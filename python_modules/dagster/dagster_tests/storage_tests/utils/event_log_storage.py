@@ -5,6 +5,7 @@ import re
 import string
 import sys
 import time
+from collections import defaultdict
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
@@ -75,10 +76,13 @@ from dagster._core.events import (
     AssetMaterializationPlannedData,
     AssetObservationData,
     DagsterEvent,
+    DagsterEventBatchMetadata,
     DagsterEventType,
     EngineEventData,
+    PlannedAssetMaterializationFailureData,
     StepExpectationResultData,
     StepMaterializationData,
+    generate_event_batch_id,
 )
 from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._core.execution.api import execute_run
@@ -2746,6 +2750,51 @@ class TestEventLogStorage:
         # make sure adding an after_cursor doesn't mess with the wiped events
         assert storage.get_materialized_partitions(c, after_cursor=9999999999) == set()
         assert storage.get_materialized_partitions(d, after_cursor=9999999999) == set()
+
+    def test_batch_write_planned_asset_materialization_failures_and_skips(self, storage, instance):
+        a = AssetKey(["a"])
+        run_id = make_new_run_id()
+
+        partitions = list(string.ascii_uppercase)
+
+        failed_partitions = {"step_a": set(partitions[:10]), "step_b": set(partitions[10:15])}
+
+        failure_events_by_step: list[list[DagsterEvent]] = [
+            [
+                DagsterEvent.build_planned_asset_materialization_failure_event(
+                    job_name="my_fake_job",
+                    step_key=step_key,
+                    planned_asset_materialization_failure_data=PlannedAssetMaterializationFailureData(
+                        asset_key=a, partition=partition, error=None
+                    ),
+                )
+                for partition in partitions
+            ]
+            for step_key, partitions in failed_partitions.items()
+        ]
+
+        failure_events = [event for events in failure_events_by_step for event in events]
+
+        batch_id = generate_event_batch_id()
+        last_index = len(failure_events) - 1
+
+        for i, failure_event in enumerate(failure_events):
+            batch_metadata = DagsterEventBatchMetadata(batch_id, i == last_index)
+            instance.report_dagster_event(failure_event, run_id, batch_metadata=batch_metadata)
+
+        failure_records = instance.get_records_for_run(
+            run_id=run_id, of_type=DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE
+        ).records
+
+        assert len(failure_records) == 15
+
+        failed_partitions_by_step_key = defaultdict(set)
+        for record in failure_records:
+            failed_partitions_by_step_key[record.event_log_entry.step_key].add(
+                record.event_log_entry.dagster_event.planned_asset_materialization_failure_data.partition
+            )
+
+        assert failed_partitions_by_step_key == failed_partitions
 
     def test_get_latest_storage_ids_by_partition(self, storage, instance):
         a = AssetKey(["a"])
