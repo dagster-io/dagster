@@ -25,12 +25,30 @@ In the **Dagster+ UI**, the asset selection syntax is available in:
 
 ## Syntax
 
-### Basic syntax
+### Filters
 
-| Asset selection | Syntax | Description |
-| --- | --- | --- |
-| **Specific asset** | `key:"my_key"` | Selects assets with key `my_key`. |
-| **Entire graph** | `*` | Displays all assets and connections. |
+Filters allow you to narrow your asset selection using specific criteria.
+
+| Filter | Syntax | Description | Supported views |
+|--------|--------|-------------|-----------------|
+| **Key (exact)** | `key:"my_key"` | Selects assets with the exact key `my_key`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Key with wildcard filter** | `key:partial_key_*`| Selects assets whose key starts with `partial_key`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Tag (exact)** | `tag:"stage"` | Selects assets tagged with `stage`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Tag (with value)** | `tag:"stage"="value"` | Selects assets tagged with `stage` having a specific `value`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Owner** | `owner:"alice"` | Selects assets owned by `alice`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Group** | `group:"team1"` | Selects assets in the group `team1`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Kind** |  `kind:"table"` |  Selects assets of kind `table`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Code location** | `code_location:"repo1"` | Selects assets located in code location `repo1`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Column tag** | `column:tag: "my_tag"` | Selects assets tagged with `my_tag`. | Dagster+ only |
+| **Columns** | `columns: "my_column"` | Selects assets with a column named `my_column`. | Dagster+ only |
+| **Table name** | `table_name: "my_table"` | Selects assets with a table named `my_table`. | Dagster+ only |
+| **Changed in branch** | `changed_in_branch: "my_branch"` | Selects assets changed in a branch named `my_branch`. | Dagster+ branch deployments only |
+
+:::note Wildcard matching
+
+Only the `key` filter supports wildcard matching.
+
+:::
 
 ### Upstream and downstream layers
 
@@ -52,31 +70,6 @@ Filtering by upstream and downstream layers can help you understand the data flo
 | **Two layers upstream and downstream of an asset** | `2+key:"my_asset"+2` | Selects two layers of assets providing input to and receiving input from `my_asset`. |
 | **All layers upstream and downstream of an asset** | `+key:"my_asset"+ ` | Selects all assets upstream and downstream of `my_asset`. |
 
-### Filters
-
-Filters allow you to narrow your asset selection using specific criteria.
-
-| Filter | Syntax | Description | Supported views |
-|--------|--------|-------------|-----------------|
-| **Key (exact)** | `key:"my_key"` | Selects assets with the exact key `my_key`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Key with wildcard filter** | `key:partial_key_*`| Selects assets whose key starts with `partial_key`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Tag (exact)** | `tag:"stage"` | Selects assets tagged with `stage`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Tag (with value)** | `tag:"stage"="value"` | Selects assets tagged with `stage` having a specific `value`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Owner** | `owner:"alice"` | Selects assets owned by `alice`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Group** | `group:"team1"` | Selects assets in the group `team1`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Kind** |  `kind:"table"` |  Selects assets of kind `table`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Code location** | `code_location:"repo1"` | Selects assets located in code location `repo1`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Column tag** | `column:tag: "my_tag"` | Selects assets tagged with `my_tag`. | Dagster+ only |
-| **Columns** | `columns: "my_column"` | Selects assets with a column named `my_column`. | Dagster+ only |
-| **Table name** | `table_name: "my_table"` | Selects assets with a table named `my_table`. | Dagster+ only |
-| **Changed in branch** | `changed_in_branch: "my_branch"` | Selects assets changed in a branch named `my_branch`. | Dagster+ branch deployments only |
-
-:::info Wildcard matching
-
-Only the `key` filter supports wildcard matching.
-
-:::
-
 ### Operands and grouping
 
 You can combine multiple filters with operands and group them with parentheses to further refine your asset selection:
@@ -90,7 +83,7 @@ You can combine multiple filters with operands and group them with parentheses t
 
 ### Functions
 
-Functions allow you to perform specific operations on your asset selection. You can use `sink()` and `root()` functions to return the sink and root assets of the specified expression.
+You can use `sink()` and `root()` functions to return the sink and root assets of an asset selection.
 
 - **Sink assets** are assets without any downstream dependencies (leaf nodes), which means they don't provide input to any other assets.
 - **Root assets** are assets without any upstream dependencies (root nodes), which means no assets provide input to them.
@@ -99,8 +92,6 @@ Functions allow you to perform specific operations on your asset selection. You 
 |--------|-------------|-----------|
 | **`sinks(expr)`** | `sinks(expr)` | Selects only "sink" assets from the specified expression. |
 | **`roots(expr)`** | `roots(expr)` | Selects only "root" assets from the specified expression. |
-
-TODO - what are allowed expressions here?
 
 ## Examples
 
@@ -111,38 +102,35 @@ To select an asset with a key containing multiple components, such as a prefix, 
 This example selects the `manhattan/manhattan_stats` asset, which is defined below:
 
 ```python
-@asset(
-    deps=[AssetKey(["taxi_trips"]), AssetKey(["taxi_zones"])], key_prefix="manhattan"
+@dg.asset(
+    deps=[dg.AssetKey(["taxi_trips"]), dg.AssetKey(["taxi_zones"])],
+    key_prefix="manhattan",
+    ...
 )
-def manhattan_stats(database: DuckDBResource):
- ...
+def manhattan_stats(database: DuckDBResource) -> None:
+    ...
 ```
 
 <Tabs groupId="examples">
-<TabItem value="python" label="Python">
+    <TabItem value="python" label="Python">
+    ```python
+    manhattan_job = define_asset_job(name="manhattan_job", selection='key:"manhattan/manhattan_stats"')
+    ```
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+    ```shell
+    dagster asset list --select 'key:"manhattan/manhattan_stats"'
+    dagster asset materialize --select 'key:"manhattan/manhattan_stats"'
+    ```
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ```shell
+    manhattan/manhattan_stats
+    ```
 
-```python
-manhattan_job = define_asset_job(name="manhattan_job", selection='key:"manhattan/manhattan_stats"')
-```
+    Which would result in the following asset graph:
 
-</TabItem>
-<TabItem value="cli" label="CLI">
-
-```shell
-dagster asset list --select 'key:"manhattan/manhattan_stats"'
-dagster asset materialize --select 'key:"manhattan/manhattan_stats"'
-```
-
-</TabItem>
-<TabItem value="dagster-ui" label="Dagster UI">
-
-```shell
-manhattan/manhattan_stats
-```
-
-Which would result in the following asset graph:
-
-{/* TODO: Add screenshot ![]() */}
+    {/* TODO: Nikki to add screenshot ![]() */}
 
 </TabItem>
 </Tabs>
@@ -154,36 +142,26 @@ To select multiple assets, use a list of the assets' asset keys. The assets don'
 This example selects the `taxi_zones_file` and `taxi_trips_file` assets, which are defined below:
 
 <Tabs groupId="examples">
-<TabItem value="python" label="Python">
+    <TabItem value="python" label="Python">
+    ```python
+    raw_data_job = define_asset_job(
+        name="raw_data_job", selection='key:"taxi_zones_file" or key:"taxi_trips_file"'
+    )
+    ```
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+    ```shell
+    dagster asset list --select 'key:"taxi_zones_file" or key:"taxi_trips_file"'
+    dagster asset materialize --select 'key:"taxi_zones_file" or key":"taxi_trips_file"'
+    ```
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ```shell
+    key:"taxi_zones_file" or key:"taxi_trips_file"
+    ```
+    Which would result in the following asset graph:
 
-When selecting multiple assets, enclose the list of asset keys in double quotes (`"`) and separate each asset key with a comma:
-
-```python
-raw_data_job = define_asset_job(
-    name="taxi_zones_job", selection="key:taxi_zones_file or key:taxi_trips_file"
-)
-```
-
-</TabItem>
-<TabItem value="cli" label="CLI">
-
-When selecting multiple assets, enclose the list of asset keys in double quotes (`"`) and separate each asset key with a comma:
-
-```shell
-dagster asset list --select "key:taxi_zones_file or key:taxi_trips_file"
-dagster asset materialize --select "key:taxi_zones_file or key:taxi_trips_file"
-```
-
-</TabItem>
-<TabItem value="dagster-ui" label="Dagster UI">
-
-```shell
-taxi_zones_file taxi_trips_file
-```
-
-Which would result in the following asset graph:
-
-{/* TODO: Add screenshot ![]() */}
+    {/* TODO: Nikki to add screenshot ![]() */}
 
 </TabItem>
 </Tabs>
@@ -191,44 +169,116 @@ Which would result in the following asset graph:
 ### Select upstream and downstream assets with filters \{#filters}
 
 ```shell
-+key:"data_pipeline" and kind:"table"+
++key:"manhattan_stats" and kind:"duckdb"+
 ```
 
-Selects one layer upstream and one layer downstream of `data_pipeline`, limited to assets of kind `table`.
+Selects one layer upstream and one layer downstream of `manhattan_stats`, limited to assets of kind `duckdb`.
 
 <Tabs groupId="examples">
     <TabItem value="python" label="Python">
-        TK - Python
-    </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-        TK - UI
+    ```python
+    manhattan_stats_duckdb_job = define_asset_job(
+        name="manhattan_stats_duckdb_job", selection='+key:"manhattan_stats" and kind:"duckdb"+'
+    )
+   ```
     </TabItem>
     <TabItem value="cli" label="CLI">
-        TK - CLI
+    ```shell
+    dagster asset list --select '+key:"manhattan_stats" and kind:"duckdb"+'
+    dagster asset materialize --select '+key:"manhattan_stats" and kind:"duckdb"+'
+    ```
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+
+    ```shell
+    +key:"manhattan_stats" and kind:"duckdb"+
+    ```
+
+    Which would result in the following asset graph:
+    {/* TODO: Nikki to add screenshot ![]() */}
     </TabItem>
 </Tabs>
 
 ### Select assets without specific tags \{#not-tag}
 
 ```shell
-owner:"billing" and not tag:"enterprise"
+owner:"team:data_eng" and not tag:"source"="nyc_open_data_portal"
 ```
 
-Selects everything owned by `billing` **excluding** any assets tagged with `enterprise`.
+Selects everything owned by team `data_eng` **excluding** any assets tagged with `source=nyc_open_data_portal`.
 
 <Tabs groupId="examples">
     <TabItem value="python" label="Python">
     ```python
+    data_eng_not_nyc_data_portal_job = define_asset_job(
+        name="data_eng_not_nyc_data_portal_job", selection='owner:"team:data_eng" and not tag:"source"="nyc_open_data_portal"'
+    )
     billing_assets = AssetSelection.from_string('owner:"billing" and not tag:"enterprise"')
     ```
     </TabItem>
+    <TabItem value="cli" label="CLI">
+    ```shell
+    dagster asset list --select 'owner:"team:data_eng" and not tag:"source"="nyc_open_data_portal"'
+    dagster asset materialize --select 'owner:"team:data_eng" and not tag:"source"="nyc_open_data_portal"'
+    ```
+    </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-        TK - UI
+    ```shell
+    owner:"team:data_eng" and not tag:"source"="nyc_open_data_portal"
+    ```
+
+    Which would result in the following asset graph:
+    {/* TODO: Nikki to add screenshot ![]() */}
+    </TabItem>
+</Tabs>
+
+### Select all assets on the path between two assets
+
+```shell
+key:"taxi_trips_file"+ and +key:"manhattan_stats"
+```
+
+Selects all assets on the path from the `taxi_trips_file` asset to the `manhattan_stats` asset.
+
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+    ```python
+    taxi_trips_manhattan_stats_job = define_asset_job(
+        name="taxi_trips_manhattan_stats_job", selection='key:"taxi_trips_file"+ and +key:"manhattan_stats"'
+    )
+    ```
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select owner:"billing" and not tag:"enterprise"
+    dagster asset list --select 'key:"taxi_trips_file"+ and +key:"manhattan_stats"'
+    dagster asset materialize --select 'key:"taxi_trips_file"+ and +key:"manhattan_stats"'
     ```
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ```shell
+    key:"taxi_trips_file"+ and +key:"manhattan_stats"
+    ```
+
+    Which would result in the following asset graph:
+    {/* TODO: Nikki to add screenshot ![]() */}
+    </TabItem>
+</Tabs>
+
+### Select all assets on the path between two sets of assets
+
+```shell
+(key:"start-1" or key:"start-2")+ and +(key:"end-1" or key:"end-2")
+```
+
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+        TODO
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+        TODO
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+        TODO
     </TabItem>
 </Tabs>
 
@@ -242,13 +292,61 @@ Selects all assets on the paths from the `sensitive_data` group to the `public_d
 
 <Tabs groupId="examples">
     <TabItem value="python" label="Python">
-        TK - Python
-    </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-        TK - UI
+        TODO
     </TabItem>
     <TabItem value="cli" label="CLI">
-        TK - CLI
+        TODO
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+        TODO
+    </TabItem>
+</Tabs>
+
+### Select assets between two assets that go through the "middle" asset
+
+```shell
+key:"taxi_zones_file"+ and +key:"manhattan_stats"+ and +key:"manhattan_map"
+```
+
+Selects all assets on the path between the `taxi_zones_file` asset and `manhattan_map` asset that go through the `manhattan_stats` asset.
+
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+    ```python
+    taxi_zones_stats_map_job = define_asset_job(
+        name="taxi_zones_stats_map_job", selection='key:"taxi_zones_file"+ and +key:"manhattan_stats"+ and +key:"manhattan_map"'
+    )
+    ```
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+    dagster asset list --select 'key:"taxi_zones_file"+ and +key:"manhattan_stats"+ and +key:"manhattan_map"'
+    dagster asset materialize --select 'key:"taxi_zones_file"+ and +key:"manhattan_stats"+ and +key:"manhattan_map"'
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ```shell
+    key:"taxi_zones_file"+ and +key:"manhattan_stats"+ and +key:"manhattan_map"
+    ```
+
+    Which would result in the following asset graph:
+    {/* TODO: Nikki to add screenshot ![]() */}
+    </TabItem>
+</Tabs>
+
+### Select all assets on the path between two sets of assets by tag
+
+```shell
+tag:"private"+ and +tag:"public"
+```
+
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+        TODO
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+        TODO
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+        TODO
     </TabItem>
 </Tabs>
 
@@ -257,20 +355,25 @@ Selects all assets on the paths from the `sensitive_data` group to the `public_d
 #### Example 1
 
 ```shell
-(owner:"alice" and kind:"table") or group:"analytics"
+(owner:"ada.dagster@example.com" and kind:"csv") or group:"analytics"
 ```
 
-Selects assets that are either owned by `alice` and of kind `table`, **or** belong to the `analytics` group.
+Selects assets that are either owned by `ada.dagster@example.com` and of kind `csv`, **or** that belong to the `analytics` group.
 
 <Tabs groupId="examples">
     <TabItem value="python" label="Python">
         TK
     </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-        TK - UI
-    </TabItem>
     <TabItem value="cli" label="CLI">
         TK - CLI
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ```shell
+    (owner:"ada.dagster@example.com" and kind:"csv") or group:"analytics"
+    ```
+
+    Which would result in the following asset graph:
+    {/* TODO: Nikki to add screenshot ![]() */}
     </TabItem>
 </Tabs>
 
@@ -284,44 +387,48 @@ Selects assets whose keys contain `data` and are **not** tagged as `obsolete` or
 
 <Tabs groupId="examples">
     <TabItem value="python" label="Python">
-        TK - Python
-    </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-        TK - UI
+        TODO
     </TabItem>
     <TabItem value="cli" label="CLI">
-        TK - CLI
+        TODO
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+        TODO
     </TabItem>
 </Tabs>
 
-### Select all sinks \{#sinks}
+### Select all sink assets \{#sinks}
 
-`sinks(*)`
+```shell
+sinks(*)
+```
 
 <Tabs groupId="examples">
     <TabItem value="python" label="Python">
-        TK - Python
-    </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-        TK - UI
+        TODO
     </TabItem>
     <TabItem value="cli" label="CLI">
-        TK - CLI
+        TODO
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+        TODO
     </TabItem>
 </Tabs>
 
-### Select all roots \{#roots}
+### Select all root assets \{#roots}
 
-`roots(*)`
+```shell
+roots(*)
+```
 
 <Tabs groupId="examples">
     <TabItem value="python" label="Python">
-        TK - Python
-    </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-        TK - UI
+        TODO
     </TabItem>
     <TabItem value="cli" label="CLI">
-        TK - CLI
+        TODO
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+        TODO
     </TabItem>
 </Tabs>
