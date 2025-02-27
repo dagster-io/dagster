@@ -9,6 +9,7 @@ import {
 } from '@dagster-io/ui-components';
 import {StyledRawCodeMirror} from '@dagster-io/ui-components/editor';
 import {useContext, useMemo} from 'react';
+import {CodeLocationAlertsSection} from 'shared/code-location/CodeLocationAlertsSection.oss';
 import {CodeLocationPageHeader} from 'shared/code-location/CodeLocationPageHeader.oss';
 import {CodeLocationServerSection} from 'shared/code-location/CodeLocationServerSection.oss';
 import {CodeLocationTabs} from 'shared/code-location/CodeLocationTabs.oss';
@@ -127,6 +128,7 @@ export const CodeLocationOverviewRoot = (props: Props) => {
           </Table>
         </>
       ) : null}
+      <CodeLocationAlertsSection locationName={repoAddress.location} />
       <CodeLocationOverviewSectionHeader label="Metadata" border="bottom" />
       <CodeLocationMetadataStyle />
       <div style={{height: '320px'}}>
