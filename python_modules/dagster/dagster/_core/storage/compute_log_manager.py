@@ -13,7 +13,7 @@ from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
-MAX_BYTES_CHUNK_READ: Final = 4194304  # 4 MB
+MAX_BYTES_CHUNK_READ: Final = 1048576  # 1 MB
 
 
 class ComputeIOType(Enum):
