@@ -129,7 +129,7 @@ def isolated_example_project_foo_bar(
             # _install_libraries_to_venv(Path(".venv"), ["dagster-test"])
             for src_dir in component_dirs:
                 component_name = src_dir.name
-                components_dir = Path.cwd() / "foo_bar" / "components" / component_name
+                components_dir = Path.cwd() / "foo_bar" / "defs" / component_name
                 components_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(src_dir, components_dir, dirs_exist_ok=True)
             yield
@@ -161,7 +161,7 @@ def isolated_example_component_library_foo_bar(
         )
         assert_runner_result(result)
         with clear_module_from_cache("foo_bar"), pushd("foo-bar"):
-            shutil.rmtree(Path("foo_bar/components"))
+            shutil.rmtree(Path("foo_bar/defs"))
 
             # Make it not a project
             with modify_pyproject_toml() as toml:

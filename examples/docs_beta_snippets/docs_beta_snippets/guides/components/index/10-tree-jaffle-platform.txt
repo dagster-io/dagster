@@ -2,11 +2,11 @@ tree jaffle_platform
 
 jaffle_platform
 ├── __init__.py
-├── components
+├── definitions.py
+├── defs
 │   └── ingest_files
 │       ├── component.yaml
 │       └── replication.yaml
-├── definitions.py
 └── lib
     └── __init__.py
 

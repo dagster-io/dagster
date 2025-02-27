@@ -268,7 +268,7 @@ class ComponentLoadContext:
         In a typical setup you end up with module names such as "a_project.components.my_component.my_python_file".
 
         This handles "__init__.py" files by ending the module name at the parent directory
-        (e.g "a_project.components.my_component") if the file resides at "a_project/components/my_component/__init__.py".
+        (e.g "a_project.components.my_component") if the file resides at "a_project/defs/my_component/__init__.py".
 
         This calls importlib.import_module with that module name, going through the python module import system.
 
@@ -281,7 +281,7 @@ class ComponentLoadContext:
             # Problematic
             # See https://linear.app/dagster-labs/issue/BUILD-736/highly-suspect-hardcoding-of-components-string-is-component-relative
             component_module_relative_path = abs_context_path.parts[
-                abs_context_path.parts.index("components") + 2 :
+                abs_context_path.parts.index("defs") + 2 :
             ]
             component_module_name = ".".join([self.module_name, *component_module_relative_path])
             if abs_file_path.name != "__init__.py":

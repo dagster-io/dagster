@@ -6,8 +6,8 @@ cd dagster-workspace && tree
 │   └── project-1
 │       ├── project_1
 │       │   ├── __init__.py
-│       │   ├── components
 │       │   ├── definitions.py
+│       │   ├── defs
 │       │   └── lib
 │       │       └── __init__.py
 │       ├── project_1_tests

@@ -42,7 +42,7 @@ from dagster_dg.utils import (
 
 # Project
 _DEFAULT_PROJECT_COMPONENTS_LIB_SUBMODULE: Final = "lib"
-_DEFAULT_PROJECT_COMPONENTS_SUBMODULE: Final = "components"
+_DEFAULT_PROJECT_COMPONENTS_SUBMODULE: Final = "defs"
 
 # Workspace
 _WORKSPACE_PROJECTS_DIR: Final = "projects"

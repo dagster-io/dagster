@@ -139,7 +139,7 @@ def test_components_docs_index(
 
         check_file(
             Path("my_component_library")
-            / "components"
+            / "defs"
             / "my_shell_command"
             / "component.yaml",
             COMPONENTS_SNIPPETS_DIR
@@ -147,10 +147,7 @@ def test_components_docs_index(
             update_snippets=update_snippets,
         )
         check_file(
-            Path("my_component_library")
-            / "components"
-            / "my_shell_command"
-            / "script.sh",
+            Path("my_component_library") / "defs" / "my_shell_command" / "script.sh",
             COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffolded-component-script.sh",
             update_snippets=update_snippets,

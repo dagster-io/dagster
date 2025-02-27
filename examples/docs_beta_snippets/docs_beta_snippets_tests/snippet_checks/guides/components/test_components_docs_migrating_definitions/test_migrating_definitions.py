@@ -39,7 +39,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         _run_command(
             r"find . -type d -name my_existing_project.egg-info -exec rm -r {} \+"
         )
-        _run_command("mkdir -p my_existing_project/components")
+        _run_command("mkdir -p my_existing_project/defs")
 
         run_command_and_snippet_output(
             cmd="tree",
@@ -69,17 +69,14 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         )
 
         run_command_and_snippet_output(
-            cmd="mv my_existing_project/elt/* my_existing_project/components/elt-definitions",
+            cmd="mv my_existing_project/elt/* my_existing_project/defs/elt-definitions",
             snippet_path=COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-mv.txt",
             update_snippets=update_snippets,
         )
         _run_command("rm -rf my_existing_project/elt")
 
         create_file(
-            Path("my_existing_project")
-            / "components"
-            / "elt-definitions"
-            / "definitions.py",
+            Path("my_existing_project") / "defs" / "elt-definitions" / "definitions.py",
             format_multiline("""
                 import dagster as dg
 
@@ -97,10 +94,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         )
 
         create_file(
-            Path("my_existing_project")
-            / "components"
-            / "elt-definitions"
-            / "component.yaml",
+            Path("my_existing_project") / "defs" / "elt-definitions" / "component.yaml",
             format_multiline("""
             type: dagster_components.lib.DefinitionsComponent
 
@@ -130,7 +124,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
                     jobs=[regenerate_analytics_job],
                     schedules=[regenerate_analytics_hourly_schedule],
                 ),
-                dg_components.build_component_defs(Path(__file__).parent / "components"),
+                dg_components.build_component_defs(Path(__file__).parent / "defs"),
             )
         """),
             COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-definitions-after.py",
@@ -159,11 +153,11 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
             cmd="dg scaffold component 'dagster_components.lib.DefinitionsComponent' analytics-definitions",
         )
         _run_command(
-            cmd="mv my_existing_project/analytics/* my_existing_project/components/analytics-definitions && rm -rf my_existing_project/analytics",
+            cmd="mv my_existing_project/analytics/* my_existing_project/defs/analytics-definitions && rm -rf my_existing_project/analytics",
         )
         create_file(
             Path("my_existing_project")
-            / "components"
+            / "defs"
             / "analytics-definitions"
             / "definitions.py",
             format_multiline("""
@@ -181,7 +175,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         )
         create_file(
             Path("my_existing_project")
-            / "components"
+            / "defs"
             / "analytics-definitions"
             / "component.yaml",
             format_multiline("""
@@ -211,7 +205,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
 
                 import dagster_components as dg_components
 
-                defs = dg_components.build_component_defs(Path(__file__).parent / "components")
+                defs = dg_components.build_component_defs(Path(__file__).parent / "defs")
             """),
             COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-definitions-after-all.py",

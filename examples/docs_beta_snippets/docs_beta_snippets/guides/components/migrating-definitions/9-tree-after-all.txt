@@ -4,20 +4,20 @@ tree
 ├── README.md
 ├── my_existing_project
 │   ├── __init__.py
-│   ├── components
-│   │   ├── analytics-definitions
-│   │   │   ├── __init__.py
-│   │   │   ├── assets.py
-│   │   │   ├── component.yaml
-│   │   │   ├── definitions.py
-│   │   │   └── jobs.py
-│   │   └── elt-definitions
-│   │       ├── __init__.py
-│   │       ├── assets.py
-│   │       ├── component.yaml
-│   │       ├── definitions.py
-│   │       └── jobs.py
-│   └── definitions.py
+│   ├── definitions.py
+│   └── defs
+│       ├── analytics-definitions
+│       │   ├── __init__.py
+│       │   ├── assets.py
+│       │   ├── component.yaml
+│       │   ├── definitions.py
+│       │   └── jobs.py
+│       └── elt-definitions
+│           ├── __init__.py
+│           ├── assets.py
+│           ├── component.yaml
+│           ├── definitions.py
+│           └── jobs.py
 ├── pyproject.toml
 └── uv.lock
 
