@@ -720,6 +720,8 @@ class DagsterEvent(
             return self.asset_observation_data.asset_observation.asset_key
         elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
             return self.asset_materialization_planned_data.asset_key
+        elif self.event_type == DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE:
+            return self.planned_asset_materialization_failure_data.asset_key
         else:
             return None
 
@@ -736,6 +738,8 @@ class DagsterEvent(
             return self.asset_observation_data.asset_observation.partition
         elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
             return self.asset_materialization_planned_data.partition
+        elif self.event_type == DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE:
+            return self.planned_asset_materialization_failure_data.partition
         else:
             return None
 
@@ -1532,6 +1536,21 @@ class DagsterEvent(
             step_key=step_key,
         )
         return event
+
+    @staticmethod
+    # TODO - naming. most other event builder fns are just the name of the event
+    def build_planned_asset_materialization_failure_event(
+        job_name: str,
+        step_key: str,
+        planned_asset_materialization_failure_data: "PlannedAssetMaterializationFailureData",
+    ) -> "DagsterEvent":
+        return DagsterEvent(
+            event_type_value=DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE.value,
+            job_name=job_name,
+            message=f"Asset {planned_asset_materialization_failure_data.asset_key.to_string()} failed to materialize",
+            event_specific_data=planned_asset_materialization_failure_data,
+            step_key=step_key,
+        )
 
 
 def get_step_output_event(
