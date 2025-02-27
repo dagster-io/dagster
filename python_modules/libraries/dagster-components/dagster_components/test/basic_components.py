@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from dagster._core.definitions.definitions_class import Definitions
 from pydantic import BaseModel, ConfigDict
 
-from dagster_components import Component, ResolvableSchema, registered_component_type
+from dagster_components import Component, ResolvableSchema
 from dagster_components.core.component import ComponentLoadContext
 
 
@@ -16,7 +16,6 @@ class MyComponentSchema(ResolvableSchema):
     an_int: int
 
 
-@registered_component_type
 @dataclass
 class MyComponent(Component):
     a_string: str
@@ -43,7 +42,6 @@ class MyNestedComponentSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-@registered_component_type
 class MyNestedComponent(Component):
     @classmethod
     def get_schema(cls) -> type[MyNestedComponentSchema]:

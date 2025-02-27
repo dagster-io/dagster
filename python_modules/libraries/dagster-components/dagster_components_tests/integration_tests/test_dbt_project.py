@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 from dagster import AssetKey
-from dagster_components.core.component import registered_component_type
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
@@ -94,7 +93,6 @@ def test_load_from_path(dbt_path: Path) -> None:
 
 
 def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
-    @registered_component_type(name="debug_dbt_project")
     @dataclass
     class DebugDbtProjectComponent(DbtProjectComponent):
         @classmethod

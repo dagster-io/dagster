@@ -14,7 +14,7 @@ from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
-from dagster._utils import pushd, snakecase
+from dagster._utils import pushd
 from typing_extensions import Self
 
 from dagster_components.core.component_key import ComponentKey
@@ -310,53 +310,7 @@ class ComponentLoadContext:
             return importlib.import_module(component_module_name)
 
 
-COMPONENT_REGISTRY_KEY_ATTR = "__dagster_component_registry_key"
 COMPONENT_LOADER_FN_ATTR = "__dagster_component_loader_fn"
-
-
-def registered_component_type(
-    cls: Optional[type[Component]] = None, *, name: Optional[str] = None
-) -> Any:
-    """Decorator for registering a component type. You must annotate a component
-    type with this decorator in order for it to be inspectable and loaded by tools.
-
-    Args:
-        cls (Optional[Type[Component]]): The target of the decorator: the component class
-            to register. The class must inherit from Component.
-        name (Optional[str]): The name to register the component type under. If not
-            provided, the name will be the snake-cased version of the class name. The
-            name is used as a key in operations like scaffolding and loading.
-    """
-    if cls is None:
-
-        def wrapper(actual_cls: type[Component]) -> type[Component]:
-            check.inst_param(actual_cls, "actual_cls", type)
-            setattr(
-                actual_cls,
-                COMPONENT_REGISTRY_KEY_ATTR,
-                name or snakecase(actual_cls.__name__),
-            )
-            return actual_cls
-
-        return wrapper
-    else:
-        # called without params
-        check.inst_param(cls, "cls", type)
-        setattr(cls, COMPONENT_REGISTRY_KEY_ATTR, name or snakecase(cls.__name__))
-        return cls
-
-
-def is_registered_component_type(cls: type) -> bool:
-    return hasattr(cls, COMPONENT_REGISTRY_KEY_ATTR)
-
-
-def get_component_type_name(component_type: type[Component]) -> str:
-    check.param_invariant(
-        is_registered_component_type(component_type),
-        "component_type",
-        "Expected a registered component. Use @component to register a component.",
-    )
-    return getattr(component_type, COMPONENT_REGISTRY_KEY_ATTR)
 
 
 T_Component = TypeVar("T_Component", bound=Component)
