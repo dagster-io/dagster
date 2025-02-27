@@ -207,7 +207,7 @@ Now that you've defined some assets, you can automate them to keep them up to da
 Navigate to `components/ingest_files/component.yaml` and add the `automation_condition` below to automatically pull in data with Sling every day:
 
 ```yaml create=jaffle_platform/components/ingest_files/component.yaml title="jaffle-platform/jaffle_platform/components/ingest_files/component.yaml"
-type: dagster_components.sling_replication_collection
+type: dagster_components.lib.SlingReplicationCollectionComponent
 
 attributes:
   replications:
