@@ -31,8 +31,9 @@ Filters allow you to narrow your asset selection using specific criteria.
 
 | Filter | Syntax | Description | Supported views |
 |--------|--------|-------------|-----------------|
-| **Key (exact)** | `key:"my_key"` | Selects assets with the exact key `my_key`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Key with wildcard filter** | `key:partial_key_*`| Selects assets whose key starts with `partial_key`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Key (exact)** | `key:"my_asset"` | Selects assets with the exact key `my_asset`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Key with one wildcard** | `key:"prefix_*"`| Selects assets whose key starts with `prefix`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Key with multiple wildcards** | `key:"prefix_*_middlefix_*_suffix"` | Selects assets whose key starts with `prefix`, contains `middlefix`, and ends with `suffix`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Tag (exact)** | `tag:"stage"` | Selects assets tagged with `stage`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Tag (with value)** | `tag:"stage"="value"` | Selects assets tagged with `stage` having a specific `value`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Owner** | `owner:"alice"` | Selects assets owned by `alice`. | OSS, Dagster+, Dagster+ branch deployments |
@@ -68,7 +69,7 @@ Filtering by upstream and downstream layers can help you understand the data flo
 | **Two layers downstream of an asset** | `key:"my_asset"+2` | Selects assets two steps downstream from `my_asset`. |
 | **One layer upstream and downstream of an asset** | `1+key:"my_asset"+1` | Selects one layer of assets providing input to and receiving input from `my_asset`. |
 | **Two layers upstream and downstream of an asset** | `2+key:"my_asset"+2` | Selects two layers of assets providing input to and receiving input from `my_asset`. |
-| **All layers upstream and downstream of an asset** | `+key:"my_asset"+ ` | Selects all assets upstream and downstream of `my_asset`. |
+| **All layers upstream and downstream of an asset** | `+key:"my_asset"+` | Selects all assets upstream and downstream of `my_asset`. |
 
 ### Operands and grouping
 
@@ -152,7 +153,7 @@ This example selects the `taxi_zones_file` and `taxi_trips_file` assets, which a
     <TabItem value="cli" label="CLI">
     ```shell
     dagster asset list --select 'key:"taxi_zones_file" or key:"taxi_trips_file"'
-    dagster asset materialize --select 'key:"taxi_zones_file" or key":"taxi_trips_file"'
+    dagster asset materialize --select 'key:"taxi_zones_file" or key:"taxi_trips_file"'
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
