@@ -277,7 +277,7 @@ def test_scaffold_sling():
             [
                 "scaffold",
                 "component",
-                "dagster_components.SlingReplicationCollectionComponent",
+                "dagster_components.dagster_sling.SlingReplicationCollectionComponent",
                 "bar/components/qux",
             ],
         )

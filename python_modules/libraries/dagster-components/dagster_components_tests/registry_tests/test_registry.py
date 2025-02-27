@@ -102,25 +102,40 @@ def test_components_from_dagster():
     # No extras
     with _temp_venv([*common_deps, "-e", components_root]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster_components.PipesSubprocessScriptCollectionComponent" in component_types
-        assert "dagster_components.DbtProjectComponent" not in component_types
-        assert "dagster_components.SlingReplicationCollectionComponent" not in component_types
+        assert (
+            "dagster_components.dagster.PipesSubprocessScriptCollectionComponent" in component_types
+        )
+        assert "dagster_components.dagster_dbt.DbtProjectComponent" not in component_types
+        assert (
+            "dagster_components.dagster_sling.SlingReplicationCollectionComponent"
+            not in component_types
+        )
 
     with _temp_venv(
         [*common_deps, "-e", f"{components_root}[dbt]", "-e", dbt_root]
     ) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster_components.PipesSubprocessScriptCollectionComponent" in component_types
-        assert "dagster_components.DbtProjectComponent" in component_types
-        assert "dagster_components.SlingReplicationCollectionComponent" not in component_types
+        assert (
+            "dagster_components.dagster.PipesSubprocessScriptCollectionComponent" in component_types
+        )
+        assert "dagster_components.dagster_dbt.DbtProjectComponent" in component_types
+        assert (
+            "dagster_components.dagster_sling.SlingReplicationCollectionComponent"
+            not in component_types
+        )
 
     with _temp_venv(
         [*common_deps, "-e", f"{components_root}[sling]", "-e", sling_root]
     ) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster_components.PipesSubprocessScriptCollectionComponent" in component_types
-        assert "dagster_components.DbtProjectComponent" not in component_types
-        assert "dagster_components.SlingReplicationCollectionComponent" in component_types
+        assert (
+            "dagster_components.dagster.PipesSubprocessScriptCollectionComponent" in component_types
+        )
+        assert "dagster_components.dagster_dbt.DbtProjectComponent" not in component_types
+        assert (
+            "dagster_components.dagster_sling.SlingReplicationCollectionComponent"
+            in component_types
+        )
 
 
 def test_all_dagster_components_have_defined_summary():

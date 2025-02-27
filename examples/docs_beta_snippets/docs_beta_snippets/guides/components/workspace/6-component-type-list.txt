@@ -1,16 +1,22 @@
 dg list component-type
 
 Using /.../dagster-workspace/projects/project-1/.venv/bin/dagster-components
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Component Type                                              ┃ Summary                  ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ dagster_components.DefinitionsComponent                     │ Wraps an arbitrary set   │
-│                                                             │ of Dagster definitions.  │
-│ dagster_components.PipesSubprocessScriptCollectionComponent │ Assets that wrap Python  │
-│                                                             │ scripts executed with    │
-│                                                             │ Dagster's                │
-│                                                             │ PipesSubprocessClient.   │
-│ dagster_components.SlingReplicationCollectionComponent      │ Expose one or more Sling │
-│                                                             │ replications to Dagster  │
-│                                                             │ as assets.               │
-└─────────────────────────────────────────────────────────────┴──────────────────────────┘
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
+┃ Component Type                                                       ┃ Summary         ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
+│ dagster_components.dagster.DefinitionsComponent                      │ Wraps an        │
+│                                                                      │ arbitrary set   │
+│                                                                      │ of Dagster      │
+│                                                                      │ definitions.    │
+│ dagster_components.dagster.PipesSubprocessScriptCollectionComponent  │ Assets that     │
+│                                                                      │ wrap Python     │
+│                                                                      │ scripts         │
+│                                                                      │ executed with   │
+│                                                                      │ Dagster's       │
+│                                                                      │ PipesSubproces… │
+│ dagster_components.dagster_sling.SlingReplicationCollectionComponent │ Expose one or   │
+│                                                                      │ more Sling      │
+│                                                                      │ replications to │
+│                                                                      │ Dagster as      │
+│                                                                      │ assets.         │
+└──────────────────────────────────────────────────────────────────────┴─────────────────┘

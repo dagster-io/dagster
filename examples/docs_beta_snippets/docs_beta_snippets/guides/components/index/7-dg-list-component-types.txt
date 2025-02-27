@@ -1,12 +1,15 @@
 dg list component-type
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Component Type                                              ┃ Summary                  ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ dagster_components.DefinitionsComponent                     │ Wraps an arbitrary set   │
-│                                                             │ of Dagster definitions.  │
-│ dagster_components.PipesSubprocessScriptCollectionComponent │ Assets that wrap Python  │
-│                                                             │ scripts executed with    │
-│                                                             │ Dagster's                │
-│                                                             │ PipesSubprocessClient.   │
-└─────────────────────────────────────────────────────────────┴──────────────────────────┘
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+┃ Component Type                                                      ┃ Summary          ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+│ dagster_components.dagster.DefinitionsComponent                     │ Wraps an         │
+│                                                                     │ arbitrary set of │
+│                                                                     │ Dagster          │
+│                                                                     │ definitions.     │
+│ dagster_components.dagster.PipesSubprocessScriptCollectionComponent │ Assets that wrap │
+│                                                                     │ Python scripts   │
+│                                                                     │ executed with    │
+│                                                                     │ Dagster's        │
+│                                                                     │ PipesSubprocess… │
+└─────────────────────────────────────────────────────────────────────┴──────────────────┘

@@ -1,4 +1,4 @@
-type: dagster_components.PipesSubprocessScriptCollectionComponent
+type: dagster_components.dagster.PipesSubprocessScriptCollectionComponent
 
 attributes:
   scripts:
