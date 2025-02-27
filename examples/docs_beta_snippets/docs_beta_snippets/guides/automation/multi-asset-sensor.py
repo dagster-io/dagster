@@ -17,8 +17,8 @@ def asset_c():
 
 
 asset_job = dg.define_asset_job(
-    "asset_b_job",
-    selection=[dg.AssetKey("asset_a"), dg.AssetKey("asset_b"), dg.AssetKey("asset_c")],
+    "asset_c_job",
+    selection=[dg.AssetKey("asset_c")],
 )
 
 
