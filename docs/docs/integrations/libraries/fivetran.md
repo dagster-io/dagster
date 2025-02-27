@@ -25,6 +25,12 @@ import Beta from '../../partials/\_Beta.md';
 
 This guide provides instructions for using Dagster with Fivetran using the `dagster-fivetran` library. Your Fivetran connector tables can be represented as assets in the Dagster asset graph, allowing you to track lineage and dependencies between Fivetran assets and data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Fivetran connectors, allowing you to trigger syncs for these on a cadence or based on upstream data changes.
 
+:::note
+
+Your Fivetran connectors must have been synced at least once to be represented in Dagster.
+
+:::
+
 ## What you'll learn
 
 - How to represent Fivetran assets in the Dagster asset graph, including lineage to other Dagster assets.
