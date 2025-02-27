@@ -1,5 +1,4 @@
-from dagster_components import ComponentLoadContext, component
-from dagster_components.lib import DbtProjectComponent
+from dagster_components import ComponentLoadContext, DbtProjectComponent, component
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource
 
 

@@ -41,7 +41,7 @@ setup(
             "dagster-components = dagster_components.cli:main",
         ],
         "dagster.components": [
-            "dagster_components = dagster_components.lib",
+            "dagster-components = dagster_components",
         ],
     },
     extras_require={

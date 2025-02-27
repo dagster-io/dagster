@@ -1,4 +1,4 @@
-type: dagster_components.lib.SlingReplicationCollectionComponent
+type: dagster_components.SlingReplicationCollectionComponent
 
 attributes:
   replications:

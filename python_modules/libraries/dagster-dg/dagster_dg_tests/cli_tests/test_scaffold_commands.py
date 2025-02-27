@@ -500,7 +500,7 @@ def test_scaffold_dbt_project_instance(params) -> None:
         result = runner.invoke(
             "scaffold",
             "component",
-            "dagster_components.lib.DbtProjectComponent",
+            "dagster_components.DbtProjectComponent",
             "my_project",
             *params,
         )
@@ -509,7 +509,7 @@ def test_scaffold_dbt_project_instance(params) -> None:
 
         component_yaml_path = Path("foo_bar/defs/my_project/component.yaml")
         assert component_yaml_path.exists()
-        assert "type: dagster_components.lib.DbtProjectComponent" in component_yaml_path.read_text()
+        assert "type: dagster_components.DbtProjectComponent" in component_yaml_path.read_text()
         assert (
             cross_platfrom_string_path("stub_projects/dbt_project_location/defs/jaffle_shop")
             in component_yaml_path.read_text()

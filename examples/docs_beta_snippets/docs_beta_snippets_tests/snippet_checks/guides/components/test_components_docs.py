@@ -119,7 +119,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
         # Scaffold new ingestion, validate new files
         run_command_and_snippet_output(
-            cmd="dg scaffold component 'dagster_components.lib.SlingReplicationCollectionComponent' ingest_files",
+            cmd="dg scaffold component 'dagster_components.SlingReplicationCollectionComponent' ingest_files",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-dg-scaffold-sling-replication.txt",
             update_snippets=update_snippets,
@@ -218,7 +218,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 ).strip(),
             )
             _run_command(
-                "dagster asset materialize --select '*' -m jaffle_platform.definitions"
+                "uv run dagster asset materialize --select '*' -m jaffle_platform.definitions"
             )
             run_command_and_snippet_output(
                 cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM raw_customers LIMIT 5;"',
@@ -251,7 +251,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
             # Scaffold dbt project components
             run_command_and_snippet_output(
-                cmd="dg scaffold component dagster_components.lib.DbtProjectComponent jdbt --project-path dbt/jdbt",
+                cmd="dg scaffold component dagster_components.DbtProjectComponent jdbt --project-path dbt/jdbt",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-scaffold-jdbt.txt",
                 update_snippets=update_snippets,
@@ -294,7 +294,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt.yaml",
                 contents=format_multiline("""
-                    type: dagster_components.lib.DbtProjectComponent
+                    type: dagster_components.DbtProjectComponent
 
                     attributes:
                       dbt:
@@ -315,7 +315,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
             # Run dbt, check works
             _run_command(
-                "DAGSTER_IS_DEV_CLI=1 dagster asset materialize --select '*' -m jaffle_platform.definitions"
+                "DAGSTER_IS_DEV_CLI=1 uv run dagster asset materialize --select '*' -m jaffle_platform.definitions"
             )
             run_command_and_snippet_output(
                 cmd='duckdb /tmp/jaffle_platform.duckdb -c "SELECT * FROM orders LIMIT 5;"',

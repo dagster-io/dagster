@@ -17,11 +17,11 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.env import environ
 from dagster_components.cli import cli
-from dagster_components.core.component_decl_builder import ComponentFileModel
-from dagster_components.core.component_defs_builder import YamlComponentDecl, build_component_defs
-from dagster_components.lib.sling_replication_collection.component import (
+from dagster_components.components.sling_replication_collection.component import (
     SlingReplicationCollectionComponent,
 )
+from dagster_components.core.component_decl_builder import ComponentFileModel
+from dagster_components.core.component_defs_builder import YamlComponentDecl, build_component_defs
 from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_sling import SlingResource
 
@@ -277,7 +277,7 @@ def test_scaffold_sling():
             [
                 "scaffold",
                 "component",
-                "dagster_components.lib.SlingReplicationCollectionComponent",
+                "dagster_components.SlingReplicationCollectionComponent",
                 "bar/components/qux",
             ],
         )
