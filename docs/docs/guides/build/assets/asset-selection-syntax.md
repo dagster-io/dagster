@@ -37,7 +37,7 @@ A query is a string that includes a list of clauses. Clauses are separated by co
 
 | Asset selection | Syntax | Description |
 | --- | --- | --- |
-| **Specific asset** | `key:"my_asset"` | Selects assets with key `my_key`. |
+| **Specific asset** | `key:"my_key"` | Selects assets with key `my_key`. |
 | **Entire graph** | `*` | Displays all assets and connections. |
 
 ### Upstream and downstream layers
@@ -130,7 +130,7 @@ def manhattan_stats(database: DuckDBResource):
 <TabItem value="python" label="Python">
 
 ```python
-manhattan_stats = AssetSelection.from_string('key:"manhattan/manhattan_stats"')
+manhattan_job = define_asset_job(name="manhattan_job", selection='key:"manhattan/manhattan_stats"')
 ```
 
 </TabItem>
@@ -157,8 +157,6 @@ Which would result in the following asset graph:
 
 ### Select multiple assets \{#multiple-assets}
 
-TODO how would you do this in new syntax?
-
 To select multiple assets, use a list of the assets' asset keys. The assets don't have to be dependent on each other.
 
 This example selects the `taxi_zones_file` and `taxi_trips_file` assets, which are defined below:
@@ -169,7 +167,9 @@ This example selects the `taxi_zones_file` and `taxi_trips_file` assets, which a
 When selecting multiple assets, enclose the list of asset keys in double quotes (`"`) and separate each asset key with a comma:
 
 ```python
-taxi_zones_and_trips = AssetSelection.from_string("taxi_zones_file, taxi_trips_file")
+raw_data_job = define_asset_job(
+    name="taxi_zones_job", selection="key:taxi_zones_file or key:taxi_trips_file"
+)
 ```
 
 </TabItem>
@@ -178,8 +178,8 @@ taxi_zones_and_trips = AssetSelection.from_string("taxi_zones_file, taxi_trips_f
 When selecting multiple assets, enclose the list of asset keys in double quotes (`"`) and separate each asset key with a comma:
 
 ```shell
-dagster asset list --select "taxi_zones_file,taxi_trips_file"
-dagster asset materialize --select "taxi_zones_file,taxi_trips_file"
+dagster asset list --select "key:taxi_zones_file or key:taxi_trips_file"
+dagster asset materialize --select "key:taxi_zones_file or key:taxi_trips_file"
 ```
 
 </TabItem>
