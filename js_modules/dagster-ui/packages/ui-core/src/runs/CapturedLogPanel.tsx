@@ -216,7 +216,7 @@ const CAPTURED_LOGS_METADATA_QUERY = gql`
   }
 `;
 
-const QUERY_LOG_LIMIT = 100000;
+const QUERY_LOG_LIMIT = 1048576; // 1MB
 const POLL_INTERVAL = 5000;
 
 const CapturedLogsSubscriptionProvider = ({
