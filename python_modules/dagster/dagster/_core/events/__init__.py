@@ -1622,6 +1622,31 @@ class AssetFailedToMaterializeData(
 
 
 @whitelist_for_serdes
+class PlannedAssetMaterializationFailureData(
+    NamedTuple(
+        "_PlannedAssetMaterializationFailureData",
+        [
+            ("asset_key", AssetKey),
+            ("partition", Optional[str]),
+            ("error", Optional[SerializableErrorInfo]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        asset_key: AssetKey,
+        partition: Optional[str],
+        error: Optional[SerializableErrorInfo] = None,
+    ):
+        return super().__new__(
+            cls,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            partition=check.opt_str_param(partition, "partition"),
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+        )
+
+
+@whitelist_for_serdes
 class StepMaterializationData(
     NamedTuple(
         "_StepMaterializationData",
