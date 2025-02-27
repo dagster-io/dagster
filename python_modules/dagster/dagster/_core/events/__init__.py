@@ -80,6 +80,7 @@ EventSpecificData = Union[
     "AssetMaterializationPlannedData",
     "AssetCheckEvaluation",
     "AssetCheckEvaluationPlanned",
+    "PlannedAssetMaterializationFailureData",
 ]
 
 
