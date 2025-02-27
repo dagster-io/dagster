@@ -3,8 +3,8 @@ cd jaffle-platform && tree
 .
 ├── jaffle_platform
 │   ├── __init__.py
-│   ├── components
 │   ├── definitions.py
+│   ├── defs
 │   └── lib
 │       └── __init__.py
 ├── jaffle_platform.egg-info

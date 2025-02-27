@@ -135,7 +135,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             custom_comparison_fn=compare_tree_output,
         )
         check_file(
-            Path("jaffle_platform") / "components" / "ingest_files" / "component.yaml",
+            Path("jaffle_platform") / "defs" / "ingest_files" / "component.yaml",
             COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component.yaml",
             update_snippets=update_snippets,
         )
@@ -193,7 +193,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             )
             create_file(
                 file_path=Path("jaffle_platform")
-                / "components"
+                / "defs"
                 / "ingest_files"
                 / "replication.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
@@ -258,14 +258,14 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
             )
             check_file(
-                Path("jaffle_platform") / "components" / "jdbt" / "component.yaml",
+                Path("jaffle_platform") / "defs" / "jdbt" / "component.yaml",
                 COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component-jdbt.yaml",
                 update_snippets=update_snippets,
             )
 
             # Update component file, with error, check and fix
             create_file(
-                Path("jaffle_platform") / "components" / "jdbt" / "component.yaml",
+                Path("jaffle_platform") / "defs" / "jdbt" / "component.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt-incorrect.yaml",
                 contents=format_multiline("""
@@ -290,7 +290,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             )
 
             create_file(
-                Path("jaffle_platform") / "components" / "jdbt" / "component.yaml",
+                Path("jaffle_platform") / "defs" / "jdbt" / "component.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt.yaml",
                 contents=format_multiline("""

@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from dagster import AssetsDefinition
 
 STUB_LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "dbt_project_location"
-COMPONENT_RELPATH = "components/jaffle_shop_dbt"
+COMPONENT_RELPATH = "defs/jaffle_shop_dbt"
 
 JAFFLE_SHOP_KEYS = {
     AssetKey("customers"),
@@ -46,7 +46,7 @@ def dbt_path() -> Iterator[Path]:
     with tempfile.TemporaryDirectory() as temp_dir:
         shutil.copytree(STUB_LOCATION_PATH, temp_dir, dirs_exist_ok=True)
         # make sure a manifest.json file is created
-        project = DbtProject(Path(temp_dir) / "components/jaffle_shop_dbt/jaffle_shop")
+        project = DbtProject(Path(temp_dir) / "defs/jaffle_shop_dbt/jaffle_shop")
         project.preparer.prepare(project)
         yield Path(temp_dir)
 
@@ -99,9 +99,7 @@ def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
 
 
 def test_load_from_path(dbt_path: Path) -> None:
-    components = build_components_from_component_folder(
-        script_load_context(), dbt_path / "components"
-    )
+    components = build_components_from_component_folder(script_load_context(), dbt_path / "defs")
     assert len(components) == 1
     assert get_asset_keys(components[0]) == JAFFLE_SHOP_KEYS
 

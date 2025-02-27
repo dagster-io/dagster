@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
 
 STUB_LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "sling_location"
-COMPONENT_RELPATH = "components/ingest"
+COMPONENT_RELPATH = "defs/ingest"
 
 
 @contextmanager

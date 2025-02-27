@@ -100,7 +100,7 @@ def test_list_components_types_from_project() -> None:
                     "list",
                     "component-types",
                     "--no-entry-points",
-                    "my_location.components.local_component_sample",
+                    "my_location.defs.local_component_sample",
                 ],
             )
 
@@ -108,9 +108,7 @@ def test_list_components_types_from_project() -> None:
 
             result = json.loads(result.output)
             assert len(result) == 1
-            assert set(result.keys()) == {
-                "my_location.components.local_component_sample.MyComponent"
-            }
+            assert set(result.keys()) == {"my_location.defs.local_component_sample.MyComponent"}
 
             # Add a second module
             result = runner.invoke(
@@ -119,8 +117,8 @@ def test_list_components_types_from_project() -> None:
                     "list",
                     "component-types",
                     "--no-entry-points",
-                    "my_location.components.local_component_sample",
-                    "my_location.components.other_local_component_sample",
+                    "my_location.defs.local_component_sample",
+                    "my_location.defs.other_local_component_sample",
                 ],
             )
 
@@ -129,8 +127,8 @@ def test_list_components_types_from_project() -> None:
             result = json.loads(result.output)
             assert len(result) == 2
             assert set(result.keys()) == {
-                "my_location.components.local_component_sample.MyComponent",
-                "my_location.components.other_local_component_sample.MyNewComponent",
+                "my_location.defs.local_component_sample.MyComponent",
+                "my_location.defs.other_local_component_sample.MyNewComponent",
             }
 
             # Add another, non-local component directory, which no-ops
@@ -140,9 +138,9 @@ def test_list_components_types_from_project() -> None:
                     "list",
                     "component-types",
                     "--no-entry-points",
-                    "my_location.components.local_component_sample",
-                    "my_location.components.other_local_component_sample",
-                    "my_location.components.default_file",
+                    "my_location.defs.local_component_sample",
+                    "my_location.defs.other_local_component_sample",
+                    "my_location.defs.default_file",
                 ],
             )
 

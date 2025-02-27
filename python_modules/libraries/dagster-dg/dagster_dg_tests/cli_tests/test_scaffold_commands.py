@@ -90,7 +90,7 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert Path("projects/foo-bar").exists()
         assert Path("projects/foo-bar/foo_bar").exists()
         assert Path("projects/foo-bar/foo_bar/lib").exists()
-        assert Path("projects/foo-bar/foo_bar/components").exists()
+        assert Path("projects/foo-bar/foo_bar/defs").exists()
         assert Path("projects/foo-bar/foo_bar_tests").exists()
         assert Path("projects/foo-bar/pyproject.toml").exists()
 
@@ -130,7 +130,7 @@ def test_scaffold_project_outside_workspace_success(monkeypatch) -> None:
         assert Path("foo-bar").exists()
         assert Path("foo-bar/foo_bar").exists()
         assert Path("foo-bar/foo_bar/lib").exists()
-        assert Path("foo-bar/foo_bar/components").exists()
+        assert Path("foo-bar/foo_bar/defs").exists()
         assert Path("foo-bar/foo_bar_tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
 
@@ -187,7 +187,7 @@ def test_scaffold_project_skip_venv_success() -> None:
         assert Path("foo-bar").exists()
         assert Path("foo-bar/foo_bar").exists()
         assert Path("foo-bar/foo_bar/lib").exists()
-        assert Path("foo-bar/foo_bar/components").exists()
+        assert Path("foo-bar/foo_bar/defs").exists()
         assert Path("foo-bar/foo_bar_tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
 
@@ -211,7 +211,7 @@ def test_scaffold_project_no_populate_cache_success(monkeypatch) -> None:
         assert Path("foo-bar").exists()
         assert Path("foo-bar/foo_bar").exists()
         assert Path("foo-bar/foo_bar/lib").exists()
-        assert Path("foo-bar/foo_bar/components").exists()
+        assert Path("foo-bar/foo_bar/defs").exists()
         assert Path("foo-bar/foo_bar_tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
 
@@ -240,7 +240,7 @@ def test_scaffold_project_no_use_dg_managed_environment_success(monkeypatch) -> 
         assert Path("foo-bar").exists()
         assert Path("foo-bar/foo_bar").exists()
         assert Path("foo-bar/foo_bar/lib").exists()
-        assert Path("foo-bar/foo_bar/components").exists()
+        assert Path("foo-bar/foo_bar/defs").exists()
         assert Path("foo-bar/foo_bar_tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
 
@@ -301,8 +301,8 @@ def test_scaffold_component_no_params_success(in_workspace: bool) -> None:
             "qux",
         )
         assert_runner_result(result)
-        assert Path("foo_bar/components/qux").exists()
-        component_yaml_path = Path("foo_bar/components/qux/component.yaml")
+        assert Path("foo_bar/defs/qux").exists()
+        component_yaml_path = Path("foo_bar/defs/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
             "type: dagster_test.components.AllMetadataEmptyComponent"
@@ -325,9 +325,9 @@ def test_scaffold_component_json_params_success(in_workspace: bool) -> None:
             '{"asset_key": "foo", "filename": "hello.py"}',
         )
         assert_runner_result(result)
-        assert Path("foo_bar/components/qux").exists()
-        assert Path("foo_bar/components/qux/hello.py").exists()
-        component_yaml_path = Path("foo_bar/components/qux/component.yaml")
+        assert Path("foo_bar/defs/qux").exists()
+        assert Path("foo_bar/defs/qux/hello.py").exists()
+        component_yaml_path = Path("foo_bar/defs/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
             "type: dagster_test.components.SimplePipesScriptComponent"
@@ -350,9 +350,9 @@ def test_scaffold_component_key_value_params_success(in_workspace: bool) -> None
             "--filename=hello.py",
         )
         assert_runner_result(result)
-        assert Path("foo_bar/components/qux").exists()
-        assert Path("foo_bar/components/qux/hello.py").exists()
-        component_yaml_path = Path("foo_bar/components/qux/component.yaml")
+        assert Path("foo_bar/defs/qux").exists()
+        assert Path("foo_bar/defs/qux/hello.py").exists()
+        component_yaml_path = Path("foo_bar/defs/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
             "type: dagster_test.components.SimplePipesScriptComponent"
@@ -425,12 +425,10 @@ def test_scaffold_component_already_exists_fails(in_workspace: bool) -> None:
 
 def test_scaffold_component_succeeds_non_default_component_package() -> None:
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
-        alt_lib_path = Path("foo_bar/_components")
+        alt_lib_path = Path("foo_bar/_defs")
         alt_lib_path.mkdir(parents=True)
         with modify_pyproject_toml() as toml:
-            set_toml_value(
-                toml, ("tool", "dg", "project", "components_module"), "foo_bar._components"
-            )
+            set_toml_value(toml, ("tool", "dg", "project", "components_module"), "foo_bar._defs")
         result = runner.invoke(
             "scaffold",
             "component",
@@ -438,8 +436,8 @@ def test_scaffold_component_succeeds_non_default_component_package() -> None:
             "qux",
         )
         assert_runner_result(result)
-        assert Path("foo_bar/_components/qux").exists()
-        component_yaml_path = Path("foo_bar/_components/qux/component.yaml")
+        assert Path("foo_bar/_defs/qux").exists()
+        component_yaml_path = Path("foo_bar/_defs/qux/component.yaml")
         assert component_yaml_path.exists()
         assert (
             "type: dagster_test.components.AllMetadataEmptyComponent"
@@ -450,9 +448,7 @@ def test_scaffold_component_succeeds_non_default_component_package() -> None:
 def test_scaffold_component_fails_components_package_does_not_exist() -> None:
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         with modify_pyproject_toml() as toml:
-            set_toml_value(
-                toml, ("tool", "dg", "project", "components_module"), "foo_bar._components"
-            )
+            set_toml_value(toml, ("tool", "dg", "project", "components_module"), "foo_bar._defs")
         result = runner.invoke(
             "scaffold",
             "component",
@@ -460,7 +456,7 @@ def test_scaffold_component_fails_components_package_does_not_exist() -> None:
             "qux",
         )
         assert_runner_result(result, exit_0=False)
-        assert "Module `foo_bar._components` is not installed" in str(result.exception)
+        assert "Module `foo_bar._defs` is not installed" in str(result.exception)
 
 
 def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
@@ -474,8 +470,8 @@ def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
 
         result = runner.invoke("scaffold", "component", "foo_bar.lib.Baz", "qux")
         assert_runner_result(result)
-        assert Path("foo_bar/components/qux").exists()
-        component_yaml_path = Path("foo_bar/components/qux/component.yaml")
+        assert Path("foo_bar/defs/qux").exists()
+        component_yaml_path = Path("foo_bar/defs/qux/component.yaml")
         assert component_yaml_path.exists()
         assert "type: foo_bar.lib.Baz" in component_yaml_path.read_text()
 
@@ -483,7 +479,7 @@ def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
 # ##### REAL COMPONENTS
 
 
-dbt_project_path = Path("../stub_projects/dbt_project_location/components/jaffle_shop")
+dbt_project_path = Path("../stub_projects/dbt_project_location/defs/jaffle_shop")
 
 
 @pytest.mark.parametrize(
@@ -509,13 +505,13 @@ def test_scaffold_dbt_project_instance(params) -> None:
             *params,
         )
         assert_runner_result(result)
-        assert Path("foo_bar/components/my_project").exists()
+        assert Path("foo_bar/defs/my_project").exists()
 
-        component_yaml_path = Path("foo_bar/components/my_project/component.yaml")
+        component_yaml_path = Path("foo_bar/defs/my_project/component.yaml")
         assert component_yaml_path.exists()
         assert "type: dagster_components.lib.DbtProjectComponent" in component_yaml_path.read_text()
         assert (
-            cross_platfrom_string_path("stub_projects/dbt_project_location/components/jaffle_shop")
+            cross_platfrom_string_path("stub_projects/dbt_project_location/defs/jaffle_shop")
             in component_yaml_path.read_text()
         )
 
