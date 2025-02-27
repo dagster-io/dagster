@@ -194,6 +194,10 @@ class FivetranSchemaConfig:
 
     schemas: Mapping[str, FivetranSchema]
 
+    @property
+    def has_schemas(self) -> bool:
+        return bool(self.schemas)
+
     @classmethod
     def from_schema_config_details(
         cls, schema_config_details: Mapping[str, Any]
@@ -201,7 +205,7 @@ class FivetranSchemaConfig:
         return cls(
             schemas={
                 schema_key: FivetranSchema.from_schema_details(schema_details=schema_details)
-                for schema_key, schema_details in schema_config_details["schemas"].items()
+                for schema_key, schema_details in schema_config_details.get("schemas", {}).items()
             }
         )
 
