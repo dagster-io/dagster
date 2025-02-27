@@ -67,7 +67,7 @@ Filters allow you to narrow your asset selection using specific criteria.
 | Filter | Syntax | Description | Supported views |
 |--------|--------|-------------|-----------------|
 | **Key (exact)** | `key:"my_key"` | Selects assets with the exact key `my_key`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Key (substring with wildcard)** | `key:partial_key_*`| Selects assets whose key contains `partial_key`. | OSS, Dagster+, Dagster+ branch deployments |
+| **Key with wildcard filter** | `key:partial_key_*`| Selects assets whose key starts with `partial_key`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Tag (exact)** | `tag:"stage"` | Selects assets tagged with `stage`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Tag (with value)** | `tag:"stage"="value"` | Selects assets tagged with `stage` having a specific `value`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Owner** | `owner:"alice"` | Selects assets owned by `alice`. | OSS, Dagster+, Dagster+ branch deployments |
