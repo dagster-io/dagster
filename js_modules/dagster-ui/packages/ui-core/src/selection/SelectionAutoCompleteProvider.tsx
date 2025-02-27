@@ -1,4 +1,12 @@
-import {BodySmall, Box, Colors, Icon, IconName, MonoSmall} from '@dagster-io/ui-components';
+import {
+  BodySmall,
+  Box,
+  Colors,
+  Icon,
+  IconName,
+  MiddleTruncate,
+  MonoSmall,
+} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {assertUnreachable} from '../app/Util';
@@ -124,7 +132,13 @@ const operatorToIconAndLabel: Record<OperatorType, {icon: IconName; label: strin
 
 export const Operator = ({displayText, type}: {displayText: string; type: OperatorType}) => {
   const {icon, label} = operatorToIconAndLabel[type];
-  return <SuggestionJSXBase label={label} icon={icon} rightLabel={displayText} />;
+  return (
+    <SuggestionJSXBase
+      label={<MiddleTruncate text={label} />}
+      icon={icon}
+      rightLabel={<MiddleTruncate text={displayText} />}
+    />
+  );
 };
 
 export const AttributeValueTagSuggestion = ({
@@ -134,29 +148,7 @@ export const AttributeValueTagSuggestion = ({
 }) => {
   const {key, value} = tag;
   const valueText = value ? `${key}=${value}` : key;
-  return <SuggestionJSXBase label={valueText} />;
-};
-
-export const AttributeWithStringValueSuggestionJSX = ({
-  icon,
-  attributeName,
-  value,
-}: {
-  icon?: IconName | null;
-  attributeName: string;
-  value: string;
-}) => {
-  return (
-    <SuggestionJSXBase
-      icon={icon}
-      label={
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
-          <MonoSmall color={Colors.textLight()}>{attributeName}:</MonoSmall>
-          <MonoSmall>{value}</MonoSmall>
-        </Box>
-      }
-    />
-  );
+  return <SuggestionJSXBase label={<MiddleTruncate text={valueText} />} />;
 };
 
 export const FunctionSuggestionJSX = ({
@@ -180,13 +172,29 @@ export const SuggestionJSXBase = ({
   rightLabel?: React.ReactNode;
 }) => {
   return (
-    <Box flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 24}}>
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 6}}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: `minmax(0, 1fr) ${rightLabel ? 'minmax(0, 1fr)' : ''}`,
+        gap: 2,
+        justifyContent: 'space-between',
+      }}
+    >
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: icon ? 'auto minmax(0, 1fr)' : 'minmax(0, 1fr)',
+          alignItems: 'center',
+          gap: 6,
+        }}
+      >
         {icon ? <Icon name={icon} size={12} style={{margin: 0}} /> : null}
-        <BodySmall>{label}</BodySmall>
-      </Box>
-      {rightLabel ? <MonoSmall>{rightLabel}</MonoSmall> : null}
-    </Box>
+        <BodySmall style={{overflow: 'hidden'}}>{label}</BodySmall>
+      </div>
+      {rightLabel ? (
+        <MonoSmall style={{textAlign: 'right', overflow: 'hidden'}}>{rightLabel}</MonoSmall>
+      ) : null}
+    </div>
   );
 };
 
@@ -240,7 +248,13 @@ export const createProvider = <
     }
     return {
       text,
-      jsx: <SuggestionJSXBase label={label} icon={icon} rightLabel={displayText} />,
+      jsx: (
+        <SuggestionJSXBase
+          label={<MiddleTruncate text={label} />}
+          icon={icon}
+          rightLabel={<MiddleTruncate text={displayText} />}
+        />
+      ),
     };
   }
 
@@ -260,7 +274,7 @@ export const createProvider = <
     }
     return {
       text: textCallback ? textCallback(`"${value}"`) : `"${value}"`,
-      jsx: <SuggestionJSXBase label={value} />,
+      jsx: <SuggestionJSXBase label={<MiddleTruncate text={value} />} />,
     };
   }
 
@@ -303,10 +317,14 @@ export const createProvider = <
     const text = `key:"*${query}*"`;
     let displayAttribute = attribute.replace(/_/g, ' ');
     displayAttribute = displayAttribute[0]!.toUpperCase() + displayAttribute.slice(1);
-    const displayText = `${displayAttribute} contains "${query}"`;
+    const displayText = (
+      <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
+        {displayAttribute} contains <MiddleTruncate text={query} />
+      </Box>
+    );
     return {
       text: textCallback ? textCallback(text) : text,
-      jsx: <SuggestionJSXBase label={displayText} rightLabel={text} />,
+      jsx: <SuggestionJSXBase label={displayText} rightLabel={<MiddleTruncate text={text} />} />,
     };
   }
 
@@ -340,7 +358,9 @@ export const createProvider = <
           label={
             <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
               <MonoSmall color={Colors.textLight()}>{attribute as string}:</MonoSmall>
-              <MonoSmall>{valueText}</MonoSmall>
+              <MonoSmall style={{overflow: 'hidden'}}>
+                <MiddleTruncate text={valueText} />
+              </MonoSmall>
             </Box>
           }
         />
