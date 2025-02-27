@@ -205,8 +205,6 @@ def test_dynamic_subcommand_help_message():
                 │ --cache-dir                                                        TEXT  Specify a directory to use for the cache.   │
                 │ --disable-cache                                                          Disable the cache..                         │
                 │ --verbose                                                                Enable verbose output for debugging.        │
-                │ --builtin-component-lib                                            TEXT  Specify a builitin component library to     │
-                │                                                                          use.                                        │
                 │ --use-dg-managed-environment    --no-use-dg-managed-environment          Enable management of the virtual            │
                 │                                                                          environment with uv.                        │
                 │ --require-local-venv            --no-require-local-venv                  Require use of a local virtual environment  │

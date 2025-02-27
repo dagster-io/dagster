@@ -1,6 +1,6 @@
 import functools
-from collections.abc import Mapping
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import (
     Any,
@@ -153,7 +153,10 @@ class DgCliConfig:
         cache_dir (Optional[str]): The directory to use for caching. If None, the default cache will
             be used.
         verbose (bool): If True, log debug information.
-        builitin_component_lib (str): The name of the builtin component library to load.
+        use_component_modules (list[str]): Specify a list of modules containing components.
+            Any components retrieved from the remote environment will be filtered to only include those
+            from these modules. This is useful primarily for testing, as it allows targeting of a stable
+            set of test components.
         use_dg_managed_environment (bool): If True, `dg` will build and manage a virtual environment
             using `uv`. Note that disabling the managed enviroment will also disable caching.
         require_local_venv (bool): If True, commands that access an environment with
@@ -165,7 +168,7 @@ class DgCliConfig:
     disable_cache: bool = False
     cache_dir: Path = DEFAULT_CACHE_DIR
     verbose: bool = False
-    builtin_component_lib: str = DEFAULT_BUILTIN_COMPONENT_LIB
+    use_component_modules: list[str] = field(default_factory=list)
     use_dg_managed_environment: bool = True
     require_local_venv: bool = True
 
@@ -180,8 +183,9 @@ class DgCliConfig:
             disable_cache=merged.get("disable_cache", DgCliConfig.disable_cache),
             cache_dir=Path(merged["cache_dir"]) if "cache_dir" in merged else DgCliConfig.cache_dir,
             verbose=merged.get("verbose", DgCliConfig.verbose),
-            builtin_component_lib=merged.get(
-                "builtin_component_lib", DgCliConfig.builtin_component_lib
+            use_component_modules=merged.get(
+                "use_component_modules",
+                DgCliConfig.__dataclass_fields__["use_component_modules"].default_factory(),
             ),
             use_dg_managed_environment=merged.get(
                 "use_dg_managed_environment", DgCliConfig.use_dg_managed_environment
@@ -195,7 +199,7 @@ class DgRawCliConfig(TypedDict, total=False):
     disable_cache: bool
     cache_dir: str
     verbose: bool
-    builtin_component_lib: str
+    use_component_modules: Sequence[str]
     use_dg_managed_environment: bool
     require_local_venv: bool
 
@@ -269,7 +273,7 @@ def _validate_cli_config(cli_opts: Mapping[str, object]) -> DgRawCliConfig:
 
 
 def _validate_cli_config_setting(cli_opts: Mapping[str, object], key: str, type_: type) -> None:
-    if key in cli_opts and not isinstance(cli_opts[key], type_):
+    if key in cli_opts and not _match_type(cli_opts[key], type_):
         raise DgValidationError(f"`{key}` must be a {type_.__name__}.")
 
 
@@ -345,20 +349,12 @@ def _load_dg_file_config(path: Path) -> DgFileConfig:
 
 
 def _validate_dg_file_config(raw_dict: Mapping[str, object]) -> DgFileConfig:
-    # For now we special case this because it needs to match a Literal, but later we should adapt
-    # the _validate_file_config_setting function to support Literal, especially if we introduce more
-    # fields with Literal types.
-    if "directory_type" not in raw_dict:
-        _raise_missing_required_key_error(
-            "tool.dg.directory_type", _get_literal_values_str(DgFileConfigDirectoryType)
-        )
-    if raw_dict["directory_type"] not in get_args(DgFileConfigDirectoryType):
-        _raise_mistyped_key_error(
-            "tool.dg.directory_type",
-            _get_literal_values_str(DgFileConfigDirectoryType),
-            raw_dict["directory_type"],
-        )
-
+    _validate_file_config_setting(
+        raw_dict,
+        "directory_type",
+        Required[Literal["workspace", "project"]],
+        "tool.dg",
+    )
     _validate_dg_config_file_cli_section(raw_dict.get("cli", {}))
     if raw_dict["directory_type"] == "workspace":
         _validate_file_config_setting(raw_dict, "workspace", dict, "tool.dg")
@@ -416,26 +412,25 @@ def _validate_file_config_no_extraneous_keys(
         raise DgValidationError(f"Unrecognized fields in `{toml_path}`: {extraneous_keys}")
 
 
-# Eventually we should get this to support Literal[...] but for no we special case that above.
-# We may also want to support Unions
+# expected_type Any to handle typing constructs (`Literal` etc)
 def _validate_file_config_setting(
     section: Mapping[str, object],
     key: str,
-    type_: type,
+    type_: Any,
     path_prefix: Optional[str] = None,
 ) -> None:
     origin = get_origin(type_)
     is_required = origin is Required
-    class_ = type_ if origin is None else get_args(type_)[0]
+    class_ = type_ if origin not in (Required, NotRequired) else get_args(type_)[0]
 
     error_type = None
     if is_required and key not in section:
         error_type = "required"
-    if key in section and not isinstance(section[key], class_):
+    if key in section and not _match_type(section[key], class_):
         error_type = "mistype"
     if error_type:
         full_key = f"{path_prefix}.{key}" if path_prefix else key
-        type_str = _get_types_str(type_)
+        type_str = get_type_str(class_)
         if error_type == "required":
             _raise_missing_required_key_error(full_key, type_str)
         if error_type == "mistype":
@@ -454,25 +449,90 @@ def _raise_file_config_validation_error(message: str, file_path: Path) -> Never:
     raise DgError(f"Error in configuration file {file_path}: {message}")
 
 
-def _get_types_str(type_: Union[type, tuple[type, ...]]) -> str:
-    types = type_ if isinstance(type_, tuple) else (type_,)
-    return " or ".join(_get_type_str(t) for t in types)
+# expected_type Any to handle typing constructs (`Literal` etc)
+def get_type_str(t: Any) -> str:
+    origin = get_origin(t)
+    if origin is None:
+        # It's a builtin or normal class
+        if hasattr(t, "__name__"):
+            return t.__name__  # e.g. 'int', 'bool'
+        return str(t)  # Fallback
+    else:
+        # It's a parametric type like list[str], Union[int, str], etc.
+        args = get_args(t)
+        arg_strs = [get_type_str(a) for a in args]
+        if origin is Union:
+            return " | ".join(arg_strs)
+        if origin is Literal:
+            arg_strs = [f'"{a}"' for a in arg_strs]
+            return " | ".join(arg_strs)
+        else:
+            return f"{_get_origin_name(origin)}[{', '.join(arg_strs)}]"
 
 
-# now way to type Literal
-def _get_literal_values(type_: Any) -> tuple[object, ...]:
-    val = type_
-    while get_origin(val) is not Literal:
-        val = get_origin(val)
-    return get_args(val)
+def _get_origin_name(origin: Any) -> str:
+    if origin is Sequence:
+        return "Sequence"  # avoid the collections.abc prefix
+    else:
+        return origin.__name__
 
 
-def _get_literal_values_str(type_: Any) -> str:
-    return " or ".join(f'"{v}"' for v in _get_literal_values(type_))
-
-
-def _get_type_str(type_: type) -> str:
-    # strip away Required/NotRequired
+def _match_type(obj: object, type_: Any) -> bool:
     origin = get_origin(type_)
-    class_ = type_ if origin is None else get_args(type_)[0]
-    return class_.__name__
+    # If typ is not a generic alias, do a normal isinstance check
+    if origin is None:
+        # Edge case: Union can appear as typing.Union without origin in older versions,
+        # but with modern Python, get_origin should handle it.
+        # If we get here, it's a concrete type like `int`, `str`, or type(None).
+        return isinstance(obj, type_)
+
+    # Handle Union (e.g. Union[int, str])
+    if origin is Union:
+        subtypes = get_args(type_)  # e.g. (int, str)
+        return any(_match_type(obj, st) for st in subtypes)
+
+    # Handle Literal (e.g. Literal[3, 5, "hello"])
+    if origin is Literal:
+        # get_args(typ) will be the allowed literal values
+        allowed_values = get_args(type_)  # e.g. (3, 5, "hello")
+        return obj in allowed_values
+
+    # Handle list[...] (e.g. list[str])
+    if origin is Sequence:
+        (item_type,) = get_args(type_)  # e.g. (str,) for list[str]
+        if not isinstance(obj, Sequence):
+            return False
+        return all(_match_type(item, item_type) for item in obj)
+
+    # Handle list[...] (e.g. list[str])
+    if origin is list:
+        (item_type,) = get_args(type_)  # e.g. (str,) for list[str]
+        if not isinstance(obj, list):
+            return False
+        return all(_match_type(item, item_type) for item in obj)
+
+    # Handle tuple[...] (e.g. tuple[int, str], tuple[str, ...])
+    if origin is tuple:
+        arg_types = get_args(type_)
+        if not isinstance(obj, tuple):
+            return False
+        # Distinguish fixed-length vs variable-length (ellipsis) tuples
+        if len(arg_types) == 2 and arg_types[1] is Ellipsis:
+            # e.g. tuple[str, ...]
+            elem_type = arg_types[0]
+            return all(_match_type(item, elem_type) for item in obj)
+        else:
+            # e.g. tuple[int, str, float]
+            if len(obj) != len(arg_types):
+                return False
+            return all(_match_type(item, t) for item, t in zip(obj, arg_types))
+
+    # Handle dict[...] (e.g. dict[str, int])
+    if origin is dict:
+        key_type, val_type = get_args(type_)
+        if not isinstance(obj, dict):
+            return False
+        return all(_match_type(k, key_type) and _match_type(v, val_type) for k, v in obj.items())
+
+    # Extend with other generic types (set, frozenset, etc.) if needed
+    raise NotImplementedError(f"No handler for {type_}")

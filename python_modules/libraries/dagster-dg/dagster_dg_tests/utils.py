@@ -28,6 +28,8 @@ from dagster_dg.utils import (
 )
 from typing_extensions import Self
 
+STANDARD_TEST_COMPONENT_MODULE = "dagster_components.lib.test"
+
 
 def _install_libraries_to_venv(venv_path: Path, libraries_rel_paths: Sequence[str]) -> None:
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
@@ -337,6 +339,11 @@ def normalize_windows_path(path: str) -> str:
 # ########################
 
 
+# NOTE: This class sets up a runner that by default targets only the `dagster_components.lib.test`
+# components in the remote environment. This is to provide stability against the set of components
+# we are testing against. Tests that are testing against scaffolded components need to set
+# `use_entry_points=True` in order to detect scaffolded components (since they aren't part of
+# `dagster_components.lib.test`).
 @dataclass
 class ProxyRunner:
     original: CliRunner
@@ -347,7 +354,7 @@ class ProxyRunner:
     @contextmanager
     def test(
         cls,
-        use_test_component_lib: bool = True,
+        use_entry_points: bool = False,
         verbose: bool = False,
         disable_cache: bool = False,
         console_width: int = DG_CLI_MAX_OUTPUT_WIDTH,
@@ -355,13 +362,12 @@ class ProxyRunner:
     ) -> Iterator[Self]:
         # We set the `COLUMNS` environment variable because this determines the width of output from
         # `rich`, which we use for generating tables etc.
+        use_component_modules_args = (
+            [] if use_entry_points else ["--use-component-module", STANDARD_TEST_COMPONENT_MODULE]
+        )
         with TemporaryDirectory() as cache_dir, set_env_var("COLUMNS", str(console_width)):
             append_opts = [
-                *(
-                    ["--builtin-component-lib", "dagster_components.test"]
-                    if use_test_component_lib
-                    else []
-                ),
+                *use_component_modules_args,
                 "--cache-dir",
                 str(cache_dir),
                 *(["--verbose"] if verbose else []),

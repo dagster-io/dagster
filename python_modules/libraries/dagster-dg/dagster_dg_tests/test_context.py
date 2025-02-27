@@ -1,9 +1,11 @@
+import re
+from collections.abc import Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Union, get_args
+from typing import Any
 
 import pytest
-from dagster_dg.config import DgFileConfigDirectoryType
+from dagster_dg.config import DgFileConfigDirectoryType, get_type_str
 from dagster_dg.context import DgContext
 from dagster_dg.error import DgError
 from dagster_dg.utils import delete_toml_value, pushd, set_toml_value
@@ -94,11 +96,11 @@ def test_invalid_config_type():
     with ProxyRunner.test() as runner, isolated_example_workspace(runner):
         with _reset_pyproject_toml():
             _set_and_detect_missing_required_key(
-                ("tool", "dg", "directory_type"), get_args(DgFileConfigDirectoryType)
+                ("tool", "dg", "directory_type"), DgFileConfigDirectoryType
             )
         with _reset_pyproject_toml():
             _set_and_detect_mistyped_value(
-                ("tool", "dg", "directory_type"), get_args(DgFileConfigDirectoryType), 1
+                ("tool", "dg", "directory_type"), DgFileConfigDirectoryType, 1
             )
 
 
@@ -118,7 +120,7 @@ def test_invalid_config_workspace():
             [("tool", "dg", "cli", "disable_cache"), bool, 1],
             [("tool", "dg", "cli", "cache_dir"), str, 1],
             [("tool", "dg", "cli", "verbose"), bool, 1],
-            [("tool", "dg", "cli", "builtin_component_lib"), str, 1],
+            [("tool", "dg", "cli", "use_component_modules"), Sequence[str], 1],
             [("tool", "dg", "cli", "use_dg_managed_environment"), bool, 1],
             [("tool", "dg", "cli", "require_local_venv"), bool, 1],
         ]
@@ -171,41 +173,29 @@ def _reset_pyproject_toml():
 def _set_and_detect_error(path: tuple[str, ...], config_value: object, error_message: str):
     with modify_pyproject_toml() as toml:
         set_toml_value(toml, path, config_value)
-    with pytest.raises(DgError, match=error_message):
+    with pytest.raises(DgError, match=re.escape(error_message)):
         DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
 
 
 def _set_and_detect_invalid_key(path: tuple[str, ...], config_value: object = True):
     leading_path, key = ".".join(path[:-1]), path[-1]
-    error_message = rf"Unrecognized fields in `{leading_path}`: \['{key}'\]"
+    error_message = rf"Unrecognized fields in `{leading_path}`: ['{key}']"
     _set_and_detect_error(path, config_value, error_message)
 
 
-# Accept tuple[str, ...] for literals
-def _set_and_detect_mistyped_value(
-    path: tuple[str, ...], expected_type: Union[type, tuple[str, ...]], config_value: object
-):
+# expected_type Any to handle typing constructs (`Literal` etc)
+def _set_and_detect_mistyped_value(path: tuple[str, ...], expected_type: Any, config_value: object):
     key = ".".join(path)
-    expected_str = _get_expected_type_str(expected_type)
+    expected_str = get_type_str(expected_type)
     error_message = rf"Invalid value for `{key}`. Expected {expected_str}, got `{config_value}`"
     _set_and_detect_error(path, config_value, error_message)
 
 
-def _set_and_detect_missing_required_key(
-    path: tuple[str, ...], expected_type: Union[type, tuple[str, ...]]
-):
+def _set_and_detect_missing_required_key(path: tuple[str, ...], expected_type: Any) -> None:
     key = ".".join(path)
-    expected_str = _get_expected_type_str(expected_type)
+    expected_str = get_type_str(expected_type)
     error_message = rf"Missing required value for `{key}`. Expected {expected_str}"
     with modify_pyproject_toml() as toml:
         delete_toml_value(toml, path)
     with pytest.raises(DgError, match=error_message):
         DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
-
-
-def _get_expected_type_str(expected_type: Union[type, tuple[str, ...]]) -> str:
-    return (
-        expected_type.__name__
-        if isinstance(expected_type, type)
-        else " or ".join([f'"{t}"' for t in expected_type])
-    )

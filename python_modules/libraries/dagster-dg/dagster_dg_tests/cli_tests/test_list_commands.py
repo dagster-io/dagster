@@ -123,7 +123,10 @@ def test_list_component_type_json_succeeds():
 # command. This subprocess inherits stderr from the parent process, for whatever reason `capsys` does
 # not work.
 def test_list_component_type_bad_entry_point_fails(capfd):
-    with ProxyRunner.test() as runner, isolated_example_component_library_foo_bar(runner):
+    with (
+        ProxyRunner.test(use_entry_points=True) as runner,
+        isolated_example_component_library_foo_bar(runner),
+    ):
         # Delete the component lib package referenced by the entry point
         shutil.rmtree("foo_bar/lib")
 

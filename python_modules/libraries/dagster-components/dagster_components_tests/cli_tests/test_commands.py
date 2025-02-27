@@ -10,37 +10,34 @@ from jsonschema import Draft202012Validator, ValidationError
 
 ensure_dagster_components_tests_import()
 
-from dagster_components_tests.utils import create_project_from_components, temp_code_location_bar
+from dagster_components_tests.utils import (
+    assert_runner_result,
+    create_project_from_components,
+    temp_code_location_bar,
+)
 
 
-# Test that the global --use-test-component-lib flag changes the registered components
-def test_global_test_flag():
-    runner: CliRunner = CliRunner()
-
-    # standard
-    result = runner.invoke(cli, ["list", "component-types"])
-    assert result.exit_code == 0
-    default_result_keys = list(json.loads(result.output).keys())
-    assert len(default_result_keys) > 0
-
-    result = runner.invoke(
-        cli, ["--builtin-component-lib", "dagster_components.test", "list", "component-types"]
-    )
-    assert result.exit_code == 0
-    test_result_keys = list(json.loads(result.output).keys())
-    assert len(default_result_keys) > 0
-
-    assert default_result_keys != test_result_keys
-
-
-def test_list_component_types_command():
+def test_list_component_types_from_entry_points():
     runner = CliRunner()
 
+    # First check the default behavior. We don't check the actual content because that may note be
+    # stable (we are loading from all entry points).
+    result = runner.invoke(cli, ["list", "component-types"])
+    assert result.exit_code == 0
+    result = json.loads(result.output)
+    assert len(result) > 1
+
+
+def test_list_components_types_from_module():
+    runner = CliRunner()
+    # Now check what we get when we load directly from the test component library. This has stable
+    # results.
     result = runner.invoke(
-        cli, ["--builtin-component-lib", "dagster_components.test", "list", "component-types"]
+        cli, ["list", "component-types", "--no-entry-points", "dagster_components.lib.test"]
     )
     assert result.exit_code == 0
     result = json.loads(result.output)
+    assert len(result) > 1
 
     assert list(result.keys()) == [
         "dagster_components.lib.test.AllMetadataEmptyComponent",
@@ -86,10 +83,11 @@ def test_list_component_types_command():
     }
 
 
-def test_list_module_components_types() -> None:
-    """Tests that the list CLI picks up on local components."""
+def test_list_components_types_from_project() -> None:
+    """Tests that the list CLI picks components we add."""
     runner = CliRunner()
 
+    # Now create a project and load the component types only from that project.
     with create_project_from_components(
         "definitions/local_component_sample",
         "definitions/other_local_component_sample",
@@ -99,8 +97,6 @@ def test_list_module_components_types() -> None:
             result = runner.invoke(
                 cli,
                 [
-                    "--builtin-component-lib",
-                    "dagster_components.test",
                     "list",
                     "component-types",
                     "--no-entry-points",
@@ -120,8 +116,6 @@ def test_list_module_components_types() -> None:
             result = runner.invoke(
                 cli,
                 [
-                    "--builtin-component-lib",
-                    "dagster_components.test",
                     "list",
                     "component-types",
                     "--no-entry-points",
@@ -143,8 +137,6 @@ def test_list_module_components_types() -> None:
             result = runner.invoke(
                 cli,
                 [
-                    "--builtin-component-lib",
-                    "dagster_components.test",
                     "list",
                     "component-types",
                     "--no-entry-points",
@@ -164,9 +156,9 @@ def test_all_components_schema_command():
     runner = CliRunner()
 
     result = runner.invoke(
-        cli, ["--builtin-component-lib", "dagster_components.test", "list", "all-components-schema"]
+        cli, ["list", "all-components-schema", "--no-entry-points", "dagster_components.lib.test"]
     )
-    assert result.exit_code == 0
+    assert_runner_result(result)
     result = json.loads(result.output)
 
     component_type_keys = [
@@ -218,8 +210,6 @@ def test_scaffold_component_command():
         result = runner.invoke(
             cli,
             [
-                "--builtin-component-lib",
-                "dagster_components.test",
                 "scaffold",
                 "component",
                 "dagster_components.lib.test.SimplePipesScriptComponent",
@@ -228,5 +218,5 @@ def test_scaffold_component_command():
                 '{"asset_key": "my_asset", "filename": "my_asset.py"}',
             ],
         )
-        assert result.exit_code == 0
+        assert_runner_result(result)
         assert Path("bar/components/qux/my_asset.py").exists()

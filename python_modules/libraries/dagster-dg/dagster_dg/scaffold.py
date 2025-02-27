@@ -193,7 +193,7 @@ def scaffold_component_instance(
         "scaffold",
         "component",
         component_type,
-        path,
+        str(path),
         *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),
     ]
     dg_context.external_components_command(scaffold_command)

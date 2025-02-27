@@ -373,32 +373,23 @@ class DgContext:
         executable_path = self.get_executable("dagster-components")
         if self.use_dg_managed_environment:
             # uv run will resolve to the same dagster-components as we resolve above
-            project_command_prefix = ["uv", "run", "dagster-components"]
+            command = ["uv", "run", "dagster-components", *command]
             env = strip_activated_venv_from_env_vars()
         else:
-            project_command_prefix = [str(executable_path)]
+            command = [str(executable_path), *command]
             env = None
-        full_command = [
-            *project_command_prefix,
-            *(
-                ["--builtin-component-lib", self.config.cli.builtin_component_lib]
-                if self.config.cli.builtin_component_lib
-                else []
-            ),
-            *command,
-        ]
         with pushd(self.root_path):
             if log:
                 print(f"Using {executable_path}")  # noqa: T201
 
             # We don't capture stderr here-- it will print directly to the console, then we can
             # add a clean error message at the end explanining what happened.
-            result = subprocess.run(full_command, stdout=subprocess.PIPE, env=env, check=False)
+            result = subprocess.run(command, stdout=subprocess.PIPE, env=env, check=False)
             if result.returncode != 0:
                 exit_with_error(f"""
                     An error occurred while executing a `dagster-components` command in the {self.environment_desc}.
 
-                    `{shlex.join(full_command)}` exited with code {result.returncode}. Aborting.
+                    `{shlex.join(command)}` exited with code {result.returncode}. Aborting.
                 """)
             else:
                 return result.stdout.decode("utf-8")

@@ -1,3 +1,4 @@
+import textwrap
 from collections.abc import Sequence
 from typing import Any, Callable, Optional, TypeVar, Union
 
@@ -30,10 +31,19 @@ GLOBAL_OPTIONS = {
             help="Enable verbose output for debugging.",
         ),
         click.Option(
-            ["--builtin-component-lib"],
+            ["--use-component-module", "use_component_modules"],
             type=str,
-            default=DgCliConfig.builtin_component_lib,
-            help="Specify a builitin component library to use.",
+            multiple=True,
+            default=DgCliConfig.__dataclass_fields__["use_component_modules"].default_factory(),
+            hidden=True,
+            help=textwrap.dedent("""
+                Specify a list of remote environment modules expected to contain components.
+                When retrieving the default set of components from the target environment, only
+                components from these modules will be fetched. This overrides the default behavior
+                of fetching all components registered under entry points in the remote environment.
+                This is useful primarily for testing, as it allows targeting of a stable set of test
+                components.
+            """).strip(),
         ),
         click.Option(
             ["--use-dg-managed-environment/--no-use-dg-managed-environment"],

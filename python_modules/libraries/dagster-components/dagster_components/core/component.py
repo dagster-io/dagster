@@ -124,9 +124,6 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
 
 
 COMPONENTS_ENTRY_POINT_GROUP = "dagster.components"
-BUILTIN_COMPONENTS_ENTRY_POINT_BASE = "dagster_components"
-BUILTIN_MAIN_COMPONENT_ENTRY_POINT = BUILTIN_COMPONENTS_ENTRY_POINT_BASE
-BUILTIN_TEST_COMPONENT_ENTRY_POINT = ".".join([BUILTIN_COMPONENTS_ENTRY_POINT_BASE, "test"])
 
 
 def load_component_type(component_key: ComponentKey) -> type[Component]:
@@ -147,10 +144,7 @@ def load_component_type(component_key: ComponentKey) -> type[Component]:
         raise DagsterError(f"Error loading module `{module_name}`.") from e
 
 
-def discover_entry_point_component_types(
-    builtin_component_lib: str = BUILTIN_MAIN_COMPONENT_ENTRY_POINT,
-    extra_modules: Optional[Sequence[str]] = None,
-) -> dict[ComponentKey, type[Component]]:
+def discover_entry_point_component_types() -> dict[ComponentKey, type[Component]]:
     """Discover component types registered in the Python environment via the
     `dagster_components` entry point group.
 
@@ -158,23 +152,9 @@ def discover_entry_point_component_types(
     "builtin" component libraries. The `dagster_components` entry point resolves to published
     component types and is loaded by default. Other entry points resolve to various sets of test
     component types. This method will only ever load one builtin component library.
-
-    Args:
-        builtin-component-lib (str): Specifies the builtin components library to load. Built-in
-            component libraries are defined under entry points with names matching the pattern
-            `dagster_components*`. Only one built-in  component library can be loaded at a time.
-            Defaults to `dagster_components`, the standard set of published component types.
     """
     component_types: dict[ComponentKey, type[Component]] = {}
-    entry_points = [
-        ep
-        for ep in get_entry_points_from_python_environment(COMPONENTS_ENTRY_POINT_GROUP)
-        # Skip built-in entry points that are not the specified builtin component library.
-        if not (
-            ep.name.startswith(BUILTIN_COMPONENTS_ENTRY_POINT_BASE)
-            and not ep.name == builtin_component_lib
-        )
-    ]
+    entry_points = get_entry_points_from_python_environment(COMPONENTS_ENTRY_POINT_GROUP)
 
     for entry_point in entry_points:
         try:
