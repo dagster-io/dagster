@@ -1,4 +1,5 @@
 import importlib.util
+import inspect
 import subprocess
 import sys
 import textwrap
@@ -7,7 +8,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 import click
 from dagster._core.definitions.asset_key import AssetKey
@@ -202,6 +203,32 @@ def get_wrapped_translator_class(translator_type: type):
             ]
 
     return WrappedTranslator
+
+
+def adopt_parameter_from_fn(source_fn: Callable, dest_fn: Callable, parameter_name: str) -> None:
+    """Utility which takes a source function and a destination function, and adopts the signature of the
+    given parameter from the source function into the destination function.
+
+    Used to copy user-subclassed Config params from a subclassed component into an op function.
+    """
+    config_arg = inspect.signature(source_fn).parameters.get(parameter_name)
+
+    if config_arg:
+        existing_signature = inspect.signature(dest_fn)
+        dest_fn.__signature__ = existing_signature.replace(
+            parameters=[
+                *[
+                    param
+                    for param in existing_signature.parameters.values()
+                    if param.name != parameter_name
+                ],
+                inspect.Parameter(
+                    parameter_name,
+                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    annotation=config_arg.annotation,
+                ),
+            ]
+        )
 
 
 def load_module_from_path(module_name, path) -> ModuleType:

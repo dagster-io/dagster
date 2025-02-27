@@ -9,10 +9,12 @@ import pytest
 import yaml
 from click.testing import CliRunner
 from dagster import AssetKey
+from dagster._config.pythonic_config.config import Config
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.result import MaterializeResult
+from dagster._core.definitions.run_config import RunConfig
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.env import environ
@@ -284,3 +286,42 @@ def test_scaffold_sling():
         assert result.exit_code == 0
         assert Path("bar/components/qux/replication.yaml").exists()
         assert Path("bar/components/qux/component.yaml").exists()
+
+
+def test_sling_subclass_custom_config() -> None:
+    class MyCustomConfig(Config):
+        foo_int: int = 2
+
+    class DebugSlingReplicationComponent(SlingReplicationCollectionComponent):
+        def execute(
+            self,
+            context: AssetExecutionContext,
+            sling: SlingResource,
+            replication_spec,
+            config: MyCustomConfig,
+        ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
+            assert config.foo_int == 5
+            # noop
+            yield from ()
+
+    decl_node = YamlComponentDecl(
+        path=STUB_LOCATION_PATH / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="debug_sling_replication",
+            attributes={"sling": {}, "replications": [{"path": "./replication.yaml"}]},
+        ),
+    )
+    context = script_load_context(decl_node)
+    attributes = decl_node.get_attributes(DebugSlingReplicationComponent.get_schema())
+    component_inst = DebugSlingReplicationComponent.load(attributes=attributes, context=context)
+
+    defs = component_inst.build_defs(context)
+    assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("input_duckdb"))
+
+    assert assets_def.op.config_schema.config_type == MyCustomConfig.to_config_schema().config_type
+
+    # run the asset with the custom config
+    result = defs.get_implicit_global_asset_job_def().execute_in_process(
+        run_config=RunConfig(ops={assets_def.op.name: {"config": {"foo_int": 5}}})
+    )
+    assert result.success

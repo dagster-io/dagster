@@ -1,7 +1,9 @@
+import inspect
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Annotated, Literal, Optional, Union
 
+from dagster._config.pythonic_config.config import Config
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
@@ -24,7 +26,11 @@ from dagster_components.core.schema.objects import (
     OpSpecSchema,
     PostProcessorFn,
 )
-from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
+from dagster_components.utils import (
+    TranslatorResolvingInfo,
+    adopt_parameter_from_fn,
+    get_wrapped_translator_class,
+)
 
 
 def resolve_translator(
@@ -124,19 +130,34 @@ class SlingReplicationCollectionComponent(Component):
     ) -> AssetsDefinition:
         op_spec = replication_spec.op or OpSpec()
 
-        @sling_assets(
+        config_arg = inspect.signature(self.execute).parameters.get("config")
+
+        def _run_sling_assets_fn(context: AssetExecutionContext, config: Config):
+            if config_arg:
+                yield from self.execute(
+                    context=context,
+                    sling=self.resource,
+                    replication_spec=replication_spec,
+                    config=config,  # type: ignore
+                )
+            else:
+                yield from self.execute(
+                    context=context, sling=self.resource, replication_spec=replication_spec
+                )
+
+        # Adopt the config parameter from the execute method to the _run_sling_assets_fn
+        if config_arg:
+            adopt_parameter_from_fn(self.execute, _run_sling_assets_fn, "config")
+
+        sling_assets_def = sling_assets(
             name=op_spec.name or Path(replication_spec.path).stem,
             op_tags=op_spec.tags,
             replication_config=context.path / replication_spec.path,
             dagster_sling_translator=replication_spec.translator,
             backfill_policy=op_spec.backfill_policy,
-        )
-        def _asset(context: AssetExecutionContext):
-            yield from self.execute(
-                context=context, sling=self.resource, replication_spec=replication_spec
-            )
+        )(_run_sling_assets_fn)
 
-        return _asset
+        return sling_assets_def
 
     def execute(
         self,
