@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from dagster_components.lib import SlingReplicationCollectionComponent
+from dagster_components.dagster_sling import SlingReplicationCollectionComponent
 from dagster_sling import SlingResource
 
 import dagster as dg

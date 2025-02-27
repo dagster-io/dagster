@@ -14,6 +14,7 @@ from pydantic import ConfigDict, Field, computed_field
 from pydantic.dataclasses import dataclass
 
 from dagster_components import Component, ComponentLoadContext, FieldResolver
+from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
@@ -24,7 +25,6 @@ from dagster_components.core.schema.objects import (
     PostProcessorFn,
     ResolutionContext,
 )
-from dagster_components.lib.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 

@@ -9,7 +9,9 @@ from pydantic import Field
 from pydantic.dataclasses import dataclass
 
 from dagster_components import Component, ComponentLoadContext, ResolvableSchema
-from dagster_components.lib.definitions_component.scaffolder import DefinitionsComponentScaffolder
+from dagster_components.components.definitions_component.scaffolder import (
+    DefinitionsComponentScaffolder,
+)
 
 
 class DefinitionsParamSchema(ResolvableSchema):

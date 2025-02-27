@@ -109,7 +109,7 @@ class SlingReplicationCollectionComponent(Component):
 
     @classmethod
     def get_scaffolder(cls) -> ComponentScaffolder:
-        from dagster_components.lib.sling_replication_collection.scaffolder import (
+        from dagster_components.components.sling_replication_collection.scaffolder import (
             SlingReplicationComponentScaffolder,
         )
 

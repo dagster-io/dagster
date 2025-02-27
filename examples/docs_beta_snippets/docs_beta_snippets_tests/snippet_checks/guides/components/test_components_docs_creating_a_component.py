@@ -153,5 +153,5 @@ def test_components_docs_index(
             update_snippets=update_snippets,
         )
         _run_command(
-            "dagster asset materialize --select '*' -m my_component_library.definitions"
+            "uv run dagster asset materialize --select '*' -m my_component_library.definitions"
         )

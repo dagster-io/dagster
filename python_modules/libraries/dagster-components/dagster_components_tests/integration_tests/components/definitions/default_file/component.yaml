@@ -1,3 +1,3 @@
-type: dagster_components.lib.DefinitionsComponent
+type: dagster_components.dagster.DefinitionsComponent
 
 attributes: {}
