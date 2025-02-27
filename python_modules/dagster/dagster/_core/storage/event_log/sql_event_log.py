@@ -95,6 +95,7 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_select,
     db_subquery,
 )
+from dagster._core.storage.utils import OrderBy
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import datetime_from_timestamp, get_current_timestamp, utc_datetime_from_naive
 from dagster._utils import PrintFn
@@ -1308,12 +1309,10 @@ class SqlEventLogStorage(EventLogStorage):
         prefix: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
+        order_by: Optional[OrderBy] = None,
     ) -> Sequence[AssetKey]:
-        rows = self._fetch_asset_rows(prefix=prefix, limit=limit, cursor=cursor)
-        asset_keys = [
-            AssetKey.from_db_string(row["asset_key"])
-            for row in sorted(rows, key=lambda x: x["asset_key"])
-        ]
+        rows = self._fetch_asset_rows(prefix=prefix, limit=limit, cursor=cursor, order_by=order_by)
+        asset_keys = [AssetKey.from_db_string(row["asset_key"]) for row in rows]
         return [asset_key for asset_key in asset_keys if asset_key]
 
     def get_latest_materialization_events(
@@ -1334,6 +1333,7 @@ class SqlEventLogStorage(EventLogStorage):
         prefix: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
         cursor: Optional[str] = None,
+        order_by: Optional[OrderBy] = None,
     ) -> Sequence[SqlAlchemyRow]:
         # fetches rows containing asset_key, last_materialization, and asset_details from the DB,
         # applying the filters specified in the arguments.
@@ -1355,7 +1355,11 @@ class SqlEventLogStorage(EventLogStorage):
 
         while should_query:
             rows, has_more, current_cursor = self._fetch_raw_asset_rows(
-                asset_keys=asset_keys, prefix=prefix, limit=fetch_limit, cursor=current_cursor
+                asset_keys=asset_keys,
+                prefix=prefix,
+                limit=fetch_limit,
+                cursor=current_cursor,
+                order_by=order_by,
             )
             result.extend(rows)
             should_query = bool(has_more) and bool(limit) and len(result) < cast("int", limit)
@@ -1372,6 +1376,7 @@ class SqlEventLogStorage(EventLogStorage):
         prefix: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
         cursor=None,
+        order_by: Optional[OrderBy] = None,
     ) -> tuple[Iterable[SqlAlchemyRow], bool, Optional[str]]:
         # fetches rows containing asset_key, last_materialization, and asset_details from the DB,
         # applying the filters specified in the arguments.  Does not guarantee that the number of
@@ -1399,7 +1404,15 @@ class SqlEventLogStorage(EventLogStorage):
             columns.append(AssetKeyTable.c.last_materialization_timestamp)
             columns.append(AssetKeyTable.c.wipe_timestamp)
 
-        query = db_select(columns).order_by(AssetKeyTable.c.asset_key.asc())
+        order_clause = AssetKeyTable.c.asset_key.asc()
+        if order_by is not None:
+            order_clause = (
+                getattr(AssetKeyTable.c, order_by.column_name).asc()
+                if order_by.ascending
+                else getattr(AssetKeyTable.c, order_by.column_name).desc()
+            )
+
+        query = db_select(columns).order_by(order_clause)
         query = self._apply_asset_filter_to_query(query, asset_keys, prefix, limit, cursor)
 
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):

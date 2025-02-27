@@ -1026,6 +1026,7 @@ class GrapheneQuery(graphene.ObjectType):
         pipeline: Optional[GraphenePipelineSelector] = None,
         assetKeys: Optional[Sequence[GrapheneAssetKeyInput]] = None,
     ) -> Sequence[GrapheneAssetNode]:
+        # TODO: Jamie - Update sorting here
         if assetKeys == []:
             return []
         elif not assetKeys:
@@ -1116,6 +1117,7 @@ class GrapheneQuery(graphene.ObjectType):
         cursor: Optional[str] = None,
         limit: Optional[int] = None,
     ):
+        # TODO: Jamie update sorting here
         return get_assets(
             graphene_info,
             prefix=prefix,

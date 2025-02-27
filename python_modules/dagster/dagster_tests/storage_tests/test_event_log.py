@@ -63,6 +63,7 @@ class TestInMemoryEventLogStorage(TestEventLogStorage):
 
 
 class TestSqliteEventLogStorage(TestEventLogStorage):
+    # TestSqliteEventLogStorage::test_get_asset_keys
     __test__ = True
 
     @pytest.fixture(name="instance", scope="function")
