@@ -28,7 +28,7 @@ from dagster_dg.utils import (
 )
 from typing_extensions import Self
 
-STANDARD_TEST_COMPONENT_MODULE = "dagster_components.lib.test"
+STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
 
 
 def _install_libraries_to_venv(venv_path: Path, libraries_rel_paths: Sequence[str]) -> None:
@@ -46,7 +46,7 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
         _install_libraries_to_venv(
-            venv_path, ["dagster", "libraries/dagster-components", "dagster-pipes"]
+            venv_path, ["dagster", "libraries/dagster-components", "dagster-pipes", "dagster-test"]
         )
 
         venv_exec_path = get_venv_executable(venv_path).parent
@@ -83,7 +83,7 @@ def isolated_example_workspace(
                 subprocess.run(["uv", "venv", ".venv"], check=True)
                 venv_path = Path.cwd() / ".venv"
                 _install_libraries_to_venv(
-                    venv_path, ["dagster", "dagster-webserver", "dagster-graphql"]
+                    venv_path, ["dagster", "dagster-webserver", "dagster-graphql", "dagster-test"]
                 )
             yield
 
@@ -95,7 +95,7 @@ def isolated_example_project_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     in_workspace: bool = True,
     skip_venv: bool = False,
-    populate_cache: bool = True,
+    populate_cache: bool = False,
     component_dirs: Sequence[Path] = [],
 ) -> Iterator[None]:
     """Scaffold a project named foo_bar in an isolated filesystem.
@@ -126,6 +126,7 @@ def isolated_example_project_foo_bar(
         )
         assert_runner_result(result)
         with clear_module_from_cache("foo_bar"), pushd(project_path):
+            # _install_libraries_to_venv(Path(".venv"), ["dagster-test"])
             for src_dir in component_dirs:
                 component_name = src_dir.name
                 components_dir = Path.cwd() / "foo_bar" / "components" / component_name
@@ -339,11 +340,11 @@ def normalize_windows_path(path: str) -> str:
 # ########################
 
 
-# NOTE: This class sets up a runner that by default targets only the `dagster_components.lib.test`
+# NOTE: This class sets up a runner that by default targets only the `dagster_test.components`
 # components in the remote environment. This is to provide stability against the set of components
 # we are testing against. Tests that are testing against scaffolded components need to set
 # `use_entry_points=True` in order to detect scaffolded components (since they aren't part of
-# `dagster_components.lib.test`).
+# `dagster_test.components`).
 @dataclass
 class ProxyRunner:
     original: CliRunner

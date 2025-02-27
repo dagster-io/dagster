@@ -31,7 +31,7 @@ class CommandSpec:
         return (*self.command, *self.args)
 
 
-DEFAULT_COMPONENT_TYPE = "dagster_components.lib.test.SimpleAssetComponent"
+DEFAULT_COMPONENT_TYPE = "dagster_test.components.SimpleAssetComponent"
 
 NO_REQUIRED_CONTEXT_COMMANDS = [
     CommandSpec(("scaffold", "project"), "foo"),

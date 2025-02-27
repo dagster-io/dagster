@@ -6,14 +6,13 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from pydantic import BaseModel
-
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component_scaffolder import (
     ComponentScaffolder,
     ComponentScaffoldRequest,
 )
 from dagster_components.scaffold import scaffold_component_yaml
+from pydantic import BaseModel
 
 
 # Same schema used for file generation and defs generation
