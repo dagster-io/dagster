@@ -1,10 +1,10 @@
 from dagster_components.lib.test.all_metadata_empty_asset import (
-    AllMetadataEmptyAsset as AllMetadataEmptyAsset,
+    AllMetadataEmptyComponent as AllMetadataEmptyComponent,
 )
 from dagster_components.lib.test.complex_schema_asset import (
-    ComplexSchemaAsset as ComplexSchemaAsset,
+    ComplexAssetComponent as ComplexAssetComponent,
 )
-from dagster_components.lib.test.simple_asset import SimpleAsset as SimpleAsset
+from dagster_components.lib.test.simple_asset import SimpleAssetComponent as SimpleAssetComponent
 from dagster_components.lib.test.simple_pipes_script_asset import (
-    SimplePipesScriptAsset as SimplePipesScriptAsset,
+    SimplePipesScriptComponent as SimplePipesScriptComponent,
 )

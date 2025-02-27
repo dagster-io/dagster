@@ -43,14 +43,14 @@ def test_list_component_types_command():
     result = json.loads(result.output)
 
     assert list(result.keys()) == [
-        "dagster_components.lib.test.AllMetadataEmptyAsset",
-        "dagster_components.lib.test.ComplexSchemaAsset",
-        "dagster_components.lib.test.SimpleAsset",
-        "dagster_components.lib.test.SimplePipesScriptAsset",
+        "dagster_components.lib.test.AllMetadataEmptyComponent",
+        "dagster_components.lib.test.ComplexAssetComponent",
+        "dagster_components.lib.test.SimpleAssetComponent",
+        "dagster_components.lib.test.SimplePipesScriptComponent",
     ]
 
-    assert result["dagster_components.lib.test.SimpleAsset"] == {
-        "name": "SimpleAsset",
+    assert result["dagster_components.lib.test.SimpleAssetComponent"] == {
+        "name": "SimpleAssetComponent",
         "namespace": "dagster_components.lib.test",
         "summary": "A simple asset that returns a constant string value.",
         "description": "A simple asset that returns a constant string value.",
@@ -72,12 +72,12 @@ def test_list_component_types_command():
             "filename": {"title": "Filename", "type": "string"},
         },
         "required": ["asset_key", "filename"],
-        "title": "SimplePipesScriptAssetSchema",
+        "title": "SimplePipesScriptSchema",
         "type": "object",
     }
 
-    assert result["dagster_components.lib.test.SimplePipesScriptAsset"] == {
-        "name": "SimplePipesScriptAsset",
+    assert result["dagster_components.lib.test.SimplePipesScriptComponent"] == {
+        "name": "SimplePipesScriptComponent",
         "namespace": "dagster_components.lib.test",
         "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
         "description": "A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
@@ -170,9 +170,9 @@ def test_all_components_schema_command():
     result = json.loads(result.output)
 
     component_type_keys = [
-        "ComplexSchemaAsset",
-        "SimpleAsset",
-        "SimplePipesScriptAsset",
+        "ComplexAssetComponent",
+        "SimpleAssetComponent",
+        "SimplePipesScriptComponent",
     ]
 
     assert result["anyOf"] == [
@@ -197,14 +197,14 @@ def test_all_components_schema_command():
     top_level_component_validator = Draft202012Validator(schema=result)
     top_level_component_validator.validate(
         {
-            "type": "dagster_components.lib.test.SimpleAsset",
+            "type": "dagster_components.lib.test.SimpleAssetComponent",
             "attributes": {"asset_key": "my_asset", "value": "my_value"},
         }
     )
     with pytest.raises(ValidationError):
         top_level_component_validator.validate(
             {
-                "type": "dagster_components.lib.test.SimpleAsset",
+                "type": "dagster_components.lib.test.SimpleAssetComponent",
                 "attributes": {"asset_key": "my_asset", "value": "my_value"},
                 "extra_key": "extra_value",
             }
@@ -222,7 +222,7 @@ def test_scaffold_component_command():
                 "dagster_components.test",
                 "scaffold",
                 "component",
-                "dagster_components.lib.test.SimplePipesScriptAsset",
+                "dagster_components.lib.test.SimplePipesScriptComponent",
                 "bar/components/qux",
                 "--json-params",
                 '{"asset_key": "my_asset", "filename": "my_asset.py"}',

@@ -70,7 +70,7 @@ class SlingReplicationSchema(ResolvableSchema[SlingReplicationSpec]):
     )
 
 
-class SlingReplicationCollectionSchema(ResolvableSchema["SlingReplicationCollection"]):
+class SlingReplicationCollectionSchema(ResolvableSchema["SlingReplicationCollectionComponent"]):
     sling: Optional[SlingResource] = None
     replications: Sequence[SlingReplicationSchema]
     asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
@@ -87,7 +87,7 @@ def resolve_resource(
 
 
 @dataclass
-class SlingReplicationCollection(Component):
+class SlingReplicationCollectionComponent(Component):
     """Expose one or more Sling replications to Dagster as assets."""
 
     resource: Annotated[SlingResource, FieldResolver(resolve_resource)] = Field(

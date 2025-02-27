@@ -1,12 +1,12 @@
 from collections.abc import Mapping
 from typing import Any
 
-from dagster_components.lib import SlingReplicationCollection
+from dagster_components.lib import SlingReplicationCollectionComponent
 
 import dagster as dg
 
 
-class SubclassWithScope(SlingReplicationCollection):
+class SubclassWithScope(SlingReplicationCollectionComponent):
     def get_additional_scope(self) -> Mapping[str, Any]:
         def _custom_cron(cron_schedule: str) -> dg.AutomationCondition:
             return (

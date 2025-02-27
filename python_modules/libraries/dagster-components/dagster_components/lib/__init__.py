@@ -10,12 +10,12 @@ if _has_dagster_dbt:
 
 if _has_dagster_sling:
     from dagster_components.lib.sling_replication_collection.component import (
-        SlingReplicationCollection as SlingReplicationCollection,
+        SlingReplicationCollectionComponent as SlingReplicationCollectionComponent,
     )
 
 from dagster_components.lib.definitions_component.component import (
     DefinitionsComponent as DefinitionsComponent,
 )
 from dagster_components.lib.pipes_subprocess_script_collection import (
-    PipesSubprocessScriptCollection as PipesSubprocessScriptCollection,
+    PipesSubprocessScriptCollectionComponent as PipesSubprocessScriptCollectionComponent,
 )

@@ -11,7 +11,9 @@ from dagster_dg_tests.utils import ProxyRunner, assert_runner_result, isolated_c
 
 def test_docs_component_type_success():
     with ProxyRunner.test() as runner, isolated_components_venv(runner):
-        result = runner.invoke("docs", "component-type", "dagster_components.lib.test.SimpleAsset")
+        result = runner.invoke(
+            "docs", "component-type", "dagster_components.lib.test.SimpleAssetComponent"
+        )
         assert_runner_result(result)
 
 
@@ -28,7 +30,7 @@ def test_docs_component_type_success_output_console():
         result = runner.invoke(
             "docs",
             "component-type",
-            "dagster_components.lib.test.ComplexSchemaAsset",
+            "dagster_components.lib.test.ComplexAssetComponent",
             "--output",
             "cli",
         )

@@ -119,7 +119,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
         # Scaffold new ingestion, validate new files
         run_command_and_snippet_output(
-            cmd="dg scaffold component 'dagster_components.lib.SlingReplicationCollection' ingest_files",
+            cmd="dg scaffold component 'dagster_components.lib.SlingReplicationCollectionComponent' ingest_files",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-dg-scaffold-sling-replication.txt",
             update_snippets=update_snippets,
