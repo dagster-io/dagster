@@ -6,7 +6,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from pydantic import Field
 
-from dagster_components import Component, ComponentLoadContext, registered_component_type
+from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
@@ -31,7 +31,6 @@ class ComplexAssetSchema(ResolvableSchema["ComplexSchemaAsset"]):
     asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
 
 
-@registered_component_type(name="complex_schema_asset")
 class ComplexSchemaAsset(Component):
     """An asset that has a complex schema."""
 

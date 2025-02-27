@@ -12,11 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.dataclasses import dataclass
 
 from dagster_components import FieldResolver
-from dagster_components.core.component import (
-    Component,
-    ComponentLoadContext,
-    registered_component_type,
-)
+from dagster_components.core.component import Component, ComponentLoadContext
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.objects import AssetSpecSchema
@@ -47,7 +43,6 @@ def resolve_specs_by_path(
     return {spec.path: spec.assets for spec in context.resolve_value(schema.scripts)}
 
 
-@registered_component_type(name="pipes_subprocess_script_collection")
 @dataclass
 class PipesSubprocessScriptCollection(Component):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""

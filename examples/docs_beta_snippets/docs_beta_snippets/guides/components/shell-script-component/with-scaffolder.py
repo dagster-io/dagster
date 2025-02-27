@@ -12,7 +12,6 @@ from dagster_components import (
     ComponentScaffolder,
     ComponentScaffoldRequest,
     ResolvableSchema,
-    registered_component_type,
     scaffold_component_yaml,
 )
 
@@ -46,7 +45,6 @@ class ShellScriptSchema(ResolvableSchema):
     asset_specs: Sequence[AssetSpecSchema]
 
 
-@registered_component_type(name="shell_command")
 @dataclass
 class ShellCommand(Component):
     """Models a shell script as a Dagster asset."""

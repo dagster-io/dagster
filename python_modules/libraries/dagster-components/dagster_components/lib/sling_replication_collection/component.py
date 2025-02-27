@@ -13,7 +13,6 @@ from pydantic.dataclasses import dataclass
 from typing_extensions import TypeAlias
 
 from dagster_components import Component, ComponentLoadContext, FieldResolver
-from dagster_components.core.component import registered_component_type
 from dagster_components.core.component_scaffolder import ComponentScaffolder
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
@@ -87,7 +86,6 @@ def resolve_resource(
     )
 
 
-@registered_component_type
 @dataclass
 class SlingReplicationCollection(Component):
     """Expose one or more Sling replications to Dagster as assets."""

@@ -4,13 +4,11 @@ from dagster_components import (
     ComponentLoadContext,
     DefaultComponentScaffolder,
     ResolvableSchema,
-    registered_component_type,
 )
 
 class ShellCommandSchema(ResolvableSchema):
     ...
 
-@registered_component_type
 class ShellCommand(Component):
     """COMPONENT SUMMARY HERE.
 

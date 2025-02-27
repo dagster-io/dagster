@@ -13,7 +13,6 @@ from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.env import environ
-from dagster_components import registered_component_type
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import YamlComponentDecl, build_component_defs
 from dagster_components.lib.sling_replication_collection.component import SlingReplicationCollection
@@ -170,7 +169,6 @@ def test_load_from_path() -> None:
 
 
 def test_sling_subclass() -> None:
-    @registered_component_type(name="debug_sling_replication")
     class DebugSlingReplicationComponent(SlingReplicationCollection):
         def execute(
             self, context: AssetExecutionContext, sling: SlingResource

@@ -8,7 +8,6 @@ from dagster_components import (
     Component,
     ComponentLoadContext,
     ResolvableSchema,
-    registered_component_type,
 )
 
 
@@ -24,7 +23,6 @@ class CustomScopeSchema(ResolvableSchema):
     asset_attributes: AssetAttributesSchema
 
 
-@registered_component_type(name="custom_scope_component")
 @dataclass
 class HasCustomScope(Component):
     asset_attributes: Mapping[str, Any]

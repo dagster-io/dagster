@@ -8,12 +8,7 @@ from dagster._core.definitions.module_loaders.load_defs_from_module import (
 from pydantic import Field
 from pydantic.dataclasses import dataclass
 
-from dagster_components import (
-    Component,
-    ComponentLoadContext,
-    ResolvableSchema,
-    registered_component_type,
-)
+from dagster_components import Component, ComponentLoadContext, ResolvableSchema
 from dagster_components.lib.definitions_component.scaffolder import DefinitionsComponentScaffolder
 
 
@@ -21,7 +16,6 @@ class DefinitionsParamSchema(ResolvableSchema):
     definitions_path: Optional[str] = None
 
 
-@registered_component_type(name="definitions")
 @dataclass
 class DefinitionsComponent(Component):
     """Wraps an arbitrary set of Dagster definitions."""

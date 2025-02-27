@@ -4,13 +4,11 @@ from dagster_components import (
     ComponentLoadContext,
     DefaultComponentScaffolder,
     ResolvableSchema,
-    registered_component_type,
 )
 
 class {{ name }}Schema(ResolvableSchema):
     ...
 
-@registered_component_type
 class {{ name }}(Component):
     """COMPONENT SUMMARY HERE.
 

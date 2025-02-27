@@ -14,7 +14,6 @@ from pydantic import ConfigDict, Field, computed_field
 from pydantic.dataclasses import dataclass
 
 from dagster_components import Component, ComponentLoadContext, FieldResolver
-from dagster_components.core.component import registered_component_type
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
@@ -52,7 +51,6 @@ def resolve_translator(
     )
 
 
-@registered_component_type(name="dbt_project")
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))  # omits translator prop from schema
 class DbtProjectComponent(Component):
     """Expose a DBT project to Dagster as a set of assets."""

@@ -1,15 +1,9 @@
-from dagster_components import (
-    Component,
-    ComponentLoadContext,
-    ResolvableSchema,
-    registered_component_type,
-)
+from dagster_components import Component, ComponentLoadContext, ResolvableSchema
 from pydantic import BaseModel
 
 import dagster as dg
 
 
-@registered_component_type(name="shell_command")
 class ShellCommand(Component):
     @classmethod
     def get_schema(cls) -> type[ResolvableSchema]: ...
