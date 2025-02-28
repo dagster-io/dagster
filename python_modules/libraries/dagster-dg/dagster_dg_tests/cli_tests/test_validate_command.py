@@ -34,9 +34,9 @@ def test_validate_command_deployment_context_success():
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_validate_command_code_location_context_success():
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
-        result = runner.invoke("check", "definitions")
+        result = runner.invoke("check", "defs")
         assert result.exit_code == 0
 
         (Path("foo_bar") / "definitions.py").write_text("invalid")
-        result = runner.invoke("check", "definitions")
+        result = runner.invoke("check", "defs")
         assert result.exit_code == 1
