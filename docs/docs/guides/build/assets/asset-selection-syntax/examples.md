@@ -55,6 +55,24 @@ Selects all assets on the path from the `taxi_trips_file` asset to the `manhatta
     </TabItem>
 </Tabs>
 
+## Select all assets on the path between two sets of assets by tag
+
+```shell
+tag:"private"+ and +tag:"public"
+```
+
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+        TODO
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+        TODO
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+        TODO
+    </TabItem>
+</Tabs>
+
 ## Select all assets on the path between two groups of assets \{#asset-path}
 
 ```shell
@@ -145,9 +163,9 @@ def manhattan_stats(database: DuckDBResource) -> None:
 </TabItem>
 </Tabs>
 
-## Select multiple assets \{#multiple-assets}
+## Select multiple assets with `or` \{#multiple-assets}
 
-To select multiple assets, use a list of the assets' asset keys. The assets don't have to be dependent on each other.
+To select multiple assets, use the `or` operand. The assets don't have to be dependent on each other.
 
 This example selects the `taxi_zones_file` and `taxi_trips_file` assets, which are defined below:
 
@@ -242,27 +260,9 @@ Selects everything owned by team `data_eng` **excluding** any assets tagged with
     </TabItem>
 </Tabs>
 
-## Select all assets on the path between two sets of assets by tag
-
-```shell
-tag:"private"+ and +tag:"public"
-```
-
-<Tabs groupId="examples">
-    <TabItem value="python" label="Python">
-        TODO
-    </TabItem>
-    <TabItem value="cli" label="CLI">
-        TODO
-    </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-        TODO
-    </TabItem>
-</Tabs>
-
 ## Select assets with parentheses grouping and filters \{#grouping-filters}
 
-### Example 1
+### Select a parentheses group `or` assets that belong in a specific `group`
 
 ```shell
 (owner:"ada.dagster@example.com" and kind:"csv") or group:"analytics"
@@ -292,10 +292,10 @@ Selects assets that are either owned by `ada.dagster@example.com` and of kind `c
     </TabItem>
 </Tabs>
 
-### Example 2
+### Exclude a parentheses group with `not` and select assets that match a `key` wildcard
 
 ```shell
-not (tag:"obsolete" or tag:"deprecated") and key_substring:"data"
+not (tag:"obsolete" or tag:"deprecated") and key:"data*"
 ```
 
 Selects assets whose keys contain `data` and are **not** tagged as `obsolete` or `deprecated`.

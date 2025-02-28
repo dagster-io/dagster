@@ -71,5 +71,5 @@ You can use `sink()` and `root()` functions to return the sink and root assets o
 
 | Function | Syntax | Description |
 |--------|-------------|-----------|
-| **`sinks(expr)`** | `sinks(expr)` | Selects only "sink" assets from the specified expression. |
-| **`roots(expr)`** | `roots(expr)` | Selects only "root" assets from the specified expression. |
+| **`sinks(expr)`** | `sinks(*)` | Selects all "sink" assets. |
+| **`roots(expr)`** | `roots(*)` | Selects all "root" assets. |
