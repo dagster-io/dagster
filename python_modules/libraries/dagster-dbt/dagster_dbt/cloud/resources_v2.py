@@ -36,7 +36,7 @@ class DbtCloudClient(DagsterModel):
     request_max_retries: int = Field(
         ...,
         description=(
-            "The maximum number of times requests to the Airbyte API should be retried "
+            "The maximum number of times requests to the dbt Cloud API should be retried "
             "before failing."
         ),
     )
@@ -46,7 +46,7 @@ class DbtCloudClient(DagsterModel):
     )
     request_timeout: int = Field(
         ...,
-        description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
+        description="Time (in seconds) after which the requests to dbt Cloud are declared timed out.",
     )
 
     @property
@@ -161,7 +161,7 @@ class DbtCloudWorkspace(ConfigurableResource):
     request_max_retries: int = Field(
         default=3,
         description=(
-            "The maximum number of times requests to the Airbyte API should be retried "
+            "The maximum number of times requests to the dbt Cloud API should be retried "
             "before failing."
         ),
     )
@@ -171,7 +171,7 @@ class DbtCloudWorkspace(ConfigurableResource):
     )
     request_timeout: int = Field(
         default=15,
-        description="Time (in seconds) after which the requests to Airbyte are declared timed out.",
+        description="Time (in seconds) after which the requests to dbt Cloud are declared timed out.",
     )
 
     @cached_method
