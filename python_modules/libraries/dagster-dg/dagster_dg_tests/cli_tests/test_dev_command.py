@@ -29,11 +29,19 @@ def test_dev_command_workspace_context_success(monkeypatch):
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     with ProxyRunner.test() as runner, isolated_example_workspace(runner, create_venv=True):
         result = runner.invoke(
-            "scaffold", "project", "--use-editable-dagster", dagster_git_repo_dir, "project-1"
+            "scaffold",
+            "project",
+            "--use-editable-component-package-only",
+            dagster_git_repo_dir,
+            "project-1",
         )
         assert_runner_result(result)
         result = runner.invoke(
-            "scaffold", "project", "--use-editable-dagster", dagster_git_repo_dir, "project-2"
+            "scaffold",
+            "project",
+            "--use-editable-component-package-only",
+            dagster_git_repo_dir,
+            "project-2",
         )
         assert_runner_result(result)
         port = _find_free_port()
