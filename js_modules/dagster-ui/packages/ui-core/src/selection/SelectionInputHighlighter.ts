@@ -44,7 +44,7 @@ export class SyntaxHighlightingVisitor
 
   private addClass(ctx: ParserRuleContext, klass: string) {
     const from = this.cm.posFromIndex(this.startOffset + ctx.start.startIndex);
-    const to = this.cm.posFromIndex(this.startOffset + ctx.stop!.stopIndex + 1);
+    const to = this.cm.posFromIndex(from.ch + ctx.text.length);
     this.cm.markText(from, to, {className: klass});
   }
 

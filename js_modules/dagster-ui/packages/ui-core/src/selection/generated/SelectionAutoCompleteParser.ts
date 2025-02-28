@@ -62,7 +62,8 @@ export class SelectionAutoCompleteParser extends Parser {
   public static readonly RULE_postNeighborTraversalWhitespace = 24;
   public static readonly RULE_postUpwardTraversalWhitespace = 25;
   public static readonly RULE_postDownwardTraversalWhitespace = 26;
-  public static readonly RULE_value = 27;
+  public static readonly RULE_postDigitsWhitespace = 27;
+  public static readonly RULE_value = 28;
   // tslint:disable:no-trailing-whitespace
   public static readonly ruleNames: string[] = [
     'start',
@@ -92,6 +93,7 @@ export class SelectionAutoCompleteParser extends Parser {
     'postNeighborTraversalWhitespace',
     'postUpwardTraversalWhitespace',
     'postDownwardTraversalWhitespace',
+    'postDigitsWhitespace',
     'value',
   ];
 
@@ -175,9 +177,9 @@ export class SelectionAutoCompleteParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 56;
+        this.state = 58;
         this.expr(0);
-        this.state = 57;
+        this.state = 59;
         this.match(SelectionAutoCompleteParser.EOF);
       }
     } catch (re) {
@@ -212,7 +214,7 @@ export class SelectionAutoCompleteParser extends Parser {
       let _alt: number;
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 83;
+        this.state = 85;
         this._errHandler.sync(this);
         switch (this.interpreter.adaptivePredict(this._input, 0, this._ctx)) {
           case 1:
@@ -221,7 +223,7 @@ export class SelectionAutoCompleteParser extends Parser {
               this._ctx = _localctx;
               _prevctx = _localctx;
 
-              this.state = 60;
+              this.state = 62;
               this.traversalAllowedExpr();
             }
             break;
@@ -231,11 +233,11 @@ export class SelectionAutoCompleteParser extends Parser {
               _localctx = new UpAndDownTraversalExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 61;
-              this.upTraversalExpr();
-              this.state = 62;
-              this.traversalAllowedExpr();
               this.state = 63;
+              this.upTraversalExpr();
+              this.state = 64;
+              this.traversalAllowedExpr();
+              this.state = 65;
               this.downTraversalExpr();
             }
             break;
@@ -245,9 +247,9 @@ export class SelectionAutoCompleteParser extends Parser {
               _localctx = new UpTraversalExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 65;
+              this.state = 67;
               this.upTraversalExpr();
-              this.state = 66;
+              this.state = 68;
               this.traversalAllowedExpr();
             }
             break;
@@ -257,9 +259,9 @@ export class SelectionAutoCompleteParser extends Parser {
               _localctx = new DownTraversalExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 68;
+              this.state = 70;
               this.traversalAllowedExpr();
-              this.state = 69;
+              this.state = 71;
               this.downTraversalExpr();
             }
             break;
@@ -269,11 +271,11 @@ export class SelectionAutoCompleteParser extends Parser {
               _localctx = new NotExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 71;
-              this.notToken();
-              this.state = 72;
-              this.postNotOperatorWhitespace();
               this.state = 73;
+              this.notToken();
+              this.state = 74;
+              this.postNotOperatorWhitespace();
+              this.state = 75;
               this.expr(8);
             }
             break;
@@ -283,9 +285,9 @@ export class SelectionAutoCompleteParser extends Parser {
               _localctx = new IncompleteNotExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 75;
+              this.state = 77;
               this.notToken();
-              this.state = 76;
+              this.state = 78;
               this.postNotOperatorWhitespace();
             }
             break;
@@ -295,9 +297,9 @@ export class SelectionAutoCompleteParser extends Parser {
               _localctx = new AllExpressionContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 78;
+              this.state = 80;
               this.match(SelectionAutoCompleteParser.STAR);
-              this.state = 79;
+              this.state = 81;
               this.postExpressionWhitespace();
             }
             break;
@@ -307,15 +309,15 @@ export class SelectionAutoCompleteParser extends Parser {
               _localctx = new UnmatchedValueContext(_localctx);
               this._ctx = _localctx;
               _prevctx = _localctx;
-              this.state = 80;
+              this.state = 82;
               this.value();
-              this.state = 81;
+              this.state = 83;
               this.postExpressionWhitespace();
             }
             break;
         }
         this._ctx._stop = this._input.tryLT(-1);
-        this.state = 105;
+        this.state = 107;
         this._errHandler.sync(this);
         _alt = this.interpreter.adaptivePredict(this._input, 2, this._ctx);
         while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
@@ -325,7 +327,7 @@ export class SelectionAutoCompleteParser extends Parser {
             }
             _prevctx = _localctx;
             {
-              this.state = 103;
+              this.state = 105;
               this._errHandler.sync(this);
               switch (this.interpreter.adaptivePredict(this._input, 1, this._ctx)) {
                 case 1:
@@ -336,15 +338,15 @@ export class SelectionAutoCompleteParser extends Parser {
                       _startState,
                       SelectionAutoCompleteParser.RULE_expr,
                     );
-                    this.state = 85;
+                    this.state = 87;
                     if (!this.precpred(this._ctx, 7)) {
                       throw this.createFailedPredicateException('this.precpred(this._ctx, 7)');
                     }
-                    this.state = 86;
-                    this.andToken();
-                    this.state = 87;
-                    this.postLogicalOperatorWhitespace();
                     this.state = 88;
+                    this.andToken();
+                    this.state = 89;
+                    this.postLogicalOperatorWhitespace();
+                    this.state = 90;
                     this.expr(8);
                   }
                   break;
@@ -357,15 +359,15 @@ export class SelectionAutoCompleteParser extends Parser {
                       _startState,
                       SelectionAutoCompleteParser.RULE_expr,
                     );
-                    this.state = 90;
+                    this.state = 92;
                     if (!this.precpred(this._ctx, 6)) {
                       throw this.createFailedPredicateException('this.precpred(this._ctx, 6)');
                     }
-                    this.state = 91;
-                    this.orToken();
-                    this.state = 92;
-                    this.postLogicalOperatorWhitespace();
                     this.state = 93;
+                    this.orToken();
+                    this.state = 94;
+                    this.postLogicalOperatorWhitespace();
+                    this.state = 95;
                     this.expr(7);
                   }
                   break;
@@ -380,13 +382,13 @@ export class SelectionAutoCompleteParser extends Parser {
                       _startState,
                       SelectionAutoCompleteParser.RULE_expr,
                     );
-                    this.state = 95;
+                    this.state = 97;
                     if (!this.precpred(this._ctx, 5)) {
                       throw this.createFailedPredicateException('this.precpred(this._ctx, 5)');
                     }
-                    this.state = 96;
+                    this.state = 98;
                     this.andToken();
-                    this.state = 97;
+                    this.state = 99;
                     this.postLogicalOperatorWhitespace();
                   }
                   break;
@@ -401,20 +403,20 @@ export class SelectionAutoCompleteParser extends Parser {
                       _startState,
                       SelectionAutoCompleteParser.RULE_expr,
                     );
-                    this.state = 99;
+                    this.state = 101;
                     if (!this.precpred(this._ctx, 4)) {
                       throw this.createFailedPredicateException('this.precpred(this._ctx, 4)');
                     }
-                    this.state = 100;
+                    this.state = 102;
                     this.orToken();
-                    this.state = 101;
+                    this.state = 103;
                     this.postLogicalOperatorWhitespace();
                   }
                   break;
               }
             }
           }
-          this.state = 107;
+          this.state = 109;
           this._errHandler.sync(this);
           _alt = this.interpreter.adaptivePredict(this._input, 2, this._ctx);
         }
@@ -440,32 +442,32 @@ export class SelectionAutoCompleteParser extends Parser {
     );
     this.enterRule(_localctx, 4, SelectionAutoCompleteParser.RULE_traversalAllowedExpr);
     try {
-      this.state = 122;
+      this.state = 124;
       this._errHandler.sync(this);
       switch (this.interpreter.adaptivePredict(this._input, 4, this._ctx)) {
         case 1:
           _localctx = new AttributeExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 1);
           {
-            this.state = 108;
-            this.attributeName();
-            this.state = 109;
-            this.colonToken();
             this.state = 110;
+            this.attributeName();
+            this.state = 111;
+            this.colonToken();
+            this.state = 112;
             this.attributeValue();
-            this.state = 113;
+            this.state = 115;
             this._errHandler.sync(this);
             switch (this.interpreter.adaptivePredict(this._input, 3, this._ctx)) {
               case 1:
                 {
-                  this.state = 111;
+                  this.state = 113;
                   this.match(SelectionAutoCompleteParser.EQUAL);
-                  this.state = 112;
+                  this.state = 114;
                   this.attributeValue();
                 }
                 break;
             }
-            this.state = 115;
+            this.state = 117;
             this.postAttributeValueWhitespace();
           }
           break;
@@ -474,9 +476,9 @@ export class SelectionAutoCompleteParser extends Parser {
           _localctx = new FunctionCallExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 2);
           {
-            this.state = 117;
+            this.state = 119;
             this.functionName();
-            this.state = 118;
+            this.state = 120;
             this.parenthesizedExpr();
           }
           break;
@@ -485,7 +487,7 @@ export class SelectionAutoCompleteParser extends Parser {
           _localctx = new TraversalAllowedParenthesizedExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 3);
           {
-            this.state = 120;
+            this.state = 122;
             this.parenthesizedExpr();
           }
           break;
@@ -494,7 +496,7 @@ export class SelectionAutoCompleteParser extends Parser {
           _localctx = new IncompleteExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 4);
           {
-            this.state = 121;
+            this.state = 123;
             this.incompleteExpr();
           }
           break;
@@ -520,15 +522,15 @@ export class SelectionAutoCompleteParser extends Parser {
       _localctx = new ParenthesizedExpressionContext(_localctx);
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 124;
-        this.leftParenToken();
-        this.state = 125;
-        this.postLogicalOperatorWhitespace();
         this.state = 126;
-        this.expr(0);
+        this.leftParenToken();
         this.state = 127;
-        this.rightParenToken();
+        this.postLogicalOperatorWhitespace();
         this.state = 128;
+        this.expr(0);
+        this.state = 129;
+        this.rightParenToken();
+        this.state = 130;
         this.postExpressionWhitespace();
       }
     } catch (re) {
@@ -548,23 +550,24 @@ export class SelectionAutoCompleteParser extends Parser {
   public incompleteExpr(): IncompleteExprContext {
     let _localctx: IncompleteExprContext = new IncompleteExprContext(this._ctx, this.state);
     this.enterRule(_localctx, 8, SelectionAutoCompleteParser.RULE_incompleteExpr);
+    let _la: number;
     try {
-      this.state = 165;
+      this.state = 172;
       this._errHandler.sync(this);
-      switch (this.interpreter.adaptivePredict(this._input, 5, this._ctx)) {
+      switch (this.interpreter.adaptivePredict(this._input, 6, this._ctx)) {
         case 1:
           _localctx = new IncompleteAttributeExpressionMissingSecondValueContext(_localctx);
           this.enterOuterAlt(_localctx, 1);
           {
-            this.state = 130;
-            this.attributeName();
-            this.state = 131;
-            this.colonToken();
             this.state = 132;
-            this.attributeValue();
+            this.attributeName();
             this.state = 133;
-            this.match(SelectionAutoCompleteParser.EQUAL);
+            this.colonToken();
             this.state = 134;
+            this.attributeValue();
+            this.state = 135;
+            this.match(SelectionAutoCompleteParser.EQUAL);
+            this.state = 136;
             this.attributeValueWhitespace();
           }
           break;
@@ -573,11 +576,11 @@ export class SelectionAutoCompleteParser extends Parser {
           _localctx = new IncompleteAttributeExpressionMissingValueContext(_localctx);
           this.enterOuterAlt(_localctx, 2);
           {
-            this.state = 136;
-            this.attributeName();
-            this.state = 137;
-            this.colonToken();
             this.state = 138;
+            this.attributeName();
+            this.state = 139;
+            this.colonToken();
+            this.state = 140;
             this.attributeValueWhitespace();
           }
           break;
@@ -586,9 +589,9 @@ export class SelectionAutoCompleteParser extends Parser {
           _localctx = new ExpressionlessFunctionExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 3);
           {
-            this.state = 140;
+            this.state = 142;
             this.functionName();
-            this.state = 141;
+            this.state = 143;
             this.expressionLessParenthesizedExpr();
           }
           break;
@@ -597,11 +600,11 @@ export class SelectionAutoCompleteParser extends Parser {
           _localctx = new UnclosedExpressionlessFunctionExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 4);
           {
-            this.state = 143;
-            this.functionName();
-            this.state = 144;
-            this.leftParenToken();
             this.state = 145;
+            this.functionName();
+            this.state = 146;
+            this.leftParenToken();
+            this.state = 147;
             this.postLogicalOperatorWhitespace();
           }
           break;
@@ -610,11 +613,11 @@ export class SelectionAutoCompleteParser extends Parser {
           _localctx = new UnclosedFunctionExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 5);
           {
-            this.state = 147;
-            this.functionName();
-            this.state = 148;
-            this.leftParenToken();
             this.state = 149;
+            this.functionName();
+            this.state = 150;
+            this.leftParenToken();
+            this.state = 151;
             this.expr(0);
           }
           break;
@@ -623,11 +626,11 @@ export class SelectionAutoCompleteParser extends Parser {
           _localctx = new UnclosedParenthesizedExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 6);
           {
-            this.state = 151;
-            this.leftParenToken();
-            this.state = 152;
-            this.postLogicalOperatorWhitespace();
             this.state = 153;
+            this.leftParenToken();
+            this.state = 154;
+            this.postLogicalOperatorWhitespace();
+            this.state = 155;
             this.expr(0);
           }
           break;
@@ -636,7 +639,7 @@ export class SelectionAutoCompleteParser extends Parser {
           _localctx = new ExpressionlessParenthesizedExpressionWrapperContext(_localctx);
           this.enterOuterAlt(_localctx, 7);
           {
-            this.state = 155;
+            this.state = 157;
             this.expressionLessParenthesizedExpr();
           }
           break;
@@ -645,9 +648,9 @@ export class SelectionAutoCompleteParser extends Parser {
           _localctx = new UnclosedExpressionlessParenthesizedExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 8);
           {
-            this.state = 156;
+            this.state = 158;
             this.leftParenToken();
-            this.state = 157;
+            this.state = 159;
             this.postLogicalOperatorWhitespace();
           }
           break;
@@ -656,22 +659,43 @@ export class SelectionAutoCompleteParser extends Parser {
           _localctx = new IncompletePlusTraversalExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 9);
           {
-            this.state = 159;
+            this.state = 162;
+            this._errHandler.sync(this);
+            _la = this._input.LA(1);
+            if (_la === SelectionAutoCompleteParser.DIGITS) {
+              {
+                this.state = 161;
+                this.match(SelectionAutoCompleteParser.DIGITS);
+              }
+            }
+
+            this.state = 164;
             this.match(SelectionAutoCompleteParser.PLUS);
-            this.state = 160;
+            this.state = 165;
             this.postNeighborTraversalWhitespace();
           }
           break;
 
         case 10:
-          _localctx = new IncompleteAttributeExpressionMissingKeyContext(_localctx);
+          _localctx = new IncompleteUpTraversalExpressionContext(_localctx);
           this.enterOuterAlt(_localctx, 10);
           {
-            this.state = 161;
+            this.state = 166;
+            this.match(SelectionAutoCompleteParser.DIGITS);
+            this.state = 167;
+            this.postDigitsWhitespace();
+          }
+          break;
+
+        case 11:
+          _localctx = new IncompleteAttributeExpressionMissingKeyContext(_localctx);
+          this.enterOuterAlt(_localctx, 11);
+          {
+            this.state = 168;
             this.colonToken();
-            this.state = 162;
+            this.state = 169;
             this.attributeValue();
-            this.state = 163;
+            this.state = 170;
             this.postExpressionWhitespace();
           }
           break;
@@ -698,13 +722,13 @@ export class SelectionAutoCompleteParser extends Parser {
       _localctx = new ExpressionlessParenthesizedExpressionContext(_localctx);
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 167;
+        this.state = 174;
         this.leftParenToken();
-        this.state = 168;
+        this.state = 175;
         this.postLogicalOperatorWhitespace();
-        this.state = 169;
+        this.state = 176;
         this.rightParenToken();
-        this.state = 170;
+        this.state = 177;
         this.postExpressionWhitespace();
       }
     } catch (re) {
@@ -728,9 +752,9 @@ export class SelectionAutoCompleteParser extends Parser {
       _localctx = new UpTraversalContext(_localctx);
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 172;
+        this.state = 179;
         this.upTraversalToken();
-        this.state = 173;
+        this.state = 180;
         this.postUpwardTraversalWhitespace();
       }
     } catch (re) {
@@ -754,9 +778,9 @@ export class SelectionAutoCompleteParser extends Parser {
       _localctx = new DownTraversalContext(_localctx);
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 175;
+        this.state = 182;
         this.downTraversalToken();
-        this.state = 176;
+        this.state = 183;
         this.postDownwardTraversalWhitespace();
       }
     } catch (re) {
@@ -780,17 +804,17 @@ export class SelectionAutoCompleteParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 179;
+        this.state = 186;
         this._errHandler.sync(this);
         _la = this._input.LA(1);
         if (_la === SelectionAutoCompleteParser.DIGITS) {
           {
-            this.state = 178;
+            this.state = 185;
             this.match(SelectionAutoCompleteParser.DIGITS);
           }
         }
 
-        this.state = 181;
+        this.state = 188;
         this.match(SelectionAutoCompleteParser.PLUS);
       }
     } catch (re) {
@@ -816,14 +840,14 @@ export class SelectionAutoCompleteParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 183;
+        this.state = 190;
         this.match(SelectionAutoCompleteParser.PLUS);
-        this.state = 185;
+        this.state = 192;
         this._errHandler.sync(this);
-        switch (this.interpreter.adaptivePredict(this._input, 7, this._ctx)) {
+        switch (this.interpreter.adaptivePredict(this._input, 8, this._ctx)) {
           case 1:
             {
-              this.state = 184;
+              this.state = 191;
               this.match(SelectionAutoCompleteParser.DIGITS);
             }
             break;
@@ -849,7 +873,7 @@ export class SelectionAutoCompleteParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 187;
+        this.state = 194;
         this.match(SelectionAutoCompleteParser.IDENTIFIER);
       }
     } catch (re) {
@@ -872,7 +896,7 @@ export class SelectionAutoCompleteParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 189;
+        this.state = 196;
         this.value();
       }
     } catch (re) {
@@ -895,7 +919,7 @@ export class SelectionAutoCompleteParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 191;
+        this.state = 198;
         this.match(SelectionAutoCompleteParser.IDENTIFIER);
       }
     } catch (re) {
@@ -918,7 +942,7 @@ export class SelectionAutoCompleteParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 193;
+        this.state = 200;
         this.match(SelectionAutoCompleteParser.OR);
       }
     } catch (re) {
@@ -941,7 +965,7 @@ export class SelectionAutoCompleteParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 195;
+        this.state = 202;
         this.match(SelectionAutoCompleteParser.AND);
       }
     } catch (re) {
@@ -964,7 +988,7 @@ export class SelectionAutoCompleteParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 197;
+        this.state = 204;
         this.match(SelectionAutoCompleteParser.NOT);
       }
     } catch (re) {
@@ -987,7 +1011,7 @@ export class SelectionAutoCompleteParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 199;
+        this.state = 206;
         this.match(SelectionAutoCompleteParser.COLON);
       }
     } catch (re) {
@@ -1010,7 +1034,7 @@ export class SelectionAutoCompleteParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 201;
+        this.state = 208;
         this.match(SelectionAutoCompleteParser.LPAREN);
       }
     } catch (re) {
@@ -1033,7 +1057,7 @@ export class SelectionAutoCompleteParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 203;
+        this.state = 210;
         this.match(SelectionAutoCompleteParser.RPAREN);
       }
     } catch (re) {
@@ -1060,21 +1084,21 @@ export class SelectionAutoCompleteParser extends Parser {
       let _alt: number;
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 208;
+        this.state = 215;
         this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 8, this._ctx);
+        _alt = this.interpreter.adaptivePredict(this._input, 9, this._ctx);
         while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
           if (_alt === 1) {
             {
               {
-                this.state = 205;
+                this.state = 212;
                 this.match(SelectionAutoCompleteParser.WS);
               }
             }
           }
-          this.state = 210;
+          this.state = 217;
           this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 8, this._ctx);
+          _alt = this.interpreter.adaptivePredict(this._input, 9, this._ctx);
         }
       }
     } catch (re) {
@@ -1101,21 +1125,21 @@ export class SelectionAutoCompleteParser extends Parser {
       let _alt: number;
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 214;
+        this.state = 221;
         this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 9, this._ctx);
+        _alt = this.interpreter.adaptivePredict(this._input, 10, this._ctx);
         while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
           if (_alt === 1) {
             {
               {
-                this.state = 211;
+                this.state = 218;
                 this.match(SelectionAutoCompleteParser.WS);
               }
             }
           }
-          this.state = 216;
+          this.state = 223;
           this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 9, this._ctx);
+          _alt = this.interpreter.adaptivePredict(this._input, 10, this._ctx);
         }
       }
     } catch (re) {
@@ -1142,21 +1166,21 @@ export class SelectionAutoCompleteParser extends Parser {
       let _alt: number;
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 220;
+        this.state = 227;
         this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 10, this._ctx);
+        _alt = this.interpreter.adaptivePredict(this._input, 11, this._ctx);
         while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
           if (_alt === 1) {
             {
               {
-                this.state = 217;
+                this.state = 224;
                 this.match(SelectionAutoCompleteParser.WS);
               }
             }
           }
-          this.state = 222;
+          this.state = 229;
           this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 10, this._ctx);
+          _alt = this.interpreter.adaptivePredict(this._input, 11, this._ctx);
         }
       }
     } catch (re) {
@@ -1183,21 +1207,21 @@ export class SelectionAutoCompleteParser extends Parser {
       let _alt: number;
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 226;
+        this.state = 233;
         this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 11, this._ctx);
+        _alt = this.interpreter.adaptivePredict(this._input, 12, this._ctx);
         while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
           if (_alt === 1) {
             {
               {
-                this.state = 223;
+                this.state = 230;
                 this.match(SelectionAutoCompleteParser.WS);
               }
             }
           }
-          this.state = 228;
+          this.state = 235;
           this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 11, this._ctx);
+          _alt = this.interpreter.adaptivePredict(this._input, 12, this._ctx);
         }
       }
     } catch (re) {
@@ -1222,21 +1246,21 @@ export class SelectionAutoCompleteParser extends Parser {
       let _alt: number;
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 232;
+        this.state = 239;
         this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 12, this._ctx);
+        _alt = this.interpreter.adaptivePredict(this._input, 13, this._ctx);
         while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
           if (_alt === 1) {
             {
               {
-                this.state = 229;
+                this.state = 236;
                 this.match(SelectionAutoCompleteParser.WS);
               }
             }
           }
-          this.state = 234;
+          this.state = 241;
           this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 12, this._ctx);
+          _alt = this.interpreter.adaptivePredict(this._input, 13, this._ctx);
         }
       }
     } catch (re) {
@@ -1261,21 +1285,21 @@ export class SelectionAutoCompleteParser extends Parser {
       let _alt: number;
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 238;
+        this.state = 245;
         this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 13, this._ctx);
+        _alt = this.interpreter.adaptivePredict(this._input, 14, this._ctx);
         while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
           if (_alt === 1) {
             {
               {
-                this.state = 235;
+                this.state = 242;
                 this.match(SelectionAutoCompleteParser.WS);
               }
             }
           }
-          this.state = 240;
+          this.state = 247;
           this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 13, this._ctx);
+          _alt = this.interpreter.adaptivePredict(this._input, 14, this._ctx);
         }
       }
     } catch (re) {
@@ -1300,17 +1324,17 @@ export class SelectionAutoCompleteParser extends Parser {
     try {
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 244;
+        this.state = 251;
         this._errHandler.sync(this);
         _la = this._input.LA(1);
         while (_la === SelectionAutoCompleteParser.WS) {
           {
             {
-              this.state = 241;
+              this.state = 248;
               this.match(SelectionAutoCompleteParser.WS);
             }
           }
-          this.state = 246;
+          this.state = 253;
           this._errHandler.sync(this);
           _la = this._input.LA(1);
         }
@@ -1337,21 +1361,62 @@ export class SelectionAutoCompleteParser extends Parser {
       let _alt: number;
       this.enterOuterAlt(_localctx, 1);
       {
-        this.state = 250;
+        this.state = 257;
         this._errHandler.sync(this);
-        _alt = this.interpreter.adaptivePredict(this._input, 15, this._ctx);
+        _alt = this.interpreter.adaptivePredict(this._input, 16, this._ctx);
         while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
           if (_alt === 1) {
             {
               {
-                this.state = 247;
+                this.state = 254;
                 this.match(SelectionAutoCompleteParser.WS);
               }
             }
           }
-          this.state = 252;
+          this.state = 259;
           this._errHandler.sync(this);
-          _alt = this.interpreter.adaptivePredict(this._input, 15, this._ctx);
+          _alt = this.interpreter.adaptivePredict(this._input, 16, this._ctx);
+        }
+      }
+    } catch (re) {
+      if (re instanceof RecognitionException) {
+        _localctx.exception = re;
+        this._errHandler.reportError(this, re);
+        this._errHandler.recover(this, re);
+      } else {
+        throw re;
+      }
+    } finally {
+      this.exitRule();
+    }
+    return _localctx;
+  }
+  // @RuleVersion(0)
+  public postDigitsWhitespace(): PostDigitsWhitespaceContext {
+    const _localctx: PostDigitsWhitespaceContext = new PostDigitsWhitespaceContext(
+      this._ctx,
+      this.state,
+    );
+    this.enterRule(_localctx, 54, SelectionAutoCompleteParser.RULE_postDigitsWhitespace);
+    try {
+      let _alt: number;
+      this.enterOuterAlt(_localctx, 1);
+      {
+        this.state = 263;
+        this._errHandler.sync(this);
+        _alt = this.interpreter.adaptivePredict(this._input, 17, this._ctx);
+        while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
+          if (_alt === 1) {
+            {
+              {
+                this.state = 260;
+                this.match(SelectionAutoCompleteParser.WS);
+              }
+            }
+          }
+          this.state = 265;
+          this._errHandler.sync(this);
+          _alt = this.interpreter.adaptivePredict(this._input, 17, this._ctx);
         }
       }
     } catch (re) {
@@ -1370,16 +1435,16 @@ export class SelectionAutoCompleteParser extends Parser {
   // @RuleVersion(0)
   public value(): ValueContext {
     let _localctx: ValueContext = new ValueContext(this._ctx, this.state);
-    this.enterRule(_localctx, 54, SelectionAutoCompleteParser.RULE_value);
+    this.enterRule(_localctx, 56, SelectionAutoCompleteParser.RULE_value);
     try {
-      this.state = 257;
+      this.state = 270;
       this._errHandler.sync(this);
       switch (this._input.LA(1)) {
         case SelectionAutoCompleteParser.QUOTED_STRING:
           _localctx = new QuotedStringValueContext(_localctx);
           this.enterOuterAlt(_localctx, 1);
           {
-            this.state = 253;
+            this.state = 266;
             this.match(SelectionAutoCompleteParser.QUOTED_STRING);
           }
           break;
@@ -1387,7 +1452,7 @@ export class SelectionAutoCompleteParser extends Parser {
           _localctx = new IncompleteLeftQuotedStringValueContext(_localctx);
           this.enterOuterAlt(_localctx, 2);
           {
-            this.state = 254;
+            this.state = 267;
             this.match(SelectionAutoCompleteParser.INCOMPLETE_LEFT_QUOTED_STRING);
           }
           break;
@@ -1395,7 +1460,7 @@ export class SelectionAutoCompleteParser extends Parser {
           _localctx = new IncompleteRightQuotedStringValueContext(_localctx);
           this.enterOuterAlt(_localctx, 3);
           {
-            this.state = 255;
+            this.state = 268;
             this.match(SelectionAutoCompleteParser.INCOMPLETE_RIGHT_QUOTED_STRING);
           }
           break;
@@ -1403,7 +1468,7 @@ export class SelectionAutoCompleteParser extends Parser {
           _localctx = new UnquotedStringValueContext(_localctx);
           this.enterOuterAlt(_localctx, 4);
           {
-            this.state = 256;
+            this.state = 269;
             this.match(SelectionAutoCompleteParser.IDENTIFIER);
           }
           break;
@@ -1449,120 +1514,128 @@ export class SelectionAutoCompleteParser extends Parser {
   }
 
   public static readonly _serializedATN: string =
-    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x11\u0106\x04' +
+    '\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x11\u0113\x04' +
     '\x02\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04' +
     '\x07\t\x07\x04\b\t\b\x04\t\t\t\x04\n\t\n\x04\v\t\v\x04\f\t\f\x04\r\t\r' +
     '\x04\x0E\t\x0E\x04\x0F\t\x0F\x04\x10\t\x10\x04\x11\t\x11\x04\x12\t\x12' +
     '\x04\x13\t\x13\x04\x14\t\x14\x04\x15\t\x15\x04\x16\t\x16\x04\x17\t\x17' +
     '\x04\x18\t\x18\x04\x19\t\x19\x04\x1A\t\x1A\x04\x1B\t\x1B\x04\x1C\t\x1C' +
-    '\x04\x1D\t\x1D\x03\x02\x03\x02\x03\x02\x03\x03\x03\x03\x03\x03\x03\x03' +
+    '\x04\x1D\t\x1D\x04\x1E\t\x1E\x03\x02\x03\x02\x03\x02\x03\x03\x03\x03\x03' +
     '\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
     '\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
-    '\x03\x03\x03\x03\x05\x03V\n\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
+    '\x03\x03\x03\x03\x03\x03\x03\x05\x03X\n\x03\x03\x03\x03\x03\x03\x03\x03' +
     '\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03' +
-    '\x03\x03\x03\x03\x03\x03\x03\x03\x07\x03j\n\x03\f\x03\x0E\x03m\v\x03\x03' +
-    '\x04\x03\x04\x03\x04\x03\x04\x03\x04\x05\x04t\n\x04\x03\x04\x03\x04\x03' +
-    '\x04\x03\x04\x03\x04\x03\x04\x03\x04\x05\x04}\n\x04\x03\x05\x03\x05\x03' +
-    '\x05\x03\x05\x03\x05\x03\x05\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03' +
-    '\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03' +
-    '\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03' +
-    '\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03' +
-    '\x06\x03\x06\x03\x06\x05\x06\xA8\n\x06\x03\x07\x03\x07\x03\x07\x03\x07' +
-    '\x03\x07\x03\b\x03\b\x03\b\x03\t\x03\t\x03\t\x03\n\x05\n\xB6\n\n\x03\n' +
-    '\x03\n\x03\v\x03\v\x05\v\xBC\n\v\x03\f\x03\f\x03\r\x03\r\x03\x0E\x03\x0E' +
-    '\x03\x0F\x03\x0F\x03\x10\x03\x10\x03\x11\x03\x11\x03\x12\x03\x12\x03\x13' +
-    '\x03\x13\x03\x14\x03\x14\x03\x15\x07\x15\xD1\n\x15\f\x15\x0E\x15\xD4\v' +
-    '\x15\x03\x16\x07\x16\xD7\n\x16\f\x16\x0E\x16\xDA\v\x16\x03\x17\x07\x17' +
-    '\xDD\n\x17\f\x17\x0E\x17\xE0\v\x17\x03\x18\x07\x18\xE3\n\x18\f\x18\x0E' +
-    '\x18\xE6\v\x18\x03\x19\x07\x19\xE9\n\x19\f\x19\x0E\x19\xEC\v\x19\x03\x1A' +
-    '\x07\x1A\xEF\n\x1A\f\x1A\x0E\x1A\xF2\v\x1A\x03\x1B\x07\x1B\xF5\n\x1B\f' +
-    '\x1B\x0E\x1B\xF8\v\x1B\x03\x1C\x07\x1C\xFB\n\x1C\f\x1C\x0E\x1C\xFE\v\x1C' +
-    '\x03\x1D\x03\x1D\x03\x1D\x03\x1D\x05\x1D\u0104\n\x1D\x03\x1D\x02\x02\x03' +
-    '\x04\x1E\x02\x02\x04\x02\x06\x02\b\x02\n\x02\f\x02\x0E\x02\x10\x02\x12' +
-    '\x02\x14\x02\x16\x02\x18\x02\x1A\x02\x1C\x02\x1E\x02 \x02"\x02$\x02&' +
-    '\x02(\x02*\x02,\x02.\x020\x022\x024\x026\x028\x02\x02\x02\x02\u010E\x02' +
-    ':\x03\x02\x02\x02\x04U\x03\x02\x02\x02\x06|\x03\x02\x02\x02\b~\x03\x02' +
-    '\x02\x02\n\xA7\x03\x02\x02\x02\f\xA9\x03\x02\x02\x02\x0E\xAE\x03\x02\x02' +
-    '\x02\x10\xB1\x03\x02\x02\x02\x12\xB5\x03\x02\x02\x02\x14\xB9\x03\x02\x02' +
-    '\x02\x16\xBD\x03\x02\x02\x02\x18\xBF\x03\x02\x02\x02\x1A\xC1\x03\x02\x02' +
-    '\x02\x1C\xC3\x03\x02\x02\x02\x1E\xC5\x03\x02\x02\x02 \xC7\x03\x02\x02' +
-    '\x02"\xC9\x03\x02\x02\x02$\xCB\x03\x02\x02\x02&\xCD\x03\x02\x02\x02(' +
-    '\xD2\x03\x02\x02\x02*\xD8\x03\x02\x02\x02,\xDE\x03\x02\x02\x02.\xE4\x03' +
-    '\x02\x02\x020\xEA\x03\x02\x02\x022\xF0\x03\x02\x02\x024\xF6\x03\x02\x02' +
-    '\x026\xFC\x03\x02\x02\x028\u0103\x03\x02\x02\x02:;\x05\x04\x03\x02;<\x07' +
-    '\x02\x02\x03<\x03\x03\x02\x02\x02=>\b\x03\x01\x02>V\x05\x06\x04\x02?@' +
-    '\x05\x0E\b\x02@A\x05\x06\x04\x02AB\x05\x10\t\x02BV\x03\x02\x02\x02CD\x05' +
-    '\x0E\b\x02DE\x05\x06\x04\x02EV\x03\x02\x02\x02FG\x05\x06\x04\x02GH\x05' +
-    '\x10\t\x02HV\x03\x02\x02\x02IJ\x05 \x11\x02JK\x05.\x18\x02KL\x05\x04\x03' +
-    '\nLV\x03\x02\x02\x02MN\x05 \x11\x02NO\x05.\x18\x02OV\x03\x02\x02\x02P' +
-    'Q\x07\x06\x02\x02QV\x05,\x17\x02RS\x058\x1D\x02ST\x05,\x17\x02TV\x03\x02' +
-    '\x02\x02U=\x03\x02\x02\x02U?\x03\x02\x02\x02UC\x03\x02\x02\x02UF\x03\x02' +
-    '\x02\x02UI\x03\x02\x02\x02UM\x03\x02\x02\x02UP\x03\x02\x02\x02UR\x03\x02' +
-    '\x02\x02Vk\x03\x02\x02\x02WX\f\t\x02\x02XY\x05\x1E\x10\x02YZ\x050\x19' +
-    '\x02Z[\x05\x04\x03\n[j\x03\x02\x02\x02\\]\f\b\x02\x02]^\x05\x1C\x0F\x02' +
-    '^_\x050\x19\x02_`\x05\x04\x03\t`j\x03\x02\x02\x02ab\f\x07\x02\x02bc\x05' +
-    '\x1E\x10\x02cd\x050\x19\x02dj\x03\x02\x02\x02ef\f\x06\x02\x02fg\x05\x1C' +
-    '\x0F\x02gh\x050\x19\x02hj\x03\x02\x02\x02iW\x03\x02\x02\x02i\\\x03\x02' +
-    '\x02\x02ia\x03\x02\x02\x02ie\x03\x02\x02\x02jm\x03\x02\x02\x02ki\x03\x02' +
-    '\x02\x02kl\x03\x02\x02\x02l\x05\x03\x02\x02\x02mk\x03\x02\x02\x02no\x05' +
-    '\x16\f\x02op\x05"\x12\x02ps\x05\x18\r\x02qr\x07\x0F\x02\x02rt\x05\x18' +
-    '\r\x02sq\x03\x02\x02\x02st\x03\x02\x02\x02tu\x03\x02\x02\x02uv\x05*\x16' +
-    '\x02v}\x03\x02\x02\x02wx\x05\x1A\x0E\x02xy\x05\b\x05\x02y}\x03\x02\x02' +
-    '\x02z}\x05\b\x05\x02{}\x05\n\x06\x02|n\x03\x02\x02\x02|w\x03\x02\x02\x02' +
-    '|z\x03\x02\x02\x02|{\x03\x02\x02\x02}\x07\x03\x02\x02\x02~\x7F\x05$\x13' +
-    '\x02\x7F\x80\x050\x19\x02\x80\x81\x05\x04\x03\x02\x81\x82\x05&\x14\x02' +
-    '\x82\x83\x05,\x17\x02\x83\t\x03\x02\x02\x02\x84\x85\x05\x16\f\x02\x85' +
-    '\x86\x05"\x12\x02\x86\x87\x05\x18\r\x02\x87\x88\x07\x0F\x02\x02\x88\x89' +
-    '\x05(\x15\x02\x89\xA8\x03\x02\x02\x02\x8A\x8B\x05\x16\f\x02\x8B\x8C\x05' +
-    '"\x12\x02\x8C\x8D\x05(\x15\x02\x8D\xA8\x03\x02\x02\x02\x8E\x8F\x05\x1A' +
-    '\x0E\x02\x8F\x90\x05\f\x07\x02\x90\xA8\x03\x02\x02\x02\x91\x92\x05\x1A' +
-    '\x0E\x02\x92\x93\x05$\x13\x02\x93\x94\x050\x19\x02\x94\xA8\x03\x02\x02' +
-    '\x02\x95\x96\x05\x1A\x0E\x02\x96\x97\x05$\x13\x02\x97\x98\x05\x04\x03' +
-    '\x02\x98\xA8\x03\x02\x02\x02\x99\x9A\x05$\x13\x02\x9A\x9B\x050\x19\x02' +
-    '\x9B\x9C\x05\x04\x03\x02\x9C\xA8\x03\x02\x02\x02\x9D\xA8\x05\f\x07\x02' +
-    '\x9E\x9F\x05$\x13\x02\x9F\xA0\x050\x19\x02\xA0\xA8\x03\x02\x02\x02\xA1' +
-    '\xA2\x07\x07\x02\x02\xA2\xA8\x052\x1A\x02\xA3\xA4\x05"\x12\x02\xA4\xA5' +
-    '\x05\x18\r\x02\xA5\xA6\x05,\x17\x02\xA6\xA8\x03\x02\x02\x02\xA7\x84\x03' +
-    '\x02\x02\x02\xA7\x8A\x03\x02\x02\x02\xA7\x8E\x03\x02\x02\x02\xA7\x91\x03' +
-    '\x02\x02\x02\xA7\x95\x03\x02\x02\x02\xA7\x99\x03\x02\x02\x02\xA7\x9D\x03' +
-    '\x02\x02\x02\xA7\x9E\x03\x02\x02\x02\xA7\xA1\x03\x02\x02\x02\xA7\xA3\x03' +
-    '\x02\x02\x02\xA8\v\x03\x02\x02\x02\xA9\xAA\x05$\x13\x02\xAA\xAB\x050\x19' +
-    '\x02\xAB\xAC\x05&\x14\x02\xAC\xAD\x05,\x17\x02\xAD\r\x03\x02\x02\x02\xAE' +
-    '\xAF\x05\x12\n\x02\xAF\xB0\x054\x1B\x02\xB0\x0F\x03\x02\x02\x02\xB1\xB2' +
-    '\x05\x14\v\x02\xB2\xB3\x056\x1C\x02\xB3\x11\x03\x02\x02\x02\xB4\xB6\x07' +
-    '\b\x02\x02\xB5\xB4\x03\x02\x02\x02\xB5\xB6\x03\x02\x02\x02\xB6\xB7\x03' +
-    '\x02\x02\x02\xB7\xB8\x07\x07\x02\x02\xB8\x13\x03\x02\x02\x02\xB9\xBB\x07' +
-    '\x07\x02\x02\xBA\xBC\x07\b\x02\x02\xBB\xBA\x03\x02\x02\x02\xBB\xBC\x03' +
-    '\x02\x02\x02\xBC\x15\x03\x02\x02\x02\xBD\xBE\x07\x10\x02\x02\xBE\x17\x03' +
-    '\x02\x02\x02\xBF\xC0\x058\x1D\x02\xC0\x19\x03\x02\x02\x02\xC1\xC2\x07' +
-    '\x10\x02\x02\xC2\x1B\x03\x02\x02\x02\xC3\xC4\x07\x04\x02\x02\xC4\x1D\x03' +
-    '\x02\x02\x02\xC5\xC6\x07\x03\x02\x02\xC6\x1F\x03\x02\x02\x02\xC7\xC8\x07' +
-    '\x05\x02\x02\xC8!\x03\x02\x02\x02\xC9\xCA\x07\t\x02\x02\xCA#\x03\x02\x02' +
-    '\x02\xCB\xCC\x07\n\x02\x02\xCC%\x03\x02\x02\x02\xCD\xCE\x07\v\x02\x02' +
-    "\xCE'\x03\x02\x02\x02\xCF\xD1\x07\x11\x02\x02\xD0\xCF\x03\x02\x02\x02" +
-    '\xD1\xD4\x03\x02\x02\x02\xD2\xD0\x03\x02\x02\x02\xD2\xD3\x03\x02\x02\x02' +
-    '\xD3)\x03\x02\x02\x02\xD4\xD2\x03\x02\x02\x02\xD5\xD7\x07\x11\x02\x02' +
-    '\xD6\xD5\x03\x02\x02\x02\xD7\xDA\x03\x02\x02\x02\xD8\xD6\x03\x02\x02\x02' +
-    '\xD8\xD9\x03\x02\x02\x02\xD9+\x03\x02\x02\x02\xDA\xD8\x03\x02\x02\x02' +
-    '\xDB\xDD\x07\x11\x02\x02\xDC\xDB\x03\x02\x02\x02\xDD\xE0\x03\x02\x02\x02' +
-    '\xDE\xDC\x03\x02\x02\x02\xDE\xDF\x03\x02\x02\x02\xDF-\x03\x02\x02\x02' +
-    '\xE0\xDE\x03\x02\x02\x02\xE1\xE3\x07\x11\x02\x02\xE2\xE1\x03\x02\x02\x02' +
-    '\xE3\xE6\x03\x02\x02\x02\xE4\xE2\x03\x02\x02\x02\xE4\xE5\x03\x02\x02\x02' +
-    '\xE5/\x03\x02\x02\x02\xE6\xE4\x03\x02\x02\x02\xE7\xE9\x07\x11\x02\x02' +
-    '\xE8\xE7\x03\x02\x02\x02\xE9\xEC\x03\x02\x02\x02\xEA\xE8\x03\x02\x02\x02' +
-    '\xEA\xEB\x03\x02\x02\x02\xEB1\x03\x02\x02\x02\xEC\xEA\x03\x02\x02\x02' +
-    '\xED\xEF\x07\x11\x02\x02\xEE\xED\x03\x02\x02\x02\xEF\xF2\x03\x02\x02\x02' +
-    '\xF0\xEE\x03\x02\x02\x02\xF0\xF1\x03\x02\x02\x02\xF13\x03\x02\x02\x02' +
-    '\xF2\xF0\x03\x02\x02\x02\xF3\xF5\x07\x11\x02\x02\xF4\xF3\x03\x02\x02\x02' +
-    '\xF5\xF8\x03\x02\x02\x02\xF6\xF4\x03\x02\x02\x02\xF6\xF7\x03\x02\x02\x02' +
-    '\xF75\x03\x02\x02\x02\xF8\xF6\x03\x02\x02\x02\xF9\xFB\x07\x11\x02\x02' +
-    '\xFA\xF9\x03\x02\x02\x02\xFB\xFE\x03\x02\x02\x02\xFC\xFA\x03\x02\x02\x02' +
-    '\xFC\xFD\x03\x02\x02\x02\xFD7\x03\x02\x02\x02\xFE\xFC\x03\x02\x02\x02' +
-    '\xFF\u0104\x07\f\x02\x02\u0100\u0104\x07\r\x02\x02\u0101\u0104\x07\x0E' +
-    '\x02\x02\u0102\u0104\x07\x10\x02\x02\u0103\xFF\x03\x02\x02\x02\u0103\u0100' +
-    '\x03\x02\x02\x02\u0103\u0101\x03\x02\x02\x02\u0103\u0102\x03\x02\x02\x02' +
-    '\u01049\x03\x02\x02\x02\x13Uiks|\xA7\xB5\xBB\xD2\xD8\xDE\xE4\xEA\xF0\xF6' +
-    '\xFC\u0103';
+    '\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x07\x03l\n\x03\f\x03\x0E' +
+    '\x03o\v\x03\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x05\x04v\n\x04\x03' +
+    '\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x05\x04\x7F\n\x04' +
+    '\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x06\x03\x06\x03\x06' +
+    '\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06' +
+    '\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06' +
+    '\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06' +
+    '\x05\x06\xA5\n\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03' +
+    '\x06\x03\x06\x05\x06\xAF\n\x06\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07' +
+    '\x03\b\x03\b\x03\b\x03\t\x03\t\x03\t\x03\n\x05\n\xBD\n\n\x03\n\x03\n\x03' +
+    '\v\x03\v\x05\v\xC3\n\v\x03\f\x03\f\x03\r\x03\r\x03\x0E\x03\x0E\x03\x0F' +
+    '\x03\x0F\x03\x10\x03\x10\x03\x11\x03\x11\x03\x12\x03\x12\x03\x13\x03\x13' +
+    '\x03\x14\x03\x14\x03\x15\x07\x15\xD8\n\x15\f\x15\x0E\x15\xDB\v\x15\x03' +
+    '\x16\x07\x16\xDE\n\x16\f\x16\x0E\x16\xE1\v\x16\x03\x17\x07\x17\xE4\n\x17' +
+    '\f\x17\x0E\x17\xE7\v\x17\x03\x18\x07\x18\xEA\n\x18\f\x18\x0E\x18\xED\v' +
+    '\x18\x03\x19\x07\x19\xF0\n\x19\f\x19\x0E\x19\xF3\v\x19\x03\x1A\x07\x1A' +
+    '\xF6\n\x1A\f\x1A\x0E\x1A\xF9\v\x1A\x03\x1B\x07\x1B\xFC\n\x1B\f\x1B\x0E' +
+    '\x1B\xFF\v\x1B\x03\x1C\x07\x1C\u0102\n\x1C\f\x1C\x0E\x1C\u0105\v\x1C\x03' +
+    '\x1D\x07\x1D\u0108\n\x1D\f\x1D\x0E\x1D\u010B\v\x1D\x03\x1E\x03\x1E\x03' +
+    '\x1E\x03\x1E\x05\x1E\u0111\n\x1E\x03\x1E\x02\x02\x03\x04\x1F\x02\x02\x04' +
+    '\x02\x06\x02\b\x02\n\x02\f\x02\x0E\x02\x10\x02\x12\x02\x14\x02\x16\x02' +
+    '\x18\x02\x1A\x02\x1C\x02\x1E\x02 \x02"\x02$\x02&\x02(\x02*\x02,\x02.' +
+    '\x020\x022\x024\x026\x028\x02:\x02\x02\x02\x02\u011D\x02<\x03\x02\x02' +
+    '\x02\x04W\x03\x02\x02\x02\x06~\x03\x02\x02\x02\b\x80\x03\x02\x02\x02\n' +
+    '\xAE\x03\x02\x02\x02\f\xB0\x03\x02\x02\x02\x0E\xB5\x03\x02\x02\x02\x10' +
+    '\xB8\x03\x02\x02\x02\x12\xBC\x03\x02\x02\x02\x14\xC0\x03\x02\x02\x02\x16' +
+    '\xC4\x03\x02\x02\x02\x18\xC6\x03\x02\x02\x02\x1A\xC8\x03\x02\x02\x02\x1C' +
+    '\xCA\x03\x02\x02\x02\x1E\xCC\x03\x02\x02\x02 \xCE\x03\x02\x02\x02"\xD0' +
+    '\x03\x02\x02\x02$\xD2\x03\x02\x02\x02&\xD4\x03\x02\x02\x02(\xD9\x03\x02' +
+    '\x02\x02*\xDF\x03\x02\x02\x02,\xE5\x03\x02\x02\x02.\xEB\x03\x02\x02\x02' +
+    '0\xF1\x03\x02\x02\x022\xF7\x03\x02\x02\x024\xFD\x03\x02\x02\x026\u0103' +
+    '\x03\x02\x02\x028\u0109\x03\x02\x02\x02:\u0110\x03\x02\x02\x02<=\x05\x04' +
+    '\x03\x02=>\x07\x02\x02\x03>\x03\x03\x02\x02\x02?@\b\x03\x01\x02@X\x05' +
+    '\x06\x04\x02AB\x05\x0E\b\x02BC\x05\x06\x04\x02CD\x05\x10\t\x02DX\x03\x02' +
+    '\x02\x02EF\x05\x0E\b\x02FG\x05\x06\x04\x02GX\x03\x02\x02\x02HI\x05\x06' +
+    '\x04\x02IJ\x05\x10\t\x02JX\x03\x02\x02\x02KL\x05 \x11\x02LM\x05.\x18\x02' +
+    'MN\x05\x04\x03\nNX\x03\x02\x02\x02OP\x05 \x11\x02PQ\x05.\x18\x02QX\x03' +
+    '\x02\x02\x02RS\x07\x06\x02\x02SX\x05,\x17\x02TU\x05:\x1E\x02UV\x05,\x17' +
+    '\x02VX\x03\x02\x02\x02W?\x03\x02\x02\x02WA\x03\x02\x02\x02WE\x03\x02\x02' +
+    '\x02WH\x03\x02\x02\x02WK\x03\x02\x02\x02WO\x03\x02\x02\x02WR\x03\x02\x02' +
+    '\x02WT\x03\x02\x02\x02Xm\x03\x02\x02\x02YZ\f\t\x02\x02Z[\x05\x1E\x10\x02' +
+    '[\\\x050\x19\x02\\]\x05\x04\x03\n]l\x03\x02\x02\x02^_\f\b\x02\x02_`\x05' +
+    '\x1C\x0F\x02`a\x050\x19\x02ab\x05\x04\x03\tbl\x03\x02\x02\x02cd\f\x07' +
+    '\x02\x02de\x05\x1E\x10\x02ef\x050\x19\x02fl\x03\x02\x02\x02gh\f\x06\x02' +
+    '\x02hi\x05\x1C\x0F\x02ij\x050\x19\x02jl\x03\x02\x02\x02kY\x03\x02\x02' +
+    '\x02k^\x03\x02\x02\x02kc\x03\x02\x02\x02kg\x03\x02\x02\x02lo\x03\x02\x02' +
+    '\x02mk\x03\x02\x02\x02mn\x03\x02\x02\x02n\x05\x03\x02\x02\x02om\x03\x02' +
+    '\x02\x02pq\x05\x16\f\x02qr\x05"\x12\x02ru\x05\x18\r\x02st\x07\x0F\x02' +
+    '\x02tv\x05\x18\r\x02us\x03\x02\x02\x02uv\x03\x02\x02\x02vw\x03\x02\x02' +
+    '\x02wx\x05*\x16\x02x\x7F\x03\x02\x02\x02yz\x05\x1A\x0E\x02z{\x05\b\x05' +
+    '\x02{\x7F\x03\x02\x02\x02|\x7F\x05\b\x05\x02}\x7F\x05\n\x06\x02~p\x03' +
+    '\x02\x02\x02~y\x03\x02\x02\x02~|\x03\x02\x02\x02~}\x03\x02\x02\x02\x7F' +
+    '\x07\x03\x02\x02\x02\x80\x81\x05$\x13\x02\x81\x82\x050\x19\x02\x82\x83' +
+    '\x05\x04\x03\x02\x83\x84\x05&\x14\x02\x84\x85\x05,\x17\x02\x85\t\x03\x02' +
+    '\x02\x02\x86\x87\x05\x16\f\x02\x87\x88\x05"\x12\x02\x88\x89\x05\x18\r' +
+    '\x02\x89\x8A\x07\x0F\x02\x02\x8A\x8B\x05(\x15\x02\x8B\xAF\x03\x02\x02' +
+    '\x02\x8C\x8D\x05\x16\f\x02\x8D\x8E\x05"\x12\x02\x8E\x8F\x05(\x15\x02' +
+    '\x8F\xAF\x03\x02\x02\x02\x90\x91\x05\x1A\x0E\x02\x91\x92\x05\f\x07\x02' +
+    '\x92\xAF\x03\x02\x02\x02\x93\x94\x05\x1A\x0E\x02\x94\x95\x05$\x13\x02' +
+    '\x95\x96\x050\x19\x02\x96\xAF\x03\x02\x02\x02\x97\x98\x05\x1A\x0E\x02' +
+    '\x98\x99\x05$\x13\x02\x99\x9A\x05\x04\x03\x02\x9A\xAF\x03\x02\x02\x02' +
+    '\x9B\x9C\x05$\x13\x02\x9C\x9D\x050\x19\x02\x9D\x9E\x05\x04\x03\x02\x9E' +
+    '\xAF\x03\x02\x02\x02\x9F\xAF\x05\f\x07\x02\xA0\xA1\x05$\x13\x02\xA1\xA2' +
+    '\x050\x19\x02\xA2\xAF\x03\x02\x02\x02\xA3\xA5\x07\b\x02\x02\xA4\xA3\x03' +
+    '\x02\x02\x02\xA4\xA5\x03\x02\x02\x02\xA5\xA6\x03\x02\x02\x02\xA6\xA7\x07' +
+    '\x07\x02\x02\xA7\xAF\x052\x1A\x02\xA8\xA9\x07\b\x02\x02\xA9\xAF\x058\x1D' +
+    '\x02\xAA\xAB\x05"\x12\x02\xAB\xAC\x05\x18\r\x02\xAC\xAD\x05,\x17\x02' +
+    '\xAD\xAF\x03\x02\x02\x02\xAE\x86\x03\x02\x02\x02\xAE\x8C\x03\x02\x02\x02' +
+    '\xAE\x90\x03\x02\x02\x02\xAE\x93\x03\x02\x02\x02\xAE\x97\x03\x02\x02\x02' +
+    '\xAE\x9B\x03\x02\x02\x02\xAE\x9F\x03\x02\x02\x02\xAE\xA0\x03\x02\x02\x02' +
+    '\xAE\xA4\x03\x02\x02\x02\xAE\xA8\x03\x02\x02\x02\xAE\xAA\x03\x02\x02\x02' +
+    '\xAF\v\x03\x02\x02\x02\xB0\xB1\x05$\x13\x02\xB1\xB2\x050\x19\x02\xB2\xB3' +
+    '\x05&\x14\x02\xB3\xB4\x05,\x17\x02\xB4\r\x03\x02\x02\x02\xB5\xB6\x05\x12' +
+    '\n\x02\xB6\xB7\x054\x1B\x02\xB7\x0F\x03\x02\x02\x02\xB8\xB9\x05\x14\v' +
+    '\x02\xB9\xBA\x056\x1C\x02\xBA\x11\x03\x02\x02\x02\xBB\xBD\x07\b\x02\x02' +
+    '\xBC\xBB\x03\x02\x02\x02\xBC\xBD\x03\x02\x02\x02\xBD\xBE\x03\x02\x02\x02' +
+    '\xBE\xBF\x07\x07\x02\x02\xBF\x13\x03\x02\x02\x02\xC0\xC2\x07\x07\x02\x02' +
+    '\xC1\xC3\x07\b\x02\x02\xC2\xC1\x03\x02\x02\x02\xC2\xC3\x03\x02\x02\x02' +
+    '\xC3\x15\x03\x02\x02\x02\xC4\xC5\x07\x10\x02\x02\xC5\x17\x03\x02\x02\x02' +
+    '\xC6\xC7\x05:\x1E\x02\xC7\x19\x03\x02\x02\x02\xC8\xC9\x07\x10\x02\x02' +
+    '\xC9\x1B\x03\x02\x02\x02\xCA\xCB\x07\x04\x02\x02\xCB\x1D\x03\x02\x02\x02' +
+    '\xCC\xCD\x07\x03\x02\x02\xCD\x1F\x03\x02\x02\x02\xCE\xCF\x07\x05\x02\x02' +
+    '\xCF!\x03\x02\x02\x02\xD0\xD1\x07\t\x02\x02\xD1#\x03\x02\x02\x02\xD2\xD3' +
+    "\x07\n\x02\x02\xD3%\x03\x02\x02\x02\xD4\xD5\x07\v\x02\x02\xD5'\x03\x02" +
+    '\x02\x02\xD6\xD8\x07\x11\x02\x02\xD7\xD6\x03\x02\x02\x02\xD8\xDB\x03\x02' +
+    '\x02\x02\xD9\xD7\x03\x02\x02\x02\xD9\xDA\x03\x02\x02\x02\xDA)\x03\x02' +
+    '\x02\x02\xDB\xD9\x03\x02\x02\x02\xDC\xDE\x07\x11\x02\x02\xDD\xDC\x03\x02' +
+    '\x02\x02\xDE\xE1\x03\x02\x02\x02\xDF\xDD\x03\x02\x02\x02\xDF\xE0\x03\x02' +
+    '\x02\x02\xE0+\x03\x02\x02\x02\xE1\xDF\x03\x02\x02\x02\xE2\xE4\x07\x11' +
+    '\x02\x02\xE3\xE2\x03\x02\x02\x02\xE4\xE7\x03\x02\x02\x02\xE5\xE3\x03\x02' +
+    '\x02\x02\xE5\xE6\x03\x02\x02\x02\xE6-\x03\x02\x02\x02\xE7\xE5\x03\x02' +
+    '\x02\x02\xE8\xEA\x07\x11\x02\x02\xE9\xE8\x03\x02\x02\x02\xEA\xED\x03\x02' +
+    '\x02\x02\xEB\xE9\x03\x02\x02\x02\xEB\xEC\x03\x02\x02\x02\xEC/\x03\x02' +
+    '\x02\x02\xED\xEB\x03\x02\x02\x02\xEE\xF0\x07\x11\x02\x02\xEF\xEE\x03\x02' +
+    '\x02\x02\xF0\xF3\x03\x02\x02\x02\xF1\xEF\x03\x02\x02\x02\xF1\xF2\x03\x02' +
+    '\x02\x02\xF21\x03\x02\x02\x02\xF3\xF1\x03\x02\x02\x02\xF4\xF6\x07\x11' +
+    '\x02\x02\xF5\xF4\x03\x02\x02\x02\xF6\xF9\x03\x02\x02\x02\xF7\xF5\x03\x02' +
+    '\x02\x02\xF7\xF8\x03\x02\x02\x02\xF83\x03\x02\x02\x02\xF9\xF7\x03\x02' +
+    '\x02\x02\xFA\xFC\x07\x11\x02\x02\xFB\xFA\x03\x02\x02\x02\xFC\xFF\x03\x02' +
+    '\x02\x02\xFD\xFB\x03\x02\x02\x02\xFD\xFE\x03\x02\x02\x02\xFE5\x03\x02' +
+    '\x02\x02\xFF\xFD\x03\x02\x02\x02\u0100\u0102\x07\x11\x02\x02\u0101\u0100' +
+    '\x03\x02\x02\x02\u0102\u0105\x03\x02\x02\x02\u0103\u0101\x03\x02\x02\x02' +
+    '\u0103\u0104\x03\x02\x02\x02\u01047\x03\x02\x02\x02\u0105\u0103\x03\x02' +
+    '\x02\x02\u0106\u0108\x07\x11\x02\x02\u0107\u0106\x03\x02\x02\x02\u0108' +
+    '\u010B\x03\x02\x02\x02\u0109\u0107\x03\x02\x02\x02\u0109\u010A\x03\x02' +
+    '\x02\x02\u010A9\x03\x02\x02\x02\u010B\u0109\x03\x02\x02\x02\u010C\u0111' +
+    '\x07\f\x02\x02\u010D\u0111\x07\r\x02\x02\u010E\u0111\x07\x0E\x02\x02\u010F' +
+    '\u0111\x07\x10\x02\x02\u0110\u010C\x03\x02\x02\x02\u0110\u010D\x03\x02' +
+    '\x02\x02\u0110\u010E\x03\x02\x02\x02\u0110\u010F\x03\x02\x02\x02\u0111' +
+    ';\x03\x02\x02\x02\x15Wkmu~\xA4\xAE\xBC\xC2\xD9\xDF\xE5\xEB\xF1\xF7\xFD' +
+    '\u0103\u0109\u0110';
   public static __ATN: ATN;
   public static get _ATN(): ATN {
     if (!SelectionAutoCompleteParser.__ATN) {
@@ -2532,6 +2605,9 @@ export class IncompletePlusTraversalExpressionContext extends IncompleteExprCont
   public postNeighborTraversalWhitespace(): PostNeighborTraversalWhitespaceContext {
     return this.getRuleContext(0, PostNeighborTraversalWhitespaceContext);
   }
+  public DIGITS(): TerminalNode | undefined {
+    return this.tryGetToken(SelectionAutoCompleteParser.DIGITS, 0);
+  }
   constructor(ctx: IncompleteExprContext) {
     super(ctx.parent, ctx.invokingState);
     this.copyFrom(ctx);
@@ -2552,6 +2628,38 @@ export class IncompletePlusTraversalExpressionContext extends IncompleteExprCont
   public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
     if (visitor.visitIncompletePlusTraversalExpression) {
       return visitor.visitIncompletePlusTraversalExpression(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+export class IncompleteUpTraversalExpressionContext extends IncompleteExprContext {
+  public DIGITS(): TerminalNode {
+    return this.getToken(SelectionAutoCompleteParser.DIGITS, 0);
+  }
+  public postDigitsWhitespace(): PostDigitsWhitespaceContext {
+    return this.getRuleContext(0, PostDigitsWhitespaceContext);
+  }
+  constructor(ctx: IncompleteExprContext) {
+    super(ctx.parent, ctx.invokingState);
+    this.copyFrom(ctx);
+  }
+  // @Override
+  public enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterIncompleteUpTraversalExpression) {
+      listener.enterIncompleteUpTraversalExpression(this);
+    }
+  }
+  // @Override
+  public exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitIncompleteUpTraversalExpression) {
+      listener.exitIncompleteUpTraversalExpression(this);
+    }
+  }
+  // @Override
+  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+    if (visitor.visitIncompleteUpTraversalExpression) {
+      return visitor.visitIncompleteUpTraversalExpression(this);
     } else {
       return visitor.visitChildren(this);
     }
@@ -3409,6 +3517,45 @@ export class PostDownwardTraversalWhitespaceContext extends ParserRuleContext {
   public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
     if (visitor.visitPostDownwardTraversalWhitespace) {
       return visitor.visitPostDownwardTraversalWhitespace(this);
+    } else {
+      return visitor.visitChildren(this);
+    }
+  }
+}
+
+export class PostDigitsWhitespaceContext extends ParserRuleContext {
+  public WS(): TerminalNode[];
+  public WS(i: number): TerminalNode;
+  public WS(i?: number): TerminalNode | TerminalNode[] {
+    if (i === undefined) {
+      return this.getTokens(SelectionAutoCompleteParser.WS);
+    } else {
+      return this.getToken(SelectionAutoCompleteParser.WS, i);
+    }
+  }
+  constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+    super(parent, invokingState);
+  }
+  // @Override
+  public get ruleIndex(): number {
+    return SelectionAutoCompleteParser.RULE_postDigitsWhitespace;
+  }
+  // @Override
+  public enterRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.enterPostDigitsWhitespace) {
+      listener.enterPostDigitsWhitespace(this);
+    }
+  }
+  // @Override
+  public exitRule(listener: SelectionAutoCompleteListener): void {
+    if (listener.exitPostDigitsWhitespace) {
+      listener.exitPostDigitsWhitespace(this);
+    }
+  }
+  // @Override
+  public accept<Result>(visitor: SelectionAutoCompleteVisitor<Result>): Result {
+    if (visitor.visitPostDigitsWhitespace) {
+      return visitor.visitPostDigitsWhitespace(this);
     } else {
       return visitor.visitChildren(this);
     }

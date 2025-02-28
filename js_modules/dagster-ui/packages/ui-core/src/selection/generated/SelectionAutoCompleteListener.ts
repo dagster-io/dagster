@@ -33,6 +33,7 @@ import {
   IncompleteOrExpressionContext,
   IncompletePlusTraversalExpressionContext,
   IncompleteRightQuotedStringValueContext,
+  IncompleteUpTraversalExpressionContext,
   LeftParenTokenContext,
   NotExpressionContext,
   NotTokenContext,
@@ -41,6 +42,7 @@ import {
   ParenthesizedExprContext,
   ParenthesizedExpressionContext,
   PostAttributeValueWhitespaceContext,
+  PostDigitsWhitespaceContext,
   PostDownwardTraversalWhitespaceContext,
   PostExpressionWhitespaceContext,
   PostLogicalOperatorWhitespaceContext,
@@ -530,6 +532,19 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
   exitIncompletePlusTraversalExpression?: (ctx: IncompletePlusTraversalExpressionContext) => void;
 
   /**
+   * Enter a parse tree produced by the `IncompleteUpTraversalExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  enterIncompleteUpTraversalExpression?: (ctx: IncompleteUpTraversalExpressionContext) => void;
+  /**
+   * Exit a parse tree produced by the `IncompleteUpTraversalExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  exitIncompleteUpTraversalExpression?: (ctx: IncompleteUpTraversalExpressionContext) => void;
+
+  /**
    * Enter a parse tree produced by the `IncompleteAttributeExpressionMissingKey`
    * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
    * @param ctx the parse tree
@@ -842,6 +857,17 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitPostDownwardTraversalWhitespace?: (ctx: PostDownwardTraversalWhitespaceContext) => void;
+
+  /**
+   * Enter a parse tree produced by `SelectionAutoCompleteParser.postDigitsWhitespace`.
+   * @param ctx the parse tree
+   */
+  enterPostDigitsWhitespace?: (ctx: PostDigitsWhitespaceContext) => void;
+  /**
+   * Exit a parse tree produced by `SelectionAutoCompleteParser.postDigitsWhitespace`.
+   * @param ctx the parse tree
+   */
+  exitPostDigitsWhitespace?: (ctx: PostDigitsWhitespaceContext) => void;
 
   /**
    * Enter a parse tree produced by `SelectionAutoCompleteParser.value`.
