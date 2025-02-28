@@ -1,5 +1,5 @@
-from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any
 
 from dagster._annotations import preview
 from dagster._record import record
@@ -27,3 +27,9 @@ class DbtCloudJobRun:
 
     def wait_for_success(self) -> int:
         return self.client.poll_run(self.run_id)
+
+    def get_run_results(self) -> Mapping[str, Any]:
+        return self.client.get_run_results_json(self.run_id)
+
+    def get_manifest(self) -> Mapping[str, Any]:
+        return self.client.get_run_manifest_json(self.run_id)
