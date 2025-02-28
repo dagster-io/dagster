@@ -2,7 +2,7 @@ from pathlib import Path
 
 import click
 
-from dagster_dg.cli.global_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import normalize_cli_config

@@ -72,7 +72,7 @@ def isolated_example_workspace(
     ):
         result = runner.invoke(
             "init",
-            "--use-editable-dagster",
+            "--use-editable-components-package-only",
             dagster_git_repo_dir,
             input=f"\n{project_name or ''}\n",
         )
@@ -118,7 +118,7 @@ def isolated_example_project_foo_bar(
         result = runner.invoke(
             "scaffold",
             "project",
-            "--use-editable-dagster",
+            "--use-editable-components-package-only",
             dagster_git_repo_dir,
             *(["--no-use-dg-managed-environment"] if skip_venv else []),
             *(["--no-populate-cache"] if not populate_cache else []),
@@ -154,7 +154,7 @@ def isolated_example_component_library_foo_bar(
         result = runner.invoke(
             "scaffold",
             "project",
-            "--use-editable-dagster",
+            "--use-editable-components-package-only",
             dagster_git_repo_dir,
             "--skip-venv",
             "foo-bar",
