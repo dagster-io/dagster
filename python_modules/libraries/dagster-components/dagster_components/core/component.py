@@ -192,13 +192,14 @@ def discover_component_types(modules: Sequence[str]) -> dict[ComponentKey, type[
 def get_component_types_in_module(
     module: ModuleType,
 ) -> Iterable[tuple[str, type[Component]]]:
-    from dagster._core.definitions.module_loaders.load_assets_from_modules import (
-        find_subclasses_in_module,
-    )
-
-    for name, component in find_subclasses_in_module(module, (Component,)):
-        if not inspect.isabstract(component):
-            yield name, component
+    for attr in dir(module):
+        value = getattr(module, attr)
+        if (
+            isinstance(value, type)
+            and issubclass(value, Component)
+            and not inspect.isabstract(value)
+        ):
+            yield attr, value
 
 
 T = TypeVar("T")

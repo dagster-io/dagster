@@ -41,12 +41,12 @@ def find_objects_in_module_of_types(
 def find_subclasses_in_module(
     module: ModuleType,
     types: Union[type, tuple[type, ...]],
-) -> Iterator[tuple[str, type]]:
+) -> Iterator[type]:
     """Yields instances or subclasses of the given type(s)."""
     for attr in dir(module):
         value = getattr(module, attr)
         if isinstance(value, type) and issubclass(value, types):
-            yield attr, value
+            yield value
 
 
 AssetLoaderTypes = Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition, AssetSpec]
