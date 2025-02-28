@@ -138,7 +138,7 @@ class SlingReplicationCollectionComponent(Component):
                     context=context,
                     sling=self.resource,
                     replication_spec=replication_spec,
-                    config=config,  # type: ignore
+                    config=config,
                 )
             else:
                 yield from self.execute(
@@ -164,6 +164,7 @@ class SlingReplicationCollectionComponent(Component):
         context: AssetExecutionContext,
         sling: SlingResource,
         replication_spec: SlingReplicationSpec,
+        **kwargs,
     ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
         iterator = sling.replicate(context=context)
         if "column_metadata" in replication_spec.include_metadata:

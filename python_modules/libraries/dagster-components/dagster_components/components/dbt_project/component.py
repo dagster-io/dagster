@@ -115,7 +115,7 @@ class DbtProjectComponent(Component):
         def _run_dbt_assets_fn(context: AssetExecutionContext, config: Config):
             # pass config to the execute method if it exists on the signature
             if config_arg:
-                yield from self.execute(context=context, dbt=self.dbt, config=config)  # type: ignore
+                yield from self.execute(context=context, dbt=self.dbt, config=config)
             else:
                 yield from self.execute(context=context, dbt=self.dbt)
 
@@ -138,5 +138,5 @@ class DbtProjectComponent(Component):
             defs = post_processor(defs)
         return defs
 
-    def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
+    def execute(self, context: AssetExecutionContext, dbt: DbtCliResource, **kwargs) -> Iterator:
         yield from dbt.cli(["build"], context=context).stream()
