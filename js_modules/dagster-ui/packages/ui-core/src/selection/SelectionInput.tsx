@@ -12,6 +12,7 @@ import {SelectionAutoCompleteInputCSS} from './SelectionInputHighlighter';
 import {useSelectionInputLintingAndHighlighting} from './useSelectionInputLintingAndHighlighting';
 import {useTrackEvent} from '../app/analytics';
 import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
+import {usePrevious} from '../hooks/usePrevious';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
 import 'codemirror/addon/edit/closebrackets';
@@ -83,9 +84,23 @@ export const SelectionAutoCompleteInput = ({
 
   const [selectedIndexRef, setSelectedIndex] = useState({current: 0});
 
+  // Memoize the stringified results to avoid resetting the selected index down below
+  const resultsJson = useMemo(() => {
+    return JSON.stringify(autoCompleteResults?.list.map((l) => l.text));
+  }, [autoCompleteResults]);
+
+  const prevJson = usePrevious(resultsJson);
+  const prevAutoCompleteResults = usePrevious(autoCompleteResults);
+
+  // Handle selection reset
   useDangerousRenderEffect(() => {
-    // Rather then using a useEffect + setState (extra render), we just set the current value directly
-    selectedIndexRef.current = 0;
+    if (prevAutoCompleteResults?.from !== autoCompleteResults?.from || prevJson !== resultsJson) {
+      selectedIndexRef.current = 0;
+    }
+  }, [resultsJson, autoCompleteResults, prevAutoCompleteResults, prevJson, selectedIndexRef]);
+
+  // Handle hiding results
+  useDangerousRenderEffect(() => {
     if (!autoCompleteResults.list.length && !loading) {
       showResults.current = false;
     }
