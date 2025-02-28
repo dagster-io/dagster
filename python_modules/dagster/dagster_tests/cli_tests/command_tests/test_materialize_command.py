@@ -64,6 +64,7 @@ def test_asset_with_dep():
     with instance_for_test() as instance:
         result = invoke_materialize("downstream_asset")
         assert "RUN_SUCCESS" in result.output
+        assert instance.get_latest_materialization_event(AssetKey("asset1")) is None
         assert instance.get_latest_materialization_event(AssetKey("downstream_asset")) is not None
 
 
@@ -78,6 +79,14 @@ def test_two_assets():
 def test_all_downstream():
     with instance_for_test() as instance:
         result = invoke_materialize("asset1*")
+        assert "RUN_SUCCESS" in result.output
+        for asset_key in [AssetKey("asset1"), AssetKey("downstream_asset")]:
+            assert instance.get_latest_materialization_event(asset_key) is not None
+
+
+def test_all_upstream():
+    with instance_for_test() as instance:
+        result = invoke_materialize("*downstream_asset")
         assert "RUN_SUCCESS" in result.output
         for asset_key in [AssetKey("asset1"), AssetKey("downstream_asset")]:
             assert instance.get_latest_materialization_event(asset_key) is not None
