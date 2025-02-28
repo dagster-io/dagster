@@ -24,15 +24,20 @@ from dagster_dg_tests.utils import (
 
 def test_list_project_success():
     with ProxyRunner.test() as runner, isolated_example_workspace(runner):
-        runner.invoke("scaffold", "project", "foo")
-        runner.invoke("scaffold", "project", "bar")
+        result = runner.invoke("scaffold", "project", "foo")
+        assert_runner_result(result)
+        result = runner.invoke("scaffold", "project", "projects/bar")
+        assert_runner_result(result)
+        result = runner.invoke("scaffold", "project", "more_projects/baz")
+        assert_runner_result(result)
         result = runner.invoke("list", "project")
         assert_runner_result(result)
         assert (
             result.output.strip()
             == textwrap.dedent("""
-                bar
                 foo
+                projects/bar
+                more_projects/baz
             """).strip()
         )
 

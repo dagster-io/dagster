@@ -164,7 +164,7 @@ def scaffold_subtree(
     normalized_path = os.path.normpath(path)
     project_name = project_name or os.path.basename(normalized_path).replace("-", "_")
     if not os.path.exists(normalized_path):
-        os.mkdir(normalized_path)
+        os.makedirs(normalized_path, exist_ok=True)
 
     project_template_path = os.path.join(os.path.dirname(__file__), "templates", templates_path)
     loader = jinja2.FileSystemLoader(searchpath=project_template_path)

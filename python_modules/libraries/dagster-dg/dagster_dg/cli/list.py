@@ -29,8 +29,8 @@ def project_list_command(**global_options: object) -> None:
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_workspace_environment(Path.cwd(), cli_config)
 
-    for project in dg_context.get_project_names():
-        click.echo(project)
+    for project in dg_context.project_specs:
+        click.echo(project.path)
 
 
 # ########################
