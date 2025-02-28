@@ -17,6 +17,9 @@ class SlaViolating:
     asset_key: AssetKey
     # The timestamp at which the asset began violating its SLA.
     violating_since: float
+    last_event_timestamp: float
+    last_event_storage_id: int
+    reason_md: str
     metadata: Mapping[str, Any]
 
     @classmethod
@@ -32,9 +35,10 @@ class SlaPassing:
     sla_name: str
     asset_key: AssetKey
     # The associated event log entry ID which led to the asset passing its SLA.
-    event_log_storage_id: int
+    last_event_storage_id: int
     # Time at which the passing event occurred
-    passing_since: float
+    last_event_timestamp: float
+    reason_md: str
     metadata: Mapping[str, Any]
 
     @classmethod
@@ -50,6 +54,8 @@ class SlaPassing:
 class SlaUnknown:
     sla_name: str
     asset_key: AssetKey
+    reason_md: str
+    metadata: Mapping[str, Any]
 
     @classmethod
     def dagster_event_type(cls) -> "DagsterEventType":
