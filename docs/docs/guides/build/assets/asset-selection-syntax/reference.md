@@ -1,7 +1,11 @@
 ---
-title: "Syntax reference"
+title: "Asset selection syntax reference"
 sidebar_position: 200
 ---
+
+import TOCInline from '@theme/TOCInline';
+
+<TOCInline toc={toc} />
 
 ## Filters
 
