@@ -198,6 +198,10 @@ T = TypeVar("T")
 
 @dataclass
 class MultiComponentsLoadContext:
+    """Context for loading an entire component hierarchy in a code location.
+    Stores resources and a cache to ensure we don't load the same component multiple times.
+    """
+
     resources: Mapping[str, object]
 
     def build_defs_from_component_path(self, path: Path) -> Definitions:
