@@ -85,6 +85,23 @@ class TranslatorResolvingInfo:
             else default_method(obj)
         )
 
+    def merge_resolved_dict_attribute(
+        self, attribute: str, obj: Any, default_method
+    ) -> Mapping[str, Any]:
+        """Merges a resolved attribute with the dict from the underlying translator.
+
+        This is useful for allowing users to augment the translator's dict with additional
+        values, instead of replacing the dict entirely.
+        """
+        attribute_value = dict(default_method(obj) or {})
+
+        resolved_attributes = self.resolution_context.with_scope(
+            **{self.obj_name: obj}
+        ).resolve_value(self.asset_attributes)
+        if attribute in resolved_attributes:
+            attribute_value.update(resolved_attributes[attribute])
+        return attribute_value
+
     def get_asset_spec(self, base_spec: AssetSpec, context: Mapping[str, Any]) -> AssetSpec:
         """Returns an AssetSpec that combines the base spec with attributes resolved using the provided context.
 
@@ -142,7 +159,7 @@ def get_wrapped_translator_class(translator_type: type):
                 tags.update(build_kind_tag(kind))
 
             tags.update(
-                self.resolving_info.get_resolved_attribute(
+                self.resolving_info.merge_resolved_dict_attribute(
                     "tags", obj, self.base_translator.get_tags
                 )
             )
@@ -156,7 +173,7 @@ def get_wrapped_translator_class(translator_type: type):
             )
 
         def get_metadata(self, obj: Any) -> Mapping[str, Any]:
-            return self.resolving_info.get_resolved_attribute(
+            return self.resolving_info.merge_resolved_dict_attribute(
                 "metadata", obj, self.base_translator.get_metadata
             )
 

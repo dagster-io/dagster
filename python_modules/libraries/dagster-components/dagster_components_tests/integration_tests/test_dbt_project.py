@@ -157,10 +157,16 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
             False,
         ),
         ({"tags": {"foo": "bar"}}, lambda asset_spec: asset_spec.tags.get("foo") == "bar", False),
-        ({"kinds": ["snowflake"]}, lambda asset_spec: "snowflake" in asset_spec.kinds, False),
+        (
+            {"kinds": ["snowflake"]},
+            lambda asset_spec: "snowflake" in asset_spec.kinds
+            and "dbt" in asset_spec.kinds,  # Ensure dbt-specific kind is not overwritten
+            False,
+        ),
         (
             {"tags": {"foo": "bar"}, "kinds": ["snowflake"]},
             lambda asset_spec: "snowflake" in asset_spec.kinds
+            and "dbt" in asset_spec.kinds  # Ensure dbt-specific kind is not overwritten
             and asset_spec.tags.get("foo") == "bar",
             False,
         ),
@@ -172,7 +178,9 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
         ),
         (
             {"metadata": {"foo": "bar"}},
-            lambda asset_spec: asset_spec.metadata.get("foo") == "bar",
+            lambda asset_spec: asset_spec.metadata.get("foo") == "bar"
+            and "dagster-dbt/materialization_type"
+            in asset_spec.metadata,  # Ensure dagster-dbt populated metadata is not overwritten
             False,
         ),
         ({"deps": ["customers"]}, None, True),
