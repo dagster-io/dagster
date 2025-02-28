@@ -16,7 +16,7 @@ With asset selection, you can:
 In the **Dagster OSS UI**, the asset selection syntax is available on:
 
 - The Asset Catalog page
-- The global asset lineage page
+- The Global asset lineage page
 
 In the **Dagster+ UI**, the asset selection syntax is available on:
 
