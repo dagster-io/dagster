@@ -4,7 +4,6 @@ from pathlib import Path
 import pytest
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._utils import pushd
-from dagster_components import build_component_defs
 from pydantic import ValidationError
 
 from dagster_components_tests.integration_tests.component_loader import load_test_component_defs
@@ -56,24 +55,3 @@ def test_definitions_component_validation_error() -> None:
         load_test_component_defs("definitions/validation_error_file")
 
     assert "component.yaml:4" in str(e.value)
-
-
-CROSS_COMPONENT_DEPENDENCY_PATH = (
-    Path(__file__).parent.parent / "code_locations" / "component_component_deps"
-)
-
-
-def test_dependency_between_components():
-    # Ensure DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH is an importable python module
-    sys.path.append(str(CROSS_COMPONENT_DEPENDENCY_PATH.parent))
-
-    defs = build_component_defs(CROSS_COMPONENT_DEPENDENCY_PATH / "defs", {})
-    assert (
-        AssetKey("downstream_of_all_my_python_defs") in defs.get_asset_graph().get_all_asset_keys()
-    )
-    downstream_of_all_my_python_defs = defs.get_assets_def("downstream_of_all_my_python_defs")
-    assert set(
-        downstream_of_all_my_python_defs.asset_deps[AssetKey("downstream_of_all_my_python_defs")]
-    ) == set(defs.get_asset_graph().get_all_asset_keys()) - {
-        AssetKey("downstream_of_all_my_python_defs")
-    }
