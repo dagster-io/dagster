@@ -69,7 +69,7 @@ class ImplicitDefinitionsComponentDecl(ComponentDeclNode):
         return ImplicitDefinitionsComponentDecl(path=path)
 
     def load(self, context) -> Sequence[Component]:
-        from dagster_components.lib.definitions_component.component import DefinitionsComponent
+        from dagster_components.dagster import DefinitionsComponent
 
         file_paths = list(self.path.glob("*.py"))
         return [DefinitionsComponent(definitions_path=file_path.name) for file_path in file_paths]

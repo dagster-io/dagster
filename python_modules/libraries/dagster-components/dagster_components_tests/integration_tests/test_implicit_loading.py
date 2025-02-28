@@ -18,3 +18,11 @@ def chdir():
 def test_implicit_single_file() -> None:
     defs = load_test_component_defs("implicit/single_file")
     assert {spec.key for spec in defs.get_all_asset_specs()} == {AssetKey("an_implicit_asset")}
+
+
+def test_implicit_double_file() -> None:
+    defs = load_test_component_defs("implicit/double_file")
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {
+        AssetKey("asset_one"),
+        AssetKey("asset_two"),
+    }
