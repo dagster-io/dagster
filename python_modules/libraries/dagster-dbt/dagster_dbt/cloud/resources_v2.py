@@ -11,6 +11,9 @@ from dagster._utils.cached_method import cached_method
 from pydantic import Field
 from requests.exceptions import RequestException
 
+from dagster_dbt.cloud.dbt_cloud_job_run import DbtCloudJobRun
+from dagster_dbt.cloud.types import DbtCloudWorkspaceData
+
 LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
 
@@ -249,4 +252,19 @@ class DbtCloudWorkspace(ConfigurableResource):
             project_id=self.project_id,
             environment_id=self.environment_id,
             job_name=expected_job_name,
+        )
+
+    def fetch_workspace_data(self) -> DbtCloudWorkspaceData:
+        job_id = self._get_or_create_job()
+        run = DbtCloudJobRun.run(
+            job_id=job_id,
+            args=["parse"],
+            client=self.dbt_client,
+        )
+        run.wait_for_success()
+        return DbtCloudWorkspaceData(
+            project_id=self.project_id,
+            environment_id=self.environment_id,
+            job_id=job_id,
+            manifest=run.get_manifest(),
         )

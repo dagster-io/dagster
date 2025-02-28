@@ -3,7 +3,9 @@ from datetime import datetime
 from typing import Any, Optional
 
 import dagster._check as check
-from dagster._annotations import beta
+from dagster._annotations import beta, preview
+from dagster._record import record
+from dagster._serdes import whitelist_for_serdes
 from dagster._vendored.dateutil.parser import isoparse
 
 
@@ -82,3 +84,16 @@ class DbtCloudOutput:
     @property
     def finished_at(self) -> datetime:
         return isoparse(self.run_details["finished_at"])
+
+
+@preview
+@whitelist_for_serdes
+@record
+class DbtCloudWorkspaceData:
+    project_id: int
+    environment_id: int
+    # The ID of the ad hoc dbt Cloud job created by Dagster.
+    # This job is used to parse the dbt Cloud project.
+    # This job is also used to kick off cli invocation if no job ID is specified by users.
+    job_id: int
+    manifest: Mapping[str, Any]
