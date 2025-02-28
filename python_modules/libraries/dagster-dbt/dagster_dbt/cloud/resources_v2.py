@@ -14,6 +14,8 @@ from requests.exceptions import RequestException
 LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
 
+DEFAULT_POLL_TIMEOUT = 60
+
 
 def get_job_name(environment_id: int, project_id: int) -> str:
     return f"{DAGSTER_ADHOC_PREFIX}{project_id}__{environment_id}"
@@ -136,6 +138,32 @@ class DbtCloudClient(DagsterModel):
             if len(jobs) < LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT:
                 break
         return results
+
+    def trigger_job(self, job_id: int, steps: Optional[Sequence[str]] = None) -> Mapping[str, Any]:
+        return self._make_request(
+            method="post",
+            endpoint=f"jobs/{job_id}/run",
+            base_url=self.api_v2_url,
+            data={"steps_override": steps, "cause": "Triggered by dagster."},
+        )
+
+    def _get_job_run_details(self, job_run_id: int) -> Mapping[str, Any]:
+        return self._make_request(
+            method="get",
+            endpoint=f"runs/{job_run_id}",
+            base_url=self.api_v2_url,
+        )
+
+    def poll_run(self, job_run_id: int, poll_timeout: Optional[float] = None) -> Mapping[str, Any]:
+        if not poll_timeout:
+            poll_timeout = DEFAULT_POLL_TIMEOUT
+        start_time = time.time()
+        while time.time() - start_time < poll_timeout:
+            run_details = self._get_job_run_details(job_run_id)
+            if run_details["data"]["status"] in {10, 20, 30}:
+                return run_details
+            time.sleep(0.1)
+        raise Exception(f"Run {job_run_id} did not complete within {poll_timeout} seconds.")
 
 
 @preview
