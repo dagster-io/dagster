@@ -28,5 +28,5 @@ In the **Dagster+ UI**, the asset selection syntax is available on:
 
 ## Next steps
 
-- Check out [example asset selection queries](examples).
 - See the [asset selection syntax reference](reference) for a full list of the filters, layers, operands, and functions that you can use to construct your own queries.
+- Check out [example asset selection queries](examples).
