@@ -21,7 +21,7 @@ In the **Dagster OSS UI**, the asset selection syntax is available on:
 In the **Dagster+ UI**, the asset selection syntax is available on:
 
 - The Asset Catalog page
-- The global asset lineage page
+- The Global asset lineage page
 - The Asset Health page
 - The Insights page
 - The Alert Policy creation page (when creating an asset alert)
