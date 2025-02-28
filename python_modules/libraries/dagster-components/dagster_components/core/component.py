@@ -1,3 +1,5 @@
+import contextlib
+import contextvars
 import dataclasses
 import importlib
 import importlib.metadata
@@ -15,6 +17,7 @@ from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import pushd
+from dagster._utils.cached_method import cached_method
 from typing_extensions import Self
 
 from dagster_components.core.component_key import ComponentKey
@@ -194,11 +197,50 @@ T = TypeVar("T")
 
 
 @dataclass
+class MultiComponentsLoadContext:
+    resources: Mapping[str, object]
+
+    def build_defs_from_component_path(self, path: Path) -> Definitions:
+        """Build a definitions object from a folder within the components hierarchy."""
+        return self._build_defs_from_component_path_inner(path.absolute().resolve())
+
+    @cached_method
+    def _build_defs_from_component_path_inner(self, path: Path) -> Definitions:
+        from dagster_components.core.component_decl_builder import path_to_decl_node
+        from dagster_components.core.component_defs_builder import defs_from_components
+
+        decl_node = path_to_decl_node(path=path)
+        if not decl_node:
+            raise Exception(f"No component found at path {path}")
+
+        context = ComponentLoadContext(
+            module_name=".".join(path.parts[-3:]),
+            decl_node=decl_node,
+            resolution_context=ResolutionContext.default(),
+            components_load_context=self,
+        )
+        with use_component_load_context(context):
+            components = decl_node.load(context)
+            return defs_from_components(
+                resources=self.resources, context=context, components=components
+            )
+
+
+@dataclass
 class ComponentLoadContext:
     module_name: str
-    resources: Mapping[str, object]
     decl_node: Optional[ComponentDeclNode]
     resolution_context: ResolutionContext
+    components_load_context: MultiComponentsLoadContext
+
+    @staticmethod
+    def current() -> "ComponentLoadContext":
+        context = active_component_load_context.get()
+        if context is None:
+            raise DagsterError(
+                "No active component load context, `ComponentLoadContext.current()` must be called inside of a component's `build_defs` method"
+            )
+        return context
 
     @staticmethod
     def for_test(
@@ -208,9 +250,9 @@ class ComponentLoadContext:
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
             module_name="test",
-            resources=resources or {},
             decl_node=decl_node,
             resolution_context=ResolutionContext.default(),
+            components_load_context=MultiComponentsLoadContext(resources=resources or {}),
         )
 
     @property
@@ -239,6 +281,9 @@ class ComponentLoadContext:
 
     def normalize_component_type_str(self, type_str: str) -> str:
         return f"{self.module_name}{type_str}" if type_str.startswith(".") else type_str
+
+    def build_defs_from_component_path(self, path: Path) -> Definitions:
+        return self.components_load_context.build_defs_from_component_path(path)
 
     def load_component_relative_python_module(self, file_path: Path) -> ModuleType:
         """Load a python module relative to the component's context path. This is useful for loading code
@@ -277,6 +322,20 @@ class ComponentLoadContext:
                 component_module_name = f"{component_module_name}.{abs_file_path.stem}"
 
             return importlib.import_module(component_module_name)
+
+
+active_component_load_context: contextvars.ContextVar[Union[ComponentLoadContext, None]] = (
+    contextvars.ContextVar("active_component_load_context", default=None)
+)
+
+
+@contextlib.contextmanager
+def use_component_load_context(component_load_context: ComponentLoadContext):
+    token = active_component_load_context.set(component_load_context)
+    try:
+        yield
+    finally:
+        active_component_load_context.reset(token)
 
 
 COMPONENT_LOADER_FN_ATTR = "__dagster_component_loader_fn"

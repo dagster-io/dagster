@@ -7,7 +7,7 @@ from dagster._utils.warnings import suppress_dagster_warnings
 from dagster_components.core.component import (
     Component,
     ComponentLoadContext,
-    ResolutionContext,
+    MultiComponentsLoadContext,
     discover_entry_point_component_types,
 )
 from dagster_components.core.component_decl_builder import (
@@ -40,26 +40,6 @@ def build_components_from_component_folder(
     component_folder = path_to_decl_node(path)
     assert isinstance(component_folder, ComponentFolder)
     return component_folder.load(context.for_decl_node(component_folder))
-
-
-def build_defs_from_component_path(
-    components_root: Path,
-    path: Path,
-    resources: Mapping[str, object],
-) -> "Definitions":
-    """Build a definitions object from a folder within the components hierarchy."""
-    decl_node = path_to_decl_node(path=path)
-    if not decl_node:
-        raise Exception(f"No component found at path {path}")
-
-    context = ComponentLoadContext(
-        module_name=".".join(path.parts[-3:]),
-        resources=resources,
-        decl_node=decl_node,
-        resolution_context=ResolutionContext.default(),
-    )
-    components = decl_node.load(context)
-    return defs_from_components(resources=resources, context=context, components=components)
 
 
 @suppress_dagster_warnings
@@ -101,10 +81,8 @@ def build_component_defs(
 
     all_defs: list[Definitions] = []
     for component_path in components_root.iterdir():
-        defs = build_defs_from_component_path(
-            components_root=components_root,
+        defs = MultiComponentsLoadContext(resources=resources or {}).build_defs_from_component_path(
             path=component_path,
-            resources=resources or {},
         )
         all_defs.append(defs)
     return Definitions.merge(*all_defs)
