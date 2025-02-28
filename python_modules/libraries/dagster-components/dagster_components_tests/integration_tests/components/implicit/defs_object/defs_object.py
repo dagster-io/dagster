@@ -1,4 +1,4 @@
-from dagster import asset, Definitions
+from dagster import Definitions, asset
 
 
 @asset

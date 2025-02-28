@@ -33,3 +33,10 @@ def test_defs_object() -> None:
     assert {spec.key for spec in defs.get_all_asset_specs()} == {
         AssetKey("in_defs_asset"),
     }
+
+
+def test_defs_and_sep_file_relative_include() -> None:
+    defs = load_test_component_defs("implicit/defs_and_sep_file_relative_include")
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {
+        AssetKey("side_asset"),
+    }
