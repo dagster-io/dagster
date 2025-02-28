@@ -18,16 +18,21 @@ In the **Dagster OSS UI**, the asset selection syntax is available on:
 - The Asset Catalog page
 - The global asset lineage page
 
-In the **Dagster+ UI**, the asset selection syntax is available in:
+In the **Dagster+ UI**, the asset selection syntax is available on:
 
 - The Asset Catalog page
 - The global asset lineage page
+- The Asset Health page
+- The Insights page
 - The Alert Policy creation page (when creating an asset alert)
-- The Asset Health overview page
 
 :::
 
 ## Examples
+
+To demonstrate how to use the asset selection syntax, we'll use the following asset graph from the Dagster University Essentials project:
+
+
 
 ### Select assets with multiple key components \{#multiple-key-components}
 
