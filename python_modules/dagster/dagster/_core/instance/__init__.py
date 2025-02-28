@@ -45,7 +45,7 @@ from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunConflict,
 )
-from dagster._core.execution.retries import auto_reexecution_should_retry_run
+from dagster._core.execution.retries import RetrySettings, auto_reexecution_should_retry_run
 from dagster._core.instance.config import (
     DAGSTER_CONFIG_YAML_FILENAME,
     DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT,
@@ -942,6 +942,13 @@ class DagsterInstance(DynamicPartitionsStore):
     @property
     def run_retries_retry_on_asset_or_op_failure(self) -> bool:
         return self.get_settings("run_retries").get("retry_on_asset_or_op_failure", True)
+
+    @property
+    def run_retries_settings(self) -> RetrySettings:
+        return RetrySettings(
+            retry_on_asset_or_op_failure=self.run_retries_retry_on_asset_or_op_failure,
+            max_retries=self.run_retries_max_retries,
+        )
 
     @property
     def auto_materialize_enabled(self) -> bool:
@@ -2503,7 +2510,12 @@ class DagsterInstance(DynamicPartitionsStore):
                         run_id,
                         {
                             WILL_RETRY_TAG: str(
-                                auto_reexecution_should_retry_run(self, run, run_failure_reason)
+                                auto_reexecution_should_retry_run(
+                                    self.run_retries_settings,
+                                    run,
+                                    run_failure_reason,
+                                    lambda: self.get_run_group(run_id),
+                                )
                             ).lower()
                         },
                     )
@@ -2513,7 +2525,7 @@ class DagsterInstance(DynamicPartitionsStore):
     def add_event_listener(self, run_id: str, cb) -> None:
         self._subscribers[run_id].append(cb)
 
-    def report_engine_event(
+    def create_engine_event(
         self,
         message: str,
         dagster_run: Optional[DagsterRun] = None,
@@ -2537,7 +2549,6 @@ class DagsterInstance(DynamicPartitionsStore):
             "Must include either dagster_run or job_name and run_id",
         )
 
-        run_id = run_id if run_id else dagster_run.run_id  # type: ignore
         job_name = job_name if job_name else dagster_run.job_name  # type: ignore
 
         engine_event_data = check.opt_inst_param(
@@ -2550,16 +2561,32 @@ class DagsterInstance(DynamicPartitionsStore):
         if cls:
             message = f"[{cls.__name__}] {message}"
 
-        log_level = logging.INFO
-        if engine_event_data and engine_event_data.error:
-            log_level = logging.ERROR
-
-        dagster_event = DagsterEvent(
+        return DagsterEvent(
             event_type_value=DagsterEventType.ENGINE_EVENT.value,
             job_name=job_name,
             message=message,
             event_specific_data=engine_event_data,
             step_key=step_key,
+        )
+
+    def report_engine_event(
+        self,
+        message: str,
+        dagster_run: Optional[DagsterRun] = None,
+        engine_event_data: Optional["EngineEventData"] = None,
+        cls: Optional[type[object]] = None,
+        step_key: Optional[str] = None,
+        job_name: Optional[str] = None,
+        run_id: Optional[str] = None,
+    ) -> "DagsterEvent":
+        run_id = run_id if run_id else dagster_run.run_id  # type: ignore
+
+        log_level = logging.INFO
+        if engine_event_data and engine_event_data.error:
+            log_level = logging.ERROR
+
+        dagster_event = self.create_engine_event(
+            message, dagster_run, engine_event_data, cls, step_key, job_name, run_id
         )
         self.report_dagster_event(dagster_event, run_id=run_id, log_level=log_level)
         return dagster_event

@@ -1,8 +1,9 @@
 import warnings
 from collections import defaultdict
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Callable, Optional
 
 from dagster import (
     Field,
@@ -16,7 +17,6 @@ from dagster._utils.tags import get_boolean_tag_value
 
 if TYPE_CHECKING:
     from dagster._core.events import RunFailureReason
-    from dagster._core.instance import DagsterInstance
 
 
 def get_retries_config():
@@ -25,6 +25,12 @@ def get_retries_config():
         default_value={"enabled": {}},
         description="Whether retries are enabled or not. By default, retries are enabled.",
     )
+
+
+@dataclass
+class RetrySettings:
+    retry_on_asset_or_op_failure: bool
+    max_retries: int
 
 
 @whitelist_for_serdes
@@ -81,7 +87,10 @@ class RetryState:
 
 
 def auto_reexecution_should_retry_run(
-    instance: "DagsterInstance", run: DagsterRun, run_failure_reason: Optional["RunFailureReason"]
+    retry_settings: RetrySettings,
+    run: DagsterRun,
+    run_failure_reason: Optional["RunFailureReason"],
+    load_run_group: Callable[[], Optional[tuple[str, Sequence[DagsterRun]]]],
 ):
     """Determines if a run will be retried by the automatic reexcution system.
     A run will retry if:
@@ -122,14 +131,14 @@ def auto_reexecution_should_retry_run(
 
     retry_on_asset_or_op_failure = get_boolean_tag_value(
         run.tags.get(RETRY_ON_ASSET_OR_OP_FAILURE_TAG),
-        default_value=instance.run_retries_retry_on_asset_or_op_failure,
+        default_value=retry_settings.retry_on_asset_or_op_failure,
     )
     if run_failure_reason == RunFailureReason.STEP_FAILURE and not retry_on_asset_or_op_failure:
         return False
 
     raw_max_retries_tag = run.tags.get(MAX_RETRIES_TAG)
     if raw_max_retries_tag is None:
-        max_retries = instance.run_retries_max_retries
+        max_retries = retry_settings.max_retries
     else:
         try:
             max_retries = int(raw_max_retries_tag)
@@ -137,7 +146,7 @@ def auto_reexecution_should_retry_run(
             warnings.warn(f"Error parsing int from tag {MAX_RETRIES_TAG}, won't retry the run.")
             return False
     if max_retries > 0:
-        run_group = instance.get_run_group(run.run_id)
+        run_group = load_run_group()
         if run_group is not None:
             _, run_group_iter = run_group
             # since the original run is in the run group, the number of retries launched
