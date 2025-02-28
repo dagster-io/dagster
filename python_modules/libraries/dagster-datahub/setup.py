@@ -40,7 +40,6 @@ setup(
         f"dagster{pin}",
         "packaging",
         "requests",
-        "confluent-kafka<2.8.1",
     ],
     extras_require={},
     zip_safe=False,
