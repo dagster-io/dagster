@@ -7,8 +7,9 @@ from typing import Any, Optional
 import click
 
 from dagster_dg.component import RemoteComponentRegistry
+from dagster_dg.config import discover_workspace_root
 from dagster_dg.context import DgContext
-from dagster_dg.utils import camelcase, exit_with_error, scaffold_subtree
+from dagster_dg.utils import exit_with_error, scaffold_subtree
 
 # ########################
 # ##### PROJECT
@@ -23,6 +24,7 @@ EDITABLE_DAGSTER_DEPENDENCIES = (
     "dagster",
     "dagster-pipes",
     "dagster-components",
+    "dagster-test[components]",  # we include dagster-test for testing purposes
 )
 EDITABLE_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver", "dagster-graphql")
 PYPI_DAGSTER_DEPENDENCIES = ("dagster-components",)
@@ -80,20 +82,14 @@ def scaffold_workspace(
     workspace_name: str,
 ) -> Path:
     # Can't create a workspace that is a child of another workspace
-    existing_workspace_path = DgContext.discover_workspace_path(Path.cwd())
+    new_workspace_path = Path.cwd() / workspace_name
+    existing_workspace_path = discover_workspace_root(new_workspace_path)
     if existing_workspace_path:
         exit_with_error(
-            f"Workspace already found at {existing_workspace_path}.  Run `dg scaffold project` to add a new project to that workspace."
+            f"Workspace already exists at {existing_workspace_path}.  Run `dg scaffold project` to add a new project to that workspace."
         )
-
-    new_workspace_path = Path.cwd() / workspace_name
-    if new_workspace_path.exists():
-        if DgContext.discover_workspace_path(new_workspace_path):
-            exit_with_error(
-                f"Workspace already exists at {new_workspace_path}.  Run `dg scaffold project` to add a new project to that workspace."
-            )
-        else:
-            exit_with_error(f"Folder already exists at {new_workspace_path}.")
+    elif new_workspace_path.exists():
+        exit_with_error(f"Folder already exists at {new_workspace_path}.")
 
     scaffold_subtree(
         path=new_workspace_path,
@@ -161,25 +157,24 @@ def scaffold_project(
 # ########################
 
 
-def scaffold_component_type(dg_context: DgContext, name: str) -> None:
+def scaffold_component_type(dg_context: DgContext, class_name: str, module_name: str) -> None:
     root_path = Path(dg_context.default_components_library_path)
-    click.echo(f"Creating a Dagster component type at {root_path}/{name}.py.")
+    click.echo(f"Creating a Dagster component type at {root_path}/{module_name}.py.")
 
     scaffold_subtree(
         path=root_path,
         name_placeholder="COMPONENT_TYPE_NAME_PLACEHOLDER",
         templates_path=str(Path(__file__).parent / "templates" / "COMPONENT_TYPE"),
-        project_name=name,
-        component_type_class_name=camelcase(name),
-        name=name,
+        project_name=module_name,
+        name=class_name,
     )
 
     with open(root_path / "__init__.py", "a") as f:
         f.write(
-            f"from {dg_context.default_components_library_module}.{name} import {camelcase(name)}\n"
+            f"from {dg_context.default_components_library_module}.{module_name} import {class_name}\n"
         )
 
-    click.echo(f"Scaffolded files for Dagster component type at {root_path}/{name}..")
+    click.echo(f"Scaffolded files for Dagster component type at {root_path}/{module_name}.py.")
 
 
 # ########################
@@ -199,7 +194,7 @@ def scaffold_component_instance(
         "scaffold",
         "component",
         component_type,
-        path,
+        str(path),
         *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),
     ]
     dg_context.external_components_command(scaffold_command)

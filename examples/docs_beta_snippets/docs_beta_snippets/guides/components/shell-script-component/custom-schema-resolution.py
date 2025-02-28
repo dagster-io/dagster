@@ -7,7 +7,6 @@ from dagster_components import (
     FieldResolver,
     ResolutionContext,
     ResolvableSchema,
-    registered_component_type,
 )
 
 import dagster as dg
@@ -27,7 +26,6 @@ def resolve_api_key(
     return MyApiClient(api_key=schema.api_key)
 
 
-@registered_component_type(name="my_component")
 @dataclass
 class MyComponent(Component):
     # FieldResolver specifies a function used to map input matching the schema

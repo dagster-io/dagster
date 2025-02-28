@@ -1263,7 +1263,7 @@ def _fetch_existing_runs(
     # fetch runs from the DB with only the run key tag
     # note: while possible to filter more at DB level with tags - it is avoided here due to observed
     # perf problems
-    runs_with_run_keys = []
+    runs_with_run_keys: list[DagsterRun] = []
     for run_key in run_keys:
         # do serial fetching, which has better perf than a single query with an IN clause, due to
         # how the query planner does the runs/run_tags join
@@ -1280,8 +1280,8 @@ def _fetch_existing_runs(
         # otherwise prevent the same named sensor across repos from effecting each other
         elif (
             run.remote_job_origin is not None
-            and run.remote_job_origin.repository_origin.get_selector_id()
-            == remote_sensor.get_remote_origin().repository_origin.get_selector_id()
+            and run.remote_job_origin.repository_origin.get_selector()
+            == remote_sensor.get_remote_origin().repository_origin.get_selector()
             and run.tags.get(SENSOR_NAME_TAG) == remote_sensor.name
         ):
             valid_runs.append(run)

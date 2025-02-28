@@ -36,7 +36,7 @@ const textDecoration = (underline: Underline) => {
       `;
     case 'hover':
       return css`
-        &:hover {
+        &:hover:not(:disabled) {
           text-decoration: underline;
           & > ${Box} {
             text-decoration: underline;

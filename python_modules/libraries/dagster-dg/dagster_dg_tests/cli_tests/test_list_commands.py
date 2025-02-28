@@ -43,11 +43,11 @@ def test_list_project_success():
 
 
 def test_list_components_succeeds():
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner, in_workspace=False):
         result = runner.invoke(
             "scaffold",
             "component",
-            "all_metadata_empty_asset@dagster_components.test",
+            "dagster_test.components.AllMetadataEmptyComponent",
             "qux",
         )
         assert_runner_result(result)
@@ -66,33 +66,33 @@ def test_list_components_succeeds():
 # ########################
 
 _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
-    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    ┃ Component Type                                    ┃ Summary                                                          ┃
-    ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-    │ all_metadata_empty_asset@dagster_components.test  │                                                                  │
-    │ complex_schema_asset@dagster_components.test      │ An asset that has a complex schema.                              │
-    │ simple_asset@dagster_components.test              │ A simple asset that returns a constant string value.             │
-    │ simple_pipes_script_asset@dagster_components.test │ A simple asset that runs a Python script with the Pipes          │
-    │                                                   │ subprocess client.                                               │
-    └───────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────┘
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    ┃ Component Type                                     ┃ Summary                                                         ┃
+    ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+    │ dagster_test.components.AllMetadataEmptyComponent  │                                                                 │
+    │ dagster_test.components.ComplexAssetComponent      │ An asset that has a complex schema.                             │
+    │ dagster_test.components.SimpleAssetComponent       │ A simple asset that returns a constant string value.            │
+    │ dagster_test.components.SimplePipesScriptComponent │ A simple asset that runs a Python script with the Pipes         │
+    │                                                    │ subprocess client.                                              │
+    └────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────┘
 """).strip()
 
 _EXPECTED_COMPONENT_TYPES_JSON = textwrap.dedent("""
     [
         {
-            "key": "all_metadata_empty_asset@dagster_components.test",
+            "key": "dagster_test.components.AllMetadataEmptyComponent",
             "summary": null
         },
         {
-            "key": "complex_schema_asset@dagster_components.test",
+            "key": "dagster_test.components.ComplexAssetComponent",
             "summary": "An asset that has a complex schema."
         },
         {
-            "key": "simple_asset@dagster_components.test",
+            "key": "dagster_test.components.SimpleAssetComponent",
             "summary": "A simple asset that returns a constant string value."
         },
         {
-            "key": "simple_pipes_script_asset@dagster_components.test",
+            "key": "dagster_test.components.SimplePipesScriptComponent",
             "summary": "A simple asset that runs a Python script with the Pipes subprocess client."
         }
     ]
@@ -123,7 +123,10 @@ def test_list_component_type_json_succeeds():
 # command. This subprocess inherits stderr from the parent process, for whatever reason `capsys` does
 # not work.
 def test_list_component_type_bad_entry_point_fails(capfd):
-    with ProxyRunner.test() as runner, isolated_example_component_library_foo_bar(runner):
+    with (
+        ProxyRunner.test(use_entry_points=True) as runner,
+        isolated_example_component_library_foo_bar(runner),
+    ):
         # Delete the component lib package referenced by the entry point
         shutil.rmtree("foo_bar/lib")
 

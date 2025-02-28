@@ -45,7 +45,7 @@ def test_components_docs_index(
 
         # Scaffold new component type
         run_command_and_snippet_output(
-            cmd="dg scaffold component-type shell_command",
+            cmd="dg scaffold component-type ShellCommand",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-dg-scaffold-shell-command.txt",
             update_snippets=update_snippets,
@@ -87,7 +87,7 @@ def test_components_docs_index(
         )
 
         run_command_and_snippet_output(
-            cmd="dg docs component-type shell_command@my_component_library --output cli > docs.html",
+            cmd="dg docs component-type my_component_library.lib.ShellCommand --output cli > docs.html",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-dg-component-type-docs.txt",
             update_snippets=update_snippets,
@@ -130,7 +130,7 @@ def test_components_docs_index(
             contents=(COMPONENTS_SNIPPETS_DIR / "with-scaffolder.py").read_text(),
         )
         run_command_and_snippet_output(
-            cmd="dg scaffold component 'shell_command@my_component_library' my_shell_command",
+            cmd="dg scaffold component 'my_component_library.lib.ShellCommand' my_shell_command",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffold-instance-of-component.txt",
             update_snippets=update_snippets,
@@ -139,7 +139,7 @@ def test_components_docs_index(
 
         check_file(
             Path("my_component_library")
-            / "components"
+            / "defs"
             / "my_shell_command"
             / "component.yaml",
             COMPONENTS_SNIPPETS_DIR
@@ -147,14 +147,11 @@ def test_components_docs_index(
             update_snippets=update_snippets,
         )
         check_file(
-            Path("my_component_library")
-            / "components"
-            / "my_shell_command"
-            / "script.sh",
+            Path("my_component_library") / "defs" / "my_shell_command" / "script.sh",
             COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffolded-component-script.sh",
             update_snippets=update_snippets,
         )
         _run_command(
-            "dagster asset materialize --select '*' -m my_component_library.definitions"
+            "uv run dagster asset materialize --select '*' -m my_component_library.definitions"
         )

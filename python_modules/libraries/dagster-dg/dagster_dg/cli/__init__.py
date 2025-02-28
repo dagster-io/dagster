@@ -78,7 +78,9 @@ def create_dg_cli():
             exit_with_error("Cannot specify both --clear-cache and --rebuild-component-registry.")
         elif clear_cache:
             cli_config = normalize_cli_config(global_options, context)
-            dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+            dg_context = DgContext.from_file_discovery_and_command_line_config(
+                Path.cwd(), cli_config
+            )
             dg_context.cache.clear_all()
             if context.invoked_subcommand is None:
                 context.exit(0)
@@ -98,7 +100,7 @@ def create_dg_cli():
 def _rebuild_component_registry(dg_context: DgContext):
     if not dg_context.has_cache:
         exit_with_error("Cache is disabled. This command cannot be run without a cache.")
-    elif not dg_context.config.use_dg_managed_environment:
+    elif not dg_context.config.cli.use_dg_managed_environment:
         exit_with_error(
             "Cannot rebuild the component registry with environment management disabled."
         )

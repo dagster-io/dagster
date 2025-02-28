@@ -3,14 +3,11 @@ from pathlib import Path
 from dagster import AssetSpec, AutomationCondition
 from dagster_components.core.component_defs_builder import build_defs_from_component_path
 
-from dagster_components_tests.utils import registry
-
 
 def test_custom_scope() -> None:
     defs = build_defs_from_component_path(
-        components_root=Path(__file__).parent / "components",
+        components_root=Path(__file__).parent / "defs",
         path=Path(__file__).parent / "custom_scope_component",
-        registry=registry(),
         resources={},
     )
 

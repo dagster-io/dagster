@@ -1065,4 +1065,12 @@ describe('createAssetSelectionHint', () => {
       to: 12,
     });
   });
+
+  it('suggests + after digits', () => {
+    expect(testAutocomplete('1234|')).toEqual({
+      from: 4,
+      list: [expect.objectContaining({text: '+'})],
+      to: 4,
+    });
+  });
 });

@@ -11,50 +11,44 @@ from jsonschema import Draft202012Validator, ValidationError
 ensure_dagster_components_tests_import()
 
 from dagster_components_tests.utils import (
-    create_code_location_from_components,
+    assert_runner_result,
+    create_project_from_components,
     temp_code_location_bar,
 )
 
 
-# Test that the global --use-test-component-lib flag changes the registered components
-def test_global_test_flag():
-    runner: CliRunner = CliRunner()
-
-    # standard
-    result = runner.invoke(cli, ["list", "component-types"])
-    assert result.exit_code == 0
-    default_result_keys = list(json.loads(result.output).keys())
-    assert len(default_result_keys) > 0
-
-    result = runner.invoke(
-        cli, ["--builtin-component-lib", "dagster_components.test", "list", "component-types"]
-    )
-    assert result.exit_code == 0
-    test_result_keys = list(json.loads(result.output).keys())
-    assert len(default_result_keys) > 0
-
-    assert default_result_keys != test_result_keys
-
-
-def test_list_component_types_command():
+def test_list_component_types_from_entry_points():
     runner = CliRunner()
 
+    # First check the default behavior. We don't check the actual content because that may note be
+    # stable (we are loading from all entry points).
+    result = runner.invoke(cli, ["list", "component-types"])
+    assert result.exit_code == 0
+    result = json.loads(result.output)
+    assert len(result) > 1
+
+
+def test_list_components_types_from_module():
+    runner = CliRunner()
+    # Now check what we get when we load directly from the test component library. This has stable
+    # results.
     result = runner.invoke(
-        cli, ["--builtin-component-lib", "dagster_components.test", "list", "component-types"]
+        cli, ["list", "component-types", "--no-entry-points", "dagster_test.components"]
     )
     assert result.exit_code == 0
     result = json.loads(result.output)
+    assert len(result) > 1
 
     assert list(result.keys()) == [
-        "all_metadata_empty_asset@dagster_components.test",
-        "complex_schema_asset@dagster_components.test",
-        "simple_asset@dagster_components.test",
-        "simple_pipes_script_asset@dagster_components.test",
+        "dagster_test.components.AllMetadataEmptyComponent",
+        "dagster_test.components.ComplexAssetComponent",
+        "dagster_test.components.SimpleAssetComponent",
+        "dagster_test.components.SimplePipesScriptComponent",
     ]
 
-    assert result["simple_asset@dagster_components.test"] == {
-        "name": "simple_asset",
-        "namespace": "dagster_components.test",
+    assert result["dagster_test.components.SimpleAssetComponent"] == {
+        "name": "SimpleAssetComponent",
+        "namespace": "dagster_test.components",
         "summary": "A simple asset that returns a constant string value.",
         "description": "A simple asset that returns a constant string value.",
         "scaffold_params_schema": None,
@@ -75,13 +69,13 @@ def test_list_component_types_command():
             "filename": {"title": "Filename", "type": "string"},
         },
         "required": ["asset_key", "filename"],
-        "title": "SimplePipesScriptAssetSchema",
+        "title": "SimplePipesScriptSchema",
         "type": "object",
     }
 
-    assert result["simple_pipes_script_asset@dagster_components.test"] == {
-        "name": "simple_pipes_script_asset",
-        "namespace": "dagster_components.test",
+    assert result["dagster_test.components.SimplePipesScriptComponent"] == {
+        "name": "SimplePipesScriptComponent",
+        "namespace": "dagster_test.components",
         "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
         "description": "A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
         "scaffold_params_schema": pipes_script_params_schema,
@@ -89,11 +83,12 @@ def test_list_component_types_command():
     }
 
 
-def test_list_local_components_types() -> None:
-    """Tests that the list CLI picks up on local components."""
+def test_list_components_types_from_project() -> None:
+    """Tests that the list CLI picks components we add."""
     runner = CliRunner()
 
-    with create_code_location_from_components(
+    # Now create a project and load the component types only from that project.
+    with create_project_from_components(
         "definitions/local_component_sample",
         "definitions/other_local_component_sample",
         "definitions/default_file",
@@ -102,11 +97,10 @@ def test_list_local_components_types() -> None:
             result = runner.invoke(
                 cli,
                 [
-                    "--builtin-component-lib",
-                    "dagster_components.test",
                     "list",
-                    "local-component-types",
-                    "my_location/components/local_component_sample",
+                    "component-types",
+                    "--no-entry-points",
+                    "my_location.defs.local_component_sample",
                 ],
             )
 
@@ -114,21 +108,17 @@ def test_list_local_components_types() -> None:
 
             result = json.loads(result.output)
             assert len(result) == 1
-            assert set(result.keys()) == {"my_location/components/local_component_sample"}
-            assert set(result["my_location/components/local_component_sample"].keys()) == {
-                "my_component@file:__init__.py"
-            }
+            assert set(result.keys()) == {"my_location.defs.local_component_sample.MyComponent"}
 
-            # Add a second directory and local component
+            # Add a second module
             result = runner.invoke(
                 cli,
                 [
-                    "--builtin-component-lib",
-                    "dagster_components.test",
                     "list",
-                    "local-component-types",
-                    "my_location/components/local_component_sample",
-                    "my_location/components/other_local_component_sample",
+                    "component-types",
+                    "--no-entry-points",
+                    "my_location.defs.local_component_sample",
+                    "my_location.defs.other_local_component_sample",
                 ],
             )
 
@@ -136,18 +126,21 @@ def test_list_local_components_types() -> None:
 
             result = json.loads(result.output)
             assert len(result) == 2
+            assert set(result.keys()) == {
+                "my_location.defs.local_component_sample.MyComponent",
+                "my_location.defs.other_local_component_sample.MyNewComponent",
+            }
 
             # Add another, non-local component directory, which no-ops
             result = runner.invoke(
                 cli,
                 [
-                    "--builtin-component-lib",
-                    "dagster_components.test",
                     "list",
-                    "local-component-types",
-                    "my_location/components/local_component_sample",
-                    "my_location/components/other_local_component_sample",
-                    "my_location/components/default_file",
+                    "component-types",
+                    "--no-entry-points",
+                    "my_location.defs.local_component_sample",
+                    "my_location.defs.other_local_component_sample",
+                    "my_location.defs.default_file",
                 ],
             )
 
@@ -161,15 +154,21 @@ def test_all_components_schema_command():
     runner = CliRunner()
 
     result = runner.invoke(
-        cli, ["--builtin-component-lib", "dagster_components.test", "list", "all-components-schema"]
+        cli,
+        [
+            "list",
+            "all-components-schema",
+            "--no-entry-points",
+            "dagster_test.components",
+        ],
     )
-    assert result.exit_code == 0
+    assert_runner_result(result)
     result = json.loads(result.output)
 
     component_type_keys = [
-        "complex_schema_asset",
-        "simple_asset",
-        "simple_pipes_script_asset",
+        "ComplexAssetComponent",
+        "SimpleAssetComponent",
+        "SimplePipesScriptComponent",
     ]
 
     assert result["anyOf"] == [
@@ -183,25 +182,25 @@ def test_all_components_schema_command():
         assert "type" in component_type_schema_def["properties"]
         assert (
             component_type_schema_def["properties"]["type"]["default"]
-            == f"{component_type_key}@dagster_components.test"
+            == f"dagster_test.components.{component_type_key}"
         )
         assert (
             component_type_schema_def["properties"]["type"]["const"]
-            == f"{component_type_key}@dagster_components.test"
+            == f"dagster_test.components.{component_type_key}"
         )
         assert "attributes" in component_type_schema_def["properties"]
 
     top_level_component_validator = Draft202012Validator(schema=result)
     top_level_component_validator.validate(
         {
-            "type": "simple_asset@dagster_components.test",
+            "type": "dagster_test.components.SimpleAssetComponent",
             "attributes": {"asset_key": "my_asset", "value": "my_value"},
         }
     )
     with pytest.raises(ValidationError):
         top_level_component_validator.validate(
             {
-                "type": "simple_asset@dagster_components.test",
+                "type": "dagster_test.components.SimpleAssetComponent",
                 "attributes": {"asset_key": "my_asset", "value": "my_value"},
                 "extra_key": "extra_value",
             }
@@ -215,15 +214,13 @@ def test_scaffold_component_command():
         result = runner.invoke(
             cli,
             [
-                "--builtin-component-lib",
-                "dagster_components.test",
                 "scaffold",
                 "component",
-                "simple_pipes_script_asset@dagster_components.test",
+                "dagster_test.components.SimplePipesScriptComponent",
                 "bar/components/qux",
                 "--json-params",
                 '{"asset_key": "my_asset", "filename": "my_asset.py"}',
             ],
         )
-        assert result.exit_code == 0
+        assert_runner_result(result)
         assert Path("bar/components/qux/my_asset.py").exists()

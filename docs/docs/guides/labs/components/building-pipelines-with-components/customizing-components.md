@@ -28,7 +28,7 @@ attributes:
 
 By convention, most library components have an `execute()` method that defines the core runtime behavior of the component. This can be overridden by subclasses of the component to customize this behavior.
 
-For example, we can create a subclass of the `SlingReplicationCollectioncomponent` that adds a debug log message during execution:
+For example, we can create a subclass of the `SlingReplicationCollectionComponent` that adds a debug log message during execution:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/custom-subclass/debug-mode.py" language="python" />
 

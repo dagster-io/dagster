@@ -5,6 +5,8 @@ import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGraphFilterBar} from 'shared/asset-graph/AssetGraphFilterBar.oss';
+import {CatalogViewSelector} from 'shared/assets/CatalogViewSelector.oss';
+import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
 
 import {AssetTable} from './AssetTable';
@@ -202,7 +204,7 @@ export const AssetsCatalogTable = ({
 
   const [view, setView] = useAssetView();
 
-  const {assets, query, error} = useAllAssets({groupSelector});
+  const {assets, loading: assetsLoading, query, error} = useAllAssets({groupSelector});
 
   const {
     filteredAssets: partiallyFiltered,
@@ -211,7 +213,8 @@ export const AssetsCatalogTable = ({
     filterButton,
     activeFiltersJsx,
     kindFilter,
-  } = useAssetCatalogFiltering({assets});
+  } = useAssetCatalogFiltering({assets, loading: assetsLoading});
+
   const {filterInput, filtered, loading, assetSelection, setAssetSelection} =
     useAssetSelectionInput({
       assets: partiallyFiltered,
@@ -263,16 +266,7 @@ export const AssetsCatalogTable = ({
       isLoading={filteredAssetsLoading || loading}
       isFiltered={isFiltered}
       actionBarComponents={
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: featureEnabled(FeatureFlag.flagSelectionSyntax)
-              ? 'auto minmax(0, 1fr)'
-              : 'auto auto minmax(0, 1fr)',
-            gap: 12,
-            alignItems: 'flex-start',
-          }}
-        >
+        <Box flex={{gap: 12, alignItems: 'flex-start'}}>
           <ButtonGroup<AssetViewType>
             activeItems={new Set([view])}
             buttons={[
@@ -286,9 +280,10 @@ export const AssetsCatalogTable = ({
               }
             }}
           />
-          {featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : filterButton}
+          {featureEnabled(FeatureFlag.flagSelectionSyntax) ? <CatalogViewSelector /> : filterButton}
           {filterInput}
-        </div>
+          {featureEnabled(FeatureFlag.flagSelectionSyntax) ? <CreateCatalogViewButton /> : null}
+        </Box>
       }
       belowActionBarComponents={
         featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : (

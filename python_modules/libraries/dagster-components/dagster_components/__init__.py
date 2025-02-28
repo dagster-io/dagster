@@ -1,9 +1,7 @@
 from dagster_components.core.component import (
     Component as Component,
     ComponentLoadContext as ComponentLoadContext,
-    ComponentTypeRegistry as ComponentTypeRegistry,
     component as component,
-    registered_component_type as registered_component_type,
 )
 from dagster_components.core.component_defs_builder import (
     build_component_defs as build_component_defs,

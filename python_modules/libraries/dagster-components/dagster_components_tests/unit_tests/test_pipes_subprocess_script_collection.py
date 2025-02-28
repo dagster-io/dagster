@@ -11,7 +11,7 @@ LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "python_script
 
 
 def test_python_params() -> None:
-    node = PythonComponentDecl(path=Path(LOCATION_PATH / "components" / "script_python_decl"))
+    node = PythonComponentDecl(path=Path(LOCATION_PATH / "defs" / "script_python_decl"))
     context = script_load_context(node)
     components = node.load(context)
     assert len(components) == 1
@@ -23,7 +23,7 @@ def test_python_params() -> None:
 
 
 def test_load_from_path() -> None:
-    defs = build_component_defs(LOCATION_PATH / "components")
+    defs = build_component_defs(LOCATION_PATH / "defs")
 
     assert defs.get_asset_graph().get_all_asset_keys() == {
         AssetKey("a"),
@@ -38,9 +38,8 @@ def test_load_from_path() -> None:
 
 def test_load_from_location_path() -> None:
     defs = build_defs_from_component_path(
-        LOCATION_PATH / "components",
-        LOCATION_PATH / "components" / "scripts",
-        script_load_context().registry,
+        LOCATION_PATH / "defs",
+        LOCATION_PATH / "defs" / "scripts",
         {},
     )
     assert defs.get_asset_graph().get_all_asset_keys() == {

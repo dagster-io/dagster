@@ -41,7 +41,7 @@ CLI_TEST_CASES = [
         should_error=True,
         check_error_msg=msg_includes_all_of(
             "component.yaml:1",
-            "Component type 'my_component_does_not_exist@file:__init__.py' not found",
+            "Component type 'foo_bar.defs.basic_component_missing_type.MyComponentDoesNotExist' not found",
         ),
     ),
     ComponentValidationTestCase(
@@ -66,7 +66,7 @@ def create_project_from_components(
     origin_paths = [COMPONENT_INTEGRATION_TEST_DIR / src_path for src_path in src_paths]
     with isolated_example_project_foo_bar(runner, component_dirs=origin_paths):
         for src_path in src_paths:
-            components_dir = Path.cwd() / "foo_bar" / "components" / src_path.split("/")[-1]
+            components_dir = Path.cwd() / "foo_bar" / "defs" / src_path.split("/")[-1]
             if local_component_defn_to_inject:
                 shutil.copy(local_component_defn_to_inject, components_dir / "__init__.py")
 
@@ -81,7 +81,9 @@ def test_check_component_succeeds_non_default_component_package() -> None:
         ),
     ):
         with modify_pyproject_toml() as toml:
-            set_toml_value(toml, ("tool", "dg", "component_package"), "foo_bar._components")
+            set_toml_value(
+                toml, ("tool", "dg", "project", "components_module"), "foo_bar._components"
+            )
 
         # We need to do all of this copying here rather than relying on the project setup
         # fixture because that fixture assumes a default component package.
@@ -117,13 +119,12 @@ def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
         with pushd(tmpdir):
             result = runner.invoke("check", "yaml")
             if test_case.should_error:
-                assert result.exit_code != 0, str(result.stdout)
-
+                assert_runner_result(result, exit_0=False)
                 assert test_case.check_error_msg
                 test_case.check_error_msg(str(result.stdout))
 
             else:
-                assert result.exit_code == 0
+                assert_runner_result(result)
 
 
 @pytest.mark.parametrize(
@@ -153,8 +154,8 @@ def test_validation_cli_multiple_components(scope_check_run: bool) -> None:
                 "yaml",
                 *(
                     [
-                        str(Path("foo_bar") / "components" / "basic_component_missing_value"),
-                        str(Path("foo_bar") / "components" / "basic_component_invalid_value"),
+                        str(Path("foo_bar") / "defs" / "basic_component_missing_value"),
+                        str(Path("foo_bar") / "defs" / "basic_component_invalid_value"),
                     ]
                     if scope_check_run
                     else []
@@ -182,7 +183,7 @@ def test_validation_cli_multiple_components_filter() -> None:
             result = runner.invoke(
                 "check",
                 "yaml",
-                str(Path("foo_bar") / "components" / "basic_component_missing_value"),
+                str(Path("foo_bar") / "defs" / "basic_component_missing_value"),
             )
             assert result.exit_code != 0, str(result.stdout)
 
@@ -227,10 +228,10 @@ def test_validation_cli_local_component_cache() -> None:
 
             # Update local component type, to invalidate cache
             contents = (
-                project_dir / "foo_bar" / "components" / "basic_component_success" / "__init__.py"
+                project_dir / "foo_bar" / "defs" / "basic_component_success" / "__init__.py"
             ).read_text()
             (
-                project_dir / "foo_bar" / "components" / "basic_component_success" / "__init__.py"
+                project_dir / "foo_bar" / "defs" / "basic_component_success" / "__init__.py"
             ).write_text(contents + "\n")
 
             # basic_component_success local component is now be invalidated and needs to be re-cached, the other one should still be cached

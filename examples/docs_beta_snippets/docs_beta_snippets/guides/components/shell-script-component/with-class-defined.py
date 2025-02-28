@@ -6,7 +6,6 @@ from dagster_components import (
     Component,
     ComponentLoadContext,
     ResolvableSchema,
-    registered_component_type,
 )
 
 import dagster as dg
@@ -17,7 +16,6 @@ class ShellScriptSchema(ResolvableSchema):
     asset_specs: Sequence[AssetSpecSchema]
 
 
-@registered_component_type(name="shell_command")
 @dataclass
 class ShellCommand(Component):
     script_path: str

@@ -180,18 +180,18 @@ def test_dynamic_subcommand_help_message():
             result = runner.invoke(
                 "scaffold",
                 "component",
-                "simple_pipes_script_asset@dagster_components.test",
+                "dagster_test.components.SimplePipesScriptComponent",
                 "--help",
             )
+            assert_runner_result(result)
             # Strip interpreter logging line
             output = "\n".join(result.output.split("\n")[1:])
         assert match_terminal_box_output(
             output.strip(),
             textwrap.dedent("""
-
-                 Usage: dg scaffold component [GLOBAL OPTIONS] simple_pipes_script_asset@dagster_components.test [OPTIONS]
-                 COMPONENT_INSTANCE_NAM
-                 E
+                 Usage: dg scaffold component [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS]             
+                                                                                                      COMPONENT_INSTANCE_NA 
+                 ME
 
                 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
                 │ *    component_instance_name      TEXT  [required]                                                                   │
@@ -203,11 +203,9 @@ def test_dynamic_subcommand_help_message():
                 │ --help         -h            Show this message and exit.                                                             │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
                 ╭─ Global options ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
-                │ --cache-dir                                                        PATH  Specify a directory to use for the cache.   │
+                │ --cache-dir                                                        TEXT  Specify a directory to use for the cache.   │
                 │ --disable-cache                                                          Disable the cache..                         │
                 │ --verbose                                                                Enable verbose output for debugging.        │
-                │ --builtin-component-lib                                            TEXT  Specify a builitin component library to     │
-                │                                                                          use.                                        │
                 │ --use-dg-managed-environment    --no-use-dg-managed-environment          Enable management of the virtual            │
                 │                                                                          environment with uv.                        │
                 │ --require-local-venv            --no-require-local-venv                  Require use of a local virtual environment  │
