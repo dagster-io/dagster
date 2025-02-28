@@ -66,7 +66,7 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional
 class RunRequest(IHaveNew, LegacyNamedTupleMixin):
     run_key: Optional[str]
     run_config: Mapping[str, Any]
-    tags: Mapping[str, str]
+    tags: Mapping[str, Any]
     job_name: Optional[str]
     asset_selection: Optional[Sequence[AssetKey]]
     stale_assets_only: bool
