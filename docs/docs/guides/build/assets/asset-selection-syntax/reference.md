@@ -23,7 +23,7 @@ Filters allow you to narrow your asset selection using specific criteria.
 | **Column tag** | `column:tag: "my_tag"` | Selects assets tagged with `my_tag`. | Dagster+ only |
 | **Columns** | `columns: "my_column"` | Selects assets with a column named `my_column`. | Dagster+ only |
 | **Table name** | `table_name: "my_table"` | Selects assets with a table named `my_table`. | Dagster+ only |
-| **Changed in branch** | `changed_in_branch: "my_branch"` | Selects assets changed in a branch named `my_branch`. | Dagster+ branch deployments only |
+| **Changed in branch** | `changed_in_branch:` | Selects assets changed in a branch named `my_branch`. | Dagster+ branch deployments only |
 
 :::note Wildcard matching
 
@@ -71,5 +71,5 @@ You can use `sink()` and `root()` functions to return the sink and root assets o
 
 | Function | Syntax | Description |
 |--------|-------------|-----------|
-| **`sinks(expr)`** | `sinks(*)` | Selects all "sink" assets. |
-| **`roots(expr)`** | `roots(*)` | Selects all "root" assets. |
+| **`sinks(expr)`** | `sinks(owner:"team:billing")` | Find all sink assets depending on assets by the billing team. |
+| **`roots(expr)`** | `roots(owner:"team:billing")` | Find all root assets depended on by the billing team. |
