@@ -10,13 +10,14 @@ from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.context import DgContext
 from dagster_dg.utils import (
+    create_toml_node,
     cross_platfrom_string_path,
     discover_git_root,
     ensure_dagster_dg_tests_import,
-    get_toml_value,
-    has_toml_value,
+    get_toml_node,
+    has_toml_node,
+    modify_toml_as_dict,
     pushd,
-    set_toml_value,
 )
 from typing_extensions import TypeAlias
 
@@ -29,7 +30,6 @@ from dagster_dg_tests.utils import (
     isolated_example_component_library_foo_bar,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
-    modify_pyproject_toml,
     standardize_box_characters,
 )
 
@@ -99,7 +99,7 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
 
         # Check TOML content
         toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())
-        assert get_toml_value(toml, ("tool", "dg", "project", "root_module"), str) == "foo_bar"
+        assert get_toml_node(toml, ("tool", "dg", "project", "root_module"), str) == "foo_bar"
 
         # Check venv created
         assert Path("projects/foo-bar/.venv").exists()
@@ -173,32 +173,32 @@ def validate_pyproject_toml_with_editable(
     repo_root: Path,
 ) -> None:
     if option == "--use-editable-dagster":
-        assert get_toml_value(toml, ("tool", "uv", "sources", "dagster"), dict) == {
+        assert get_toml_node(toml, ("tool", "uv", "sources", "dagster"), dict) == {
             "path": str(repo_root / "python_modules" / "dagster"),
             "editable": True,
         }
-        assert get_toml_value(toml, ("tool", "uv", "sources", "dagster-pipes"), dict) == {
+        assert get_toml_node(toml, ("tool", "uv", "sources", "dagster-pipes"), dict) == {
             "path": str(repo_root / "python_modules" / "dagster-pipes"),
             "editable": True,
         }
-        assert get_toml_value(toml, ("tool", "uv", "sources", "dagster-webserver"), dict) == {
+        assert get_toml_node(toml, ("tool", "uv", "sources", "dagster-webserver"), dict) == {
             "path": str(repo_root / "python_modules" / "dagster-webserver"),
             "editable": True,
         }
         # Check for presence of one random package with no component to ensure we are
         # preemptively adding all packages
-        assert get_toml_value(toml, ("tool", "uv", "sources", "dagstermill"), dict) == {
+        assert get_toml_node(toml, ("tool", "uv", "sources", "dagstermill"), dict) == {
             "path": str(repo_root / "python_modules" / "libraries" / "dagstermill"),
             "editable": True,
         }
     else:
-        assert not has_toml_value(toml, ("tool", "uv", "sources", "dagster"))
-        assert not has_toml_value(toml, ("tool", "uv", "sources", "dagster-pipes"))
-        assert not has_toml_value(toml, ("tool", "uv", "sources", "dagster-webserver"))
-        assert not has_toml_value(toml, ("tool", "uv", "sources", "dagstermill"))
+        assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster"))
+        assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster-pipes"))
+        assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster-webserver"))
+        assert not has_toml_node(toml, ("tool", "uv", "sources", "dagstermill"))
 
     # dagster-components should be in sources in both cases
-    assert get_toml_value(toml, ("tool", "uv", "sources", "dagster-components"), dict) == {
+    assert get_toml_node(toml, ("tool", "uv", "sources", "dagster-components"), dict) == {
         "path": str(repo_root / "python_modules" / "libraries" / "dagster-components"),
         "editable": True,
     }
@@ -466,8 +466,8 @@ def test_scaffold_component_succeeds_non_default_defs_module() -> None:
     ):
         alt_lib_path = Path("foo_bar/_defs")
         alt_lib_path.mkdir(parents=True)
-        with modify_pyproject_toml() as toml:
-            set_toml_value(toml, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
+            create_toml_node(toml_dict, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
         result = runner.invoke(
             "scaffold",
             "component",
@@ -489,8 +489,8 @@ def test_scaffold_component_fails_defs_module_does_not_exist() -> None:
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        with modify_pyproject_toml() as toml:
-            set_toml_value(toml, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
+            create_toml_node(toml_dict, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
         result = runner.invoke(
             "scaffold",
             "component",
