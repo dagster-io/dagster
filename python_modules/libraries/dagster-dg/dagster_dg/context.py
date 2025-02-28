@@ -27,14 +27,11 @@ from dagster_dg.utils import (
     NOT_PROJECT_ERROR_MESSAGE,
     NOT_WORKSPACE_ERROR_MESSAGE,
     NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE,
-    ensure_loadable_path,
     exit_with_error,
     generate_missing_dagster_components_in_local_venv_error_message,
-    get_path_for_module,
     get_toml_value,
     get_venv_executable,
     has_toml_value,
-    is_package_installed,
     pushd,
     resolve_local_venv,
     strip_activated_venv_from_env_vars,
@@ -217,7 +214,7 @@ class DgContext:
 
     def get_cache_key_for_module(self, module_name: str) -> tuple[str, str, str]:
         if module_name.startswith(self.root_module_name):
-            path = self.get_path_for_module(module_name)
+            path = self.get_path_for_local_module(module_name)
             env_hash = hash_paths([path], includes=["*.py"])
             path_parts = [str(part) for part in path.parts if part != "/"]
             return ("_".join(path_parts), env_hash, "local_component_registry")
@@ -306,7 +303,7 @@ class DgContext:
     def components_path(self) -> Path:
         if not self.is_project:
             raise DgError("`components_path` is only available in a Dagster project context")
-        return self.get_path_for_module(self.components_module_name)
+        return self.get_path_for_local_module(self.components_module_name)
 
     def get_component_instance_names(self) -> Iterable[str]:
         return [str(instance_path.name) for instance_path in self.components_path.iterdir()]
@@ -327,7 +324,7 @@ class DgContext:
 
     @cached_property
     def definitions_path(self) -> Path:
-        return self.get_path_for_module(self.definitions_module_name)
+        return self.get_path_for_local_module(self.definitions_module_name)
 
     # ########################
     # ##### COMPONENT LIBRARY METHODS
@@ -353,7 +350,7 @@ class DgContext:
     def default_components_library_path(self) -> Path:
         if not self.is_component_library:
             raise DgError("`components_lib_path` is only available in a component library context")
-        return self.get_path_for_module(self.default_components_library_module)
+        return self.get_path_for_local_module(self.default_components_library_module)
 
     @cached_property
     def _dagster_components_entry_points(self) -> Mapping[str, str]:
@@ -450,16 +447,20 @@ class DgContext:
     def pyproject_toml_path(self) -> Path:
         return self.root_path / "pyproject.toml"
 
-    def get_path_for_module(self, module_name: str) -> Path:
-        with ensure_loadable_path(self.root_path):
-            parts = module_name.split(".")
-            for i in range(len(parts)):
-                leading_module_name = ".".join(parts[: i + 1])
-                if not is_package_installed(leading_module_name):
-                    raise DgError(
-                        f"Module `{leading_module_name}` is not installed in the current environment."
-                    )
-            return Path(get_path_for_module(module_name))
+    def get_path_for_local_module(self, module_name: str) -> Path:
+        if not self.is_project and not self.is_component_library:
+            raise DgError(
+                "`get_path_for_local_module` is only available in a project or component library context"
+            )
+        if not module_name.startswith(self.root_module_name):
+            raise DgError(f"Module `{module_name}` is not part of the current project.")
+        path = self.root_path / Path(*module_name.split("."))
+        if path.exists():
+            return path
+        elif path.with_suffix(".py").exists():
+            return path.with_suffix(".py")
+        else:
+            raise DgError(f"Cannot find module `{module_name}` in the current project.")
 
 
 # ########################
