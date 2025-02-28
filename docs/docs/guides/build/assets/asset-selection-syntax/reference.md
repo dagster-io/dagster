@@ -3,9 +3,7 @@ title: "Asset selection syntax reference"
 sidebar_position: 200
 ---
 
-import TOCInline from '@theme/TOCInline';
-
-<TOCInline toc={toc} />
+This page contains a full list of the filters, layers, operands, and functions you can use to construct your own asset selection queries. For a list of common queries, see "[Asset selection examples](examples)".
 
 ## Filters
 
