@@ -32,7 +32,7 @@ import {
 
 const DEFAULT_TEXT_CALLBACK = (value: string) => value;
 
-const DEBUG = true;
+const DEBUG = false;
 
 export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   private getAttributeResultsMatchingQuery: SelectionAutoCompleteProvider['getAttributeResultsMatchingQuery'];
@@ -79,7 +79,6 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   }
 
   set startReplacementIndex(newValue: number) {
-    debugger;
     if (DEBUG) {
       console.log('Autocomplete suggestions being set by stack:', new Error());
     }
