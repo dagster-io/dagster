@@ -11,8 +11,7 @@
 - [ui] Added Not Diamond icon for asset `kinds` tag. (Thanks [@dragos-pop](https://github.com/dragos-pop)!)
 - [ui] Added Weaviate icon for asset `kinds` tag. (Thanks [@jjyeo](https://github.com/jjyeo)!)
 - [ui] Made Alerts page visible to users with Viewer roles.
-- [dagster-insights] Fix links to branch deployments in the deployment list UI.
-- [dagster-insights] Adjusted the way batching runs from the `create_snowflake_insights_asset_and_schedule` sensor using the `schedule_batch_size_hrs` parameter works to yield a single partition range run instead of individual runs per partition.
+- [dagster-postgres] Removed the cap on `PostgresEventLogStorage` `QueuePool` by setting [`max_overflow`](https://docs.sqlalchemy.org/en/20/core/engines.html#sqlalchemy.create_engine.params.max_overflow) to `-1`. (Thanks [@axelwas](https://github.com/axelwas)!)
 
 ### Bugfixes
 
@@ -27,12 +26,11 @@
 - [ui] Corrected PostgreSQL SVG icon for asset `kinds` tag. (Thanks [@dragos-pop](https://github.com/dragos-pop)!)
 - [ui] Fixed an issue that caused Markdown with code blocks in languages not supported for syntax highlighting to crash the page.
 - Fixed an issue where asset backfills included failed partitions in the in-progress list in logging output.
-- Removed the cap on `PostgresEventLogStorage` `QueuePool` by setting [`max_overflow`](https://docs.sqlalchemy.org/en/20/core/engines.html#sqlalchemy.create_engine.params.max_overflow) to `-1`. (Thanks [@axelwas](https://github.com/axelwas)!)
 
 ### Documentation
 
 - Fixed broken image links in quickstart examples. (Thanks [@stevenayers](https://github.com/stevenayers)!)
-- [dagster-dbt] Made serveral fixes to the "Using dbt with Dagster" page. (Thanks [@jjyeo](https://github.com/jjyeo)!)
+- [dagster-dbt] Made several fixes to the "Using dbt with Dagster" page. (Thanks [@jjyeo](https://github.com/jjyeo)!)
 - Fixed broken link in defining-assets.md. (Thanks [@Exlll](https://github.com/Exlll)!)
 - Fixed link in CONTRIBUTING.md leading to a 404. (Thanks [@Exlll](https://github.com/Exlll)!)
 - Fixed typo in managing-code-locations-with-definitions.md. (Thanks [@kgeis](https://github.com/kgeis)!)
@@ -41,6 +39,10 @@
 ### Dagster Plus
 
 - [ui] Enabled setting long-running job alerts in minutes instead of hours.
+- [dagster-insights] Fix links to branch deployments in the deployment list UI.
+- [dagster-insights] Adjusted the way batching runs from the `create_snowflake_insights_asset_and_schedule` sensor using the `schedule_batch_size_hrs` parameter works to yield a single partition range run instead of individual runs per partition.
+
+## 1.10.2 (core) / 0.26.2 (libraries)
 
 ### New
 
