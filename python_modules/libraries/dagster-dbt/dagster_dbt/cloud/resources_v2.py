@@ -15,14 +15,16 @@ from dagster._annotations import preview
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._model import DagsterModel
+from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
 from requests.exceptions import RequestException
 
 from dagster_dbt.asset_utils import build_dbt_specs
+from dagster_dbt.cloud.dbt_cloud_cli_invocation import DbtCloudCliInvocation
 from dagster_dbt.cloud.dbt_cloud_job_run import DbtCloudJobRun
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.cloud.types import DbtCloudWorkspaceData
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
@@ -285,6 +287,9 @@ class DbtCloudWorkspace(ConfigurableResource):
             manifest=run.get_manifest(),
         )
 
+    def _get_or_fetch_workspace_data(self) -> "DbtCloudWorkspaceData":
+        return DbtCloudWorkspaceDefsLoader(project_environment=self).get_or_fetch_state()
+
     # Cache spec retrieval for a specific translator class.
     @lru_cache(maxsize=1)
     def load_specs(
@@ -324,6 +329,16 @@ class DbtCloudWorkspace(ConfigurableResource):
             for spec in self.get_specs(dagster_dbt_translator=dagster_dbt_translator)
             if isinstance(spec, AssetCheckSpec)
         ]
+
+    def cli(self, args: Sequence[str]) -> DbtCloudCliInvocation:
+        """Run a dbt cli command with the dbt Cloud client."""
+        return DbtCloudCliInvocation.run(
+            job_id=self.job_id,
+            args=args,
+            client=self.dbt_client,
+            translator=self.translator,
+            workspace_data=self._get_or_fetch_workspace_data(),
+        )
 
 
 @preview
