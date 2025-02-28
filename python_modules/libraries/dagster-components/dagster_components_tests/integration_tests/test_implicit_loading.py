@@ -26,3 +26,10 @@ def test_implicit_double_file() -> None:
         AssetKey("asset_one"),
         AssetKey("asset_two"),
     }
+
+
+def test_defs_object() -> None:
+    defs = load_test_component_defs("implicit/defs_object")
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {
+        AssetKey("in_defs_asset"),
+    }
