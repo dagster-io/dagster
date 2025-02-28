@@ -27,6 +27,7 @@ from pydantic import Field
 from requests.exceptions import RequestException
 
 from dagster_dbt.cloud.client import DbtCloudWorkspaceClient
+from dagster_dbt.cloud.dbt_cloud_job_run import DbtCloudJobRun
 from dagster_dbt.cloud.types import DbtCloudJob, DbtCloudOutput
 
 DBT_DEFAULT_HOST = "https://cloud.getdbt.com/"
@@ -757,11 +758,6 @@ class DbtCloudWorkspace(ConfigurableResource):
 
     @cached_method
     def get_client(self) -> DbtCloudWorkspaceClient:
-        """Get the dbt Cloud client to interact with this dbt Cloud workspace.
-
-        Returns:
-            DbtCloudWorkspaceClient: The dbt Cloud client to interact with the dbt Cloud workspace.
-        """
         return DbtCloudWorkspaceClient(
             account_id=self.credentials.account_id,
             token=self.credentials.token,
@@ -797,4 +793,19 @@ class DbtCloudWorkspace(ConfigurableResource):
                 environment_id=self.environment_id,
                 job_name=expected_job_name,
             )
+        )
+
+    def fetch_workspace_data(self) -> DbtCloudWorkspaceData:
+        job = self._get_or_create_dagster_adhoc_job()
+        run = DbtCloudJobRun.run(
+            job_id=job.id,
+            args=["parse"],
+            client=self.dbt_client,
+        )
+        run.wait_for_success()
+        return DbtCloudWorkspaceData(
+            project_id=self.project_id,
+            environment_id=self.environment_id,
+            job_id=job.id,
+            manifest=run.get_manifest(),
         )
