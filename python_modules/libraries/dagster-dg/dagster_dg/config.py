@@ -22,7 +22,7 @@ from click.core import ParameterSource
 from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
 
 from dagster_dg.error import DgError, DgValidationError
-from dagster_dg.utils import get_toml_value, is_macos, is_windows
+from dagster_dg.utils import get_toml_node, is_macos, is_windows
 
 T = TypeVar("T")
 
@@ -329,10 +329,8 @@ DgFileConfig: TypeAlias = Union[DgWorkspaceFileConfig, DgProjectFileConfig]
 def has_dg_file_config(
     path: Path, predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None
 ) -> bool:
-    toml = tomlkit.parse(path.read_text())
-    return "dg" in toml.get("tool", {}) and (
-        predicate(get_toml_value(toml, ["tool", "dg"], dict)) if predicate else True
-    )
+    toml = tomlkit.parse(path.read_text()).unwrap()
+    return "dg" in toml.get("tool", {}) and (predicate(toml["tool"]["dg"]) if predicate else True)
 
 
 def load_dg_root_file_config(path: Path) -> DgFileConfig:
@@ -349,7 +347,7 @@ def load_dg_workspace_file_config(path: Path) -> "DgWorkspaceFileConfig":
 
 def _load_dg_file_config(path: Path) -> DgFileConfig:
     toml = tomlkit.parse(path.read_text())
-    raw_dict = get_toml_value(toml, ["tool", "dg"], tomlkit.items.Table).unwrap()
+    raw_dict = get_toml_node(toml, ("tool", "dg"), tomlkit.items.Table).unwrap()
     try:
         config = _validate_dg_file_config({k: v for k, v in raw_dict.items()})
     except DgValidationError as e:
