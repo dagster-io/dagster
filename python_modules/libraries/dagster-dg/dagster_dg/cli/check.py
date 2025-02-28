@@ -168,7 +168,7 @@ def check_yaml_command(
         click.echo("All components validated successfully.")
 
 
-@check_group.command(name="definitions", cls=DgClickCommand)
+@check_group.command(name="defs", cls=DgClickCommand)
 @click.option(
     "--log-level",
     help="Set the log level for dagster services.",
