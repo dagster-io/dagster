@@ -6,9 +6,17 @@ from typing import Any, Optional
 import requests
 from dagster import Failure, MetadataValue, get_dagster_logger
 from dagster._annotations import preview
+from dagster._config.pythonic_config import ConfigurableResource
+from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._model import DagsterModel
+from dagster._record import record
+from dagster._serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
+
+from dagster_dbt.cloud.client_v2 import DbtCloudClient
+
+from dagster_dbt.cloud.dbt_cloud_job_run import DbtCloudJobRun
 from requests.exceptions import RequestException
 
 from dagster_dbt.cloud.types import DbtCloudJobRunStatusType, DbtCloudRun

@@ -27,7 +27,7 @@ from pydantic import Field
 from requests.exceptions import RequestException
 
 from dagster_dbt.cloud.client import DbtCloudWorkspaceClient
-from dagster_dbt.cloud.dbt_cloud_job_run import DbtCloudJobRun
+from dagster_dbt.cloud.job_run import DbtCloudJobRun
 from dagster_dbt.cloud.types import DbtCloudJob, DbtCloudOutput
 
 DBT_DEFAULT_HOST = "https://cloud.getdbt.com/"
