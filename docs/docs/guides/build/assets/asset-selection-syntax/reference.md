@@ -20,16 +20,36 @@ Filters allow you to narrow your asset selection using specific criteria.
 | **Group** | `group:"team1"` | Selects assets in the group `team1`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Kind** |  `kind:"table"` |  Selects assets of kind `table`. | OSS, Dagster+, Dagster+ branch deployments |
 | **Code location** | `code_location:"repo1"` | Selects assets located in code location `repo1`. | OSS, Dagster+, Dagster+ branch deployments |
-| **Column tag** | `column:tag: "my_tag"` | Selects assets tagged with `my_tag`. | Dagster+ only |
+| **Column tag** | `column_tag: "my_tag"` | Selects assets tagged with `my_tag`. | Dagster+ only |
 | **Columns** | `columns: "my_column"` | Selects assets with a column named `my_column`. | Dagster+ only |
 | **Table name** | `table_name: "my_table"` | Selects assets with a table named `my_table`. | Dagster+ only |
-| **Changed in branch** | `changed_in_branch:` | Selects assets changed in a branch named `my_branch`. | Dagster+ branch deployments only |
 
-:::note Wildcard matching
+
+:::info Wildcard matching
 
 Only the `key` filter supports wildcard matching.
 
 :::
+
+### `changed_in_branch` filter
+
+The `changed_in_branch` filter selects assets that have been changed for a specific reason in a specific branch. The reason can be one of `ANY`, `CODE_VERSION`, `DEPENDENCIES`, `METADATA`, `NEW`, `PARTITIONS_DEFINITION`, or `TAGS`.
+
+:::info
+
+The `changed_in_branch` filter is only available in [Dagster+ branch deployments](/dagster-plus/features/ci-cd/branch-deployments/).
+
+:::
+
+| Reason | Syntax | Description |
+|------------|--------|-------------|
+| `ANY`      | `changed_in_branch: "ANY"` | Selects any assets changed in the branch. |
+| `CODE_VERSION` | `changed_in_branch: "CODE_VERSION"` | Selects assets whose code version changed in the branch. |
+| `DEPENDENCIES` | `changed_in_branch: "DEPENDENCIES"` | Selects assets whose dependencies changed in the branch. |
+| `METADATA` | `changed_in_branch: "METADATA"`  | Selects assets whose metadata has changed in the branch. |
+| `NEW` | `changed_in_branch: "NEW"` | Selects assets that are new in the branch. |
+| `PARTITIONS_DEFINITION` | `changed_in_branch: "PARTITIONS_DEFINITION"` | Selects assets whose partitions definition has changed in the branch. |
+| `TAGS` | `changed_in_branch: "TAGS"` | Selects assets whose tags have changed in the branch. |
 
 ## Upstream and downstream layers
 
