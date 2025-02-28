@@ -1,4 +1,5 @@
 import shutil
+import sys
 import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, nullcontext
@@ -14,6 +15,7 @@ from dagster_components.components.dbt_project.component import DbtProjectCompon
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
+    build_component_defs,
     build_components_from_component_folder,
     defs_from_components,
 )
@@ -252,3 +254,25 @@ def test_exclude(dbt_path: Path) -> None:
         attributes=decl_node.get_attributes(DbtProjectComponent.get_schema()), context=context
     )
     assert get_asset_keys(component) == set(JAFFLE_SHOP_KEYS) - {AssetKey("customers")}
+
+
+DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH = (
+    Path(__file__).parent.parent / "code_locations" / "dependency_on_dbt_project_location"
+)
+
+
+def test_dependency_on_dbt_project():
+    # Ensure DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH is an importable python module
+    sys.path.append(str(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH.parent))
+
+    project = DbtProject(
+        Path(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH) / "defs/jaffle_shop_dbt/jaffle_shop"
+    )
+    project.preparer.prepare(project)
+
+    defs = build_component_defs(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH / "defs", {})
+    assert AssetKey("downstream_of_customers") in defs.get_asset_graph().get_all_asset_keys()
+    downstream_of_customers_def = defs.get_assets_def("downstream_of_customers")
+    assert set(downstream_of_customers_def.asset_deps[AssetKey("downstream_of_customers")]) == {
+        AssetKey("customers")
+    }

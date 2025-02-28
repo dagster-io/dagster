@@ -1,6 +1,9 @@
 from collections.abc import Iterator, Sequence
-from typing import Annotated, Optional
+from pathlib import Path
+from typing import Annotated, Optional, cast
 
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster_dbt import (
@@ -10,6 +13,7 @@ from dagster_dbt import (
     DbtProject,
     dbt_assets,
 )
+from dagster_dbt.asset_utils import get_asset_key_for_model as base_get_asset_key_for_model
 from pydantic import ConfigDict, Field, computed_field
 from pydantic.dataclasses import dataclass
 
@@ -124,3 +128,35 @@ class DbtProjectComponent(Component):
 
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
         yield from dbt.cli(["build"], context=context).stream()
+
+
+def get_asset_key_for_model(
+    context: ComponentLoadContext, component_path: Path, model_name: str
+) -> AssetKey:
+    """Component-based version of dagster_dbt.get_asset_key_for_model. Returns the corresponding Dagster
+    asset key for a dbt model, seed, or snapshot, loaded from the passed component path.
+
+    Args:
+        component_path (Path): The path to the component that was used to load the dbt project.
+        model_name (str): The name of the dbt model, seed, or snapshot.
+
+    Returns:
+        AssetKey: The corresponding Dagster asset key.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import asset
+            from dagster_components.components.dbt_project import get_asset_key_for_model
+
+            @dbt_assets(manifest=...)
+            def all_dbt_assets():
+                ...
+
+
+            @asset(deps={get_asset_key_for_model(Path(__file__).parent / "dbt_project", "customers")})
+            def cleaned_customers():
+                ...
+    """
+    defs = context.build_defs_from_component_path(component_path)
+    return base_get_asset_key_for_model(cast(Sequence[AssetsDefinition], defs.assets), model_name)
