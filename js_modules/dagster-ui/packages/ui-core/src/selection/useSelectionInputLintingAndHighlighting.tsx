@@ -84,6 +84,10 @@ export const useSelectionInputLintingAndHighlighting = ({
       return null;
     }
     if (error.error.offendingSymbol) {
+      const symbol = error.error.offendingSymbol;
+      if (symbol === '<EOF>') {
+        return 'Selection is incomplete';
+      }
       return (
         <Box flex={{direction: 'row', alignItems: 'center'}}>
           Unexpected input
