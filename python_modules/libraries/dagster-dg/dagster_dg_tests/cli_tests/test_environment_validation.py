@@ -65,7 +65,7 @@ WORKSPACE_CONTEXT_COMMANDS = [
 
 WORKSPACE_OR_PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("dev",)),
-    CommandSpec(("check", "definitions")),
+    CommandSpec(("check", "defs")),
 ]
 
 # ########################
