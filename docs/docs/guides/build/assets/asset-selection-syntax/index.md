@@ -13,13 +13,17 @@ With asset selection, you can:
 
 :::info Availability
 
-In the **Dagster OSS UI**, the asset selection syntax is available on the assets overview page.
+In the **Dagster OSS UI**, the asset selection syntax is available on:
+
+- The Asset Catalog page
+- The global asset lineage page
 
 In the **Dagster+ UI**, the asset selection syntax is available in:
 
-- The Asset Catalog
+- The Asset Catalog page
+- The global asset lineage page
 - The Alert Policy creation page (when creating an asset alert)
-- The Insights page
+- The Asset Health overview page
 
 :::
 
