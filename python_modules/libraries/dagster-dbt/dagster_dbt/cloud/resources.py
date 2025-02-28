@@ -35,6 +35,7 @@ from requests.exceptions import RequestException
 
 from dagster_dbt.asset_utils import build_dbt_specs
 from dagster_dbt.cloud.client import DbtCloudWorkspaceClient
+from dagster_dbt.cloud.dbt_cloud_cli_invocation import DbtCloudCliInvocation
 from dagster_dbt.cloud.run_handler import DbtCloudJobRunHandler
 from dagster_dbt.cloud.types import DbtCloudJob, DbtCloudOutput, DbtCloudWorkspaceData
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
@@ -829,6 +830,9 @@ class DbtCloudWorkspace(ConfigurableResource):
             manifest=run_handler.get_manifest(),
         )
 
+    def _get_or_fetch_workspace_data(self) -> "DbtCloudWorkspaceData":
+        return DbtCloudWorkspaceDefsLoader(project_environment=self).get_or_fetch_state()
+
     # Cache spec retrieval for a specific translator class.
     @lru_cache(maxsize=1)
     def load_specs(
@@ -872,6 +876,16 @@ class DbtCloudWorkspace(ConfigurableResource):
             for spec in self.load_specs(dagster_dbt_translator=dagster_dbt_translator)
             if isinstance(spec, AssetCheckSpec)
         ]
+
+    def cli(self, args: Sequence[str]) -> DbtCloudCliInvocation:
+        """Run a dbt cli command with the dbt Cloud client."""
+        return DbtCloudCliInvocation.run(
+            job_id=self.job_id,
+            args=args,
+            client=self.dbt_client,
+            translator=self.translator,
+            workspace_data=self._get_or_fetch_workspace_data(),
+        )
 
 
 @preview
