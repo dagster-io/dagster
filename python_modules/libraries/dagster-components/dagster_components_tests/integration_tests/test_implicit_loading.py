@@ -40,3 +40,18 @@ def test_defs_and_sep_file_relative_include() -> None:
     assert {spec.key for spec in defs.get_all_asset_specs()} == {
         AssetKey("side_asset"),
     }
+
+
+@pytest.mark.xfail(reason="Duplicate asset key bug when using absolute imports", strict=True)
+def test_defs_and_sep_file_absolute_include() -> None:
+    # fails with dagster._core.errors.DagsterInvalidDefinitionError: Duplicate asset key: AssetKey(['side_asset'])
+    # Probably due to some module caching issue I do not understand?
+    # Both
+    # * importlib.import_module(component_module_name) AND
+    # * importlib.import_module(component_module_name)
+    # in DefinitionsComponent result in the same failure
+
+    defs = load_test_component_defs("implicit/defs_and_sep_file_absolute_include")
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {
+        AssetKey("side_asset"),
+    }
