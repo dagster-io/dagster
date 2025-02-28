@@ -232,6 +232,8 @@ class MultiComponentsLoadContext:
 
 @dataclass
 class ComponentLoadContext:
+    """Context for loading a single component."""
+
     module_name: str
     decl_node: Optional[ComponentDeclNode]
     resolution_context: ResolutionContext
