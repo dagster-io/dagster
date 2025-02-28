@@ -80,8 +80,9 @@ def build_component_defs(
     component_types = component_types or discover_entry_point_component_types()
 
     all_defs: list[Definitions] = []
+    load_context = MultiComponentsLoadContext(resources=resources or {})
     for component_path in components_root.iterdir():
-        defs = MultiComponentsLoadContext(resources=resources or {}).build_defs_from_component_path(
+        defs = load_context.build_defs_from_component_path(
             path=component_path,
         )
         all_defs.append(defs)
