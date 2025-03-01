@@ -9,11 +9,7 @@ from tqdm import tqdm
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._core.execution.backfill import (
-    BULK_ACTION_TERMINAL_STATUSES,
-    BulkActionStatus,
-    PartitionBackfill,
-)
+from dagster._core.execution.backfill import BULK_ACTION_TERMINAL_STATUSES, PartitionBackfill
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.runs.schema import (
@@ -426,7 +422,7 @@ def migrate_backfill_end_timestamp(storage: RunStorage, print_fn: Optional[Print
         print_fn("Querying run storage.")
 
     for backfill in chunked_backfill_iterator(storage, print_fn):
-        if backfill.status == BulkActionStatus.REQUESTED:
+        if backfill.status not in BULK_ACTION_TERMINAL_STATUSES:
             # we don't want to mutate a backfill that is still in progress. Additionally, it won't
             # have an end timestamp until it moves to a terminal state
             continue
