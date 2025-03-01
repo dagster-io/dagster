@@ -87,4 +87,4 @@ Now, after adding the updated `customer_metrics_dag_asset` to our `Definitions` 
 
 ## Next steps
 
-Next, we'll federate the execution of our DAGs across both Airflow instances. Follow along [here](federated-execution).
+Next, we'll federate the execution of our DAGs across both Airflow instances. Follow along [here](federate-execution).

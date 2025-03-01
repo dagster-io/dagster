@@ -1,5 +1,5 @@
 ---
-title: "Observe assets"
+title: "Observe Airflow tasks"
 sidebar_position: 300
 ---
 
