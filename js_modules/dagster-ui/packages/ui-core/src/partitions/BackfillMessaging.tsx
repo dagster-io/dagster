@@ -83,7 +83,9 @@ export async function showBackfillSuccessToast(
     ),
     action: {
       text: 'View',
-      href: history.createHref({pathname, search}),
+      onClick: () => {
+        history.push({pathname, search});
+      },
     },
   });
 }

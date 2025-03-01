@@ -94,7 +94,9 @@ export async function handleLaunchResult(
         ),
         action: {
           text: 'View',
-          href: history.createHref({pathname, search}),
+          onClick: () => {
+            history.push({pathname, search});
+          },
         },
       });
     }
@@ -194,7 +196,9 @@ export async function handleLaunchMultipleResult(
     message: <div>Launched {successfulRunIds.length} runs</div>,
     action: {
       text: 'View',
-      href: history.createHref({pathname: queryString}),
+      onClick: () => {
+        history.push(queryString);
+      },
     },
   });
 

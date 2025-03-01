@@ -11,6 +11,7 @@ import {
   Group,
   Icon,
   Mono,
+  showToast,
 } from '@dagster-io/ui-components';
 import chunk from 'lodash/chunk';
 import * as React from 'react';
@@ -19,7 +20,6 @@ import {NavigationBlock} from './NavigationBlock';
 import {TERMINATE_MUTATION} from './RunUtils';
 import {useMutation} from '../apollo-client';
 import {TerminateMutation, TerminateMutationVariables} from './types/RunUtils.types';
-import {getSharedToaster} from '../app/DomUtils';
 import {TerminateRunPolicy} from '../graphql/types';
 import {testId} from '../testing/testId';
 
@@ -154,7 +154,7 @@ export const TerminationDialog = (props: Props) => {
         variables: {runIds: runIdsChunk, terminatePolicy: state.policy},
       });
       if (!data || data?.terminateRuns.__typename === 'PythonError') {
-        (await getSharedToaster()).show({
+        showToast({
           message: 'Sorry, an error occurred and the runs could not be terminated.',
           intent: 'danger',
         });
