@@ -2,6 +2,7 @@ import uniq from 'lodash/uniq';
 import React, {useCallback, useMemo, useRef} from 'react';
 
 import {AssetBaseData, __resetForJest as __resetBaseData} from './AssetBaseDataProvider';
+import {AssetSLAData} from './AssetSLADataProvider';
 import {
   AssetStaleStatusData,
   __resetForJest as __resetStaleData,
@@ -155,7 +156,9 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
 
   return (
     <AssetBaseData.LiveDataProvider>
-      <AssetStaleStatusData.LiveDataProvider>{children}</AssetStaleStatusData.LiveDataProvider>
+      <AssetStaleStatusData.LiveDataProvider>
+        <AssetSLAData.LiveDataProvider>{children}</AssetSLAData.LiveDataProvider>
+      </AssetStaleStatusData.LiveDataProvider>
     </AssetBaseData.LiveDataProvider>
   );
 };
