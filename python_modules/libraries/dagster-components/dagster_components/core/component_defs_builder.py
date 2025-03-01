@@ -101,6 +101,10 @@ def build_component_defs(
 
     all_defs: list[Definitions] = []
     for component_path in components_root.iterdir():
+        if not component_path.is_dir():
+            # Skip non-directories
+            continue
+
         defs = build_defs_from_component_path(
             components_root=components_root,
             path=component_path,
