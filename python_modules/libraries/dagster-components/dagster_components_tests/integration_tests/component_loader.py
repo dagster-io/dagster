@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_components.core.component_defs_builder import build_defs_from_component_path
+from dagster_components.core.component_defs_builder import MultiComponentsLoadContext
 
 from dagster_components_tests.utils import create_project_from_components
 
@@ -19,8 +19,6 @@ def load_test_component_defs(
     ) as code_location_dir:
         sys.path.append(str(code_location_dir))
 
-        return build_defs_from_component_path(
-            components_root=Path(code_location_dir) / "my_location" / "defs",
+        return MultiComponentsLoadContext(resources={}).build_defs_from_component_path(
             path=Path(code_location_dir) / "my_location" / "defs" / Path(src_path).stem,
-            resources={},
         )
