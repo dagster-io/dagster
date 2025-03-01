@@ -397,7 +397,7 @@ def test_scaffold_component_command_with_non_matching_module_name():
             "qux",
         )
         assert_runner_result(result, exit_0=False)
-        assert "Module `foo_bar` is not installed" in str(result.exception)
+        assert "Cannot find module `foo_bar.lib`" in str(result.exception)
 
 
 @pytest.mark.parametrize("in_workspace", [True, False])
@@ -456,7 +456,7 @@ def test_scaffold_component_fails_components_package_does_not_exist() -> None:
             "qux",
         )
         assert_runner_result(result, exit_0=False)
-        assert "Module `foo_bar._defs` is not installed" in str(result.exception)
+        assert "Cannot find module `foo_bar._defs`" in str(result.exception)
 
 
 def test_scaffold_component_succeeds_scaffolded_component_type() -> None:

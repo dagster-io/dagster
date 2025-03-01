@@ -1,5 +1,4 @@
 import contextlib
-import importlib.util
 import json
 import os
 import posixpath
@@ -9,7 +8,6 @@ import sys
 import textwrap
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from fnmatch import fnmatch
-from importlib.machinery import ModuleSpec
 from pathlib import Path
 from typing import Any, Optional, TypeVar, Union
 
@@ -59,44 +57,6 @@ def install_to_venv(venv_dir: Path, install_args: list[str]) -> None:
     executable = get_venv_executable(venv_dir)
     command = ["uv", "pip", "install", "--python", str(executable), *install_args]
     subprocess.run(command, check=True)
-
-
-# Temporarily places a path at the front of sys.path, ensuring that any modules in that path are
-# importable.
-@contextlib.contextmanager
-def ensure_loadable_path(path: Path) -> Iterator[None]:
-    orig_path = sys.path.copy()
-    sys.path.insert(0, str(path))
-    try:
-        yield
-    finally:
-        sys.path = orig_path
-
-
-def is_package_installed(package_name: str) -> bool:
-    try:
-        return bool(importlib.util.find_spec(package_name))
-    except ModuleNotFoundError:
-        return False
-
-
-def _get_spec_for_module(module_name: str) -> ModuleSpec:
-    spec = importlib.util.find_spec(module_name)
-    if not spec:
-        raise DgError(f"Cannot find module: {module_name}")
-    return spec
-
-
-def get_path_for_module(module_name: str) -> str:
-    spec = _get_spec_for_module(module_name)
-    submodule_search_locations = spec.submodule_search_locations
-    if submodule_search_locations:  # branch module (i.e. package), a directory
-        return submodule_search_locations[0]
-    else:  # leaf module, not a directory
-        file_path = spec.origin
-        if not file_path:
-            raise DgError(f"Cannot find file path for module: {module_name}")
-        return file_path
 
 
 def is_valid_json(value: str) -> bool:
