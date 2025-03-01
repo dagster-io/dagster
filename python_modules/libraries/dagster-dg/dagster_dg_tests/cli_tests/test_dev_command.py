@@ -14,6 +14,7 @@ from dagster_graphql.client import DagsterGraphQLClient
 ensure_dagster_dg_tests_import()
 from dagster_dg_tests.utils import (
     ProxyRunner,
+    assert_runner_result,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
 )
@@ -27,12 +28,14 @@ def test_dev_command_workspace_context_success(monkeypatch):
     # venv with `dagster` and `dagster-webserver` installed.
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     with ProxyRunner.test() as runner, isolated_example_workspace(runner, create_venv=True):
-        runner.invoke(
+        result = runner.invoke(
             "scaffold", "project", "--use-editable-dagster", dagster_git_repo_dir, "project-1"
         )
-        runner.invoke(
+        assert_runner_result(result)
+        result = runner.invoke(
             "scaffold", "project", "--use-editable-dagster", dagster_git_repo_dir, "project-2"
         )
+        assert_runner_result(result)
         port = _find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
         projects = {"project-1", "project-2"}
