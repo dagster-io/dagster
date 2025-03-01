@@ -43,7 +43,10 @@ def test_list_project_success():
 
 
 def test_list_components_succeeds():
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner, in_workspace=False):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
         result = runner.invoke(
             "scaffold",
             "component",
@@ -101,7 +104,10 @@ _EXPECTED_COMPONENT_TYPES_JSON = textwrap.dedent("""
 
 
 def test_list_component_types_success():
-    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
         with fixed_panel_width(width=120):
             result = runner.invoke("list", "component-type")
             assert_runner_result(result)
@@ -111,7 +117,10 @@ def test_list_component_types_success():
 
 
 def test_list_component_type_json_succeeds():
-    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
         result = runner.invoke("list", "component-type", "--json")
         assert_runner_result(result)
         # strip the first line of logging output
@@ -124,7 +133,7 @@ def test_list_component_type_json_succeeds():
 # not work.
 def test_list_component_type_bad_entry_point_fails(capfd):
     with (
-        ProxyRunner.test(use_entry_points=True) as runner,
+        ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
     ):
         # Delete the component lib package referenced by the entry point
