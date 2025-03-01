@@ -34,8 +34,8 @@ To create a new catalog view, you have two options:
 ### Creating a new catalog view from scratch
 
 1. Click the catalog view dropdown to open the catalog view menu. From here, click the **New** button.
-2. Give the view a name and optionally, a description and icon.
-3. Click **Add filters** to select filters to apply to the view. Filters can select a subset of assets based on their metadata, tags, kinds, owners, asset groups, or other properties.
+2. In the search box, enter an asset selection. Asset selections can select a subset of assets with the [asset selection syntax](/guides/build/assets/asset-selection-syntax/reference).
+3. Give the view a name and optionally, a description and icon.
 4. To make the view shareable, toggle the **Public view** switch.
 5. Click **Create view** to create the view.
 
@@ -47,8 +47,8 @@ Give your view a name and optionally a description and icon. Next, you can selec
 
 When viewing the global asset lineage or asset list, you can create a new catalog view from your current set of filters.
 
-1. On these pages, select one or more asset filters.
-2. Click **Create new catalog view**, located near the top right of the page. This will open the catalog view creation dialog with your current filters pre-populated.
+1. On these pages, enter an asset selection in the search box.
+2. Click the **globe icon** located to the right of the search box. This will open the catalog view creation dialog with your current asset selection pre-populated.
 3. Give the view a name and optionally, a description and icon.
 4. To make the view shareable, toggle the **Public view** switch.
 5. Click **Create view** to create the view.
