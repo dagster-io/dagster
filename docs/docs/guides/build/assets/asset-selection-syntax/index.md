@@ -15,12 +15,12 @@ With asset selection, you can:
 
 In the **Dagster OSS UI**, the asset selection syntax is available on:
 
-- The Asset Catalog page
+- The Asset Catalog
 - The Global asset lineage page
 
 In the **Dagster+ UI**, the asset selection syntax is available on:
 
-- The Asset Catalog page
+- The Asset Catalog > All Assets page
 - The Global asset lineage page
 - The Asset Health page
 - The Insights page
