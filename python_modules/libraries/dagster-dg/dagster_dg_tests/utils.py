@@ -340,11 +340,9 @@ def normalize_windows_path(path: str) -> str:
 # ########################
 
 
-# NOTE: This class sets up a runner that by default targets only the `dagster_test.components`
-# components in the remote environment. This is to provide stability against the set of components
-# we are testing against. Tests that are testing against scaffolded components need to set
-# `use_entry_points=True` in order to detect scaffolded components (since they aren't part of
-# `dagster_test.components`).
+# NOTE: Pass use_fixed_test_components=True to use the dagster_test.components module instead of
+# components loaded from entry points. This should be done whenever we want to test against a fixed
+# set of known component types (as in inspect or list commands).
 @dataclass
 class ProxyRunner:
     original: CliRunner
@@ -355,7 +353,7 @@ class ProxyRunner:
     @contextmanager
     def test(
         cls,
-        use_entry_points: bool = False,
+        use_fixed_test_components: bool = False,
         verbose: bool = False,
         disable_cache: bool = False,
         console_width: int = DG_CLI_MAX_OUTPUT_WIDTH,
@@ -364,7 +362,9 @@ class ProxyRunner:
         # We set the `COLUMNS` environment variable because this determines the width of output from
         # `rich`, which we use for generating tables etc.
         use_component_modules_args = (
-            [] if use_entry_points else ["--use-component-module", STANDARD_TEST_COMPONENT_MODULE]
+            ["--use-component-module", STANDARD_TEST_COMPONENT_MODULE]
+            if use_fixed_test_components
+            else []
         )
         with TemporaryDirectory() as cache_dir, set_env_var("COLUMNS", str(console_width)):
             append_opts = [
