@@ -6,10 +6,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import pytest
-from dagster import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster import AssetExecutionContext, AssetKey, AssetSpec, Config
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
+from dagster._core.definitions.run_config import RunConfig
 from dagster_components.components.dbt_project.component import DbtProjectComponent
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
@@ -17,7 +17,7 @@ from dagster_components.core.component_defs_builder import (
     build_components_from_component_folder,
     defs_from_components,
 )
-from dagster_dbt import DbtProject
+from dagster_dbt import DbtCliResource, DbtProject
 from pydantic.dataclasses import dataclass
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
@@ -117,34 +117,6 @@ def test_load_from_path(dbt_path: Path) -> None:
         assert asset_node.tags["foo"] == "bar"
         assert asset_node.tags["another"] == "one"
         assert asset_node.metadata["something"] == 1
-
-
-def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
-    @dataclass
-    class DebugDbtProjectComponent(DbtProjectComponent):
-        @classmethod
-        def get_additional_scope(cls) -> Mapping[str, Any]:
-            return {"get_tags_for_node": lambda node: {"model_id": node["name"].replace("_", "-")}}
-
-    decl_node = YamlComponentDecl(
-        path=dbt_path / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
-            type="debug_dbt_project",
-            attributes={
-                "dbt": {"project_dir": "jaffle_shop"},
-                "asset_attributes": {"tags": "{{ get_tags_for_node(node) }}"},
-            },
-        ),
-    )
-    context = script_load_context(decl_node).with_rendering_scope(
-        DebugDbtProjectComponent.get_additional_scope()
-    )
-    component = DebugDbtProjectComponent.load(
-        attributes=decl_node.get_attributes(DebugDbtProjectComponent.get_schema()), context=context
-    )
-    defs = component.build_defs(script_load_context())
-    assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("stg_customers"))
-    assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["model_id"] == "stg-customers"
 
 
 @pytest.mark.parametrize(
@@ -260,3 +232,70 @@ def test_exclude(dbt_path: Path) -> None:
         attributes=decl_node.get_attributes(DbtProjectComponent.get_schema()), context=context
     )
     assert get_asset_keys(component) == set(JAFFLE_SHOP_KEYS) - {AssetKey("customers")}
+
+
+def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
+    @dataclass
+    class DebugDbtProjectComponent(DbtProjectComponent):
+        @classmethod
+        def get_additional_scope(cls) -> Mapping[str, Any]:
+            return {"get_tags_for_node": lambda node: {"model_id": node["name"].replace("_", "-")}}
+
+    decl_node = YamlComponentDecl(
+        path=dbt_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="debug_dbt_project",
+            attributes={
+                "dbt": {"project_dir": "jaffle_shop"},
+                "asset_attributes": {"tags": "{{ get_tags_for_node(node) }}"},
+            },
+        ),
+    )
+    context = script_load_context(decl_node).with_rendering_scope(
+        DebugDbtProjectComponent.get_additional_scope()
+    )
+    component = DebugDbtProjectComponent.load(
+        attributes=decl_node.get_attributes(DebugDbtProjectComponent.get_schema()), context=context
+    )
+    defs = component.build_defs(script_load_context())
+    assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("stg_customers"))
+    assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["model_id"] == "stg-customers"
+
+
+def test_dbt_subclass_custom_config(dbt_path: Path) -> None:
+    class MyCustomConfig(Config):
+        foo_int: int = 2
+
+    @dataclass
+    class DebugDbtProjectComponent(DbtProjectComponent):
+        def execute(
+            self, context: AssetExecutionContext, dbt: DbtCliResource, config: MyCustomConfig
+        ) -> Iterator:
+            assert config.foo_int == 5
+            yield from super().execute(context=context, dbt=dbt)
+
+    decl_node = YamlComponentDecl(
+        path=dbt_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="debug_dbt_project",
+            attributes={
+                "dbt": {"project_dir": "jaffle_shop"},
+            },
+        ),
+    )
+    context = script_load_context(decl_node).with_rendering_scope(
+        DebugDbtProjectComponent.get_additional_scope()
+    )
+    component = DebugDbtProjectComponent.load(
+        attributes=decl_node.get_attributes(DebugDbtProjectComponent.get_schema()), context=context
+    )
+    defs = component.build_defs(script_load_context())
+    assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("stg_customers"))
+
+    assert assets_def.op.config_schema.config_type == MyCustomConfig.to_config_schema().config_type
+
+    # run the asset with the custom config
+    result = defs.get_implicit_global_asset_job_def().execute_in_process(
+        run_config=RunConfig(ops={assets_def.op.name: {"config": {"foo_int": 5}}})
+    )
+    assert result.success

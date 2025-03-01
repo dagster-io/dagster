@@ -1,6 +1,8 @@
+import inspect
 from collections.abc import Iterator, Sequence
 from typing import Annotated, Optional
 
+from dagster import Config
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster_dbt import (
@@ -25,7 +27,11 @@ from dagster_components.core.schema.objects import (
     PostProcessorFn,
     ResolutionContext,
 )
-from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
+from dagster_components.utils import (
+    TranslatorResolvingInfo,
+    adopt_parameter_from_fn,
+    get_wrapped_translator_class,
+)
 
 
 class DbtProjectSchema(ResolvableSchema["DbtProjectComponent"]):
@@ -104,7 +110,20 @@ class DbtProjectComponent(Component):
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         self.project.prepare_if_dev()
 
-        @dbt_assets(
+        config_arg = inspect.signature(self.execute).parameters.get("config")
+
+        def _run_dbt_assets_fn(context: AssetExecutionContext, config: Config):
+            # pass config to the execute method if it exists on the signature
+            if config_arg:
+                yield from self.execute(context=context, dbt=self.dbt, config=config)
+            else:
+                yield from self.execute(context=context, dbt=self.dbt)
+
+        # Adopt the config parameter from the execute method to the _run_dbt_assets_fn
+        if config_arg:
+            adopt_parameter_from_fn(self.execute, _run_dbt_assets_fn, "config")
+
+        dbt_assets_def = dbt_assets(
             manifest=self.project.manifest_path,
             project=self.project,
             name=self.op.name if self.op else self.project.name,
@@ -113,14 +132,11 @@ class DbtProjectComponent(Component):
             select=self.select,
             exclude=self.exclude,
             backfill_policy=self.op.backfill_policy if self.op else None,
-        )
-        def _fn(context: AssetExecutionContext):
-            yield from self.execute(context=context, dbt=self.dbt)
-
-        defs = Definitions(assets=[_fn])
+        )(_run_dbt_assets_fn)
+        defs = Definitions(assets=[dbt_assets_def])
         for post_processor in self.asset_post_processors or []:
             defs = post_processor(defs)
         return defs
 
-    def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
+    def execute(self, context: AssetExecutionContext, dbt: DbtCliResource, **kwargs) -> Iterator:
         yield from dbt.cli(["build"], context=context).stream()
