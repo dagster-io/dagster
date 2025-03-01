@@ -19,10 +19,6 @@ sidebar_custom_props:
   logo: images/integrations/airflow.svg
 ---
 
-import Beta from '../../../partials/\_Beta.md';
-
-<Beta />
-
 Airlift is a toolkit for integrating Dagster and Airflow. Using `dagster-airflift`, you can:
 
 - Observe Airflow instances from within Dagster
