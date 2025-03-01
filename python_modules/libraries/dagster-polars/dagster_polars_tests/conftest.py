@@ -7,8 +7,7 @@ import polars as pl
 import pytest
 import pytest_cases
 from _pytest.tmpdir import TempPathFactory
-from dagster import DagsterInstance
-from dagster._utils.warnings import BetaWarning, PreviewWarning
+from dagster import BetaWarning, DagsterInstance, PreviewWarning
 from dagster_polars import BasePolarsUPathIOManager, PolarsDeltaIOManager, PolarsParquetIOManager
 
 logging.getLogger("alembic.runtime.migration").setLevel(logging.WARNING)
