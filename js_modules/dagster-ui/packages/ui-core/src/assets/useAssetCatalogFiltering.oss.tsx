@@ -7,7 +7,7 @@ import {
 
 import {useAssetGroupSelectorsForAssets} from './AssetGroupSuggest';
 import {CloudOSSContext} from '../app/CloudOSSContext';
-import {ChangeReason} from '../graphql/types';
+import {ChangeReason, StaleStatus} from '../graphql/types';
 import {useFilters} from '../ui/BaseFilters';
 import {FilterObject} from '../ui/BaseFilters/useFilter';
 import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
@@ -16,6 +16,7 @@ import {useChangedFilter} from '../ui/Filters/useChangedFilter';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {useDefinitionTagFilter, useTagsForAssets} from '../ui/Filters/useDefinitionTagFilter';
 import {useAssetKindsForAssets, useKindFilter} from '../ui/Filters/useKindFilter';
+import {useStaleStatusFilter} from '../ui/Filters/useStaleStatusFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
@@ -48,6 +49,7 @@ export function useAssetCatalogFiltering<
     setGroups,
     setOwners,
     setCodeLocations,
+    setStaleStatuses,
     setSelectAllFilters,
   } = useAssetDefinitionFilterState({isEnabled});
 
@@ -105,8 +107,24 @@ export function useAssetCatalogFiltering<
     setCodeLocations,
   });
 
+  const allStaleStatuses = Object.values(StaleStatus);
+
+  const staleStatusFilter = useStaleStatusFilter({
+    allStaleStatuses,
+    staleStatuses: filters.selectAllFilters?.includes('staleStatuses')
+      ? Object.values(StaleStatus)
+      : filters.staleStatuses,
+    setStaleStatuses,
+  });
+
   const uiFilters = React.useMemo(() => {
-    const uiFilters: FilterObject[] = [groupsFilter, kindFilter, ownersFilter, tagsFilter];
+    const uiFilters: FilterObject[] = [
+      groupsFilter,
+      kindFilter,
+      ownersFilter,
+      tagsFilter,
+      staleStatusFilter,
+    ];
     if (isBranchDeployment) {
       uiFilters.push(changedInBranchFilter);
     }
@@ -123,6 +141,7 @@ export function useAssetCatalogFiltering<
     isBranchDeployment,
     ownersFilter,
     reposFilter,
+    staleStatusFilter,
     tagsFilter,
   ]);
   const components = useFilters({filters: uiFilters});
@@ -156,6 +175,7 @@ export function useAssetCatalogFiltering<
       ['groups', filters.groups, allAssetGroupOptions] as const,
       ['changedInBranch', filters.changedInBranch, Object.values(ChangeReason)] as const,
       ['codeLocations', filters.codeLocations, allRepos] as const,
+      ['staleStatuses', filters.staleStatuses, Object.values(StaleStatus)] as const,
     ].forEach(([key, activeItems, allItems]) => {
       if (!allItems.length) {
         return;
@@ -181,6 +201,7 @@ export function useAssetCatalogFiltering<
     allAssetOwners,
     allKinds,
     allRepos,
+    allStaleStatuses,
     didWaitAfterLoading,
     filters,
     loading,
@@ -203,6 +224,7 @@ export function useAssetCatalogFiltering<
     filteredAssetsLoading: false,
     kindFilter,
     groupsFilter,
+    staleStatusFilter,
     renderFilterButton: components.renderButton,
   };
 }
