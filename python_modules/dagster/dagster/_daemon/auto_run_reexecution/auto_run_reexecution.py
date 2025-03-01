@@ -1,13 +1,13 @@
 import logging
 import sys
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from typing import Optional, cast
 
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterRunNotFoundError
-from dagster._core.events import EngineEventData, RunFailureReason
+from dagster._core.events import DagsterEvent, EngineEventData, RunFailureReason
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.retries import auto_reexecution_should_retry_run
 from dagster._core.instance import DagsterInstance
@@ -33,27 +33,44 @@ def should_retry(run: DagsterRun, instance: DagsterInstance) -> bool:
     WILL_RETRY_TAG. If the tag wasn't set for a run failure, we set it so that other daemons can use the
     WILL_RETRY_TAG to determine if the run should be retried.
     """
+    should_retry_bool_value, tags_to_add, events = should_retry_internal(run, instance)
+    instance.add_run_tags(run.run_id, tags_to_add)
+    for event in events:
+        instance.report_dagster_event(event, run.run_id)
+    return should_retry_bool_value
+
+
+def should_retry_internal(
+    run: DagsterRun, instance: DagsterInstance
+) -> tuple[bool, Mapping[str, str], list[DagsterEvent]]:
     will_retry_tag_value = run.tags.get(WILL_RETRY_TAG)
     run_failure_reason = (
         RunFailureReason(run.tags.get(RUN_FAILURE_REASON_TAG))
         if run.tags.get(RUN_FAILURE_REASON_TAG)
         else None
     )
+    tags_to_add = {}
+    events_to_report = []
     if will_retry_tag_value is None:
         # If the run doesn't have the WILL_RETRY_TAG, and the run is failed, we
         # recalculate if the run should be retried to ensure backward compatibilty
         if run.status == DagsterRunStatus.FAILURE:
-            should_retry_run = auto_reexecution_should_retry_run(instance, run, run_failure_reason)
+            should_retry_run = auto_reexecution_should_retry_run(
+                instance.run_retries_settings,
+                run,
+                run_failure_reason,
+                load_run_group=lambda: instance.get_run_group(run.run_id),
+            )
             # add the tag to the run so that it can be used in other parts of the system
-            instance.add_run_tags(run.run_id, {WILL_RETRY_TAG: str(should_retry_run).lower()})
+            tags_to_add.update({WILL_RETRY_TAG: str(should_retry_run).lower()})
         else:
             # run is not failed, and shouldn't be retried
-            return False
+            return False, tags_to_add, events_to_report
     else:
         should_retry_run = get_boolean_tag_value(will_retry_tag_value, default_value=False)
 
     if should_retry_run:
-        return should_retry_run
+        return should_retry_run, tags_to_add, events_to_report
     else:
         # one of the reasons we may not retry a run is if it is a step failure and system is
         # set to not retry on op/asset failures. In this case, we log
@@ -63,12 +80,14 @@ def should_retry(run: DagsterRun, instance: DagsterInstance) -> bool:
             default_value=instance.run_retries_retry_on_asset_or_op_failure,
         )
         if run_failure_reason == RunFailureReason.STEP_FAILURE and not retry_on_asset_or_op_failure:
-            instance.report_engine_event(
-                "Not retrying run since it failed due to an asset or op failure and run retries "
-                "are configured with retry_on_asset_or_op_failure set to false.",
-                run,
+            events_to_report.append(
+                instance.create_engine_event(
+                    "Not retrying run since it failed due to an asset or op failure and run retries "
+                    "are configured with retry_on_asset_or_op_failure set to false.",
+                    run,
+                )
             )
-        return False
+        return False, tags_to_add, events_to_report
 
 
 def filter_runs_to_should_retry(
