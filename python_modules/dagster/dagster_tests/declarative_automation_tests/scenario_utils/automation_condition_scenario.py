@@ -89,7 +89,7 @@ class AutomationConditionScenarioState(ScenarioState):
                 instance=self.instance,
                 entity_keys=asset_graph.get_all_asset_keys(),
                 cursor=AssetDaemonCursor.empty().with_updates(
-                    0, 0, [], [self.condition_cursor] if self.condition_cursor else []
+                    0, 0, [], [self.condition_cursor] if self.condition_cursor else [], asset_graph
                 ),
                 logger=self.logger,
                 emit_backfills=False,
