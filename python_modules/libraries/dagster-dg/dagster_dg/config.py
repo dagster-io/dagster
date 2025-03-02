@@ -114,7 +114,9 @@ class DgConfig:
         if container_workspace_file_config:
             if "cli" in container_workspace_file_config:
                 cli_partials.append(container_workspace_file_config["cli"])
-            workspace_config = DgWorkspaceConfig.from_raw(container_workspace_file_config)
+            workspace_config = DgWorkspaceConfig.from_raw(
+                container_workspace_file_config["workspace"]
+            )
 
         if root_file_config:
             if "cli" in root_file_config:
@@ -243,15 +245,36 @@ class DgRawProjectConfig(TypedDict):
 
 @dataclass
 class DgWorkspaceConfig:
-    pass
+    projects: list["DgWorkspaceProjectSpec"]
 
     @classmethod
     def from_raw(cls, raw: "DgRawWorkspaceConfig") -> Self:
-        return cls()
+        projects = [DgWorkspaceProjectSpec.from_raw(spec) for spec in raw.get("projects", [])]
+        return cls(projects=projects)
 
 
-class DgRawWorkspaceConfig(TypedDict):
-    pass
+class DgRawWorkspaceConfig(TypedDict, total=False):
+    projects: list["DgRawWorkspaceProjectSpec"]
+
+
+@dataclass
+class DgWorkspaceProjectSpec:
+    path: Path
+    code_location_name: Optional[str] = None
+
+    @classmethod
+    def from_raw(cls, raw: "DgRawWorkspaceProjectSpec") -> Self:
+        return cls(
+            path=Path(raw["path"]),
+            code_location_name=raw.get(
+                "code_location_name", DgWorkspaceProjectSpec.code_location_name
+            ),
+        )
+
+
+class DgRawWorkspaceProjectSpec(TypedDict, total=False):
+    path: Required[str]
+    code_location_name: str
 
 
 # ########################
@@ -383,7 +406,7 @@ def _validate_dg_file_config(raw_dict: Mapping[str, object]) -> DgFileConfig:
 
 def _validate_dg_config_file_cli_section(section: object) -> None:
     if not isinstance(section, dict):
-        raise DgValidationError("`tool.dg.cli` must be a table.")
+        _raise_mistyped_key_error("tool.dg.cli", get_type_str(dict), section)
     for key, type_ in DgRawCliConfig.__annotations__.items():
         _validate_file_config_setting(section, key, type_, "tool.dg.cli")
     _validate_file_config_no_extraneous_keys(
@@ -393,7 +416,7 @@ def _validate_dg_config_file_cli_section(section: object) -> None:
 
 def _validate_file_config_project_section(section: object) -> None:
     if not isinstance(section, dict):
-        raise DgValidationError("`tool.dg.project` must be a table.")
+        _raise_mistyped_key_error("tool.dg.project", get_type_str(dict), section)
     for key, type_ in DgRawProjectConfig.__annotations__.items():
         _validate_file_config_setting(section, key, type_, "tool.dg.project")
     _validate_file_config_no_extraneous_keys(
@@ -403,11 +426,30 @@ def _validate_file_config_project_section(section: object) -> None:
 
 def _validate_file_config_workspace_section(section: object) -> None:
     if not isinstance(section, dict):
-        raise DgValidationError("`tool.dg.workspace` must be a table.")
+        _raise_mistyped_key_error("tool.dg.workspace", get_type_str(dict), section)
     for key, type_ in DgRawWorkspaceConfig.__annotations__.items():
-        _validate_file_config_setting(section, key, type_, "tool.dg.workspace")
+        if key == "projects":
+            _validate_file_config_setting(section, key, list, "tool.dg.workspace")
+            for i, spec in enumerate(section.get("projects", [])):
+                _validate_file_config_workspace_project_spec(spec, i)
+        else:
+            _validate_file_config_setting(section, key, type_, "tool.dg.workspace")
     _validate_file_config_no_extraneous_keys(
         set(DgRawWorkspaceConfig.__annotations__.keys()), section, "tool.dg.workspace"
+    )
+
+
+def _validate_file_config_workspace_project_spec(section: object, index: int) -> None:
+    if not isinstance(section, dict):
+        _raise_mistyped_key_error(
+            f"tool.dg.workspace.projects[{index}]", get_type_str(dict), section
+        )
+    for key, type_ in DgRawWorkspaceProjectSpec.__annotations__.items():
+        _validate_file_config_setting(section, key, type_, f"tool.dg.workspace.projects[{index}]")
+    _validate_file_config_no_extraneous_keys(
+        set(DgRawWorkspaceProjectSpec.__annotations__.keys()),
+        section,
+        f"tool.dg.workspace.projects[{index}]",
     )
 
 
