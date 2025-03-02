@@ -99,10 +99,7 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
 
         # Check TOML content
         toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())
-        assert (
-            get_toml_value(toml, ("tool", "dagster", "module_name"), str) == "foo_bar.definitions"
-        )
-        assert get_toml_value(toml, ("tool", "dagster", "code_location_name"), str) == "foo-bar"
+        assert get_toml_value(toml, ("tool", "dg", "project", "root_module"), str) == "foo_bar"
 
         # Check venv created
         assert Path("projects/foo-bar/.venv").exists()
