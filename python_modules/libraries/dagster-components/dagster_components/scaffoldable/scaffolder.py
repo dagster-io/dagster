@@ -22,7 +22,7 @@ class ScaffoldRequest:
 
 class Scaffolder:
     @classmethod
-    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
+    def get_params(cls) -> Optional[type[BaseModel]]:
         return None
 
     @abstractmethod

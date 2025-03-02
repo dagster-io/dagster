@@ -17,7 +17,7 @@ class DbtScaffoldParams(BaseModel):
 
 class DbtProjectComponentScaffolder(Scaffolder):
     @classmethod
-    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
+    def get_params(cls) -> Optional[type[BaseModel]]:
         return DbtScaffoldParams
 
     def scaffold(self, request: ScaffoldRequest, params: DbtScaffoldParams) -> None:
