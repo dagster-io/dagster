@@ -1559,6 +1559,7 @@ export type RunDagsterRunEventFragment_MaterializationEvent = {
   eventType: Types.DagsterEventType | null;
   label: string | null;
   description: string | null;
+  partition: string | null;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -1885,6 +1886,7 @@ export type RunDagsterRunEventFragment_ObservationEvent = {
   eventType: Types.DagsterEventType | null;
   label: string | null;
   description: string | null;
+  partition: string | null;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';

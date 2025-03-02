@@ -137,11 +137,13 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       }
     }
     ... on MaterializationEvent {
+      partition
       assetKey {
         path
       }
     }
     ... on ObservationEvent {
+      partition
       assetKey {
         path
       }

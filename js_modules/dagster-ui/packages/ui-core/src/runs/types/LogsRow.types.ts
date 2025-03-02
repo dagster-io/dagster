@@ -1508,6 +1508,7 @@ export type LogsRowStructuredFragment_MaterializationEvent = {
   stepKey: string | null;
   label: string | null;
   description: string | null;
+  partition: string | null;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -1834,6 +1835,7 @@ export type LogsRowStructuredFragment_ObservationEvent = {
   stepKey: string | null;
   label: string | null;
   description: string | null;
+  partition: string | null;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
