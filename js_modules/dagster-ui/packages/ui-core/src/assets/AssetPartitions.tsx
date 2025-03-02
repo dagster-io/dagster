@@ -287,7 +287,7 @@ export const AssetPartitions = ({
                     value={searchValues[idx] || ''}
                     onChange={(e) => updateSearchValue(idx, e.target.value)}
                     placeholder="Filter by name…"
-                    data-testId={testId(`search-${idx}`)}
+                    data-testid={testId(`search-${idx}`)}
                   />
                 </Box>
                 <div>
@@ -318,7 +318,7 @@ export const AssetPartitions = ({
                             return copy;
                           });
                         }}
-                        data-testId={testId('sort-creation')}
+                        data-testid={testId('sort-creation')}
                       />
                       <MenuItem
                         text={
@@ -337,7 +337,7 @@ export const AssetPartitions = ({
                             return copy;
                           });
                         }}
-                        data-testId={testId('sort-reverse-creation')}
+                        data-testid={testId('sort-reverse-creation')}
                       />
                       <MenuItem
                         text="Alphabetical sort"
@@ -349,7 +349,7 @@ export const AssetPartitions = ({
                             return copy;
                           });
                         }}
-                        data-testId={testId('sort-alphabetical')}
+                        data-testid={testId('sort-alphabetical')}
                       />
                       <MenuItem
                         text="Reverse alphabetical sort"
@@ -361,7 +361,7 @@ export const AssetPartitions = ({
                             return [...copy];
                           });
                         }}
-                        data-testId={testId('sort-reverse-alphabetical')}
+                        data-testid={testId('sort-reverse-alphabetical')}
                       />
                     </Menu>
                   }
