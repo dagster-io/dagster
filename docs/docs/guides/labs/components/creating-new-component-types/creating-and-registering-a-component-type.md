@@ -102,7 +102,7 @@ Once your component type is registered, instances of the component type can be s
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/6-scaffold-instance-of-component.txt" />
 
-By default, this will create a new directory alongside an unpopulated `component.yaml` file. However, you can customize this behavior by implementing a `get_scaffolder` method on your component type.
+By default, this will create a new directory alongside an unpopulated `component.yaml` file. However, you can customize this behavior by decorating your component_type with `scaffoldable`.
 
 In this case, we might want to scaffold a template shell script alongside a filled-out `component.yaml` file, which we accomplish with a custom scaffolder:
 
