@@ -24,7 +24,6 @@ export type InstanceBackfillsQuery = {
           isAssetBackfill: boolean;
           hasCancelPermission: boolean;
           hasResumePermission: boolean;
-          numCancelable: number;
           partitionNames: Array<string> | null;
           partitionSet: {
             __typename: 'PartitionSet';
@@ -65,4 +64,4 @@ export type InstanceBackfillsQuery = {
       };
 };
 
-export const InstanceBackfillsQueryVersion = 'b7b238631fe7f9d6c56285ae304ff6cf07446bed0da42e9d0d5d9339b01d9d6f';
+export const InstanceBackfillsQueryVersion = '7d49e0bedbb438d69661de797a95d21af5a665ecc00cdc38fe1c72c04a7587e2';
