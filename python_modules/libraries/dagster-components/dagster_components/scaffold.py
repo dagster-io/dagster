@@ -5,7 +5,8 @@ from typing import Any, Optional
 import click
 import yaml
 
-from dagster_components.core.component import Component, scaffolder_from_component_type
+from dagster_components.core.component import Component
+from dagster_components.scaffoldable.decorator import get_scaffolder
 from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason, ScaffoldRequest
 
 
@@ -37,7 +38,7 @@ def scaffold_component_instance(
     click.echo(f"Creating a Dagster component instance folder at {path}.")
     if not path.exists():
         path.mkdir()
-    scaffolder = scaffolder_from_component_type(component_type)
+    scaffolder = get_scaffolder(component_type)
 
     if isinstance(scaffolder, ScaffolderUnavailableReason):
         raise Exception(

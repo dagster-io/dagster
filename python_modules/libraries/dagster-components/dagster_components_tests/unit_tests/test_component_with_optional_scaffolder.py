@@ -1,5 +1,5 @@
 from dagster_components import Component
-from dagster_components.core.component import scaffolder_from_component_type
+from dagster_components.scaffold import get_scaffolder
 from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 
@@ -14,6 +14,6 @@ class ComponentWithOptionalScaffolder(Component): ...
 
 def test_component_with_optional_scaffolder() -> None:
     assert isinstance(
-        scaffolder_from_component_type(ComponentWithOptionalScaffolder),
+        get_scaffolder(ComponentWithOptionalScaffolder),
         ScaffolderUnavailableReason,
     )

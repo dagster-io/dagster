@@ -9,7 +9,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
+from typing import Any, Callable, Optional, TypedDict, TypeVar
 
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
@@ -18,10 +18,10 @@ from dagster._utils import pushd
 from typing_extensions import Self
 
 from dagster_components.core.component_key import ComponentKey
-from dagster_components.core.component_scaffolder import DefaultComponentScaffolder, Scaffolder
+from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.scaffoldable.decorator import scaffoldable
+from dagster_components.scaffoldable.decorator import get_scaffolder, scaffoldable
 from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 from dagster_components.utils import format_error_message
 
@@ -33,20 +33,6 @@ class ComponentsEntryPointLoadError(DagsterError):
 class ComponentDeclNode(ABC):
     @abstractmethod
     def load(self, context: "ComponentLoadContext") -> Sequence["Component"]: ...
-
-
-def scaffolder_from_component_type(
-    component_type: type["Component"],
-) -> Union[Scaffolder, ScaffolderUnavailableReason]:
-    from dagster_components.scaffoldable.decorator import get_scaffolder, is_scaffoldable_class
-
-    if is_scaffoldable_class(component_type):
-        scaffolder = get_scaffolder(component_type)
-        if isinstance(scaffolder, ScaffolderUnavailableReason):
-            return scaffolder
-        return scaffolder()
-
-    return DefaultComponentScaffolder()
 
 
 @scaffoldable(scaffolder=DefaultComponentScaffolder)
@@ -71,7 +57,7 @@ class Component(ABC):
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
 
-        scaffolder = scaffolder_from_component_type(cls)
+        scaffolder = get_scaffolder(cls)
 
         if isinstance(scaffolder, ScaffolderUnavailableReason):
             raise DagsterError(
