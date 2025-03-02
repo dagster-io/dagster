@@ -1,6 +1,7 @@
 import shlex
 import shutil
 import subprocess
+import warnings
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
@@ -29,6 +30,7 @@ from dagster_dg.utils import (
     NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE,
     exit_with_error,
     generate_missing_dagster_components_in_local_venv_error_message,
+    generate_tool_dg_cli_in_project_in_workspace_error_message,
     get_toml_value,
     get_venv_executable,
     has_toml_value,
@@ -136,33 +138,41 @@ class DgContext:
         path: Path,
         command_line_config: DgRawCliConfig,
     ) -> Self:
-        config_path = discover_config_file(path)
+        root_config_path = discover_config_file(path)
         workspace_config_path = discover_config_file(
             path, lambda x: bool(x.get("directory_type") == "workspace")
         )
 
-        if config_path:
-            root_path = config_path.parent
-            root_file_config = load_dg_root_file_config(config_path)
-            if workspace_config_path:
-                workspace_root_path = workspace_config_path.parent
-
-                # If the workspace config is different from the root config, we need to load the
-                # workspace config.
-                container_workspace_file_config = (
-                    load_dg_workspace_file_config(workspace_config_path)
-                    if config_path != workspace_config_path
-                    else None
-                )
-
-            else:
-                container_workspace_file_config = None
+        if root_config_path:
+            root_path = root_config_path.parent
+            root_file_config = load_dg_root_file_config(root_config_path)
+            if workspace_config_path is None:
                 workspace_root_path = None
+                container_workspace_file_config = None
+
+            # Only load the workspace config if the workspace root is different from the first
+            # detected root.
+            elif workspace_config_path == root_config_path:
+                workspace_root_path = workspace_config_path.parent
+                container_workspace_file_config = None
+            else:
+                workspace_root_path = workspace_config_path.parent
+                container_workspace_file_config = load_dg_workspace_file_config(
+                    workspace_config_path
+                )
+                if "cli" in root_file_config:
+                    del root_file_config["cli"]
+                    warnings.warn(
+                        generate_tool_dg_cli_in_project_in_workspace_error_message(
+                            root_path, workspace_root_path
+                        )
+                    )
         else:
             root_path = Path.cwd()
             workspace_root_path = None
             root_file_config = None
             container_workspace_file_config = None
+
         config = DgConfig.from_partial_configs(
             root_file_config=root_file_config,
             container_workspace_file_config=container_workspace_file_config,
