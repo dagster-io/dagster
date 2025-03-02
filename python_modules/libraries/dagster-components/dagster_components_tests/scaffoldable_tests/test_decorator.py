@@ -1,7 +1,7 @@
 import pytest
 from dagster._check.functions import CheckError
 from dagster_components.scaffoldable.decorator import (
-    Scaffoldable,
+    ComponentScaffolder,
     get_scaffolder,
     is_scaffoldable_class,
     scaffoldable,
@@ -11,7 +11,7 @@ from dagster_components.scaffoldable.decorator import (
 # Example usage:
 def test_basic_usage() -> None:
     # Example scaffolder class
-    class MyScaffolder(Scaffoldable):
+    class MyScaffolder(ComponentScaffolder):
         pass
 
     # Example decorated class

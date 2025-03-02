@@ -1,7 +1,8 @@
-from abc import ABC
 from typing import Callable, TypeVar
 
 from dagster import _check as check
+
+from dagster_components.scaffoldable.scaffolder import ComponentScaffolder
 
 # Type variable for generic class handling
 T = TypeVar("T")
@@ -10,12 +11,7 @@ T = TypeVar("T")
 SCAFFOLDER_ATTRIBUTE = "__scaffolder_class__"
 
 
-# Abstract base class
-class Scaffoldable(ABC):
-    pass
-
-
-def scaffoldable(scaffolder: type[Scaffoldable]) -> Callable[[type[T]], type[T]]:
+def scaffoldable(scaffolder: type[ComponentScaffolder]) -> Callable[[type[T]], type[T]]:
     """A decorator that attaches a scaffolder class to the decorated class.
 
     Args:
@@ -45,16 +41,16 @@ def is_scaffoldable_class(cls: type) -> bool:
     return hasattr(cls, SCAFFOLDER_ATTRIBUTE)
 
 
-def get_scaffolder(cls: type) -> type[Scaffoldable]:
+def get_scaffolder(cls: type) -> type[ComponentScaffolder]:
     """Retrieves the scaffolder class attached to the decorated class.
 
     Args:
         cls: The class to inspect
 
     Returns:
-        The scaffolder class if it exists, None otherwise
+        The scaffolder class attached to the decorated class. Raises CheckError if the class is not decorated with @scaffoldable.
     """
     check.param_invariant(
-        is_scaffoldable_class(cls), "cls", "Class must decorated with @scaffoldable"
+        is_scaffoldable_class(cls), "cls", "Class must be decorated with @scaffoldable"
     )
     return getattr(cls, SCAFFOLDER_ATTRIBUTE)
