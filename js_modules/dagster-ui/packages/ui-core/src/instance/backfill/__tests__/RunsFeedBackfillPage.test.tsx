@@ -20,7 +20,7 @@ import {
   mockViewportClientRect,
   restoreViewportClientRect,
 } from '../../../testing/mocking';
-import {BackfillPage} from '../BackfillPage';
+import {RunsFeedBackfillPage} from '../RunsFeedBackfillPage';
 import {BACKFILL_DETAILS_QUERY} from '../useBackfillDetailsQuery';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
@@ -76,6 +76,7 @@ const mocks = [
         endTimestamp: 2000,
         numPartitions: 3,
         status: BulkActionStatus.REQUESTED,
+        isAssetBackfill: true,
         timestamp: 1000,
       }),
     },
@@ -95,10 +96,10 @@ describe('BackfillPage', () => {
     render(
       <RecoilRoot>
         <AnalyticsContext.Provider value={{page: () => {}} as any}>
-          <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
-            <Route path="/backfills/:backfillId">
+          <MemoryRouter initialEntries={[`/runs/b/${mockBackfillId}`]}>
+            <Route path="/runs/b/:backfillId">
               <MockedProvider mocks={mocks}>
-                <BackfillPage />
+                <RunsFeedBackfillPage />
               </MockedProvider>
             </Route>
           </MemoryRouter>
@@ -127,10 +128,10 @@ describe('BackfillPage', () => {
     const {getByText} = render(
       <RecoilRoot>
         <AnalyticsContext.Provider value={{page: () => {}} as any}>
-          <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
-            <Route path="/backfills/:backfillId">
+          <MemoryRouter initialEntries={[`/runs/b/${mockBackfillId}`]}>
+            <Route path="/runs/b/:backfillId">
               <MockedProvider mocks={errorMocks}>
-                <BackfillPage />
+                <RunsFeedBackfillPage />
               </MockedProvider>
             </Route>
           </MemoryRouter>
@@ -145,10 +146,10 @@ describe('BackfillPage', () => {
     render(
       <RecoilRoot>
         <AnalyticsContext.Provider value={{page: () => {}} as any}>
-          <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
-            <Route path="/backfills/:backfillId">
+          <MemoryRouter initialEntries={[`/runs/b/${mockBackfillId}`]}>
+            <Route path="/runs/b/:backfillId">
               <MockedProvider mocks={mocks}>
-                <BackfillPage />
+                <RunsFeedBackfillPage />
               </MockedProvider>
             </Route>
           </MemoryRouter>
