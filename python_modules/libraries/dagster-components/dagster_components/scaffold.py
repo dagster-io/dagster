@@ -6,7 +6,7 @@ import click
 import yaml
 
 from dagster_components.core.component import Component, scaffolder_from_component_type
-from dagster_components.core.component_scaffolder import (
+from dagster_components.scaffoldable.scaffolder import (
     ComponentScaffolderUnavailableReason,
     ComponentScaffoldRequest,
 )

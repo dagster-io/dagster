@@ -10,9 +10,12 @@ T = TypeVar("T")
 # Constant for scaffolder attribute name
 SCAFFOLDER_ATTRIBUTE = "__scaffolder_class__"
 
+
 if TYPE_CHECKING:
-    from dagster_components.core.component_scaffolder import ComponentScaffolderUnavailableReason
-    from dagster_components.scaffoldable.scaffolder import ComponentScaffolder
+    from dagster_components.scaffoldable.scaffolder import (
+        ComponentScaffolder,
+        ComponentScaffolderUnavailableReason,
+    )
 
 
 def scaffoldable(

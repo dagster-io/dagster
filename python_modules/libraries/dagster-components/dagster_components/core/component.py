@@ -20,12 +20,12 @@ from typing_extensions import Self
 from dagster_components.core.component_key import ComponentKey
 from dagster_components.core.component_scaffolder import (
     ComponentScaffolder,
-    ComponentScaffolderUnavailableReason,
     DefaultComponentScaffolder,
 )
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.scaffoldable.decorator import scaffoldable
+from dagster_components.scaffoldable.scaffolder import ComponentScaffolderUnavailableReason
 from dagster_components.utils import format_error_message
 
 

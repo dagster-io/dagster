@@ -1,12 +1,6 @@
-from dataclasses import dataclass
 from typing import Any
 
 from dagster_components.scaffoldable.scaffolder import ComponentScaffolder, ComponentScaffoldRequest
-
-
-@dataclass
-class ComponentScaffolderUnavailableReason:
-    message: str
 
 
 class DefaultComponentScaffolder(ComponentScaffolder):
