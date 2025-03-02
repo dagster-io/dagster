@@ -58,11 +58,13 @@ export const isCanonicalRowCountMetadataEntry = (
 ): m is IntMetadataEntry =>
   m && m.__typename === 'IntMetadataEntry' && m.label === 'dagster/row_count';
 
+export type LogRowStructuredRow = {label: string; item: JSX.Element};
+
 export const LogRowStructuredContentTable = ({
   rows,
   styles,
 }: {
-  rows: {label: string; item: JSX.Element}[];
+  rows: LogRowStructuredRow[];
   styles?: React.CSSProperties;
 }) => (
   <div style={{overflow: 'auto', paddingBottom: 10, ...(styles || {})}}>
