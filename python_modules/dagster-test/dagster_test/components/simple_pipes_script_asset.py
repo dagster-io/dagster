@@ -7,10 +7,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component_scaffolder import (
-    ComponentScaffolder,
-    ComponentScaffoldRequest,
-)
+from dagster_components.core.component_scaffolder import Scaffolder, ScaffoldRequest
 from dagster_components.scaffold import scaffold_component_yaml
 from dagster_components.scaffoldable.decorator import scaffoldable
 from pydantic import BaseModel
@@ -22,12 +19,12 @@ class SimplePipesScriptSchema(BaseModel):
     filename: str
 
 
-class SimplePipesScriptScaffolder(ComponentScaffolder):
+class SimplePipesScriptScaffolder(Scaffolder):
     @classmethod
     def get_schema(cls):
         return SimplePipesScriptSchema
 
-    def scaffold(self, request: ComponentScaffoldRequest, params: SimplePipesScriptSchema) -> None:
+    def scaffold(self, request: ScaffoldRequest, params: SimplePipesScriptSchema) -> None:
         scaffold_component_yaml(request, params.model_dump())
         Path(request.component_instance_root_path, params.filename).write_text(
             _SCRIPT_TEMPLATE.format(asset_key=params.asset_key)

@@ -6,10 +6,7 @@ import click
 import yaml
 
 from dagster_components.core.component import Component, scaffolder_from_component_type
-from dagster_components.scaffoldable.scaffolder import (
-    ComponentScaffolderUnavailableReason,
-    ComponentScaffoldRequest,
-)
+from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason, ScaffoldRequest
 
 
 class ComponentDumper(yaml.Dumper):
@@ -21,7 +18,7 @@ class ComponentDumper(yaml.Dumper):
 
 
 def scaffold_component_yaml(
-    request: ComponentScaffoldRequest, attributes: Optional[Mapping[str, Any]]
+    request: ScaffoldRequest, attributes: Optional[Mapping[str, Any]]
 ) -> None:
     with open(request.component_instance_root_path / "component.yaml", "w") as f:
         component_data = {"type": request.component_type_name, "attributes": attributes or {}}
@@ -42,13 +39,13 @@ def scaffold_component_instance(
         path.mkdir()
     scaffolder = scaffolder_from_component_type(component_type)
 
-    if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
+    if isinstance(scaffolder, ScaffolderUnavailableReason):
         raise Exception(
             f"Component type {component_type_name} does not have a scaffolder. Reason: {scaffolder.message}."
         )
 
     scaffolder.scaffold(
-        ComponentScaffoldRequest(
+        ScaffoldRequest(
             component_type_name=component_type_name,
             component_instance_root_path=path,
         ),

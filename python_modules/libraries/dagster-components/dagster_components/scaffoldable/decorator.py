@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Callable, TypeVar, Union
 
 from dagster import _check as check
 
-from dagster_components.scaffoldable.scaffolder import ComponentScaffolder
+from dagster_components.scaffoldable.scaffolder import Scaffolder
 
 # Type variable for generic class handling
 T = TypeVar("T")
@@ -12,14 +12,11 @@ SCAFFOLDER_ATTRIBUTE = "__scaffolder_class__"
 
 
 if TYPE_CHECKING:
-    from dagster_components.scaffoldable.scaffolder import (
-        ComponentScaffolder,
-        ComponentScaffolderUnavailableReason,
-    )
+    from dagster_components.scaffoldable.scaffolder import Scaffolder, ScaffolderUnavailableReason
 
 
 def scaffoldable(
-    scaffolder: Union[type["ComponentScaffolder"], "ComponentScaffolderUnavailableReason"],
+    scaffolder: Union[type["Scaffolder"], "ScaffolderUnavailableReason"],
 ) -> Callable[[type[T]], type[T]]:
     """A decorator that attaches a scaffolder class to the decorated class.
 
@@ -52,7 +49,7 @@ def is_scaffoldable_class(cls: type) -> bool:
 
 def get_scaffolder(
     cls: type,
-) -> Union[type["ComponentScaffolder"], "ComponentScaffolderUnavailableReason"]:
+) -> Union[type["Scaffolder"], "ScaffolderUnavailableReason"]:
     """Retrieves the scaffolder class attached to the decorated class.
 
     Args:

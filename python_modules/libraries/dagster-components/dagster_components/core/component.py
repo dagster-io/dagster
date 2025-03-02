@@ -18,14 +18,11 @@ from dagster._utils import pushd
 from typing_extensions import Self
 
 from dagster_components.core.component_key import ComponentKey
-from dagster_components.core.component_scaffolder import (
-    ComponentScaffolder,
-    DefaultComponentScaffolder,
-)
+from dagster_components.core.component_scaffolder import DefaultComponentScaffolder, Scaffolder
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.scaffoldable.decorator import scaffoldable
-from dagster_components.scaffoldable.scaffolder import ComponentScaffolderUnavailableReason
+from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 from dagster_components.utils import format_error_message
 
 
@@ -40,12 +37,12 @@ class ComponentDeclNode(ABC):
 
 def scaffolder_from_component_type(
     component_type: type["Component"],
-) -> Union[ComponentScaffolder, ComponentScaffolderUnavailableReason]:
+) -> Union[Scaffolder, ScaffolderUnavailableReason]:
     from dagster_components.scaffoldable.decorator import get_scaffolder, is_scaffoldable_class
 
     if is_scaffoldable_class(component_type):
         scaffolder = get_scaffolder(component_type)
-        if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
+        if isinstance(scaffolder, ScaffolderUnavailableReason):
             return scaffolder
         return scaffolder()
 
@@ -76,7 +73,7 @@ class Component(ABC):
 
         scaffolder = scaffolder_from_component_type(cls)
 
-        if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
+        if isinstance(scaffolder, ScaffolderUnavailableReason):
             raise DagsterError(
                 f"Component {cls.__name__} is not scaffoldable: {scaffolder.message}"
             )
