@@ -14,13 +14,15 @@ class ScaffolderUnavailableReason:
 
 @record
 class ScaffoldRequest:
-    component_type_name: str
-    component_instance_root_path: Path
+    # fully qualified class name of the scaffolded class
+    type_name: str
+    # target path for the scaffold request. Typically used to construct absolute paths
+    target_path: Path
 
 
 class Scaffolder:
     @classmethod
-    def get_schema(cls) -> Optional[type[BaseModel]]:
+    def get_params(cls) -> Optional[type[BaseModel]]:
         return None
 
     @abstractmethod

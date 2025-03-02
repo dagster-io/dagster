@@ -69,7 +69,7 @@ def test_list_components_types_from_module():
             "filename": {"title": "Filename", "type": "string"},
         },
         "required": ["asset_key", "filename"],
-        "title": "SimplePipesScriptSchema",
+        "title": "SimplePipesScriptScaffoldParams",
         "type": "object",
     }
 
