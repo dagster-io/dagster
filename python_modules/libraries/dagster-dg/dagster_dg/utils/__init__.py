@@ -276,7 +276,7 @@ def not_none(value: Optional[T]) -> T:
 
 
 def exit_with_error(error_message: str) -> Never:
-    formatted_error_message = _format_error_message(error_message)
+    formatted_error_message = format_multiline_str(error_message)
     click.echo(click.style(formatted_error_message, fg="red"))
     sys.exit(1)
 
@@ -286,7 +286,7 @@ def exit_with_error(error_message: str) -> Never:
 # ########################
 
 
-def _format_error_message(message: str) -> str:
+def format_multiline_str(message: str) -> str:
     # width=10000 unwraps any hardwrapping
     dedented = textwrap.dedent(message).strip()
     paragraphs = [textwrap.fill(p, width=10000) for p in dedented.split("\n\n")]
@@ -350,6 +350,21 @@ you are using `dg` in a non-managed environment (either outside of a Dagster pro
 `--no-use-dg-managed-environment` flag), you need to independently ensure `dagster-components` is
 installed.
 """
+
+
+def generate_tool_dg_cli_in_project_in_workspace_error_message(
+    project_path: Path, workspace_path: Path
+) -> str:
+    return textwrap.dedent(f"""
+        `tool.dg.cli` section detected in project `pyproject.toml` file at:
+            {project_path}
+        This project is inside of a workspace at:
+            {workspace_path}
+        """).lstrip() + format_multiline_str("""
+        The `tool.dg.cli` section is ignored for project `pyproject.toml` files inside of a
+        workspace. Any `tool.dg.cli` settings should be placed in the workspace config file.
+        """)
+
 
 # ########################
 # ##### CUSTOM CLICK SUBCLASSES
