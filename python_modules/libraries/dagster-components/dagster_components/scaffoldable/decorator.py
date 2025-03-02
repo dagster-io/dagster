@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, TypeVar, Union
+from typing import Callable, TypeVar, Union
 
 from dagster import _check as check
 
@@ -11,8 +11,7 @@ T = TypeVar("T")
 SCAFFOLDER_ATTRIBUTE = "__scaffolder_class__"
 
 
-if TYPE_CHECKING:
-    from dagster_components.scaffoldable.scaffolder import Scaffolder, ScaffolderUnavailableReason
+from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 
 
 def scaffoldable(
@@ -49,7 +48,7 @@ def is_scaffoldable_class(cls: type) -> bool:
 
 def get_scaffolder(
     cls: type,
-) -> Union[type["Scaffolder"], "ScaffolderUnavailableReason"]:
+) -> Union["Scaffolder", "ScaffolderUnavailableReason"]:
     """Retrieves the scaffolder class attached to the decorated class.
 
     Args:
@@ -61,4 +60,5 @@ def get_scaffolder(
     check.param_invariant(
         is_scaffoldable_class(cls), "cls", "Class must be decorated with @scaffoldable"
     )
-    return getattr(cls, SCAFFOLDER_ATTRIBUTE)
+    attr = getattr(cls, SCAFFOLDER_ATTRIBUTE)
+    return attr if isinstance(attr, ScaffolderUnavailableReason) else attr()

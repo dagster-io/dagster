@@ -26,7 +26,7 @@ def test_basic_usage() -> None:
     # Test the functions
     assert is_scaffoldable_class(MyClass) is True
     assert is_scaffoldable_class(RegularClass) is False
-    assert get_scaffolder(MyClass) is MyScaffolder
+    assert isinstance(get_scaffolder(MyClass), MyScaffolder)
     with pytest.raises(CheckError):
         get_scaffolder(RegularClass)
 
@@ -43,7 +43,7 @@ def test_inheritance() -> None:
     class ClassTwo(ClassOne): ...
 
     assert is_scaffoldable_class(ClassOne) is True
-    assert get_scaffolder(ClassOne) is ScaffoldableOne
+    assert isinstance(get_scaffolder(ClassOne), ScaffoldableOne)
 
     assert is_scaffoldable_class(ClassTwo) is True
-    assert get_scaffolder(ClassTwo) is ScaffoldableTwo
+    assert isinstance(get_scaffolder(ClassTwo), ScaffoldableTwo)
