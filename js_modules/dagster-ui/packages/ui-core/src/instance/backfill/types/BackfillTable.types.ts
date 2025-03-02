@@ -27,7 +27,6 @@ export type BackfillTableFragment = {
   partitionSetName: string | null;
   hasCancelPermission: boolean;
   hasResumePermission: boolean;
-  numCancelable: number;
   partitionNames: Array<string> | null;
   partitionSet: {
     __typename: 'PartitionSet';
