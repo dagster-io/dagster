@@ -73,27 +73,20 @@ def create_project_from_components(
         yield Path.cwd()
 
 
-def test_check_component_succeeds_non_default_component_package() -> None:
-    with (
-        ProxyRunner.test() as runner,
-        create_project_from_components(
-            runner,
-        ),
-    ):
+def test_check_component_succeeds_non_default_defs_module() -> None:
+    with ProxyRunner.test() as runner, create_project_from_components(runner):
         with modify_pyproject_toml() as toml:
-            set_toml_value(
-                toml, ("tool", "dg", "project", "components_module"), "foo_bar._components"
-            )
+            set_toml_value(toml, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
 
         # We need to do all of this copying here rather than relying on the project setup
         # fixture because that fixture assumes a default component package.
         component_src_path = COMPONENT_INTEGRATION_TEST_DIR / BASIC_VALID_VALUE.component_path
         component_name = component_src_path.name
-        components_dir = Path.cwd() / "foo_bar" / "_components" / component_name
-        components_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(component_src_path, components_dir, dirs_exist_ok=True)
+        defs_dir = Path.cwd() / "foo_bar" / "_defs" / component_name
+        defs_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(component_src_path, defs_dir, dirs_exist_ok=True)
         assert BASIC_VALID_VALUE.component_type_filepath
-        shutil.copy(BASIC_VALID_VALUE.component_type_filepath, components_dir / "__init__.py")
+        shutil.copy(BASIC_VALID_VALUE.component_type_filepath, defs_dir / "__init__.py")
 
         result = runner.invoke("check", "yaml")
         assert_runner_result(result, exit_0=True)

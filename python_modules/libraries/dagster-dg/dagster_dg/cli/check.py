@@ -82,7 +82,7 @@ def check_yaml_command(
 
     component_contents_by_key: dict[ComponentKey, Any] = {}
     modules_to_fetch = set()
-    for component_dir in dg_context.components_path.iterdir():
+    for component_dir in dg_context.defs_path.iterdir():
         if resolved_paths and not any(
             path == component_dir or path in component_dir.parents for path in resolved_paths
         ):
@@ -121,7 +121,9 @@ def check_yaml_command(
                 continue
 
             raw_key = component_doc_tree.value.get("type")
-            component_instance_module = dg_context.get_component_instance_module(component_dir.name)
+            component_instance_module = dg_context.get_component_instance_module_name(
+                component_dir.name
+            )
             qualified_key = (
                 f"{component_instance_module}{raw_key}" if raw_key.startswith(".") else raw_key
             )
@@ -130,7 +132,7 @@ def check_yaml_command(
 
             # We need to fetch components from any modules local to the project because these are
             # not cached with the components from the general environment.
-            if key.namespace.startswith(dg_context.components_module_name):
+            if key.namespace.startswith(dg_context.defs_module_name):
                 modules_to_fetch.add(key.namespace)
 
     # Fetch the local component types, if we need any local components

@@ -24,7 +24,7 @@ directory_type = "project"
 
 [tool.dg.project]
 root_module = "my_existing_project"
-components_module = "my_existing_project.defs"
+defs_module = "my_existing_project.defs"
 
 [tool.dagster]
 module_name = "my_existing_project.definitions"

@@ -212,19 +212,19 @@ class DgRawCliConfig(TypedDict, total=False):
 @dataclass
 class DgProjectConfig:
     root_module: str
-    components_module: Optional[str] = None
+    defs_module: Optional[str] = None
 
     @classmethod
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
         return cls(
             root_module=raw["root_module"],
-            components_module=raw.get("components_module", DgProjectConfig.components_module),
+            defs_module=raw.get("defs_module", DgProjectConfig.defs_module),
         )
 
 
 class DgRawProjectConfig(TypedDict):
     root_module: Required[str]
-    components_module: NotRequired[str]
+    defs_module: NotRequired[str]
 
 
 # ########################
