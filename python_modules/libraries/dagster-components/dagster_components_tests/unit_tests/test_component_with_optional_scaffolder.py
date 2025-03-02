@@ -1,9 +1,7 @@
 from dagster_components import Component
-from dagster_components.core.component import (
-    ComponentScaffolderUnavailableReason,
-    scaffolder_from_component_type,
-)
+from dagster_components.core.component import scaffolder_from_component_type
 from dagster_components.scaffoldable.decorator import scaffoldable
+from dagster_components.scaffoldable.scaffolder import ComponentScaffolderUnavailableReason
 
 
 @scaffoldable(

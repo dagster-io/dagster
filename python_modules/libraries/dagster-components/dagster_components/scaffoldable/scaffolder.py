@@ -1,9 +1,15 @@
 from abc import abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
 from dagster._record import record
 from pydantic import BaseModel
+
+
+@dataclass
+class ComponentScaffolderUnavailableReason:
+    message: str
 
 
 @record
