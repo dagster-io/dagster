@@ -31,7 +31,7 @@ import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {LargeCollapsibleSection} from '../LargeCollapsibleSection';
 import {MaterializationTag} from '../MaterializationTag';
 import {OverdueTag} from '../OverdueTag';
-import {RecentUpdatesTimeline} from '../RecentUpdatesTimeline';
+import {RecentUpdatesTimelineForAssetKey} from '../RecentUpdatesTimeline';
 import {SimpleStakeholderAssetStatus} from '../SimpleStakeholderAssetStatus';
 import {AssetChecksStatusSummary} from '../asset-checks/AssetChecksStatusSummary';
 import {buildConsolidatedColumnSchema} from '../buildConsolidatedColumnSchema';
@@ -39,8 +39,7 @@ import {globalAssetGraphPathForAssetsAndDescendants} from '../globalAssetGraphPa
 import {AssetKey} from '../types';
 import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
-import {useLatestPartitionEvents} from '../useLatestPartitionEvents';
-import {useRecentAssetEvents} from '../useRecentAssetEvents';
+import {useLatestEvents} from '../useLatestEvents';
 
 export const AssetNodeOverview = ({
   assetKey,
@@ -72,20 +71,10 @@ export const AssetNodeOverview = ({
 
   const assetNodeLoadTimestamp = location ? location.updatedTimestamp * 1000 : undefined;
 
-  const {materialization, observation, loading} = useLatestPartitionEvents(
+  const {materialization, observation, loading} = useLatestEvents(
     assetKey,
     assetNodeLoadTimestamp,
     liveData,
-  );
-
-  const {
-    materializations,
-    observations,
-    loading: materializationsLoading,
-  } = useRecentAssetEvents(
-    cachedOrLiveAssetNode?.partitionDefinition ? undefined : cachedOrLiveAssetNode?.assetKey,
-    {},
-    {assetHasDefinedPartitions: false},
   );
 
   // Start loading neighboring assets data immediately to avoid waterfall.
@@ -154,12 +143,7 @@ export const AssetNodeOverview = ({
         ) : undefined}
       </Box>
       {cachedOrLiveAssetNode.isPartitioned ? null : (
-        <RecentUpdatesTimeline
-          materializations={materializations}
-          observations={observations}
-          assetKey={cachedOrLiveAssetNode.assetKey}
-          loading={materializationsLoading}
-        />
+        <RecentUpdatesTimelineForAssetKey assetKey={cachedOrLiveAssetNode.assetKey} />
       )}
     </Box>
   );
@@ -305,12 +289,6 @@ export const AssetNodeOverviewNonSDA = ({
   assetKey: AssetKey;
   lastMaterialization: {timestamp: string; runId: string} | null | undefined;
 }) => {
-  const {materializations, observations, loading} = useRecentAssetEvents(
-    assetKey,
-    {},
-    {assetHasDefinedPartitions: false},
-  );
-
   return (
     <AssetNodeOverviewContainer
       left={
@@ -327,12 +305,7 @@ export const AssetNodeOverviewNonSDA = ({
                 <Caption color={Colors.textLighter()}>Never materialized</Caption>
               )}
             </div>
-            <RecentUpdatesTimeline
-              materializations={materializations}
-              observations={observations}
-              assetKey={assetKey}
-              loading={loading}
-            />
+            <RecentUpdatesTimelineForAssetKey assetKey={assetKey} />
           </Box>
         </LargeCollapsibleSection>
       }
