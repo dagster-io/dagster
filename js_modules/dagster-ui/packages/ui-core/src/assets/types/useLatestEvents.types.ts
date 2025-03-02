@@ -372,4 +372,4 @@ export type AssetOverviewMetadataEventsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetOverviewMetadataEventsQueryVersion = 'ce504cf0820b50aab6cecee3fb4cb5e412af98beef75a80038c83c872d4fb0cd';
+export const AssetOverviewMetadataEventsQueryVersion = '0188ef9d8f04f99e2f98e0f7c8755982259c8e65ded2647e72ddf008acc0b331';
