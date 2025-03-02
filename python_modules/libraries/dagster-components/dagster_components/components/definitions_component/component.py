@@ -12,6 +12,7 @@ from dagster_components import Component, ComponentLoadContext, ResolvableSchema
 from dagster_components.components.definitions_component.scaffolder import (
     DefinitionsComponentScaffolder,
 )
+from dagster_components.scaffoldable.decorator import scaffoldable
 
 
 class DefinitionsParamSchema(ResolvableSchema):
@@ -19,6 +20,7 @@ class DefinitionsParamSchema(ResolvableSchema):
 
 
 @dataclass
+@scaffoldable(scaffolder=DefinitionsComponentScaffolder)
 class DefinitionsComponent(Component):
     """Wraps an arbitrary set of Dagster definitions."""
 
@@ -28,7 +30,7 @@ class DefinitionsComponent(Component):
 
     @classmethod
     def get_scaffolder(cls) -> DefinitionsComponentScaffolder:
-        return DefinitionsComponentScaffolder()
+        raise Exception("Using decorator instead of classmethod")
 
     @classmethod
     def get_schema(cls) -> type[DefinitionsParamSchema]:

@@ -37,6 +37,26 @@ class ComponentDeclNode(ABC):
     def load(self, context: "ComponentLoadContext") -> Sequence["Component"]: ...
 
 
+def scaffolder_from_component_type(component_type: type["Component"]) -> ComponentScaffolder:
+    from dagster_components.scaffoldable.decorator import get_scaffolder, is_scaffoldable_class
+
+    if is_scaffoldable_class(component_type):
+        scaffolder = get_scaffolder(component_type)
+        if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
+            raise DagsterError(
+                f"Component {component_type.__name__} is not scaffoldable: {scaffolder.message}"
+            )
+        return scaffolder()
+
+    scaffolder = component_type.get_scaffolder()
+    if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
+        raise DagsterError(
+            f"Component {component_type.__name__} is not scaffoldable: {scaffolder.message}"
+        )
+
+    return scaffolder
+
+
 class Component(ABC):
     @classmethod
     def get_schema(cls) -> Optional[type[ResolvableSchema]]:
@@ -69,7 +89,7 @@ class Component(ABC):
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
 
-        scaffolder = cls.get_scaffolder()
+        scaffolder = scaffolder_from_component_type(cls)
 
         if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
             raise DagsterError(
