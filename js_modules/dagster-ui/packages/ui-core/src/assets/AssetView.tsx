@@ -315,6 +315,9 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
         }
         right={
           <Box style={{margin: '-4px 0'}} flex={{direction: 'row', gap: 8}}>
+            {reportEvents.element}
+            {wipe.element}
+            {dynamicPartitionsDelete.element}
             {cachedOrLiveDefinition && cachedOrLiveDefinition.jobNames.length > 0 ? (
               <LaunchAssetExecutionButton
                 scope={{all: [cachedOrLiveDefinition]}}
@@ -326,9 +329,6 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
                 ]}
               />
             ) : undefined}
-            {reportEvents.element}
-            {wipe.element}
-            {dynamicPartitionsDelete.element}
           </Box>
         }
       />
