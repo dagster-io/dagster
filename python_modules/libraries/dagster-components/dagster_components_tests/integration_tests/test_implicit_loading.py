@@ -1,0 +1,57 @@
+import sys
+from pathlib import Path
+
+import pytest
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._utils import pushd
+
+from dagster_components_tests.integration_tests.component_loader import load_test_component_defs
+
+
+@pytest.fixture(autouse=True)
+def chdir():
+    with pushd(str(Path(__file__).parent.parent)):
+        sys.path.append(str(Path(__file__).parent))
+        yield
+
+
+def test_implicit_single_file() -> None:
+    defs = load_test_component_defs("implicit/single_file")
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {AssetKey("an_implicit_asset")}
+
+
+def test_implicit_double_file() -> None:
+    defs = load_test_component_defs("implicit/double_file")
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {
+        AssetKey("asset_one"),
+        AssetKey("asset_two"),
+    }
+
+
+def test_defs_object() -> None:
+    defs = load_test_component_defs("implicit/defs_object")
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {
+        AssetKey("in_defs_asset"),
+    }
+
+
+def test_defs_and_sep_file_relative_include() -> None:
+    defs = load_test_component_defs("implicit/defs_and_sep_file_relative_include")
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {
+        AssetKey("side_asset"),
+    }
+
+
+@pytest.mark.xfail(reason="Duplicate asset key bug when using absolute imports", strict=True)
+def test_defs_and_sep_file_absolute_include() -> None:
+    # fails with dagster._core.errors.DagsterInvalidDefinitionError: Duplicate asset key: AssetKey(['side_asset'])
+    # Probably due to some module caching issue I do not understand?
+    # Both
+    # * importlib.import_module(component_module_name) AND
+    # * importlib.import_module(component_module_name)
+    # in DefinitionsComponent result in the same failure
+
+    defs = load_test_component_defs("implicit/defs_and_sep_file_absolute_include")
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {
+        AssetKey("side_asset"),
+    }
