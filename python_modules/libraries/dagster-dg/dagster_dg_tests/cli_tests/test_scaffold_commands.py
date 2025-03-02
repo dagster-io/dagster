@@ -462,7 +462,7 @@ def test_scaffold_component_already_exists_fails(in_workspace: bool) -> None:
         assert "already exists" in result.output
 
 
-def test_scaffold_component_succeeds_non_default_component_package() -> None:
+def test_scaffold_component_succeeds_non_default_defs_module() -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
@@ -470,7 +470,7 @@ def test_scaffold_component_succeeds_non_default_component_package() -> None:
         alt_lib_path = Path("foo_bar/_defs")
         alt_lib_path.mkdir(parents=True)
         with modify_pyproject_toml() as toml:
-            set_toml_value(toml, ("tool", "dg", "project", "components_module"), "foo_bar._defs")
+            set_toml_value(toml, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
         result = runner.invoke(
             "scaffold",
             "component",
@@ -487,13 +487,13 @@ def test_scaffold_component_succeeds_non_default_component_package() -> None:
         )
 
 
-def test_scaffold_component_fails_components_package_does_not_exist() -> None:
+def test_scaffold_component_fails_defs_module_does_not_exist() -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
     ):
         with modify_pyproject_toml() as toml:
-            set_toml_value(toml, ("tool", "dg", "project", "components_module"), "foo_bar._defs")
+            set_toml_value(toml, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
         result = runner.invoke(
             "scaffold",
             "component",
