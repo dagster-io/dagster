@@ -25,6 +25,7 @@ from dagster_components.core.component_scaffolder import (
 )
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
+from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.utils import format_error_message
 
 
@@ -37,41 +38,25 @@ class ComponentDeclNode(ABC):
     def load(self, context: "ComponentLoadContext") -> Sequence["Component"]: ...
 
 
-def scaffolder_from_component_type(component_type: type["Component"]) -> ComponentScaffolder:
+def scaffolder_from_component_type(
+    component_type: type["Component"],
+) -> Union[ComponentScaffolder, ComponentScaffolderUnavailableReason]:
     from dagster_components.scaffoldable.decorator import get_scaffolder, is_scaffoldable_class
 
     if is_scaffoldable_class(component_type):
         scaffolder = get_scaffolder(component_type)
         if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
-            raise DagsterError(
-                f"Component {component_type.__name__} is not scaffoldable: {scaffolder.message}"
-            )
+            return scaffolder
         return scaffolder()
 
-    scaffolder = component_type.get_scaffolder()
-    if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
-        raise DagsterError(
-            f"Component {component_type.__name__} is not scaffoldable: {scaffolder.message}"
-        )
-
-    return scaffolder
+    return DefaultComponentScaffolder()
 
 
+@scaffoldable(scaffolder=DefaultComponentScaffolder)
 class Component(ABC):
     @classmethod
     def get_schema(cls) -> Optional[type[ResolvableSchema]]:
         return None
-
-    @classmethod
-    def get_scaffolder(cls) -> Union[ComponentScaffolder, ComponentScaffolderUnavailableReason]:
-        """Subclasses should implement this method to override scaffolding behavior. If this component
-        is not meant to be scaffolded it returns a ComponentScaffolderUnavailableReason with a message
-        This can be determined at runtime based on the environment or configuration. For example,
-        if scaffolders are optionally installed as extras (for example to avoid heavy dependencies in production),
-        this method should return a ComponentScaffolderUnavailableReason with a message explaining
-        how to install the necessary extras.
-        """
-        return DefaultComponentScaffolder()
 
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:

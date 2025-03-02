@@ -29,3 +29,21 @@ def test_basic_usage() -> None:
     assert get_scaffolder(MyClass) is MyScaffolder
     with pytest.raises(CheckError):
         get_scaffolder(RegularClass)
+
+
+def test_inheritance() -> None:
+    class ScaffoldableOne(ComponentScaffolder): ...
+
+    class ScaffoldableTwo(ComponentScaffolder): ...
+
+    @scaffoldable(ScaffoldableOne)
+    class ClassOne: ...
+
+    @scaffoldable(ScaffoldableTwo)
+    class ClassTwo(ClassOne): ...
+
+    assert is_scaffoldable_class(ClassOne) is True
+    assert get_scaffolder(ClassOne) is ScaffoldableOne
+
+    assert is_scaffoldable_class(ClassTwo) is True
+    assert get_scaffolder(ClassTwo) is ScaffoldableTwo
