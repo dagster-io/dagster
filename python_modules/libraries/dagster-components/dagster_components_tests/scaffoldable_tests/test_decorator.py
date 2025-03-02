@@ -5,13 +5,13 @@ from dagster_components.scaffoldable.decorator import (
     is_scaffoldable_class,
     scaffoldable,
 )
-from dagster_components.scaffoldable.scaffolder import ComponentScaffolder
+from dagster_components.scaffoldable.scaffolder import Scaffolder
 
 
 # Example usage:
 def test_basic_usage() -> None:
     # Example scaffolder class
-    class MyScaffolder(ComponentScaffolder):
+    class MyScaffolder(Scaffolder):
         pass
 
     # Example decorated class
@@ -32,9 +32,9 @@ def test_basic_usage() -> None:
 
 
 def test_inheritance() -> None:
-    class ScaffoldableOne(ComponentScaffolder): ...
+    class ScaffoldableOne(Scaffolder): ...
 
-    class ScaffoldableTwo(ComponentScaffolder): ...
+    class ScaffoldableTwo(Scaffolder): ...
 
     @scaffoldable(ScaffoldableOne)
     class ClassOne: ...

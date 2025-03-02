@@ -4,8 +4,8 @@ from typing import Optional
 from dagster._utils import pushd
 from pydantic import BaseModel
 
-from dagster_components.core.component import ComponentScaffolder
-from dagster_components.core.component_scaffolder import ComponentScaffoldRequest
+from dagster_components.core.component import Scaffolder
+from dagster_components.core.component_scaffolder import ScaffoldRequest
 from dagster_components.scaffold import scaffold_component_yaml
 
 
@@ -13,14 +13,12 @@ class DefinitionsScaffoldSchema(BaseModel):
     definitions_path: Optional[str] = None
 
 
-class DefinitionsComponentScaffolder(ComponentScaffolder):
+class DefinitionsComponentScaffolder(Scaffolder):
     @classmethod
     def get_schema(cls):
         return DefinitionsScaffoldSchema
 
-    def scaffold(
-        self, request: ComponentScaffoldRequest, params: DefinitionsScaffoldSchema
-    ) -> None:
+    def scaffold(self, request: ScaffoldRequest, params: DefinitionsScaffoldSchema) -> None:
         scaffold_params = (
             params if isinstance(params, DefinitionsScaffoldSchema) else DefinitionsScaffoldSchema()
         )

@@ -9,9 +9,9 @@ from dagster_components import (
     AssetSpecSchema,
     Component,
     ComponentLoadContext,
-    ComponentScaffolder,
-    ComponentScaffoldRequest,
     ResolvableSchema,
+    Scaffolder,
+    ScaffoldRequest,
     scaffold_component_yaml,
 )
 from dagster_components.scaffoldable.decorator import scaffoldable
@@ -20,10 +20,10 @@ import dagster as dg
 
 
 # highlight-start
-class ShellCommandScaffolder(ComponentScaffolder):
+class ShellCommandScaffolder(Scaffolder):
     """Scaffolds a template shell script alongside a filled-out component YAML file."""
 
-    def scaffold(self, request: ComponentScaffoldRequest, params: Any) -> None:
+    def scaffold(self, request: ScaffoldRequest, params: Any) -> None:
         scaffold_component_yaml(
             request,
             {

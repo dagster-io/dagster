@@ -7,7 +7,7 @@ from pydantic import TypeAdapter
 from dagster_components.core.component import load_component_type
 from dagster_components.core.component_key import ComponentKey
 from dagster_components.scaffold import scaffold_component_instance, scaffolder_from_component_type
-from dagster_components.scaffoldable.scaffolder import ComponentScaffolderUnavailableReason
+from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 
 
 @click.group(name="scaffold")
@@ -29,7 +29,7 @@ def scaffold_component_command(
 
     if json_params:
         scaffolder = scaffolder_from_component_type(component_type_cls)
-        if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
+        if isinstance(scaffolder, ScaffolderUnavailableReason):
             raise Exception(
                 f"Component type {component_type} does not have a scaffolder. Reason: {scaffolder.message}."
             )

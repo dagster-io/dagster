@@ -8,20 +8,20 @@ from pydantic import BaseModel
 
 
 @dataclass
-class ComponentScaffolderUnavailableReason:
+class ScaffolderUnavailableReason:
     message: str
 
 
 @record
-class ComponentScaffoldRequest:
+class ScaffoldRequest:
     component_type_name: str
     component_instance_root_path: Path
 
 
-class ComponentScaffolder:
+class Scaffolder:
     @classmethod
     def get_schema(cls) -> Optional[type[BaseModel]]:
         return None
 
     @abstractmethod
-    def scaffold(self, request: ComponentScaffoldRequest, params: Any) -> None: ...
+    def scaffold(self, request: ScaffoldRequest, params: Any) -> None: ...
