@@ -12,6 +12,7 @@ from dagster_components.core.component_scaffolder import (
     ComponentScaffoldRequest,
 )
 from dagster_components.scaffold import scaffold_component_yaml
+from dagster_components.scaffoldable.decorator import scaffoldable
 from pydantic import BaseModel
 
 
@@ -43,15 +44,12 @@ context.report_asset_materialization(asset_key="{asset_key}")
 """
 
 
+@scaffoldable(scaffolder=SimplePipesScriptScaffolder)
 class SimplePipesScriptComponent(Component):
     """A simple asset that runs a Python script with the Pipes subprocess client.
 
     Because it is a pipes asset, no value is returned.
     """
-
-    @classmethod
-    def get_scaffolder(cls) -> ComponentScaffolder:
-        return SimplePipesScriptScaffolder()
 
     @classmethod
     def get_schema(cls):

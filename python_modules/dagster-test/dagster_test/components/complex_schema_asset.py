@@ -5,7 +5,6 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
@@ -36,10 +35,6 @@ class ComplexAssetComponent(Component):
     @classmethod
     def get_schema(cls):
         return ComplexAssetSchema
-
-    @classmethod
-    def get_scaffolder(cls) -> DefaultComponentScaffolder:
-        return DefaultComponentScaffolder()
 
     def __init__(
         self,

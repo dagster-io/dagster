@@ -14,6 +14,7 @@ from dagster_components import (
     ResolvableSchema,
     scaffold_component_yaml,
 )
+from dagster_components.scaffoldable.decorator import scaffoldable
 
 import dagster as dg
 
@@ -45,6 +46,9 @@ class ShellScriptSchema(ResolvableSchema):
     asset_specs: Sequence[AssetSpecSchema]
 
 
+# highlight-start
+@scaffoldable(scaffolder=ShellCommandScaffolder)
+# highlight-end
 @dataclass
 class ShellCommand(Component):
     """Models a shell script as a Dagster asset."""
@@ -67,11 +71,3 @@ class ShellCommand(Component):
 
     def execute(self, resolved_script_path: Path, context: dg.AssetExecutionContext):
         return subprocess.run(["sh", str(resolved_script_path)], check=True)
-
-    # highlight-start
-    @classmethod
-    def get_scaffolder(cls) -> ComponentScaffolder:
-        return ShellCommandScaffolder()
-
-
-# highlight-end

@@ -29,10 +29,6 @@ class DefinitionsComponent(Component):
     )
 
     @classmethod
-    def get_scaffolder(cls) -> DefinitionsComponentScaffolder:
-        raise Exception("Using decorator instead of classmethod")
-
-    @classmethod
     def get_schema(cls) -> type[DefinitionsParamSchema]:
         return DefinitionsParamSchema
 
