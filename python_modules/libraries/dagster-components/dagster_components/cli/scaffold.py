@@ -9,6 +9,7 @@ from dagster_components.core.component_key import ComponentKey
 from dagster_components.scaffold import (
     ComponentScaffolderUnavailableReason,
     scaffold_component_instance,
+    scaffolder_from_component_type,
 )
 
 
@@ -30,7 +31,7 @@ def scaffold_component_command(
     component_type_cls = load_component_type(key)
 
     if json_params:
-        scaffolder = component_type_cls.get_scaffolder()
+        scaffolder = scaffolder_from_component_type(component_type_cls)
         if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
             raise Exception(
                 f"Component type {component_type} does not have a scaffolder. Reason: {scaffolder.message}."
