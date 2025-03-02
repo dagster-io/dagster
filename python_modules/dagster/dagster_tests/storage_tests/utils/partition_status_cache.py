@@ -4,6 +4,7 @@ import pytest
 from dagster import (
     AssetKey,
     AssetMaterialization,
+    BackfillPolicy,
     DagsterEventType,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
@@ -28,6 +29,10 @@ from dagster._core.storage.partition_status_cache import (
     build_failed_and_in_progress_partition_subset,
     get_and_update_asset_status_cache_value,
     get_last_planned_storage_id,
+)
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
 )
 from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_run_id
@@ -309,6 +314,37 @@ class TestPartitionStatusCache:
         )
         assert cached_status
         assert cached_status.serialized_materialized_partition_subset is None
+
+    def test_failure_cache_on_multi_partition_backfill(self, instance):
+        partitions_def = StaticPartitionsDefinition(["fail1", "fail2"])
+
+        @asset(partitions_def=partitions_def, backfill_policy=BackfillPolicy.single_run())
+        def asset1(context):
+            raise Exception()
+
+        asset_key = AssetKey("asset1")
+        asset_graph = AssetGraph.from_assets([asset1])
+        asset_job = define_asset_job("asset_job").resolve(asset_graph=asset_graph)
+
+        # no events
+        cached_status = get_and_update_asset_status_cache_value(
+            instance, asset_key, asset_graph.get(asset_key).partitions_def
+        )
+        assert not cached_status
+
+        asset_job.execute_in_process(
+            instance=instance,
+            raise_on_error=False,
+            tags={ASSET_PARTITION_RANGE_START_TAG: "fail1", ASSET_PARTITION_RANGE_END_TAG: "fail2"},
+        )
+
+        cached_status = get_and_update_asset_status_cache_value(
+            instance, asset_key, asset_graph.get(asset_key).partitions_def
+        )
+        # failed partition
+        assert partitions_def.deserialize_subset(
+            cached_status.serialized_failed_partition_subset  # pyright: ignore[reportArgumentType,reportOptionalMemberAccess]
+        ).get_partition_keys() == {"fail1", "fail2"}
 
     def test_failure_cache(self, instance):
         partitions_def = StaticPartitionsDefinition(["good1", "good2", "fail1", "fail2"])
