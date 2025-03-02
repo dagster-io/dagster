@@ -320,11 +320,30 @@ class DgContext:
             raise DgError(
                 "`code_location_target_module_name` is only available in a Dagster project context"
             )
-        return f"{self.root_module_name}.{_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE}"
+        return self._tool_dagster_config_section.get(
+            "module_name",
+            f"{self.root_module_name}.{_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE}",
+        )
 
     @cached_property
     def code_location_target_path(self) -> Path:
         return self.get_path_for_local_module(self.code_location_target_module_name)
+
+    @property
+    def code_location_name(self) -> str:
+        if not self.is_project:
+            raise DgError("`code_location_name` is only available in a Dagster project context")
+        return self._tool_dagster_config_section.get("code_location_name", self.project_name)
+
+    @cached_property
+    def _tool_dagster_config_section(self) -> dict[str, str]:
+        if not self.is_project:
+            raise DgError("`tool_dg_config_section` is only available in a Dagster project context")
+        with open(self.pyproject_toml_path) as f:
+            toml = tomlkit.parse(f.read())
+            if not has_toml_value(toml, ("tool", "dagster")):
+                return {}
+            return get_toml_value(toml, ("tool", "dagster"), dict)
 
     # ########################
     # ##### COMPONENT LIBRARY METHODS
