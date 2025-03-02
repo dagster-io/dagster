@@ -172,7 +172,7 @@ def temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
             project_context: DgContext = dg_context.with_root_path(project_root)
             entry = {
                 "working_directory": str(dg_context.workspace_root_path),
-                "relative_path": str(project_context.definitions_path),
+                "relative_path": str(project_context.code_location_target_path),
                 "location_name": project_context.project_name,
             }
             if project_context.use_dg_managed_environment:
