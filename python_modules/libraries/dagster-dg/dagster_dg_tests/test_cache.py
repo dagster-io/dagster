@@ -11,7 +11,7 @@ from dagster_dg_tests.utils import (
 # For all cache tests, avoid setting up venv in example project so we do not prepopulate the
 # cache (which is part of the venv setup routine).
 example_project = partial(isolated_example_project_foo_bar, populate_cache=False)
-cache_runner_args = {"use_entry_points": True, "verbose": True}
+cache_runner_args = {"verbose": True}
 
 
 def test_load_from_cache():
