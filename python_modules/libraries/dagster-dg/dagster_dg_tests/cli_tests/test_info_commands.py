@@ -36,7 +36,7 @@ _EXPECTED_INSPECT_COMPONENT_TYPE_FULL = textwrap.dedent("""
             "asset_key",
             "filename"
         ],
-        "title": "SimplePipesScriptSchema",
+        "title": "SimplePipesScaffoldParams",
         "type": "object"
     }
 
@@ -57,7 +57,7 @@ _EXPECTED_INSPECT_COMPONENT_TYPE_FULL = textwrap.dedent("""
             "asset_key",
             "filename"
         ],
-        "title": "SimplePipesScriptSchema",
+        "title": "SimplePipesScaffoldParams",
         "type": "object"
     }
 """).strip()
@@ -130,7 +130,7 @@ def test_inspect_component_type_flag_fields_success():
                         "asset_key",
                         "filename"
                     ],
-                    "title": "SimplePipesScriptSchema",
+                    "title": "SimplePipesScaffoldParams",
                     "type": "object"
                 }
             """).strip()
@@ -160,7 +160,7 @@ def test_inspect_component_type_flag_fields_success():
                         "asset_key",
                         "filename"
                     ],
-                    "title": "SimplePipesScriptSchema",
+                    "title": "SimplePipesScaffoldParams",
                     "type": "object"
                 }
             """).strip()

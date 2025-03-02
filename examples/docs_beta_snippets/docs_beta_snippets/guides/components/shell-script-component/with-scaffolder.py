@@ -33,7 +33,7 @@ class ShellCommandScaffolder(Scaffolder):
                 ],
             },
         )
-        script_path = Path(request.component_instance_root_path) / "script.sh"
+        script_path = Path(request.target_path) / "script.sh"
         script_path.write_text("#!/bin/bash\n\necho 'Hello, world!'")
         os.chmod(script_path, 0o755)
 

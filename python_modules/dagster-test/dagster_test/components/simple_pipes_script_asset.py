@@ -14,19 +14,19 @@ from pydantic import BaseModel
 
 
 # Same schema used for file generation and defs generation
-class SimplePipesScriptSchema(BaseModel):
+class SimplePipesScaffoldParams(BaseModel):
     asset_key: str
     filename: str
 
 
 class SimplePipesScriptScaffolder(Scaffolder):
     @classmethod
-    def get_schema(cls):
-        return SimplePipesScriptSchema
+    def get_scaffold_params(cls):
+        return SimplePipesScaffoldParams
 
-    def scaffold(self, request: ScaffoldRequest, params: SimplePipesScriptSchema) -> None:
+    def scaffold(self, request: ScaffoldRequest, params: SimplePipesScaffoldParams) -> None:
         scaffold_component_yaml(request, params.model_dump())
-        Path(request.component_instance_root_path, params.filename).write_text(
+        Path(request.target_path, params.filename).write_text(
             _SCRIPT_TEMPLATE.format(asset_key=params.asset_key)
         )
 
@@ -50,7 +50,7 @@ class SimplePipesScriptComponent(Component):
 
     @classmethod
     def get_schema(cls):
-        return SimplePipesScriptSchema
+        return SimplePipesScaffoldParams
 
     def __init__(self, asset_key: AssetKey, script_path: Path):
         self._asset_key = asset_key

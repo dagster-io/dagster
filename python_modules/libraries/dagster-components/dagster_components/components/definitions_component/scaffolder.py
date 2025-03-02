@@ -9,21 +9,21 @@ from dagster_components.core.component_scaffolder import ScaffoldRequest
 from dagster_components.scaffold import scaffold_component_yaml
 
 
-class DefinitionsScaffoldSchema(BaseModel):
+class DefinitionsScaffoldParams(BaseModel):
     definitions_path: Optional[str] = None
 
 
 class DefinitionsComponentScaffolder(Scaffolder):
     @classmethod
-    def get_schema(cls):
-        return DefinitionsScaffoldSchema
+    def get_scaffold_params(cls):
+        return DefinitionsScaffoldParams
 
-    def scaffold(self, request: ScaffoldRequest, params: DefinitionsScaffoldSchema) -> None:
+    def scaffold(self, request: ScaffoldRequest, params: DefinitionsScaffoldParams) -> None:
         scaffold_params = (
-            params if isinstance(params, DefinitionsScaffoldSchema) else DefinitionsScaffoldSchema()
+            params if isinstance(params, DefinitionsScaffoldParams) else DefinitionsScaffoldParams()
         )
 
-        with pushd(str(request.component_instance_root_path)):
+        with pushd(str(request.target_path)):
             Path(
                 scaffold_params.definitions_path
                 if scaffold_params.definitions_path

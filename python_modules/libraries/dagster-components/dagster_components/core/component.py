@@ -79,7 +79,7 @@ class Component(ABC):
             )
 
         component_schema = cls.get_schema()
-        scaffold_params = scaffolder.get_schema()
+        scaffold_params = scaffolder.get_scaffold_params()
         return {
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,
