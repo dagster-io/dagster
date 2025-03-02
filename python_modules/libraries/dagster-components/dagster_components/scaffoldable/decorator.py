@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Callable, TypeVar, Union
 
 from dagster import _check as check
 
-from dagster_components.scaffoldable.scaffolder import ComponentScaffolder
+from dagster_components.scaffoldable.scaffolder import Scaffolder
 
 # Type variable for generic class handling
 T = TypeVar("T")
