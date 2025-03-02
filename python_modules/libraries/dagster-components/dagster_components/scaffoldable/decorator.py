@@ -11,7 +11,7 @@ T = TypeVar("T")
 SCAFFOLDER_ATTRIBUTE = "__scaffolder_class__"
 
 
-from dagster_components.scaffoldable.scaffolder import Scaffolder, ScaffolderUnavailableReason
+from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 
 
 def scaffoldable(
