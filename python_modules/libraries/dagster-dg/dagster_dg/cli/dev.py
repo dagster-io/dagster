@@ -13,7 +13,7 @@ import click
 import psutil
 import yaml
 
-from dagster_dg.cli.global_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.error import DgError

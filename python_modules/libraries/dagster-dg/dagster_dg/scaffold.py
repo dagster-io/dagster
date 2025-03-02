@@ -1,6 +1,6 @@
 import json
 import os
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, Optional
 
@@ -12,70 +12,8 @@ from dagster_dg.context import DgContext
 from dagster_dg.utils import exit_with_error, scaffold_subtree
 
 # ########################
-# ##### PROJECT
+# ##### WORKSPACE
 # ########################
-
-# Despite the fact that editable dependencies are resolved through tool.uv.sources, we need to set
-# the dependencies themselves differently depending on whether we are using editable dagster or
-# not. This is because `tool.uv.sources` only seems to apply to direct dependencies of the package,
-# so any 2+-order Dagster dependency of our package needs to be listed as a direct dependency in the
-# editable case.
-EDITABLE_DAGSTER_DEPENDENCIES = (
-    "dagster",
-    "dagster-pipes",
-    "dagster-components",
-    "dagster-test[components]",  # we include dagster-test for testing purposes
-)
-EDITABLE_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver", "dagster-graphql")
-PYPI_DAGSTER_DEPENDENCIES = ("dagster-components",)
-PYPI_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver",)
-
-
-def get_pyproject_toml_dependencies(use_editable_dagster: bool) -> str:
-    deps = EDITABLE_DAGSTER_DEPENDENCIES if use_editable_dagster else PYPI_DAGSTER_DEPENDENCIES
-    return "\n".join(
-        [
-            "dependencies = [",
-            *[f'    "{dep}",' for dep in deps],
-            "]",
-        ]
-    )
-
-
-def get_pyproject_toml_dev_dependencies(use_editable_dagster: bool) -> str:
-    deps = (
-        EDITABLE_DAGSTER_DEV_DEPENDENCIES if use_editable_dagster else PYPI_DAGSTER_DEV_DEPENDENCIES
-    )
-    return "\n".join(
-        [
-            "dev = [",
-            *[f'    "{dep}",' for dep in deps],
-            "]",
-        ]
-    )
-
-
-def get_pyproject_toml_uv_sources(editable_dagster_root: Path) -> str:
-    lib_lines = [
-        f"{path.name} = {{ path = '{path}', editable = true }}"
-        for path in _gather_dagster_packages(editable_dagster_root)
-    ]
-    return "\n".join(
-        [
-            "[tool.uv.sources]",
-            *lib_lines,
-        ]
-    )
-
-
-def _gather_dagster_packages(editable_dagster_root: Path) -> Sequence[Path]:
-    return [
-        p.parent
-        for p in (
-            *editable_dagster_root.glob("python_modules/dagster*/setup.py"),
-            *editable_dagster_root.glob("python_modules/libraries/dagster*/setup.py"),
-        )
-    ]
 
 
 def scaffold_workspace(
@@ -103,33 +41,56 @@ def scaffold_workspace(
     return new_workspace_path
 
 
+# ########################
+# ##### PROJECT
+# ########################
+
+
 def scaffold_project(
     path: Path,
     dg_context: DgContext,
     use_editable_dagster: Optional[str],
+    use_editable_components_package_only: Optional[str],
     skip_venv: bool = False,
     populate_cache: bool = True,
 ) -> None:
     click.echo(f"Creating a Dagster project at {path}.")
 
-    if use_editable_dagster == "TRUE":
-        if not os.environ.get("DAGSTER_GIT_REPO_DIR"):
-            exit_with_error(
-                "The `--use-editable-dagster` flag requires the `DAGSTER_GIT_REPO_DIR` environment variable to be set."
-            )
-        editable_dagster_root = os.environ["DAGSTER_GIT_REPO_DIR"]
-    elif use_editable_dagster:  # a string value was passed
-        editable_dagster_root = use_editable_dagster
+    if use_editable_dagster and use_editable_components_package_only:
+        exit_with_error(
+            "Cannot specify both --use-editable-dagster and --use-editable-components-package-only."
+        )
+    elif use_editable_dagster:
+        editable_dagster_root = (
+            _get_editable_dagster_from_env()
+            if use_editable_dagster == "TRUE"
+            else use_editable_dagster
+        )
+        deps = EDITABLE_DAGSTER_DEPENDENCIES
+        dev_deps = EDITABLE_DAGSTER_DEV_DEPENDENCIES
+        sources = _gather_dagster_packages(Path(editable_dagster_root))
+    elif use_editable_components_package_only:
+        editable_dagster_root = (
+            _get_editable_dagster_from_env()
+            if use_editable_components_package_only == "TRUE"
+            else use_editable_components_package_only
+        )
+        deps = EDITABLE_COMPONENTS_ONLY_DEPENDENCIES
+        dev_deps = EDITABLE_COMPONENTS_ONLY_DEV_DEPENDENCIES
+        sources = [
+            x
+            for x in _gather_dagster_packages(Path(editable_dagster_root))
+            if x.name in ("dagster-components", "dagster-test")
+        ]
     else:
         editable_dagster_root = None
+        deps = PYPI_DAGSTER_DEPENDENCIES
+        dev_deps = PYPI_DAGSTER_DEV_DEPENDENCIES
+        sources = []
 
-    dependencies = get_pyproject_toml_dependencies(use_editable_dagster=bool(editable_dagster_root))
-    dev_dependencies = get_pyproject_toml_dev_dependencies(
-        use_editable_dagster=bool(editable_dagster_root)
-    )
-    uv_sources = (
-        get_pyproject_toml_uv_sources(Path(editable_dagster_root)) if editable_dagster_root else ""
-    )
+    dependencies_str = _get_pyproject_toml_dependencies(deps)
+    dev_dependencies_str = _get_pyproject_toml_dev_dependencies(dev_deps)
+    uv_sources_str = _get_pyproject_toml_uv_sources(sources) if sources else ""
 
     scaffold_subtree(
         path=path,
@@ -137,10 +98,10 @@ def scaffold_project(
         templates_path=os.path.join(
             os.path.dirname(__file__), "templates", "PROJECT_NAME_PLACEHOLDER"
         ),
-        dependencies=dependencies,
-        dev_dependencies=dev_dependencies,
+        dependencies=dependencies_str,
+        dev_dependencies=dev_dependencies_str,
         code_location_name=path.name,
-        uv_sources=uv_sources,
+        uv_sources=uv_sources_str,
     )
     click.echo(f"Scaffolded files for Dagster project at {path}.")
 
@@ -150,6 +111,73 @@ def scaffold_project(
         cl_dg_context.ensure_uv_lock()
         if populate_cache:
             RemoteComponentRegistry.from_dg_context(cl_dg_context)  # Populate the cache
+
+
+# Despite the fact that editable dependencies are resolved through tool.uv.sources, we need to set
+# the dependencies themselves differently depending on whether we are using editable dagster or
+# not. This is because `tool.uv.sources` only seems to apply to direct dependencies of the package,
+# so any 2+-order Dagster dependency of our package needs to be listed as a direct dependency in the
+# editable case. See: https://github.com/astral-sh/uv/issues/9446
+EDITABLE_DAGSTER_DEPENDENCIES = (
+    "dagster",
+    "dagster-pipes",
+    "dagster-components",
+    "dagster-test[components]",  # we include dagster-test for testing purposes
+)
+EDITABLE_COMPONENTS_ONLY_DEPENDENCIES = ("dagster-components", "dagster-test[components]")
+EDITABLE_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver", "dagster-graphql")
+EDITABLE_COMPONENTS_ONLY_DEV_DEPENDENCIES = ("dagster-webserver",)
+PYPI_DAGSTER_DEPENDENCIES = ("dagster-components",)
+PYPI_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver",)
+
+
+def _get_editable_dagster_from_env() -> str:
+    if not os.environ.get("DAGSTER_GIT_REPO_DIR"):
+        exit_with_error(
+            "The `--use-editable-dagster` and `--use-editable-components-package-only` options, when used as flags,"
+            " require the `DAGSTER_GIT_REPO_DIR` environment variable to be set."
+        )
+    return os.environ["DAGSTER_GIT_REPO_DIR"]
+
+
+def _get_pyproject_toml_dependencies(deps: tuple[str, ...]) -> str:
+    return "\n".join(
+        [
+            "dependencies = [",
+            *[f'    "{dep}",' for dep in deps],
+            "]",
+        ]
+    )
+
+
+def _get_pyproject_toml_dev_dependencies(deps: tuple[str, ...]) -> str:
+    return "\n".join(
+        [
+            "dev = [",
+            *[f'    "{dep}",' for dep in deps],
+            "]",
+        ]
+    )
+
+
+def _get_pyproject_toml_uv_sources(lib_paths: list[Path]) -> str:
+    lib_lines = [f"{path.name} = {{ path = '{path}', editable = true }}" for path in lib_paths]
+    return "\n".join(
+        [
+            "[tool.uv.sources]",
+            *lib_lines,
+        ]
+    )
+
+
+def _gather_dagster_packages(editable_dagster_root: Path) -> list[Path]:
+    return [
+        p.parent
+        for p in (
+            *editable_dagster_root.glob("python_modules/dagster*/setup.py"),
+            *editable_dagster_root.glob("python_modules/libraries/dagster*/setup.py"),
+        )
+    ]
 
 
 # ########################

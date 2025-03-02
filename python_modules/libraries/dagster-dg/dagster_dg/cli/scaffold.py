@@ -7,7 +7,11 @@ import click
 from click.core import ParameterSource
 from typer.rich_utils import rich_format_help
 
-from dagster_dg.cli.global_options import GLOBAL_OPTIONS, dg_global_options
+from dagster_dg.cli.shared_options import (
+    GLOBAL_OPTIONS,
+    dg_editable_dagster_options,
+    dg_global_options,
+)
 from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import (
@@ -78,18 +82,6 @@ def workspace_scaffold_command(
 @scaffold_group.command(name="project", cls=DgClickCommand)
 @click.argument("name", type=str)
 @click.option(
-    "--use-editable-dagster",
-    type=str,
-    flag_value="TRUE",
-    is_flag=False,
-    default=None,
-    help=(
-        "Install Dagster package dependencies from a local Dagster clone. Accepts a path to local Dagster clone root or"
-        " may be set as a flag (no value is passed). If set as a flag,"
-        " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
-    ),
-)
-@click.option(
     "--skip-venv",
     is_flag=True,
     default=False,
@@ -102,14 +94,16 @@ def workspace_scaffold_command(
     help="Whether to automatically populate the component type cache for the project.",
     hidden=True,
 )
+@dg_editable_dagster_options
 @dg_global_options
 @click.pass_context
 def project_scaffold_command(
     context: click.Context,
     name: str,
-    use_editable_dagster: Optional[str],
     skip_venv: bool,
     populate_cache: bool,
+    use_editable_dagster: Optional[str],
+    use_editable_components_package_only: Optional[str],
     **global_options: object,
 ) -> None:
     """Scaffold a Dagster project file structure and a uv-managed virtual environment scoped
@@ -149,6 +143,7 @@ def project_scaffold_command(
         project_path,
         dg_context,
         use_editable_dagster=use_editable_dagster,
+        use_editable_components_package_only=use_editable_components_package_only,
         skip_venv=skip_venv,
         populate_cache=populate_cache,
     )
