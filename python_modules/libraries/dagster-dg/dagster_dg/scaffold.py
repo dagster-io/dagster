@@ -5,11 +5,20 @@ from pathlib import Path
 from typing import Any, Optional
 
 import click
+import tomlkit
+import tomlkit.items
 
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.config import discover_workspace_root
 from dagster_dg.context import DgContext
-from dagster_dg.utils import exit_with_error, scaffold_subtree
+from dagster_dg.utils import (
+    exit_with_error,
+    get_toml_node,
+    has_toml_node,
+    modify_toml,
+    scaffold_subtree,
+    set_toml_node,
+)
 
 # ########################
 # ##### WORKSPACE
@@ -110,6 +119,31 @@ def scaffold_project(
         cl_dg_context.ensure_uv_lock()
         if populate_cache:
             RemoteComponentRegistry.from_dg_context(cl_dg_context)  # Populate the cache
+
+    # Update pyproject.toml
+    if cl_dg_context.is_workspace:
+        entry = {
+            "path": str(cl_dg_context.root_path.relative_to(cl_dg_context.workspace_root_path)),
+        }
+
+        with modify_toml(dg_context.pyproject_toml_path) as toml:
+            if not has_toml_node(toml, ("tool", "dg", "workspace", "projects")):
+                projects = tomlkit.aot()
+                set_toml_node(toml, ("tool", "dg", "workspace", "projects"), projects)
+                item = tomlkit.table()
+            else:
+                projects = get_toml_node(
+                    toml,
+                    ("tool", "dg", "workspace", "projects"),
+                    (tomlkit.items.AoT, tomlkit.items.Array),
+                )
+                if isinstance(projects, tomlkit.items.Array):
+                    item = tomlkit.inline_table()
+                else:
+                    item = tomlkit.table()
+            for key, value in entry.items():
+                item[key] = value
+            projects.append(item)
 
 
 # Despite the fact that editable dependencies are resolved through tool.uv.sources, we need to set
