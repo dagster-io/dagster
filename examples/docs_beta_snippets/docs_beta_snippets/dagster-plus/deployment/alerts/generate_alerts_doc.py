@@ -209,7 +209,7 @@ def _code_link(alert: AlertType, service: NotificationService) -> str:
                 event_types=alert.event_types,
                 description=f"Sends {service.effect_description} {alert.condition_description}.",
                 **(alert.config_snippet if alert.config_snippet else {}),
-                notification_service=service.config_snippet,
+                notification_service={service.name: service.config_snippet},
             )
         ),
     )
