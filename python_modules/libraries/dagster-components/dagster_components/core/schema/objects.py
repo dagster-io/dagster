@@ -166,6 +166,10 @@ class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[AssetSpe
     ] = Field(..., description="A unique identifier for the asset.")
 
 
+def resolve_asset_spec_schema(context: ResolutionContext, schema: AssetSpecSchema) -> AssetSpec:
+    return resolve_as(schema=schema, target_type=AssetSpec, context=context)
+
+
 class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Mapping[str, Any]]):
     """Resolves into a dictionary of asset attributes. This is similar to AssetSpecSchema, but
     does not require a key. This is useful in contexts where you want to modify attributes of
