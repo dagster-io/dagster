@@ -90,9 +90,24 @@ def test_dg_init_use_editable_dagster(
         assert_runner_result(result)
 
         assert Path("dagster-workspace").exists()
-        pyproject_toml = Path("dagster-workspace/projects/helloworld/pyproject.toml")
-        assert pyproject_toml.exists()
-        with pyproject_toml.open() as f:
+
+        workspace_config = Path("dagster-workspace/pyproject.toml")
+        with workspace_config.open() as f:
+            toml = tomlkit.parse(f.read())
+            option_key = option[2:].replace("-", "_")
+            option_value = True if value_source == "env_var" else str(dagster_git_repo_dir)
+            assert (
+                get_toml_node(
+                    toml,
+                    ("tool", "dg", "workspace", "new_project_options", option_key),
+                    (bool, str),
+                )
+                == option_value
+            )
+
+        project_config = Path("dagster-workspace/projects/helloworld/pyproject.toml")
+        assert project_config.exists()
+        with project_config.open() as f:
             toml = tomlkit.parse(f.read())
             validate_pyproject_toml_with_editable(toml, option, dagster_git_repo_dir)
 

@@ -15,6 +15,7 @@ from dagster_dg.cli.shared_options import (
 from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import (
+    DgWorkspaceNewProjectOptions,
     get_config_from_cli_context,
     has_config_on_cli_context,
     normalize_cli_config,
@@ -53,9 +54,12 @@ def scaffold_group():
 
 @scaffold_group.command(name="workspace", cls=DgClickCommand)
 @click.argument("name", type=str, default=DEFAULT_WORKSPACE_NAME)
+@dg_editable_dagster_options
 @dg_global_options
 def workspace_scaffold_command(
     name: str,
+    use_editable_dagster: Optional[str],
+    use_editable_components_package_only: Optional[str],
     **global_options: object,
 ):
     """Initialize a new Dagster workspace.
@@ -71,7 +75,11 @@ def workspace_scaffold_command(
     │   └── pyproject.toml
 
     """  # noqa: D301
-    scaffold_workspace(name)
+    new_project_options = DgWorkspaceNewProjectOptions.get_raw_from_cli(
+        use_editable_dagster,
+        use_editable_components_package_only,
+    )
+    scaffold_workspace(name, new_project_options)
 
 
 # ########################

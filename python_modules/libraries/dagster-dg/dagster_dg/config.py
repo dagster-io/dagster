@@ -246,15 +246,20 @@ class DgRawProjectConfig(TypedDict):
 @dataclass
 class DgWorkspaceConfig:
     projects: list["DgWorkspaceProjectSpec"]
+    new_project_options: "DgWorkspaceNewProjectOptions"
 
     @classmethod
     def from_raw(cls, raw: "DgRawWorkspaceConfig") -> Self:
         projects = [DgWorkspaceProjectSpec.from_raw(spec) for spec in raw.get("projects", [])]
-        return cls(projects)
+        new_project_options = DgWorkspaceNewProjectOptions.from_raw(
+            raw.get("new_project_options", {})
+        )
+        return cls(projects, new_project_options)
 
 
 class DgRawWorkspaceConfig(TypedDict, total=False):
     projects: list["DgRawWorkspaceProjectSpec"]
+    new_project_options: "DgRawWorkspaceNewProjectOptions"
 
 
 @dataclass
@@ -275,6 +280,50 @@ class DgWorkspaceProjectSpec:
 class DgRawWorkspaceProjectSpec(TypedDict, total=False):
     path: Required[str]
     code_location_name: str
+
+
+@dataclass
+class DgWorkspaceNewProjectOptions:
+    use_editable_dagster: Union[str, bool] = False
+    use_editable_components_package_only: Union[str, bool] = False
+
+    @classmethod
+    def from_raw(cls, raw: "DgRawWorkspaceNewProjectOptions") -> Self:
+        return cls(
+            use_editable_dagster=raw.get(
+                "use_editable_dagster", DgWorkspaceNewProjectOptions.use_editable_dagster
+            ),
+            use_editable_components_package_only=raw.get(
+                "use_editable_components_package_only",
+                DgWorkspaceNewProjectOptions.use_editable_components_package_only,
+            ),
+        )
+
+    # This is here instead of on `DgRawWorkspaceNewProjectOptions` because TypedDict can't have
+    # methods.
+    @classmethod
+    def get_raw_from_cli(
+        cls,
+        use_editable_dagster: Optional[str],
+        use_editable_components_package_only: Optional[str],
+    ) -> "DgRawWorkspaceNewProjectOptions":
+        raw_new_project_options: DgRawWorkspaceNewProjectOptions = {}
+        if use_editable_dagster:
+            raw_new_project_options["use_editable_dagster"] = (
+                True if use_editable_dagster == "TRUE" else use_editable_dagster
+            )
+        if use_editable_components_package_only:
+            raw_new_project_options["use_editable_components_package_only"] = (
+                True
+                if use_editable_components_package_only == "TRUE"
+                else use_editable_components_package_only
+            )
+        return raw_new_project_options
+
+
+class DgRawWorkspaceNewProjectOptions(TypedDict, total=False):
+    use_editable_dagster: Union[str, bool]
+    use_editable_components_package_only: Union[str, bool]
 
 
 # ########################
@@ -432,6 +481,10 @@ def _validate_file_config_workspace_section(section: object) -> None:
             _validate_file_config_setting(section, key, list, "tool.dg.workspace")
             for i, spec in enumerate(section.get("projects", [])):
                 _validate_file_config_workspace_project_spec(spec, i)
+        elif key == "new_project_options":
+            _validate_file_config_workspace_new_project_options(
+                section.get("new_project_options", {})
+            )
         else:
             _validate_file_config_setting(section, key, type_, "tool.dg.workspace")
     _validate_file_config_no_extraneous_keys(
@@ -450,6 +503,20 @@ def _validate_file_config_workspace_project_spec(section: object, index: int) ->
         set(DgRawWorkspaceProjectSpec.__annotations__.keys()),
         section,
         f"tool.dg.workspace.projects[{index}]",
+    )
+
+
+def _validate_file_config_workspace_new_project_options(section: object) -> None:
+    if not isinstance(section, dict):
+        _raise_mistyped_key_error(
+            "tool.dg.workspace.new_project_options", get_type_str(dict), section
+        )
+    for key, type_ in DgRawWorkspaceNewProjectOptions.__annotations__.items():
+        _validate_file_config_setting(section, key, type_, "tool.dg.workspace.new_project_options")
+    _validate_file_config_no_extraneous_keys(
+        set(DgRawWorkspaceNewProjectOptions.__annotations__.keys()),
+        section,
+        "tool.dg.workspace.new_project_options",
     )
 
 

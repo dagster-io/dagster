@@ -5,7 +5,7 @@ import click
 
 from dagster_dg.cli.scaffold import DEFAULT_WORKSPACE_NAME
 from dagster_dg.cli.shared_options import dg_editable_dagster_options, dg_global_options
-from dagster_dg.config import normalize_cli_config
+from dagster_dg.config import DgWorkspaceNewProjectOptions, normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import scaffold_project, scaffold_workspace
 from dagster_dg.utils import DgClickCommand, exit_with_error
@@ -43,7 +43,12 @@ def init_command(
         default=DEFAULT_WORKSPACE_NAME,
     ).strip()
 
-    workspace_path = scaffold_workspace(workspace_name)
+    new_project_options = DgWorkspaceNewProjectOptions.get_raw_from_cli(
+        use_editable_dagster,
+        use_editable_components_package_only,
+    )
+
+    workspace_path = scaffold_workspace(workspace_name, new_project_options)
     workspace_dg_context = DgContext.from_file_discovery_and_command_line_config(
         workspace_path, cli_config
     )
