@@ -2,6 +2,7 @@
 title: Creating alerts in Dagster+
 sidebar_position: 200
 ---
+{/* To update or regenerate the yaml code snippets in this doc, run `python ./examples/docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/generate_alerts_doc_code_snippets.py` */}
 
 You can create alerts in the Dagster+ UI or using the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli).
 
