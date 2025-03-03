@@ -655,11 +655,6 @@
       "permanent": false
     },
     {
-      "source": "/guides/build/assets/asset-selection/syntax",
-      "destination": "/guides/build/assets/asset-selection-syntax/",
-      "permanent": false
-    },
-    {
       "source": "/concepts/assets/asset-checks",
       "destination": "/guides/test/asset-checks",
       "permanent": false
