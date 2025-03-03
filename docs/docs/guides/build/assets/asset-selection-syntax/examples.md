@@ -21,7 +21,7 @@ Selects all assets on the path from the `raw_data_b` asset to the `summary_stats
     <TabItem value="python" label="Python">
     ```python
     raw_data_b_summary_stats_2_job = define_asset_job(
-        name="raw_data_b_summary_stats_2_job", selection='key:"raw_data_b"+ and +key:"summary_stats2"'
+        name="raw_data_b_summary_stats_2_job", selection='key:"raw_data_b"+ and +key:"summary_stats_2"'
     )
     ```
     </TabItem>

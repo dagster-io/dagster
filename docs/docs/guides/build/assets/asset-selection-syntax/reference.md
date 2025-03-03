@@ -84,7 +84,7 @@ You can combine multiple filters with operands and group them with parentheses t
 
 ## Functions
 
-You can use `sink()` and `roots()` functions to return the sink and root assets of an asset selection.
+You can use `sinks()` and `roots()` functions to return the sink and root assets of an asset selection.
 
 - **Sink assets** are assets without any downstream dependencies (leaf nodes), which means they don't provide input to any other assets.
 - **Root assets** are assets without any upstream dependencies (root nodes), which means no assets provide input to them.
