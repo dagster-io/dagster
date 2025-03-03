@@ -240,7 +240,7 @@ Selects one layer downstream of `combo_a_b_c_data`, limited to assets of kind `c
 owner:"nora.dagster@example.com" and not tag:"customer_data"
 ```
 
-Selects all assets owned by team `data_engineering` **excluding** any assets tagged with `private`.
+Selects all assets owned by `nora.dagster@example.com` **excluding** any assets tagged with `customer_data`.
 
 <Tabs groupId="examples">
     <TabItem value="python" label="Python">
