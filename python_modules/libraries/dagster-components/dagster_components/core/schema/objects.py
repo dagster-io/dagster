@@ -14,7 +14,12 @@ from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
 from typing_extensions import Self, TypeAlias
 
-from dagster_components.core.schema.base import FieldResolver, ResolvableSchema, resolve_fields
+from dagster_components.core.schema.base import (
+    FieldResolver,
+    ResolvableSchema,
+    resolve_as,
+    resolve_fields,
+)
 from dagster_components.core.schema.context import ResolutionContext
 
 
@@ -61,11 +66,17 @@ TFromSchema = TypeVar("TFromSchema")
 class ResolvableFromSchema(Generic[TFromSchema]):
     @classmethod
     def from_schema(cls, context: ResolutionContext, schema: "OpSpecSchema") -> Self:
-        obj = schema.resolve_as(target_type=cls, context=context)  # type: ignore
+        obj = resolve_as(schema=schema, target_type=cls, context=context)
         if not isinstance(obj, cls):
             raise ValueError(f"Expected {cls}, got {obj}")
         typed_obj = cast(Self, obj)
         return typed_obj
+
+    @classmethod
+    def from_optional_schema(
+        cls, context: ResolutionContext, schema: Optional["OpSpecSchema"]
+    ) -> Optional[Self]:
+        return cls.from_schema(context, schema) if schema else None
 
 
 @dataclass

@@ -15,7 +15,7 @@ from dagster_dbt import (
 
 from dagster_components import Component, ComponentLoadContext, FieldResolver
 from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
-from dagster_components.core.schema.base import ResolvableSchema, resolve_as
+from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
@@ -42,53 +42,49 @@ class DbtProjectSchema(ResolvableSchema["DbtProjectComponent"]):
     exclude: Optional[str] = None
 
 
-def resolve_dbt(context: ResolutionContext, schema: DbtProjectSchema) -> DbtCliResource:
-    return DbtCliResource(**context.resolve_value(schema.dbt.model_dump()))
-
-
-def resolve_translator(
-    context: ResolutionContext, schema: DbtProjectSchema
-) -> DagsterDbtTranslator:
-    if schema.asset_attributes and schema.asset_attributes.deps:
-        # TODO: Consider supporting alerting deps in the future
-        raise ValueError("deps are not supported for dbt_project component")
-    return get_wrapped_translator_class(DagsterDbtTranslator)(
-        resolving_info=TranslatorResolvingInfo(
-            "node", schema.asset_attributes or AssetAttributesSchema(), context
-        )
-    )
-
-
-def resolve_schema_to_post_processors(
-    context: ResolutionContext, schema: DbtProjectSchema
-) -> Sequence[PostProcessorFn]:
-    return [
-        resolve_schema_to_post_processor(context, s) for s in schema.asset_post_processors or []
-    ]
-
-
-def resolve_op_spec(context: ResolutionContext, schema: DbtProjectSchema) -> Optional[OpSpec]:
-    return resolve_as(schema.op, target_type=OpSpec, context=context) if schema.op else None
-
-
 @scaffoldable(scaffolder=DbtProjectComponentScaffolder)
 @dataclass
 class DbtProjectComponent(Component):
     """Expose a DBT project to Dagster as a set of assets."""
 
-    dbt: Annotated[DbtCliResource, FieldResolver(resolve_dbt)]
+    dbt: Annotated[
+        DbtCliResource,
+        FieldResolver(
+            lambda context, schema: DbtCliResource(**context.resolve_value(schema.dbt.model_dump()))
+        ),
+    ]
     op: Annotated[
         Optional[OpSpec],
-        FieldResolver(
-            lambda context, schema: OpSpec.from_schema(context, schema.op) if schema.op else None
-        ),
+        FieldResolver(lambda context, schema: OpSpec.from_optional_schema(context, schema.op)),
     ] = None
+
+    @staticmethod
+    def resolve_translator(
+        context: ResolutionContext, schema: DbtProjectSchema
+    ) -> DagsterDbtTranslator:
+        if schema.asset_attributes and schema.asset_attributes.deps:
+            # TODO: Consider supporting alerting deps in the future
+            raise ValueError("deps are not supported for dbt_project component")
+        return get_wrapped_translator_class(DagsterDbtTranslator)(
+            resolving_info=TranslatorResolvingInfo(
+                "node", schema.asset_attributes or AssetAttributesSchema(), context
+            )
+        )
+
     translator: Annotated[DagsterDbtTranslator, FieldResolver(resolve_translator)] = field(
         default_factory=DagsterDbtTranslator
     )
+
     asset_post_processors: Annotated[
-        Optional[Sequence[PostProcessorFn]], FieldResolver(resolve_schema_to_post_processors)
+        Optional[Sequence[PostProcessorFn]],
+        FieldResolver(
+            lambda context, schema: [
+                resolve_schema_to_post_processor(context, schema)
+                for schema in schema.asset_post_processors or []
+            ]
+        ),
     ] = None
+
     select: str = "fqn:*"
     exclude: Optional[str] = None
 
