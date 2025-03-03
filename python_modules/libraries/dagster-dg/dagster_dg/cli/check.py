@@ -173,7 +173,7 @@ def check_yaml_command(
     "--log-level",
     help="Set the log level for dagster services.",
     show_default=True,
-    default="info",
+    default="warning",
     type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option(
@@ -244,3 +244,5 @@ def check_definitions_command(
             cmd.extend(["--workspace", workspace_file])
 
         subprocess.run(cmd, check=True)
+
+    click.echo("All definitions loaded successfully.")
