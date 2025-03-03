@@ -7,9 +7,6 @@ from dagster_components.core.component_defs_builder import (
     build_component_defs as build_component_defs,
 )
 from dagster_components.core.component_scaffolder import (
-    ComponentScaffolder as ComponentScaffolder,
-    ComponentScaffolderUnavailableReason as ComponentScaffolderUnavailableReason,
-    ComponentScaffoldRequest as ComponentScaffoldRequest,
     DefaultComponentScaffolder as DefaultComponentScaffolder,
 )
 from dagster_components.core.schema.base import (
@@ -25,4 +22,9 @@ from dagster_components.core.schema.objects import (
     OpSpecSchema as OpSpecSchema,
 )
 from dagster_components.scaffold import scaffold_component_yaml as scaffold_component_yaml
+from dagster_components.scaffoldable.scaffolder import (
+    Scaffolder as Scaffolder,
+    ScaffolderUnavailableReason as ScaffolderUnavailableReason,
+    ScaffoldRequest as ScaffoldRequest,
+)
 from dagster_components.version import __version__ as __version__

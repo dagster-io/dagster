@@ -25,6 +25,7 @@ from dagster_components.core.schema.objects import (
     PostProcessorFn,
     ResolutionContext,
 )
+from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 
@@ -57,6 +58,7 @@ def resolve_translator(
     )
 
 
+@scaffoldable(scaffolder=DbtProjectComponentScaffolder)
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))  # omits translator prop from schema
 class DbtProjectComponent(Component):
     """Expose a DBT project to Dagster as a set of assets."""
@@ -82,10 +84,6 @@ class DbtProjectComponent(Component):
     @property
     def project(self) -> DbtProject:
         return DbtProject(self.dbt.project_dir)
-
-    @classmethod
-    def get_scaffolder(cls) -> "DbtProjectComponentScaffolder":
-        return DbtProjectComponentScaffolder()
 
     @classmethod
     def get_schema(cls) -> type[DbtProjectSchema]:

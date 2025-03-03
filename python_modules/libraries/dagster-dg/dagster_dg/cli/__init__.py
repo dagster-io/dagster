@@ -5,10 +5,10 @@ import click
 from dagster_dg.cli.check import check_group
 from dagster_dg.cli.dev import dev_command
 from dagster_dg.cli.docs import docs_group
-from dagster_dg.cli.global_options import dg_global_options
 from dagster_dg.cli.init import init_command
 from dagster_dg.cli.list import list_group
 from dagster_dg.cli.scaffold import scaffold_group
+from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.cli.utils import utils_group
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.config import normalize_cli_config

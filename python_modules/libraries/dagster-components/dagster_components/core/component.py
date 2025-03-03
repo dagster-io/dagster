@@ -9,7 +9,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
+from typing import Any, Callable, Optional, TypedDict, TypeVar
 
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
@@ -18,13 +18,11 @@ from dagster._utils import pushd
 from typing_extensions import Self
 
 from dagster_components.core.component_key import ComponentKey
-from dagster_components.core.component_scaffolder import (
-    ComponentScaffolder,
-    ComponentScaffolderUnavailableReason,
-    DefaultComponentScaffolder,
-)
+from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
+from dagster_components.scaffoldable.decorator import get_scaffolder, scaffoldable
+from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 from dagster_components.utils import format_error_message
 
 
@@ -37,21 +35,11 @@ class ComponentDeclNode(ABC):
     def load(self, context: "ComponentLoadContext") -> Sequence["Component"]: ...
 
 
+@scaffoldable(scaffolder=DefaultComponentScaffolder)
 class Component(ABC):
     @classmethod
     def get_schema(cls) -> Optional[type[ResolvableSchema]]:
         return None
-
-    @classmethod
-    def get_scaffolder(cls) -> Union[ComponentScaffolder, ComponentScaffolderUnavailableReason]:
-        """Subclasses should implement this method to override scaffolding behavior. If this component
-        is not meant to be scaffolded it returns a ComponentScaffolderUnavailableReason with a message
-        This can be determined at runtime based on the environment or configuration. For example,
-        if scaffolders are optionally installed as extras (for example to avoid heavy dependencies in production),
-        this method should return a ComponentScaffolderUnavailableReason with a message explaining
-        how to install the necessary extras.
-        """
-        return DefaultComponentScaffolder()
 
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:
@@ -69,15 +57,15 @@ class Component(ABC):
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
 
-        scaffolder = cls.get_scaffolder()
+        scaffolder = get_scaffolder(cls)
 
-        if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
+        if isinstance(scaffolder, ScaffolderUnavailableReason):
             raise DagsterError(
                 f"Component {cls.__name__} is not scaffoldable: {scaffolder.message}"
             )
 
         component_schema = cls.get_schema()
-        scaffold_params = scaffolder.get_schema()
+        scaffold_params = scaffolder.get_params()
         return {
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,

@@ -10,7 +10,7 @@ from yaml.scanner import ScannerError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.cli.dev import format_forwarded_option, temp_workspace_file
-from dagster_dg.cli.global_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import normalize_cli_config
@@ -173,7 +173,7 @@ def check_yaml_command(
     "--log-level",
     help="Set the log level for dagster services.",
     show_default=True,
-    default="info",
+    default="warning",
     type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option(
@@ -244,3 +244,5 @@ def check_definitions_command(
             cmd.extend(["--workspace", workspace_file])
 
         subprocess.run(cmd, check=True)
+
+    click.echo("All definitions loaded successfully.")

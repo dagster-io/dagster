@@ -19,10 +19,6 @@ class ShellCommand(Component):
     def get_schema(cls):
         return ShellCommandSchema
 
-    @classmethod
-    def get_scaffolder(cls) -> DefaultComponentScaffolder:
-        return DefaultComponentScaffolder()
-
     def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
         # Add definition construction logic here.
         return Definitions()

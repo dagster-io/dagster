@@ -1,34 +1,10 @@
-from abc import abstractmethod
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
-from dagster._record import record
-from pydantic import BaseModel
+from dagster_components.scaffoldable.scaffolder import Scaffolder, ScaffoldRequest
 
 
-@record
-class ComponentScaffoldRequest:
-    component_type_name: str
-    component_instance_root_path: Path
-
-
-class ComponentScaffolder:
-    @classmethod
-    def get_schema(cls) -> Optional[type[BaseModel]]:
-        return None
-
-    @abstractmethod
-    def scaffold(self, request: ComponentScaffoldRequest, params: Any) -> None: ...
-
-
-@dataclass
-class ComponentScaffolderUnavailableReason:
-    message: str
-
-
-class DefaultComponentScaffolder(ComponentScaffolder):
-    def scaffold(self, request: ComponentScaffoldRequest, params: Any) -> None:
+class DefaultComponentScaffolder(Scaffolder):
+    def scaffold(self, request: ScaffoldRequest, params: Any) -> None:
         # This will be deleted once all components are converted to the new ComponentScaffolder API
         from dagster_components.scaffold import scaffold_component_yaml
 

@@ -6,10 +6,8 @@ import click
 import yaml
 
 from dagster_components.core.component import Component
-from dagster_components.core.component_scaffolder import (
-    ComponentScaffolderUnavailableReason,
-    ComponentScaffoldRequest,
-)
+from dagster_components.scaffoldable.decorator import get_scaffolder
+from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason, ScaffoldRequest
 
 
 class ComponentDumper(yaml.Dumper):
@@ -21,10 +19,10 @@ class ComponentDumper(yaml.Dumper):
 
 
 def scaffold_component_yaml(
-    request: ComponentScaffoldRequest, attributes: Optional[Mapping[str, Any]]
+    request: ScaffoldRequest, attributes: Optional[Mapping[str, Any]]
 ) -> None:
-    with open(request.component_instance_root_path / "component.yaml", "w") as f:
-        component_data = {"type": request.component_type_name, "attributes": attributes or {}}
+    with open(request.target_path / "component.yaml", "w") as f:
+        component_data = {"type": request.type_name, "attributes": attributes or {}}
         yaml.dump(
             component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
         )
@@ -40,17 +38,17 @@ def scaffold_component_instance(
     click.echo(f"Creating a Dagster component instance folder at {path}.")
     if not path.exists():
         path.mkdir()
-    scaffolder = component_type.get_scaffolder()
+    scaffolder = get_scaffolder(component_type)
 
-    if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
+    if isinstance(scaffolder, ScaffolderUnavailableReason):
         raise Exception(
             f"Component type {component_type_name} does not have a scaffolder. Reason: {scaffolder.message}."
         )
 
     scaffolder.scaffold(
-        ComponentScaffoldRequest(
-            component_type_name=component_type_name,
-            component_instance_root_path=path,
+        ScaffoldRequest(
+            type_name=component_type_name,
+            target_path=path,
         ),
         scaffold_params,
     )

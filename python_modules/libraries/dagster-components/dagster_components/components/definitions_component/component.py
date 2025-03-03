@@ -12,6 +12,7 @@ from dagster_components import Component, ComponentLoadContext, ResolvableSchema
 from dagster_components.components.definitions_component.scaffolder import (
     DefinitionsComponentScaffolder,
 )
+from dagster_components.scaffoldable.decorator import scaffoldable
 
 
 class DefinitionsParamSchema(ResolvableSchema):
@@ -19,16 +20,13 @@ class DefinitionsParamSchema(ResolvableSchema):
 
 
 @dataclass
+@scaffoldable(scaffolder=DefinitionsComponentScaffolder)
 class DefinitionsComponent(Component):
     """Wraps an arbitrary set of Dagster definitions."""
 
     definitions_path: Optional[str] = Field(
         ..., description="Relative path to a file containing Dagster definitions."
     )
-
-    @classmethod
-    def get_scaffolder(cls) -> DefinitionsComponentScaffolder:
-        return DefinitionsComponentScaffolder()
 
     @classmethod
     def get_schema(cls) -> type[DefinitionsParamSchema]:

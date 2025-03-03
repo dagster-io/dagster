@@ -1,6 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Meta, StoryFn} from '@storybook/react';
 import {MemoryRouter} from 'react-router-dom';
+import {RecoilRoot} from 'recoil';
 
 import {Route} from '../../../app/Route';
 import {AnalyticsContext} from '../../../app/analytics';
@@ -12,25 +13,27 @@ import {
   buildPartitionBackfill,
   buildUnpartitionedAssetStatus,
 } from '../../../graphql/types';
-import {BackfillPage} from '../BackfillPage';
+import {RunsFeedBackfillPage} from '../RunsFeedBackfillPage';
 import {buildBackfillDetailsQuery} from '../__fixtures__/buildBackfillDetails';
 
 // eslint-disable-next-line import/no-default-export
 export default {
-  title: 'Instance/Backfills',
-  component: BackfillPage,
+  title: 'Runs/Backfills',
+  component: RunsFeedBackfillPage,
 } as Meta;
 
 const Template: StoryFn = ({mocks}) => (
-  <AnalyticsContext.Provider value={{page: () => {}} as any}>
-    <MemoryRouter initialEntries={['/backfill/1']}>
-      <MockedProvider mocks={mocks}>
-        <Route path="/backfill/:backfillId">
-          <BackfillPage />
-        </Route>
-      </MockedProvider>
-    </MemoryRouter>
-  </AnalyticsContext.Provider>
+  <RecoilRoot>
+    <AnalyticsContext.Provider value={{page: () => {}} as any}>
+      <MemoryRouter initialEntries={['/runs/b/1']}>
+        <MockedProvider mocks={mocks}>
+          <Route path="/runs/b/:backfillId">
+            <RunsFeedBackfillPage />
+          </Route>
+        </MockedProvider>
+      </MemoryRouter>
+    </AnalyticsContext.Provider>
+  </RecoilRoot>
 );
 
 export const Completed = () => {
