@@ -1,5 +1,5 @@
 import {Page} from '@dagster-io/ui-components';
-import {useCallback, useMemo} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 import {AssetsGraphHeader} from 'shared/assets/AssetsGraphHeader.oss';
 
@@ -51,12 +51,14 @@ export const AssetsGlobalGraphRoot = () => {
     [history, openInNewTab],
   );
 
+  const [hideEdgesToNodesOutsideQuery, setHideEdgesToNodesOutsideQuery] = useState(true);
+
   const fetchOptions = useMemo(() => {
     const options: AssetGraphFetchScope = {
-      hideEdgesToNodesOutsideQuery: false,
+      hideEdgesToNodesOutsideQuery,
     };
     return options;
-  }, []);
+  }, [hideEdgesToNodesOutsideQuery]);
 
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
@@ -69,6 +71,7 @@ export const AssetsGlobalGraphRoot = () => {
         onChangeExplorerPath={onChangeExplorerPath}
         onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
         viewType={AssetGraphViewType.GLOBAL}
+        setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
       />
     </Page>
   );
