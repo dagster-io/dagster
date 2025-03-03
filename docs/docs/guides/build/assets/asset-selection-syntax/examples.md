@@ -86,10 +86,6 @@ Selects all assets on the paths between assets tagged with `private` and assets 
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    ```shell
-    tag:"private"+ and +tag:"public"
-    ```
-    Which would result in the following asset graph:
     {/* TODO: Nikki to add screenshot ![]() */}
     </TabItem>
 </Tabs>
@@ -117,11 +113,6 @@ Selects all assets on the paths from the `sensitive_data` group to the `public_d
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    ```shell
-    group:"sensitive_data"* and *group:"public_data"
-    ```
-
-    Which would result in the following asset graph:
     {/* TODO: Nikki to add screenshot ![]() */}
     </TabItem>
 </Tabs>
@@ -149,11 +140,6 @@ Selects all assets on the path between the `raw_data_c` asset and `summary_stats
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    ```shell
-    key:"raw_data_c"+ and +key:"combo_a_b_c"+ and +key:"summary_stats_1"
-    ```
-
-    Which would result in the following asset graph:
     {/* TODO: Nikki to add screenshot ![]() */}
     </TabItem>
 </Tabs>
@@ -190,15 +176,8 @@ def raw_data_a() -> None:
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    ```shell
-    key:"my_prefix/raw_data_a"
-    ```
-
-    Which would result in the following asset graph:
-
     {/* TODO: Nikki to add screenshot ![]() */}
-
-</TabItem>
+    </TabItem>
 </Tabs>
 
 ## Select multiple assets with `or` \{#multiple-assets}
@@ -224,14 +203,8 @@ key:"summary_stats_1" or key:"summary_stats_2"
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    ```shell
-    key:"summary_stats_1" or key:"summary_stats_2"
-    ```
-    Which would result in the following asset graph:
-
     {/* TODO: Nikki to add screenshot ![]() */}
-
-</TabItem>
+    </TabItem>
 </Tabs>
 
 ## Select downstream assets with filters \{#filters}
@@ -257,12 +230,6 @@ Selects one layer downstream of `combo_a_b_c_data`, limited to assets of kind `c
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-
-    ```shell
-    key:"combo_a_b_c_data" and kind:"csv"+
-    ```
-
-    Which would result in the following asset graph:
     {/* TODO: Nikki to add screenshot ![]() */}
     </TabItem>
 </Tabs>
@@ -290,11 +257,6 @@ Selects all assets owned by team `data_eng` **excluding** any assets tagged with
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    ```shell
-    owner:"team:data_eng" and not tag:"private"
-    ```
-
-    Which would result in the following asset graph:
     {/* TODO: Nikki to add screenshot ![]() */}
     </TabItem>
 </Tabs>
@@ -322,11 +284,6 @@ Selects assets that are either owned by the sales team and of kind `csv`, **or**
     dagster asset materialize --select '(owner:"team:sales" and kind:"csv") or group:"public_data"'
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    ```shell
-    (owner:"team:sales" and kind:"csv") or group:"public_data"
-    ```
-
-    Which would result in the following asset graph:
     {/* TODO: Nikki to add screenshot ![]() */}
     </TabItem>
 </Tabs>
@@ -352,11 +309,6 @@ Selects assets whose keys contain `raw` and are **not** of the kind `s3` or `csv
     dagster asset materialize --select 'not (kind:"s3" or kind:"csv") and key:"raw*"'
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    ```shell
-    not (kind:"s3" or kind:"csv") and key:"raw*"
-    ```
-
-    Which would result in the following asset graph:
     {/* TODO: Nikki to add screenshot ![]() */}
     </TabItem>
 </Tabs>
