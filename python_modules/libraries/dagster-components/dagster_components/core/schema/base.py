@@ -14,49 +14,49 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-def resolve_as(obj: "ResolvableSchema", target_type: type[T], context: "ResolutionContext") -> T:
-    return target_type(**resolve_fields(obj, target_type, context))
+def resolve_as(schema: "ResolvableSchema", target_type: type[T], context: "ResolutionContext") -> T:
+    return target_type(**resolve_fields(schema, target_type, context))
 
 
 def resolve_fields(
-    obj: "ResolvableSchema", target_type: type, context: "ResolutionContext"
+    schema: "ResolvableSchema", target_type: type, context: "ResolutionContext"
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""
     return {
-        field_name: resolver.fn(context, obj)
-        for field_name, resolver in get_field_resolvers(obj, target_type).items()
+        field_name: resolver.fn(context, schema)
+        for field_name, resolver in get_field_resolvers(schema, target_type).items()
     }
 
 
 def get_field_resolvers(
-    obj: "ResolvableSchema", target_type: type
+    schema: "ResolvableSchema", target_type: type
 ) -> Mapping[str, "FieldResolver"]:
     return {
         # extract field resolvers from annotations if possible, otherwise extract from the schema type
         **(
             _get_annotation_field_resolvers(target_type)
-            or _get_annotation_field_resolvers(obj.__class__)
+            or _get_annotation_field_resolvers(schema.__class__)
         )
     }
 
 
-def get_resolved_type(obj: "ResolvableSchema") -> type:
+def get_resolved_type(schema: "ResolvableSchema") -> type:
     generic_base = next(
-        base for base in obj.__class__.__bases__ if issubclass(base, ResolvableSchema)
+        base for base in schema.__class__.__bases__ if issubclass(base, ResolvableSchema)
     )
     generic_args = generic_base.__pydantic_generic_metadata__["args"]
     if len(generic_args) == 0:
         # if no generic type is specified, resolve back to the base type
-        return obj.__class__
+        return schema.__class__
     elif len(generic_args) > 1:
         raise DagsterInvalidDefinitionError(
-            f"Expected at most one generic argument for type: `{obj.__class__}`"
+            f"Expected at most one generic argument for type: `{schema.__class__}`"
         )
     resolved_type = next(iter(generic_args))
     resolved_type = resolved_type if isinstance(resolved_type, type) else None
     if resolved_type is None:
         raise DagsterInvalidDefinitionError(
-            f"Could not extract resolved type instance from `{obj.__class__}`. "
+            f"Could not extract resolved type instance from `{schema.__class__}`. "
             "This can happen when using a ForwardRef when defining your ResolvableModel "
             '(`ResolvableModel["SomeType"]`). Consider using a concrete type or calling '
             "`resolve_as` instead."
@@ -64,8 +64,8 @@ def get_resolved_type(obj: "ResolvableSchema") -> type:
     return resolved_type
 
 
-def resolve(obj: "ResolvableSchema", context: "ResolutionContext") -> object:
-    return obj.resolve(context)
+def resolve(schema: "ResolvableSchema", context: "ResolutionContext") -> object:
+    return schema.resolve(context)
 
 
 class ResolvableSchema(BaseModel, Generic[T]):
