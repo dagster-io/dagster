@@ -203,14 +203,14 @@ key:"summary_stats_1" or key:"summary_stats_2"
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    {/* TODO: Nikki to add screenshot ![]() */}
+    ![Select multiple assets with or](/images/guides/build/assets/asset-selection-syntax/select-multiple-assets-with-or.png)
     </TabItem>
 </Tabs>
 
-## Select downstream assets with filters \{#filters}
+## Select downstream assets with a filter \{#filters}
 
 ```shell
-key:"combo_a_b_c_data" and kind:"csv"+
+key:"combo_a_b_c_data"+ and kind:"csv"
 ```
 
 Selects one layer downstream of `combo_a_b_c_data`, limited to assets of kind `csv`.
@@ -219,51 +219,51 @@ Selects one layer downstream of `combo_a_b_c_data`, limited to assets of kind `c
     <TabItem value="python" label="Python">
     ```python
     downstream_csv_job = define_asset_job(
-        name="downstream_csv_job", selection='key:"combo_a_b_c_data" and kind:"csv"+'
+        name="downstream_csv_job", selection='key:"combo_a_b_c_data"+ and kind:"csv"'
     )
    ```
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'key:"combo_a_b_c_data" and kind:"csv"+'
-    dagster asset materialize --select 'key:"combo_a_b_c_data" and kind:"csv+"'
+    dagster asset list --select 'key:"combo_a_b_c_data"+ and kind:"csv"'
+    dagster asset materialize --select 'key:"combo_a_b_c_data"+ and kind:"csv"'
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    {/* TODO: Nikki to add screenshot ![]() */}
+    ![Select downstream assets with a filter](/images/guides/build/assets/asset-selection-syntax/select-downstream-assets-with-filters.png)
     </TabItem>
 </Tabs>
 
-## Select assets without specific tags \{#not-tag}
+## Select assets without a specific tag \{#not-tag}
 
 ```shell
-owner:"team:data_eng" and not tag:"private"
+owner:"team:data_engineering" and not tag:"private"
 ```
 
-Selects all assets owned by team `data_eng` **excluding** any assets tagged with `private`.
+Selects all assets owned by team `data_engineering` **excluding** any assets tagged with `private`.
 
 <Tabs groupId="examples">
     <TabItem value="python" label="Python">
     ```python
     data_eng_not_private_job = define_asset_job(
-        name="data_eng_not_private_job", selection='owner:"team:data_eng" and not tag:"private"'
+        name="data_eng_not_private_job", selection='owner:"team:data_engineering" and not tag:"private"'
     )
     ```
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'owner:"team:data_eng" and not tag:"private"'
-    dagster asset materialize --select 'owner:"team:data_eng" and not tag:"private"'
+    dagster asset list --select 'owner:"team:data_engineering" and not tag:"private"'
+    dagster asset materialize --select 'owner:"team:data_engineering" and not tag:"private"'
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    {/* TODO: Nikki to add screenshot ![]() */}
+    {/* TODO ![Select assets without a specific tag]() */}
     </TabItem>
 </Tabs>
 
 ## Select assets with parentheses grouping and filters \{#grouping-filters}
 
-### Select a parentheses group `or` assets that belong in a specific `group`
+### Select a parentheses group `or` assets that belong in a named `group`
 
 ```shell
 (owner:"team:sales" and kind:"csv") or group:"public_data"
@@ -284,7 +284,7 @@ Selects assets that are either owned by the sales team and of kind `csv`, **or**
     dagster asset materialize --select '(owner:"team:sales" and kind:"csv") or group:"public_data"'
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    {/* TODO: Nikki to add screenshot ![]() */}
+    ![Select a parentheses group or assets that belong in a named group](/images/guides/build/assets/asset-selection-syntax/select-parentheses-group-or-named-group.png)
     </TabItem>
 </Tabs>
 
@@ -309,6 +309,6 @@ Selects assets whose keys contain `raw` and are **not** of the kind `s3` or `csv
     dagster asset materialize --select 'not (kind:"s3" or kind:"csv") and key:"raw*"'
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    {/* TODO: Nikki to add screenshot ![]() */}
+    ![Exclude parentheses group with not and select assets that match a key wildcard](/images/guides/build/assets/asset-selection-syntax/select-assets-not-in-parentheses-group-with-wildcard.png)
     </TabItem>
 </Tabs>
