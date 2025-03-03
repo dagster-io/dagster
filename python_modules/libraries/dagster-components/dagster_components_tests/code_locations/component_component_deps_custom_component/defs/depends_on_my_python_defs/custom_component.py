@@ -11,9 +11,11 @@ MY_PYTHON_DEFS_COMPONENT_PATH = Path(__file__).parent.parent / "my_python_defs"
 
 class MyCustomComponent(Component):
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+        from component_component_deps_custom_component.defs import my_python_defs
+
         assets_from_my_python_defs = cast(
             Sequence[dg.AssetsDefinition],
-            context.build_defs_from_component_path(MY_PYTHON_DEFS_COMPONENT_PATH).assets,
+            context.build_defs_from_component_module(my_python_defs).assets,
         )
 
         @dg.asset(deps=assets_from_my_python_defs)

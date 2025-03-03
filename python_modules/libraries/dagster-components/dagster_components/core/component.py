@@ -288,6 +288,10 @@ class ComponentLoadContext:
     def normalize_component_type_str(self, type_str: str) -> str:
         return f"{self.module_name}{type_str}" if type_str.startswith(".") else type_str
 
+    def build_defs_from_component_module(self, module: ModuleType) -> Definitions:
+        component_path = self.path.parent.parent.parent / Path(*module.__name__.split("."))
+        return self.module_cache.build_defs_from_component_path(component_path)
+
     def build_defs_from_component_path(self, path: Path) -> Definitions:
         return self.module_cache.build_defs_from_component_path(path)
 
