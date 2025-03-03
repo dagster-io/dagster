@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
 from typing_extensions import TypeAlias
 
-from dagster_components.core.schema.base import FieldResolver, ResolvableSchema
+from dagster_components.core.schema.base import FieldResolver, ResolvableSchema, resolve_fields
 from dagster_components.core.schema.context import ResolutionContext
 
 
@@ -158,7 +158,7 @@ def resolve_asset_attributes_to_mapping(
 ) -> Mapping[str, Any]:
     # only include fields that are explcitly set
     set_fields = schema.model_dump(exclude_unset=True).keys()
-    return {k: v for k, v in schema.resolve_fields(dict, context).items() if k in set_fields}
+    return {k: v for k, v in resolve_fields(schema, dict, context).items() if k in set_fields}
 
 
 class AssetPostProcessorSchema(ResolvableSchema):

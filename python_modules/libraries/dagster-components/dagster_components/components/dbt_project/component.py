@@ -15,7 +15,7 @@ from dagster_dbt import (
 
 from dagster_components import Component, ComponentLoadContext, FieldResolver
 from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
-from dagster_components.core.schema.base import ResolvableSchema
+from dagster_components.core.schema.base import ResolvableSchema, resolve_as
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
@@ -68,7 +68,7 @@ def resolve_schema_to_post_processors(
 
 
 def resolve_op_spec(context: ResolutionContext, schema: DbtProjectSchema) -> Optional[OpSpec]:
-    return schema.op.resolve_as(target_type=OpSpec, context=context) if schema.op else None
+    return resolve_as(schema.op, target_type=OpSpec, context=context) if schema.op else None
 
 
 @scaffoldable(scaffolder=DbtProjectComponentScaffolder)
