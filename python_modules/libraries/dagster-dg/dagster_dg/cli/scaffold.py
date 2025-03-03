@@ -80,7 +80,7 @@ def workspace_scaffold_command(
 
 
 @scaffold_group.command(name="project", cls=DgClickCommand)
-@click.argument("name", type=str)
+@click.argument("path", type=Path)
 @click.option(
     "--skip-venv",
     is_flag=True,
@@ -96,8 +96,8 @@ def workspace_scaffold_command(
 )
 @dg_editable_dagster_options
 @dg_global_options
-def project_scaffold_command(
-    name: str,
+def scaffold_project_command(
+    path: Path,
     skip_venv: bool,
     populate_cache: bool,
     use_editable_dagster: Optional[str],
@@ -130,15 +130,16 @@ def project_scaffold_command(
     """  # noqa: D301
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
+
+    abs_path = path.resolve()
     if dg_context.is_workspace:
-        if dg_context.has_project(name):
-            exit_with_error(f"A project named {name} already exists.")
-        project_path = dg_context.project_root_path / name
-    else:
-        project_path = Path.cwd() / name
+        if dg_context.has_project(abs_path.relative_to(dg_context.workspace_root_path)):
+            exit_with_error(f"The current workspace already specifies a project at {abs_path}.")
+        elif abs_path.exists():
+            exit_with_error(f"A file or directory already exists at {abs_path}.")
 
     scaffold_project(
-        project_path,
+        abs_path,
         dg_context,
         use_editable_dagster=use_editable_dagster,
         use_editable_components_package_only=use_editable_components_package_only,

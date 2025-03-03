@@ -108,12 +108,11 @@ def isolated_example_project_foo_bar(
     """
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    project_path = Path("foo-bar")
     if in_workspace:
         fs_context = isolated_example_workspace(runner)
-        project_path = Path("projects/foo-bar")
     else:
         fs_context = runner.isolated_filesystem()
-        project_path = Path("foo-bar")
     with fs_context:
         result = runner.invoke(
             "scaffold",

@@ -169,8 +169,8 @@ def temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
         if dg_context.is_project:
             entries.append(_workspace_entry_for_project(dg_context))
         elif dg_context.is_workspace:
-            for project_name in dg_context.get_project_names():
-                project_root = dg_context.get_project_path(project_name)
+            for spec in dg_context.project_specs:
+                project_root = dg_context.root_path / spec.path
                 project_context: DgContext = dg_context.with_root_path(project_root)
                 entries.append(_workspace_entry_for_project(project_context))
         yaml.dump({"load_from": entries}, temp_workspace_file)

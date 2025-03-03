@@ -118,6 +118,7 @@ def test_invalid_config_workspace():
             "tool.dg.project",
             "tool.dg.cli.invalid_key",
             "tool.dg.workspace.invalid_key",
+            "tool.dg.workspace.projects[0].invalid_key",
         ]
         for path in cases:
             with _reset_pyproject_toml():
@@ -130,10 +131,20 @@ def test_invalid_config_workspace():
             ["tool.dg.cli.use_dg_managed_environment", bool, 1],
             ["tool.dg.cli.use_component_modules", Sequence[str], 1],
             ["tool.dg.cli.require_local_venv", bool, 1],
+            ["tool.dg.workspace.projects", list, 1],
+            ["tool.dg.workspace.projects[1]", dict, 1],
+            ["tool.dg.workspace.projects[0].path", str, 1],
         ]
         for path, expected_type, val in cases:
             with _reset_pyproject_toml():
                 _set_and_detect_mistyped_value(path, expected_type, val)
+
+        cases = [
+            ["tool.dg.workspace.projects[0].path", str],
+        ]
+        for path, expected_type in cases:
+            with _reset_pyproject_toml():
+                _set_and_detect_missing_required_key(path, expected_type)
 
 
 def test_invalid_config_project():

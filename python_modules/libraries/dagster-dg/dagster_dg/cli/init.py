@@ -1,4 +1,5 @@
-from typing import Optional
+from pathlib import Path
+from typing import Final, Optional
 
 import click
 
@@ -8,6 +9,9 @@ from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import scaffold_project, scaffold_workspace
 from dagster_dg.utils import DgClickCommand, exit_with_error
+
+# Workspace
+_DEFAULT_INIT_PROJECTS_DIR: Final = "projects"
 
 
 @click.command(name="init", cls=DgClickCommand)
@@ -56,13 +60,12 @@ def init_command(
             "Continuing without adding a project. You can create one later by running `dg scaffold project`."
         )
     else:
+        project_path = Path(workspace_path, _DEFAULT_INIT_PROJECTS_DIR, project_name)
+        if project_path.exists():
+            exit_with_error(f"A file or directory already exists at {project_path}.")
         workspace_dg_context = DgContext.from_file_discovery_and_command_line_config(
             workspace_path, cli_config
         )
-        if workspace_dg_context.has_project(project_name):
-            exit_with_error(f"A project named {project_name} already exists.")
-
-        project_path = workspace_dg_context.get_workspace_project_path(project_name)
 
         scaffold_project(
             project_path,
