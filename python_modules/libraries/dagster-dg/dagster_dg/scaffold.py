@@ -9,7 +9,11 @@ import tomlkit
 import tomlkit.items
 
 from dagster_dg.component import RemoteComponentRegistry
-from dagster_dg.config import discover_workspace_root
+from dagster_dg.config import (
+    DgRawWorkspaceNewProjectOptions,
+    DgWorkspaceNewProjectOptions,
+    discover_workspace_root,
+)
 from dagster_dg.context import DgContext
 from dagster_dg.utils import (
     exit_with_error,
@@ -27,6 +31,7 @@ from dagster_dg.utils import (
 
 def scaffold_workspace(
     workspace_name: str,
+    new_project_options: Optional[DgRawWorkspaceNewProjectOptions] = None,
 ) -> Path:
     # Can't create a workspace that is a child of another workspace
     new_workspace_path = Path.cwd() / workspace_name
@@ -46,6 +51,13 @@ def scaffold_workspace(
         ),
         project_name=workspace_name,
     )
+
+    if new_project_options is not None:
+        with modify_toml(new_workspace_path / "pyproject.toml") as toml:
+            set_toml_node(
+                toml, ("tool", "dg", "workspace", "new_project_options"), new_project_options
+            )
+
     click.echo(f"Scaffolded files for Dagster workspace at {new_workspace_path}.")
     return new_workspace_path
 
@@ -65,24 +77,40 @@ def scaffold_project(
 ) -> None:
     click.echo(f"Creating a Dagster project at {path}.")
 
-    if use_editable_dagster and use_editable_components_package_only:
+    cli_options = DgWorkspaceNewProjectOptions.get_raw_from_cli(
+        use_editable_dagster, use_editable_components_package_only
+    )
+    workspace_options = (
+        dg_context.config.workspace.new_project_options if dg_context.config.workspace else None
+    )
+
+    final_use_editable_dagster = cli_options.get(
+        "use_editable_dagster",
+        workspace_options.use_editable_dagster if workspace_options else None,
+    )
+    final_use_editable_components_package_only = cli_options.get(
+        "use_editable_components_package_only",
+        workspace_options.use_editable_components_package_only if workspace_options else None,
+    )
+
+    if final_use_editable_dagster and final_use_editable_components_package_only:
         exit_with_error(
             "Cannot specify both --use-editable-dagster and --use-editable-components-package-only."
         )
-    elif use_editable_dagster:
+    elif final_use_editable_dagster:
         editable_dagster_root = (
             _get_editable_dagster_from_env()
-            if use_editable_dagster == "TRUE"
-            else use_editable_dagster
+            if final_use_editable_dagster is True
+            else final_use_editable_dagster
         )
         deps = EDITABLE_DAGSTER_DEPENDENCIES
         dev_deps = EDITABLE_DAGSTER_DEV_DEPENDENCIES
         sources = _gather_dagster_packages(Path(editable_dagster_root))
-    elif use_editable_components_package_only:
+    elif final_use_editable_components_package_only:
         editable_dagster_root = (
             _get_editable_dagster_from_env()
-            if use_editable_components_package_only == "TRUE"
-            else use_editable_components_package_only
+            if final_use_editable_components_package_only is True
+            else final_use_editable_components_package_only
         )
         deps = EDITABLE_COMPONENTS_ONLY_DEPENDENCIES
         dev_deps = EDITABLE_COMPONENTS_ONLY_DEV_DEPENDENCIES

@@ -141,6 +141,31 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         )
 
 
+def test_scaffold_project_inside_workspace_applies_new_project_options(monkeypatch):
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, use_editable_components_package_only=False),
+    ):
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
+            create_toml_node(
+                toml_dict,
+                ("tool", "dg", "workspace", "new_project_options", "use_editable_dagster"),
+                True,
+            )
+
+        result = runner.invoke(
+            "scaffold",
+            "project",
+            "projects/foo-bar",
+        )
+        assert_runner_result(result)
+        # Check that use_editable_dagster was applied
+        toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())
+        assert has_toml_node(toml, ("tool", "uv", "sources", "dagster"))
+
+
 def test_scaffold_project_outside_workspace_success(monkeypatch) -> None:
     # Remove when we are able to test without editable install
     dagster_git_repo_dir = discover_git_root(Path(__file__))
@@ -303,7 +328,10 @@ def test_scaffold_project_editable_dagster_no_env_var_no_value_fails(
     option: EditableOption, monkeypatch
 ) -> None:
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", "")
-    with ProxyRunner.test() as runner, isolated_example_workspace(runner):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, use_editable_components_package_only=False),
+    ):
         result = runner.invoke("scaffold", "project", option, "--", "bar")
         assert_runner_result(result, exit_0=False)
         assert "require the `DAGSTER_GIT_REPO_DIR`" in result.output
