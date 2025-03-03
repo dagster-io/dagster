@@ -7,7 +7,7 @@ from dagster._utils.warnings import suppress_dagster_warnings
 from dagster_components.core.component import (
     Component,
     ComponentLoadContext,
-    MultiComponentsLoadContext,
+    DefinitionsModuleCache,
     discover_entry_point_component_types,
 )
 from dagster_components.core.component_decl_builder import (
@@ -80,9 +80,9 @@ def build_component_defs(
     component_types = component_types or discover_entry_point_component_types()
 
     all_defs: list[Definitions] = []
-    load_context = MultiComponentsLoadContext(resources=resources or {})
+    module_cache = DefinitionsModuleCache(resources=resources or {})
     for component_path in components_root.iterdir():
-        defs = load_context.build_defs_from_component_path(
+        defs = module_cache.build_defs_from_component_path(
             path=component_path,
         )
         all_defs.append(defs)

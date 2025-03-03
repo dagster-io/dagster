@@ -2,7 +2,7 @@ from pathlib import Path
 
 from dagster import AssetKey
 from dagster_components import build_component_defs
-from dagster_components.core.component import MultiComponentsLoadContext
+from dagster_components.core.component import DefinitionsModuleCache
 from dagster_components.core.component_decl_builder import PythonComponentDecl
 
 from dagster_components_tests.utils import script_load_context
@@ -37,7 +37,7 @@ def test_load_from_path() -> None:
 
 
 def test_load_from_location_path() -> None:
-    defs = MultiComponentsLoadContext(resources={}).build_defs_from_component_path(
+    defs = DefinitionsModuleCache(resources={}).build_defs_from_component_path(
         LOCATION_PATH / "defs" / "scripts",
     )
     assert defs.get_asset_graph().get_all_asset_keys() == {

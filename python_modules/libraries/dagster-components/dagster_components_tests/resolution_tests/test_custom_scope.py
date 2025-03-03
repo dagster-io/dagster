@@ -1,11 +1,11 @@
 from pathlib import Path
 
 from dagster import AssetSpec, AutomationCondition
-from dagster_components.core.component_defs_builder import MultiComponentsLoadContext
+from dagster_components.core.component_defs_builder import DefinitionsModuleCache
 
 
 def test_custom_scope() -> None:
-    defs = MultiComponentsLoadContext(resources={}).build_defs_from_component_path(
+    defs = DefinitionsModuleCache(resources={}).build_defs_from_component_path(
         path=Path(__file__).parent / "custom_scope_component",
     )
 

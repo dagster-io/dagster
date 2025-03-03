@@ -197,7 +197,7 @@ T = TypeVar("T")
 
 
 @dataclass
-class MultiComponentsLoadContext:
+class DefinitionsModuleCache:
     """Context for loading an entire component hierarchy in a code location.
     Stores resources and a cache to ensure we don't load the same component multiple times.
     """
@@ -221,7 +221,7 @@ class MultiComponentsLoadContext:
             module_name=".".join(path.parts[-3:]),
             decl_node=decl_node,
             resolution_context=ResolutionContext.default(),
-            components_load_context=self,
+            module_cache=self,
         )
         with use_component_load_context(context):
             components = decl_node.load(context)
@@ -237,7 +237,7 @@ class ComponentLoadContext:
     module_name: str
     decl_node: Optional[ComponentDeclNode]
     resolution_context: ResolutionContext
-    components_load_context: MultiComponentsLoadContext
+    module_cache: DefinitionsModuleCache
 
     @staticmethod
     def current() -> "ComponentLoadContext":
@@ -258,7 +258,7 @@ class ComponentLoadContext:
             module_name="test",
             decl_node=decl_node,
             resolution_context=ResolutionContext.default(),
-            components_load_context=MultiComponentsLoadContext(resources=resources or {}),
+            module_cache=DefinitionsModuleCache(resources=resources or {}),
         )
 
     @property
@@ -289,7 +289,7 @@ class ComponentLoadContext:
         return f"{self.module_name}{type_str}" if type_str.startswith(".") else type_str
 
     def build_defs_from_component_path(self, path: Path) -> Definitions:
-        return self.components_load_context.build_defs_from_component_path(path)
+        return self.module_cache.build_defs_from_component_path(path)
 
     def load_component_relative_python_module(self, file_path: Path) -> ModuleType:
         """Load a python module relative to the component's context path. This is useful for loading code
