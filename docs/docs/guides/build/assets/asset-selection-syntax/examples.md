@@ -32,12 +32,7 @@ Selects all assets on the path from the `raw_data_b` asset to the `summary_stats
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    ```shell
-    key:"raw_data_b"+ and +key:"summary_stats_2"
-    ```
-
-    Which would result in the following asset graph:
-    {/* TODO: Nikki to add screenshot ![]() */}
+    ![All assets on the path between two assets](/images/guides/build/assets/asset-selection-syntax/all-assets-between-two-assets.png)
     </TabItem>
 </Tabs>
 
@@ -64,12 +59,7 @@ Selects all assets on the paths between the `raw_data_a` or `raw_data_b` assets 
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    ```shell
-    (key:"raw_data_a" or key:"raw_data_b")+ and +(key:"a_b_c_for_sales" or key:"b_c_for_sales")
-    ```
-
-    Which would result in the following asset graph:
-    {/* TODO: Nikki to add screenshot ![]() */}
+    ![All assets between two sets of assets](/images/guides/build/assets/asset-selection-syntax/all-assets-between-two-sets-of-assets.png)
     </TabItem>
 </Tabs>
 
