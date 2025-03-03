@@ -237,7 +237,7 @@ Selects one layer downstream of `combo_a_b_c_data`, limited to assets of kind `c
 ## Select assets without a specific tag \{#not-tag}
 
 ```shell
-owner:"team:data_engineering" and not tag:"private"
+owner:"nora.dagster@example.com" and not tag:"customer_data"
 ```
 
 Selects all assets owned by team `data_engineering` **excluding** any assets tagged with `private`.
@@ -246,18 +246,18 @@ Selects all assets owned by team `data_engineering` **excluding** any assets tag
     <TabItem value="python" label="Python">
     ```python
     data_eng_not_private_job = define_asset_job(
-        name="data_eng_not_private_job", selection='owner:"team:data_engineering" and not tag:"private"'
+        name="data_eng_not_private_job", selection='owner:"nora.dagster@example.com" and not tag:"customer_data"'
     )
     ```
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'owner:"team:data_engineering" and not tag:"private"'
-    dagster asset materialize --select 'owner:"team:data_engineering" and not tag:"private"'
+    dagster asset list --select 'owner:"nora.dagster@example.com" and not tag:"customer_data"'
+    dagster asset materialize --select 'owner:"nora.dagster@example.com" and not tag:"customer_data"'
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    {/* TODO ![Select assets without a specific tag]() */}
+    ![Select assets with a specific owner and without a specific tag](/images/guides/build/assets/asset-selection-syntax/select-assets-owner-not-tag.png)
     </TabItem>
 </Tabs>
 
