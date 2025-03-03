@@ -9,13 +9,16 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from pydantic import BaseModel, ConfigDict
 
 from dagster_components import FieldResolver
 from dagster_components.core.component import Component, ComponentLoadContext
-from dagster_components.core.schema.base import ResolvableSchema
+from dagster_components.core.schema.base import PlainSamwiseSchema
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.objects import AssetSpecSchema, resolve_asset_spec_schema
+from dagster_components.core.schema.objects import (
+    AssetSpecSchema,
+    ResolvableFromSchema,
+    resolve_asset_spec_schema,
+)
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
@@ -27,28 +30,28 @@ def resolve_assets(
     return [resolve_asset_spec_schema(context, asset) for asset in schema.assets]
 
 
-class PipesSubprocessScriptSpec(BaseModel):
-    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
-
+@dataclass
+class PipesSubprocessScriptSpec(ResolvableFromSchema["PipesSubprocessScriptSchema"]):
     path: str
     assets: Annotated[Sequence[AssetSpec], FieldResolver(resolve_assets)]
 
 
-class PipesSubprocessScriptSchema(ResolvableSchema[PipesSubprocessScriptSpec]):
+class PipesSubprocessScriptSchema(PlainSamwiseSchema):
     path: str
     assets: Sequence[AssetSpecSchema]
 
 
-class PipesSubprocessScriptCollectionSchema(
-    ResolvableSchema["PipesSubprocessScriptCollectionComponent"]
-):
+class PipesSubprocessScriptCollectionSchema(PlainSamwiseSchema):
     scripts: Sequence[PipesSubprocessScriptSchema]
 
 
 def resolve_specs_by_path(
     context: ResolutionContext, schema: PipesSubprocessScriptCollectionSchema
 ) -> Mapping[str, Sequence[AssetSpec]]:
-    return {spec.path: spec.assets for spec in context.resolve_value(schema.scripts)}
+    return {
+        spec.path: spec.assets
+        for spec in PipesSubprocessScriptSpec.from_sequence(context, schema.scripts)
+    }
 
 
 @dataclass

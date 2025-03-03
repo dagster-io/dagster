@@ -7,11 +7,12 @@ from dataclasses import dataclass
 from dagster._core.definitions.definitions_class import Definitions
 from pydantic import BaseModel, ConfigDict
 
-from dagster_components import Component, ResolvableSchema
+from dagster_components import Component
 from dagster_components.core.component import ComponentLoadContext
+from dagster_components.core.schema.base import PlainSamwiseSchema
 
 
-class MyComponentSchema(ResolvableSchema):
+class MyComponentSchema(PlainSamwiseSchema):
     a_string: str
     an_int: int
 

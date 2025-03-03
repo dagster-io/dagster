@@ -1,6 +1,16 @@
 from collections.abc import Mapping
 from dataclasses import fields, is_dataclass
-from typing import TYPE_CHECKING, Annotated, Any, Callable, Generic, TypeVar, get_args, get_origin
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Callable,
+    Generic,
+    TypeVar,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from dagster._core.errors import DagsterInvalidDefinitionError
 from pydantic import BaseModel, ConfigDict
@@ -10,16 +20,23 @@ from dagster_components.core.schema.metadata import FieldInfo
 if TYPE_CHECKING:
     from dagster_components.core.schema.context import ResolutionContext
 
+from typing_extensions import TypeAlias
 
 T = TypeVar("T")
 
+ComponentSchema: TypeAlias = Union["ResolvableSchema", "PlainSamwiseSchema"]
 
-def resolve_as(schema: "ResolvableSchema", target_type: type[T], context: "ResolutionContext") -> T:
+
+def resolve_as(
+    schema: ComponentSchema,
+    target_type: type[T],
+    context: "ResolutionContext",
+) -> T:
     return target_type(**resolve_fields(schema, target_type, context))
 
 
 def resolve_fields(
-    schema: "ResolvableSchema", target_type: type, context: "ResolutionContext"
+    schema: ComponentSchema, target_type: type, context: "ResolutionContext"
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""
     return {
@@ -29,7 +46,7 @@ def resolve_fields(
 
 
 def get_field_resolvers(
-    schema: "ResolvableSchema", target_type: type
+    schema: ComponentSchema, target_type: type
 ) -> Mapping[str, "FieldResolver"]:
     return {
         # extract field resolvers from annotations if possible, otherwise extract from the schema type
@@ -64,8 +81,15 @@ def get_resolved_type(schema: "ResolvableSchema") -> type:
     return resolved_type
 
 
-def resolve(schema: "ResolvableSchema", context: "ResolutionContext") -> object:
-    return schema.resolve(context)
+def resolve(schema: ComponentSchema, context: "ResolutionContext") -> object:
+    if isinstance(schema, ResolvableSchema):
+        return schema.resolve(context)
+    else:
+        return resolve_as(schema, get_resolved_type(schema), context)
+
+
+class PlainSamwiseSchema(BaseModel):
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
 
 class ResolvableSchema(BaseModel, Generic[T]):

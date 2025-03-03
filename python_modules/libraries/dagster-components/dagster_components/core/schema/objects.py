@@ -2,7 +2,6 @@ from collections.abc import Mapping, Sequence
 from typing import Annotated, Any, Callable, Generic, Literal, Optional, TypeVar, Union, cast
 
 import dagster._check as check
-from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
@@ -16,7 +15,7 @@ from typing_extensions import Self, TypeAlias
 
 from dagster_components.core.schema.base import (
     FieldResolver,
-    ResolvableSchema,
+    PlainSamwiseSchema,
     resolve_as,
     resolve_fields,
 )
@@ -94,7 +93,7 @@ class OpSpec(ResolvableFromSchema["OpSpecSchema"]):
     )
 
 
-class OpSpecSchema(ResolvableSchema[OpSpec]):
+class OpSpecSchema(PlainSamwiseSchema):
     name: Optional[str] = Field(default=None, description="The name of the op.")
     tags: Optional[dict[str, str]] = Field(
         default=None, description="Arbitrary metadata for the op."
@@ -104,7 +103,7 @@ class OpSpecSchema(ResolvableSchema[OpSpec]):
     ] = Field(default=None, description="The backfill policy to use for the assets.")
 
 
-class AssetDepSchema(ResolvableSchema[AssetDep]):
+class AssetDepSchema(PlainSamwiseSchema):
     asset: Annotated[
         str, FieldResolver(lambda context, schema: _resolve_asset_key(schema.asset, context))
     ]
@@ -160,7 +159,7 @@ class _ResolvableAssetAttributesMixin(BaseModel):
     )
 
 
-class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[AssetSpec]):
+class AssetSpecSchema(_ResolvableAssetAttributesMixin, PlainSamwiseSchema):
     key: Annotated[
         str, FieldResolver(lambda context, schema: _resolve_asset_key(schema.key, context))
     ] = Field(..., description="A unique identifier for the asset.")
@@ -170,7 +169,7 @@ def resolve_asset_spec_schema(context: ResolutionContext, schema: AssetSpecSchem
     return resolve_as(schema=schema, target_type=AssetSpec, context=context)
 
 
-class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Mapping[str, Any]]):
+class AssetAttributesSchema(_ResolvableAssetAttributesMixin, PlainSamwiseSchema):
     """Resolves into a dictionary of asset attributes. This is similar to AssetSpecSchema, but
     does not require a key. This is useful in contexts where you want to modify attributes of
     an existing AssetSpec.
@@ -183,9 +182,6 @@ class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Ma
         ),
     ] = Field(default=None, description="A unique identifier for the asset.")
 
-    def resolve(self, context: ResolutionContext) -> Mapping[str, Any]:
-        return resolve_asset_attributes_to_mapping(self, context)
-
 
 def resolve_asset_attributes_to_mapping(
     schema: AssetAttributesSchema, context: ResolutionContext
@@ -195,20 +191,19 @@ def resolve_asset_attributes_to_mapping(
     return {k: v for k, v in resolve_fields(schema, dict, context).items() if k in set_fields}
 
 
-class AssetPostProcessorSchema(ResolvableSchema):
+class AssetPostProcessorSchema(PlainSamwiseSchema):
     target: str = "*"
     operation: Literal["merge", "replace"] = "merge"
     attributes: AssetAttributesSchema
-
-    def resolve(self, context: ResolutionContext) -> Callable[[Definitions], Definitions]:
-        return resolve_schema_to_post_processor(context, self)
 
 
 def apply_post_processor_to_spec(
     schema: AssetPostProcessorSchema, spec: AssetSpec, context: ResolutionContext
 ) -> AssetSpec:
     # add the original spec to the context and resolve values
-    attributes = context.with_scope(asset=spec).resolve_value(schema.attributes)
+    attributes = resolve_asset_attributes_to_mapping(
+        schema.attributes, context.with_scope(asset=spec)
+    )
 
     if schema.operation == "merge":
         mergeable_attributes = {"metadata", "tags"}
