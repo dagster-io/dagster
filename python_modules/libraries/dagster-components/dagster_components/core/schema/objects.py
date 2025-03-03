@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Annotated, Any, Callable, Literal, Optional, Union
+from typing import Annotated, Any, Callable, Generic, Literal, Optional, TypeVar, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.asset_dep import AssetDep
@@ -12,7 +12,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
 from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from dagster_components.core.schema.base import FieldResolver, ResolvableSchema, resolve_fields
 from dagster_components.core.schema.context import ResolutionContext
@@ -55,8 +55,21 @@ def resolve_backfill_policy(
     raise ValueError(f"Invalid backfill policy: {schema.backfill_policy}")
 
 
+TFromSchema = TypeVar("TFromSchema")
+
+
+class ResolvableFromSchema(Generic[TFromSchema]):
+    @classmethod
+    def from_schema(cls, context: ResolutionContext, schema: "OpSpecSchema") -> Self:
+        obj = schema.resolve_as(target_type=cls, context=context)  # type: ignore
+        if not isinstance(obj, cls):
+            raise ValueError(f"Expected {cls}, got {obj}")
+        typed_obj = cast(Self, obj)
+        return typed_obj
+
+
 @dataclass
-class OpSpec:
+class OpSpec(ResolvableFromSchema["OpSpecSchema"]):
     name: Optional[str] = None
     tags: Optional[dict[str, str]] = None
     backfill_policy: Annotated[Optional[BackfillPolicy], FieldResolver(resolve_backfill_policy)] = (

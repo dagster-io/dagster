@@ -77,7 +77,12 @@ class DbtProjectComponent(Component):
     """Expose a DBT project to Dagster as a set of assets."""
 
     dbt: Annotated[DbtCliResource, FieldResolver(resolve_dbt)]
-    op: Annotated[Optional[OpSpec], FieldResolver(resolve_op_spec)] = None
+    op: Annotated[
+        Optional[OpSpec],
+        FieldResolver(
+            lambda context, schema: OpSpec.from_schema(context, schema.op) if schema.op else None
+        ),
+    ] = None
     translator: Annotated[DagsterDbtTranslator, FieldResolver(resolve_translator)] = field(
         default_factory=DagsterDbtTranslator
     )
