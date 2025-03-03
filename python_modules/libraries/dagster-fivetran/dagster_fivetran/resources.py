@@ -864,6 +864,11 @@ class FivetranWorkspace(ConfigurableResource):
         ),
     )
 
+    @property
+    @cached_method
+    def _log(self) -> logging.Logger:
+        return get_dagster_logger()
+
     @cached_method
     def get_client(self) -> FivetranClient:
         return FivetranClient(
