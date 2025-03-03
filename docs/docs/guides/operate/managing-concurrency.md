@@ -108,7 +108,7 @@ concurrency:
 ## Limit the number of ops concurrently executing for a single run
 
 While pool limits allow you to [limit the number of ops executing across all runs](#limit-the-number-of-assets-or-ops-actively-executing-across-all-runs), to limit the number of ops executing *within a single run*, you need to configure your [run executor](/guides/operate/run-executors). You can
-limit concurrency for ops and assets in runs, by using `max_concurrent` in the run config, either in Python on the job definition or using the Launchpad in the Dagster UI.
+limit concurrency for ops and assets in runs, by using `max_concurrent` in the run config, either in Python or using the Launchpad in the Dagster UI.
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/operate/concurrency-run-scoped-op-concurrency.py" language="python" title="Limit concurrent op execution for a single run" />
 
