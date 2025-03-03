@@ -25,6 +25,8 @@ from dagster_components.core.schema.objects import (
     OpSpec,
     OpSpecSchema,
     PostProcessorFn,
+    ResolvableFromSchema,
+    resolve_schema_to_post_processor,
 )
 from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
@@ -50,9 +52,12 @@ def resolve_translator(
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 
 
-class SlingReplicationSpec(BaseModel):
+class SlingReplicationSpec(BaseModel, ResolvableFromSchema["SlingReplicationSchema"]):
     path: str
-    op: Optional[OpSpec]
+    op: Annotated[
+        Optional[OpSpec],
+        FieldResolver(lambda context, schema: OpSpec.from_optional_schema(context, schema.op)),
+    ] = None
     translator: Annotated[Optional[DagsterSlingTranslator], FieldResolver(resolve_translator)]
     include_metadata: list[SlingMetadataAddons]
 
@@ -95,6 +100,15 @@ def resolve_resource(
     )
 
 
+def resolve_schema_to_post_processors(
+    context: ResolutionContext, schema: SlingReplicationCollectionSchema
+) -> Sequence[PostProcessorFn]:
+    return [
+        resolve_schema_to_post_processor(context, post_processor)
+        for post_processor in schema.asset_post_processors or []
+    ]
+
+
 @scaffoldable(scaffolder=SlingReplicationComponentScaffolder)
 @dataclass
 class SlingReplicationCollectionComponent(Component):
@@ -103,10 +117,18 @@ class SlingReplicationCollectionComponent(Component):
     resource: Annotated[SlingResource, FieldResolver(resolve_resource)] = Field(
         ..., description="Customizations to Sling execution."
     )
-    replications: Sequence[SlingReplicationSpec] = Field(
-        ..., description="A set of Sling replications to expose as assets."
-    )
-    asset_post_processors: Optional[Sequence[PostProcessorFn]] = Field(
+    replications: Annotated[
+        Sequence[SlingReplicationSpec],
+        FieldResolver(
+            lambda context, schema: SlingReplicationSpec.from_sequence(
+                context=context, schema_seq=schema.replications
+            )
+        ),
+    ] = Field(..., description="A set of Sling replications to expose as assets.")
+
+    asset_post_processors: Annotated[
+        Optional[Sequence[PostProcessorFn]], FieldResolver(resolve_schema_to_post_processors)
+    ] = Field(
         default=None,
         description="Post-processors to apply to the asset definitions produced by this component.",
     )

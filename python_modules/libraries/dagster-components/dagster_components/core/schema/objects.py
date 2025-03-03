@@ -65,8 +65,8 @@ TFromSchema = TypeVar("TFromSchema")
 
 class ResolvableFromSchema(Generic[TFromSchema]):
     @classmethod
-    def from_schema(cls, context: ResolutionContext, schema: "OpSpecSchema") -> Self:
-        obj = resolve_as(schema=schema, target_type=cls, context=context)
+    def from_schema(cls, context: ResolutionContext, schema: TFromSchema) -> Self:
+        obj = resolve_as(schema=schema, target_type=cls, context=context)  # type: ignore
         if not isinstance(obj, cls):
             raise ValueError(f"Expected {cls}, got {obj}")
         typed_obj = cast(Self, obj)
@@ -74,9 +74,15 @@ class ResolvableFromSchema(Generic[TFromSchema]):
 
     @classmethod
     def from_optional_schema(
-        cls, context: ResolutionContext, schema: Optional["OpSpecSchema"]
+        cls, context: ResolutionContext, schema: Optional[TFromSchema]
     ) -> Optional[Self]:
         return cls.from_schema(context, schema) if schema else None
+
+    @classmethod
+    def from_sequence(
+        cls, context: ResolutionContext, schema_seq: Sequence[TFromSchema]
+    ) -> Sequence[Self]:
+        return [cls.from_schema(context, schema) for schema in schema_seq]
 
 
 @dataclass
