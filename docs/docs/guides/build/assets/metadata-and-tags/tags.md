@@ -34,6 +34,22 @@ Tag values must:
 - Contain only alphanumeric characters, dashes (`-`), underscores (`_`), and dots (`.`)
 - Be a string or JSON that is serializable to a string
 
+### Labels
+
+A label is a tag that only contains a key. To create a label, set the tag value to an empty string:
+
+```python
+@dg.asset(
+    tags={"private":""}
+)
+def my_asset() -> None:
+    ...
+```
+
+A label will look like the following in the UI:
+
+![Label in UI](/images/guides/build/assets/metadata-tags/label-ui.png)
+
 ### Customizing run execution with tags
 
 While tags are primarily used for labeling and organization, some run execution features are controlled using run tags:
