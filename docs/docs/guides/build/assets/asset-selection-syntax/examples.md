@@ -32,7 +32,7 @@ Selects all assets on the path from the `raw_data_b` asset to the `summary_stats
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    ![All assets on the path between two assets](/images/guides/build/assets/asset-selection-syntax/all-assets-between-two-assets.png)
+    ![All assets on the path between two assets](/images/guides/build/assets/asset-selection-syntax/select-assets-between-two-assets.png)
     </TabItem>
 </Tabs>
 
@@ -59,7 +59,7 @@ Selects all assets on the paths between the `raw_data_a` or `raw_data_b` assets 
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    ![All assets between two sets of assets](/images/guides/build/assets/asset-selection-syntax/all-assets-between-two-sets-of-assets.png)
+    ![All assets between two sets of assets](/images/guides/build/assets/asset-selection-syntax/select-assets-between-two-sets-of-assets.png)
     </TabItem>
 </Tabs>
 
@@ -86,14 +86,14 @@ Selects all assets on the paths between assets tagged with `private` and assets 
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    {/* TODO: Nikki to add screenshot ![]() */}
+    ![All assets on the path between two sets of assets by tag](/images/guides/build/assets/asset-selection-syntax/select-assets-between-sets-by-tag.png)
     </TabItem>
 </Tabs>
 
 ## Select all assets on the path between two groups of assets \{#asset-path}
 
 ```shell
-group:"sensitive_data"* and *group:"public_data"
+group:"sensitive_data"+ and +group:"public_data"
 ```
 
 Selects all assets on the paths from the `sensitive_data` group to the `public_data` group.
@@ -102,45 +102,45 @@ Selects all assets on the paths from the `sensitive_data` group to the `public_d
     <TabItem value="python" label="Python">
     ```python
     sensitive_to_public_asset_job = define_asset_job(
-        name="sensitive_to_public_asset_job", selection='group:"sensitive_data"* and *group:"public_data"'
+        name="sensitive_to_public_asset_job", selection='group:"sensitive_data"+ and +group:"public_data"'
     )
     ```
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'group:"sensitive_data"* and *group:"public_data"'
-    dagster asset materialize --select 'group:"sensitive_data"* and *group:"public_data"'
+    dagster asset list --select 'group:"sensitive_data"+ and +group:"public_data"'
+    dagster asset materialize --select 'group:"sensitive_data"+ and +group:"public_data"'
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    {/* TODO: Nikki to add screenshot ![]() */}
+    ![All assets on the path between two groups of assets](/images/guides/build/assets/asset-selection-syntax/select-assets-between-two-groups.png)
     </TabItem>
 </Tabs>
 
 ## Select assets between two assets that go through the "middle" asset
 
 ```shell
-key:"raw_data_c"+ and +key:"combo_a_b_c"+ and +key:"summary_stats_1"
+key:"raw_data_c"+ and +key:"combo_a_b_c_data"+ and +key:"summary_stats_1"
 ```
 
-Selects all assets on the path between the `raw_data_c` asset and `summary_stats_1` asset that go through the `combo_a_b_c` asset.
+Selects all assets on the path between the `raw_data_c` asset and `summary_stats_1` asset that go through the `combo_a_b_c_data` asset.
 
 <Tabs groupId="examples">
     <TabItem value="python" label="Python">
     ```python
     middle_asset_job = define_asset_job(
-        name="middle_asset_job", selection='key:"raw_data_c"+ and +key:"combo_a_b_c"+ and +key:"summary_stats_1"'
+        name="middle_asset_job", selection='key:"raw_data_c"+ and +key:"combo_a_b_c_data"+ and +key:"summary_stats_1"'
     )
     ```
     </TabItem>
     <TabItem value="cli" label="CLI">
     ```shell
-    dagster asset list --select 'key:"raw_data_c"+ and +key:"combo_a_b_c"+ and +key:"summary_stats_1"'
-    dagster asset materialize --select 'key:"raw_data_c"+ and +key:"combo_a_b_c"+ and +key:"summary_stats_1"'
+    dagster asset list --select 'key:"raw_data_c"+ and +key:"combo_a_b_c_data"+ and +key:"summary_stats_1"'
+    dagster asset materialize --select 'key:"raw_data_c"+ and +key:"combo_a_b_c_data"+ and +key:"summary_stats_1"'
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    {/* TODO: Nikki to add screenshot ![]() */}
+    ![All assets between two assets that go through a middle asset](/images/guides/build/assets/asset-selection-syntax/select-assets-through-middle-asset.png)
     </TabItem>
 </Tabs>
 
@@ -176,7 +176,7 @@ def raw_data_a() -> None:
     ```
     </TabItem>
     <TabItem value="dagster-ui" label="Dagster UI">
-    {/* TODO: Nikki to add screenshot ![]() */}
+    ![Select assets with multiple key components](/images/guides/build/assets/asset-selection-syntax/select-assets-multiple-key-components.png)
     </TabItem>
 </Tabs>
 
