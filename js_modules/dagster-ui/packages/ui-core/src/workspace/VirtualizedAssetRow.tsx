@@ -1,6 +1,7 @@
 import {Box, Caption, Checkbox, Colors, Icon, Skeleton} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import {MISSING_LIVE_DATA} from 'shared/asset-graph/MissingLiveData.oss';
 import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
 import styled from 'styled-components';
 
@@ -14,7 +15,7 @@ import {gql, useQuery} from '../apollo-client';
 import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {buildAssetNodeStatusContent} from '../asset-graph/AssetNodeStatusContent';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
-import {MISSING_LIVE_DATA, tokenForAssetKey} from '../asset-graph/Utils';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetActionMenu} from '../assets/AssetActionMenu';
 import {AssetLink} from '../assets/AssetLink';
 import {PartitionCountLabels, partitionCountString} from '../assets/AssetNodePartitionCounts';

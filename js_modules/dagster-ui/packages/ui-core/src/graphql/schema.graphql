@@ -77,6 +77,9 @@ enum DagsterEventType {
   ALERT_SUCCESS
   ALERT_FAILURE
   LOGS_CAPTURED
+  SLA_PASSING
+  SLA_VIOLATING
+  SLA_UNKNOWN
 }
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent & ErrorEvent {

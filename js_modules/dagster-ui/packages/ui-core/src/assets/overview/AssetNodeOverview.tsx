@@ -9,6 +9,7 @@ import {
 } from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
 import {AssetAlertsSection} from 'shared/assets/AssetAlertsSection.oss';
 import {AssetNodeOverviewSLASummary} from 'shared/assets/overview/AssetNodeOverviewSLASummary.oss';
 
@@ -20,7 +21,6 @@ import {ComputeDetailsSection} from './ComputeDetailsSection';
 import {DefinitionSection} from './DefinitionSection';
 import {LineageSection} from './LineageSection';
 import {useAssetsLiveData} from '../../asset-data/AssetLiveDataProvider';
-import {LiveDataForNode} from '../../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../../asset-graph/types/useAssetGraphData.types';
 import {IntMetadataEntry} from '../../graphql/types';
 import {isCanonicalRowCountMetadataEntry} from '../../metadata/MetadataEntry';

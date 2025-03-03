@@ -13,6 +13,7 @@ import {
   Subheading,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
 
 import {AssetEventDetail, AssetEventDetailEmpty} from './AssetEventDetail';
 import {AssetEventList} from './AssetEventList';
@@ -24,7 +25,7 @@ import {AssetKey, AssetViewParams} from './types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {usePaginatedAssetEvents} from './usePaginatedAssetEvents';
 import {getXAxisForParams} from './useRecentAssetEvents';
-import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
+import {stepKeyForAsset} from '../asset-graph/Utils';
 import {RepositorySelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 

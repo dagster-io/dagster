@@ -3,13 +3,13 @@ import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import {AssetNodeSLARow} from 'shared/asset-graph/AssetNodeSLARow.oss';
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
 import styled, {CSSObject} from 'styled-components';
 
 import {AssetNodeMenuProps, useAssetNodeMenu} from './AssetNodeMenu';
 import {AssetNodeRowBox} from './AssetNodeRowBox';
 import {buildAssetNodeStatusContent} from './AssetNodeStatusContent';
 import {ContextMenuWrapper} from './ContextMenuWrapper';
-import {LiveDataForNode} from './Utils';
 import {
   ASSET_NODE_NAME_MAX_LENGTH,
   ASSET_NODE_STATUS_ROW_HEIGHT,

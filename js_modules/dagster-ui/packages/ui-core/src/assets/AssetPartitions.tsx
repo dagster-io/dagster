@@ -12,6 +12,7 @@ import {
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
 import {useMemo, useState} from 'react';
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
 
 import {AssetPartitionDetailEmpty, AssetPartitionDetailLoader} from './AssetPartitionDetail';
 import {AssetPartitionList} from './AssetPartitionList';
@@ -28,7 +29,6 @@ import {
   usePartitionHealthData,
 } from './usePartitionHealthData';
 import {usePartitionKeyInParams} from './usePartitionKeyInParams';
-import {LiveDataForNode} from '../asset-graph/Utils';
 import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {SortButton} from '../launchpad/ConfigEditorConfigPicker';

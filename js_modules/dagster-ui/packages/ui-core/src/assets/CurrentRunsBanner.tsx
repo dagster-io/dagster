@@ -2,8 +2,8 @@ import {Alert, Box, Spinner} from '@dagster-io/ui-components';
 import {BorderSetting, BorderSide} from '@dagster-io/ui-components/src/components/types';
 import {Fragment} from 'react';
 import {Link} from 'react-router-dom';
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
 
-import {LiveDataForNode} from '../asset-graph/Utils';
 import {titleForRun} from '../runs/RunUtils';
 import {useStepLogs} from '../runs/StepLogsDialog';
 

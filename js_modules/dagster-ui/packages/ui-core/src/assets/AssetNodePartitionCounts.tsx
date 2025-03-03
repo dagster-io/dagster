@@ -1,7 +1,7 @@
 import {Box, Colors, Icon, IconName, Tooltip} from '@dagster-io/ui-components';
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
 import styled from 'styled-components';
 
-import {LiveDataForNode} from '../asset-graph/Utils';
 import {AssetNodeFragment} from '../asset-graph/types/AssetNode.types';
 import {AssetPartitionStatus} from '../assets/AssetPartitionStatus';
 

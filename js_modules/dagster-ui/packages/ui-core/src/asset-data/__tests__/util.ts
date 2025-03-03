@@ -7,13 +7,13 @@ import {
   buildAssetNode,
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
-import {ASSETS_FRESHNESS_INFO_QUERY, ASSETS_GRAPH_LIVE_QUERY} from '../AssetBaseDataProvider';
+import {ASSETS_FRESHNESS_INFO_QUERY, ASSETS_GRAPH_LIVE_QUERY} from '../AssetBaseDataQueries';
 import {
   AssetGraphLiveQuery,
   AssetGraphLiveQueryVariables,
   AssetsFreshnessInfoQuery,
   AssetsFreshnessInfoQueryVariables,
-} from '../types/AssetBaseDataProvider.types';
+} from '../types/AssetBaseDataQueries.types';
 
 export function buildMockedAssetGraphLiveQuery(
   assetKeys: AssetKeyInput[],

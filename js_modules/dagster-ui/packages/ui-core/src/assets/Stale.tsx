@@ -16,11 +16,12 @@ import groupBy from 'lodash/groupBy';
 import isEqual from 'lodash/isEqual';
 import React from 'react';
 import {Link} from 'react-router-dom';
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
 import styled from 'styled-components';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
-import {LiveDataForNode, displayNameForAssetKey} from '../asset-graph/Utils';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput, StaleCauseCategory, StaleStatus} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
 

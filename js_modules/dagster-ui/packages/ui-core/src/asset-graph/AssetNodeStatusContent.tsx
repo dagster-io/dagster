@@ -1,8 +1,9 @@
 import {Body, Colors, Icon, Spinner} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
 
 import {AssetLatestRunSpinner, AssetRunLink} from './AssetRunLinking';
-import {LiveDataForNode, stepKeyForAsset} from './Utils';
+import {stepKeyForAsset} from './Utils';
 import {
   StyleForAssetPartitionStatus,
   partitionCountString,

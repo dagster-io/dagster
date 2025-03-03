@@ -1,10 +1,11 @@
 import {Box, Caption, Spinner} from '@dagster-io/ui-components';
 import {memo} from 'react';
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
 
 import {isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
 import {PartitionHealthData} from './usePartitionHealthData';
-import {LiveDataForNode, displayNameForAssetKey} from '../asset-graph/Utils';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {PartitionStatus} from '../partitions/PartitionStatus';
 
 interface Props {

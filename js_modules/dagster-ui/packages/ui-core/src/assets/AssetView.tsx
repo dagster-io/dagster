@@ -5,6 +5,7 @@ import {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {LiveDataForNodeWithStaleData} from 'shared/asset-graph/LiveDataForNode.oss';
 import {AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
 import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
@@ -42,13 +43,7 @@ import {currentPageAtom} from '../app/analytics';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
-import {
-  GraphData,
-  LiveDataForNodeWithStaleData,
-  nodeDependsOnSelf,
-  toGraphId,
-  tokenForAssetKey,
-} from '../asset-graph/Utils';
+import {GraphData, nodeDependsOnSelf, toGraphId, tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';

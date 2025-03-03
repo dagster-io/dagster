@@ -1,8 +1,8 @@
 import {FontFamily, Spinner, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
 
-import {LiveDataForNode} from './Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetViewParams} from '../assets/types';
 import {AssetKeyInput} from '../graphql/types';

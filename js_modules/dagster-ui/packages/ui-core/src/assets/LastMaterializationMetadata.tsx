@@ -1,5 +1,6 @@
 import {Box, Colors, Group, Icon, Mono, NonIdealState, Table} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
+import {LiveDataForNodeWithStaleData} from 'shared/asset-graph/LiveDataForNode.oss';
 import styled from 'styled-components';
 
 import {AssetLineageElements} from './AssetLineageElements';
@@ -12,7 +13,7 @@ import {
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
-import {LiveDataForNodeWithStaleData, isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {MetadataEntry} from '../metadata/MetadataEntry';
 import {isCanonicalColumnLineageEntry} from '../metadata/TableSchema';
