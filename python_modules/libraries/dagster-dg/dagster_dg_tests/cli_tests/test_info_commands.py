@@ -64,7 +64,10 @@ _EXPECTED_INSPECT_COMPONENT_TYPE_FULL = textwrap.dedent("""
 
 
 def test_inspect_component_type_all_metadata_success():
-    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
         result = runner.invoke(
             "utils",
             "inspect-component-type",
@@ -75,7 +78,10 @@ def test_inspect_component_type_all_metadata_success():
 
 
 def test_inspect_component_type_all_metadata_empty_success():
-    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
         result = runner.invoke(
             "utils",
             "inspect-component-type",
@@ -90,7 +96,10 @@ def test_inspect_component_type_all_metadata_empty_success():
 
 
 def test_inspect_component_type_flag_fields_success():
-    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
         result = runner.invoke(
             "utils",
             "inspect-component-type",
@@ -168,7 +177,10 @@ def test_inspect_component_type_flag_fields_success():
 
 
 def test_inspect_component_type_multiple_flags_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
         result = runner.invoke(
             "utils",
             "inspect-component-type",
@@ -184,7 +196,10 @@ def test_inspect_component_type_multiple_flags_fails() -> None:
 
 
 def test_inspect_component_type_undefined_component_type_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
         result = runner.invoke(
             "utils",
             "inspect-component-type",
