@@ -62,6 +62,7 @@ def isolated_example_workspace(
     runner: Union[CliRunner, "ProxyRunner"],
     project_name: Optional[str] = None,
     create_venv: bool = False,
+    use_editable_components_package_only: bool = True,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
@@ -72,8 +73,11 @@ def isolated_example_workspace(
     ):
         result = runner.invoke(
             "init",
-            "--use-editable-components-package-only",
-            dagster_git_repo_dir,
+            *(
+                ["--use-editable-components-package-only", dagster_git_repo_dir]
+                if use_editable_components_package_only
+                else []
+            ),
             input=f"\n{project_name or ''}\n",
         )
         assert_runner_result(result)
