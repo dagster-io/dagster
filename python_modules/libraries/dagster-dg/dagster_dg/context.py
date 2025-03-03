@@ -31,9 +31,9 @@ from dagster_dg.utils import (
     exit_with_error,
     generate_missing_dagster_components_in_local_venv_error_message,
     generate_tool_dg_cli_in_project_in_workspace_error_message,
-    get_toml_value,
+    get_toml_node,
     get_venv_executable,
-    has_toml_value,
+    has_toml_node,
     pushd,
     resolve_local_venv,
     strip_activated_venv_from_env_vars,
@@ -378,10 +378,10 @@ class DgContext:
         if not self.pyproject_toml_path.exists():
             return {}
         toml = tomlkit.parse(self.pyproject_toml_path.read_text())
-        if not has_toml_value(toml, ("project", "entry-points", "dagster.components")):
+        if not has_toml_node(toml, ("project", "entry-points", "dagster.components")):
             return {}
         else:
-            return get_toml_value(
+            return get_toml_node(
                 toml,
                 ("project", "entry-points", "dagster.components"),
                 (tomlkit.items.Table, tomlkit.items.InlineTable),
