@@ -930,6 +930,12 @@ class FivetranWorkspace(ConfigurableResource):
                     # so connectors for which the schemas are missing are discarded.
                     or not schema_config.has_schemas
                 ):
+                    if not schema_config.has_schemas:
+                        self._log.warning(
+                            f"Ignoring connector `{connector.name}`. "
+                            f"Dagster requires connector schema information to represent this connector, "
+                            f"which is not available until this connector has been run for the first time."
+                        )
                     continue
 
                 connectors_by_id[connector.id] = connector
