@@ -21,6 +21,8 @@ Assets (Fivetran API)
 
 .. autoclass:: dagster_fivetran.fivetran_event_iterator.FivetranEventIterator
 
+.. autoclass:: ConnectorSelectorFn
+
 
 Legacy
 ======
