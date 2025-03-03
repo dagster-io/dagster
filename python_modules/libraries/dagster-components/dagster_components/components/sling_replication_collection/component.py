@@ -1,8 +1,9 @@
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Literal, Optional, Union
+from typing import Annotated, Any, Literal, Optional, Union
 
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
@@ -27,7 +28,21 @@ from dagster_components.resolved.core_models import (
 )
 from dagster_components.resolved.metadata import ResolvableFieldInfo
 from dagster_components.resolved.model import FieldResolver, ResolvableModel, ResolvedFrom
-from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
+from dagster_components.utils import TranslatorResolvingInfo
+
+
+class ResolvingSlingTranslator(DagsterSlingTranslator):
+    def __init__(self, *, resolving_info: TranslatorResolvingInfo):
+        self.resolving_info = resolving_info
+
+    def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
+        base_spec = super().get_asset_spec(stream_definition)
+
+        return self.resolving_info.get_asset_spec(
+            base_spec,
+            {"stream_definition": stream_definition},
+        )
+
 
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 
@@ -40,7 +55,7 @@ def resolve_translator(
         raise ValueError("owners are not supported for sling_replication_collection component")
     if model.asset_attributes and model.asset_attributes.code_version:
         raise ValueError("code_version is not supported for sling_replication_collection component")
-    return get_wrapped_translator_class(DagsterSlingTranslator)(
+    return ResolvingSlingTranslator(
         resolving_info=TranslatorResolvingInfo(
             "stream_definition",
             model.asset_attributes or AssetAttributesModel(),
