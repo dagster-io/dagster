@@ -144,7 +144,7 @@ def test_invalid_config_project():
         cases = [
             [("tool", "dg", "cli", "verbose"), bool, 1],
             [("tool", "dg", "project", "root_module"), str, 1],
-            [("tool", "dg", "project", "components_module"), str, 1],
+            [("tool", "dg", "project", "defs_module"), str, 1],
         ]
         for path, expected_type, val in cases:
             with _reset_pyproject_toml():

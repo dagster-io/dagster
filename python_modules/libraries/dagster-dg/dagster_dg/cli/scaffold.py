@@ -96,9 +96,7 @@ def workspace_scaffold_command(
 )
 @dg_editable_dagster_options
 @dg_global_options
-@click.pass_context
 def project_scaffold_command(
-    context: click.Context,
     name: str,
     skip_venv: bool,
     populate_cache: bool,
@@ -118,7 +116,7 @@ def project_scaffold_command(
     \b
     ├── <name>
     │   ├── __init__.py
-    │   ├── components
+    │   ├── defs
     │   ├── definitions.py
     │   └── lib
     │       └── __init__.py
@@ -130,7 +128,7 @@ def project_scaffold_command(
     component`).  The `<name>.lib` directory holds custom component types scoped to the project
     (which can be created with `dg scaffold component-type`).
     """  # noqa: D301
-    cli_config = normalize_cli_config(global_options, context)
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
     if dg_context.is_workspace:
         if dg_context.has_project(name):
@@ -326,7 +324,7 @@ def _create_component_scaffold_subcommand(
             scaffold_params = None
 
         scaffold_component_instance(
-            Path(dg_context.components_path) / component_instance_name,
+            Path(dg_context.defs_path) / component_instance_name,
             component_key.to_typename(),
             scaffold_params,
             dg_context,
@@ -366,7 +364,9 @@ def component_type_scaffold_command(
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
 
     module_name = snakecase(name)
-    component_key = ComponentKey(name=name, namespace=dg_context.default_components_library_module)
+    component_key = ComponentKey(
+        name=name, namespace=dg_context.default_component_library_module_name
+    )
     if registry.has(component_key):
         exit_with_error(f"Component type`{component_key.to_typename()}` already exists.")
 

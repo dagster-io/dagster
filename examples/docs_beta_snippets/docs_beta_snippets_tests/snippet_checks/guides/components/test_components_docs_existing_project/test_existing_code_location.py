@@ -50,7 +50,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
             [tool.dg.project]
             root_module = "my_existing_project"
-            components_module = "my_existing_project.defs"
+            defs_module = "my_existing_project.defs"
         """)
         pyproject_contents = pyproject_contents.replace(
             "[tool.dagster]", f"{tool_dg_section}\n\n[tool.dagster]"

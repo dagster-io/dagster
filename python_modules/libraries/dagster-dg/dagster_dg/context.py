@@ -38,8 +38,8 @@ from dagster_dg.utils import (
 )
 
 # Project
-_DEFAULT_PROJECT_COMPONENTS_LIB_SUBMODULE: Final = "lib"
-_DEFAULT_PROJECT_COMPONENTS_SUBMODULE: Final = "defs"
+_DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
+_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE: Final = "definitions"
 
 # Workspace
 _WORKSPACE_PROJECTS_DIR: Final = "projects"
@@ -207,7 +207,7 @@ class DgContext:
         path_parts = [str(part) for part in self.root_path.parts if part != self.root_path.anchor]
         paths_to_hash = [
             self.root_path / "uv.lock",
-            *([self.default_components_library_path] if self.is_component_library else []),
+            *([self.default_component_library_path] if self.is_component_library else []),
         ]
         env_hash = hash_paths(paths_to_hash)
         return ("_".join(path_parts), env_hash, data_type)
@@ -264,7 +264,7 @@ class DgContext:
         if self.config.project:
             return self.config.project.root_module
         elif self.is_component_library:
-            return self.default_components_library_module.split(".")[0]
+            return self.default_component_library_module_name.split(".")[0]
         else:
             raise DgError("Cannot determine root package name")
 
@@ -291,40 +291,40 @@ class DgContext:
         return self.root_path / get_venv_executable(Path(".venv"))
 
     @cached_property
-    def components_module_name(self) -> str:
+    def defs_module_name(self) -> str:
         if not self.config.project:
-            raise DgError("`components_module_name` is only available in a Dagster project context")
+            raise DgError("`defs_module_name` is only available in a Dagster project context")
         return (
-            self.config.project.components_module
-            or f"{self.root_module_name}.{_DEFAULT_PROJECT_COMPONENTS_SUBMODULE}"
+            self.config.project.defs_module
+            or f"{self.root_module_name}.{_DEFAULT_PROJECT_DEFS_SUBMODULE}"
         )
 
     @cached_property
-    def components_path(self) -> Path:
+    def defs_path(self) -> Path:
         if not self.is_project:
-            raise DgError("`components_path` is only available in a Dagster project context")
-        return self.get_path_for_local_module(self.components_module_name)
+            raise DgError("`defs_path` is only available in a Dagster project context")
+        return self.get_path_for_local_module(self.defs_module_name)
 
     def get_component_instance_names(self) -> Iterable[str]:
-        return [str(instance_path.name) for instance_path in self.components_path.iterdir()]
+        return [str(instance_path.name) for instance_path in self.defs_path.iterdir()]
 
-    def get_component_instance_module(self, name: str) -> str:
-        return f"{self.components_module_name}.{name}"
+    def get_component_instance_module_name(self, name: str) -> str:
+        return f"{self.defs_module_name}.{name}"
 
     def has_component_instance(self, name: str) -> bool:
-        return (self.components_path / name).is_dir()
+        return (self.defs_path / name).is_dir()
 
     @property
-    def definitions_module_name(self) -> str:
+    def code_location_target_module_name(self) -> str:
         if not self.is_project:
             raise DgError(
-                "`definitions_module_name` is only available in a Dagster project context"
+                "`code_location_target_module_name` is only available in a Dagster project context"
             )
-        return f"{self.root_module_name}.definitions"
+        return f"{self.root_module_name}.{_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE}"
 
     @cached_property
-    def definitions_path(self) -> Path:
-        return self.get_path_for_local_module(self.definitions_module_name)
+    def code_location_target_path(self) -> Path:
+        return self.get_path_for_local_module(self.code_location_target_module_name)
 
     # ########################
     # ##### COMPONENT LIBRARY METHODS
@@ -339,18 +339,20 @@ class DgContext:
         return bool(self._dagster_components_entry_points)
 
     @cached_property
-    def default_components_library_module(self) -> str:
+    def default_component_library_module_name(self) -> str:
         if not self._dagster_components_entry_points:
             raise DgError(
-                "`default_components_library_module_name` is only available in a component library context"
+                "`default_component_library_module_name` is only available in a component library context"
             )
         return next(iter(self._dagster_components_entry_points.values()))
 
     @cached_property
-    def default_components_library_path(self) -> Path:
+    def default_component_library_path(self) -> Path:
         if not self.is_component_library:
-            raise DgError("`components_lib_path` is only available in a component library context")
-        return self.get_path_for_local_module(self.default_components_library_module)
+            raise DgError(
+                "`default_component_library_path` is only available in a component library context"
+            )
+        return self.get_path_for_local_module(self.default_component_library_module_name)
 
     @cached_property
     def _dagster_components_entry_points(self) -> Mapping[str, str]:
