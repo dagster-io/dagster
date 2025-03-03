@@ -11,7 +11,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Optional, TypedDict, TypeVar
+from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
 
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
