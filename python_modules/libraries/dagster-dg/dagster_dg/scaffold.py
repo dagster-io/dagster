@@ -186,7 +186,7 @@ def _gather_dagster_packages(editable_dagster_root: Path) -> list[Path]:
 
 
 def scaffold_component_type(dg_context: DgContext, class_name: str, module_name: str) -> None:
-    root_path = Path(dg_context.default_components_library_path)
+    root_path = Path(dg_context.default_component_library_path)
     click.echo(f"Creating a Dagster component type at {root_path}/{module_name}.py.")
 
     scaffold_subtree(
@@ -199,7 +199,7 @@ def scaffold_component_type(dg_context: DgContext, class_name: str, module_name:
 
     with open(root_path / "__init__.py", "a") as f:
         f.write(
-            f"from {dg_context.default_components_library_module}.{module_name} import {class_name}\n"
+            f"from {dg_context.default_component_library_module_name}.{module_name} import {class_name}\n"
         )
 
     click.echo(f"Scaffolded files for Dagster component type at {root_path}/{module_name}.py.")

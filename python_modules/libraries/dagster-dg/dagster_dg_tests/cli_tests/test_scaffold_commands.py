@@ -302,7 +302,10 @@ def test_scaffold_project_already_exists_fails() -> None:
 
 
 def test_scaffold_component_dynamic_subcommand_generation() -> None:
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
         result = runner.invoke("scaffold", "component", "--help")
         assert_runner_result(result)
 
@@ -321,7 +324,7 @@ def test_scaffold_component_dynamic_subcommand_generation() -> None:
 @pytest.mark.parametrize("in_workspace", [True, False])
 def test_scaffold_component_no_params_success(in_workspace: bool) -> None:
     with (
-        ProxyRunner.test() as runner,
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
@@ -343,7 +346,7 @@ def test_scaffold_component_no_params_success(in_workspace: bool) -> None:
 @pytest.mark.parametrize("in_workspace", [True, False])
 def test_scaffold_component_json_params_success(in_workspace: bool) -> None:
     with (
-        ProxyRunner.test() as runner,
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
@@ -368,7 +371,7 @@ def test_scaffold_component_json_params_success(in_workspace: bool) -> None:
 @pytest.mark.parametrize("in_workspace", [True, False])
 def test_scaffold_component_key_value_params_success(in_workspace: bool) -> None:
     with (
-        ProxyRunner.test() as runner,
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
@@ -391,7 +394,10 @@ def test_scaffold_component_key_value_params_success(in_workspace: bool) -> None
 
 
 def test_scaffold_component_json_params_and_key_value_params_fails() -> None:
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
         result = runner.invoke(
             "scaffold",
             "component",
@@ -415,7 +421,10 @@ def test_scaffold_component_undefined_component_type_fails() -> None:
 
 
 def test_scaffold_component_command_with_non_matching_module_name():
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
         #  move the module from foo_bar to module_not_same_as_project
         python_module = Path("foo_bar")
         python_module.rename("module_not_same_as_project")
@@ -433,7 +442,7 @@ def test_scaffold_component_command_with_non_matching_module_name():
 @pytest.mark.parametrize("in_workspace", [True, False])
 def test_scaffold_component_already_exists_fails(in_workspace: bool) -> None:
     with (
-        ProxyRunner.test() as runner,
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace),
     ):
         result = runner.invoke(
@@ -453,12 +462,15 @@ def test_scaffold_component_already_exists_fails(in_workspace: bool) -> None:
         assert "already exists" in result.output
 
 
-def test_scaffold_component_succeeds_non_default_component_package() -> None:
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+def test_scaffold_component_succeeds_non_default_defs_module() -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
         alt_lib_path = Path("foo_bar/_defs")
         alt_lib_path.mkdir(parents=True)
         with modify_pyproject_toml() as toml:
-            set_toml_value(toml, ("tool", "dg", "project", "components_module"), "foo_bar._defs")
+            set_toml_value(toml, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
         result = runner.invoke(
             "scaffold",
             "component",
@@ -475,10 +487,13 @@ def test_scaffold_component_succeeds_non_default_component_package() -> None:
         )
 
 
-def test_scaffold_component_fails_components_package_does_not_exist() -> None:
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+def test_scaffold_component_fails_defs_module_does_not_exist() -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
         with modify_pyproject_toml() as toml:
-            set_toml_value(toml, ("tool", "dg", "project", "components_module"), "foo_bar._defs")
+            set_toml_value(toml, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
         result = runner.invoke(
             "scaffold",
             "component",
@@ -491,7 +506,7 @@ def test_scaffold_component_fails_components_package_does_not_exist() -> None:
 
 def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
     with (
-        ProxyRunner.test(use_entry_points=True) as runner,
+        ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
         result = runner.invoke("scaffold", "component-type", "Baz")
@@ -521,7 +536,7 @@ dbt_project_path = Path("../stub_projects/dbt_project_location/defs/jaffle_shop"
 )
 def test_scaffold_dbt_project_instance(params) -> None:
     with (
-        ProxyRunner.test(use_entry_points=True) as runner,
+        ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
         # We need to add dagster-dbt also because we are using editable installs. Only
@@ -569,7 +584,7 @@ def test_scaffold_component_type_success() -> None:
 
 def test_scaffold_component_type_already_exists_fails() -> None:
     with (
-        ProxyRunner.test(use_entry_points=True) as runner,
+        ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
     ):
         result = runner.invoke("scaffold", "component-type", "Baz")
@@ -581,7 +596,7 @@ def test_scaffold_component_type_already_exists_fails() -> None:
 
 def test_scaffold_component_type_succeeds_non_default_component_lib_package() -> None:
     with (
-        ProxyRunner.test(use_entry_points=True) as runner,
+        ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner, lib_module_name="foo_bar._lib"),
     ):
         result = runner.invoke(
@@ -598,7 +613,7 @@ def test_scaffold_component_type_succeeds_non_default_component_lib_package() ->
 
 def test_scaffold_component_type_fails_components_lib_package_does_not_exist(capfd) -> None:
     with (
-        ProxyRunner.test(use_entry_points=True) as runner,
+        ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner, lib_module_name="foo_bar.fake"),
     ):
         # Delete the entry point module

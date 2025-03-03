@@ -16,11 +16,9 @@ ensure_dagster_dg_tests_import()
 
 from dagster_dg_tests.utils import ProxyRunner, assert_runner_result
 
-runner_opts = {"use_entry_points": True}
-
 
 def test_dg_init_command_success(monkeypatch) -> None:
-    with ProxyRunner.test(**runner_opts) as runner, runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("init", input="\nhelloworld\n")
         assert_runner_result(result)
         assert Path("dagster-workspace").exists()
@@ -34,7 +32,7 @@ def test_dg_init_command_success(monkeypatch) -> None:
 
 
 def test_dg_init_command_no_project(monkeypatch) -> None:
-    with ProxyRunner.test(**runner_opts) as runner, runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("init", input="\n\n")
         assert_runner_result(result)
         assert Path("dagster-workspace").exists()
@@ -44,7 +42,7 @@ def test_dg_init_command_no_project(monkeypatch) -> None:
 
 
 def test_dg_init_override_workspace_name(monkeypatch) -> None:
-    with ProxyRunner.test(**runner_opts) as runner, runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("init", input="my-workspace\ngoodbyeworld\n")
         assert_runner_result(result)
         assert Path("my-workspace").exists()
@@ -61,7 +59,7 @@ def test_dg_init_workspace_already_exists_failure(monkeypatch) -> None:
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
 
-    with ProxyRunner.test(**runner_opts) as runner, runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
         os.mkdir("dagster-workspace")
         result = runner.invoke("init", "--use-editable-dagster", input="\nhelloworld\n")
         assert_runner_result(result, exit_0=False)
@@ -80,7 +78,7 @@ def test_dg_init_use_editable_dagster(
     else:
         editable_args = [option, str(dagster_git_repo_dir)]
 
-    with ProxyRunner.test(**runner_opts) as runner, runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("init", *editable_args, input="\nhelloworld\n")
         assert_runner_result(result)
 
@@ -97,7 +95,7 @@ def test_dg_init_project_editable_dagster_no_env_var_no_value_fails(
     option: EditableOption, monkeypatch
 ) -> None:
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", "")
-    with ProxyRunner.test(**runner_opts) as runner, runner.isolated_filesystem():
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("init", option, input="\nhelloworld\n")
         assert_runner_result(result, exit_0=False)
         assert "require the `DAGSTER_GIT_REPO_DIR`" in result.output

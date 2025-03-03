@@ -23,6 +23,7 @@ import {AssetKey} from '../assets/types';
 import {DagsterEventType, ErrorSource} from '../graphql/types';
 import {
   LogRowStructuredContentTable,
+  LogRowStructuredRow,
   MetadataEntries,
   MetadataEntryLink,
 } from '../metadata/MetadataEntry';
@@ -139,6 +140,7 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
           metadataEntries={node.metadataEntries}
           eventType={eventType}
           timestamp={node.timestamp}
+          partition={node.partition}
         />
       );
     case 'ObservationEvent':
@@ -149,6 +151,7 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
           metadataEntries={node.metadataEntries}
           eventType={eventType}
           timestamp={node.timestamp}
+          partition={node.partition}
         />
       );
     case 'AssetMaterializationPlannedEvent':
@@ -495,12 +498,14 @@ const AssetMetadataContent = ({
   metadataEntries,
   eventType,
   timestamp,
+  partition,
 }: {
   message: string;
   assetKey: AssetKey | null;
   metadataEntries: MetadataEntryFragment[];
   eventType: string;
   timestamp: string;
+  partition: string | null;
 }) => {
   if (!assetKey) {
     return (
@@ -518,22 +523,30 @@ const AssetMetadataContent = ({
     </span>
   );
 
+  // Note: No memoization here - log row content components are memoized higher up
+
+  const rows: LogRowStructuredRow[] = [
+    {
+      label: 'asset_key',
+      item: (
+        <>
+          {displayNameForAssetKey(assetKey)}
+          {assetDashboardLink}
+        </>
+      ),
+    },
+  ];
+
+  if (partition) {
+    rows.push({label: 'partition', item: <>{partition}</>});
+  }
+
   return (
     <DefaultContent message={message} eventType={eventType}>
       <>
         <LogRowStructuredContentTable
           styles={metadataEntries?.length ? {paddingBottom: 0} : {}}
-          rows={[
-            {
-              label: 'asset_key',
-              item: (
-                <>
-                  {displayNameForAssetKey(assetKey)}
-                  {assetDashboardLink}
-                </>
-              ),
-            },
-          ]}
+          rows={rows}
         />
         <MetadataEntries entries={metadataEntries} />
       </>
