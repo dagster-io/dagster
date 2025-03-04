@@ -61,9 +61,7 @@ def get_schema_type(resolvable_from_schema_type: type["ResolvableFromSchema"]) -
 class ResolvableFromSchema(Generic[TSchema]):
     @classmethod
     def from_schema(cls, context: "ResolutionContext", schema: TSchema) -> Self:
-        return resolve_schema_to_resolvable(
-            schema=schema, resolvable_from_schema_type=cls, context=context
-        )
+        return resolve_schema_to_resolvable(schema=schema, target_type=cls, context=context)
 
     @classmethod
     def from_optional(
@@ -162,14 +160,12 @@ def resolve_fields(
     }
 
 
-TResolvableFromSchema = TypeVar("TResolvableFromSchema", bound=ResolvableFromSchema)
+TTargetType = TypeVar("TTargetType")
 
 
 def resolve_schema_to_resolvable(
     schema: EitherSchema,
-    resolvable_from_schema_type: type[TResolvableFromSchema],
+    target_type: type[TTargetType],
     context: "ResolutionContext",
-) -> TResolvableFromSchema:
-    return resolvable_from_schema_type(
-        **resolve_fields(schema, resolvable_from_schema_type, context)
-    )
+) -> TTargetType:
+    return target_type(**resolve_fields(schema, target_type, context))

@@ -16,7 +16,7 @@ from typing_extensions import Self
 from dagster_components.core.component import Component, ComponentLoadContext
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.objects import AssetSpecSchema
+from dagster_components.core.schema.objects import AssetSpecSchema, ResolvedAssetSpec
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLFieldResolver,
     DSLSchema,
@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 @dataclass
 class PipesSubprocessScriptSpec(ResolvableFromSchema["PipesSubprocessScriptSchema"]):
     path: str
-    assets: Sequence[AssetSpec]
+    assets: Annotated[Sequence[ResolvedAssetSpec], DSLFieldResolver(ResolvedAssetSpec.from_seq)]
 
 
 class PipesSubprocessScriptSchema(DSLSchema):
@@ -47,7 +47,7 @@ def resolve_specs_by_path(
     context: ResolutionContext, schema: PipesSubprocessScriptCollectionSchema
 ) -> Mapping[str, Sequence[AssetSpec]]:
     return {
-        spec.path: spec.assets
+        spec.path: [asset.to_asset_spec() for asset in spec.assets]
         for spec in PipesSubprocessScriptSpec.from_seq(context, schema.scripts)
     }
 

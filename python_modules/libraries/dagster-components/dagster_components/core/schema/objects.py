@@ -1,3 +1,4 @@
+import dataclasses
 from collections.abc import Mapping, Sequence
 from typing import Annotated, Any, Callable, Literal, Optional, Union
 
@@ -7,6 +8,9 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
 from pydantic import BaseModel, Field
@@ -21,7 +25,7 @@ from dagster_components.core.schema.resolvable_from_schema import (
 )
 
 
-def _resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
+def resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
     resolved_val = context.resolve_value(key, as_type=Union[str, AssetKey])
     return (
         AssetKey.from_user_string(resolved_val) if isinstance(resolved_val, str) else resolved_val
@@ -126,13 +130,49 @@ class _ResolvableAssetAttributesMixin(BaseModel):
     )
 
 
-class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[AssetSpec]):
+class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
     key: Annotated[
-        str, FieldResolver(lambda context, schema: _resolve_asset_key(schema.key, context))
+        str, FieldResolver(lambda context, schema: resolve_asset_key(schema.key, context))
     ] = Field(..., description="A unique identifier for the asset.")
 
 
-class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Mapping[str, Any]]):
+@dataclasses.dataclass
+class ResolvedAssetSpec(ResolvableFromSchema[AssetSpecSchema]):
+    key: Annotated[
+        AssetKey,
+        DSLFieldResolver.from_parent(
+            lambda context, schema: resolve_asset_key(schema.key, context)
+        ),
+    ]
+    deps: Sequence[str]
+    description: Optional[str] = None
+    metadata: Mapping[str, Any] = dataclasses.field(default_factory=dict)
+    group_name: Optional[str] = None
+    skippable: bool = False
+    code_version: Optional[str] = None
+    owners: Sequence[str] = dataclasses.field(default_factory=list)
+    tags: Mapping[str, str] = dataclasses.field(default_factory=dict)
+    kinds: Optional[Sequence[str]] = None
+    automation_condition: Optional[AutomationCondition] = None
+
+    def to_asset_spec(self) -> AssetSpec:
+        return AssetSpec(
+            key=self.key,
+            deps=self.deps,
+            description=self.description,
+            metadata=self.metadata,
+            group_name=self.group_name,
+            skippable=self.skippable,
+            code_version=self.code_version,
+            owners=self.owners,
+            tags=self.tags,
+            kinds=set(self.kinds or []),
+            automation_condition=self.automation_condition,
+        )
+
+
+# class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Mapping[str, Any]]):
+class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
     """Resolves into a dictionary of asset attributes. This is similar to AssetSpecSchema, but
     does not require a key. This is useful in contexts where you want to modify attributes of
     an existing AssetSpec.
@@ -141,12 +181,9 @@ class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Ma
     key: Annotated[
         Optional[str],
         FieldResolver(
-            lambda context, schema: _resolve_asset_key(schema.key, context) if schema.key else None
+            lambda context, schema: resolve_asset_key(schema.key, context) if schema.key else None
         ),
     ] = Field(default=None, description="A unique identifier for the asset.")
-
-    def resolve(self, context: ResolutionContext) -> Mapping[str, Any]:
-        return resolve_asset_attributes_to_mapping(context, self)
 
 
 def resolve_asset_attributes_to_mapping(
