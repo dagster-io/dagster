@@ -16,7 +16,7 @@ from dagster_components import Component, ComponentLoadContext, FieldResolver
 from dagster_components.components.sling_replication_collection.scaffolder import (
     SlingReplicationComponentScaffolder,
 )
-from dagster_components.core.schema.base import ResolvableSchema
+from dagster_components.core.schema.base import ResolvableSchema, resolve_as
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
@@ -25,6 +25,7 @@ from dagster_components.core.schema.objects import (
     OpSpec,
     OpSpecSchema,
     PostProcessorFn,
+    resolve_schema_to_post_processor,
 )
 from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
@@ -50,14 +51,20 @@ def resolve_translator(
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 
 
+def resolve_op_spec(
+    context: ResolutionContext, schema: "SlingReplicationSchema"
+) -> Optional[OpSpec]:
+    return resolve_as(schema=schema.op, target_type=OpSpec, context=context) if schema.op else None
+
+
 class SlingReplicationSpec(BaseModel):
     path: str
-    op: Optional[OpSpec]
+    op: Annotated[Optional[OpSpec], FieldResolver(resolve_op_spec)]
     translator: Annotated[Optional[DagsterSlingTranslator], FieldResolver(resolve_translator)]
     include_metadata: list[SlingMetadataAddons]
 
 
-class SlingReplicationSchema(ResolvableSchema[SlingReplicationSpec]):
+class SlingReplicationSchema(ResolvableSchema):
     path: str = Field(
         ...,
         description="The path to the Sling replication file. For more information, see https://docs.slingdata.io/concepts/replication#overview.",
@@ -79,10 +86,19 @@ class SlingReplicationSchema(ResolvableSchema[SlingReplicationSpec]):
     )
 
 
-class SlingReplicationCollectionSchema(ResolvableSchema["SlingReplicationCollectionComponent"]):
+class SlingReplicationCollectionSchema(ResolvableSchema):
     sling: Optional[SlingResource] = None
     replications: Sequence[SlingReplicationSchema]
     asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
+
+
+def resolve_replication_specs(
+    context: ResolutionContext, schema: SlingReplicationCollectionSchema
+) -> Sequence[SlingReplicationSpec]:
+    return [
+        resolve_as(context=context, target_type=SlingReplicationSpec, schema=replication)
+        for replication in schema.replications
+    ]
 
 
 def resolve_resource(
@@ -95,6 +111,15 @@ def resolve_resource(
     )
 
 
+def resolve_asset_post_processors(
+    context: ResolutionContext, schema: SlingReplicationCollectionSchema
+) -> Sequence[PostProcessorFn]:
+    return [
+        resolve_schema_to_post_processor(context, post_processor)
+        for post_processor in schema.asset_post_processors or []
+    ]
+
+
 @scaffoldable(scaffolder=SlingReplicationComponentScaffolder)
 @dataclass
 class SlingReplicationCollectionComponent(Component):
@@ -103,10 +128,12 @@ class SlingReplicationCollectionComponent(Component):
     resource: Annotated[SlingResource, FieldResolver(resolve_resource)] = Field(
         ..., description="Customizations to Sling execution."
     )
-    replications: Sequence[SlingReplicationSpec] = Field(
-        ..., description="A set of Sling replications to expose as assets."
-    )
-    asset_post_processors: Optional[Sequence[PostProcessorFn]] = Field(
+    replications: Annotated[
+        Sequence[SlingReplicationSpec], FieldResolver(resolve_replication_specs)
+    ] = Field(..., description="A set of Sling replications to expose as assets.")
+    asset_post_processors: Annotated[
+        Optional[Sequence[PostProcessorFn]], FieldResolver(resolve_asset_post_processors)
+    ] = Field(
         default=None,
         description="Post-processors to apply to the asset definitions produced by this component.",
     )
