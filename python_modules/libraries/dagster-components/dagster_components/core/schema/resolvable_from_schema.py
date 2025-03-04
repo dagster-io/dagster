@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, fields, is_dataclass
 from typing import (
     TYPE_CHECKING,
@@ -6,6 +6,7 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Optional,
     TypeVar,
     Union,
     get_args,
@@ -13,7 +14,7 @@ from typing import (
 )
 
 from pydantic import BaseModel, ConfigDict
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 from dagster_components.core.schema.base import ResolvableSchema
 
@@ -32,7 +33,22 @@ TSchema = TypeVar("TSchema", bound=EitherSchema)
 # TSchema = TypeVar("TSchema", bound=DSLSchema)
 
 
-class ResolvableFromSchema(Generic[TSchema]): ...
+class ResolvableFromSchema(Generic[TSchema]):
+    @classmethod
+    def from_schema(cls, context: "ResolutionContext", schema: TSchema) -> Self:
+        return resolve_schema_to_resolvable(
+            schema=schema, resolvable_from_schema_type=cls, context=context
+        )
+
+    @classmethod
+    def from_optional(
+        cls, context: "ResolutionContext", schema: Optional[TSchema]
+    ) -> Optional[Self]:
+        return cls.from_schema(context, schema) if schema else None
+
+    @classmethod
+    def from_seq(cls, context: "ResolutionContext", schema: Sequence[TSchema]) -> Sequence[Self]:
+        return [cls.from_schema(context, item) for item in schema]
 
 
 @dataclass
@@ -41,15 +57,17 @@ class ParentFn:
 
 
 @dataclass
-class PropNoContextFn:
-    callable: Callable[[Any], Any]
+class AttrWithContextFn:
+    callable: Callable[["ResolutionContext", Any], Any]
 
 
 class DSLFieldResolver:
     """Contains information on how to resolve this field from a DSLSchema."""
 
-    def __init__(self, fn: Union[ParentFn, PropNoContextFn, Callable[[Any], Any]]):
-        self.fn = fn if isinstance(fn, (ParentFn, PropNoContextFn)) else PropNoContextFn(fn)
+    def __init__(
+        self, fn: Union[ParentFn, AttrWithContextFn, Callable[["ResolutionContext", Any], Any]]
+    ):
+        self.fn = fn if isinstance(fn, (ParentFn, AttrWithContextFn)) else AttrWithContextFn(fn)
         super().__init__()
 
     @staticmethod
@@ -70,9 +88,10 @@ class DSLFieldResolver:
     def execute(self, context: "ResolutionContext", schema: EitherSchema, field_name: str) -> Any:
         if isinstance(self.fn, ParentFn):
             return self.fn.callable(context, schema)
-        elif isinstance(self.fn, PropNoContextFn):
+        elif isinstance(self.fn, AttrWithContextFn):
             attr = getattr(schema, field_name)
-            return self.fn.callable(attr)
+            return self.fn.callable(context, attr)
+
         else:
             raise ValueError(f"Unsupported DSLFieldResolver type: {self.fn}")
 
