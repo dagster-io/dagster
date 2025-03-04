@@ -329,7 +329,7 @@
       "destination": "/etl-pipeline-tutorial/"
     },
     {
-      "source": "/tutorial/secheduling-your-pipeline",
+      "source": "/tutorial/scheduling-your-pipeline",
       "destination": "/etl-pipeline-tutorial/"
     },
     {
@@ -1024,7 +1024,7 @@
       "destination": "/dagster-plus/deployment/deployment-types/hybrid/azure/acr-user-code"
     },
     {
-      "source": "/dagster-plus/deployment/deployment-types/hybrid/azure/blob-compute-logs",
+      "source": "/dagster-plus/deployment/azure/blob-compute-logs",
       "destination": "/dagster-plus/deployment/deployment-types/hybrid/azure/blob-compute-logs"
     },
     {
@@ -1677,7 +1677,7 @@
     {
       "source": "/integrations/airlift/federation-tutorial/overview",
       "destination": "/integrations/libraries/airlift/"
-    }
+    },
     {
       "source": "/integrations/airlift/tutorial/overview",
       "destination": "/integrations/libraries/airlift"
