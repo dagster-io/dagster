@@ -2,8 +2,6 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Annotated, Optional
 
-import pytest
-from dagster._check.functions import ParameterCheckError
 from dagster_components import FieldResolver, ResolutionContext
 from dagster_components.core.schema.base import PlainSamwiseSchema
 from dagster_components.core.schema.objects import ResolvableFromSchema
@@ -63,8 +61,8 @@ def test_valid_resolution_nested() -> None:
     )
 
 
-@pytest.mark.skip("Figure out better way of handling type issues")
-def test_invalid_resolution_simple() -> None:
-    with pytest.raises(ParameterCheckError):
-        context = ResolutionContext(scope={"some_int": "NOT_AN_INT"})
-        context.resolve_value(InnerSchema(val1="{{ some_int }}", val2="abc"))
+# @pytest.mark.skip("Figure out better way of handling type issues")
+# def test_invalid_resolution_simple() -> None:
+#     with pytest.raises(ParameterCheckError):
+#         context = ResolutionContext(scope={"some_int": "NOT_AN_INT"})
+#         context.resolve_value(InnerSchema(val1="{{ some_int }}", val2="abc"))

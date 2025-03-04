@@ -81,11 +81,11 @@ def get_resolved_type(schema: "ResolvableSchema") -> type:
     return resolved_type
 
 
-def resolve(schema: ComponentSchema, context: "ResolutionContext") -> object:
-    if isinstance(schema, ResolvableSchema):
-        return schema.resolve(context)
-    else:
-        return resolve_as(schema, get_resolved_type(schema), context)
+def resolve(schema: "ResolvableSchema", context: "ResolutionContext") -> object:
+    return schema.resolve(context)
+    # else:
+    #     raise Exception(f"got here {type(schema)}")
+    #     return resolve_as(schema, get_resolved_type(schema), context)
 
 
 class PlainSamwiseSchema(BaseModel):

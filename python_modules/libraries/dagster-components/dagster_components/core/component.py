@@ -19,7 +19,7 @@ from typing_extensions import Self
 
 from dagster_components.core.component_key import ComponentKey
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
-from dagster_components.core.schema.base import ResolvableSchema, resolve_as
+from dagster_components.core.schema.base import ComponentSchema, ResolvableSchema, resolve_as
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.scaffoldable.decorator import get_scaffolder, scaffoldable
 from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
@@ -49,7 +49,7 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
-    def load(cls, attributes: Optional[ResolvableSchema], context: "ComponentLoadContext") -> Self:
+    def load(cls, attributes: Optional[ComponentSchema], context: "ComponentLoadContext") -> Self:
         return resolve_as(attributes, cls, context.resolution_context) if attributes else cls()
 
     @classmethod
