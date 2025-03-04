@@ -22,6 +22,7 @@ import {
   MetadataEntryFragment,
   TableMetadataEntryFragment,
 } from './types/MetadataEntryFragment.types';
+import {PoolTag} from '../../src/instance/PoolTag';
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
@@ -57,11 +58,13 @@ export const isCanonicalRowCountMetadataEntry = (
 ): m is IntMetadataEntry =>
   m && m.__typename === 'IntMetadataEntry' && m.label === 'dagster/row_count';
 
+export type LogRowStructuredRow = {label: string; item: JSX.Element};
+
 export const LogRowStructuredContentTable = ({
   rows,
   styles,
 }: {
-  rows: {label: string; item: JSX.Element}[];
+  rows: LogRowStructuredRow[];
   styles?: React.CSSProperties;
 }) => (
   <div style={{overflow: 'auto', paddingBottom: 10, ...(styles || {})}}>
@@ -294,6 +297,8 @@ export const MetadataEntry = ({
           [Show Code References]
         </MetadataEntryDialogAction>
       );
+    case 'PoolMetadataEntry':
+      return <PoolTag pool={entry.pool} />;
     default:
       return assertUnreachable(entry);
   }

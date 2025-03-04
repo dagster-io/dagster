@@ -5,7 +5,7 @@ from abc import abstractmethod
 from typing import Annotated, NamedTuple, get_type_hints
 
 import pytest
-from dagster import resource
+from dagster import BetaWarning, PreviewWarning, SupersessionWarning, resource
 from dagster._annotations import (
     PUBLIC,
     PublicAttr,
@@ -31,7 +31,6 @@ from dagster._annotations import (
     superseded,
 )
 from dagster._check import CheckError
-from dagster._utils.warnings import BetaWarning, PreviewWarning, SupersessionWarning
 
 from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 

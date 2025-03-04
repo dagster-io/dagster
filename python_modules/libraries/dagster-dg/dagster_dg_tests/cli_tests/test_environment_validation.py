@@ -4,7 +4,10 @@ from pathlib import Path
 import click
 import pytest
 from dagster_dg.cli import cli
-from dagster_dg.utils import get_venv_executable, resolve_local_venv
+from dagster_dg.utils import ensure_dagster_dg_tests_import, get_venv_executable, resolve_local_venv
+
+ensure_dagster_dg_tests_import()
+
 from dagster_dg_tests.utils import ProxyRunner, assert_runner_result, isolated_components_venv
 
 # The tests in this file are designed to check error messages for basic precondition checks for
@@ -28,11 +31,12 @@ class CommandSpec:
         return (*self.command, *self.args)
 
 
-DEFAULT_COMPONENT_TYPE = "simple_asset@dagster_components.test"
+DEFAULT_COMPONENT_TYPE = "dagster_test.components.SimpleAssetComponent"
 
 NO_REQUIRED_CONTEXT_COMMANDS = [
     CommandSpec(("scaffold", "project"), "foo"),
     CommandSpec(("init",), "foo"),
+    CommandSpec(("scaffold", "workspace"), "foo"),
 ]
 
 
@@ -42,9 +46,9 @@ COMPONENT_LIBRARY_CONTEXT_COMMANDS = [
 
 REGISTRY_CONTEXT_COMMANDS = [
     CommandSpec(tuple(), "--rebuild-component-registry"),
-    CommandSpec(("inspect", "component-type"), DEFAULT_COMPONENT_TYPE),
     CommandSpec(("docs", "component-type"), DEFAULT_COMPONENT_TYPE),
     CommandSpec(("list", "component-type")),
+    CommandSpec(("utils", "inspect-component-type"), DEFAULT_COMPONENT_TYPE),
 ]
 
 
@@ -61,6 +65,7 @@ WORKSPACE_CONTEXT_COMMANDS = [
 
 WORKSPACE_OR_PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("dev",)),
+    CommandSpec(("check", "defs")),
 ]
 
 # ########################
@@ -129,7 +134,10 @@ def test_no_local_venv_failure(spec: CommandSpec) -> None:
     ids=lambda spec: "-".join(spec.command),
 )
 def test_no_local_dagster_components_failure(spec: CommandSpec) -> None:
-    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
         _uninstall_dagster_components_from_local_venv(Path.cwd())
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
@@ -149,7 +157,7 @@ def test_no_local_dagster_components_failure(spec: CommandSpec) -> None:
     ids=lambda spec: "-".join(spec.command),
 )
 def test_no_ambient_dagster_components_failure(spec: CommandSpec) -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+    with ProxyRunner.test(use_fixed_test_components=True) as runner, runner.isolated_filesystem():
         cli_args = _add_global_cli_options(spec.to_cli_args(), "--no-require-local-venv")
         # Set $PATH to /dev/null to ensure that the `dagster-components` executable is not found
         result = runner.invoke(*cli_args, "--no-require-local-venv", env={"PATH": "/dev/null"})
@@ -159,7 +167,10 @@ def test_no_ambient_dagster_components_failure(spec: CommandSpec) -> None:
 
 @pytest.mark.parametrize("spec", PROJECT_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command))
 def test_no_project_failure(spec: CommandSpec) -> None:
-    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster project directory" in result.output
@@ -169,7 +180,10 @@ def test_no_project_failure(spec: CommandSpec) -> None:
     "spec", COMPONENT_LIBRARY_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command)
 )
 def test_no_component_library_failure(spec: CommandSpec) -> None:
-    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster component library directory" in result.output
@@ -179,7 +193,10 @@ def test_no_component_library_failure(spec: CommandSpec) -> None:
     "spec", WORKSPACE_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command)
 )
 def test_no_workspace_failure(spec: CommandSpec) -> None:
-    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster workspace directory" in result.output
@@ -189,7 +206,10 @@ def test_no_workspace_failure(spec: CommandSpec) -> None:
     "spec", WORKSPACE_OR_PROJECT_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command)
 )
 def test_no_workspace_or_project_failure(spec: CommandSpec) -> None:
-    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
         assert "must be run inside a Dagster workspace or project directory" in result.output

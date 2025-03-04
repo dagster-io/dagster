@@ -145,6 +145,12 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'PoolMetadataEntry';
+                      pool: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'PythonArtifactMetadataEntry';
                       module: string;
                       name: string;
@@ -343,6 +349,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -546,6 +558,12 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'PoolMetadataEntry';
+                      pool: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'PythonArtifactMetadataEntry';
                       module: string;
                       name: string;
@@ -728,6 +746,12 @@ export type PipelineRunLogsSubscription = {
                   | {
                       __typename: 'PipelineRunMetadataEntry';
                       runId: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'PoolMetadataEntry';
+                      pool: string;
                       label: string;
                       description: string | null;
                     }
@@ -915,6 +939,12 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -1083,6 +1113,12 @@ export type PipelineRunLogsSubscription = {
                   | {
                       __typename: 'PipelineRunMetadataEntry';
                       runId: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'PoolMetadataEntry';
+                      pool: string;
                       label: string;
                       description: string | null;
                     }
@@ -1326,6 +1362,12 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -1545,6 +1587,12 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -1672,6 +1720,7 @@ export type PipelineRunLogsSubscription = {
               eventType: Types.DagsterEventType | null;
               label: string | null;
               description: string | null;
+              partition: string | null;
               metadataEntries: Array<
                 | {
                     __typename: 'AssetMetadataEntry';
@@ -1748,6 +1797,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -1932,6 +1987,12 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'PoolMetadataEntry';
+                      pool: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'PythonArtifactMetadataEntry';
                       module: string;
                       name: string;
@@ -2034,6 +2095,7 @@ export type PipelineRunLogsSubscription = {
               eventType: Types.DagsterEventType | null;
               label: string | null;
               description: string | null;
+              partition: string | null;
               metadataEntries: Array<
                 | {
                     __typename: 'AssetMetadataEntry';
@@ -2110,6 +2172,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -2291,6 +2359,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -2485,6 +2559,12 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -2661,6 +2741,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -2938,6 +3024,12 @@ export type PipelineRunLogsSubscription = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'PoolMetadataEntry';
+                      pool: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'PythonArtifactMetadataEntry';
                       module: string;
                       name: string;
@@ -3122,6 +3214,12 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -3298,6 +3396,12 @@ export type PipelineRunLogsSubscription = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -3524,6 +3628,12 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'PoolMetadataEntry';
+                pool: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'PythonArtifactMetadataEntry';
                 module: string;
                 name: string;
@@ -3723,6 +3833,12 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -3917,6 +4033,12 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'PoolMetadataEntry';
+                pool: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'PythonArtifactMetadataEntry';
                 module: string;
                 name: string;
@@ -4096,6 +4218,12 @@ export type RunLogsSubscriptionSuccessFragment = {
             | {
                 __typename: 'PipelineRunMetadataEntry';
                 runId: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'PoolMetadataEntry';
+                pool: string;
                 label: string;
                 description: string | null;
               }
@@ -4280,6 +4408,12 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -4443,6 +4577,12 @@ export type RunLogsSubscriptionSuccessFragment = {
             | {
                 __typename: 'PipelineRunMetadataEntry';
                 runId: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'PoolMetadataEntry';
+                pool: string;
                 label: string;
                 description: string | null;
               }
@@ -4683,6 +4823,12 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -4897,6 +5043,12 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -5019,6 +5171,7 @@ export type RunLogsSubscriptionSuccessFragment = {
         eventType: Types.DagsterEventType | null;
         label: string | null;
         description: string | null;
+        partition: string | null;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';
@@ -5095,6 +5248,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'PipelineRunMetadataEntry';
               runId: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
               label: string;
               description: string | null;
             }
@@ -5274,6 +5433,12 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'PoolMetadataEntry';
+                pool: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'PythonArtifactMetadataEntry';
                 module: string;
                 name: string;
@@ -5373,6 +5538,7 @@ export type RunLogsSubscriptionSuccessFragment = {
         eventType: Types.DagsterEventType | null;
         label: string | null;
         description: string | null;
+        partition: string | null;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';
@@ -5449,6 +5615,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'PipelineRunMetadataEntry';
               runId: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
               label: string;
               description: string | null;
             }
@@ -5625,6 +5797,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'PipelineRunMetadataEntry';
               runId: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
               label: string;
               description: string | null;
             }
@@ -5814,6 +5992,12 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -5985,6 +6169,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'PipelineRunMetadataEntry';
               runId: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
               label: string;
               description: string | null;
             }
@@ -6257,6 +6447,12 @@ export type RunLogsSubscriptionSuccessFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'PoolMetadataEntry';
+                pool: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'PythonArtifactMetadataEntry';
                 module: string;
                 name: string;
@@ -6438,6 +6634,12 @@ export type RunLogsSubscriptionSuccessFragment = {
               description: string | null;
             }
           | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -6609,6 +6811,12 @@ export type RunLogsSubscriptionSuccessFragment = {
           | {
               __typename: 'PipelineRunMetadataEntry';
               runId: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
               label: string;
               description: string | null;
             }
@@ -6848,6 +7056,12 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'PoolMetadataEntry';
+                      pool: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'PythonArtifactMetadataEntry';
                       module: string;
                       name: string;
@@ -7046,6 +7260,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -7249,6 +7469,12 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'PoolMetadataEntry';
+                      pool: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'PythonArtifactMetadataEntry';
                       module: string;
                       name: string;
@@ -7431,6 +7657,12 @@ export type RunLogsQuery = {
                   | {
                       __typename: 'PipelineRunMetadataEntry';
                       runId: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'PoolMetadataEntry';
+                      pool: string;
                       label: string;
                       description: string | null;
                     }
@@ -7618,6 +7850,12 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -7786,6 +8024,12 @@ export type RunLogsQuery = {
                   | {
                       __typename: 'PipelineRunMetadataEntry';
                       runId: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
+                      __typename: 'PoolMetadataEntry';
+                      pool: string;
                       label: string;
                       description: string | null;
                     }
@@ -8029,6 +8273,12 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -8248,6 +8498,12 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -8375,6 +8631,7 @@ export type RunLogsQuery = {
               eventType: Types.DagsterEventType | null;
               label: string | null;
               description: string | null;
+              partition: string | null;
               metadataEntries: Array<
                 | {
                     __typename: 'AssetMetadataEntry';
@@ -8451,6 +8708,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -8635,6 +8898,12 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'PoolMetadataEntry';
+                      pool: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'PythonArtifactMetadataEntry';
                       module: string;
                       name: string;
@@ -8737,6 +9006,7 @@ export type RunLogsQuery = {
               eventType: Types.DagsterEventType | null;
               label: string | null;
               description: string | null;
+              partition: string | null;
               metadataEntries: Array<
                 | {
                     __typename: 'AssetMetadataEntry';
@@ -8813,6 +9083,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -8994,6 +9270,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -9188,6 +9470,12 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -9364,6 +9652,12 @@ export type RunLogsQuery = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -9641,6 +9935,12 @@ export type RunLogsQuery = {
                       description: string | null;
                     }
                   | {
+                      __typename: 'PoolMetadataEntry';
+                      pool: string;
+                      label: string;
+                      description: string | null;
+                    }
+                  | {
                       __typename: 'PythonArtifactMetadataEntry';
                       module: string;
                       name: string;
@@ -9825,6 +10125,12 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -10005,6 +10311,12 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -10099,6 +10411,6 @@ export type RunLogsQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const PipelineRunLogsSubscriptionVersion = '9f7f83476b6839dabd890487982ba453adb7cee3340c47aebb7f189492784023';
+export const PipelineRunLogsSubscriptionVersion = '5749e8e3ce69ddabd9d3b6d6fb0fc3e12d91f0f8f6331ec9ba3ea77865ad763c';
 
-export const RunLogsQueryVersion = '6086ddc4fb1ea5e12a73049ba83df08747ecd1a9d3443eeb7e2875fddd55fa9e';
+export const RunLogsQueryVersion = '033a0df471e9f7b0ea207195ef47685823fecfc45b13261bdb4b4db1dbf5cb99';

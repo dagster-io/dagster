@@ -63,19 +63,6 @@ COMPONENT_VALIDATION_TEST_CASES = [
     BASIC_INVALID_VALUE,
     BASIC_MISSING_VALUE,
     ComponentValidationTestCase(
-        component_path="validation/simple_asset_invalid_value",
-        component_type_filepath=None,
-        should_error=True,
-        validate_error_msg=msg_includes_all_of(
-            "component.yaml:5", "attributes.value", "Input should be a valid string"
-        ),
-        check_error_msg=msg_includes_all_of(
-            "component.yaml:5",
-            "attributes.value",
-            "{} is not of type 'string'",
-        ),
-    ),
-    ComponentValidationTestCase(
         component_path="validation/basic_component_extra_value",
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,

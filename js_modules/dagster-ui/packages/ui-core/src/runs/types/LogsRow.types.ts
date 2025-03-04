@@ -120,6 +120,7 @@ export type LogsRowStructuredFragment_AssetCheckEvaluationEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -299,6 +300,7 @@ export type LogsRowStructuredFragment_EngineEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -483,6 +485,7 @@ export type LogsRowStructuredFragment_ExecutionStepFailureEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -651,6 +654,7 @@ export type LogsRowStructuredFragment_ExecutionStepInputEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -811,6 +815,7 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -968,6 +973,7 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -1184,6 +1190,7 @@ export type LogsRowStructuredFragment_HandledOutputEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -1383,6 +1390,7 @@ export type LogsRowStructuredFragment_LoadedInputEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -1500,6 +1508,7 @@ export type LogsRowStructuredFragment_MaterializationEvent = {
   stepKey: string | null;
   label: string | null;
   description: string | null;
+  partition: string | null;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -1569,6 +1578,7 @@ export type LogsRowStructuredFragment_MaterializationEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -1734,6 +1744,7 @@ export type LogsRowStructuredFragment_ObjectStoreOperationEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -1824,6 +1835,7 @@ export type LogsRowStructuredFragment_ObservationEvent = {
   stepKey: string | null;
   label: string | null;
   description: string | null;
+  partition: string | null;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -1893,6 +1905,7 @@ export type LogsRowStructuredFragment_ObservationEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -2054,6 +2067,7 @@ export type LogsRowStructuredFragment_ResourceInitFailureEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -2224,6 +2238,7 @@ export type LogsRowStructuredFragment_ResourceInitStartedEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -2384,6 +2399,7 @@ export type LogsRowStructuredFragment_ResourceInitSuccessEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -2642,6 +2658,7 @@ export type LogsRowStructuredFragment_StepExpectationResultEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -2803,6 +2820,7 @@ export type LogsRowStructuredFragment_StepWorkerStartedEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -2963,6 +2981,7 @@ export type LogsRowStructuredFragment_StepWorkerStartingEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;

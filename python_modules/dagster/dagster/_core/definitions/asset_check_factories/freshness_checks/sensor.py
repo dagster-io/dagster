@@ -1,6 +1,6 @@
 import datetime
-from collections.abc import Iterator, Sequence
-from typing import Optional, Union, cast
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Any, Optional, Union, cast
 
 from dagster import _check as check
 from dagster._annotations import beta
@@ -41,6 +41,7 @@ def build_sensor_for_freshness_checks(
     minimum_interval_seconds: Optional[int] = None,
     name: str = DEFAULT_FRESHNESS_SENSOR_NAME,
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
+    tags: Optional[Mapping[str, Any]] = None,
 ) -> SensorDefinition:
     """Builds a sensor which kicks off evaluation of freshness checks.
 
@@ -67,6 +68,8 @@ def build_sensor_for_freshness_checks(
             name may need to be provided in case of multiple calls of this function.
         default_status (Optional[DefaultSensorStatus]): The default status of the sensor. Defaults
             to stopped.
+        tags (Optional[Dict[str, Any]]): A dictionary of tags (string key-value pairs) to attach
+            to the launched run.
 
     Returns:
         SensorDefinition: The sensor that kicks off freshness evaluations.
@@ -112,7 +115,7 @@ def build_sensor_for_freshness_checks(
         new_cursor = check_key.to_user_string() if check_key else None
         context.update_cursor(new_cursor)
         if checks_to_evaluate:
-            return RunRequest(asset_check_keys=checks_to_evaluate)
+            return RunRequest(asset_check_keys=checks_to_evaluate, tags=tags)
         else:
             return SkipReason(
                 "No freshness checks need to be evaluated at this time, since all checks are either currently evaluating, have failed, or are not yet overdue."

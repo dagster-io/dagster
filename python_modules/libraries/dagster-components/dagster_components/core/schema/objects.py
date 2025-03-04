@@ -7,11 +7,14 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
 from pydantic import BaseModel, Field
+from pydantic.dataclasses import dataclass
+from typing_extensions import TypeAlias
 
-from dagster_components.core.schema.base import FieldResolver, ResolvableSchema
+from dagster_components.core.schema.base import FieldResolver, ResolvableSchema, resolve_fields
 from dagster_components.core.schema.context import ResolutionContext
 
 
@@ -22,11 +25,53 @@ def _resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
     )
 
 
-class OpSpecSchema(ResolvableSchema):
+PostProcessorFn: TypeAlias = Callable[[Definitions], Definitions]
+
+
+@dataclass
+class SingleRunBackfillPolicySchema:
+    type: Literal["single_run"] = "single_run"
+
+
+@dataclass
+class MultiRunBackfillPolicySchema:
+    type: Literal["multi_run"] = "multi_run"
+    max_partitions_per_run: int = 1
+
+
+def resolve_backfill_policy(
+    context: ResolutionContext, schema: "OpSpecSchema"
+) -> Optional[BackfillPolicy]:
+    if schema.backfill_policy is None:
+        return None
+
+    if schema.backfill_policy.type == "single_run":
+        return BackfillPolicy.single_run()
+    elif schema.backfill_policy.type == "multi_run":
+        return BackfillPolicy.multi_run(
+            max_partitions_per_run=schema.backfill_policy.max_partitions_per_run
+        )
+
+    raise ValueError(f"Invalid backfill policy: {schema.backfill_policy}")
+
+
+@dataclass
+class OpSpec:
+    name: Optional[str] = None
+    tags: Optional[dict[str, str]] = None
+    backfill_policy: Annotated[Optional[BackfillPolicy], FieldResolver(resolve_backfill_policy)] = (
+        None
+    )
+
+
+class OpSpecSchema(ResolvableSchema[OpSpec]):
     name: Optional[str] = Field(default=None, description="The name of the op.")
     tags: Optional[dict[str, str]] = Field(
         default=None, description="Arbitrary metadata for the op."
     )
+    backfill_policy: Optional[
+        Union[SingleRunBackfillPolicySchema, MultiRunBackfillPolicySchema]
+    ] = Field(default=None, description="The backfill policy to use for the assets.")
 
 
 class AssetDepSchema(ResolvableSchema[AssetDep]):
@@ -105,49 +150,65 @@ class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Ma
     ] = Field(default=None, description="A unique identifier for the asset.")
 
     def resolve(self, context: ResolutionContext) -> Mapping[str, Any]:
-        # only include fields that are explcitly set
-        set_fields = self.model_dump(exclude_unset=True).keys()
-        return {k: v for k, v in self.resolve_fields(dict, context).items() if k in set_fields}
+        return resolve_asset_attributes_to_mapping(self, context)
 
 
-class AssetSpecTransformSchema(ResolvableSchema):
+def resolve_asset_attributes_to_mapping(
+    schema: AssetAttributesSchema, context: ResolutionContext
+) -> Mapping[str, Any]:
+    # only include fields that are explcitly set
+    set_fields = schema.model_dump(exclude_unset=True).keys()
+    return {k: v for k, v in resolve_fields(schema, dict, context).items() if k in set_fields}
+
+
+class AssetPostProcessorSchema(ResolvableSchema):
     target: str = "*"
     operation: Literal["merge", "replace"] = "merge"
     attributes: AssetAttributesSchema
 
-    def apply_to_spec(self, spec: AssetSpec, context: ResolutionContext) -> AssetSpec:
-        # add the original spec to the context and resolve values
-        attributes = context.with_scope(asset=spec).resolve_value(self.attributes)
-
-        if self.operation == "merge":
-            mergeable_attributes = {"metadata", "tags"}
-            merge_attributes = {k: v for k, v in attributes.items() if k in mergeable_attributes}
-            replace_attributes = {
-                k: v for k, v in attributes.items() if k not in mergeable_attributes
-            }
-            return spec.merge_attributes(**merge_attributes).replace_attributes(
-                **replace_attributes
-            )
-        elif self.operation == "replace":
-            return spec.replace_attributes(**attributes)
-        else:
-            check.failed(f"Unsupported operation: {self.operation}")
-
-    def apply(self, defs: Definitions, context: ResolutionContext) -> Definitions:
-        target_selection = AssetSelection.from_string(self.target, include_sources=True)
-        target_keys = target_selection.resolve(defs.get_asset_graph())
-
-        mappable = [d for d in defs.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))]
-        mapped_assets = map_asset_specs(
-            lambda spec: self.apply_to_spec(spec, context) if spec.key in target_keys else spec,
-            mappable,
-        )
-
-        assets = [
-            *mapped_assets,
-            *[d for d in defs.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))],
-        ]
-        return replace(defs, assets=assets)
-
     def resolve(self, context: ResolutionContext) -> Callable[[Definitions], Definitions]:
-        return lambda defs: self.apply(defs, context)
+        return resolve_schema_to_post_processor(context, self)
+
+
+def apply_post_processor_to_spec(
+    schema: AssetPostProcessorSchema, spec: AssetSpec, context: ResolutionContext
+) -> AssetSpec:
+    # add the original spec to the context and resolve values
+    attributes = context.with_scope(asset=spec).resolve_value(schema.attributes)
+
+    if schema.operation == "merge":
+        mergeable_attributes = {"metadata", "tags"}
+        merge_attributes = {k: v for k, v in attributes.items() if k in mergeable_attributes}
+        replace_attributes = {k: v for k, v in attributes.items() if k not in mergeable_attributes}
+        return spec.merge_attributes(**merge_attributes).replace_attributes(**replace_attributes)
+    elif schema.operation == "replace":
+        return spec.replace_attributes(**attributes)
+    else:
+        check.failed(f"Unsupported operation: {schema.operation}")
+
+
+def apply_post_processor_to_defs(
+    schema: AssetPostProcessorSchema, defs: Definitions, context: ResolutionContext
+) -> Definitions:
+    target_selection = AssetSelection.from_string(schema.target, include_sources=True)
+    target_keys = target_selection.resolve(defs.get_asset_graph())
+
+    mappable = [d for d in defs.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))]
+    mapped_assets = map_asset_specs(
+        lambda spec: apply_post_processor_to_spec(schema, spec, context)
+        if spec.key in target_keys
+        else spec,
+        mappable,
+    )
+
+    assets = [
+        *mapped_assets,
+        *[d for d in defs.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))],
+    ]
+    return replace(defs, assets=assets)
+
+
+def resolve_schema_to_post_processor(
+    context, schema: AssetPostProcessorSchema
+) -> Callable[[Definitions], Definitions]:
+    return lambda defs: apply_post_processor_to_defs(schema, defs, context)

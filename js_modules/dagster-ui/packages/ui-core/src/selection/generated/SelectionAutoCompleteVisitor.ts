@@ -32,7 +32,9 @@ import {
   IncompleteNotExpressionContext,
   IncompleteOrExpressionContext,
   IncompletePlusTraversalExpressionContext,
+  IncompletePlusTraversalExpressionMissingValueContext,
   IncompleteRightQuotedStringValueContext,
+  IncompleteUpTraversalExpressionContext,
   LeftParenTokenContext,
   NotExpressionContext,
   NotTokenContext,
@@ -41,6 +43,7 @@ import {
   ParenthesizedExprContext,
   ParenthesizedExpressionContext,
   PostAttributeValueWhitespaceContext,
+  PostDigitsWhitespaceContext,
   PostDownwardTraversalWhitespaceContext,
   PostExpressionWhitespaceContext,
   PostLogicalOperatorWhitespaceContext,
@@ -356,6 +359,24 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
   ) => Result;
 
   /**
+   * Visit a parse tree produced by the `IncompleteUpTraversalExpression`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitIncompleteUpTraversalExpression?: (ctx: IncompleteUpTraversalExpressionContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `IncompletePlusTraversalExpressionMissingValue`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitIncompletePlusTraversalExpressionMissingValue?: (
+    ctx: IncompletePlusTraversalExpressionMissingValueContext,
+  ) => Result;
+
+  /**
    * Visit a parse tree produced by the `IncompleteAttributeExpressionMissingKey`
    * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
    * @param ctx the parse tree
@@ -553,6 +574,13 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
    * @return the visitor result
    */
   visitPostDownwardTraversalWhitespace?: (ctx: PostDownwardTraversalWhitespaceContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.postDigitsWhitespace`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitPostDigitsWhitespace?: (ctx: PostDigitsWhitespaceContext) => Result;
 
   /**
    * Visit a parse tree produced by `SelectionAutoCompleteParser.value`.

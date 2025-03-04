@@ -117,7 +117,9 @@ def test_sensor_multi_asset_different_states(instance: DagsterInstance) -> None:
             )
         )
 
-        sensor = build_sensor_for_freshness_checks(freshness_checks=freshness_checks)
+        sensor = build_sensor_for_freshness_checks(
+            freshness_checks=freshness_checks, tags={"foo": "FOO"}
+        )
         defs = Definitions(asset_checks=freshness_checks, assets=[my_asset], sensors=[sensor])
 
         context = build_sensor_context(instance=instance, definitions=defs)
@@ -129,6 +131,7 @@ def test_sensor_multi_asset_different_states(instance: DagsterInstance) -> None:
             AssetCheckKey(AssetKey("never_eval"), "freshness_check"),
             AssetCheckKey(AssetKey("success_eval_expired"), "freshness_check"),
         ]
+        assert run_request.tags == {"foo": "FOO"}
         # Cursor should be None, since we made it through all assets.
         assert context.cursor is None
 

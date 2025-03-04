@@ -6,7 +6,6 @@ import {
   MenuItem,
   Popover,
   Spinner,
-  Subheading,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui-components';
@@ -270,107 +269,101 @@ export const AssetPartitions = ({
               data-testid={testId(`partitions-${selection.dimension.name}`)}
             >
               <Box
-                flex={{
-                  direction: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-                background={Colors.backgroundDefault()}
                 border="bottom"
-                padding={{horizontal: 24, vertical: 8}}
+                background={Colors.backgroundDefault()}
+                padding={{right: 16, vertical: 8, left: idx === 0 ? 24 : 16}}
               >
-                <Box style={{display: 'flex', flex: 1}}>
-                  <TextInput
-                    fill
-                    icon="search"
-                    value={searchValues[idx] || ''}
-                    onChange={(e) => updateSearchValue(idx, e.target.value)}
-                    placeholder="Filter by name…"
-                    data-testId={testId(`search-${idx}`)}
-                  />
-                </Box>
-                <div>
-                  {selection.dimension.name !== 'default' && (
-                    <Box flex={{gap: 8, alignItems: 'center'}}>
-                      <Icon name="partition" />
-                      <Subheading>{selection.dimension.name}</Subheading>
-                    </Box>
-                  )}
-                </div>
-                <Popover
-                  content={
-                    <Menu>
-                      <MenuItem
-                        text={
-                          <Tooltip content="The order in which partitions were created">
-                            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                              <span>Creation sort</span>
-                              <Icon name="info" />
-                            </Box>
-                          </Tooltip>
-                        }
-                        active={SortType.CREATION === sortType}
-                        onClick={() => {
-                          setSortTypes((sorts) => {
-                            const copy = [...sorts];
-                            copy[idx] = SortType.CREATION;
-                            return copy;
-                          });
-                        }}
-                        data-testId={testId('sort-creation')}
-                      />
-                      <MenuItem
-                        text={
-                          <Tooltip content="The order in which partitions were created, reversed">
-                            <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-                              <span>Reverse creation sort</span>
-                              <Icon name="info" />
-                            </Box>
-                          </Tooltip>
-                        }
-                        active={SortType.REVERSE_CREATION === sortType}
-                        onClick={() => {
-                          setSortTypes((sorts) => {
-                            const copy = [...sorts];
-                            copy[idx] = SortType.REVERSE_CREATION;
-                            return copy;
-                          });
-                        }}
-                        data-testId={testId('sort-reverse-creation')}
-                      />
-                      <MenuItem
-                        text="Alphabetical sort"
-                        active={SortType.ALPHABETICAL === sortType}
-                        onClick={() => {
-                          setSortTypes((sorts) => {
-                            const copy = [...sorts];
-                            copy[idx] = SortType.ALPHABETICAL;
-                            return copy;
-                          });
-                        }}
-                        data-testId={testId('sort-alphabetical')}
-                      />
-                      <MenuItem
-                        text="Reverse alphabetical sort"
-                        active={SortType.REVERSE_ALPHABETICAL === sortType}
-                        onClick={() => {
-                          setSortTypes((sorts) => {
-                            const copy = [...sorts];
-                            copy[idx] = SortType.REVERSE_ALPHABETICAL;
-                            return [...copy];
-                          });
-                        }}
-                        data-testId={testId('sort-reverse-alphabetical')}
-                      />
-                    </Menu>
+                <TextInput
+                  icon="search"
+                  fill
+                  style={{width: `100%`}}
+                  value={searchValues[idx] || ''}
+                  onChange={(e) => updateSearchValue(idx, e.target.value)}
+                  placeholder={
+                    selection.dimension.name !== 'default'
+                      ? `Filter by ${selection.dimension.name}…`
+                      : 'Filter by name…'
                   }
-                  position="bottom-left"
-                >
-                  <SortButton data-testid={`sort-${idx}`}>
-                    <Icon name="sort_by_alpha" color={Colors.accentGray()} />
-                  </SortButton>
-                </Popover>
+                  data-testid={testId(`search-${idx}`)}
+                  rightElement={
+                    <Popover
+                      content={
+                        <Menu>
+                          <MenuItem
+                            text={
+                              <Tooltip content="The order in which partitions were created">
+                                <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                                  <span>Creation sort</span>
+                                  <Icon name="info" />
+                                </Box>
+                              </Tooltip>
+                            }
+                            active={SortType.CREATION === sortType}
+                            onClick={() => {
+                              setSortTypes((sorts) => {
+                                const copy = [...sorts];
+                                copy[idx] = SortType.CREATION;
+                                return copy;
+                              });
+                            }}
+                            data-testid={testId('sort-creation')}
+                          />
+                          <MenuItem
+                            text={
+                              <Tooltip content="The order in which partitions were created, reversed">
+                                <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                                  <span>Reverse creation sort</span>
+                                  <Icon name="info" />
+                                </Box>
+                              </Tooltip>
+                            }
+                            active={SortType.REVERSE_CREATION === sortType}
+                            onClick={() => {
+                              setSortTypes((sorts) => {
+                                const copy = [...sorts];
+                                copy[idx] = SortType.REVERSE_CREATION;
+                                return copy;
+                              });
+                            }}
+                            data-testid={testId('sort-reverse-creation')}
+                          />
+                          <MenuItem
+                            text="Alphabetical sort"
+                            active={SortType.ALPHABETICAL === sortType}
+                            onClick={() => {
+                              setSortTypes((sorts) => {
+                                const copy = [...sorts];
+                                copy[idx] = SortType.ALPHABETICAL;
+                                return copy;
+                              });
+                            }}
+                            data-testid={testId('sort-alphabetical')}
+                          />
+                          <MenuItem
+                            text="Reverse alphabetical sort"
+                            active={SortType.REVERSE_ALPHABETICAL === sortType}
+                            onClick={() => {
+                              setSortTypes((sorts) => {
+                                const copy = [...sorts];
+                                copy[idx] = SortType.REVERSE_ALPHABETICAL;
+                                return [...copy];
+                              });
+                            }}
+                            data-testid={testId('sort-reverse-alphabetical')}
+                          />
+                        </Menu>
+                      }
+                      position="bottom-left"
+                    >
+                      <SortButton
+                        data-testid={`sort-${idx}`}
+                        style={{margin: 0, marginRight: -4, borderRadius: 6}}
+                      >
+                        <Icon name="sort_by_alpha" color={Colors.accentGray()} />
+                      </SortButton>
+                    </Popover>
+                  }
+                />
               </Box>
 
               {!assetHealth ? (

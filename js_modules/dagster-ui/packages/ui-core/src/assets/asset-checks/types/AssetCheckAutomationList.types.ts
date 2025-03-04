@@ -124,6 +124,12 @@ export type AssetCheckAutomationListQuery = {
                         description: string | null;
                       }
                     | {
+                        __typename: 'PoolMetadataEntry';
+                        pool: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
                         __typename: 'PythonArtifactMetadataEntry';
                         module: string;
                         name: string;
@@ -310,6 +316,12 @@ export type AssetCheckAutomationListQuery = {
                         description: string | null;
                       }
                     | {
+                        __typename: 'PoolMetadataEntry';
+                        pool: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
                         __typename: 'PythonArtifactMetadataEntry';
                         module: string;
                         name: string;
@@ -428,4 +440,4 @@ export type AssetCheckAutomationListQuery = {
     | null;
 };
 
-export const AssetCheckAutomationListQueryVersion = 'b6dffe3883c3c008672d9366595c876d95e0b1672f891695550ab513c93fa3a8';
+export const AssetCheckAutomationListQueryVersion = 'b40139464172ab964e709b4e13302ddedfb6d96a8171e1aab2e8cd1134752a9c';

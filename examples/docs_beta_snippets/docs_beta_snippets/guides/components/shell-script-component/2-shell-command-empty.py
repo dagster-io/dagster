@@ -4,13 +4,11 @@ from dagster_components import (
     ComponentLoadContext,
     DefaultComponentScaffolder,
     ResolvableSchema,
-    registered_component_type,
 )
 
 class ShellCommandSchema(ResolvableSchema):
     ...
 
-@registered_component_type(name="shell_command")
 class ShellCommand(Component):
     """COMPONENT SUMMARY HERE.
 
@@ -20,10 +18,6 @@ class ShellCommand(Component):
     @classmethod
     def get_schema(cls):
         return ShellCommandSchema
-
-    @classmethod
-    def get_scaffolder(cls) -> DefaultComponentScaffolder:
-        return DefaultComponentScaffolder()
 
     def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
         # Add definition construction logic here.

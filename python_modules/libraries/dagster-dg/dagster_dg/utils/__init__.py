@@ -1,5 +1,4 @@
 import contextlib
-import importlib.util
 import json
 import os
 import posixpath
@@ -9,7 +8,6 @@ import sys
 import textwrap
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from fnmatch import fnmatch
-from importlib.machinery import ModuleSpec
 from pathlib import Path
 from typing import Any, Optional, TypeVar, Union
 
@@ -59,48 +57,6 @@ def install_to_venv(venv_dir: Path, install_args: list[str]) -> None:
     executable = get_venv_executable(venv_dir)
     command = ["uv", "pip", "install", "--python", str(executable), *install_args]
     subprocess.run(command, check=True)
-
-
-# Temporarily places a path at the front of sys.path, ensuring that any modules in that path are
-# importable.
-@contextlib.contextmanager
-def ensure_loadable_path(path: Path) -> Iterator[None]:
-    orig_path = sys.path.copy()
-    sys.path.insert(0, str(path))
-    try:
-        yield
-    finally:
-        sys.path = orig_path
-
-
-def is_package_installed(package_name: str) -> bool:
-    try:
-        return bool(importlib.util.find_spec(package_name))
-    except ModuleNotFoundError:
-        return False
-
-
-def _get_spec_for_module(module_name: str) -> ModuleSpec:
-    spec = importlib.util.find_spec(module_name)
-    if not spec:
-        raise DgError(f"Cannot find module: {module_name}")
-    return spec
-
-
-def get_path_for_module(module_name: str) -> str:
-    spec = _get_spec_for_module(module_name)
-    file_path = spec.origin
-    if not file_path:
-        raise DgError(f"Cannot find file path for module: {module_name}")
-    return file_path
-
-
-def get_path_for_package(package_name: str) -> str:
-    spec = _get_spec_for_module(package_name)
-    submodule_search_locations = spec.submodule_search_locations
-    if not submodule_search_locations:
-        raise DgError(f"Package does not have any locations for submodules: {package_name}")
-    return submodule_search_locations[0]
 
 
 def is_valid_json(value: str) -> bool:
@@ -363,23 +319,25 @@ environment in an ancestor directory or use the `--no-require-local-venv` flag t
 
 NOT_WORKSPACE_ERROR_MESSAGE = """
 This command must be run inside a Dagster workspace directory. Ensure that there is a
-`pyproject.toml` file with `tool.dg.is_workspace = true` set in the root workspace directory.
+`pyproject.toml` file with `tool.dg.directory_type = "workspace"` set in the root workspace
+directory.
 """
 
 
 NOT_PROJECT_ERROR_MESSAGE = """
 This command must be run inside a Dagster project directory. Ensure that the nearest
-pyproject.toml has `tool.dg.is_project = true` set.
+pyproject.toml has `tool.dg.directory_type = "project"` set.
 """
 
 NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE = """
 This command must be run inside a Dagster workspace or project directory. Ensure that the
-nearest pyproject.toml has `tool.dg.is_project = true` or `tool.dg.is_workspace = true` set.
+nearest pyproject.toml has `tool.dg.directory_type = "project"` or `tool.dg.directory_type =
+"workspace"` set.
 """
 
 NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = """
 This command must be run inside a Dagster component library directory. Ensure that the nearest
-pyproject.toml has `tool.dg.is_component_lib = true` set.
+pyproject.toml has an entry point defined under the `dagster.components` group.
 """
 
 MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE = """
@@ -468,7 +426,11 @@ def parse_json_option(context: click.Context, param: click.Option, value: str):
 # ########################
 
 
-def get_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], expected_type: type[T]) -> T:
+def get_toml_value(
+    doc: tomlkit.TOMLDocument,
+    path: Iterable[str],
+    expected_type: Union[type[T], tuple[type[T], ...]],
+) -> T:
     """Given a tomlkit-parsed document/table (`doc`),retrieve the nested value at `path` and ensure
     it is of type `expected_type`. Returns the value if so, or raises a KeyError / TypeError if not.
     """
@@ -481,11 +443,32 @@ def get_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], expected_type
 
     # Finally, ensure the found value is of the expected type
     if not isinstance(current, expected_type):
+        expected_types = expected_type if isinstance(expected_type, tuple) else (expected_type,)
+        type_str = " or ".join(t.__name__ for t in expected_types)
         raise TypeError(
-            f"Expected '{'.'.join(path)}' to be {expected_type.__name__}, "
+            f"Expected '{'.'.join(path)}' to be {type_str}, "
             f"but got {type(current).__name__} instead."
         )
     return current
+
+
+def has_toml_value(doc: tomlkit.TOMLDocument, path: Sequence[str]) -> bool:
+    """Given a tomlkit-parsed document/table (`doc`), return whether a value is defined at `path`."""
+    leading_path, key = path[:-1], path[-1]
+    current = doc
+    for leading_key in leading_path:
+        if not isinstance(current, dict) or leading_key not in current:
+            return False
+        current = current[leading_key]
+    return isinstance(current, dict) and key in current
+
+
+def delete_toml_value(doc: tomlkit.TOMLDocument, path: Sequence[str]) -> None:
+    """Given a tomlkit-parsed document/table (`doc`), delete the nested value at `path`. Raises
+    an error if the leading keys do not already lead to a dictionary.
+    """
+    dct = get_toml_value(doc, path[:-1], dict) if len(path) > 1 else doc
+    del dct[path[-1]]
 
 
 def set_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], value: object) -> None:
@@ -493,5 +476,13 @@ def set_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], value: object
     an error if the leading keys do not already lead to a dictionary.
     """
     path_list = list(path)
-    inner_dict = get_toml_value(doc, path_list[:-1], dict)
-    inner_dict[path_list[-1]] = value
+    current: Any = doc
+    for key in path_list[:-1]:
+        if key not in current:
+            current[key] = {}
+        elif not isinstance(current[key], dict):
+            raise TypeError(
+                f"Expected '{key}' to be a table, but got {type(current[key]).__name__}."
+            )
+        current = current[key]
+    current[path_list[-1]] = value

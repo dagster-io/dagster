@@ -10,7 +10,6 @@ from dagster_components import (
     ComponentLoadContext,
     ResolutionContext,
     ResolvableSchema,
-    registered_component_type,
 )
 
 import dagster as dg
@@ -27,7 +26,6 @@ def resolve_asset_specs(
     return context.resolve_value(schema.asset_specs)
 
 
-@registered_component_type(name="shell_command")
 @dataclass
 class ShellCommand(Component):
     script_path: str

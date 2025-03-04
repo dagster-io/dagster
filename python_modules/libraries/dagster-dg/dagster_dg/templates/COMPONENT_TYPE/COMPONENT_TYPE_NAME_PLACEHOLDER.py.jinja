@@ -4,14 +4,12 @@ from dagster_components import (
     ComponentLoadContext,
     DefaultComponentScaffolder,
     ResolvableSchema,
-    registered_component_type,
 )
 
-class {{ component_type_class_name }}Schema(ResolvableSchema):
+class {{ name }}Schema(ResolvableSchema):
     ...
 
-@registered_component_type(name="{{ name }}")
-class {{ component_type_class_name }}(Component):
+class {{ name }}(Component):
     """COMPONENT SUMMARY HERE.
 
     COMPONENT DESCRIPTION HERE.
@@ -19,11 +17,7 @@ class {{ component_type_class_name }}(Component):
 
     @classmethod
     def get_schema(cls):
-        return {{ component_type_class_name }}Schema
-
-    @classmethod
-    def get_scaffolder(cls) -> DefaultComponentScaffolder:
-        return DefaultComponentScaffolder()
+        return {{ name }}Schema
 
     def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
         # Add definition construction logic here.

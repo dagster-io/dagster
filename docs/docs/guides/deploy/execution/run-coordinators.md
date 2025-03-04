@@ -18,6 +18,6 @@ The following run coordinators can be configured on your [Dagster instance](/gui
 
 ## Configuring run coordinators
 
-If you opt to use the `DefaultRunCoordinator`, no configuration is required on your part.
+If you use the `DefaultRunCoordinator`, no configuration is required on your part.
 
 However, if using the `QueuedRunCoordinator` or building a custom implementation, you can define [custom run prioritization rules](customizing-run-queue-priority) and [instance-level concurrency limits](/guides/operate/managing-concurrency).

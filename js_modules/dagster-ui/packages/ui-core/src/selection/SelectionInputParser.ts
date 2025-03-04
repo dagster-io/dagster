@@ -44,7 +44,6 @@ export const parseInput = memoize((input: string): ParseResult => {
     // Attach custom error listener
     const errorListener = new CustomErrorListener();
     parser.removeErrorListeners();
-    parser.addErrorListener(errorListener);
 
     // Set the error handler to bail on error to prevent infinite loops
     parser.errorHandler = new BailErrorStrategy();
@@ -64,7 +63,7 @@ export const parseInput = memoize((input: string): ParseResult => {
 
       if (currentErrors.length > 0) {
         const error = currentErrors[0]!;
-        const errorCharPos = error.column;
+        const errorCharPos = error.from;
         const errorIndex = currentPosition + errorCharPos;
 
         // Parse up to the error
@@ -89,9 +88,8 @@ export const parseInput = memoize((input: string): ParseResult => {
         // Add the error to the errors array
         errors.push({
           message: error.message,
-          line: error.line,
-          column: error.column + currentPosition,
-          offendingSymbol: error.offendingSymbol,
+          from: error.from + currentPosition,
+          to: error.to + currentPosition,
         });
 
         // Advance currentPosition beyond the error

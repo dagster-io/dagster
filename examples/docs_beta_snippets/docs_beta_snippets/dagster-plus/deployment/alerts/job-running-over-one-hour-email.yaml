@@ -9,8 +9,9 @@ alert_policies:
   - JOB_LONG_RUNNING
   name: job-running-over-one-hour-email
   notification_service:
-    email_addresses:
-    - richard.hendricks@hooli.com
-    - nelson.bighetti@hooli.com
+    email:
+      email_addresses:
+      - richard.hendricks@hooli.com
+      - nelson.bighetti@hooli.com
   tags:
     important: 'true'

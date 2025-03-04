@@ -1,3 +1,4 @@
+import random
 import tempfile
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
@@ -5,6 +6,7 @@ from typing import IO, Optional
 
 import dagster._check as check
 from dagster import job, op
+from dagster._core.execution.compute_logs import create_compute_log_file_key
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator
@@ -372,3 +374,19 @@ def test_read_log_lines_for_log_key_prefix():
         assert cursor.line == -1  # pyright: ignore[reportOptionalMemberAccess]
         for ll in log_lines:
             assert ll == next(all_logs_iter)
+
+
+def test_file_keys_unique_even_if_random_is_seeded():
+    assert create_compute_log_file_key() != create_compute_log_file_key()
+
+    random.seed(0)
+
+    seeded_state = random.getstate()
+    key1 = create_compute_log_file_key()
+
+    random.seed(0)
+    key2 = create_compute_log_file_key()
+
+    assert key1 != key2
+    # state returned to seeded version
+    assert random.getstate() == seeded_state

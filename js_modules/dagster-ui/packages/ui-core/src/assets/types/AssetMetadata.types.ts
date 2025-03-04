@@ -74,6 +74,7 @@ export type AssetNodeOpMetadataFragment = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -250,6 +251,12 @@ export type AssetNodeOpMetadataFragment = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -1536,6 +1543,12 @@ export type AssetNodeOpMetadataFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -2818,6 +2831,12 @@ export type AssetNodeOpMetadataFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -4087,6 +4106,12 @@ export type AssetNodeOpMetadataFragment = {
           | {
               __typename: 'PipelineRunMetadataEntry';
               runId: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
               label: string;
               description: string | null;
             }
@@ -5379,6 +5404,12 @@ export type AssetNodeOpMetadataFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -6657,6 +6688,12 @@ export type AssetNodeOpMetadataFragment = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -7943,6 +7980,12 @@ export type AssetNodeOpMetadataFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -9212,6 +9255,12 @@ export type AssetNodeOpMetadataFragment = {
           | {
               __typename: 'PipelineRunMetadataEntry';
               runId: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
               label: string;
               description: string | null;
             }
@@ -10504,6 +10553,12 @@ export type AssetNodeOpMetadataFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -11782,6 +11837,12 @@ export type AssetNodeOpMetadataFragment = {
                 | {
                     __typename: 'PipelineRunMetadataEntry';
                     runId: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
                     label: string;
                     description: string | null;
                   }
@@ -13068,6 +13129,12 @@ export type AssetNodeOpMetadataFragment = {
                     description: string | null;
                   }
                 | {
+                    __typename: 'PoolMetadataEntry';
+                    pool: string;
+                    label: string;
+                    description: string | null;
+                  }
+                | {
                     __typename: 'PythonArtifactMetadataEntry';
                     module: string;
                     name: string;
@@ -14337,6 +14404,12 @@ export type AssetNodeOpMetadataFragment = {
           | {
               __typename: 'PipelineRunMetadataEntry';
               runId: string;
+              label: string;
+              description: string | null;
+            }
+          | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
               label: string;
               description: string | null;
             }

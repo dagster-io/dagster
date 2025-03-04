@@ -7,9 +7,8 @@ This is the home of the Dagster documentation. The documentation site is built u
 ## Overview of the docs
 
 - `./src` contains custom components, styles, themes, and layouts.
-- `./content-templates` contains the templates for the documentation pages.
-- `./docs/` is the source of truth for the documentation.
-- `/examples/docs_beta_snippets/docs_beta_snippets/` contains code examples for the documentation. Some code examples also live in `/examples/` and `/examples/docs_snippets/docs_snippets/`.
+- `./docs/` contains documentation Markdown files.
+- `/examples/docs_snippets/docs_snippets/` contains code examples for the documentation. Some code examples also live in `/examples/` and `/examples/docs_beta_snippets/docs_beta_snippets/`.
 
 The docs are organized into the following sections:
 
@@ -43,7 +42,7 @@ nvm install --lts
 
 To start the local development server:
 
-```sh
+```bash
 yarn install
 ```
 
@@ -53,9 +52,9 @@ yarn start
 
 This command starts a local development server and opens [http://localhost:3050](http://localhost:3050) in a browser window.
 
-### Build
+### Checking for build errors
 
-To build the site for production:
+To check for broken links and other build errors, you will need to build API docs, then build the full docs site:
 
 ```bash
 # build and copy API markdown files; build and copy the sphinx `objects.inv` to static/
@@ -65,23 +64,9 @@ yarn build-api-docs
 yarn build
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service. This also checks for any broken links in the documentation.
+### Linting
 
-**NOTE:** the `make sphinx_objects_inv` command needs to be run before creating a new release. We plan to automate this procedure in the future.
-
-### Generated content
-
-Kinds tags are generated programmatically and stored in the `docs/partials/_KindsTags.md` partial. This is done using the following command:
-
-```sh
-yarn rebuild-kinds-tags
-```
-
-### Linters
-
-The docs site also uses [Vale](https://vale.sh/) to check for issues in the documentation.
-
-To check the documentation for different issues, use the following:
+To check the documentation for formatting issues, use the following:
 
 ```bash
 ## Lints all content, applies lint autofixes and prettier changes
@@ -94,7 +79,21 @@ yarn vale /path/to/file      ## check individual file
 yarn vale --no-wrap          ## remove wrapping from output
 ```
 
-### Versioning
+For more information on Vale, see https://vale.sh/. 
+
+---
+
+## Generated content
+
+Kinds tags are generated programmatically and stored in the `docs/partials/_KindsTags.md` partial. This is done using the following command:
+
+```sh
+yarn rebuild-kinds-tags
+```
+
+---
+
+## Versioning
 
 Previous versions of the docs site are made accessible through preview deployments in Vercel, for example:
 

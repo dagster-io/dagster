@@ -6,4 +6,5 @@ alert_policies:
   - AGENT_UNAVAILABLE
   name: code-location-error-microsoft_teams
   notification_service:
-    webhook_url: https://yourdomain.webhook.office.com/...
+    microsoft_teams:
+      webhook_url: https://yourdomain.webhook.office.com/...

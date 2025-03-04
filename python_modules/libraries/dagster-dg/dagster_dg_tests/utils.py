@@ -4,7 +4,7 @@ import subprocess
 import sys
 import traceback
 from collections.abc import Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -18,6 +18,7 @@ from dagster_dg.cli import (
     cli as dg_cli,
 )
 from dagster_dg.utils import (
+    delete_toml_value,
     discover_git_root,
     get_venv_executable,
     install_to_venv,
@@ -26,6 +27,8 @@ from dagster_dg.utils import (
     set_toml_value,
 )
 from typing_extensions import Self
+
+STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
 
 
 def _install_libraries_to_venv(venv_path: Path, libraries_rel_paths: Sequence[str]) -> None:
@@ -43,7 +46,7 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
         _install_libraries_to_venv(
-            venv_path, ["dagster", "libraries/dagster-components", "dagster-pipes"]
+            venv_path, ["dagster", "libraries/dagster-components", "dagster-pipes", "dagster-test"]
         )
 
         venv_exec_path = get_venv_executable(venv_path).parent
@@ -56,18 +59,31 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
 
 @contextmanager
 def isolated_example_workspace(
-    runner: Union[CliRunner, "ProxyRunner"], create_venv: bool = False
+    runner: Union[CliRunner, "ProxyRunner"],
+    project_name: Optional[str] = None,
+    create_venv: bool = False,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
-    with runner.isolated_filesystem(), clear_module_from_cache("foo_bar"):
-        runner.invoke("init", input=" \n")
-        with pushd("workspace"):
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    with (
+        runner.isolated_filesystem(),
+        clear_module_from_cache("foo_bar"),
+        clear_module_from_cache(project_name) if project_name else nullcontext(),
+    ):
+        result = runner.invoke(
+            "init",
+            "--use-editable-components-package-only",
+            dagster_git_repo_dir,
+            input=f"\n{project_name or ''}\n",
+        )
+        assert_runner_result(result)
+        with pushd("dagster-workspace"):
             # Create a venv capable of running dagster dev
             if create_venv:
                 subprocess.run(["uv", "venv", ".venv"], check=True)
                 venv_path = Path.cwd() / ".venv"
                 _install_libraries_to_venv(
-                    venv_path, ["dagster", "dagster-webserver", "dagster-graphql"]
+                    venv_path, ["dagster", "dagster-webserver", "dagster-graphql", "dagster-test"]
                 )
             yield
 
@@ -79,7 +95,7 @@ def isolated_example_project_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     in_workspace: bool = True,
     skip_venv: bool = False,
-    populate_cache: bool = True,
+    populate_cache: bool = False,
     component_dirs: Sequence[Path] = [],
 ) -> Iterator[None]:
     """Scaffold a project named foo_bar in an isolated filesystem.
@@ -99,19 +115,21 @@ def isolated_example_project_foo_bar(
         fs_context = runner.isolated_filesystem()
         project_path = Path("foo-bar")
     with fs_context:
-        runner.invoke(
+        result = runner.invoke(
             "scaffold",
             "project",
-            "--use-editable-dagster",
+            "--use-editable-components-package-only",
             dagster_git_repo_dir,
             *(["--no-use-dg-managed-environment"] if skip_venv else []),
             *(["--no-populate-cache"] if not populate_cache else []),
             "foo-bar",
         )
+        assert_runner_result(result)
         with clear_module_from_cache("foo_bar"), pushd(project_path):
+            # _install_libraries_to_venv(Path(".venv"), ["dagster-test"])
             for src_dir in component_dirs:
                 component_name = src_dir.name
-                components_dir = Path.cwd() / "foo_bar" / "components" / component_name
+                components_dir = Path.cwd() / "foo_bar" / "defs" / component_name
                 components_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(src_dir, components_dir, dirs_exist_ok=True)
             yield
@@ -120,42 +138,44 @@ def isolated_example_project_foo_bar(
 @contextmanager
 def isolated_example_component_library_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
-    lib_package_name: Optional[str] = None,
+    lib_module_name: Optional[str] = None,
     skip_venv: bool = False,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     with (
-        runner.isolated_filesystem() if skip_venv else isolated_components_venv(runner)
-    ) as venv_path:
+        (
+            runner.isolated_filesystem() if skip_venv else isolated_components_venv(runner)
+        ) as venv_path,
+        # clear_module_from_cache("foo_bar"),
+    ):
         # We just use the project generation function and then modify it to be a component library
         # only.
         result = runner.invoke(
             "scaffold",
             "project",
-            "--use-editable-dagster",
+            "--use-editable-components-package-only",
             dagster_git_repo_dir,
             "--skip-venv",
             "foo-bar",
         )
         assert_runner_result(result)
         with clear_module_from_cache("foo_bar"), pushd("foo-bar"):
-            shutil.rmtree(Path("foo_bar/components"))
+            shutil.rmtree(Path("foo_bar/defs"))
 
             # Make it not a project
             with modify_pyproject_toml() as toml:
-                set_toml_value(toml, ("tool", "dg", "is_project"), False)
+                delete_toml_value(toml, ("tool", "dg"))
 
                 # We need to set any alternative lib package name _before_ we install into the
                 # environment, since it affects entry points which are set at install time.
-                if lib_package_name:
-                    set_toml_value(toml, ("tool", "dg", "component_lib_package"), lib_package_name)
+                if lib_module_name:
                     set_toml_value(
                         toml,
                         ("project", "entry-points", "dagster.components", "foo_bar"),
-                        lib_package_name,
+                        lib_module_name,
                     )
-                    Path(*lib_package_name.split(".")).mkdir(exist_ok=True)
+                    Path(*lib_module_name.split(".")).mkdir(exist_ok=True)
 
             # Install the component library into our venv
             if not skip_venv:
@@ -177,11 +197,13 @@ def modify_environment_variable(name: str, value: str) -> Iterator[None]:
 
 @contextmanager
 def clear_module_from_cache(module_name: str) -> Iterator[None]:
-    if module_name in sys.modules:
-        del sys.modules[module_name]
+    matches = {key for key in sys.modules if key.startswith(module_name)}
+    for match in matches:
+        del sys.modules[match]
     yield
-    if module_name in sys.modules:
-        del sys.modules[module_name]
+    matches = {key for key in sys.modules if key.startswith(module_name)}
+    for match in matches:
+        del sys.modules[match]
 
 
 @contextmanager
@@ -318,6 +340,9 @@ def normalize_windows_path(path: str) -> str:
 # ########################
 
 
+# NOTE: Pass use_fixed_test_components=True to use the dagster_test.components module instead of
+# components loaded from entry points. This should be done whenever we want to test against a fixed
+# set of known component types (as in inspect or list commands).
 @dataclass
 class ProxyRunner:
     original: CliRunner
@@ -328,7 +353,7 @@ class ProxyRunner:
     @contextmanager
     def test(
         cls,
-        use_test_component_lib: bool = True,
+        use_fixed_test_components: bool = False,
         verbose: bool = False,
         disable_cache: bool = False,
         console_width: int = DG_CLI_MAX_OUTPUT_WIDTH,
@@ -336,13 +361,14 @@ class ProxyRunner:
     ) -> Iterator[Self]:
         # We set the `COLUMNS` environment variable because this determines the width of output from
         # `rich`, which we use for generating tables etc.
+        use_component_modules_args = (
+            ["--use-component-module", STANDARD_TEST_COMPONENT_MODULE]
+            if use_fixed_test_components
+            else []
+        )
         with TemporaryDirectory() as cache_dir, set_env_var("COLUMNS", str(console_width)):
             append_opts = [
-                *(
-                    ["--builtin-component-lib", "dagster_components.test"]
-                    if use_test_component_lib
-                    else []
-                ),
+                *use_component_modules_args,
                 "--cache-dir",
                 str(cache_dir),
                 *(["--verbose"] if verbose else []),

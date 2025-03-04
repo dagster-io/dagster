@@ -1,4 +1,4 @@
-type: definitions@dagster_components
+type: dagster_components.dagster.DefinitionsComponent
 
 attributes:
   definitions_path: {}

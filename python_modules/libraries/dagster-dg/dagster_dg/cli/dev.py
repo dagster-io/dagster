@@ -13,7 +13,7 @@ import click
 import psutil
 import yaml
 
-from dagster_dg.cli.global_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.error import DgError
@@ -70,9 +70,7 @@ _CHECK_SUBPROCESS_INTERVAL = 5
     required=False,
 )
 @dg_global_options
-@click.pass_context
 def dev_command(
-    context: click.Context,
     code_server_log_level: str,
     log_level: str,
     log_format: str,
@@ -86,16 +84,16 @@ def dev_command(
     If run inside a workspace directory, this command will launch all projects in the
     workspace. If launched inside a project directory, it will launch only that project.
     """
-    cli_config = normalize_cli_config(global_options, context)
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
 
     forward_options = [
-        *_format_forwarded_option("--code-server-log-level", code_server_log_level),
-        *_format_forwarded_option("--log-level", log_level),
-        *_format_forwarded_option("--log-format", log_format),
-        *_format_forwarded_option("--port", port),
-        *_format_forwarded_option("--host", host),
-        *_format_forwarded_option("--live-data-poll-rate", live_data_poll_rate),
+        *format_forwarded_option("--code-server-log-level", code_server_log_level),
+        *format_forwarded_option("--log-level", log_level),
+        *format_forwarded_option("--log-format", log_format),
+        *format_forwarded_option("--port", port),
+        *format_forwarded_option("--host", host),
+        *format_forwarded_option("--live-data-poll-rate", live_data_poll_rate),
     ]
 
     # In a project context, we can just run `dagster dev` directly, using `dagster` from the
@@ -129,7 +127,7 @@ def dev_command(
             *forward_options,
         ]
         cmd_location = "ephemeral dagster dev"
-        temp_workspace_file_cm = _temp_workspace_file(dg_context)
+        temp_workspace_file_cm = temp_workspace_file(dg_context)
     else:
         exit_with_error("This command must be run inside a project or workspace directory.")
 
@@ -166,7 +164,7 @@ def dev_command(
 
 
 @contextmanager
-def _temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
+def temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
     with NamedTemporaryFile(mode="w+", delete=True) as temp_workspace_file:
         entries = []
         for project_name in dg_context.get_project_names():
@@ -174,7 +172,7 @@ def _temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
             project_context: DgContext = dg_context.with_root_path(project_root)
             entry = {
                 "working_directory": str(dg_context.workspace_root_path),
-                "relative_path": str(project_context.definitions_path),
+                "relative_path": str(project_context.code_location_target_path),
                 "location_name": project_context.project_name,
             }
             if project_context.use_dg_managed_environment:
@@ -185,7 +183,7 @@ def _temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
         yield temp_workspace_file.name
 
 
-def _format_forwarded_option(option: str, value: object) -> list[str]:
+def format_forwarded_option(option: str, value: object) -> list[str]:
     return [] if value is None else [option, str(value)]
 
 

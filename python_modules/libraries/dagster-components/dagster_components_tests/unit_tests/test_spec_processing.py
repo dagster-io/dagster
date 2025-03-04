@@ -3,12 +3,16 @@ from collections.abc import Sequence
 import pytest
 from dagster import AssetKey, AssetSpec, AutomationCondition, Definitions
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.objects import AssetAttributesSchema, AssetSpecTransformSchema
+from dagster_components.core.schema.objects import (
+    AssetAttributesSchema,
+    AssetPostProcessorSchema,
+    apply_post_processor_to_defs,
+)
 from pydantic import BaseModel, TypeAdapter
 
 
 class M(BaseModel):
-    asset_attributes: Sequence[AssetSpecTransformSchema] = []
+    asset_attributes: Sequence[AssetPostProcessorSchema] = []
 
 
 defs = Definitions(
@@ -21,13 +25,15 @@ defs = Definitions(
 
 
 def test_replace_attributes() -> None:
-    op = AssetSpecTransformSchema(
+    op = AssetPostProcessorSchema(
         operation="replace",
         target="group:g2",
         attributes=AssetAttributesSchema(tags={"newtag": "newval"}),
     )
 
-    newdefs = op.apply(defs, ResolutionContext.default())
+    newdefs = apply_post_processor_to_defs(
+        schema=op, defs=defs, context=ResolutionContext.default()
+    )
     asset_graph = newdefs.get_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {}
     assert asset_graph.get(AssetKey("b")).tags == {"newtag": "newval"}
@@ -35,13 +41,15 @@ def test_replace_attributes() -> None:
 
 
 def test_merge_attributes() -> None:
-    op = AssetSpecTransformSchema(
+    op = AssetPostProcessorSchema(
         operation="merge",
         target="group:g2",
         attributes=AssetAttributesSchema(tags={"newtag": "newval"}),
     )
 
-    newdefs = op.apply(defs, ResolutionContext.default())
+    newdefs = apply_post_processor_to_defs(
+        schema=op, defs=defs, context=ResolutionContext.default()
+    )
     asset_graph = newdefs.get_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {}
     assert asset_graph.get(AssetKey("b")).tags == {"newtag": "newval"}
@@ -49,11 +57,13 @@ def test_merge_attributes() -> None:
 
 
 def test_render_attributes_asset_context() -> None:
-    op = AssetSpecTransformSchema(
+    op = AssetPostProcessorSchema(
         attributes=AssetAttributesSchema(tags={"group_name_tag": "group__{{ asset.group_name }}"})
     )
 
-    newdefs = op.apply(defs, ResolutionContext.default().with_scope(foo="theval"))
+    newdefs = apply_post_processor_to_defs(
+        schema=op, defs=defs, context=ResolutionContext.default()
+    )
     asset_graph = newdefs.get_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {"group_name_tag": "group__g1"}
     assert asset_graph.get(AssetKey("b")).tags == {"group_name_tag": "group__g2"}
@@ -61,7 +71,7 @@ def test_render_attributes_asset_context() -> None:
 
 
 def test_render_attributes_custom_context() -> None:
-    op = AssetSpecTransformSchema(
+    op = AssetPostProcessorSchema(
         operation="replace",
         target="group:g2",
         attributes=AssetAttributesSchema(
@@ -75,9 +85,10 @@ def test_render_attributes_custom_context() -> None:
         return AutomationCondition.cron_tick_passed(s) & ~AutomationCondition.in_progress()
 
     metadata = {"a": 1, "b": "str", "d": 1.23}
-    newdefs = op.apply(
-        defs,
-        ResolutionContext.default().with_scope(
+    newdefs = apply_post_processor_to_defs(
+        schema=op,
+        defs=defs,
+        context=ResolutionContext.default().with_scope(
             foo="theval", metadata=metadata, custom_cron=_custom_cron
         ),
     )
@@ -99,11 +110,11 @@ def test_render_attributes_custom_context() -> None:
         # default to merge and a * target
         (
             {"attributes": {"tags": {"a": "b"}}},
-            AssetSpecTransformSchema(target="*", attributes=AssetAttributesSchema(tags={"a": "b"})),
+            AssetPostProcessorSchema(target="*", attributes=AssetAttributesSchema(tags={"a": "b"})),
         ),
         (
             {"operation": "replace", "attributes": {"tags": {"a": "b"}}},
-            AssetSpecTransformSchema(
+            AssetPostProcessorSchema(
                 operation="replace",
                 target="*",
                 attributes=AssetAttributesSchema(tags={"a": "b"}),
@@ -112,14 +123,14 @@ def test_render_attributes_custom_context() -> None:
         # explicit target
         (
             {"attributes": {"tags": {"a": "b"}}, "target": "group:g2"},
-            AssetSpecTransformSchema(
+            AssetPostProcessorSchema(
                 target="group:g2",
                 attributes=AssetAttributesSchema(tags={"a": "b"}),
             ),
         ),
         (
             {"operation": "replace", "attributes": {"tags": {"a": "b"}}, "target": "group:g2"},
-            AssetSpecTransformSchema(
+            AssetPostProcessorSchema(
                 operation="replace",
                 target="group:g2",
                 attributes=AssetAttributesSchema(tags={"a": "b"}),
@@ -128,6 +139,6 @@ def test_render_attributes_custom_context() -> None:
     ],
 )
 def test_load_attributes(python, expected) -> None:
-    loaded = TypeAdapter(Sequence[AssetSpecTransformSchema]).validate_python([python])
+    loaded = TypeAdapter(Sequence[AssetPostProcessorSchema]).validate_python([python])
     assert len(loaded) == 1
     assert loaded[0] == expected

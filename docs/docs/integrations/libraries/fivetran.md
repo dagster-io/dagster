@@ -25,6 +25,12 @@ import Beta from '../../partials/\_Beta.md';
 
 This guide provides instructions for using Dagster with Fivetran using the `dagster-fivetran` library. Your Fivetran connector tables can be represented as assets in the Dagster asset graph, allowing you to track lineage and dependencies between Fivetran assets and data assets you are already modeling in Dagster. You can also use Dagster to orchestrate Fivetran connectors, allowing you to trigger syncs for these on a cadence or based on upstream data changes.
 
+:::note
+
+Your Fivetran connectors must have been synced at least once to be represented in Dagster.
+
+:::
+
 ## What you'll learn
 
 - How to represent Fivetran assets in the Dagster asset graph, including lineage to other Dagster assets.
@@ -91,6 +97,12 @@ With this metadata, you can view documentation in Dagster for all columns in you
 To enable this feature, call <PyObject section="libraries" object="fivetran_event_iterator.FivetranEventIterator.fetch_column_metadata" module="dagster_fivetran" displayText="fetch_column_metadata()" /> on the <PyObject section="libraries" object="fivetran_event_iterator.FivetranEventIterator" module="dagster_fivetran" /> returned by the `sync_and_poll()` call on the <PyObject section="libraries" module="dagster_fivetran" object="FivetranWorkspace" /> resource.
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/fivetran/fetch_column_metadata_fivetran_assets.py" language="python" />
+
+### Load Fivetran asset for selected connectors
+
+To select a subset of Fivetran connectors for which your Fivetran assets will be loaded, you can use the <PyObject section="libraries" module="dagster_fivetran" object="ConnectorSelectorFn" /> callback and define your selection conditions. 
+
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/fivetran/select_fivetran_connectors.py" language="python" />
 
 ### Load Fivetran assets from multiple workspaces
 

@@ -7,9 +7,13 @@ import click
 from click.core import ParameterSource
 from typer.rich_utils import rich_format_help
 
-from dagster_dg.cli.global_options import GLOBAL_OPTIONS, dg_global_options
+from dagster_dg.cli.shared_options import (
+    GLOBAL_OPTIONS,
+    dg_editable_dagster_options,
+    dg_global_options,
+)
 from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
-from dagster_dg.component_key import GlobalComponentKey
+from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import (
     get_config_from_cli_context,
     has_config_on_cli_context,
@@ -21,6 +25,7 @@ from dagster_dg.scaffold import (
     scaffold_component_instance,
     scaffold_component_type,
     scaffold_project,
+    scaffold_workspace,
 )
 from dagster_dg.utils import (
     DgClickCommand,
@@ -30,12 +35,43 @@ from dagster_dg.utils import (
     json_schema_property_to_click_option,
     not_none,
     parse_json_option,
+    snakecase,
 )
+
+DEFAULT_WORKSPACE_NAME = "dagster-workspace"
 
 
 @click.group(name="scaffold", cls=DgClickGroup)
 def scaffold_group():
     """Commands for scaffolding Dagster code."""
+
+
+# ########################
+# ##### WORKSPACE
+# ########################
+
+
+@scaffold_group.command(name="workspace", cls=DgClickCommand)
+@click.argument("name", type=str, default=DEFAULT_WORKSPACE_NAME)
+@dg_global_options
+def workspace_scaffold_command(
+    name: str,
+    **global_options: object,
+):
+    """Initialize a new Dagster workspace.
+
+    The scaffolded workspace folder has the following structure:
+
+    \b
+    ├── dagster-workspace
+    │   ├── projects
+    |   |   └── <Dagster projects go here>
+    |   ├── libraries
+    |   |   └── <Shared packages go here>
+    │   └── pyproject.toml
+
+    """  # noqa: D301
+    scaffold_workspace(name)
 
 
 # ########################
@@ -45,18 +81,6 @@ def scaffold_group():
 
 @scaffold_group.command(name="project", cls=DgClickCommand)
 @click.argument("name", type=str)
-@click.option(
-    "--use-editable-dagster",
-    type=str,
-    flag_value="TRUE",
-    is_flag=False,
-    default=None,
-    help=(
-        "Install Dagster package dependencies from a local Dagster clone. Accepts a path to local Dagster clone root or"
-        " may be set as a flag (no value is passed). If set as a flag,"
-        " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
-    ),
-)
 @click.option(
     "--skip-venv",
     is_flag=True,
@@ -70,14 +94,14 @@ def scaffold_group():
     help="Whether to automatically populate the component type cache for the project.",
     hidden=True,
 )
+@dg_editable_dagster_options
 @dg_global_options
-@click.pass_context
 def project_scaffold_command(
-    context: click.Context,
     name: str,
-    use_editable_dagster: Optional[str],
     skip_venv: bool,
     populate_cache: bool,
+    use_editable_dagster: Optional[str],
+    use_editable_components_package_only: Optional[str],
     **global_options: object,
 ) -> None:
     """Scaffold a Dagster project file structure and a uv-managed virtual environment scoped
@@ -92,7 +116,7 @@ def project_scaffold_command(
     \b
     ├── <name>
     │   ├── __init__.py
-    │   ├── components
+    │   ├── defs
     │   ├── definitions.py
     │   └── lib
     │       └── __init__.py
@@ -104,8 +128,8 @@ def project_scaffold_command(
     component`).  The `<name>.lib` directory holds custom component types scoped to the project
     (which can be created with `dg scaffold component-type`).
     """  # noqa: D301
-    cli_config = normalize_cli_config(global_options, context)
-    dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
     if dg_context.is_workspace:
         if dg_context.has_project(name):
             exit_with_error(f"A project named {name} already exists.")
@@ -117,6 +141,7 @@ def project_scaffold_command(
         project_path,
         dg_context,
         use_editable_dagster=use_editable_dagster,
+        use_editable_components_package_only=use_editable_components_package_only,
         skip_venv=skip_venv,
         populate_cache=populate_cache,
     )
@@ -161,7 +186,7 @@ class ComponentScaffoldGroup(DgClickGroup):
         dg_context = DgContext.for_defined_registry_environment(Path.cwd(), config)
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        for key, component_type in registry.global_items():
+        for key, component_type in registry.items():
             command = _create_component_scaffold_subcommand(key, component_type)
             self.add_command(command)
 
@@ -226,7 +251,7 @@ def component_scaffold_group(context: click.Context, help_: bool, **global_optio
 
 
 def _create_component_scaffold_subcommand(
-    component_key: GlobalComponentKey, component_type: RemoteComponentType
+    component_key: ComponentKey, component_type: RemoteComponentType
 ) -> DgClickCommand:
     # We need to "reset" the help option names to the default ones because we inherit the parent
     # value of context settings from the parent group, which has been customized.
@@ -271,7 +296,7 @@ def _create_component_scaffold_subcommand(
         dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
         registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        if not registry.has_global(component_key):
+        if not registry.has(component_key):
             exit_with_error(f"Component type `{component_key.to_typename()}` not found.")
         elif dg_context.has_component_instance(component_instance_name):
             exit_with_error(
@@ -299,7 +324,7 @@ def _create_component_scaffold_subcommand(
             scaffold_params = None
 
         scaffold_component_instance(
-            Path(dg_context.components_path) / component_instance_name,
+            Path(dg_context.defs_path) / component_instance_name,
             component_key.to_typename(),
             scaffold_params,
             dg_context,
@@ -337,8 +362,12 @@ def component_type_scaffold_command(
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_component_library_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
-    component_key = GlobalComponentKey(name=name, namespace=dg_context.root_package_name)
-    if registry.has_global(component_key):
+
+    module_name = snakecase(name)
+    component_key = ComponentKey(
+        name=name, namespace=dg_context.default_component_library_module_name
+    )
+    if registry.has(component_key):
         exit_with_error(f"Component type`{component_key.to_typename()}` already exists.")
 
-    scaffold_component_type(dg_context, name)
+    scaffold_component_type(dg_context, name, module_name)

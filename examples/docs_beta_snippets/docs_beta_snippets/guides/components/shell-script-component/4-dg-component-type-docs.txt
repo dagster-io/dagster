@@ -1,1 +1,1 @@
-dg docs component-type shell_command@my_component_library
+dg docs component-type my_component_library.lib.ShellCommand

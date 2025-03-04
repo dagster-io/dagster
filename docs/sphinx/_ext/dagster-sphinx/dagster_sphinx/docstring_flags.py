@@ -51,23 +51,15 @@ def inject_param_flag(
     param: str,
     info: Union[BetaInfo, DeprecatedInfo],
 ):
-    additional_text = f" {info.additional_warn_text}" if info.additional_warn_text else ""
     if isinstance(info, DeprecatedInfo):
         flag = ":inline-flag:`deprecated`"
-        message = (
-            f"(This parameter will be removed in version {info.breaking_version}.{additional_text})"
-        )
     elif isinstance(info, BetaInfo):
         flag = ":inline-flag:`beta`"
-        message = (
-            f"(This parameter is currently in beta, and may have breaking changes in minor version releases, "
-            f"with behavior changes in patch releases.{additional_text})"
-        )
     else:
         check.failed(f"Unexpected info type {type(info)}")
     index = next((i for i in range(len(lines)) if re.search(f"^:param {param}", lines[i])), None)
     modified_line = (
-        re.sub(rf"^:param {param}:", f":param {param}: {flag} {message}", lines[index])
+        re.sub(rf"^:param {param}:", f":param {param}: {flag} ", lines[index])
         if index is not None
         else None
     )

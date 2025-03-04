@@ -266,14 +266,14 @@ export const AssetPartitionDetail = ({
         )}
         <div style={{flex: 1}} />
       </Box>
-      {currentRun?.status === RunStatus.FAILURE && (
+      {currentRun?.status === RunStatus.FAILURE || currentRun?.status === RunStatus.CANCELED ? (
         <FailedRunSinceMaterializationBanner
           run={currentRun}
           stepKey={stepKey}
           padding={{horizontal: 0, vertical: 16}}
           border="bottom"
         />
-      )}
+      ) : null}
       {currentRun && currentRunStatusMessage && (
         <Alert
           intent="info"

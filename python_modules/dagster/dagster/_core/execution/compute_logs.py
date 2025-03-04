@@ -19,7 +19,11 @@ WIN_PY36_COMPUTE_LOG_DISABLED_MSG = """\u001b[33mWARNING: Compute log capture is
 
 
 def create_compute_log_file_key():
-    return "".join(random.choice(string.ascii_lowercase) for x in range(8))
+    # Ensure that if user code has seeded the random module that it
+    # doesn't cause the same file key for each step (but the random
+    # seed is still restored afterwards)
+    rng = random.Random(int.from_bytes(os.urandom(16), "big"))
+    return "".join(rng.choice(string.ascii_lowercase) for x in range(8))
 
 
 @contextmanager
