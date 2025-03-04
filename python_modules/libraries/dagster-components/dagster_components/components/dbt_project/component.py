@@ -12,10 +12,11 @@ from dagster_dbt import (
     DbtProject,
     dbt_assets,
 )
+from typing_extensions import Self
 
-from dagster_components import Component, ComponentLoadContext, FieldResolver
+from dagster_components import Component, ComponentLoadContext
 from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
-from dagster_components.core.schema.base import ResolvableSchema, resolve_as
+from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
@@ -25,6 +26,11 @@ from dagster_components.core.schema.objects import (
     PostProcessorFn,
     ResolutionContext,
     resolve_schema_to_post_processor,
+)
+from dagster_components.core.schema.resolvable_from_schema import (
+    DSLFieldResolver,
+    ResolvableFromSchema,
+    resolve_schema_to_resolvable,
 )
 from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
@@ -68,24 +74,36 @@ def resolve_schema_to_post_processors(
 
 
 def resolve_op_spec(context: ResolutionContext, schema: DbtProjectSchema) -> Optional[OpSpec]:
-    return resolve_as(schema.op, target_type=OpSpec, context=context) if schema.op else None
+    return (
+        resolve_schema_to_resolvable(
+            schema=schema.op, resolvable_from_schema_type=OpSpec, context=context
+        )
+        if schema.op
+        else None
+    )
 
 
 @scaffoldable(scaffolder=DbtProjectComponentScaffolder)
 @dataclass
-class DbtProjectComponent(Component):
+class DbtProjectComponent(Component, ResolvableFromSchema[DbtProjectSchema]):
     """Expose a DBT project to Dagster as a set of assets."""
 
-    dbt: Annotated[DbtCliResource, FieldResolver(resolve_dbt)]
-    op: Annotated[Optional[OpSpec], FieldResolver(resolve_op_spec)] = None
-    translator: Annotated[DagsterDbtTranslator, FieldResolver(resolve_translator)] = field(
-        default_factory=DagsterDbtTranslator
-    )
+    dbt: Annotated[DbtCliResource, DSLFieldResolver.from_parent(resolve_dbt)]
+    op: Annotated[Optional[OpSpec], DSLFieldResolver.from_parent(resolve_op_spec)] = None
+    translator: Annotated[
+        DagsterDbtTranslator, DSLFieldResolver.from_parent(resolve_translator)
+    ] = field(default_factory=DagsterDbtTranslator)
     asset_post_processors: Annotated[
-        Optional[Sequence[PostProcessorFn]], FieldResolver(resolve_schema_to_post_processors)
+        Optional[Sequence[PostProcessorFn]],
+        DSLFieldResolver.from_parent(resolve_schema_to_post_processors),
     ] = None
     select: str = "fqn:*"
     exclude: Optional[str] = None
+
+    @classmethod
+    def load(cls, attributes: Optional[ResolvableSchema], context: "ComponentLoadContext") -> Self:
+        assert isinstance(attributes, DbtProjectSchema)
+        return resolve_schema_to_resolvable(attributes, cls, context.resolution_context)
 
     @cached_property
     def project(self) -> DbtProject:

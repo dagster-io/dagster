@@ -15,6 +15,10 @@ from typing_extensions import TypeAlias
 
 from dagster_components.core.schema.base import FieldResolver, ResolvableSchema, resolve_fields
 from dagster_components.core.schema.context import ResolutionContext
+from dagster_components.core.schema.resolvable_from_schema import (
+    DSLFieldResolver,
+    ResolvableFromSchema,
+)
 
 
 def _resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
@@ -55,12 +59,12 @@ def resolve_backfill_policy(
 
 
 @dataclass
-class OpSpec:
+class OpSpec(ResolvableFromSchema["OpSpecSchema"]):
     name: Optional[str] = None
     tags: Optional[dict[str, str]] = None
-    backfill_policy: Annotated[Optional[BackfillPolicy], FieldResolver(resolve_backfill_policy)] = (
-        None
-    )
+    backfill_policy: Annotated[
+        Optional[BackfillPolicy], DSLFieldResolver.from_parent(resolve_backfill_policy)
+    ] = None
 
 
 class OpSpecSchema(ResolvableSchema):
