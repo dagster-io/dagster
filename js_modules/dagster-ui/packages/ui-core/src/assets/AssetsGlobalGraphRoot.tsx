@@ -15,6 +15,7 @@ import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 
 interface AssetGroupRootParams {
@@ -51,12 +52,22 @@ export const AssetsGlobalGraphRoot = () => {
     [history, openInNewTab],
   );
 
+  const [hideEdgesToNodesOutsideQuery, setHideEdgesToNodesOutsideQuery] = useStateWithStorage(
+    'hideEdgesToNodesOutsideQuery',
+    (json) => {
+      if (json === 'false' || json === false) {
+        return false;
+      }
+      return true;
+    },
+  );
+
   const fetchOptions = useMemo(() => {
     const options: AssetGraphFetchScope = {
-      hideEdgesToNodesOutsideQuery: false,
+      hideEdgesToNodesOutsideQuery,
     };
     return options;
-  }, []);
+  }, [hideEdgesToNodesOutsideQuery]);
 
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
@@ -69,6 +80,7 @@ export const AssetsGlobalGraphRoot = () => {
         onChangeExplorerPath={onChangeExplorerPath}
         onNavigateToSourceAssetNode={onNavigateToSourceAssetNode}
         viewType={AssetGraphViewType.GLOBAL}
+        setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
       />
     </Page>
   );
