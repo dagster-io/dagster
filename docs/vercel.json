@@ -1790,6 +1790,16 @@
     {
       "source": "/changelog",
       "destination": "/about/changelog"
+    },
+    {
+      "source": "/changelog*",
+      "has": [
+        {
+          "type": "query",
+          "key": "page"
+        }
+      ],
+      "destination": "/about/changelog*"
     }
   ]
 }
