@@ -11,6 +11,10 @@ from dagster._cli.workspace.cli_target import (
     get_workspace_from_cli_opts,
     workspace_options,
 )
+from dagster._utils.error import (
+    remove_non_user_code_lines_from_serializable_exc_info,
+    unwrap_user_code_error,
+)
 from dagster._utils.log import configure_loggers
 
 
@@ -86,9 +90,12 @@ def definitions_validate_command(
             ]
             for code_location, entry in workspace.get_code_location_entries().items():
                 if entry.load_error:
+                    underlying_error = remove_non_user_code_lines_from_serializable_exc_info(
+                        unwrap_user_code_error(entry.load_error)
+                    )
                     logger.error(
                         f"Validation failed for code location {code_location}:\n\n"
-                        f"{entry.load_error.to_string()}"
+                        f"{underlying_error.to_string()}"
                     )
                     pass
                 else:

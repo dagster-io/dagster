@@ -239,3 +239,84 @@ def serializable_error_info_from_exc_info(
     else:
         tb_exc = traceback.TracebackException(exc_type, e, tb)
         return _serializable_error_info_from_tb(tb_exc)
+
+
+DAGSTER_FRAMEWORK_SUBSTRINGS = [
+    "/site-packages/dagster/",
+    "/python_modules/dagster/dagster/",
+]
+
+IMPORT_MACHINERY_SUBSTRINGS = [
+    "importlib/__init__.py",
+    "importlib._bootstrap",
+]
+
+
+def unwrap_user_code_error(error_info: SerializableErrorInfo) -> SerializableErrorInfo:
+    """Extracts the underlying error from the passed error, if it is a DagsterUserCodeLoadError."""
+    if error_info.cls_name == "DagsterUserCodeLoadError":
+        return unwrap_user_code_error(error_info.cause)
+    return error_info
+
+
+def remove_non_user_code_lines_from_serializable_exc_info(
+    error_info: SerializableErrorInfo,
+):
+    return remove_matching_lines_from_serializable_exc_info(
+        error_info,
+        DAGSTER_FRAMEWORK_SUBSTRINGS + IMPORT_MACHINERY_SUBSTRINGS,
+    )
+
+
+def remove_matching_lines_from_serializable_exc_info(
+    error_info: SerializableErrorInfo,
+    matching_lines: Sequence[str],
+):
+    """Utility which truncates a stacktrace to drop lines which match the given strings.
+    This is useful for e.g. removing Dagster framework lines from a stacktrace that
+    involves user code.
+
+    Args:
+        error_info (SerializableErrorInfo): The error info to truncate
+        matching_lines (Sequence[str]): The lines to truncate from the stacktrace
+
+    Returns:
+        SerializableErrorInfo: A new error info with the stacktrace truncated
+    """
+    return error_info._replace(
+        stack=remove_matching_lines_from_stack_trace(error_info.stack, matching_lines),
+        cause=(
+            remove_matching_lines_from_serializable_exc_info(error_info.cause, matching_lines)
+            if error_info.cause
+            else None
+        ),
+        context=(
+            remove_matching_lines_from_serializable_exc_info(error_info.context, matching_lines)
+            if error_info.context
+            else None
+        ),
+    )
+
+
+def remove_matching_lines_from_stack_trace(
+    stack: Sequence[str],
+    matching_lines: Sequence[str],
+) -> Sequence[str]:
+    # Remove lines until you find the first non-dagster framework line
+
+    for i in range(len(stack)):
+        if not _line_contains_matching_string(stack[i], matching_lines):
+            return stack[i:]
+
+    # Return the full stack trace if its all Dagster framework lines,
+    # to not be left with an empty stack trace
+    return stack
+
+
+def _line_contains_matching_string(line: str, matching_strings: Sequence[str]):
+    split_by_comma = line.split(",")
+    if not split_by_comma:
+        return False
+
+    file_portion = split_by_comma[0]
+    return any(framework_substring in file_portion for framework_substring in matching_strings)
