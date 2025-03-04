@@ -1413,25 +1413,49 @@ class DagsterInstance(DynamicPartitionsStore):
                     "Creating a run targeting a partition range is not supported for assets partitioned with function-based dynamic partitions"
                 )
 
-            if partitions_def is not None:
+            if partitions_def is None:
+                individual_partitions = [None]  # emit one non-partitioned event
+            elif self.event_log_storage.supports_partition_subset_in_asset_materialization_planned_events:
                 partitions_subset = partitions_def.subset_with_partition_keys(
                     partitions_def.get_partition_keys_in_range(
                         PartitionKeyRange(partition_range_start, partition_range_end),
                         dynamic_partitions_store=self,
                     )
                 ).to_serializable_subset()
+                individual_partitions = []
+            else:
+                individual_partitions = partitions_def.get_partition_keys_in_range(
+                    PartitionKeyRange(partition_range_start, partition_range_end),
+                    dynamic_partitions_store=self,
+                )
+        elif check.not_none(output.properties).is_asset_partitioned and partition_tag:
+            individual_partitions = [partition_tag]
+        else:
+            individual_partitions = [None]  # emit one non-partitioned event
 
-        partition = (
-            partition_tag if check.not_none(output.properties).is_asset_partitioned else None
-        )
-        materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
-            job_name,
-            step.key,
-            AssetMaterializationPlannedData(
-                asset_key, partition=partition, partitions_subset=partitions_subset
-            ),
-        )
-        self.report_dagster_event(materialization_planned, dagster_run.run_id, logging.DEBUG)
+        assert not (
+            individual_partitions and partitions_subset
+        ), "Should set either individual_partitions or partitions_subset, but not both"
+
+        for individual_partition in individual_partitions:
+            materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
+                job_name,
+                step.key,
+                AssetMaterializationPlannedData(
+                    asset_key, partition=individual_partition, partitions_subset=partitions_subset
+                ),
+            )
+            self.report_dagster_event(materialization_planned, dagster_run.run_id, logging.DEBUG)
+
+        if partitions_subset:
+            materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
+                job_name,
+                step.key,
+                AssetMaterializationPlannedData(
+                    asset_key, partition=None, partitions_subset=partitions_subset
+                ),
+            )
+            self.report_dagster_event(materialization_planned, dagster_run.run_id, logging.DEBUG)
 
     def _log_asset_planned_events(
         self,
