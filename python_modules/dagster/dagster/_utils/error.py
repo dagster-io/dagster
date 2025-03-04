@@ -91,6 +91,8 @@ ExceptionInfo: TypeAlias = Union[
 def _should_redact_user_code_error() -> bool:
     return str(os.getenv("DAGSTER_REDACT_USER_CODE_ERRORS")).lower() in ("1", "true", "t")
 
+def redact_persisted_error_info(error_info: SerializableErrorInfo):
+
 
 _REDACTED_ERROR_LOGGER_NAME = os.getenv(
     "DAGSTER_REDACTED_ERROR_LOGGER_NAME", "dagster.redacted_errors"
