@@ -100,7 +100,7 @@ def build_component_defs(
     component_types = component_types or discover_entry_point_component_types()
 
     all_defs: list[Definitions] = []
-    for component_path in components_root.iterdir():
+    for component_path in [item for item in components_root.iterdir() if item.is_dir()]:
         defs = build_defs_from_component_path(
             components_root=components_root,
             path=component_path,
