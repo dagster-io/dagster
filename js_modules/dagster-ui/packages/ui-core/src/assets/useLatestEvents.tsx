@@ -69,6 +69,7 @@ export const ASSET_OVERVIEW_METADATA_EVENTS_QUERY = gql`
         assetMaterializations(limit: 1) {
           timestamp
           runId
+          partition
           metadataEntries {
             ...MetadataEntryFragment
           }
@@ -76,6 +77,7 @@ export const ASSET_OVERVIEW_METADATA_EVENTS_QUERY = gql`
         assetObservations(limit: 1) {
           timestamp
           runId
+          partition
           metadataEntries {
             ...MetadataEntryFragment
           }

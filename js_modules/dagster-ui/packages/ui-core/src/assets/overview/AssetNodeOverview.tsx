@@ -102,6 +102,13 @@ export const AssetNodeOverview = ({
     (entry) => isCanonicalRowCountMetadataEntry(entry),
   ) as IntMetadataEntry | undefined;
 
+  // The live data does not include a partition, but the timestamp on the live data triggers
+  // an update of `observation` and `materialization`, so they should be in sync. To make sure
+  // we never display incorrect data we verify that the timestamps match.
+  const liveDataPartition = assetNode?.isObservable
+    ? partitionIfMatching(liveData?.lastObservation, observation)
+    : partitionIfMatching(liveData?.lastMaterialization, materialization);
+
   const renderStatusSection = () => (
     <Box flex={{direction: 'column', gap: 16}}>
       <Box style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))'}}>
@@ -113,6 +120,7 @@ export const AssetNodeOverview = ({
             {liveData ? (
               <SimpleStakeholderAssetStatus
                 liveData={liveData}
+                partition={liveDataPartition}
                 assetNode={assetNode ?? cachedAssetNode!}
               />
             ) : (
@@ -361,3 +369,13 @@ export const AssetNodeOverviewLoading = () => (
     }
   />
 );
+
+function partitionIfMatching(
+  liveDataEvent: {timestamp: string} | null | undefined,
+  event: {timestamp: string; partition: string | null} | undefined,
+) {
+  if (!liveDataEvent || !event) {
+    return null;
+  }
+  return liveDataEvent.timestamp === event.timestamp ? event.partition : null;
+}

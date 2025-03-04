@@ -1,6 +1,7 @@
 // eslint-disable-next-line no-restricted-imports
 import {Box, Caption, Colors, Tag} from '@dagster-io/ui-components';
 import React from 'react';
+import {Link} from 'react-router-dom';
 
 import {MaterializationTag} from './MaterializationTag';
 import {Timestamp} from '../app/time/Timestamp';
@@ -18,9 +19,11 @@ import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 export const SimpleStakeholderAssetStatus = ({
   liveData,
   assetNode,
+  partition,
 }: {
   liveData: LiveDataForNode | undefined;
   assetNode: Pick<AssetViewDefinitionNodeFragment, 'assetKey' | 'isObservable'>;
+  partition: string | null;
 }) => {
   if (!liveData) {
     return <span />;
@@ -53,20 +56,34 @@ export const SimpleStakeholderAssetStatus = ({
       </Tag>
     );
   }
+  const partitionTag = partition ? (
+    <Tag intent="none">
+      <Link to={`?view=partitions&partition=${encodeURIComponent(partition)}`}>
+        <Caption color={Colors.textDefault()}>{partition}</Caption>
+      </Link>
+    </Tag>
+  ) : undefined;
+
   if (liveData.lastMaterialization) {
     return (
-      <MaterializationTag
-        assetKey={assetNode.assetKey}
-        event={liveData.lastMaterialization}
-        stepKey={liveData.stepKey}
-      />
+      <Box flex={{gap: 4}}>
+        <MaterializationTag
+          assetKey={assetNode.assetKey}
+          event={liveData.lastMaterialization}
+          stepKey={liveData.stepKey}
+        />
+        {partitionTag}
+      </Box>
     );
   }
   if (liveData.lastObservation && assetNode.isObservable) {
     return (
-      <Tag intent="none">
-        <Timestamp timestamp={{ms: Number(liveData.lastObservation.timestamp)}} />
-      </Tag>
+      <Box flex={{gap: 4}}>
+        <Tag intent="none">
+          <Timestamp timestamp={{ms: Number(liveData.lastObservation.timestamp)}} />
+        </Tag>
+        {partitionTag}
+      </Box>
     );
   }
 
