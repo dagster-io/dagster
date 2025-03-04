@@ -42,3 +42,20 @@ def test_simple_pydantic_resolveable_from_schema():
 
     assert isinstance(hello, Hello)
     assert hello.hello == 1
+
+
+def test_simple_dataclass_resolveable_from_schema_with_condense_syntax():
+    class HelloSchema(DSLSchema):
+        hello: str
+
+    from dataclasses import dataclass
+
+    @dataclass
+    class Hello(ResolvableFromSchema[HelloSchema]):
+        # int equivalent to lambda val: int(val)
+        hello: Annotated[int, DSLFieldResolver(int)]
+
+    hello = resolve_schema_to_resolvable(HelloSchema(hello="1"), Hello, ResolutionContext.default())
+
+    assert isinstance(hello, Hello)
+    assert hello.hello == 1
