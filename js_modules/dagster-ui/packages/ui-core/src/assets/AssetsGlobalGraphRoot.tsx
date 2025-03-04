@@ -1,5 +1,5 @@
 import {Page} from '@dagster-io/ui-components';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 import {AssetsGraphHeader} from 'shared/assets/AssetsGraphHeader.oss';
 
@@ -15,6 +15,7 @@ import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
 
 interface AssetGroupRootParams {
@@ -51,7 +52,17 @@ export const AssetsGlobalGraphRoot = () => {
     [history, openInNewTab],
   );
 
-  const [hideEdgesToNodesOutsideQuery, setHideEdgesToNodesOutsideQuery] = useState(true);
+  const [hideEdgesToNodesOutsideQuery, setHideEdgesToNodesOutsideQuery] = useStateWithStorage(
+    'hideEdgesToNodesOutsideQuery',
+    (json) => {
+      if (json === 'false' || json === false) {
+        return false;
+      }
+      return true;
+    },
+  );
+
+  console.log({hideEdgesToNodesOutsideQuery});
 
   const fetchOptions = useMemo(() => {
     const options: AssetGraphFetchScope = {
