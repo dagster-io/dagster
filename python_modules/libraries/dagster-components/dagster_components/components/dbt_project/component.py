@@ -1,4 +1,6 @@
 from collections.abc import Iterator, Sequence
+from dataclasses import dataclass, field
+from functools import cached_property
 from typing import Annotated, Optional
 
 from dagster._core.definitions.definitions_class import Definitions
@@ -10,8 +12,6 @@ from dagster_dbt import (
     DbtProject,
     dbt_assets,
 )
-from pydantic import ConfigDict, Field, computed_field
-from pydantic.dataclasses import dataclass
 
 from dagster_components import Component, ComponentLoadContext, FieldResolver
 from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
@@ -72,32 +72,22 @@ def resolve_op_spec(context: ResolutionContext, schema: DbtProjectSchema) -> Opt
 
 
 @scaffoldable(scaffolder=DbtProjectComponentScaffolder)
-@dataclass(config=ConfigDict(arbitrary_types_allowed=True))  # omits translator prop from schema
+@dataclass
 class DbtProjectComponent(Component):
     """Expose a DBT project to Dagster as a set of assets."""
 
     dbt: Annotated[DbtCliResource, FieldResolver(resolve_dbt)]
-    op: Annotated[Optional[OpSpec], FieldResolver(resolve_op_spec)] = Field(
-        None, description="Customizations to the op underlying the dbt run."
-    )
-    translator: Annotated[DagsterDbtTranslator, FieldResolver(resolve_translator)] = Field(
-        default_factory=lambda: DagsterDbtTranslator()
+    op: Annotated[Optional[OpSpec], FieldResolver(resolve_op_spec)] = None
+    translator: Annotated[DagsterDbtTranslator, FieldResolver(resolve_translator)] = field(
+        default_factory=DagsterDbtTranslator
     )
     asset_post_processors: Annotated[
         Optional[Sequence[PostProcessorFn]], FieldResolver(resolve_schema_to_post_processors)
     ] = None
+    select: str = "fqn:*"
+    exclude: Optional[str] = None
 
-    select: str = Field(
-        default="fqn:*",
-        description="A dbt selection string which specifies a subset of dbt nodes to represent as assets.",
-    )
-    exclude: Optional[str] = Field(
-        default=None,
-        description="A dbt selection string which specifies a subset of dbt nodes to exclude from the set of assets.",
-    )
-
-    @computed_field
-    @property
+    @cached_property
     def project(self) -> DbtProject:
         return DbtProject(self.dbt.project_dir)
 

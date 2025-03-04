@@ -2,6 +2,7 @@ import shutil
 import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, nullcontext
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
@@ -18,7 +19,6 @@ from dagster_components.core.component_defs_builder import (
     defs_from_components,
 )
 from dagster_dbt import DbtProject
-from pydantic.dataclasses import dataclass
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
 
