@@ -31,6 +31,8 @@ service DagsterApi {
   rpc GetCurrentImage (Empty) returns (GetCurrentImageReply) {}
   rpc GetCurrentRuns (Empty) returns (GetCurrentRunsReply) {}
   rpc ReloadCode (ReloadCodeRequest) returns (ReloadCodeReply) {}
+  rpc RefreshDefinitions (RefreshDefinitionsRequest) returns (RefreshDefinitionsReply) {}
+
 }
 
 message Empty {}
@@ -202,5 +204,12 @@ message ReloadCodeRequest {
 }
 
 message ReloadCodeReply {
+  string serialized_error = 2;
+}
+
+message RefreshDefinitionsRequest {
+}
+
+message RefreshDefinitionsReply {
   string serialized_error = 2;
 }
