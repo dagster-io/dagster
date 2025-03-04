@@ -517,6 +517,9 @@ class TestEventLogStorage:
     def set_default_op_concurrency(self, instance, storage, limit):
         pass
 
+    def supports_asset_failed_to_materialize_storage(self):
+        return False
+
     def watch_timeout(self):
         return 5
 
