@@ -3,8 +3,8 @@ import {useMemo} from 'react';
 
 import {KeyboardTag} from './KeyboardTag';
 import {AssetLayoutDirection} from './layout';
-import {assertUnreachable} from '../app/Util';
 import {ShortcutHandler} from '../app/ShortcutHandler';
+import {assertUnreachable} from '../app/Util';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 type Props = {
@@ -180,24 +180,26 @@ export const AssetGraphSettingsButton = ({
       >
         <Button icon={<Icon name="settings" />} />
       </Popover>
-      <ShortcutHandler
-        shortcutLabel={<Box flex={{direction: 'column', gap: 4}}>{shortcutLabelJsx}</Box>}
-      >
-        {/* This div is used to position the shortcut label and make sure there's enough space for it to be fully visible */}
-        {/* Note we combine all of the shortcuts into a single ShortCutHandler component to ensure that the shortcut labels do not overlap */}
-        <div
-          style={{
-            visibility: 'hidden',
-            position: 'absolute',
-            bottom: 0,
-            left: -32, // To account for the width of the toolbar. We want the shortcut labels to be to the left of the toolbar.
-            transform: 'translate(-100%, -100%)', // To make sure the shortcut labels are fully visible.
-          }}
+      <div style={{position: 'relative', marginTop: -8}}>
+        <ShortcutHandler
+          shortcutLabel={<Box flex={{direction: 'column', gap: 4}}>{shortcutLabelJsx}</Box>}
         >
-          {shortcutLabelJsx}
-        </div>
-      </ShortcutHandler>
-      {shortcutsJsx}
+          {/* This div is used to position the shortcut label and make sure there's enough space for it to be fully visible */}
+          {/* Note we combine all of the shortcuts into a single ShortCutHandler component to ensure that the shortcut labels do not overlap */}
+          <div
+            style={{
+              visibility: 'hidden',
+              position: 'absolute',
+              bottom: 0,
+              left: -32, // To account for the width of the toolbar. We want the shortcut labels to be to the left of the toolbar.
+              transform: 'translate(-100%, -100%)', // To make sure the shortcut labels are fully visible.
+            }}
+          >
+            {shortcutLabelJsx}
+          </div>
+        </ShortcutHandler>
+        {shortcutsJsx}
+      </div>
     </>
   );
 };
