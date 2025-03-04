@@ -1,6 +1,6 @@
 ---
-title: "Monitoring and debugging pipelines"
-sidebar_class_name: hidden
+title: "Debugging"
+sidebar_position: 20
 ---
 
 import DocCardList from '@theme/DocCardList';
