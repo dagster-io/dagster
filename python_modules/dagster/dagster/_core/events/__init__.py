@@ -1544,7 +1544,6 @@ class DagsterEvent(
         return event
 
     @staticmethod
-    # TODO - naming. most other event builder fns are just the name of the event
     def build_asset_failed_to_materialize_event(
         job_name: str,
         step_key: str,
