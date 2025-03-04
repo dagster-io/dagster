@@ -126,6 +126,7 @@ def dev_command(
             "dev",
             *forward_options,
         ]
+        print("CMD: " + str(cmd))
         cmd_location = "ephemeral dagster dev"
         temp_workspace_file_cm = temp_workspace_file(dg_context)
     else:

@@ -245,6 +245,12 @@ class BaseWorkspaceRequestContext(LoadingContext):
         self.process_context.reload_code_location(name)
         return self.process_context.create_request_context()
 
+    def refresh_code_location(self, name: str) -> "BaseWorkspaceRequestContext":
+        # This method signals to the remote gRPC server that it should reload its
+        # code, and returns a new request context created from the updated process context
+        self.process_context.refresh_code_location(name)
+        return self.process_context.create_request_context()
+
     def shutdown_code_location(self, name: str):
         self.process_context.shutdown_code_location(name)
 
@@ -593,6 +599,10 @@ class IWorkspaceProcessContext(ABC):
 
     @abstractmethod
     def reload_code_location(self, name: str) -> None:
+        pass
+
+    @abstractmethod
+    def refresh_code_location(self, name: str) -> None:
         pass
 
     def shutdown_code_location(self, name: str) -> None:

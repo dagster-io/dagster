@@ -227,15 +227,18 @@ class LoadedRepositories:
         container_context: Optional[Mapping[str, Any]],
     ):
         self._loadable_target_origin = loadable_target_origin
+        self._container_image = container_image
+        self._entry_point = entry_point
 
         self._code_pointers_by_repo_name: dict[str, CodePointer] = {}
         self._recon_repos_by_name: dict[str, ReconstructableRepository] = {}
         self._repo_defs_by_name: dict[str, RepositoryDefinition] = {}
         self._loadable_repository_symbols: list[LoadableRepositorySymbol] = []
+        self._loadable_targets: list[LoadableTarget] = []
 
         self._container_context = container_context
 
-        if not loadable_target_origin:
+        if not self._loadable_target_origin:
             # empty workspace
             return
         with enter_loadable_target_origin_load_context(loadable_target_origin):
@@ -250,20 +253,32 @@ class LoadedRepositories:
                     ]
                 ),
             ):
-                loadable_targets = get_loadable_targets(
+                self._loadable_targets = get_loadable_targets(
                     loadable_target_origin.python_file,
                     loadable_target_origin.module_name,
                     loadable_target_origin.package_name,
                     loadable_target_origin.working_directory,
                     loadable_target_origin.attribute,
                 )
-            for loadable_target in loadable_targets:
+
+            self.reload_repos()
+
+    def reload_repos(self):
+        loadable_target_origin = self._loadable_target_origin
+        with user_code_error_boundary(
+            DagsterUserCodeLoadError,
+            lambda: "Error occurred during the loading of Dagster definitions in\n"
+            + ", ".join(
+                [f"{k}={v}" for k, v in loadable_target_origin._asdict().items() if v is not None]
+            ),
+        ):
+            for loadable_target in self._loadable_targets:
                 pointer = _get_code_pointer(loadable_target_origin, loadable_target)
                 recon_repo = ReconstructableRepository(
                     pointer,
-                    container_image,
+                    self._container_image,
                     executable_path=loadable_target_origin.executable_path or sys.executable,
-                    entry_point=entry_point,
+                    entry_point=self._entry_point,
                     container_context=self._container_context,
                 )
                 with user_code_error_boundary(
@@ -603,6 +618,11 @@ class DagsterApiServer(DagsterApiServicer):
     def ListRepositories(
         self, request: dagster_api_pb2.ListRepositoriesRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ListRepositoriesReply:
+        print("LIST REPOSITORIES")
+
+        # This needs to be a separate grpc call can't run it every time
+        self._loaded_repositories.reload_repos()
+
         if self._serializable_load_error:
             return dagster_api_pb2.ListRepositoriesReply(
                 serialized_list_repositories_response_or_error=serialize_value(
@@ -821,6 +841,7 @@ class DagsterApiServer(DagsterApiServicer):
     def ExternalRepository(
         self, request: dagster_api_pb2.ExternalRepositoryRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ExternalRepositoryReply:
+        print("EXTERNAL REPOSITORY")
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)
 
         return dagster_api_pb2.ExternalRepositoryReply(
@@ -852,6 +873,7 @@ class DagsterApiServer(DagsterApiServicer):
     def StreamingExternalRepository(
         self, request: dagster_api_pb2.ExternalRepositoryRequest, _context: grpc.ServicerContext
     ) -> Iterable[dagster_api_pb2.StreamingExternalRepositoryEvent]:
+        print("STREAMING EXTERNAL REPOSITORY")
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)
 
         num_chunks = int(

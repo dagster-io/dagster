@@ -672,7 +672,7 @@ class GrapheneReloadRepositoryLocationMutation(graphene.Mutation):
         # request. Reloading a repository location modifies the IWorkspaceProcessContext, rendeirng
         # our current WorkspaceRequestContext outdated. Therefore, `reload_repository_location` returns
         # an updated WorkspaceRequestContext for us to use.
-        new_context = graphene_info.context.reload_code_location(repositoryLocationName)
+        new_context = graphene_info.context.refresh_code_location(repositoryLocationName)
         return GrapheneWorkspaceLocationEntry(
             check.not_none(new_context.get_location_entry(repositoryLocationName))
         )
