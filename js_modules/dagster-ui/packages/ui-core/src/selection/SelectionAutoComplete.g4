@@ -48,6 +48,7 @@ incompleteExpr:
 	| leftParenToken postLogicalOperatorWhitespace			# UnclosedExpressionlessParenthesizedExpression
 	| DIGITS? PLUS postNeighborTraversalWhitespace			# IncompletePlusTraversalExpression
 	| DIGITS postDigitsWhitespace							# IncompleteUpTraversalExpression
+	| PLUS value postExpressionWhitespace					# IncompletePlusTraversalExpressionMissingValue
 	| colonToken attributeValue postExpressionWhitespace	# IncompleteAttributeExpressionMissingKey;
 
 expressionLessParenthesizedExpr:
