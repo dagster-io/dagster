@@ -78,12 +78,10 @@ from dagster._core.events import (
     AssetMaterializationPlannedData,
     AssetObservationData,
     DagsterEvent,
-    DagsterEventBatchMetadata,
     DagsterEventType,
     EngineEventData,
     StepExpectationResultData,
     StepMaterializationData,
-    generate_event_batch_id,
 )
 from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._core.execution.api import execute_run
@@ -2752,7 +2750,7 @@ class TestEventLogStorage:
         assert storage.get_materialized_partitions(c, after_cursor=9999999999) == set()
         assert storage.get_materialized_partitions(d, after_cursor=9999999999) == set()
 
-    def test_batch_write_asset_materialization_failures(self, storage, instance):
+    def test_write_asset_materialization_failures(self, storage, instance):
         a = AssetKey(["a"])
         run_id = make_new_run_id()
 
@@ -2779,12 +2777,8 @@ class TestEventLogStorage:
 
         failure_events = [event for events in failure_events_by_step for event in events]
 
-        batch_id = generate_event_batch_id()
-        last_index = len(failure_events) - 1
-
-        for i, failure_event in enumerate(failure_events):
-            batch_metadata = DagsterEventBatchMetadata(batch_id, i == last_index)
-            instance.report_dagster_event(failure_event, run_id, batch_metadata=batch_metadata)
+        for failure_event in failure_events:
+            instance.report_dagster_event(failure_event, run_id)
 
         failure_records = instance.get_records_for_run(
             run_id=run_id, of_type=DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
