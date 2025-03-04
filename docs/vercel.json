@@ -489,7 +489,7 @@
     },
     {
       "source": "/_apidocs/libraries/dagster-airflow",
-      "destination": "/api/python-api/libraries/dagster-airlift",
+      "destination": "/api/python-api/libraries/dagster-airlift"
     },
     {
       "source": "/integrations/great-expectations",
