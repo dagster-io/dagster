@@ -708,6 +708,11 @@ class DagsterEvent(
         """bool: If this event is of type ASSET_MATERIALIZATION_PLANNED."""
         return self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
 
+    @property
+    def is_asset_failed_to_materialize(self) -> bool:
+        """bool: If this event is of type ASSET_FAILED_TO_MATERIALIZE."""
+        return self.event_type == DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+
     @public
     @property
     def asset_key(self) -> Optional[AssetKey]:
