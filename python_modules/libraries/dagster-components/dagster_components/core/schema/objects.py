@@ -167,7 +167,7 @@ class AssetPostProcessorSchema(ResolvableSchema):
     attributes: AssetAttributesSchema
 
     def resolve(self, context: ResolutionContext) -> Callable[[Definitions], Definitions]:
-        return resolve_schema_to_transform(context, self)
+        return resolve_schema_to_post_processor(context, self)
 
 
 def apply_post_processor_to_spec(
@@ -208,7 +208,7 @@ def apply_post_processor_to_defs(
     return replace(defs, assets=assets)
 
 
-def resolve_schema_to_transform(
+def resolve_schema_to_post_processor(
     context, schema: AssetPostProcessorSchema
 ) -> Callable[[Definitions], Definitions]:
     return lambda defs: apply_post_processor_to_defs(schema, defs, context)

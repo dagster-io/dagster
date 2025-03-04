@@ -24,6 +24,7 @@ from dagster_components.core.schema.objects import (
     OpSpecSchema,
     PostProcessorFn,
     ResolutionContext,
+    resolve_schema_to_post_processor,
 )
 from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
@@ -58,19 +59,34 @@ def resolve_translator(
     )
 
 
+def resolve_schema_to_post_processors(
+    context: ResolutionContext, schema: DbtProjectSchema
+) -> Sequence[PostProcessorFn]:
+    return [
+        resolve_schema_to_post_processor(context, s) for s in schema.asset_post_processors or []
+    ]
+
+
+def resolve_op_spec(context: ResolutionContext, schema: DbtProjectSchema) -> Optional[OpSpec]:
+    return schema.op.resolve_as(target_type=OpSpec, context=context) if schema.op else None
+
+
 @scaffoldable(scaffolder=DbtProjectComponentScaffolder)
 @dataclass(config=ConfigDict(arbitrary_types_allowed=True))  # omits translator prop from schema
 class DbtProjectComponent(Component):
     """Expose a DBT project to Dagster as a set of assets."""
 
     dbt: Annotated[DbtCliResource, FieldResolver(resolve_dbt)]
-    op: Optional[OpSpec] = Field(
+    op: Annotated[Optional[OpSpec], FieldResolver(resolve_op_spec)] = Field(
         None, description="Customizations to the op underlying the dbt run."
     )
     translator: Annotated[DagsterDbtTranslator, FieldResolver(resolve_translator)] = Field(
         default_factory=lambda: DagsterDbtTranslator()
     )
-    asset_post_processors: Optional[Sequence[PostProcessorFn]] = None
+    asset_post_processors: Annotated[
+        Optional[Sequence[PostProcessorFn]], FieldResolver(resolve_schema_to_post_processors)
+    ] = None
+
     select: str = Field(
         default="fqn:*",
         description="A dbt selection string which specifies a subset of dbt nodes to represent as assets.",

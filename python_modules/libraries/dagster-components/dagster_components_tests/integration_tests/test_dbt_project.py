@@ -73,10 +73,9 @@ def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
             },
         ),
     )
+    attributes = decl_node.get_attributes(DbtProjectComponent.get_schema())
     context = script_load_context(decl_node)
-    component = DbtProjectComponent.load(
-        attributes=decl_node.get_attributes(DbtProjectComponent.get_schema()), context=context
-    )
+    component = DbtProjectComponent.load(attributes=attributes, context=context)
     assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
     defs = component.build_defs(script_load_context())
     assets_def: AssetsDefinition = defs.get_assets_def("stg_customers")
