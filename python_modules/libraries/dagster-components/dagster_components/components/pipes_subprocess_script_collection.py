@@ -9,8 +9,6 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-
-# from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import Self
 
 from dagster_components.core.component import Component, ComponentLoadContext

@@ -25,7 +25,7 @@ from dagster_components.core.schema.resolvable_from_schema import (
 )
 
 
-def resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
+def _resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
     resolved_val = context.resolve_value(key, as_type=Union[str, AssetKey])
     return (
         AssetKey.from_user_string(resolved_val) if isinstance(resolved_val, str) else resolved_val
@@ -81,7 +81,7 @@ class OpSpecSchema(ResolvableSchema):
     ] = Field(default=None, description="The backfill policy to use for the assets.")
 
 
-class _ResolvableAssetAttributesMixin(BaseModel):
+class _AssetAttributesSchemaMixin(BaseModel):
     deps: Sequence[str] = Field(
         default_factory=list,
         description="The asset keys for the upstream assets that this asset depends on.",
@@ -130,9 +130,9 @@ class _ResolvableAssetAttributesMixin(BaseModel):
     )
 
 
-class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
+class AssetSpecSchema(_AssetAttributesSchemaMixin, ResolvableSchema):
     key: Annotated[
-        str, FieldResolver(lambda context, schema: resolve_asset_key(schema.key, context))
+        str, FieldResolver(lambda context, schema: _resolve_asset_key(schema.key, context))
     ] = Field(..., description="A unique identifier for the asset.")
 
 
@@ -141,7 +141,7 @@ class ResolvedAssetSpec(ResolvableFromSchema[AssetSpecSchema]):
     key: Annotated[
         AssetKey,
         DSLFieldResolver.from_parent(
-            lambda context, schema: resolve_asset_key(schema.key, context)
+            lambda context, schema: _resolve_asset_key(schema.key, context)
         ),
     ]
     deps: Sequence[str]
@@ -171,8 +171,7 @@ class ResolvedAssetSpec(ResolvableFromSchema[AssetSpecSchema]):
         )
 
 
-# class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Mapping[str, Any]]):
-class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
+class AssetAttributesSchema(_AssetAttributesSchemaMixin, ResolvableSchema):
     """Resolves into a dictionary of asset attributes. This is similar to AssetSpecSchema, but
     does not require a key. This is useful in contexts where you want to modify attributes of
     an existing AssetSpec.
@@ -181,7 +180,7 @@ class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
     key: Annotated[
         Optional[str],
         FieldResolver(
-            lambda context, schema: resolve_asset_key(schema.key, context) if schema.key else None
+            lambda context, schema: _resolve_asset_key(schema.key, context) if schema.key else None
         ),
     ] = Field(default=None, description="A unique identifier for the asset.")
 
