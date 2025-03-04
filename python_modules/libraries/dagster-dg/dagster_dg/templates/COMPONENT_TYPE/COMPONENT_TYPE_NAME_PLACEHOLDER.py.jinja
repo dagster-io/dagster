@@ -3,10 +3,10 @@ from dagster_components import (
     Component,
     ComponentLoadContext,
     DefaultComponentScaffolder,
-    ResolvableSchema,
+    PlainSamwiseSchema,
 )
 
-class {{ name }}Schema(ResolvableSchema):
+class {{ name }}Schema(PlainSamwiseSchema):
     ...
 
 class {{ name }}(Component):

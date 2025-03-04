@@ -3,10 +3,10 @@ from dagster_components import (
     Component,
     ComponentLoadContext,
     DefaultComponentScaffolder,
-    ResolvableSchema,
 )
+from dagster_components.core.schema.base import PlainSamwiseSchema
 
-class ShellCommandSchema(ResolvableSchema):
+class ShellCommandSchema(PlainSamwiseSchema):
     ...
 
 class ShellCommand(Component):

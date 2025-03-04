@@ -93,6 +93,15 @@ def _sample_value_for_subschema(
         # TODO: handle anyOf fields more gracefully, for now just choose first option
         return _sample_value_for_subschema(json_schema, subschema["anyOf"][0])
 
+    if "allOf" in subschema:
+        # TODO: handle allOf fields more gracefully, for now just choose first option
+        return _sample_value_for_subschema(json_schema, subschema["allOf"][0])
+
+    if "type" not in subschema:
+        import code
+
+        code.interact(local=locals())
+
     objtype = subschema["type"]
     if objtype == "object":
         return {

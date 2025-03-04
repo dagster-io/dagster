@@ -9,13 +9,13 @@ from dagster_components import (
     Component,
     ComponentLoadContext,
     ResolutionContext,
-    ResolvableSchema,
 )
+from dagster_components.core.schema.base import PlainSamwiseSchema
 
 import dagster as dg
 
 
-class ShellScriptSchema(ResolvableSchema):
+class ShellScriptSchema(PlainSamwiseSchema):
     script_path: str
     asset_specs: Sequence[AssetSpecSchema]
 

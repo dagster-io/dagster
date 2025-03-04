@@ -6,8 +6,8 @@ from dagster_components import (
     ComponentLoadContext,
     FieldResolver,
     ResolutionContext,
-    ResolvableSchema,
 )
+from dagster_components.core.schema.base import PlainSamwiseSchema
 
 import dagster as dg
 
@@ -16,7 +16,7 @@ class MyApiClient:
     def __init__(self, api_key: str): ...
 
 
-class MyComponentSchema(ResolvableSchema):
+class MyComponentSchema(PlainSamwiseSchema):
     api_key: str
 
 

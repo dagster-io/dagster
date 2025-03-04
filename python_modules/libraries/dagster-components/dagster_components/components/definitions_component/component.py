@@ -8,14 +8,15 @@ from dagster._core.definitions.module_loaders.load_defs_from_module import (
 from pydantic import Field
 from pydantic.dataclasses import dataclass
 
-from dagster_components import Component, ComponentLoadContext, ResolvableSchema
+from dagster_components import Component, ComponentLoadContext
 from dagster_components.components.definitions_component.scaffolder import (
     DefinitionsComponentScaffolder,
 )
+from dagster_components.core.schema.base import PlainSamwiseSchema
 from dagster_components.scaffoldable.decorator import scaffoldable
 
 
-class DefinitionsParamSchema(ResolvableSchema):
+class DefinitionsParamSchema(PlainSamwiseSchema):
     definitions_path: Optional[str] = None
 
 

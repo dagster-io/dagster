@@ -5,7 +5,7 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.schema.base import ResolvableSchema
+from dagster_components.core.schema.base import PlainSamwiseSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
@@ -16,7 +16,7 @@ from dagster_components.core.schema.objects import (
 from pydantic import Field
 
 
-class ComplexAssetSchema(ResolvableSchema["ComplexAssetComponent"]):
+class ComplexAssetSchema(PlainSamwiseSchema):
     value: str = Field(..., examples=["example_for_value"])
     list_value: list[str] = Field(
         ..., examples=[["example_for_list_value_1", "example_for_list_value_2"]]
@@ -41,7 +41,7 @@ class ComplexAssetComponent(Component):
         value: str,
         op_spec: Optional[OpSpecSchema],
         asset_attributes: Optional[AssetAttributesSchema],
-        asset_post_processors: Sequence[PostProcessorFn],
+        asset_post_processors: Sequence[PostProcessorFn],  # going to need to fix this one
     ):
         self._value = value
         self._op_spec = op_spec

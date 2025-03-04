@@ -1,16 +1,12 @@
 from collections.abc import Sequence
 
-from dagster_components import (
-    AssetSpecSchema,
-    Component,
-    ComponentLoadContext,
-    ResolvableSchema,
-)
+from dagster_components import AssetSpecSchema, Component, ComponentLoadContext
+from dagster_components.core.schema.base import PlainSamwiseSchema
 
 import dagster as dg
 
 
-class ShellScriptSchema(ResolvableSchema):
+class ShellScriptSchema(PlainSamwiseSchema):
     script_path: str
     asset_specs: Sequence[AssetSpecSchema]
 

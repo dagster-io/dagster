@@ -1,9 +1,10 @@
 from collections.abc import Sequence
 
-from dagster_components import AssetSpecSchema, Component, ResolvableSchema
+from dagster_components import AssetSpecSchema, Component
+from dagster_components.core.schema.base import PlainSamwiseSchema
 
 
-class ShellCommandParams(ResolvableSchema):
+class ShellCommandParams(PlainSamwiseSchema):
     path: str
     asset_specs: Sequence[AssetSpecSchema]
 

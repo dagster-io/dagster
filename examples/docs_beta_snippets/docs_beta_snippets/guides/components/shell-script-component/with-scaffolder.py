@@ -9,11 +9,11 @@ from dagster_components import (
     AssetSpecSchema,
     Component,
     ComponentLoadContext,
-    ResolvableSchema,
     Scaffolder,
     ScaffoldRequest,
     scaffold_component_yaml,
 )
+from dagster_components.core.schema.base import PlainSamwiseSchema
 from dagster_components.scaffoldable.decorator import scaffoldable
 
 import dagster as dg
@@ -41,7 +41,7 @@ class ShellCommandScaffolder(Scaffolder):
 # highlight-end
 
 
-class ShellScriptSchema(ResolvableSchema):
+class ShellScriptSchema(PlainSamwiseSchema):
     script_path: str
     asset_specs: Sequence[AssetSpecSchema]
 
