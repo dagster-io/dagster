@@ -551,13 +551,20 @@ class DagsterApiServer(DagsterApiServicer):
         return loaded_repos.reconstructables_by_name[remote_repo_origin.repository_name]
 
     def ReloadCode(
-        self, _request: dagster_api_pb2.ReloadCodeRequest, _context: grpc.ServicerContext
+        self, request: dagster_api_pb2.ReloadCodeRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ReloadCodeReply:
-        self._logger.warn(
-            "Reloading definitions from a code server launched via `dagster api grpc` "
-            "without restarting the process is not currently supported. To enable this functionality, "
-            "launch the code server with the `dagster code-server start` command instead."
-        )
+        if request.refresh:
+            print("RELOADING WITH A REFRESH!!!")
+            # This needs to be a separate grpc call can't run it every time
+            self._loaded_repositories.reload_repos()
+            self._server_id = str(uuid.uuid4())
+            print("NEW SERVER ID: " + str(self._server_id))
+        else:
+            self._logger.warn(
+                "Reloading definitions from a code server launched via `dagster api grpc` "
+                "without restarting the process is not currently supported. To enable this functionality, "
+                "launch the code server with the `dagster code-server start` command instead."
+            )
 
         return dagster_api_pb2.ReloadCodeReply()
 
@@ -619,11 +626,6 @@ class DagsterApiServer(DagsterApiServicer):
         self, request: dagster_api_pb2.ListRepositoriesRequest, _context: grpc.ServicerContext
     ) -> dagster_api_pb2.ListRepositoriesReply:
         print("LIST REPOSITORIES")
-
-        # This needs to be a separate grpc call can't run it every time
-        self._loaded_repositories.reload_repos()
-
-        #        self._server_id = str(uuid.uuid4())
 
         if self._serializable_load_error:
             return dagster_api_pb2.ListRepositoriesReply(
