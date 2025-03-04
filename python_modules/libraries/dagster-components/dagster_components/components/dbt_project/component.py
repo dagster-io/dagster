@@ -20,12 +20,11 @@ from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
+    AssetPostProcessor,
     AssetPostProcessorSchema,
     OpSpec,
     OpSpecSchema,
-    PostProcessorFn,
     ResolutionContext,
-    resolve_schema_to_post_processor,
 )
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLFieldResolver,
@@ -48,8 +47,8 @@ class DbtProjectSchema(ResolvableSchema["DbtProjectComponent"]):
     exclude: Optional[str] = None
 
 
-def resolve_dbt(context: ResolutionContext, schema: DbtProjectSchema) -> DbtCliResource:
-    return DbtCliResource(**context.resolve_value(schema.dbt.model_dump()))
+def resolve_dbt(context: ResolutionContext, dbt: DbtCliResource) -> DbtCliResource:
+    return DbtCliResource(**context.resolve_value(dbt.model_dump()))
 
 
 def resolve_translator(
@@ -65,38 +64,19 @@ def resolve_translator(
     )
 
 
-def resolve_schema_to_post_processors(
-    context: ResolutionContext, schema: DbtProjectSchema
-) -> Sequence[PostProcessorFn]:
-    return [
-        resolve_schema_to_post_processor(context, s) for s in schema.asset_post_processors or []
-    ]
-
-
-def resolve_op_spec(context: ResolutionContext, schema: DbtProjectSchema) -> Optional[OpSpec]:
-    return (
-        resolve_schema_to_resolvable(
-            schema=schema.op, resolvable_from_schema_type=OpSpec, context=context
-        )
-        if schema.op
-        else None
-    )
-
-
 @scaffoldable(scaffolder=DbtProjectComponentScaffolder)
 @dataclass
 class DbtProjectComponent(Component, ResolvableFromSchema[DbtProjectSchema]):
     """Expose a DBT project to Dagster as a set of assets."""
 
-    dbt: Annotated[DbtCliResource, DSLFieldResolver.from_parent(resolve_dbt)]
-    op: Annotated[Optional[OpSpec], DSLFieldResolver.from_parent(resolve_op_spec)] = None
+    dbt: Annotated[DbtCliResource, DSLFieldResolver(resolve_dbt)]
+    op: Annotated[Optional[OpSpec], DSLFieldResolver(OpSpec.from_optional)] = None
     translator: Annotated[
         DagsterDbtTranslator, DSLFieldResolver.from_parent(resolve_translator)
     ] = field(default_factory=DagsterDbtTranslator)
     asset_post_processors: Annotated[
-        Optional[Sequence[PostProcessorFn]],
-        DSLFieldResolver.from_parent(resolve_schema_to_post_processors),
-    ] = None
+        Sequence[AssetPostProcessor], DSLFieldResolver(AssetPostProcessor.from_optional_seq)
+    ] = field(default_factory=list)
     select: str = "fqn:*"
     exclude: Optional[str] = None
 
@@ -141,7 +121,7 @@ class DbtProjectComponent(Component, ResolvableFromSchema[DbtProjectSchema]):
 
         defs = Definitions(assets=[_fn])
         for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
+            defs = post_processor.fn(defs)
         return defs
 
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:

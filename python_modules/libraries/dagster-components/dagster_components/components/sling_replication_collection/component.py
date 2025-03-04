@@ -21,11 +21,10 @@ from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
+    AssetPostProcessor,
     AssetPostProcessorSchema,
     OpSpec,
     OpSpecSchema,
-    PostProcessorFn,
-    resolve_schema_to_post_processor,
 )
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLFieldResolver,
@@ -103,15 +102,6 @@ def resolve_resource(
     )
 
 
-def resolve_asset_post_processors(
-    context: ResolutionContext, schema: SlingReplicationCollectionSchema
-) -> Sequence[PostProcessorFn]:
-    return [
-        resolve_schema_to_post_processor(context, post_processor)
-        for post_processor in schema.asset_post_processors or []
-    ]
-
-
 @scaffoldable(scaffolder=SlingReplicationComponentScaffolder)
 @dataclass
 class SlingReplicationCollectionComponent(
@@ -128,8 +118,8 @@ class SlingReplicationCollectionComponent(
     ] = Field(..., description="A set of Sling replications to expose as assets.")
 
     asset_post_processors: Annotated[
-        Optional[Sequence[PostProcessorFn]],
-        DSLFieldResolver.from_parent(resolve_asset_post_processors),
+        Optional[Sequence[AssetPostProcessor]],
+        DSLFieldResolver(AssetPostProcessor.from_optional_seq),
     ] = Field(
         default=None,
         description="Post-processors to apply to the asset definitions produced by this component.",
@@ -181,5 +171,5 @@ class SlingReplicationCollectionComponent(
             assets=[self.build_asset(context, replication) for replication in self.replications],
         )
         for post_processor in self.asset_post_processors or []:
-            defs = post_processor(defs)
+            defs = post_processor.fn(defs)
         return defs
