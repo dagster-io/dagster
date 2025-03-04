@@ -16,6 +16,7 @@ export type AssetOverviewMetadataEventsQuery = {
           __typename: 'MaterializationEvent';
           timestamp: string;
           runId: string;
+          partition: string | null;
           metadataEntries: Array<
             | {
                 __typename: 'AssetMetadataEntry';
@@ -194,6 +195,7 @@ export type AssetOverviewMetadataEventsQuery = {
           __typename: 'ObservationEvent';
           timestamp: string;
           runId: string;
+          partition: string | null;
           metadataEntries: Array<
             | {
                 __typename: 'AssetMetadataEntry';
@@ -372,4 +374,4 @@ export type AssetOverviewMetadataEventsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetOverviewMetadataEventsQueryVersion = 'ce504cf0820b50aab6cecee3fb4cb5e412af98beef75a80038c83c872d4fb0cd';
+export const AssetOverviewMetadataEventsQueryVersion = '114f8107c50306b1a96275b011beacf8b6422c88e387f479da4d0a45c4a08cca';

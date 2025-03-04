@@ -38,6 +38,11 @@ type Props = {
   loading: boolean;
 };
 
+export const RecentUpdatesTimelineForAssetKey = (props: {assetKey: AssetKey}) => {
+  const data = useRecentAssetEvents(props.assetKey, {}, {assetHasDefinedPartitions: false});
+  return <RecentUpdatesTimeline assetKey={props.assetKey} {...data} />;
+};
+
 export const RecentUpdatesTimeline = ({
   assetKey,
   observations,
