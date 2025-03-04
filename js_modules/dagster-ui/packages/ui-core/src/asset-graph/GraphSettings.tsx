@@ -3,7 +3,7 @@ import {useMemo} from 'react';
 
 import {KeyboardTag} from './KeyboardTag';
 import {AssetLayoutDirection} from './layout';
-import {assertUnreachable} from '../../../../../../../internal/dagster-cloud/js_modules/app-cloud/dagster/js_modules/dagster-ui/packages/ui-core/src/app/Util';
+import {assertUnreachable} from '../app/Util';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
