@@ -12,19 +12,21 @@ from dagster import (
     Field,
     Selector,
 )
-from dagster._config.config_type import Array, ConfigType, Noneable
-from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, convert_potential_field
-from dagster._config.post_process import resolve_defaults
+from dagster._config.config_type import Array, ConfigType, ConfigTypeKind, Noneable
+from dagster._config.field_utils import (
+    FIELD_NO_DEFAULT_PROVIDED,
+    Map,
+    _ConfigHasFields,
+    convert_potential_field,
+)
 from dagster._config.pythonic_config.attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._config.source import BoolSource, IntSource, StringSource
-from dagster._config.validate import validate_config
 from dagster._core.definitions.definition_config_schema import DefinitionConfigSchema
 from dagster._core.errors import (
     DagsterInvalidConfigDefinitionError,
-    DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
@@ -32,45 +34,76 @@ from dagster._model.pydantic_compat_layer import ModelFieldCompat, PydanticUndef
 from dagster._utils.typing_api import is_closed_python_optional_type
 
 
-# This is from https://github.com/dagster-io/dagster/pull/11470
-def _apply_defaults_to_schema_field(field: Field, additional_default_values: Any) -> Field:
-    # This work by validating the top-level config and then
-    # just setting it at that top-level field. Config fields
-    # can actually take nested values so we only need to set it
-    # at a single level
+def _create_new_default_from_subfields(
+    old_field: Field, updated_sub_fields: dict[str, Field], additional_default_values: dict
+) -> Any:
+    """Generates a replacement default value for a field based on its updated subfields,
+    if possible.
 
-    evr = validate_config(field.config_type, additional_default_values)
-
-    if not evr.success:
-        raise DagsterInvalidConfigError(
-            "Incorrect values passed to .configured",
-            evr.errors,
-            additional_default_values,
-        )
-
-    if field.default_provided:
-        # In the case where there is already a default config value
-        # we can apply "additional" defaults by actually invoking
-        # the config machinery. Meaning we pass the new_additional_default_values
-        # and then resolve the existing defaults over them. This preserves the default
-        # values that are not specified in new_additional_default_values and then
-        # applies the new value as the default value of the field in question.
-        defaults_processed_evr = resolve_defaults(field.config_type, additional_default_values)
-        check.invariant(
-            defaults_processed_evr.success,
-            "Since validation passed, this should always work.",
-        )
-        default_to_pass = defaults_processed_evr.value
-        return copy_with_default(field, default_to_pass)
+    We can only build a replacement default if all required subfields have defaults,
+    or the field is a Selector. In this case, we can construct a new default value
+    composed of the defaults of the subfields.
+    """
+    if all(
+        sub_field.default_provided or not sub_field.is_required
+        for sub_field in updated_sub_fields.values()
+    ) or (
+        old_field.config_type.kind == ConfigTypeKind.SELECTOR
+        and any(sub_field.default_provided for sub_field in updated_sub_fields.values())
+    ):
+        return {
+            **additional_default_values,
+            **{k: v.default_value for k, v in updated_sub_fields.items() if v.default_provided},
+        }
     else:
-        return copy_with_default(field, additional_default_values)
+        return old_field.default_value if old_field.default_provided else FIELD_NO_DEFAULT_PROVIDED
+
+
+# This is from https://github.com/dagster-io/dagster/pull/11470
+def _apply_defaults_to_schema_field(old_field: Field, additional_default_values: Any) -> Field:
+    """Given a config Field and a set of default values (usually a dictionary or raw default value),
+    return a new Field with the default values applied to it (and recursively to any sub-fields).
+    """
+    # Any config type which does not have subfields or which doesn't have a new default value
+    # to apply can be copied directly.
+    if not isinstance(old_field.config_type, _ConfigHasFields) or not isinstance(
+        additional_default_values, dict
+    ):
+        return copy_with_default(old_field, additional_default_values)
+
+    # If the field has subfields and the default value is a dictionary, iterate
+    # over the subfields and apply the defaults to them.
+    updated_sub_fields = {
+        k: _apply_defaults_to_schema_field(
+            sub_field, additional_default_values.get(k, FIELD_NO_DEFAULT_PROVIDED)
+        )
+        for k, sub_field in old_field.config_type.fields.items()
+    }
+
+    # We also compute a replacement default value, if possible.
+    new_default_value = _create_new_default_from_subfields(
+        old_field, updated_sub_fields, additional_default_values
+    )
+
+    return Field(
+        config=old_field.config_type.__class__(fields=updated_sub_fields),
+        default_value=new_default_value,
+        is_required=new_default_value == FIELD_NO_DEFAULT_PROVIDED and old_field.is_required,
+        description=old_field.description,
+    )
 
 
 def copy_with_default(old_field: Field, new_config_value: Any) -> Field:
+    """Copies a Field, but replaces the default value with the provided value.
+    Also updates the is_required flag depending on whether the new config value is
+    actually specified.
+    """
     return Field(
         config=old_field.config_type,
-        default_value=new_config_value,
-        is_required=False,
+        default_value=old_field.default_value
+        if new_config_value == FIELD_NO_DEFAULT_PROVIDED and old_field.default_provided
+        else new_config_value,
+        is_required=new_config_value == FIELD_NO_DEFAULT_PROVIDED and old_field.is_required,
         description=old_field.description,
     )
 
