@@ -10,7 +10,7 @@ from dagster_sling import DagsterSlingTranslator, SlingResource, sling_assets
 from dagster_sling.resources import AssetExecutionContext
 from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
-from typing_extensions import Self, TypeAlias
+from typing_extensions import TypeAlias
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.components.sling_replication_collection.scaffolder import (
@@ -29,7 +29,6 @@ from dagster_components.core.schema.objects import (
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLFieldResolver,
     ResolvableFromSchema,
-    resolve_schema_to_resolvable,
 )
 from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
@@ -126,15 +125,6 @@ class SlingReplicationCollectionComponent(
         default=None,
         description="Post-processors to apply to the asset definitions produced by this component.",
     )
-
-    @classmethod
-    def load(cls, attributes: Optional[ResolvableSchema], context: "ComponentLoadContext") -> Self:
-        assert isinstance(attributes, SlingReplicationCollectionSchema)
-        return resolve_schema_to_resolvable(attributes, cls, context.resolution_context)
-
-    @classmethod
-    def get_schema(cls) -> type[SlingReplicationCollectionSchema]:
-        return SlingReplicationCollectionSchema
 
     def build_asset(
         self, context: ComponentLoadContext, replication_spec: SlingReplicationSpec
