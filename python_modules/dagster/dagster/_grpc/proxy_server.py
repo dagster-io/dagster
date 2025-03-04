@@ -149,6 +149,9 @@ class DagsterProxyApiServicer(DagsterApiServicer):
             )
             self._client_heartbeat_thread.start()
 
+    def RefreshDefinitions(self, request, context):
+        return self._query("RefreshDefinitions", request, context)
+
     def ReloadCode(self, request, context):
         with self._reload_lock:  # can only call this method once at a time
             old_heartbeat_shutdown_event = self._client_heartbeat_shutdown_event
