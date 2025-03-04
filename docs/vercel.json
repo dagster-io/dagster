@@ -1792,14 +1792,14 @@
       "destination": "/about/changelog"
     },
     {
-      "source": "/changelog*",
+      "source": "/changelog",
       "has": [
         {
           "type": "query",
           "key": "page"
         }
       ],
-      "destination": "/about/changelog*"
+      "destination": "/about/changelog"
     }
   ]
 }
