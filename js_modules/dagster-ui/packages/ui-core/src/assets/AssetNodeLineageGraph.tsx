@@ -12,7 +12,7 @@ import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from '../asset-graph/AssetNode';
 import {ExpandedGroupNode, GroupOutline} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
-import {AssetGraphSettingsMenu, useLayoutDirectionState} from '../asset-graph/GraphSettings';
+import {AssetGraphSettingsButton, useLayoutDirectionState} from '../asset-graph/GraphSettings';
 import {GraphData, GraphNode, groupIdForNode, toGraphId} from '../asset-graph/Utils';
 import {DEFAULT_MAX_ZOOM} from '../graph/SVGConsts';
 import {SVGViewport, SVGViewportRef} from '../graph/SVGViewport';
@@ -103,7 +103,7 @@ const AssetNodeLineageGraphInner = ({
         maxZoom={DEFAULT_MAX_ZOOM}
         maxAutocenterZoom={DEFAULT_MAX_ZOOM}
         additionalToolbarElements={
-          <AssetGraphSettingsMenu direction={direction} setDirection={setDirection} />
+          <AssetGraphSettingsButton direction={direction} setDirection={setDirection} />
         }
       >
         {({scale}, viewportRect) => (
