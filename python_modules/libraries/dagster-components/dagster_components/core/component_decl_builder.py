@@ -33,6 +33,45 @@ class ComponentFileModel(BaseModel):
 T = TypeVar("T", bound=BaseModel)
 
 
+def has_python_files(folder_path: Path) -> bool:
+    """Check if a folder contains any Python files excluding __init__.py.
+
+    Args:
+        folder_path (Path): Path object representing the folder to check
+    Returns:
+        bool: True if folder contains .py files (except __init__.py), False otherwise
+    """
+    if not folder_path.is_dir():
+        return False
+    # Check all files in the directory
+    for file_path in folder_path.glob("*.py"):
+        if file_path.name != "__init__.py":
+            return True
+    return False
+
+
+@record
+class ImplicitDefinitionsComponentDecl(ComponentDeclNode):
+    path: Path
+
+    @staticmethod
+    def exists_at(path: Path) -> bool:
+        if YamlComponentDecl.exists_at(path):
+            return False
+        if PythonComponentDecl.exists_at(path):
+            return False
+        return has_python_files(path)
+
+    @staticmethod
+    def from_path(path: Path) -> "ImplicitDefinitionsComponentDecl":
+        return ImplicitDefinitionsComponentDecl(path=path)
+
+    def load(self, context) -> Sequence[Component]:
+        from dagster_components.dagster import DefinitionsComponent
+
+        return [DefinitionsComponent(definitions_path=None)]
+
+
 @record
 class PythonComponentDecl(ComponentDeclNode):
     path: Path
@@ -145,6 +184,8 @@ def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
         return YamlComponentDecl.from_path(path)
     elif PythonComponentDecl.exists_at(path):
         return PythonComponentDecl.from_path(path)
+    elif ImplicitDefinitionsComponentDecl.exists_at(path):
+        return ImplicitDefinitionsComponentDecl.from_path(path)
 
     subs = []
     for subpath in path.iterdir():

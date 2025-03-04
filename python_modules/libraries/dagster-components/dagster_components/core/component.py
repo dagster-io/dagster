@@ -216,11 +216,15 @@ class ComponentLoadContext:
     @property
     def path(self) -> Path:
         from dagster_components.core.component_decl_builder import (
+            ImplicitDefinitionsComponentDecl,
             PythonComponentDecl,
             YamlComponentDecl,
         )
 
-        if not isinstance(self.decl_node, (YamlComponentDecl, PythonComponentDecl)):
+        if not isinstance(
+            self.decl_node,
+            (YamlComponentDecl, PythonComponentDecl, ImplicitDefinitionsComponentDecl),
+        ):
             check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
 
         return self.decl_node.path
