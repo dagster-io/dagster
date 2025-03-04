@@ -9,7 +9,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Optional, TypedDict, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, TypeVar
 
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
@@ -21,9 +21,16 @@ from dagster_components.core.component_key import ComponentKey
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
 from dagster_components.core.schema.base import ResolvableSchema, resolve_as
 from dagster_components.core.schema.context import ResolutionContext
+from dagster_components.core.schema.resolvable_from_schema import (
+    ResolvableFromSchema,
+    resolve_schema_to_resolvable,
+)
 from dagster_components.scaffoldable.decorator import get_scaffolder, scaffoldable
 from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 from dagster_components.utils import format_error_message
+
+if TYPE_CHECKING:
+    from dagster_components.core.schema.resolvable_from_schema import EitherSchema
 
 
 class ComponentsEntryPointLoadError(DagsterError):
@@ -38,7 +45,14 @@ class ComponentDeclNode(ABC):
 @scaffoldable(scaffolder=DefaultComponentScaffolder)
 class Component(ABC):
     @classmethod
-    def get_schema(cls) -> Optional[type[ResolvableSchema]]:
+    def get_schema(cls) -> Optional[type["EitherSchema"]]:
+        from dagster_components.core.schema.resolvable_from_schema import (
+            ResolvableFromSchema,
+            get_schema_type,
+        )
+
+        if issubclass(cls, ResolvableFromSchema):
+            return get_schema_type(cls)
         return None
 
     @classmethod
@@ -49,8 +63,16 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
-    def load(cls, attributes: Optional[ResolvableSchema], context: "ComponentLoadContext") -> Self:
-        return resolve_as(attributes, cls, context.resolution_context) if attributes else cls()
+    def load(cls, attributes: Optional["EitherSchema"], context: "ComponentLoadContext") -> Self:
+        if issubclass(cls, ResolvableFromSchema):
+            return (
+                resolve_schema_to_resolvable(attributes, cls, context.resolution_context)
+                if attributes
+                else cls()
+            )
+        else:
+            assert isinstance(attributes, ResolvableSchema)
+            return resolve_as(attributes, cls, context.resolution_context) if attributes else cls()
 
     @classmethod
     def get_metadata(cls) -> "ComponentTypeInternalMetadata":

@@ -13,6 +13,7 @@ from typing import (
     get_origin,
 )
 
+from dagster import _check as check
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import Self, TypeAlias
 
@@ -29,8 +30,32 @@ class DSLSchema(BaseModel):
 EitherSchema: TypeAlias = Union[ResolvableSchema, DSLSchema]
 
 TSchema = TypeVar("TSchema", bound=EitherSchema)
+
+
 # switch to this once we have eliminated ResolvableSchema
 # TSchema = TypeVar("TSchema", bound=DSLSchema)
+def get_schema_type(resolvable_from_schema_type: type["ResolvableFromSchema"]) -> type[DSLSchema]:
+    """Returns the first generic type argument (TSchema) of the ResolvableFromSchema instance at runtime."""
+    check.param_invariant(
+        issubclass(resolvable_from_schema_type, ResolvableFromSchema),
+        "resolvable_from_schema_type",
+    )
+    check.param_invariant(
+        hasattr(resolvable_from_schema_type, "__orig_bases__"),
+        "resolvable_from_schema_type",
+    )
+    for base in resolvable_from_schema_type.__orig_bases__:  # type: ignore
+        # Check if this base originates from ResolvableFromSchema
+        origin = getattr(base, "__origin__", None)
+        if origin is ResolvableFromSchema:
+            type_args = get_args(base)
+            if not type_args:
+                raise ValueError(
+                    "ResolvableFromSchema base found but no generic type arguments present"
+                )
+            return type_args[0]
+
+    raise ValueError("No generic type arguments found in ResolvableFromSchema subclass")
 
 
 class ResolvableFromSchema(Generic[TSchema]):

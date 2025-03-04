@@ -12,7 +12,6 @@ from dagster_dbt import (
     DbtProject,
     dbt_assets,
 )
-from typing_extensions import Self
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
@@ -29,7 +28,6 @@ from dagster_components.core.schema.objects import (
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLFieldResolver,
     ResolvableFromSchema,
-    resolve_schema_to_resolvable,
 )
 from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
@@ -84,18 +82,9 @@ class DbtProjectComponent(Component, ResolvableFromSchema[DbtProjectSchema]):
     select: str = "fqn:*"
     exclude: Optional[str] = None
 
-    @classmethod
-    def load(cls, attributes: Optional[ResolvableSchema], context: "ComponentLoadContext") -> Self:
-        assert isinstance(attributes, DbtProjectSchema)
-        return resolve_schema_to_resolvable(attributes, cls, context.resolution_context)
-
     @cached_property
     def project(self) -> DbtProject:
         return DbtProject(self.dbt.project_dir)
-
-    @classmethod
-    def get_schema(cls) -> type[DbtProjectSchema]:
-        return DbtProjectSchema
 
     def get_asset_selection(
         self, select: str, exclude: Optional[str] = None
