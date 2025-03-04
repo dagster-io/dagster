@@ -623,6 +623,8 @@ class DagsterApiServer(DagsterApiServicer):
         # This needs to be a separate grpc call can't run it every time
         self._loaded_repositories.reload_repos()
 
+        #        self._server_id = str(uuid.uuid4())
+
         if self._serializable_load_error:
             return dagster_api_pb2.ListRepositoriesReply(
                 serialized_list_repositories_response_or_error=serialize_value(

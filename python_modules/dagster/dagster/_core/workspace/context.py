@@ -87,6 +87,9 @@ T = TypeVar("T")
 
 WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL = 45
 
+from watchdog.events import FileSystemEventHandler as WatchdogFileSystemEventHandler
+from watchdog.observers import Observer as WatchdogObserver
+
 
 class BaseWorkspaceRequestContext(LoadingContext):
     """This class is a request-scoped object that stores (1) a reference to all repository locations
@@ -661,6 +664,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             workspace_load_target, "workspace_load_target", WorkspaceLoadTarget
         )
 
+        print("TARGET: " + str(self._workspace_load_target))
+
         self._read_only = read_only
 
         self._version = version
@@ -669,6 +674,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._lock = threading.Lock()
         self._watch_thread_shutdown_events: dict[str, threading.Event] = {}
         self._watch_threads: dict[str, threading.Thread] = {}
+        self._watchdog_threads: dict[str, WatchdogObserver] = {}
+        self._watchdog_thread_shutdown_events: dict[str, threading.Event] = {}
 
         self._state_subscribers_lock = threading.Lock()
         self._state_subscriber_id_iter = count()
@@ -801,6 +808,27 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._watch_threads[location_name] = watch_thread
         watch_thread.start()
 
+    def _start_watchdog_thread(self, origin: ManagedGrpcPythonEnvCodeLocationOrigin) -> None:
+        location_name = origin.location_name
+
+        context = self
+
+        class Handler(WatchdogFileSystemEventHandler):
+            def on_any_event(self, event):
+                print(f"Watchdog event {event} for {location_name}")
+                context.refresh_code_location(location_name)
+
+        print("WHERE SHOULD I WATCH FOR " + str(origin.loadable_target_origin))
+        watch_path = origin.loadable_target_origin.get_root_path()
+
+        print("WATCHING " + str(watch_path))
+        thread = WatchdogObserver()
+        thread.schedule(Handler(), watch_path, recursive=True)
+
+        self._watchdog_threads[location_name] = thread
+
+        thread.start()
+
     def _load_location(self, origin: CodeLocationOrigin, reload: bool) -> CodeLocationEntry:
         location_name = origin.location_name
         location = None
@@ -921,12 +949,16 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             self._watch_threads = {}
 
             previous_locations = self._current_workspace.code_location_entries
-            self._current_workspace = CurrentWorkspace(code_location_entries=new_locations)
+            previous_watchdog_threads = self._watchdog_threads
+            self._watchdog_threads = {}
 
+            self._current_workspace = CurrentWorkspace(code_location_entries=new_locations)
             # start monitoring for new locations
             for entry in new_locations.values():
                 if isinstance(entry.origin, GrpcServerCodeLocationOrigin):
                     self._start_watch_thread(entry.origin)
+                elif isinstance(entry.origin, ManagedGrpcPythonEnvCodeLocationOrigin):
+                    self._start_watchdog_thread(entry.origin)
 
         # clean up previous locations
         for event in previous_events.values():
@@ -934,6 +966,13 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
         for watch_thread in previous_threads.values():
             watch_thread.join()
+
+        for watch_thread in previous_watchdog_threads.values():
+            print("JOINING WATCHDOG THREAD")
+            watch_thread.stop()
+            watch_thread.join()
+
+            print("JOINED")
 
         for entry in previous_locations.values():
             if entry.code_location:
