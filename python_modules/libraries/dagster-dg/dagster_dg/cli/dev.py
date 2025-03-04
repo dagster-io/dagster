@@ -118,6 +118,8 @@ def dev_command(
         os.environ["DAGSTER_PROJECT_ENV_FILE_PATHS"] = json.dumps(
             {dg_context.code_location_name: str(dg_context.root_path)}
         )
+        if dg_context.use_dg_managed_environment:
+            dg_context.ensure_uv_sync()
 
     # In a project context, we can just run `dagster dev` directly, using `dagster` from the
     # code location's environment.

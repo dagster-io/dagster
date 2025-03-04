@@ -475,6 +475,11 @@ class DgContext:
 
     def ensure_uv_lock(self, path: Optional[Path] = None) -> None:
         path = path or self.root_path
+        if not (path / "uv.lock").exists():
+            self.ensure_uv_sync(path)
+
+    def ensure_uv_sync(self, path: Optional[Path] = None) -> None:
+        path = path or self.root_path
         with pushd(path):
             if not (path / "uv.lock").exists():
                 subprocess.run(
