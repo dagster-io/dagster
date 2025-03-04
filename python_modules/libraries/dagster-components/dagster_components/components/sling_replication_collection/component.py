@@ -16,7 +16,6 @@ from dagster_components import Component, ComponentLoadContext
 from dagster_components.components.sling_replication_collection.scaffolder import (
     SlingReplicationComponentScaffolder,
 )
-from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
@@ -28,6 +27,7 @@ from dagster_components.core.schema.objects import (
 )
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLFieldResolver,
+    DSLSchema,
     ResolvableFromSchema,
 )
 from dagster_components.scaffoldable.decorator import scaffoldable
@@ -65,7 +65,7 @@ class SlingReplicationSpec(BaseModel, ResolvableFromSchema["SlingReplicationSche
     include_metadata: list[SlingMetadataAddons]
 
 
-class SlingReplicationSchema(ResolvableSchema):
+class SlingReplicationSchema(DSLSchema):
     path: str = Field(
         ...,
         description="The path to the Sling replication file. For more information, see https://docs.slingdata.io/concepts/replication#overview.",
@@ -87,7 +87,7 @@ class SlingReplicationSchema(ResolvableSchema):
     )
 
 
-class SlingReplicationCollectionSchema(ResolvableSchema):
+class SlingReplicationCollectionSchema(DSLSchema):
     sling: Optional[SlingResource] = None
     replications: Sequence[SlingReplicationSchema]
     asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
