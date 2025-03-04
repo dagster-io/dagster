@@ -45,6 +45,15 @@
       "destination": "/dagster-plus/:path*"
     },
     {
+      "source": "/guides",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/guides/general",
+      "destination": "/"
+    },
+    {
       "source": "/guides/dagster-pipes/:path*",
       "destination": "/guides/build/external-pipelines/"
     },
@@ -183,6 +192,10 @@
       "permanent": false
     },
     {
+      "source": "/api/python-api/dagster-shell",
+      "destination": "/api/python-api/pipes"
+    },
+    {
       "source": "/deploying/celery",
       "destination": "/guides/deploy/deployment-options/kubernetes/kubernetes-and-celery"
     },
@@ -287,6 +300,10 @@
       "destination": "/guides/operate/run-executors"
     },
     {
+      "source": "/concepts/resources-legacy",
+      "destination": "/guides/build/external-resources/"
+    },
+    {
       "source": "/integrations/pyspark",
       "destination": "/integrations/libraries/spark",
       "permanent": false
@@ -297,6 +314,26 @@
     },
     {
       "source": "/tutorial/introduction",
+      "destination": "/etl-pipeline-tutorial/"
+    },
+    {
+      "source": "/tutorial/setup",
+      "destination": "/etl-pipeline-tutorial/"
+    },
+    {
+      "source": "/tutorial/writing-your-first-asset",
+      "destination": "/etl-pipeline-tutorial/"
+    },
+    {
+      "source": "/tutorial/building-an-asset-graph",
+      "destination": "/etl-pipeline-tutorial/"
+    },
+    {
+      "source": "/tutorial/secheduling-your-pipeline",
+      "destination": "/etl-pipeline-tutorial/"
+    },
+    {
+      "source": "/tutorial/connecting-to-external-services",
       "destination": "/etl-pipeline-tutorial/"
     },
     {
@@ -461,6 +498,10 @@
       "destination": "/guides/build/assets/metadata-and-tags/"
     },
     {
+      "source": "/dagster-plus/managing-deployments/managing-deployments",
+      "destination": "/dagster-plus/deployment/management/"
+    },
+    {
       "source": "/dagster-plus/managing-deployments/setting-up-alerts",
       "destination": "/dagster-plus/features/alerts/"
     },
@@ -538,6 +579,16 @@
     {
       "source": "/tutorials/:path*",
       "destination": "/examples/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/tutorials/:path*/",
+      "destination": "/examples/:path*/",
+      "permanent": false
+    },
+    {
+      "source": "/tutorials/",
+      "destination": "/examples/",
       "permanent": false
     },
     {
@@ -669,6 +720,14 @@
       "destination": "/guides/operate/configuration/run-configuration"
     },
     {
+      "source": "/concepts/configuration/config-schema-legacy",
+      "destination": "/guides/operate/configuration/run-configuration"
+    },
+    {
+      "source": "/concepts/configuration/configured",
+      "destination": "/guides/operate/configuration/run-configuration"
+    },
+    {
       "source": "/concepts/configuration/advanced-config-types",
       "destination": "/guides/operate/configuration/advanced-config-types"
     },
@@ -679,6 +738,10 @@
     {
       "source": "/concepts/code-locations/workspace-files",
       "destination": "/guides/deploy/code-locations/workspace-yaml"
+    },
+    {
+      "source": "/concepts/webserver/ui",
+      "destination": "guides/operate/webserver"
     },
     {
       "source": "/concepts/webserver/ui-user-settings",
@@ -741,6 +804,10 @@
       "destination": "/guides/build/assets/asset-jobs"
     },
     {
+      "source": "/concepts/metadata-tags",
+      "destination": "/guides/build/assets/metadata-and-tags/"
+    },
+    {
       "source": "/concepts/metadata-tags/asset-metadata",
       "destination": "/guides/build/assets/metadata-and-tags/"
     },
@@ -759,6 +826,14 @@
     {
       "source": "/concepts/metadata-tags/tags",
       "destination": "/guides/build/assets/metadata-and-tags/tags"
+    },
+    {
+      "source": "/concepts/metadata-tags/asset-metadata/table-metadata",
+      "destination": "/guides/build/assets/metadata-and-tags/table-metadata"
+    },
+    {
+      "source": "/concepts/repositories-workspaces/repositories",
+      "destination": "/api/python-api/repositories"
     },
     {
       "source": "/concepts/dagster-pipes/subprocess",
@@ -790,7 +865,11 @@
     },
     {
       "source": "/concepts/dagster-pipes/aws-emr-containers",
-      "destination": "/guides/build/external-pipelines/aws/aws-emr-containers-pipeline"
+      "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
+    },
+    {
+      "source": "/guides/build/external-pipelines/aws-emr-containers-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
     },
     {
       "source": "/concepts/dagster-pipes/aws-emr-serverless",
@@ -835,6 +914,10 @@
     {
       "source": "/guides/migrations/from-step-launchers-to-pipes",
       "destination": "/guides/build/external-pipelines/migrating-from-step-launchers-to-pipes"
+    },
+    {
+      "source": "/concepts/io-management/io-managers-legacy",
+      "destination": "/guides/build/io-managers/"
     },
     {
       "source": "/concepts/io-management/io-managers",
@@ -927,6 +1010,22 @@
     {
       "source": "/dagster-plus/deployment/agents/local",
       "destination": "/dagster-plus/deployment/deployment-types/hybrid/local"
+    },
+    {
+      "source": "/dagster-plus/deployment/azure/overview",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/azure/"
+    },
+    {
+      "source": "/dagster-plus/deployment/azure/aks-agent",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/azure/aks-agent"
+    },
+    {
+      "source": "/dagster-plus/deployment/azure/acr-user-code",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/azure/acr-user-code"
+    },
+    {
+      "source": "/dagster-plus/deployment/deployment-types/hybrid/azure/blob-compute-logs",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid/azure/blob-compute-logs"
     },
     {
       "source": "/dagster-plus/deployment/agents/customizing-configuration",
@@ -1231,7 +1330,7 @@
       "destination": "/dagster-plus/features/ci-cd/branch-deployments/testing"
     },
     {
-      "source": "/guides/integration/approaches-to-writing-integrations",
+      "source": "/guides/integrations/approaches-to-writing-integrations",
       "destination": "/integrations/guides/integration-approaches"
     },
     {
@@ -1292,6 +1391,10 @@
       "destination": "/guides/migrate/"
     },
     {
+      "source": "/guides/migrations/migrating-airflow-to-dagster",
+      "destination": "/integrations/libraries/airlift/airflow-to-dagster"
+    },
+    {
       "source": "/integrations/airflow/from-airflow-to-dagster",
       "destination": "/integrations/libraries/airlift/airflow-to-dagster/"
     },
@@ -1338,6 +1441,10 @@
     {
       "source": "/guides/dagster/code-references",
       "destination": "/guides/build/assets/metadata-and-tags/"
+    },
+    {
+      "source": "/guides/best-practices",
+      "destination": "/"
     },
     {
       "source": "/integrations",
@@ -1458,6 +1565,16 @@
       "permanent": false
     },
     {
+      "source": "/integrations/fivetran/fivetran",
+      "destination": "/integrations/libraries/fivetran",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/fivetran/fivetran-legacy",
+      "destination": "/integrations/libraries/fivetran",
+      "permanent": false
+    },
+    {
       "source": "/integrations/bigquery",
       "destination": "/integrations/libraries/gcp/bigquery/",
       "permanent": false
@@ -1549,9 +1666,18 @@
       "destination": "/guides/build/external-pipelines/pyspark-pipeline"
     },
     {
+      "source": "/community",
+      "destination": "/about/community",
+      "permanent": false
+    },
+    {
       "source": "/community/contributing/",
       "destination": "/about/contributing"
     },
+    {
+      "source": "/integrations/airlift/federation-tutorial/overview",
+      "destination": "/integrations/libraries/airlift/"
+    }
     {
       "source": "/integrations/airlift/tutorial/overview",
       "destination": "/integrations/libraries/airlift"
@@ -1656,6 +1782,14 @@
       "source": "/guides/preview/:path*",
       "destination": "/guides/labs/:path*",
       "permanent": false
+    },
+    {
+      "source": "/guides/preview/components/",
+      "destination": "/guides/labs/components/"
+    },
+    {
+      "source": "/changelog",
+      "destination": "/about/changelog"
     }
   ]
 }
