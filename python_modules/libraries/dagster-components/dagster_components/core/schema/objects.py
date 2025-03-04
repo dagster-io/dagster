@@ -18,7 +18,6 @@ from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLFieldResolver,
     ResolvableFromSchema,
-    resolve_schema_to_resolvable,
 )
 
 
@@ -66,18 +65,6 @@ class OpSpec(ResolvableFromSchema["OpSpecSchema"]):
     backfill_policy: Annotated[
         Optional[BackfillPolicy], DSLFieldResolver.from_parent(resolve_backfill_policy)
     ] = None
-
-    @classmethod
-    def from_schema(cls, context: ResolutionContext, schema: "OpSpecSchema") -> "OpSpec":
-        return resolve_schema_to_resolvable(
-            schema=schema, resolvable_from_schema_type=OpSpec, context=context
-        )
-
-    @classmethod
-    def from_optional(
-        cls, context: ResolutionContext, schema: Optional["OpSpecSchema"]
-    ) -> Optional["OpSpec"]:
-        return cls.from_schema(context, schema) if schema else None
 
 
 class OpSpecSchema(ResolvableSchema):
