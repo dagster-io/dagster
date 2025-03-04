@@ -86,7 +86,7 @@ AssetEventType: TypeAlias = Literal[
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
     DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-    DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE,
+    DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
 ]
 
 EventCursor: TypeAlias = Union[int, RunShardedEventsCursor]

@@ -80,7 +80,7 @@ EventSpecificData = Union[
     "AssetMaterializationPlannedData",
     "AssetCheckEvaluation",
     "AssetCheckEvaluationPlanned",
-    "PlannedAssetMaterializationFailureData",
+    "AssetFailedToMaterializeData",
 ]
 
 
@@ -110,7 +110,7 @@ class DagsterEventType(str, Enum):
 
     ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
     ASSET_MATERIALIZATION_PLANNED = "ASSET_MATERIALIZATION_PLANNED"
-    PLANNED_ASSET_MATERIALIZATION_FAILURE = "PLANNED_ASSET_MATERIALIZATION_FAILURE"
+    ASSET_FAILED_TO_MATERIALIZE = "ASSET_FAILED_TO_MATERIALIZE"
     ASSET_OBSERVATION = "ASSET_OBSERVATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
     ASSET_CHECK_EVALUATION_PLANNED = "ASSET_CHECK_EVALUATION_PLANNED"
@@ -242,14 +242,14 @@ PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN
 BATCH_WRITABLE_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
-    DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE,
+    DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
 }
 
 ASSET_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
     DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-    DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE,
+    DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
 }
 
 ASSET_CHECK_EVENTS = {
@@ -721,8 +721,8 @@ class DagsterEvent(
             return self.asset_observation_data.asset_observation.asset_key
         elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
             return self.asset_materialization_planned_data.asset_key
-        elif self.event_type == DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE:
-            return self.planned_asset_materialization_failure_data.asset_key
+        elif self.event_type == DagsterEventType.ASSET_FAILED_TO_MATERIALIZE:
+            return self.asset_failed_to_materialize_data.asset_key
         else:
             return None
 
@@ -739,8 +739,8 @@ class DagsterEvent(
             return self.asset_observation_data.asset_observation.partition
         elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
             return self.asset_materialization_planned_data.partition
-        elif self.event_type == DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE:
-            return self.planned_asset_materialization_failure_data.partition
+        elif self.event_type == DagsterEventType.ASSET_FAILED_TO_MATERIALIZE:
+            return self.asset_failed_to_materialize_data.partition
         else:
             return None
 
@@ -806,15 +806,15 @@ class DagsterEvent(
         return cast(AssetCheckEvaluationPlanned, self.event_specific_data)
 
     @property
-    def planned_asset_materialization_failure_data(
+    def asset_failed_to_materialize_data(
         self,
-    ) -> "PlannedAssetMaterializationFailureData":
+    ) -> "AssetFailedToMaterializeData":
         _assert_type(
-            "planned_asset_materialization_failure",
-            DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE,
+            "asset_failed_to_materialize_data",
+            DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
             self.event_type,
         )
-        return cast(PlannedAssetMaterializationFailureData, self.event_specific_data)
+        return cast(AssetFailedToMaterializeData, self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -1540,16 +1540,16 @@ class DagsterEvent(
 
     @staticmethod
     # TODO - naming. most other event builder fns are just the name of the event
-    def build_planned_asset_materialization_failure_event(
+    def build_asset_failed_to_materialize_event(
         job_name: str,
         step_key: str,
-        planned_asset_materialization_failure_data: "PlannedAssetMaterializationFailureData",
+        asset_failed_to_materialize_data: "AssetFailedToMaterializeData",
     ) -> "DagsterEvent":
         return DagsterEvent(
-            event_type_value=DagsterEventType.PLANNED_ASSET_MATERIALIZATION_FAILURE.value,
+            event_type_value=DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value,
             job_name=job_name,
-            message=f"Asset {planned_asset_materialization_failure_data.asset_key.to_string()} failed to materialize",
-            event_specific_data=planned_asset_materialization_failure_data,
+            message=f"Asset {asset_failed_to_materialize_data.asset_key.to_string()} failed to materialize",
+            event_specific_data=asset_failed_to_materialize_data,
             step_key=step_key,
         )
 
@@ -1583,13 +1583,19 @@ class AssetObservationData(
         )
 
 
+class AssetFailedToMaterializeReason(Enum):
+    COMPUTE_FAILED = "COMPUTE_FAILED"
+    UPSTREAM_COMPUTE_FAILED = "UPSTREAM_COMPUTE_FAILED"
+
+
 @whitelist_for_serdes
-class PlannedAssetMaterializationFailureData(
+class AssetFailedToMaterializeData(
     NamedTuple(
-        "_PlannedAssetMaterializationFailureData",
+        "AssetFailedToMaterializeData",
         [
             ("asset_key", AssetKey),
             ("partition", Optional[str]),
+            ("reason", AssetFailedToMaterializeReason),
             ("error", Optional[SerializableErrorInfo]),
         ],
     )
@@ -1598,12 +1604,14 @@ class PlannedAssetMaterializationFailureData(
         cls,
         asset_key: AssetKey,
         partition: Optional[str],
+        reason: AssetFailedToMaterializeReason,
         error: Optional[SerializableErrorInfo] = None,
     ):
         return super().__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
             partition=check.opt_str_param(partition, "partition"),
+            reason=check.inst_param(reason, "reason", AssetFailedToMaterializeReason),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
