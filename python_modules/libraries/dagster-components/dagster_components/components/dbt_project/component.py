@@ -15,7 +15,6 @@ from dagster_dbt import (
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
-from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
@@ -27,13 +26,14 @@ from dagster_components.core.schema.objects import (
 )
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLFieldResolver,
+    DSLSchema,
     ResolvableFromSchema,
 )
 from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 
-class DbtProjectSchema(ResolvableSchema["DbtProjectComponent"]):
+class DbtProjectSchema(DSLSchema):
     dbt: DbtCliResource
     op: Optional[OpSpecSchema] = None
     asset_attributes: Annotated[
