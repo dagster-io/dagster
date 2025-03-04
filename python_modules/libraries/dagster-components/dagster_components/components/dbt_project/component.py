@@ -75,8 +75,9 @@ class DbtProjectComponent(Component, ResolvableFromSchema[DbtProjectSchema]):
         DagsterDbtTranslator, DSLFieldResolver.from_parent(resolve_translator)
     ] = field(default_factory=DagsterDbtTranslator)
     asset_post_processors: Annotated[
-        Sequence[AssetPostProcessor], DSLFieldResolver(AssetPostProcessor.from_optional_seq)
-    ] = field(default_factory=list)
+        Optional[Sequence[AssetPostProcessor]],
+        DSLFieldResolver(AssetPostProcessor.from_optional_seq),
+    ] = None
     select: str = "fqn:*"
     exclude: Optional[str] = None
 
