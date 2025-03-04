@@ -50,6 +50,12 @@ class ResolvableFromSchema(Generic[TSchema]):
     def from_seq(cls, context: "ResolutionContext", schema: Sequence[TSchema]) -> Sequence[Self]:
         return [cls.from_schema(context, item) for item in schema]
 
+    @classmethod
+    def from_optional_seq(
+        cls, context: "ResolutionContext", schema: Optional[Sequence[TSchema]]
+    ) -> Optional[Sequence[Self]]:
+        return cls.from_seq(context, schema) if schema else None
+
 
 @dataclass
 class ParentFn:
