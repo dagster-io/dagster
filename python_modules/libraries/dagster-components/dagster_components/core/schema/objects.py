@@ -150,9 +150,15 @@ class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Ma
     ] = Field(default=None, description="A unique identifier for the asset.")
 
     def resolve(self, context: ResolutionContext) -> Mapping[str, Any]:
-        # only include fields that are explcitly set
-        set_fields = self.model_dump(exclude_unset=True).keys()
-        return {k: v for k, v in self.resolve_fields(dict, context).items() if k in set_fields}
+        return resolve_asset_attributes_to_mapping(self, context)
+
+
+def resolve_asset_attributes_to_mapping(
+    schema: AssetAttributesSchema, context: ResolutionContext
+) -> Mapping[str, Any]:
+    # only include fields that are explcitly set
+    set_fields = schema.model_dump(exclude_unset=True).keys()
+    return {k: v for k, v in schema.resolve_fields(dict, context).items() if k in set_fields}
 
 
 class AssetPostProcessorSchema(ResolvableSchema):
@@ -160,39 +166,49 @@ class AssetPostProcessorSchema(ResolvableSchema):
     operation: Literal["merge", "replace"] = "merge"
     attributes: AssetAttributesSchema
 
-    def apply_to_spec(self, spec: AssetSpec, context: ResolutionContext) -> AssetSpec:
-        # add the original spec to the context and resolve values
-        attributes = context.with_scope(asset=spec).resolve_value(self.attributes)
-
-        if self.operation == "merge":
-            mergeable_attributes = {"metadata", "tags"}
-            merge_attributes = {k: v for k, v in attributes.items() if k in mergeable_attributes}
-            replace_attributes = {
-                k: v for k, v in attributes.items() if k not in mergeable_attributes
-            }
-            return spec.merge_attributes(**merge_attributes).replace_attributes(
-                **replace_attributes
-            )
-        elif self.operation == "replace":
-            return spec.replace_attributes(**attributes)
-        else:
-            check.failed(f"Unsupported operation: {self.operation}")
-
-    def apply(self, defs: Definitions, context: ResolutionContext) -> Definitions:
-        target_selection = AssetSelection.from_string(self.target, include_sources=True)
-        target_keys = target_selection.resolve(defs.get_asset_graph())
-
-        mappable = [d for d in defs.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))]
-        mapped_assets = map_asset_specs(
-            lambda spec: self.apply_to_spec(spec, context) if spec.key in target_keys else spec,
-            mappable,
-        )
-
-        assets = [
-            *mapped_assets,
-            *[d for d in defs.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))],
-        ]
-        return replace(defs, assets=assets)
-
     def resolve(self, context: ResolutionContext) -> Callable[[Definitions], Definitions]:
-        return lambda defs: self.apply(defs, context)
+        return resolve_schema_to_transform(context, self)
+
+
+def apply_post_processor_to_spec(
+    schema: AssetPostProcessorSchema, spec: AssetSpec, context: ResolutionContext
+) -> AssetSpec:
+    # add the original spec to the context and resolve values
+    attributes = context.with_scope(asset=spec).resolve_value(schema.attributes)
+
+    if schema.operation == "merge":
+        mergeable_attributes = {"metadata", "tags"}
+        merge_attributes = {k: v for k, v in attributes.items() if k in mergeable_attributes}
+        replace_attributes = {k: v for k, v in attributes.items() if k not in mergeable_attributes}
+        return spec.merge_attributes(**merge_attributes).replace_attributes(**replace_attributes)
+    elif schema.operation == "replace":
+        return spec.replace_attributes(**attributes)
+    else:
+        check.failed(f"Unsupported operation: {schema.operation}")
+
+
+def apply_post_processor_to_defs(
+    schema: AssetPostProcessorSchema, defs: Definitions, context: ResolutionContext
+) -> Definitions:
+    target_selection = AssetSelection.from_string(schema.target, include_sources=True)
+    target_keys = target_selection.resolve(defs.get_asset_graph())
+
+    mappable = [d for d in defs.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))]
+    mapped_assets = map_asset_specs(
+        lambda spec: apply_post_processor_to_spec(schema, spec, context)
+        if spec.key in target_keys
+        else spec,
+        mappable,
+    )
+
+    assets = [
+        *mapped_assets,
+        *[d for d in defs.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))],
+    ]
+    return replace(defs, assets=assets)
+
+
+def resolve_schema_to_transform(
+    context, schema: AssetPostProcessorSchema
+) -> Callable[[Definitions], Definitions]:
+    return lambda defs: apply_post_processor_to_defs(schema, defs, context)
