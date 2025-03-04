@@ -46,8 +46,8 @@ The full URL you send requests to will vary depending on how you access your Dag
 | Endpoint                                                                  | Description                                                                        |
 | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | [`POST /report_asset_materialization/`](#report-an-asset-materialization) | Records an <PyObject section="ops" module="dagster" object="AssetMaterialization" /> event for an external asset. |
-| [`POST /report_asset_check/`](#report-an-asset-check-evaluation)          | Records an <PyObject object="asset_check" /> evaluation for an external asset.     |
-| [`POST /report_asset_observation/`](#report-an-asset-observation)         | Records an <PyObject object="AssetObservation" /> event for an external asset.     |
+| [`POST /report_asset_check/`](#report-an-asset-check-evaluation)          | Records an <PyObject section="asset-checks" module="dagster" object="asset_check" /> evaluation for an external asset.     |
+| [`POST /report_asset_observation/`](#report-an-asset-observation)         | Records an <PyObject section="assets" module="dagster" object="AssetObservation" /> event for an external asset.     |
 
 ### Report an asset materialization
 
@@ -537,7 +537,7 @@ curl --request POST \
 
 ### Report an asset observation
 
-Records an <PyObject object="AssetObservation" /> event for an external asset. This event type captures metadata about an asset at a point in time and provides it to the Dagster framework. Refer to the [Asset observation](/guides/build/assets/metadata-and-tags/asset-observations) documentation for more information.
+Records an <PyObject section="assets" module="dagster" object="AssetObservation" /> event for an external asset. This event type captures metadata about an asset at a point in time and provides it to the Dagster framework. Refer to the [Asset observation](/guides/build/assets/metadata-and-tags/asset-observations) documentation for more information.
 
 #### Resources
 
@@ -668,7 +668,7 @@ Parameters can be passed in multiple ways and will be considered in the followin
         <ul>
           <li>
             <strong>JSON body</strong> - Value is passed to the 
-            <PyObject object="AssetObservation" /> constructor.
+            <PyObject section="assets" module="dagster" object="AssetObservation" /> constructor.
           </li>
           <li>
             <strong>Query parameter</strong> - Accepts a JSON encoded object.
@@ -682,7 +682,7 @@ Parameters can be passed in multiple ways and will be considered in the followin
       <td>
         The data version of the observed asset. May be passed in JSON body or as
         a query parameter; value is passed to 
-        <PyObject object="AssetObservation" /> via <code>tags</code>.
+        <PyObject section="assets" module="dagster" object="AssetObservation" /> via <code>tags</code>.
       </td>
     </tr>
     <tr>
@@ -691,7 +691,7 @@ Parameters can be passed in multiple ways and will be considered in the followin
       <td>
         A human-readable description of the asset or observation. May be passed
         in JSON body or as a query parameter; value is passed to the 
-        <PyObject object="AssetObservation" /> constructor.
+        <PyObject section="assets" module="dagster" object="AssetObservation" /> constructor.
       </td>
     </tr>
     <tr>
@@ -700,7 +700,7 @@ Parameters can be passed in multiple ways and will be considered in the followin
       <td>
         The name of the partition that was observed. May be passed in JSON body
         or as a query parameter; value is passed to the 
-        <PyObject object="AssetObservation" /> constructor.
+        <PyObject section="assets" module="dagster" object="AssetObservation" /> constructor.
       </td>
     </tr>
   </tbody>

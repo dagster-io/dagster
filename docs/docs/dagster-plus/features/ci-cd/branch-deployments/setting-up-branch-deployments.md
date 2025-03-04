@@ -133,7 +133,7 @@ While you can use your existing production agent, we recommend creating a dedica
 
 **Step 4.1: Add GitHub CI/CD script to your project**
 :::note
-If you used the GitHub app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-github-action-runs)
+If you used the GitHub app to configure your repository, this step isn't required, and you can skip ahead to Step 4.5.
 :::
 
 Copy the following files to your project, and **replace** all references to `quickstart-etl` with the name of your project:
@@ -147,7 +147,7 @@ In the next step, you'll modify these files to work with your Dagster+ setup.
 **Step 4.2: Add the agent registry to dagster_cloud.yaml**
 
 :::note
-If you used the GitHub app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-github-action-runs)
+If you used the GitHub app to configure your repository, this step isn't required, and you can skip ahead to Step 4.5.
 :::
 
 In the `dagster_cloud.yaml` file, replace `build.registry` with the registry used by the [agent you created in Step 2](#step-2-generate-a-dagster-agent-token).
@@ -159,7 +159,7 @@ For example:
 **Step 4.3: Configure GitHub Action secrets**
 
 :::note
-If you used the GitHub app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-github-action-runs)
+If you used the GitHub app to configure your repository, this step isn't required, and you can skip ahead to Step 4.5.
 :::
 
 1. In your GitHub repository, click the **Settings** tab.
@@ -205,7 +205,7 @@ Repeat steps 3-6 for each of the secrets required for the registry used by the a
 **Step 4.4: Configure GitHub Action**
 
 :::note
-If you used the GitHub app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-github-action-runs)
+If you used the GitHub app to configure your repository, this step isn't required, and you can skip ahead to Step 4.5.
 :::
 
 In this step, you'll update the GitHub workflow files in your repository to set up Docker registry access.
@@ -241,7 +241,7 @@ The last step is to verify that the GitHub Action runs successfully.
 **Step 4.1: add GitLab CI/CD script to your project**
 
 :::note
-If you used the GitLab app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-gitlab-pipeline-runs)
+If you used the GitLab app to configure your repository, this step isn't required and you can skip ahead to Step 4.5.
 :::
 
 Copy the following files to your project, and **replace** all references to `quickstart-etl` with the name of your project:
@@ -255,7 +255,7 @@ In the next step, you'll modify these files to work with your Dagster+ setup.
 **Step 4.2: add the agent registry to dagster_cloud.yaml**
 
 :::note
-If you used the GitLab app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-gitlab-pipeline-runs)
+If you used the GitLab app to configure your repository, this step isn't required and you can skip ahead to Step 4.5.
 :::
 
 
@@ -268,7 +268,7 @@ For example:
 **Step 4.3: configure GitLab CI/CD variables**
 
 :::note
-If you used the GitLab app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-gitlab-pipeline-runs)
+If you used the GitLab app to configure your repository, this step isn't required and you can skip ahead to Step 4.5.
 :::
 
 
@@ -322,7 +322,7 @@ Repeat steps 3-6 for each of the secrets required for your registry type:
 **Step 4.4: configure GitLab CI/CD script**
 
 :::note
-If you used the GitLab app to configure you're repository, this step isn't required. [Skip ahead to Step 4.5](#step-45-verify-gitlab-pipeline-runs)
+If you used the GitLab app to configure your repository, this step isn't required and you can skip ahead to Step 4.5.
 :::
 
 In this step, you'll update the GitLab CI/CD config to set up Docker registry access.

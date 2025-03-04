@@ -265,7 +265,7 @@ You can set up alerts to fire when any code location fails to load due to an err
 
 :::note
 
-Alerting when a Hybrid agent becomes unavailable is only available for [Hybrid deployments]((/dagster-plus/deployment/deployment-types/hybrid/)).
+Alerting when a Hybrid agent becomes unavailable is only available for [Hybrid deployments](/dagster-plus/deployment/deployment-types/hybrid/).
 
 :::
 
