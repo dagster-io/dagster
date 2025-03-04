@@ -10,7 +10,7 @@ from dagster._core.loader import LoadingContext
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+    from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
     from dagster._core.definitions.events import (
         AssetKey,
         AssetKeyPartitionKey,
@@ -414,20 +414,34 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _get_status(self, key: "AssetKeyPartitionKey") -> StaleStatus:
+        from dagster._core.definitions.events import AssetKeyPartitionKey
+
         # The status loader does not support querying for the stale status of a
-        # partitioned asset without specifying a partition, so we return here.
-        asset = self.asset_graph.get(key.asset_key)
+        # partitioned asset without specifying a partition, so we return here with basic rules.
+        asset: BaseAssetNode = self.asset_graph.get(key.asset_key)
         if asset.is_partitioned and not key.partition_key:
+            materialized_partitions = len(self._instance.get_materialized_partitions(key.asset_key))
+            all_partitions = (
+                asset.partitions_def.get_num_partitions() if asset.partitions_def else 1
+            )
+            if all_partitions > materialized_partitions:
+                return StaleStatus.MISSING
+            # We calculate last partition status when no partition is provided and basic rules pass.
+            partition_key = (
+                asset.partitions_def.get_last_partition_key() if asset.partitions_def else None
+            )
+            if partition_key is None:
+                # Returning FRESH status to avoid undefined alerts on undefined stale status checks.
+                return StaleStatus.FRESH
+            key = AssetKeyPartitionKey(key.asset_key, partition_key)
+        current_version = self._get_current_data_version(key=key)
+        if current_version == NULL_DATA_VERSION:
+            return StaleStatus.MISSING
+        elif asset.is_external:
             return StaleStatus.FRESH
         else:
-            current_version = self._get_current_data_version(key=key)
-            if current_version == NULL_DATA_VERSION:
-                return StaleStatus.MISSING
-            elif asset.is_external:
-                return StaleStatus.FRESH
-            else:
-                causes = self._get_stale_causes(key=key)
-                return StaleStatus.FRESH if len(causes) == 0 else StaleStatus.STALE
+            causes = self._get_stale_causes(key=key)
+            return StaleStatus.FRESH if len(causes) == 0 else StaleStatus.STALE
 
     @cached_method
     def _get_stale_causes(self, key: "AssetKeyPartitionKey") -> Sequence[StaleCause]:
