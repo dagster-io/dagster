@@ -47,33 +47,36 @@ class DbtProjectSchema(ResolvableSchema["DbtProjectComponent"]):
     exclude: Optional[str] = None
 
 
-def resolve_dbt(context: ResolutionContext, dbt: DbtCliResource) -> DbtCliResource:
-    return DbtCliResource(**context.resolve_value(dbt.model_dump()))
-
-
-def resolve_translator(
-    context: ResolutionContext, schema: DbtProjectSchema
-) -> DagsterDbtTranslator:
-    if schema.asset_attributes and schema.asset_attributes.deps:
-        # TODO: Consider supporting alerting deps in the future
-        raise ValueError("deps are not supported for dbt_project component")
-    return get_wrapped_translator_class(DagsterDbtTranslator)(
-        resolving_info=TranslatorResolvingInfo(
-            "node", schema.asset_attributes or AssetAttributesSchema(), context
-        )
-    )
-
-
 @scaffoldable(scaffolder=DbtProjectComponentScaffolder)
 @dataclass
 class DbtProjectComponent(Component, ResolvableFromSchema[DbtProjectSchema]):
     """Expose a DBT project to Dagster as a set of assets."""
 
+    @staticmethod
+    def resolve_dbt(context: ResolutionContext, dbt: DbtCliResource) -> DbtCliResource:
+        return DbtCliResource(**context.resolve_value(dbt.model_dump()))
+
     dbt: Annotated[DbtCliResource, DSLFieldResolver(resolve_dbt)]
     op: Annotated[Optional[OpSpec], DSLFieldResolver(OpSpec.from_optional)] = None
+
+    @staticmethod
+    def resolve_translator(
+        context: ResolutionContext, schema: DbtProjectSchema
+    ) -> DagsterDbtTranslator:
+        if schema.asset_attributes and schema.asset_attributes.deps:
+            # TODO: Consider supporting alerting deps in the future
+            raise ValueError("deps are not supported for dbt_project component")
+        return get_wrapped_translator_class(DagsterDbtTranslator)(
+            resolving_info=TranslatorResolvingInfo(
+                "node", schema.asset_attributes or AssetAttributesSchema(), context
+            )
+        )
+
+    # This requires from_parent because it access asset_attributes in the schema
     translator: Annotated[
         DagsterDbtTranslator, DSLFieldResolver.from_parent(resolve_translator)
     ] = field(default_factory=DagsterDbtTranslator)
+
     asset_post_processors: Annotated[
         Optional[Sequence[AssetPostProcessor]],
         DSLFieldResolver(AssetPostProcessor.from_optional_seq),
