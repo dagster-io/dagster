@@ -1,4 +1,5 @@
 import subprocess
+import sys
 from collections.abc import Mapping, Sequence
 from contextlib import nullcontext
 from pathlib import Path
@@ -245,6 +246,8 @@ def check_definitions_command(
         if workspace_file:  # only non-None deployment context
             cmd.extend(["--workspace", workspace_file])
 
-        subprocess.run(cmd, check=True)
+        result = subprocess.run(cmd, check=False)
+        if result.returncode != 0:
+            sys.exit(result.returncode)
 
     click.echo("All definitions loaded successfully.")
