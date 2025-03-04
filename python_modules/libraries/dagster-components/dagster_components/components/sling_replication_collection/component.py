@@ -16,7 +16,7 @@ from dagster_components import Component, ComponentLoadContext
 from dagster_components.components.sling_replication_collection.scaffolder import (
     SlingReplicationComponentScaffolder,
 )
-from dagster_components.core.schema.base import ResolvableSchema, resolve_as
+from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
@@ -56,15 +56,9 @@ def resolve_translator(
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 
 
-def resolve_op_spec(
-    context: ResolutionContext, schema: "SlingReplicationSchema"
-) -> Optional[OpSpec]:
-    return resolve_as(schema=schema.op, target_type=OpSpec, context=context) if schema.op else None
-
-
 class SlingReplicationSpec(BaseModel, ResolvableFromSchema["SlingReplicationSchema"]):
     path: str
-    op: Annotated[Optional[OpSpec], DSLFieldResolver.from_parent(resolve_op_spec)]
+    op: Annotated[Optional[OpSpec], DSLFieldResolver(OpSpec.from_optional)]
     translator: Annotated[
         Optional[DagsterSlingTranslator], DSLFieldResolver.from_parent(resolve_translator)
     ]
@@ -99,17 +93,6 @@ class SlingReplicationCollectionSchema(ResolvableSchema):
     asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
 
 
-def resolve_replication_specs(
-    context: ResolutionContext, schema: SlingReplicationCollectionSchema
-) -> Sequence[SlingReplicationSpec]:
-    return [
-        resolve_schema_to_resolvable(
-            context=context, resolvable_from_schema_type=SlingReplicationSpec, schema=replication
-        )
-        for replication in schema.replications
-    ]
-
-
 def resolve_resource(
     context: ResolutionContext, schema: SlingReplicationCollectionSchema
 ) -> SlingResource:
@@ -139,9 +122,11 @@ class SlingReplicationCollectionComponent(
     resource: Annotated[SlingResource, DSLFieldResolver.from_parent(resolve_resource)] = Field(
         ..., description="Customizations to Sling execution."
     )
+
     replications: Annotated[
-        Sequence[SlingReplicationSpec], DSLFieldResolver.from_parent(resolve_replication_specs)
+        Sequence[SlingReplicationSpec], DSLFieldResolver(SlingReplicationSpec.from_seq)
     ] = Field(..., description="A set of Sling replications to expose as assets.")
+
     asset_post_processors: Annotated[
         Optional[Sequence[PostProcessorFn]],
         DSLFieldResolver.from_parent(resolve_asset_post_processors),
