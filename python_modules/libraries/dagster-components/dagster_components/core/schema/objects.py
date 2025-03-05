@@ -13,7 +13,12 @@ from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
 from typing_extensions import TypeAlias
 
-from dagster_components.core.schema.base import FieldResolver, ResolvableSchema, resolve_fields
+from dagster_components.core.schema.base import (
+    FieldResolver,
+    ResolvableSchema,
+    resolve_as,
+    resolve_fields,
+)
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLFieldResolver,
@@ -126,7 +131,7 @@ class _ResolvableAssetAttributesMixin(BaseModel):
     )
 
 
-class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[AssetSpec]):
+class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
     key: Annotated[
         str, FieldResolver(lambda context, schema: _resolve_asset_key(schema.key, context))
     ] = Field(..., description="A unique identifier for the asset.")
@@ -144,6 +149,22 @@ class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
             lambda context, schema: _resolve_asset_key(schema.key, context) if schema.key else None
         ),
     ] = Field(default=None, description="A unique identifier for the asset.")
+
+
+def resolve_asset_specs(context: ResolutionContext, assets: Sequence[AssetSpecSchema]):
+    return [
+        resolve_as(
+            context=context,
+            target_type=AssetSpec,
+            schema=asset_schema,
+        )
+        for asset_schema in assets
+    ]
+
+
+ResolvedAssetSpecs: TypeAlias = Annotated[
+    Sequence[AssetSpec], DSLFieldResolver(resolve_asset_specs)
+]
 
 
 def resolve_asset_attributes_to_mapping(
