@@ -6,6 +6,7 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster_components import Component, ComponentLoadContext
+from dagster_components.components.dbt_project.component import DSLSchema
 from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
@@ -18,7 +19,7 @@ from dagster_components.core.schema.resolvable_from_schema import ResolvableFrom
 from pydantic import Field
 
 
-class ComplexAssetSchema(ResolvableSchema["ComplexAssetComponent"]):
+class ComplexAssetSchema(DSLSchema):
     value: str = Field(..., examples=["example_for_value"])
     list_value: list[str] = Field(
         ..., examples=[["example_for_list_value_1", "example_for_list_value_2"]]
