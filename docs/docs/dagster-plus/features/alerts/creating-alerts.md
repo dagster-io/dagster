@@ -304,7 +304,7 @@ You can set up alerts to fire if your Hybrid agent hasn't sent a heartbeat in th
   </TabItem>
 </Tabs>
 
-## Alerting when a Dagster+ Insights metric crosses a specified threshhold (Experimental)
+## Alerting when a Dagster+ Insights metric crosses a specified threshold (Experimental)
 
 Sends a notification when a [Dagster+ Insights](/dagster-plus/features/insights/) metric exceeds or
 falls below a specified threshold over a specified time window. This can be used to alert on:
