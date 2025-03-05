@@ -11,7 +11,10 @@ from dagster import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
-from dagster_components.components.dbt_project.component import DbtProjectComponent
+from dagster_components.components.dbt_project.component import (
+    DbtProjectComponent,
+    DbtProjectSchema,
+)
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
@@ -73,7 +76,7 @@ def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
             },
         ),
     )
-    attributes = decl_node.get_attributes(DbtProjectComponent.get_schema())
+    attributes = decl_node.get_attributes(DbtProjectSchema)
     context = script_load_context(decl_node)
     component = DbtProjectComponent.load(attributes=attributes, context=context)
     assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
@@ -139,7 +142,8 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
         DebugDbtProjectComponent.get_additional_scope()
     )
     component = DebugDbtProjectComponent.load(
-        attributes=decl_node.get_attributes(DebugDbtProjectComponent.get_schema()), context=context
+        attributes=decl_node.get_attributes(DebugDbtProjectComponent.get_schema()),  # type: ignore
+        context=context,
     )
     defs = component.build_defs(script_load_context())
     assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("stg_customers"))
@@ -216,7 +220,7 @@ def test_asset_attributes(
         )
         context = script_load_context(decl_node)
         component = DbtProjectComponent.load(
-            attributes=decl_node.get_attributes(DbtProjectComponent.get_schema()), context=context
+            attributes=decl_node.get_attributes(DbtProjectSchema), context=context
         )
         assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
         defs = component.build_defs(script_load_context())
@@ -238,7 +242,7 @@ def test_subselection(dbt_path: Path) -> None:
     )
     context = script_load_context(decl_node)
     component = DbtProjectComponent.load(
-        attributes=decl_node.get_attributes(DbtProjectComponent.get_schema()), context=context
+        attributes=decl_node.get_attributes(DbtProjectSchema), context=context
     )
     assert get_asset_keys(component) == {AssetKey("raw_customers")}
 
@@ -256,6 +260,6 @@ def test_exclude(dbt_path: Path) -> None:
     )
     context = script_load_context(decl_node)
     component = DbtProjectComponent.load(
-        attributes=decl_node.get_attributes(DbtProjectComponent.get_schema()), context=context
+        attributes=decl_node.get_attributes(DbtProjectSchema), context=context
     )
     assert get_asset_keys(component) == set(JAFFLE_SHOP_KEYS) - {AssetKey("customers")}
