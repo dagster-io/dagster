@@ -58,12 +58,13 @@ def get_schema_type(resolvable_from_schema_type: type["ResolvableFromSchema"]) -
     raise ValueError("No generic type arguments found in ResolvableFromSchema subclass")
 
 
-class ResolvableFromSchema(Generic[TSchema]):
+class ResolutionSpec(Generic[TSchema]): ...
+
+
+class ResolvableFromSchema(ResolutionSpec[TSchema]):
     @classmethod
     def from_schema(cls, context: "ResolutionContext", schema: TSchema) -> Self:
-        return resolve_schema_to_resolvable(
-            schema=schema, resolvable_from_schema_type=cls, context=context
-        )
+        return resolve_schema_to_resolvable(schema=schema, resolvable_type=cls, context=context)
 
     @classmethod
     def from_optional(
@@ -106,6 +107,17 @@ class DSLFieldResolver:
         return DSLFieldResolver(ParentFn(fn))
 
     @staticmethod
+    def from_spec(spec: type[ResolutionSpec], target_type: type):
+        return DSLFieldResolver.from_parent(
+            lambda context, schema: resolve_schema_using_spec(
+                schema=schema,
+                resolution_spec=spec,
+                context=context,
+                target_type=target_type,
+            )
+        )
+
+    @staticmethod
     def from_annotation(annotation: Any, field_name: str) -> "DSLFieldResolver":
         if get_origin(annotation) is Annotated:
             args = get_args(annotation)
@@ -127,7 +139,10 @@ class DSLFieldResolver:
             raise ValueError(f"Unsupported DSLFieldResolver type: {self.fn}")
 
 
-def get_annotation_field_resolvers(cls: type) -> dict[str, DSLFieldResolver]:
+TResolutionSpec = TypeVar("TResolutionSpec", bound=ResolutionSpec)
+
+
+def get_annotation_field_resolvers(cls: type[TResolutionSpec]) -> dict[str, DSLFieldResolver]:
     if issubclass(cls, BaseModel):
         # neither pydantic's Field.annotation nor Field.rebuild_annotation() actually
         # return the original annotation, so we have to walk the mro to get them
@@ -147,29 +162,49 @@ def get_annotation_field_resolvers(cls: type) -> dict[str, DSLFieldResolver]:
             for field in fields(cls)
         }
     else:
-        return {}
-
-
-def resolve_fields(
-    schema: EitherSchema,
-    target_type: type,
-    context: "ResolutionContext",
-) -> Mapping[str, Any]:
-    """Returns a mapping of field names to resolved values for those fields."""
-    return {
-        field_name: resolver.execute(context=context, schema=schema, field_name=field_name)
-        for field_name, resolver in get_annotation_field_resolvers(target_type).items()
-    }
+        # Handle vanilla Python classes with type annotations
+        annotations = getattr(cls, "__annotations__", {})
+        return {
+            field_name: DSLFieldResolver.from_annotation(annotation, field_name)
+            for field_name, annotation in annotations.items()
+        }
 
 
 TResolvableFromSchema = TypeVar("TResolvableFromSchema", bound=ResolvableFromSchema)
 
 
+def resolve_fields(
+    schema: EitherSchema,
+    resolution_spec: type,
+    context: "ResolutionContext",
+) -> Mapping[str, Any]:
+    """Returns a mapping of field names to resolved values for those fields."""
+    return {
+        field_name: resolver.execute(context=context, schema=schema, field_name=field_name)
+        for field_name, resolver in get_annotation_field_resolvers(resolution_spec).items()
+    }
+
+
+T = TypeVar("T")
+
+
 def resolve_schema_to_resolvable(
     schema: EitherSchema,
-    resolvable_from_schema_type: type[TResolvableFromSchema],
+    resolvable_type: type[TResolvableFromSchema],
     context: "ResolutionContext",
 ) -> TResolvableFromSchema:
-    return resolvable_from_schema_type(
-        **resolve_fields(schema, resolvable_from_schema_type, context)
+    return resolve_schema_using_spec(
+        schema=schema,
+        resolution_spec=resolvable_type,
+        context=context,
+        target_type=resolvable_type,
     )
+
+
+def resolve_schema_using_spec(
+    schema: EitherSchema,
+    resolution_spec: type[TResolutionSpec],
+    context: "ResolutionContext",
+    target_type: type[T],
+) -> T:
+    return target_type(**resolve_fields(schema, resolution_spec, context))
