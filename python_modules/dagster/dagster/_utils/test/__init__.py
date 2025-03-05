@@ -93,6 +93,7 @@ def create_test_pipeline_execution_context(
         ),
         log_manager=log_manager,
         output_capture=None,
+        event_loop=None,
     )
 
 
