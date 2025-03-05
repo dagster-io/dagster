@@ -621,12 +621,7 @@
     },
     {
       "source": "/concepts/assets/asset-selection-syntax",
-<<<<<<< HEAD
-      "destination": "/guides/build/assets/asset-selection-syntax/",
-      "permanent": false
-=======
       "destination": "/guides/build/assets/asset-selection-syntax"
->>>>>>> master
     },
     {
       "source": "/concepts/assets/asset-checks",
