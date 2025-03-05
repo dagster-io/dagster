@@ -3,10 +3,15 @@ from typing import NamedTuple
 from dagster._annotations import preview
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._config.pythonic_config.resource import ResourceDependency
+from dagster._model import DagsterModel
+from dagster._record import record
+from dagster._serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
 from dagster_dbt.cloud.client_v2 import DbtCloudClient
+
+from dagster_dbt.cloud.dbt_cloud_job_run import DbtCloudJobRun
 
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
 
@@ -87,4 +92,19 @@ class DbtCloudWorkspace(ConfigurableResource):
             project_id=self.project_id,
             environment_id=self.environment_id,
             job_name=expected_job_name,
+        )
+
+    def fetch_workspace_data(self) -> DbtCloudWorkspaceData:
+        job_id = self._get_or_create_job()
+        run = DbtCloudJobRun.run(
+            job_id=job_id,
+            args=["parse"],
+            client=self.get_client(),
+        )
+        run.wait_for_success()
+        return DbtCloudWorkspaceData(
+            project_id=self.project_id,
+            environment_id=self.environment_id,
+            job_id=job_id,
+            manifest=run.get_manifest(),
         )
