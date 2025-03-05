@@ -64,6 +64,16 @@ class DbtCloudClient(DagsterModel):
         )
         return session
 
+    def _get_artifact_session(self) -> requests.Session:
+        session = requests.Session()
+        session.headers.update(
+            {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.token}",
+            }
+        )
+        return session
+
     def _make_request(
         self,
         method: str,
@@ -71,13 +81,14 @@ class DbtCloudClient(DagsterModel):
         base_url: str,
         data: Optional[Mapping[str, Any]] = None,
         params: Optional[Mapping[str, Any]] = None,
+        session_attr: str = "_get_session",
     ) -> Mapping[str, Any]:
         url = f"{base_url}/{endpoint}"
 
         num_retries = 0
         while True:
             try:
-                session = self._get_session()
+                session = getattr(self, session_attr)()
                 response = session.request(
                     method=method,
                     url=f"{self.api_v2_url}/{endpoint}",
@@ -164,3 +175,17 @@ class DbtCloudClient(DagsterModel):
                 return run_details
             time.sleep(0.1)
         raise Exception(f"Run {job_run_id} did not complete within {poll_timeout} seconds.")
+
+    def get_run_artifact(self, job_run_id: int, path: str) -> Mapping[str, Any]:
+        return self._make_request(
+            method="get",
+            endpoint=f"runs/{job_run_id}/artifacts/{path}",
+            base_url=self.api_v2_url,
+            session_attr="_get_artifact_session",
+        )
+
+    def get_run_results_json(self, job_run_id: int) -> Mapping[str, Any]:
+        return self.get_run_artifact(job_run_id=job_run_id, path="run_results.json")
+
+    def get_run_manifest_json(self, job_run_id: int) -> Mapping[str, Any]:
+        return self.get_run_artifact(job_run_id=job_run_id, path="manifest.json")
