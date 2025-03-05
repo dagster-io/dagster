@@ -304,7 +304,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 """),
             )
             run_command_and_snippet_output(
-                cmd="dg check yaml",
+                cmd="dg check yzaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-component-check.txt",
                 update_snippets=update_snippets,
