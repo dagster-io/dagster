@@ -22,6 +22,7 @@ from dagster_components.core.component_scaffolder import DefaultComponentScaffol
 from dagster_components.core.schema.base import ResolvableSchema, resolve_as
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.resolvable_from_schema import (
+    DSLSchema,
     ResolvableFromSchema,
     resolve_schema_to_resolvable,
 )
@@ -51,6 +52,9 @@ class Component(ABC):
             get_schema_type,
         )
 
+        if issubclass(cls, DSLSchema):
+            return cls
+
         if issubclass(cls, ResolvableFromSchema):
             return get_schema_type(cls)
         return None
@@ -64,15 +68,20 @@ class Component(ABC):
 
     @classmethod
     def load(cls, attributes: Optional["EitherSchema"], context: "ComponentLoadContext") -> Self:
+        if issubclass(cls, DSLSchema):
+            # If the Component is a DSLSchema, the attributes in this case are an instance of itself
+            assert isinstance(attributes, cls)
+            return attributes
+
         if issubclass(cls, ResolvableFromSchema):
             return (
                 resolve_schema_to_resolvable(attributes, cls, context.resolution_context)
                 if attributes
                 else cls()
             )
-        else:
-            assert isinstance(attributes, ResolvableSchema)
-            return resolve_as(attributes, cls, context.resolution_context) if attributes else cls()
+
+        assert isinstance(attributes, ResolvableSchema)
+        return resolve_as(attributes, cls, context.resolution_context) if attributes else cls()
 
     @classmethod
     def get_metadata(cls) -> "ComponentTypeInternalMetadata":
