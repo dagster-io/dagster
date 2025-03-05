@@ -112,7 +112,10 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 from pathlib import Path
 
                 import dagster_components as dg_components
-                from my_existing_project import assets
+                from my_existing_project import (
+                    assets,
+                    defs as component_defs,
+                )
 
                 import dagster as dg
 
@@ -120,7 +123,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
                 defs = dg.Definitions.merge(
                     dg.Definitions(assets=all_assets),
-                    dg_components.build_component_defs(Path(__file__).parent / "components"),
+                    dg_components.build_component_defs(component_defs),
                 )
             """),
             snippet_path=COMPONENTS_SNIPPETS_DIR

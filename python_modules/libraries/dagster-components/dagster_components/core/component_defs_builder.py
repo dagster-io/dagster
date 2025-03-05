@@ -1,7 +1,11 @@
+import importlib
+import warnings
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from types import ModuleType
+from typing import Optional
 
+from dagster import Definitions
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_components.core.component import (
@@ -17,9 +21,7 @@ from dagster_components.core.component_decl_builder import (
     path_to_decl_node,
 )
 from dagster_components.core.component_key import ComponentKey
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.definitions_class import Definitions
+from dagster_components.utils import get_path_from_module
 
 
 def resolve_decl_node_to_yaml_decls(decl: ComponentDeclNode) -> list[YamlComponentDecl]:
@@ -42,18 +44,26 @@ def build_components_from_component_folder(
     return component_folder.load(context.for_decl_node(component_folder))
 
 
-def build_defs_from_component_path(
-    components_root: Path,
-    path: Path,
-    resources: Mapping[str, object],
-) -> "Definitions":
-    """Build a definitions object from a folder within the components hierarchy."""
-    decl_node = path_to_decl_node(path=path)
+def build_defs_from_component_module(
+    module: ModuleType, resources: Mapping[str, object]
+) -> Definitions:
+    """Loads a set of Dagster definitions from a components Python module.
+
+    Args:
+        module (ModuleType): The Python module to load definitions from.
+
+    Returns:
+        Definitions: The set of Dagster definitions loaded from the module.
+    """
+    from dagster_components.core.component_decl_builder import module_to_decl_node
+    from dagster_components.core.component_defs_builder import defs_from_components
+
+    decl_node = module_to_decl_node(module)
     if not decl_node:
-        raise Exception(f"No component found at path {path}")
+        raise Exception(f"No component found at module {module}")
 
     context = ComponentLoadContext(
-        module_name=".".join(path.parts[-3:]),
+        module_name=module.__name__,
         resources=resources,
         decl_node=decl_node,
         resolution_context=ResolutionContext.default(decl_node.get_source_position_tree()),
@@ -85,7 +95,7 @@ def defs_from_components(
 # Public method so optional Nones are fine
 @suppress_dagster_warnings
 def build_component_defs(
-    components_root: Path,
+    components_root: ModuleType,
     resources: Optional[Mapping[str, object]] = None,
     component_types: Optional[dict[ComponentKey, type[Component]]] = None,
 ) -> "Definitions":
@@ -97,13 +107,23 @@ def build_component_defs(
     """
     from dagster._core.definitions.definitions_class import Definitions
 
+    # For backcompat, allow a path to be passed, even though the signature doesn't support it
+    if isinstance(components_root, (Path, str)):
+        warnings.warn(
+            "Passing a path to build_component_defs is deprecated. Pass a module instead.",
+            DeprecationWarning,
+        )
+        components_root = importlib.import_module(
+            f"{Path(components_root).parent.name}.{Path(components_root).name}"
+        )
+
     component_types = component_types or discover_entry_point_component_types()
+    components_root_dir = get_path_from_module(components_root)
 
     all_defs: list[Definitions] = []
-    for component_path in [item for item in components_root.iterdir() if item.is_dir()]:
-        defs = build_defs_from_component_path(
-            components_root=components_root,
-            path=component_path,
+    for component_path in [item for item in components_root_dir.iterdir() if item.is_dir()]:
+        defs = build_defs_from_component_module(
+            module=importlib.import_module(f"{components_root.__name__}.{component_path.name}"),
             resources=resources or {},
         )
         all_defs.append(defs)
