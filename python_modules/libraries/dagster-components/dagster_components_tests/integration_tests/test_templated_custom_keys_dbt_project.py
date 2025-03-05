@@ -159,6 +159,6 @@ def test_render_vars_asset_key(dbt_path: Path) -> None:
             ),
         )
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(DbtProjectComponent.get_schema())
+        attributes = decl_node.get_attributes(DbtProjectSchema)
         comp = DbtProjectComponent.load(attributes=attributes, context=context)
         assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS_WITH_PREFIX
