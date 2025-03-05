@@ -188,4 +188,3 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 return run_details
             time.sleep(0.1)
         raise Exception(f"Run {job_run_id} did not complete within {poll_timeout} seconds.")
-

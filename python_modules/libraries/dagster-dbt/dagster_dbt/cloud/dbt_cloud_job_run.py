@@ -3,7 +3,6 @@ from collections.abc import Sequence
 from dagster._annotations import preview
 from dagster._record import record
 
-
 from dagster_dbt.cloud.client_v2 import DbtCloudClient
 
 
