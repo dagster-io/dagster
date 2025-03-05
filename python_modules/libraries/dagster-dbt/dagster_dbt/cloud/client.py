@@ -15,7 +15,7 @@ LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
 
 
 @preview
-class DbtCloudClient(DagsterModel):
+class DbtCloudWorkspaceClient(DagsterModel):
     account_id: str = Field(
         ...,
         description="The dbt Cloud Account ID. Can be found on the Account Info page of dbt Cloud.",
@@ -58,6 +58,7 @@ class DbtCloudClient(DagsterModel):
         session.headers.update(
             {
                 "Accept": "application/json",
+                "Content-Type": "application/json",
                 "Authorization": f"Token {self.token}",
             }
         )
@@ -106,14 +107,14 @@ class DbtCloudClient(DagsterModel):
             endpoint="jobs",
             base_url=self.api_v2_url,
             data={
-                "account_id": self.account_id,
+                "account_id": int(self.account_id),
                 "environment_id": environment_id,
                 "project_id": project_id,
                 "name": job_name,
                 "description": "A job that runs dbt models, sources, and tests.",
                 "job_type": "other",
             },
-        )
+        )["data"]
 
     def list_jobs(
         self,
