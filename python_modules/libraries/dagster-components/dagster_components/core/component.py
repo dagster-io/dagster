@@ -15,6 +15,7 @@ from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import pushd
+from dagster._utils.source_position import SourcePositionTree
 from typing_extensions import Self
 
 from dagster_components.core.component_key import ComponentKey
@@ -42,6 +43,9 @@ class ComponentDeclNode(ABC):
     @abstractmethod
     def load(self, context: "ComponentLoadContext") -> Sequence["Component"]: ...
 
+    @abstractmethod
+    def get_source_position_tree(self) -> Optional[SourcePositionTree]: ...
+
 
 @scaffoldable(scaffolder=DefaultComponentScaffolder)
 class Component(ABC):
@@ -68,20 +72,17 @@ class Component(ABC):
 
     @classmethod
     def load(cls, attributes: Optional["EitherSchema"], context: "ComponentLoadContext") -> Self:
+        ctx = context.resolution_context.at_path("attributes")
         if issubclass(cls, DSLSchema):
             # If the Component is a DSLSchema, the attributes in this case are an instance of itself
             assert isinstance(attributes, cls)
             return attributes
 
         if issubclass(cls, ResolvableFromSchema):
-            return (
-                resolve_schema_to_resolvable(attributes, cls, context.resolution_context)
-                if attributes
-                else cls()
-            )
+            return resolve_schema_to_resolvable(attributes, cls, ctx) if attributes else cls()
 
         assert isinstance(attributes, ResolvableSchema)
-        return resolve_as(attributes, cls, context.resolution_context) if attributes else cls()
+        return resolve_as(attributes, cls, ctx) if attributes else cls()
 
     @classmethod
     def get_metadata(cls) -> "ComponentTypeInternalMetadata":
@@ -241,7 +242,9 @@ class ComponentLoadContext:
             module_name="test",
             resources=resources or {},
             decl_node=decl_node,
-            resolution_context=ResolutionContext.default(),
+            resolution_context=ResolutionContext.default(
+                decl_node.get_source_position_tree() if decl_node else None
+            ),
         )
 
     @property

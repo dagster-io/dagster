@@ -23,7 +23,7 @@ def resolve_fields(
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""
     return {
-        field_name: resolver.fn(context, schema)
+        field_name: resolver.fn(context.at_path(field_name), schema)
         for field_name, resolver in get_field_resolvers(schema, target_type).items()
     }
 
