@@ -6,7 +6,7 @@ from dagster_components.core.component_defs_builder import build_defs_from_compo
 
 def test_custom_scope() -> None:
     defs = build_defs_from_component_path(
-        components_root=Path(__file__).parent / "components",
+        components_root=Path(__file__).parent / "defs",
         path=Path(__file__).parent / "custom_scope_component",
         resources={},
     )

@@ -1,16 +1,6 @@
 from collections.abc import Mapping
 from dataclasses import fields, is_dataclass
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Callable,
-    Generic,
-    Optional,
-    TypeVar,
-    get_args,
-    get_origin,
-)
+from typing import TYPE_CHECKING, Annotated, Any, Callable, Generic, TypeVar, get_args, get_origin
 
 from dagster._core.errors import DagsterInvalidDefinitionError
 from pydantic import BaseModel, ConfigDict
@@ -24,57 +14,65 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
+def resolve_as(schema: "ResolvableSchema", target_type: type[T], context: "ResolutionContext") -> T:
+    return target_type(**resolve_fields(schema, target_type, context))
+
+
+def resolve_fields(
+    schema: "ResolvableSchema", target_type: type, context: "ResolutionContext"
+) -> Mapping[str, Any]:
+    """Returns a mapping of field names to resolved values for those fields."""
+    return {
+        field_name: resolver.fn(context, schema)
+        for field_name, resolver in get_field_resolvers(schema, target_type).items()
+    }
+
+
+def get_field_resolvers(
+    schema: "ResolvableSchema", target_type: type
+) -> Mapping[str, "FieldResolver"]:
+    return {
+        # extract field resolvers from annotations if possible, otherwise extract from the schema type
+        **(
+            _get_annotation_field_resolvers(target_type)
+            or _get_annotation_field_resolvers(schema.__class__)
+        )
+    }
+
+
+def get_resolved_type(schema: "ResolvableSchema") -> type:
+    generic_base = next(
+        base for base in schema.__class__.__bases__ if issubclass(base, ResolvableSchema)
+    )
+    generic_args = generic_base.__pydantic_generic_metadata__["args"]
+    if len(generic_args) == 0:
+        # if no generic type is specified, resolve back to the base type
+        return schema.__class__
+    elif len(generic_args) > 1:
+        raise DagsterInvalidDefinitionError(
+            f"Expected at most one generic argument for type: `{schema.__class__}`"
+        )
+    resolved_type = next(iter(generic_args))
+    resolved_type = resolved_type if isinstance(resolved_type, type) else None
+    if resolved_type is None:
+        raise DagsterInvalidDefinitionError(
+            f"Could not extract resolved type instance from `{schema.__class__}`. "
+            "This can happen when using a ForwardRef when defining your ResolvableModel "
+            '(`ResolvableModel["SomeType"]`). Consider using a concrete type or calling '
+            "`resolve_as` instead."
+        )
+    return resolved_type
+
+
+def resolve(schema: "ResolvableSchema", context: "ResolutionContext") -> object:
+    return schema.resolve(context)
+
+
 class ResolvableSchema(BaseModel, Generic[T]):
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
-    def _get_resolved_type(self) -> Optional[type]:
-        generic_base = next(
-            base for base in self.__class__.__bases__ if issubclass(base, ResolvableSchema)
-        )
-        generic_args = generic_base.__pydantic_generic_metadata__["args"]
-        if len(generic_args) == 0:
-            # if no generic type is specified, resolve back to the base type
-            return self.__class__
-        elif len(generic_args) > 1:
-            raise DagsterInvalidDefinitionError(
-                f"Expected at most one generic argument for type: `{self.__class__}`"
-            )
-        resolved_type = next(iter(generic_args))
-        return resolved_type if isinstance(resolved_type, type) else None
-
-    def _get_field_resolvers(self, target_type: type) -> Mapping[str, "FieldResolver"]:
-        return {
-            # extract field resolvers from annotations if possible, otherwise extract from the schema type
-            **(
-                _get_annotation_field_resolvers(target_type)
-                or _get_annotation_field_resolvers(self.__class__)
-            )
-        }
-
-    @property
-    def _resolved_type(self) -> type:
-        resolved_type = self._get_resolved_type()
-        if resolved_type is None:
-            raise DagsterInvalidDefinitionError(
-                f"Could not extract resolved type instance from `{self.__class__}`. "
-                "This can happen when using a ForwardRef when defining your ResolvableModel "
-                '(`ResolvableModel["SomeType"]`). Consider using a concrete type or calling '
-                "`resolve_as` instead."
-            )
-        return resolved_type
-
-    def resolve_fields(self, target_type: type, context: "ResolutionContext") -> Mapping[str, Any]:
-        """Returns a mapping of field names to resolved values for those fields."""
-        return {
-            field_name: resolver.fn(context, self)
-            for field_name, resolver in self._get_field_resolvers(target_type).items()
-        }
-
-    def resolve_as(self, target_type: type[T], context: "ResolutionContext") -> T:
-        return target_type(**self.resolve_fields(target_type, context))
-
     def resolve(self, context: "ResolutionContext") -> T:
-        return self.resolve_as(self._resolved_type, context)
+        return resolve_as(self, get_resolved_type(self), context)
 
 
 class FieldResolver(FieldInfo):

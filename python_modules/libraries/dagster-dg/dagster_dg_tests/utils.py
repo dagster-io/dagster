@@ -28,7 +28,7 @@ from dagster_dg.utils import (
 )
 from typing_extensions import Self
 
-STANDARD_TEST_COMPONENT_MODULE = "dagster_components.lib.test"
+STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
 
 
 def _install_libraries_to_venv(venv_path: Path, libraries_rel_paths: Sequence[str]) -> None:
@@ -46,7 +46,7 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
         _install_libraries_to_venv(
-            venv_path, ["dagster", "libraries/dagster-components", "dagster-pipes"]
+            venv_path, ["dagster", "libraries/dagster-components", "dagster-pipes", "dagster-test"]
         )
 
         venv_exec_path = get_venv_executable(venv_path).parent
@@ -72,7 +72,7 @@ def isolated_example_workspace(
     ):
         result = runner.invoke(
             "init",
-            "--use-editable-dagster",
+            "--use-editable-components-package-only",
             dagster_git_repo_dir,
             input=f"\n{project_name or ''}\n",
         )
@@ -83,7 +83,7 @@ def isolated_example_workspace(
                 subprocess.run(["uv", "venv", ".venv"], check=True)
                 venv_path = Path.cwd() / ".venv"
                 _install_libraries_to_venv(
-                    venv_path, ["dagster", "dagster-webserver", "dagster-graphql"]
+                    venv_path, ["dagster", "dagster-webserver", "dagster-graphql", "dagster-test"]
                 )
             yield
 
@@ -95,7 +95,7 @@ def isolated_example_project_foo_bar(
     runner: Union[CliRunner, "ProxyRunner"],
     in_workspace: bool = True,
     skip_venv: bool = False,
-    populate_cache: bool = True,
+    populate_cache: bool = False,
     component_dirs: Sequence[Path] = [],
 ) -> Iterator[None]:
     """Scaffold a project named foo_bar in an isolated filesystem.
@@ -118,7 +118,7 @@ def isolated_example_project_foo_bar(
         result = runner.invoke(
             "scaffold",
             "project",
-            "--use-editable-dagster",
+            "--use-editable-components-package-only",
             dagster_git_repo_dir,
             *(["--no-use-dg-managed-environment"] if skip_venv else []),
             *(["--no-populate-cache"] if not populate_cache else []),
@@ -126,9 +126,10 @@ def isolated_example_project_foo_bar(
         )
         assert_runner_result(result)
         with clear_module_from_cache("foo_bar"), pushd(project_path):
+            # _install_libraries_to_venv(Path(".venv"), ["dagster-test"])
             for src_dir in component_dirs:
                 component_name = src_dir.name
-                components_dir = Path.cwd() / "foo_bar" / "components" / component_name
+                components_dir = Path.cwd() / "foo_bar" / "defs" / component_name
                 components_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(src_dir, components_dir, dirs_exist_ok=True)
             yield
@@ -153,14 +154,14 @@ def isolated_example_component_library_foo_bar(
         result = runner.invoke(
             "scaffold",
             "project",
-            "--use-editable-dagster",
+            "--use-editable-components-package-only",
             dagster_git_repo_dir,
             "--skip-venv",
             "foo-bar",
         )
         assert_runner_result(result)
         with clear_module_from_cache("foo_bar"), pushd("foo-bar"):
-            shutil.rmtree(Path("foo_bar/components"))
+            shutil.rmtree(Path("foo_bar/defs"))
 
             # Make it not a project
             with modify_pyproject_toml() as toml:
@@ -339,11 +340,9 @@ def normalize_windows_path(path: str) -> str:
 # ########################
 
 
-# NOTE: This class sets up a runner that by default targets only the `dagster_components.lib.test`
-# components in the remote environment. This is to provide stability against the set of components
-# we are testing against. Tests that are testing against scaffolded components need to set
-# `use_entry_points=True` in order to detect scaffolded components (since they aren't part of
-# `dagster_components.lib.test`).
+# NOTE: Pass use_fixed_test_components=True to use the dagster_test.components module instead of
+# components loaded from entry points. This should be done whenever we want to test against a fixed
+# set of known component types (as in inspect or list commands).
 @dataclass
 class ProxyRunner:
     original: CliRunner
@@ -354,7 +353,7 @@ class ProxyRunner:
     @contextmanager
     def test(
         cls,
-        use_entry_points: bool = False,
+        use_fixed_test_components: bool = False,
         verbose: bool = False,
         disable_cache: bool = False,
         console_width: int = DG_CLI_MAX_OUTPUT_WIDTH,
@@ -363,7 +362,9 @@ class ProxyRunner:
         # We set the `COLUMNS` environment variable because this determines the width of output from
         # `rich`, which we use for generating tables etc.
         use_component_modules_args = (
-            [] if use_entry_points else ["--use-component-module", STANDARD_TEST_COMPONENT_MODULE]
+            ["--use-component-module", STANDARD_TEST_COMPONENT_MODULE]
+            if use_fixed_test_components
+            else []
         )
         with TemporaryDirectory() as cache_dir, set_env_var("COLUMNS", str(console_width)):
             append_opts = [

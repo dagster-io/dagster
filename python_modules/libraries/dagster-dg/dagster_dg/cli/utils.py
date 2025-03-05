@@ -5,7 +5,7 @@ from typing import Any
 
 import click
 
-from dagster_dg.cli.global_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry, all_components_schema_from_dg_context
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import normalize_cli_config

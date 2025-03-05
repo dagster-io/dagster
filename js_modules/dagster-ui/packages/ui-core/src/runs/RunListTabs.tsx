@@ -132,9 +132,6 @@ export const useSelectedRunsTab = (filterTokens: TokenizingFieldValue[]) => {
   if (pathname === '/runs/scheduled') {
     return 'scheduled';
   }
-  if (pathname === '/overview/backfills') {
-    return 'backfills';
-  }
 
   const statusTokens = new Set(
     filterTokens.filter((token) => token.token === 'status').map((token) => token.value),

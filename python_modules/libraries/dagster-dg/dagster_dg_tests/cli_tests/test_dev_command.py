@@ -3,30 +3,47 @@ import signal
 import socket
 import subprocess
 import time
+from pathlib import Path
 
 import psutil
 import pytest
 import requests
-from dagster_dg.utils import ensure_dagster_dg_tests_import, is_windows
+from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import, is_windows
 from dagster_graphql.client import DagsterGraphQLClient
 
 ensure_dagster_dg_tests_import()
 from dagster_dg_tests.utils import (
     ProxyRunner,
+    assert_runner_result,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
 )
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_command_workspace_context_success():
+def test_dev_command_workspace_context_success(monkeypatch):
     # The command will use `uv tool run dagster dev` to start the webserver if it
     # cannot find a venv with `dagster` and `dagster-webserver` installed. `uv tool run` will
     # pull the `dagster` package from PyPI. To avoid this, we ensure the workspace directory has a
     # venv with `dagster` and `dagster-webserver` installed.
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     with ProxyRunner.test() as runner, isolated_example_workspace(runner, create_venv=True):
-        runner.invoke("scaffold", "project", "project-1")
-        runner.invoke("scaffold", "project", "project-2")
+        result = runner.invoke(
+            "scaffold",
+            "project",
+            "--use-editable-components-package-only",
+            dagster_git_repo_dir,
+            "project-1",
+        )
+        assert_runner_result(result)
+        result = runner.invoke(
+            "scaffold",
+            "project",
+            "--use-editable-components-package-only",
+            dagster_git_repo_dir,
+            "project-2",
+        )
+        assert_runner_result(result)
         port = _find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
         projects = {"project-1", "project-2"}

@@ -8,13 +8,16 @@ from typing import TYPE_CHECKING
 import pytest
 from dagster import AssetKey
 from dagster._utils.env import environ
+from dagster_components.components.dbt_project.component import (
+    DbtProjectComponent,
+    DbtProjectSchema,
+)
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
     build_components_from_component_folder,
     defs_from_components,
 )
-from dagster_components.lib.dbt_project.component import DbtProjectComponent
 from dagster_dbt import DbtProject
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
@@ -25,7 +28,7 @@ if TYPE_CHECKING:
 STUB_LOCATION_PATH = (
     Path(__file__).parent.parent / "code_locations" / "templated_custom_keys_dbt_project_location"
 )
-COMPONENT_RELPATH = "components/jaffle_shop_dbt"
+COMPONENT_RELPATH = "defs/jaffle_shop_dbt"
 
 JAFFLE_SHOP_KEYS = {
     AssetKey("customers"),
@@ -56,7 +59,7 @@ def dbt_path() -> Iterator[Path]:
     with tempfile.TemporaryDirectory() as temp_dir:
         shutil.copytree(STUB_LOCATION_PATH, temp_dir, dirs_exist_ok=True)
         # make sure a manifest.json file is created
-        project = DbtProject(Path(temp_dir) / "components/jaffle_shop_dbt/jaffle_shop")
+        project = DbtProject(Path(temp_dir) / "defs/jaffle_shop_dbt/jaffle_shop")
         project.preparer.prepare(project)
         yield Path(temp_dir)
 
@@ -75,7 +78,7 @@ def test_python_attributes_node_rename(dbt_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    attributes = decl_node.get_attributes(DbtProjectComponent.get_schema())
+    attributes = decl_node.get_attributes(DbtProjectSchema)
     component = DbtProjectComponent.load(attributes=attributes, context=context)
     assert get_asset_keys(component) == JAFFLE_SHOP_KEYS_WITH_PREFIX
 
@@ -94,7 +97,7 @@ def test_python_attributes_group(dbt_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    attributes = decl_node.get_attributes(DbtProjectComponent.get_schema())
+    attributes = decl_node.get_attributes(DbtProjectSchema)
     comp = DbtProjectComponent.load(attributes=attributes, context=context)
     assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS
     defs: Definitions = comp.build_defs(script_load_context(None))
@@ -103,9 +106,7 @@ def test_python_attributes_group(dbt_path: Path) -> None:
 
 
 def test_load_from_path(dbt_path: Path) -> None:
-    components = build_components_from_component_folder(
-        script_load_context(), dbt_path / "components"
-    )
+    components = build_components_from_component_folder(script_load_context(), dbt_path / "defs")
     assert len(components) == 1
     assert get_asset_keys(components[0]) == JAFFLE_SHOP_KEYS_WITH_PREFIX
 
@@ -135,7 +136,7 @@ def test_render_vars_root(dbt_path: Path) -> None:
             ),
         )
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(DbtProjectComponent.get_schema())
+        attributes = decl_node.get_attributes(DbtProjectSchema)
         comp = DbtProjectComponent.load(attributes=attributes, context=context)
         assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS
         defs: Definitions = comp.build_defs(script_load_context())
@@ -158,6 +159,6 @@ def test_render_vars_asset_key(dbt_path: Path) -> None:
             ),
         )
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(DbtProjectComponent.get_schema())
+        attributes = decl_node.get_attributes(DbtProjectSchema)
         comp = DbtProjectComponent.load(attributes=attributes, context=context)
         assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS_WITH_PREFIX

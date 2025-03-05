@@ -46,7 +46,9 @@ incompleteExpr:
 	| leftParenToken postLogicalOperatorWhitespace expr		# UnclosedParenthesizedExpression
 	| expressionLessParenthesizedExpr						# ExpressionlessParenthesizedExpressionWrapper
 	| leftParenToken postLogicalOperatorWhitespace			# UnclosedExpressionlessParenthesizedExpression
-	| PLUS postNeighborTraversalWhitespace					# IncompletePlusTraversalExpression
+	| DIGITS? PLUS postNeighborTraversalWhitespace			# IncompletePlusTraversalExpression
+	| DIGITS postDigitsWhitespace							# IncompleteUpTraversalExpression
+	| PLUS value postExpressionWhitespace					# IncompletePlusTraversalExpressionMissingValue
 	| colonToken attributeValue postExpressionWhitespace	# IncompleteAttributeExpressionMissingKey;
 
 expressionLessParenthesizedExpr:
@@ -96,6 +98,8 @@ postNeighborTraversalWhitespace: WS*;
 postUpwardTraversalWhitespace: WS*;
 
 postDownwardTraversalWhitespace: WS*;
+
+postDigitsWhitespace: WS*;
 
 // Value can be a quoted string, unquoted string, or identifier
 value:

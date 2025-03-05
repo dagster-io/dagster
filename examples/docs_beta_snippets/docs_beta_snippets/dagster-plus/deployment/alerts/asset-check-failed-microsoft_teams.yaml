@@ -15,4 +15,5 @@ alert_policies:
   - ASSET_CHECK_SEVERITY_ERROR
   name: asset-check-failed-microsoft_teams
   notification_service:
-    webhook_url: https://yourdomain.webhook.office.com/...
+    microsoft_teams:
+      webhook_url: https://yourdomain.webhook.office.com/...

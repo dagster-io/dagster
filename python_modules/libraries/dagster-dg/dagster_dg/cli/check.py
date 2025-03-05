@@ -1,4 +1,5 @@
 import subprocess
+import sys
 from collections.abc import Mapping, Sequence
 from contextlib import nullcontext
 from pathlib import Path
@@ -10,7 +11,7 @@ from yaml.scanner import ScannerError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.cli.dev import format_forwarded_option, temp_workspace_file
-from dagster_dg.cli.global_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import normalize_cli_config
@@ -82,7 +83,7 @@ def check_yaml_command(
 
     component_contents_by_key: dict[ComponentKey, Any] = {}
     modules_to_fetch = set()
-    for component_dir in dg_context.components_path.iterdir():
+    for component_dir in dg_context.defs_path.iterdir():
         if resolved_paths and not any(
             path == component_dir or path in component_dir.parents for path in resolved_paths
         ):
@@ -121,7 +122,9 @@ def check_yaml_command(
                 continue
 
             raw_key = component_doc_tree.value.get("type")
-            component_instance_module = dg_context.get_component_instance_module(component_dir.name)
+            component_instance_module = dg_context.get_component_instance_module_name(
+                component_dir.name
+            )
             qualified_key = (
                 f"{component_instance_module}{raw_key}" if raw_key.startswith(".") else raw_key
             )
@@ -130,7 +133,7 @@ def check_yaml_command(
 
             # We need to fetch components from any modules local to the project because these are
             # not cached with the components from the general environment.
-            if key.namespace.startswith(dg_context.components_module_name):
+            if key.namespace.startswith(dg_context.defs_module_name):
                 modules_to_fetch.add(key.namespace)
 
     # Fetch the local component types, if we need any local components
@@ -168,12 +171,12 @@ def check_yaml_command(
         click.echo("All components validated successfully.")
 
 
-@check_group.command(name="definitions", cls=DgClickCommand)
+@check_group.command(name="defs", cls=DgClickCommand)
 @click.option(
     "--log-level",
     help="Set the log level for dagster services.",
     show_default=True,
-    default="info",
+    default="warning",
     type=click.Choice(["critical", "error", "warning", "info", "debug"], case_sensitive=False),
 )
 @click.option(
@@ -243,4 +246,8 @@ def check_definitions_command(
         if workspace_file:  # only non-None deployment context
             cmd.extend(["--workspace", workspace_file])
 
-        subprocess.run(cmd, check=True)
+        result = subprocess.run(cmd, check=False)
+        if result.returncode != 0:
+            sys.exit(result.returncode)
+
+    click.echo("All definitions loaded successfully.")

@@ -3,8 +3,8 @@ import importlib
 from dagster_components.core.component import get_component_types_in_module
 
 _COMPONENT_LIBRARY_MODULES = [
-    "dagster_components.lib",
-    "dagster_components.lib.test",
+    "dagster_components",
+    "dagster_test.components",
 ]
 
 

@@ -6,6 +6,7 @@ import {useSetRecoilState} from 'recoil';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGraphFilterBar} from 'shared/asset-graph/AssetGraphFilterBar.oss';
 import {CatalogViewSelector} from 'shared/assets/CatalogViewSelector.oss';
+import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
 
 import {AssetTable} from './AssetTable';
@@ -265,14 +266,7 @@ export const AssetsCatalogTable = ({
       isLoading={filteredAssetsLoading || loading}
       isFiltered={isFiltered}
       actionBarComponents={
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'auto auto minmax(0, 1fr)',
-            gap: 12,
-            alignItems: 'flex-start',
-          }}
-        >
+        <Box flex={{gap: 12, alignItems: 'flex-start'}}>
           <ButtonGroup<AssetViewType>
             activeItems={new Set([view])}
             buttons={[
@@ -288,7 +282,8 @@ export const AssetsCatalogTable = ({
           />
           {featureEnabled(FeatureFlag.flagSelectionSyntax) ? <CatalogViewSelector /> : filterButton}
           {filterInput}
-        </div>
+          {featureEnabled(FeatureFlag.flagSelectionSyntax) ? <CreateCatalogViewButton /> : null}
+        </Box>
       }
       belowActionBarComponents={
         featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : (

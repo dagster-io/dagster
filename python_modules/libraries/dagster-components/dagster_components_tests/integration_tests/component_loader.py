@@ -20,7 +20,7 @@ def load_test_component_defs(
         sys.path.append(str(code_location_dir))
 
         return build_defs_from_component_path(
-            components_root=Path(code_location_dir) / "my_location" / "components",
-            path=Path(code_location_dir) / "my_location" / "components" / Path(src_path).stem,
+            components_root=Path(code_location_dir) / "my_location" / "defs",
+            path=Path(code_location_dir) / "my_location" / "defs" / Path(src_path).stem,
             resources={},
         )

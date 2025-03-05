@@ -1720,6 +1720,7 @@ export type PipelineRunLogsSubscription = {
               eventType: Types.DagsterEventType | null;
               label: string | null;
               description: string | null;
+              partition: string | null;
               metadataEntries: Array<
                 | {
                     __typename: 'AssetMetadataEntry';
@@ -2094,6 +2095,7 @@ export type PipelineRunLogsSubscription = {
               eventType: Types.DagsterEventType | null;
               label: string | null;
               description: string | null;
+              partition: string | null;
               metadataEntries: Array<
                 | {
                     __typename: 'AssetMetadataEntry';
@@ -5169,6 +5171,7 @@ export type RunLogsSubscriptionSuccessFragment = {
         eventType: Types.DagsterEventType | null;
         label: string | null;
         description: string | null;
+        partition: string | null;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';
@@ -5535,6 +5538,7 @@ export type RunLogsSubscriptionSuccessFragment = {
         eventType: Types.DagsterEventType | null;
         label: string | null;
         description: string | null;
+        partition: string | null;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';
@@ -8627,6 +8631,7 @@ export type RunLogsQuery = {
               eventType: Types.DagsterEventType | null;
               label: string | null;
               description: string | null;
+              partition: string | null;
               metadataEntries: Array<
                 | {
                     __typename: 'AssetMetadataEntry';
@@ -9001,6 +9006,7 @@ export type RunLogsQuery = {
               eventType: Types.DagsterEventType | null;
               label: string | null;
               description: string | null;
+              partition: string | null;
               metadataEntries: Array<
                 | {
                     __typename: 'AssetMetadataEntry';
@@ -10405,6 +10411,6 @@ export type RunLogsQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const PipelineRunLogsSubscriptionVersion = '30d5e43a94fb8f8a4c28f21e2a79a212748ad55071ca4aab13ca52ad5e4d7172';
+export const PipelineRunLogsSubscriptionVersion = '5749e8e3ce69ddabd9d3b6d6fb0fc3e12d91f0f8f6331ec9ba3ea77865ad763c';
 
-export const RunLogsQueryVersion = 'caab66a030a87823fc2a72c921e6bc0994215a6beabc001bc4832c275c7d4443';
+export const RunLogsQueryVersion = '033a0df471e9f7b0ea207195ef47685823fecfc45b13261bdb4b4db1dbf5cb99';

@@ -6,5 +6,6 @@ alert_policies:
   - TICK_FAILURE
   name: schedule-sensor-failure-slack
   notification_service:
-    slack_channel_name: notifications
-    slack_workspace_name: hooli
+    slack:
+      slack_channel_name: notifications
+      slack_workspace_name: hooli

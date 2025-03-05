@@ -1,7 +1,7 @@
 from collections.abc import Mapping
 from typing import Any
 
-from dagster_components.lib import SlingReplicationCollectionComponent
+from dagster_components.dagster_sling import SlingReplicationCollectionComponent
 
 import dagster as dg
 

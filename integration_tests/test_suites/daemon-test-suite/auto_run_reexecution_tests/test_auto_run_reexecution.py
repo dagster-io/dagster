@@ -956,3 +956,102 @@ def test_subset_run(instance: DagsterInstance, workspace_context):
         auto_run.execution_plan_snapshot_id
     ).step_keys_to_execute == ["do_something"]
     assert instance.get_job_snapshot(auto_run.job_snapshot_id).node_names == ["do_something"]
+
+
+def test_consume_new_runs_for_automatic_reexecution_with_root_run_deleted(
+    instance, workspace_context
+):
+    instance.wipe()
+    instance.run_coordinator.queue().clear()
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_context,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
+        )
+    )
+
+    assert len(instance.run_coordinator.queue()) == 0
+
+    # retries failure
+    run = create_run(
+        instance,
+        status=DagsterRunStatus.STARTED,
+        tags={
+            MAX_RETRIES_TAG: "3",
+            RESUME_RETRY_TAG: "true",
+            RETRY_STRATEGY_TAG: "ALL_STEPS",
+        },
+    )
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name="foo",
+        message="",
+    )
+    event_record = EventLogEntry(
+        user_message="",
+        level=logging.ERROR,
+        job_name="foo",
+        run_id=run.run_id,
+        error_info=None,
+        timestamp=time.time(),
+        dagster_event=dagster_event,
+    )
+    instance.handle_new_event(event_record)
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.tags.get(WILL_RETRY_TAG) == "true"
+
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_context,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
+        )
+    )
+    assert len(instance.run_coordinator.queue()) == 1
+    process_runs_in_queue(instance, instance.run_coordinator.queue())
+    first_retry = instance.get_run_by_id(instance.run_coordinator.queue()[0].run_id)
+    run = instance.get_run_by_id(run.run_id)
+    assert run.tags.get(AUTO_RETRY_RUN_ID_TAG) == first_retry.run_id
+
+    # retry strategy is copied, "is_resume_retry" is not since the retry strategy is ALL_STEPS
+    assert RESUME_RETRY_TAG not in first_retry.tags
+    assert first_retry.tags.get(RETRY_STRATEGY_TAG) == "ALL_STEPS"
+
+    # mark the retried run as failed.
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name="foo",
+        message="",
+    )
+    event_record = EventLogEntry(
+        user_message="",
+        level=logging.ERROR,
+        job_name="foo",
+        run_id=first_retry.run_id,
+        error_info=None,
+        timestamp=time.time(),
+        dagster_event=dagster_event,
+    )
+    instance.handle_new_event(event_record)
+    first_retry = instance.get_run_by_id(first_retry.run_id)
+    assert first_retry
+    assert first_retry.tags.get(WILL_RETRY_TAG) == "true"
+
+    # delete the root run to create the test scenario
+    instance.delete_run(run.run_id)
+
+    list(
+        consume_new_runs_for_automatic_reexecution(
+            workspace_context,
+            instance.get_run_records(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+            logger,
+        )
+    )
+    # no additional retries are launched since the root run was deleted
+    assert len(instance.run_coordinator.queue()) == 1
+    engine_events = instance.all_logs(first_retry.run_id, of_type=DagsterEventType.ENGINE_EVENT)
+    assert any(
+        ["Could not find run group" in engine_event.message for engine_event in engine_events]
+    )

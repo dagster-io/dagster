@@ -10,9 +10,12 @@ from dagster_dg_tests.utils import ProxyRunner, assert_runner_result, isolated_c
 
 
 def test_docs_component_type_success():
-    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
         result = runner.invoke(
-            "docs", "component-type", "dagster_components.lib.test.SimpleAssetComponent"
+            "docs", "component-type", "dagster_test.components.SimpleAssetComponent"
         )
         assert_runner_result(result)
 
@@ -26,11 +29,14 @@ def _includes_ignore_indent(text: str, substr: str) -> bool:
 
 
 def test_docs_component_type_success_output_console():
-    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
         result = runner.invoke(
             "docs",
             "component-type",
-            "dagster_components.lib.test.ComplexAssetComponent",
+            "dagster_test.components.ComplexAssetComponent",
             "--output",
             "cli",
         )

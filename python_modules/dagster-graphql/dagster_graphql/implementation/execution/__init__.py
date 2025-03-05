@@ -321,13 +321,15 @@ async def gen_captured_log_data(
     def _enqueue(new_event):
         loop.call_soon_threadsafe(queue.put_nowait, new_event)
 
-    subscription(_enqueue)
+    # subscription object will attempt to fetch when started, so move off main thread
+    await run_in_threadpool(subscription, _enqueue)
+
     is_complete = False
     try:
         while not is_complete:
             update = await queue.get()
             yield from_captured_log_data(update)
-            is_complete = subscription.is_complete
+            is_complete = subscription.is_complete and queue.empty()
     finally:
         subscription.dispose()
 

@@ -30,5 +30,4 @@ Ready to [get started](/dagster-plus/getting-started)?
 - Learn more about Dagster+ [pricing and plan types](https://dagster.io/pricing) or [contact the Dagster team](https://dagster.io/contact)
 - Dagster+ includes support, [click here](https://dagster.io/support) to learn more.
 - Dagster+ is HIPAA compliant, SOC 2 Type II certified, and meets GDPR requirements. Learn more about Dagster+[ security](https://dagster.io/security).
-- Migrate [from a Dagster open source deployment to Dagster+](/dagster-plus/deployment/migration/self-hosted-to-dagster-plus)
 - Dagster+ [status page](https://dagstercloud.statuspage.io/)

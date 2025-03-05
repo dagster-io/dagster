@@ -8,14 +8,14 @@ tree
 │   │   ├── __init__.py
 │   │   ├── assets.py
 │   │   └── jobs.py
-│   ├── components
-│   │   └── elt-definitions
-│   │       ├── __init__.py
-│   │       ├── assets.py
-│   │       ├── component.yaml
-│   │       ├── definitions.py
-│   │       └── jobs.py
-│   └── definitions.py
+│   ├── definitions.py
+│   └── defs
+│       └── elt-definitions
+│           ├── __init__.py
+│           ├── assets.py
+│           ├── component.yaml
+│           ├── definitions.py
+│           └── jobs.py
 ├── pyproject.toml
 └── uv.lock
 

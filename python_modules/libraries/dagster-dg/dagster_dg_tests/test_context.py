@@ -144,7 +144,7 @@ def test_invalid_config_project():
         cases = [
             [("tool", "dg", "cli", "verbose"), bool, 1],
             [("tool", "dg", "project", "root_module"), str, 1],
-            [("tool", "dg", "project", "components_module"), str, 1],
+            [("tool", "dg", "project", "defs_module"), str, 1],
         ]
         for path, expected_type, val in cases:
             with _reset_pyproject_toml():
@@ -156,6 +156,21 @@ def test_invalid_config_project():
         for path, expected_type in cases:
             with _reset_pyproject_toml():
                 _set_and_detect_missing_required_key(path, expected_type)
+
+
+def test_tool_dg_config():
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+        context = DgContext.for_project_environment(Path.cwd(), {})
+        assert context.code_location_target_module_name == "foo_bar.definitions"
+        assert context.code_location_name == "foo-bar"
+
+        with modify_pyproject_toml() as toml:
+            set_toml_value(toml, ("tool", "dagster", "module_name"), "foo_bar._definitions")
+            set_toml_value(toml, ("tool", "dagster", "code_location_name"), "my-code_location")
+
+        context = DgContext.for_project_environment(Path.cwd(), {})
+        assert context.code_location_target_module_name == "foo_bar._definitions"
+        assert context.code_location_name == "my-code_location"
 
 
 # ########################

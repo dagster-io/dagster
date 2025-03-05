@@ -15,4 +15,5 @@ alert_policies:
   - ASSET_CHECK_SEVERITY_ERROR
   name: asset-check-failed-pagerduty
   notification_service:
-    integration_key: <pagerduty_integration_key>
+    pagerduty:
+      integration_key: <pagerduty_integration_key>

@@ -4,7 +4,7 @@ import subprocess
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import Final, Optional
+from typing import Final, Optional, Union
 
 import tomlkit
 import tomlkit.items
@@ -27,22 +27,19 @@ from dagster_dg.utils import (
     NOT_PROJECT_ERROR_MESSAGE,
     NOT_WORKSPACE_ERROR_MESSAGE,
     NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE,
-    ensure_loadable_path,
     exit_with_error,
     generate_missing_dagster_components_in_local_venv_error_message,
-    get_path_for_module,
     get_toml_value,
     get_venv_executable,
     has_toml_value,
-    is_package_installed,
     pushd,
     resolve_local_venv,
     strip_activated_venv_from_env_vars,
 )
 
 # Project
-_DEFAULT_PROJECT_COMPONENTS_LIB_SUBMODULE: Final = "lib"
-_DEFAULT_PROJECT_COMPONENTS_SUBMODULE: Final = "components"
+_DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
+_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE: Final = "definitions"
 
 # Workspace
 _WORKSPACE_PROJECTS_DIR: Final = "projects"
@@ -205,20 +202,24 @@ class DgContext:
     def has_cache(self) -> bool:
         return self._cache is not None
 
-    def get_cache_key(self, data_type: CachableDataType) -> tuple[str, str, str]:
+    # Allowing open-ended str data_type for now so we can do module names
+    def get_cache_key(self, data_type: Union[CachableDataType, str]) -> tuple[str, str, str]:
         path_parts = [str(part) for part in self.root_path.parts if part != self.root_path.anchor]
         paths_to_hash = [
             self.root_path / "uv.lock",
-            *([self.default_components_library_path] if self.is_component_library else []),
+            *([self.default_component_library_path] if self.is_component_library else []),
         ]
         env_hash = hash_paths(paths_to_hash)
         return ("_".join(path_parts), env_hash, data_type)
 
     def get_cache_key_for_module(self, module_name: str) -> tuple[str, str, str]:
-        path = self.get_path_for_module(module_name)
-        env_hash = hash_paths([path], includes=["*.py"])
-        path_parts = [str(part) for part in path.parts if part != "/"]
-        return ("_".join(path_parts), env_hash, "local_component_registry")
+        if module_name.startswith(self.root_module_name):
+            path = self.get_path_for_local_module(module_name)
+            env_hash = hash_paths([path], includes=["*.py"])
+            path_parts = [str(part) for part in path.parts if part != "/"]
+            return ("_".join(path_parts), env_hash, "local_component_registry")
+        else:
+            return self.get_cache_key(module_name)
 
     # ########################
     # ##### WORKSPACE METHODS
@@ -263,7 +264,7 @@ class DgContext:
         if self.config.project:
             return self.config.project.root_module
         elif self.is_component_library:
-            return self.default_components_library_module.split(".")[0]
+            return self.default_component_library_module_name.split(".")[0]
         else:
             raise DgError("Cannot determine root package name")
 
@@ -290,40 +291,59 @@ class DgContext:
         return self.root_path / get_venv_executable(Path(".venv"))
 
     @cached_property
-    def components_module_name(self) -> str:
+    def defs_module_name(self) -> str:
         if not self.config.project:
-            raise DgError("`components_module_name` is only available in a Dagster project context")
+            raise DgError("`defs_module_name` is only available in a Dagster project context")
         return (
-            self.config.project.components_module
-            or f"{self.root_module_name}.{_DEFAULT_PROJECT_COMPONENTS_SUBMODULE}"
+            self.config.project.defs_module
+            or f"{self.root_module_name}.{_DEFAULT_PROJECT_DEFS_SUBMODULE}"
         )
 
     @cached_property
-    def components_path(self) -> Path:
+    def defs_path(self) -> Path:
         if not self.is_project:
-            raise DgError("`components_path` is only available in a Dagster project context")
-        return self.get_path_for_module(self.components_module_name)
+            raise DgError("`defs_path` is only available in a Dagster project context")
+        return self.get_path_for_local_module(self.defs_module_name)
 
     def get_component_instance_names(self) -> Iterable[str]:
-        return [str(instance_path.name) for instance_path in self.components_path.iterdir()]
+        return [str(instance_path.name) for instance_path in self.defs_path.iterdir()]
 
-    def get_component_instance_module(self, name: str) -> str:
-        return f"{self.components_module_name}.{name}"
+    def get_component_instance_module_name(self, name: str) -> str:
+        return f"{self.defs_module_name}.{name}"
 
     def has_component_instance(self, name: str) -> bool:
-        return (self.components_path / name).is_dir()
+        return (self.defs_path / name).is_dir()
 
     @property
-    def definitions_module_name(self) -> str:
+    def code_location_target_module_name(self) -> str:
         if not self.is_project:
             raise DgError(
-                "`definitions_module_name` is only available in a Dagster project context"
+                "`code_location_target_module_name` is only available in a Dagster project context"
             )
-        return f"{self.root_module_name}.definitions"
+        return self._tool_dagster_config_section.get(
+            "module_name",
+            f"{self.root_module_name}.{_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE}",
+        )
 
     @cached_property
-    def definitions_path(self) -> Path:
-        return self.get_path_for_module(self.definitions_module_name)
+    def code_location_target_path(self) -> Path:
+        return self.get_path_for_local_module(self.code_location_target_module_name)
+
+    @property
+    def code_location_name(self) -> str:
+        if not self.is_project:
+            raise DgError("`code_location_name` is only available in a Dagster project context")
+        return self._tool_dagster_config_section.get("code_location_name", self.project_name)
+
+    @cached_property
+    def _tool_dagster_config_section(self) -> dict[str, str]:
+        if not self.is_project:
+            raise DgError("`tool_dg_config_section` is only available in a Dagster project context")
+        with open(self.pyproject_toml_path) as f:
+            toml = tomlkit.parse(f.read())
+            if not has_toml_value(toml, ("tool", "dagster")):
+                return {}
+            return get_toml_value(toml, ("tool", "dagster"), dict)
 
     # ########################
     # ##### COMPONENT LIBRARY METHODS
@@ -338,18 +358,20 @@ class DgContext:
         return bool(self._dagster_components_entry_points)
 
     @cached_property
-    def default_components_library_module(self) -> str:
+    def default_component_library_module_name(self) -> str:
         if not self._dagster_components_entry_points:
             raise DgError(
-                "`default_components_library_module_name` is only available in a component library context"
+                "`default_component_library_module_name` is only available in a component library context"
             )
         return next(iter(self._dagster_components_entry_points.values()))
 
     @cached_property
-    def default_components_library_path(self) -> Path:
+    def default_component_library_path(self) -> Path:
         if not self.is_component_library:
-            raise DgError("`components_lib_path` is only available in a component library context")
-        return self.get_path_for_module(self.default_components_library_module)
+            raise DgError(
+                "`default_component_library_path` is only available in a component library context"
+            )
+        return self.get_path_for_local_module(self.default_component_library_module_name)
 
     @cached_property
     def _dagster_components_entry_points(self) -> Mapping[str, str]:
@@ -446,16 +468,20 @@ class DgContext:
     def pyproject_toml_path(self) -> Path:
         return self.root_path / "pyproject.toml"
 
-    def get_path_for_module(self, module_name: str) -> Path:
-        with ensure_loadable_path(self.root_path):
-            parts = module_name.split(".")
-            for i in range(len(parts)):
-                leading_module_name = ".".join(parts[: i + 1])
-                if not is_package_installed(leading_module_name):
-                    raise DgError(
-                        f"Module `{leading_module_name}` is not installed in the current environment."
-                    )
-            return Path(get_path_for_module(module_name))
+    def get_path_for_local_module(self, module_name: str) -> Path:
+        if not self.is_project and not self.is_component_library:
+            raise DgError(
+                "`get_path_for_local_module` is only available in a project or component library context"
+            )
+        if not module_name.startswith(self.root_module_name):
+            raise DgError(f"Module `{module_name}` is not part of the current project.")
+        path = self.root_path / Path(*module_name.split("."))
+        if path.exists():
+            return path
+        elif path.with_suffix(".py").exists():
+            return path.with_suffix(".py")
+        else:
+            raise DgError(f"Cannot find module `{module_name}` in the current project.")
 
 
 # ########################

@@ -460,13 +460,20 @@ class ConfigurableResourceFactory(
         """
         from dagster._config.post_process import post_process_config
 
+        post_processed_config = post_process_config(
+            self._config_schema.config_type,  # pyright: ignore[reportArgumentType]
+            self._convert_to_config_dictionary(),
+        )
+
+        if not post_processed_config.success:
+            raise DagsterInvalidConfigError(
+                "Errors while initializing resource",
+                post_processed_config.errors,
+                post_processed_config,
+            )
+
         return self.from_resource_context(
-            build_init_resource_context(
-                config=post_process_config(
-                    self._config_schema.config_type,  # pyright: ignore[reportArgumentType]
-                    self._convert_to_config_dictionary(),  # pyright: ignore[reportArgumentType]
-                ).value,
-            ),
+            build_init_resource_context(config=post_processed_config.value),
             nested_resources=self.nested_resources,
         )
 
@@ -477,13 +484,20 @@ class ConfigurableResourceFactory(
         """
         from dagster._config.post_process import post_process_config
 
+        post_processed_config = post_process_config(
+            self._config_schema.config_type,  # pyright: ignore[reportArgumentType]
+            self._convert_to_config_dictionary(),
+        )
+
+        if not post_processed_config.success:
+            raise DagsterInvalidConfigError(
+                "Errors while initializing resource",
+                post_processed_config.errors,
+                post_processed_config,
+            )
+
         with self.from_resource_context_cm(
-            build_init_resource_context(
-                config=post_process_config(
-                    self._config_schema.config_type,  # pyright: ignore[reportArgumentType]
-                    self._convert_to_config_dictionary(),  # pyright: ignore[reportArgumentType]
-                ).value
-            ),
+            build_init_resource_context(config=post_processed_config.value),
             nested_resources=self.nested_resources,
         ) as out:
             yield out

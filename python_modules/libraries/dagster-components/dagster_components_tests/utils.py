@@ -121,7 +121,7 @@ def create_project_from_components(
         for src_path in src_paths:
             component_name = src_path.split("/")[-1]
 
-            components_dir = project_root / "my_location" / "components" / component_name
+            components_dir = project_root / "my_location" / "defs" / component_name
             components_dir.mkdir(parents=True, exist_ok=True)
 
             _setup_component_in_folder(

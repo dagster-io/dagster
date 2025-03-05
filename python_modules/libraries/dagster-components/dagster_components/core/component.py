@@ -9,7 +9,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, TypeVar
 
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
@@ -18,14 +18,20 @@ from dagster._utils import pushd
 from typing_extensions import Self
 
 from dagster_components.core.component_key import ComponentKey
-from dagster_components.core.component_scaffolder import (
-    ComponentScaffolder,
-    ComponentScaffolderUnavailableReason,
-    DefaultComponentScaffolder,
-)
-from dagster_components.core.schema.base import ResolvableSchema
+from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
+from dagster_components.core.schema.base import ResolvableSchema, resolve_as
 from dagster_components.core.schema.context import ResolutionContext
+from dagster_components.core.schema.resolvable_from_schema import (
+    DSLSchema,
+    ResolvableFromSchema,
+    resolve_schema_to_resolvable,
+)
+from dagster_components.scaffoldable.decorator import get_scaffolder, scaffoldable
+from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 from dagster_components.utils import format_error_message
+
+if TYPE_CHECKING:
+    from dagster_components.core.schema.resolvable_from_schema import EitherSchema
 
 
 class ComponentsEntryPointLoadError(DagsterError):
@@ -37,21 +43,21 @@ class ComponentDeclNode(ABC):
     def load(self, context: "ComponentLoadContext") -> Sequence["Component"]: ...
 
 
+@scaffoldable(scaffolder=DefaultComponentScaffolder)
 class Component(ABC):
     @classmethod
-    def get_schema(cls) -> Optional[type[ResolvableSchema]]:
-        return None
+    def get_schema(cls) -> Optional[type["EitherSchema"]]:
+        from dagster_components.core.schema.resolvable_from_schema import (
+            ResolvableFromSchema,
+            get_schema_type,
+        )
 
-    @classmethod
-    def get_scaffolder(cls) -> Union[ComponentScaffolder, ComponentScaffolderUnavailableReason]:
-        """Subclasses should implement this method to override scaffolding behavior. If this component
-        is not meant to be scaffolded it returns a ComponentScaffolderUnavailableReason with a message
-        This can be determined at runtime based on the environment or configuration. For example,
-        if scaffolders are optionally installed as extras (for example to avoid heavy dependencies in production),
-        this method should return a ComponentScaffolderUnavailableReason with a message explaining
-        how to install the necessary extras.
-        """
-        return DefaultComponentScaffolder()
+        if issubclass(cls, DSLSchema):
+            return cls
+
+        if issubclass(cls, ResolvableFromSchema):
+            return get_schema_type(cls)
+        return None
 
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:
@@ -61,23 +67,36 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
-    def load(cls, attributes: Optional[ResolvableSchema], context: "ComponentLoadContext") -> Self:
-        return attributes.resolve_as(cls, context.resolution_context) if attributes else cls()
+    def load(cls, attributes: Optional["EitherSchema"], context: "ComponentLoadContext") -> Self:
+        if issubclass(cls, DSLSchema):
+            # If the Component is a DSLSchema, the attributes in this case are an instance of itself
+            assert isinstance(attributes, cls)
+            return attributes
+
+        if issubclass(cls, ResolvableFromSchema):
+            return (
+                resolve_schema_to_resolvable(attributes, cls, context.resolution_context)
+                if attributes
+                else cls()
+            )
+
+        assert isinstance(attributes, ResolvableSchema)
+        return resolve_as(attributes, cls, context.resolution_context) if attributes else cls()
 
     @classmethod
     def get_metadata(cls) -> "ComponentTypeInternalMetadata":
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
 
-        scaffolder = cls.get_scaffolder()
+        scaffolder = get_scaffolder(cls)
 
-        if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
+        if isinstance(scaffolder, ScaffolderUnavailableReason):
             raise DagsterError(
                 f"Component {cls.__name__} is not scaffoldable: {scaffolder.message}"
             )
 
         component_schema = cls.get_schema()
-        scaffold_params = scaffolder.get_schema()
+        scaffold_params = scaffolder.get_params()
         return {
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,
@@ -192,13 +211,14 @@ def discover_component_types(modules: Sequence[str]) -> dict[ComponentKey, type[
 def get_component_types_in_module(
     module: ModuleType,
 ) -> Iterable[tuple[str, type[Component]]]:
-    from dagster._core.definitions.module_loaders.load_assets_from_modules import (
-        find_subclasses_in_module,
-    )
-
-    for name, component in find_subclasses_in_module(module, (Component,)):
-        if not inspect.isabstract(component):
-            yield name, component
+    for attr in dir(module):
+        value = getattr(module, attr)
+        if (
+            isinstance(value, type)
+            and issubclass(value, Component)
+            and not inspect.isabstract(value)
+        ):
+            yield attr, value
 
 
 T = TypeVar("T")
@@ -268,7 +288,7 @@ class ComponentLoadContext:
         In a typical setup you end up with module names such as "a_project.components.my_component.my_python_file".
 
         This handles "__init__.py" files by ending the module name at the parent directory
-        (e.g "a_project.components.my_component") if the file resides at "a_project/components/my_component/__init__.py".
+        (e.g "a_project.components.my_component") if the file resides at "a_project/defs/my_component/__init__.py".
 
         This calls importlib.import_module with that module name, going through the python module import system.
 
@@ -281,7 +301,7 @@ class ComponentLoadContext:
             # Problematic
             # See https://linear.app/dagster-labs/issue/BUILD-736/highly-suspect-hardcoding-of-components-string-is-component-relative
             component_module_relative_path = abs_context_path.parts[
-                abs_context_path.parts.index("components") + 2 :
+                abs_context_path.parts.index("defs") + 2 :
             ]
             component_module_name = ".".join([self.module_name, *component_module_relative_path])
             if abs_file_path.name != "__init__.py":

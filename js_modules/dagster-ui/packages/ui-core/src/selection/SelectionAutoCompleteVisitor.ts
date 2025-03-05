@@ -17,8 +17,11 @@ import {
   FunctionNameContext,
   IncompleteAttributeExpressionMissingValueContext,
   IncompletePlusTraversalExpressionContext,
+  IncompletePlusTraversalExpressionMissingValueContext,
+  IncompleteUpTraversalExpressionContext,
   LeftParenTokenContext,
   OrTokenContext,
+  PostDigitsWhitespaceContext,
   PostDownwardTraversalWhitespaceContext,
   PostLogicalOperatorWhitespaceContext,
   PostNeighborTraversalWhitespaceContext,
@@ -30,7 +33,6 @@ import {
 
 const DEFAULT_TEXT_CALLBACK = (value: string) => value;
 
-// set to true for debug output if desired
 const DEBUG = false;
 
 export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
@@ -43,7 +45,6 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
 
   public list: Array<Suggestion> = [];
 
-  // Replacement indices from the original code
   public _startReplacementIndex: number;
   public _stopReplacementIndex: number;
 
@@ -78,7 +79,6 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this._stopReplacementIndex = cursorIndex;
   }
 
-  // Keep the same accessors and logging as before
   set startReplacementIndex(newValue: number) {
     if (DEBUG) {
       console.log('Autocomplete suggestions being set by stack:', new Error());
@@ -255,6 +255,26 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     }
   }
 
+  public visitIncompleteUpTraversalExpression(_ctx: IncompleteUpTraversalExpressionContext) {
+    this.list.push(
+      this.createOperatorSuggestion({text: '+', type: 'up-traversal', displayText: '+'}),
+    );
+  }
+
+  public visitIncompletePlusTraversalExpressionMissingValue(
+    ctx: IncompletePlusTraversalExpressionMissingValueContext,
+  ) {
+    const value = getValueNodeValue(ctx.value());
+    if (this.nodeIncludesCursor(ctx.value())) {
+      this.startReplacementIndex = ctx.value().start.startIndex;
+      this.stopReplacementIndex = ctx.value().stop!.stopIndex + 1;
+      this.addUnmatchedValueResults(value, DEFAULT_TEXT_CALLBACK, {
+        excludePlus: true,
+      });
+      return;
+    }
+  }
+
   public visitIncompletePlusTraversalExpression(ctx: IncompletePlusTraversalExpressionContext) {
     if (
       this.nodeIncludesCursor(ctx.postNeighborTraversalWhitespace()) &&
@@ -304,6 +324,18 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     if (!this.list.length) {
       this.addAfterExpressionResults(ctx);
     }
+  }
+
+  public visitPostDigitsWhitespace(ctx: PostDigitsWhitespaceContext) {
+    this.startReplacementIndex = ctx.start.startIndex;
+    this.stopReplacementIndex = ctx.stop!.stopIndex;
+    this.list.push(
+      this.createOperatorSuggestion({
+        text: '+',
+        type: 'up-traversal',
+        displayText: '+',
+      }),
+    );
   }
 
   public visitPostLogicalOperatorWhitespace(ctx: PostLogicalOperatorWhitespaceContext) {

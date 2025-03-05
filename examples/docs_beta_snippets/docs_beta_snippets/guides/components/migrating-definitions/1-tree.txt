@@ -8,8 +8,8 @@ tree
 │   │   ├── __init__.py
 │   │   ├── assets.py
 │   │   └── jobs.py
-│   ├── components
 │   ├── definitions.py
+│   ├── defs
 │   └── elt
 │       ├── __init__.py
 │       ├── assets.py
