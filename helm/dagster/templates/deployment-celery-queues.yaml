@@ -15,6 +15,7 @@ metadata:
     {{- end }}
 spec:
   replicas: {{ $queue.replicaCount }}
+  revisionHistoryLimit: {{ $queue.revisionHistoryLimit }}
   selector:
     matchLabels:
       {{- include "dagster.selectorLabels" $ | nindent 6 }}
