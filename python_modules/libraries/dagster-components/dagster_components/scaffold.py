@@ -7,7 +7,7 @@ import yaml
 from pydantic import TypeAdapter
 
 from dagster_components.core.component import Component
-from dagster_components.scaffoldable.decorator import get_scaffolder
+from dagster_components.scaffoldable.registry import get_scaffolder
 from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason, ScaffoldRequest
 
 

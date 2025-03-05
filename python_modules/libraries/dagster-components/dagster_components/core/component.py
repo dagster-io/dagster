@@ -26,7 +26,7 @@ from dagster_components.core.schema.resolvable_from_schema import (
     ResolvedFrom,
     resolve_schema_to_resolvable,
 )
-from dagster_components.scaffoldable.decorator import scaffoldable
+from dagster_components.scaffoldable.registry import scaffoldable
 from dagster_components.utils import format_error_message
 
 

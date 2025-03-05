@@ -29,7 +29,7 @@ from dagster_components.core.schema.resolvable_from_schema import (
     ResolvableModel,
     ResolvedFrom,
 )
-from dagster_components.scaffoldable.decorator import scaffoldable
+from dagster_components.scaffoldable.registry import scaffoldable
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 
