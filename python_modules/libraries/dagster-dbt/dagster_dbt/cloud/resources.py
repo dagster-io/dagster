@@ -714,6 +714,7 @@ def dbt_cloud_resource(context) -> DbtCloudResource:
 # ------------------
 
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
+LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
 
 
 def get_dagster_adhoc_job_name(project_id: int, environment_id: int) -> str:
