@@ -1587,6 +1587,7 @@ class AssetObservationData(
         )
 
 
+@whitelist_for_serdes
 class AssetFailedToMaterializeReason(Enum):
     COMPUTE_FAILED = "COMPUTE_FAILED"
     UPSTREAM_COMPUTE_FAILED = "UPSTREAM_COMPUTE_FAILED"
