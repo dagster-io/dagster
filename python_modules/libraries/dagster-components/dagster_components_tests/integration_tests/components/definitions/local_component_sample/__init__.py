@@ -1,9 +1,9 @@
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_components import Component, ResolvableSchema
+from dagster_components import Component, YamlSchema
 from dagster_components.core.component import ComponentLoadContext
 
 
-class MyComponentSchema(ResolvableSchema):
+class MyComponentSchema(YamlSchema):
     a_string: str
     an_int: int
 

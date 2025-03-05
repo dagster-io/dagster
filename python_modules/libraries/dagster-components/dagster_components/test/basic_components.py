@@ -2,50 +2,27 @@
 in integration_tests/components/validation.
 """
 
-from dataclasses import dataclass
-
 from dagster._core.definitions.definitions_class import Definitions
-from pydantic import BaseModel, ConfigDict
 
-from dagster_components import Component, ResolvableSchema
+from dagster_components import Component, YamlSchema
 from dagster_components.core.component import ComponentLoadContext
 
 
-class MyComponentSchema(ResolvableSchema):
+class MyComponent(Component, YamlSchema):
     a_string: str
     an_int: int
-
-
-@dataclass
-class MyComponent(Component):
-    a_string: str
-    an_int: int
-
-    @classmethod
-    def get_schema(cls) -> type[MyComponentSchema]:
-        return MyComponentSchema
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         return Definitions()
 
 
-class MyNestedModel(BaseModel):
+class MyNestedModel(YamlSchema):
     a_string: str
     an_int: int
 
-    model_config = ConfigDict(extra="forbid")
 
-
-class MyNestedComponentSchema(BaseModel):
+class MyNestedComponent(Component, YamlSchema):
     nested: dict[str, MyNestedModel]
-
-    model_config = ConfigDict(extra="forbid")
-
-
-class MyNestedComponent(Component):
-    @classmethod
-    def get_schema(cls) -> type[MyNestedComponentSchema]:
-        return MyNestedComponentSchema
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         return Definitions()

@@ -1,9 +1,9 @@
 from collections.abc import Sequence
 
-from dagster_components import AssetSpecSchema, Component, ResolvableSchema
+from dagster_components import AssetSpecSchema, Component, YamlSchema
 
 
-class ShellCommandParams(ResolvableSchema):
+class ShellCommandParams(YamlSchema):
     path: str
     asset_specs: Sequence[AssetSpecSchema]
 

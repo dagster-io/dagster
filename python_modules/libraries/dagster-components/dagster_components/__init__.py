@@ -21,6 +21,12 @@ from dagster_components.core.schema.objects import (
     AssetSpecSchema as AssetSpecSchema,
     OpSpecSchema as OpSpecSchema,
 )
+from dagster_components.core.schema.resolvable_from_schema import (
+    ResolutionSpec as ResolutionSpec,
+    ResolvableFromSchema as ResolvableFromSchema,
+    YamlFieldResolver as YamlFieldResolver,
+    YamlSchema as YamlSchema,
+)
 from dagster_components.scaffold import scaffold_component_yaml as scaffold_component_yaml
 from dagster_components.scaffoldable.scaffolder import (
     Scaffolder as Scaffolder,
