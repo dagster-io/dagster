@@ -1,4 +1,6 @@
 import contextlib
+import os
+import shutil
 import signal
 import socket
 import subprocess
@@ -53,6 +55,16 @@ def test_dev_command_workspace_context_success(monkeypatch):
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_command_project_context_success():
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+        port = _find_free_port()
+        dev_process = _launch_dev_command(["--port", str(port)])
+        _assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_dev_command_project_context_success_no_uv_sync():
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+        shutil.rmtree(Path.cwd() / ".venv")
+        os.remove(Path.cwd() / "uv.lock")
         port = _find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
         _assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)

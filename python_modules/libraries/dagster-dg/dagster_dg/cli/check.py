@@ -215,6 +215,9 @@ def check_definitions_command(
         *format_forwarded_option("--log-format", log_format),
     ]
 
+    if dg_context.use_dg_managed_environment:
+        dg_context.ensure_uv_sync()
+
     # In a code location context, we can just run `dagster definitions validate` directly, using `dagster` from the
     # code location's environment.
     if dg_context.is_project:

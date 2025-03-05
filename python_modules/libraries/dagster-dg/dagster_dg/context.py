@@ -418,9 +418,13 @@ class DgContext:
 
     def ensure_uv_lock(self, path: Optional[Path] = None) -> None:
         path = path or self.root_path
+        if not (path / "uv.lock").exists():
+            self.ensure_uv_sync(path)
+
+    def ensure_uv_sync(self, path: Optional[Path] = None) -> None:
+        path = path or self.root_path
         with pushd(path):
-            if not (path / "uv.lock").exists():
-                subprocess.run(["uv", "sync"], check=True, env=strip_activated_venv_from_env_vars())
+            subprocess.run(["uv", "sync"], check=True, env=strip_activated_venv_from_env_vars())
 
     @property
     def use_dg_managed_environment(self) -> bool:

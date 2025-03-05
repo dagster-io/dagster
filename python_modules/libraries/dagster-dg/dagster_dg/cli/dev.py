@@ -96,6 +96,9 @@ def dev_command(
         *format_forwarded_option("--live-data-poll-rate", live_data_poll_rate),
     ]
 
+    if dg_context.use_dg_managed_environment:
+        dg_context.ensure_uv_sync()
+
     # In a project context, we can just run `dagster dev` directly, using `dagster` from the
     # project's environment.
     if dg_context.is_project:
