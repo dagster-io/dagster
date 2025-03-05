@@ -132,7 +132,7 @@ class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[AssetSpe
     ] = Field(..., description="A unique identifier for the asset.")
 
 
-class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Mapping[str, Any]]):
+class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
     """Resolves into a dictionary of asset attributes. This is similar to AssetSpecSchema, but
     does not require a key. This is useful in contexts where you want to modify attributes of
     an existing AssetSpec.
@@ -144,9 +144,6 @@ class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Ma
             lambda context, schema: _resolve_asset_key(schema.key, context) if schema.key else None
         ),
     ] = Field(default=None, description="A unique identifier for the asset.")
-
-    def resolve(self, context: ResolutionContext) -> Mapping[str, Any]:
-        return resolve_asset_attributes_to_mapping(context, self)
 
 
 def resolve_asset_attributes_to_mapping(
@@ -168,7 +165,9 @@ def apply_post_processor_to_spec(
     schema: AssetPostProcessorSchema, spec: AssetSpec, context: ResolutionContext
 ) -> AssetSpec:
     # add the original spec to the context and resolve values
-    attributes = context.with_scope(asset=spec).resolve_value(schema.attributes)
+    attributes = resolve_asset_attributes_to_mapping(
+        context=context.with_scope(asset=spec), schema=schema.attributes
+    )
 
     if schema.operation == "merge":
         mergeable_attributes = {"metadata", "tags"}
