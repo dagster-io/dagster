@@ -162,9 +162,6 @@ class AssetPostProcessorSchema(ResolvableSchema):
     operation: Literal["merge", "replace"] = "merge"
     attributes: AssetAttributesSchema
 
-    def resolve(self, context: ResolutionContext) -> Callable[[Definitions], Definitions]:
-        return resolve_schema_to_post_processor(context, self)
-
 
 def apply_post_processor_to_spec(
     schema: AssetPostProcessorSchema, spec: AssetSpec, context: ResolutionContext
@@ -208,3 +205,8 @@ def resolve_schema_to_post_processor(
     context, schema: AssetPostProcessorSchema
 ) -> Callable[[Definitions], Definitions]:
     return lambda defs: apply_post_processor_to_defs(schema, defs, context)
+
+
+@dataclass
+class AssetPostProcessor(ResolvableFromSchema[AssetPostProcessorSchema]):
+    fn: Annotated[PostProcessorFn, DSLFieldResolver.from_parent(resolve_schema_to_post_processor)]
