@@ -155,6 +155,12 @@ class AssetSpecResolutionSpec(ResolutionSpec):
     automation_condition: Optional[AutomationCondition]
 
 
+AssetSpecSequenceField: TypeAlias = Annotated[
+    Sequence[AssetSpec],
+    DSLFieldResolver(AssetSpecResolutionSpec.resolver_fn(AssetSpec).from_seq),
+]
+
+
 class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
     """Resolves into a dictionary of asset attributes. This is similar to AssetSpecSchema, but
     does not require a key. This is useful in contexts where you want to modify attributes of
