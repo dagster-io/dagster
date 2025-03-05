@@ -58,17 +58,6 @@ def get_schema_type(resolvable_from_schema_type: type["ResolvableFromSchema"]) -
     raise ValueError("No generic type arguments found in ResolvableFromSchema subclass")
 
 
-from typing import TypeVar
-
-# def from_schema(context: "ResolutionContext", schema: EitherSchema, target_type: type[T]) -> T:
-#     return resolve_schema_with_transform(
-#         schema=schema,
-#         resolution_spec=ResolutionSpec,  # Adjust as needed
-#         context=context,
-#         target_type=target_type,
-#     )
-
-
 class ResolutionSpec(Generic[TSchema]): ...
 
 
