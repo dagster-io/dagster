@@ -34,7 +34,7 @@ def test_asset_reconciliation_cursor_evaluation_id_backcompat() -> None:
 
     assert c == AssetDaemonCursor.empty(20)
 
-    c2 = c.with_updates(21, datetime.datetime.now().timestamp(), [], [])
+    c2 = c.with_updates(21, datetime.datetime.now().timestamp(), [], [], asset_graph)
 
     serdes_c2 = deserialize_value(serialize_value(c2), as_type=AssetDaemonCursor)
     assert serdes_c2 == c2
