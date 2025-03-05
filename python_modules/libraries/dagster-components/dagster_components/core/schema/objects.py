@@ -146,11 +146,12 @@ class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Ma
     ] = Field(default=None, description="A unique identifier for the asset.")
 
     def resolve(self, context: ResolutionContext) -> Mapping[str, Any]:
-        return resolve_asset_attributes_to_mapping(self, context)
+        return resolve_asset_attributes_to_mapping(context, self)
 
 
 def resolve_asset_attributes_to_mapping(
-    schema: AssetAttributesSchema, context: ResolutionContext
+    context: ResolutionContext,
+    schema: AssetAttributesSchema,
 ) -> Mapping[str, Any]:
     # only include fields that are explcitly set
     set_fields = schema.model_dump(exclude_unset=True).keys()
