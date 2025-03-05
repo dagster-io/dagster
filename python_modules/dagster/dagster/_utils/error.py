@@ -259,16 +259,19 @@ def unwrap_user_code_error(error_info: SerializableErrorInfo) -> SerializableErr
     return error_info
 
 
-def remove_non_user_code_lines_from_serializable_exc_info(
+def remove_system_frames_from_error(
     error_info: SerializableErrorInfo,
 ):
-    return remove_matching_lines_from_serializable_exc_info(
+    """Remove system frames from a SerializableErrorInfo, including Dagster framework boilerplate
+    and import machinery, which are generally not useful for users to debug their code.
+    """
+    return remove_matching_lines_from_serializable_error_info(
         error_info,
         DAGSTER_FRAMEWORK_SUBSTRINGS + IMPORT_MACHINERY_SUBSTRINGS,
     )
 
 
-def remove_matching_lines_from_serializable_exc_info(
+def remove_matching_lines_from_serializable_error_info(
     error_info: SerializableErrorInfo,
     matching_lines: Sequence[str],
 ):
@@ -286,12 +289,12 @@ def remove_matching_lines_from_serializable_exc_info(
     return error_info._replace(
         stack=remove_matching_lines_from_stack_trace(error_info.stack, matching_lines),
         cause=(
-            remove_matching_lines_from_serializable_exc_info(error_info.cause, matching_lines)
+            remove_matching_lines_from_serializable_error_info(error_info.cause, matching_lines)
             if error_info.cause
             else None
         ),
         context=(
-            remove_matching_lines_from_serializable_exc_info(error_info.context, matching_lines)
+            remove_matching_lines_from_serializable_error_info(error_info.context, matching_lines)
             if error_info.context
             else None
         ),
