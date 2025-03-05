@@ -3,9 +3,9 @@ from typing import Annotated, Optional
 
 from dagster_components import ResolutionContext
 from dagster_components.core.schema.resolvable_from_schema import (
-    DSLFieldResolver,
-    DSLSchema,
     ResolvableFromSchema,
+    YamlFieldResolver,
+    YamlSchema,
     resolve_schema_to_resolvable,
 )
 from pydantic import BaseModel
@@ -16,7 +16,7 @@ def resolve_val1(context: ResolutionContext, schema: "InnerSchema") -> int:
 
 
 class InnerObject(BaseModel, ResolvableFromSchema["InnerSchema"]):
-    val1_renamed: Annotated[int, DSLFieldResolver.from_parent(resolve_val1)]
+    val1_renamed: Annotated[int, YamlFieldResolver.from_parent(resolve_val1)]
     val2: Optional[str]
 
 
@@ -24,17 +24,17 @@ class TargetObject(BaseModel, ResolvableFromSchema["TargetSchema"]):
     int_val: int
     str_val: str
     inners: Annotated[
-        Optional[Sequence[InnerObject]], DSLFieldResolver(InnerObject.from_optional_seq)
+        Optional[Sequence[InnerObject]], YamlFieldResolver(InnerObject.from_optional_seq)
     ]
 
 
-class InnerSchema(DSLSchema):
+class InnerSchema(YamlSchema):
     val1: str
     val2: Optional[str]
     val3: str = "val3"
 
 
-class TargetSchema(DSLSchema):
+class TargetSchema(YamlSchema):
     int_val: str
     str_val: str
     inners: Optional[Sequence[InnerSchema]]

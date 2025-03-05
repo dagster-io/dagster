@@ -8,14 +8,14 @@ from dagster_components import (
     Component,
     ComponentLoadContext,
     ResolutionContext,
-    ResolvableSchema,
+    YamlSchema,
 )
 from dagster_components.core.schema.objects import AssetSpecSequenceField
 
 import dagster as dg
 
 
-class ShellScriptSchema(ResolvableSchema):
+class ShellScriptSchema(YamlSchema):
     script_path: str
     asset_specs: Sequence[AssetSpecSchema]
 

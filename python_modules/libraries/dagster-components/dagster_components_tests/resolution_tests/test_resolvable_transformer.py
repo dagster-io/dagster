@@ -12,10 +12,10 @@ from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.objects import AssetSpecResolutionSpec, AssetSpecSchema
 from dagster_components.core.schema.resolvable_from_schema import (
-    DSLFieldResolver,
-    DSLSchema,
     ResolutionSpec,
     ResolvableFromSchema,
+    YamlFieldResolver,
+    YamlSchema,
     resolve_fields,
     resolve_schema_using_spec,
 )
@@ -29,12 +29,12 @@ class ExistingBusinessObject:
     value: int
 
 
-class ExistingBusinessObjectSchema(DSLSchema):
+class ExistingBusinessObjectSchema(YamlSchema):
     value: str
 
 
 class ExistingBusinessObjectResolutionSpec(ResolutionSpec[ExistingBusinessObjectSchema]):
-    value: Annotated[int, DSLFieldResolver(lambda context, val: int(val))]
+    value: Annotated[int, YamlFieldResolver(lambda context, val: int(val))]
 
 
 def test_resolve_fields_on_transform() -> None:
@@ -58,7 +58,7 @@ def test_use_transform_to_build_business_object():
 
 
 def test_with_resolution_spec_on_component():
-    class ComponentWithExistingBusinessObjectSchema(DSLSchema):
+    class ComponentWithExistingBusinessObjectSchema(YamlSchema):
         business_object: ExistingBusinessObjectSchema
 
     @dataclass
@@ -67,7 +67,7 @@ def test_with_resolution_spec_on_component():
     ):
         business_object: Annotated[
             ExistingBusinessObject,
-            DSLFieldResolver.from_spec(
+            YamlFieldResolver.from_spec(
                 ExistingBusinessObjectResolutionSpec, ExistingBusinessObject
             ),
         ]
@@ -84,12 +84,12 @@ def test_with_resolution_spec_on_component():
 
 ExistingBusinessObjectField: TypeAlias = Annotated[
     ExistingBusinessObject,
-    DSLFieldResolver.from_spec(ExistingBusinessObjectResolutionSpec, ExistingBusinessObject),
+    YamlFieldResolver.from_spec(ExistingBusinessObjectResolutionSpec, ExistingBusinessObject),
 ]
 
 
 def test_reuse_across_components():
-    class ComponentWithExistingBusinessObjectSchemaOne(DSLSchema):
+    class ComponentWithExistingBusinessObjectSchemaOne(YamlSchema):
         business_object: ExistingBusinessObjectSchema
 
     @dataclass
@@ -100,7 +100,7 @@ def test_reuse_across_components():
 
         def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...
 
-    class ComponentWithExistingBusinessObjectSchemaTwo(DSLSchema):
+    class ComponentWithExistingBusinessObjectSchemaTwo(YamlSchema):
         business_object: ExistingBusinessObjectSchema
 
     @dataclass
@@ -176,14 +176,14 @@ def test_asset_spec():
 
 
 def test_asset_spec_seq() -> None:
-    class SomeObjectSchema(DSLSchema):
+    class SomeObjectSchema(YamlSchema):
         specs: Sequence[AssetSpecSchema]
 
     @dataclass
     class SomeObject(ResolvableFromSchema[SomeObjectSchema]):
         specs: Annotated[
             Sequence[AssetSpec],
-            DSLFieldResolver(AssetSpecResolutionSpec.resolver_fn(AssetSpec).from_seq),
+            YamlFieldResolver(AssetSpecResolutionSpec.resolver_fn(AssetSpec).from_seq),
         ]
 
     some_object = resolve_schema_using_spec(

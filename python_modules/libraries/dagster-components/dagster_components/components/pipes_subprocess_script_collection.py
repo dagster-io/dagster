@@ -14,16 +14,16 @@ from dagster_components.core.component import Component, ComponentLoadContext
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.objects import AssetSpecSchema, AssetSpecSequenceField
 from dagster_components.core.schema.resolvable_from_schema import (
-    DSLFieldResolver,
-    DSLSchema,
     ResolvableFromSchema,
+    YamlFieldResolver,
+    YamlSchema,
 )
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 
-class PipesSubprocessScriptSchema(DSLSchema):
+class PipesSubprocessScriptSchema(YamlSchema):
     path: str
     assets: Sequence[AssetSpecSchema]
 
@@ -34,7 +34,7 @@ class PipesSubprocessScriptSpec(ResolvableFromSchema[PipesSubprocessScriptSchema
     assets: AssetSpecSequenceField
 
 
-class PipesSubprocessScriptCollectionSchema(DSLSchema):
+class PipesSubprocessScriptCollectionSchema(YamlSchema):
     scripts: Sequence[PipesSubprocessScriptSchema]
 
 
@@ -55,7 +55,7 @@ class PipesSubprocessScriptCollectionComponent(
         }
 
     specs_by_path: Annotated[
-        Mapping[str, Sequence[AssetSpec]], DSLFieldResolver.from_parent(resolve_specs_by_path)
+        Mapping[str, Sequence[AssetSpec]], YamlFieldResolver.from_parent(resolve_specs_by_path)
     ] = ...
 
     @staticmethod

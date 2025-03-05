@@ -22,8 +22,8 @@ from dagster_components.core.component_scaffolder import DefaultComponentScaffol
 from dagster_components.core.schema.base import ResolvableSchema, resolve_as
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.resolvable_from_schema import (
-    DSLSchema,
     ResolvableFromSchema,
+    YamlSchema,
     resolve_schema_to_resolvable,
 )
 from dagster_components.scaffoldable.decorator import get_scaffolder, scaffoldable
@@ -52,7 +52,7 @@ class Component(ABC):
             get_schema_type,
         )
 
-        if issubclass(cls, DSLSchema):
+        if issubclass(cls, YamlSchema):
             return cls
 
         if issubclass(cls, ResolvableFromSchema):
@@ -68,8 +68,8 @@ class Component(ABC):
 
     @classmethod
     def load(cls, attributes: Optional["EitherSchema"], context: "ComponentLoadContext") -> Self:
-        if issubclass(cls, DSLSchema):
-            # If the Component is a DSLSchema, the attributes in this case are an instance of itself
+        if issubclass(cls, YamlSchema):
+            # If the Component is a YamlSchema, the attributes in this case are an instance of itself
             assert isinstance(attributes, cls)
             return attributes
 

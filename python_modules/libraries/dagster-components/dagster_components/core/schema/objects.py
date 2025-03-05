@@ -19,9 +19,10 @@ from typing_extensions import TypeAlias
 from dagster_components.core.schema.base import FieldResolver, ResolvableSchema, resolve_fields
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.resolvable_from_schema import (
-    DSLFieldResolver,
     ResolutionSpec,
     ResolvableFromSchema,
+    YamlFieldResolver,
+    YamlSchema,
 )
 
 
@@ -67,11 +68,11 @@ class OpSpec(ResolvableFromSchema["OpSpecSchema"]):
     name: Optional[str] = None
     tags: Optional[dict[str, str]] = None
     backfill_policy: Annotated[
-        Optional[BackfillPolicy], DSLFieldResolver.from_parent(resolve_backfill_policy)
+        Optional[BackfillPolicy], YamlFieldResolver.from_parent(resolve_backfill_policy)
     ] = None
 
 
-class OpSpecSchema(ResolvableSchema):
+class OpSpecSchema(YamlSchema):
     name: Optional[str] = Field(default=None, description="The name of the op.")
     tags: Optional[dict[str, str]] = Field(
         default=None, description="Arbitrary metadata for the op."
@@ -139,7 +140,7 @@ class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
 class AssetSpecResolutionSpec(ResolutionSpec):
     key: Annotated[
         str,
-        DSLFieldResolver.from_parent(
+        YamlFieldResolver.from_parent(
             lambda context, schema: _resolve_asset_key(schema.key, context)
         ),
     ]
@@ -157,7 +158,7 @@ class AssetSpecResolutionSpec(ResolutionSpec):
 
 AssetSpecSequenceField: TypeAlias = Annotated[
     Sequence[AssetSpec],
-    DSLFieldResolver(AssetSpecResolutionSpec.resolver_fn(AssetSpec).from_seq),
+    YamlFieldResolver(AssetSpecResolutionSpec.resolver_fn(AssetSpec).from_seq),
 ]
 
 
@@ -185,11 +186,11 @@ def resolve_asset_attributes_to_mapping(
 
 
 ResolvedAssetAttributes: TypeAlias = Annotated[
-    Mapping[str, Any], DSLFieldResolver(resolve_asset_attributes_to_mapping)
+    Mapping[str, Any], YamlFieldResolver(resolve_asset_attributes_to_mapping)
 ]
 
 
-class AssetPostProcessorSchema(ResolvableSchema):
+class AssetPostProcessorSchema(YamlSchema):
     target: str = "*"
     operation: Literal["merge", "replace"] = "merge"
     attributes: AssetAttributesSchema
@@ -243,4 +244,4 @@ def resolve_schema_to_post_processor(
 
 @dataclass
 class AssetPostProcessor(ResolvableFromSchema[AssetPostProcessorSchema]):
-    fn: Annotated[PostProcessorFn, DSLFieldResolver.from_parent(resolve_schema_to_post_processor)]
+    fn: Annotated[PostProcessorFn, YamlFieldResolver.from_parent(resolve_schema_to_post_processor)]

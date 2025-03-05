@@ -9,15 +9,16 @@ from dagster_components import (
     AssetSpecSchema,
     Component,
     ComponentLoadContext,
-    ResolvableSchema,
+    ResolvableFromSchema,
     Scaffolder,
     ScaffoldRequest,
+    YamlSchema,
     scaffold_component_yaml,
 )
 from dagster_components.core.schema.objects import AssetSpecSequenceField
 from dagster_components.core.schema.resolvable_from_schema import (
-    DSLSchema,
     ResolvableFromSchema,
+    YamlSchema,
 )
 from dagster_components.scaffoldable.decorator import scaffoldable
 
@@ -46,7 +47,7 @@ class ShellCommandScaffolder(Scaffolder):
 # highlight-end
 
 
-class ShellScriptSchema(DSLSchema):
+class ShellScriptSchema(YamlSchema):
     script_path: str
     asset_specs: Sequence[AssetSpecSchema]
 
