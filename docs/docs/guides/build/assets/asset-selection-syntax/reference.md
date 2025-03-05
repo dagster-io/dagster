@@ -80,7 +80,7 @@ You can combine multiple filters with operands and group them with parentheses t
 | **`and`** | `owner:"alice" and kind:"dbt"` | Selects assets owned by `alice` of kind `dbt`. |
 | **`or`** | `owner:"billing" or owner:"sales"` | Selects assets owned by either `billing` or `sales`. |
 | **`not`** | `not tag:"obsolete"` | Excludes assets tagged with `obsolete`. |
-| **Grouping `()`** | `(owner:"alice" and kind:"table") or group:"analytics"` | Symbols `(` and `)` used to group expressions and control the order of evaluation in queries. This example selects assets that are both owned by `alice` and of kind `table`, or that belong to the `analytics` group. |
+| **Grouping `()`** | `(owner:"alice" or group:"analytics") and  kind:"table"` | Symbols `(` and `)` used to group expressions and control the order of evaluation in queries. This example selects assets that are both owned by `alice` and of kind `table`, or that belong to the `analytics` group. |
 
 ## Functions
 
