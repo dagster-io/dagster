@@ -373,6 +373,12 @@ To override the <PyObject section="assets" module="dagster" object="AutomationCo
 
 <CodeExample startAfter="start_custom_automation_condition_dagster_dbt_translator" endBefore="end_custom_automation_condition_dagster_dbt_translator" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
 
+:::note
+
+Ensure that the [`default_automation_condition_sensor` is enabled](/guides/automate/declarative-automation/#using-declarative-automation) for automation conditions to be evaluated.
+
+:::
+
 ## dbt models, code versions, and "Unsynced"
 
 Note that Dagster allows the optional specification of a [`code_version`](/guides/build/assets/defining-assets#asset-code-versions) for each asset definition, which are used to track changes. The `code_version` for an asset arising from a dbt model is defined automatically as the hash of the SQL defining the DBT model. This allows the asset graph in the UI to use the "Unsynced" status to indicate which dbt models have new SQL since they were last materialized.
