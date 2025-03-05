@@ -155,9 +155,6 @@ class AssetSpecResolutionSpec(ResolutionSpec):
     automation_condition: Optional[AutomationCondition]
 
 
-# = Field(..., description="A unique identifier for the asset.")
-
-
 class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
     """Resolves into a dictionary of asset attributes. This is similar to AssetSpecSchema, but
     does not require a key. This is useful in contexts where you want to modify attributes of
