@@ -11,12 +11,12 @@ from dagster_components import Component, ComponentLoadContext
 from dagster_components.components.definitions_component.scaffolder import (
     DefinitionsComponentScaffolder,
 )
-from dagster_components.core.schema.resolvable_from_schema import DSLSchema
+from dagster_components.core.schema.resolvable_from_schema import YamlSchema
 from dagster_components.scaffoldable.decorator import scaffoldable
 
 
 @scaffoldable(scaffolder=DefinitionsComponentScaffolder)
-class DefinitionsComponent(Component, DSLSchema):
+class DefinitionsComponent(Component, YamlSchema):
     """Wraps an arbitrary set of Dagster definitions."""
 
     definitions_path: Optional[str] = Field(

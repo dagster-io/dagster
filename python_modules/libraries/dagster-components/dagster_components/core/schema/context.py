@@ -44,7 +44,7 @@ class ResolutionContext:
         """Resolves a single value, if it is a templated string."""
         if isinstance(val, ResolvableSchema):
             return resolve(val, self)
-        elif isinstance(val, str):
+        if isinstance(val, str):
             return NativeTemplate(val).render(**self.scope)
         else:
             return val

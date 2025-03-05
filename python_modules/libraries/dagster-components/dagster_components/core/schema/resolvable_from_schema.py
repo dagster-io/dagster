@@ -23,18 +23,18 @@ if TYPE_CHECKING:
     from dagster_components.core.schema.context import ResolutionContext
 
 
-class DSLSchema(BaseModel):
+class YamlSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-EitherSchema: TypeAlias = Union[ResolvableSchema, DSLSchema]
+EitherSchema: TypeAlias = Union[ResolvableSchema, YamlSchema]
 
 TSchema = TypeVar("TSchema", bound=EitherSchema)
 
 
 # switch to this once we have eliminated ResolvableSchema
-# TSchema = TypeVar("TSchema", bound=DSLSchema)
-def get_schema_type(resolvable_from_schema_type: type["ResolvableFromSchema"]) -> type[DSLSchema]:
+# TSchema = TypeVar("TSchema", bound=YamlSchema)
+def get_schema_type(resolvable_from_schema_type: type["ResolvableFromSchema"]) -> type[YamlSchema]:
     """Returns the first generic type argument (TSchema) of the ResolvableFromSchema instance at runtime."""
     check.param_invariant(
         issubclass(resolvable_from_schema_type, ResolvableFromSchema),
@@ -124,8 +124,8 @@ class AttrWithContextFn:
     callable: Callable[["ResolutionContext", Any], Any]
 
 
-class DSLFieldResolver:
-    """Contains information on how to resolve this field from a DSLSchema."""
+class YamlFieldResolver:
+    """Contains information on how to resolve this field from a YamlSchema."""
 
     def __init__(
         self, fn: Union[ParentFn, AttrWithContextFn, Callable[["ResolutionContext", Any], Any]]
@@ -144,11 +144,11 @@ class DSLFieldResolver:
 
     @staticmethod
     def from_parent(fn: Callable[["ResolutionContext", Any], Any]):
-        return DSLFieldResolver(ParentFn(fn))
+        return YamlFieldResolver(ParentFn(fn))
 
     @staticmethod
     def from_spec(spec: type[ResolutionSpec], target_type: type):
-        return DSLFieldResolver.from_parent(
+        return YamlFieldResolver.from_parent(
             lambda context, schema: resolve_schema_using_spec(
                 schema=schema,
                 resolution_spec=spec,
@@ -158,13 +158,13 @@ class DSLFieldResolver:
         )
 
     @staticmethod
-    def from_annotation(annotation: Any, field_name: str) -> "DSLFieldResolver":
+    def from_annotation(annotation: Any, field_name: str) -> "YamlFieldResolver":
         if get_origin(annotation) is Annotated:
             args = get_args(annotation)
-            resolver = next((arg for arg in args if isinstance(arg, DSLFieldResolver)), None)
+            resolver = next((arg for arg in args if isinstance(arg, YamlFieldResolver)), None)
             if resolver:
                 return resolver
-        return DSLFieldResolver.from_parent(
+        return YamlFieldResolver.from_parent(
             lambda context, schema: context.resolve_value(getattr(schema, field_name))
         )
 
@@ -175,13 +175,13 @@ class DSLFieldResolver:
             attr = getattr(schema, field_name)
             return self.fn.callable(context, attr)
         else:
-            raise ValueError(f"Unsupported DSLFieldResolver type: {self.fn}")
+            raise ValueError(f"Unsupported YamlFieldResolver type: {self.fn}")
 
 
 TResolutionSpec = TypeVar("TResolutionSpec", bound=ResolutionSpec)
 
 
-def get_annotation_field_resolvers(cls: type[TResolutionSpec]) -> dict[str, DSLFieldResolver]:
+def get_annotation_field_resolvers(cls: type[TResolutionSpec]) -> dict[str, YamlFieldResolver]:
     if issubclass(cls, BaseModel):
         # neither pydantic's Field.annotation nor Field.rebuild_annotation() actually
         # return the original annotation, so we have to walk the mro to get them
@@ -192,19 +192,19 @@ def get_annotation_field_resolvers(cls: type[TResolutionSpec]) -> dict[str, DSLF
                     annotations[field_name] = base.__annotations__[field_name]
                     break
         return {
-            field_name: DSLFieldResolver.from_annotation(annotation, field_name)
+            field_name: YamlFieldResolver.from_annotation(annotation, field_name)
             for field_name, annotation in annotations.items()
         }
     elif is_dataclass(cls):
         return {
-            field.name: DSLFieldResolver.from_annotation(field.type, field.name)
+            field.name: YamlFieldResolver.from_annotation(field.type, field.name)
             for field in fields(cls)
         }
     else:
         # Handle vanilla Python classes with type annotations
         annotations = getattr(cls, "__annotations__", {})
         return {
-            field_name: DSLFieldResolver.from_annotation(annotation, field_name)
+            field_name: YamlFieldResolver.from_annotation(annotation, field_name)
             for field_name, annotation in annotations.items()
         }
 
