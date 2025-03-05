@@ -74,7 +74,7 @@ class ResolvableFromSchema(ResolutionSpec[TSchema]):
 
     @classmethod
     def from_seq(cls, context: "ResolutionContext", schema: Sequence[TSchema]) -> Sequence[Self]:
-        return [cls.from_schema(context, item) for item in schema]
+        return [cls.from_schema(context.at_path(idx), item) for idx, item in enumerate(schema)]
 
     @classmethod
     def from_optional_seq(
@@ -133,7 +133,7 @@ class DSLFieldResolver:
             return self.fn.callable(context, schema)
         elif isinstance(self.fn, AttrWithContextFn):
             attr = getattr(schema, field_name)
-            return self.fn.callable(context, attr)
+            return self.fn.callable(context.at_path(field_name), attr)
 
         else:
             raise ValueError(f"Unsupported DSLFieldResolver type: {self.fn}")

@@ -49,6 +49,9 @@ class PythonComponentDecl(ComponentDeclNode):
     def from_path(path: Path) -> "PythonComponentDecl":
         return PythonComponentDecl(path=path)
 
+    def get_source_position_tree(self) -> Optional[SourcePositionTree]:
+        return None
+
     def load(self, context: ComponentLoadContext) -> Sequence[Component]:
         module = load_module_from_path(
             self.path.stem, PythonComponentDecl.component_file_path(self.path)
@@ -96,6 +99,9 @@ class YamlComponentDecl(ComponentDeclNode):
             component_file_model=obj,
             source_position_tree=parsed.source_position_tree,
         )
+
+    def get_source_position_tree(self) -> Optional[SourcePositionTree]:
+        return self.source_position_tree
 
     def get_attributes(self, schema: type[T]) -> T:
         with pushd(str(self.path)):

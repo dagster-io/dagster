@@ -56,7 +56,7 @@ def build_defs_from_component_path(
         module_name=".".join(path.parts[-3:]),
         resources=resources,
         decl_node=decl_node,
-        resolution_context=ResolutionContext.default(),
+        resolution_context=ResolutionContext.default(decl_node.get_source_position_tree()),
     )
     components = decl_node.load(context)
     return defs_from_components(resources=resources, context=context, components=components)

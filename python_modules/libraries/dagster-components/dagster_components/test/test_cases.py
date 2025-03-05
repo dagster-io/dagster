@@ -180,4 +180,15 @@ COMPONENT_VALIDATION_TEST_CASES = [
             "found character '@' that cannot start any token",
         ),
     ),
+    ComponentValidationTestCase(
+        component_path="validation/basic_component_templating_invalid_scope",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
+        should_error=True,
+        validate_error_msg=msg_includes_all_of(
+            "'fake' not found in scope",
+            "component.yaml:4",
+            "attributes.a_string",
+            "available scope is: env, automation_condition",
+        ),
+    ),
 ]

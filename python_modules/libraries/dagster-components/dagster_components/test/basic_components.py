@@ -3,6 +3,7 @@ in integration_tests/components/validation.
 """
 
 from dataclasses import dataclass
+from typing import Union
 
 from dagster._core.definitions.definitions_class import Definitions
 from pydantic import BaseModel, ConfigDict
@@ -13,7 +14,7 @@ from dagster_components.core.component import ComponentLoadContext
 
 class MyComponentSchema(ResolvableSchema):
     a_string: str
-    an_int: int
+    an_int: Union[int, str]
 
 
 @dataclass

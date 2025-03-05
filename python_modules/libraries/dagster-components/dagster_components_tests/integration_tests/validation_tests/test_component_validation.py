@@ -1,4 +1,6 @@
 import pytest
+from dagster._core.instance_for_test import environ
+from dagster_components.core.schema.context import ResolutionException
 from dagster_components.test.test_cases import (
     COMPONENT_VALIDATION_TEST_CASES,
     ComponentValidationTestCase,
@@ -21,17 +23,18 @@ def test_validation_messages(test_case: ComponentValidationTestCase) -> None:
     """Tests raw YAML error messages when attempting to load components with
     errors.
     """
-    if test_case.should_error:
-        with pytest.raises((ValidationError, ScannerError)) as e:
+    with environ({"STRING_ENV_VAR": "foo", "INT_ENV_VAR": "42"}):
+        if test_case.should_error:
+            with pytest.raises((ValidationError, ScannerError, ResolutionException)) as e:
+                load_test_component_defs(
+                    str(test_case.component_path),
+                    test_case.component_type_filepath,
+                )
+
+            assert test_case.validate_error_msg
+            test_case.validate_error_msg(str(e.value))
+        else:
             load_test_component_defs(
                 str(test_case.component_path),
                 test_case.component_type_filepath,
             )
-
-        assert test_case.validate_error_msg
-        test_case.validate_error_msg(str(e.value))
-    else:
-        load_test_component_defs(
-            str(test_case.component_path),
-            test_case.component_type_filepath,
-        )
