@@ -64,7 +64,7 @@ class ResolutionSpec(Generic[TSchema]): ...
 class ResolvableFromSchema(ResolutionSpec[TSchema]):
     @classmethod
     def from_schema(cls, context: "ResolutionContext", schema: TSchema) -> Self:
-        return resolve_schema_to_resolvable(schema=schema, resolution_spec=cls, context=context)
+        return resolve_schema_to_resolvable(schema=schema, resolvable_type=cls, context=context)
 
     @classmethod
     def from_optional(
@@ -179,10 +179,21 @@ T = TypeVar("T")
 
 def resolve_schema_to_resolvable(
     schema: EitherSchema,
+    resolvable_type: type[TResolvableFromSchema],
+    context: "ResolutionContext",
+) -> TResolvableFromSchema:
+    return resolve_schema_with_transform(
+        schema=schema,
+        resolution_spec=resolvable_type,
+        context=context,
+        target_type=resolvable_type,
+    )
+
+
+def resolve_schema_with_transform(
+    schema: EitherSchema,
     resolution_spec: type[TResolutionSpec],
     context: "ResolutionContext",
-    type_to_create: Optional[type[T]] = None,  # defaults to type[TResolutionSpec]
+    target_type: type[T],
 ) -> T:
-    type_to_create = type_to_create if type_to_create else resolution_spec  # type: ignore
-    assert type_to_create
-    return type_to_create(**resolve_fields(schema, resolution_spec, context))
+    return target_type(**resolve_fields(schema, resolution_spec, context))
