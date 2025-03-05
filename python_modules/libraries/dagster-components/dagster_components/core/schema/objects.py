@@ -2,7 +2,6 @@ from collections.abc import Mapping, Sequence
 from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 import dagster._check as check
-from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
@@ -64,7 +63,7 @@ class OpSpec:
     )
 
 
-class OpSpecSchema(ResolvableSchema[OpSpec]):
+class OpSpecSchema(ResolvableSchema):
     name: Optional[str] = Field(default=None, description="The name of the op.")
     tags: Optional[dict[str, str]] = Field(
         default=None, description="Arbitrary metadata for the op."
@@ -72,13 +71,6 @@ class OpSpecSchema(ResolvableSchema[OpSpec]):
     backfill_policy: Optional[
         Union[SingleRunBackfillPolicySchema, MultiRunBackfillPolicySchema]
     ] = Field(default=None, description="The backfill policy to use for the assets.")
-
-
-class AssetDepSchema(ResolvableSchema[AssetDep]):
-    asset: Annotated[
-        str, FieldResolver(lambda context, schema: _resolve_asset_key(schema.asset, context))
-    ]
-    partition_mapping: Optional[str]
 
 
 class _ResolvableAssetAttributesMixin(BaseModel):
