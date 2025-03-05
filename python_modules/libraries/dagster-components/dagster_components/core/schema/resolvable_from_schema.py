@@ -13,6 +13,9 @@ from typing import (
 )
 
 from pydantic import BaseModel, ConfigDict
+from typing_extensions import TypeAlias
+
+from dagster_components.core.schema.base import ResolvableSchema
 
 if TYPE_CHECKING:
     from dagster_components.core.schema.context import ResolutionContext
@@ -22,7 +25,9 @@ class DSLSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-TSchema = TypeVar("TSchema", bound=BaseModel)
+EitherSchema: TypeAlias = Union[ResolvableSchema, DSLSchema]
+
+TSchema = TypeVar("TSchema", bound=EitherSchema)
 # switch to this once we have eliminated ResolvableSchema
 # TSchema = TypeVar("TSchema", bound=DSLSchema)
 
@@ -62,7 +67,7 @@ class DSLFieldResolver:
             lambda context, schema: context.resolve_value(getattr(schema, field_name))
         )
 
-    def execute(self, context: "ResolutionContext", schema: DSLSchema, field_name: str) -> Any:
+    def execute(self, context: "ResolutionContext", schema: EitherSchema, field_name: str) -> Any:
         if isinstance(self.fn, ParentFn):
             return self.fn.callable(context, schema)
         elif isinstance(self.fn, PropNoContextFn):
@@ -96,7 +101,9 @@ def get_annotation_field_resolvers(cls: type) -> dict[str, DSLFieldResolver]:
 
 
 def resolve_fields(
-    schema: DSLSchema, target_type: type, context: "ResolutionContext"
+    schema: EitherSchema,
+    target_type: type,
+    context: "ResolutionContext",
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""
     return {
@@ -109,7 +116,7 @@ TResolvableFromSchema = TypeVar("TResolvableFromSchema", bound=ResolvableFromSch
 
 
 def resolve_schema_to_resolvable(
-    schema: DSLSchema,
+    schema: EitherSchema,
     resolvable_from_schema_type: type[TResolvableFromSchema],
     context: "ResolutionContext",
 ) -> TResolvableFromSchema:
