@@ -19,7 +19,10 @@ from dagster._core.definitions.tags import build_kind_tag
 from dagster._core.errors import DagsterError
 
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.objects import AssetAttributesSchema
+from dagster_components.core.schema.objects import (
+    AssetAttributesSchema,
+    resolve_asset_attributes_to_mapping,
+)
 
 T = TypeVar("T")
 
@@ -76,9 +79,11 @@ class TranslatorResolvingInfo:
     resolution_context: ResolutionContext
 
     def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
-        resolved_attributes = self.resolution_context.with_scope(
-            **{self.obj_name: obj}
-        ).resolve_value(self.asset_attributes)
+        resolved_attributes = resolve_asset_attributes_to_mapping(
+            context=self.resolution_context.with_scope(**{self.obj_name: obj}),
+            schema=self.asset_attributes,
+        )
+
         return (
             resolved_attributes[attribute]
             if attribute in resolved_attributes
@@ -95,9 +100,11 @@ class TranslatorResolvingInfo:
         """
         attribute_value = dict(default_method(obj) or {})
 
-        resolved_attributes = self.resolution_context.with_scope(
-            **{self.obj_name: obj}
-        ).resolve_value(self.asset_attributes)
+        resolved_attributes = resolve_asset_attributes_to_mapping(
+            context=self.resolution_context.with_scope(**{self.obj_name: obj}),
+            schema=self.asset_attributes,
+        )
+
         if attribute in resolved_attributes:
             attribute_value.update(resolved_attributes[attribute])
         return attribute_value
