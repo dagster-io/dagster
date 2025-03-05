@@ -82,7 +82,7 @@ export const SelectionAutoCompleteInput = ({
 
   const focusRef = useRef(false);
 
-  const [selectedIndexRef, setSelectedIndex] = useState({current: 0});
+  const [selectedIndexRef, setSelectedIndex] = useState({current: -1});
 
   // Memoize the stringified results to avoid resetting the selected index down below
   const resultsJson = useMemo(() => {
@@ -95,7 +95,7 @@ export const SelectionAutoCompleteInput = ({
   // Handle selection reset
   useDangerousRenderEffect(() => {
     if (prevAutoCompleteResults?.from !== autoCompleteResults?.from || prevJson !== resultsJson) {
-      selectedIndexRef.current = 0;
+      selectedIndexRef.current = -1;
     }
   }, [resultsJson, autoCompleteResults, prevAutoCompleteResults, prevJson, selectedIndexRef]);
 
@@ -217,7 +217,7 @@ export const SelectionAutoCompleteInput = ({
       setCursorPosition(cursor.ch);
       requestAnimationFrame(() => {
         // Reset selected index on value change
-        setSelectedIndex({current: 0});
+        setSelectedIndex({current: -1});
       });
     }
   }, [value]);
@@ -261,15 +261,17 @@ export const SelectionAutoCompleteInput = ({
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
       if (e.key === 'Enter') {
-        e.stopPropagation();
-        e.preventDefault();
-        onSelectionChange(innerValueRef.current);
-        setShowResults({current: false});
-      }
-      if (!showResults.current) {
+        if (selectedIndexRef.current !== -1 && selectedItem) {
+          onSelect(selectedItem);
+        } else {
+          e.stopPropagation();
+          e.preventDefault();
+          onSelectionChange(innerValueRef.current);
+          setShowResults({current: false});
+        }
+      } else if (!showResults.current) {
         return;
-      }
-      if (e.key === 'ArrowDown' && !e.shiftKey && !e.ctrlKey) {
+      } else if (e.key === 'ArrowDown' && !e.shiftKey && !e.ctrlKey) {
         e.preventDefault();
         e.stopPropagation();
         setSelectedIndex((prev) => ({
@@ -296,11 +298,12 @@ export const SelectionAutoCompleteInput = ({
     },
     [
       showResults,
+      selectedIndexRef,
+      selectedItem,
       onSelectionChange,
       innerValueRef,
-      autoCompleteResults?.list.length,
-      selectedItem,
       onSelect,
+      autoCompleteResults?.list.length,
     ],
   );
 
