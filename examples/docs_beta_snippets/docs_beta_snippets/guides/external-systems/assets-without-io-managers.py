@@ -9,9 +9,7 @@ raw_sales_data = dg.AssetSpec("raw_sales_data")
 @dg.asset
 def raw_sales_data(duckdb: DuckDBResource) -> None:
     # Read data from a CSV
-    raw_df = pd.read_csv(
-        "https://docs.dagster.io/assets/raw_sales_data.csv"
-    )
+    raw_df = pd.read_csv("https://docs.dagster.io/assets/raw_sales_data.csv")
     # Construct DuckDB connection
     with duckdb.get_connection() as conn:
         # Use the data from the CSV to create or update a table

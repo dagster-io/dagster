@@ -6,9 +6,7 @@ import dagster as dg
 
 @dg.asset
 def raw_sales_data() -> pd.DataFrame:
-    return pd.read_csv(
-        "https://docs.dagster.io/assets/raw_sales_data.csv"
-    )
+    return pd.read_csv("https://docs.dagster.io/assets/raw_sales_data.csv")
 
 
 # highlight-start
