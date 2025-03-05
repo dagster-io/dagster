@@ -20,6 +20,10 @@ import {
   buildWorkspaceQueryWithZeroLocations,
 } from '../__fixtures__/LeftNavRepositorySection.fixtures';
 
+jest.mock('../RepositoryLocationStateObserver', () => ({
+  RepositoryLocationStateObserver: () => <div />,
+}));
+
 describe('Repository options', () => {
   const locationOne = 'ipsum';
   const repoOne = 'lorem';
