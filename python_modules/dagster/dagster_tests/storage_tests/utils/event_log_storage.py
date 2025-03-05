@@ -514,11 +514,11 @@ class TestEventLogStorage:
     def supports_multiple_event_type_queries(self):
         return True
 
-    def set_default_op_concurrency(self, instance, storage, limit):
-        pass
-
     def supports_asset_failed_to_materialize_storage(self):
         return False
+
+    def set_default_op_concurrency(self, instance, storage, limit):
+        pass
 
     def watch_timeout(self):
         return 5
@@ -2797,6 +2797,57 @@ class TestEventLogStorage:
             )
 
         assert failed_partitions_by_step_key == failed_partitions
+
+    def test_asset_materialization_failures_asset_key_table_updates(self, storage, instance):
+        if not self.supports_asset_failed_to_materialize_storage():
+            pytest.skip("storage does not support storing failed events in DB")
+
+        a = AssetKey(["a"])
+        run_id = make_new_run_id()
+
+        partitions = list(string.ascii_uppercase)
+
+        failed_partitions = {"step_a": set(partitions[:10])}
+
+        failure_events_by_step: list[list[DagsterEvent]] = [
+            [
+                DagsterEvent.build_asset_failed_to_materialize_event(
+                    job_name="my_fake_job",
+                    step_key=step_key,
+                    asset_failed_to_materialize_data=AssetFailedToMaterializeData(
+                        asset_key=a,
+                        partition=partition,
+                        error=None,
+                        reason=AssetFailedToMaterializeReason.COMPUTE_FAILED,
+                    ),
+                )
+                for partition in partitions
+            ]
+            for step_key, partitions in failed_partitions.items()
+        ]
+
+        failure_events = [event for events in failure_events_by_step for event in events]
+
+        for failure_event in failure_events:
+            instance.report_dagster_event(failure_event, run_id)
+
+        failure_records = instance.get_records_for_run(
+            run_id=run_id, of_type=DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+        ).records
+
+        assert len(failure_records) == 10
+
+        failed_partitions_by_step_key = defaultdict(set)
+        for record in failure_records:
+            assert record.event_log_entry.dagster_event.is_asset_failed_to_materialize
+            failed_partitions_by_step_key[record.event_log_entry.step_key].add(
+                record.event_log_entry.dagster_event.asset_failed_to_materialize_data.partition
+            )
+
+        assert failed_partitions_by_step_key == failed_partitions
+
+        asset_key_row = storage._fetch_asset_rows(asset_keys=[a])[0]
+        assert asset_key_row.last_failed_to_materialize_event
 
     def test_get_latest_storage_ids_by_partition(self, storage, instance):
         a = AssetKey(["a"])
