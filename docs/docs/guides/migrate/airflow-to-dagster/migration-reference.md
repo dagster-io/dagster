@@ -29,8 +29,8 @@ You can use a custom proxy operator to establish a connection to a Dagster plus 
 In order to make spin-up more efficient, `dagster-airlift` caches the state of the Airflow instance in the dagster database, so that repeat fetches of the code location don't require additional calls to Airflow's rest API. However, this means that the Dagster definitions can potentially fall out of sync with Airflow. Here are a few different ways this can manifest:
 
 - A new Airflow DAG is added. The lineage information does not show up for this dag, and materializations are not recorded.
-- A DAGis removed. The polling sensor begins failing, because there exist assets which expect that DAGto exist.
-- The task dependency structure within a DAGchanges. This may result in `unsynced` statuses in Dagster, or missing materializations. This is not an exhaustive list of problems, but most of the time the tell is that materializations are missing, or assets are missing. When you find yourself in this state, you can force `dagster-airlift` to reload Airflow state by reloading the code location. To do this, go to the `Deployment` tab on the top nav, and click `Redeploy` on the code location relevant to your asset. After some time, the code location should be reloaded with refreshed state from Airflow.
+- A DAG is removed. The polling sensor begins failing, because there exist assets which expect that DAG to exist.
+- The task dependency structure within a DAG changes. This may result in `unsynced` statuses in Dagster, or missing materializations. This is not an exhaustive list of problems, but most of the time the tell is that materializations are missing, or assets are missing. When you find yourself in this state, you can force `dagster-airlift` to reload Airflow state by reloading the code location. To do this, go to the `Deployment` tab on the top nav, and click `Redeploy` on the code location relevant to your asset. After some time, the code location should be reloaded with refreshed state from Airflow.
 
 ## Automating changes to code locations
 
@@ -71,7 +71,7 @@ defs = Definitions.merge(
 
 ## Customizing DAG proxying operator
 
-Similar to how we can customize the operator we construct on a per-DAGbasis, we can customize the operator we construct on a per-DAGbasis. We can use the `build_from_dag_fn` argument of `proxying_to_dagster` to provide a custom operator in place of the default.
+Similar to how we can customize the operator we construct on a per-DAG basis, we can customize the operator we construct on a per-DAG basis. We can use the `build_from_dag_fn` argument of `proxying_to_dagster` to provide a custom operator in place of the default.
 
 For example, in the following example we can see that the operator is customized to provide an authorization header which authenticates Dagster.
 
