@@ -4,9 +4,12 @@ from pathlib import Path
 import pytest
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._utils import pushd
+from dagster_components.components.definitions_component.component import DefinitionsComponent
+from dagster_components.scaffold import scaffold_component_instance
 from pydantic import ValidationError
 
 from dagster_components_tests.integration_tests.component_loader import load_test_component_defs
+from dagster_components_tests.utils import temp_code_location_bar
 
 
 @pytest.fixture(autouse=True)
@@ -68,3 +71,15 @@ def test_definitions_component_with_definitions_object() -> None:
 def test_definitions_component_with_multiple_definitions_objects() -> None:
     with pytest.raises(ValueError, match="Found multiple Definitions objects in my_defs.py"):
         load_test_component_defs("definitions/definitions_object_multiple")
+
+
+def test_scaffold_sensor() -> None:
+    with temp_code_location_bar():
+        instance_path = Path(".") / "some_instance"
+        scaffold_component_instance(
+            instance_path, DefinitionsComponent, "DefinitionsComponent", {"object_type": "sensor"}
+        )
+        assert {p.name for p in instance_path.iterdir()} == {"definitions.py", "component.yaml"}
+
+        with open(instance_path / "definitions.py") as f:
+            assert "@dg.sensor" in f.read()

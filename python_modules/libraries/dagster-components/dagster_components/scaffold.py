@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 import click
 import yaml
+from pydantic import TypeAdapter
 
 from dagster_components.core.component import Component
 from dagster_components.scaffoldable.decorator import get_scaffolder
@@ -33,7 +34,7 @@ def scaffold_component_instance(
     path: Path,
     component_type: type[Component],
     component_type_name: str,
-    scaffold_params: Mapping[str, Any],
+    scaffold_params: Any,
 ) -> None:
     click.echo(f"Creating a Dagster component instance folder at {path}.")
     if not path.exists():
@@ -50,7 +51,7 @@ def scaffold_component_instance(
             type_name=component_type_name,
             target_path=path,
         ),
-        scaffold_params,
+        TypeAdapter(scaffolder.get_params()).validate_python(scaffold_params),
     )
 
     component_yaml_path = path / "component.yaml"
