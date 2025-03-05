@@ -1,5 +1,5 @@
-External assets
-===============
+External assets instance API
+============================
 
 As Dagster doesn't control scheduling or materializing `external assets <https://docs.dagster.io/guides/build/assets/external-assets>`_, it's up to you to keep their metadata updated. The APIs in this reference can be used to keep external assets updated in Dagster.
 
@@ -39,4 +39,4 @@ External asset events can be recorded using :py:func:`DagsterInstance.report_run
 REST API
 --------
 
-Refer to the `External assets REST API reference <https://docs.dagster.io/apidocs/external-assets-rest>`_ for information and examples on the available APIs.
+Refer to the `External assets REST API reference <https://docs.dagster.io/api/python-api/external-assets-rest>`_ for information and examples on the available APIs.

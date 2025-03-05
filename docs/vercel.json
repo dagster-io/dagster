@@ -123,8 +123,12 @@
     },
     {
       "source": "/api/external-assets",
-      "destination": "/api/python-api/external-assets",
+      "destination": "/api/python-api/external-assets-instance-api",
       "permanent": false
+    },
+    {
+      "source": "/api/python-api/external-assets",
+      "destination": "/api/python-api/external-assets-instance-api"
     },
     {
       "source": "/api/hooks",

@@ -1,18 +1,23 @@
 ---
-title: Creating alerts in Dagster+
+title: Creating alert policies in Dagster+
 sidebar_position: 200
 ---
 {/* To update or regenerate the yaml code snippets in this doc, run `python ./examples/docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/generate_alerts_doc_code_snippets.py` */}
 
-You can create alerts in the Dagster+ UI or using the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli).
+You can create alert policies in the Dagster+ UI or with the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli).
 
-{/* TODO link to dagster-cloud CLI tool doc */}
+Alert policies are configured on a per-deployment basis. This means, for example, that asset alerts configured in a prod deployment are only applicable to assets in that deployment.
+
+When you create an alert policy, you must select an alert policy type. For more information on the policy types, see "[Alert policy types](alert-policy-types)".
 
 :::note
-Before you create alerts, you must [configure an alert notification service](configuring-an-alert-notification-service).
+
+Before you create alert policies, you must [configure an alert notification service](configuring-an-alert-notification-service).
+
 :::
 
 ## Alerting when a run fails
+
 You can set up alerts to notify you when a run fails.
 
 By default, these alerts will target all runs in the deployment, but they can be scoped to runs with a specific tag.
@@ -25,9 +30,6 @@ By default, these alerts will target all runs in the deployment, but they can be
 5. Choose run targets and events for your alert and click **Continue**.
 6. Choose a notification channel for your Run alert and click **Continue**.
 7. Review and save your Run alert and click **Save alert**.
-
-
-5. Select **Job failure**.
 
 If desired, add **tags** in the format `{key}:{value}` to filter the runs that will be considered.
 
@@ -57,9 +59,11 @@ If desired, add **tags** in the format `{key}:{value}` to filter the runs that w
 </Tabs>
 
 ## Alerting when a run is taking too long to complete
+
 You can set up alerts to notify you whenever a run takes more than some threshold amount of time.
 
-        By default, these alerts will target all runs in the deployment, but they can be scoped to runs with a specific tag.
+By default, these alerts will target all runs in the deployment, but they can be scoped to runs with a specific tag.
+
 <Tabs groupId="ui_or_cli">
   <TabItem value='ui' label='In the UI'>
     1. In the Dagster UI, click **Deployment**.
@@ -69,8 +73,6 @@ You can set up alerts to notify you whenever a run takes more than some threshol
 5. Choose run targets, select "Run exceeding a specified number of hours", enter the number of hours, and click **Continue**.
 6. Choose a notification channel for your Run alert and click **Continue**.
 7. Review and save your Run alert and click **Save alert**.
-
-5. Select **Job running over** and how many hours to alert after.
 
 If desired, add **tags** in the format `{key}:{value}` to filter the runs that will be considered.
 
@@ -100,6 +102,7 @@ If desired, add **tags** in the format `{key}:{value}` to filter the runs that w
 </Tabs>
 
 ## Alerting when an asset fails to materialize
+
 You can set up alerts to notify you when an asset materialization attempt fails.
 
 By default, these alerts will target all assets in the deployment, but they can be scoped to a specific asset or group of assets.
@@ -111,8 +114,8 @@ If using a RetryPolicy, an alert will only be sent after all retries complete.
 :::
 
 <Tabs groupId="ui_or_cli">
-  <TabItem value='ui' label='In the UI'>
-    1. In the Dagster UI, click **Deployment**.
+<TabItem value='ui' label='In the UI'>
+1. In the Dagster UI, click **Deployment**.
 2. Click the **Alert policies** tab.
 3. Click **Create alert policy**.
 4. Select **Asset** from the menu and click **Continue**.
@@ -147,12 +150,13 @@ If using a RetryPolicy, an alert will only be sent after all retries complete.
 </Tabs>
 
 ## Alerting when an asset check fails
+
 You can set up alerts to notify you when an asset check on an asset fails.
 
 By default, these alerts will target all assets in the deployment, but they can be scoped to checks on a specific asset or group of assets.
 <Tabs groupId="ui_or_cli">
-  <TabItem value='ui' label='In the UI'>
-    1. In the Dagster UI, click **Deployment**.
+<TabItem value='ui' label='In the UI'>
+1. In the Dagster UI, click **Deployment**.
 2. Click the **Alert policies** tab.
 3. Click **Create alert policy**.
 4. Select **Asset** from the menu and click **Continue**.
@@ -186,12 +190,13 @@ By default, these alerts will target all assets in the deployment, but they can 
 </Tabs>
 
 ## Alerting when a schedule or sensor tick fails
+
 You can set up alerts to fire when any schedule or sensor tick across your entire deployment fails.
 
 Alerts are sent only when a schedule/sensor transitions from **success** to **failure**, so only the initial failure will trigger the alert.
 <Tabs groupId="ui_or_cli">
-  <TabItem value='ui' label='In the UI'>
-    1. In the Dagster UI, click **Deployment**.
+<TabItem value='ui' label='In the UI'>
+1. In the Dagster UI, click **Deployment**.
 2. Click the **Alert policies** tab.
 3. Click **Create alert policy**.
 4. Select **Automation** from the menu and click **Continue**.
@@ -224,10 +229,11 @@ Alerts are sent only when a schedule/sensor transitions from **success** to **fa
 </Tabs>
 
 ## Alerting when a code location fails to load
+
 You can set up alerts to fire when any code location fails to load due to an error.
 <Tabs groupId="ui_or_cli">
-  <TabItem value='ui' label='In the UI'>
-    1. In the Dagster UI, click **Deployment**.
+<TabItem value='ui' label='In the UI'>
+1. In the Dagster UI, click **Deployment**.
 2. Click the **Alert policies** tab.
 3. Click **Create alert policy**.
 4. Select **Code Location** from the menu and click **Continue**.
@@ -260,14 +266,17 @@ You can set up alerts to fire when any code location fails to load due to an err
 </Tabs>
 
 ## Alerting when a Hybrid agent becomes unavailable
+
 :::note
-This is only available for [Hybrid](/dagster-plus/deployment/deployment-types/hybrid/) deployments.
+
+Alerting when a Hybrid agent becomes unavailable is only available for [Hybrid deployments](/dagster-plus/deployment/deployment-types/hybrid/).
+
 :::
 
 You can set up alerts to fire if your Hybrid agent hasn't sent a heartbeat in the last 5 minutes.
 <Tabs groupId="ui_or_cli">
-  <TabItem value='ui' label='In the UI'>
-    1. In the Dagster UI, click **Deployment**.
+<TabItem value='ui' label='In the UI'>
+1. In the Dagster UI, click **Deployment**.
 2. Click the **Alert policies** tab.
 3. Click **Create alert policy**.
 4. Select **Code Location** from the menu and click **Continue**.
