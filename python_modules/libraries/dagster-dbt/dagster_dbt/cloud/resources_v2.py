@@ -13,7 +13,6 @@ from dagster_dbt.cloud.client_v2 import DbtCloudClient
 
 from dagster_dbt.cloud.dbt_cloud_job_run import DbtCloudJobRun
 
-LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
 
 
