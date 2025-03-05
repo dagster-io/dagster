@@ -15,7 +15,16 @@ from dagster_dbt import (
     DbtProject,
     dbt_assets,
 )
+<<<<<<< HEAD
 from dagster_dbt.asset_utils import get_asset_key_for_model as get_asset_key_for_model
+=======
+from dagster_dbt.asset_utils import (
+    get_asset_key_for_model as base_get_asset_key_for_model,
+    get_manifest_and_translator_from_dbt_assets,
+)
+from pydantic import ConfigDict, Field, computed_field
+from pydantic.dataclasses import dataclass
+>>>>>>> 4eb6644f8c ([dagster-components][dbt] Add utility to construct DbtManifestAssetSelection for a component)
 
 from dagster_components import Component, ComponentLoadContext, FieldResolver
 from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
@@ -163,3 +172,30 @@ def get_component_asset_key_for_model(
     """
     defs = context.build_defs_from_component_module(dbt_component_module)
     return get_asset_key_for_model(cast(Sequence[AssetsDefinition], defs.assets), model_name)
+
+
+def asset_selection_for_component(
+    context: ComponentLoadContext,
+    dbt_component_module: ModuleType,
+    select: str = "fqn:*",
+    exclude: Optional[str] = None,
+) -> DbtManifestAssetSelection:
+    """Constructs a DbtManifestAssetSelection, based on the dbt manifest and asset key mapping
+    of the assets defined in the specified dagster_components.dagster_dbt.DbtAssetsComponent instance.
+
+    Args:
+        context (ComponentLoadContext): The context in which to load the component.
+        dbt_component_module (ModuleType): The module that was used to load the dbt project.
+        select (str): The dbt selection string to use when constructing the asset selection.
+        exclude (Optional[str]): The dbt selection string to use when excluding assets from the asset selection.
+    """
+    defs = context.build_defs_from_component_module(dbt_component_module)
+    manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(
+        cast(Sequence[AssetsDefinition], defs.assets)
+    )
+    return DbtManifestAssetSelection.build(
+        manifest=manifest,
+        dagster_dbt_translator=dagster_dbt_translator,
+        select=select,
+        exclude=exclude,
+    )
