@@ -801,7 +801,7 @@ class DbtCloudWorkspace(ConfigurableResource):
         run = DbtCloudJobRun.run(
             job_id=job.id,
             args=["parse"],
-            client=self.dbt_client,
+            client=self.get_client(),
         )
         run.wait_for_success()
         return DbtCloudWorkspaceData(
