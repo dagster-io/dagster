@@ -98,7 +98,7 @@ curl \
 </TabItem>
 </Tabs>
 
-Refer to the [External assets REST API documentation](/api/python-api/external-assets) for more information.
+Refer to the [External assets REST API documentation](/api/python-api/external-assets-rest-api) for more information.
 
 ## Modeling a graph of external assets
 

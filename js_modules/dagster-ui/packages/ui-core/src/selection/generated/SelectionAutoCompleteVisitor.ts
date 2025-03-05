@@ -32,6 +32,7 @@ import {
   IncompleteNotExpressionContext,
   IncompleteOrExpressionContext,
   IncompletePlusTraversalExpressionContext,
+  IncompletePlusTraversalExpressionMissingValueContext,
   IncompleteRightQuotedStringValueContext,
   IncompleteUpTraversalExpressionContext,
   LeftParenTokenContext,
@@ -364,6 +365,16 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
    * @return the visitor result
    */
   visitIncompleteUpTraversalExpression?: (ctx: IncompleteUpTraversalExpressionContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `IncompletePlusTraversalExpressionMissingValue`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitIncompletePlusTraversalExpressionMissingValue?: (
+    ctx: IncompletePlusTraversalExpressionMissingValueContext,
+  ) => Result;
 
   /**
    * Visit a parse tree produced by the `IncompleteAttributeExpressionMissingKey`

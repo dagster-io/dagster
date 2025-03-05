@@ -32,6 +32,7 @@ import {
   IncompleteNotExpressionContext,
   IncompleteOrExpressionContext,
   IncompletePlusTraversalExpressionContext,
+  IncompletePlusTraversalExpressionMissingValueContext,
   IncompleteRightQuotedStringValueContext,
   IncompleteUpTraversalExpressionContext,
   LeftParenTokenContext,
@@ -543,6 +544,23 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitIncompleteUpTraversalExpression?: (ctx: IncompleteUpTraversalExpressionContext) => void;
+
+  /**
+   * Enter a parse tree produced by the `IncompletePlusTraversalExpressionMissingValue`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  enterIncompletePlusTraversalExpressionMissingValue?: (
+    ctx: IncompletePlusTraversalExpressionMissingValueContext,
+  ) => void;
+  /**
+   * Exit a parse tree produced by the `IncompletePlusTraversalExpressionMissingValue`
+   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
+   * @param ctx the parse tree
+   */
+  exitIncompletePlusTraversalExpressionMissingValue?: (
+    ctx: IncompletePlusTraversalExpressionMissingValueContext,
+  ) => void;
 
   /**
    * Enter a parse tree produced by the `IncompleteAttributeExpressionMissingKey`

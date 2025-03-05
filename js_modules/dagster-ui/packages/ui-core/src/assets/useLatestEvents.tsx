@@ -6,12 +6,12 @@ import {gql, useQuery} from '../apollo-client';
 import {
   AssetOverviewMetadataEventsQuery,
   AssetOverviewMetadataEventsQueryVariables,
-} from './types/useLatestPartitionEvents.types';
+} from './types/useLatestEvents.types';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {usePredicateChangeSignal} from '../hooks/usePredicateChangeSignal';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
-export function useLatestPartitionEvents(
+export function useLatestEvents(
   assetKey: AssetKey,
   assetNodeLoadTimestamp: number | undefined,
   liveData: LiveDataForNode | undefined,
@@ -66,16 +66,18 @@ export const ASSET_OVERVIEW_METADATA_EVENTS_QUERY = gql`
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
         id
-        assetMaterializations(limit: 1, partitionInLast: 1) {
+        assetMaterializations(limit: 1) {
           timestamp
           runId
+          partition
           metadataEntries {
             ...MetadataEntryFragment
           }
         }
-        assetObservations(limit: 1, partitionInLast: 1) {
+        assetObservations(limit: 1) {
           timestamp
           runId
+          partition
           metadataEntries {
             ...MetadataEntryFragment
           }

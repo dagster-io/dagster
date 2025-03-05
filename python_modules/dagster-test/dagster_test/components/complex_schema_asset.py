@@ -1,22 +1,23 @@
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Annotated, Optional
 
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.schema.base import ResolvableSchema
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesSchema,
+    AssetPostProcessor,
     AssetPostProcessorSchema,
     OpSpecSchema,
-    PostProcessorFn,
 )
+from dagster_components.core.schema.resolvable_from_schema import DSLSchema, ResolvableFromSchema
 from pydantic import Field
 
 
-class ComplexAssetSchema(ResolvableSchema["ComplexAssetComponent"]):
+class ComplexAssetSchema(DSLSchema):
     value: str = Field(..., examples=["example_for_value"])
     list_value: list[str] = Field(
         ..., examples=[["example_for_list_value_1", "example_for_list_value_2"]]
@@ -29,31 +30,25 @@ class ComplexAssetSchema(ResolvableSchema["ComplexAssetComponent"]):
     asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
 
 
-class ComplexAssetComponent(Component):
+@dataclass
+class ComplexAssetComponent(Component, ResolvableFromSchema[ComplexAssetSchema]):
     """An asset that has a complex schema."""
 
-    @classmethod
-    def get_schema(cls):
-        return ComplexAssetSchema
-
-    def __init__(
-        self,
-        value: str,
-        op_spec: Optional[OpSpecSchema],
-        asset_attributes: Optional[AssetAttributesSchema],
-        asset_post_processors: Sequence[PostProcessorFn],
-    ):
-        self._value = value
-        self._op_spec = op_spec
-        self._asset_attributes = asset_attributes
-        self._asset_post_processors = asset_post_processors
+    value: str
+    list_value: list[str]
+    obj_value: dict[str, str]
+    op: Optional[OpSpecSchema] = None
+    asset_attributes: Optional[AssetAttributesSchema] = None
+    asset_post_processors: Annotated[
+        Optional[Sequence[AssetPostProcessor]], AssetPostProcessor.from_optional_seq
+    ] = None
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        @asset(spec=self._asset_attributes)
+        @asset(spec=self.asset_attributes)
         def dummy(context: AssetExecutionContext):
-            return self._value
+            return self.value
 
         defs = Definitions(assets=[dummy])
-        for post_processor in self._asset_post_processors:
-            defs = post_processor(defs)
+        for post_processor in self.asset_post_processors or []:
+            defs = post_processor.fn(defs)
         return defs

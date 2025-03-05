@@ -6,4 +6,5 @@ alert_policies:
   - AGENT_UNAVAILABLE
   name: code-location-error-pagerduty
   notification_service:
-    integration_key: <pagerduty_integration_key>
+    pagerduty:
+      integration_key: <pagerduty_integration_key>

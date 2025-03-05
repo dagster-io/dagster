@@ -9,6 +9,7 @@ alert_policies:
   - JOB_LONG_RUNNING
   name: job-running-over-one-hour-microsoft_teams
   notification_service:
-    webhook_url: https://yourdomain.webhook.office.com/...
+    microsoft_teams:
+      webhook_url: https://yourdomain.webhook.office.com/...
   tags:
     important: 'true'

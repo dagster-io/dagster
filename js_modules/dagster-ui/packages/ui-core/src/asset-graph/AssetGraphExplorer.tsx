@@ -32,7 +32,7 @@ import {AssetNodeMenuProps} from './AssetNodeMenu';
 import {CollapsedGroupNode} from './CollapsedGroupNode';
 import {ExpandedGroupNode, GroupOutline} from './ExpandedGroupNode';
 import {AssetNodeLink} from './ForeignNode';
-import {ToggleDirectionButton, ToggleGroupsButton, useLayoutDirectionState} from './GraphSettings';
+import {AssetGraphSettingsButton, useLayoutDirectionState} from './GraphSettings';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {
   AssetGraphViewType,
@@ -97,6 +97,7 @@ type Props = {
     node: AssetLocation,
   ) => void;
   viewType: AssetGraphViewType;
+  setHideEdgesToNodesOutsideQuery?: (hideEdgesToNodesOutsideQuery: boolean) => void;
 };
 
 export const MINIMAL_SCALE = 0.6;
@@ -228,6 +229,7 @@ const AssetGraphExplorerWithData = ({
   kindFilter,
   groupsFilter,
   loading: dataLoading,
+  setHideEdgesToNodesOutsideQuery,
 }: WithDataProps) => {
   const findAssetLocation = useFindAssetLocation();
   const [highlighted, setHighlighted] = React.useState<string[] | null>(null);
@@ -510,21 +512,15 @@ const AssetGraphExplorerWithData = ({
       graphHeight={layout.height}
       graphHasNoMinimumZoom={false}
       additionalToolbarElements={
-        <>
-          {allGroups.length > 1 && (
-            <ToggleGroupsButton
-              key="toggle-groups"
-              expandedGroups={expandedGroups}
-              setExpandedGroups={setExpandedGroups}
-              allGroups={allGroups}
-            />
-          )}
-          <ToggleDirectionButton
-            key="toggle-direction"
-            direction={direction}
-            setDirection={setDirection}
-          />
-        </>
+        <AssetGraphSettingsButton
+          expandedGroups={expandedGroups}
+          setExpandedGroups={setExpandedGroups}
+          allGroups={allGroups}
+          direction={direction}
+          setDirection={setDirection}
+          hideEdgesToNodesOutsideQuery={fetchOptions.hideEdgesToNodesOutsideQuery}
+          setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
+        />
       }
       onClick={onClickBackground}
       onArrowKeyDown={onArrowKeyDown}
@@ -723,6 +719,8 @@ const AssetGraphExplorerWithData = ({
                 allGroups={allGroups}
                 expandedGroups={expandedGroups}
                 setExpandedGroups={setExpandedGroups}
+                hideEdgesToNodesOutsideQuery={fetchOptions.hideEdgesToNodesOutsideQuery}
+                setHideEdgesToNodesOutsideQuery={setHideEdgesToNodesOutsideQuery}
               >
                 {svgViewport}
               </AssetGraphBackgroundContextMenu>

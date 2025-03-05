@@ -15,5 +15,6 @@ alert_policies:
   - ASSET_CHECK_SEVERITY_ERROR
   name: asset-check-failed-slack
   notification_service:
-    slack_channel_name: notifications
-    slack_workspace_name: hooli
+    slack:
+      slack_channel_name: notifications
+      slack_workspace_name: hooli

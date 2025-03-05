@@ -17,6 +17,7 @@ import {
   FunctionNameContext,
   IncompleteAttributeExpressionMissingValueContext,
   IncompletePlusTraversalExpressionContext,
+  IncompletePlusTraversalExpressionMissingValueContext,
   IncompleteUpTraversalExpressionContext,
   LeftParenTokenContext,
   OrTokenContext,
@@ -258,6 +259,20 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this.list.push(
       this.createOperatorSuggestion({text: '+', type: 'up-traversal', displayText: '+'}),
     );
+  }
+
+  public visitIncompletePlusTraversalExpressionMissingValue(
+    ctx: IncompletePlusTraversalExpressionMissingValueContext,
+  ) {
+    const value = getValueNodeValue(ctx.value());
+    if (this.nodeIncludesCursor(ctx.value())) {
+      this.startReplacementIndex = ctx.value().start.startIndex;
+      this.stopReplacementIndex = ctx.value().stop!.stopIndex + 1;
+      this.addUnmatchedValueResults(value, DEFAULT_TEXT_CALLBACK, {
+        excludePlus: true,
+      });
+      return;
+    }
   }
 
   public visitIncompletePlusTraversalExpression(ctx: IncompletePlusTraversalExpressionContext) {

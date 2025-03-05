@@ -2,7 +2,6 @@ from collections.abc import Mapping, Sequence
 from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 import dagster._check as check
-from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
@@ -14,8 +13,12 @@ from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
 from typing_extensions import TypeAlias
 
-from dagster_components.core.schema.base import FieldResolver, ResolvableSchema
+from dagster_components.core.schema.base import FieldResolver, ResolvableSchema, resolve_fields
 from dagster_components.core.schema.context import ResolutionContext
+from dagster_components.core.schema.resolvable_from_schema import (
+    DSLFieldResolver,
+    ResolvableFromSchema,
+)
 
 
 def _resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
@@ -56,15 +59,15 @@ def resolve_backfill_policy(
 
 
 @dataclass
-class OpSpec:
+class OpSpec(ResolvableFromSchema["OpSpecSchema"]):
     name: Optional[str] = None
     tags: Optional[dict[str, str]] = None
-    backfill_policy: Annotated[Optional[BackfillPolicy], FieldResolver(resolve_backfill_policy)] = (
-        None
-    )
+    backfill_policy: Annotated[
+        Optional[BackfillPolicy], DSLFieldResolver.from_parent(resolve_backfill_policy)
+    ] = None
 
 
-class OpSpecSchema(ResolvableSchema[OpSpec]):
+class OpSpecSchema(ResolvableSchema):
     name: Optional[str] = Field(default=None, description="The name of the op.")
     tags: Optional[dict[str, str]] = Field(
         default=None, description="Arbitrary metadata for the op."
@@ -72,13 +75,6 @@ class OpSpecSchema(ResolvableSchema[OpSpec]):
     backfill_policy: Optional[
         Union[SingleRunBackfillPolicySchema, MultiRunBackfillPolicySchema]
     ] = Field(default=None, description="The backfill policy to use for the assets.")
-
-
-class AssetDepSchema(ResolvableSchema[AssetDep]):
-    asset: Annotated[
-        str, FieldResolver(lambda context, schema: _resolve_asset_key(schema.asset, context))
-    ]
-    partition_mapping: Optional[str]
 
 
 class _ResolvableAssetAttributesMixin(BaseModel):
@@ -150,9 +146,16 @@ class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[Ma
     ] = Field(default=None, description="A unique identifier for the asset.")
 
     def resolve(self, context: ResolutionContext) -> Mapping[str, Any]:
-        # only include fields that are explcitly set
-        set_fields = self.model_dump(exclude_unset=True).keys()
-        return {k: v for k, v in self.resolve_fields(dict, context).items() if k in set_fields}
+        return resolve_asset_attributes_to_mapping(context, self)
+
+
+def resolve_asset_attributes_to_mapping(
+    context: ResolutionContext,
+    schema: AssetAttributesSchema,
+) -> Mapping[str, Any]:
+    # only include fields that are explcitly set
+    set_fields = schema.model_dump(exclude_unset=True).keys()
+    return {k: v for k, v in resolve_fields(schema, dict, context).items() if k in set_fields}
 
 
 class AssetPostProcessorSchema(ResolvableSchema):
@@ -160,39 +163,51 @@ class AssetPostProcessorSchema(ResolvableSchema):
     operation: Literal["merge", "replace"] = "merge"
     attributes: AssetAttributesSchema
 
-    def apply_to_spec(self, spec: AssetSpec, context: ResolutionContext) -> AssetSpec:
-        # add the original spec to the context and resolve values
-        attributes = context.with_scope(asset=spec).resolve_value(self.attributes)
 
-        if self.operation == "merge":
-            mergeable_attributes = {"metadata", "tags"}
-            merge_attributes = {k: v for k, v in attributes.items() if k in mergeable_attributes}
-            replace_attributes = {
-                k: v for k, v in attributes.items() if k not in mergeable_attributes
-            }
-            return spec.merge_attributes(**merge_attributes).replace_attributes(
-                **replace_attributes
-            )
-        elif self.operation == "replace":
-            return spec.replace_attributes(**attributes)
-        else:
-            check.failed(f"Unsupported operation: {self.operation}")
+def apply_post_processor_to_spec(
+    schema: AssetPostProcessorSchema, spec: AssetSpec, context: ResolutionContext
+) -> AssetSpec:
+    # add the original spec to the context and resolve values
+    attributes = context.with_scope(asset=spec).resolve_value(schema.attributes)
 
-    def apply(self, defs: Definitions, context: ResolutionContext) -> Definitions:
-        target_selection = AssetSelection.from_string(self.target, include_sources=True)
-        target_keys = target_selection.resolve(defs.get_asset_graph())
+    if schema.operation == "merge":
+        mergeable_attributes = {"metadata", "tags"}
+        merge_attributes = {k: v for k, v in attributes.items() if k in mergeable_attributes}
+        replace_attributes = {k: v for k, v in attributes.items() if k not in mergeable_attributes}
+        return spec.merge_attributes(**merge_attributes).replace_attributes(**replace_attributes)
+    elif schema.operation == "replace":
+        return spec.replace_attributes(**attributes)
+    else:
+        check.failed(f"Unsupported operation: {schema.operation}")
 
-        mappable = [d for d in defs.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))]
-        mapped_assets = map_asset_specs(
-            lambda spec: self.apply_to_spec(spec, context) if spec.key in target_keys else spec,
-            mappable,
-        )
 
-        assets = [
-            *mapped_assets,
-            *[d for d in defs.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))],
-        ]
-        return replace(defs, assets=assets)
+def apply_post_processor_to_defs(
+    schema: AssetPostProcessorSchema, defs: Definitions, context: ResolutionContext
+) -> Definitions:
+    target_selection = AssetSelection.from_string(schema.target, include_sources=True)
+    target_keys = target_selection.resolve(defs.get_asset_graph())
 
-    def resolve(self, context: ResolutionContext) -> Callable[[Definitions], Definitions]:
-        return lambda defs: self.apply(defs, context)
+    mappable = [d for d in defs.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))]
+    mapped_assets = map_asset_specs(
+        lambda spec: apply_post_processor_to_spec(schema, spec, context)
+        if spec.key in target_keys
+        else spec,
+        mappable,
+    )
+
+    assets = [
+        *mapped_assets,
+        *[d for d in defs.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))],
+    ]
+    return replace(defs, assets=assets)
+
+
+def resolve_schema_to_post_processor(
+    context, schema: AssetPostProcessorSchema
+) -> Callable[[Definitions], Definitions]:
+    return lambda defs: apply_post_processor_to_defs(schema, defs, context)
+
+
+@dataclass
+class AssetPostProcessor(ResolvableFromSchema[AssetPostProcessorSchema]):
+    fn: Annotated[PostProcessorFn, DSLFieldResolver.from_parent(resolve_schema_to_post_processor)]

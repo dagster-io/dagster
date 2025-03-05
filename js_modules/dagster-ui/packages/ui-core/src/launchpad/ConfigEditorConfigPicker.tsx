@@ -5,7 +5,6 @@ import {
   Button,
   Colors,
   Icon,
-  IconWrapper,
   Menu,
   MenuDivider,
   MenuItem,
@@ -403,9 +402,7 @@ export const SortButton = styled.button`
     outline: none;
   }
   :hover {
-    ${IconWrapper} {
-      background-color: ${Colors.backgroundLight()};
-    }
+    background-color: ${Colors.backgroundLight()};
   }
 `;
 
