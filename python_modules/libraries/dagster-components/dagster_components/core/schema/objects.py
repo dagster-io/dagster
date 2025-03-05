@@ -7,6 +7,9 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
 from pydantic import BaseModel, Field
@@ -17,6 +20,7 @@ from dagster_components.core.schema.base import FieldResolver, ResolvableSchema,
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLFieldResolver,
+    ResolutionSpec,
     ResolvableFromSchema,
 )
 
@@ -130,6 +134,28 @@ class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[AssetSpe
     key: Annotated[
         str, FieldResolver(lambda context, schema: _resolve_asset_key(schema.key, context))
     ] = Field(..., description="A unique identifier for the asset.")
+
+
+class AssetSpecResolutionSpec(ResolutionSpec):
+    key: Annotated[
+        str,
+        DSLFieldResolver.from_parent(
+            lambda context, schema: _resolve_asset_key(schema.key, context)
+        ),
+    ]
+    deps: Sequence[str]
+    description: Optional[str]
+    metadata: Mapping[str, Any]
+    group_name: Optional[str]
+    skippable: bool
+    code_version: Optional[str]
+    owners: Sequence[str]
+    tags: Mapping[str, str]
+    kinds: Optional[Sequence[str]]
+    automation_condition: Optional[AutomationCondition]
+
+
+# = Field(..., description="A unique identifier for the asset.")
 
 
 class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
