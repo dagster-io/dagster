@@ -265,15 +265,15 @@ def remove_system_frames_from_error(
     """Remove system frames from a SerializableErrorInfo, including Dagster framework boilerplate
     and import machinery, which are generally not useful for users to debug their code.
     """
-    return remove_matching_lines_from_serializable_error_info(
+    return remove_matching_lines_from_error_info(
         error_info,
         DAGSTER_FRAMEWORK_SUBSTRINGS + IMPORT_MACHINERY_SUBSTRINGS,
     )
 
 
-def remove_matching_lines_from_serializable_error_info(
+def remove_matching_lines_from_error_info(
     error_info: SerializableErrorInfo,
-    matching_lines: Sequence[str],
+    match_substrs: Sequence[str],
 ):
     """Utility which truncates a stacktrace to drop lines which match the given strings.
     This is useful for e.g. removing Dagster framework lines from a stacktrace that
@@ -287,14 +287,14 @@ def remove_matching_lines_from_serializable_error_info(
         SerializableErrorInfo: A new error info with the stacktrace truncated
     """
     return error_info._replace(
-        stack=remove_matching_lines_from_stack_trace(error_info.stack, matching_lines),
+        stack=remove_matching_lines_from_stack_trace(error_info.stack, match_substrs),
         cause=(
-            remove_matching_lines_from_serializable_error_info(error_info.cause, matching_lines)
+            remove_matching_lines_from_error_info(error_info.cause, match_substrs)
             if error_info.cause
             else None
         ),
         context=(
-            remove_matching_lines_from_serializable_error_info(error_info.context, matching_lines)
+            remove_matching_lines_from_error_info(error_info.context, match_substrs)
             if error_info.context
             else None
         ),
