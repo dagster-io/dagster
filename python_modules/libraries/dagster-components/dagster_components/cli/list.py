@@ -2,15 +2,19 @@ import json
 from typing import Any, Literal, Union
 
 import click
+from dagster._core.errors import DagsterError
 from pydantic import ConfigDict, TypeAdapter, create_model
 
 from dagster_components.core.component import (
     Component,
     ComponentTypeMetadata,
+    ScaffoldableObjectMetadata,
     discover_component_types,
     discover_entry_point_component_types,
 )
 from dagster_components.core.component_key import ComponentKey
+from dagster_components.scaffoldable.decorator import get_scaffolder
+from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 
 
 @click.group(name="list")
@@ -33,6 +37,31 @@ def list_component_types_command(
             name=key.name,
             namespace=key.namespace,
             **component_types[key].get_metadata(),
+        )
+    click.echo(json.dumps(output))
+
+
+@list_cli.command(name="scaffoldable-objects")
+@click.option("--entry-points/--no-entry-points", is_flag=True, default=True)
+@click.argument("extra_modules", nargs=-1, type=str)
+@click.pass_context
+def list_scaffoldable_objects_command(
+    ctx: click.Context, entry_points: bool, extra_modules: tuple[str, ...]
+) -> None:
+    """List registered scaffoldable Dagster objects."""
+    output: dict[str, Any] = {}
+    component_types = _load_component_types(entry_points, extra_modules)
+    for key in sorted(component_types.keys(), key=lambda k: k.to_typename()):
+        scaffolder = get_scaffolder(component_types[key])
+        if isinstance(scaffolder, ScaffolderUnavailableReason):
+            raise DagsterError(
+                f"Component {component_types[key].__name__} is not scaffoldable: {scaffolder.message}"
+            )
+        scaffold_params = scaffolder.get_params()
+        output[key.to_typename()] = ScaffoldableObjectMetadata(
+            name=key.name,
+            namespace=key.namespace,
+            scaffold_params_schema=scaffold_params.model_json_schema() if scaffold_params else None,
         )
     click.echo(json.dumps(output))
 

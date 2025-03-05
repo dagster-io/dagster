@@ -209,18 +209,18 @@ def scaffold_component_type(dg_context: DgContext, class_name: str, module_name:
 # ########################
 
 
-def scaffold_component_instance(
+def scaffold_object(
     path: Path,
-    component_type: str,
+    object_type: str,
     scaffold_params: Optional[Mapping[str, Any]],
     dg_context: "DgContext",
 ) -> None:
-    click.echo(f"Creating a Dagster component instance folder at {path}.")
+    click.echo(f"Creating a Dagster def folder at {path}.")
     os.makedirs(path, exist_ok=True)
     scaffold_command = [
         "scaffold",
-        "component",
-        component_type,
+        "object",
+        object_type,
         str(path),
         *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),
     ]
