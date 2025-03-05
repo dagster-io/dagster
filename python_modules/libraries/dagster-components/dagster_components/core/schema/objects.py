@@ -130,7 +130,7 @@ class _ResolvableAssetAttributesMixin(BaseModel):
     )
 
 
-class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema[AssetSpec]):
+class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
     key: Annotated[
         str, FieldResolver(lambda context, schema: _resolve_asset_key(schema.key, context))
     ] = Field(..., description="A unique identifier for the asset.")

@@ -7,6 +7,7 @@ from dagster_components import (
     ComponentLoadContext,
     ResolvableSchema,
 )
+from dagster_components.core.schema.objects import AssetSpecSequenceField
 
 import dagster as dg
 
@@ -19,7 +20,7 @@ class ShellScriptSchema(ResolvableSchema):
 @dataclass
 class ShellCommand(Component):
     script_path: str
-    asset_specs: Sequence[dg.AssetSpec]
+    asset_specs: AssetSpecSequenceField
 
     @classmethod
     def get_schema(cls) -> type[ShellScriptSchema]:
