@@ -136,7 +136,7 @@ class DbtCloudWorkspace(ConfigurableResource):
     # Cache spec retrieval for a specific translator class.
     @lru_cache(maxsize=1)
     def load_specs(
-        self, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+            self, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
     ) -> Sequence[Union[AssetSpec, AssetCheckSpec]]:
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
 
@@ -150,40 +150,44 @@ class DbtCloudWorkspace(ConfigurableResource):
                 AssetSpec,
             )
             asset_check_specs = check.is_list(
-                defs.asset_checks,
+                [
+                    check_spec
+                    for asset_def in defs.asset_checks
+                    for check_spec in asset_def.check_specs
+                ],
                 AssetCheckSpec,
             )
             return [*asset_specs, *asset_check_specs]
 
     def load_asset_specs(
-        self, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+            self, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
     ) -> Sequence[AssetSpec]:
         return [
             spec
-            for spec in self.get_specs(dagster_dbt_translator=dagster_dbt_translator)
+            for spec in self.load_specs(dagster_dbt_translator=dagster_dbt_translator)
             if isinstance(spec, AssetSpec)
         ]
 
     def load_check_specs(
-        self, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+            self, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
     ) -> Sequence[AssetCheckSpec]:
         return [
             spec
-            for spec in self.get_specs(dagster_dbt_translator=dagster_dbt_translator)
+            for spec in self.load_specs(dagster_dbt_translator=dagster_dbt_translator)
             if isinstance(spec, AssetCheckSpec)
         ]
 
 
 @preview
 def load_dbt_cloud_asset_specs(
-    workspace: DbtCloudWorkspace, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+        workspace: DbtCloudWorkspace, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
 ) -> Sequence[AssetSpec]:
     return workspace.load_asset_specs(dagster_dbt_translator=dagster_dbt_translator)
 
 
 @preview
 def load_dbt_cloud_check_specs(
-    workspace: DbtCloudWorkspace, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+        workspace: DbtCloudWorkspace, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
 ) -> Sequence[AssetCheckSpec]:
     return workspace.load_check_specs(dagster_dbt_translator=dagster_dbt_translator)
 
@@ -210,4 +214,8 @@ class DbtCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[DbtCloudWorkspace
             io_manager_key=None,
             project=None,
         )
-        return Definitions(assets=all_asset_specs, asset_checks=all_check_specs)
+
+        @multi_asset_check(specs=all_check_specs)
+        def _all_asset_checks(): ...
+
+        return Definitions(assets=all_asset_specs, asset_checks=[_all_asset_checks])
