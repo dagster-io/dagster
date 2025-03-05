@@ -1,8 +1,11 @@
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Annotated, Optional
+from types import ModuleType
+from typing import Annotated, Optional, cast
 
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster_dbt import (
@@ -12,6 +15,7 @@ from dagster_dbt import (
     DbtProject,
     dbt_assets,
 )
+from dagster_dbt.asset_utils import get_asset_key_for_model as get_asset_key_for_model
 
 from dagster_components import Component, ComponentLoadContext, FieldResolver
 from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
@@ -128,3 +132,34 @@ class DbtProjectComponent(Component):
 
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
         yield from dbt.cli(["build"], context=context).stream()
+
+
+def get_component_asset_key_for_model(
+    context: ComponentLoadContext, dbt_component_module: ModuleType, model_name: str
+) -> AssetKey:
+    """Component-based version of dagster_dbt.get_asset_key_for_model. Returns the corresponding Dagster
+    asset key for a dbt model, seed, or snapshot, loaded from the passed component path.
+
+    Args:
+        dbt_component_module (ModuleType): The module that was used to load the dbt project.
+        model_name (str): The name of the dbt model, seed, or snapshot.
+
+    Returns:
+        AssetKey: The corresponding Dagster asset key.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import asset
+            from dagster_components.components.dbt_project import get_asset_key_for_model
+            from dagster_components.core.component import ComponentLoadContext
+            from my_project.defs import dbt_component
+
+            ctx = ComponentLoadContext.get()
+
+            @asset(deps={get_asset_key_for_model(ctx, dbt_component, "customers")})
+            def cleaned_customers():
+                ...
+    """
+    defs = context.build_defs_from_component_module(dbt_component_module)
+    return get_asset_key_for_model(cast(Sequence[AssetsDefinition], defs.assets), model_name)
