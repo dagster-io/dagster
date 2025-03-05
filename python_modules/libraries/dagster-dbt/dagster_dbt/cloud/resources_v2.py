@@ -1,39 +1,31 @@
-from typing import NamedTuple
-import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from functools import lru_cache
-from typing import Any, NamedTuple, Optional, Union
+from typing import NamedTuple, Optional, Union
 
-import requests
 from dagster import (
     AssetCheckSpec,
     AssetSpec,
     Definitions,
-    Failure,
     _check as check,
+    multi_asset_check,
 )
 from dagster._annotations import preview
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
-from dagster._model import DagsterModel
 from dagster._record import record
-from dagster._serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
-from dagster_dbt.cloud.client_v2 import DbtCloudClient
-
 from dagster_dbt.asset_utils import build_dbt_specs
+from dagster_dbt.cloud.client_v2 import DbtCloudClient
 from dagster_dbt.cloud.dbt_cloud_job_run import DbtCloudJobRun
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.cloud.types import DbtCloudWorkspaceData
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
 
 DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX = "__dbt_cloud"
-
-DEFAULT_POLL_TIMEOUT = 60
 
 
 def get_job_name(environment_id: int, project_id: int) -> str:
@@ -136,7 +128,7 @@ class DbtCloudWorkspace(ConfigurableResource):
     # Cache spec retrieval for a specific translator class.
     @lru_cache(maxsize=1)
     def load_specs(
-            self, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+        self, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
     ) -> Sequence[Union[AssetSpec, AssetCheckSpec]]:
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
 
@@ -160,7 +152,7 @@ class DbtCloudWorkspace(ConfigurableResource):
             return [*asset_specs, *asset_check_specs]
 
     def load_asset_specs(
-            self, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+        self, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
     ) -> Sequence[AssetSpec]:
         return [
             spec
@@ -169,7 +161,7 @@ class DbtCloudWorkspace(ConfigurableResource):
         ]
 
     def load_check_specs(
-            self, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+        self, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
     ) -> Sequence[AssetCheckSpec]:
         return [
             spec
@@ -180,14 +172,14 @@ class DbtCloudWorkspace(ConfigurableResource):
 
 @preview
 def load_dbt_cloud_asset_specs(
-        workspace: DbtCloudWorkspace, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+    workspace: DbtCloudWorkspace, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
 ) -> Sequence[AssetSpec]:
     return workspace.load_asset_specs(dagster_dbt_translator=dagster_dbt_translator)
 
 
 @preview
 def load_dbt_cloud_check_specs(
-        workspace: DbtCloudWorkspace, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+    workspace: DbtCloudWorkspace, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
 ) -> Sequence[AssetCheckSpec]:
     return workspace.load_check_specs(dagster_dbt_translator=dagster_dbt_translator)
 
