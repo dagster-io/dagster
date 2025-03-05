@@ -131,9 +131,12 @@ class DSLFieldResolver:
         self, fn: Union[ParentFn, AttrWithContextFn, Callable[["ResolutionContext", Any], Any]]
     ):
         if not isinstance(fn, (ParentFn, AttrWithContextFn)):
-            check.param_invariant(
-                callable(fn), "fn", "must be callable if not ParentFn or AttrWithContextFn"
-            )
+            if not callable(fn):
+                check.param_invariant(
+                    callable(fn),
+                    "fn",
+                    f"must be callable if not ParentFn or AttrWithContextFn. Got {fn}",
+                )
             self.fn = AttrWithContextFn(fn)
         else:
             self.fn = fn

@@ -127,8 +127,9 @@ class TranslatorResolvingInfo:
 
         ```
         """
-        resolved_attributes = self.resolution_context.with_scope(**context).resolve_value(
-            self.asset_attributes
+        resolved_attributes = resolve_asset_attributes_to_mapping(
+            schema=self.asset_attributes,
+            context=self.resolution_context.with_scope(**context),
         )
         return base_spec.replace_attributes(**resolved_attributes)
 

@@ -36,28 +36,26 @@ from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_transl
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 
 
+def resolve_translator(
+    context: ResolutionContext, schema: "SlingReplicationSchema"
+) -> DagsterSlingTranslator:
+    # TODO: Consider supporting owners and code_version in the future
+    if schema.asset_attributes and schema.asset_attributes.owners:
+        raise ValueError("owners are not supported for sling_replication_collection component")
+    if schema.asset_attributes and schema.asset_attributes.code_version:
+        raise ValueError("code_version is not supported for sling_replication_collection component")
+    return get_wrapped_translator_class(DagsterSlingTranslator)(
+        resolving_info=TranslatorResolvingInfo(
+            "stream_definition",
+            schema.asset_attributes or AssetAttributesSchema(),
+            context,
+        )
+    )
+
+
 class SlingReplicationSpec(BaseModel, ResolvableFromSchema["SlingReplicationSchema"]):
     path: str
     op: Annotated[Optional[OpSpec], DSLFieldResolver(OpSpec.from_optional)]
-
-    @staticmethod
-    def resolve_translator(
-        context: ResolutionContext, schema: "SlingReplicationSchema"
-    ) -> DagsterSlingTranslator:
-        # TODO: Consider supporting owners and code_version in the future
-        if schema.asset_attributes and schema.asset_attributes.owners:
-            raise ValueError("owners are not supported for sling_replication_collection component")
-        if schema.asset_attributes and schema.asset_attributes.code_version:
-            raise ValueError(
-                "code_version is not supported for sling_replication_collection component"
-            )
-        return get_wrapped_translator_class(DagsterSlingTranslator)(
-            resolving_info=TranslatorResolvingInfo(
-                "stream_definition",
-                schema.asset_attributes or AssetAttributesSchema(),
-                context,
-            )
-        )
 
     translator: Annotated[
         Optional[DagsterSlingTranslator], DSLFieldResolver.from_parent(resolve_translator)
@@ -93,22 +91,22 @@ class SlingReplicationCollectionSchema(DSLSchema):
     asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
 
 
+def resolve_resource(
+    context: ResolutionContext, schema: SlingReplicationCollectionSchema
+) -> SlingResource:
+    return (
+        SlingResource(**context.resolve_value(schema.sling.model_dump()))
+        if schema.sling
+        else SlingResource()
+    )
+
+
 @scaffoldable(scaffolder=SlingReplicationComponentScaffolder)
 @dataclass
 class SlingReplicationCollectionComponent(
     Component, ResolvableFromSchema[SlingReplicationCollectionSchema]
 ):
     """Expose one or more Sling replications to Dagster as assets."""
-
-    @staticmethod
-    def resolve_resource(
-        context: ResolutionContext, schema: SlingReplicationCollectionSchema
-    ) -> SlingResource:
-        return (
-            SlingResource(**context.resolve_value(schema.sling.model_dump()))
-            if schema.sling
-            else SlingResource()
-        )
 
     resource: Annotated[SlingResource, DSLFieldResolver.from_parent(resolve_resource)] = Field(
         ..., description="Customizations to Sling execution."
