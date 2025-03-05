@@ -1,14 +1,18 @@
 ---
-title: Creating alerts in Dagster+
+title: Creating alert policies in Dagster+
 sidebar_position: 200
 ---
 {/* To update or regenerate the yaml code snippets in this doc, run `python ./examples/docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/generate_alerts_doc_code_snippets.py` */}
 
-You can create alerts in the Dagster+ UI or with the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli).
+You can create alert policies in the Dagster+ UI or with the [`dagster-cloud` CLI](/dagster-plus/deployment/management/dagster-cloud-cli).
+
+Alert policies are configured on a per-deployment basis. This means, for example, that asset alerts configured in a prod deployment are only applicable to assets in that deployment.
+
+When you create an alert policy, you must select an alert policy type. For more information on the policy types, see "[Alert policy types](alert-policy-types)".
 
 :::note
 
-Before you create alerts, you must [configure an alert notification service](configuring-an-alert-notification-service).
+Before you create alert policies, you must [configure an alert notification service](configuring-an-alert-notification-service).
 
 :::
 
@@ -303,31 +307,3 @@ You can set up alerts to fire if your Hybrid agent hasn't sent a heartbeat in th
 
   </TabItem>
 </Tabs>
-
-## Alerting when a Dagster+ Insights metric crosses a specified threshold (Experimental)
-
-Sends a notification when a [Dagster+ Insights](/dagster-plus/features/insights/) metric exceeds or
-falls below a specified threshold over a specified time window. This can be used to alert on:
-
-- Dagster credit usage across a deployment or for a specific job
-- Performance regressions on asset or job runtime
-- Spend on external tools such as Snowflake or BigQuery credits
-
-Alerts can be scoped to the sum of any metric across an entire deployment, or for a specific job, asset group, or asset key.
-
-:::note
-
-Alerts are sent only when the threshold is first crossed, and will not be sent again until the value returns to expected levels. Insights data may become available up to 24 hours after run completion.
-
-:::
-
-## Alerting when your organization has reached its monthly credit limit (Experimental)
-
-:::info Availability
-
-This alert is only available on [Serverless deployments](/dagster-plus/deployment/deployment-types/serverless/).
-
-:::
-
-Each newly created organization on Dagster+ Serverless starts with an alert policy of this type, configured to notify the email address used to create the organization.
-
