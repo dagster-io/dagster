@@ -155,6 +155,11 @@ def resolve_asset_attributes_to_mapping(
     return {k: v for k, v in resolve_fields(schema, dict, context).items() if k in set_fields}
 
 
+ResolvedAssetAttributes: TypeAlias = Annotated[
+    Mapping[str, Any], DSLFieldResolver(resolve_asset_attributes_to_mapping)
+]
+
+
 class AssetPostProcessorSchema(ResolvableSchema):
     target: str = "*"
     operation: Literal["merge", "replace"] = "merge"

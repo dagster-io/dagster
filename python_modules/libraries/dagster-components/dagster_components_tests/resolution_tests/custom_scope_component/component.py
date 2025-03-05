@@ -1,15 +1,11 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Annotated, Any
+from typing import Any
 
 from dagster import AssetSpec, AutomationCondition, Definitions
 from dagster_components import AssetAttributesSchema, Component, ComponentLoadContext
-from dagster_components.core.schema.objects import resolve_asset_attributes_to_mapping
-from dagster_components.core.schema.resolvable_from_schema import (
-    DSLFieldResolver,
-    DSLSchema,
-    ResolvableFromSchema,
-)
+from dagster_components.core.schema.objects import ResolvedAssetAttributes
+from dagster_components.core.schema.resolvable_from_schema import DSLSchema, ResolvableFromSchema
 
 
 def my_custom_fn(a: str, b: str) -> str:
@@ -26,9 +22,7 @@ class CustomScopeSchema(DSLSchema):
 
 @dataclass
 class HasCustomScope(Component, ResolvableFromSchema[CustomScopeSchema]):
-    asset_attributes: Annotated[
-        Mapping[str, Any], DSLFieldResolver(resolve_asset_attributes_to_mapping)
-    ]
+    asset_attributes: ResolvedAssetAttributes
 
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:
