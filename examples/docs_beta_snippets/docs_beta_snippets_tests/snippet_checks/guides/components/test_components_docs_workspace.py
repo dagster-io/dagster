@@ -85,7 +85,7 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
             / f"{get_next_snip_number()}-project-pyproject.toml",
             update_snippets=update_snippets,
             snippet_replace_regex=[
-                re_ignore_before("[tool.dagster]"),
+                re_ignore_before("[tool.dg]"),
                 re_ignore_after('root_module = "project_1"'),
             ],
         )

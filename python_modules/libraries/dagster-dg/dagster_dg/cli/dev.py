@@ -4,7 +4,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Iterator, Mapping, Sequence
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Optional, TypeVar
@@ -98,13 +98,13 @@ def dev_command(
 
     # In a project context, we can just run `dagster dev` directly, using `dagster` from the
     # project's environment.
+    temp_workspace_file_cm = temp_workspace_file(dg_context)
     if dg_context.is_project:
         cmd_location = dg_context.get_executable("dagster")
         if dg_context.use_dg_managed_environment:
             cmd = ["uv", "run", "dagster", "dev", *forward_options]
         else:
             cmd = [cmd_location, "dev", *forward_options]
-        temp_workspace_file_cm = nullcontext()
 
     # In a workspace context, dg dev will construct a temporary
     # workspace file that points at all defined projects and invoke:
@@ -127,7 +127,6 @@ def dev_command(
             *forward_options,
         ]
         cmd_location = "ephemeral dagster dev"
-        temp_workspace_file_cm = temp_workspace_file(dg_context)
     else:
         exit_with_error("This command must be run inside a project or workspace directory.")
 
@@ -167,20 +166,27 @@ def dev_command(
 def temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
     with NamedTemporaryFile(mode="w+", delete=True) as temp_workspace_file:
         entries = []
-        for project_name in dg_context.get_project_names():
-            project_root = dg_context.get_project_path(project_name)
-            project_context: DgContext = dg_context.with_root_path(project_root)
-            entry = {
-                "working_directory": str(dg_context.workspace_root_path),
-                "relative_path": str(project_context.code_location_target_path),
-                "location_name": project_context.project_name,
-            }
-            if project_context.use_dg_managed_environment:
-                entry["executable_path"] = str(project_context.project_python_executable)
-            entries.append({"python_file": entry})
+        if dg_context.is_project:
+            entries.append(_workspace_entry_for_project(dg_context))
+        elif dg_context.is_workspace:
+            for project_name in dg_context.get_project_names():
+                project_root = dg_context.get_project_path(project_name)
+                project_context: DgContext = dg_context.with_root_path(project_root)
+                entries.append(_workspace_entry_for_project(project_context))
         yaml.dump({"load_from": entries}, temp_workspace_file)
         temp_workspace_file.flush()
         yield temp_workspace_file.name
+
+
+def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, str]]:
+    entry = {
+        "working_directory": str(dg_context.root_path),
+        "module_name": str(dg_context.code_location_target_module_name),
+        "location_name": dg_context.code_location_name,
+    }
+    if dg_context.use_dg_managed_environment:
+        entry["executable_path"] = str(dg_context.project_python_executable)
+    return {"python_module": entry}
 
 
 def format_forwarded_option(option: str, value: object) -> list[str]:

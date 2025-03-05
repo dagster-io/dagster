@@ -1,7 +1,6 @@
 import subprocess
 import sys
 from collections.abc import Mapping, Sequence
-from contextlib import nullcontext
 from pathlib import Path
 from typing import Any, NamedTuple, Optional
 
@@ -217,10 +216,10 @@ def check_definitions_command(
 
     # In a code location context, we can just run `dagster definitions validate` directly, using `dagster` from the
     # code location's environment.
+    temp_workspace_file_cm = temp_workspace_file(dg_context)
     if dg_context.is_project:
         cmd = ["uv", "run", "dagster", "definitions", "validate", *forward_options]
         cmd_location = dg_context.get_executable("dagster")
-        temp_workspace_file_cm = nullcontext()
 
     # In a deployment context, dg validate will construct a temporary
     # workspace file that points at all defined code locations and invoke:

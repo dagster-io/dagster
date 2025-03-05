@@ -1,8 +1,4 @@
 ...
-[tool.dagster]
-module_name = "project_1.definitions"
-code_location_name = "project-1"
-
 [tool.dg]
 directory_type = "project"
 

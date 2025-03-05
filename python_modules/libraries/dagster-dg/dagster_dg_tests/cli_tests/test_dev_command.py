@@ -94,7 +94,7 @@ def test_dev_command_has_options_of_dagster_dev():
 # Modify this test with a new option whenever a new forwarded option is added to `dagster-dev`.
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_command_forwards_options_to_dagster_dev():
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+    with ProxyRunner.test() as runner, isolated_example_workspace(runner, "foo-bar"):
         port = _find_free_port()
         options = [
             "--code-server-log-level",
@@ -114,14 +114,7 @@ def test_dev_command_forwards_options_to_dagster_dev():
             dev_process = _launch_dev_command(options)
             time.sleep(0.5)
             child_process = _get_child_processes(dev_process.pid)[0]
-            expected_cmdline = [
-                "uv",
-                "run",
-                "dagster",
-                "dev",
-                *options,
-            ]
-            assert child_process.cmdline() == expected_cmdline
+            assert " ".join(options) in " ".join(child_process.cmdline())
         finally:
             dev_process.terminate()
             dev_process.communicate()

@@ -100,7 +100,6 @@ def scaffold_project(
         ),
         dependencies=dependencies_str,
         dev_dependencies=dev_dependencies_str,
-        code_location_name=path.name,
         uv_sources=uv_sources_str,
     )
     click.echo(f"Scaffolded files for Dagster project at {path}.")
