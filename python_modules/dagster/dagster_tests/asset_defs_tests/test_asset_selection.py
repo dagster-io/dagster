@@ -908,7 +908,7 @@ def test_code_location() -> None:
     selection = CodeLocationAssetSelection(selected_code_location="code_location1")
 
     # But not resolved.
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(CheckError):
         selection.resolve([my_asset])
 
 
