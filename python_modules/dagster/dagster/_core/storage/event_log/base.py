@@ -376,7 +376,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         pass
 
     @property
-    def asset_records_have_last_planned_materialization_storage_id(self) -> bool:
+    def asset_records_have_last_planned_and_failed_materializations(self) -> bool:
         return False
 
     @abstractmethod

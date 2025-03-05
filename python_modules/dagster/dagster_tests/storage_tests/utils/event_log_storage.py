@@ -4141,7 +4141,7 @@ class TestEventLogStorage:
             ascending=False,
         ).records[0]
 
-        if storage.asset_records_have_last_planned_materialization_storage_id:
+        if storage.asset_records_have_last_planned_and_failed_materializations:
             assert (
                 asset_entry.last_planned_materialization_storage_id
                 == materialization_planned_record.storage_id
