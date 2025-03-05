@@ -1,11 +1,10 @@
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 
 from dagster._annotations import preview
 from dagster._record import record
 
-if TYPE_CHECKING:
-    from dagster_dbt.cloud.resources_v2 import DbtCloudClient
+
+from dagster_dbt.cloud.client_v2 import DbtCloudClient
 
 
 @preview
@@ -16,10 +15,10 @@ class DbtCloudJobRun:
     job_id: int
     run_id: int
     args: Sequence[str]
-    client: "DbtCloudClient"
+    client: DbtCloudClient
 
     @classmethod
-    def run(cls, job_id: int, args: Sequence[str], client: "DbtCloudClient") -> "DbtCloudJobRun":
+    def run(cls, job_id: int, args: Sequence[str], client: DbtCloudClient) -> "DbtCloudJobRun":
         response = client.trigger_job(job_id, steps=[" ".join(["dbt", *args])])
         return DbtCloudJobRun(
             job_id=job_id, run_id=response["data"]["id"], args=args, client=client
