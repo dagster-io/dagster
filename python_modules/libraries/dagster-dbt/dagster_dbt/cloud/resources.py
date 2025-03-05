@@ -20,6 +20,7 @@ from dagster import (
     __version__,
     _check as check,
     get_dagster_logger,
+    multi_asset_check,
     resource,
 )
 from dagster._annotations import beta, preview
@@ -836,7 +837,11 @@ class DbtCloudWorkspace(ConfigurableResource):
                 AssetSpec,
             )
             asset_check_specs = check.is_list(
-                defs.asset_checks,
+                [
+                    check_spec
+                    for asset_def in defs.asset_checks
+                    for check_spec in asset_def.check_specs
+                ],
                 AssetCheckSpec,
             )
             return [*asset_specs, *asset_check_specs]
@@ -846,7 +851,7 @@ class DbtCloudWorkspace(ConfigurableResource):
     ) -> Sequence[AssetSpec]:
         return [
             spec
-            for spec in self.get_specs(dagster_dbt_translator=dagster_dbt_translator)
+            for spec in self.load_specs(dagster_dbt_translator=dagster_dbt_translator)
             if isinstance(spec, AssetSpec)
         ]
 
@@ -855,7 +860,7 @@ class DbtCloudWorkspace(ConfigurableResource):
     ) -> Sequence[AssetCheckSpec]:
         return [
             spec
-            for spec in self.get_specs(dagster_dbt_translator=dagster_dbt_translator)
+            for spec in self.load_specs(dagster_dbt_translator=dagster_dbt_translator)
             if isinstance(spec, AssetCheckSpec)
         ]
 
@@ -896,4 +901,8 @@ class DbtCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[DbtCloudWorkspace
             io_manager_key=None,
             project=None,
         )
-        return Definitions(assets=all_asset_specs, asset_checks=all_check_specs)
+
+        @multi_asset_check(specs=all_check_specs)
+        def _all_asset_checks(): ...
+
+        return Definitions(assets=all_asset_specs, asset_checks=[_all_asset_checks])
