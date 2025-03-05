@@ -1,0 +1,29 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.heading {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+}
+
+.icon {
+  height: 48px;
+  width: 48px;
+  border-radius: 8px;
+  background-color: var(--color-background-lighter);
+  box-shadow: 0 0 0 1px var(--color-keyline-default);
+}
+
+.heading h1 {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.description {
+  font-size: 14px;
+  color: var(--color-text-light);
+}

@@ -1,0 +1,31 @@
+[
+  {
+    "name": "my-pkg",
+    "componentTypes": [
+      {
+        "name": "my_pkg.components.FooComponent",
+        "author": "admin",
+        "tags": ["dbt", "metrics"],
+        "example": "...",
+        "schema": "{ }",
+        "description": "Foo bar"
+      },
+      {
+        "name": "my_pkg.components.Bar",
+        "author": "somebody-else",
+        "tags": ["dbt", "metrics"],
+        "example": "...",
+        "schema": "{ }",
+        "description": "Bar description"
+      },
+      {
+        "name": "my_pkg.components.Baz",
+        "author": "admin",
+        "tags": ["dbt", "metrics"],
+        "example": "...",
+        "schema": "{ }",
+        "description": "Baz description"
+      }
+    ]
+  }
+]
