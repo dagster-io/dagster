@@ -697,6 +697,7 @@ class GrpcServerCodeLocation(CodeLocation):
             list_repositories_response = sync_list_repositories_grpc(self.client)
 
             self._server_id = sync_get_server_id(self.client)
+            print("SERVER ID FOR NEW CODE LOCATION: " + str(self._server_id))
             self.repository_names = set(
                 symbol.repository_name for symbol in list_repositories_response.repository_symbols
             )

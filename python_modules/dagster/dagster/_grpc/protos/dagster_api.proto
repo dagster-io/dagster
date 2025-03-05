@@ -31,6 +31,7 @@ service DagsterApi {
   rpc GetCurrentImage (Empty) returns (GetCurrentImageReply) {}
   rpc GetCurrentRuns (Empty) returns (GetCurrentRunsReply) {}
   rpc ReloadCode (ReloadCodeRequest) returns (ReloadCodeReply) {}
+
 }
 
 message Empty {}
@@ -199,6 +200,7 @@ message ExternalSensorExecutionReply {
 }
 
 message ReloadCodeRequest {
+  string refresh = 1;
 }
 
 message ReloadCodeReply {

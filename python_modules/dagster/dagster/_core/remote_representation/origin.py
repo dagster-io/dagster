@@ -347,6 +347,10 @@ class GrpcServerCodeLocationOrigin(
         }
         return {key: value for key, value in metadata.items() if value is not None}
 
+    def refresh_location(self, instance):
+        # This should use a different grpc call
+        self.create_client().reload_code(timeout=instance.code_server_reload_timeout, refresh=True)
+
     def reload_location(self, instance: "DagsterInstance") -> "GrpcServerCodeLocation":
         from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 

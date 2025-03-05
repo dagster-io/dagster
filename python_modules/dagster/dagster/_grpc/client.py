@@ -403,8 +403,13 @@ class DagsterGrpcClient:
 
         return res.serialized_external_pipeline_subset_result
 
-    def reload_code(self, timeout: int) -> dagster_api_pb2.ReloadCodeReply:
-        return self._query("ReloadCode", dagster_api_pb2.ReloadCodeRequest, timeout=timeout)
+    def reload_code(self, timeout: int, refresh: bool = False) -> dagster_api_pb2.ReloadCodeReply:
+        return self._query(
+            "ReloadCode",
+            dagster_api_pb2.ReloadCodeRequest,
+            refresh="TRUE" if refresh else None,
+            timeout=timeout,
+        )
 
     def external_repository(
         self,

@@ -120,6 +120,8 @@ class SlingReplicationCollectionComponent(Component):
     ) -> AssetsDefinition:
         op_spec = replication_spec.op or OpSpec()
 
+        print("BUILDING AN ASSET FROM SPEC " + str(op_spec))
+
         @sling_assets(
             name=op_spec.name or Path(replication_spec.path).stem,
             op_tags=op_spec.tags,

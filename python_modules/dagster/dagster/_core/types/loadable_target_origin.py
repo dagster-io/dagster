@@ -1,6 +1,9 @@
+import importlib
+import os
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Iterator, NamedTuple, Optional, Sequence
+from typing import NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
@@ -35,9 +38,7 @@ class LoadableTargetOrigin(
             executable_path=check.opt_str_param(executable_path, "executable_path"),
             python_file=check.opt_str_param(python_file, "python_file"),
             module_name=check.opt_str_param(module_name, "module_name"),
-            working_directory=check.opt_str_param(
-                working_directory, "working_directory"
-            ),
+            working_directory=check.opt_str_param(working_directory, "working_directory"),
             attribute=check.opt_str_param(attribute, "attribute"),
             package_name=check.opt_str_param(package_name, "package_name"),
         )
@@ -66,9 +67,27 @@ class LoadableTargetOrigin(
     def as_dict(self) -> dict:
         return {k: v for k, v in self._asdict().items() if v is not None}
 
+    def get_root_path(self) -> str:
+        if self.working_directory and self.python_file:
+            return os.path.join(self.working_directory, self.python_file)
+        elif self.python_file:
+            return self.python_file
+        # origin is a guaranteed string for non-namespace-packages
+        elif self.module_name:
+            spec = importlib.util.find_spec(self.module_name)
+            assert spec is not None, f"Could not find module {self.module_name}."
+            return os.path.dirname(spec.origin)
+        elif self.package_name:
+            spec = importlib.util.find_spec(self.package_name)
+            assert spec is not None, f"Could not find package {self.package_name}."
+            assert spec.origin is not None, "Namespace package has no root path."
+            return os.path.dirname(spec.origin)
+        else:
+            raise Exception("Cannot resolve root path for LoadableTargetOrigin")
 
-_current_loadable_target_origin: ContextVar[Optional[LoadableTargetOrigin]] = (
-    ContextVar("_current_loadable_target_origin", default=None)
+
+_current_loadable_target_origin: ContextVar[Optional[LoadableTargetOrigin]] = ContextVar(
+    "_current_loadable_target_origin", default=None
 )
 
 
