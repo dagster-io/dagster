@@ -1,5 +1,5 @@
 ---
-title: Workspace file (workspace.yaml) reference"
+title: "Workspace file (workspace.yaml) reference"
 sidebar_position: 200
 ---
 
@@ -18,7 +18,7 @@ load_from:
   - python_file: my_file.py
 ```
 
-Each entry in a workspace file is considered a code location. A code location can contain either a single <PyObject section="definitions" module="dagster" object="Definitions" /> object.
+Each entry in a workspace file is considered a code location. A code location should contain a single <PyObject section="definitions" module="dagster" object="Definitions" /> object.
 
 Each code location is loaded in its own process that Dagster tools use an RPC protocol to communicate with. This process separation allows multiple code locations in different environments to be loaded independently, and ensures that errors in user code can't impact Dagster system code.
 
