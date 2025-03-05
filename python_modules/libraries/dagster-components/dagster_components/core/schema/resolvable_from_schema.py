@@ -58,6 +58,17 @@ def get_schema_type(resolvable_from_schema_type: type["ResolvableFromSchema"]) -
     raise ValueError("No generic type arguments found in ResolvableFromSchema subclass")
 
 
+from typing import TypeVar
+
+# def from_schema(context: "ResolutionContext", schema: EitherSchema, target_type: type[T]) -> T:
+#     return resolve_schema_with_transform(
+#         schema=schema,
+#         resolution_spec=ResolutionSpec,  # Adjust as needed
+#         context=context,
+#         target_type=target_type,
+#     )
+
+
 class ResolutionSpec(Generic[TSchema]): ...
 
 
@@ -105,6 +116,17 @@ class DSLFieldResolver:
     @staticmethod
     def from_parent(fn: Callable[["ResolutionContext", Any], Any]):
         return DSLFieldResolver(ParentFn(fn))
+
+    @staticmethod
+    def from_spec(spec: type[ResolutionSpec], target_type: type):
+        return DSLFieldResolver.from_parent(
+            lambda context, schema: resolve_schema_using_spec(
+                schema=schema,
+                resolution_spec=spec,
+                context=context,
+                target_type=target_type,
+            )
+        )
 
     @staticmethod
     def from_annotation(annotation: Any, field_name: str) -> "DSLFieldResolver":
@@ -182,7 +204,7 @@ def resolve_schema_to_resolvable(
     resolvable_type: type[TResolvableFromSchema],
     context: "ResolutionContext",
 ) -> TResolvableFromSchema:
-    return resolve_schema_with_transform(
+    return resolve_schema_using_spec(
         schema=schema,
         resolution_spec=resolvable_type,
         context=context,
@@ -190,7 +212,7 @@ def resolve_schema_to_resolvable(
     )
 
 
-def resolve_schema_with_transform(
+def resolve_schema_using_spec(
     schema: EitherSchema,
     resolution_spec: type[TResolutionSpec],
     context: "ResolutionContext",
