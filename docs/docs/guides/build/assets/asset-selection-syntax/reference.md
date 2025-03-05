@@ -99,5 +99,5 @@ You can use `sinks(expr)` and `roots(expr)` functions to return the sink or root
 |--------|--------------|
 | `sinks(*)` | Find all assets without any downstream dependencies. |
 | `roots(*)` | Find all assets without any upstream dependencies. |
-| `sinks(owner:"team:billing")` | Find all assets that depend on assets owned by the billing team. |
-| `roots(owner:"team:billing")` | Find all assets that depend on assets owned by the billing team. |
+| `sinks(owner:"team:billing")` | Find all assets without any downstream dependencies that depend on assets owned by the billing team. |
+| `roots(owner:"team:billing")` | Find all assets without any upstream dependencies that feed into assets owned by the billing team. |
