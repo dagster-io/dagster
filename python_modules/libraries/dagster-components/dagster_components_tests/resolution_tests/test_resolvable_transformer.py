@@ -1,9 +1,15 @@
 from dataclasses import dataclass
 from typing import Annotated
 
+from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.schema.context import ResolutionContext
+from dagster_components.core.schema.objects import AssetSpecResolutionSpec, AssetSpecSchema
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLFieldResolver,
     DSLSchema,
@@ -12,6 +18,7 @@ from dagster_components.core.schema.resolvable_from_schema import (
     resolve_fields,
     resolve_schema_using_spec,
 )
+from dagster_components.utils import AssetKey
 from typing_extensions import TypeAlias
 
 
@@ -116,3 +123,52 @@ def test_reuse_across_components():
 
     assert isinstance(comp_instance_one, ComponentWithExistingBusinessObjectTwo)
     assert comp_instance_one.business_object.value == 2
+
+
+def test_asset_spec():
+    asset_schema = AssetSpecSchema(
+        key="asset_key",
+    )
+
+    asset_spec = resolve_schema_using_spec(
+        schema=asset_schema,
+        resolution_spec=AssetSpecResolutionSpec,
+        context=ResolutionContext.default(),
+        target_type=AssetSpec,
+    )
+
+    assert asset_spec.key == AssetKey("asset_key")
+
+    kitchen_sink = AssetSpecSchema(
+        key="kitchen_sink",
+        deps=["upstream"],
+        description="A kitchen sink",
+        metadata={"key": "value"},
+        group_name="group_name",
+        skippable=False,
+        code_version="code_version",
+        owners=["owner@owner.com"],
+        tags={"tag": "value"},
+        kinds=["kind"],
+        automation_condition="{{automation_condition.eager()}}",
+    )
+
+    kitchen_sink_spec = resolve_schema_using_spec(
+        schema=kitchen_sink,
+        resolution_spec=AssetSpecResolutionSpec,
+        context=ResolutionContext.default(),
+        target_type=AssetSpec,
+    )
+
+    assert kitchen_sink_spec.key == AssetKey("kitchen_sink")
+    assert kitchen_sink_spec.deps == [AssetDep(asset="upstream")]
+    assert kitchen_sink_spec.description == "A kitchen sink"
+    assert kitchen_sink_spec.metadata == {"key": "value"}
+    assert kitchen_sink_spec.group_name == "group_name"
+    assert kitchen_sink_spec.skippable is False
+    assert kitchen_sink_spec.code_version == "code_version"
+    assert kitchen_sink_spec.owners == ["owner@owner.com"]
+    assert kitchen_sink_spec.tags == {"tag": "value", "dagster/kind/kind": ""}
+    assert kitchen_sink_spec.kinds == {"kind"}
+    assert isinstance(kitchen_sink_spec.automation_condition, AutomationCondition)
+    assert kitchen_sink_spec.automation_condition.get_label() == "eager"
