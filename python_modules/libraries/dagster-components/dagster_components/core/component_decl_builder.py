@@ -1,8 +1,10 @@
 import inspect
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from types import ModuleType
 from typing import Any, Optional, TypeVar, Union
 
+from dagster import _check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._record import record
 from dagster._utils import pushd
@@ -204,3 +206,24 @@ def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
             subs.append(component)
 
     return ComponentFolder(path=path, sub_decls=subs)
+
+
+def module_to_decl_node(module: ModuleType) -> Optional[ComponentDeclNode]:
+    """Given a Python module, returns a corresponding component declaration node.
+
+    Args:
+        module (ModuleType): The Python module to convert to a component declaration node.
+
+    Returns:
+        Optional[ComponentDeclNode]: The corresponding component declaration node, or None if the module does not contain a component.
+    """
+    module_path = (
+        Path(module.__file__).parent
+        if module.__file__
+        else Path(module.__path__[0])
+        if module.__path__
+        else None
+    )
+    return path_to_decl_node(
+        check.not_none(module_path, f"Module {module.__name__} has no filepath")
+    )
