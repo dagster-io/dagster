@@ -9,6 +9,9 @@ from dagster._utils import file_relative_path
 EMPTY_PROJECT_PATH = file_relative_path(__file__, "definitions_command_projects/empty_project")
 VALID_PROJECT_PATH = file_relative_path(__file__, "definitions_command_projects/valid_project")
 INVALID_PROJECT_PATH = file_relative_path(__file__, "definitions_command_projects/invalid_project")
+INVALID_PROJECT_PATH_WITH_EXCEPTION = file_relative_path(
+    __file__, "definitions_command_projects/invalid_project_exc"
+)
 PROJECT_ALTERNATE_ENTRYPOINT_PATH = file_relative_path(
     __file__, "definitions_command_projects/alternate_entrypoint_project"
 )
@@ -102,6 +105,18 @@ def test_invalid_project(options, monkeypatch):
         assert result.exit_code == 1
         assert "Validation failed" in result.output
         assert "Duplicate asset key: AssetKey(['my_asset'])" in result.output
+
+
+def test_invalid_project_truncated_properly(monkeypatch):
+    with monkeypatch.context() as m:
+        m.chdir(INVALID_PROJECT_PATH_WITH_EXCEPTION)
+        result = invoke_validate(options=[])
+        assert result.exit_code == 1
+        assert "Validation failed" in result.output
+        assert "This is a test exception" in result.output
+        # Assert extraneous lines are removed
+        assert "importlib" not in result.output, result.output
+        assert "DagsterUserCodeLoadError" not in result.output, result.output
 
 
 def test_env_var(monkeypatch):
