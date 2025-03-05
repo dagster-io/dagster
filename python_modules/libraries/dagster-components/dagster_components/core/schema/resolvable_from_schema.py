@@ -58,12 +58,13 @@ def get_schema_type(resolvable_from_schema_type: type["ResolvableFromSchema"]) -
     raise ValueError("No generic type arguments found in ResolvableFromSchema subclass")
 
 
-class ResolvableFromSchema(Generic[TSchema]):
+class ResolutionSpec(Generic[TSchema]): ...
+
+
+class ResolvableFromSchema(ResolutionSpec[TSchema]):
     @classmethod
     def from_schema(cls, context: "ResolutionContext", schema: TSchema) -> Self:
-        return resolve_schema_to_resolvable(
-            schema=schema, resolvable_from_schema_type=cls, context=context
-        )
+        return resolve_schema_to_resolvable(schema=schema, resolution_spec=cls, context=context)
 
     @classmethod
     def from_optional(
@@ -127,7 +128,10 @@ class DSLFieldResolver:
             raise ValueError(f"Unsupported DSLFieldResolver type: {self.fn}")
 
 
-def get_annotation_field_resolvers(cls: type) -> dict[str, DSLFieldResolver]:
+TResolutionSpec = TypeVar("TResolutionSpec", bound=ResolutionSpec)
+
+
+def get_annotation_field_resolvers(cls: type[TResolutionSpec]) -> dict[str, DSLFieldResolver]:
     if issubclass(cls, BaseModel):
         # neither pydantic's Field.annotation nor Field.rebuild_annotation() actually
         # return the original annotation, so we have to walk the mro to get them
@@ -147,29 +151,38 @@ def get_annotation_field_resolvers(cls: type) -> dict[str, DSLFieldResolver]:
             for field in fields(cls)
         }
     else:
-        return {}
-
-
-def resolve_fields(
-    schema: EitherSchema,
-    target_type: type,
-    context: "ResolutionContext",
-) -> Mapping[str, Any]:
-    """Returns a mapping of field names to resolved values for those fields."""
-    return {
-        field_name: resolver.execute(context=context, schema=schema, field_name=field_name)
-        for field_name, resolver in get_annotation_field_resolvers(target_type).items()
-    }
+        # Handle vanilla Python classes with type annotations
+        annotations = getattr(cls, "__annotations__", {})
+        return {
+            field_name: DSLFieldResolver.from_annotation(annotation, field_name)
+            for field_name, annotation in annotations.items()
+        }
 
 
 TResolvableFromSchema = TypeVar("TResolvableFromSchema", bound=ResolvableFromSchema)
 
 
+def resolve_fields(
+    schema: EitherSchema,
+    resolution_spec: type,
+    context: "ResolutionContext",
+) -> Mapping[str, Any]:
+    """Returns a mapping of field names to resolved values for those fields."""
+    return {
+        field_name: resolver.execute(context=context, schema=schema, field_name=field_name)
+        for field_name, resolver in get_annotation_field_resolvers(resolution_spec).items()
+    }
+
+
+T = TypeVar("T")
+
+
 def resolve_schema_to_resolvable(
     schema: EitherSchema,
-    resolvable_from_schema_type: type[TResolvableFromSchema],
+    resolution_spec: type[TResolutionSpec],
     context: "ResolutionContext",
-) -> TResolvableFromSchema:
-    return resolvable_from_schema_type(
-        **resolve_fields(schema, resolvable_from_schema_type, context)
-    )
+    type_to_create: Optional[type[T]] = None,  # defaults to type[TResolutionSpec]
+) -> T:
+    type_to_create = type_to_create if type_to_create else resolution_spec  # type: ignore
+    assert type_to_create
+    return type_to_create(**resolve_fields(schema, resolution_spec, context))
