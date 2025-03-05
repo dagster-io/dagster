@@ -1,5 +1,5 @@
 ---
-title: "Airflow operator migration"
+title: "Migrating Airflow operators to Dagster"
 sidebar_position: 40
 ---
 
