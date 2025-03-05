@@ -6,9 +6,9 @@ import {
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalThemeStyle,
-  GlobalToasterStyle,
   GlobalTooltipStyle,
   Colors,
+  Toaster,
 } from '@dagster-io/ui-components';
 
 import * as React from 'react';
@@ -68,11 +68,11 @@ export const decorators = [
       <GlobalThemeStyle />
       <GlobalGeist />
       <GlobalGeistMono />
-      <GlobalToasterStyle />
       <GlobalTooltipStyle />
       <GlobalPopoverStyle />
       <GlobalDialogStyle />
       <GlobalSuggestStyle />
+      <Toaster richColors />
       <Story />
     </MemoryRouter>
   ),
