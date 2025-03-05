@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Annotated, Optional
 
-from dagster_components import FieldResolver, ResolutionContext
+from dagster_components import ResolutionContext
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLFieldResolver,
     DSLSchema,
@@ -16,7 +16,7 @@ def resolve_val1(context: ResolutionContext, schema: "InnerSchema") -> int:
 
 
 class InnerObject(BaseModel, ResolvableFromSchema["InnerSchema"]):
-    val1_renamed: Annotated[int, FieldResolver(resolve_val1)]
+    val1_renamed: Annotated[int, DSLFieldResolver.from_parent(resolve_val1)]
     val2: Optional[str]
 
 
