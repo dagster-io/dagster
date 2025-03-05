@@ -47,19 +47,21 @@ In this case, we'll want to define a few things:
 
 To simplify common use cases, `dagster-components` provides schemas for common bits of configuration, such as `AssetSpecSchema`, which contains attributes that are common to all assets, such as the key, description, tags, and dependencies.
 
-We can the schema for our component and add it to our class as follows:
+In order to make the properties on the component available in the schema, we add `YamlSchema` as a base class, which also makes it a `pydantic.BaseModel`.
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-config-schema.py" language="python" title="my_component_library/lib/shell_command.py"/>
 
 
 ## Defining the Python class
 
-Next, we'll want to translate this schema into fully resolved Python objects. For example, our schema defines `asset_specs` as `Sequence[AssetSpecSchema]`, but at runtime we'll want to work with `Sequence[AssetSpec]`.
+Sometimes raw schema and values are sufficient for parameterizing components, but frequently you want to work directly with python business objects. This makes the Python APIs for creating components nicer to work with, but also errors caught when contructuring those business objects can be tied to a location in the YAML document, resulting in better error messages.
 
-By convention, we'll use the `@dataclass` decorator to simplify our class definition. We can define attributes for our class that line up with the properties in our schema, but this time we'll use the fully resolved types where appropriate.
+In order to do this we make a standalone schema class called `ShellScriptSchema` and then change the base class of the component from `YamlSchema` to `ResolvableFromSchema[ShellScriptSchema]`. This leaves `ShellScriptSchema` as the source of truth
+for the yaml document schema, but allows the component to accept arbitrary Python objects, in this case a sequence of `AssetSpec`.
 
-Our path will still just be a string, but our `asset_specs` will be a list of `AssetSpec` objects. `AssetSpecSchema` implements `ResolvableSchema[AssetSpec]`, which indicates that it can automatically resolve into an `AssetSpec` object, so we don't need to do any additional work to resolve this field for our component.
+By convention, we'll use the `@dataclass` from `dataclasses` decorator on our class definition.
 
+Our path will still just be a string, but our `asset_specs` will be a list of `AssetSpec` objects, but annotated with enough information for the resolution engine to handle the mapping. We declare the property as `asset_specs: Annotated[Sequence[dg.AssetSpec], AssetSpecSchema.resolver_for_seq()]`. You can ignore `resolver_for_seq` for now, but it returns an instance of `YamlFieldResolver` which you will learn about later.
 
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-class-defined.py" language="python" title="my_component_library/lib/shell_command.py"/>
@@ -118,7 +120,7 @@ Now, when we run `dg scaffold component`, we'll see that a template shell script
 
 In most cases, the types you use in your component schema and in the component class will be the same, or will have out-of-the-box resolution logic, as in the case of `AssetSpecSchema` and `AssetSpec`.
 
-However, in some cases you may want to use a type that doesn't have an existing schema equivalent.  In this case, you can provide a function that will resolve the value to the desired type by providing an annotation on the field with `Annotated[<type>, FieldResolver(...)]`.
+However, in some cases you may want to use a type that doesn't have an existing schema equivalent.  In this case, you can provide a function that will resolve the value to the desired type by providing an annotation on the field with `Annotated[<type>, YamlFieldResolver(...)]`.
 
 For example, we might want to provide an API client to our component, which can be configured with an API key in YAML, or a mock client in tests:
 
@@ -126,7 +128,7 @@ For example, we might want to provide an API client to our component, which can 
 
 ## [Advanced] Customize rendering of YAML values
 
-The components system supports a rich templating syntax that allows you to load arbitrary Python values based off of your `component.yaml` file. All string values in a `ResolvableModel` can be templated using the Jinja2 templating engine, and may be resolved into arbitrary Python types. This allows you to expose complex object types, such as `PartitionsDefinition` or `AutomationCondition` to users of your component, even if they're working in pure YAML.
+The components system supports a rich templating syntax that allows you to load arbitrary Python values based off of your `component.yaml` file. All string values in a `YamlModel` can be templated using the Jinja2 templating engine, and may be resolved into arbitrary Python types. This allows you to expose complex object types, such as `PartitionsDefinition` or `AutomationCondition` to users of your component, even if they're working in pure YAML.
 
 You can define custom values that will be made available to the templating engine by defining a `get_additional_scope` classmethod on your component. In our case, we can define a `"daily_partitions"` function which returns a `DailyPartitionsDefinition` object with a pre-defined start date:
 
