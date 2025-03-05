@@ -1005,8 +1005,23 @@ class CodeLocationAssetSelection(AssetSelection):
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
-        """This should not be invoked in user code."""
-        raise NotImplementedError
+        from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+
+        check.invariant(
+            isinstance(asset_graph, RemoteAssetGraph),
+            "code_location: cannot be used to select assets in user code.",
+        )
+
+        return {
+            key
+            for key in cast(RemoteAssetGraph, asset_graph).remote_asset_nodes_by_key
+            if (
+                asset_graph.get(key)
+                .resolve_to_singular_repo_scoped_node()
+                .repository_handle.location_name
+            )
+            == self.selected_code_location
+        }
 
     def to_selection_str(self) -> str:
         return f'code_location:"{self.selected_code_location}"'
