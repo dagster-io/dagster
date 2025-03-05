@@ -2,7 +2,7 @@ import subprocess
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from dagster_components import (
     AssetSpecSchema,
@@ -11,7 +11,6 @@ from dagster_components import (
     ResolvableFromSchema,
     YamlSchema,
 )
-from dagster_components.core.schema.objects import AssetSpecSequenceField
 
 import dagster as dg
 
@@ -24,7 +23,7 @@ class ShellScriptSchema(YamlSchema):
 @dataclass
 class ShellCommand(Component, ResolvableFromSchema[ShellScriptSchema]):
     script_path: str
-    asset_specs: AssetSpecSequenceField
+    asset_specs: Annotated[Sequence[dg.AssetSpec], AssetSpecSchema.resolver_for_seq()]
 
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:

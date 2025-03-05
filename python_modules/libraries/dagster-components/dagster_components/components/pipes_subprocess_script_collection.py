@@ -10,13 +10,12 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
-from dagster_components.core.component import Component, ComponentLoadContext
+from dagster_components.core.component import Component, ComponentLoadContext, YamlSchema
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.objects import AssetSpecSchema, AssetSpecSequenceField
+from dagster_components.core.schema.objects import AssetSpecSchema
 from dagster_components.core.schema.resolvable_from_schema import (
     ResolvableFromSchema,
     YamlFieldResolver,
-    YamlSchema,
 )
 
 if TYPE_CHECKING:
@@ -31,7 +30,7 @@ class PipesSubprocessScriptSchema(YamlSchema):
 @dataclass
 class PipesSubprocessScriptSpec(ResolvableFromSchema[PipesSubprocessScriptSchema]):
     path: str
-    assets: AssetSpecSequenceField
+    assets: Annotated[Sequence[AssetSpec], AssetSpecSchema.resolver_for_seq()]
 
 
 class PipesSubprocessScriptCollectionSchema(YamlSchema):

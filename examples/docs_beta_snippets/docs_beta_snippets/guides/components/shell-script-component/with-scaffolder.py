@@ -3,7 +3,7 @@ import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from dagster_components import (
     AssetSpecSchema,
@@ -12,10 +12,8 @@ from dagster_components import (
     ResolvableFromSchema,
     Scaffolder,
     ScaffoldRequest,
-    YamlSchema,
     scaffold_component_yaml,
 )
-from dagster_components.core.schema.objects import AssetSpecSequenceField
 from dagster_components.core.schema.resolvable_from_schema import (
     ResolvableFromSchema,
     YamlSchema,
@@ -60,7 +58,7 @@ class ShellCommand(Component, ResolvableFromSchema[ShellScriptSchema]):
     """Models a shell script as a Dagster asset."""
 
     script_path: str
-    asset_specs: AssetSpecSequenceField
+    asset_specs: Annotated[Sequence[dg.AssetSpec], AssetSpecSchema.resolver_for_seq()]
 
     def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
         resolved_script_path = Path(load_context.path, self.script_path).absolute()

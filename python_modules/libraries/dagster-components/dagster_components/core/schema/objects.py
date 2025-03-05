@@ -136,6 +136,10 @@ class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
         str, FieldResolver(lambda context, schema: _resolve_asset_key(schema.key, context))
     ] = Field(..., description="A unique identifier for the asset.")
 
+    @staticmethod
+    def resolver_for_seq() -> YamlFieldResolver:
+        return YamlFieldResolver(AssetSpecResolutionSpec.resolver_fn(AssetSpec).from_seq)
+
 
 class AssetSpecResolutionSpec(ResolutionSpec):
     key: Annotated[
@@ -154,12 +158,6 @@ class AssetSpecResolutionSpec(ResolutionSpec):
     tags: Mapping[str, str]
     kinds: Optional[Sequence[str]]
     automation_condition: Optional[AutomationCondition]
-
-
-AssetSpecSequenceField: TypeAlias = Annotated[
-    Sequence[AssetSpec],
-    YamlFieldResolver(AssetSpecResolutionSpec.resolver_fn(AssetSpec).from_seq),
-]
 
 
 class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
