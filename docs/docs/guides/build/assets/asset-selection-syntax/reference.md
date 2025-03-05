@@ -84,12 +84,20 @@ You can combine multiple filters with operands and group them with parentheses t
 
 ## Functions
 
-You can use `sinks()` and `roots()` functions to return the sink and root assets of an asset selection.
+You can use `sinks(expr)` and `roots(expr)` functions to return the sink or root assets of an expression.
 
 - **Sink assets** are assets without any downstream dependencies (leaf nodes), which means they don't provide input to any other assets.
 - **Root assets** are assets without any upstream dependencies (root nodes), which means no assets provide input to them.
 
-| Function | Syntax | Description |
-|--------|-------------|-----------|
-| **`sinks(expr)`** | `sinks(owner:"team:billing")` | Find all sink assets depending on assets by the billing team. |
-| **`roots(expr)`** | `roots(owner:"team:billing")` | Find all root assets depended on by the billing team. |
+:::note
+
+`sinks(expr)` and `roots(expr)` return the sink or root assets **of** the expression, not the sink or root assets **within** the expression.
+
+:::
+
+| Example | Description |
+|--------|--------------|
+| `sinks(*)` | Find all assets without any downstream dependencies. |
+| `roots(*)` | Find all assets without any upstream dependencies. |
+| `sinks(owner:"team:billing")` | Find all assets that depend on assets owned by the billing team. |
+| `roots(owner:"team:billing")` | Find all assets that depend on assets owned by the billing team. |
