@@ -2,6 +2,7 @@ from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Annotated, Literal, Optional, Union
 
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
@@ -27,7 +28,18 @@ from dagster_components.core.schema.objects import (
     PostProcessorFn,
 )
 from dagster_components.scaffoldable.decorator import scaffoldable
-from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
+from dagster_components.utils import TranslatorResolvingInfo
+
+
+class ResolvingSlingTranslator(DagsterSlingTranslator):
+    def __init__(self, *, resolving_info: TranslatorResolvingInfo):
+        self.resolving_info = resolving_info
+
+    def get_asset_spec(self, base_spec: AssetSpec) -> AssetSpec:
+        return self.resolving_info.get_asset_spec(
+            base_spec,
+            {},
+        )
 
 
 def resolve_translator(
@@ -38,7 +50,7 @@ def resolve_translator(
         raise ValueError("owners are not supported for sling_replication_collection component")
     if schema.asset_attributes and schema.asset_attributes.code_version:
         raise ValueError("code_version is not supported for sling_replication_collection component")
-    return get_wrapped_translator_class(DagsterSlingTranslator)(
+    return ResolvingSlingTranslator(
         resolving_info=TranslatorResolvingInfo(
             "stream_definition",
             schema.asset_attributes or AssetAttributesSchema(),
