@@ -68,7 +68,7 @@ from dagster._core.utils import (
 )
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.daemon import DaemonIterator, DagsterDaemon, SpanMarker
-from dagster._daemon.sensor import is_under_min_interval, mark_sensor_state_for_tick
+from dagster._daemon.sensor import get_elapsed, is_under_min_interval, mark_sensor_state_for_tick
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
@@ -374,6 +374,11 @@ class AssetDaemon(DagsterDaemon):
     def daemon_type(cls) -> str:
         return "ASSET"
 
+    def instrument_elapsed(
+        self, sensor: Optional[RemoteSensor], elapsed: Optional[float], min_interval: Optional[int]
+    ) -> None:
+        pass
+
     def _get_print_sensor_name(self, sensor: Optional[RemoteSensor]) -> str:
         if not sensor:
             return ""
@@ -579,6 +584,14 @@ class AssetDaemon(DagsterDaemon):
                 instance.add_instigator_state(auto_materialize_state)
             elif is_under_min_interval(auto_materialize_state, sensor):
                 continue
+
+            self.instrument_elapsed(
+                sensor,
+                get_elapsed(auto_materialize_state, sensor)
+                if auto_materialize_state and sensor
+                else None,
+                sensor.min_interval_seconds if sensor else None,
+            )
 
             if threadpool_executor:
                 # only one tick per sensor can be in flight
