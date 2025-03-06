@@ -68,7 +68,7 @@ def get_sample_job_data(job_name: str) -> Mapping[str, Any]:
         "account": {"name": "string", "state": 1, "docs_job_id": 0, "freshness_job_id": 0},
         "project": {
             "name": "string",
-            "account_id": 0,
+            "account_id": TEST_ACCOUNT_ID,
             "description": "string",
             "connection_id": 0,
             "repository_id": 0,
@@ -79,8 +79,8 @@ def get_sample_job_data(job_name: str) -> Mapping[str, Any]:
             "freshness_job_id": 0,
         },
         "environment": {
-            "account_id": 0,
-            "project_id": 0,
+            "account_id": TEST_ACCOUNT_ID,
+            "project_id": TEST_PROJECT_ID,
             "name": "string",
             "connection_id": 0,
             "credentials_id": 0,
