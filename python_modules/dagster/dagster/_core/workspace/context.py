@@ -811,7 +811,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                     heartbeat=True,
                     watch_server=False,
                     grpc_server_registry=self._grpc_server_registry,
-                    instance=self._instance,
+                    auto_materialize_use_sensors=self.instance.auto_materialize_use_sensors,
                 )
             else:
                 location = (

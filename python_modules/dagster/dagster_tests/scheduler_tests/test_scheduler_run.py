@@ -791,7 +791,8 @@ def _grpc_server_remote_repo(port: int, scheduler_instance: DagsterInstance):
             host="localhost", port=port, location_name="test_location"
         )
         with GrpcServerCodeLocation(
-            origin=location_origin, instance=scheduler_instance
+            origin=location_origin,
+            auto_materialize_use_sensors=True,
         ) as location:
             yield location.get_repository("the_repo")
     finally:

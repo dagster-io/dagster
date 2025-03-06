@@ -617,10 +617,10 @@ class QueuedRunCoordinatorDaemonTests(ABC):
             return original_method(
                 self,
                 origin,
-                host,  # pyright: ignore[reportArgumentType]
+                host,
                 port,
                 socket,
-                heartbeat,  # pyright: ignore[reportArgumentType]
+                heartbeat,
                 watch_server,
                 grpc_server_registry,
             )
