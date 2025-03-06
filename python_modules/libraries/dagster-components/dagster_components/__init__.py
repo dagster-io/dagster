@@ -12,10 +12,10 @@ from dagster_components.core.component_scaffolder import (
 from dagster_components.core.schema.context import ResolutionContext as ResolutionContext
 from dagster_components.core.schema.metadata import ResolvableFieldInfo as ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
-    AssetAttributesSchema as AssetAttributesSchema,
-    AssetPostProcessorSchema as AssetPostProcessorSchema,
+    AssetAttributesModel as AssetAttributesModel,
+    AssetPostProcessorModel as AssetPostProcessorModel,
     AssetSpecSchema as AssetSpecSchema,
-    OpSpecSchema as OpSpecSchema,
+    OpSpecModel as OpSpecModel,
 )
 from dagster_components.core.schema.resolvable_from_schema import (
     FieldResolver as FieldResolver,

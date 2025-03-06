@@ -20,7 +20,7 @@ from dagster._core.errors import DagsterError
 
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.objects import (
-    AssetAttributesSchema,
+    AssetAttributesModel,
     resolve_asset_attributes_to_mapping,
 )
 
@@ -75,7 +75,7 @@ def get_path_for_package(package_name: str) -> str:
 @dataclass
 class TranslatorResolvingInfo:
     obj_name: str
-    asset_attributes: AssetAttributesSchema
+    asset_attributes: AssetAttributesModel
     resolution_context: ResolutionContext
 
     def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:

@@ -48,23 +48,23 @@ class MultiRunBackfillPolicySchema:
 
 
 def resolve_backfill_policy(
-    context: ResolutionContext, schema: "OpSpecSchema"
+    context: ResolutionContext, model: "OpSpecModel"
 ) -> Optional[BackfillPolicy]:
-    if schema.backfill_policy is None:
+    if model.backfill_policy is None:
         return None
 
-    if schema.backfill_policy.type == "single_run":
+    if model.backfill_policy.type == "single_run":
         return BackfillPolicy.single_run()
-    elif schema.backfill_policy.type == "multi_run":
+    elif model.backfill_policy.type == "multi_run":
         return BackfillPolicy.multi_run(
-            max_partitions_per_run=schema.backfill_policy.max_partitions_per_run
+            max_partitions_per_run=model.backfill_policy.max_partitions_per_run
         )
 
-    raise ValueError(f"Invalid backfill policy: {schema.backfill_policy}")
+    raise ValueError(f"Invalid backfill policy: {model.backfill_policy}")
 
 
 @dataclass
-class OpSpec(ResolvedFrom["OpSpecSchema"]):
+class OpSpec(ResolvedFrom["OpSpecModel"]):
     name: Optional[str] = None
     tags: Optional[dict[str, str]] = None
     backfill_policy: Annotated[
@@ -72,7 +72,7 @@ class OpSpec(ResolvedFrom["OpSpecSchema"]):
     ] = None
 
 
-class OpSpecSchema(ResolvableModel):
+class OpSpecModel(ResolvableModel):
     name: Optional[str] = Field(default=None, description="The name of the op.")
     tags: Optional[dict[str, str]] = Field(
         default=None, description="Arbitrary metadata for the op."
@@ -170,7 +170,7 @@ AssetSpecSequenceField: TypeAlias = Annotated[
 ]
 
 
-class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableModel):
+class AssetAttributesModel(_ResolvableAssetAttributesMixin, ResolvableModel):
     """Resolves into a dictionary of asset attributes. This is similar to AssetSpecSchema, but
     does not require a key. This is useful in contexts where you want to modify attributes of
     an existing AssetSpec.
@@ -181,7 +181,7 @@ class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableModel):
 
 def resolve_asset_attributes_to_mapping(
     context: ResolutionContext,
-    schema: AssetAttributesSchema,
+    schema: AssetAttributesModel,
 ) -> Mapping[str, Any]:
     # only include fields that are explcitly set
     set_fields = schema.model_dump(exclude_unset=True).keys()
@@ -194,14 +194,14 @@ ResolvedAssetAttributes: TypeAlias = Annotated[
 ]
 
 
-class AssetPostProcessorSchema(ResolvableModel):
+class AssetPostProcessorModel(ResolvableModel):
     target: str = "*"
     operation: Literal["merge", "replace"] = "merge"
-    attributes: AssetAttributesSchema
+    attributes: AssetAttributesModel
 
 
 def apply_post_processor_to_spec(
-    schema: AssetPostProcessorSchema, spec: AssetSpec, context: ResolutionContext
+    schema: AssetPostProcessorModel, spec: AssetSpec, context: ResolutionContext
 ) -> AssetSpec:
     # add the original spec to the context and resolve values
     attributes = resolve_asset_attributes_to_mapping(
@@ -220,7 +220,7 @@ def apply_post_processor_to_spec(
 
 
 def apply_post_processor_to_defs(
-    schema: AssetPostProcessorSchema, defs: Definitions, context: ResolutionContext
+    schema: AssetPostProcessorModel, defs: Definitions, context: ResolutionContext
 ) -> Definitions:
     target_selection = AssetSelection.from_string(schema.target, include_sources=True)
     target_keys = target_selection.resolve(defs.get_asset_graph())
@@ -241,11 +241,11 @@ def apply_post_processor_to_defs(
 
 
 def resolve_schema_to_post_processor(
-    context, schema: AssetPostProcessorSchema
+    context, schema: AssetPostProcessorModel
 ) -> Callable[[Definitions], Definitions]:
     return lambda defs: apply_post_processor_to_defs(schema, defs, context)
 
 
 @dataclass
-class AssetPostProcessor(ResolvedFrom[AssetPostProcessorSchema]):
+class AssetPostProcessor(ResolvedFrom[AssetPostProcessorModel]):
     fn: Annotated[PostProcessorFn, FieldResolver.from_model(resolve_schema_to_post_processor)]

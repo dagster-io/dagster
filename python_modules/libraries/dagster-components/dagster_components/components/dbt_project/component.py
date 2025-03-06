@@ -17,11 +17,11 @@ from dagster_components import Component, ComponentLoadContext
 from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
-    AssetAttributesSchema,
+    AssetAttributesModel,
     AssetPostProcessor,
-    AssetPostProcessorSchema,
+    AssetPostProcessorModel,
     OpSpec,
-    OpSpecSchema,
+    OpSpecModel,
     ResolutionContext,
 )
 from dagster_components.core.schema.resolvable_from_schema import (
@@ -33,27 +33,25 @@ from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 
-class DbtProjectSchema(ResolvableModel):
+class DbtProjectModel(ResolvableModel):
     dbt: DbtCliResource
-    op: Optional[OpSpecSchema] = None
+    op: Optional[OpSpecModel] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesSchema],
+        Optional[AssetAttributesModel],
         ResolvableFieldInfo(required_scope={"node"}),
     ] = None
-    asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
+    asset_post_processors: Optional[Sequence[AssetPostProcessorModel]] = None
     select: str = "fqn:*"
     exclude: Optional[str] = None
 
 
-def resolve_translator(
-    context: ResolutionContext, schema: DbtProjectSchema
-) -> DagsterDbtTranslator:
-    if schema.asset_attributes and schema.asset_attributes.deps:
+def resolve_translator(context: ResolutionContext, model: DbtProjectModel) -> DagsterDbtTranslator:
+    if model.asset_attributes and model.asset_attributes.deps:
         # TODO: Consider supporting alerting deps in the future
         raise ValueError("deps are not supported for dbt_project component")
     return get_wrapped_translator_class(DagsterDbtTranslator)(
         resolving_info=TranslatorResolvingInfo(
-            "node", schema.asset_attributes or AssetAttributesSchema(), context
+            "node", model.asset_attributes or AssetAttributesModel(), context
         )
     )
 
@@ -64,12 +62,12 @@ def resolve_dbt(context: ResolutionContext, dbt: DbtCliResource) -> DbtCliResour
 
 @scaffoldable(scaffolder=DbtProjectComponentScaffolder)
 @dataclass
-class DbtProjectComponent(Component, ResolvedFrom[DbtProjectSchema]):
+class DbtProjectComponent(Component, ResolvedFrom[DbtProjectModel]):
     """Expose a DBT project to Dagster as a set of assets."""
 
     dbt: Annotated[DbtCliResource, FieldResolver(resolve_dbt)]
     op: Annotated[Optional[OpSpec], FieldResolver(OpSpec.from_optional)] = None
-    # This requires from_parent because it access asset_attributes in the schema
+    # This requires from_parent because it access asset_attributes in the model
     translator: Annotated[DagsterDbtTranslator, FieldResolver.from_model(resolve_translator)] = (
         field(default_factory=DagsterDbtTranslator)
     )

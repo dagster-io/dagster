@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from dagster import AssetSpec, AutomationCondition, Definitions
-from dagster_components import AssetAttributesSchema, Component, ComponentLoadContext
+from dagster_components import AssetAttributesModel, Component, ComponentLoadContext
 from dagster_components.core.schema.objects import ResolvedAssetAttributes
 from dagster_components.core.schema.resolvable_from_schema import ResolvableModel, ResolvedFrom
 
@@ -17,7 +17,7 @@ def my_custom_automation_condition(cron_schedule: str) -> AutomationCondition:
 
 
 class CustomScopeSchema(ResolvableModel):
-    asset_attributes: AssetAttributesSchema
+    asset_attributes: AssetAttributesModel
 
 
 @dataclass
