@@ -259,12 +259,12 @@ def unwrap_user_code_error(error_info: SerializableErrorInfo) -> SerializableErr
     return error_info
 
 
-NO_HINT = lambda _: None
+NO_HINT = lambda _, __: None
 
 
 def remove_system_frames_from_error(
     error_info: SerializableErrorInfo,
-    build_system_frame_removed_hint: Callable[[int], Optional[str]] = NO_HINT,
+    build_system_frame_removed_hint: Callable[[bool, int], Optional[str]] = NO_HINT,
 ):
     """Remove system frames from a SerializableErrorInfo, including Dagster framework boilerplate
     and import machinery, which are generally not useful for users to debug their code.
@@ -279,7 +279,7 @@ def remove_system_frames_from_error(
 def remove_matching_lines_from_error_info(
     error_info: SerializableErrorInfo,
     match_substrs: Sequence[str],
-    build_system_frame_removed_hint: Callable[[int], Optional[str]],
+    build_system_frame_removed_hint: Callable[[bool, int], Optional[str]],
 ):
     """Utility which truncates a stacktrace to drop lines which match the given strings.
     This is useful for e.g. removing Dagster framework lines from a stacktrace that
@@ -316,15 +316,17 @@ def remove_matching_lines_from_error_info(
 def remove_matching_lines_from_stack_trace(
     stack: Sequence[str],
     matching_lines: Sequence[str],
-    build_system_frame_removed_hint: Callable[[int], Optional[str]],
+    build_system_frame_removed_hint: Callable[[bool, int], Optional[str]],
 ) -> Sequence[str]:
     ctr = 0
     out = []
+    is_first_hidden_frame = True
 
     for i in range(len(stack)):
         if not _line_contains_matching_string(stack[i], matching_lines):
             if ctr > 0:
-                hint = build_system_frame_removed_hint(ctr)
+                hint = build_system_frame_removed_hint(is_first_hidden_frame, ctr)
+                is_first_hidden_frame = False
                 if hint:
                     out.append(hint)
             ctr = 0
@@ -333,7 +335,7 @@ def remove_matching_lines_from_stack_trace(
             ctr += 1
 
     if ctr > 0:
-        hint = build_system_frame_removed_hint(ctr)
+        hint = build_system_frame_removed_hint(is_first_hidden_frame, ctr)
         if hint:
             out.append(hint)
 
