@@ -20,7 +20,6 @@ from typing_extensions import Self
 
 from dagster_components.core.component_key import ComponentKey
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
-from dagster_components.core.schema.base import ResolvableSchema, resolve_as
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLSchema,
@@ -74,12 +73,10 @@ class Component(ABC):
             # If the Component is a DSLSchema, the attributes in this case are an instance of itself
             assert isinstance(attributes, cls)
             return attributes
-
-        if issubclass(cls, ResolvableFromSchema):
+        elif issubclass(cls, ResolvableFromSchema):
             return resolve_schema_to_resolvable(attributes, cls, ctx) if attributes else cls()
-
-        assert isinstance(attributes, ResolvableSchema)
-        return resolve_as(attributes, cls, ctx) if attributes else cls()
+        else:
+            check.failed(f"Unsupported component type {cls}")
 
     @classmethod
     def get_metadata(cls) -> "ComponentTypeInternalMetadata":
@@ -264,9 +261,6 @@ class ComponentLoadContext:
 
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
         return dataclasses.replace(self, decl_node=decl_node)
-
-    def resolve(self, value: ResolvableSchema, as_type: type[T]) -> T:
-        return self.resolution_context.resolve_value(value, as_type=as_type)
 
     def normalize_component_type_str(self, type_str: str) -> str:
         return f"{self.module_name}{type_str}" if type_str.startswith(".") else type_str
