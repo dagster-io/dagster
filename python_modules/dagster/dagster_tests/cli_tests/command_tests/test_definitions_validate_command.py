@@ -4,7 +4,7 @@ from typing import Optional
 import pytest
 from click.testing import CliRunner
 from dagster._cli.definitions import definitions_validate_command
-from dagster._utils import file_relative_path
+from dagster._utils import file_relative_path, pushd
 
 EMPTY_PROJECT_PATH = file_relative_path(__file__, "definitions_command_projects/empty_project")
 VALID_PROJECT_PATH = file_relative_path(__file__, "definitions_command_projects/valid_project")
@@ -107,16 +107,25 @@ def test_invalid_project(options, monkeypatch):
         assert "Duplicate asset key: AssetKey(['my_asset'])" in result.output
 
 
-def test_invalid_project_truncated_properly(monkeypatch):
-    with monkeypatch.context() as m:
-        m.chdir(INVALID_PROJECT_PATH_WITH_EXCEPTION)
-        result = invoke_validate(options=[])
+@pytest.mark.parametrize("verbose", [True, False])
+def test_invalid_project_truncated_properly(verbose):
+    with pushd(INVALID_PROJECT_PATH_WITH_EXCEPTION):
+        result = invoke_validate(options=["--verbose"] if verbose else [])
         assert result.exit_code == 1
         assert "Validation failed" in result.output
         assert "This is a test exception" in result.output
-        # Assert extraneous lines are removed
-        assert "importlib" not in result.output, result.output
-        assert "DagsterUserCodeLoadError" not in result.output, result.output
+
+        if verbose:
+            assert "importlib" in result.output, result.output
+            assert "DagsterUserCodeLoadError" in result.output, result.output
+        else:
+            # Assert extraneous lines are removed
+            assert "importlib" not in result.output, result.output
+            assert "DagsterUserCodeLoadError" not in result.output, result.output
+            assert (
+                "system frames removed, run with --verbose to see the full stack trace"
+                in result.output
+            )
 
 
 def test_env_var(monkeypatch):

@@ -186,12 +186,20 @@ def check_yaml_command(
     default="colored",
     help="Format of the logs for dagster services",
 )
+@click.option(
+    "--verbose",
+    "-v",
+    flag_value=True,
+    default=False,
+    help="Show verbose error messages, including system frames in stack traces.",
+)
 @dg_global_options
 @click.pass_context
 def check_definitions_command(
     context: click.Context,
     log_level: str,
     log_format: str,
+    verbose: bool,
     **global_options: Mapping[str, object],
 ) -> None:
     """Loads and validates your Dagster definitions using a Dagster instance.
@@ -212,6 +220,7 @@ def check_definitions_command(
     forward_options = [
         *format_forwarded_option("--log-level", log_level),
         *format_forwarded_option("--log-format", log_format),
+        *(["--verbose"] if verbose else []),
     ]
 
     # In a code location context, we can just run `dagster definitions validate` directly, using `dagster` from the
