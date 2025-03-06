@@ -71,6 +71,7 @@ from dagster._grpc.server import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCo
 from dagster._time import get_current_timestamp
 from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._utils.env import using_dagster_dev
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
@@ -640,7 +641,6 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         grpc_server_registry: Optional[GrpcServerRegistry] = None,
         code_server_log_level: str = "INFO",
         server_command: GrpcServerCommand = GrpcServerCommand.API_GRPC,
-        verbose_stack_traces: bool = True,
     ):
         self._stack = ExitStack()
 
@@ -665,8 +665,6 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._state_subscriber_id_iter = count()
         self._state_subscribers: dict[int, LocationStateSubscriber] = {}
         self.add_state_subscriber(LocationStateSubscriber(self._location_state_events_handler))
-
-        self._verbose_stack_traces = verbose_stack_traces
 
         if grpc_server_registry:
             self._grpc_server_registry: GrpcServerRegistry = check.inst_param(
@@ -826,7 +824,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             error = serializable_error_info_from_exc_info(sys.exc_info())
             # In dagster dev, the code server process already logs the error, so we don't need to log it again from
             # the workspace process context
-            if self._verbose_stack_traces:
+            if using_dagster_dev():
                 warnings.warn(f"Error loading repository location {location_name}")
             else:
                 warnings.warn(
