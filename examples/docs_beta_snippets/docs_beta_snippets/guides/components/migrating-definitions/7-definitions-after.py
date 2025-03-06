@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import dagster_components as dg_components
-from my_existing_project import defs as component_defs
+import my_existing_project.defs
 from my_existing_project.analytics import assets as analytics_assets
 from my_existing_project.analytics.jobs import (
     regenerate_analytics_hourly_schedule,
@@ -16,5 +16,5 @@ defs = dg.Definitions.merge(
         jobs=[regenerate_analytics_job],
         schedules=[regenerate_analytics_hourly_schedule],
     ),
-    dg_components.build_component_defs(component_defs),
+    dg_components.build_component_defs(my_existing_project.defs),
 )
