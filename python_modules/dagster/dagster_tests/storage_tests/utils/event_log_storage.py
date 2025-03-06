@@ -3051,7 +3051,7 @@ class TestEventLogStorage:
 
         failed_partitions_by_step_key = defaultdict(set)
         for record in failure_records:
-            assert record.dagster_event.is_asset_failed_to_materialize
+            assert record.event_log_entry.dagster_event.is_asset_failed_to_materialize
             failed_partitions_by_step_key[record.event_log_entry.step_key].add(
                 record.event_log_entry.dagster_event.asset_failed_to_materialize_data.partition
             )
