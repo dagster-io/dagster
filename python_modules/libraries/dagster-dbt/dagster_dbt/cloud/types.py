@@ -153,6 +153,7 @@ class DbtCloudRun:
 @record
 class DbtCloudWorkspaceData:
     """Represents the data of a dbt Cloud workspace, given a project and environment."""
+
     project_id: int
     environment_id: int
     # The ID of the ad hoc dbt Cloud job created by Dagster.
