@@ -33,7 +33,7 @@ def assert_rest_api_call(
 
 def test_basic_resource_request(
     workspace: DbtCloudWorkspace,
-    api_mocks: responses.RequestsMock,
+    all_api_mocks: responses.RequestsMock,
 ) -> None:
     client = workspace.get_client()
 
@@ -45,23 +45,23 @@ def test_basic_resource_request(
     client.trigger_job_run(job_id=TEST_JOB_ID)
     client.get_run_details(run_id=TEST_RUN_ID)
 
-    assert len(api_mocks.calls) == 4
-    assert_rest_api_call(call=api_mocks.calls[0], endpoint="jobs", method="GET")
-    assert_rest_api_call(call=api_mocks.calls[1], endpoint="jobs", method="POST")
-    assert_rest_api_call(call=api_mocks.calls[2], endpoint=f"jobs/{TEST_JOB_ID}/run", method="POST")
-    assert_rest_api_call(call=api_mocks.calls[3], endpoint=f"runs/{TEST_RUN_ID}", method="GET")
+    assert len(all_api_mocks.calls) == 4
+    assert_rest_api_call(call=all_api_mocks.calls[0], endpoint="jobs", method="GET")
+    assert_rest_api_call(call=all_api_mocks.calls[1], endpoint="jobs", method="POST")
+    assert_rest_api_call(call=all_api_mocks.calls[2], endpoint=f"jobs/{TEST_JOB_ID}/run", method="POST")
+    assert_rest_api_call(call=all_api_mocks.calls[3], endpoint=f"runs/{TEST_RUN_ID}", method="GET")
 
 
 def test_get_or_create_dagster_adhoc_job(
     workspace: DbtCloudWorkspace,
-    api_mocks: responses.RequestsMock,
+    job_api_mocks: responses.RequestsMock,
 ) -> None:
     # The expected job name is not in the initial list of jobs so a job is created
     job = workspace._get_or_create_dagster_adhoc_job()  # noqa
 
-    assert len(api_mocks.calls) == 2
-    assert_rest_api_call(call=api_mocks.calls[0], endpoint="jobs", method="GET")
-    assert_rest_api_call(call=api_mocks.calls[1], endpoint="jobs", method="POST")
+    assert len(job_api_mocks.calls) == 2
+    assert_rest_api_call(call=job_api_mocks.calls[0], endpoint="jobs", method="GET")
+    assert_rest_api_call(call=job_api_mocks.calls[1], endpoint="jobs", method="POST")
 
     assert job.id == TEST_JOB_ID
     assert job.name == TEST_ADHOC_JOB_NAME
