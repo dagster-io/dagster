@@ -45,10 +45,6 @@ class DbtProjectSchema(DSLSchema):
     exclude: Optional[str] = None
 
 
-def resolve_dbt(context: ResolutionContext, dbt: DbtCliResource) -> DbtCliResource:
-    return DbtCliResource(**context.resolve_value(dbt.model_dump()))
-
-
 def resolve_translator(
     context: ResolutionContext, schema: DbtProjectSchema
 ) -> DagsterDbtTranslator:
@@ -60,6 +56,10 @@ def resolve_translator(
             "node", schema.asset_attributes or AssetAttributesSchema(), context
         )
     )
+
+
+def resolve_dbt(context: ResolutionContext, dbt: DbtCliResource) -> DbtCliResource:
+    return DbtCliResource(**context.resolve_value(dbt.model_dump()))
 
 
 @scaffoldable(scaffolder=DbtProjectComponentScaffolder)
