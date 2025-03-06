@@ -1847,7 +1847,7 @@
     },
     {
       "source": "/_modules/dagster_aws/:path*",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws/dagster_aws/ecs/:path*.py"
+      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws/dagster_aws/:path*.py"
     },
     {
       "source": "/_modules/dagster_aws/pipes/context_injectors/",
