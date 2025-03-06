@@ -11,6 +11,8 @@ from dagster._utils.cached_method import cached_method
 from pydantic import Field
 from requests.exceptions import RequestException
 
+from dagster_dbt.cloud.types import DbtCloudJobRunStatusType
+
 LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
 DEFAULT_POLL_TIMEOUT = 60
 
@@ -184,7 +186,11 @@ class DbtCloudWorkspaceClient(DagsterModel):
         start_time = time.time()
         while time.time() - start_time < poll_timeout:
             run_details = self._get_job_run_details(job_run_id)
-            if run_details["data"]["status"] in {10, 20, 30}:
+            if run_details["status"] in {
+                DbtCloudJobRunStatusType.SUCCESS,
+                DbtCloudJobRunStatusType.ERROR,
+                DbtCloudJobRunStatusType.CANCELLED,
+            }:
                 return run_details
             time.sleep(0.1)
         raise Exception(f"Run {job_run_id} did not complete within {poll_timeout} seconds.")
