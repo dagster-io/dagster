@@ -43,11 +43,11 @@ def definitions_cli():
     help="Load the code locations using a gRPC server, instead of in-process.",
 )
 @click.option(
-    "--verbose",
+    "--verbose-stack-traces",
     "-v",
     flag_value=True,
     default=False,
-    help="Show verbose error messages, including system frames in stack traces.",
+    help="Show verbose stack traces, including system frames in stack traces.",
 )
 @definitions_cli.command(
     name="validate",
@@ -78,7 +78,7 @@ def definitions_validate_command(
 
     removed_system_frame_hint = (
         lambda is_first_hidden_frame,
-        i: f"  [{i} dagster system frames hidden, run with --verbose to see the full stack trace]\n"
+        i: f"  [{i} dagster system frames hidden, run with --verbose-stack-traces to see the full stack trace]\n"
         if is_first_hidden_frame
         else f"  [{i} dagster system frames hidden]\n"
     )

@@ -110,7 +110,7 @@ def test_invalid_project(options, monkeypatch):
 @pytest.mark.parametrize("verbose", [True, False])
 def test_invalid_project_truncated_properly(verbose):
     with pushd(INVALID_PROJECT_PATH_WITH_EXCEPTION):
-        result = invoke_validate(options=["--verbose"] if verbose else [])
+        result = invoke_validate(options=["--verbose-stack-traces"] if verbose else [])
         assert result.exit_code == 1
         assert "Validation failed" in result.output
         assert "is not a valid name in Dagster" in result.output, result.output
@@ -125,7 +125,7 @@ def test_invalid_project_truncated_properly(verbose):
             # (after user code)
             assert (
                 result.output.count(
-                    "dagster system frames hidden, run with --verbose to see the full stack trace"
+                    "dagster system frames hidden, run with --verbose-stack-traces to see the full stack trace"
                 )
                 == 1
             )
