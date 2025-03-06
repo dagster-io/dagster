@@ -64,6 +64,9 @@ class ImplicitDefinitionsComponentDecl(ComponentDeclNode):
     def from_path(path: Path) -> "ImplicitDefinitionsComponentDecl":
         return ImplicitDefinitionsComponentDecl(path=path)
 
+    def get_source_position_tree(self) -> Optional[SourcePositionTree]:
+        return None
+
     def load(self, context) -> Sequence[Component]:
         from dagster_components.dagster import DefinitionsComponent
 
