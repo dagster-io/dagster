@@ -1810,8 +1810,12 @@
       "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster/dagster/_config/:path.py"
     },
     {
-      "source": "/_modules/dagster/_core/:path",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster/dagster/_core/:path.py"
+      "source": "/_modules/dagster/_core/:path*",
+      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster/dagster/_core/:path*.py"
+    },
+    {
+      "source": "/_modules/dagster/_core/instance",
+      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster/dagster/_core/"
     },
     {
       "source": "/_modules/dagster/_utils",
