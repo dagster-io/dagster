@@ -135,8 +135,7 @@ class AssetSpecSchema(_ResolvableAssetAttributesMixin, DSLSchema):
     key: str = Field(..., description="A unique identifier for the asset.")
 
 
-# TODO: Will share these fields in a followup
-class AssetSpecResolutionSpec(ResolutionSpec["AssetAttributesSchema"]):
+class SharedAssetAttributesSpec(ResolutionSpec["AssetAttributesSchema"]):
     deps: Sequence[str]
     description: Optional[str]
     metadata: Mapping[str, Any]
@@ -147,6 +146,9 @@ class AssetSpecResolutionSpec(ResolutionSpec["AssetAttributesSchema"]):
     tags: Mapping[str, str]
     kinds: Optional[Sequence[str]]
     automation_condition: Optional[AutomationCondition]
+
+
+class AssetSpecResolutionSpec(SharedAssetAttributesSpec):
     key: Annotated[
         AssetKey,
         DSLFieldResolver.from_parent(
@@ -155,17 +157,7 @@ class AssetSpecResolutionSpec(ResolutionSpec["AssetAttributesSchema"]):
     ]
 
 
-class AssetAttributesResolutionSpec(ResolutionSpec["AssetAttributesSchema"]):
-    deps: Sequence[str]
-    description: Optional[str]
-    metadata: Mapping[str, Any]
-    group_name: Optional[str]
-    skippable: bool
-    code_version: Optional[str]
-    owners: Sequence[str]
-    tags: Mapping[str, str]
-    kinds: Optional[Sequence[str]]
-    automation_condition: Optional[AutomationCondition]
+class AssetAttributesResolutionSpec(SharedAssetAttributesSpec):
     key: Annotated[
         Optional[AssetKey],
         DSLFieldResolver.from_parent(
