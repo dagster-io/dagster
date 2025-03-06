@@ -24,7 +24,7 @@ from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.resolvable_from_schema import (
     ResolvableModel,
     ResolvedFrom,
-    resolve_schema_to_resolvable,
+    resolve_model,
 )
 from dagster_components.scaffoldable.decorator import get_scaffolder, scaffoldable
 from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
@@ -49,14 +49,14 @@ class Component(ABC):
     def get_schema(cls) -> Optional[type["ResolvableModel"]]:
         from dagster_components.core.schema.resolvable_from_schema import (
             ResolvedFrom,
-            get_schema_type,
+            get_model_type,
         )
 
         if issubclass(cls, ResolvableModel):
             return cls
 
         if issubclass(cls, ResolvedFrom):
-            return get_schema_type(cls)
+            return get_model_type(cls)
         return None
 
     @classmethod
@@ -75,9 +75,7 @@ class Component(ABC):
 
         elif issubclass(cls, ResolvedFrom):
             return (
-                resolve_schema_to_resolvable(
-                    attributes, cls, context.resolution_context.at_path("attributes")
-                )
+                resolve_model(attributes, cls, context.resolution_context.at_path("attributes"))
                 if attributes
                 else cls()
             )

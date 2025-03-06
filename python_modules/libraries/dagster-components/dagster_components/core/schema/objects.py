@@ -131,11 +131,11 @@ class _ResolvableAssetAttributesMixin(BaseModel):
     )
 
 
-class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableModel):
+class AssetSpecModel(_ResolvableAssetAttributesMixin, ResolvableModel):
     key: str = Field(..., description="A unique identifier for the asset.")
 
 
-class SharedAssetAttributesSpec(ResolvedKwargs["AssetAttributesSchema"]):
+class SharedAssetKwargs(ResolvedKwargs["AssetAttributesModel"]):
     deps: Sequence[str]
     description: Optional[str]
     metadata: Mapping[str, Any]
@@ -148,14 +148,14 @@ class SharedAssetAttributesSpec(ResolvedKwargs["AssetAttributesSchema"]):
     automation_condition: Optional[AutomationCondition]
 
 
-class AssetSpecResolutionSpec(SharedAssetAttributesSpec):
+class AssetSpecKwargs(SharedAssetKwargs):
     key: Annotated[
         AssetKey,
         FieldResolver.from_model(lambda context, schema: _resolve_asset_key(schema.key, context)),
     ]
 
 
-class AssetAttributesResolutionSpec(SharedAssetAttributesSpec):
+class AssetAttributesKwargs(SharedAssetKwargs):
     key: Annotated[
         Optional[AssetKey],
         FieldResolver.from_model(
@@ -166,7 +166,7 @@ class AssetAttributesResolutionSpec(SharedAssetAttributesSpec):
 
 AssetSpecSequenceField: TypeAlias = Annotated[
     Sequence[AssetSpec],
-    FieldResolver(AssetSpecResolutionSpec.resolver_fn(AssetSpec).from_seq),
+    FieldResolver(AssetSpecKwargs.resolver_fn(AssetSpec).from_seq),
 ]
 
 
@@ -181,11 +181,11 @@ class AssetAttributesModel(_ResolvableAssetAttributesMixin, ResolvableModel):
 
 def resolve_asset_attributes_to_mapping(
     context: ResolutionContext,
-    schema: AssetAttributesModel,
+    model: AssetAttributesModel,
 ) -> Mapping[str, Any]:
     # only include fields that are explcitly set
-    set_fields = schema.model_dump(exclude_unset=True).keys()
-    resolved_fields = resolve_fields(schema, AssetAttributesResolutionSpec, context)
+    set_fields = model.model_dump(exclude_unset=True).keys()
+    resolved_fields = resolve_fields(model, AssetAttributesKwargs, context)
     return {k: v for k, v in resolved_fields.items() if k in set_fields}
 
 
@@ -201,33 +201,33 @@ class AssetPostProcessorModel(ResolvableModel):
 
 
 def apply_post_processor_to_spec(
-    schema: AssetPostProcessorModel, spec: AssetSpec, context: ResolutionContext
+    model: AssetPostProcessorModel, spec: AssetSpec, context: ResolutionContext
 ) -> AssetSpec:
     # add the original spec to the context and resolve values
     attributes = resolve_asset_attributes_to_mapping(
-        context=context.with_scope(asset=spec), schema=schema.attributes
+        context=context.with_scope(asset=spec), model=model.attributes
     )
 
-    if schema.operation == "merge":
+    if model.operation == "merge":
         mergeable_attributes = {"metadata", "tags"}
         merge_attributes = {k: v for k, v in attributes.items() if k in mergeable_attributes}
         replace_attributes = {k: v for k, v in attributes.items() if k not in mergeable_attributes}
         return spec.merge_attributes(**merge_attributes).replace_attributes(**replace_attributes)
-    elif schema.operation == "replace":
+    elif model.operation == "replace":
         return spec.replace_attributes(**attributes)
     else:
-        check.failed(f"Unsupported operation: {schema.operation}")
+        check.failed(f"Unsupported operation: {model.operation}")
 
 
 def apply_post_processor_to_defs(
-    schema: AssetPostProcessorModel, defs: Definitions, context: ResolutionContext
+    model: AssetPostProcessorModel, defs: Definitions, context: ResolutionContext
 ) -> Definitions:
-    target_selection = AssetSelection.from_string(schema.target, include_sources=True)
+    target_selection = AssetSelection.from_string(model.target, include_sources=True)
     target_keys = target_selection.resolve(defs.get_asset_graph())
 
     mappable = [d for d in defs.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))]
     mapped_assets = map_asset_specs(
-        lambda spec: apply_post_processor_to_spec(schema, spec, context)
+        lambda spec: apply_post_processor_to_spec(model, spec, context)
         if spec.key in target_keys
         else spec,
         mappable,
@@ -241,9 +241,9 @@ def apply_post_processor_to_defs(
 
 
 def resolve_schema_to_post_processor(
-    context, schema: AssetPostProcessorModel
+    context, model: AssetPostProcessorModel
 ) -> Callable[[Definitions], Definitions]:
-    return lambda defs: apply_post_processor_to_defs(schema, defs, context)
+    return lambda defs: apply_post_processor_to_defs(model, defs, context)
 
 
 @dataclass

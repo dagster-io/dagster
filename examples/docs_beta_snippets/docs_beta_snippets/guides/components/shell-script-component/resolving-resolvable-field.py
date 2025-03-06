@@ -1,8 +1,8 @@
 from collections.abc import Sequence
 
-from dagster_components import AssetSpecSchema, Component, ResolvableModel
+from dagster_components import AssetSpecModel, Component, ResolvableModel
 
 
 class ShellCommand(Component, ResolvableModel):
     path: str
-    asset_specs: Sequence[AssetSpecSchema]
+    asset_specs: Sequence[AssetSpecModel]

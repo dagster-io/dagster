@@ -6,7 +6,7 @@ from dagster_components.core.schema.resolvable_from_schema import (
     FieldResolver,
     ResolvableModel,
     ResolvedFrom,
-    resolve_schema_to_resolvable,
+    resolve_model,
 )
 from pydantic import BaseModel
 
@@ -41,7 +41,7 @@ class TargetModel(ResolvableModel):
 def test_valid_resolution_simple() -> None:
     context = ResolutionContext(scope={"some_int": 1, "some_str": "a"})
     inner_schema = InnerModel(val1="{{ some_int }}", val2="{{ some_str }}_b")
-    inner = resolve_schema_to_resolvable(inner_schema, InnerObject, context)
+    inner = resolve_model(inner_schema, InnerObject, context)
     assert inner == InnerObject(val1_renamed=21, val2="a_b")
 
 
@@ -53,7 +53,7 @@ def test_valid_resolution_nested() -> None:
         inners=[InnerModel(val1="{{ some_int }}", val2="{{ some_str }}_y")],
     )
 
-    target = resolve_schema_to_resolvable(params, TargetObject, context)
+    target = resolve_model(params, TargetObject, context)
 
     assert target == TargetObject(
         int_val=1,

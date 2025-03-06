@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from dagster_components import (
-    AssetSpecSchema,
+    AssetSpecModel,
     Component,
     ComponentLoadContext,
     Scaffolder,
@@ -47,7 +47,7 @@ class ShellCommandScaffolder(Scaffolder):
 
 class ShellCommandModel(ResolvableModel):
     script_path: str
-    asset_specs: Sequence[AssetSpecSchema]
+    asset_specs: Sequence[AssetSpecModel]
 
 
 # highlight-start
