@@ -1,3 +1,5 @@
+import contextlib
+import contextvars
 import dataclasses
 import importlib
 import importlib.metadata
@@ -9,12 +11,13 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Optional, TypedDict, TypeVar
+from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
 
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import pushd
+from dagster._utils.cached_method import cached_method
 from typing_extensions import Self
 
 from dagster_components.core.component_key import ComponentKey
@@ -194,11 +197,63 @@ T = TypeVar("T")
 
 
 @dataclass
-class ComponentLoadContext:
-    module_name: str
+class DefinitionsModuleCache:
+    """Cache used when loading a code location's component hierarchy.
+    Stores resources and a cache to ensure we don't load the same component multiple times.
+    """
+
     resources: Mapping[str, object]
+
+    def build_defs_from_component_module(self, module: ModuleType) -> Definitions:
+        """Loads a set of Dagster definitions from a components Python module.
+
+        Args:
+            module (ModuleType): The Python module to load definitions from.
+
+        Returns:
+            Definitions: The set of Dagster definitions loaded from the module.
+        """
+        return self._build_defs_from_component_module_inner(module)
+
+    @cached_method
+    def _build_defs_from_component_module_inner(self, module: ModuleType) -> Definitions:
+        from dagster_components.core.component_decl_builder import module_to_decl_node
+        from dagster_components.core.component_defs_builder import defs_from_components
+
+        decl_node = module_to_decl_node(module)
+        if not decl_node:
+            raise Exception(f"No component found at module {module}")
+
+        context = ComponentLoadContext(
+            module_name=module.__name__,
+            decl_node=decl_node,
+            resolution_context=ResolutionContext.default(),
+            module_cache=self,
+        )
+        with use_component_load_context(context):
+            components = decl_node.load(context)
+            return defs_from_components(
+                resources=self.resources, context=context, components=components
+            )
+
+
+@dataclass
+class ComponentLoadContext:
+    """Context for loading a single component."""
+
+    module_name: str
     decl_node: Optional[ComponentDeclNode]
     resolution_context: ResolutionContext
+    module_cache: DefinitionsModuleCache
+
+    @staticmethod
+    def current() -> "ComponentLoadContext":
+        context = active_component_load_context.get()
+        if context is None:
+            raise DagsterError(
+                "No active component load context, `ComponentLoadContext.current()` must be called inside of a component's `build_defs` method"
+            )
+        return context
 
     @staticmethod
     def for_test(
@@ -208,9 +263,9 @@ class ComponentLoadContext:
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
             module_name="test",
-            resources=resources or {},
             decl_node=decl_node,
             resolution_context=ResolutionContext.default(),
+            module_cache=DefinitionsModuleCache(resources=resources or {}),
         )
 
     @property
@@ -239,6 +294,13 @@ class ComponentLoadContext:
 
     def normalize_component_type_str(self, type_str: str) -> str:
         return f"{self.module_name}{type_str}" if type_str.startswith(".") else type_str
+
+    def build_defs_from_component_module(self, module: ModuleType) -> Definitions:
+        """Builds the set of Dagster definitions for a component module.
+
+        This is useful for resolving dependencies on other components.
+        """
+        return self.module_cache.build_defs_from_component_module(module)
 
     def load_component_relative_python_module(self, file_path: Path) -> ModuleType:
         """Load a python module relative to the component's context path. This is useful for loading code
@@ -277,6 +339,20 @@ class ComponentLoadContext:
                 component_module_name = f"{component_module_name}.{abs_file_path.stem}"
 
             return importlib.import_module(component_module_name)
+
+
+active_component_load_context: contextvars.ContextVar[Union[ComponentLoadContext, None]] = (
+    contextvars.ContextVar("active_component_load_context", default=None)
+)
+
+
+@contextlib.contextmanager
+def use_component_load_context(component_load_context: ComponentLoadContext):
+    token = active_component_load_context.set(component_load_context)
+    try:
+        yield
+    finally:
+        active_component_load_context.reset(token)
 
 
 COMPONENT_LOADER_FN_ATTR = "__dagster_component_loader_fn"

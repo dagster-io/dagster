@@ -1,16 +1,15 @@
 import importlib
 
 from dagster import AssetSpec, AutomationCondition
-from dagster_components.core.component_defs_builder import build_defs_from_component_module
+from dagster_components.core.component_defs_builder import DefinitionsModuleCache
 
 
 def test_custom_scope() -> None:
     module = importlib.import_module(
         "dagster_components_tests.resolution_tests.custom_scope_component"
     )
-    defs = build_defs_from_component_module(
+    defs = DefinitionsModuleCache(resources={}).build_defs_from_component_module(
         module=module,
-        resources={},
     )
 
     assets = list(defs.assets or [])

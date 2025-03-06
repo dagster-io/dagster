@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_components.core.component_defs_builder import build_defs_from_component_module
+from dagster_components.core.component_defs_builder import DefinitionsModuleCache
 
 from dagster_components_tests.utils import create_project_from_components
 
@@ -22,7 +22,6 @@ def load_test_component_defs(
 
         module = importlib.import_module(f"my_location.defs.{Path(src_path).stem}")
 
-        return build_defs_from_component_module(
+        return DefinitionsModuleCache(resources={}).build_defs_from_component_module(
             module=module,
-            resources={},
         )
