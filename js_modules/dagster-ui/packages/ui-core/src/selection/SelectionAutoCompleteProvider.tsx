@@ -237,15 +237,8 @@ export const createProvider = <
   }) {
     const displayText = `${attribute as string}:`;
     const icon: IconName = attributeToIcon[attribute];
-    let label;
-    switch (attribute) {
-      case primaryAttributeKey as string:
-        label = 'Exact match';
-        break;
-      default:
-        label = (attribute as string).replace(/_/g, ' ');
-        label = label[0]!.toUpperCase() + label.slice(1);
-    }
+    let label = (attribute as string).replace(/_/g, ' ');
+    label = label[0]!.toUpperCase() + label.slice(1);
     return {
       text,
       jsx: (
