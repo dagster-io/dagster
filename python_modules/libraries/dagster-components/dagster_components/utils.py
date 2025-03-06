@@ -80,7 +80,9 @@ class TranslatorResolvingInfo:
 
     def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
         resolved_attributes = resolve_asset_attributes_to_mapping(
-            context=self.resolution_context.with_scope(**{self.obj_name: obj}),
+            context=self.resolution_context.at_path("asset_attributes").with_scope(
+                **{self.obj_name: obj}
+            ),
             schema=self.asset_attributes,
         )
 
