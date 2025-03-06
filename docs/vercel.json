@@ -1804,6 +1804,11 @@
         }
       ],
       "destination": "/about/changelog"
+    },
+    {
+      "source": "/_modules/dagster/_config/:path*/",
+      "destination": "https://github.com/dagster-io/dagster/tree/masterpython_modules/dagster/_config/:path*.py",
+      "permanent": false
     }
   ]
 }
