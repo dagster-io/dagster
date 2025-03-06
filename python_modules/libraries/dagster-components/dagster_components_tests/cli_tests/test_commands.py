@@ -47,20 +47,21 @@ def test_list_components_types_from_module():
     ]
 
     assert result["dagster_test.components.SimpleAssetComponent"] == {
-        "name": "SimpleAssetComponent",
-        "namespace": "dagster_test.components",
-        "summary": "A simple asset that returns a constant string value.",
-        "description": "A simple asset that returns a constant string value.",
-        "scaffold_params_schema": None,
         "component_schema": {
+            "additionalProperties": False,
             "properties": {
                 "asset_key": {"title": "Asset Key", "type": "string"},
                 "value": {"title": "Value", "type": "string"},
             },
             "required": ["asset_key", "value"],
-            "title": "SimpleAssetSchema",
+            "title": "SimpleAssetComponentModel",
             "type": "object",
         },
+        "description": "A simple asset that returns a constant string value.",
+        "name": "SimpleAssetComponent",
+        "namespace": "dagster_test.components",
+        "scaffold_params_schema": None,
+        "summary": "A simple asset that returns a constant string value.",
     }
 
     pipes_script_params_schema = {
