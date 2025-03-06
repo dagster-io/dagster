@@ -90,7 +90,7 @@ class DbtCloudOutput:
 class DbtCloudJob:
     """Represents a dbt Cloud job, based on data as returned from the API."""
 
-    id: str
+    id: int
     account_id: Optional[int]
     project_id: Optional[int]
     environment_id: Optional[int]
