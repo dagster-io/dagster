@@ -29,28 +29,28 @@ class ExistingBusinessObject:
     value: int
 
 
-class ExistingBusinessObjectSchema(ResolvableModel):
+class ExistingBusinessObjectModel(ResolvableModel):
     value: str
 
 
-class ExistingBusinessObjectResolutionSpec(ResolvedKwargs[ExistingBusinessObjectSchema]):
+class ExistingBusinessObjectKwargs(ResolvedKwargs[ExistingBusinessObjectModel]):
     value: Annotated[int, FieldResolver(lambda context, val: int(val))]
 
 
 def test_resolve_fields_on_transform() -> None:
     fields = resolve_fields(
-        schema=ExistingBusinessObjectSchema(value="1"),
-        resolution_spec=ExistingBusinessObjectResolutionSpec,
+        schema=ExistingBusinessObjectModel(value="1"),
+        resolution_spec=ExistingBusinessObjectKwargs,
         context=ResolutionContext.default(),
     )
     assert fields == {"value": 1}
 
 
 def test_use_transform_to_build_business_object():
-    schema = ExistingBusinessObjectSchema(value="1")
+    schema = ExistingBusinessObjectModel(value="1")
     business_object = resolve_schema_using_spec(
         schema=schema,
-        resolution_spec=ExistingBusinessObjectResolutionSpec,
+        resolution_spec=ExistingBusinessObjectKwargs,
         context=ResolutionContext.default(),
         target_type=ExistingBusinessObject,
     )
@@ -58,22 +58,22 @@ def test_use_transform_to_build_business_object():
 
 
 def test_with_resolution_spec_on_component():
-    class ComponentWithExistingBusinessObjectSchema(ResolvableModel):
-        business_object: ExistingBusinessObjectSchema
+    class ComponentWithExistingBusinessObjectModel(ResolvableModel):
+        business_object: ExistingBusinessObjectModel
 
     @dataclass
     class ComponentWithExistingBusinessObject(
-        Component, ResolvedFrom[ComponentWithExistingBusinessObjectSchema]
+        Component, ResolvedFrom[ComponentWithExistingBusinessObjectModel]
     ):
         business_object: Annotated[
             ExistingBusinessObject,
-            FieldResolver.from_spec(ExistingBusinessObjectResolutionSpec, ExistingBusinessObject),
+            FieldResolver.from_spec(ExistingBusinessObjectKwargs, ExistingBusinessObject),
         ]
 
         def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...
 
     comp_instance = ComponentWithExistingBusinessObject.load(
-        attributes=ExistingBusinessObjectSchema(value="1"), context=ComponentLoadContext.for_test()
+        attributes=ExistingBusinessObjectModel(value="1"), context=ComponentLoadContext.for_test()
     )
 
     assert isinstance(comp_instance, ComponentWithExistingBusinessObject)
@@ -82,13 +82,13 @@ def test_with_resolution_spec_on_component():
 
 ExistingBusinessObjectField: TypeAlias = Annotated[
     ExistingBusinessObject,
-    FieldResolver.from_spec(ExistingBusinessObjectResolutionSpec, ExistingBusinessObject),
+    FieldResolver.from_spec(ExistingBusinessObjectKwargs, ExistingBusinessObject),
 ]
 
 
 def test_reuse_across_components():
     class ComponentWithExistingBusinessObjectSchemaOne(ResolvableModel):
-        business_object: ExistingBusinessObjectSchema
+        business_object: ExistingBusinessObjectModel
 
     @dataclass
     class ComponentWithExistingBusinessObjectOne(
@@ -99,7 +99,7 @@ def test_reuse_across_components():
         def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...
 
     class ComponentWithExistingBusinessObjectSchemaTwo(ResolvableModel):
-        business_object: ExistingBusinessObjectSchema
+        business_object: ExistingBusinessObjectModel
 
     @dataclass
     class ComponentWithExistingBusinessObjectTwo(
@@ -110,14 +110,14 @@ def test_reuse_across_components():
         def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...
 
     comp_instance_one = ComponentWithExistingBusinessObjectOne.load(
-        attributes=ExistingBusinessObjectSchema(value="1"), context=ComponentLoadContext.for_test()
+        attributes=ExistingBusinessObjectModel(value="1"), context=ComponentLoadContext.for_test()
     )
 
     assert isinstance(comp_instance_one, ComponentWithExistingBusinessObjectOne)
     assert comp_instance_one.business_object.value == 1
 
     comp_instance_one = ComponentWithExistingBusinessObjectTwo.load(
-        attributes=ExistingBusinessObjectSchema(value="2"), context=ComponentLoadContext.for_test()
+        attributes=ExistingBusinessObjectModel(value="2"), context=ComponentLoadContext.for_test()
     )
 
     assert isinstance(comp_instance_one, ComponentWithExistingBusinessObjectTwo)
@@ -174,18 +174,18 @@ def test_asset_spec():
 
 
 def test_asset_spec_seq() -> None:
-    class SomeObjectSchema(ResolvableModel):
+    class SomeObjectModel(ResolvableModel):
         specs: Sequence[AssetSpecSchema]
 
     @dataclass
-    class SomeObject(ResolvedFrom[SomeObjectSchema]):
+    class SomeObject(ResolvedFrom[SomeObjectModel]):
         specs: Annotated[
             Sequence[AssetSpec],
             FieldResolver(AssetSpecResolutionSpec.resolver_fn(AssetSpec).from_seq),
         ]
 
     some_object = resolve_schema_using_spec(
-        schema=SomeObjectSchema(
+        schema=SomeObjectModel(
             specs=[
                 AssetSpecSchema(key="asset1"),
                 AssetSpecSchema(key="asset2"),

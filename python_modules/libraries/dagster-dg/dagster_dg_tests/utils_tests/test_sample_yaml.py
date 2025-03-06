@@ -5,20 +5,20 @@ from dagster_components import ResolvableFieldInfo, ResolvableModel
 from dagster_dg.docs import generate_sample_yaml
 
 
-class SampleSubSchema(ResolvableModel):
+class SampleSubModel(ResolvableModel):
     str_field: str
     int_field: int
 
 
-class SampleSchema(ResolvableModel):
-    sub_scoped: Annotated[SampleSubSchema, ResolvableFieldInfo(required_scope={"outer_scope"})]
-    sub_optional: SampleSubSchema
-    sub_list: Sequence[SampleSubSchema]
+class SampleModel(ResolvableModel):
+    sub_scoped: Annotated[SampleSubModel, ResolvableFieldInfo(required_scope={"outer_scope"})]
+    sub_optional: SampleSubModel
+    sub_list: Sequence[SampleSubModel]
 
 
 def test_generate_sample_yaml():
     yaml = generate_sample_yaml(
-        component_type=".sample", json_schema=SampleSchema.model_json_schema()
+        component_type=".sample", json_schema=SampleModel.model_json_schema()
     )
     assert (
         yaml

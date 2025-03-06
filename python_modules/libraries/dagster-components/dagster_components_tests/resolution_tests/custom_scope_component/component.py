@@ -16,12 +16,12 @@ def my_custom_automation_condition(cron_schedule: str) -> AutomationCondition:
     return AutomationCondition.cron_tick_passed(cron_schedule) & ~AutomationCondition.in_progress()
 
 
-class CustomScopeSchema(ResolvableModel):
+class CustomScopeModel(ResolvableModel):
     asset_attributes: AssetAttributesModel
 
 
 @dataclass
-class HasCustomScope(Component, ResolvedFrom[CustomScopeSchema]):
+class HasCustomScope(Component, ResolvedFrom[CustomScopeModel]):
     asset_attributes: ResolvedAssetAttributes
 
     @classmethod
@@ -32,10 +32,6 @@ class HasCustomScope(Component, ResolvedFrom[CustomScopeSchema]):
             "custom_fn": my_custom_fn,
             "custom_automation_condition": my_custom_automation_condition,
         }
-
-    @classmethod
-    def get_schema(cls):
-        return CustomScopeSchema
 
     def build_defs(self, context: ComponentLoadContext):
         return Definitions(assets=[AssetSpec(key="key", **self.asset_attributes)])

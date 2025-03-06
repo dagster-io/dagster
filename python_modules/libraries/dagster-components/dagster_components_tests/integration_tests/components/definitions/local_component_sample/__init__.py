@@ -3,7 +3,7 @@ from dagster_components import Component, ResolvableModel
 from dagster_components.core.component import ComponentLoadContext
 
 
-class MyComponentSchema(ResolvableModel):
+class MyComponentModel(ResolvableModel):
     a_string: str
     an_int: int
 
