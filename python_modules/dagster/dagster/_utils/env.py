@@ -30,5 +30,5 @@ def using_dagster_dev() -> bool:
     return bool(os.getenv("DAGSTER_IS_DEV_CLI"))
 
 
-def use_verbose_stack_traces() -> bool:
-    return bool(os.getenv("DAGSTER_VERBOSE_STACK_TRACES", "1"))
+def use_verbose() -> bool:
+    return bool(os.getenv("DAGSTER_verbose", "1"))

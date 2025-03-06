@@ -386,7 +386,7 @@ def _get_cmdline(proc: psutil.Process) -> str:
 
 
 @pytest.mark.parametrize("verbose", [True, False])
-def test_dagster_dev_command_verbose_stack_traces(verbose: bool) -> None:
+def test_dagster_dev_command_verbose(verbose: bool) -> None:
     with tempfile.TemporaryDirectory() as tempdir:
         stdout_filepath = str(Path(tempdir) / "stdout.txt")
 
@@ -394,8 +394,7 @@ def test_dagster_dev_command_verbose_stack_traces(verbose: bool) -> None:
             webserver_port = find_free_port()
             stdout_file = open(stdout_filepath, "w")
             with _launch_dev_command(
-                options=["--port", str(webserver_port)]
-                + (["--verbose-stack-traces"] if verbose else []),
+                options=["--port", str(webserver_port)] + (["--verbose"] if verbose else []),
                 capture_output=True,
                 stdout_file=stdout_file,
             ):
@@ -413,7 +412,7 @@ def test_dagster_dev_command_verbose_stack_traces(verbose: bool) -> None:
                 assert "importlib" not in contents, contents
                 assert (
                     contents.count(
-                        "dagster system frames hidden, run with --verbose-stack-traces to see the full stack trace"
+                        "dagster system frames hidden, run with --verbose to see the full stack trace"
                     )
                     == 1
                 ), contents

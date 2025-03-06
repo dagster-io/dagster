@@ -100,7 +100,7 @@ _CHECK_SUBPROCESS_INTERVAL = 5
     help="Internal use only. Pass a readable pipe file descriptor to the dev process that will be monitored for a shutdown signal.",
 )
 @click.option(
-    "--verbose-stack-traces",
+    "--verbose",
     "-v",
     is_flag=True,
     default=False,
@@ -119,7 +119,7 @@ def dev_command(
     live_data_poll_rate: Optional[str],
     use_legacy_code_server_behavior: bool,
     shutdown_pipe: Optional[int],
-    verbose_stack_traces: bool,
+    verbose: bool,
     **other_opts: object,
 ) -> None:
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
@@ -136,7 +136,7 @@ def dev_command(
         )
 
     os.environ["DAGSTER_IS_DEV_CLI"] = "1"
-    os.environ["DAGSTER_VERBOSE_STACK_TRACES"] = "1" if verbose_stack_traces else ""
+    os.environ["DAGSTER_verbose"] = "1" if verbose else ""
 
     configure_loggers(formatter=log_format, log_level=log_level.upper())
     logger = logging.getLogger("dagster")

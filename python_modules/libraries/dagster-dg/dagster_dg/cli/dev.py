@@ -70,7 +70,7 @@ _CHECK_SUBPROCESS_INTERVAL = 5
     required=False,
 )
 @click.option(
-    "--verbose-stack-traces",
+    "--verbose",
     "-v",
     flag_value=True,
     default=False,
@@ -84,7 +84,7 @@ def dev_command(
     port: Optional[int],
     host: Optional[str],
     live_data_poll_rate: int,
-    verbose_stack_traces: bool,
+    verbose: bool,
     **global_options: Mapping[str, object],
 ) -> None:
     """Start a local instance of Dagster.
@@ -102,7 +102,7 @@ def dev_command(
         *format_forwarded_option("--port", port),
         *format_forwarded_option("--host", host),
         *format_forwarded_option("--live-data-poll-rate", live_data_poll_rate),
-        ["--verbose-stack-traces"] if verbose_stack_traces else [],
+        *(["--verbose"] if verbose else []),
     ]
 
     # In a project context, we can just run `dagster dev` directly, using `dagster` from the

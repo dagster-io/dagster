@@ -103,7 +103,7 @@ from dagster._utils.container import (
     ContainerUtilizationMetrics,
     retrieve_containerized_utilization_metrics,
 )
-from dagster._utils.env import use_verbose_stack_traces, using_dagster_dev
+from dagster._utils.env import use_verbose, using_dagster_dev
 from dagster._utils.error import (
     remove_system_frames_from_error,
     serializable_error_info_from_exc_info,
@@ -433,10 +433,10 @@ class DagsterApiServer(DagsterApiServicer):
                 raise
             self._loaded_repositories = None
             self._serializable_load_error = serializable_error_info_from_exc_info(sys.exc_info())
-            if using_dagster_dev() and not use_verbose_stack_traces():
+            if using_dagster_dev() and not use_verbose():
                 removed_system_frame_hint = (
                     lambda is_first_hidden_frame,
-                    i: f"  [{i} dagster system frames hidden, run with --verbose-stack-traces to see the full stack trace]\n"
+                    i: f"  [{i} dagster system frames hidden, run with --verbose to see the full stack trace]\n"
                     if is_first_hidden_frame
                     else f"  [{i} dagster system frames hidden]\n"
                 )

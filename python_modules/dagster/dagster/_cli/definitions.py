@@ -43,7 +43,7 @@ def definitions_cli():
     help="Load the code locations using a gRPC server, instead of in-process.",
 )
 @click.option(
-    "--verbose-stack-traces",
+    "--verbose",
     "-v",
     flag_value=True,
     default=False,
@@ -69,7 +69,7 @@ def definitions_validate_command(
     log_level: str,
     log_format: str,
     load_with_grpc: bool,
-    verbose_stack_traces: bool,
+    verbose: bool,
     **other_opts: object,
 ):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
@@ -82,7 +82,7 @@ def definitions_validate_command(
 
     removed_system_frame_hint = (
         lambda is_first_hidden_frame,
-        i: f"  [{i} dagster system frames hidden, run with --verbose-stack-traces to see the full stack trace]\n"
+        i: f"  [{i} dagster system frames hidden, run with --verbose to see the full stack trace]\n"
         if is_first_hidden_frame
         else f"  [{i} dagster system frames hidden]\n"
     )
@@ -105,7 +105,7 @@ def definitions_validate_command(
             ]
             for code_location, entry in workspace.get_code_location_entries().items():
                 if entry.load_error:
-                    if verbose_stack_traces:
+                    if verbose:
                         underlying_error = entry.load_error
                     else:
                         underlying_error = remove_system_frames_from_error(
