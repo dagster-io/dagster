@@ -21,17 +21,19 @@ if TYPE_CHECKING:
     from dagster_components.core.schema.context import ResolutionContext
 
 
-class DSLSchema(BaseModel):
+class ResolvableModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-TSchema = TypeVar("TSchema", bound=DSLSchema)
+TSchema = TypeVar("TSchema", bound=ResolvableModel)
 
 
-def get_schema_type(resolvable_from_schema_type: type["ResolvableFromSchema"]) -> type[DSLSchema]:
+def get_schema_type(
+    resolvable_from_schema_type: type["ResolvedFrom"],
+) -> type[ResolvableModel]:
     """Returns the first generic type argument (TSchema) of the ResolvableFromSchema instance at runtime."""
     check.param_invariant(
-        issubclass(resolvable_from_schema_type, ResolvableFromSchema),
+        issubclass(resolvable_from_schema_type, ResolvedFrom),
         "resolvable_from_schema_type",
     )
     check.param_invariant(
@@ -41,7 +43,7 @@ def get_schema_type(resolvable_from_schema_type: type["ResolvableFromSchema"]) -
     for base in resolvable_from_schema_type.__orig_bases__:  # type: ignore
         # Check if this base originates from ResolvableFromSchema
         origin = getattr(base, "__origin__", None)
-        if origin is ResolvableFromSchema:
+        if origin is ResolvedFrom:
             type_args = get_args(base)
             if not type_args:
                 raise ValueError(
@@ -56,11 +58,11 @@ T = TypeVar("T")
 
 
 class ResolutionResolverFn(Generic[T]):
-    def __init__(self, target_type: type[T], spec_type: type["ResolutionSpec"]):
+    def __init__(self, target_type: type[T], spec_type: type["ResolvedKwargs"]):
         self.target_type = target_type
         self.spec_type = spec_type
 
-    def from_schema(self, context: "ResolutionContext", schema: DSLSchema) -> T:
+    def from_schema(self, context: "ResolutionContext", schema: ResolvableModel) -> T:
         return resolve_schema_using_spec(
             schema=schema,
             resolution_spec=self.spec_type,
@@ -80,13 +82,13 @@ class ResolutionResolverFn(Generic[T]):
         return self.from_seq(context, schema) if schema else None
 
 
-class ResolutionSpec(Generic[TSchema]):
+class ResolvedKwargs(Generic[TSchema]):
     @classmethod
     def resolver_fn(cls, target_type: type) -> ResolutionResolverFn:
         return ResolutionResolverFn(target_type=target_type, spec_type=cls)
 
 
-class ResolvableFromSchema(ResolutionSpec[TSchema]):
+class ResolvedFrom(ResolvedKwargs[TSchema]):
     @classmethod
     def from_schema(cls, context: "ResolutionContext", schema: TSchema) -> Self:
         return resolve_schema_to_resolvable(schema=schema, resolvable_type=cls, context=context)
@@ -118,7 +120,7 @@ class AttrWithContextFn:
     callable: Callable[["ResolutionContext", Any], Any]
 
 
-class DSLFieldResolver:
+class FieldResolver:
     """Contains information on how to resolve this field from a DSLSchema."""
 
     def __init__(
@@ -137,12 +139,12 @@ class DSLFieldResolver:
         super().__init__()
 
     @staticmethod
-    def from_parent(fn: Callable[["ResolutionContext", Any], Any]):
-        return DSLFieldResolver(ParentFn(fn))
+    def from_model(fn: Callable[["ResolutionContext", Any], Any]):
+        return FieldResolver(ParentFn(fn))
 
     @staticmethod
-    def from_spec(spec: type[ResolutionSpec], target_type: type):
-        return DSLFieldResolver.from_parent(
+    def from_spec(spec: type[ResolvedKwargs], target_type: type):
+        return FieldResolver.from_model(
             lambda context, schema: resolve_schema_using_spec(
                 schema=schema,
                 resolution_spec=spec,
@@ -152,20 +154,22 @@ class DSLFieldResolver:
         )
 
     @staticmethod
-    def from_annotation(annotation: Any, field_name: str) -> "DSLFieldResolver":
+    def from_annotation(annotation: Any, field_name: str) -> "FieldResolver":
         if get_origin(annotation) is Annotated:
             args = get_args(annotation)
-            resolver = next((arg for arg in args if isinstance(arg, DSLFieldResolver)), None)
+            resolver = next((arg for arg in args if isinstance(arg, FieldResolver)), None)
             if resolver:
                 return resolver
 
             check.failed(f"Could not find resolver on annotation {field_name}")
 
-        return DSLFieldResolver.from_parent(
+        return FieldResolver.from_model(
             lambda context, schema: context.resolve_value(getattr(schema, field_name))
         )
 
-    def execute(self, context: "ResolutionContext", schema: DSLSchema, field_name: str) -> Any:
+    def execute(
+        self, context: "ResolutionContext", schema: ResolvableModel, field_name: str
+    ) -> Any:
         if isinstance(self.fn, ParentFn):
             return self.fn.callable(context, schema)
         elif isinstance(self.fn, AttrWithContextFn):
@@ -175,10 +179,10 @@ class DSLFieldResolver:
             raise ValueError(f"Unsupported DSLFieldResolver type: {self.fn}")
 
 
-TResolutionSpec = TypeVar("TResolutionSpec", bound=ResolutionSpec)
+TResolutionSpec = TypeVar("TResolutionSpec", bound=ResolvedKwargs)
 
 
-def get_annotation_field_resolvers(cls: type[TResolutionSpec]) -> dict[str, DSLFieldResolver]:
+def get_annotation_field_resolvers(cls: type[TResolutionSpec]) -> dict[str, FieldResolver]:
     # Collect annotations from all base classes in MRO
     annotations = {}
 
@@ -191,16 +195,16 @@ def get_annotation_field_resolvers(cls: type[TResolutionSpec]) -> dict[str, DSLF
         annotations.update(base_annotations)
 
     return {
-        field_name: DSLFieldResolver.from_annotation(annotation, field_name)
+        field_name: FieldResolver.from_annotation(annotation, field_name)
         for field_name, annotation in annotations.items()
     }
 
 
-TResolvableFromSchema = TypeVar("TResolvableFromSchema", bound=ResolvableFromSchema)
+TResolvableFromSchema = TypeVar("TResolvableFromSchema", bound=ResolvedFrom)
 
 
 def resolve_fields(
-    schema: DSLSchema,
+    schema: ResolvableModel,
     resolution_spec: type[TResolutionSpec],
     context: "ResolutionContext",
 ) -> Mapping[str, Any]:
@@ -217,7 +221,7 @@ T = TypeVar("T")
 
 
 def resolve_schema_to_resolvable(
-    schema: DSLSchema,
+    schema: ResolvableModel,
     resolvable_type: type[TResolvableFromSchema],
     context: "ResolutionContext",
 ) -> TResolvableFromSchema:
@@ -230,7 +234,7 @@ def resolve_schema_to_resolvable(
 
 
 def resolve_schema_using_spec(
-    schema: DSLSchema,
+    schema: ResolvableModel,
     resolution_spec: type[TResolutionSpec],
     context: "ResolutionContext",
     target_type: type[T],

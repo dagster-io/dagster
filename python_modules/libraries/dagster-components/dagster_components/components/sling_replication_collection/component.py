@@ -26,9 +26,9 @@ from dagster_components.core.schema.objects import (
     OpSpecSchema,
 )
 from dagster_components.core.schema.resolvable_from_schema import (
-    DSLFieldResolver,
-    DSLSchema,
-    ResolvableFromSchema,
+    FieldResolver,
+    ResolvableModel,
+    ResolvedFrom,
 )
 from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
@@ -53,16 +53,16 @@ def resolve_translator(
     )
 
 
-class SlingReplicationSpec(BaseModel, ResolvableFromSchema["SlingReplicationSchema"]):
+class SlingReplicationSpec(BaseModel, ResolvedFrom["SlingReplicationSchema"]):
     path: str
-    op: Annotated[Optional[OpSpec], DSLFieldResolver(OpSpec.from_optional)]
+    op: Annotated[Optional[OpSpec], FieldResolver(OpSpec.from_optional)]
     translator: Annotated[
-        Optional[DagsterSlingTranslator], DSLFieldResolver.from_parent(resolve_translator)
+        Optional[DagsterSlingTranslator], FieldResolver.from_model(resolve_translator)
     ]
     include_metadata: list[SlingMetadataAddons]
 
 
-class SlingReplicationSchema(DSLSchema):
+class SlingReplicationSchema(ResolvableModel):
     path: str = Field(
         ...,
         description="The path to the Sling replication file. For more information, see https://docs.slingdata.io/concepts/replication#overview.",
@@ -84,7 +84,7 @@ class SlingReplicationSchema(DSLSchema):
     )
 
 
-class SlingReplicationCollectionSchema(DSLSchema):
+class SlingReplicationCollectionSchema(ResolvableModel):
     sling: Optional[SlingResource] = None
     replications: Sequence[SlingReplicationSchema]
     asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
@@ -103,19 +103,19 @@ def resolve_resource(
 @scaffoldable(scaffolder=SlingReplicationComponentScaffolder)
 @dataclass
 class SlingReplicationCollectionComponent(
-    Component, ResolvableFromSchema[SlingReplicationCollectionSchema]
+    Component, ResolvedFrom[SlingReplicationCollectionSchema]
 ):
     """Expose one or more Sling replications to Dagster as assets."""
 
-    resource: Annotated[SlingResource, DSLFieldResolver.from_parent(resolve_resource)] = Field(
+    resource: Annotated[SlingResource, FieldResolver.from_model(resolve_resource)] = Field(
         ..., description="Customizations to Sling execution."
     )
     replications: Annotated[
-        Sequence[SlingReplicationSpec], DSLFieldResolver(SlingReplicationSpec.from_seq)
+        Sequence[SlingReplicationSpec], FieldResolver(SlingReplicationSpec.from_seq)
     ] = Field(..., description="A set of Sling replications to expose as assets.")
     asset_post_processors: Annotated[
         Optional[Sequence[AssetPostProcessor]],
-        DSLFieldResolver(AssetPostProcessor.from_optional_seq),
+        FieldResolver(AssetPostProcessor.from_optional_seq),
     ] = Field(
         default=None,
         description="Post-processors to apply to the asset definitions produced by this component.",

@@ -13,11 +13,11 @@ from dagster_components.core.schema.objects import (
     AssetPostProcessorSchema,
     OpSpecSchema,
 )
-from dagster_components.core.schema.resolvable_from_schema import DSLSchema, ResolvableFromSchema
+from dagster_components.core.schema.resolvable_from_schema import ResolvableModel, ResolvedFrom
 from pydantic import Field
 
 
-class ComplexAssetSchema(DSLSchema):
+class ComplexAssetSchema(ResolvableModel):
     value: str = Field(..., examples=["example_for_value"])
     list_value: list[str] = Field(
         ..., examples=[["example_for_list_value_1", "example_for_list_value_2"]]
@@ -31,7 +31,7 @@ class ComplexAssetSchema(DSLSchema):
 
 
 @dataclass
-class ComplexAssetComponent(Component, ResolvableFromSchema[ComplexAssetSchema]):
+class ComplexAssetComponent(Component, ResolvedFrom[ComplexAssetSchema]):
     """An asset that has a complex schema."""
 
     value: str

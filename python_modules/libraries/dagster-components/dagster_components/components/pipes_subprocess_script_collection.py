@@ -14,33 +14,33 @@ from dagster_components.core.component import Component, ComponentLoadContext
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.objects import AssetSpecSchema, AssetSpecSequenceField
 from dagster_components.core.schema.resolvable_from_schema import (
-    DSLFieldResolver,
-    DSLSchema,
-    ResolvableFromSchema,
+    FieldResolver,
+    ResolvableModel,
+    ResolvedFrom,
 )
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 
-class PipesSubprocessScriptSchema(DSLSchema):
+class PipesSubprocessScriptSchema(ResolvableModel):
     path: str
     assets: Sequence[AssetSpecSchema]
 
 
 @dataclass
-class PipesSubprocessScriptSpec(ResolvableFromSchema[PipesSubprocessScriptSchema]):
+class PipesSubprocessScriptSpec(ResolvedFrom[PipesSubprocessScriptSchema]):
     path: str
     assets: AssetSpecSequenceField
 
 
-class PipesSubprocessScriptCollectionSchema(DSLSchema):
+class PipesSubprocessScriptCollectionSchema(ResolvableModel):
     scripts: Sequence[PipesSubprocessScriptSchema]
 
 
 @dataclass
 class PipesSubprocessScriptCollectionComponent(
-    Component, ResolvableFromSchema[PipesSubprocessScriptCollectionSchema]
+    Component, ResolvedFrom[PipesSubprocessScriptCollectionSchema]
 ):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
 
@@ -55,7 +55,7 @@ class PipesSubprocessScriptCollectionComponent(
         }
 
     specs_by_path: Annotated[
-        Mapping[str, Sequence[AssetSpec]], DSLFieldResolver.from_parent(resolve_specs_by_path)
+        Mapping[str, Sequence[AssetSpec]], FieldResolver.from_model(resolve_specs_by_path)
     ] = ...
 
     @staticmethod

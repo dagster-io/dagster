@@ -12,10 +12,10 @@ from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.objects import AssetSpecResolutionSpec, AssetSpecSchema
 from dagster_components.core.schema.resolvable_from_schema import (
-    DSLFieldResolver,
-    DSLSchema,
-    ResolutionSpec,
-    ResolvableFromSchema,
+    FieldResolver,
+    ResolvableModel,
+    ResolvedFrom,
+    ResolvedKwargs,
     resolve_fields,
     resolve_schema_using_spec,
 )
@@ -29,12 +29,12 @@ class ExistingBusinessObject:
     value: int
 
 
-class ExistingBusinessObjectSchema(DSLSchema):
+class ExistingBusinessObjectSchema(ResolvableModel):
     value: str
 
 
-class ExistingBusinessObjectResolutionSpec(ResolutionSpec[ExistingBusinessObjectSchema]):
-    value: Annotated[int, DSLFieldResolver(lambda context, val: int(val))]
+class ExistingBusinessObjectResolutionSpec(ResolvedKwargs[ExistingBusinessObjectSchema]):
+    value: Annotated[int, FieldResolver(lambda context, val: int(val))]
 
 
 def test_resolve_fields_on_transform() -> None:
@@ -58,18 +58,16 @@ def test_use_transform_to_build_business_object():
 
 
 def test_with_resolution_spec_on_component():
-    class ComponentWithExistingBusinessObjectSchema(DSLSchema):
+    class ComponentWithExistingBusinessObjectSchema(ResolvableModel):
         business_object: ExistingBusinessObjectSchema
 
     @dataclass
     class ComponentWithExistingBusinessObject(
-        Component, ResolvableFromSchema[ComponentWithExistingBusinessObjectSchema]
+        Component, ResolvedFrom[ComponentWithExistingBusinessObjectSchema]
     ):
         business_object: Annotated[
             ExistingBusinessObject,
-            DSLFieldResolver.from_spec(
-                ExistingBusinessObjectResolutionSpec, ExistingBusinessObject
-            ),
+            FieldResolver.from_spec(ExistingBusinessObjectResolutionSpec, ExistingBusinessObject),
         ]
 
         def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...
@@ -84,28 +82,28 @@ def test_with_resolution_spec_on_component():
 
 ExistingBusinessObjectField: TypeAlias = Annotated[
     ExistingBusinessObject,
-    DSLFieldResolver.from_spec(ExistingBusinessObjectResolutionSpec, ExistingBusinessObject),
+    FieldResolver.from_spec(ExistingBusinessObjectResolutionSpec, ExistingBusinessObject),
 ]
 
 
 def test_reuse_across_components():
-    class ComponentWithExistingBusinessObjectSchemaOne(DSLSchema):
+    class ComponentWithExistingBusinessObjectSchemaOne(ResolvableModel):
         business_object: ExistingBusinessObjectSchema
 
     @dataclass
     class ComponentWithExistingBusinessObjectOne(
-        Component, ResolvableFromSchema[ComponentWithExistingBusinessObjectSchemaOne]
+        Component, ResolvedFrom[ComponentWithExistingBusinessObjectSchemaOne]
     ):
         business_object: ExistingBusinessObjectField
 
         def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...
 
-    class ComponentWithExistingBusinessObjectSchemaTwo(DSLSchema):
+    class ComponentWithExistingBusinessObjectSchemaTwo(ResolvableModel):
         business_object: ExistingBusinessObjectSchema
 
     @dataclass
     class ComponentWithExistingBusinessObjectTwo(
-        Component, ResolvableFromSchema[ComponentWithExistingBusinessObjectSchemaTwo]
+        Component, ResolvedFrom[ComponentWithExistingBusinessObjectSchemaTwo]
     ):
         business_object: ExistingBusinessObjectField
 
@@ -176,14 +174,14 @@ def test_asset_spec():
 
 
 def test_asset_spec_seq() -> None:
-    class SomeObjectSchema(DSLSchema):
+    class SomeObjectSchema(ResolvableModel):
         specs: Sequence[AssetSpecSchema]
 
     @dataclass
-    class SomeObject(ResolvableFromSchema[SomeObjectSchema]):
+    class SomeObject(ResolvedFrom[SomeObjectSchema]):
         specs: Annotated[
             Sequence[AssetSpec],
-            DSLFieldResolver(AssetSpecResolutionSpec.resolver_fn(AssetSpec).from_seq),
+            FieldResolver(AssetSpecResolutionSpec.resolver_fn(AssetSpec).from_seq),
         ]
 
     some_object = resolve_schema_using_spec(

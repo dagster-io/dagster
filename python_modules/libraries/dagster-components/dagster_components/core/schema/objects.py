@@ -18,10 +18,10 @@ from typing_extensions import TypeAlias
 
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.resolvable_from_schema import (
-    DSLFieldResolver,
-    DSLSchema,
-    ResolutionSpec,
-    ResolvableFromSchema,
+    FieldResolver,
+    ResolvableModel,
+    ResolvedFrom,
+    ResolvedKwargs,
     resolve_fields,
 )
 
@@ -64,15 +64,15 @@ def resolve_backfill_policy(
 
 
 @dataclass
-class OpSpec(ResolvableFromSchema["OpSpecSchema"]):
+class OpSpec(ResolvedFrom["OpSpecSchema"]):
     name: Optional[str] = None
     tags: Optional[dict[str, str]] = None
     backfill_policy: Annotated[
-        Optional[BackfillPolicy], DSLFieldResolver.from_parent(resolve_backfill_policy)
+        Optional[BackfillPolicy], FieldResolver.from_model(resolve_backfill_policy)
     ] = None
 
 
-class OpSpecSchema(DSLSchema):
+class OpSpecSchema(ResolvableModel):
     name: Optional[str] = Field(default=None, description="The name of the op.")
     tags: Optional[dict[str, str]] = Field(
         default=None, description="Arbitrary metadata for the op."
@@ -131,11 +131,11 @@ class _ResolvableAssetAttributesMixin(BaseModel):
     )
 
 
-class AssetSpecSchema(_ResolvableAssetAttributesMixin, DSLSchema):
+class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableModel):
     key: str = Field(..., description="A unique identifier for the asset.")
 
 
-class SharedAssetAttributesSpec(ResolutionSpec["AssetAttributesSchema"]):
+class SharedAssetAttributesSpec(ResolvedKwargs["AssetAttributesSchema"]):
     deps: Sequence[str]
     description: Optional[str]
     metadata: Mapping[str, Any]
@@ -151,16 +151,14 @@ class SharedAssetAttributesSpec(ResolutionSpec["AssetAttributesSchema"]):
 class AssetSpecResolutionSpec(SharedAssetAttributesSpec):
     key: Annotated[
         AssetKey,
-        DSLFieldResolver.from_parent(
-            lambda context, schema: _resolve_asset_key(schema.key, context)
-        ),
+        FieldResolver.from_model(lambda context, schema: _resolve_asset_key(schema.key, context)),
     ]
 
 
 class AssetAttributesResolutionSpec(SharedAssetAttributesSpec):
     key: Annotated[
         Optional[AssetKey],
-        DSLFieldResolver.from_parent(
+        FieldResolver.from_model(
             lambda context, schema: _resolve_asset_key(schema.key, context) if schema.key else None
         ),
     ] = None
@@ -168,11 +166,11 @@ class AssetAttributesResolutionSpec(SharedAssetAttributesSpec):
 
 AssetSpecSequenceField: TypeAlias = Annotated[
     Sequence[AssetSpec],
-    DSLFieldResolver(AssetSpecResolutionSpec.resolver_fn(AssetSpec).from_seq),
+    FieldResolver(AssetSpecResolutionSpec.resolver_fn(AssetSpec).from_seq),
 ]
 
 
-class AssetAttributesSchema(_ResolvableAssetAttributesMixin, DSLSchema):
+class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableModel):
     """Resolves into a dictionary of asset attributes. This is similar to AssetSpecSchema, but
     does not require a key. This is useful in contexts where you want to modify attributes of
     an existing AssetSpec.
@@ -192,11 +190,11 @@ def resolve_asset_attributes_to_mapping(
 
 
 ResolvedAssetAttributes: TypeAlias = Annotated[
-    Mapping[str, Any], DSLFieldResolver(resolve_asset_attributes_to_mapping)
+    Mapping[str, Any], FieldResolver(resolve_asset_attributes_to_mapping)
 ]
 
 
-class AssetPostProcessorSchema(DSLSchema):
+class AssetPostProcessorSchema(ResolvableModel):
     target: str = "*"
     operation: Literal["merge", "replace"] = "merge"
     attributes: AssetAttributesSchema
@@ -249,5 +247,5 @@ def resolve_schema_to_post_processor(
 
 
 @dataclass
-class AssetPostProcessor(ResolvableFromSchema[AssetPostProcessorSchema]):
-    fn: Annotated[PostProcessorFn, DSLFieldResolver.from_parent(resolve_schema_to_post_processor)]
+class AssetPostProcessor(ResolvedFrom[AssetPostProcessorSchema]):
+    fn: Annotated[PostProcessorFn, FieldResolver.from_model(resolve_schema_to_post_processor)]

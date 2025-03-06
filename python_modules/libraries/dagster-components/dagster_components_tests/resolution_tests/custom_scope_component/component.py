@@ -5,7 +5,7 @@ from typing import Any
 from dagster import AssetSpec, AutomationCondition, Definitions
 from dagster_components import AssetAttributesSchema, Component, ComponentLoadContext
 from dagster_components.core.schema.objects import ResolvedAssetAttributes
-from dagster_components.core.schema.resolvable_from_schema import DSLSchema, ResolvableFromSchema
+from dagster_components.core.schema.resolvable_from_schema import ResolvableModel, ResolvedFrom
 
 
 def my_custom_fn(a: str, b: str) -> str:
@@ -16,12 +16,12 @@ def my_custom_automation_condition(cron_schedule: str) -> AutomationCondition:
     return AutomationCondition.cron_tick_passed(cron_schedule) & ~AutomationCondition.in_progress()
 
 
-class CustomScopeSchema(DSLSchema):
+class CustomScopeSchema(ResolvableModel):
     asset_attributes: AssetAttributesSchema
 
 
 @dataclass
-class HasCustomScope(Component, ResolvableFromSchema[CustomScopeSchema]):
+class HasCustomScope(Component, ResolvedFrom[CustomScopeSchema]):
     asset_attributes: ResolvedAssetAttributes
 
     @classmethod

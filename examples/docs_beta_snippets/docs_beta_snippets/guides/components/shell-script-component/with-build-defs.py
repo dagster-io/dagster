@@ -7,21 +7,21 @@ from dagster_components import (
     AssetSpecSchema,
     Component,
     ComponentLoadContext,
-    DSLSchema,
-    ResolvableFromSchema,
+    ResolvableModel,
+    ResolvedFrom,
 )
 from dagster_components.core.schema.objects import AssetSpecSequenceField
 
 import dagster as dg
 
 
-class ShellScriptSchema(DSLSchema):
+class ShellScriptSchema(ResolvableModel):
     script_path: str
     asset_specs: Sequence[AssetSpecSchema]
 
 
 @dataclass
-class ShellCommand(Component, ResolvableFromSchema[ShellScriptSchema]):
+class ShellCommand(Component, ResolvedFrom[ShellScriptSchema]):
     """Models a shell script as a Dagster asset."""
 
     script_path: str
