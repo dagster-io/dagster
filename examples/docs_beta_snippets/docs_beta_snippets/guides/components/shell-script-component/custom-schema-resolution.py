@@ -5,7 +5,6 @@ from dagster_components import (
     Component,
     ComponentLoadContext,
     FieldResolver,
-    ResolavableModel,
     ResolutionContext,
     ResolvableModel,
     ResolvedFrom,
