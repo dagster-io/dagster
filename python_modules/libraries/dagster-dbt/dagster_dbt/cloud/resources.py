@@ -27,7 +27,8 @@ from pydantic import Field
 from requests.exceptions import RequestException
 
 from dagster_dbt.cloud.client import DbtCloudWorkspaceClient
-from dagster_dbt.cloud.types import DbtCloudJob, DbtCloudOutput
+from dagster_dbt.cloud.run_handler import DbtCloudJobRunHandler
+from dagster_dbt.cloud.types import DbtCloudJob, DbtCloudOutput, DbtCloudWorkspaceData
 
 DBT_DEFAULT_HOST = "https://cloud.getdbt.com/"
 DBT_API_V2_PATH = "api/v2/accounts/"
@@ -713,6 +714,7 @@ def dbt_cloud_resource(context) -> DbtCloudResource:
 # ------------------
 
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
+LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
 
 
 def get_dagster_adhoc_job_name(project_id: int, environment_id: int) -> str:
@@ -757,11 +759,6 @@ class DbtCloudWorkspace(ConfigurableResource):
 
     @cached_method
     def get_client(self) -> DbtCloudWorkspaceClient:
-        """Get the dbt Cloud client to interact with this dbt Cloud workspace.
-
-        Returns:
-            DbtCloudWorkspaceClient: The dbt Cloud client to interact with the dbt Cloud workspace.
-        """
         return DbtCloudWorkspaceClient(
             account_id=self.credentials.account_id,
             token=self.credentials.token,
@@ -797,4 +794,19 @@ class DbtCloudWorkspace(ConfigurableResource):
                 environment_id=self.environment_id,
                 job_name=expected_job_name,
             )
+        )
+
+    def fetch_workspace_data(self) -> DbtCloudWorkspaceData:
+        job = self._get_or_create_dagster_adhoc_job()
+        run_handler = DbtCloudJobRunHandler.run(
+            job_id=job.id,
+            args=["parse"],
+            client=self.get_client(),
+        )
+        run_handler.wait_for_success()
+        return DbtCloudWorkspaceData(
+            project_id=self.project_id,
+            environment_id=self.environment_id,
+            job_id=job.id,
+            manifest=run_handler.get_manifest(),
         )
