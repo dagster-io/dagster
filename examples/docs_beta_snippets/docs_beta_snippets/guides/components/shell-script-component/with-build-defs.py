@@ -21,7 +21,7 @@ class ShellCommandModel(ResolvableModel):
 
 
 @dataclass
-class ShellCommandComponent(Component, ResolvedFrom[ShellCommandModel]):
+class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
     """Models a shell script as a Dagster asset."""
 
     script_path: str

@@ -22,7 +22,7 @@ class ShellCommandModel(ResolvableModel):
 
 
 @dataclass
-class ShellCommandComponent(Component, ResolvedFrom[ShellCommandModel]):
+class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
     script_path: str
     asset_specs: AssetSpecSequenceField
 
