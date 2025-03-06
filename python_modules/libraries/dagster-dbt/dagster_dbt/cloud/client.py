@@ -73,7 +73,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
         session.headers.update(
             {
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.token}",
+                "Authorization": f"Token {self.token}",
             }
         )
         return session

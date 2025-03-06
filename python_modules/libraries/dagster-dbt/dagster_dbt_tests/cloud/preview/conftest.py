@@ -1,7 +1,7 @@
-from collections.abc import Iterator, Mapping
-from typing import Any
 import json
+from collections.abc import Iterator, Mapping
 from pathlib import Path
+from typing import Any
 
 import pytest
 import responses
@@ -33,11 +33,11 @@ TEST_ANOTHER_JOB_NAME = "test_another_job_name"
 
 TEST_REST_API_BASE_URL = f"{TEST_ACCESS_URL}/api/v2/accounts/{TEST_ACCOUNT_ID}"
 
-with open(manifest_path, "r") as f:
+with open(manifest_path) as f:
     SAMPLE_MANIFEST_JSON = json.load(f)
 
 
-with open(run_results_path, "r") as f:
+with open(run_results_path) as f:
     SAMPLE_RUN_RESULTS_JSON = json.load(f)
 
 

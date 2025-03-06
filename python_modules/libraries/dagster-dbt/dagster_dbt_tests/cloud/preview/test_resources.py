@@ -54,8 +54,16 @@ def test_basic_resource_request(
         call=all_api_mocks.calls[2], endpoint=f"jobs/{TEST_JOB_ID}/run", method="POST"
     )
     assert_rest_api_call(call=all_api_mocks.calls[3], endpoint=f"runs/{TEST_RUN_ID}", method="GET")
-    assert_rest_api_call(call=all_api_mocks.calls[4], endpoint=f"runs/{TEST_RUN_ID}/artifacts/manifest.json", method="GET")
-    assert_rest_api_call(call=all_api_mocks.calls[5], endpoint=f"runs/{TEST_RUN_ID}/artifacts/run_results.json", method="GET")
+    assert_rest_api_call(
+        call=all_api_mocks.calls[4],
+        endpoint=f"runs/{TEST_RUN_ID}/artifacts/manifest.json",
+        method="GET",
+    )
+    assert_rest_api_call(
+        call=all_api_mocks.calls[5],
+        endpoint=f"runs/{TEST_RUN_ID}/artifacts/run_results.json",
+        method="GET",
+    )
 
 
 def test_get_or_create_dagster_adhoc_job(
