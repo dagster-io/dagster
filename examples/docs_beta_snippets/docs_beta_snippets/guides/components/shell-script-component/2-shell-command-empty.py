@@ -2,11 +2,11 @@ from dagster import Definitions
 from dagster_components import (
     Component,
     ComponentLoadContext,
-    DefaultComponentScaffolder,
     ResolvableModel,
 )
 
-class ShellCommand(Component, ResolvableModel):
+
+class ShellCommandComponent(Component, ResolvableModel):
     """COMPONENT SUMMARY HERE.
 
     COMPONENT DESCRIPTION HERE.

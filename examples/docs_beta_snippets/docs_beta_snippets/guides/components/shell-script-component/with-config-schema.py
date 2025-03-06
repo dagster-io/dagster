@@ -10,7 +10,7 @@ from dagster_components import (
 import dagster as dg
 
 
-class ShellCommand(Component, ResolvableModel):
+class ShellCommandComponent(Component, ResolvableModel):
     """Models a shell script as a Dagster asset."""
 
     script_path: str

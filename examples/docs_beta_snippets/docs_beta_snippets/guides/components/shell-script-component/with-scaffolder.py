@@ -45,7 +45,7 @@ class ShellCommandScaffolder(Scaffolder):
 # highlight-end
 
 
-class ShellScriptSchema(ResolvableModel):
+class ShellCommandModel(ResolvableModel):
     script_path: str
     asset_specs: Sequence[AssetSpecSchema]
 
@@ -54,7 +54,7 @@ class ShellScriptSchema(ResolvableModel):
 @scaffoldable(scaffolder=ShellCommandScaffolder)
 # highlight-end
 @dataclass
-class ShellCommand(Component, ResolvedFrom[ShellScriptSchema]):
+class ShellCommandComponent(Component, ResolvedFrom[ShellCommandModel]):
     """Models a shell script as a Dagster asset."""
 
     script_path: str
