@@ -2,7 +2,7 @@ import {CharStreams, CommonTokenStream} from 'antlr4ts';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {AntlrRunSelectionVisitor} from './AntlrRunSelectionVisitor';
-import {AntlrInputErrorListener} from '../asset-selection/filterAssetSelectionByQuery';
+import {AntlrInputErrorListener} from '../asset-selection/parseAssetSelectionQuery';
 import {RunGraphQueryItem} from '../gantt/toGraphQueryItems';
 import {RunSelectionLexer} from './generated/RunSelectionLexer';
 import {RunSelectionParser} from './generated/RunSelectionParser';
