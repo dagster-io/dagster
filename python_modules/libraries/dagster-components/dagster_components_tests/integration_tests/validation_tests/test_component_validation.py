@@ -1,5 +1,5 @@
 import pytest
-from dagster_components.core.schema.context import ResolutionException
+from dagster_components.resolved.context import ResolutionException
 from dagster_components.test.test_cases import (
     BASIC_COMPONENT_TYPE_FILEPATH,
     COMPONENT_VALIDATION_TEST_CASES,
