@@ -20,6 +20,7 @@ from dagster_components.core.schema.base import FieldResolver, ResolvableSchema,
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLFieldResolver,
+    DSLSchema,
     ResolutionSpec,
     ResolvableFromSchema,
 )
@@ -71,7 +72,7 @@ class OpSpec(ResolvableFromSchema["OpSpecSchema"]):
     ] = None
 
 
-class OpSpecSchema(ResolvableSchema):
+class OpSpecSchema(DSLSchema):
     name: Optional[str] = Field(default=None, description="The name of the op.")
     tags: Optional[dict[str, str]] = Field(
         default=None, description="Arbitrary metadata for the op."
