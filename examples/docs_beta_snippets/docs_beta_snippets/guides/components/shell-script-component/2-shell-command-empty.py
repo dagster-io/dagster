@@ -6,9 +6,6 @@ from dagster_components import (
     ResolvableModel,
 )
 
-class ShellCommandSchema(ResolvableModel):
-    ...
-
 class ShellCommand(Component, ResolvableModel):
     """COMPONENT SUMMARY HERE.
 
