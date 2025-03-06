@@ -16,7 +16,7 @@ LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
 
 @preview
 class DbtCloudWorkspaceClient(DagsterModel):
-    account_id: str = Field(
+    account_id: int = Field(
         ...,
         description="The dbt Cloud Account ID. Can be found on the Account Info page of dbt Cloud.",
     )
@@ -86,7 +86,8 @@ class DbtCloudWorkspaceClient(DagsterModel):
                     timeout=self.request_timeout,
                 )
                 response.raise_for_status()
-                return response.json()
+                resp_dict = response.json()
+                return resp_dict["data"] if "data" in resp_dict else resp_dict
             except RequestException as e:
                 self._log.error(
                     f"Request to dbt Cloud API failed for url {url} with method {method} : {e}"
@@ -101,26 +102,48 @@ class DbtCloudWorkspaceClient(DagsterModel):
     def create_job(
         self, *, project_id: int, environment_id: int, job_name: str
     ) -> Mapping[str, Any]:
-        """Creates a dbt cloud job spec'ed to do what dagster expects."""
+        """Creates a dbt cloud job in a dbt Cloud workspace for a given project and environment.
+
+        Args:
+            project_id (str): The dbt Cloud Project ID. You can retrieve this value from the
+                URL of the "Explore" tab in the dbt Cloud UI.
+            environment_id (str): The dbt Cloud Environment ID. You can retrieve this value from the
+                URL of the given environment page the dbt Cloud UI.
+            job_name (str): The name of the job to create.
+
+        Returns:
+            Dict[str, Any]: Parsed json data from the response to this request
+        """
         return self._make_request(
             method="post",
             endpoint="jobs",
             base_url=self.api_v2_url,
             data={
-                "account_id": int(self.account_id),
+                "account_id": self.account_id,
                 "environment_id": environment_id,
                 "project_id": project_id,
                 "name": job_name,
                 "description": "A job that runs dbt models, sources, and tests.",
                 "job_type": "other",
             },
-        )["data"]
+        )
 
     def list_jobs(
         self,
         project_id: int,
         environment_id: int,
     ) -> Sequence[Mapping[str, Any]]:
+        """Retrieves a list of dbt cloud jobs from a dbt Cloud workspace for a given project and environment.
+
+        Args:
+            project_id (str): The dbt Cloud Project ID. You can retrieve this value from the
+                URL of the "Explore" tab in the dbt Cloud UI.
+            environment_id (str): The dbt Cloud Environment ID. You can retrieve this value from the
+                URL of the given environment page the dbt Cloud UI.
+
+        Returns:
+            List[Dict[str, Any]]: A List of parsed json data from the response to this request
+        """
         results = []
         while jobs := self._make_request(
             method="get",
@@ -133,7 +156,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 "limit": LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT,
                 "offset": len(results),
             },
-        )["data"]:
+        ):
             results.extend(jobs)
             if len(jobs) < LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT:
                 break

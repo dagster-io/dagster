@@ -27,7 +27,7 @@ from pydantic import Field
 from requests.exceptions import RequestException
 
 from dagster_dbt.cloud.client import DbtCloudWorkspaceClient
-from dagster_dbt.cloud.types import DbtCloudOutput
+from dagster_dbt.cloud.types import DbtCloudJob, DbtCloudOutput
 
 DBT_DEFAULT_HOST = "https://cloud.getdbt.com/"
 DBT_API_V2_PATH = "api/v2/accounts/"
@@ -715,7 +715,7 @@ def dbt_cloud_resource(context) -> DbtCloudResource:
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
 
 
-def get_job_name(environment_id: int, project_id: int) -> str:
+def get_dagster_adhoc_job_name(project_id: int, environment_id: int) -> str:
     return f"{DAGSTER_ADHOC_PREFIX}{project_id}__{environment_id}"
 
 
@@ -757,6 +757,11 @@ class DbtCloudWorkspace(ConfigurableResource):
 
     @cached_method
     def get_client(self) -> DbtCloudWorkspaceClient:
+        """Get the dbt Cloud client to interact with this dbt Cloud workspace.
+
+        Returns:
+            DbtCloudWorkspaceClient: The dbt Cloud client to interact with the dbt Cloud workspace.
+        """
         return DbtCloudWorkspaceClient(
             account_id=self.credentials.account_id,
             token=self.credentials.token,
@@ -766,29 +771,30 @@ class DbtCloudWorkspace(ConfigurableResource):
             request_timeout=self.request_timeout,
         )
 
-    def _get_or_create_job(self) -> int:
-        """Get or create a dbt Cloud job for the given project and environment in this dbt Cloud Workspace."""
+    def _get_or_create_dagster_adhoc_job(self) -> DbtCloudJob:
+        """Get or create an ad hoc dbt Cloud job for the given project and environment in this dbt Cloud Workspace.
+
+        Returns:
+            DbtCloudJob: Internal representation of the dbt Cloud job.
+        """
         client = self.get_client()
-        expected_job_name = get_job_name(
+        expected_job_name = get_dagster_adhoc_job_name(
             project_id=self.project_id, environment_id=self.environment_id
         )
-        if expected_job_name in {
-            job["name"]
-            for job in client.list_jobs(
+        jobs = [
+            DbtCloudJob.from_job_details(job_details)
+            for job_details in client.list_jobs(
                 project_id=self.project_id,
                 environment_id=self.environment_id,
             )
-        }:
-            return next(
-                job["id"]
-                for job in client.list_jobs(
-                    project_id=self.project_id,
-                    environment_id=self.environment_id,
-                )
-                if job["name"] == expected_job_name
+        ]
+
+        if expected_job_name in {job.name for job in jobs}:
+            return next(job for job in jobs if job.name == expected_job_name)
+        return DbtCloudJob.from_job_details(
+            client.create_job(
+                project_id=self.project_id,
+                environment_id=self.environment_id,
+                job_name=expected_job_name,
             )
-        return client.create_job(
-            project_id=self.project_id,
-            environment_id=self.environment_id,
-            job_name=expected_job_name,
-        )["id"]
+        )

@@ -3,7 +3,8 @@ from datetime import datetime
 from typing import Any, Optional
 
 import dagster._check as check
-from dagster._annotations import beta
+from dagster._annotations import beta, preview
+from dagster._record import record
 from dagster._vendored.dateutil.parser import isoparse
 
 
@@ -82,3 +83,25 @@ class DbtCloudOutput:
     @property
     def finished_at(self) -> datetime:
         return isoparse(self.run_details["finished_at"])
+
+
+@preview
+@record
+class DbtCloudJob:
+    """Represents a dbt Cloud job, based on data as returned from the API."""
+
+    id: str
+    account_id: Optional[int]
+    project_id: Optional[int]
+    environment_id: Optional[int]
+    name: Optional[str]
+
+    @classmethod
+    def from_job_details(cls, job_details: Mapping[str, Any]) -> "DbtCloudJob":
+        return cls(
+            id=job_details["id"],
+            account_id=job_details.get("account_id"),
+            project_id=job_details.get("project_id"),
+            environment_id=job_details.get("environment_id"),
+            name=job_details.get("name"),
+        )
