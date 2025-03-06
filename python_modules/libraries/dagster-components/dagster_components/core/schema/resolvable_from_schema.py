@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, fields, is_dataclass
+from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -185,31 +185,21 @@ TResolutionSpec = TypeVar("TResolutionSpec", bound=ResolutionSpec)
 
 
 def get_annotation_field_resolvers(cls: type[TResolutionSpec]) -> dict[str, DSLFieldResolver]:
-    if issubclass(cls, BaseModel):
-        # neither pydantic's Field.annotation nor Field.rebuild_annotation() actually
-        # return the original annotation, so we have to walk the mro to get them
-        annotations = {}
-        for field_name in cls.model_fields:
-            for base in cls.__mro__:
-                if field_name in getattr(base, "__annotations__", {}):
-                    annotations[field_name] = base.__annotations__[field_name]
-                    break
-        return {
-            field_name: DSLFieldResolver.from_annotation(annotation, field_name)
-            for field_name, annotation in annotations.items()
-        }
-    elif is_dataclass(cls):
-        return {
-            field.name: DSLFieldResolver.from_annotation(field.type, field.name)
-            for field in fields(cls)
-        }
-    else:
-        # Handle vanilla Python classes with type annotations
-        annotations = getattr(cls, "__annotations__", {})
-        return {
-            field_name: DSLFieldResolver.from_annotation(annotation, field_name)
-            for field_name, annotation in annotations.items()
-        }
+    # Collect annotations from all base classes in MRO
+    annotations = {}
+
+    # Walk through all base classes in MRO
+    for base in reversed(cls.__mro__):
+        # Get annotations from current base class if they exist
+        base_annotations = getattr(base, "__annotations__", {})
+        # Update annotations dict with any new annotations found
+        # Later bases don't override earlier ones due to how update works
+        annotations.update(base_annotations)
+
+    return {
+        field_name: DSLFieldResolver.from_annotation(annotation, field_name)
+        for field_name, annotation in annotations.items()
+    }
 
 
 TResolvableFromSchema = TypeVar("TResolvableFromSchema", bound=ResolvableFromSchema)
