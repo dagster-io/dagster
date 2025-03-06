@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 from datetime import datetime
+from enum import Enum
 from typing import Any, Optional
 
 import dagster._check as check
@@ -104,4 +105,43 @@ class DbtCloudJob:
             project_id=job_details.get("project_id"),
             environment_id=job_details.get("environment_id"),
             name=job_details.get("name"),
+        )
+
+
+class DbtCloudJobRunStatusType(int, Enum):
+    """Enum representing each status type for a run in dbt Cloud's ontology."""
+
+    QUEUED = 1
+    STARTING = 2
+    RUNNING = 3
+    SUCCESS = 10
+    ERROR = 20
+    CANCELLED = 30
+
+
+@preview
+@record
+class DbtCloudRun:
+    """Represents a dbt Cloud run, based on data as returned from the API."""
+
+    id: int
+    trigger_id: Optional[int]
+    account_id: Optional[int]
+    project_id: Optional[int]
+    environment_id: Optional[int]
+    job_definition_id: Optional[int]
+    status: Optional[DbtCloudJobRunStatusType]
+
+    @classmethod
+    def from_run_details(cls, run_details: Mapping[str, Any]) -> "DbtCloudRun":
+        return cls(
+            id=run_details["id"],
+            trigger_id=run_details.get("trigger_id"),
+            account_id=run_details.get("account_id"),
+            project_id=run_details.get("project_id"),
+            environment_id=run_details.get("environment_id"),
+            job_definition_id=run_details.get("job_definition_id"),
+            status=DbtCloudJobRunStatusType(run_details.get("status"))
+            if run_details.get("status")
+            else None,
         )
