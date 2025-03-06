@@ -1830,12 +1830,8 @@
       "destination": "https://github.com/dagster-io/dagster/blob/master/python_modules/dagster/dagster/_core/definitions/job_definition.py"
     },
     {
-      "source": "/_modules/dagster_airbyte/:path",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/:path.py"
-    },
-    {
-      "source": "/_modules/dagster_airbyte/:path",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/:path.py"
+      "source": "/_modules/dagster_airbyte/:path*",
+      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/:path*.py"
     },
     {
       "source": "/_modules/dagster_airbyte/asset_decorator/",
@@ -1850,40 +1846,16 @@
       "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airlift/dagster_airlift/core/top_level_dag_def_api.py"
     },
     {
-      "source": "/_modules/dagster_aws/ecs/:path",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws/dagster_aws/ecs/:path.py"
+      "source": "/_modules/dagster_aws/:path*",
+      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws/dagster_aws/ecs/:path*.py"
     },
     {
-      "source": "/_modules/dagster_aws/ecs/:path",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws/dagster_aws/ecs/:path.py"
-    },
-    {
-      "source": "/_modules/dagster_aws/pipes/clients/:path",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws/dagster_aws/pipes/clients/:path.py"
-    },
-    {
-      "source": "/_modules/dagster_aws/ecs/context_injectors",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws/dagster_aws/pipes/context_injectors.py"
-    },
-    {
-      "source": "/_modules/dagster_aws/ecs/context_injectors/",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws/dagster_aws/pipes/__init__.py"
-    },
-    {
-      "source": "/_modules/dagster_aws/redshift/resources",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws/dagster_aws/redshift/resources.py"
-    },
-    {
-      "source": "/_modules/dagster_aws/s3/:path",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws/dagster_aws/s3/:path.py"
+      "source": "/_modules/dagster_aws/pipes/context_injectors/",
+      "destination": "https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-aws/dagster_aws/pipes/context_injectors.py"
     },
     {
       "source": "/_modules/dagster_aws/s3/resources/",
       "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws/dagster_aws/s3/resources.py"
-    },
-    {
-      "source": "/_modules/dagster_aws/secretsmanager/resources",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws/dagster_aws/secretsmanager/resources.py"
     },
     {
       "source": "/_modules/dagster_azure/adls2/:path",
@@ -1902,16 +1874,8 @@
       "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-census/dagster_census/ops.py"
     },
     {
-      "source": "/_modules/dagster_dbt/:path",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt/dagster_dbt/:path.py"
-    },
-    {
-      "source": "/_modules/dagster_dbt/asset_decorator/",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt/dagster_dbt/asset_decorator.py"
-    },
-    {
-      "source": "/_modules/dagster_dbt/core/:path",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt/dagster_dbt/core/:path.py"
+      "source": "/_modules/dagster_dbt/:path*",
+      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-dbt/dagster_dbt/:path*.py"
     },
     {
       "source": "/_modules/dagster_deltalake/:path",
