@@ -77,7 +77,7 @@ def definitions_validate_command(
     logging.captureWarnings(True)
 
     removed_system_frame_hint = (
-        lambda i: f"  [{i-1} system frames removed, run with --verbose to see the full stack trace]\n"
+        lambda i: f"  [{i-1} dagster system frames hidden, run with --verbose to see the full stack trace]\n"
     )
 
     with get_possibly_temporary_instance_for_cli(

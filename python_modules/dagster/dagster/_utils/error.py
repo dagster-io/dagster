@@ -318,19 +318,26 @@ def remove_matching_lines_from_stack_trace(
     matching_lines: Sequence[str],
     build_system_frame_removed_hint: Callable[[int], Optional[str]],
 ) -> Sequence[str]:
-    # Remove lines until you find the first non-dagster framework line
+    ctr = 0
+    out = []
 
     for i in range(len(stack)):
         if not _line_contains_matching_string(stack[i], matching_lines):
-            if i > 0:
-                hint = build_system_frame_removed_hint(i)
+            if ctr > 0:
+                hint = build_system_frame_removed_hint(ctr)
                 if hint:
-                    return [hint] + list(stack[i:])
-            return stack[i:]
+                    out.append(hint)
+            ctr = 0
+            out.append(stack[i])
+        else:
+            ctr += 1
 
-    # Return the full stack trace if its all Dagster framework lines,
-    # to not be left with an empty stack trace
-    return stack
+    if ctr > 0:
+        hint = build_system_frame_removed_hint(ctr)
+        if hint:
+            out.append(hint)
+
+    return out
 
 
 def _line_contains_matching_string(line: str, matching_strings: Sequence[str]):
