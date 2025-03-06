@@ -105,7 +105,7 @@ def definitions_validate_command(
             ]
             for code_location, entry in workspace.get_code_location_entries().items():
                 if entry.load_error:
-                    if verbose:
+                    if verbose_stack_traces:
                         underlying_error = entry.load_error
                     else:
                         underlying_error = remove_system_frames_from_error(
