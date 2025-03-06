@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.10.4 (core) / 0.26.4 (libraries)
+
+### New
+
+- [ui] The asset overview tab for a partitioned asset now shows metadata and schema of the most recent materialization, not today's partition.
+- [ui] In run logs, asset materialization and observation events now show the output partition as well as the asset key.
+- [ui] The backfills view has moved to Runs > Backfills and is no longer available on the Overview tab.
+- [ui] Pool event information from a run now links to the pool configuration page.
+- Added support for passing `tags` to the created `RunRequest` when using `build_sensor_for_freshness_checks()`.
+- [dagster-gcp] The `PickledObjectGCSIOManager` now replaces the underlying blob when the same asset is materialized multiple times, instead of deleting and then re-uploading the blob.
+- [docs] Added docs covering run-scoped op concurrency.
+- [dagster-fivetran] Fivetran connectors fetched in Dagster can now be filtered and selected using the ConnectorSelectorFn.
+
+### Bugfixes
+
+- Fixed a bug where if a run was deleted while the re-execution system was determining whether the run should be retried an error was raised. Now, if a run is deleted while the re-execution system is determining whether the run should be retried, the run will not be retried.
+- [ui] Fixed an issue where assets with automation conditions wouldn't show the jobs/sensors/schedules targeting them.
+- [ui] Steps properly transition to failed in the Run gantt chart when resource initialization fails.
+
 ## 1.10.3 (core) / 0.26.3 (libraries)
 
 ### New
