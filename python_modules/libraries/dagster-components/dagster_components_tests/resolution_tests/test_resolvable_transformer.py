@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Annotated
 
@@ -172,3 +173,29 @@ def test_asset_spec():
     assert kitchen_sink_spec.kinds == {"kind"}
     assert isinstance(kitchen_sink_spec.automation_condition, AutomationCondition)
     assert kitchen_sink_spec.automation_condition.get_label() == "eager"
+
+
+def test_asset_spec_seq() -> None:
+    class SomeObjectSchema(DSLSchema):
+        specs: Sequence[AssetSpecSchema]
+
+    @dataclass
+    class SomeObject(ResolvableFromSchema[SomeObjectSchema]):
+        specs: Annotated[
+            Sequence[AssetSpec],
+            DSLFieldResolver(AssetSpecResolutionSpec.resolver_fn(AssetSpec).from_seq),
+        ]
+
+    some_object = resolve_schema_using_spec(
+        schema=SomeObjectSchema(
+            specs=[
+                AssetSpecSchema(key="asset1"),
+                AssetSpecSchema(key="asset2"),
+            ]
+        ),
+        resolution_spec=SomeObject,
+        context=ResolutionContext.default(),
+        target_type=SomeObject,
+    )
+
+    assert some_object.specs == [AssetSpec(key="asset1"), AssetSpec(key="asset2")]

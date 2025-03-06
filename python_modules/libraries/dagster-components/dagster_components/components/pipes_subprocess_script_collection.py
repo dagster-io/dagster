@@ -10,10 +10,9 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
-# from pydantic import BaseModel, ConfigDict, Field from pydantic.dataclasses import dataclass
 from dagster_components.core.component import Component, ComponentLoadContext
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.objects import AssetSpecSchema
+from dagster_components.core.schema.objects import AssetSpecSchema, AssetSpecSequenceField
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLFieldResolver,
     DSLSchema,
@@ -32,7 +31,7 @@ class PipesSubprocessScriptSchema(DSLSchema):
 @dataclass
 class PipesSubprocessScriptSpec(ResolvableFromSchema[PipesSubprocessScriptSchema]):
     path: str
-    assets: Sequence[AssetSpec]
+    assets: AssetSpecSequenceField
 
 
 class PipesSubprocessScriptCollectionSchema(DSLSchema):

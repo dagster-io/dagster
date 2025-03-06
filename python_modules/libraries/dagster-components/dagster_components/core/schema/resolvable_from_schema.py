@@ -58,7 +58,38 @@ def get_schema_type(resolvable_from_schema_type: type["ResolvableFromSchema"]) -
     raise ValueError("No generic type arguments found in ResolvableFromSchema subclass")
 
 
-class ResolutionSpec(Generic[TSchema]): ...
+T = TypeVar("T")
+
+
+class ResolutionResolverFn(Generic[T]):
+    def __init__(self, target_type: type[T], spec_type: type["ResolutionSpec"]):
+        self.target_type = target_type
+        self.spec_type = spec_type
+
+    def from_schema(self, context: "ResolutionContext", schema: EitherSchema) -> T:
+        return resolve_schema_using_spec(
+            schema=schema,
+            resolution_spec=self.spec_type,
+            context=context,
+            target_type=self.target_type,
+        )
+
+    def from_seq(self, context: "ResolutionContext", schema: Sequence[TSchema]) -> Sequence[T]:
+        return [self.from_schema(context, item) for item in schema]
+
+    def from_optional(self, context: "ResolutionContext", schema: Optional[TSchema]) -> Optional[T]:
+        return self.from_schema(context, schema) if schema else None
+
+    def from_optional_seq(
+        self, context: "ResolutionContext", schema: Optional[Sequence[TSchema]]
+    ) -> Optional[Sequence[T]]:
+        return self.from_seq(context, schema) if schema else None
+
+
+class ResolutionSpec(Generic[TSchema]):
+    @classmethod
+    def resolver_fn(cls, target_type: type) -> ResolutionResolverFn:
+        return ResolutionResolverFn(target_type=target_type, spec_type=cls)
 
 
 class ResolvableFromSchema(ResolutionSpec[TSchema]):
@@ -99,7 +130,13 @@ class DSLFieldResolver:
     def __init__(
         self, fn: Union[ParentFn, AttrWithContextFn, Callable[["ResolutionContext", Any], Any]]
     ):
-        self.fn = fn if isinstance(fn, (ParentFn, AttrWithContextFn)) else AttrWithContextFn(fn)
+        if not isinstance(fn, (ParentFn, AttrWithContextFn)):
+            check.param_invariant(
+                callable(fn), "fn", "must be callable if not ParentFn or AttrWithContextFn"
+            )
+            self.fn = AttrWithContextFn(fn)
+        else:
+            self.fn = fn
         super().__init__()
 
     @staticmethod
@@ -134,7 +171,6 @@ class DSLFieldResolver:
         elif isinstance(self.fn, AttrWithContextFn):
             attr = getattr(schema, field_name)
             return self.fn.callable(context, attr)
-
         else:
             raise ValueError(f"Unsupported DSLFieldResolver type: {self.fn}")
 
