@@ -4,9 +4,10 @@ from typing import Annotated
 from dagster_components import (
     Component,
     ComponentLoadContext,
-    FieldResolver,
+    DSLFieldResolver,
+    DSLSchema,
     ResolutionContext,
-    ResolvableSchema,
+    ResolvableFromSchema,
 )
 
 import dagster as dg
@@ -16,7 +17,7 @@ class MyApiClient:
     def __init__(self, api_key: str): ...
 
 
-class MyComponentSchema(ResolvableSchema):
+class MyComponentSchema(DSLSchema):
     api_key: str
 
 
@@ -27,13 +28,9 @@ def resolve_api_key(
 
 
 @dataclass
-class MyComponent(Component):
+class MyComponent(Component, ResolvableFromSchema[MyComponentSchema]):
     # FieldResolver specifies a function used to map input matching the schema
     # to a value for this field
-    api_client: Annotated[MyApiClient, FieldResolver(resolve_api_key)]
-
-    @classmethod
-    def get_schema(cls) -> type[MyComponentSchema]:
-        return MyComponentSchema
+    api_client: Annotated[MyApiClient, DSLFieldResolver(resolve_api_key)]
 
     def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions: ...

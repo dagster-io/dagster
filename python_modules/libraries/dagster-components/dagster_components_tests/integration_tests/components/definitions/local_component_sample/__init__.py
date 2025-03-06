@@ -1,9 +1,9 @@
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_components import Component, ResolvableSchema
+from dagster_components import Component, DSLSchema
 from dagster_components.core.component import ComponentLoadContext
 
 
-class MyComponentSchema(ResolvableSchema):
+class MyComponentSchema(DSLSchema):
     a_string: str
     an_int: int
 
@@ -11,10 +11,6 @@ class MyComponentSchema(ResolvableSchema):
 class MyComponent(Component):
     a_string: str
     an_int: int
-
-    @classmethod
-    def get_schema(cls):
-        return MyComponentSchema
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         return Definitions()
