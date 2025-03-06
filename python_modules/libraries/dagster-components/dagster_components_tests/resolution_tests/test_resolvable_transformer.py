@@ -9,7 +9,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.schema.context import ResolutionContext
+from dagster_components.resolved.context import ResolutionContext
 from dagster_components.core.schema.objects import AssetSpecKwargs, AssetSpecModel
 from dagster_components.core.schema.resolvable_from_schema import (
     FieldResolver,

@@ -18,7 +18,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.tags import build_kind_tag
 from dagster._core.errors import DagsterError
 
-from dagster_components.core.schema.context import ResolutionContext
+from dagster_components.resolved.context import ResolutionContext
 from dagster_components.core.schema.objects import (
     AssetAttributesModel,
     resolve_asset_attributes_to_mapping,

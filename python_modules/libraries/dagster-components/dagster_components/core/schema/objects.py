@@ -16,7 +16,7 @@ from dagster._record import replace
 from pydantic import BaseModel, Field
 from typing_extensions import TypeAlias
 
-from dagster_components.core.schema.context import ResolutionContext
+from dagster_components.resolved.context import ResolutionContext
 from dagster_components.core.schema.resolvable_from_schema import (
     FieldResolver,
     ResolvableModel,
