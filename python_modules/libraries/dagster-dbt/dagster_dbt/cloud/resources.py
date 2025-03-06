@@ -726,13 +726,8 @@ DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
 DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX = "__dbt_cloud"
 
 
-<<<<<<< HEAD
 def get_dagster_adhoc_job_name(project_id: int, environment_id: int) -> str:
     return f"{DAGSTER_ADHOC_PREFIX}{project_id}__{environment_id}"
-=======
-def get_job_name(environment_id: int, project_id: int) -> str:
-    return f"{DAGSTER_ADHOC_PREFIX}{project_id}__{environment_id}_4"
->>>>>>> f954d5eb97 (Fix unique id)
 
 
 @preview
