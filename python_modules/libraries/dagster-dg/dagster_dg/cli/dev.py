@@ -9,12 +9,14 @@ from typing import Optional, TypeVar
 
 import click
 
+from dagster_dg.check import check_yaml as check_yaml_fn
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.cli.utils import create_dagster_cli_cmd
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.error import DgError
 from dagster_dg.utils import DgClickCommand, pushd
+from dagster_dg.utils.cli import format_forwarded_option
 
 T = TypeVar("T")
 
@@ -67,6 +69,12 @@ _SUBPROCESS_WAIT_TIMEOUT = 60
     show_default=True,
     required=False,
 )
+@click.option(
+    "--check-yaml/--no-check-yaml",
+    flag_value=True,
+    default=True,
+    help="Whether to schema-check component.yaml files for the project before starting the dev server.",
+)
 @dg_global_options
 def dev_command(
     code_server_log_level: str,
@@ -75,6 +83,7 @@ def dev_command(
     port: Optional[int],
     host: Optional[str],
     live_data_poll_rate: int,
+    check_yaml: bool,
     **global_options: Mapping[str, object],
 ) -> None:
     """Start a local instance of Dagster.
@@ -110,6 +119,22 @@ def dev_command(
         pushd(dg_context.root_path),
         create_dagster_cli_cmd(dg_context, forward_options, run_cmds=run_cmds) as cmd_object,
     ):
+        if check_yaml:
+            overall_check_result = True
+            project_dirs = (
+                [project.path for project in dg_context.project_specs]
+                if dg_context.is_workspace
+                else [dg_context.root_path]
+            )
+            for project_dir in project_dirs:
+                check_result = check_yaml_fn(
+                    dg_context.for_project_environment(project_dir, cli_config),
+                    [],
+                )
+                overall_check_result = overall_check_result and check_result
+            if not overall_check_result:
+                click.get_current_context().exit(1)
+
         cmd_location, cmd, workspace_file = cmd_object
         print(f"Using {cmd_location}")  # noqa: T201
         if workspace_file:  # only non-None deployment context
@@ -134,10 +159,6 @@ def dev_command(
             except subprocess.TimeoutExpired:
                 click.secho("`dagster dev` did not terminate in time. Killing it.")
                 uv_run_dagster_dev_process.kill()
-
-
-def format_forwarded_option(option: str, value: object) -> list[str]:
-    return [] if value is None else [option, str(value)]
 
 
 # Windows subprocess termination utilities. See here for why we send CTRL_BREAK_EVENT on Windows:
