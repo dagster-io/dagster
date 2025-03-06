@@ -1,9 +1,12 @@
+import Link from "next/link";
 import styles from "./css/Header.module.css";
 
 export default function Header() {
   return (
     <div className={styles.header}>
-      <DagsterLogo />
+      <Link href="/">
+        <DagsterLogo />
+      </Link>
     </div>
   );
 }

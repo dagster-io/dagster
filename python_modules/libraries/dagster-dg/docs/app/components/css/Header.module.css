@@ -8,6 +8,10 @@
   align-items: center;
 }
 
+.header a {
+  line-height: 0;
+}
+
 .svg {
   height: 48px;
   width: 168px;
