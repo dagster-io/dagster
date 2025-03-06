@@ -1,7 +1,6 @@
 import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import {AddToFavoritesButton} from 'shared/asset-graph/AddToFavoritesButton.oss';
-import styled from 'styled-components';
 
 import {GraphNode, displayNameForAssetKey, nodeDependsOnSelf, stepKeyForAsset} from './Utils';
 import {gql, useQuery} from '../apollo-client';
@@ -255,15 +254,6 @@ const Header = ({assetNode, repoAddress}: HeaderProps) => {
     </Box>
   );
 };
-
-const AssetCatalogLink = styled(Link)`
-  display: flex;
-  gap: 4px;
-  padding: 2px;
-  margin: -2px;
-  align-items: center;
-  white-space: nowrap;
-`;
 
 const SIDEBAR_ASSET_FRAGMENT = gql`
   fragment SidebarAssetFragment on AssetNode {
