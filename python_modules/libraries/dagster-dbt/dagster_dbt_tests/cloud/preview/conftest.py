@@ -1,5 +1,7 @@
 from collections.abc import Iterator, Mapping
 from typing import Any
+import json
+from pathlib import Path
 
 import pytest
 import responses
@@ -9,6 +11,11 @@ from dagster_dbt.cloud.resources import (
     get_dagster_adhoc_job_name,
 )
 from dagster_dbt.cloud.types import DbtCloudJobRunStatusType
+
+tests_path = Path(__file__).joinpath("..").resolve()
+manifest_path = tests_path.joinpath("manifest.json")
+run_results_path = tests_path.joinpath("run_results.json")
+
 
 TEST_ACCOUNT_ID = 1111
 TEST_ACCESS_URL = "https://cloud.getdbt.com"
@@ -25,6 +32,13 @@ TEST_ADHOC_JOB_NAME = get_dagster_adhoc_job_name(
 TEST_ANOTHER_JOB_NAME = "test_another_job_name"
 
 TEST_REST_API_BASE_URL = f"{TEST_ACCESS_URL}/api/v2/accounts/{TEST_ACCOUNT_ID}"
+
+with open(manifest_path, "r") as f:
+    SAMPLE_MANIFEST_JSON = json.load(f)
+
+
+with open(run_results_path, "r") as f:
+    SAMPLE_RUN_RESULTS_JSON = json.load(f)
 
 
 # Taken from dbt Cloud REST API documentation
@@ -339,5 +353,17 @@ def all_api_mocks_fixture(
         url=f"{TEST_REST_API_BASE_URL}/jobs/{TEST_JOB_ID}/run",
         json=SAMPLE_SUCCESS_RUN_RESPONSE,
         status=201,
+    )
+    job_api_mocks.add(
+        method=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/runs/{TEST_RUN_ID}/artifacts/manifest.json",
+        json=SAMPLE_MANIFEST_JSON,
+        status=200,
+    )
+    job_api_mocks.add(
+        method=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/runs/{TEST_RUN_ID}/artifacts/run_results.json",
+        json=SAMPLE_RUN_RESULTS_JSON,
+        status=200,
     )
     yield job_api_mocks

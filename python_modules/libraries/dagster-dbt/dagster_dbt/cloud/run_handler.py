@@ -37,7 +37,7 @@ class DbtCloudJobRunHandler:
         return dbt_cloud_run.status
 
     def get_run_results(self) -> Mapping[str, Any]:
-        return self.client.get_run_results_json(self.run_id)
+        return self.client.get_run_results_json(run_id=self.run_id)
 
     def get_manifest(self) -> Mapping[str, Any]:
-        return self.client.get_run_manifest_json(self.run_id)
+        return self.client.get_run_manifest_json(run_id=self.run_id)

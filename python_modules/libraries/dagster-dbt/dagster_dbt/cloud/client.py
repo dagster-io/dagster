@@ -260,16 +260,16 @@ class DbtCloudWorkspaceClient(DagsterModel):
             time.sleep(poll_interval)
         raise Exception(f"Run {run.id} did not complete within {poll_timeout} seconds.")
 
-    def get_run_artifact(self, job_run_id: int, path: str) -> Mapping[str, Any]:
+    def get_run_artifact(self, run_id: int, path: str) -> Mapping[str, Any]:
         return self._make_request(
             method="get",
-            endpoint=f"runs/{job_run_id}/artifacts/{path}",
+            endpoint=f"runs/{run_id}/artifacts/{path}",
             base_url=self.api_v2_url,
             session_attr="_get_artifact_session",
         )
 
-    def get_run_results_json(self, job_run_id: int) -> Mapping[str, Any]:
-        return self.get_run_artifact(job_run_id=job_run_id, path="run_results.json")
+    def get_run_results_json(self, run_id: int) -> Mapping[str, Any]:
+        return self.get_run_artifact(run_id=run_id, path="run_results.json")
 
-    def get_run_manifest_json(self, job_run_id: int) -> Mapping[str, Any]:
-        return self.get_run_artifact(job_run_id=job_run_id, path="manifest.json")
+    def get_run_manifest_json(self, run_id: int) -> Mapping[str, Any]:
+        return self.get_run_artifact(run_id=run_id, path="manifest.json")
