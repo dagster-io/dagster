@@ -3,13 +3,13 @@ from dagster_components import (
     Component,
     ComponentLoadContext,
     DefaultComponentScaffolder,
-    DSLSchema,
+    ResolvableModel,
 )
 
-class ShellCommandSchema(DSLSchema):
+class ShellCommandSchema(ResolvableModel):
     ...
 
-class ShellCommand(Component, DSLSchema):
+class ShellCommand(Component, ResolvableModel):
     """COMPONENT SUMMARY HERE.
 
     COMPONENT DESCRIPTION HERE.

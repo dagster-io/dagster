@@ -1,9 +1,9 @@
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_components import Component, DSLSchema
+from dagster_components import Component, ResolvableModel
 from dagster_components.core.component import ComponentLoadContext
 
 
-class MyComponentSchema(DSLSchema):
+class MyComponentSchema(ResolvableModel):
     a_string: str
     an_int: int
 

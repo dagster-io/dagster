@@ -25,15 +25,15 @@ from dagster_components.core.schema.objects import (
     ResolutionContext,
 )
 from dagster_components.core.schema.resolvable_from_schema import (
-    DSLFieldResolver,
-    DSLSchema,
-    ResolvableFromSchema,
+    FieldResolver,
+    ResolvableModel,
+    ResolvedFrom,
 )
 from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 
-class DbtProjectSchema(DSLSchema):
+class DbtProjectSchema(ResolvableModel):
     dbt: DbtCliResource
     op: Optional[OpSpecSchema] = None
     asset_attributes: Annotated[
@@ -64,18 +64,18 @@ def resolve_dbt(context: ResolutionContext, dbt: DbtCliResource) -> DbtCliResour
 
 @scaffoldable(scaffolder=DbtProjectComponentScaffolder)
 @dataclass
-class DbtProjectComponent(Component, ResolvableFromSchema[DbtProjectSchema]):
+class DbtProjectComponent(Component, ResolvedFrom[DbtProjectSchema]):
     """Expose a DBT project to Dagster as a set of assets."""
 
-    dbt: Annotated[DbtCliResource, DSLFieldResolver(resolve_dbt)]
-    op: Annotated[Optional[OpSpec], DSLFieldResolver(OpSpec.from_optional)] = None
+    dbt: Annotated[DbtCliResource, FieldResolver(resolve_dbt)]
+    op: Annotated[Optional[OpSpec], FieldResolver(OpSpec.from_optional)] = None
     # This requires from_parent because it access asset_attributes in the schema
-    translator: Annotated[
-        DagsterDbtTranslator, DSLFieldResolver.from_parent(resolve_translator)
-    ] = field(default_factory=DagsterDbtTranslator)
+    translator: Annotated[DagsterDbtTranslator, FieldResolver.from_model(resolve_translator)] = (
+        field(default_factory=DagsterDbtTranslator)
+    )
     asset_post_processors: Annotated[
         Optional[Sequence[AssetPostProcessor]],
-        DSLFieldResolver(AssetPostProcessor.from_optional_seq),
+        FieldResolver(AssetPostProcessor.from_optional_seq),
     ] = None
     select: str = "fqn:*"
     exclude: Optional[str] = None

@@ -18,10 +18,10 @@ from dagster_components.core.schema.objects import (
     OpSpecSchema as OpSpecSchema,
 )
 from dagster_components.core.schema.resolvable_from_schema import (
-    DSLFieldResolver as DSLFieldResolver,
-    DSLSchema as DSLSchema,
-    ResolutionSpec as ResolutionSpec,
-    ResolvableFromSchema as ResolvableFromSchema,
+    FieldResolver as FieldResolver,
+    ResolvableModel as ResolvableModel,
+    ResolvedFrom as ResolvedFrom,
+    ResolvedKwargs as ResolvedKwargs,
 )
 from dagster_components.scaffold import scaffold_component_yaml as scaffold_component_yaml
 from dagster_components.scaffoldable.scaffolder import (

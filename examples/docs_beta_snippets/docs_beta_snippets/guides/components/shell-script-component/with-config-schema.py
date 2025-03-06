@@ -4,13 +4,13 @@ from dagster_components import (
     AssetSpecSchema,
     Component,
     ComponentLoadContext,
-    DSLSchema,
+    ResolvableModel,
 )
 
 import dagster as dg
 
 
-class ShellCommand(Component, DSLSchema):
+class ShellCommand(Component, ResolvableModel):
     """Models a shell script as a Dagster asset."""
 
     script_path: str

@@ -22,8 +22,8 @@ from dagster_components.core.component_key import ComponentKey
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.resolvable_from_schema import (
-    DSLSchema,
-    ResolvableFromSchema,
+    ResolvableModel,
+    ResolvedFrom,
     resolve_schema_to_resolvable,
 )
 from dagster_components.scaffoldable.decorator import get_scaffolder, scaffoldable
@@ -46,16 +46,16 @@ class ComponentDeclNode(ABC):
 @scaffoldable(scaffolder=DefaultComponentScaffolder)
 class Component(ABC):
     @classmethod
-    def get_schema(cls) -> Optional[type["DSLSchema"]]:
+    def get_schema(cls) -> Optional[type["ResolvableModel"]]:
         from dagster_components.core.schema.resolvable_from_schema import (
-            ResolvableFromSchema,
+            ResolvedFrom,
             get_schema_type,
         )
 
-        if issubclass(cls, DSLSchema):
+        if issubclass(cls, ResolvableModel):
             return cls
 
-        if issubclass(cls, ResolvableFromSchema):
+        if issubclass(cls, ResolvedFrom):
             return get_schema_type(cls)
         return None
 
@@ -67,14 +67,20 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
-    def load(cls, attributes: Optional["DSLSchema"], context: "ComponentLoadContext") -> Self:
-        ctx = context.resolution_context.at_path("attributes")
-        if issubclass(cls, DSLSchema):
+    def load(cls, attributes: Optional["ResolvableModel"], context: "ComponentLoadContext") -> Self:
+        if issubclass(cls, ResolvableModel):
             # If the Component is a DSLSchema, the attributes in this case are an instance of itself
             assert isinstance(attributes, cls)
             return attributes
-        elif issubclass(cls, ResolvableFromSchema):
-            return resolve_schema_to_resolvable(attributes, cls, ctx) if attributes else cls()
+
+        elif issubclass(cls, ResolvedFrom):
+            return (
+                resolve_schema_to_resolvable(
+                    attributes, cls, context.resolution_context.at_path("attributes")
+                )
+                if attributes
+                else cls()
+            )
         else:
             check.failed(f"Unsupported component type {cls}")
 

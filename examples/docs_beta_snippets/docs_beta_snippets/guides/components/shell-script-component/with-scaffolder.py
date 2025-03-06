@@ -15,8 +15,8 @@ from dagster_components import (
 )
 from dagster_components.core.schema.objects import AssetSpecSequenceField
 from dagster_components.core.schema.resolvable_from_schema import (
-    DSLSchema,
-    ResolvableFromSchema,
+    ResolvableModel,
+    ResolvedFrom,
 )
 from dagster_components.scaffoldable.decorator import scaffoldable
 
@@ -45,7 +45,7 @@ class ShellCommandScaffolder(Scaffolder):
 # highlight-end
 
 
-class ShellScriptSchema(DSLSchema):
+class ShellScriptSchema(ResolvableModel):
     script_path: str
     asset_specs: Sequence[AssetSpecSchema]
 
@@ -54,7 +54,7 @@ class ShellScriptSchema(DSLSchema):
 @scaffoldable(scaffolder=ShellCommandScaffolder)
 # highlight-end
 @dataclass
-class ShellCommand(Component, ResolvableFromSchema[ShellScriptSchema]):
+class ShellCommand(Component, ResolvedFrom[ShellScriptSchema]):
     """Models a shell script as a Dagster asset."""
 
     script_path: str

@@ -3,13 +3,10 @@ from dagster_components import (
     Component,
     ComponentLoadContext,
     DefaultComponentScaffolder,
-    DSLSchema,
+    ResolvableModel,
 )
 
-class {{ name }}Schema(DSLSchema):
-    ...
-
-class {{ name }}(Component, DSLSchema):
+class {{ name }}(Component, ResolvableModel):
     """COMPONENT SUMMARY HERE.
 
     COMPONENT DESCRIPTION HERE.

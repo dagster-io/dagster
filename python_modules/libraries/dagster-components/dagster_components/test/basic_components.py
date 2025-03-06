@@ -9,7 +9,7 @@ from typing import Any
 from dagster._core.definitions.definitions_class import Definitions
 from pydantic import BaseModel, ConfigDict
 
-from dagster_components import Component, DSLSchema, ResolvableFromSchema
+from dagster_components import Component, ResolvableModel, ResolvedFrom
 from dagster_components.core.component import ComponentLoadContext
 
 
@@ -21,13 +21,13 @@ def _error():
     _inner_error()
 
 
-class MyComponentSchema(DSLSchema):
+class MyComponentModel(ResolvableModel):
     a_string: str
     an_int: int
 
 
 @dataclass
-class MyComponent(Component, ResolvableFromSchema[MyComponentSchema]):
+class MyComponent(Component, ResolvedFrom[MyComponentModel]):
     a_string: str
     an_int: int
 
