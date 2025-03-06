@@ -60,7 +60,6 @@ export type BackfillDetailsQuery = {
         hasCancelPermission: boolean;
         hasResumePermission: boolean;
         numCancelable: number;
-        partitionNames: Array<string> | null;
         assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
         error: {
           __typename: 'PythonError';
@@ -108,19 +107,7 @@ export type BackfillDetailsQuery = {
             runDuration: number | null;
           }>;
         } | null;
-        partitionSet: {
-          __typename: 'PartitionSet';
-          id: string;
-          mode: string;
-          name: string;
-          pipelineName: string;
-          repositoryOrigin: {
-            __typename: 'RepositoryOrigin';
-            id: string;
-            repositoryName: string;
-            repositoryLocationName: string;
-          };
-        } | null;
+        partitionSet: {__typename: 'PartitionSet'; id: string} | null;
       }
     | {
         __typename: 'PythonError';
@@ -146,7 +133,6 @@ export type BackfillDetailsBackfillFragment = {
   hasCancelPermission: boolean;
   hasResumePermission: boolean;
   numCancelable: number;
-  partitionNames: Array<string> | null;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
   error: {
     __typename: 'PythonError';
@@ -194,19 +180,7 @@ export type BackfillDetailsBackfillFragment = {
       runDuration: number | null;
     }>;
   } | null;
-  partitionSet: {
-    __typename: 'PartitionSet';
-    id: string;
-    mode: string;
-    name: string;
-    pipelineName: string;
-    repositoryOrigin: {
-      __typename: 'RepositoryOrigin';
-      id: string;
-      repositoryName: string;
-      repositoryLocationName: string;
-    };
-  } | null;
+  partitionSet: {__typename: 'PartitionSet'; id: string} | null;
 };
 
-export const BackfillDetailsQueryVersion = 'b2e50b372c779a994a7fdcdbef873890bf39716520774315b9e880ae59375217';
+export const BackfillDetailsQueryVersion = 'e34d8b653527a444eb1a2ad9d53c93ee17b61da13790dcab96f910d10d36f291';

@@ -137,12 +137,7 @@ export const BackfillTarget = ({
 }: {
   backfill: Pick<
     BackfillTableFragment,
-    | 'id'
-    | 'partitionNames'
-    | 'assetSelection'
-    | 'partitionSet'
-    | 'partitionSetName'
-    | 'numPartitions'
+    'id' | 'assetSelection' | 'partitionSet' | 'partitionSetName' | 'numPartitions'
   >;
   repoAddress: RepoAddress | null;
   useTags: boolean;
@@ -266,7 +261,8 @@ const BackfillRequestedRange = ({
   backfill,
   onExpand,
 }: {
-  backfill: Pick<PartitionBackfill, 'numPartitions' | 'partitionNames'>;
+  backfill: Pick<PartitionBackfill, 'numPartitions'> &
+    Partial<Pick<PartitionBackfill, 'partitionNames'>>;
   allPartitions?: string[];
   onExpand: () => void;
 }) => {
@@ -282,15 +278,11 @@ const BackfillRequestedRange = ({
   return (
     <Box flex={{direction: 'column', gap: 8}}>
       <div>
-        {partitionNames ? (
-          <TagButton onClick={onExpand}>
-            <Tag intent="primary" interactive>
-              {numPartitionsLabel}
-            </Tag>
-          </TagButton>
-        ) : (
-          <Tag intent="primary">{numPartitionsLabel}</Tag>
-        )}
+        <TagButton onClick={onExpand}>
+          <Tag intent="primary" interactive>
+            {numPartitionsLabel}
+          </Tag>
+        </TagButton>
       </div>
       {allPartitions && partitionNames && (
         <RequestedPartitionStatusBar all={allPartitions} requested={partitionNames} />

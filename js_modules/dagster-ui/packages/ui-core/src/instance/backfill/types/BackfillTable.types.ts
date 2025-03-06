@@ -28,12 +28,11 @@ export type BackfillTableFragment = {
   hasCancelPermission: boolean;
   hasResumePermission: boolean;
   numCancelable: number;
-  partitionNames: Array<string> | null;
   partitionSet: {
     __typename: 'PartitionSet';
     id: string;
-    mode: string;
     name: string;
+    mode: string;
     pipelineName: string;
     repositoryOrigin: {
       __typename: 'RepositoryOrigin';

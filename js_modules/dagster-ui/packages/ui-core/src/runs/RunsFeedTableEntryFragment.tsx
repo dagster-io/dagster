@@ -1,6 +1,6 @@
 import {RUN_ACTIONS_MENU_RUN_FRAGMENT} from './RunActionsMenu';
 import {gql} from '../apollo-client';
-import {BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT} from '../instance/backfill/BackfillFragments';
+import {BACKFILL_TABLE_FRAGMENT_FOR_STEP_STATUS_DIALOG} from '../instance/backfill/BackfillFragments';
 import {PARTITION_SET_FOR_BACKFILL_TABLE_FRAGMENT} from '../instance/backfill/BackfillTable';
 
 export const RUNS_FEED_TABLE_ENTRY_FRAGMENT = gql`
@@ -51,11 +51,11 @@ export const RUNS_FEED_TABLE_ENTRY_FRAGMENT = gql`
       isAssetBackfill
       numCancelable
       numPartitions
-      ...BackfillStepStatusDialogBackfillFragment
+      ...BackfillTableFragmentForStepStatusDialog
     }
   }
 
   ${RUN_ACTIONS_MENU_RUN_FRAGMENT}
   ${PARTITION_SET_FOR_BACKFILL_TABLE_FRAGMENT}
-  ${BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT}
+  ${BACKFILL_TABLE_FRAGMENT_FOR_STEP_STATUS_DIALOG}
 `;
