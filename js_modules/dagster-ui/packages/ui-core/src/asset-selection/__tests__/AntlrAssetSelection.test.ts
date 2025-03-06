@@ -96,6 +96,11 @@ describe('parseAssetSelectionQuery', () => {
       assertQueryResult('(key:A or key:B) and (key:B or key:C)', ['B']);
     });
 
+    it('should parse not query', () => {
+      assertQueryResult('not key:A', ['B', 'B2', 'C']);
+      assertQueryResult('NOT key:A', ['B', 'B2', 'C']);
+    });
+
     it('should parse upstream plus query', () => {
       assertQueryResult('1+key:A', ['A']);
       assertQueryResult('1+key:B', ['A', 'B']);
@@ -127,12 +132,14 @@ describe('parseAssetSelectionQuery', () => {
       assertQueryResult('+key:B+', ['A', 'B', 'C']);
       assertQueryResult('key:A+ and +key:C and +key:B+', ['A', 'B', 'C']);
       assertQueryResult('key:A+ and +key:B+ and +key:C', ['A', 'B', 'C']);
+      assertQueryResult('key:A+ AND +key:B+ AND +key:C', ['A', 'B', 'C']);
     });
 
     it('should parse sinks query', () => {
       assertQueryResult('sinks(*)', ['C']);
       assertQueryResult('sinks(key:A)', ['A']);
       assertQueryResult('sinks(key:A or key:B)', ['B']);
+      assertQueryResult('sinks(key:A OR key:B)', ['B']);
     });
 
     it('should parse roots query', () => {

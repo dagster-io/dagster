@@ -1084,9 +1084,9 @@ class AssetSelectionParser(Parser):
     literalNames = [
         "<INVALID>",
         "'='",
-        "'and'",
-        "'or'",
-        "'not'",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
         "'*'",
         "'+'",
         "<INVALID>",
