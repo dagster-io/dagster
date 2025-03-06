@@ -14,10 +14,7 @@ from dagster_components import (
     scaffold_component_yaml,
 )
 from dagster_components.core.schema.objects import AssetSpecSequenceField
-from dagster_components.core.schema.resolvable_from_schema import (
-    ResolvableModel,
-    ResolvedFrom,
-)
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
 from dagster_components.scaffoldable.decorator import scaffoldable
 
 import dagster as dg

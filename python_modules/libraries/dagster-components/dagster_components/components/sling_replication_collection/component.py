@@ -16,7 +16,6 @@ from dagster_components import Component, ComponentLoadContext
 from dagster_components.components.sling_replication_collection.scaffolder import (
     SlingReplicationComponentScaffolder,
 )
-from dagster_components.resolved.context import ResolutionContext
 from dagster_components.core.schema.metadata import ResolvableFieldInfo
 from dagster_components.core.schema.objects import (
     AssetAttributesModel,
@@ -25,11 +24,8 @@ from dagster_components.core.schema.objects import (
     OpSpec,
     OpSpecModel,
 )
-from dagster_components.core.schema.resolvable_from_schema import (
-    FieldResolver,
-    ResolvableModel,
-    ResolvedFrom,
-)
+from dagster_components.resolved.context import ResolutionContext
+from dagster_components.resolved.model import FieldResolver, ResolvableModel, ResolvedFrom
 from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 

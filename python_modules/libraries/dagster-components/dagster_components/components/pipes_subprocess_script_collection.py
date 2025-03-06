@@ -11,13 +11,9 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 from dagster_components.core.component import Component, ComponentLoadContext
-from dagster_components.resolved.context import ResolutionContext
 from dagster_components.core.schema.objects import AssetSpecModel, AssetSpecSequenceField
-from dagster_components.core.schema.resolvable_from_schema import (
-    FieldResolver,
-    ResolvableModel,
-    ResolvedFrom,
-)
+from dagster_components.resolved.context import ResolutionContext
+from dagster_components.resolved.model import FieldResolver, ResolvableModel, ResolvedFrom
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions

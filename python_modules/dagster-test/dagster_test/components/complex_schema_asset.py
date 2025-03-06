@@ -13,7 +13,7 @@ from dagster_components.core.schema.objects import (
     AssetPostProcessorModel,
     OpSpecModel,
 )
-from dagster_components.core.schema.resolvable_from_schema import ResolvableModel, ResolvedFrom
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
 from pydantic import Field
 
 

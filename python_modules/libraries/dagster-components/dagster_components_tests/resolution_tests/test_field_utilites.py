@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Annotated
 
-from dagster_components.core.schema.resolvable_from_schema import (
+from dagster_components.resolved.model import (
     FieldResolver,
     ResolvedKwargs,
     get_annotation_field_resolvers,

@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from dagster_components.resolved.context import ResolutionContext
-from dagster_components.core.schema.resolvable_from_schema import (
+from dagster_components.resolved.model import (
     FieldResolver,
     ResolvableModel,
     ResolvedFrom,
