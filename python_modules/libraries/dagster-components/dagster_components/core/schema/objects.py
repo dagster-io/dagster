@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import Annotated, Any, Callable, Literal, Optional, Union
 
 import dagster._check as check
@@ -13,7 +14,6 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import replace
 from pydantic import BaseModel, Field
-from pydantic.dataclasses import dataclass
 from typing_extensions import TypeAlias
 
 from dagster_components.core.schema.context import ResolutionContext
@@ -36,13 +36,11 @@ def _resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
 PostProcessorFn: TypeAlias = Callable[[Definitions], Definitions]
 
 
-@dataclass
-class SingleRunBackfillPolicySchema:
+class SingleRunBackfillPolicyModel(ResolvableModel):
     type: Literal["single_run"] = "single_run"
 
 
-@dataclass
-class MultiRunBackfillPolicySchema:
+class MultiRunBackfillPolicyModel(ResolvableModel):
     type: Literal["multi_run"] = "multi_run"
     max_partitions_per_run: int = 1
 
@@ -77,9 +75,9 @@ class OpSpecModel(ResolvableModel):
     tags: Optional[dict[str, str]] = Field(
         default=None, description="Arbitrary metadata for the op."
     )
-    backfill_policy: Optional[
-        Union[SingleRunBackfillPolicySchema, MultiRunBackfillPolicySchema]
-    ] = Field(default=None, description="The backfill policy to use for the assets.")
+    backfill_policy: Optional[Union[SingleRunBackfillPolicyModel, MultiRunBackfillPolicyModel]] = (
+        Field(default=None, description="The backfill policy to use for the assets.")
+    )
 
 
 class _ResolvableAssetAttributesMixin(BaseModel):
