@@ -303,9 +303,9 @@ def workspace_fixture(credentials: DbtCloudCredentials) -> DbtCloudWorkspace:
 
 
 @pytest.fixture(
-    name="api_mocks",
+    name="job_api_mocks",
 )
-def api_mocks_fixture() -> Iterator[responses.RequestsMock]:
+def job_api_mocks_fixture() -> Iterator[responses.RequestsMock]:
     with responses.RequestsMock() as response:
         response.add(
             method=responses.GET,
@@ -319,16 +319,25 @@ def api_mocks_fixture() -> Iterator[responses.RequestsMock]:
             json=SAMPLE_CREATE_JOB_RESPONSE,
             status=201,
         )
-        response.add(
-            method=responses.GET,
-            url=f"{TEST_REST_API_BASE_URL}/runs/{TEST_RUN_ID}",
-            json=SAMPLE_SUCCESS_RUN_RESPONSE,
-            status=200,
-        )
-        response.add(
-            method=responses.POST,
-            url=f"{TEST_REST_API_BASE_URL}/jobs/{TEST_JOB_ID}/run",
-            json=SAMPLE_SUCCESS_RUN_RESPONSE,
-            status=201,
-        )
         yield response
+
+
+@pytest.fixture(
+    name="all_api_mocks",
+)
+def all_api_mocks_fixture(
+    job_api_mocks: responses.RequestsMock,
+) -> Iterator[responses.RequestsMock]:
+    job_api_mocks.add(
+        method=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/runs/{TEST_RUN_ID}",
+        json=SAMPLE_SUCCESS_RUN_RESPONSE,
+        status=200,
+    )
+    job_api_mocks.add(
+        method=responses.POST,
+        url=f"{TEST_REST_API_BASE_URL}/jobs/{TEST_JOB_ID}/run",
+        json=SAMPLE_SUCCESS_RUN_RESPONSE,
+        status=201,
+    )
+    yield job_api_mocks
