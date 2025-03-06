@@ -1806,8 +1806,8 @@
       "destination": "/about/changelog"
     },
     {
-      "source": "/_modules/dagster/_config/:path*/",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster/_config/:path*.py",
+      "source": "/_modules/dagster/_config/:path*",
+      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster/dagster/_config/:path*.py",
       "permanent": false
     }
   ]
