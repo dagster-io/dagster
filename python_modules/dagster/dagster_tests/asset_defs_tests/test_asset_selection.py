@@ -10,6 +10,7 @@ from dagster import (
     AssetOut,
     AssetSpec,
     DailyPartitionsDefinition,
+    Definitions,
     DimensionPartitionMapping,
     IdentityPartitionMapping,
     MultiPartitionMapping,
@@ -17,12 +18,13 @@ from dagster import (
     SourceAsset,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    asset,
     asset_check,
     multi_asset,
     observable_source_asset,
 )
 from dagster._check.functions import CheckError
-from dagster._core.definitions import AssetSelection, asset
+from dagster._core.definitions import AssetSelection
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import (
@@ -52,7 +54,11 @@ from dagster._core.definitions.asset_selection import (
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.events import AssetKey
+from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.remote_representation.external_data import RepositorySnap
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.selector.subset_selector import MAX_NUM
+from dagster._core.test_utils import instance_for_test
 from dagster._serdes import deserialize_value
 from dagster._serdes.serdes import _WHITELIST_MAP
 from typing_extensions import TypeAlias
@@ -904,12 +910,53 @@ def test_code_location() -> None:
     @asset
     def my_asset(): ...
 
+    defs = Definitions(assets=[my_asset])
+
     # Selection can be instantiated.
     selection = CodeLocationAssetSelection(selected_code_location="code_location1")
 
     # But not resolved.
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(CheckError):
         selection.resolve([my_asset])
+
+    with instance_for_test() as instance:
+        # A RemoteRepositoryAssetGraph can resolve it though
+        repo_handle = RepositoryHandle.for_test(
+            location_name="code_location1",
+            repository_name="bar_repo",
+        )
+        remote_repo = RemoteRepository(
+            RepositorySnap.from_def(
+                defs.get_repository_def(),
+            ),
+            repository_handle=repo_handle,
+            instance=instance,
+        )
+
+        assert selection.resolve_inner(
+            remote_repo.asset_graph,
+            allow_missing=False,
+        ) == {AssetKey("my_asset")}
+
+        other_repo_handle = RepositoryHandle.for_test(
+            location_name="code_location2",
+            repository_name="bar_repo",
+        )
+        other_remote_repo = RemoteRepository(
+            RepositorySnap.from_def(
+                defs.get_repository_def(),
+            ),
+            repository_handle=other_repo_handle,
+            instance=instance,
+        )
+
+        assert (
+            selection.resolve_inner(
+                other_remote_repo.asset_graph,
+                allow_missing=False,
+            )
+            == set()
+        )
 
 
 def test_column() -> None:
