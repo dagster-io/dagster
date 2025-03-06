@@ -16,13 +16,13 @@ from dagster_components.core.schema.objects import AssetSpecSequenceField
 import dagster as dg
 
 
-class ShellScriptSchema(ResolvableModel):
+class ShellCommandModel(ResolvableModel):
     script_path: str
     asset_specs: Sequence[AssetSpecSchema]
 
 
 @dataclass
-class ShellCommand(Component, ResolvedFrom[ShellScriptSchema]):
+class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
     script_path: str
     asset_specs: AssetSpecSequenceField
 
