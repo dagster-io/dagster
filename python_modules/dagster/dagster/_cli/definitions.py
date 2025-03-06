@@ -66,7 +66,11 @@ def definitions_cli():
     """,
 )
 def definitions_validate_command(
-    log_level: str, log_format: str, load_with_grpc: bool, verbose: bool, **other_opts: object
+    log_level: str,
+    log_format: str,
+    load_with_grpc: bool,
+    verbose_stack_traces: bool,
+    **other_opts: object,
 ):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
