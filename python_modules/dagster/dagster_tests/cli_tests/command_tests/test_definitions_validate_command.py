@@ -113,19 +113,23 @@ def test_invalid_project_truncated_properly(verbose):
         result = invoke_validate(options=["--verbose"] if verbose else [])
         assert result.exit_code == 1
         assert "Validation failed" in result.output
-        assert "This is a test exception" in result.output
+        assert "is not a valid name in Dagster" in result.output, result.output
 
         if verbose:
             assert "importlib" in result.output, result.output
-            assert "DagsterUserCodeLoadError" in result.output, result.output
         else:
-            # Assert extraneous lines are removed
+            # Assert extraneous lines are removed in two blocs
             assert "importlib" not in result.output, result.output
-            assert "DagsterUserCodeLoadError" not in result.output, result.output
+            # Assert system frames hint is present in the output exactly twice,
+            # once for the load error (before user code) and one for the Dagster check validation
+            # (after user code)
             assert (
-                "system frames removed, run with --verbose to see the full stack trace"
-                in result.output
+                result.output.count(
+                    "dagster system frames hidden, run with --verbose to see the full stack trace"
+                )
+                == 1
             )
+            assert result.output.count("dagster system frames hidden") == 2
 
 
 def test_env_var(monkeypatch):
