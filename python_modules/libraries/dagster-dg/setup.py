@@ -39,6 +39,7 @@ setup(
         "markdown",
         "jsonschema",
         "psutil",
+        "yaspin",
         "PyYAML>=5.1",
         "rich",
         # We use some private APIs of typer so we hard-pin here. This shouldn't need to be

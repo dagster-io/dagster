@@ -1,30 +1,22 @@
 [
   {
-    "name": "my-pkg",
+    "name": "dagster_components",
     "componentTypes": [
       {
-        "name": "my_pkg.components.FooComponent",
-        "author": "admin",
-        "tags": ["dbt", "metrics"],
-        "example": "...",
-        "schema": "{ }",
-        "description": "Foo bar"
+        "name": "dagster_components.dagster.DefinitionsComponent",
+        "author": "",
+        "tags": [],
+        "example": "type: dagster_components.dagster.DefinitionsComponent\n\nattributes:\n  definitions_path: '...'\n",
+        "schema": "{\"additionalProperties\": false, \"properties\": {\"definitions_path\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"default\": null, \"title\": \"Definitions Path\"}}, \"title\": \"DefinitionsParamSchema\", \"type\": \"object\"}",
+        "description": "Wraps an arbitrary set of Dagster definitions."
       },
       {
-        "name": "my_pkg.components.Bar",
-        "author": "somebody-else",
-        "tags": ["dbt", "metrics"],
-        "example": "...",
-        "schema": "{ }",
-        "description": "Bar description"
-      },
-      {
-        "name": "my_pkg.components.Baz",
-        "author": "admin",
-        "tags": ["dbt", "metrics"],
-        "example": "...",
-        "schema": "{ }",
-        "description": "Baz description"
+        "name": "dagster_components.dagster.PipesSubprocessScriptCollectionComponent",
+        "author": "",
+        "tags": [],
+        "example": "type: dagster_components.dagster.PipesSubprocessScriptCollectionComponent\n\nattributes:\n  scripts:\n    - path: '...'\n      assets:\n        - deps:\n            - my_database/my_schema/upstream_table\n          description: Refined sales data\n          metadata: '...'\n          group_name: staging\n          skippable: false\n          code_version: '3'\n          owners:\n            - team:analytics\n            - nelson@hooli.com\n          tags:\n            team: analytics\n            tier: prod\n          kinds:\n            - snowflake\n          automation_condition: '...'\n          key: '...'\n",
+        "schema": "{\"$defs\": {\"AssetSpecSchema\": {\"additionalProperties\": false, \"properties\": {\"deps\": {\"description\": \"The asset keys for the upstream assets that this asset depends on.\", \"examples\": [[\"my_database/my_schema/upstream_table\"]], \"items\": {\"type\": \"string\"}, \"title\": \"Deps\", \"type\": \"array\"}, \"description\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"default\": null, \"description\": \"Human-readable description of the asset.\", \"examples\": [\"Refined sales data\"], \"title\": \"Description\"}, \"metadata\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"object\"}], \"description\": \"Additional metadata for the asset.\", \"title\": \"Metadata\"}, \"group_name\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"default\": null, \"description\": \"Used to organize assets into groups, defaults to 'default'.\", \"examples\": [\"staging\"], \"title\": \"Group Name\"}, \"skippable\": {\"default\": false, \"description\": \"Whether this asset can be omitted during materialization, causing downstream dependencies to skip.\", \"title\": \"Skippable\", \"type\": \"boolean\"}, \"code_version\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"default\": null, \"description\": \"A version representing the code that produced the asset. Increment this value when the code changes.\", \"examples\": [\"3\"], \"title\": \"Code Version\"}, \"owners\": {\"description\": \"A list of strings representing owners of the asset. Each string can be a user's email address, or a team name prefixed with `team:`, e.g. `team:finops`.\", \"examples\": [[\"team:analytics\", \"nelson@hooli.com\"]], \"items\": {\"type\": \"string\"}, \"title\": \"Owners\", \"type\": \"array\"}, \"tags\": {\"anyOf\": [{\"type\": \"string\"}, {\"additionalProperties\": {\"type\": \"string\"}, \"type\": \"object\"}], \"description\": \"Tags for filtering and organizing.\", \"examples\": [{\"team\": \"analytics\", \"tier\": \"prod\"}], \"title\": \"Tags\"}, \"kinds\": {\"anyOf\": [{\"items\": {\"type\": \"string\"}, \"type\": \"array\"}, {\"type\": \"null\"}], \"default\": null, \"description\": \"A list of strings representing the kinds of the asset. These will be made visible in the Dagster UI.\", \"examples\": [[\"snowflake\"]], \"title\": \"Kinds\"}, \"automation_condition\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"default\": null, \"description\": \"The condition under which the asset will be automatically materialized.\", \"title\": \"Automation Condition\"}, \"key\": {\"description\": \"A unique identifier for the asset.\", \"title\": \"Key\", \"type\": \"string\"}}, \"required\": [\"key\"], \"title\": \"AssetSpecSchema\", \"type\": \"object\"}, \"PipesSubprocessScriptSchema\": {\"additionalProperties\": false, \"properties\": {\"path\": {\"title\": \"Path\", \"type\": \"string\"}, \"assets\": {\"items\": {\"$ref\": \"#/$defs/AssetSpecSchema\"}, \"title\": \"Assets\", \"type\": \"array\"}}, \"required\": [\"path\", \"assets\"], \"title\": \"PipesSubprocessScriptSchema\", \"type\": \"object\"}}, \"additionalProperties\": false, \"properties\": {\"scripts\": {\"items\": {\"$ref\": \"#/$defs/PipesSubprocessScriptSchema\"}, \"title\": \"Scripts\", \"type\": \"array\"}}, \"required\": [\"scripts\"], \"title\": \"PipesSubprocessScriptCollectionSchema\", \"type\": \"object\"}",
+        "description": "Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."
       }
     ]
   }
