@@ -1883,7 +1883,7 @@
     },
     {
       "source": "/_modules/dagster_azure/adls2/:path",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-azure/dagster_azure/dls2/:path.py"
+      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-azure/dagster_azure/adls2/:path.py"
     },
     {
       "source": "/_modules/dagster_azure/blob/compute_log_manager",
@@ -1943,7 +1943,7 @@
     },
     {
       "source": "/_modules/dagster_embedded_elt/sling/:path",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sling/dagster_slin/:path.py"
+      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sling/dagster_sling/:path.py"
     },
     {
       "source": "/_modules/dagster_gcp/dataproc/solids/",
