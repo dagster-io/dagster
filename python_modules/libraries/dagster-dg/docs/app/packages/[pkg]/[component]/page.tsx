@@ -27,7 +27,13 @@ export default async function ComponentPage({params}: Props) {
       <div className={styles.tableOfContents}>
         <ol>
           <li>
-            <a href="#overview">Overview</a>
+            <a href="#scaffolding">Scaffolding</a>
+          </li>
+          <li>
+            <a href="#schema">Schema</a>
+          </li>
+          <li>
+            <a href="#example">Example YAML</a>
           </li>
         </ol>
       </div>

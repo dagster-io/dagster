@@ -1,23 +1,29 @@
-.heading {
+.sectionHeader {
+  margin: 32px 0 16px;
   display: flex;
   flex-direction: row;
-  gap: 16px;
+  align-items: center;
+  gap: 8px;
 }
 
-.icon {
-  height: 48px;
-  width: 48px;
-  border-radius: 8px;
-  background-color: var(--color-background-default);
-  box-shadow: 0 0 0 1px var(--color-keyline-default);
+.sectionHeader h2 {
+  font-size: 20px;
+  font-weight: 600;
 }
 
-.heading h1 {
-  font-size: 18px;
-  margin-bottom: 4px;
+.sectionHeader a {
+  font-size: 20px;
+  font-weight: 600;
+  opacity: 0;
+  color: var(--color-text-lighter);
+  transition: opacity 0.1s ease-in-out;
 }
 
-.description {
-  font-size: 14px;
+.sectionHeader:hover a {
+  opacity: 1;
+}
+
+.sectionHeader a:hover {
   color: var(--color-text-light);
+  text-decoration: underline;
 }

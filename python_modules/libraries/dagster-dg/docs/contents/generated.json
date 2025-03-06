@@ -7,7 +7,7 @@
         "author": "",
         "tags": [],
         "example": "type: dagster_components.dagster.DefinitionsComponent\n\nattributes:\n  definitions_path: '...'\n",
-        "schema": "{\"additionalProperties\": false, \"properties\": {\"definitions_path\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"default\": null, \"title\": \"Definitions Path\"}}, \"title\": \"DefinitionsParamSchema\", \"type\": \"object\"}",
+        "schema": "{\"additionalProperties\": false, \"description\": \"Wraps an arbitrary set of Dagster definitions.\", \"properties\": {\"definitions_path\": {\"anyOf\": [{\"type\": \"string\"}, {\"type\": \"null\"}], \"default\": null, \"description\": \"Relative path to a file containing Dagster definitions.\", \"title\": \"Definitions Path\"}}, \"title\": \"DefinitionsComponent\", \"type\": \"object\"}",
         "description": "Wraps an arbitrary set of Dagster definitions."
       },
       {

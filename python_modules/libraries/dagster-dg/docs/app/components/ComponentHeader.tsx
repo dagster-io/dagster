@@ -12,7 +12,7 @@ export default function ComponentHeader({config}: Props) {
     <div className={styles.container}>
       <div className={styles.heading}>
         <div className={styles.icon} />
-        <div>
+        <div className={styles.headingContent}>
           <h1>{config.name}</h1>
           <div className={styles.description}>{config.description}</div>
         </div>
