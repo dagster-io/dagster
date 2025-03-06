@@ -13,8 +13,8 @@ class DbtCloudJobRunHandler:
     """Handles the process of a dbt Cloud job run."""
 
     job_id: int
+    run_id: int
     args: Sequence[str]
-    dbt_cloud_run: DbtCloudRun
     client: DbtCloudWorkspaceClient
 
     @classmethod
@@ -25,12 +25,12 @@ class DbtCloudJobRunHandler:
         dbt_cloud_run = DbtCloudRun.from_run_details(run_details=run_details)
         return DbtCloudJobRunHandler(
             job_id=job_id,
+            run_id=dbt_cloud_run.id,
             args=args,
-            dbt_cloud_run=dbt_cloud_run,
             client=client,
         )
 
     def wait_for_success(self) -> DbtCloudJobRunStatusType:
-        run_details = self.client.poll_run(run_id=self.dbt_cloud_run.id)
-        self.dbt_cloud_run = DbtCloudRun.from_run_details(run_details=run_details)
-        return self.dbt_cloud_run.status
+        run_details = self.client.poll_run(run_id=self.run_id)
+        dbt_cloud_run = DbtCloudRun.from_run_details(run_details=run_details)
+        return dbt_cloud_run.status
