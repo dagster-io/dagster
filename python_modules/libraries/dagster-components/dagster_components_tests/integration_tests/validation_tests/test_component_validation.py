@@ -27,13 +27,23 @@ DEFS_TEST_CASES = [
             "available scope is: env, automation_condition",
         ),
     ),
+    ComponentValidationTestCase(
+        component_path="validation/basic_component_scope_exc",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
+        should_error=True,
+        validate_error_msg=msg_includes_all_of(
+            "component.yaml:4",
+            'raise Exception("boom")',
+            "_inner_error()",
+        ),
+    ),
 ]
 
 
 @pytest.mark.parametrize(
     "test_case",
-    COMPONENT_VALIDATION_TEST_CASES,
-    ids=[str(case.component_path) for case in COMPONENT_VALIDATION_TEST_CASES],
+    DEFS_TEST_CASES,
+    ids=[str(case.component_path) for case in DEFS_TEST_CASES],
 )
 def test_validation_messages(test_case: ComponentValidationTestCase) -> None:
     """Tests raw YAML error messages when attempting to load components with

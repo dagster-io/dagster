@@ -1,4 +1,6 @@
 import os
+import sys
+import traceback
 from collections.abc import Mapping, Sequence
 from typing import Any, Optional, TypeVar, Union, overload
 
@@ -52,12 +54,16 @@ class ResolutionContext:
     def with_scope(self, **additional_scope) -> "ResolutionContext":
         return copy(self, scope={**self.scope, **additional_scope})
 
-    def _invalid_scope_exc(self, undefined_message: str) -> ResolutionException:
-        msg_parts = []
-
+    def _location(self) -> Optional[str]:
         if self.source_position_tree:
             source_pos, _ = self.source_position_tree.lookup_closest_and_path(self.path, trace=None)
-            msg_parts.append(f"{source_pos!s}:")
+            return str(source_pos)
+
+    def _invalid_scope_exc(self, undefined_message: str) -> ResolutionException:
+        msg_parts = []
+        loc = self._location()
+        if loc:
+            msg_parts.append(loc)
 
         idx = undefined_message.find(" is undefined")
         if idx > 0:
@@ -68,7 +74,24 @@ class ResolutionContext:
         else:
             msg_parts.append(f"UndefinedError: {undefined_message}")
 
-        raise ResolutionException("\n".join(msg_parts))
+        return ResolutionException("\n".join(msg_parts))
+
+    def _scope_threw_exc(self, fmt_exc: list[str]):
+        msg_parts = []
+        loc = self._location()
+        if loc:
+            msg_parts.append(loc + "\n")
+
+        # strip the system frames from the stack trace
+        template_seen = False
+        for line in fmt_exc:
+            if "in top-level template code" in line:
+                template_seen = True
+            if line.strip().startswith("File") and not template_seen:
+                continue
+            msg_parts.append(line)
+
+        return ResolutionException("".join(msg_parts))
 
     def _resolve_inner_value(self, val: Any) -> Any:
         """Resolves a single value, if it is a templated string."""
@@ -83,6 +106,12 @@ class ResolutionContext:
             except UndefinedError as undefined_error:
                 if undefined_error.message:
                     raise self._invalid_scope_exc(undefined_error.message) from None
+                else:
+                    raise
+            except Exception as e:
+                if not isinstance(e, ResolutionException):
+                    fmt_exc = traceback.format_exception(*sys.exc_info())
+                    raise self._scope_threw_exc(fmt_exc) from None
                 else:
                     raise
         else:
