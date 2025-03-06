@@ -1809,6 +1809,11 @@
       "source": "/_modules/dagster/_config/:path*",
       "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster/dagster/_config/:path*.py",
       "permanent": false
+    },
+    {
+      "source": "/_modules/dagster/_core/:path*",
+      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster/dagster/_core/:path*.py",
+      "permanent": false
     }
   ]
 }
