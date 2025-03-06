@@ -24,3 +24,11 @@ def environ(env: Mapping[str, str]) -> Iterator[None]:
                     del os.environ[key]
             else:
                 os.environ[key] = value
+
+
+def using_dagster_dev() -> bool:
+    return bool(os.getenv("DAGSTER_IS_DEV_CLI"))
+
+
+def use_verbose() -> bool:
+    return bool(os.getenv("DAGSTER_verbose", "1"))

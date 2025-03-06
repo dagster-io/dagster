@@ -47,7 +47,7 @@ def definitions_cli():
     "-v",
     flag_value=True,
     default=False,
-    help="Show verbose error messages, including system frames in stack traces.",
+    help="Show verbose stack traces, including system frames in stack traces.",
 )
 @definitions_cli.command(
     name="validate",
@@ -66,7 +66,11 @@ def definitions_cli():
     """,
 )
 def definitions_validate_command(
-    log_level: str, log_format: str, load_with_grpc: bool, verbose: bool, **other_opts: object
+    log_level: str,
+    log_format: str,
+    load_with_grpc: bool,
+    verbose: bool,
+    **other_opts: object,
 ):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
