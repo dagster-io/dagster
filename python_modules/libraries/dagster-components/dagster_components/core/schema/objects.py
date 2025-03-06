@@ -16,18 +16,18 @@ from pydantic import BaseModel, Field
 from pydantic.dataclasses import dataclass
 from typing_extensions import TypeAlias
 
-from dagster_components.core.schema.base import FieldResolver, ResolvableSchema, resolve_fields
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.resolvable_from_schema import (
     DSLFieldResolver,
     DSLSchema,
     ResolutionSpec,
     ResolvableFromSchema,
+    resolve_fields,
 )
 
 
 def _resolve_asset_key(key: str, context: ResolutionContext) -> AssetKey:
-    resolved_val = context.resolve_value(key, as_type=Union[str, AssetKey])
+    resolved_val = context.resolve_value(key, as_type=AssetKey)
     return (
         AssetKey.from_user_string(resolved_val) if isinstance(resolved_val, str) else resolved_val
     )
@@ -131,19 +131,12 @@ class _ResolvableAssetAttributesMixin(BaseModel):
     )
 
 
-class AssetSpecSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
-    key: Annotated[
-        str, FieldResolver(lambda context, schema: _resolve_asset_key(schema.key, context))
-    ] = Field(..., description="A unique identifier for the asset.")
+class AssetSpecSchema(_ResolvableAssetAttributesMixin, DSLSchema):
+    key: str = Field(..., description="A unique identifier for the asset.")
 
 
-class AssetSpecResolutionSpec(ResolutionSpec):
-    key: Annotated[
-        str,
-        DSLFieldResolver.from_parent(
-            lambda context, schema: _resolve_asset_key(schema.key, context)
-        ),
-    ]
+# TODO: Will share these fields in a followup
+class AssetSpecResolutionSpec(ResolutionSpec["AssetAttributesSchema"]):
     deps: Sequence[str]
     description: Optional[str]
     metadata: Mapping[str, Any]
@@ -154,6 +147,31 @@ class AssetSpecResolutionSpec(ResolutionSpec):
     tags: Mapping[str, str]
     kinds: Optional[Sequence[str]]
     automation_condition: Optional[AutomationCondition]
+    key: Annotated[
+        AssetKey,
+        DSLFieldResolver.from_parent(
+            lambda context, schema: _resolve_asset_key(schema.key, context)
+        ),
+    ]
+
+
+class AssetAttributesResolutionSpec(ResolutionSpec["AssetAttributesSchema"]):
+    deps: Sequence[str]
+    description: Optional[str]
+    metadata: Mapping[str, Any]
+    group_name: Optional[str]
+    skippable: bool
+    code_version: Optional[str]
+    owners: Sequence[str]
+    tags: Mapping[str, str]
+    kinds: Optional[Sequence[str]]
+    automation_condition: Optional[AutomationCondition]
+    key: Annotated[
+        Optional[AssetKey],
+        DSLFieldResolver.from_parent(
+            lambda context, schema: _resolve_asset_key(schema.key, context) if schema.key else None
+        ),
+    ] = None
 
 
 AssetSpecSequenceField: TypeAlias = Annotated[
@@ -162,18 +180,13 @@ AssetSpecSequenceField: TypeAlias = Annotated[
 ]
 
 
-class AssetAttributesSchema(_ResolvableAssetAttributesMixin, ResolvableSchema):
+class AssetAttributesSchema(_ResolvableAssetAttributesMixin, DSLSchema):
     """Resolves into a dictionary of asset attributes. This is similar to AssetSpecSchema, but
     does not require a key. This is useful in contexts where you want to modify attributes of
     an existing AssetSpec.
     """
 
-    key: Annotated[
-        Optional[str],
-        FieldResolver(
-            lambda context, schema: _resolve_asset_key(schema.key, context) if schema.key else None
-        ),
-    ] = Field(default=None, description="A unique identifier for the asset.")
+    key: Optional[str] = Field(default=None, description="A unique identifier for the asset.")
 
 
 def resolve_asset_attributes_to_mapping(
@@ -182,7 +195,8 @@ def resolve_asset_attributes_to_mapping(
 ) -> Mapping[str, Any]:
     # only include fields that are explcitly set
     set_fields = schema.model_dump(exclude_unset=True).keys()
-    return {k: v for k, v in resolve_fields(schema, dict, context).items() if k in set_fields}
+    resolved_fields = resolve_fields(schema, AssetAttributesResolutionSpec, context)
+    return {k: v for k, v in resolved_fields.items() if k in set_fields}
 
 
 ResolvedAssetAttributes: TypeAlias = Annotated[
@@ -190,7 +204,7 @@ ResolvedAssetAttributes: TypeAlias = Annotated[
 ]
 
 
-class AssetPostProcessorSchema(ResolvableSchema):
+class AssetPostProcessorSchema(DSLSchema):
     target: str = "*"
     operation: Literal["merge", "replace"] = "merge"
     attributes: AssetAttributesSchema

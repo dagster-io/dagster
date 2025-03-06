@@ -164,6 +164,9 @@ class DSLFieldResolver:
             resolver = next((arg for arg in args if isinstance(arg, DSLFieldResolver)), None)
             if resolver:
                 return resolver
+
+            check.failed(f"Could not find resolver on annotation {field_name}")
+
         return DSLFieldResolver.from_parent(
             lambda context, schema: context.resolve_value(getattr(schema, field_name))
         )
@@ -214,7 +217,7 @@ TResolvableFromSchema = TypeVar("TResolvableFromSchema", bound=ResolvableFromSch
 
 def resolve_fields(
     schema: EitherSchema,
-    resolution_spec: type,
+    resolution_spec: type[TResolutionSpec],
     context: "ResolutionContext",
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""
