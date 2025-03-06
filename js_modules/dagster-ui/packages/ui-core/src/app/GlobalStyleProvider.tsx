@@ -7,8 +7,8 @@ import {
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalThemeStyle,
-  GlobalToasterStyle,
   GlobalTooltipStyle,
+  Toaster,
   themeToClassName,
 } from '@dagster-io/ui-components';
 import {useLayoutEffect} from 'react';
@@ -103,12 +103,12 @@ export const GlobalStyleProvider = () => {
       <GlobalGeistMono />
       <GlobalStyle />
       <GlobalThemeStyle />
-      <GlobalToasterStyle />
       <GlobalTooltipStyle />
       <GlobalPopoverStyle />
       <GlobalDialogStyle />
       <GlobalCustomAlertPortalStyle />
       <GlobalSuggestStyle />
+      <Toaster richColors />
     </>
   );
 };

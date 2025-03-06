@@ -437,7 +437,10 @@ const ConcurrencyActionMenu = ({
             icon="status"
             text="Free all concurrency slots for run"
             onClick={async () => {
-              await showSharedToaster({message: 'Freeing concurrency slots...'});
+              await showSharedToaster({
+                intent: 'primary',
+                message: 'Freeing concurrency slots...',
+              });
               const resp = await freeSlots({variables: {runId: pendingStep.runId}});
               if (resp.data?.freeConcurrencySlots) {
                 onUpdate();
