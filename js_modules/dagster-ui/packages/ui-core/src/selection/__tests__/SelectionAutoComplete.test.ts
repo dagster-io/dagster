@@ -4,7 +4,7 @@ import {createProvider} from '../SelectionAutoCompleteProvider';
 describe('createAssetSelectionHint', () => {
   const attributesMap = {
     key: ['asset1', 'asset2', 'asset3'],
-    tag: ['tag1', 'tag2', 'tag3'],
+    tag: ['tag1', 'tag2', 'tag3', 'value=value1', 'value=value2'],
     owner: ['marco@dagsterlabs.com', 'team:frontend'],
     group: ['group1', 'group2'],
     kind: ['kind1', 'kind2'],
@@ -1091,6 +1091,17 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({text: 'code_location:"assumptions@location3"'}),
       ],
       to: 4,
+    });
+  });
+
+  it('value suggestions should replace entire value=value segment in tag:value=value', () => {
+    expect(testAutocomplete('tag:value=v|alue')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({text: '"value=value1"'}),
+        expect.objectContaining({text: '"value=value2"'}),
+      ],
+      to: 15,
     });
   });
 });
