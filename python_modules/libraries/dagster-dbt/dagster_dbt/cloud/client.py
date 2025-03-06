@@ -14,6 +14,7 @@ from requests.exceptions import RequestException
 from dagster_dbt.cloud.types import DbtCloudJobRunStatusType
 
 LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
+DEFAULT_POLL_INTERVAL = 1
 DEFAULT_POLL_TIMEOUT = 60
 
 
@@ -165,32 +166,78 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 break
         return results
 
-    def trigger_job(self, job_id: int, steps: Optional[Sequence[str]] = None) -> Mapping[str, Any]:
+    def trigger_job_run(
+        self, job_id: int, steps_override: Optional[Sequence[str]] = None
+    ) -> Mapping[str, Any]:
+        """Triggers a run for a given dbt Cloud Job.
+
+        Args:
+            job_id (str): The dbt Cloud Job ID. You can retrieve this value from the
+                URL of the given job in the dbt Cloud UI.
+            steps_override (Optional[Sequence[str]]): A list of dbt commands
+                that overrides the dbt commands of the dbt Cloud job. If no list is passed,
+                the dbt commands of the job are not overriden.
+
+        Returns:
+            List[Dict[str, Any]]: A List of parsed json data from the response to this request.
+        """
         return self._make_request(
             method="post",
             endpoint=f"jobs/{job_id}/run",
             base_url=self.api_v2_url,
-            data={"steps_override": steps, "cause": "Triggered by dagster."},
+            data={"steps_override": steps_override, "cause": "Triggered by dagster."}
+            if steps_override
+            else None,
         )
 
-    def _get_job_run_details(self, job_run_id: int) -> Mapping[str, Any]:
+    def get_run_details(self, run_id: int) -> Mapping[str, Any]:
+        """Retrieves the details of a given dbt Cloud Run.
+
+        Args:
+            run_id (str): The dbt Cloud Run ID. You can retrieve this value from the
+                URL of the given run in the dbt Cloud UI.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
         return self._make_request(
             method="get",
-            endpoint=f"runs/{job_run_id}",
+            endpoint=f"runs/{run_id}",
             base_url=self.api_v2_url,
         )
 
-    def poll_run(self, job_run_id: int, poll_timeout: Optional[float] = None) -> Mapping[str, Any]:
+    def poll_run(
+        self,
+        run_id: int,
+        poll_interval: Optional[float] = None,
+        poll_timeout: Optional[float] = None,
+    ) -> Mapping[str, Any]:
+        """Given a dbt Cloud run, poll until the run completes.
+
+        Args:
+            run_id (str): The dbt Cloud Run ID. You can retrieve this value from the
+                URL of the given run in the dbt Cloud UI.
+            poll_interval (float): The time (in seconds) that will be waited between successive polls.
+                By default, the interval is set to 1 second.
+            poll_timeout (float): The maximum time that will waited before this operation is timed
+                out. By default, this will time out after 60 seconds.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
+        if not poll_interval:
+            poll_interval = DEFAULT_POLL_INTERVAL
         if not poll_timeout:
             poll_timeout = DEFAULT_POLL_TIMEOUT
         start_time = time.time()
         while time.time() - start_time < poll_timeout:
-            run_details = self._get_job_run_details(job_run_id)
+            run_details = self.get_run_details(run_id)
             if run_details["status"] in {
                 DbtCloudJobRunStatusType.SUCCESS,
                 DbtCloudJobRunStatusType.ERROR,
                 DbtCloudJobRunStatusType.CANCELLED,
             }:
                 return run_details
-            time.sleep(0.1)
-        raise Exception(f"Run {job_run_id} did not complete within {poll_timeout} seconds.")
+            # Sleep for the configured time interval before polling again.
+            time.sleep(poll_interval)
+        raise Exception(f"Run {run_id} did not complete within {poll_timeout} seconds.")

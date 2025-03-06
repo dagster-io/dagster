@@ -22,7 +22,7 @@ class DbtCloudJobRun:
     def run(
         cls, job_id: int, args: Sequence[str], client: DbtCloudWorkspaceClient
     ) -> "DbtCloudJobRun":
-        run_details = client.trigger_job(job_id, steps=[" ".join(["dbt", *args])])
+        run_details = client.trigger_job_run(job_id, steps_override=[" ".join(["dbt", *args])])
         return DbtCloudJobRun(
             job_id=job_id,
             run_id=run_details["id"],
