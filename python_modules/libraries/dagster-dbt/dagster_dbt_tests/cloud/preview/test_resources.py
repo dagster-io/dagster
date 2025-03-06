@@ -48,7 +48,9 @@ def test_basic_resource_request(
     assert len(all_api_mocks.calls) == 4
     assert_rest_api_call(call=all_api_mocks.calls[0], endpoint="jobs", method="GET")
     assert_rest_api_call(call=all_api_mocks.calls[1], endpoint="jobs", method="POST")
-    assert_rest_api_call(call=all_api_mocks.calls[2], endpoint=f"jobs/{TEST_JOB_ID}/run", method="POST")
+    assert_rest_api_call(
+        call=all_api_mocks.calls[2], endpoint=f"jobs/{TEST_JOB_ID}/run", method="POST"
+    )
     assert_rest_api_call(call=all_api_mocks.calls[3], endpoint=f"runs/{TEST_RUN_ID}", method="GET")
 
 
