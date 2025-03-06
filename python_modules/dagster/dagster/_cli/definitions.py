@@ -42,6 +42,13 @@ def definitions_cli():
     default=False,
     help="Load the code locations using a gRPC server, instead of in-process.",
 )
+@click.option(
+    "--verbose",
+    "-v",
+    flag_value=True,
+    default=False,
+    help="Show verbose error messages, including system frames in stack traces.",
+)
 @definitions_cli.command(
     name="validate",
     help="""
@@ -59,7 +66,7 @@ def definitions_cli():
     """,
 )
 def definitions_validate_command(
-    log_level: str, log_format: str, load_with_grpc: bool, **other_opts: object
+    log_level: str, log_format: str, load_with_grpc: bool, verbose: bool, **other_opts: object
 ):
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
@@ -68,6 +75,10 @@ def definitions_validate_command(
     configure_loggers(formatter=log_format, log_level=log_level.upper())
     logger = logging.getLogger("dagster")
     logging.captureWarnings(True)
+
+    removed_system_frame_hint = (
+        lambda i: f"  [{i-1} system frames removed, run with --verbose to see the full stack trace]\n"
+    )
 
     with get_possibly_temporary_instance_for_cli(
         "dagster definitions validate", logger=logger
@@ -87,9 +98,13 @@ def definitions_validate_command(
             ]
             for code_location, entry in workspace.get_code_location_entries().items():
                 if entry.load_error:
-                    underlying_error = remove_system_frames_from_error(
-                        unwrap_user_code_error(entry.load_error)
-                    )
+                    if verbose:
+                        underlying_error = entry.load_error
+                    else:
+                        underlying_error = remove_system_frames_from_error(
+                            unwrap_user_code_error(entry.load_error),
+                            build_system_frame_removed_hint=removed_system_frame_hint,
+                        )
                     logger.error(
                         f"Validation failed for code location {code_location}:\n\n"
                         f"{underlying_error.to_string()}"
