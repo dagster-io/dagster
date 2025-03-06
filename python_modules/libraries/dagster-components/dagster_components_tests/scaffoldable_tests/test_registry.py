@@ -1,8 +1,10 @@
 import pytest
 from dagster._check.functions import CheckError
-from dagster_components.scaffoldable.decorator import (
+from dagster_components.scaffoldable.registry import (
+    ScaffolderRegistry,
+    _make_scaffoldable,
     get_scaffolder,
-    is_scaffoldable_class,
+    is_scaffoldable,
     scaffoldable,
 )
 from dagster_components.scaffoldable.scaffolder import Scaffolder
@@ -24,8 +26,8 @@ def test_basic_usage() -> None:
         pass
 
     # Test the functions
-    assert is_scaffoldable_class(MyClass) is True
-    assert is_scaffoldable_class(RegularClass) is False
+    assert is_scaffoldable(MyClass) is True
+    assert is_scaffoldable(RegularClass) is False
     assert isinstance(get_scaffolder(MyClass), MyScaffolder)
     with pytest.raises(CheckError):
         get_scaffolder(RegularClass)
@@ -42,8 +44,32 @@ def test_inheritance() -> None:
     @scaffoldable(ScaffoldableTwo)
     class ClassTwo(ClassOne): ...
 
-    assert is_scaffoldable_class(ClassOne) is True
+    assert is_scaffoldable(ClassOne) is True
     assert isinstance(get_scaffolder(ClassOne), ScaffoldableOne)
 
-    assert is_scaffoldable_class(ClassTwo) is True
+    assert is_scaffoldable(ClassTwo) is True
     assert isinstance(get_scaffolder(ClassTwo), ScaffoldableTwo)
+
+
+def test_make_scaffoldable() -> None:
+    registry = ScaffolderRegistry.create()
+
+    class ScaffoldableOne(Scaffolder): ...
+
+    class ScaffoldableTwo(Scaffolder): ...
+
+    class ClassOne: ...
+
+    _make_scaffoldable(ClassOne, ScaffoldableOne, registry)
+
+    def fn_two(): ...
+
+    _make_scaffoldable(fn_two, ScaffoldableTwo, registry)
+
+    assert is_scaffoldable(ClassOne)
+    x = get_scaffolder(ClassOne)
+    print(type(x), x)
+    assert isinstance(get_scaffolder(ClassOne), ScaffoldableOne)
+
+    assert is_scaffoldable(fn_two)
+    assert isinstance(get_scaffolder(fn_two), ScaffoldableTwo)

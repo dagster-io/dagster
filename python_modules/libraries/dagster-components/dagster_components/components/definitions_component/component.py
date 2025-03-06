@@ -13,7 +13,7 @@ from dagster_components.components.definitions_component.scaffolder import (
     DefinitionsComponentScaffolder,
 )
 from dagster_components.core.schema.resolvable_from_schema import ResolvableModel
-from dagster_components.scaffoldable.decorator import scaffoldable
+from dagster_components.scaffoldable.registry import scaffoldable
 
 
 @scaffoldable(scaffolder=DefinitionsComponentScaffolder)

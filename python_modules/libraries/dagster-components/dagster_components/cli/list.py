@@ -13,7 +13,7 @@ from dagster_components.core.component import (
     discover_entry_point_component_types,
 )
 from dagster_components.core.component_key import ComponentKey
-from dagster_components.scaffoldable.decorator import get_scaffolder
+from dagster_components.scaffoldable.registry import get_scaffolder
 from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 
 

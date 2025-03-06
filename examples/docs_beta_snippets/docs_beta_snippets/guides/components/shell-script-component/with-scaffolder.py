@@ -18,7 +18,7 @@ from dagster_components.core.schema.resolvable_from_schema import (
     ResolvableModel,
     ResolvedFrom,
 )
-from dagster_components.scaffoldable.decorator import scaffoldable
+from dagster_components.scaffoldable.registry import scaffoldable
 
 import dagster as dg
 
