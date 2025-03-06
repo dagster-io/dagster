@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import Annotated, Optional
 
 from dagster_components import ResolutionContext
-from dagster_components.core.schema.resolvable_from_schema import (
+from dagster_components.resolved.model import (
     FieldResolver,
     ResolvableModel,
     ResolvedFrom,

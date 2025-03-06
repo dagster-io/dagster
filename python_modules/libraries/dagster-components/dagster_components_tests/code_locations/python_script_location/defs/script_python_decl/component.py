@@ -5,7 +5,7 @@ from dagster_components.components.pipes_subprocess_script_collection import (
     PipesSubprocessScriptModel,
 )
 from dagster_components.core.component import component
-from dagster_components.core.schema.objects import AssetSpecModel
+from dagster_components.resolved.core_models import AssetSpecModel
 
 
 @component

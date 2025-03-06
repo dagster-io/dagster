@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from dagster_components.core.schema.context import ResolutionContext
+    from dagster_components.resolved.context import ResolutionContext
 
 
 class ResolvableModel(BaseModel):

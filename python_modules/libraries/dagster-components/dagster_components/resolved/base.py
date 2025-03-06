@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING, Annotated, Any, Callable, Generic, TypeVar, ge
 from dagster._core.errors import DagsterInvalidDefinitionError
 from pydantic import BaseModel, ConfigDict
 
-from dagster_components.core.schema.metadata import FieldInfo
+from dagster_components.resolved.metadata import FieldInfo
 
 if TYPE_CHECKING:
-    from dagster_components.core.schema.context import ResolutionContext
+    from dagster_components.resolved.context import ResolutionContext
 
 
 T = TypeVar("T")

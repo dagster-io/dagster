@@ -20,12 +20,8 @@ from typing_extensions import Self
 
 from dagster_components.core.component_key import ComponentKey
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
-from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.resolvable_from_schema import (
-    ResolvableModel,
-    ResolvedFrom,
-    resolve_model,
-)
+from dagster_components.resolved.context import ResolutionContext
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, resolve_model
 from dagster_components.scaffoldable.decorator import get_scaffolder, scaffoldable
 from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 from dagster_components.utils import format_error_message
@@ -47,10 +43,7 @@ class ComponentDeclNode(ABC):
 class Component(ABC):
     @classmethod
     def get_schema(cls) -> Optional[type["ResolvableModel"]]:
-        from dagster_components.core.schema.resolvable_from_schema import (
-            ResolvedFrom,
-            get_model_type,
-        )
+        from dagster_components.resolved.model import ResolvedFrom, get_model_type
 
         if issubclass(cls, ResolvableModel):
             return cls
