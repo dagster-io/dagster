@@ -1,4 +1,5 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 from dagster._annotations import preview
 from dagster._record import record
