@@ -16,7 +16,7 @@ TEST_TOKEN = "test_token"
 TEST_PROJECT_ID = 2222
 TEST_ENVIRONMENT_ID = 3333
 
-TEST_JOB_ID = "test_job_id"
+TEST_JOB_ID = 4444
 TEST_ADHOC_JOB_NAME = get_dagster_adhoc_job_name(
     project_id=TEST_PROJECT_ID, environment_id=TEST_ENVIRONMENT_ID
 )
