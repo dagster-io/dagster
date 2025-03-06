@@ -15,9 +15,7 @@ from typing import (
 
 from dagster import _check as check
 from pydantic import BaseModel, ConfigDict
-from typing_extensions import Self, TypeAlias
-
-from dagster_components.core.schema.base import ResolvableSchema
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     from dagster_components.core.schema.context import ResolutionContext
@@ -27,13 +25,9 @@ class DSLSchema(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-EitherSchema: TypeAlias = Union[ResolvableSchema, DSLSchema]
-
-TSchema = TypeVar("TSchema", bound=EitherSchema)
+TSchema = TypeVar("TSchema", bound=DSLSchema)
 
 
-# switch to this once we have eliminated ResolvableSchema
-# TSchema = TypeVar("TSchema", bound=DSLSchema)
 def get_schema_type(resolvable_from_schema_type: type["ResolvableFromSchema"]) -> type[DSLSchema]:
     """Returns the first generic type argument (TSchema) of the ResolvableFromSchema instance at runtime."""
     check.param_invariant(
@@ -66,7 +60,7 @@ class ResolutionResolverFn(Generic[T]):
         self.target_type = target_type
         self.spec_type = spec_type
 
-    def from_schema(self, context: "ResolutionContext", schema: EitherSchema) -> T:
+    def from_schema(self, context: "ResolutionContext", schema: DSLSchema) -> T:
         return resolve_schema_using_spec(
             schema=schema,
             resolution_spec=self.spec_type,
@@ -171,7 +165,7 @@ class DSLFieldResolver:
             lambda context, schema: context.resolve_value(getattr(schema, field_name))
         )
 
-    def execute(self, context: "ResolutionContext", schema: EitherSchema, field_name: str) -> Any:
+    def execute(self, context: "ResolutionContext", schema: DSLSchema, field_name: str) -> Any:
         if isinstance(self.fn, ParentFn):
             return self.fn.callable(context, schema)
         elif isinstance(self.fn, AttrWithContextFn):
@@ -206,13 +200,15 @@ TResolvableFromSchema = TypeVar("TResolvableFromSchema", bound=ResolvableFromSch
 
 
 def resolve_fields(
-    schema: EitherSchema,
+    schema: DSLSchema,
     resolution_spec: type[TResolutionSpec],
     context: "ResolutionContext",
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""
     return {
-        field_name: resolver.execute(context=context, schema=schema, field_name=field_name)
+        field_name: resolver.execute(
+            context=context.at_path(field_name), schema=schema, field_name=field_name
+        )
         for field_name, resolver in get_annotation_field_resolvers(resolution_spec).items()
     }
 
@@ -221,7 +217,7 @@ T = TypeVar("T")
 
 
 def resolve_schema_to_resolvable(
-    schema: EitherSchema,
+    schema: DSLSchema,
     resolvable_type: type[TResolvableFromSchema],
     context: "ResolutionContext",
 ) -> TResolvableFromSchema:
@@ -234,7 +230,7 @@ def resolve_schema_to_resolvable(
 
 
 def resolve_schema_using_spec(
-    schema: EitherSchema,
+    schema: DSLSchema,
     resolution_spec: type[TResolutionSpec],
     context: "ResolutionContext",
     target_type: type[T],

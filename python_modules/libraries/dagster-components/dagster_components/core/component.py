@@ -9,7 +9,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, TypeVar
+from typing import Any, Callable, Optional, TypedDict, TypeVar
 
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
@@ -31,9 +31,6 @@ from dagster_components.scaffoldable.decorator import get_scaffolder, scaffoldab
 from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 from dagster_components.utils import format_error_message
 
-if TYPE_CHECKING:
-    from dagster_components.core.schema.resolvable_from_schema import EitherSchema
-
 
 class ComponentsEntryPointLoadError(DagsterError):
     pass
@@ -50,7 +47,7 @@ class ComponentDeclNode(ABC):
 @scaffoldable(scaffolder=DefaultComponentScaffolder)
 class Component(ABC):
     @classmethod
-    def get_schema(cls) -> Optional[type["EitherSchema"]]:
+    def get_schema(cls) -> Optional[type["DSLSchema"]]:
         from dagster_components.core.schema.resolvable_from_schema import (
             ResolvableFromSchema,
             get_schema_type,
@@ -71,7 +68,7 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
-    def load(cls, attributes: Optional["EitherSchema"], context: "ComponentLoadContext") -> Self:
+    def load(cls, attributes: Optional["DSLSchema"], context: "ComponentLoadContext") -> Self:
         ctx = context.resolution_context.at_path("attributes")
         if issubclass(cls, DSLSchema):
             # If the Component is a DSLSchema, the attributes in this case are an instance of itself

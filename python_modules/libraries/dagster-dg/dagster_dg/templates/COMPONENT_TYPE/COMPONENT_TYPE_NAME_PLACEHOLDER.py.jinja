@@ -3,21 +3,17 @@ from dagster_components import (
     Component,
     ComponentLoadContext,
     DefaultComponentScaffolder,
-    ResolvableSchema,
+    DSLSchema,
 )
 
-class {{ name }}Schema(ResolvableSchema):
+class {{ name }}Schema(DSLSchema):
     ...
 
-class {{ name }}(Component):
+class {{ name }}(Component, DSLSchema):
     """COMPONENT SUMMARY HERE.
 
     COMPONENT DESCRIPTION HERE.
     """
-
-    @classmethod
-    def get_schema(cls):
-        return {{ name }}Schema
 
     def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
         # Add definition construction logic here.

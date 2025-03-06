@@ -9,7 +9,6 @@ from dagster_components import (
     AssetSpecSchema,
     Component,
     ComponentLoadContext,
-    ResolvableSchema,
     Scaffolder,
     ScaffoldRequest,
     scaffold_component_yaml,
