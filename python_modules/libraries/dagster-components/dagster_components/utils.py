@@ -83,7 +83,7 @@ class TranslatorResolvingInfo:
             context=self.resolution_context.at_path("asset_attributes").with_scope(
                 **{self.obj_name: obj}
             ),
-            schema=self.asset_attributes,
+            model=self.asset_attributes,
         )
 
         return (
@@ -104,7 +104,7 @@ class TranslatorResolvingInfo:
 
         resolved_attributes = resolve_asset_attributes_to_mapping(
             context=self.resolution_context.with_scope(**{self.obj_name: obj}),
-            schema=self.asset_attributes,
+            model=self.asset_attributes,
         )
 
         if attribute in resolved_attributes:
@@ -130,7 +130,7 @@ class TranslatorResolvingInfo:
         ```
         """
         resolved_attributes = resolve_asset_attributes_to_mapping(
-            schema=self.asset_attributes,
+            model=self.asset_attributes,
             context=self.resolution_context.with_scope(**context),
         )
         return base_spec.replace_attributes(**resolved_attributes)

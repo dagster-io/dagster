@@ -12,7 +12,7 @@ from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 from dagster_components.core.component import Component, ComponentLoadContext
 from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.objects import AssetSpecSchema, AssetSpecSequenceField
+from dagster_components.core.schema.objects import AssetSpecModel, AssetSpecSequenceField
 from dagster_components.core.schema.resolvable_from_schema import (
     FieldResolver,
     ResolvableModel,
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 class PipesSubprocessScriptModel(ResolvableModel):
     path: str
-    assets: Sequence[AssetSpecSchema]
+    assets: Sequence[AssetSpecModel]
 
 
 @dataclass

@@ -14,7 +14,7 @@ from dagster_components.core.schema.metadata import ResolvableFieldInfo as Resol
 from dagster_components.core.schema.objects import (
     AssetAttributesModel as AssetAttributesModel,
     AssetPostProcessorModel as AssetPostProcessorModel,
-    AssetSpecSchema as AssetSpecSchema,
+    AssetSpecModel as AssetSpecModel,
     OpSpecModel as OpSpecModel,
 )
 from dagster_components.core.schema.resolvable_from_schema import (

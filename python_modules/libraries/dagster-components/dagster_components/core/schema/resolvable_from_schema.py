@@ -25,22 +25,22 @@ class ResolvableModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-TSchema = TypeVar("TSchema", bound=ResolvableModel)
+TModel = TypeVar("TModel", bound=ResolvableModel)
 
 
-def get_schema_type(
-    resolvable_from_schema_type: type["ResolvedFrom"],
+def get_model_type(
+    resolved_from_type: type["ResolvedFrom"],
 ) -> type[ResolvableModel]:
     """Returns the first generic type argument (TSchema) of the ResolvableFromSchema instance at runtime."""
     check.param_invariant(
-        issubclass(resolvable_from_schema_type, ResolvedFrom),
-        "resolvable_from_schema_type",
+        issubclass(resolved_from_type, ResolvedFrom),
+        "resolvable_from_type",
     )
     check.param_invariant(
-        hasattr(resolvable_from_schema_type, "__orig_bases__"),
-        "resolvable_from_schema_type",
+        hasattr(resolved_from_type, "__orig_bases__"),
+        "resolvable_from_type",
     )
-    for base in resolvable_from_schema_type.__orig_bases__:  # type: ignore
+    for base in resolved_from_type.__orig_bases__:  # type: ignore
         # Check if this base originates from ResolvableFromSchema
         origin = getattr(base, "__origin__", None)
         if origin is ResolvedFrom:
@@ -62,52 +62,50 @@ class ResolutionResolverFn(Generic[T]):
         self.target_type = target_type
         self.spec_type = spec_type
 
-    def from_schema(self, context: "ResolutionContext", schema: ResolvableModel) -> T:
-        return resolve_schema_using_spec(
-            schema=schema,
-            resolution_spec=self.spec_type,
+    def from_model(self, context: "ResolutionContext", model: ResolvableModel) -> T:
+        return resolve_model_using_kwargs_cls(
+            model=model,
+            kwargs_cls=self.spec_type,
             context=context,
             target_type=self.target_type,
         )
 
-    def from_seq(self, context: "ResolutionContext", schema: Sequence[TSchema]) -> Sequence[T]:
-        return [self.from_schema(context, item) for item in schema]
+    def from_seq(self, context: "ResolutionContext", model: Sequence[TModel]) -> Sequence[T]:
+        return [self.from_model(context, item) for item in model]
 
-    def from_optional(self, context: "ResolutionContext", schema: Optional[TSchema]) -> Optional[T]:
-        return self.from_schema(context, schema) if schema else None
+    def from_optional(self, context: "ResolutionContext", model: Optional[TModel]) -> Optional[T]:
+        return self.from_model(context, model) if model else None
 
     def from_optional_seq(
-        self, context: "ResolutionContext", schema: Optional[Sequence[TSchema]]
+        self, context: "ResolutionContext", model: Optional[Sequence[TModel]]
     ) -> Optional[Sequence[T]]:
-        return self.from_seq(context, schema) if schema else None
+        return self.from_seq(context, model) if model else None
 
 
-class ResolvedKwargs(Generic[TSchema]):
+class ResolvedKwargs(Generic[TModel]):
     @classmethod
     def resolver_fn(cls, target_type: type) -> ResolutionResolverFn:
         return ResolutionResolverFn(target_type=target_type, spec_type=cls)
 
 
-class ResolvedFrom(ResolvedKwargs[TSchema]):
+class ResolvedFrom(ResolvedKwargs[TModel]):
     @classmethod
-    def from_schema(cls, context: "ResolutionContext", schema: TSchema) -> Self:
-        return resolve_schema_to_resolvable(schema=schema, resolvable_type=cls, context=context)
+    def from_model(cls, context: "ResolutionContext", model: TModel) -> Self:
+        return resolve_model(model=model, resolvable_type=cls, context=context)
 
     @classmethod
-    def from_optional(
-        cls, context: "ResolutionContext", schema: Optional[TSchema]
-    ) -> Optional[Self]:
-        return cls.from_schema(context, schema) if schema else None
+    def from_optional(cls, context: "ResolutionContext", model: Optional[TModel]) -> Optional[Self]:
+        return cls.from_model(context, model) if model else None
 
     @classmethod
-    def from_seq(cls, context: "ResolutionContext", schema: Sequence[TSchema]) -> Sequence[Self]:
-        return [cls.from_schema(context.at_path(idx), item) for idx, item in enumerate(schema)]
+    def from_seq(cls, context: "ResolutionContext", model: Sequence[TModel]) -> Sequence[Self]:
+        return [cls.from_model(context.at_path(idx), item) for idx, item in enumerate(model)]
 
     @classmethod
     def from_optional_seq(
-        cls, context: "ResolutionContext", schema: Optional[Sequence[TSchema]]
+        cls, context: "ResolutionContext", model: Optional[Sequence[TModel]]
     ) -> Optional[Sequence[Self]]:
-        return cls.from_seq(context, schema) if schema else None
+        return cls.from_seq(context, model) if model else None
 
 
 @dataclass
@@ -145,9 +143,9 @@ class FieldResolver:
     @staticmethod
     def from_spec(spec: type[ResolvedKwargs], target_type: type):
         return FieldResolver.from_model(
-            lambda context, schema: resolve_schema_using_spec(
-                schema=schema,
-                resolution_spec=spec,
+            lambda context, model: resolve_model_using_kwargs_cls(
+                model=model,
+                kwargs_cls=spec,
                 context=context,
                 target_type=target_type,
             )
@@ -164,30 +162,28 @@ class FieldResolver:
             check.failed(f"Could not find resolver on annotation {field_name}")
 
         return FieldResolver.from_model(
-            lambda context, schema: context.resolve_value(getattr(schema, field_name))
+            lambda context, model: context.resolve_value(getattr(model, field_name))
         )
 
-    def execute(
-        self, context: "ResolutionContext", schema: ResolvableModel, field_name: str
-    ) -> Any:
+    def execute(self, context: "ResolutionContext", model: ResolvableModel, field_name: str) -> Any:
         if isinstance(self.fn, ParentFn):
-            return self.fn.callable(context, schema)
+            return self.fn.callable(context, model)
         elif isinstance(self.fn, AttrWithContextFn):
-            attr = getattr(schema, field_name)
+            attr = getattr(model, field_name)
             return self.fn.callable(context.at_path(field_name), attr)
         else:
             raise ValueError(f"Unsupported DSLFieldResolver type: {self.fn}")
 
 
-TResolutionSpec = TypeVar("TResolutionSpec", bound=ResolvedKwargs)
+TResolvedKwargs = TypeVar("TResolvedKwargs", bound=ResolvedKwargs)
 
 
-def get_annotation_field_resolvers(cls: type[TResolutionSpec]) -> dict[str, FieldResolver]:
+def get_annotation_field_resolvers(kwargs_cls: type[TResolvedKwargs]) -> dict[str, FieldResolver]:
     # Collect annotations from all base classes in MRO
     annotations = {}
 
     # Walk through all base classes in MRO
-    for base in reversed(cls.__mro__):
+    for base in reversed(kwargs_cls.__mro__):
         # Get annotations from current base class if they exist
         base_annotations = getattr(base, "__annotations__", {})
         # Update annotations dict with any new annotations found
@@ -200,43 +196,43 @@ def get_annotation_field_resolvers(cls: type[TResolutionSpec]) -> dict[str, Fiel
     }
 
 
-TResolvableFromSchema = TypeVar("TResolvableFromSchema", bound=ResolvedFrom)
+TResolvedFrom = TypeVar("TResolvedFrom", bound=ResolvedFrom)
 
 
 def resolve_fields(
-    schema: ResolvableModel,
-    resolution_spec: type[TResolutionSpec],
+    model: ResolvableModel,
+    kwargs_cls: type[TResolvedKwargs],
     context: "ResolutionContext",
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""
     return {
         field_name: resolver.execute(
-            context=context.at_path(field_name), schema=schema, field_name=field_name
+            context=context.at_path(field_name), model=model, field_name=field_name
         )
-        for field_name, resolver in get_annotation_field_resolvers(resolution_spec).items()
+        for field_name, resolver in get_annotation_field_resolvers(kwargs_cls).items()
     }
 
 
 T = TypeVar("T")
 
 
-def resolve_schema_to_resolvable(
-    schema: ResolvableModel,
-    resolvable_type: type[TResolvableFromSchema],
+def resolve_model(
+    model: ResolvableModel,
+    resolvable_type: type[TResolvedFrom],
     context: "ResolutionContext",
-) -> TResolvableFromSchema:
-    return resolve_schema_using_spec(
-        schema=schema,
-        resolution_spec=resolvable_type,
+) -> TResolvedFrom:
+    return resolve_model_using_kwargs_cls(
+        model=model,
+        kwargs_cls=resolvable_type,
         context=context,
         target_type=resolvable_type,
     )
 
 
-def resolve_schema_using_spec(
-    schema: ResolvableModel,
-    resolution_spec: type[TResolutionSpec],
+def resolve_model_using_kwargs_cls(
+    model: ResolvableModel,
+    kwargs_cls: type[TResolvedKwargs],
     context: "ResolutionContext",
     target_type: type[T],
 ) -> T:
-    return target_type(**resolve_fields(schema, resolution_spec, context))
+    return target_type(**resolve_fields(model, kwargs_cls, context))

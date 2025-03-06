@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from dagster_components import (
-    AssetSpecSchema,
+    AssetSpecModel,
     Component,
     ComponentLoadContext,
     ResolvableModel,
@@ -15,7 +15,7 @@ import dagster as dg
 
 class ShellCommandModel(ResolvableModel):
     script_path: str
-    asset_specs: Sequence[AssetSpecSchema]
+    asset_specs: Sequence[AssetSpecModel]
 
 
 @dataclass

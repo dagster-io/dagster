@@ -85,27 +85,25 @@ class SlingReplicationModel(ResolvableModel):
     )
 
 
-class SlingReplicationCollectionSchema(ResolvableModel):
+class SlingReplicationCollectionModel(ResolvableModel):
     sling: Optional[SlingResource] = None
     replications: Sequence[SlingReplicationModel]
     asset_post_processors: Optional[Sequence[AssetPostProcessorModel]] = None
 
 
 def resolve_resource(
-    context: ResolutionContext, schema: SlingReplicationCollectionSchema
+    context: ResolutionContext, model: SlingReplicationCollectionModel
 ) -> SlingResource:
     return (
-        SlingResource(**context.resolve_value(schema.sling.model_dump()))
-        if schema.sling
+        SlingResource(**context.resolve_value(model.sling.model_dump()))
+        if model.sling
         else SlingResource()
     )
 
 
 @scaffoldable(scaffolder=SlingReplicationComponentScaffolder)
 @dataclass
-class SlingReplicationCollectionComponent(
-    Component, ResolvedFrom[SlingReplicationCollectionSchema]
-):
+class SlingReplicationCollectionComponent(Component, ResolvedFrom[SlingReplicationCollectionModel]):
     """Expose one or more Sling replications to Dagster as assets."""
 
     resource: Annotated[SlingResource, FieldResolver.from_model(resolve_resource)] = ...

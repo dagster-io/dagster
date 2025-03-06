@@ -31,9 +31,7 @@ def test_replace_attributes() -> None:
         attributes=AssetAttributesModel(tags={"newtag": "newval"}),
     )
 
-    newdefs = apply_post_processor_to_defs(
-        schema=op, defs=defs, context=ResolutionContext.default()
-    )
+    newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
     asset_graph = newdefs.get_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {}
     assert asset_graph.get(AssetKey("b")).tags == {"newtag": "newval"}
@@ -47,9 +45,7 @@ def test_merge_attributes() -> None:
         attributes=AssetAttributesModel(tags={"newtag": "newval"}),
     )
 
-    newdefs = apply_post_processor_to_defs(
-        schema=op, defs=defs, context=ResolutionContext.default()
-    )
+    newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
     asset_graph = newdefs.get_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {}
     assert asset_graph.get(AssetKey("b")).tags == {"newtag": "newval"}
@@ -61,9 +57,7 @@ def test_render_attributes_asset_context() -> None:
         attributes=AssetAttributesModel(tags={"group_name_tag": "group__{{ asset.group_name }}"})
     )
 
-    newdefs = apply_post_processor_to_defs(
-        schema=op, defs=defs, context=ResolutionContext.default()
-    )
+    newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
     asset_graph = newdefs.get_asset_graph()
     assert asset_graph.get(AssetKey("a")).tags == {"group_name_tag": "group__g1"}
     assert asset_graph.get(AssetKey("b")).tags == {"group_name_tag": "group__g2"}
@@ -86,7 +80,7 @@ def test_render_attributes_custom_context() -> None:
 
     metadata = {"a": 1, "b": "str", "d": 1.23}
     newdefs = apply_post_processor_to_defs(
-        schema=op,
+        model=op,
         defs=defs,
         context=ResolutionContext.default().with_scope(
             foo="theval", metadata=metadata, custom_cron=_custom_cron
