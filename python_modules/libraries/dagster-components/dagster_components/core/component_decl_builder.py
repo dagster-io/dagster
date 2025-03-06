@@ -12,7 +12,7 @@ from dagster._utils.pydantic_yaml import (
 )
 from dagster._utils.source_position import SourcePositionTree
 from dagster._utils.yaml_utils import parse_yaml_with_source_positions
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from dagster_components.core.component import (
     Component,
@@ -26,6 +26,8 @@ from dagster_components.utils import load_module_from_path
 
 
 class ComponentFileModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     type: str
     attributes: Optional[Mapping[str, Any]] = None
 
