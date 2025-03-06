@@ -3,15 +3,7 @@ title: "Federate execution between Airflow instances with Dagster"
 sidebar_position: 30
 ---
 
-This tutorial demonstrates using `dagster-airlift` to observe DAGs from multiple Airflow instances, and federate execution between them using Dagster as a centralized control plane.
-
-Using `dagster-airlift` we can
-
-- Observe Airflow DAGs and their execution history
-- Directly trigger Airflow DAGs from Dagster
-- Set up federated execution _across_ Airflow instances
-
-All of this can be done with no changes to Airflow code.
+You can use `dagster-airlift` to observe DAGs from multiple Airflow instances and federate execution between them using Dagster as a centralized control plane, all without changing your Airflow code.
 
 ## Overview
 
