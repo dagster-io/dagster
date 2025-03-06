@@ -1807,13 +1807,27 @@
     },
     {
       "source": "/_modules/dagster/_config/:path*",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster/dagster/_config/:path*.py",
-      "permanent": false
+      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster/dagster/_config/:path*.py"
     },
     {
       "source": "/_modules/dagster/_core/:path*",
-      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster/dagster/_core/:path*.py",
-      "permanent": false
+      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster/dagster/_core/:path*.py"
+    },
+    {
+      "source": "/_modules/dagster/_utils",
+      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster/dagster/_utils/__init__.py"
+    },
+    {
+      "source": "/_modules/dagster/_utils/warnings",
+      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/dagster/dagster/_utils/warnings.py"
+    },
+    {
+      "source": "/_modules/dagster/core/definitions/job_definition",
+      "destination": "https://github.com/dagster-io/dagster/blob/master/python_modules/dagster/dagster/_core/definitions/job_definition.py"
+    },
+    {
+      "source": "/_modules/dagster_airbyte/:path",
+      "destination": "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-airbyte/dagster_airbyte/:path.py"
     }
   ]
 }
