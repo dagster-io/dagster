@@ -4,34 +4,33 @@ from dagster._annotations import preview
 from dagster._record import record
 
 from dagster_dbt.cloud.client import DbtCloudWorkspaceClient
-from dagster_dbt.cloud.types import DbtCloudJobRunStatusType
+from dagster_dbt.cloud.types import DbtCloudJobRunStatusType, DbtCloudRun
 
 
 @preview
 @record
-class DbtCloudJobRun:
-    """Represents a dbt Cloud job run."""
+class DbtCloudJobRunHandler:
+    """Handles the process of a dbt Cloud job run."""
 
     job_id: int
-    run_id: int
     args: Sequence[str]
+    run: DbtCloudRun
     client: DbtCloudWorkspaceClient
-    status: DbtCloudJobRunStatusType
 
     @classmethod
     def run(
         cls, job_id: int, args: Sequence[str], client: DbtCloudWorkspaceClient
-    ) -> "DbtCloudJobRun":
+    ) -> "DbtCloudJobRunHandler":
         run_details = client.trigger_job_run(job_id, steps_override=[" ".join(["dbt", *args])])
-        return DbtCloudJobRun(
+        run = DbtCloudRun.from_run_details(run_details=run_details)
+        return DbtCloudJobRunHandler(
             job_id=job_id,
-            run_id=run_details["id"],
             args=args,
+            run=run,
             client=client,
-            status=DbtCloudJobRunStatusType(run_details["status"]),
         )
 
     def wait_for_success(self) -> DbtCloudJobRunStatusType:
-        run_details = self.client.poll_run(self.run_id)
-        self.status = DbtCloudJobRunStatusType(run_details["status"])
-        return self.status
+        run_details = self.client.poll_run(run_id=self.run.id)
+        self.run = DbtCloudRun.from_run_details(run_details=run_details)
+        return self.run.status
