@@ -3,21 +3,20 @@ import signal
 import subprocess
 import sys
 import time
-from collections.abc import Iterator, Mapping, Sequence
-from contextlib import contextmanager
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 from typing import Optional, TypeVar
 
 import click
 import psutil
-import yaml
 
+from dagster_dg.cli.check import check_yaml
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.error import DgError
 from dagster_dg.utils import DgClickCommand, exit_with_error, pushd
+from dagster_dg.utils.cli import format_forwarded_option, temp_workspace_file
 
 T = TypeVar("T")
 
@@ -76,6 +75,12 @@ _CHECK_SUBPROCESS_INTERVAL = 5
     default=False,
     help="Show verbose stack traces, including system frames in stack traces.",
 )
+@click.option(
+    "--no-check-yaml",
+    flag_value=True,
+    default=False,
+    help="Skip checking the component.yaml files for the project before starting the dev server.",
+)
 @dg_global_options
 def dev_command(
     code_server_log_level: str,
@@ -85,6 +90,7 @@ def dev_command(
     host: Optional[str],
     live_data_poll_rate: int,
     verbose: bool,
+    no_check_yaml: bool,
     **global_options: Mapping[str, object],
 ) -> None:
     """Start a local instance of Dagster.
@@ -109,6 +115,10 @@ def dev_command(
     # project's environment.
     temp_workspace_file_cm = temp_workspace_file(dg_context)
     if dg_context.is_project:
+        if not no_check_yaml:
+            if not check_yaml(dg_context, []):
+                click.get_current_context().exit(1)
+
         cmd_location = dg_context.get_executable("dagster")
         if dg_context.use_dg_managed_environment:
             cmd = ["uv", "run", "dagster", "dev", *forward_options]
@@ -125,6 +135,19 @@ def dev_command(
     # `dagster-webserver` is not a dependency of `dagster` but is required to run the `dev`
     # command.
     elif dg_context.is_workspace:
+        if not no_check_yaml:
+            overall_check_result = True
+            for project in dg_context.get_project_names():
+                check_result = check_yaml(
+                    dg_context.for_project_environment(
+                        dg_context.get_project_path(project), cli_config
+                    ),
+                    [],
+                )
+                overall_check_result = overall_check_result and check_result
+            if not overall_check_result:
+                click.get_current_context().exit(1)
+
         cmd = [
             "uv",
             "tool",
@@ -169,37 +192,6 @@ def dev_command(
             except subprocess.TimeoutExpired:
                 click.secho("`dagster dev` did not terminate in time. Killing it.")
                 uv_run_dagster_dev_process.kill()
-
-
-@contextmanager
-def temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
-    with NamedTemporaryFile(mode="w+", delete=True) as temp_workspace_file:
-        entries = []
-        if dg_context.is_project:
-            entries.append(_workspace_entry_for_project(dg_context))
-        elif dg_context.is_workspace:
-            for project_name in dg_context.get_project_names():
-                project_root = dg_context.get_project_path(project_name)
-                project_context: DgContext = dg_context.with_root_path(project_root)
-                entries.append(_workspace_entry_for_project(project_context))
-        yaml.dump({"load_from": entries}, temp_workspace_file)
-        temp_workspace_file.flush()
-        yield temp_workspace_file.name
-
-
-def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, str]]:
-    entry = {
-        "working_directory": str(dg_context.root_path),
-        "module_name": str(dg_context.code_location_target_module_name),
-        "location_name": dg_context.code_location_name,
-    }
-    if dg_context.use_dg_managed_environment:
-        entry["executable_path"] = str(dg_context.project_python_executable)
-    return {"python_module": entry}
-
-
-def format_forwarded_option(option: str, value: object) -> list[str]:
-    return [] if value is None else [option, str(value)]
 
 
 def _get_child_process_pid(proc: "subprocess.Popen") -> int:
