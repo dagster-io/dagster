@@ -189,7 +189,7 @@ def get_annotation_field_resolvers(cls: type[TResolutionSpec]) -> dict[str, DSLF
     annotations = {}
 
     # Walk through all base classes in MRO
-    for base in cls.__mro__:
+    for base in reversed(cls.__mro__):
         # Get annotations from current base class if they exist
         base_annotations = getattr(base, "__annotations__", {})
         # Update annotations dict with any new annotations found
