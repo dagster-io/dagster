@@ -13,7 +13,7 @@ from dagster_components import (
     ScaffoldRequest,
     scaffold_component_yaml,
 )
-from dagster_components.core.schema.objects import AssetSpecSequenceField
+from dagster_components.resolved.core_models import AssetSpecSequenceField
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
 from dagster_components.scaffoldable.decorator import scaffoldable
 

@@ -16,8 +16,8 @@ from dagster_components import Component, ComponentLoadContext
 from dagster_components.components.sling_replication_collection.scaffolder import (
     SlingReplicationComponentScaffolder,
 )
-from dagster_components.core.schema.metadata import ResolvableFieldInfo
-from dagster_components.core.schema.objects import (
+from dagster_components.resolved.metadata import ResolvableFieldInfo
+from dagster_components.resolved.core_models import (
     AssetAttributesModel,
     AssetPostProcessor,
     AssetPostProcessorModel,

@@ -15,8 +15,8 @@ from dagster_dbt import (
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
-from dagster_components.core.schema.metadata import ResolvableFieldInfo
-from dagster_components.core.schema.objects import (
+from dagster_components.resolved.metadata import ResolvableFieldInfo
+from dagster_components.resolved.core_models import (
     AssetAttributesModel,
     AssetPostProcessor,
     AssetPostProcessorModel,

@@ -9,8 +9,8 @@ from dagster_components.core.component_defs_builder import (
 from dagster_components.core.component_scaffolder import (
     DefaultComponentScaffolder as DefaultComponentScaffolder,
 )
-from dagster_components.core.schema.metadata import ResolvableFieldInfo as ResolvableFieldInfo
-from dagster_components.core.schema.objects import (
+from dagster_components.resolved.metadata import ResolvableFieldInfo as ResolvableFieldInfo
+from dagster_components.resolved.core_models import (
     AssetAttributesModel as AssetAttributesModel,
     AssetPostProcessorModel as AssetPostProcessorModel,
     AssetSpecModel as AssetSpecModel,

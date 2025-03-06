@@ -8,7 +8,7 @@ from dagster_components import (
     ResolvableModel,
     ResolvedFrom,
 )
-from dagster_components.core.schema.objects import AssetSpecSequenceField
+from dagster_components.resolved.core_models import AssetSpecSequenceField
 
 import dagster as dg
 

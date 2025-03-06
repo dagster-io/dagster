@@ -11,7 +11,7 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 from dagster_components.core.component import Component, ComponentLoadContext
-from dagster_components.core.schema.objects import AssetSpecModel, AssetSpecSequenceField
+from dagster_components.resolved.core_models import AssetSpecModel, AssetSpecSequenceField
 from dagster_components.resolved.context import ResolutionContext
 from dagster_components.resolved.model import FieldResolver, ResolvableModel, ResolvedFrom
 

@@ -4,7 +4,7 @@ from typing import Any
 
 from dagster import AssetSpec, AutomationCondition, Definitions
 from dagster_components import AssetAttributesModel, Component, ComponentLoadContext
-from dagster_components.core.schema.objects import ResolvedAssetAttributes
+from dagster_components.resolved.core_models import ResolvedAssetAttributes
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
 
 
