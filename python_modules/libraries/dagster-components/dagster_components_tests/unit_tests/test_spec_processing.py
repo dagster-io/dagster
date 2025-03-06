@@ -4,15 +4,15 @@ import pytest
 from dagster import AssetKey, AssetSpec, AutomationCondition, Definitions
 from dagster_components.core.schema.context import ResolutionContext
 from dagster_components.core.schema.objects import (
-    AssetAttributesSchema,
-    AssetPostProcessorSchema,
+    AssetAttributesModel,
+    AssetPostProcessorModel,
     apply_post_processor_to_defs,
 )
 from pydantic import BaseModel, TypeAdapter
 
 
 class M(BaseModel):
-    asset_attributes: Sequence[AssetPostProcessorSchema] = []
+    asset_attributes: Sequence[AssetPostProcessorModel] = []
 
 
 defs = Definitions(
@@ -25,10 +25,10 @@ defs = Definitions(
 
 
 def test_replace_attributes() -> None:
-    op = AssetPostProcessorSchema(
+    op = AssetPostProcessorModel(
         operation="replace",
         target="group:g2",
-        attributes=AssetAttributesSchema(tags={"newtag": "newval"}),
+        attributes=AssetAttributesModel(tags={"newtag": "newval"}),
     )
 
     newdefs = apply_post_processor_to_defs(
@@ -41,10 +41,10 @@ def test_replace_attributes() -> None:
 
 
 def test_merge_attributes() -> None:
-    op = AssetPostProcessorSchema(
+    op = AssetPostProcessorModel(
         operation="merge",
         target="group:g2",
-        attributes=AssetAttributesSchema(tags={"newtag": "newval"}),
+        attributes=AssetAttributesModel(tags={"newtag": "newval"}),
     )
 
     newdefs = apply_post_processor_to_defs(
@@ -57,8 +57,8 @@ def test_merge_attributes() -> None:
 
 
 def test_render_attributes_asset_context() -> None:
-    op = AssetPostProcessorSchema(
-        attributes=AssetAttributesSchema(tags={"group_name_tag": "group__{{ asset.group_name }}"})
+    op = AssetPostProcessorModel(
+        attributes=AssetAttributesModel(tags={"group_name_tag": "group__{{ asset.group_name }}"})
     )
 
     newdefs = apply_post_processor_to_defs(
@@ -71,10 +71,10 @@ def test_render_attributes_asset_context() -> None:
 
 
 def test_render_attributes_custom_context() -> None:
-    op = AssetPostProcessorSchema(
+    op = AssetPostProcessorModel(
         operation="replace",
         target="group:g2",
-        attributes=AssetAttributesSchema(
+        attributes=AssetAttributesModel(
             tags={"a": "{{ foo }}", "b": "prefix_{{ foo }}"},
             metadata="{{ metadata }}",
             automation_condition="{{ custom_cron('@daily') }}",
@@ -110,35 +110,35 @@ def test_render_attributes_custom_context() -> None:
         # default to merge and a * target
         (
             {"attributes": {"tags": {"a": "b"}}},
-            AssetPostProcessorSchema(target="*", attributes=AssetAttributesSchema(tags={"a": "b"})),
+            AssetPostProcessorModel(target="*", attributes=AssetAttributesModel(tags={"a": "b"})),
         ),
         (
             {"operation": "replace", "attributes": {"tags": {"a": "b"}}},
-            AssetPostProcessorSchema(
+            AssetPostProcessorModel(
                 operation="replace",
                 target="*",
-                attributes=AssetAttributesSchema(tags={"a": "b"}),
+                attributes=AssetAttributesModel(tags={"a": "b"}),
             ),
         ),
         # explicit target
         (
             {"attributes": {"tags": {"a": "b"}}, "target": "group:g2"},
-            AssetPostProcessorSchema(
+            AssetPostProcessorModel(
                 target="group:g2",
-                attributes=AssetAttributesSchema(tags={"a": "b"}),
+                attributes=AssetAttributesModel(tags={"a": "b"}),
             ),
         ),
         (
             {"operation": "replace", "attributes": {"tags": {"a": "b"}}, "target": "group:g2"},
-            AssetPostProcessorSchema(
+            AssetPostProcessorModel(
                 operation="replace",
                 target="group:g2",
-                attributes=AssetAttributesSchema(tags={"a": "b"}),
+                attributes=AssetAttributesModel(tags={"a": "b"}),
             ),
         ),
     ],
 )
 def test_load_attributes(python, expected) -> None:
-    loaded = TypeAdapter(Sequence[AssetPostProcessorSchema]).validate_python([python])
+    loaded = TypeAdapter(Sequence[AssetPostProcessorModel]).validate_python([python])
     assert len(loaded) == 1
     assert loaded[0] == expected

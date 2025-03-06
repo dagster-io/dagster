@@ -23,35 +23,35 @@ if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 
-class PipesSubprocessScriptSchema(ResolvableModel):
+class PipesSubprocessScriptModel(ResolvableModel):
     path: str
     assets: Sequence[AssetSpecSchema]
 
 
 @dataclass
-class PipesSubprocessScriptSpec(ResolvedFrom[PipesSubprocessScriptSchema]):
+class PipesSubprocessScript(ResolvedFrom[PipesSubprocessScriptModel]):
     path: str
     assets: AssetSpecSequenceField
 
 
-class PipesSubprocessScriptCollectionSchema(ResolvableModel):
-    scripts: Sequence[PipesSubprocessScriptSchema]
+class PipesSubprocessScriptCollectionModel(ResolvableModel):
+    scripts: Sequence[PipesSubprocessScriptModel]
 
 
 @dataclass
 class PipesSubprocessScriptCollectionComponent(
-    Component, ResolvedFrom[PipesSubprocessScriptCollectionSchema]
+    Component, ResolvedFrom[PipesSubprocessScriptCollectionModel]
 ):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
 
     # "A mapping from Python script paths to the assets that are produced by the script.",
     @staticmethod
     def resolve_specs_by_path(
-        context: ResolutionContext, schema: PipesSubprocessScriptCollectionSchema
+        context: ResolutionContext, model: PipesSubprocessScriptCollectionModel
     ) -> Mapping[str, Sequence[AssetSpec]]:
         return {
             spec.path: spec.assets
-            for spec in PipesSubprocessScriptSpec.from_seq(context, schema.scripts)
+            for spec in PipesSubprocessScript.from_seq(context, model.scripts)
         }
 
     specs_by_path: Annotated[
@@ -64,8 +64,8 @@ class PipesSubprocessScriptCollectionComponent(
         return PipesSubprocessScriptCollectionComponent(specs_by_path=path_specs)
 
     @classmethod
-    def get_schema(cls) -> type[PipesSubprocessScriptCollectionSchema]:
-        return PipesSubprocessScriptCollectionSchema
+    def get_schema(cls) -> type[PipesSubprocessScriptCollectionModel]:
+        return PipesSubprocessScriptCollectionModel
 
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions
