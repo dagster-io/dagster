@@ -26,8 +26,7 @@ from dagster_components.core.schema.resolvable_from_schema import (
     ResolvedFrom,
     resolve_schema_to_resolvable,
 )
-from dagster_components.scaffoldable.decorator import get_scaffolder, scaffoldable
-from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
+from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.utils import format_error_message
 
 
@@ -89,21 +88,10 @@ class Component(ABC):
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
 
-        scaffolder = get_scaffolder(cls)
-
-        if isinstance(scaffolder, ScaffolderUnavailableReason):
-            raise DagsterError(
-                f"Component {cls.__name__} is not scaffoldable: {scaffolder.message}"
-            )
-
         component_schema = cls.get_schema()
-        scaffold_params = scaffolder.get_params()
         return {
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,
-            "scaffold_params_schema": None
-            if scaffold_params is None
-            else scaffold_params.model_json_schema(),
             "component_schema": None
             if component_schema is None
             else component_schema.model_json_schema(),
@@ -127,8 +115,13 @@ def _clean_docstring(docstring: str) -> str:
 class ComponentTypeInternalMetadata(TypedDict):
     summary: Optional[str]
     description: Optional[str]
-    scaffold_params_schema: Optional[Any]  # json schema
     component_schema: Optional[Any]  # json schema
+
+
+class ScaffoldableObjectMetadata(TypedDict):
+    name: str
+    namespace: str
+    scaffold_params_schema: Optional[Any]  # json schema
 
 
 class ComponentTypeMetadata(ComponentTypeInternalMetadata):

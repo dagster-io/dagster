@@ -12,8 +12,12 @@ from dagster_dg.cli.shared_options import (
     dg_editable_dagster_options,
     dg_global_options,
 )
-from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
-from dagster_dg.component_key import ComponentKey
+from dagster_dg.component import (
+    RemoteComponentRegistry,
+    RemoteScaffoldableObject,
+    RemoteScaffoldableObjectRegistry,
+)
+from dagster_dg.component_key import ComponentKey, ObjectKey
 from dagster_dg.config import (
     get_config_from_cli_context,
     has_config_on_cli_context,
@@ -22,8 +26,8 @@ from dagster_dg.config import (
 )
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import (
-    scaffold_component_instance,
     scaffold_component_type,
+    scaffold_object,
     scaffold_project,
     scaffold_workspace,
 )
@@ -160,7 +164,7 @@ def project_scaffold_command(
 #     dg --builtin-component-lib dagster_components.test ...
 #
 # To handle this, we define a custom click.Group subclass that loads the commands on demand.
-class ComponentScaffoldGroup(DgClickGroup):
+class ObjectScaffoldGroup(DgClickGroup):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._commands_defined = False
@@ -185,13 +189,13 @@ class ComponentScaffoldGroup(DgClickGroup):
         config = get_config_from_cli_context(cli_context)
         dg_context = DgContext.for_defined_registry_environment(Path.cwd(), config)
 
-        registry = RemoteComponentRegistry.from_dg_context(dg_context)
+        registry = RemoteScaffoldableObjectRegistry.from_dg_context(dg_context)
         for key, component_type in registry.items():
-            command = _create_component_scaffold_subcommand(key, component_type)
+            command = _create_scaffold_subcommand(key, component_type)
             self.add_command(command)
 
 
-class ComponentScaffoldSubCommand(DgClickCommand):
+class ScaffoldObjectSubCommand(DgClickCommand):
     # We have to override this because the implementation of `format_help` used elsewhere will only
     # pull parameters directly off the target command. For these component scaffold subcommands  we need
     # to expose the global options, which are defined on the preceding group rather than the command
@@ -228,8 +232,8 @@ class ComponentScaffoldSubCommand(DgClickCommand):
 # options first and generate the correct subcommands. We then add a custom `--help` option that
 # gets invoked inside the callback.
 @scaffold_group.group(
-    name="component",
-    cls=ComponentScaffoldGroup,
+    name="def",
+    cls=ScaffoldObjectSubCommand,
     invoke_without_command=True,
     context_settings={"help_option_names": []},
 )
@@ -250,17 +254,17 @@ def component_scaffold_group(context: click.Context, help_: bool, **global_optio
         context.exit(0)
 
 
-def _create_component_scaffold_subcommand(
-    component_key: ComponentKey, component_type: RemoteComponentType
+def _create_scaffold_subcommand(
+    object_key: ObjectKey, remote_object: RemoteScaffoldableObject
 ) -> DgClickCommand:
     # We need to "reset" the help option names to the default ones because we inherit the parent
     # value of context settings from the parent group, which has been customized.
     @click.command(
-        name=component_key.to_typename(),
-        cls=ComponentScaffoldSubCommand,
+        name=object_key.to_typename(),
+        cls=ScaffoldObjectSubCommand,
         context_settings={"help_option_names": ["-h", "--help"]},
     )
-    @click.argument("component_instance_name", type=str)
+    @click.argument("instance_name", type=str)
     @click.option(
         "--json-params",
         type=str,
@@ -271,14 +275,14 @@ def _create_component_scaffold_subcommand(
     @click.pass_context
     def scaffold_component_command(
         cli_context: click.Context,
-        component_instance_name: str,
+        instance_name: str,
         json_params: Mapping[str, Any],
         **key_value_params: Any,
     ) -> None:
-        f"""Scaffold of a {component_type.name} component.
+        f"""Scaffold of a {remote_object.name}.
 
         This command must be run inside a Dagster project directory. The component scaffold will be
-        placed in submodule `<project_name>.components.<COMPONENT_NAME>`.
+        placed in submodule `<project_name>.defs.<COMPONENT_NAME>`.
 
         Components can optionally be passed scaffold parameters. There are two ways to do this:
 
@@ -295,13 +299,11 @@ def _create_component_scaffold_subcommand(
         cli_config = get_config_from_cli_context(cli_context)
         dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
-        registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        if not registry.has(component_key):
-            exit_with_error(f"Component type `{component_key.to_typename()}` not found.")
-        elif dg_context.has_component_instance(component_instance_name):
-            exit_with_error(
-                f"A component instance named `{component_instance_name}` already exists."
-            )
+        registry = RemoteScaffoldableObjectRegistry.from_dg_context(dg_context)
+        if not registry.has(object_key):
+            exit_with_error(f"Scaffoldable object type `{object_key.to_typename()}` not found.")
+        elif dg_context.has_component_instance(instance_name):
+            exit_with_error(f"A def named `{instance_name}` already exists.")
 
         # Specified key-value params will be passed to this function with their default value of
         # `None` even if the user did not set them. Filter down to just the ones that were set by
@@ -314,7 +316,7 @@ def _create_component_scaffold_subcommand(
         if json_params is not None and user_provided_key_value_params:
             exit_with_error(
                 "Detected params passed as both --json-params and individual options. These are mutually exclusive means of passing"
-                " component generation parameters. Use only one.",
+                " scaffold parameters. Use only one.",
             )
         elif json_params:
             scaffold_params = json_params
@@ -323,15 +325,15 @@ def _create_component_scaffold_subcommand(
         else:
             scaffold_params = None
 
-        scaffold_component_instance(
-            Path(dg_context.defs_path) / component_instance_name,
-            component_key.to_typename(),
+        scaffold_object(
+            Path(dg_context.defs_path) / instance_name,
+            object_key.to_typename(),
             scaffold_params,
             dg_context,
         )
 
     # If there are defined scaffold params, add them to the command
-    schema = component_type.scaffold_params_schema
+    schema = remote_object.scaffold_params_schema
     if schema:
         for key, field_info in schema["properties"].items():
             # All fields are currently optional because they can also be passed under
