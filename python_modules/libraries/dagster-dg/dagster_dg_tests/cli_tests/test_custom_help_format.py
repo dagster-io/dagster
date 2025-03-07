@@ -182,7 +182,7 @@ def test_dynamic_subcommand_help_message():
         with fixed_panel_width(width=120):
             result = runner.invoke(
                 "scaffold",
-                "component",
+                "defs",
                 "dagster_test.components.SimplePipesScriptComponent",
                 "--help",
             )
@@ -192,7 +192,7 @@ def test_dynamic_subcommand_help_message():
         assert match_terminal_box_output(
             output.strip(),
             textwrap.dedent("""
-                 Usage: dg scaffold component [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS]             
+                 Usage: dg scaffold defs [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS]             
                                                                                                       COMPONENT_INSTANCE_NA 
                  ME
 

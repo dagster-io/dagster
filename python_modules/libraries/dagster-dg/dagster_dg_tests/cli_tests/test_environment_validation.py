@@ -224,7 +224,7 @@ def test_no_workspace_or_project_failure(spec: CommandSpec) -> None:
 # ########################
 
 
-# `dg scaffold component` is special because global options have to be inserted before the
+# `dg scaffold defs` is special because global options have to be inserted before the
 # subcommand name, instead of just at the end.
 def _add_global_cli_options(cli_args: tuple[str, ...], *global_opts: str) -> list[str]:
     if cli_args[:2] == ("scaffold", "component"):
