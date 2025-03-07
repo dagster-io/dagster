@@ -9,13 +9,13 @@ from jsonschema import Draft202012Validator, ValidationError
 from yaml.scanner import ScannerError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
-from dagster_dg.cli.dev import format_forwarded_option, temp_workspace_file
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error, pushd
+from dagster_dg.utils.cli import format_forwarded_option, temp_workspace_file
 from dagster_dg.yaml_utils import parse_yaml_with_source_positions
 from dagster_dg.yaml_utils.source_position import (
     LineCol,
@@ -72,11 +72,21 @@ def check_yaml_command(
     **global_options: object,
 ) -> None:
     """Check component.yaml files against their schemas, showing validation errors."""
-    resolved_paths = [Path(path).absolute() for path in paths]
-    top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
-
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+
+    if not check_yaml(dg_context, paths):
+        click.get_current_context().exit(1)
+    else:
+        click.echo("All components validated successfully.")
+
+
+def check_yaml(
+    dg_context: DgContext,
+    paths: Sequence[str],
+) -> bool:
+    resolved_paths = [Path(path).absolute() for path in paths]
+    top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
 
     validation_errors: list[ErrorInput] = []
 
@@ -165,9 +175,9 @@ def check_yaml_command(
                     prefix=["attributes"] if key else [],
                 )
             )
-        click.get_current_context().exit(1)
+        return False
     else:
-        click.echo("All components validated successfully.")
+        return True
 
 
 @check_group.command(name="defs", cls=DgClickCommand)

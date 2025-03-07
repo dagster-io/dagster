@@ -1,9 +1,6 @@
-import contextlib
 import re
 import shutil
-from collections.abc import Iterator
 from pathlib import Path
-from typing import Optional
 
 import pytest
 from dagster_components.test.test_cases import (
@@ -21,7 +18,7 @@ ensure_dagster_dg_tests_import()
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
-    isolated_example_project_foo_bar,
+    create_project_from_components,
     modify_pyproject_toml,
 )
 
@@ -54,23 +51,6 @@ CLI_TEST_CASES = [
         ),
     ),
 ]
-
-
-@contextlib.contextmanager
-def create_project_from_components(
-    runner: ProxyRunner, *src_paths: str, local_component_defn_to_inject: Optional[Path] = None
-) -> Iterator[Path]:
-    """Scaffolds a project with the given components in a temporary directory,
-    injecting the provided local component defn into each component's __init__.py.
-    """
-    origin_paths = [COMPONENT_INTEGRATION_TEST_DIR / src_path for src_path in src_paths]
-    with isolated_example_project_foo_bar(runner, component_dirs=origin_paths):
-        for src_path in src_paths:
-            components_dir = Path.cwd() / "foo_bar" / "defs" / src_path.split("/")[-1]
-            if local_component_defn_to_inject:
-                shutil.copy(local_component_defn_to_inject, components_dir / "__init__.py")
-
-        yield Path.cwd()
 
 
 def test_check_component_succeeds_non_default_defs_module() -> None:
