@@ -50,7 +50,7 @@ setup(
             "hypothesis[zoneinfo]>=6.89.0",
             "deepdiff>=6.3.0",
             "pytest-cases>=3.6.14",
-            "pytest_mock"
+            "pytest_mock",
         ],
     },
     zip_safe=False,
