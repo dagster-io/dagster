@@ -105,15 +105,25 @@ def list_definitions_command(ctx: click.Context, **other_opts: object) -> None:
                 group=node.group_name,
                 kinds=sorted(list(node.kinds)),
                 description=node.description,
+                automation_condition=node.automation_condition.__name__
+                if node.automation_condition
+                else None,
             )
         )
     for job in repo_def.get_all_jobs():
         if not is_reserved_asset_job_name(job.name):
             all_defs.append(DgJobMetadata(type="job", name=job.name))
     for schedule in repo_def.schedule_defs:
+        schedule_str = (
+            schedule.cron_schedule
+            if isinstance(schedule.cron_schedule, str)
+            else ", ".join(schedule.cron_schedule)
+        )
         all_defs.append(
             DgScheduleMetadata(
-                type="schedule", name=schedule.name, cron_schedule=schedule.cron_schedule
+                type="schedule",
+                name=schedule.name,
+                cron_schedule=schedule_str,
             )
         )
     for sensor in repo_def.sensor_defs:
