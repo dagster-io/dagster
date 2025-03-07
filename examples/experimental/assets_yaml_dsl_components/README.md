@@ -9,13 +9,13 @@ dagster project from-example --name my-dagster-project --example asset_yaml_dsl
 To install this example and its Python dependencies, run:
 
 ```bash
-pip install -e ".[dev]"
+uv pip install -e ".[dev]"
 ```
 
 Once you've done this, you can run:
 
 ```
-dagster dev
+dg dev
 ```
 
 to view this example in Dagster's UI.
