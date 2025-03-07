@@ -27,25 +27,25 @@ Note that all GraphQL methods on the API are not yet available in Python - the `
   module="dagster_graphql"
   object="DagsterGraphQLClient"
   method="submit_job_execution"
-  />
+  /> [submit_job_execution](#submitting-a-job-run)
 - <PyObject
   section="libraries"
   module="dagster_graphql"
   object="DagsterGraphQLClient"
   method="get_run_status"
-  />
+  /> [get_run_status](#getting-a-job-runs-status)
 - <PyObject
   section="libraries"
   module="dagster_graphql"
   object="DagsterGraphQLClient"
   method="reload_repository_location"
-  />
+  /> [reload_repository_location](#reloading-all-repositories-in-a-repository-location)
 - <PyObject
   section="libraries"
   module="dagster_graphql"
   object="DagsterGraphQLClient"
   method="shutdown_repository_location"
-  />
+  /> [shutdown_repository_location](#shutting-down-a-repository-location-server)
 
 ## Using the GraphQL Client
 
