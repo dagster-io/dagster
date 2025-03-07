@@ -245,7 +245,10 @@ def component_scaffold_group(context: click.Context, help_: bool, **global_optio
 def handle_component_scaffold_group(
     context: click.Context, help_: bool, **global_options: object
 ) -> None:
-    """Handle the component scaffold group command."""
+    # Click attempts to resolve subcommands BEFORE it invokes this callback.
+    # Therefore we need to manually invoke this callback during subcommand generation to make sure
+    # it runs first. It will be invoked again later by Click. We make it idempotent to deal with
+    # that.
     if not has_config_on_cli_context(context):
         cli_config = normalize_cli_config(global_options, context)
         set_config_on_cli_context(context, cli_config)
