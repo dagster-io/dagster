@@ -1589,12 +1589,16 @@ class AssetObservationData(
 
 @whitelist_for_serdes
 class AssetFailedToMaterializeReason(Enum):
-    COMPUTE_FAILED = "COMPUTE_FAILED"
-    UPSTREAM_COMPUTE_FAILED = "UPSTREAM_COMPUTE_FAILED"
-    SKIPPED_OPTIONAL = "SKIPPED_OPTIONAL"
-    UPSTREAM_SKIPPED = "UPSTREAM_SKIPPED"
-    RUN_USER_TERMINATED = "RUN_USER_TERMINATED"
-    RUN_SYSTEM_TERMINATED = "RUN_SYSTEM_TERMINATED"
+    COMPUTE_FAILED = "COMPUTE_FAILED"  # The step to compute the asset failed
+    UPSTREAM_COMPUTE_FAILED = (
+        "UPSTREAM_COMPUTE_FAILED"  # An upstream step failed, so the step for the asset was not run
+    )
+    SKIPPED_OPTIONAL = "SKIPPED_OPTIONAL"  # The asset is optional and was not materialized
+    UPSTREAM_SKIPPED = "UPSTREAM_SKIPPED"  # An upstream asset is optional and was not materialized, so the step for the asset was not run
+    RUN_USER_TERMINATED = "RUN_USER_TERMINATED"  # A user to an action to terminated the run
+    RUN_SYSTEM_TERMINATED = (
+        "RUN_SYSTEM_TERMINATED"  # An external event resulted in the run being terminated
+    )
     UNKNOWN = "UNKNOWN"
 
 
