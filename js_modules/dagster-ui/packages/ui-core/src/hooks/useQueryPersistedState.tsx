@@ -125,7 +125,7 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
         }
       }
     },
-    [history, encode, options],
+    [encode, options.defaults, behavior, history],
   );
 
   if (!isEqual(valueRef.current, qsDecoded)) {
