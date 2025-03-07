@@ -56,6 +56,7 @@ PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("utils", "configure-editor"), "vscode"),
     CommandSpec(("check", "yaml")),
     CommandSpec(("list", "component")),
+    CommandSpec(("list", "defs")),
     CommandSpec(("scaffold", "component"), DEFAULT_COMPONENT_TYPE, "foot"),
 ]
 

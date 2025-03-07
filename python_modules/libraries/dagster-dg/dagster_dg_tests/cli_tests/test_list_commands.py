@@ -1,6 +1,9 @@
+import inspect
 import shutil
 import textwrap
+from pathlib import Path
 
+import pytest
 from dagster_components.utils import format_error_message
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 
@@ -151,3 +154,196 @@ def test_list_component_type_bad_entry_point_fails(capfd):
 
         captured = capfd.readouterr()
         assert "Error loading entry point `foo_bar` in group `dagster.components`." in captured.err
+
+
+# ########################
+# ##### DEFS
+# ########################
+
+_EXPECTED_DEFS = textwrap.dedent("""
+    Assets
+    ┏━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━┓
+    ┃ Key        ┃ Group   ┃ Deps ┃ Kinds ┃ Description ┃
+    ┡━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━┩
+    │ my_asset_1 │ default │      │       │             │
+    │ my_asset_2 │ default │      │       │             │
+    └────────────┴─────────┴──────┴───────┴─────────────┘
+
+    Jobs
+    ┏━━━━━━━━━━━━━┓
+    ┃ Name        ┃
+    ┡━━━━━━━━━━━━━┩
+    │ my_schedule │
+    └─────────────┘
+
+    Schedules
+    ┏━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓
+    ┃ Name        ┃ Cron schedule ┃
+    ┡━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
+    │ my_schedule │ @daily        │
+    └─────────────┴───────────────┘
+
+    Sensors
+    ┏━━━━━━━━━━━━━┓
+    ┃ Name        ┃
+    ┡━━━━━━━━━━━━━┩
+    │ my_schedule │
+    └─────────────┘
+""").strip()
+
+_EXPECTED_DEFS_JSON = textwrap.dedent("""
+    [
+        {
+            "type": "asset",
+            "key": "my_asset_1",
+            "group": "default",
+            "deps": [],
+            "kinds": [],
+            "description": null,
+            "automation_condition": null
+        },
+        {
+            "type": "asset",
+            "key": "my_asset_2",
+            "group": "default",
+            "deps": [],
+            "kinds": [],
+            "description": null,
+            "automation_condition": null
+        },
+        {
+            "type": "job",
+            "name": "my_job"
+        },
+        {
+            "type": "schedule",
+            "name": "my_schedule",
+            "cron_schedule": "@daily"
+        },
+        {
+            "type": "sensor",
+            "name": "my_sensor"
+        }
+    ]
+""").strip()
+
+
+@pytest.mark.parametrize("use_json", [True, False])
+def test_list_defs_succeeds(use_json: bool):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        result = runner.invoke(
+            "scaffold",
+            "component",
+            "dagster_components.dagster.DefinitionsComponent",
+            "mydefs",
+        )
+        assert_runner_result(result)
+
+        with Path("foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            defs_source = textwrap.dedent(inspect.getsource(_sample_defs).split("\n", 1)[1])
+            f.write(defs_source)
+
+        if use_json:
+            result = runner.invoke("list", "defs", "--json")
+            assert_runner_result(result)
+            output = "\n".join(result.output.split("\n")[1:])
+            assert output.strip() == _EXPECTED_DEFS_JSON
+        else:
+            result = runner.invoke("list", "defs")
+            assert_runner_result(result)
+            output = "\n".join(result.output.split("\n")[1:])
+            match_terminal_box_output(output.strip(), _EXPECTED_DEFS)
+
+
+def _sample_defs():
+    from dagster import Definitions, asset, job, schedule, sensor
+
+    @asset
+    def my_asset_1(): ...
+
+    @asset
+    def my_asset_2(): ...
+
+    @schedule(cron_schedule="@daily", target=[my_asset_1])
+    def my_schedule(): ...
+
+    @sensor(target=[my_asset_2])
+    def my_sensor(): ...
+
+    @job
+    def my_job(): ...
+
+    defs = Definitions(  # noqa: F841
+        assets=[my_asset_1, my_asset_2],
+        schedules=[my_schedule],
+        sensors=[my_sensor],
+    )
+
+
+_EXPECTED_COMPLEX_ASSET_DEFS = textwrap.dedent("""
+    Assets
+    ┏━━━━━━━━━┳━━━━━━━━━┳━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+    ┃ Key     ┃ Group   ┃ Deps  ┃ Kinds ┃ Description      ┃
+    ┡━━━━━━━━━╇━━━━━━━━━╇━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+    │ alpha   │ group_1 │       │ sling │                  │
+    │ beta    │ group_2 │       │ dbt   │ This is beta.    │
+    │ delta   │ group_2 │ alpha │ dbt   │                  │
+    │         │         │ beta  │       │                  │
+    │ epsilon │ group_2 │ delta │ dbt   │ This is epsilon. │
+    └─────────┴─────────┴───────┴───────┴──────────────────┘
+""").strip()
+
+
+def test_list_defs_complex_assets_succeeds():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        result = runner.invoke(
+            "scaffold",
+            "component",
+            "dagster_components.dagster.DefinitionsComponent",
+            "mydefs",
+        )
+        assert_runner_result(result)
+
+        with Path("foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            defs_source = textwrap.dedent(
+                inspect.getsource(_sample_complex_asset_defs).split("\n", 1)[1]
+            )
+            f.write(defs_source)
+
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
+        output = "\n".join(result.output.split("\n")[1:])
+        match_terminal_box_output(output.strip(), _EXPECTED_COMPLEX_ASSET_DEFS)
+
+
+def _sample_complex_asset_defs():
+    from dagster import asset
+
+    @asset(kinds={"sling"}, group_name="group_1")
+    def alpha():
+        pass
+
+    @asset(
+        kinds={"dbt"},
+        group_name="group_2",
+        description="This is beta.",
+    )
+    def beta():
+        pass
+
+    @asset(
+        kinds={"dbt"},
+        group_name="group_2",
+    )
+    def delta(alpha, beta):
+        pass
+
+    @asset(kinds={"dbt"}, group_name="group_2", description="This is epsilon.")
+    def epsilon(delta):
+        pass
