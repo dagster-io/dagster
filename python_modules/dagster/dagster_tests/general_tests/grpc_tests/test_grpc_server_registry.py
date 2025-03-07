@@ -57,7 +57,7 @@ def instance():
         yield instance
 
 
-def test_error_repo_in_registry(instance):
+def test_error_repo_in_registry():
     error_origin = ManagedGrpcPythonEnvCodeLocationOrigin(
         loadable_target_origin=LoadableTargetOrigin(
             executable_path=sys.executable,
@@ -83,7 +83,7 @@ def test_error_repo_in_registry(instance):
                 socket=endpoint.socket,
                 host=endpoint.host,
                 watch_server=False,
-                instance=instance,
+                auto_materialize_sensors=True,
             ):
                 pass
 
@@ -95,7 +95,7 @@ def test_error_repo_in_registry(instance):
                 socket=endpoint.socket,
                 host=endpoint.host,
                 watch_server=False,
-                instance=instance,
+                auto_materialize_sensors=True,
             ):
                 pass
 
