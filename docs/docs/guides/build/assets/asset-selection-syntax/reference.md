@@ -84,20 +84,17 @@ You can combine multiple filters with operands and group them with parentheses t
 
 ## Functions
 
-You can use `sinks(expr)` and `roots(expr)` functions to return the sink or root assets of an expression.
+You can use `roots(selection)` and `sinks(selection)` functions to return the sink or root assets of an asset selection.
 
-- **Sink assets** are assets without any downstream dependencies (leaf nodes), which means they don't provide input to any other assets.
-- **Root assets** are assets without any upstream dependencies (root nodes), which means no assets provide input to them.
+- **Root assets** are assets that have no upstream dependencies within the asset selection. Root assets can have upstream dependencies outside of the asset selection.
 
-:::note
-
-`sinks(expr)` and `roots(expr)` return the sink or root assets **of** the expression, not the sink or root assets **within** the expression.
-
-:::
+- **Sink assets** are assets that have no downstream dependencies within the asset selection. Sink assets can have downstream dependencies outside of the asset selection.
 
 | Example | Description |
 |--------|--------------|
-| `sinks(*)` | Find all assets without any downstream dependencies. |
 | `roots(*)` | Find all assets without any upstream dependencies. |
-| `sinks(owner:"team:billing")` | Find all assets without any downstream dependencies that depend on assets owned by the billing team. |
-| `roots(owner:"team:billing")` | Find all assets without any upstream dependencies that feed into assets owned by the billing team. |
+| `sinks(*)` | Find all assets without any downstream dependencies. |
+| `roots(owner:"team:billing")` | Find all the root assets within the selection of assets owned by the billing team. |
+| `sinks(owner:"team:billing")` | Find all the sink assets within the selection of assets owned by the billing team. |
+| `roots(+owner:"team:billing")` | Find all root assets that feed into assets owned by the billing team. |
+| `sinks(owner:"team:billing"+)` | Find all sink assets that depend on assets owned by the billing team. |
