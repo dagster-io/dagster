@@ -222,6 +222,11 @@ def check_definitions_command(
         *(["--verbose"] if verbose else []),
     ]
 
-    run_dagster_command_with_workspace(dg_context, ["definitions", "validate", *forward_options])
-
-    click.echo("All definitions loaded successfully.")
+    result = run_dagster_command_with_workspace(
+        dg_context, ["definitions", "validate", *forward_options]
+    )
+    if result.returncode != 0:
+        # underlying command logs error message
+        click.get_current_context().exit(result.returncode)
+    else:
+        click.echo("All definitions loaded successfully.")
