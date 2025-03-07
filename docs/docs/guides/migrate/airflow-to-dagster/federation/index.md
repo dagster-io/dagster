@@ -5,17 +5,13 @@ sidebar_position: 30
 
 You can use `dagster-airlift` to observe DAGs from multiple Airflow instances and federate execution between them using Dagster as a centralized control plane, all without changing your Airflow code.
 
-## Overview
+## Tutorial overview
 
-This tutorial will take you through an imaginary data platform team that has the following scenario:
+In this tutorial, a data platform team is tasked with managing the following Airflow setup:
 
-- An Airflow instance `warehouse`, run by another team, that is responsible for loading data into a data warehouse.
-- An Airflow instance `metrics`, run by the data platform team, that deploys all the metrics constructed by data scientists on top of the data warehouse.
+- An Airflow instance calld `warehouse`, run by another team, that contains a DAG called `warehouse.load_customers` that loads customer data into the data warehouse.
+- An Airflow instance called `metrics`, run by the data platform team, that contains a DAG called `metrics.customer_metrics` that computes metrics on top of the customer data.
 
-Two DAGs have been causing a lot of pain lately for the team: `warehouse.load_customers` and `metrics.customer_metrics`. The `warehouse.load_customers` DAG is responsible for loading customer data into the data warehouse, and the `metrics.customer_metrics` DAG is responsible for computing metrics on top of the customer data. There's a cross-instance dependency relationship between these two DAGs, but it's not observable or controllable. The data platform team would ideally _only_ like to rebuild the `metrics.customer_metrics` DAG when the `warehouse.load_customers` DAG has new data. In this guide, we'll use `dagster-airlift` to observe the `warehouse` and `metrics` Airflow instances, and set up a federated execution controlled by Dagster that only triggers the `metrics.customer_metrics` DAG when the `warehouse.load_customers` DAG has new data. This process won't require any changes to the Airflow code.
+The data platform team wants to update this setup to only rebuild the `metrics.customer_metrics` DAG when the `warehouse.load_customers` DAG has new data. They can't observe or control this cross-instance dependency in the current setup, so they decide to use `dagster-airlift`.
 
-## Pages
-
-* [Setup](setup)
-* [Observe multiple Airflow instances](observe)
-* [Federate execution across Airflow instances](federate-execution)
+In this tutorial, we'll walk you through an example of using `dagster-airlift` to observe the `warehouse` and `metrics` Airflow instances described above, and set up a federated execution controlled by Dagster that only triggers the `metrics.customer_metrics` DAG when the `warehouse.load_customers` DAG has new data, all without requiring any changes to Airflow code.
