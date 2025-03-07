@@ -7,6 +7,7 @@ import click
 from rich.console import Console
 from rich.table import Table
 
+from dagster_dg.cli.scaffold import SHIM_COMPONENTS
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.config import normalize_cli_config
@@ -79,7 +80,7 @@ def component_type_list(output_json: bool, **global_options: object) -> None:
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
 
-    sorted_keys = sorted(registry.keys(), key=lambda k: k.to_typename())
+    sorted_keys = sorted(registry.keys() - SHIM_COMPONENTS.keys(), key=lambda k: k.to_typename())
 
     # JSON
     if output_json:
@@ -99,7 +100,7 @@ def component_type_list(output_json: bool, **global_options: object) -> None:
         table = Table(border_style="dim")
         table.add_column("Component Type", style="bold cyan", no_wrap=True)
         table.add_column("Summary")
-        for key in sorted(registry.keys(), key=lambda k: k.to_typename()):
+        for key in sorted_keys:
             table.add_row(key.to_typename(), registry.get(key).summary)
         console = Console()
         console.print(table)
