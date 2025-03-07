@@ -6,7 +6,7 @@ import traceback
 import uuid
 from collections.abc import Sequence
 from types import TracebackType
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, Callable, NamedTuple, Optional, Union
 
 from typing_extensions import TypeAlias
 
@@ -239,3 +239,113 @@ def serializable_error_info_from_exc_info(
     else:
         tb_exc = traceback.TracebackException(exc_type, e, tb)
         return _serializable_error_info_from_tb(tb_exc)
+
+
+DAGSTER_FRAMEWORK_SUBSTRINGS = [
+    "/site-packages/dagster/",
+    "/python_modules/dagster/dagster/",
+]
+
+IMPORT_MACHINERY_SUBSTRINGS = [
+    "importlib/__init__.py",
+    "importlib._bootstrap",
+]
+
+
+def unwrap_user_code_error(error_info: SerializableErrorInfo) -> SerializableErrorInfo:
+    """Extracts the underlying error from the passed error, if it is a DagsterUserCodeLoadError."""
+    if error_info.cls_name == "DagsterUserCodeLoadError":
+        return unwrap_user_code_error(error_info.cause)
+    return error_info
+
+
+NO_HINT = lambda _, __: None
+
+
+def remove_system_frames_from_error(
+    error_info: SerializableErrorInfo,
+    build_system_frame_removed_hint: Callable[[bool, int], Optional[str]] = NO_HINT,
+):
+    """Remove system frames from a SerializableErrorInfo, including Dagster framework boilerplate
+    and import machinery, which are generally not useful for users to debug their code.
+    """
+    return remove_matching_lines_from_error_info(
+        error_info,
+        DAGSTER_FRAMEWORK_SUBSTRINGS + IMPORT_MACHINERY_SUBSTRINGS,
+        build_system_frame_removed_hint,
+    )
+
+
+def remove_matching_lines_from_error_info(
+    error_info: SerializableErrorInfo,
+    match_substrs: Sequence[str],
+    build_system_frame_removed_hint: Callable[[bool, int], Optional[str]],
+):
+    """Utility which truncates a stacktrace to drop lines which match the given strings.
+    This is useful for e.g. removing Dagster framework lines from a stacktrace that
+    involves user code.
+
+    Args:
+        error_info (SerializableErrorInfo): The error info to truncate
+        matching_lines (Sequence[str]): The lines to truncate from the stacktrace
+
+    Returns:
+        SerializableErrorInfo: A new error info with the stacktrace truncated
+    """
+    return error_info._replace(
+        stack=remove_matching_lines_from_stack_trace(
+            error_info.stack, match_substrs, build_system_frame_removed_hint
+        ),
+        cause=(
+            remove_matching_lines_from_error_info(
+                error_info.cause, match_substrs, build_system_frame_removed_hint
+            )
+            if error_info.cause
+            else None
+        ),
+        context=(
+            remove_matching_lines_from_error_info(
+                error_info.context, match_substrs, build_system_frame_removed_hint
+            )
+            if error_info.context
+            else None
+        ),
+    )
+
+
+def remove_matching_lines_from_stack_trace(
+    stack: Sequence[str],
+    matching_lines: Sequence[str],
+    build_system_frame_removed_hint: Callable[[bool, int], Optional[str]],
+) -> Sequence[str]:
+    ctr = 0
+    out = []
+    is_first_hidden_frame = True
+
+    for i in range(len(stack)):
+        if not _line_contains_matching_string(stack[i], matching_lines):
+            if ctr > 0:
+                hint = build_system_frame_removed_hint(is_first_hidden_frame, ctr)
+                is_first_hidden_frame = False
+                if hint:
+                    out.append(hint)
+            ctr = 0
+            out.append(stack[i])
+        else:
+            ctr += 1
+
+    if ctr > 0:
+        hint = build_system_frame_removed_hint(is_first_hidden_frame, ctr)
+        if hint:
+            out.append(hint)
+
+    return out
+
+
+def _line_contains_matching_string(line: str, matching_strings: Sequence[str]):
+    split_by_comma = line.split(",")
+    if not split_by_comma:
+        return False
+
+    file_portion = split_by_comma[0]
+    return any(framework_substring in file_portion for framework_substring in matching_strings)

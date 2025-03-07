@@ -55,3 +55,16 @@ def test_definitions_component_validation_error() -> None:
         load_test_component_defs("definitions/validation_error_file")
 
     assert "component.yaml:4" in str(e.value)
+
+
+def test_definitions_component_with_definitions_object() -> None:
+    defs = load_test_component_defs("definitions/definitions_object_relative_imports")
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {
+        AssetKey("asset_in_some_file"),
+        AssetKey("asset_in_some_other_file"),
+    }
+
+
+def test_definitions_component_with_multiple_definitions_objects() -> None:
+    with pytest.raises(ValueError, match="Found multiple Definitions objects in my_defs.py"):
+        load_test_component_defs("definitions/definitions_object_multiple")

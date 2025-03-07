@@ -38,6 +38,7 @@
     "codemirror": "^5.65.2",
     "deepmerge": "^4.2.2",
     "react-dates": "^21.8.0",
+    "sonner": "^2.0.1",
     "yaml": "2.4.0"
   },
   "devDependencies": {

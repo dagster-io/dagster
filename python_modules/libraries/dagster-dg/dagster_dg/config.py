@@ -213,18 +213,27 @@ class DgRawCliConfig(TypedDict, total=False):
 class DgProjectConfig:
     root_module: str
     defs_module: Optional[str] = None
+    code_location_target_module: Optional[str] = None
+    code_location_name: Optional[str] = None
 
     @classmethod
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
         return cls(
             root_module=raw["root_module"],
             defs_module=raw.get("defs_module", DgProjectConfig.defs_module),
+            code_location_name=raw.get("code_location_name", DgProjectConfig.code_location_name),
+            code_location_target_module=raw.get(
+                "code_location_target_module",
+                DgProjectConfig.code_location_target_module,
+            ),
         )
 
 
 class DgRawProjectConfig(TypedDict):
     root_module: Required[str]
     defs_module: NotRequired[str]
+    code_location_target_module: NotRequired[str]
+    code_location_name: NotRequired[str]
 
 
 # ########################

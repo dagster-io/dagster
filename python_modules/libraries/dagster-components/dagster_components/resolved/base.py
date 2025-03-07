@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING, Annotated, Any, Callable, Generic, TypeVar, ge
 from dagster._core.errors import DagsterInvalidDefinitionError
 from pydantic import BaseModel, ConfigDict
 
-from dagster_components.core.schema.metadata import FieldInfo
+from dagster_components.resolved.metadata import FieldInfo
 
 if TYPE_CHECKING:
-    from dagster_components.core.schema.context import ResolutionContext
+    from dagster_components.resolved.context import ResolutionContext
 
 
 T = TypeVar("T")
@@ -23,7 +23,7 @@ def resolve_fields(
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""
     return {
-        field_name: resolver.fn(context, schema)
+        field_name: resolver.fn(context.at_path(field_name), schema)
         for field_name, resolver in get_field_resolvers(schema, target_type).items()
     }
 

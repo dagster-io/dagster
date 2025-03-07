@@ -1,6 +1,7 @@
 import shlex
 import shutil
 import subprocess
+import warnings
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
@@ -29,6 +30,7 @@ from dagster_dg.utils import (
     NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE,
     exit_with_error,
     generate_missing_dagster_components_in_local_venv_error_message,
+    generate_tool_dg_cli_in_project_in_workspace_error_message,
     get_toml_value,
     get_venv_executable,
     has_toml_value,
@@ -136,33 +138,41 @@ class DgContext:
         path: Path,
         command_line_config: DgRawCliConfig,
     ) -> Self:
-        config_path = discover_config_file(path)
+        root_config_path = discover_config_file(path)
         workspace_config_path = discover_config_file(
             path, lambda x: bool(x.get("directory_type") == "workspace")
         )
 
-        if config_path:
-            root_path = config_path.parent
-            root_file_config = load_dg_root_file_config(config_path)
-            if workspace_config_path:
-                workspace_root_path = workspace_config_path.parent
-
-                # If the workspace config is different from the root config, we need to load the
-                # workspace config.
-                container_workspace_file_config = (
-                    load_dg_workspace_file_config(workspace_config_path)
-                    if config_path != workspace_config_path
-                    else None
-                )
-
-            else:
-                container_workspace_file_config = None
+        if root_config_path:
+            root_path = root_config_path.parent
+            root_file_config = load_dg_root_file_config(root_config_path)
+            if workspace_config_path is None:
                 workspace_root_path = None
+                container_workspace_file_config = None
+
+            # Only load the workspace config if the workspace root is different from the first
+            # detected root.
+            elif workspace_config_path == root_config_path:
+                workspace_root_path = workspace_config_path.parent
+                container_workspace_file_config = None
+            else:
+                workspace_root_path = workspace_config_path.parent
+                container_workspace_file_config = load_dg_workspace_file_config(
+                    workspace_config_path
+                )
+                if "cli" in root_file_config:
+                    del root_file_config["cli"]
+                    warnings.warn(
+                        generate_tool_dg_cli_in_project_in_workspace_error_message(
+                            root_path, workspace_root_path
+                        )
+                    )
         else:
             root_path = Path.cwd()
             workspace_root_path = None
             root_file_config = None
             container_workspace_file_config = None
+
         config = DgConfig.from_partial_configs(
             root_file_config=root_file_config,
             container_workspace_file_config=container_workspace_file_config,
@@ -306,7 +316,7 @@ class DgContext:
         return self.get_path_for_local_module(self.defs_module_name)
 
     def get_component_instance_names(self) -> Iterable[str]:
-        return [str(instance_path.name) for instance_path in self.defs_path.iterdir()]
+        return [str(p.name) for p in self.defs_path.iterdir() if p.is_dir()]
 
     def get_component_instance_module_name(self, name: str) -> str:
         return f"{self.defs_module_name}.{name}"
@@ -316,13 +326,13 @@ class DgContext:
 
     @property
     def code_location_target_module_name(self) -> str:
-        if not self.is_project:
+        if not self.config.project:
             raise DgError(
                 "`code_location_target_module_name` is only available in a Dagster project context"
             )
-        return self._tool_dagster_config_section.get(
-            "module_name",
-            f"{self.root_module_name}.{_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE}",
+        return (
+            self.config.project.code_location_target_module
+            or f"{self.root_module_name}.{_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE}"
         )
 
     @cached_property
@@ -331,19 +341,9 @@ class DgContext:
 
     @property
     def code_location_name(self) -> str:
-        if not self.is_project:
+        if not self.config.project:
             raise DgError("`code_location_name` is only available in a Dagster project context")
-        return self._tool_dagster_config_section.get("code_location_name", self.project_name)
-
-    @cached_property
-    def _tool_dagster_config_section(self) -> dict[str, str]:
-        if not self.is_project:
-            raise DgError("`tool_dg_config_section` is only available in a Dagster project context")
-        with open(self.pyproject_toml_path) as f:
-            toml = tomlkit.parse(f.read())
-            if not has_toml_value(toml, ("tool", "dagster")):
-                return {}
-            return get_toml_value(toml, ("tool", "dagster"), dict)
+        return self.config.project.code_location_name or self.project_name
 
     # ########################
     # ##### COMPONENT LIBRARY METHODS

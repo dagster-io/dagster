@@ -12,7 +12,7 @@ from dagster._utils.pydantic_yaml import (
 )
 from dagster._utils.source_position import SourcePositionTree
 from dagster._utils.yaml_utils import parse_yaml_with_source_positions
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from dagster_components.core.component import (
     Component,
@@ -26,11 +26,51 @@ from dagster_components.utils import load_module_from_path
 
 
 class ComponentFileModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     type: str
     attributes: Optional[Mapping[str, Any]] = None
 
 
 T = TypeVar("T", bound=BaseModel)
+
+
+def has_python_files(folder_path: Path) -> bool:
+    """Check if a folder contains any Python files excluding __init__.py.
+
+    Args:
+        folder_path (Path): Path object representing the folder to check
+    Returns:
+        bool: True if folder contains .py files (except __init__.py), False otherwise
+    """
+    if not folder_path.is_dir():
+        return False
+    return any(folder_path.glob("*.py"))
+
+
+@record
+class ImplicitDefinitionsComponentDecl(ComponentDeclNode):
+    path: Path
+
+    @staticmethod
+    def exists_at(path: Path) -> bool:
+        if YamlComponentDecl.exists_at(path):
+            return False
+        if PythonComponentDecl.exists_at(path):
+            return False
+        return has_python_files(path)
+
+    @staticmethod
+    def from_path(path: Path) -> "ImplicitDefinitionsComponentDecl":
+        return ImplicitDefinitionsComponentDecl(path=path)
+
+    def get_source_position_tree(self) -> Optional[SourcePositionTree]:
+        return None
+
+    def load(self, context) -> Sequence[Component]:
+        from dagster_components.dagster import DefinitionsComponent
+
+        return [DefinitionsComponent(definitions_path=None)]
 
 
 @record
@@ -48,6 +88,9 @@ class PythonComponentDecl(ComponentDeclNode):
     @staticmethod
     def from_path(path: Path) -> "PythonComponentDecl":
         return PythonComponentDecl(path=path)
+
+    def get_source_position_tree(self) -> Optional[SourcePositionTree]:
+        return None
 
     def load(self, context: ComponentLoadContext) -> Sequence[Component]:
         module = load_module_from_path(
@@ -97,6 +140,9 @@ class YamlComponentDecl(ComponentDeclNode):
             source_position_tree=parsed.source_position_tree,
         )
 
+    def get_source_position_tree(self) -> Optional[SourcePositionTree]:
+        return self.source_position_tree
+
     def get_attributes(self, schema: type[T]) -> T:
         with pushd(str(self.path)):
             if self.source_position_tree:
@@ -132,6 +178,9 @@ class ComponentFolder(ComponentDeclNode):
             components.extend(sub_decl.load(sub_context))
         return components
 
+    def get_source_position_tree(self) -> Optional[SourcePositionTree]:
+        return None
+
 
 def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
     # right now, we only support two types of components, both of which are folders
@@ -145,6 +194,8 @@ def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
         return YamlComponentDecl.from_path(path)
     elif PythonComponentDecl.exists_at(path):
         return PythonComponentDecl.from_path(path)
+    elif ImplicitDefinitionsComponentDecl.exists_at(path):
+        return ImplicitDefinitionsComponentDecl.from_path(path)
 
     subs = []
     for subpath in path.iterdir():

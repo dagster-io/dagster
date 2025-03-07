@@ -1,60 +1,56 @@
 from typing import Annotated
 
-from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.resolvable_from_schema import (
-    DSLFieldResolver,
-    DSLSchema,
-    ResolvableFromSchema,
-    resolve_schema_to_resolvable,
+from dagster_components.resolved.context import ResolutionContext
+from dagster_components.resolved.model import (
+    FieldResolver,
+    ResolvableModel,
+    ResolvedFrom,
+    resolve_model,
 )
 
 
 def test_simple_dataclass_resolveable_from_schema():
-    class HelloSchema(DSLSchema):
+    class HelloModel(ResolvableModel):
         hello: str
 
     from dataclasses import dataclass
 
     @dataclass
-    class Hello(ResolvableFromSchema[HelloSchema]):
-        hello: Annotated[
-            int, DSLFieldResolver.from_parent(lambda context, schema: int(schema.hello))
-        ]
+    class Hello(ResolvedFrom[HelloModel]):
+        hello: Annotated[int, FieldResolver.from_model(lambda context, schema: int(schema.hello))]
 
-    hello = resolve_schema_to_resolvable(HelloSchema(hello="1"), Hello, ResolutionContext.default())
+    hello = resolve_model(HelloModel(hello="1"), Hello, ResolutionContext.default())
 
     assert isinstance(hello, Hello)
     assert hello.hello == 1
 
 
 def test_simple_pydantic_resolveable_from_schema():
-    class HelloSchema(DSLSchema):
+    class HelloModel(ResolvableModel):
         hello: str
 
     from pydantic import BaseModel
 
-    class Hello(BaseModel, ResolvableFromSchema[HelloSchema]):
-        hello: Annotated[
-            int, DSLFieldResolver.from_parent(lambda context, schema: int(schema.hello))
-        ]
+    class Hello(BaseModel, ResolvedFrom[HelloModel]):
+        hello: Annotated[int, FieldResolver.from_model(lambda context, schema: int(schema.hello))]
 
-    hello = resolve_schema_to_resolvable(HelloSchema(hello="1"), Hello, ResolutionContext.default())
+    hello = resolve_model(HelloModel(hello="1"), Hello, ResolutionContext.default())
 
     assert isinstance(hello, Hello)
     assert hello.hello == 1
 
 
 def test_simple_dataclass_resolveable_from_schema_with_condense_syntax():
-    class HelloSchema(DSLSchema):
+    class HelloModel(ResolvableModel):
         hello: str
 
     from dataclasses import dataclass
 
     @dataclass
-    class Hello(ResolvableFromSchema[HelloSchema]):
-        hello: Annotated[int, DSLFieldResolver(lambda context, val: int(val))]
+    class Hello(ResolvedFrom[HelloModel]):
+        hello: Annotated[int, FieldResolver(lambda context, val: int(val))]
 
-    hello = resolve_schema_to_resolvable(HelloSchema(hello="1"), Hello, ResolutionContext.default())
+    hello = resolve_model(HelloModel(hello="1"), Hello, ResolutionContext.default())
 
     assert isinstance(hello, Hello)
     assert hello.hello == 1

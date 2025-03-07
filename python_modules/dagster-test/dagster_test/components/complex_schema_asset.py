@@ -6,39 +6,39 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.schema.metadata import ResolvableFieldInfo
-from dagster_components.core.schema.objects import (
-    AssetAttributesSchema,
+from dagster_components.resolved.core_models import (
+    AssetAttributesModel,
     AssetPostProcessor,
-    AssetPostProcessorSchema,
-    OpSpecSchema,
+    AssetPostProcessorModel,
+    OpSpecModel,
 )
-from dagster_components.core.schema.resolvable_from_schema import DSLSchema, ResolvableFromSchema
+from dagster_components.resolved.metadata import ResolvableFieldInfo
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
 from pydantic import Field
 
 
-class ComplexAssetSchema(DSLSchema):
+class ComplexAssetModel(ResolvableModel):
     value: str = Field(..., examples=["example_for_value"])
     list_value: list[str] = Field(
         ..., examples=[["example_for_list_value_1", "example_for_list_value_2"]]
     )
     obj_value: dict[str, str] = Field(..., examples=[{"key_1": "value_1", "key_2": "value_2"}])
-    op: Optional[OpSpecSchema] = None
+    op: Optional[OpSpecModel] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesSchema], ResolvableFieldInfo(required_scope={"node"})
+        Optional[AssetAttributesModel], ResolvableFieldInfo(required_scope={"node"})
     ] = None
-    asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
+    asset_post_processors: Optional[Sequence[AssetPostProcessorModel]] = None
 
 
 @dataclass
-class ComplexAssetComponent(Component, ResolvableFromSchema[ComplexAssetSchema]):
+class ComplexAssetComponent(Component, ResolvedFrom[ComplexAssetModel]):
     """An asset that has a complex schema."""
 
     value: str
     list_value: list[str]
     obj_value: dict[str, str]
-    op: Optional[OpSpecSchema] = None
-    asset_attributes: Optional[AssetAttributesSchema] = None
+    op: Optional[OpSpecModel] = None
+    asset_attributes: Optional[AssetAttributesModel] = None
     asset_post_processors: Annotated[
         Optional[Sequence[AssetPostProcessor]], AssetPostProcessor.from_optional_seq
     ] = None

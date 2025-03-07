@@ -52,11 +52,12 @@ def test_context_in_project_in_workspace():
         context = DgContext.for_project_environment(path_arg, {})
         assert context.config.cli.verbose is True
 
-        # Test config from project overrides workspace
+        # Test cli config in project is ignored and generates warning
         with pushd(project_path), modify_pyproject_toml() as pyproject_toml:
             set_toml_value(pyproject_toml, ("tool", "dg", "cli", "verbose"), False)
-        context = DgContext.for_project_environment(path_arg, {})
-        assert context.config.cli.verbose is False
+        with pytest.warns(match="`tool.dg.cli` section detected in project"):
+            context = DgContext.for_project_environment(path_arg, {})
+        assert context.config.cli.verbose is True
 
 
 def test_context_in_project_outside_workspace():
@@ -70,6 +71,7 @@ def test_context_in_project_outside_workspace():
         assert context.workspace_root_path is None
         assert context.config.cli.verbose is False
 
+        # Test CLI setting is used in project outside of workspace
         with modify_pyproject_toml() as pyproject_toml:
             set_toml_value(pyproject_toml, ("tool", "dg", "cli", "verbose"), True)
         context = DgContext.for_project_environment(path_arg, {})
@@ -145,6 +147,8 @@ def test_invalid_config_project():
             [("tool", "dg", "cli", "verbose"), bool, 1],
             [("tool", "dg", "project", "root_module"), str, 1],
             [("tool", "dg", "project", "defs_module"), str, 1],
+            [("tool", "dg", "project", "code_location_name"), str, 1],
+            [("tool", "dg", "project", "code_location_target_module"), str, 1],
         ]
         for path, expected_type, val in cases:
             with _reset_pyproject_toml():
@@ -158,15 +162,21 @@ def test_invalid_config_project():
                 _set_and_detect_missing_required_key(path, expected_type)
 
 
-def test_tool_dg_config():
+def test_code_location_config():
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         context = DgContext.for_project_environment(Path.cwd(), {})
         assert context.code_location_target_module_name == "foo_bar.definitions"
         assert context.code_location_name == "foo-bar"
 
         with modify_pyproject_toml() as toml:
-            set_toml_value(toml, ("tool", "dagster", "module_name"), "foo_bar._definitions")
-            set_toml_value(toml, ("tool", "dagster", "code_location_name"), "my-code_location")
+            set_toml_value(
+                toml,
+                ("tool", "dg", "project", "code_location_target_module"),
+                "foo_bar._definitions",
+            )
+            set_toml_value(
+                toml, ("tool", "dg", "project", "code_location_name"), "my-code_location"
+            )
 
         context = DgContext.for_project_environment(Path.cwd(), {})
         assert context.code_location_target_module_name == "foo_bar._definitions"

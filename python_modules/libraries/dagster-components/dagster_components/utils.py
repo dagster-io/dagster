@@ -18,8 +18,11 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.tags import build_kind_tag
 from dagster._core.errors import DagsterError
 
-from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.objects import AssetAttributesSchema
+from dagster_components.resolved.context import ResolutionContext
+from dagster_components.resolved.core_models import (
+    AssetAttributesModel,
+    resolve_asset_attributes_to_mapping,
+)
 
 T = TypeVar("T")
 
@@ -72,13 +75,17 @@ def get_path_for_package(package_name: str) -> str:
 @dataclass
 class TranslatorResolvingInfo:
     obj_name: str
-    asset_attributes: AssetAttributesSchema
+    asset_attributes: AssetAttributesModel
     resolution_context: ResolutionContext
 
     def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
-        resolved_attributes = self.resolution_context.with_scope(
-            **{self.obj_name: obj}
-        ).resolve_value(self.asset_attributes)
+        resolved_attributes = resolve_asset_attributes_to_mapping(
+            context=self.resolution_context.at_path("asset_attributes").with_scope(
+                **{self.obj_name: obj}
+            ),
+            model=self.asset_attributes,
+        )
+
         return (
             resolved_attributes[attribute]
             if attribute in resolved_attributes
@@ -95,9 +102,11 @@ class TranslatorResolvingInfo:
         """
         attribute_value = dict(default_method(obj) or {})
 
-        resolved_attributes = self.resolution_context.with_scope(
-            **{self.obj_name: obj}
-        ).resolve_value(self.asset_attributes)
+        resolved_attributes = resolve_asset_attributes_to_mapping(
+            context=self.resolution_context.with_scope(**{self.obj_name: obj}),
+            model=self.asset_attributes,
+        )
+
         if attribute in resolved_attributes:
             attribute_value.update(resolved_attributes[attribute])
         return attribute_value
@@ -120,8 +129,9 @@ class TranslatorResolvingInfo:
 
         ```
         """
-        resolved_attributes = self.resolution_context.with_scope(**context).resolve_value(
-            self.asset_attributes
+        resolved_attributes = resolve_asset_attributes_to_mapping(
+            model=self.asset_attributes,
+            context=self.resolution_context.with_scope(**context),
         )
         return base_spec.replace_attributes(**resolved_attributes)
 

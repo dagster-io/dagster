@@ -299,6 +299,7 @@ export const AssetsCatalogTable = ({
       assetSelection={assetSelection}
       displayPathForAsset={displayPathForAsset}
       kindFilter={kindFilter}
+      onChangeAssetSelection={setAssetSelection}
     />
   );
 };
