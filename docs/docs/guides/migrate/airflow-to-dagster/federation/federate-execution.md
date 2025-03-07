@@ -3,7 +3,7 @@ title: "Federate execution across Airflow instances"
 sidebar_position: 300
 ---
 
-At this point, we should be [observing our DAGs within Dagster](observe), and now we have cross-instance lineage for our DAGs. Now, we'll federate the execution of our DAGs across both Airflow instances by using Dagster's Declarative Automation system.
+In the [previous step](observe), you created Dagster asset representations of Airflow DAGs in order to observe the Airflow instances from Dagster, and set up cross-instance lineage for the DAGs. In this step, you'll federate the execution of the DAGs across both Airflow instances by using Dagster's [Declarative Automation](/guides/automate/declarative-automation) framework.
 
 ## Making `customer_metrics` executable
 
