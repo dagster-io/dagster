@@ -259,7 +259,7 @@ def test_list_defs_succeeds(use_json: bool):
 
 
 def _sample_defs():
-    from dagster import Definitions, asset, job, schedule, sensor
+    from dagster import asset, job, schedule, sensor
 
     @asset
     def my_asset_1(): ...
@@ -275,12 +275,6 @@ def _sample_defs():
 
     @job
     def my_job(): ...
-
-    defs = Definitions(  # noqa: F841
-        assets=[my_asset_1, my_asset_2],
-        schedules=[my_schedule],
-        sensors=[my_sensor],
-    )
 
 
 _EXPECTED_COMPLEX_ASSET_DEFS = textwrap.dedent("""
