@@ -125,7 +125,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
                     jobs=[regenerate_analytics_job],
                     schedules=[regenerate_analytics_hourly_schedule],
                 ),
-                dg_components.build_component_defs(my_existing_project.defs),
+                dg_components.build_defs(my_existing_project.defs),
             )
         """),
             COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-definitions-after.py",
@@ -207,7 +207,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
                 import dagster_components as dg_components
                 import my_existing_project.defs
 
-                defs = dg_components.build_component_defs(my_existing_project.defs)
+                defs = dg_components.build_defs(my_existing_project.defs)
             """),
             COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-definitions-after-all.py",

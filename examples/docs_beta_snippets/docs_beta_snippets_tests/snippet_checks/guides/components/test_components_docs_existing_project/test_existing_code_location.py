@@ -121,7 +121,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
                 defs = dg.Definitions.merge(
                     dg.Definitions(assets=all_assets),
-                    dg_components.build_component_defs(my_existing_project.defs),
+                    dg_components.build_defs(my_existing_project.defs),
                 )
             """),
             snippet_path=COMPONENTS_SNIPPETS_DIR

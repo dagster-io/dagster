@@ -16,5 +16,5 @@ defs = dg.Definitions.merge(
         jobs=[regenerate_analytics_job],
         schedules=[regenerate_analytics_hourly_schedule],
     ),
-    dg_components.build_component_defs(my_existing_project.defs),
+    dg_components.build_defs(my_existing_project.defs),
 )

@@ -2,7 +2,7 @@ import importlib
 from pathlib import Path
 
 from dagster import AssetKey
-from dagster_components import build_component_defs
+from dagster_components import build_defs
 from dagster_components.core.component_decl_builder import PythonComponentDecl
 from dagster_components.core.component_defs_builder import build_defs_from_component_module
 
@@ -27,7 +27,7 @@ def test_load_from_path() -> None:
     module = importlib.import_module(
         "dagster_components_tests.code_locations.python_script_location.defs"
     )
-    defs = build_component_defs(module)
+    defs = build_defs(module)
 
     assert defs.get_asset_graph().get_all_asset_keys() == {
         AssetKey("a"),

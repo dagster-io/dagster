@@ -10,5 +10,5 @@ all_assets = dg.load_assets_from_modules([assets])
 
 defs = dg.Definitions.merge(
     dg.Definitions(assets=all_assets),
-    dg_components.build_component_defs(my_existing_project.defs),
+    dg_components.build_defs(my_existing_project.defs),
 )
