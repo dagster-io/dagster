@@ -9,11 +9,11 @@ In the [previous step](observe), we created Dagster asset representations of Air
 
 To federate execution of the `customer_metrics` Airflow DAG, you first need to make its corresponding asset executable within Dagster.
 
-To do this, you can use the `@multi_asset` decorator to define how the `customer_metrics` asset should be executed. You'll use the `AirflowInstance` defined earlier to trigger a run of the `customer_metrics` DAG. If the run completes successfully, the asset will be materialized. If the run fails, an exception will be raised:
+To do this, you can use the <PyObject section="assets" module="dagster" object="multi_asset" displayText="@multi_asset" />  decorator to define how the `customer_metrics` asset should be executed. You'll use the `AirflowInstance` defined earlier to trigger a run of the `customer_metrics` DAG. If the run completes successfully, the asset will be materialized. If the run fails, an exception will be raised:
 
 <CodeExample path="airlift-federation-tutorial/snippets/federated_execution.py" startAfter="start_multi_asset" endBefore="end_multi_asset" />
 
-Next, replace the `customer_metrics_dag_asset` in the `Definitions` object with the `run_customer_metrics` function:
+Next, replace the `customer_metrics_dag_asset` in the <PyObject section="definitions" module="dagster" object="Definitions" /> object with the `run_customer_metrics` function:
 
 <CodeExample path="airlift-federation-tutorial/snippets/federated_execution.py" startAfter="start_multi_asset_defs" endBefore="end_multi_asset_defs" />
 
