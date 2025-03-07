@@ -65,7 +65,7 @@ class DbClient(Generic[T]):
     def get_select_statement(table_slice: TableSlice) -> str: ...
 
     @staticmethod
-    def get_table_name(table_slice: TableSlice) -> Optional[str]:
+    def get_table_name(table_slice: TableSlice) -> str:
         """Returns a string which is set as the dagster/table_name metadata value for an
         emitted asset. This value should be the fully qualified name of the table, including the
         schema and database, if applicable.
