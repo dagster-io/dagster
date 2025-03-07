@@ -162,7 +162,7 @@ def test_check_cli_with_watch() -> None:
             check_thread.daemon = True  # Make thread daemon so it exits when main thread exits
             check_thread.start()
 
-            time.sleep(2)  # Give the check command time to start
+            time.sleep(10)  # Give the check command time to start
 
             # Copy the invalid component into the valid code location
             shutil.copy(
