@@ -73,7 +73,11 @@ class Component(ABC):
                 else cls()
             )
         else:
-            check.failed(f"Unsupported component type {cls}")
+            # Ideally we would detect this at class declaration time. A metaclass is difficult
+            # to do because the way our users can mixin other frameworks that themselves use metaclasses.
+            check.failed(
+                f"Unsupported component type {cls}. Must inherit from either ResolvableModel or ResolvedFrom."
+            )
 
     @classmethod
     def get_metadata(cls) -> "ComponentTypeInternalMetadata":
