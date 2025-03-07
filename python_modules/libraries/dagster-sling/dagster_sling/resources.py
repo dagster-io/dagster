@@ -216,10 +216,10 @@ class SlingResource(ConfigurableResource):
         return d
     
     def _query_metadata(self, metadata_string: str, start_time: float, base_metadata: Union[list,None] = None):
-        """Metadata quering using regular expression from standard sling log
+        """Metadata quering using regular expression from standard sling log.
         
         Args:
-            metadata_string (string): raw log string containing log/metadata from sling cli run
+            metadata_string (str): raw log string containing log/metadata from sling cli run
             start_time (float): start time that will be assign to calculate elapse
             base_metadata (list, Null): list of metadata to be query from string
 
@@ -264,9 +264,9 @@ class SlingResource(ConfigurableResource):
         return ANSI_ESCAPE.sub("", line).replace("INF", "")
     
     def _clean_timestamp_log(self, line: str):
-        """Remove timestamp from log gather from sling cli to reduce redundency in dagster log
+        """Remove timestamp from log gather from sling cli to reduce redundency in dagster log.
         
-        Args: 
+        Args:
             line (str): line of log gather from cli to be cleaned
         
         Returns:
@@ -435,7 +435,7 @@ class SlingResource(ConfigurableResource):
 
             ##### Old method use _run which is not streamable #####
 
-            if stream != True: 
+            if not stream: 
                 results = sling._run(  # noqa
                     cmd=cmd,
                     temp_file=temp_file,
@@ -483,7 +483,7 @@ class SlingResource(ConfigurableResource):
                 metadata_text = []
                 metadata = {}
 
-                for line in sling._exec_cmd(cmd, env=env):
+                for line in sling._exec_cmd(cmd, env=env): #noqa
                     if line == "": # if empty line -- skipped
                         continue
                     text = self._clean_timestamp_log(line) # else clean timestamp
@@ -505,7 +505,7 @@ class SlingResource(ConfigurableResource):
                         # Else search for single replication format
                         else:
                             # If found, extract stream name, stream config, asset key
-                            matched = re.findall("Sling Replication [|] .* [|] (\S*)$", text)
+                            matched = re.findall(r"Sling Replication [|] .* [|] (\S*)$", text)
                             if matched:
                                 current_stream = matched[0]
                                 current_config = replication_config.get("streams", {}).get(current_stream,{})
