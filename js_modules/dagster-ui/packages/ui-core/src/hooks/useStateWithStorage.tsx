@@ -3,7 +3,11 @@ import * as React from 'react';
 export function getJSONForKey(key: string) {
   let stored = undefined;
   try {
-    stored = window.localStorage.getItem(key);
+    if (typeof window === 'undefined') {
+      stored = self.localStorage.getItem(key);
+    } else {
+      stored = window.localStorage.getItem(key);
+    }
     if (stored) {
       return JSON.parse(stored);
     }

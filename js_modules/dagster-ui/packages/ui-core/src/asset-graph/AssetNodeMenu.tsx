@@ -1,6 +1,7 @@
 import {Box, Menu, MenuDivider, MenuItem, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
+import {AddToFavoritesMenuItem} from 'shared/assets/AddToFavoritesMenuItem.oss';
 
 import {GraphData, tokenForAssetKey} from './Utils';
 import {StatusDot} from './sidebar/StatusDot';
@@ -75,6 +76,7 @@ export const useAssetNodeMenu = ({
   return {
     menu: (
       <Menu>
+        <AddToFavoritesMenuItem assetKey={node.assetKey} />
         <MenuLink
           to={assetDetailsPathForKey(node.assetKey)}
           text="View asset details"
