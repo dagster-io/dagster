@@ -29,7 +29,7 @@ To understand the structure, let's look at the content of `jaffle_platform/defin
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/5-definitions.py" language="Python" title="jaffle-platform/jaffle_platform/definitions.py" />
 
-This call to `build_component_defs` will:
+This call to `build_defs` will:
 
 - discover the set of components defined in the project
 - compute a set of `Definitions` from each component

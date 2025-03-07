@@ -66,7 +66,7 @@ Next, you'll want to create a directory to contain any new components you add to
 
 To do so, you'll need to modify your `definitions.py` file, or whichever file contains your top-level `Definitions` object.
 
-You can manually construct a set of definitions for your components using `build_component_defs`, then merge them with your existing definitions using `Definitions.merge`. You point `build_components_defs` at the directory you just created that contains components.
+You can manually construct a set of definitions for your components using `build_defs`, then merge them with your existing definitions using `Definitions.merge`. You point `build_components_defs` at the directory you just created that contains components.
 
 <Tabs>
     <TabItem value='before' label='Before'>

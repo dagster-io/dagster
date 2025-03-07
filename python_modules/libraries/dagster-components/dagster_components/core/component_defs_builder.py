@@ -1,11 +1,11 @@
 import importlib
-import warnings
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from types import ModuleType
 from typing import Optional
 
 from dagster import Definitions
+from dagster._annotations import deprecated
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_components.core.component import (
@@ -92,10 +92,10 @@ def defs_from_components(
     )
 
 
-# Public method so optional Nones are fine
+@deprecated(breaking_version="0.2.0")
 @suppress_dagster_warnings
 def build_component_defs(
-    components_root: ModuleType,
+    components_root: Path,
     resources: Optional[Mapping[str, object]] = None,
     component_types: Optional[dict[ComponentKey, type[Component]]] = None,
 ) -> "Definitions":
@@ -105,25 +105,38 @@ def build_component_defs(
         components_root (Path): The path to the components root. This is a directory containing
             subdirectories with component instances.
     """
+    defs_root = importlib.import_module(
+        f"{Path(components_root).parent.name}.{Path(components_root).name}"
+    )
+
+    return build_defs(defs_root=defs_root, resources=resources, component_types=component_types)
+
+
+# Public method so optional Nones are fine
+@suppress_dagster_warnings
+def build_defs(
+    defs_root: ModuleType,
+    resources: Optional[Mapping[str, object]] = None,
+    component_types: Optional[dict[ComponentKey, type[Component]]] = None,
+) -> "Definitions":
+    """Build a Definitions object containing all Dagster defs in the given module.
+
+    Args:
+        defs_root (Path): The path to the defs root, typically `package.defs`.
+        resources (Optional[Mapping[str, object]]): A mapping of resource keys to resources
+            to apply to the definitions.
+        component_types (Optional[dict[ComponentKey, type[Component]]]): A mapping of
+            component keys to component types.
+    """
     from dagster._core.definitions.definitions_class import Definitions
 
-    # For backcompat, allow a path to be passed, even though the signature doesn't support it
-    if isinstance(components_root, (Path, str)):
-        warnings.warn(
-            "Passing a path to build_component_defs is deprecated. Pass a module instead.",
-            DeprecationWarning,
-        )
-        components_root = importlib.import_module(
-            f"{Path(components_root).parent.name}.{Path(components_root).name}"
-        )
-
     component_types = component_types or discover_entry_point_component_types()
-    components_root_dir = get_path_from_module(components_root)
+    components_root_dir = get_path_from_module(defs_root)
 
     all_defs: list[Definitions] = []
     for component_path in [item for item in components_root_dir.iterdir() if item.is_dir()]:
         defs = build_defs_from_component_module(
-            module=importlib.import_module(f"{components_root.__name__}.{component_path.name}"),
+            module=importlib.import_module(f"{defs_root.__name__}.{component_path.name}"),
             resources=resources or {},
         )
         all_defs.append(defs)
