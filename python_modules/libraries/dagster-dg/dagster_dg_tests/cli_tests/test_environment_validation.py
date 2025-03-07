@@ -60,7 +60,7 @@ PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("check", "yaml")),
     CommandSpec(("list", "component")),
     CommandSpec(("list", "defs")),
-    CommandSpec(("scaffold", "component"), DEFAULT_COMPONENT_TYPE, "foot"),
+    CommandSpec(("scaffold", "defs"), DEFAULT_COMPONENT_TYPE, "foot"),
 ]
 
 WORKSPACE_CONTEXT_COMMANDS = [
@@ -87,7 +87,7 @@ def test_all_commands_represented_in_env_check_tests() -> None:
     def crawl(command: click.Command, path: tuple[str, ...]) -> None:
         assert command.name
         new_path = (*path, command.name)
-        if isinstance(command, click.Group) and not new_path == ("dg", "scaffold", "component"):
+        if isinstance(command, click.Group) and not new_path == ("dg", "scaffold", "defs"):
             for subcommand in command.commands.values():
                 assert subcommand.name
                 crawl(subcommand, new_path)
@@ -227,7 +227,7 @@ def test_no_workspace_or_project_failure(spec: CommandSpec) -> None:
 # `dg scaffold defs` is special because global options have to be inserted before the
 # subcommand name, instead of just at the end.
 def _add_global_cli_options(cli_args: tuple[str, ...], *global_opts: str) -> list[str]:
-    if cli_args[:2] == ("scaffold", "component"):
+    if cli_args[:2] == ("scaffold", "defs"):
         return [*cli_args[:2], *global_opts, *cli_args[2:]]
     else:
         return [*cli_args, *global_opts]

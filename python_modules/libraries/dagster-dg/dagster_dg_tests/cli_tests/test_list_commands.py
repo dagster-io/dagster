@@ -52,7 +52,7 @@ def test_list_components_succeeds():
     ):
         result = runner.invoke(
             "scaffold",
-            "component",
+            "defs",
             "dagster_test.components.AllMetadataEmptyComponent",
             "qux",
         )
@@ -236,7 +236,7 @@ def test_list_defs_succeeds(use_json: bool):
     ):
         result = runner.invoke(
             "scaffold",
-            "component",
+            "defs",
             "dagster_components.dagster.DefinitionsComponent",
             "mydefs",
         )
@@ -304,7 +304,7 @@ def test_list_defs_complex_assets_succeeds():
     ):
         result = runner.invoke(
             "scaffold",
-            "component",
+            "defs",
             "dagster_components.dagster.DefinitionsComponent",
             "mydefs",
         )

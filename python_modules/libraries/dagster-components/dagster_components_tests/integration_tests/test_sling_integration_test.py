@@ -277,7 +277,7 @@ def test_scaffold_sling():
             cli,
             [
                 "scaffold",
-                "component",
+                "defs",
                 "dagster_components.dagster_sling.SlingReplicationCollectionComponent",
                 "bar/components/qux",
             ],
