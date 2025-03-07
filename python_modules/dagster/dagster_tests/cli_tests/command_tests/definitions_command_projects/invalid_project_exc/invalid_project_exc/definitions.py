@@ -1,11 +1,6 @@
 import dagster as dg
 
 
-@dg.op(name="oknow")
+@dg.op(name="invalid!op/name")
 def invalid_op():
     pass
-
-
-@dg.job
-def invalid_job():
-    invalid_op()
