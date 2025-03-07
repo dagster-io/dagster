@@ -1,9 +1,9 @@
 token literal names:
 null
 '='
-'and'
-'or'
-'not'
+null
+null
+null
 '*'
 '+'
 null
@@ -55,7 +55,7 @@ SINKS
 ROOTS
 QUOTED_STRING
 UNQUOTED_STRING
-UNQUOTED_REGEX_STRING
+UNQUOTED_WILDCARD_STRING
 WS
 
 rule names:

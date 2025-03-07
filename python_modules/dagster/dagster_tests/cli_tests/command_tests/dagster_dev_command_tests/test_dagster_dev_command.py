@@ -6,8 +6,10 @@ import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Optional, TextIO
 
 import psutil
+import pytest
 import requests
 import yaml
 from dagster._cli.utils import TMP_DAGSTER_HOME_PREFIX
@@ -24,6 +26,10 @@ from dagster._serdes.ipc import (
 )
 from dagster._utils import find_free_port, pushd
 from dagster_graphql import DagsterGraphQLClient
+
+from dagster_tests.cli_tests.command_tests.test_definitions_validate_command import (
+    INVALID_PROJECT_PATH_WITH_EXCEPTION,
+)
 
 
 def test_dagster_dev_command_workspace():
@@ -212,13 +218,16 @@ def test_dagster_dev_command_legacy_code_server_behavior():
 
 @contextmanager
 def _launch_dev_command(
-    options: list[str], capture_output: bool = False
+    options: list[str],
+    capture_output: bool = False,
+    stdout_file: Optional[TextIO] = None,
+    stderr_file: Optional[TextIO] = None,
 ) -> Iterator[subprocess.Popen]:
     read_fd, write_fd = get_ipc_shutdown_pipe()
     proc = open_ipc_subprocess(
         ["dagster", "dev", *options, "--shutdown-pipe", str(read_fd)],
-        stdout=subprocess.PIPE if capture_output else None,
-        stderr=subprocess.PIPE if capture_output else None,
+        stdout=stdout_file if stdout_file else (subprocess.PIPE if capture_output else None),
+        stderr=stderr_file if stderr_file else (subprocess.PIPE if capture_output else None),
         cwd=os.getcwd(),
         pass_fds=[read_fd],
     )
@@ -374,3 +383,37 @@ def _get_cmdline(proc: psutil.Process) -> str:
         return str(proc.cmdline())
     except psutil.NoSuchProcess:
         return "CMDLINE IRRETRIEVABLE"
+
+
+@pytest.mark.parametrize("verbose", [True, False])
+def test_dagster_dev_command_verbose(verbose: bool) -> None:
+    with tempfile.TemporaryDirectory() as tempdir:
+        stdout_filepath = str(Path(tempdir) / "stdout.txt")
+
+        with pushd(INVALID_PROJECT_PATH_WITH_EXCEPTION):
+            webserver_port = find_free_port()
+            stdout_file = open(stdout_filepath, "w")
+            with _launch_dev_command(
+                options=["--port", str(webserver_port)] + (["--verbose"] if verbose else []),
+                capture_output=True,
+                stdout_file=stdout_file,
+            ):
+                _wait_for_webserver_running(webserver_port)
+
+        stdout_file.close()
+        with open(stdout_filepath, encoding="utf-8") as f:
+            contents = f.read()
+
+            assert "is not a valid name in Dagster" in contents, contents
+
+            if verbose:
+                assert "importlib" in contents, contents
+            else:
+                assert "importlib" not in contents, contents
+                assert (
+                    contents.count(
+                        "dagster system frames hidden, run with --verbose to see the full stack trace"
+                    )
+                    == 1
+                ), contents
+                assert contents.count("dagster system frames hidden") == 2, contents

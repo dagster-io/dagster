@@ -5,23 +5,24 @@ from pathlib import Path
 from typing import Any
 
 from dagster_components import (
-    AssetSpecSchema,
+    AssetSpecModel,
     Component,
     ComponentLoadContext,
-    ResolvableSchema,
+    ResolvableModel,
+    ResolvedFrom,
 )
-from dagster_components.core.schema.objects import AssetSpecSequenceField
+from dagster_components.resolved.core_models import AssetSpecSequenceField
 
 import dagster as dg
 
 
-class ShellScriptSchema(ResolvableSchema):
+class ShellCommandModel(ResolvableModel):
     script_path: str
-    asset_specs: Sequence[AssetSpecSchema]
+    asset_specs: Sequence[AssetSpecModel]
 
 
 @dataclass
-class ShellCommand(Component):
+class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
     script_path: str
     asset_specs: AssetSpecSequenceField
 
@@ -30,10 +31,6 @@ class ShellCommand(Component):
         return {
             "daily_partitions": dg.DailyPartitionsDefinition(start_date="2024-01-01")
         }
-
-    @classmethod
-    def get_schema(cls) -> type[ShellScriptSchema]:
-        return ShellScriptSchema
 
     def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
         @dg.multi_asset(name=Path(self.script_path).stem, specs=self.asset_specs)

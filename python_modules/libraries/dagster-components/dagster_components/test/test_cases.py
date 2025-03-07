@@ -153,6 +153,19 @@ COMPONENT_VALIDATION_TEST_CASES = [
         ),
     ),
     ComponentValidationTestCase(
+        component_path="validation/other_invalid_component_file_model",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
+        should_error=True,
+        validate_error_msg=msg_includes_all_of(
+            "component.yaml:3",
+            "attributez",
+        ),
+        check_error_msg=msg_includes_all_of(
+            "component.yaml:3",
+            "attributez",
+        ),
+    ),
+    ComponentValidationTestCase(
         component_path="validation/invalid_yaml_missing_quote",
         component_type_filepath=None,
         should_error=True,

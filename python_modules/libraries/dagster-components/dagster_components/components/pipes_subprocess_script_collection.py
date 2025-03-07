@@ -11,51 +11,46 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 from dagster_components.core.component import Component, ComponentLoadContext
-from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.objects import AssetSpecSchema, AssetSpecSequenceField
-from dagster_components.core.schema.resolvable_from_schema import (
-    DSLFieldResolver,
-    DSLSchema,
-    ResolvableFromSchema,
-)
+from dagster_components.resolved.context import ResolutionContext
+from dagster_components.resolved.core_models import AssetSpecModel, AssetSpecSequenceField
+from dagster_components.resolved.model import FieldResolver, ResolvableModel, ResolvedFrom
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 
-class PipesSubprocessScriptSchema(DSLSchema):
+class PipesSubprocessScriptModel(ResolvableModel):
     path: str
-    assets: Sequence[AssetSpecSchema]
+    assets: Sequence[AssetSpecModel]
 
 
 @dataclass
-class PipesSubprocessScriptSpec(ResolvableFromSchema[PipesSubprocessScriptSchema]):
+class PipesSubprocessScript(ResolvedFrom[PipesSubprocessScriptModel]):
     path: str
     assets: AssetSpecSequenceField
 
 
-class PipesSubprocessScriptCollectionSchema(DSLSchema):
-    scripts: Sequence[PipesSubprocessScriptSchema]
+class PipesSubprocessScriptCollectionModel(ResolvableModel):
+    scripts: Sequence[PipesSubprocessScriptModel]
+
+
+def resolve_specs_by_path(
+    context: ResolutionContext, model: PipesSubprocessScriptCollectionModel
+) -> Mapping[str, Sequence[AssetSpec]]:
+    # "A mapping from Python script paths to the assets that are produced by the script.",
+    return {
+        spec.path: spec.assets for spec in PipesSubprocessScript.from_seq(context, model.scripts)
+    }
 
 
 @dataclass
 class PipesSubprocessScriptCollectionComponent(
-    Component, ResolvableFromSchema[PipesSubprocessScriptCollectionSchema]
+    Component, ResolvedFrom[PipesSubprocessScriptCollectionModel]
 ):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
 
-    # "A mapping from Python script paths to the assets that are produced by the script.",
-    @staticmethod
-    def resolve_specs_by_path(
-        context: ResolutionContext, schema: PipesSubprocessScriptCollectionSchema
-    ) -> Mapping[str, Sequence[AssetSpec]]:
-        return {
-            spec.path: spec.assets
-            for spec in PipesSubprocessScriptSpec.from_seq(context, schema.scripts)
-        }
-
     specs_by_path: Annotated[
-        Mapping[str, Sequence[AssetSpec]], DSLFieldResolver.from_parent(resolve_specs_by_path)
+        Mapping[str, Sequence[AssetSpec]], FieldResolver.from_model(resolve_specs_by_path)
     ] = ...
 
     @staticmethod
@@ -64,8 +59,8 @@ class PipesSubprocessScriptCollectionComponent(
         return PipesSubprocessScriptCollectionComponent(specs_by_path=path_specs)
 
     @classmethod
-    def get_schema(cls) -> type[PipesSubprocessScriptCollectionSchema]:
-        return PipesSubprocessScriptCollectionSchema
+    def get_schema(cls) -> type[PipesSubprocessScriptCollectionModel]:
+        return PipesSubprocessScriptCollectionModel
 
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions

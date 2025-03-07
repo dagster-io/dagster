@@ -6,7 +6,7 @@ import traceback
 import uuid
 from collections.abc import Sequence
 from types import TracebackType
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, Callable, NamedTuple, Optional, Union
 
 from typing_extensions import TypeAlias
 
@@ -259,8 +259,12 @@ def unwrap_user_code_error(error_info: SerializableErrorInfo) -> SerializableErr
     return error_info
 
 
+NO_HINT = lambda _, __: None
+
+
 def remove_system_frames_from_error(
     error_info: SerializableErrorInfo,
+    build_system_frame_removed_hint: Callable[[bool, int], Optional[str]] = NO_HINT,
 ):
     """Remove system frames from a SerializableErrorInfo, including Dagster framework boilerplate
     and import machinery, which are generally not useful for users to debug their code.
@@ -268,12 +272,14 @@ def remove_system_frames_from_error(
     return remove_matching_lines_from_error_info(
         error_info,
         DAGSTER_FRAMEWORK_SUBSTRINGS + IMPORT_MACHINERY_SUBSTRINGS,
+        build_system_frame_removed_hint,
     )
 
 
 def remove_matching_lines_from_error_info(
     error_info: SerializableErrorInfo,
     match_substrs: Sequence[str],
+    build_system_frame_removed_hint: Callable[[bool, int], Optional[str]],
 ):
     """Utility which truncates a stacktrace to drop lines which match the given strings.
     This is useful for e.g. removing Dagster framework lines from a stacktrace that
@@ -287,14 +293,20 @@ def remove_matching_lines_from_error_info(
         SerializableErrorInfo: A new error info with the stacktrace truncated
     """
     return error_info._replace(
-        stack=remove_matching_lines_from_stack_trace(error_info.stack, match_substrs),
+        stack=remove_matching_lines_from_stack_trace(
+            error_info.stack, match_substrs, build_system_frame_removed_hint
+        ),
         cause=(
-            remove_matching_lines_from_error_info(error_info.cause, match_substrs)
+            remove_matching_lines_from_error_info(
+                error_info.cause, match_substrs, build_system_frame_removed_hint
+            )
             if error_info.cause
             else None
         ),
         context=(
-            remove_matching_lines_from_error_info(error_info.context, match_substrs)
+            remove_matching_lines_from_error_info(
+                error_info.context, match_substrs, build_system_frame_removed_hint
+            )
             if error_info.context
             else None
         ),
@@ -304,16 +316,30 @@ def remove_matching_lines_from_error_info(
 def remove_matching_lines_from_stack_trace(
     stack: Sequence[str],
     matching_lines: Sequence[str],
+    build_system_frame_removed_hint: Callable[[bool, int], Optional[str]],
 ) -> Sequence[str]:
-    # Remove lines until you find the first non-dagster framework line
+    ctr = 0
+    out = []
+    is_first_hidden_frame = True
 
     for i in range(len(stack)):
         if not _line_contains_matching_string(stack[i], matching_lines):
-            return stack[i:]
+            if ctr > 0:
+                hint = build_system_frame_removed_hint(is_first_hidden_frame, ctr)
+                is_first_hidden_frame = False
+                if hint:
+                    out.append(hint)
+            ctr = 0
+            out.append(stack[i])
+        else:
+            ctr += 1
 
-    # Return the full stack trace if its all Dagster framework lines,
-    # to not be left with an empty stack trace
-    return stack
+    if ctr > 0:
+        hint = build_system_frame_removed_hint(is_first_hidden_frame, ctr)
+        if hint:
+            out.append(hint)
+
+    return out
 
 
 def _line_contains_matching_string(line: str, matching_strings: Sequence[str]):

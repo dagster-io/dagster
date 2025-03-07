@@ -35,6 +35,8 @@ def scaffold_component_instance(
     component_type_name: str,
     scaffold_params: Mapping[str, Any],
 ) -> None:
+    from dagster_components.components.shim_components.base import ShimComponent
+
     click.echo(f"Creating a Dagster component instance folder at {path}.")
     if not path.exists():
         path.mkdir()
@@ -53,8 +55,9 @@ def scaffold_component_instance(
         scaffold_params,
     )
 
-    component_yaml_path = path / "component.yaml"
-    if not component_yaml_path.exists():
-        raise Exception(
-            f"Currently all components require a component.yaml file. Please ensure your implementation of scaffold writes this file at {component_yaml_path}."
-        )
+    if not issubclass(component_type, ShimComponent):
+        component_yaml_path = path / "component.yaml"
+        if not component_yaml_path.exists():
+            raise Exception(
+                f"Currently all components require a component.yaml file. Please ensure your implementation of scaffold writes this file at {component_yaml_path}."
+            )

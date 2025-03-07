@@ -43,6 +43,7 @@ interface Props {
   isFiltered: boolean;
   kindFilter?: StaticSetFilter<string>;
   isLoading: boolean;
+  onChangeAssetSelection: (selection: string) => void;
 }
 
 export const AssetTable = ({
@@ -57,6 +58,7 @@ export const AssetTable = ({
   view,
   kindFilter,
   isLoading,
+  onChangeAssetSelection,
 }: Props) => {
   const groupedByDisplayKey = useMemo(
     () => groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a))),
@@ -143,6 +145,7 @@ export const AssetTable = ({
         view={view}
         kindFilter={kindFilter}
         isLoading={isLoading}
+        onChangeAssetSelection={onChangeAssetSelection}
       />
     );
   };

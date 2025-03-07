@@ -3,8 +3,6 @@ import {
   Box,
   Colors,
   Icon,
-  MiddleTruncate,
-  MonoSmall,
   PopoverContentStyle,
   PopoverWrapperStyle,
 } from '@dagster-io/ui-components';
@@ -88,18 +86,7 @@ export const useSelectionInputLintingAndHighlighting = ({
       if (symbol === '<EOF>') {
         return 'Selection is incomplete';
       }
-      return (
-        <Box flex={{direction: 'row', alignItems: 'center'}}>
-          Unexpected input
-          <div style={{width: 4}} />
-          <MonoSmall color={Colors.textRed()}>
-            <div style={{maxWidth: 200}}>
-              <MiddleTruncate text={error.error.offendingSymbol} />
-            </div>
-          </MonoSmall>
-          .
-        </Box>
-      );
+      return <Box flex={{direction: 'row', alignItems: 'center'}}>{error.error.message}</Box>;
     }
     if (error.error.message) {
       return error.error.message;

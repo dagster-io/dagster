@@ -19,7 +19,7 @@ from dagster._utils.env import environ
 from dagster_components.cli import cli
 from dagster_components.components.sling_replication_collection.component import (
     SlingReplicationCollectionComponent,
-    SlingReplicationCollectionSchema,
+    SlingReplicationCollectionModel,
 )
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import YamlComponentDecl, build_component_defs
@@ -76,7 +76,7 @@ def temp_sling_component_instance(
 def test_python_attributes() -> None:
     with temp_sling_component_instance([{"path": "./replication.yaml"}]) as decl_node:
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionSchema)
+        attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
         component = SlingReplicationCollectionComponent.load(attributes, context)
 
         replications = component.replications
@@ -100,7 +100,7 @@ def test_python_attributes_op_name() -> None:
         ]
     ) as decl_node:
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionSchema)
+        attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
         component = SlingReplicationCollectionComponent.load(attributes, context=context)
         replications = component.replications
         assert len(replications) == 1
@@ -122,7 +122,7 @@ def test_python_attributes_op_tags() -> None:
         ]
     ) as decl_node:
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionSchema)
+        attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
         component = SlingReplicationCollectionComponent.load(attributes=attributes, context=context)
         replications = component.replications
         assert len(replications) == 1
@@ -140,7 +140,7 @@ def test_python_params_include_metadata() -> None:
         ]
     ) as decl_node:
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionSchema)
+        attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
         component = SlingReplicationCollectionComponent.load(attributes=attributes, context=context)
         replications = component.replications
         assert len(replications) == 1
@@ -196,7 +196,7 @@ def test_sling_subclass() -> None:
         ),
     )
     context = script_load_context(decl_node)
-    attributes = decl_node.get_attributes(SlingReplicationCollectionSchema)
+    attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
     component_inst = DebugSlingReplicationComponent.load(attributes=attributes, context=context)
     assert component_inst.build_defs(context).get_asset_graph().get_all_asset_keys() == {
         AssetKey("input_csv"),
@@ -260,7 +260,7 @@ def test_asset_attributes(
         ) as decl_node,
     ):
         context = script_load_context(decl_node)
-        attrs = decl_node.get_attributes(SlingReplicationCollectionSchema)
+        attrs = decl_node.get_attributes(SlingReplicationCollectionModel)
         component = SlingReplicationCollectionComponent.load(attributes=attrs, context=context)
         defs = component.build_defs(context)
 

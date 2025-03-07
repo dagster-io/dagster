@@ -15,6 +15,7 @@ from dagster_dg.cli.shared_options import (
 from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import (
+    DgRawCliConfig,
     get_config_from_cli_context,
     has_config_on_cli_context,
     normalize_cli_config,
@@ -250,6 +251,74 @@ def component_scaffold_group(context: click.Context, help_: bool, **global_optio
         context.exit(0)
 
 
+def _core_scaffold(
+    cli_context: click.Context,
+    cli_config: DgRawCliConfig,
+    component_key: ComponentKey,
+    instance_name: str,
+    key_value_params,
+    json_params,
+) -> None:
+    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+    registry = RemoteComponentRegistry.from_dg_context(dg_context)
+    if not registry.has(component_key):
+        exit_with_error(f"Component type `{component_key.to_typename()}` not found.")
+    elif dg_context.has_component_instance(instance_name):
+        exit_with_error(f"A component instance named `{instance_name}` already exists.")
+
+    # Specified key-value params will be passed to this function with their default value of
+    # `None` even if the user did not set them. Filter down to just the ones that were set by
+    # the user.
+    user_provided_key_value_params = {
+        k: v
+        for k, v in key_value_params.items()
+        if cli_context.get_parameter_source(k) == ParameterSource.COMMANDLINE
+    }
+    if json_params is not None and user_provided_key_value_params:
+        exit_with_error(
+            "Detected params passed as both --json-params and individual options. These are mutually exclusive means of passing"
+            " component generation parameters. Use only one.",
+        )
+    elif json_params:
+        scaffold_params = json_params
+    elif user_provided_key_value_params:
+        scaffold_params = user_provided_key_value_params
+    else:
+        scaffold_params = None
+
+    scaffold_component_instance(
+        Path(dg_context.defs_path) / instance_name,
+        component_key.to_typename(),
+        scaffold_params,
+        dg_context,
+    )
+
+
+def _create_component_shim_scaffold_subcommand(
+    component_key: ComponentKey, command_name: str
+) -> DgClickCommand:
+    # We need to "reset" the help option names to the default ones because we inherit the parent
+    # value of context settings from the parent group, which has been customized.
+    @click.command(
+        name=command_name,
+        cls=ComponentScaffoldSubCommand,
+        context_settings={"help_option_names": ["-h", "--help"]},
+    )
+    @click.argument("instance_name", type=str)
+    @dg_global_options
+    @click.pass_context
+    def scaffold_component_shim_command(
+        cli_context: click.Context,
+        instance_name: str,
+        **global_options: object,
+    ) -> None:
+        """Scaffold of a definition."""
+        cli_config = normalize_cli_config(global_options, cli_context)
+        _core_scaffold(cli_context, cli_config, component_key, instance_name, {}, {})
+
+    return scaffold_component_shim_command
+
+
 def _create_component_scaffold_subcommand(
     component_key: ComponentKey, component_type: RemoteComponentType
 ) -> DgClickCommand:
@@ -293,41 +362,13 @@ def _create_component_scaffold_subcommand(
         It is an error to pass both --json-params and key-value pairs as options.
         """
         cli_config = get_config_from_cli_context(cli_context)
-        dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
-
-        registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        if not registry.has(component_key):
-            exit_with_error(f"Component type `{component_key.to_typename()}` not found.")
-        elif dg_context.has_component_instance(component_instance_name):
-            exit_with_error(
-                f"A component instance named `{component_instance_name}` already exists."
-            )
-
-        # Specified key-value params will be passed to this function with their default value of
-        # `None` even if the user did not set them. Filter down to just the ones that were set by
-        # the user.
-        user_provided_key_value_params = {
-            k: v
-            for k, v in key_value_params.items()
-            if cli_context.get_parameter_source(k) == ParameterSource.COMMANDLINE
-        }
-        if json_params is not None and user_provided_key_value_params:
-            exit_with_error(
-                "Detected params passed as both --json-params and individual options. These are mutually exclusive means of passing"
-                " component generation parameters. Use only one.",
-            )
-        elif json_params:
-            scaffold_params = json_params
-        elif user_provided_key_value_params:
-            scaffold_params = user_provided_key_value_params
-        else:
-            scaffold_params = None
-
-        scaffold_component_instance(
-            Path(dg_context.defs_path) / component_instance_name,
-            component_key.to_typename(),
-            scaffold_params,
-            dg_context,
+        _core_scaffold(
+            cli_context,
+            cli_config,
+            component_key,
+            component_instance_name,
+            key_value_params,
+            json_params,
         )
 
     # If there are defined scaffold params, add them to the command
@@ -341,6 +382,21 @@ def _create_component_scaffold_subcommand(
 
     return scaffold_component_command
 
+
+# ########################
+# ##### COMPONENT SHIMS
+# ########################
+
+SHIM_COMPONENTS = {
+    ComponentKey("dagster_components.dagster", "RawAssetComponent"): "asset",
+    ComponentKey("dagster_components.dagster", "RawSensorComponent"): "sensor",
+    ComponentKey("dagster_components.dagster", "RawScheduleComponent"): "schedule",
+}
+
+for key, command_name in SHIM_COMPONENTS.items():
+    scaffold_group.add_command(
+        _create_component_shim_scaffold_subcommand(key, command_name),
+    )
 
 # ########################
 # ##### COMPONENT TYPE

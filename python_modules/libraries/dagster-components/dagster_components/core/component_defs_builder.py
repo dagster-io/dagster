@@ -56,7 +56,7 @@ def build_defs_from_component_path(
         module_name=".".join(path.parts[-3:]),
         resources=resources,
         decl_node=decl_node,
-        resolution_context=ResolutionContext.default(),
+        resolution_context=ResolutionContext.default(decl_node.get_source_position_tree()),
     )
     components = decl_node.load(context)
     return defs_from_components(resources=resources, context=context, components=components)
@@ -100,7 +100,7 @@ def build_component_defs(
     component_types = component_types or discover_entry_point_component_types()
 
     all_defs: list[Definitions] = []
-    for component_path in components_root.iterdir():
+    for component_path in [item for item in components_root.iterdir() if item.is_dir()]:
         defs = build_defs_from_component_path(
             components_root=components_root,
             path=component_path,

@@ -9,17 +9,19 @@ from dagster_components.core.component_defs_builder import (
 from dagster_components.core.component_scaffolder import (
     DefaultComponentScaffolder as DefaultComponentScaffolder,
 )
-from dagster_components.core.schema.base import (
-    FieldResolver as FieldResolver,
-    ResolvableSchema as ResolvableSchema,
+from dagster_components.resolved.context import ResolutionContext as ResolutionContext
+from dagster_components.resolved.core_models import (
+    AssetAttributesModel as AssetAttributesModel,
+    AssetPostProcessorModel as AssetPostProcessorModel,
+    AssetSpecModel as AssetSpecModel,
+    OpSpecModel as OpSpecModel,
 )
-from dagster_components.core.schema.context import ResolutionContext as ResolutionContext
-from dagster_components.core.schema.metadata import ResolvableFieldInfo as ResolvableFieldInfo
-from dagster_components.core.schema.objects import (
-    AssetAttributesSchema as AssetAttributesSchema,
-    AssetPostProcessorSchema as AssetPostProcessorSchema,
-    AssetSpecSchema as AssetSpecSchema,
-    OpSpecSchema as OpSpecSchema,
+from dagster_components.resolved.metadata import ResolvableFieldInfo as ResolvableFieldInfo
+from dagster_components.resolved.model import (
+    FieldResolver as FieldResolver,
+    ResolvableModel as ResolvableModel,
+    ResolvedFrom as ResolvedFrom,
+    ResolvedKwargs as ResolvedKwargs,
 )
 from dagster_components.scaffold import scaffold_component_yaml as scaffold_component_yaml
 from dagster_components.scaffoldable.scaffolder import (

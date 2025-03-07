@@ -9,29 +9,22 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, TypeVar
+from typing import Any, Callable, Optional, TypedDict, TypeVar
 
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import pushd
+from dagster._utils.source_position import SourcePositionTree
 from typing_extensions import Self
 
 from dagster_components.core.component_key import ComponentKey
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
-from dagster_components.core.schema.base import ResolvableSchema, resolve_as
-from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.resolvable_from_schema import (
-    DSLSchema,
-    ResolvableFromSchema,
-    resolve_schema_to_resolvable,
-)
+from dagster_components.resolved.context import ResolutionContext
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, resolve_model
 from dagster_components.scaffoldable.decorator import get_scaffolder, scaffoldable
 from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 from dagster_components.utils import format_error_message
-
-if TYPE_CHECKING:
-    from dagster_components.core.schema.resolvable_from_schema import EitherSchema
 
 
 class ComponentsEntryPointLoadError(DagsterError):
@@ -42,21 +35,21 @@ class ComponentDeclNode(ABC):
     @abstractmethod
     def load(self, context: "ComponentLoadContext") -> Sequence["Component"]: ...
 
+    @abstractmethod
+    def get_source_position_tree(self) -> Optional[SourcePositionTree]: ...
+
 
 @scaffoldable(scaffolder=DefaultComponentScaffolder)
 class Component(ABC):
     @classmethod
-    def get_schema(cls) -> Optional[type["EitherSchema"]]:
-        from dagster_components.core.schema.resolvable_from_schema import (
-            ResolvableFromSchema,
-            get_schema_type,
-        )
+    def get_schema(cls) -> Optional[type["ResolvableModel"]]:
+        from dagster_components.resolved.model import ResolvedFrom, get_model_type
 
-        if issubclass(cls, DSLSchema):
+        if issubclass(cls, ResolvableModel):
             return cls
 
-        if issubclass(cls, ResolvableFromSchema):
-            return get_schema_type(cls)
+        if issubclass(cls, ResolvedFrom):
+            return get_model_type(cls)
         return None
 
     @classmethod
@@ -67,21 +60,24 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
-    def load(cls, attributes: Optional["EitherSchema"], context: "ComponentLoadContext") -> Self:
-        if issubclass(cls, DSLSchema):
+    def load(cls, attributes: Optional["ResolvableModel"], context: "ComponentLoadContext") -> Self:
+        if issubclass(cls, ResolvableModel):
             # If the Component is a DSLSchema, the attributes in this case are an instance of itself
             assert isinstance(attributes, cls)
             return attributes
 
-        if issubclass(cls, ResolvableFromSchema):
+        elif issubclass(cls, ResolvedFrom):
             return (
-                resolve_schema_to_resolvable(attributes, cls, context.resolution_context)
+                resolve_model(attributes, cls, context.resolution_context.at_path("attributes"))
                 if attributes
                 else cls()
             )
-
-        assert isinstance(attributes, ResolvableSchema)
-        return resolve_as(attributes, cls, context.resolution_context) if attributes else cls()
+        else:
+            # Ideally we would detect this at class declaration time. A metaclass is difficult
+            # to do because the way our users can mixin other frameworks that themselves use metaclasses.
+            check.failed(
+                f"Unsupported component type {cls}. Must inherit from either ResolvableModel or ResolvedFrom."
+            )
 
     @classmethod
     def get_metadata(cls) -> "ComponentTypeInternalMetadata":
@@ -241,17 +237,23 @@ class ComponentLoadContext:
             module_name="test",
             resources=resources or {},
             decl_node=decl_node,
-            resolution_context=ResolutionContext.default(),
+            resolution_context=ResolutionContext.default(
+                decl_node.get_source_position_tree() if decl_node else None
+            ),
         )
 
     @property
     def path(self) -> Path:
         from dagster_components.core.component_decl_builder import (
+            ImplicitDefinitionsComponentDecl,
             PythonComponentDecl,
             YamlComponentDecl,
         )
 
-        if not isinstance(self.decl_node, (YamlComponentDecl, PythonComponentDecl)):
+        if not isinstance(
+            self.decl_node,
+            (YamlComponentDecl, PythonComponentDecl, ImplicitDefinitionsComponentDecl),
+        ):
             check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
 
         return self.decl_node.path
@@ -264,9 +266,6 @@ class ComponentLoadContext:
 
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
         return dataclasses.replace(self, decl_node=decl_node)
-
-    def resolve(self, value: ResolvableSchema, as_type: type[T]) -> T:
-        return self.resolution_context.resolve_value(value, as_type=as_type)
 
     def normalize_component_type_str(self, type_str: str) -> str:
         return f"{self.module_name}{type_str}" if type_str.startswith(".") else type_str

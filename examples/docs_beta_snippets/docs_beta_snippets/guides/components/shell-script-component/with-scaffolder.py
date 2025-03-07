@@ -6,19 +6,15 @@ from pathlib import Path
 from typing import Any
 
 from dagster_components import (
-    AssetSpecSchema,
+    AssetSpecModel,
     Component,
     ComponentLoadContext,
-    ResolvableSchema,
     Scaffolder,
     ScaffoldRequest,
     scaffold_component_yaml,
 )
-from dagster_components.core.schema.objects import AssetSpecSequenceField
-from dagster_components.core.schema.resolvable_from_schema import (
-    DSLSchema,
-    ResolvableFromSchema,
-)
+from dagster_components.resolved.core_models import AssetSpecSequenceField
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
 from dagster_components.scaffoldable.decorator import scaffoldable
 
 import dagster as dg
@@ -46,16 +42,16 @@ class ShellCommandScaffolder(Scaffolder):
 # highlight-end
 
 
-class ShellScriptSchema(DSLSchema):
+class ShellCommandModel(ResolvableModel):
     script_path: str
-    asset_specs: Sequence[AssetSpecSchema]
+    asset_specs: Sequence[AssetSpecModel]
 
 
 # highlight-start
 @scaffoldable(scaffolder=ShellCommandScaffolder)
 # highlight-end
 @dataclass
-class ShellCommand(Component, ResolvableFromSchema[ShellScriptSchema]):
+class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
     """Models a shell script as a Dagster asset."""
 
     script_path: str

@@ -518,6 +518,36 @@ def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
         assert "type: foo_bar.lib.Baz" in component_yaml_path.read_text()
 
 
+# ##### SHIMS
+
+
+def test_scaffold_asset() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "asset", "assets/foo")
+        assert_runner_result(result)
+        assert Path("foo_bar/defs/assets/foo/definitions.py").exists()
+        assert not Path("foo_bar/defs/assets/foo/component.yaml").exists()
+
+        result = runner.invoke("scaffold", "asset", "assets/bar")
+        assert_runner_result(result)
+        assert Path("foo_bar/defs/assets/bar/definitions.py").exists()
+        assert not Path("foo_bar/defs/assets/bar/component.yaml").exists()
+
+
+def test_scaffold_sensor() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "sensor", "my_sensor")
+        assert_runner_result(result)
+        assert Path("foo_bar/defs/my_sensor/definitions.py").exists()
+        assert not Path("foo_bar/defs/my_sensor/component.yaml").exists()
+
+
 # ##### REAL COMPONENTS
 
 

@@ -37,6 +37,9 @@ NO_REQUIRED_CONTEXT_COMMANDS = [
     CommandSpec(("scaffold", "project"), "foo"),
     CommandSpec(("init",), "foo"),
     CommandSpec(("scaffold", "workspace"), "foo"),
+    CommandSpec(("scaffold", "asset"), "foo"),
+    CommandSpec(("scaffold", "schedule"), "foo"),
+    CommandSpec(("scaffold", "sensor"), "foo"),
 ]
 
 
@@ -56,6 +59,7 @@ PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("utils", "configure-editor"), "vscode"),
     CommandSpec(("check", "yaml")),
     CommandSpec(("list", "component")),
+    CommandSpec(("list", "defs")),
     CommandSpec(("scaffold", "component"), DEFAULT_COMPONENT_TYPE, "foot"),
 ]
 
