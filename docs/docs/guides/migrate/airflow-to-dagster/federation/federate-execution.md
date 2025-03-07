@@ -3,44 +3,46 @@ title: "Federate execution across Airflow instances"
 sidebar_position: 300
 ---
 
-In the [previous step](observe), you created Dagster asset representations of Airflow DAGs in order to observe the Airflow instances from Dagster, and set up cross-instance lineage for the DAGs. In this step, you'll federate the execution of the DAGs across both Airflow instances by using Dagster's [Declarative Automation](/guides/automate/declarative-automation) framework.
+In the [previous step](observe), we created Dagster asset representations of Airflow DAGs in order to observe the Airflow instances from Dagster, and set up cross-instance lineage for the DAGs. In this step, we'll federate the execution of the DAGs across both Airflow instances by using Dagster's [Declarative Automation](/guides/automate/declarative-automation/) framework.
 
-## Making `customer_metrics` executable
+## Make the `customer_metrics` DAG executable
 
-The `load_airflow_dag_asset_specs` function creates asset representations (called `AssetSpec`) of Airflow DAGs, but these assets are not executable. We need to define an execution function in Dagster in order to make them executable.
+To federate execution of the `customer_metrics` Airflow DAG, you first need to make its corresponding asset executable within Dagster.
 
-In order to federate execution of `customer_metrics`, we first need to make it executable within Dagster. We can do this by using the `@multi_asset` decorator to define how the `customer_metrics` asset should be executed. We'll use the `AirflowInstance` defined earlier to trigger a run of the `customer_metrics` DAG. We then wait for the run to complete, and if it is successful, we'll successfully materialize the asset. If the run fails, we'll raise an exception.
+To do this, you can use the `@multi_asset` decorator to define how the `customer_metrics` asset should be executed. You'll use the `AirflowInstance` defined earlier to trigger a run of the `customer_metrics` DAG. If the run completes successfully, the asset will be materialized. If the run fails, an exception will be raised:
 
 <CodeExample path="airlift-federation-tutorial/snippets/federated_execution.py" startAfter="start_multi_asset" endBefore="end_multi_asset" />
 
-Now, we'll replace the `customer_metrics_dag_asset` in our `Definitions` object with the `run_customer_metrics` function:
+Next, replace the `customer_metrics_dag_asset` in the `Definitions` object with the `run_customer_metrics` function:
 
 <CodeExample path="airlift-federation-tutorial/snippets/federated_execution.py" startAfter="start_multi_asset_defs" endBefore="end_multi_asset_defs" />
 
-We should be able to go to the Dagster UI and see that the `customer_metrics` asset can now be materialized.
+In the Dagster UI, you should see that the `customer_metrics` asset can now be materialized.
 
-## Federating execution
+## Federate execution
 
-Ultimately, we would like to kick off a run of `customer_metrics` whenever `load_customers` completes successfully. We're already retrieving a materialization when `load_customers` completes, so we can use this to trigger a run of `customer_metrics` by using Declarative Automation. First, we'll add an `AutomationCondition.eager()` to our `customer_metrics_dag_asset`. This will tell Dagster to run the `run_customer_metrics` function whenever the `load_customers` asset is materialized.
+Ultimately, we would like to trigger a run of `customer_metrics` whenever `load_customers` completes successfully. We're already retrieving a materialization when `load_customers` completes, so we can use this to trigger a run of `customer_metrics` by using [Declarative Automation](/guides/automate/declarative-automation/).
+
+First, add an [`AutomationCondition.eager()`](/api/python-api/assets#dagster.AutomationCondition.eager) to the `customer_metrics_dag_asset`. This will tell Dagster to run the `run_customer_metrics` function whenever the `load_customers` asset is materialized:
 
 <CodeExample path="airlift-federation-tutorial/snippets/federated_execution.py" startAfter="start_eager" endBefore="end_eager" />
 
-Now, we can set up Declarative Automation by adding an `AutomationConditionSensorDefinition`.
+Next, create an <PyObject section="assets" module="dagster" object="AutomationConditionSensorDefinition" /> to set up Declarative Automation:
 
 <CodeExample path="airlift-federation-tutorial/snippets/federated_execution.py" startAfter="start_automation_sensor" endBefore="end_automation_sensor" />
 
-We'll add this sensor to our `Definitions` object.
+Add this sensor to the <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
 <CodeExample path="airlift-federation-tutorial/snippets/federated_execution.py" startAfter="start_complete_defs" endBefore="end_complete_defs" />
 
-Now the `run_customer_metrics` function will be executed whenever the `load_customers` asset is materialized. Let's test this out by triggering a run of the `load_customers` DAG in Airflow. When the run completes, we should see a materialization of the `customer_metrics` asset kick off in the Dagster UI, and eventually a run of the `customer_metrics` DAG in the metrics Airflow instance.
+Now the `run_customer_metrics` function will be executed whenever the `load_customers` asset is materialized. You can test this by triggering a run of the `load_customers` DAG in Airflow. When the run completes, you should see a materialization of the `customer_metrics` asset start in the Dagster UI, and eventually a run of the `customer_metrics` DAG in the metrics Airflow instance.
 
-## Complete code
+:::note Complete code
 
-When all the above steps are complete, your code should look something like this.
+To see what the code should look like after you have completed all the steps above, check out the [example in GitHub](https://github.com/dagster-io/dagster/blob/master/examples/airlift-federation-tutorial/airlift_federation_tutorial/dagster_defs/stages/executable_and_da.py).
 
-<CodeExample path="airlift-federation-tutorial/airlift_federation_tutorial/dagster_defs/stages/executable_and_da.py" />
+:::
 
 ## Conclusion
 
-That concludes the tutorial! We've federated the execution of our DAGs across two Airflow instances using Dagster's Declarative Automation system. We've also set up cross-instance lineage for our DAGs, and can now observe the lineage and execution of our DAGs in the Dagster UI.
+That concludes the tutorial! If you followed all the steps, you should have successfully federated the execution of two DAGs across two Airflow instances using Dagster's Declarative Automation system and set up cross-instance lineage for the DAGs. You can now observe the lineage and execution of both DAGs in the Dagster UI.
