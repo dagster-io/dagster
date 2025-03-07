@@ -24,7 +24,7 @@ export class OpSelectionLexer extends Lexer {
   public static readonly ROOTS = 12;
   public static readonly QUOTED_STRING = 13;
   public static readonly UNQUOTED_STRING = 14;
-  public static readonly UNQUOTED_REGEX_STRING = 15;
+  public static readonly UNQUOTED_WILDCARD_STRING = 15;
   public static readonly WS = 16;
 
   // tslint:disable:no-trailing-whitespace
@@ -48,7 +48,7 @@ export class OpSelectionLexer extends Lexer {
     'ROOTS',
     'QUOTED_STRING',
     'UNQUOTED_STRING',
-    'UNQUOTED_REGEX_STRING',
+    'UNQUOTED_WILDCARD_STRING',
     'WS',
   ];
 
@@ -83,7 +83,7 @@ export class OpSelectionLexer extends Lexer {
     'ROOTS',
     'QUOTED_STRING',
     'UNQUOTED_STRING',
-    'UNQUOTED_REGEX_STRING',
+    'UNQUOTED_WILDCARD_STRING',
     'WS',
   ];
   public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(

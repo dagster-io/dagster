@@ -35,7 +35,7 @@ value: QUOTED_STRING | UNQUOTED_STRING;
 keyValue:
 	QUOTED_STRING
 	| UNQUOTED_STRING
-	| UNQUOTED_REGEX_STRING;
+	| UNQUOTED_WILDCARD_STRING;
 
 // Tokens for operators and keywords
 AND: 'and' | 'AND';
@@ -63,7 +63,7 @@ ROOTS: 'roots';
 // Tokens for strings
 QUOTED_STRING: '"' (~["\\\r\n])* '"';
 UNQUOTED_STRING: [a-zA-Z_][a-zA-Z0-9_]*;
-UNQUOTED_REGEX_STRING: [a-zA-Z_*][a-zA-Z0-9_*]*;
+UNQUOTED_WILDCARD_STRING: [a-zA-Z_*][a-zA-Z0-9_*]*;
 
 // Whitespace
 WS: [ \t\r\n]+ -> skip;
