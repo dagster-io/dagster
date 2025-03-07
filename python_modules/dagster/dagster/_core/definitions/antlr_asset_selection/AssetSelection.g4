@@ -49,9 +49,9 @@ keyValue:
 	| UNQUOTED_WILDCARD_STRING;
 
 // Operators and keywords
-AND: 'and';
-OR: 'or';
-NOT: 'not';
+AND: 'and' | 'AND';
+OR: 'or' | 'OR';
+NOT: 'not' | 'NOT';
 
 STAR: '*';
 PLUS: '+';

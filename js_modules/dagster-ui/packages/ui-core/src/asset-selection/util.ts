@@ -31,7 +31,7 @@ export function getValue(ctx: ValueContext | KeyValueContext): string {
   if (ctx.UNQUOTED_STRING()) {
     return ctx.text;
   }
-  if ('UNQUOTED_REGEX_STRING' in ctx && ctx.UNQUOTED_REGEX_STRING()) {
+  if ('UNQUOTED_WILDCARD_STRING' in ctx && ctx.UNQUOTED_WILDCARD_STRING()) {
     return ctx.text;
   }
   throw new Error('Invalid value');
