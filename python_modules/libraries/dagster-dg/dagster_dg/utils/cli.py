@@ -37,4 +37,4 @@ def run_dagster_command_with_workspace(dg_context: DgContext, args: Sequence[str
         click.echo(f"Using {cmd_location}")
         if workspace_file:  # only non-None deployment context
             cmd.extend(["--workspace", workspace_file])
-        subprocess.run(cmd, check=True)
+        return subprocess.run(cmd, check=False)
