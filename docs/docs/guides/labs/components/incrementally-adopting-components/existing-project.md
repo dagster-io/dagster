@@ -54,15 +54,19 @@ Add a `tool.dg` section to your `pyproject.toml` file. This will tell the `dg` c
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/existing-project/2-pyproject.toml" language="toml" title="pyproject.toml" />
 
 
-### Create a `components` directory
+### Create a `defs` directory
 
-Next, you'll want to create a directory to contain any new components you add to your project. By convention, this directory is named `components`, and exists at the top level of your project's Python module.
+Next, you'll want to create a directory to contain any new definitions you add to your project. By convention, this directory is named `defs`, and exists at the top level of your project's Python module.
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/existing-project/5-mkdir-components.txt" />
 
+### Create a `lib` directory
+
+TODO explain lib
+
 ## Modify top-level definitions
 
-`dagster-components` provides a utility to create a `Definitions` object from your components directory. Because you're working with an existing project, you'll want to combine your existing definitions with the ones from your components directory.
+`dagster-components` provides a utility to create a `Definitions` object from your defs directory. Because you're working with an existing project, you'll want to combine your existing definitions with the ones from your defs directory.
 
 To do so, you'll need to modify your `definitions.py` file, or whichever file contains your top-level `Definitions` object.
 
@@ -78,6 +82,8 @@ You can manually construct a set of definitions for your components using `build
 </Tabs>
 
 Now, your project is ready to use components! `dg` can be used to scaffold new components directly into the existing project.
+
+
 
 ## Next steps
 

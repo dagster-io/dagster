@@ -13,4 +13,12 @@ setup(
         "Operating System :: OS Independent",
     ],
     extras_require={"dev": ["dagster-webserver", "pytest"]},
+    entry_points={
+        "console_scripts": [
+            "dagster-components = dagster_components.cli:main",
+        ],
+        "dagster.components": [
+            "asset-yaml-dsl-components=asset_yaml_dsl_components.lib",
+        ],
+    },
 )

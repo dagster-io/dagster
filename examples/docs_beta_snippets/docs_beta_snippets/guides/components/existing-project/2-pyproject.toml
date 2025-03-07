@@ -9,4 +9,9 @@ defs_module = "my_existing_project.defs"
 [tool.dagster]
 module_name = "my_existing_project.definitions"
 code_location_name = "my_existing_project"
+
+[project]
+name = "my_existing_project"
+[project.entry-points]
+"dagster.components" = { my_existing_project= "my_existing_project.lib"}
 ...
