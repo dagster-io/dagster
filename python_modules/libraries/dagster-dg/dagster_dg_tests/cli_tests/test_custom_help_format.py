@@ -192,9 +192,8 @@ def test_dynamic_subcommand_help_message():
         assert match_terminal_box_output(
             output.strip(),
             textwrap.dedent("""
-                 Usage: dg scaffold defs [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS]             
-                                                                                                      COMPONENT_INSTANCE_NA 
-                 ME
+                 Usage: dg scaffold defs [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS]
+                                                                                                      COMPONENT_INSTANCE_NAME
 
                 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
                 │ *    component_instance_name      TEXT  [required]                                                                   │
