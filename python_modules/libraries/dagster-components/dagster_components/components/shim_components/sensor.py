@@ -10,9 +10,9 @@ from dagster_components.scaffoldable.decorator import scaffoldable
 class SensorScaffolder(Scaffolder):
     def scaffold(self, request: ScaffoldRequest, params: None) -> None:
         with pushd(str(request.target_path)):
-            Path("definitions.py").write_text("""
-# import dagster as dg
+            Path("sensor.py").write_text("""# import dagster as dg
 # 
+#
 # @dg.sensor(target=...)
 # def my_sensor(context: dg.SensorEvaluationContext): ...
 """)

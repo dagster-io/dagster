@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 import pytest
-from dagster._core.definitions.asset_key import AssetKey
+from dagster import AssetKey
 from dagster._utils import pushd
 
 from dagster_components_tests.integration_tests.component_loader import load_test_component_defs
@@ -26,6 +26,11 @@ def test_definitions_component_with_multiple_files() -> None:
         AssetKey("asset_in_some_file"),
         AssetKey("asset_in_other_file"),
     }
+
+
+def test_definitions_component_empty() -> None:
+    defs = load_test_component_defs("definitions_implicit/empty")
+    assert len(defs.get_all_asset_specs()) == 0
 
 
 def test_definitions_component_with_definitions_object() -> None:

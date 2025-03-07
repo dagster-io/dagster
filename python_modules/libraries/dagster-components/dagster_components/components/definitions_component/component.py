@@ -43,12 +43,18 @@ class DefinitionsComponent(Component, ResolvableModel):
         else:
             return load_definitions_from_module(defs_module)
 
+    @property
+    def path(self) -> Optional[Path]:
+        return Path(self.definitions_path) if self.definitions_path else None
+
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        defs_paths = (
-            [Path(self.definitions_path)]
-            if self.definitions_path
-            else list(context.path.rglob("*.py"))
-        )
+        if self.path is None:
+            defs_paths = list(context.path.rglob("*.py"))
+        elif self.path.is_dir():
+            defs_paths = list(self.path.rglob("*.py"))
+        else:
+            defs_paths = [self.path]
+
         return Definitions.merge(
             *(self._build_defs_for_path(context, defs_path) for defs_path in defs_paths)
         )

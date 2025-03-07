@@ -10,9 +10,9 @@ from dagster_components.scaffoldable.decorator import scaffoldable
 class ScheduleScaffolder(Scaffolder):
     def scaffold(self, request: ScaffoldRequest, params: None) -> None:
         with pushd(str(request.target_path)):
-            Path("definitions.py").write_text("""
-# import dagster as dg
+            Path("schedule.py").write_text("""# import dagster as dg
 # 
+#
 # @dg.schedule(cron_schedule=..., target=...)
 # def my_schedule(context: dg.ScheduleEvaluationContext): ...
 
