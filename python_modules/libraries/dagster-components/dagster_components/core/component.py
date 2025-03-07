@@ -39,6 +39,9 @@ class ComponentDeclNode(ABC):
     def get_source_position_tree(self) -> Optional[SourcePositionTree]: ...
 
 
+from dagster_components.core.udf import get_udf_methods
+
+
 @scaffoldable(scaffolder=DefaultComponentScaffolder)
 class Component(ABC):
     @classmethod
@@ -54,7 +57,7 @@ class Component(ABC):
 
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:
-        return {}
+        return get_udf_methods(cls)
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...

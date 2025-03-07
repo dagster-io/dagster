@@ -18,6 +18,7 @@ from dagster_components.core.component_defs_builder import (
     build_components_from_component_folder,
     defs_from_components,
 )
+from dagster_components.core.udf import udf
 from dagster_dbt import DbtProject
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
@@ -121,9 +122,10 @@ def test_load_from_path(dbt_path: Path) -> None:
 def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
     @dataclass
     class DebugDbtProjectComponent(DbtProjectComponent):
-        @classmethod
-        def get_additional_scope(cls) -> Mapping[str, Any]:
-            return {"get_tags_for_node": lambda node: {"model_id": node["name"].replace("_", "-")}}
+        @staticmethod
+        @udf
+        def get_tags_for_node(node: Mapping[str, Any]) -> Mapping[str, Any]:
+            return {"model_id": node["name"].replace("_", "-")}
 
     decl_node = YamlComponentDecl(
         path=dbt_path / COMPONENT_RELPATH,
