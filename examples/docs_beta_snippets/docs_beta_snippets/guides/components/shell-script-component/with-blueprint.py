@@ -14,7 +14,7 @@ from dagster_components import (
     scaffold_component_yaml,
 )
 from dagster_components.blueprint import scaffold_with
-from dagster_components.resolved.core_models import AssetSpecSequenceField
+from dagster_components.resolved.core_models import ResolvedAssetSpec
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
 
 import dagster as dg
@@ -55,7 +55,7 @@ class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
     """Models a shell script as a Dagster asset."""
 
     script_path: str
-    asset_specs: AssetSpecSequenceField
+    asset_specs: Sequence[ResolvedAssetSpec]
 
     def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
         resolved_script_path = Path(load_context.path, self.script_path).absolute()

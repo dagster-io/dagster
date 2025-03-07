@@ -11,7 +11,7 @@ from dagster_components import (
     ResolvableModel,
     ResolvedFrom,
 )
-from dagster_components.resolved.core_models import AssetSpecSequenceField
+from dagster_components.resolved.core_models import ResolvedAssetSpec
 
 import dagster as dg
 
@@ -24,7 +24,7 @@ class ShellCommandModel(ResolvableModel):
 @dataclass
 class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
     script_path: str
-    asset_specs: AssetSpecSequenceField
+    asset_specs: Sequence[ResolvedAssetSpec]
 
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:

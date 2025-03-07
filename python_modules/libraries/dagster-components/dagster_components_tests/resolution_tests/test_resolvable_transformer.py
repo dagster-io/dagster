@@ -16,6 +16,7 @@ from dagster_components.resolved.model import (
     ResolvableModel,
     ResolvedFrom,
     ResolvedKwargs,
+    ResolveFromModel,
     resolve_fields,
     resolve_model_using_kwargs_cls,
 )
@@ -173,16 +174,16 @@ def test_asset_spec():
     assert kitchen_sink_spec.automation_condition.get_label() == "eager"
 
 
+ResolvedAssetSpec: TypeAlias = Annotated[AssetSpec, ResolveFromModel(via=AssetSpecKwargs)]
+
+
 def test_asset_spec_seq() -> None:
     class SomeObjectModel(ResolvableModel):
         specs: Sequence[AssetSpecModel]
 
     @dataclass
     class SomeObject(ResolvedFrom[SomeObjectModel]):
-        specs: Annotated[
-            Sequence[AssetSpec],
-            FieldResolver(AssetSpecKwargs.resolver_fn(AssetSpec).from_seq),
-        ]
+        specs: Sequence[ResolvedAssetSpec]
 
     some_object = resolve_model_using_kwargs_cls(
         model=SomeObjectModel(

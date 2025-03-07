@@ -19,9 +19,11 @@ from typing_extensions import TypeAlias
 from dagster_components.resolved.context import ResolutionContext
 from dagster_components.resolved.model import (
     FieldResolver,
+    Injected,
     ResolvableModel,
     ResolvedFrom,
     ResolvedKwargs,
+    ResolveFromModel,
     resolve_fields,
 )
 
@@ -143,7 +145,7 @@ class SharedAssetKwargs(ResolvedKwargs["AssetAttributesModel"]):
     owners: Sequence[str]
     tags: Mapping[str, str]
     kinds: Optional[Sequence[str]]
-    automation_condition: Optional[AutomationCondition]
+    automation_condition: Optional[Injected[AutomationCondition]]
 
 
 class AssetSpecKwargs(SharedAssetKwargs):
@@ -162,10 +164,7 @@ class AssetAttributesKwargs(SharedAssetKwargs):
     ] = None
 
 
-AssetSpecSequenceField: TypeAlias = Annotated[
-    Sequence[AssetSpec],
-    FieldResolver(AssetSpecKwargs.resolver_fn(AssetSpec).from_seq),
-]
+ResolvedAssetSpec: TypeAlias = Annotated[AssetSpec, ResolveFromModel(via=AssetSpecKwargs)]
 
 
 class AssetAttributesModel(_ResolvableAssetAttributesMixin, ResolvableModel):
