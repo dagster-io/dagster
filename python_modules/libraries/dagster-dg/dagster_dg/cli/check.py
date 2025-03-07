@@ -73,7 +73,7 @@ def check_yaml_command(
 ) -> None:
     """Check component.yaml files against their schemas, showing validation errors."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
     if not check_yaml(dg_context, paths):
         click.get_current_context().exit(1)
