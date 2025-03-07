@@ -1591,6 +1591,28 @@ class AssetObservationData(
 class AssetFailedToMaterializeReason(Enum):
     COMPUTE_FAILED = "COMPUTE_FAILED"
     UPSTREAM_COMPUTE_FAILED = "UPSTREAM_COMPUTE_FAILED"
+    SKIPPED_OPTIONAL = "SKIPPED_OPTIONAL"
+    UPSTREAM_SKIPPED = "UPSTREAM_SKIPPED"
+    RUN_USER_TERMINATED = "RUN_USER_TERMINATED"
+    RUN_SYSTEM_TERMINATED = "RUN_SYSTEM_TERMINATED"
+    UNKNOWN = "UNKNOWN"
+
+
+# The asset can fail to materialize in two ways, an unexpected/unintentional failure that updates
+# the global state of the asset to failed, and one that indicates that the asset not materializing
+# is expected (like an optional asset, user canceled the run)
+MATERIALIZATION_ATTEMPT_FAILED_TYPES = [
+    AssetFailedToMaterializeReason.COMPUTE_FAILED,
+    AssetFailedToMaterializeReason.UPSTREAM_COMPUTE_FAILED,
+    AssetFailedToMaterializeReason.RUN_SYSTEM_TERMINATED,
+    AssetFailedToMaterializeReason.UNKNOWN,
+]
+
+MATERIALIZATION_ATTEMPT_SKIPPED_TYPES = [
+    AssetFailedToMaterializeReason.SKIPPED_OPTIONAL,
+    AssetFailedToMaterializeReason.UPSTREAM_SKIPPED,
+    AssetFailedToMaterializeReason.RUN_USER_TERMINATED,
+]
 
 
 @whitelist_for_serdes
