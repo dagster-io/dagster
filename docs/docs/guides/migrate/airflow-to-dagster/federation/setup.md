@@ -34,7 +34,7 @@ dagster project from-example --name airlift-federation-tutorial --example airlif
 
 ### Project structure
 
-The tutorial example contains the following files and directories:
+This tutorial example contains the following files and directories:
 
 ```plaintext
 airlift_federation_tutorial
