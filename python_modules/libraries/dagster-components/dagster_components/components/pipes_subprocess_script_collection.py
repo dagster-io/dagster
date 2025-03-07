@@ -34,21 +34,20 @@ class PipesSubprocessScriptCollectionModel(ResolvableModel):
     scripts: Sequence[PipesSubprocessScriptModel]
 
 
+def resolve_specs_by_path(
+    context: ResolutionContext, model: PipesSubprocessScriptCollectionModel
+) -> Mapping[str, Sequence[AssetSpec]]:
+    # "A mapping from Python script paths to the assets that are produced by the script.",
+    return {
+        spec.path: spec.assets for spec in PipesSubprocessScript.from_seq(context, model.scripts)
+    }
+
+
 @dataclass
 class PipesSubprocessScriptCollectionComponent(
     Component, ResolvedFrom[PipesSubprocessScriptCollectionModel]
 ):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
-
-    # "A mapping from Python script paths to the assets that are produced by the script.",
-    @staticmethod
-    def resolve_specs_by_path(
-        context: ResolutionContext, model: PipesSubprocessScriptCollectionModel
-    ) -> Mapping[str, Sequence[AssetSpec]]:
-        return {
-            spec.path: spec.assets
-            for spec in PipesSubprocessScript.from_seq(context, model.scripts)
-        }
 
     specs_by_path: Annotated[
         Mapping[str, Sequence[AssetSpec]], FieldResolver.from_model(resolve_specs_by_path)
