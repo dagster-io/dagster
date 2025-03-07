@@ -22,7 +22,7 @@ from dagster_aws.pipes.message_readers import PipesCloudWatchLogReader, PipesClo
 
 if TYPE_CHECKING:
     from mypy_boto3_glue.client import GlueClient
-    from mypy_boto3_glue.type_defs import GetJobRunResponseTypeDef, StartJobRunRequestRequestTypeDef
+    from mypy_boto3_glue.type_defs import GetJobRunResponseTypeDef, StartJobRunRequestTypeDef
 
 
 class PipesGlueClient(PipesClient, TreatAsResourceParam):
@@ -62,7 +62,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         self,
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
-        start_job_run_params: "StartJobRunRequestRequestTypeDef",
+        start_job_run_params: "StartJobRunRequestTypeDef",
         extras: Optional[dict[str, Any]] = None,
     ) -> PipesClientCompletedInvocation:
         """Start a Glue job, enriched with the pipes protocol.
