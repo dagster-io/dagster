@@ -1,7 +1,7 @@
-import {render, screen, waitFor} from '@testing-library/react';
+import {act, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {useCallback, useMemo} from 'react';
-import {MemoryRouter} from 'react-router-dom';
+import {MemoryRouter, useHistory} from 'react-router-dom';
 
 import {Route} from '../../app/Route';
 import {useQueryPersistedState} from '../useQueryPersistedState';
@@ -347,5 +347,113 @@ describe('useQueryPersistedState', () => {
         '?hello=true&items%5B%5D=Added0&items%5B%5D=Added1&items%5B%5D=Added2',
       );
     });
+  });
+
+  it('supports push behavior', async () => {
+    let querySearch: string | undefined;
+
+    let goback: () => void;
+
+    const Test = ({options}: {options: Parameters<typeof useQueryPersistedState>[0]}) => {
+      const [_, setQuery] = useQueryPersistedState(options);
+      const history = useHistory();
+      goback = () => history.goBack();
+      return (
+        <>
+          <div onClick={() => setQuery('one')}>one</div>
+          <div onClick={() => setQuery('two')}>two</div>
+          <div onClick={() => setQuery('three')}>three</div>
+        </>
+      );
+    };
+
+    render(
+      <MemoryRouter initialEntries={['/page?q=B']}>
+        <Test options={{queryKey: 'q', behavior: 'push'}} />
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByText(`one`));
+    await waitFor(() => {
+      expect(querySearch).toEqual('?q=one');
+    });
+
+    await userEvent.click(screen.getByText(`two`));
+    await waitFor(() => {
+      expect(querySearch).toEqual('?q=two');
+    });
+
+    await userEvent.click(screen.getByText(`three`));
+    await waitFor(() => {
+      expect(querySearch).toEqual('?q=three');
+    });
+
+    await act(() => {
+      goback();
+    });
+
+    await waitFor(() => {
+      expect(querySearch).toEqual('?q=two');
+    });
+
+    await act(() => {
+      goback();
+    });
+
+    await waitFor(() => {
+      expect(querySearch).toEqual('?q=one');
+    });
+  });
+
+  it('supports replace behavior', async () => {
+    let querySearch: string | undefined;
+
+    let goback: () => void;
+    let push: (...args: Parameters<ReturnType<typeof useHistory>['push']>) => void;
+
+    const Test = ({options}: {options: Parameters<typeof useQueryPersistedState>[0]}) => {
+      const [_, setQuery] = useQueryPersistedState(options);
+      const history = useHistory();
+      goback = () => history.goBack();
+      push = history.push.bind(history);
+      return (
+        <>
+          <div onClick={() => setQuery('one')}>one</div>
+          <div onClick={() => setQuery('two')}>two</div>
+          <div onClick={() => setQuery('three')}>three</div>
+        </>
+      );
+    };
+
+    render(
+      <MemoryRouter initialEntries={['/page?q=B']}>
+        <Test options={{queryKey: 'q', behavior: 'replace'}} />
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
+
+    push!('/page?');
+
+    await userEvent.click(screen.getByText(`one`));
+    await waitFor(() => {
+      expect(querySearch).toEqual('?q=one');
+    });
+
+    await userEvent.click(screen.getByText(`two`));
+    await waitFor(() => {
+      expect(querySearch).toEqual('?q=two');
+    });
+
+    await userEvent.click(screen.getByText(`three`));
+    await waitFor(() => {
+      expect(querySearch).toEqual('?q=three');
+    });
+
+    await act(() => {
+      goback();
+    });
+
+    expect(querySearch).toEqual('?q=B'); // end up back on initial route
   });
 });
