@@ -1,22 +1,28 @@
 ---
-title: "Interactive debugging with pdb"
-description: 'Learn how to use pdb for interactive debugging'
+title: "Debugging assets during execution"
+description: 'Debugging assets during execution'
 sidebar_position: 10
 ---
 
-Sometimes you may want to debug an asset while it is executing. To simplify this process, Dagster supports interactive debugging with [pdb](https://docs.python.org/3/library/pdb.html) through the <PyObject section="execution" module="dagster" object="AssetExecutionContext" /> of an asset. pdb is useful when you need to step through code line-by-line to identify and fix bugs by inspecting variables and program flow in real time.
+Sometimes you may want to debug an asset while it is executing. To simplify this process, Dagster supports interactive debugging with [`pdb`](https://docs.python.org/3/library/pdb.html) through the <PyObject section="execution" module="dagster" object="AssetExecutionContext" /> of an asset. `pdb` helps you identify and fix bugs by enabling you to inspect variables and program flow in an interactive debugging console starting from a breakpoint you set in your code.
 
-## Setting pdb
+This can be useful when debugging assets with complex transformations or assets that retrieve data from external systems where you want to work directly with the data inside of the asset.
 
-Add `context.pdb.set_trace()` to the asset code where you want to enter the debugger.
+## 1. Set a pdb breakpoint in your asset
+
+First, add the `context` parameter to your asset definition, and add `context.pdb.set_trace()` to the asset code where you want to add a breakpoint. You should insert your breakpoint after the variables you are interested in have been initialized but before any mutations. With `pdb` you will be able to proceed to the next statement of the asset but will not be able to reverse the state of a variable so it is better to set the break point early.
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/monitor-alert/debugging/pdb.py" language="python" />
 
-Next you can launch the asset locally from your terminal with `dagster dev`. When the asset is materialized, the execution in the Dagster will wait on the asset where pdb has been set.
+## 2. Launch the webserver and materialize your asset
+
+Next, launch the Dagster webserver from your terminal with `dagster dev`, then, in the UI, materialize the asset. The asset will remain in a "Materializing" state while the interactive debugger is running.
 
 ![pdb Asset Running](/images/guides/monitor/debugging/pdb-asset-running.png)
 
-In the terminal where running `dagster dev`, there will now be a pdb debugger.
+## 3. Debug your asset in the `pdb` debugger
+
+In the terminal where `dagster dev` is running, you should now see a `pdb` debugger:
 
 ```bash
 2025-03-03 15:24:55 -0600 - dagster - DEBUG - __ASSET_JOB - 202cd42f-ecf3-4504-838c-e41f58dbdf78 - 52536 - RUN_START - Started execution of run for "__ASSET_JOB".
@@ -33,18 +39,20 @@ In the terminal where running `dagster dev`, there will now be a pdb debugger.
 (Pdb)
 ```
 
-## Accessing variables
-
-The pdb debugger will be at the point in the asset where `context.pdb.set_trace()` was set and give you access to any of the variables within the asset at that point in the asset code.
+The `pdb` debugger will start at the point in the asset where you set the breakpoint, and give you access to any of the variables in the asset that have been defined by that point in the code. At this point the variable `x` has been defined and set to 10. We can return `x` to get its current value and see the new statement of the asset above `x += 5`.
 
 ```bash
+--Return--
+> /Users/dennis/code/dagster-quickstart/debugging.py(11)pdb_asset()
+-> x += 5
 (Pdb) x
 10
 ```
 
-You can keep navigate through the asset code using any [pdb commands](https://realpython.com/python-debugging-pdb/#essential-pdb-commands) and access variables at different points to see how values change over time. 
+You can navigate through the asset code using any [pdb commands](https://docs.python.org/3/library/pdb.html#debugger-commands) and access variables at different points to see how values change over time. 
 
 ```bash
+--Return--
 > /Users/dennis/code/dagster-quickstart/debugging.py(11)pdb_asset()
 -> x += 5
 (Pdb) x
@@ -62,12 +70,12 @@ You can keep navigate through the asset code using any [pdb commands](https://re
 (Pdb)
 ```
 
-While these pdb commands occur in the terminal, they will also be recorded in `stdout` of the Dagster asset execution.
+While these `pdb` commands occur in the terminal, they will also be recorded in `stdout` of the Dagster asset execution:
 
 ![pdb stdout](/images/guides/monitor/debugging/stdout.png)
 
-## Continuing execution
+## 4. End debugging and finish materializing your asset
 
-The asset will remain in the "materializing" state until all the statements of the asset have been navigated through using `next` or `continue` is executed within pdb. The asset will then finish materializing and close pdb in the terminal.
+The asset will remain in the "Materializing" state until you have navigated through all the statements of the asset with `next` or until you execute `continue` within `pdb`. The asset will then finish materializing and close `pdb` in the terminal:
 
 ![pdb Asset Success](/images/guides/monitor/debugging/pdb-asset-success.png)
