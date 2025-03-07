@@ -1,6 +1,7 @@
 import shutil
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
 
@@ -11,9 +12,8 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 from dagster_components.core.component import Component, ComponentLoadContext
-from dagster_components.resolved.context import ResolutionContext
-from dagster_components.resolved.core_models import AssetSpecModel, AssetSpecSequenceField
-from dagster_components.resolved.model import FieldResolver, ResolvableModel, ResolvedFrom
+from dagster_components.resolved.core_models import AssetSpecModel, ResolvedAssetSpec
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
@@ -27,20 +27,11 @@ class PipesSubprocessScriptModel(ResolvableModel):
 @dataclass
 class PipesSubprocessScript(ResolvedFrom[PipesSubprocessScriptModel]):
     path: str
-    assets: AssetSpecSequenceField
+    assets: Sequence[ResolvedAssetSpec]
 
 
 class PipesSubprocessScriptCollectionModel(ResolvableModel):
     scripts: Sequence[PipesSubprocessScriptModel]
-
-
-def resolve_specs_by_path(
-    context: ResolutionContext, model: PipesSubprocessScriptCollectionModel
-) -> Mapping[str, Sequence[AssetSpec]]:
-    # "A mapping from Python script paths to the assets that are produced by the script.",
-    return {
-        spec.path: spec.assets for spec in PipesSubprocessScript.from_seq(context, model.scripts)
-    }
 
 
 @dataclass
@@ -49,14 +40,20 @@ class PipesSubprocessScriptCollectionComponent(
 ):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
 
-    specs_by_path: Annotated[
-        Mapping[str, Sequence[AssetSpec]], FieldResolver.from_model(resolve_specs_by_path)
-    ] = ...
+    scripts: Annotated[Sequence[PipesSubprocessScript], Resolver.from_annotation()]
+
+    @cached_property
+    def specs_by_path(self) -> Mapping[str, Sequence[AssetSpec]]:
+        return {script.path: script.assets for script in self.scripts}
 
     @staticmethod
     def introspect_from_path(path: Path) -> "PipesSubprocessScriptCollectionComponent":
-        path_specs = {str(path): [AssetSpec(path.stem)] for path in list(path.rglob("*.py"))}
-        return PipesSubprocessScriptCollectionComponent(specs_by_path=path_specs)
+        return PipesSubprocessScriptCollectionComponent(
+            [
+                PipesSubprocessScript(path=str(path), assets=[AssetSpec(path.stem)])
+                for path in list(path.rglob("*.py"))
+            ]
+        )
 
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions

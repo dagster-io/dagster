@@ -30,7 +30,7 @@ from dagster_components.resolved.core_models import (
     OpSpecModel,
 )
 from dagster_components.resolved.metadata import ResolvableFieldInfo
-from dagster_components.resolved.model import FieldResolver, ResolvableModel, ResolvedFrom
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
@@ -72,10 +72,8 @@ def resolve_translator(
 @dataclass
 class SlingReplicationSpecModel(ResolvedFrom["SlingReplicationModel"]):
     path: str
-    op: Annotated[Optional[OpSpec], FieldResolver(OpSpec.from_optional)]
-    translator: Annotated[
-        Optional[DagsterSlingTranslator], FieldResolver.from_model(resolve_translator)
-    ]
+    op: Annotated[Optional[OpSpec], Resolver.from_annotation()]
+    translator: Annotated[Optional[DagsterSlingTranslator], Resolver.from_model(resolve_translator)]
     include_metadata: list[SlingMetadataAddons]
 
 
@@ -122,13 +120,10 @@ def resolve_resource(
 class SlingReplicationCollectionComponent(Component, ResolvedFrom[SlingReplicationCollectionModel]):
     """Expose one or more Sling replications to Dagster as assets."""
 
-    resource: Annotated[SlingResource, FieldResolver.from_model(resolve_resource)] = ...
-    replications: Annotated[
-        Sequence[SlingReplicationSpecModel], FieldResolver(SlingReplicationSpecModel.from_seq)
-    ] = ...
+    resource: Annotated[SlingResource, Resolver.from_model(resolve_resource)] = ...
+    replications: Annotated[Sequence[SlingReplicationSpecModel], Resolver.from_annotation()] = ...
     asset_post_processors: Annotated[
-        Optional[Sequence[AssetPostProcessor]],
-        FieldResolver(AssetPostProcessor.from_optional_seq),
+        Optional[Sequence[AssetPostProcessor]], Resolver.from_annotation()
     ] = None
 
     def build_asset(
