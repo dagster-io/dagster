@@ -88,6 +88,9 @@ T = TypeVar("T")
 
 WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL = 45
 
+from watchdog.events import FileSystemEventHandler as WatchdogFileSystemEventHandler
+from watchdog.observers import Observer as WatchdogObserver
+
 
 class BaseWorkspaceRequestContext(LoadingContext):
     """This class is a request-scoped object that stores (1) a reference to all repository locations
@@ -244,6 +247,15 @@ class BaseWorkspaceRequestContext(LoadingContext):
         # This method signals to the remote gRPC server that it should reload its
         # code, and returns a new request context created from the updated process context
         self.process_context.reload_code_location(name)
+        return self.process_context.create_request_context()
+
+    def refresh_code_location(self, name: str) -> "BaseWorkspaceRequestContext":
+        # This method signals to the remote gRPC server that it should reload its
+        # code, and returns a new request context created from the updated process context
+
+        print("REFRESH CODE LOCATION")
+
+        self.process_context.refresh_code_location(name)
         return self.process_context.create_request_context()
 
     def shutdown_code_location(self, name: str):
@@ -596,6 +608,10 @@ class IWorkspaceProcessContext(ABC):
     def reload_code_location(self, name: str) -> None:
         pass
 
+    @abstractmethod
+    def refresh_code_location(self, name: str) -> None:
+        pass
+
     def shutdown_code_location(self, name: str) -> None:
         raise NotImplementedError
 
@@ -652,6 +668,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             workspace_load_target, "workspace_load_target", WorkspaceLoadTarget
         )
 
+        print("TARGET: " + str(self._workspace_load_target))
+
         self._read_only = read_only
 
         self._version = version
@@ -660,6 +678,8 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._lock = threading.Lock()
         self._watch_thread_shutdown_events: dict[str, threading.Event] = {}
         self._watch_threads: dict[str, threading.Thread] = {}
+        self._watchdog_threads: dict[str, WatchdogObserver] = {}
+        self._watchdog_thread_shutdown_events: dict[str, threading.Event] = {}
 
         self._state_subscribers_lock = threading.Lock()
         self._state_subscriber_id_iter = count()
@@ -792,7 +812,33 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._watch_threads[location_name] = watch_thread
         watch_thread.start()
 
-    def _load_location(self, origin: CodeLocationOrigin, reload: bool) -> CodeLocationEntry:
+    def _start_watchdog_thread(self, origin: ManagedGrpcPythonEnvCodeLocationOrigin) -> None:
+        location_name = origin.location_name
+
+        context = self
+
+        class Handler(WatchdogFileSystemEventHandler):
+            def on_any_event(self, event):
+                print(f"Watchdog event {event} for {location_name}")
+                print(str(type(context)))
+                context.refresh_code_location(location_name)
+                print("CALLED REFRESH! DID IT FINISH??")
+
+        print("WHERE SHOULD I WATCH FOR " + str(origin.loadable_target_origin))
+        watch_path = origin.loadable_target_origin.get_root_path()
+
+        print("WATCHING " + str(watch_path))
+        thread = WatchdogObserver()
+        thread.schedule(Handler(), watch_path, recursive=True)
+
+        self._watchdog_threads[location_name] = thread
+
+        thread.start()
+
+    def _load_location(
+        self, origin: CodeLocationOrigin, reload: bool, refresh: bool = False
+    ) -> CodeLocationEntry:
+        print("LOADING LOCATION!!! " + str(type(origin)))
         location_name = origin.location_name
         location = None
         error = None
@@ -803,6 +849,13 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                     if reload
                     else self._grpc_server_registry.get_grpc_endpoint(origin)
                 )
+
+                if refresh:
+                    print("INITIATING REFRESH")
+                    endpoint.create_client().reload_code(
+                        timeout=self._instance.code_server_reload_timeout, refresh=True
+                    )
+
                 location = GrpcServerCodeLocation(
                     origin=origin,
                     port=endpoint.port,
@@ -814,11 +867,18 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                     instance=self._instance,
                 )
             else:
-                location = (
-                    origin.reload_location(self.instance)
-                    if reload
-                    else origin.create_location(self.instance)
-                )
+                if reload:
+                    print("DOING A FULL RELOAD")
+                    location = origin.reload_location(self.instance)
+                else:
+                    if refresh:
+                        import traceback
+
+                        traceback.print_stack()
+                        print("REFRESHING FROM ORIGIN " + str(type(origin)))
+                        origin.refresh_location(self._instance)
+                        print("REFRESHED FROM ORIGIN")
+                    location = origin.create_location(self.instance)
 
         except Exception:
             error = serializable_error_info_from_exc_info(sys.exc_info())
@@ -897,7 +957,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
     def refresh_workspace(self) -> None:
         updated_locations = {
-            origin.location_name: self._load_location(origin, reload=False)
+            origin.location_name: self._load_location(origin, reload=False, refresh=True)
             for origin in self._origins
         }
         self._update_workspace(updated_locations)
@@ -919,12 +979,16 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             self._watch_threads = {}
 
             previous_locations = self._current_workspace.code_location_entries
-            self._current_workspace = CurrentWorkspace(code_location_entries=new_locations)
+            previous_watchdog_threads = self._watchdog_threads
+            self._watchdog_threads = {}
 
+            self._current_workspace = CurrentWorkspace(code_location_entries=new_locations)
             # start monitoring for new locations
             for entry in new_locations.values():
                 if isinstance(entry.origin, GrpcServerCodeLocationOrigin):
                     self._start_watch_thread(entry.origin)
+                elif isinstance(entry.origin, ManagedGrpcPythonEnvCodeLocationOrigin):
+                    self._start_watchdog_thread(entry.origin)
 
         # clean up previous locations
         for event in previous_events.values():
@@ -932,6 +996,13 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
         for watch_thread in previous_threads.values():
             watch_thread.join()
+
+        for watch_thread in previous_watchdog_threads.values():
+            print("JOINING WATCHDOG THREAD")
+            watch_thread.stop()
+            watch_thread.join()
+
+            print("JOINED")
 
         for entry in previous_locations.values():
             if entry.code_location:
@@ -954,22 +1025,22 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             LocationStateChangeEventType.LOCATION_UPDATED,
             LocationStateChangeEventType.LOCATION_ERROR,
         ):
-            # In case of an updated location, reload the handle to get updated repository data and
-            # re-attach a subscriber
-            # In case of a location error, just reload the handle in order to update the workspace
-            # with the correct error messages
             logging.getLogger("dagster-webserver").info(
                 f"Received {event.event_type} event for location {event.location_name}, refreshing"
             )
-            self.refresh_code_location(event.location_name)
+            self.refresh_code_location(event.location_name, refresh=False)
 
-    def refresh_code_location(self, name: str) -> None:
+    def refresh_code_location(self, name: str, refresh: bool = True) -> None:
         # This method reloads the webserver's copy of the code from the remote gRPC server without
         # restarting it, and returns a new request context created from the updated process context
         new_entry = self._load_location(
-            self._current_workspace.code_location_entries[name].origin, reload=False
+            self._current_workspace.code_location_entries[name].origin,
+            reload=False,
+            refresh=refresh,
         )
+        print("RELOADING WITH REFRESH FROM SERVER")
         with self._lock:
+            print("GOT LOCK")
             # Relying on GC to clean up the old location once nothing else
             # is referencing it
             self._current_workspace = self._current_workspace.with_code_location(name, new_entry)

@@ -278,7 +278,7 @@ class DagsterDaemonController(AbstractContextManager):
             if (nowish - last_workspace_update_time) > RELOAD_WORKSPACE_INTERVAL:
                 if self._grpc_server_registry:
                     self._grpc_server_registry.clear_all_grpc_endpoints()
-                self._workspace_process_context.refresh_workspace()
+                #                self._workspace_process_context.refresh_workspace()
                 return get_current_timestamp()
         except Exception:
             if (nowish - last_workspace_update_time) > DEFAULT_WORKSPACE_FRESHNESS_TOLERANCE:

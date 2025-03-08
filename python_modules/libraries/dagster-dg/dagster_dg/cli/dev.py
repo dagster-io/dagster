@@ -135,6 +135,7 @@ def dev_command(
             "dev",
             *forward_options,
         ]
+        print("CMD: " + str(cmd))
         cmd_location = "ephemeral dagster dev"
     else:
         exit_with_error("This command must be run inside a project or workspace directory.")
