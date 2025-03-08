@@ -105,6 +105,9 @@ def dev_command(
         *(["--verbose"] if verbose else []),
     ]
 
+    if dg_context.use_dg_managed_environment:
+        dg_context.ensure_uv_sync()
+
     # In a project context, we can just run `dagster dev` directly, using `dagster` from the
     # project's environment.
     temp_workspace_file_cm = temp_workspace_file(dg_context)
