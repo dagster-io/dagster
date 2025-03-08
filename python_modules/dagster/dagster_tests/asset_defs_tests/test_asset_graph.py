@@ -11,7 +11,6 @@ from dagster import (
     AssetsDefinition,
     AssetSpec,
     AutomationCondition,
-    DagsterInstance,
     DailyPartitionsDefinition,
     Definitions,
     GraphOut,
@@ -57,7 +56,7 @@ def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
     remote_repo = RemoteRepository(
         RepositorySnap.from_def(repo),
         repository_handle=RepositoryHandle.for_test(location_name="fake", repository_name="repo"),
-        instance=DagsterInstance.ephemeral(),
+        auto_materialize_use_sensors=True,
     )
     return remote_repo.asset_graph
 

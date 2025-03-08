@@ -87,8 +87,7 @@ def instance_without_auto_materialize_sensors():
         yield the_instance
 
 
-def test_default_auto_materialize_sensors(instance_with_auto_materialize_sensors):
-    instance = instance_with_auto_materialize_sensors
+def test_default_auto_materialize_sensors():
     repo_handle = RepositoryHandle.for_test(
         location_name="foo_location",
         repository_name="bar_repo",
@@ -98,7 +97,7 @@ def test_default_auto_materialize_sensors(instance_with_auto_materialize_sensors
             defs.get_repository_def(),
         ),
         repository_handle=repo_handle,
-        instance=instance,
+        auto_materialize_use_sensors=True,
     )
 
     sensors = remote_repo.get_sensors()
@@ -120,11 +119,7 @@ def test_default_auto_materialize_sensors(instance_with_auto_materialize_sensors
     assert auto_materialize_sensor.asset_selection == AssetSelection.all(include_sources=True)
 
 
-def test_default_auto_materialize_sensors_without_observable(
-    instance_with_auto_materialize_sensors,
-):
-    instance = instance_with_auto_materialize_sensors
-
+def test_default_auto_materialize_sensors_without_observable():
     repo_handle = RepositoryHandle.for_test(
         location_name="foo_location",
         repository_name="bar_repo",
@@ -135,7 +130,7 @@ def test_default_auto_materialize_sensors_without_observable(
             defs_without_observables.get_repository_def(),
         ),
         repository_handle=repo_handle,
-        instance=instance,
+        auto_materialize_use_sensors=True,
     )
 
     sensors = remote_repo.get_sensors()
@@ -150,7 +145,7 @@ def test_default_auto_materialize_sensors_without_observable(
     assert auto_materialize_sensor.asset_selection == AssetSelection.all(include_sources=False)
 
 
-def test_opt_out_default_auto_materialize_sensors(instance_without_auto_materialize_sensors):
+def test_opt_out_default_auto_materialize_sensors():
     repo_handle = RepositoryHandle.for_test(
         location_name="foo_location",
         repository_name="bar_repo",
@@ -162,7 +157,7 @@ def test_opt_out_default_auto_materialize_sensors(instance_without_auto_material
             defs.get_repository_def(),
         ),
         repository_handle=repo_handle,
-        instance=instance_without_auto_materialize_sensors,
+        auto_materialize_use_sensors=True,
     )
     sensors = remote_repo.get_sensors()
     assert len(sensors) == 2
@@ -170,7 +165,7 @@ def test_opt_out_default_auto_materialize_sensors(instance_without_auto_material
     assert sensors[1].name == "normal_sensor"
 
 
-def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_materialize_sensors):
+def test_combine_default_sensors_with_non_default_sensors():
     auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_custom_policy_sensor",
         target=[auto_materialize_asset, auto_observe_asset],
@@ -197,7 +192,7 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
             defs_with_auto_materialize_sensor.get_repository_def(),
         ),
         repository_handle=repo_handle,
-        instance=instance_with_auto_materialize_sensors,
+        auto_materialize_use_sensors=True,
     )
 
     sensors = remote_repo.get_sensors()
@@ -234,7 +229,7 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
     }
 
 
-def test_custom_sensors_cover_all(instance_with_auto_materialize_sensors):
+def test_custom_sensors_cover_all():
     auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_custom_policy_sensor",
         target=[
@@ -267,7 +262,7 @@ def test_custom_sensors_cover_all(instance_with_auto_materialize_sensors):
             defs_with_auto_materialize_sensor.get_repository_def(),
         ),
         repository_handle=repo_handle,
-        instance=instance_with_auto_materialize_sensors,
+        auto_materialize_use_sensors=True,
     )
 
     sensors = remote_repo.get_sensors()

@@ -768,7 +768,7 @@ def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> CurrentW
                 location_name="test",
                 repository_name=repo.name,
             ),
-            instance=DagsterInstance.ephemeral(),
+            auto_materialize_use_sensors=True,
         )
     mock_entry = unittest.mock.MagicMock(spec=CodeLocationEntry)
     mock_location = unittest.mock.MagicMock(spec=CodeLocation)

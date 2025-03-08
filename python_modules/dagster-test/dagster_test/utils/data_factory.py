@@ -4,7 +4,7 @@ from collections.abc import (
     Set as AbstractSet,
 )
 from datetime import datetime
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 from uuid import uuid4
 
 from dagster import (
@@ -22,6 +22,13 @@ from dagster._core.events import (
     ResolvedFromDynamicStepHandle,
     StepHandle,
 )
+from dagster._core.remote_representation.external import RemoteRepository
+from dagster._core.remote_representation.external_data import (
+    JobDataSnap,
+    JobRefSnap,
+    RepositorySnap,
+)
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.storage.dagster_run import RunOpConcurrency
 from dagster._grpc.types import JobPythonOrigin, RemoteJobOrigin, SerializableErrorInfo
 from pydantic import UUID4
@@ -121,4 +128,18 @@ def dagster_run(
         job_code_origin=job_code_origin,
         has_repository_load_data=has_repository_load_data,
         run_op_concurrency=run_op_concurrency,
+    )
+
+
+def remote_repository(
+    repository_snap: RepositorySnap,
+    repository_handle: RepositoryHandle,
+    auto_materialize_use_sensors: bool = True,
+    ref_to_data_fn: Optional[Callable[[JobRefSnap], JobDataSnap]] = None,
+):
+    return RemoteRepository(
+        repository_snap=repository_snap,
+        repository_handle=repository_handle,
+        auto_materialize_use_sensors=auto_materialize_use_sensors,
+        ref_to_data_fn=ref_to_data_fn,
     )
