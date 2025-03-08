@@ -232,13 +232,13 @@ class SlingResource(ConfigurableResource):
         tmp = None
         tmp_metadata = {}
         end_time = time.time()
-        target_type = re.findall('writing to target ([\w\s]*) ',metadata_string)[0]
+        target_type = re.findall(r'writing to target ([\w\s]*) ',metadata_string)[0]
         if target_type == "database":
-            tmp = re.findall('inserted ([0-9]*) rows .*into ([\w.:/;-_\"\'{}]*)',metadata_string)
+            tmp = re.findall(r'inserted ([0-9]*) rows .*into ([\w.:/;-_\"\'{}]*)',metadata_string)
         elif target_type == "file system": 
-            tmp = re.findall('wrote ([0-9]*) rows .*to ([\w.:/;-_\"\'{}]*)',metadata_string)
+            tmp = re.findall(r'wrote ([0-9]*) rows .*to ([\w.:/;-_\"\'{}]*)',metadata_string)
         else: 
-            tmp = re.findall('inserted ([0-9]*) rows .*into ([\w.:/;-_\"\'{}]*)',metadata_string)
+            tmp = re.findall(r'inserted ([0-9]*) rows .*into ([\w.:/;-_\"\'{}]*)',metadata_string)
             
         if tmp:
             
