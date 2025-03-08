@@ -16,7 +16,6 @@ import {AssetGraphSettingsButton, useLayoutDirectionState} from '../asset-graph/
 import {GraphData, GraphNode, groupIdForNode, toGraphId} from '../asset-graph/Utils';
 import {DEFAULT_MAX_ZOOM} from '../graph/SVGConsts';
 import {SVGViewport, SVGViewportRef} from '../graph/SVGViewport';
-import {SVGViewportProvider} from '../graph/SVGViewportContext';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {isNodeOffscreen} from '../graph/common';
 import {AssetKeyInput} from '../graphql/types';
@@ -28,11 +27,7 @@ export type AssetNodeLineageGraphProps = {
 };
 
 export const AssetNodeLineageGraph = (props: AssetNodeLineageGraphProps) => {
-  return (
-    <SVGViewportProvider>
-      <AssetNodeLineageGraphInner {...props} />
-    </SVGViewportProvider>
-  );
+  return <AssetNodeLineageGraphInner {...props} />;
 };
 
 const AssetNodeLineageGraphInner = ({
