@@ -219,7 +219,7 @@ def scaffold_component_instance(
     os.makedirs(path, exist_ok=True)
     scaffold_command = [
         "scaffold",
-        "component",
+        "defs",
         component_type,
         str(path),
         *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),

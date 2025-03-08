@@ -153,7 +153,7 @@ def project_scaffold_command(
 # ########################
 
 
-# The `dg scaffold component` command is special because its subcommands are dynamically generated
+# The `dg scaffold defs` command is special because its subcommands are dynamically generated
 # from the registered component types in the project. Because the registered component types
 # depend on the built-in component library we are using, we cannot resolve them until we have the
 # built-in component library, which can be set via a global option, e.g.:
@@ -229,7 +229,7 @@ class ComponentScaffoldSubCommand(DgClickCommand):
 # options first and generate the correct subcommands. We then add a custom `--help` option that
 # gets invoked inside the callback.
 @scaffold_group.group(
-    name="component",
+    name="defs",
     cls=ComponentScaffoldGroup,
     invoke_without_command=True,
     context_settings={"help_option_names": []},
@@ -238,7 +238,7 @@ class ComponentScaffoldSubCommand(DgClickCommand):
 @dg_global_options
 @click.pass_context
 def component_scaffold_group(context: click.Context, help_: bool, **global_options: object) -> None:
-    """Scaffold of a Dagster component."""
+    """Scaffold of a Dagster definitions module."""
     # Click attempts to resolve subcommands BEFORE it invokes this callback.
     # Therefore we need to manually invoke this callback during subcommand generation to make sure
     # it runs first. It will be invoked again later by Click. We make it idempotent to deal with

@@ -303,7 +303,7 @@ def test_scaffold_component_dynamic_subcommand_generation() -> None:
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "component", "--help")
+        result = runner.invoke("scaffold", "defs", "--help")
         assert_runner_result(result)
 
         normalized_output = standardize_box_characters(result.output)
@@ -326,7 +326,7 @@ def test_scaffold_component_no_params_success(in_workspace: bool) -> None:
     ):
         result = runner.invoke(
             "scaffold",
-            "component",
+            "defs",
             "dagster_test.components.AllMetadataEmptyComponent",
             "qux",
         )
@@ -348,7 +348,7 @@ def test_scaffold_component_json_params_success(in_workspace: bool) -> None:
     ):
         result = runner.invoke(
             "scaffold",
-            "component",
+            "defs",
             "dagster_test.components.SimplePipesScriptComponent",
             "qux",
             "--json-params",
@@ -373,7 +373,7 @@ def test_scaffold_component_key_value_params_success(in_workspace: bool) -> None
     ):
         result = runner.invoke(
             "scaffold",
-            "component",
+            "defs",
             "dagster_test.components.SimplePipesScriptComponent",
             "qux",
             "--asset-key=foo",
@@ -397,7 +397,7 @@ def test_scaffold_component_json_params_and_key_value_params_fails() -> None:
     ):
         result = runner.invoke(
             "scaffold",
-            "component",
+            "defs",
             "dagster_test.components.SimplePipesScriptComponent",
             "qux",
             "--json-params",
@@ -412,7 +412,7 @@ def test_scaffold_component_json_params_and_key_value_params_fails() -> None:
 
 def test_scaffold_component_undefined_component_type_fails() -> None:
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
-        result = runner.invoke("scaffold", "component", "fake.Fake", "qux")
+        result = runner.invoke("scaffold", "defs", "fake.Fake", "qux")
         assert_runner_result(result, exit_0=False)
         assert "No component type `fake.Fake` is registered" in result.output
 
@@ -428,7 +428,7 @@ def test_scaffold_component_command_with_non_matching_module_name():
 
         result = runner.invoke(
             "scaffold",
-            "component",
+            "defs",
             "dagster_test.components.AllMetadataEmptyComponent",
             "qux",
         )
@@ -444,14 +444,14 @@ def test_scaffold_component_already_exists_fails(in_workspace: bool) -> None:
     ):
         result = runner.invoke(
             "scaffold",
-            "component",
+            "defs",
             "dagster_test.components.AllMetadataEmptyComponent",
             "qux",
         )
         assert_runner_result(result)
         result = runner.invoke(
             "scaffold",
-            "component",
+            "defs",
             "dagster_test.components.AllMetadataEmptyComponent",
             "qux",
         )
@@ -470,7 +470,7 @@ def test_scaffold_component_succeeds_non_default_defs_module() -> None:
             set_toml_value(toml, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
         result = runner.invoke(
             "scaffold",
-            "component",
+            "defs",
             "dagster_test.components.AllMetadataEmptyComponent",
             "qux",
         )
@@ -493,7 +493,7 @@ def test_scaffold_component_fails_defs_module_does_not_exist() -> None:
             set_toml_value(toml, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
         result = runner.invoke(
             "scaffold",
-            "component",
+            "defs",
             "dagster_test.components.AllMetadataEmptyComponent",
             "qux",
         )
@@ -510,7 +510,7 @@ def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
         assert_runner_result(result)
         assert Path("foo_bar/lib/baz.py").exists()
 
-        result = runner.invoke("scaffold", "component", "foo_bar.lib.Baz", "qux")
+        result = runner.invoke("scaffold", "defs", "foo_bar.lib.Baz", "qux")
         assert_runner_result(result)
         assert Path("foo_bar/defs/qux").exists()
         component_yaml_path = Path("foo_bar/defs/qux/component.yaml")
@@ -571,7 +571,7 @@ def test_scaffold_dbt_project_instance(params) -> None:
         subprocess.run(["uv", "add", "dagster-components[dbt]", "dagster-dbt"], check=True)
         result = runner.invoke(
             "scaffold",
-            "component",
+            "defs",
             "dagster_components.dagster_dbt.DbtProjectComponent",
             "my_project",
             *params,
