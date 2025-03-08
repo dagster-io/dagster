@@ -227,15 +227,27 @@ class SlingResource(ConfigurableResource):
             final_dict (dict): Final metadata idct contain metadata query from string
         """
         if base_metadata is None:
-            base_metadata = ["stream_name", "row_count", "destination_table", "elapsed_time"]
+            base_metadata = ["stream_name", "row_count", "destination_table", "destination_file", "elapsed_time"]
 
+        tmp = None
         tmp_metadata = {}
         end_time = time.time()
-        tmp = re.findall('inserted ([0-9]*) rows into (.*) in ([0-9]*) secs',metadata_string)
+        target_type = re.findall('writing to target ([\w\s]*) ',metadata_string)[0]
+        if target_type == "database":
+            tmp = re.findall('inserted ([0-9]*) rows .*into ([\w.:/;-_\"\'{}]*)',metadata_string)
+        elif target_type == "file system": 
+            tmp = re.findall('wrote ([0-9]*) rows .*to ([\w.:/;-_\"\'{}]*)',metadata_string)
+        else: 
+            tmp = re.findall('inserted ([0-9]*) rows .*into ([\w.:/;-_\"\'{}]*)',metadata_string)
+            
         if tmp:
-            tmp_metadata["row_count"] = tmp[0][0]
-            tmp_metadata["destination_table"] = tmp[0][1]
+            
+            if target_type == "database":
+                tmp_metadata["destination_table"] = tmp[0][1]
+            if target_type == "file system":
+                tmp_metadata["destination_file"] = tmp[0][1]
             tmp_metadata["elapsed_time"] = end_time - start_time
+            tmp_metadata["row_count"] = tmp[0][0]
             
         final_dict = {}
         for k in base_metadata:
@@ -524,6 +536,7 @@ class SlingResource(ConfigurableResource):
                         if matched:
                             # If yes, query metadata and materialize asset
                             metadata = self._query_metadata("\n".join(metadata_text), start_time=start_time)
+                            start_time=time.time()
                             metadata["stream_name"] = current_stream
                             logger.debug(metadata)
                             logger.debug(metadata_text)
