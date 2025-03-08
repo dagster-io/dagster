@@ -1,6 +1,9 @@
+import os
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Iterator, NamedTuple, Optional, Sequence
+from importlib.util import find_spec
+from typing import NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
@@ -65,6 +68,20 @@ class LoadableTargetOrigin(
     @property
     def as_dict(self) -> dict:
         return {k: v for k, v in self._asdict().items() if v is not None}
+
+    def get_root_path(self) -> str:
+        if self.working_directory and self.python_file:
+            return os.path.join(self.working_directory, self.python_file)
+        elif self.python_file:
+            return self.python_file
+        # origin is a guaranteed string for non-namespace-packages
+        elif self.package_name or self.module_name:
+            spec = find_spec(check.not_none(self.package_name or self.module_name))
+            assert spec is not None, f"Could not find package {self.package_name}."
+            assert spec.origin is not None, "Namespace package has no root path."
+            return os.path.dirname(spec.origin)
+        else:
+            raise Exception("Cannot resolve root path for LoadableTargetOrigin")
 
 
 _current_loadable_target_origin: ContextVar[Optional[LoadableTargetOrigin]] = (
