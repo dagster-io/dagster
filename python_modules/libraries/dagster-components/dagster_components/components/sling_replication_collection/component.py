@@ -74,7 +74,7 @@ class SlingReplicationModel(ResolvableModel):
     )
     asset_attributes: Annotated[
         Optional[AssetAttributesModel],
-        ResolvableFieldInfo(required_scope={"stream_definition"}),
+        ResolvableFieldInfo(required_scope={"stream_definition", "spec"}),
     ] = Field(
         None,
         description="Customizations to the assets produced by the Sling replication.",
