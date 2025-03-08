@@ -541,6 +541,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         return False
 
     @property
+    def supports_partition_subset_in_asset_materialization_planned_events(self) -> bool:
+        return False
+
+    @property
     def asset_records_have_last_observation(self) -> bool:
         return False
 
