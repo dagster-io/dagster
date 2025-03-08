@@ -63,7 +63,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Monitor',
+      label: 'Monitor & debug',
       collapsed: false,
       link: {type: 'doc', id: 'guides/monitor/index'},
       items: [
