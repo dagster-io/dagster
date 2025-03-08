@@ -148,13 +148,14 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
 export function indexedDBAsyncMemoize<R, U extends (...args: any[]) => Promise<R>>(
   fn: U,
   hashFn?: (...args: Parameters<U>) => any,
+  key?: string,
 ): U & {
   isCached: (...args: Parameters<U>) => Promise<boolean>;
 } {
   let lru: ReturnType<typeof cache<R>> | undefined;
   try {
     lru = cache<R>({
-      dbName: 'indexDBAsyncMemoizeDB',
+      dbName: `indexDBAsyncMemoizeDB${key}`,
       maxCount: 50,
     });
   } catch {}
