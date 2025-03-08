@@ -3,6 +3,7 @@ import LRU from 'lru-cache';
 
 import {timeByParts} from './timeByParts';
 import {cache} from '../util/idb-lru-cache';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
 function twoDigit(v: number) {
   return `${v < 10 ? '0' : ''}${v}`;
@@ -144,24 +145,25 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
   }) as any;
 }
 
-export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise<R>>(
+export function indexedDBAsyncMemoize<R, U extends (...args: any[]) => Promise<R>>(
   fn: U,
-  hashFn?: (arg: T, ...rest: any[]) => any,
+  hashFn?: (...args: Parameters<U>) => any,
+  key?: string,
 ): U & {
-  isCached: (arg: T, ...rest: any[]) => Promise<boolean>;
+  isCached: (...args: Parameters<U>) => Promise<boolean>;
 } {
   let lru: ReturnType<typeof cache<R>> | undefined;
   try {
     lru = cache<R>({
-      dbName: 'indexDBAsyncMemoizeDB',
+      dbName: `indexDBAsyncMemoizeDB${key}`,
       maxCount: 50,
     });
   } catch {}
 
   const hashToPromise: Record<string, Promise<R>> = {};
 
-  async function genHashKey(arg: T, ...rest: any[]) {
-    const hash = hashFn ? hashFn(arg, ...rest) : arg;
+  const genHashKey = weakMapMemoize(async (...args: Parameters<U>) => {
+    const hash = hashFn ? hashFn(...args) : args;
 
     const encoder = new TextEncoder();
     // Crypto.subtle isn't defined in insecure contexts... fallback to using the full string as a key
@@ -173,11 +175,11 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
       return hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
     }
     return hash.toString();
-  }
+  });
 
-  const ret = (async (arg: T, ...rest: any[]) => {
+  const ret = (async (...args: Parameters<U>) => {
     return new Promise<R>(async (resolve, reject) => {
-      const hashKey = await genHashKey(arg, ...rest);
+      const hashKey = await genHashKey(...args);
       if (lru && (await lru.has(hashKey))) {
         const entry = await lru.get(hashKey);
         const value = entry?.value;
@@ -189,7 +191,7 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
         return;
       } else if (!hashToPromise[hashKey]) {
         hashToPromise[hashKey] = new Promise(async (res) => {
-          const result = await fn(arg, ...rest);
+          const result = await fn(...args);
           // Resolve the promise before storing the result in IndexedDB
           res(result);
           if (lru) {
@@ -201,34 +203,14 @@ export function indexedDBAsyncMemoize<T, R, U extends (arg: T, ...rest: any[]) =
       resolve(await hashToPromise[hashKey]!);
     });
   }) as any;
-  ret.isCached = async (arg: T, ...rest: any) => {
-    const hashKey = await genHashKey(arg, ...rest);
+  ret.isCached = async (...args: Parameters<U>) => {
+    const hashKey = await genHashKey(...args);
     if (!lru) {
       return false;
     }
     return await lru.has(hashKey);
   };
   return ret;
-}
-
-// Simple memoization function for methods that take a single object argument.
-// Returns a memoized copy of the provided function which retrieves the result
-// from a cache after the first invocation with a given object.
-//
-// Uses WeakMap to tie the lifecycle of the cache to the lifecycle of the
-// object argument.
-export function weakmapMemoize<T extends object, R>(
-  fn: (arg: T, ...rest: any[]) => R,
-): (arg: T, ...rest: any[]) => R {
-  const cache = new WeakMap();
-  return (arg: T, ...rest: any[]) => {
-    if (cache.has(arg)) {
-      return cache.get(arg);
-    }
-    const r = fn(arg, ...rest);
-    cache.set(arg, r);
-    return r;
-  };
 }
 
 export function assertUnreachable(value: never): never {

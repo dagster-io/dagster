@@ -4,8 +4,8 @@ import styled from 'styled-components';
 import {OpGraphLayout, OpLayout, OpLayoutEdge} from './asyncGraphLayout';
 import {OpLayoutEdgeSide, OpLayoutIO} from './layout';
 import {OpGraphOpFragment} from './types/OpGraph.types';
-import {weakmapMemoize} from '../app/Util';
 import {buildSVGPathVertical} from '../asset-graph/Utils';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
 export type Edge = {a: string; b: string};
 
@@ -17,7 +17,7 @@ type Path = {
   to: OpLayoutEdgeSide;
 };
 
-const buildSVGPaths = weakmapMemoize((edges: OpLayoutEdge[], nodes: {[name: string]: OpLayout}) =>
+const buildSVGPaths = weakMapMemoize((edges: OpLayoutEdge[], nodes: {[name: string]: OpLayout}) =>
   edges
     .map(({from, to}) => {
       const source = nodes[from.opName]!;
