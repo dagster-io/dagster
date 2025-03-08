@@ -226,13 +226,12 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 
-const computeGraphData = indexedDBAsyncMemoize<
-  Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
-  GraphDataState,
-  typeof computeGraphDataWrapper
->(computeGraphDataWrapper, (props) => {
-  return JSON.stringify(props);
-});
+const computeGraphData = indexedDBAsyncMemoize<GraphDataState, typeof computeGraphDataWrapper>(
+  computeGraphDataWrapper,
+  (props) => {
+    return JSON.stringify(props);
+  },
+);
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
   const items: {[name: string]: AssetGraphQueryItem} = {};
@@ -391,13 +390,12 @@ async function computeGraphDataWrapper(
   return computeGraphDataImpl(props);
 }
 
-const buildGraphData = indexedDBAsyncMemoize<
-  BuildGraphDataMessageType,
-  GraphData,
-  typeof buildGraphDataWrapper
->(buildGraphDataWrapper, (props) => {
-  return JSON.stringify(props);
-});
+const buildGraphData = indexedDBAsyncMemoize<GraphData, typeof buildGraphDataWrapper>(
+  buildGraphDataWrapper,
+  (props) => {
+    return JSON.stringify(props);
+  },
+);
 
 async function buildGraphDataWrapper(
   props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,

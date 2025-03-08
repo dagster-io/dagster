@@ -145,11 +145,11 @@ export function asyncMemoize<T, R, U extends (arg: T, ...rest: any[]) => Promise
   }) as any;
 }
 
-export function indexedDBAsyncMemoize<T extends any[], R, U extends (...args: T) => Promise<R>>(
+export function indexedDBAsyncMemoize<R, U extends (...args: any[]) => Promise<R>>(
   fn: U,
-  hashFn?: (...args: any[]) => any,
+  hashFn?: (...args: Parameters<U>) => any,
 ): U & {
-  isCached: (...args: any[]) => Promise<boolean>;
+  isCached: (...args: Parameters<U>) => Promise<boolean>;
 } {
   let lru: ReturnType<typeof cache<R>> | undefined;
   try {
@@ -161,7 +161,7 @@ export function indexedDBAsyncMemoize<T extends any[], R, U extends (...args: T)
 
   const hashToPromise: Record<string, Promise<R>> = {};
 
-  const genHashKey = weakMapMemoize(async (...args: T) => {
+  const genHashKey = weakMapMemoize(async (...args: Parameters<U>) => {
     const hash = hashFn ? hashFn(...args) : args;
 
     const encoder = new TextEncoder();
@@ -176,7 +176,7 @@ export function indexedDBAsyncMemoize<T extends any[], R, U extends (...args: T)
     return hash.toString();
   });
 
-  const ret = (async (...args: T) => {
+  const ret = (async (...args: Parameters<U>) => {
     return new Promise<R>(async (resolve, reject) => {
       const hashKey = await genHashKey(...args);
       if (lru && (await lru.has(hashKey))) {
@@ -202,7 +202,7 @@ export function indexedDBAsyncMemoize<T extends any[], R, U extends (...args: T)
       resolve(await hashToPromise[hashKey]!);
     });
   }) as any;
-  ret.isCached = async (...args: T) => {
+  ret.isCached = async (...args: Parameters<U>) => {
     const hashKey = await genHashKey(...args);
     if (!lru) {
       return false;
