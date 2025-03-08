@@ -41,4 +41,5 @@ defs = build_defs_from_airflow_instance(
         asset_checks=[lakehouse_existence_check(csv_path=CSV_PATH, duckdb_path=DB_PATH)],
         resources={"dbt": jaffle_shop_resource()},
     ),
+    sensor_minimum_interval_seconds=1,
 )
