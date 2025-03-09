@@ -26,7 +26,7 @@ Next, declare a reference to the `warehouse` Airflow instance, which is running 
 
 <CodeExample path="airlift-federation-tutorial/snippets/observe.py" startAfter="start_warehouse_instance" endBefore="end_warehouse_instance" />
 
-Now you can use the <PyObject section="libraries" module="dagster-airlift" object="load_airflow_dag_asset_specs" /> function to create asset representations (<PyObject section="assets" module="dagster" object="AssetSpec" pluralize />) of the DAGs in the `warehouse` Airflow instance:
+Now you can use the `load_airflow_dag_asset_specs` function to create asset representations (<PyObject section="assets" module="dagster" object="AssetSpec" pluralize />) of the DAGs in the `warehouse` Airflow instance:
 
 <CodeExample path="airlift-federation-tutorial/snippets/observe.py" startAfter="start_load_all" endBefore="end_load_all" />
 
@@ -93,4 +93,4 @@ Now, after adding the updated `customer_metrics_dag_asset` to our <PyObject sect
 
 ## Next steps
 
-In the next step, "[Federate execution across Airflow instances](federate)", we'll federate the execution of our DAGs across both Airflow instances.
+In the next step, "[Federate execution across Airflow instances](federate-execution)", we'll federate the execution of our DAGs across both Airflow instances.
