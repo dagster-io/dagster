@@ -111,7 +111,7 @@ function traversal(direction: 'up' | 'down', levels?: number) {
     if (levels === undefined) {
       return '+';
     }
-    return direction === 'down' ? `+${levels}+` : `+${levels}+`;
+    return direction === 'up' ? `+${levels}` : `${levels}+`;
   }
   if (levels === undefined) {
     return '*';
