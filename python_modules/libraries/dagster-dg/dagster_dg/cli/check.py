@@ -226,7 +226,7 @@ def check_definitions_command(
 
     with (
         pushd(dg_context.root_path),
-        validate_command(dg_context, forward_options) as (cmd_location, cmd, workspace_file),
+        create_validate_cmd(dg_context, forward_options) as (cmd_location, cmd, workspace_file),
     ):
         print(f"Using {cmd_location}")  # noqa: T201
         if workspace_file:  # only non-None deployment context
@@ -248,12 +248,15 @@ class CommandArgs(NamedTuple):
 
 
 @contextlib.contextmanager
-def validate_command(dg_context: DgContext, forward_options: list[str]) -> Iterator[CommandArgs]:
+def create_validate_cmd(dg_context: DgContext, forward_options: list[str]) -> Iterator[CommandArgs]:
     if dg_context.is_project:
         # In a code location context, we can just run `dagster definitions validate` directly, using `dagster` from the
         # code location's environment.
         cmd = ["uv", "run", "dagster", "definitions", "validate", *forward_options]
         cmd_location = dg_context.get_executable("dagster")
+        # print("*******************")
+        # print(f"cmds: {cmd}")
+        # print("*******************")
         yield CommandArgs(cmd_location=str(cmd_location), cmd=cmd, workspace_file=None)
     elif dg_context.is_workspace:
         # In a workspace context, dg validate will construct a temporary
