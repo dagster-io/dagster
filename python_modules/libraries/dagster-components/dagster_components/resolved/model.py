@@ -15,7 +15,13 @@ from typing import (
 
 from dagster import _check as check
 from pydantic import BaseModel, ConfigDict
-from typing_extensions import Self
+from typing_extensions import Self, TypeAlias
+
+try:
+    # this type only exists in python 3.10+
+    from types import UnionType  # type: ignore
+except ImportError:
+    UnionType = Union
 
 if TYPE_CHECKING:
     from dagster_components.resolved.context import ResolutionContext
@@ -57,10 +63,10 @@ def get_model_type(
 T = TypeVar("T")
 
 
-class ResolutionResolverFn(Generic[T]):
-    def __init__(self, target_type: type[T], spec_type: type["ResolvedKwargs"]):
+class ResolveViaKwargs(Generic[T]):
+    def __init__(self, target_type: type[T], kwargs_type: type["ResolvedKwargs"]):
         self.target_type = target_type
-        self.spec_type = spec_type
+        self.spec_type = kwargs_type
 
     def from_model(self, context: "ResolutionContext", model: ResolvableModel) -> T:
         return resolve_model_using_kwargs_cls(
@@ -84,11 +90,11 @@ class ResolutionResolverFn(Generic[T]):
 
 class ResolvedKwargs(Generic[TModel]):
     @classmethod
-    def resolver_fn(cls, target_type: type) -> ResolutionResolverFn:
-        return ResolutionResolverFn(target_type=target_type, spec_type=cls)
+    def resolver_fn(cls, target_type: type) -> ResolveViaKwargs:
+        return ResolveViaKwargs(target_type=target_type, kwargs_type=cls)
 
 
-class ResolvedFrom(ResolvedKwargs[TModel]):
+class ResolvedFrom(Generic[TModel]):
     @classmethod
     def from_model(cls, context: "ResolutionContext", model: TModel) -> Self:
         return resolve_model(model=model, resolvable_type=cls, context=context)
@@ -118,11 +124,66 @@ class AttrWithContextFn:
     callable: Callable[["ResolutionContext", Any], Any]
 
 
+@dataclass
+class ResolveFromModel:
+    """Annotated marker to specify that the target type should be resolved from its model.
+
+    The via argument allows use for target types that are not directly ResolvableFrom.
+    """
+
+    via: Optional[type[ResolvedKwargs]] = None
+
+
+class ResolveFromInjection:
+    """Annotated marker for resolution target types that must be satisfied via template injection."""
+
+
+Injected: TypeAlias = Annotated[T, ResolveFromInjection()]
+
+
+def _is_scalar(annotation):
+    if annotation in (int, float, str, bool, Any, type(None)):
+        return True
+
+    origin = get_origin(annotation)
+    args = get_args(annotation)
+
+    if origin in (Union, UnionType, list, Sequence, tuple, dict, Mapping) and all(
+        _is_scalar(arg) for arg in args
+    ):
+        return True
+
+    if origin is Annotated and any(isinstance(arg, ResolveFromInjection) for arg in args):
+        return True
+
+    return False
+
+
+def _get_resolved_from_cls(annotation) -> Optional[Union[type[ResolvedFrom], ResolveViaKwargs]]:
+    origin = get_origin(annotation)
+    if origin is not Annotated:
+        return None
+
+    args = get_args(annotation)
+    resolve_model = next((arg for arg in args if isinstance(arg, ResolveFromModel)), None)
+    if not resolve_model:
+        return None
+
+    if resolve_model.via:
+        return resolve_model.via.resolver_fn(target_type=args[0])
+
+    resolved_from_cls = args[0]
+    if not issubclass(resolved_from_cls, ResolvedFrom):
+        check.failed("Can only annotate ResolvedFrom types with ResolveModel()")
+    return resolved_from_cls
+
+
 class FieldResolver:
     """Contains information on how to resolve this field from a DSLSchema."""
 
     def __init__(
-        self, fn: Union[ParentFn, AttrWithContextFn, Callable[["ResolutionContext", Any], Any]]
+        self,
+        fn: Union[ParentFn, AttrWithContextFn, Callable[["ResolutionContext", Any], Any]],
     ):
         if not isinstance(fn, (ParentFn, AttrWithContextFn)):
             if not callable(fn):
@@ -153,17 +214,38 @@ class FieldResolver:
 
     @staticmethod
     def from_annotation(annotation: Any, field_name: str) -> "FieldResolver":
-        if get_origin(annotation) is Annotated:
-            args = get_args(annotation)
+        if _is_scalar(annotation):
+            return FieldResolver.from_model(
+                lambda context, model: context.resolve_value(getattr(model, field_name))
+            )
+
+        origin = get_origin(annotation)
+        args = get_args(annotation)
+
+        if origin is Annotated:
             resolver = next((arg for arg in args if isinstance(arg, FieldResolver)), None)
             if resolver:
                 return resolver
 
-            check.failed(f"Could not find resolver on annotation {field_name}")
+        if origin in (Union, UnionType) and len(args) == 2:
+            left_t, right_t = args
+            if right_t is type(None):
+                resolved_from_cls = _get_resolved_from_cls(left_t)
+                if resolved_from_cls:
+                    return FieldResolver(resolved_from_cls.from_optional)
 
-        return FieldResolver.from_model(
-            lambda context, model: context.resolve_value(getattr(model, field_name))
-        )
+                elif get_origin(left_t) in (Sequence, tuple, list):
+                    resolved_from_cls = _get_resolved_from_cls(get_args(left_t)[0])
+                    if resolved_from_cls:
+                        return FieldResolver(resolved_from_cls.from_optional_seq)
+
+        elif origin in (Sequence, tuple, list):
+            resolved_from_cls = _get_resolved_from_cls(args[0])
+
+            if resolved_from_cls:
+                return FieldResolver(resolved_from_cls.from_seq)
+
+        check.failed(f"Could not find derive resolver for annotation {field_name}: {annotation}")
 
     def execute(self, context: "ResolutionContext", model: ResolvableModel, field_name: str) -> Any:
         if isinstance(self.fn, ParentFn):
@@ -236,3 +318,8 @@ def resolve_model_using_kwargs_cls(
     target_type: type[T],
 ) -> T:
     return target_type(**resolve_fields(model, kwargs_cls, context))
+
+
+TResolvedFrom = TypeVar("TResolvedFrom", bound=ResolvedFrom)
+
+Resolved: TypeAlias = Annotated[TResolvedFrom, ResolveFromModel()]
