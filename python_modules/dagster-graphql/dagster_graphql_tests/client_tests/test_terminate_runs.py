@@ -25,6 +25,23 @@ def test_successful_run_termination(mock_client: MockClient):
 
 
 @python_client_test_suite
+def test_successful_forced_run_termination(mock_client: MockClient):
+    expected_result = None
+    response = {
+        "terminateRuns": {
+            "terminateRunResults": [
+                {"__typename": "TerminateRunSuccess", "run": {"runId": run_id}}
+                for run_id in RUN_IDS
+            ]
+        }
+    }
+    mock_client.mock_gql_client.execute.return_value = response
+
+    actual_result = mock_client.python_client.terminate_runs(RUN_IDS, True)
+    assert actual_result == expected_result
+
+
+@python_client_test_suite
 def test_complete_failure_run_not_found(mock_client: MockClient):
     error_messages = [("RunNotFoundError", f"Run Id {run_id} not found") for run_id in RUN_IDS]
     error_message_string = f"All run terminations failed: {error_messages}"
