@@ -25,7 +25,7 @@ class HasCustomScope(Component, ResolvedFrom[CustomScopeModel]):
     asset_attributes: ResolvedAssetAttributes
 
     @classmethod
-    def get_additional_scope(cls) -> Mapping[str, Any]:
+    def get_udfs(cls) -> Mapping[str, Any]:
         return {
             "custom_str": "xyz",
             "custom_dict": {"a": "b"},

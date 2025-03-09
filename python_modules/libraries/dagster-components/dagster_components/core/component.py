@@ -53,7 +53,7 @@ class Component(ABC):
         return None
 
     @classmethod
-    def get_additional_scope(cls) -> Mapping[str, Any]:
+    def get_udfs(cls) -> Mapping[str, Any]:
         return {}
 
     @abstractmethod

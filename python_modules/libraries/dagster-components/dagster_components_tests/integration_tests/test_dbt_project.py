@@ -122,7 +122,7 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
     @dataclass
     class DebugDbtProjectComponent(DbtProjectComponent):
         @classmethod
-        def get_additional_scope(cls) -> Mapping[str, Any]:
+        def get_udfs(cls) -> Mapping[str, Any]:
             return {"get_tags_for_node": lambda node: {"model_id": node["name"].replace("_", "-")}}
 
     decl_node = YamlComponentDecl(
@@ -136,7 +136,7 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node).with_rendering_scope(
-        DebugDbtProjectComponent.get_additional_scope()
+        DebugDbtProjectComponent.get_udfs()
     )
     component = DebugDbtProjectComponent.load(
         attributes=decl_node.get_attributes(DebugDbtProjectComponent.get_schema()),  # type: ignore

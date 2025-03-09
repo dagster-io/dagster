@@ -27,7 +27,7 @@ class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
     asset_specs: AssetSpecSequenceField
 
     @classmethod
-    def get_additional_scope(cls) -> Mapping[str, Any]:
+    def get_udfs(cls) -> Mapping[str, Any]:
         return {
             "daily_partitions": dg.DailyPartitionsDefinition(start_date="2024-01-01")
         }

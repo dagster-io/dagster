@@ -32,16 +32,16 @@ For example, we can create a subclass of the `SlingReplicationCollectionComponen
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/custom-subclass/debug-mode.py" language="python" />
 
-## Adding component-level templating scope
+## Adding component-level udfs
 
-By default, the scopes available for use in the template are:
+By default, the functions available for use in the template are:
 
 - `env`: A function that allows you to access environment variables.
 - `automation_condition`: A scope allowing you to access all static constructors of the `AutomationCondition` class.
 
-However, it can be useful to add additional scope options to your component type. For example, you may have a custom automation condition that you'd like to use in your component.
+However, it can be useful to add user-defined functions (udfs) options to your component type. For example, you may have a custom automation condition that you'd like to use in your component.
 
-To do so, you can define a function that returns an `AutomationCondition` and define a `get_additional_scope` method on your subclass:
+To do so, you can define a function that returns an `AutomationCondition` and define a `get_defs` method on your subclass:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/custom-subclass/custom-scope.py" language="python" />
 

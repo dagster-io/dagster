@@ -35,7 +35,7 @@ class MyComponent(Component, ResolvedFrom[MyComponentModel]):
         return Definitions()
 
     @classmethod
-    def get_additional_scope(cls) -> Mapping[str, Any]:
+    def get_udfs(cls) -> Mapping[str, Any]:
         return {
             "error": _error,
         }
