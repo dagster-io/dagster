@@ -3,7 +3,7 @@ title: "Peer the Airflow instance with a Dagster code location"
 sidebar_position: 200
 ---
 
-In the [previous step](setup), we created a virtual environment, installed Dagster and the tutorial example code, and set up a local Airflow instance. Now we can start writing Dagster code.
+In the [setup step](setup), we created a virtual environment, installed Dagster and the tutorial example code, and set up a local Airflow instance. Now we can start writing Dagster code.
 
 We call the first stage of migration from Airflow to Dagster the "peering" stage, since we will "peer" the Airflow instance with a Dagster code location, which will create an asset representation of each Airflow DAG that you can view in Dagster. This step does not require any changes to your Airflow instance.
 

@@ -3,9 +3,9 @@ title: "Observe Airflow tasks"
 sidebar_position: 300
 ---
 
-Previously, we completed the ["Peering" stage](peer) of the Airflow migration tutorial by peering the example Airflow instance with a Dagster code location.
+In the previous step, "[Peer the Airflow instance with a Dagster code location](peer)", we connected the example Airflow instance to a Dagster code location.
 
-The next step is to represent the Airflow workflows more richly by observing the data assets that are produced by the Airflow tasks. Similar to the peering step, this stage does not require any changes to Airflow code.
+The next step is to represent the Airflow workflows more richly by observing the data assets that are produced by the Airflow tasks. Similar to the peering step, this step does not require any changes to Airflow code.
 
 ## Create asset specs for Airflow tasks
 
