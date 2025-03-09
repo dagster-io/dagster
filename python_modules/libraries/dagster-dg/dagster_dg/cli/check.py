@@ -223,6 +223,9 @@ def check_definitions_command(
         *(["--verbose"] if verbose else []),
     ]
 
+    if dg_context.use_dg_managed_environment:
+        dg_context.ensure_uv_sync()
+
     # In a code location context, we can just run `dagster definitions validate` directly, using `dagster` from the
     # code location's environment.
     temp_workspace_file_cm = temp_workspace_file(dg_context)
