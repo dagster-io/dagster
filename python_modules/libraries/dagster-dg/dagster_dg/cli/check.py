@@ -1,5 +1,3 @@
-import subprocess
-import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, Optional
@@ -9,13 +7,14 @@ from jsonschema import Draft202012Validator, ValidationError
 from yaml.scanner import ScannerError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
-from dagster_dg.cli.dev import format_forwarded_option, temp_workspace_file
+from dagster_dg.cli.dev import format_forwarded_option
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
-from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error, pushd
+from dagster_dg.utils import DgClickCommand, DgClickGroup
+from dagster_dg.utils.cli import run_dagster_command_with_workspace
 from dagster_dg.yaml_utils import parse_yaml_with_source_positions
 from dagster_dg.yaml_utils.source_position import (
     LineCol,
@@ -223,39 +222,6 @@ def check_definitions_command(
         *(["--verbose"] if verbose else []),
     ]
 
-    # In a code location context, we can just run `dagster definitions validate` directly, using `dagster` from the
-    # code location's environment.
-    temp_workspace_file_cm = temp_workspace_file(dg_context)
-    if dg_context.is_project:
-        cmd = ["uv", "run", "dagster", "definitions", "validate", *forward_options]
-        cmd_location = dg_context.get_executable("dagster")
-
-    # In a deployment context, dg validate will construct a temporary
-    # workspace file that points at all defined code locations and invoke:
-    #
-    #     uv tool run --with dagster-webserver dagster definitions validate
-    elif dg_context.is_workspace:
-        cmd = [
-            "uv",
-            "tool",
-            "run",
-            "dagster",
-            "definitions",
-            "validate",
-            *forward_options,
-        ]
-        cmd_location = "ephemeral dagster definitions validate"
-        temp_workspace_file_cm = temp_workspace_file(dg_context)
-    else:
-        exit_with_error("This command must be run inside a code location or deployment directory.")
-
-    with pushd(dg_context.root_path), temp_workspace_file_cm as workspace_file:
-        print(f"Using {cmd_location}")  # noqa: T201
-        if workspace_file:  # only non-None deployment context
-            cmd.extend(["--workspace", workspace_file])
-
-        result = subprocess.run(cmd, check=False)
-        if result.returncode != 0:
-            sys.exit(result.returncode)
+    run_dagster_command_with_workspace(dg_context, ["definitions", "validate", *forward_options])
 
     click.echo("All definitions loaded successfully.")
