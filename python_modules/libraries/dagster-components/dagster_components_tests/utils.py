@@ -13,7 +13,7 @@ from typing import AbstractSet, Any, Iterable, Optional, TypeVar  # noqa: UP035
 import tomlkit
 from click.testing import Result
 from dagster import AssetKey, DagsterInstance
-from dagster._utils import pushd
+from dagster._utils import alter_sys_path, pushd
 from dagster_components.core.component import Component, ComponentDeclNode, ComponentLoadContext
 from dagster_components.utils import ensure_loadable_path
 
@@ -115,23 +115,25 @@ def create_project_from_components(
     with tempfile.TemporaryDirectory() as tmpdir:
         project_root = Path(tmpdir) / "my_location"
         project_root.mkdir()
-        with open(project_root / "pyproject.toml", "w") as f:
-            f.write(generate_component_lib_pyproject_toml("my_location", is_project=True))
 
-        for src_path in src_paths:
-            component_name = src_path.split("/")[-1]
+        with alter_sys_path(to_add=[str(project_root)], to_remove=[]):
+            with open(project_root / "pyproject.toml", "w") as f:
+                f.write(generate_component_lib_pyproject_toml("my_location", is_project=True))
 
-            components_dir = project_root / "my_location" / "defs" / component_name
-            components_dir.mkdir(parents=True, exist_ok=True)
+            for src_path in src_paths:
+                component_name = src_path.split("/")[-1]
 
-            _setup_component_in_folder(
-                src_path=src_path,
-                dst_path=str(components_dir),
-                local_component_defn_to_inject=local_component_defn_to_inject,
-            )
+                components_dir = project_root / "my_location" / "defs" / component_name
+                components_dir.mkdir(parents=True, exist_ok=True)
 
-        with ensure_loadable_path(project_root):
-            yield project_root
+                _setup_component_in_folder(
+                    src_path=src_path,
+                    dst_path=str(components_dir),
+                    local_component_defn_to_inject=local_component_defn_to_inject,
+                )
+
+            with ensure_loadable_path(project_root):
+                yield project_root
 
 
 # ########################
