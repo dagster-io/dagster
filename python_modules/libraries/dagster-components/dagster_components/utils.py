@@ -2,6 +2,7 @@ import importlib.util
 import subprocess
 import sys
 import textwrap
+from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -10,6 +11,7 @@ from types import ModuleType
 from typing import Any, Optional, TypeVar
 
 import click
+from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -78,10 +80,12 @@ class TranslatorResolvingInfo:
     asset_attributes: AssetAttributesModel
     resolution_context: ResolutionContext
 
-    def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
+    def get_resolved_attribute(
+        self, attribute: str, obj: Any, base_spec: AssetSpec, default_method
+    ) -> Any:
         resolved_attributes = resolve_asset_attributes_to_mapping(
             context=self.resolution_context.at_path("asset_attributes").with_scope(
-                **{self.obj_name: obj}
+                **{self.obj_name: obj, "spec": base_spec}
             ),
             model=self.asset_attributes,
         )
@@ -93,7 +97,7 @@ class TranslatorResolvingInfo:
         )
 
     def merge_resolved_dict_attribute(
-        self, attribute: str, obj: Any, default_method
+        self, attribute: str, obj: Any, base_spec: AssetSpec, default_method
     ) -> Mapping[str, Any]:
         """Merges a resolved attribute with the dict from the underlying translator.
 
@@ -103,7 +107,7 @@ class TranslatorResolvingInfo:
         attribute_value = dict(default_method(obj) or {})
 
         resolved_attributes = resolve_asset_attributes_to_mapping(
-            context=self.resolution_context.with_scope(**{self.obj_name: obj}),
+            context=self.resolution_context.with_scope(**{self.obj_name: obj, "spec": base_spec}),
             model=self.asset_attributes,
         )
 
@@ -136,24 +140,46 @@ class TranslatorResolvingInfo:
         return base_spec.replace_attributes(**resolved_attributes)
 
 
+class AssetSpecTranslator(ABC):
+    @abstractmethod
+    def get_asset_spec(self, obj: Any) -> AssetSpec:
+        pass
+
+
 def get_wrapped_translator_class(translator_type: type):
     """Temporary hack to allow wrapping of many methods of a given translator class. Will be removed
     once all translators implement `get_asset_spec`.
     """
+    check.invariant(
+        hasattr(translator_type, "get_asset_spec"), "Translator must implement get_asset_spec"
+    )
 
     class WrappedTranslator(translator_type):
         def __init__(self, *, resolving_info: TranslatorResolvingInfo):
             self.base_translator = translator_type()
             self.resolving_info = resolving_info
+            self._base_asset_spec_cache = {}
+
+        def _get_base_translator_asset_spec(self, obj: Any) -> AssetSpec:
+            """Retrieves the asset spec from the base dagster translator, caching the result."""
+            if id(obj) not in self._base_asset_spec_cache:
+                self._base_asset_spec_cache[id(obj)] = self.base_translator.get_asset_spec(obj)
+            return self._base_asset_spec_cache[id(obj)]
 
         def get_asset_key(self, obj: Any) -> AssetKey:
             return self.resolving_info.get_resolved_attribute(
-                "key", obj, self.base_translator.get_asset_key
+                "key",
+                obj,
+                self._get_base_translator_asset_spec(obj),
+                self.base_translator.get_asset_key,
             )
 
         def get_group_name(self, obj: Any) -> Optional[str]:
             return self.resolving_info.get_resolved_attribute(
-                "group_name", obj, self.base_translator.get_group_name
+                "group_name",
+                obj,
+                self._get_base_translator_asset_spec(obj),
+                self.base_translator.get_group_name,
             )
 
         def get_tags(self, obj: Any) -> Mapping[str, str]:
@@ -164,13 +190,18 @@ def get_wrapped_translator_class(translator_type: type):
                 if hasattr(self.base_translator, "get_kinds")
                 else lambda *args: []
             )
-            kinds = self.resolving_info.get_resolved_attribute("kinds", obj, base_kinds)
+            kinds = self.resolving_info.get_resolved_attribute(
+                "kinds", obj, self._get_base_translator_asset_spec(obj), base_kinds
+            )
             for kind in kinds:
                 tags.update(build_kind_tag(kind))
 
             tags.update(
                 self.resolving_info.merge_resolved_dict_attribute(
-                    "tags", obj, self.base_translator.get_tags
+                    "tags",
+                    obj,
+                    self._get_base_translator_asset_spec(obj),
+                    self.base_translator.get_tags,
                 )
             )
             return tags
@@ -179,35 +210,51 @@ def get_wrapped_translator_class(translator_type: type):
             return self.resolving_info.get_resolved_attribute(
                 "automation_condition",
                 obj,
+                self._get_base_translator_asset_spec(obj),
                 self.base_translator.get_automation_condition,
             )
 
         def get_metadata(self, obj: Any) -> Mapping[str, Any]:
             return self.resolving_info.merge_resolved_dict_attribute(
-                "metadata", obj, self.base_translator.get_metadata
+                "metadata",
+                obj,
+                self._get_base_translator_asset_spec(obj),
+                self.base_translator.get_metadata,
             )
 
         def get_owners(self, obj: Any) -> Sequence[str]:
             return self.resolving_info.get_resolved_attribute(
-                "owners", obj, self.base_translator.get_owners
+                "owners",
+                obj,
+                self._get_base_translator_asset_spec(obj),
+                self.base_translator.get_owners,
             )
 
         def get_code_version(self, obj: Any) -> Optional[str]:
             version = self.resolving_info.get_resolved_attribute(
-                "code_version", obj, self.base_translator.get_code_version
+                "code_version",
+                obj,
+                self._get_base_translator_asset_spec(obj),
+                self.base_translator.get_code_version,
             )
             return str(version) if version else None
 
         def get_description(self, obj: Any) -> Optional[str]:
             return self.resolving_info.get_resolved_attribute(
-                "description", obj, self.base_translator.get_description
+                "description",
+                obj,
+                self._get_base_translator_asset_spec(obj),
+                self.base_translator.get_description,
             )
 
         def get_deps_asset_key(self, obj: Any) -> Iterable[AssetKey]:
             return [
                 AssetKey.from_user_string(dep) if isinstance(dep, str) else dep
                 for dep in self.resolving_info.get_resolved_attribute(
-                    "deps", obj, self.base_translator.get_deps_asset_key
+                    "deps",
+                    obj,
+                    self._get_base_translator_asset_spec(obj),
+                    self.base_translator.get_deps_asset_key,
                 )
             ]
 

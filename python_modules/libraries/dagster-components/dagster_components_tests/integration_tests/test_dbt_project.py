@@ -260,3 +260,26 @@ def test_exclude(dbt_path: Path) -> None:
         attributes=decl_node.get_attributes(DbtProjectModel), context=context
     )
     assert get_asset_keys(component) == set(JAFFLE_SHOP_KEYS) - {AssetKey("customers")}
+
+
+def test_spec_is_available_in_scope(dbt_path: Path) -> None:
+    decl_node = YamlComponentDecl(
+        path=dbt_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="  ",
+            attributes={
+                "dbt": {"project_dir": "jaffle_shop"},
+                "asset_attributes": {"metadata": {"asset_key": "{{ spec.key.path }}"}},
+            },
+        ),
+    )
+    context = script_load_context(decl_node)
+    component = DbtProjectComponent.load(
+        attributes=decl_node.get_attributes(DbtProjectComponent.get_schema()),  # type: ignore
+        context=context,
+    )
+    defs = component.build_defs(script_load_context())
+    assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("stg_customers"))
+    assert assets_def.get_asset_spec(AssetKey("stg_customers")).metadata["asset_key"] == [
+        "stg_customers"
+    ]
