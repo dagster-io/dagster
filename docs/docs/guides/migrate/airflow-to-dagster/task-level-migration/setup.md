@@ -3,13 +3,13 @@ title: "Setup"
 sidebar_position: 100
 ---
 
-In this step, you'll:
+In order the complete this tutorial, you'll need to:
 
-- Install the example code
-- Set up a local environment
-- Ensure we can run Airflow locally.
+- Create a virtual environment
+- Install Dagster and the tutorial example code
+- Set up a local Airflow instance
 
-## Install example code
+## Create a virtual environment
 
 First, create a fresh virtual environment using `uv` and activate it:
 
@@ -18,6 +18,8 @@ pip install uv
 uv venv
 source .venv/bin/activate
 ```
+
+## Install Dagster and the tutorial example code
 
 Next, install Dagster and verify that the `dagster` CLI is available:
 
@@ -49,7 +51,7 @@ tutorial_example
 │   ├── dags.py: The Airflow DAG definition
 ```
 
-## Run Airflow locally
+## Set up a local Airflow instance
 
 This tutorial involves running a local Airflow instance, which you can do by following commands from the root of the `airlift-migration-tutorial` directory.
 
