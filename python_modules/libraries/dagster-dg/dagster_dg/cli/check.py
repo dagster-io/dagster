@@ -6,12 +6,11 @@ from pathlib import Path
 from typing import Any, NamedTuple, Optional
 
 import click
-from dagster._record import record
 from jsonschema import Draft202012Validator, ValidationError
 from yaml.scanner import ScannerError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
-from dagster_dg.cli.dev import format_forwarded_option, create_temp_workspace_file
+from dagster_dg.cli.dev import create_temp_workspace_file, format_forwarded_option
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.component_key import ComponentKey
@@ -227,10 +226,13 @@ def check_definitions_command(
 
     with (
         pushd(dg_context.root_path),
-        validate_command_args(dg_context, forward_options) as cmd_args,
+        definitions_validate_command_args(dg_context, forward_options) as (
+            cmd_location,
+            cmd,
+            workspace_file,
+        ),
     ):
-        print(f"Using {cmd_args.cmd_location}")  # noqa: T201
-        cmd, workspace_file = cmd_args.cmd, cmd_args.workspace_file
+        print(f"Using {cmd_location}")  # noqa: T201
         if workspace_file:  # only non-None deployment context
             cmd.extend(["--workspace", workspace_file])
 
@@ -243,15 +245,14 @@ def check_definitions_command(
     click.echo("All definitions loaded successfully.")
 
 
-@record
-class CommandArgs:
+class CommandArgs(NamedTuple):
     cmd_location: str
     cmd: list[str]
     workspace_file: Optional[str]
 
 
 @contextlib.contextmanager
-def validate_command_args(
+def definitions_validate_command_args(
     dg_context: DgContext, forward_options: list[str]
 ) -> Iterator[CommandArgs]:
     if dg_context.is_project:
