@@ -226,11 +226,7 @@ def check_definitions_command(
 
     with (
         pushd(dg_context.root_path),
-        definitions_validate_command_args(dg_context, forward_options) as (
-            cmd_location,
-            cmd,
-            workspace_file,
-        ),
+        validate_command(dg_context, forward_options) as (cmd_location, cmd, workspace_file),
     ):
         print(f"Using {cmd_location}")  # noqa: T201
         if workspace_file:  # only non-None deployment context
@@ -252,9 +248,7 @@ class CommandArgs(NamedTuple):
 
 
 @contextlib.contextmanager
-def definitions_validate_command_args(
-    dg_context: DgContext, forward_options: list[str]
-) -> Iterator[CommandArgs]:
+def validate_command(dg_context: DgContext, forward_options: list[str]) -> Iterator[CommandArgs]:
     if dg_context.is_project:
         # In a code location context, we can just run `dagster definitions validate` directly, using `dagster` from the
         # code location's environment.
