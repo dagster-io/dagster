@@ -2,7 +2,7 @@ import re
 from collections.abc import Sequence
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 
 import pytest
 from dagster_dg.config import DgFileConfigDirectoryType, get_type_str
@@ -119,6 +119,7 @@ def test_invalid_config_workspace():
             "tool.dg.cli.invalid_key",
             "tool.dg.workspace.invalid_key",
             "tool.dg.workspace.projects[0].invalid_key",
+            "tool.dg.workspace.new_project_options.invalid_key",
         ]
         for path in cases:
             with _reset_pyproject_toml():
@@ -134,6 +135,13 @@ def test_invalid_config_workspace():
             ["tool.dg.workspace.projects", list, 1],
             ["tool.dg.workspace.projects[1]", dict, 1],
             ["tool.dg.workspace.projects[0].path", str, 1],
+            ["tool.dg.workspace.new_project_options", dict, 1],
+            ["tool.dg.workspace.new_project_options.use_editable_dagster", Union[bool, str], 1],
+            [
+                "tool.dg.workspace.new_project_options.use_editable_components_package_only",
+                Union[bool, str],
+                1,
+            ],
         ]
         for path, expected_type, val in cases:
             with _reset_pyproject_toml():
