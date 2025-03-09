@@ -8,6 +8,7 @@ import {
   OperationVariables,
   useApolloClient,
 } from '../apollo-client';
+import {usePreviousDistinctValue} from '../hooks/usePrevious';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {CompletionType, useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {cache} from '../util/idb-lru-cache';
@@ -161,8 +162,11 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
     }
   }, [error, dep]);
 
+  const previousData = usePreviousDistinctValue(data);
+
   return {
     data,
+    previousData,
     called: true, // Add called for compatibility with useBlockTraceOnQueryResult
     error,
     loading,
