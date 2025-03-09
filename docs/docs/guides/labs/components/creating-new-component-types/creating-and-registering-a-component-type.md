@@ -128,11 +128,11 @@ For example, we might want to provide an API client to our component, which can 
 
 The components system supports a rich templating syntax that allows you to load arbitrary Python values based off of your `component.yaml` file. All string values in a `ResolvableModel` can be templated using the Jinja2 templating engine, and may be resolved into arbitrary Python types. This allows you to expose complex object types, such as `PartitionsDefinition` or `AutomationCondition` to users of your component, even if they're working in pure YAML.
 
-You can define custom values that will be made available to the templating engine by defining a `get_additional_scope` classmethod on your component. In our case, we can define a `"daily_partitions"` function which returns a `DailyPartitionsDefinition` object with a pre-defined start date:
+You can define custom values that will be made available to the templating engine by defining a `get_udfs` classmethod on your component. In our case, we can define a `"daily_partitions"` function which returns a `DailyPartitionsDefinition` object with a pre-defined start date:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-custom-scope.py" language="python" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-custom-udf.py" language="python" />
 
-When a user instantiates this component, they will be able to use this custom scope in their `component.yaml` file:
+When a user instantiates this component, they will be able to use this udf in their `component.yaml` file:
 
 ```yaml
 component_type: my_component
