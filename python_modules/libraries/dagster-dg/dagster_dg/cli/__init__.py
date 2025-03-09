@@ -68,6 +68,7 @@ def create_dg_cli():
         **global_options: object,
     ):
         """CLI for working with Dagster components."""
+        click.echo(f"Welcome to the dg. Executing at {__file__}")
         context = click.get_current_context()
         if install_completion:
             import dagster_dg.completion
