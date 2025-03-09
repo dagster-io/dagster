@@ -169,8 +169,13 @@ export const GanttChart = (props: GanttChartProps) => {
 
   const onDoubleClickStep = React.useCallback(
     (stepKey: string) => {
-      const query = `*${stepKey}*`;
-      onUpdateQuery(selection.query !== query ? query : '*');
+      if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+        const query = `+key:"${stepKey}"+`;
+        onUpdateQuery(selection.query !== query ? query : '*');
+      } else {
+        const query = `*${stepKey}*`;
+        onUpdateQuery(selection.query !== query ? query : '*');
+      }
     },
     [onUpdateQuery, selection.query],
   );
