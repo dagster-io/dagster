@@ -3,7 +3,10 @@ from dagster_components.core.component import (
     ComponentLoadContext as ComponentLoadContext,
     component as component,
 )
-from dagster_components.core.component_defs_builder import load_defs as load_defs
+from dagster_components.core.component_defs_builder import (
+    build_component_defs as build_component_defs,
+    load_defs as load_defs,
+)
 from dagster_components.core.component_scaffolder import (
     DefaultComponentScaffolder as DefaultComponentScaffolder,
 )
