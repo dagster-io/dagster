@@ -17,7 +17,7 @@ ensure_dagster_dg_tests_import()
 from dagster_dg_tests.utils import ProxyRunner, assert_runner_result
 
 
-def test_dg_init_command_success(monkeypatch) -> None:
+def test_init_command_success(monkeypatch) -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("init", input="\nhelloworld\n")
         assert_runner_result(result)
@@ -38,7 +38,7 @@ def test_dg_init_command_success(monkeypatch) -> None:
         )
 
 
-def test_dg_init_command_no_project(monkeypatch) -> None:
+def test_init_command_no_project(monkeypatch) -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("init", input="\n\n")
         assert_runner_result(result)
@@ -48,7 +48,7 @@ def test_dg_init_command_no_project(monkeypatch) -> None:
         assert Path("dagster-workspace/libraries").exists()
 
 
-def test_dg_init_override_workspace_name(monkeypatch) -> None:
+def test_init_override_workspace_name(monkeypatch) -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("init", input="my-workspace\ngoodbyeworld\n")
         assert_runner_result(result)
@@ -62,7 +62,7 @@ def test_dg_init_override_workspace_name(monkeypatch) -> None:
         assert Path("my-workspace/projects/goodbyeworld/goodbyeworld_tests").exists()
 
 
-def test_dg_init_workspace_already_exists_failure(monkeypatch) -> None:
+def test_init_workspace_already_exists_failure(monkeypatch) -> None:
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
 
@@ -75,9 +75,7 @@ def test_dg_init_workspace_already_exists_failure(monkeypatch) -> None:
 
 @pytest.mark.parametrize("option", get_args(EditableOption))
 @pytest.mark.parametrize("value_source", ["env_var", "arg"])
-def test_dg_init_use_editable_dagster(
-    option: EditableOption, value_source: str, monkeypatch
-) -> None:
+def test_init_use_editable_dagster(option: EditableOption, value_source: str, monkeypatch) -> None:
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     if value_source == "env_var":
         monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
@@ -113,7 +111,7 @@ def test_dg_init_use_editable_dagster(
 
 
 @pytest.mark.parametrize("option", get_args(EditableOption))
-def test_dg_init_project_editable_dagster_no_env_var_no_value_fails(
+def test_init_project_editable_dagster_no_env_var_no_value_fails(
     option: EditableOption, monkeypatch
 ) -> None:
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", "")

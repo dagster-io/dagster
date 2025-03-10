@@ -13,7 +13,7 @@ from dagster_dg_tests.utils import (
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_validate_command_deployment_context_success():
+def test_check_defs_workspace_context_success():
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     with ProxyRunner.test() as runner, isolated_example_workspace(runner, create_venv=True):
         result = runner.invoke(
@@ -42,7 +42,7 @@ def test_validate_command_deployment_context_success():
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_validate_command_project_context_success():
+def test_check_defs_project_context_success():
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         result = runner.invoke("check", "defs")
         assert_runner_result(result)
