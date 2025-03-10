@@ -20,17 +20,17 @@ describe('Global Graph URLs', () => {
   describe('globalAssetGraphPathForAssetsAndDescendants', () => {
     it('should return a valid path for a single asset', async () => {
       const url = globalAssetGraphPathForAssetsAndDescendants([{path: ['asset_0']}]);
-      expect(url).toEqual(`/asset-groups~asset_0*/asset_0`);
+      expect(url).toEqual(`/asset-groups~${encodeURIComponent('key:"asset_0"+')}/asset_0`);
     });
 
     it('should avoid exceeding a 32k character URL', async () => {
-      const keysLarge = new Array(900).fill(0).map((_, idx) => ({path: [`asset_${idx}`]}));
+      const keysLarge = new Array(800).fill(0).map((_, idx) => ({path: [`asset_${idx}`]}));
       const urlLarge = globalAssetGraphPathForAssetsAndDescendants(keysLarge);
-      expect(urlLarge.length).toEqual(24986);
+      expect(urlLarge.length).toEqual(34984);
 
-      const keysHuge = new Array(1500).fill(0).map((_, idx) => ({path: [`asset_${idx}`]}));
+      const keysHuge = new Array(900).fill(0).map((_, idx) => ({path: [`asset_${idx}`]}));
       const urlHuge = globalAssetGraphPathForAssetsAndDescendants(keysHuge);
-      expect(urlHuge.length).toEqual(24399); // smaller because the selection is not passed
+      expect(urlHuge.length).toEqual(28697); // smaller because the selection is not passed
     });
   });
 });

@@ -34,5 +34,6 @@ export function globalAssetGraphPathForAssetsAndDescendants(assetKeys: AssetKeyI
   }
   const opNames =
     opsQuery.length > URL_MAX_LENGTH / 2 ? [] : [assetKeys.map(tokenForAssetKey).join(',')];
+
   return globalAssetGraphPathToString({opNames, opsQuery});
 }
