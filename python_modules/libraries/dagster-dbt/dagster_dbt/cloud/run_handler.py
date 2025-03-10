@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import Optional
 
 from dagster._annotations import preview
 from dagster._record import record
@@ -30,7 +31,7 @@ class DbtCloudJobRunHandler:
             client=client,
         )
 
-    def wait_for_success(self) -> DbtCloudJobRunStatusType:
+    def wait_for_success(self) -> Optional[DbtCloudJobRunStatusType]:
         run_details = self.client.poll_run(run_id=self.run_id)
         dbt_cloud_run = DbtCloudRun.from_run_details(run_details=run_details)
         return dbt_cloud_run.status
