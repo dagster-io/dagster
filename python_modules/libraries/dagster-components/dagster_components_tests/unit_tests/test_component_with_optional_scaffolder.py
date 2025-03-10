@@ -1,10 +1,10 @@
 from dagster_components import Component
+from dagster_components.fold.decorator import foldable
+from dagster_components.fold.scaffolder import ScaffolderUnavailableReason
 from dagster_components.scaffold import get_scaffolder
-from dagster_components.scaffoldable.decorator import scaffoldable
-from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 
 
-@scaffoldable(
+@foldable(
     scaffolder=ScaffolderUnavailableReason(
         "In order to scaffold this component you must install dagster_foobar with the [dev] extra. E.g. `uv add dagster-foobar[dev]` or `pip install dagster-foobar[dev]`"
     )

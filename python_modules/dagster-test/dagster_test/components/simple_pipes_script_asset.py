@@ -8,8 +8,8 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.component_scaffolder import Scaffolder, ScaffoldRequest
+from dagster_components.fold.decorator import foldable
 from dagster_components.scaffold import scaffold_component_yaml
-from dagster_components.scaffoldable.decorator import scaffoldable
 from pydantic import BaseModel
 
 
@@ -41,7 +41,7 @@ context.report_asset_materialization(asset_key="{asset_key}")
 """
 
 
-@scaffoldable(scaffolder=SimplePipesScriptScaffolder)
+@foldable(scaffolder=SimplePipesScriptScaffolder)
 class SimplePipesScriptComponent(Component):
     """A simple asset that runs a Python script with the Pipes subprocess client.
 

@@ -4,7 +4,7 @@ from dagster._utils import pushd
 
 from dagster_components import Scaffolder, ScaffoldRequest
 from dagster_components.components.shim_components.base import ShimComponent
-from dagster_components.scaffoldable.decorator import scaffoldable
+from dagster_components.fold.decorator import foldable
 
 
 class SensorScaffolder(Scaffolder):
@@ -18,6 +18,6 @@ class SensorScaffolder(Scaffolder):
 """)
 
 
-@scaffoldable(SensorScaffolder)
+@foldable(SensorScaffolder)
 class RawSensorComponent(ShimComponent):
     """Sensor component."""

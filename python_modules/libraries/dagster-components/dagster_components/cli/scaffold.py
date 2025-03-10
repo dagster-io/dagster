@@ -6,9 +6,9 @@ from pydantic import TypeAdapter
 
 from dagster_components.core.component import load_component_type
 from dagster_components.core.component_key import ComponentKey
+from dagster_components.fold.decorator import get_scaffolder
+from dagster_components.fold.scaffolder import ScaffolderUnavailableReason
 from dagster_components.scaffold import scaffold_component_instance
-from dagster_components.scaffoldable.decorator import get_scaffolder
-from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 
 
 @click.group(name="scaffold")

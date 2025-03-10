@@ -4,7 +4,7 @@ from dagster._utils import pushd
 
 from dagster_components import Scaffolder, ScaffoldRequest
 from dagster_components.components.shim_components.base import ShimComponent
-from dagster_components.scaffoldable.decorator import scaffoldable
+from dagster_components.fold.decorator import foldable
 
 
 class ScheduleScaffolder(Scaffolder):
@@ -19,6 +19,6 @@ class ScheduleScaffolder(Scaffolder):
 """)
 
 
-@scaffoldable(ScheduleScaffolder)
+@foldable(ScheduleScaffolder)
 class RawScheduleComponent(ShimComponent):
     """Schedule component."""
