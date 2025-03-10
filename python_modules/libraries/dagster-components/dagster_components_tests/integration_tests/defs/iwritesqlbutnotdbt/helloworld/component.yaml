@@ -1,0 +1,2 @@
+type: dagster_components_tests.integration_tests.lib.iwritesqlbutnotdbt.SqlComponent
+attributes: {}
