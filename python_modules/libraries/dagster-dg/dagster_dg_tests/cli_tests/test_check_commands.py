@@ -15,14 +15,18 @@ from dagster_components.test.test_cases import (
     ComponentValidationTestCase,
     msg_includes_all_of,
 )
-from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd, set_toml_value
+from dagster_dg.utils import (
+    create_toml_node,
+    ensure_dagster_dg_tests_import,
+    modify_toml_as_dict,
+    pushd,
+)
 
 ensure_dagster_dg_tests_import()
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     isolated_example_project_foo_bar,
-    modify_pyproject_toml,
 )
 
 COMPONENT_INTEGRATION_TEST_DIR = (
@@ -75,8 +79,8 @@ def create_project_from_components(
 
 def test_check_component_succeeds_non_default_defs_module() -> None:
     with ProxyRunner.test() as runner, create_project_from_components(runner):
-        with modify_pyproject_toml() as toml:
-            set_toml_value(toml, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
+            create_toml_node(toml_dict, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
 
         # We need to do all of this copying here rather than relying on the project setup
         # fixture because that fixture assumes a default component package.

@@ -99,9 +99,9 @@ export class SelectionAutoCompleteParser extends Parser {
 
   private static readonly _LITERAL_NAMES: Array<string | undefined> = [
     undefined,
-    "'and'",
-    "'or'",
-    "'not'",
+    undefined,
+    undefined,
+    undefined,
     "'*'",
     "'+'",
     undefined,

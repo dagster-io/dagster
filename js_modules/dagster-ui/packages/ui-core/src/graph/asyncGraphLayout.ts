@@ -62,7 +62,7 @@ const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOption
   }
 
   return `${JSON.stringify(opts)}${JSON.stringify({
-    version: 3,
+    version: 4,
     downstream: recreateObjectWithKeysSorted(graphData.downstream),
     upstream: recreateObjectWithKeysSorted(graphData.upstream),
     nodes: Object.keys(graphData.nodes)
@@ -125,7 +125,7 @@ type Action =
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'loading':
-      return {loading: true, layout: null, cacheKey: ''};
+      return {loading: true, layout: state.layout, cacheKey: state.cacheKey};
     case 'layout':
       return {
         loading: false,
@@ -195,6 +195,7 @@ export function useAssetLayout(
   _graphData: GraphData,
   expandedGroups: string[],
   opts: LayoutAssetGraphOptions,
+  dataLoading?: boolean,
 ) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const flags = useFeatureFlags();
@@ -206,6 +207,9 @@ export function useAssetLayout(
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
   useLayoutEffect(() => {
+    if (dataLoading) {
+      return;
+    }
     let canceled = false;
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
@@ -231,7 +235,7 @@ export function useAssetLayout(
     return () => {
       canceled = true;
     };
-  }, [cacheKey, graphData, runAsync, flags, opts]);
+  }, [cacheKey, graphData, runAsync, flags, opts, dataLoading]);
 
   const uid = useRef(0);
   useDangerousRenderEffect(() => {

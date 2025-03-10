@@ -27,15 +27,20 @@ from dagster_dg_tests.utils import (
 
 def test_list_project_success():
     with ProxyRunner.test() as runner, isolated_example_workspace(runner):
-        runner.invoke("scaffold", "project", "foo")
-        runner.invoke("scaffold", "project", "bar")
+        result = runner.invoke("scaffold", "project", "foo")
+        assert_runner_result(result)
+        result = runner.invoke("scaffold", "project", "projects/bar")
+        assert_runner_result(result)
+        result = runner.invoke("scaffold", "project", "more_projects/baz")
+        assert_runner_result(result)
         result = runner.invoke("list", "project")
         assert_runner_result(result)
         assert (
             result.output.strip()
             == textwrap.dedent("""
-                bar
                 foo
+                projects/bar
+                more_projects/baz
             """).strip()
         )
 
@@ -259,7 +264,7 @@ def test_list_defs_succeeds(use_json: bool):
 
 
 def _sample_defs():
-    from dagster import Definitions, asset, job, schedule, sensor
+    from dagster import asset, job, schedule, sensor
 
     @asset
     def my_asset_1(): ...
@@ -275,12 +280,6 @@ def _sample_defs():
 
     @job
     def my_job(): ...
-
-    defs = Definitions(  # noqa: F841
-        assets=[my_asset_1, my_asset_2],
-        schedules=[my_schedule],
-        sensors=[my_sensor],
-    )
 
 
 _EXPECTED_COMPLEX_ASSET_DEFS = textwrap.dedent("""

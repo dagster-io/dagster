@@ -213,7 +213,11 @@ export const AssetsCatalogTable = ({
     filterButton,
     activeFiltersJsx,
     kindFilter,
-  } = useAssetCatalogFiltering({assets, loading: assetsLoading});
+  } = useAssetCatalogFiltering({
+    assets,
+    loading: assetsLoading,
+    enabled: !featureEnabled(FeatureFlag.flagSelectionSyntax),
+  });
 
   const {filterInput, filtered, loading, assetSelection, setAssetSelection} =
     useAssetSelectionInput({

@@ -197,7 +197,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                         f"Found: `{partition_by}`"
                     )
 
-                if (engine := delta_write_options.get("engine", "pyarrow")) == "rust":
+                # rust is the default engine in newer versions of deltalake
+                if (engine := delta_write_options.get("engine", "rust")) == "rust":
                     delta_write_options["predicate"] = self.get_predicate(context)
 
                 elif engine == "pyarrow":

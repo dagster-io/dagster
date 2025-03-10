@@ -11,20 +11,20 @@ from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import Any, Optional, Union
 
-import tomlkit
 from click.testing import CliRunner, Result
 from dagster_dg.cli import (
     DG_CLI_MAX_OUTPUT_WIDTH,
     cli as dg_cli,
 )
 from dagster_dg.utils import (
-    delete_toml_value,
+    delete_toml_node,
     discover_git_root,
     get_venv_executable,
     install_to_venv,
     is_windows,
+    modify_toml,
     pushd,
-    set_toml_value,
+    set_toml_node,
 )
 from typing_extensions import Self
 
@@ -108,12 +108,11 @@ def isolated_example_project_foo_bar(
     """
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    project_path = Path("foo-bar")
     if in_workspace:
         fs_context = isolated_example_workspace(runner)
-        project_path = Path("projects/foo-bar")
     else:
         fs_context = runner.isolated_filesystem()
-        project_path = Path("foo-bar")
     with fs_context:
         result = runner.invoke(
             "scaffold",
@@ -164,13 +163,13 @@ def isolated_example_component_library_foo_bar(
             shutil.rmtree(Path("foo_bar/defs"))
 
             # Make it not a project
-            with modify_pyproject_toml() as toml:
-                delete_toml_value(toml, ("tool", "dg"))
+            with modify_toml(Path("pyproject.toml")) as toml:
+                delete_toml_node(toml, ("tool", "dg"))
 
                 # We need to set any alternative lib package name _before_ we install into the
                 # environment, since it affects entry points which are set at install time.
                 if lib_module_name:
-                    set_toml_value(
+                    set_toml_node(
                         toml,
                         ("project", "entry-points", "dagster.components", "foo_bar"),
                         lib_module_name,
@@ -429,12 +428,3 @@ def print_exception_info(
     formatted_traceback = "".join(traceback.format_tb(exc_traceback))
     print(formatted_traceback)  # noqa: T201
     print(f"{exc_type.__name__}: {exc_value}")  # noqa: T201
-
-
-@contextmanager
-def modify_pyproject_toml() -> Iterator[tomlkit.TOMLDocument]:
-    with open("pyproject.toml") as f:
-        toml = tomlkit.parse(f.read())
-    yield toml
-    with open("pyproject.toml", "w") as f:
-        f.write(tomlkit.dumps(toml))

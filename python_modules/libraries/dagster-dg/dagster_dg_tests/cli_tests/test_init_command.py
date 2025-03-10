@@ -4,7 +4,7 @@ from typing import get_args
 
 import pytest
 import tomlkit
-from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import
+from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import, get_toml_node
 
 ensure_dagster_dg_tests_import()
 from dagster_dg_tests.cli_tests.test_scaffold_commands import (
@@ -29,6 +29,13 @@ def test_dg_init_command_success(monkeypatch) -> None:
         assert Path("dagster-workspace/projects/helloworld/helloworld").exists()
         assert Path("dagster-workspace/projects/helloworld/pyproject.toml").exists()
         assert Path("dagster-workspace/projects/helloworld/helloworld_tests").exists()
+
+        # Check workspace TOML content
+        toml = tomlkit.parse(Path("dagster-workspace/pyproject.toml").read_text())
+        assert (
+            get_toml_node(toml, ("tool", "dg", "workspace", "projects", 0, "path"), str)
+            == "projects/helloworld"
+        )
 
 
 def test_dg_init_command_no_project(monkeypatch) -> None:
