@@ -141,7 +141,7 @@ attributes:
   script_path: script.sh
   asset_specs:
     - key: a
-      partitions_def: "{{ daily_partitions }}"
+      partitions_def: "{{ daily_partitions_def() }}"
 ```
 
 ## Next steps

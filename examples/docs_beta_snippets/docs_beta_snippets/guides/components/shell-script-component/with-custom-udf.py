@@ -21,6 +21,10 @@ class ShellCommandModel(ResolvableModel):
     asset_specs: Sequence[AssetSpecModel]
 
 
+def daily_partitions_def_from_jan1_2024() -> dg.DailyPartitionsDefinition:
+    return dg.DailyPartitionsDefinition(start_date="2024-01-01")
+
+
 @dataclass
 class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
     script_path: str
@@ -29,7 +33,7 @@ class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
     @classmethod
     def get_udfs(cls) -> Mapping[str, Any]:
         return {
-            "daily_partitions": dg.DailyPartitionsDefinition(start_date="2024-01-01")
+            "daily_partitions_def_from_20240101": daily_partitions_def_from_jan1_2024()
         }
 
     def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
