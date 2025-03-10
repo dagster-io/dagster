@@ -21,7 +21,8 @@ def test_get_passed_asset_defs_all_assets_defs():
 def test_get_passed_asset_defs_all_asset_specs():
     my_spec = dg.AssetSpec(key="my_asset")
     defs = dg.Definitions(assets=[my_spec])
-    assert get_passed_assets_defs(defs) == []
+    assert len(get_passed_assets_defs(defs)) == 1
+    assert get_passed_assets_defs(defs)[0].key == my_spec.key
 
 
 def test_get_passed_asset_defs_cacheable_assets_defs():
@@ -63,4 +64,7 @@ def get_passed_asset_defs_mixed():
 
     my_spec = dg.AssetSpec(key="my_asset")
     defs = dg.Definitions(assets=[my_asset, my_spec])
-    assert get_passed_assets_defs(defs) == [my_asset]
+    assert {asset.key for asset in get_passed_assets_defs(defs)} == {
+        my_asset.key,
+        my_spec.key,
+    }

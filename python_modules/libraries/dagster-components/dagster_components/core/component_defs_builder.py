@@ -2,7 +2,7 @@ import importlib
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from dagster import (
     Definitions,
@@ -11,6 +11,10 @@ from dagster import (
 from dagster._annotations import deprecated
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.definitions_class import _canonicalize_specs_to_assets_defs
+from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.utils import dedupe_object_refs
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_components.core.component import (
@@ -27,9 +31,6 @@ from dagster_components.core.component_decl_builder import (
 )
 from dagster_components.core.component_key import ComponentKey
 from dagster_components.utils import get_path_from_module
-
-if TYPE_CHECKING:
-    from dagster import Definitions
 
 
 def resolve_decl_node_to_yaml_decls(decl: ComponentDeclNode) -> list[YamlComponentDecl]:
@@ -124,8 +125,8 @@ def load_defs(
 
 
 def get_passed_assets_defs(defs: Definitions) -> Sequence[AssetsDefinition]:
-    """Returns all AssetsDefinitions passed to the Definitions object. Does not support
-    CacheableAssetsDefinitions, and ignores bare AssetSpecs.
+    """Returns all AssetsDefinitions associated with the Definitions object. Does not support
+    CacheableAssetsDefinitions.
     """
     check.invariant(
         not any(
@@ -135,5 +136,13 @@ def get_passed_assets_defs(defs: Definitions) -> Sequence[AssetsDefinition]:
     )
 
     return [
-        asset_def for asset_def in (defs.assets or []) if isinstance(asset_def, AssetsDefinition)
+        check.inst(
+            create_external_asset_from_source_asset(asset)
+            if isinstance(asset, SourceAsset)
+            else asset,
+            AssetsDefinition,
+        )
+        for asset in _canonicalize_specs_to_assets_defs(
+            dedupe_object_refs([asset_def for asset_def in (defs.assets or [])])
+        )
     ]
