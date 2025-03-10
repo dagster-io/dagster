@@ -759,6 +759,11 @@ class DbtCloudWorkspace(ConfigurableResource):
 
     @cached_method
     def get_client(self) -> DbtCloudWorkspaceClient:
+        """Get the dbt Cloud client to interact with this dbt Cloud workspace.
+        
+        Returns:
+            DbtCloudWorkspaceClient: The dbt Cloud client to interact with the dbt Cloud workspace.
+        """
         return DbtCloudWorkspaceClient(
             account_id=self.credentials.account_id,
             token=self.credentials.token,
