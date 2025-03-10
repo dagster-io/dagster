@@ -15,7 +15,7 @@ BLUEPRINT_ATTRIBUTE = "__blueprint__"
 
 
 def blueprint(
-    scaffolder: Union[type["Blueprint"], "BlueprintUnavailableReason"],
+    blueprint_cls: Union[type["Blueprint"], "BlueprintUnavailableReason"],
 ) -> Callable[[type[T]], type[T]]:
     """A decorator that attaches a scaffolder class to the decorated class.
 
@@ -28,7 +28,7 @@ def blueprint(
 
     def decorator(cls: type[T]) -> type[T]:
         # Store the scaffolder class as an attribute using the constant
-        setattr(cls, BLUEPRINT_ATTRIBUTE, scaffolder)
+        setattr(cls, BLUEPRINT_ATTRIBUTE, blueprint_cls)
         return cls
 
     return decorator
@@ -77,7 +77,7 @@ class ScaffoldRequest:
 
 class Blueprint:
     @classmethod
-    def get_params(cls) -> Optional[type[BaseModel]]:
+    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
         return None
 
     @abstractmethod

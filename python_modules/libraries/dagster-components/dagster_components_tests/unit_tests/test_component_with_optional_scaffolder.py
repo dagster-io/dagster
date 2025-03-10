@@ -4,7 +4,7 @@ from dagster_components.component_scaffolding import get_blueprint
 
 
 @blueprint(
-    scaffolder=BlueprintUnavailableReason(
+    blueprint_cls=BlueprintUnavailableReason(
         "In order to scaffold this component you must install dagster_foobar with the [dev] extra. E.g. `uv add dagster-foobar[dev]` or `pip install dagster-foobar[dev]`"
     )
 )

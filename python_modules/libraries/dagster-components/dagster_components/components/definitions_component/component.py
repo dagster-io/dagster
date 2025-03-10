@@ -16,7 +16,7 @@ from dagster_components.components.definitions_component.blueprint import (
 from dagster_components.resolved.model import ResolvableModel
 
 
-@blueprint(scaffolder=DefinitionsComponentBlueprint)
+@blueprint(blueprint_cls=DefinitionsComponentBlueprint)
 class DefinitionsComponent(Component, ResolvableModel):
     """Wraps an arbitrary set of Dagster definitions."""
 

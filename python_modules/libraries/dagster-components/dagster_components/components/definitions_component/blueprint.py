@@ -15,7 +15,7 @@ class DefinitionsScaffoldParams(BaseModel):
 
 class DefinitionsComponentBlueprint(Blueprint):
     @classmethod
-    def get_params(cls):
+    def get_scaffold_params(cls):
         return DefinitionsScaffoldParams
 
     def scaffold(self, request: ScaffoldRequest, params: DefinitionsScaffoldParams) -> None:

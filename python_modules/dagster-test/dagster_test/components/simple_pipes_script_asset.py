@@ -20,7 +20,7 @@ class SimplePipesScriptScaffoldParams(BaseModel):
 
 class SimplePipesScriptBlueprint(Blueprint):
     @classmethod
-    def get_params(cls):
+    def get_scaffold_params(cls):
         return SimplePipesScriptScaffoldParams
 
     def scaffold(self, request: ScaffoldRequest, params: SimplePipesScriptScaffoldParams) -> None:
@@ -40,7 +40,7 @@ context.report_asset_materialization(asset_key="{asset_key}")
 """
 
 
-@blueprint(scaffolder=SimplePipesScriptBlueprint)
+@blueprint(blueprint_cls=SimplePipesScriptBlueprint)
 class SimplePipesScriptComponent(Component):
     """A simple asset that runs a Python script with the Pipes subprocess client.
 

@@ -48,7 +48,7 @@ class ShellCommandModel(ResolvableModel):
 
 
 # highlight-start
-@blueprint(scaffolder=ShellCommandBlueprint)
+@blueprint(blueprint_cls=ShellCommandBlueprint)
 # highlight-end
 @dataclass
 class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):

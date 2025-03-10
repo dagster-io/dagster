@@ -38,7 +38,7 @@ class ComponentDeclNode(ABC):
     def get_source_position_tree(self) -> Optional[SourcePositionTree]: ...
 
 
-@blueprint(scaffolder=DefaultComponentBlueprint)
+@blueprint(blueprint_cls=DefaultComponentBlueprint)
 class Component(ABC):
     @classmethod
     def get_schema(cls) -> Optional[type["ResolvableModel"]]:
@@ -83,15 +83,13 @@ class Component(ABC):
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
 
-        scaffolder = get_blueprint(cls)
+        blueprint = get_blueprint(cls)
 
-        if isinstance(scaffolder, BlueprintUnavailableReason):
-            raise DagsterError(
-                f"Component {cls.__name__} is not scaffoldable: {scaffolder.message}"
-            )
+        if isinstance(blueprint, BlueprintUnavailableReason):
+            raise DagsterError(f"Component {cls.__name__} is not scaffoldable: {blueprint.message}")
 
         component_schema = cls.get_schema()
-        scaffold_params = scaffolder.get_params()
+        scaffold_params = blueprint.get_scaffold_params()
         return {
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,

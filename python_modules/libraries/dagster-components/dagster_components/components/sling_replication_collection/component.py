@@ -14,7 +14,7 @@ from typing_extensions import TypeAlias
 
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.blueprint import blueprint
-from dagster_components.components.sling_replication_collection.scaffolder import (
+from dagster_components.components.sling_replication_collection.blueprint import (
     SlingReplicationComponentBlueprint,
 )
 from dagster_components.resolved.context import ResolutionContext
@@ -97,7 +97,7 @@ def resolve_resource(
     )
 
 
-@blueprint(scaffolder=SlingReplicationComponentBlueprint)
+@blueprint(blueprint_cls=SlingReplicationComponentBlueprint)
 @dataclass
 class SlingReplicationCollectionComponent(Component, ResolvedFrom[SlingReplicationCollectionModel]):
     """Expose one or more Sling replications to Dagster as assets."""

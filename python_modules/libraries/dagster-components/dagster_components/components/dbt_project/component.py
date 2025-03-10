@@ -56,7 +56,7 @@ def resolve_dbt(context: ResolutionContext, dbt: DbtCliResource) -> DbtCliResour
     return DbtCliResource(**context.resolve_value(dbt.model_dump()))
 
 
-@blueprint(scaffolder=DbtProjectComponentBlueprint)
+@blueprint(blueprint_cls=DbtProjectComponentBlueprint)
 @dataclass
 class DbtProjectComponent(Component, ResolvedFrom[DbtProjectModel]):
     """Expose a DBT project to Dagster as a set of assets."""
