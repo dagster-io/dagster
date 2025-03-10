@@ -132,7 +132,7 @@ class ResolveFromModel:
     The via argument allows use for target types that are not directly ResolvableFrom.
     """
 
-    via: Optional[type[ResolvedKwargs]] = None
+    via: type[ResolvedKwargs]
 
 
 class ResolveFromInjection:
@@ -164,22 +164,19 @@ def _is_scalar(annotation):
 
 
 def _get_resolved_from_cls(annotation) -> Optional[Union[type[ResolvedFrom], ResolveViaKwargs]]:
+    if isinstance(annotation, type) and issubclass(annotation, ResolvedFrom):
+        return annotation
+
     origin = get_origin(annotation)
     if origin is not Annotated:
         return None
 
     args = get_args(annotation)
     resolve_model = next((arg for arg in args if isinstance(arg, ResolveFromModel)), None)
-    if not resolve_model:
-        return None
-
-    if resolve_model.via:
+    if resolve_model:
         return resolve_model.via.resolver_fn(target_type=args[0])
 
-    resolved_from_cls = args[0]
-    if not issubclass(resolved_from_cls, ResolvedFrom):
-        check.failed("Can only annotate ResolvedFrom types with ResolveModel()")
-    return resolved_from_cls
+    return None
 
 
 class FieldResolver:
@@ -253,7 +250,7 @@ class FieldResolver:
             f"Could not derive resolver for annotation {field_name}: {annotation}.\n"
             "Field types are expected to contain:\n"
             "* basic serializable types such as str, int, float, bool, list, etc\n"
-            "* ResolvedFrom subclasses wrapped with Resolved[]\n"
+            "* ResolvedFrom subclasses\n"
             "* complex types expected to be provided via scope wrapped with Injected[]\n"
         )
 
@@ -331,5 +328,3 @@ def resolve_model_using_kwargs_cls(
 
 
 TResolvedFrom = TypeVar("TResolvedFrom", bound=ResolvedFrom)
-
-Resolved: TypeAlias = Annotated[TResolvedFrom, ResolveFromModel()]
