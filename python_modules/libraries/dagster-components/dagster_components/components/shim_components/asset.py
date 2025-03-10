@@ -2,12 +2,12 @@ from pathlib import Path
 
 from dagster._utils import pushd
 
-from dagster_components import Scaffolder, ScaffoldRequest
+from dagster_components import Blueprint, ScaffoldRequest
+from dagster_components.blueprint import blueprint
 from dagster_components.components.shim_components.base import ShimComponent
-from dagster_components.scaffoldable.decorator import scaffoldable
 
 
-class AssetScaffolder(Scaffolder):
+class AssetBlueprint(Blueprint):
     def scaffold(self, request: ScaffoldRequest, params: None) -> None:
         with pushd(str(request.target_path)):
             Path("definitions.py").write_text("""
@@ -18,6 +18,6 @@ class AssetScaffolder(Scaffolder):
 """)
 
 
-@scaffoldable(AssetScaffolder)
+@blueprint(AssetBlueprint)
 class RawAssetComponent(ShimComponent):
     """Asset definition component."""
