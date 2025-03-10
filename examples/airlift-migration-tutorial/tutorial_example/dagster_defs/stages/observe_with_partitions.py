@@ -26,6 +26,7 @@ from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 PARTITIONS_DEF = DailyPartitionsDefinition(start_date=get_current_datetime_midnight())
 # highlight-end
 
+
 @asset_check(asset=AssetKey(["customers_csv"]))
 def validate_exported_csv() -> AssetCheckResult:
     csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
