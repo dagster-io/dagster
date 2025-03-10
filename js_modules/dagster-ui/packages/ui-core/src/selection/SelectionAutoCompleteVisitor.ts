@@ -169,16 +169,11 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
   }
 
   public visitTerminal(ctx: TerminalNode) {
-    if (
-      this.nodeIncludesCursor({
-        start: {startIndex: ctx.payload.startIndex},
-        stop: {stopIndex: ctx.payload.stopIndex},
-      })
-    ) {
+    if (this.nodeIncludesCursor(ctx)) {
       if (ctx.text === '=') {
         const parent = ctx.parent;
-        if (parent?.constructor.name === AttributeExpressionContext.name) {
-          this.forceVisitCtx.add((parent as AttributeExpressionContext).attributeValue(1));
+        if (parent instanceof AttributeExpressionContext) {
+          this.forceVisitCtx.add(parent.attributeValue(1));
         }
       }
     }
@@ -198,14 +193,13 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
 
     const parentContext = ctx.parent;
-    if (parentContext?.constructor.name === AttributeExpressionContext.name) {
-      const context = parentContext as AttributeExpressionContext;
-      this.startReplacementIndex = context.colonToken().start.startIndex + 1;
-      this.stopReplacementIndex = context.stop!.stopIndex + 1;
+    if (parentContext instanceof AttributeExpressionContext) {
+      this.startReplacementIndex = parentContext.colonToken().start.startIndex + 1;
+      this.stopReplacementIndex = parentContext.stop!.stopIndex + 1;
     }
 
     const parentChildren = ctx.parent?.children ?? [];
-    if (parentChildren[0]?.constructor.name === AttributeNameContext.name) {
+    if (parentChildren[0] instanceof AttributeNameContext) {
       const rawValue = getValueNodeValue(ctx.value());
       this.addAttributeValueResults(parentChildren[0].text, rawValue);
     }
@@ -217,12 +211,12 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       let valueNode: ParserRuleContext | null = null;
 
       const parentChildren = ctx.parent?.children ?? [];
-      if (parentChildren[0]?.constructor.name === AttributeNameContext.name) {
+      if (parentChildren[0] instanceof AttributeNameContext) {
         attributeName = parentChildren[0] as ParserRuleContext;
       }
-      if (parentChildren[1]?.constructor.name === AttributeValueContext.name) {
+      if (parentChildren[1] instanceof AttributeValueContext) {
         valueNode = parentChildren[1] as ParserRuleContext;
-      } else if (parentChildren[2]?.constructor.name === AttributeValueContext.name) {
+      } else if (parentChildren[2] instanceof AttributeValueContext) {
         valueNode = parentChildren[2] as ParserRuleContext;
       }
 
