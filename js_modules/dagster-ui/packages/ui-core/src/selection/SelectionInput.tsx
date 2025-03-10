@@ -2,7 +2,15 @@ import {Box, Colors, Icon, Popover, UnstyledButton} from '@dagster-io/ui-compone
 import useResizeObserver from '@react-hook/resize-observer';
 import CodeMirror, {Editor, EditorChange} from 'codemirror';
 import debounce from 'lodash/debounce';
-import React, {KeyboardEvent, useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import React, {
+  KeyboardEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import styled from 'styled-components';
 
 import {SyntaxError} from './CustomErrorListener';
@@ -29,8 +37,10 @@ type SelectionAutoCompleteInputProps = {
   onChange: (value: string) => void;
   useAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'];
   saveOnBlur?: boolean;
+  onErrorStateChange?: (errors: SyntaxError[]) => void;
 };
 
+const emptyArray: SyntaxError[] = [];
 export const SelectionAutoCompleteInput = ({
   id,
   value,
@@ -39,6 +49,7 @@ export const SelectionAutoCompleteInput = ({
   linter,
   useAutoComplete,
   saveOnBlur = false,
+  onErrorStateChange,
 }: SelectionAutoCompleteInputProps) => {
   const trackEvent = useTrackEvent();
 
@@ -359,6 +370,19 @@ export const SelectionAutoCompleteInput = ({
   );
 
   useResizeObserver(inputRef, adjustHeight);
+
+  const errors = useMemo(() => {
+    const linterErrors = linter(value);
+    if (linterErrors.length > 0) {
+      return linterErrors;
+    }
+    // Keep the reference the same to avoid re-rendering
+    return emptyArray;
+  }, [linter, value]);
+
+  useEffect(() => {
+    onErrorStateChange?.(errors);
+  }, [onErrorStateChange, errors]);
 
   return (
     <div onBlur={onBlur} style={{width: '100%'}}>
