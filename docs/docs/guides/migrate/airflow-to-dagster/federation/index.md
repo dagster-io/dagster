@@ -9,7 +9,7 @@ You can use `dagster-airlift` to observe DAGs from multiple Airflow instances an
 
 In this tutorial, a data platform team is tasked with managing the following Airflow setup:
 
-- An Airflow instance calld `warehouse`, run by another team, that contains a DAG called `warehouse.load_customers` that loads customer data into the data warehouse.
+- An Airflow instance called `warehouse`, run by another team, that contains a DAG called `warehouse.load_customers` that loads customer data into the data warehouse.
 - An Airflow instance called `metrics`, run by the data platform team, that contains a DAG called `metrics.customer_metrics` that computes metrics on top of the customer data.
 
 The data platform team wants to update this setup to only rebuild the `metrics.customer_metrics` DAG when the `warehouse.load_customers` DAG has new data. They can't observe or control this cross-instance dependency in the current setup, so they decide to use `dagster-airlift`.
