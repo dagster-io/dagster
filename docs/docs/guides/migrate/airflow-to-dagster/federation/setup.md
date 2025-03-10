@@ -46,9 +46,9 @@ airlift_federation_tutorial
 └── warehouse_airflow_dags: Contains the Airflow DAGs for the "upstream" Airflow instance
 ```
 
-## Run Airflow locally
+## Run Airflow instances locally
 
-This tutorial involves running a local Airflow instance, which you can do by following commands from the root of the `airlift-migration-tutorial` directory.
+This tutorial involves running two local Airflow instances, which you can do by following commands from the root of the `airlift-federation-tutorial` directory.
 
 First, install the required Python packages:
 
