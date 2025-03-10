@@ -6,6 +6,7 @@ from typing import Literal, get_args
 
 import pytest
 import tomlkit
+from dagster_dg.cli.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.context import DgContext
@@ -252,6 +253,21 @@ def validate_pyproject_toml_with_editable(
         "path": str(repo_root / "python_modules" / "libraries" / "dagster-components"),
         "editable": True,
     }
+
+
+def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> None:
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
+    monkeypatch.setenv(DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR, "1")
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        # We need to use subprocess rather than runner here because the environment variable affects
+        # CLI defaults set at process startup.
+        subprocess.check_output(["dg", "scaffold", "project", "foo-bar"], text=True)
+        with open("foo-bar/pyproject.toml") as f:
+            toml = tomlkit.parse(f.read())
+            validate_pyproject_toml_with_editable(
+                toml, "--use-editable-dagster", dagster_git_repo_dir
+            )
 
 
 def test_scaffold_project_skip_venv_success() -> None:

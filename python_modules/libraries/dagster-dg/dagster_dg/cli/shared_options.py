@@ -1,3 +1,4 @@
+import os
 import textwrap
 from collections.abc import Sequence
 from typing import Any, Callable, Optional, TypeVar, Union
@@ -105,6 +106,11 @@ dg_global_options = make_option_group(GLOBAL_OPTIONS)
 # ##### EDITABLE DAGSTER
 # ########################
 
+# When set, this will cause project scaffolding to default to --use-editable-dagster mode.
+# This is a private feature designed to prevent mistakes during development.
+DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR = "DG_USE_EDITABLE_DAGSTER"
+
+
 EDITABLE_DAGSTER_OPTIONS = {
     not_none(option.name): option
     for option in [
@@ -113,7 +119,7 @@ EDITABLE_DAGSTER_OPTIONS = {
             type=str,
             flag_value="TRUE",
             is_flag=False,
-            default=None,
+            default="TRUE" if os.getenv(DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR) else None,
             help=(
                 "Install all Dagster package dependencies from a local Dagster clone. Accepts a path to local Dagster clone root or"
                 " may be set as a flag (no value is passed). If set as a flag,"
