@@ -4,8 +4,13 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Optional
 
-from dagster import Definitions
+from dagster import (
+    Definitions,
+    _check as check,
+)
 from dagster._annotations import deprecated
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_components.core.component import (
@@ -116,3 +121,19 @@ def load_defs(
         )
         all_defs.append(defs)
     return Definitions.merge(*all_defs)
+
+
+def get_passed_assets_defs(defs: Definitions) -> Sequence[AssetsDefinition]:
+    """Returns all AssetsDefinitions passed to the Definitions object. Does not support
+    CacheableAssetsDefinitions, and ignores bare AssetSpecs.
+    """
+    check.invariant(
+        not any(
+            isinstance(asset_def, CacheableAssetsDefinition) for asset_def in (defs.assets or [])
+        ),
+        "Cannot call get_passed_assets_defs on a Definitions object that contains CacheableAssetsDefinitions",
+    )
+
+    return [
+        asset_def for asset_def in (defs.assets or []) if isinstance(asset_def, AssetsDefinition)
+    ]
