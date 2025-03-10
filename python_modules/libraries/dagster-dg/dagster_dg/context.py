@@ -11,7 +11,7 @@ import tomlkit
 import tomlkit.items
 from typing_extensions import Self
 
-from dagster_dg.cache import CachableDataType, DgCache, hash_paths
+from dagster_dg.cache import CachableDataType, DgCache
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.config import (
     DgConfig,
@@ -39,6 +39,7 @@ from dagster_dg.utils import (
     resolve_local_venv,
     strip_activated_venv_from_env_vars,
 )
+from dagster_dg.utils.filesystem import hash_paths
 
 # Project
 _DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
@@ -209,6 +210,13 @@ class DgContext:
     @property
     def has_cache(self) -> bool:
         return self._cache is not None
+
+    def component_registry_paths(self) -> list[Path]:
+        """Paths that should be watched for changes to the component registry."""
+        return [
+            self.root_path / "uv.lock",
+            *([self.default_component_library_path] if self.is_component_library else []),
+        ]
 
     # Allowing open-ended str data_type for now so we can do module names
     def get_cache_key(self, data_type: Union[CachableDataType, str]) -> tuple[str, str, str]:
