@@ -1,5 +1,31 @@
 # Contributing documentation
 
+## Content
+
+### Partials
+
+Docusaurus supports [markdown partials](https://docusaurus.io/docs/markdown-features/react#importing-markdown) for including content in multiple places.
+
+These files are to be prefixed with `_` and saved in the `docs/partials/` directory.
+
+```bash
+$ ls -1 docs/partials/
+_Beta.md
+_Deprecated.md
+_InspirationList.md
+_KindsTags.md
+_Preview.md
+_Superseded.md
+```
+
+The partial can then be imported and included as an HTML tag:
+
+```
+import Deprecated from '../../../partials/\_Deprecated.md';
+
+<Deprecated />
+```
+
 ## Formatting
 
 ### PyObject references
@@ -28,6 +54,12 @@ After:
 Note that the `method` property causes the build to break -- use `object` instead, and prepend the class name to the method, if it is different from the module.
 
 ### Images
+
+#### Screenshots
+
+Screenshots are to be at least 1920x1080 resolution, and can be captured using your preferred screenshot tool.
+
+On MacOS the Command+Shift+5 hotkey opens a screenshot utility that can be useful for capturing windows and selections.
 
 #### Location
 
@@ -146,6 +178,47 @@ This will run `pyright` on all new/changed files relative to the master branch.
 make quick_pyright
 ```
 
+#### Line selection
+
+When referencing a subset of lines from a file, it is recommended to use the `startAfter` and `endBefore` props, which requires creating comments in the original source code. For example:
+
+```
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/assets/multi_component_asset_key.py"
+  startAfter="start_marker"
+  endBefore="end_marker"
+/>
+```
+
+```python
+from dagster import AssetIn, asset
+
+
+# start_marker
+@asset(key_prefix=["one", "two", "three"])
+def upstream_asset():
+    return [1, 2, 3]
+# end_marker
+
+
+@asset(ins={"upstream_asset": AssetIn(key_prefix=["one", "two", "three"])})
+def downstream_asset(upstream_asset):
+    return upstream_asset + [4]
+
+```
+
+#### Line highlighting
+
+Highlighting code examples can be done by creating `highlight-start` and `highlight-end` comments.
+
+```python
+@dg.asset
+# highlight-start
+def iris_dataset(iris_db: SnowflakeResource) -> None:
+    # highlight-end
+    iris_df = pd.read_csv("https://docs.dagster.io/assets/iris.csv")
+```
+
 ### CLI Invocation Examples
 
 Since CLI invocations often include both a command and its output, which are logically separate and which users might want to copy and paste separately, we have a special component for this.
@@ -221,3 +294,21 @@ Tabs are formatted as follows:
 You can add labels to tags, customize headings, and sync tab choices with the `groupId` prop. For more information, see the [Docusaurus Tabs docs](https://docusaurus.io/docs/markdown-features/tabs).
 
 Use `**strong**` to emphasize content in tabs. Do not use Markdown headings, since those will generate confusing items in the right sidebar.
+
+#### Synced tabs
+
+Groups of tabs can be synced by using the `groupId` parameter.
+
+```html
+<Tabs groupId="operating-systems">
+  <TabItem value="win" label="Windows">Use Ctrl + C to copy.</TabItem>
+  <TabItem value="mac" label="macOS">Use Command + C to copy.</TabItem>
+</Tabs>
+
+<Tabs groupId="operating-systems">
+  <TabItem value="win" label="Windows">Use Ctrl + V to paste.</TabItem>
+  <TabItem value="mac" label="macOS">Use Command + V to paste.</TabItem>
+</Tabs>
+```
+
+For more information refer to the [Docusaurus documentation](https://docusaurus.io/docs/markdown-features/tabs#syncing-tab-choices).
