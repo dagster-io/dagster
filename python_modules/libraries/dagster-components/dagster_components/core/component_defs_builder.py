@@ -2,7 +2,7 @@ import importlib
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from types import ModuleType
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from dagster import Definitions
 from dagster._annotations import deprecated
@@ -11,7 +11,7 @@ from dagster._utils.warnings import suppress_dagster_warnings
 from dagster_components.core.component import (
     Component,
     ComponentLoadContext,
-    ResolutionContext,
+    DefinitionsModuleCache,
     discover_entry_point_component_types,
 )
 from dagster_components.core.component_decl_builder import (
@@ -22,6 +22,9 @@ from dagster_components.core.component_decl_builder import (
 )
 from dagster_components.core.component_key import ComponentKey
 from dagster_components.utils import get_path_from_module
+
+if TYPE_CHECKING:
+    from dagster import Definitions
 
 
 def resolve_decl_node_to_yaml_decls(decl: ComponentDeclNode) -> list[YamlComponentDecl]:
@@ -42,34 +45,6 @@ def build_components_from_component_folder(
     component_folder = path_to_decl_node(path)
     assert isinstance(component_folder, ComponentFolder)
     return component_folder.load(context.for_decl_node(component_folder))
-
-
-def build_defs_from_component_module(
-    module: ModuleType, resources: Mapping[str, object]
-) -> Definitions:
-    """Loads a set of Dagster definitions from a components Python module.
-
-    Args:
-        module (ModuleType): The Python module to load definitions from.
-
-    Returns:
-        Definitions: The set of Dagster definitions loaded from the module.
-    """
-    from dagster_components.core.component_decl_builder import module_to_decl_node
-    from dagster_components.core.component_defs_builder import defs_from_components
-
-    decl_node = module_to_decl_node(module)
-    if not decl_node:
-        raise Exception(f"No component found at module {module}")
-
-    context = ComponentLoadContext(
-        module_name=module.__name__,
-        resources=resources,
-        decl_node=decl_node,
-        resolution_context=ResolutionContext.default(decl_node.get_source_position_tree()),
-    )
-    components = decl_node.load(context)
-    return defs_from_components(resources=resources, context=context, components=components)
 
 
 @suppress_dagster_warnings
@@ -134,10 +109,10 @@ def load_defs(
     components_root_dir = get_path_from_module(defs_root)
 
     all_defs: list[Definitions] = []
+    module_cache = DefinitionsModuleCache(resources=resources or {})
     for component_path in [item for item in components_root_dir.iterdir() if item.is_dir()]:
-        defs = build_defs_from_component_module(
+        defs = module_cache.load_defs(
             module=importlib.import_module(f"{defs_root.__name__}.{component_path.name}"),
-            resources=resources or {},
         )
         all_defs.append(defs)
     return Definitions.merge(*all_defs)
