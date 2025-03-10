@@ -35,7 +35,7 @@ def list_group():
 
 @list_group.command(name="project", cls=DgClickCommand)
 @dg_global_options
-def project_list_command(**global_options: object) -> None:
+def list_project_command(**global_options: object) -> None:
     """List projects in the current workspace."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_workspace_environment(Path.cwd(), cli_config)
@@ -51,7 +51,7 @@ def project_list_command(**global_options: object) -> None:
 
 @list_group.command(name="component", cls=DgClickCommand)
 @dg_global_options
-def component_list_command(**global_options: object) -> None:
+def list_component_command(**global_options: object) -> None:
     """List Dagster component instances defined in the current project."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
@@ -74,7 +74,7 @@ def component_list_command(**global_options: object) -> None:
     help="Output as JSON instead of a table.",
 )
 @dg_global_options
-def component_type_list(output_json: bool, **global_options: object) -> None:
+def list_component_type_command(output_json: bool, **global_options: object) -> None:
     """List registered Dagster components in the current project environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)

@@ -21,7 +21,7 @@ from dagster_dg_tests.utils import (
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_command_workspace_context_success(monkeypatch):
+def test_dev_workspace_context_success(monkeypatch):
     # The command will use `uv tool run dagster dev` to start the webserver if it
     # cannot find a venv with `dagster` and `dagster-webserver` installed. `uv tool run` will
     # pull the `dagster` package from PyPI. To avoid this, we ensure the workspace directory has a
@@ -51,7 +51,7 @@ def test_dev_command_workspace_context_success(monkeypatch):
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_command_project_context_success():
+def test_dev_project_context_success():
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         port = _find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
@@ -61,7 +61,7 @@ def test_dev_command_project_context_success():
 @pytest.mark.skipif(
     is_windows() == "Windows", reason="Temporarily skipping (signal issues in CLI).."
 )
-def test_dev_command_has_options_of_dagster_dev():
+def test_dev_has_options_of_dagster_dev():
     from dagster._cli.dev import dev_command as dagster_dev_command
     from dagster_dg.cli import dev_command as dev_command
 
@@ -93,7 +93,7 @@ def test_dev_command_has_options_of_dagster_dev():
 
 # Modify this test with a new option whenever a new forwarded option is added to `dagster-dev`.
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_command_forwards_options_to_dagster_dev():
+def test_dev_forwards_options_to_dagster_dev():
     with ProxyRunner.test() as runner, isolated_example_workspace(runner, "foo-bar"):
         port = _find_free_port()
         options = [
