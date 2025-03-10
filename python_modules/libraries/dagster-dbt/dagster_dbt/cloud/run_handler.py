@@ -1,5 +1,5 @@
-from collections.abc import Sequence
-from typing import Optional
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
 from dagster._annotations import preview
 from dagster._record import record
@@ -35,3 +35,9 @@ class DbtCloudJobRunHandler:
         run_details = self.client.poll_run(run_id=self.run_id)
         dbt_cloud_run = DbtCloudRun.from_run_details(run_details=run_details)
         return dbt_cloud_run.status
+
+    def get_run_results(self) -> Mapping[str, Any]:
+        return self.client.get_run_results_json(run_id=self.run_id)
+
+    def get_manifest(self) -> Mapping[str, Any]:
+        return self.client.get_run_manifest_json(run_id=self.run_id)
