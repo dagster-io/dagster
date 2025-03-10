@@ -200,7 +200,9 @@ class InProcessCodeLocationOrigin(
     def create_location(self, instance: "DagsterInstance") -> "InProcessCodeLocation":
         from dagster._core.remote_representation.code_location import InProcessCodeLocation
 
-        return InProcessCodeLocation(self, instance=instance)
+        return InProcessCodeLocation(
+            self, auto_materialize_use_sensors=instance.auto_materialize_use_sensors
+        )
 
     def reload_location(self, instance: "DagsterInstance") -> "InProcessCodeLocation":
         raise NotImplementedError
@@ -287,7 +289,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
                 heartbeat=True,
                 watch_server=False,
                 grpc_server_registry=grpc_server_registry,
-                instance=instance,
+                auto_materialize_use_sensors=instance.auto_materialize_use_sensors,
             ) as location:
                 yield location
 
