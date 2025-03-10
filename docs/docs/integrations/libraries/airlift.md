@@ -58,7 +58,7 @@ If you need to migrate at the DAG level, see "[Migrate from Airflow to Dagster a
 
 ## Federating execution between Airflow instances with Dagster
 
-You can use Airflit to observe DAGs from multiple Airflow instances, and federate execution between them using Dagster as a centralized control plane.
+You can use Airlift to observe DAGs from multiple Airflow instances, and federate execution between them using Dagster as a centralized control plane.
 
 To get started, see "[Federate execution between Airflow instances with Dagster](/guides/migrate/airflow-to-dagster/federation/)".
 
