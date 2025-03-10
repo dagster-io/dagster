@@ -163,11 +163,11 @@ def create_dagster_cli_cmd(
     cmd = [*run_cmds, *forward_options]
     if dg_context.is_project:
         cmd_location = dg_context.get_executable("dagster")
-        with create_temp_workspace_file(dg_context) as temp_workspace_file:
-            yield DagsterCliCmd(
-                cmd_location=str(cmd_location), cmd=cmd, workspace_file=temp_workspace_file
-            )
-        # yield CommandArgs(cmd_location=str(cmd_location), cmd=cmd, workspace_file=None)
+        # with create_temp_workspace_file(dg_context) as temp_workspace_file:
+        #     yield DagsterCliCmd(
+        #         cmd_location=str(cmd_location), cmd=cmd, workspace_file=temp_workspace_file
+        #     )
+        yield DagsterCliCmd(cmd_location=str(cmd_location), cmd=cmd, workspace_file=None)
     elif dg_context.is_workspace:
         with create_temp_workspace_file(dg_context) as temp_workspace_file:
             yield DagsterCliCmd(
