@@ -42,6 +42,7 @@ from dagster_dg.utils import (
 )
 
 DEFAULT_WORKSPACE_NAME = "dagster-workspace"
+REQUIRE_EDITABLE_DAGSTER_PROJECTS_ENV_VAR = "DG_REQUIRE_EDITABLE_DAGSTER"
 
 
 @click.group(name="scaffold", cls=DgClickGroup)
