@@ -1,6 +1,6 @@
 ---
 title: 'Defining dependencies with asset factories'
-sidebar_position: 800
+sidebar_position: 600
 ---
 
 In data engineering, it's often helpful to reuse code to define similar assets. For example, you may want to represent every file in a directory as an asset.
