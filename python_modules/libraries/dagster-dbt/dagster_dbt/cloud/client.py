@@ -4,14 +4,18 @@ from collections.abc import Mapping, Sequence
 from typing import Any, Optional
 
 import requests
-from dagster import Failure, get_dagster_logger
+from dagster import Failure, MetadataValue, get_dagster_logger
 from dagster._annotations import preview
 from dagster._model import DagsterModel
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
 from requests.exceptions import RequestException
 
+from dagster_dbt.cloud.types import DbtCloudJobRunStatusType, DbtCloudRun
+
 LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
+DEFAULT_POLL_INTERVAL = 1
+DEFAULT_POLL_TIMEOUT = 60
 
 
 @preview
@@ -161,3 +165,86 @@ class DbtCloudWorkspaceClient(DagsterModel):
             if len(jobs) < LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT:
                 break
         return results
+
+    def trigger_job_run(
+        self, job_id: int, steps_override: Optional[Sequence[str]] = None
+    ) -> Mapping[str, Any]:
+        """Triggers a run for a given dbt Cloud Job.
+
+        Args:
+            job_id (str): The dbt Cloud Job ID. You can retrieve this value from the
+                URL of the given job in the dbt Cloud UI.
+            steps_override (Optional[Sequence[str]]): A list of dbt commands
+                that overrides the dbt commands of the dbt Cloud job. If no list is passed,
+                the dbt commands of the job are not overriden.
+
+        Returns:
+            List[Dict[str, Any]]: A List of parsed json data from the response to this request.
+        """
+        return self._make_request(
+            method="post",
+            endpoint=f"jobs/{job_id}/run",
+            base_url=self.api_v2_url,
+            data={"steps_override": steps_override, "cause": "Triggered by dagster."}
+            if steps_override
+            else None,
+        )
+
+    def get_run_details(self, run_id: int) -> Mapping[str, Any]:
+        """Retrieves the details of a given dbt Cloud Run.
+
+        Args:
+            run_id (str): The dbt Cloud Run ID. You can retrieve this value from the
+                URL of the given run in the dbt Cloud UI.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
+        return self._make_request(
+            method="get",
+            endpoint=f"runs/{run_id}",
+            base_url=self.api_v2_url,
+        )
+
+    def poll_run(
+        self,
+        run_id: int,
+        poll_interval: Optional[float] = None,
+        poll_timeout: Optional[float] = None,
+    ) -> Mapping[str, Any]:
+        """Given a dbt Cloud run, poll until the run completes.
+
+        Args:
+            run_id (str): The dbt Cloud Run ID. You can retrieve this value from the
+                URL of the given run in the dbt Cloud UI.
+            poll_interval (float): The time (in seconds) that will be waited between successive polls.
+                By default, the interval is set to 1 second.
+            poll_timeout (float): The maximum time that will waited before this operation is timed
+                out. By default, this will time out after 60 seconds.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
+        if not poll_interval:
+            poll_interval = DEFAULT_POLL_INTERVAL
+        if not poll_timeout:
+            poll_timeout = DEFAULT_POLL_TIMEOUT
+        start_time = time.time()
+        while time.time() - start_time < poll_timeout:
+            run_details = self.get_run_details(run_id)
+            run = DbtCloudRun.from_run_details(run_details=run_details)
+            if run.status == DbtCloudJobRunStatusType.SUCCESS:
+                return run_details
+            elif run.status in {
+                DbtCloudJobRunStatusType.ERROR,
+                DbtCloudJobRunStatusType.CANCELLED,
+            }:
+                raise Failure(
+                    f"dbt Cloud run '{run.id}' failed!",
+                    metadata={
+                        "run_details": MetadataValue.json(run_details),
+                    },
+                )
+            # Sleep for the configured time interval before polling again.
+            time.sleep(poll_interval)
+        raise Exception(f"Run {run.id} did not complete within {poll_timeout} seconds.")
