@@ -1,5 +1,5 @@
 ---
-title: "Federate execution across Airflow instances"
+title: "Federate execution"
 sidebar_position: 300
 ---
 
