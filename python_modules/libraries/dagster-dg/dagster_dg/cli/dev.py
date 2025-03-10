@@ -69,13 +69,6 @@ _CHECK_SUBPROCESS_INTERVAL = 5
     show_default=True,
     required=False,
 )
-@click.option(
-    "--verbose",
-    "-v",
-    flag_value=True,
-    default=False,
-    help="Show verbose stack traces, including system frames in stack traces.",
-)
 @dg_global_options
 def dev_command(
     code_server_log_level: str,
@@ -84,7 +77,6 @@ def dev_command(
     port: Optional[int],
     host: Optional[str],
     live_data_poll_rate: int,
-    verbose: bool,
     **global_options: Mapping[str, object],
 ) -> None:
     """Start a local instance of Dagster.
@@ -102,7 +94,7 @@ def dev_command(
         *format_forwarded_option("--port", port),
         *format_forwarded_option("--host", host),
         *format_forwarded_option("--live-data-poll-rate", live_data_poll_rate),
-        *(["--verbose"] if verbose else []),
+        *(["--verbose"] if dg_context.config.cli.verbose else []),
     ]
 
     # In a project context, we can just run `dagster dev` directly, using `dagster` from the
