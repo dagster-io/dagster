@@ -214,10 +214,12 @@ class SlingResource(ConfigurableResource):
         if "connection_string" in d:
             del d["connection_string"]
         return d
-    
-    def _query_metadata(self, metadata_string: str, start_time: float, base_metadata: Union[list,None] = None):
+
+    def _query_metadata(
+        self, metadata_string: str, start_time: float, base_metadata: Union[list, None] = None
+    ):
         """Metadata quering using regular expression from standard sling log.
-        
+
         Args:
             metadata_string (str): raw log string containing log/metadata from sling cli run
             start_time (float): start time that will be assign to calculate elapse
@@ -227,28 +229,33 @@ class SlingResource(ConfigurableResource):
             final_dict (dict): Final metadata idct contain metadata query from string
         """
         if base_metadata is None:
-            base_metadata = ["stream_name", "row_count", "destination_table", "destination_file", "elapsed_time"]
+            base_metadata = [
+                "stream_name",
+                "row_count",
+                "destination_table",
+                "destination_file",
+                "elapsed_time",
+            ]
 
         tmp = None
         tmp_metadata = {}
         end_time = time.time()
-        target_type = re.findall(r'writing to target ([\w\s]*) ',metadata_string)[0]
+        target_type = re.findall(r"writing to target ([\w\s]*) ", metadata_string)[0]
         if target_type == "database":
-            tmp = re.findall(r'inserted ([0-9]*) rows .*into ([\w.:/;-_\"\'{}]*)',metadata_string)
-        elif target_type == "file system": 
-            tmp = re.findall(r'wrote ([0-9]*) rows .*to ([\w.:/;-_\"\'{}]*)',metadata_string)
-        else: 
-            tmp = re.findall(r'inserted ([0-9]*) rows .*into ([\w.:/;-_\"\'{}]*)',metadata_string)
-            
+            tmp = re.findall(r"inserted ([0-9]*) rows .*into ([\w.:/;-_\"\'{}]*)", metadata_string)
+        elif target_type == "file system":
+            tmp = re.findall(r"wrote ([0-9]*) rows .*to ([\w.:/;-_\"\'{}]*)", metadata_string)
+        else:
+            tmp = re.findall(r"inserted ([0-9]*) rows .*into ([\w.:/;-_\"\'{}]*)", metadata_string)
+
         if tmp:
-            
             if target_type == "database":
                 tmp_metadata["destination_table"] = tmp[0][1]
             if target_type == "file system":
                 tmp_metadata["destination_file"] = tmp[0][1]
             tmp_metadata["elapsed_time"] = end_time - start_time
             tmp_metadata["row_count"] = tmp[0][0]
-            
+
         final_dict = {}
         for k in base_metadata:
             if tmp_metadata.get(k):
@@ -274,16 +281,16 @@ class SlingResource(ConfigurableResource):
     def _clean_line(self, line: str) -> str:
         """Removes ANSI escape sequences from a line of output."""
         return ANSI_ESCAPE.sub("", line).replace("INF", "")
-    
+
     def _clean_timestamp_log(self, line: str):
         """Remove timestamp from log gather from sling cli to reduce redundency in dagster log.
-        
+
         Args:
             line (str): line of log gather from cli to be cleaned
-        
+
         Returns:
             text: cleaned log consist only of log data
-        
+
         """
         tmp = self._clean_line(line)
         try:
@@ -371,7 +378,7 @@ class SlingResource(ConfigurableResource):
         replication_config: Optional[SlingReplicationParam] = None,
         dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
         debug: bool = False,
-        stream: bool = False
+        stream: bool = False,
     ) -> SlingEventIterator[SlingEventType]:
         """Runs a Sling replication from the given replication config.
 
@@ -398,7 +405,7 @@ class SlingResource(ConfigurableResource):
                 replication_config=replication_config_dict,
                 dagster_sling_translator=dagster_sling_translator,
                 debug=debug,
-                stream=stream
+                stream=stream,
             ),
             sling_cli=self,
             replication_config=replication_config_dict,
@@ -412,7 +419,7 @@ class SlingResource(ConfigurableResource):
         replication_config: dict[str, Any],
         dagster_sling_translator: DagsterSlingTranslator,
         debug: bool,
-        stream: bool = False
+        stream: bool = False,
     ) -> Iterator[SlingEventType]:
         # if translator has not been defined on metadata _or_ through param, then use the default constructor
 
@@ -447,7 +454,7 @@ class SlingResource(ConfigurableResource):
 
             ##### Old method use _run which is not streamable #####
 
-            if not stream: 
+            if not stream:
                 results = sling._run(  # noqa
                     cmd=cmd,
                     temp_file=temp_file,
@@ -487,30 +494,34 @@ class SlingResource(ConfigurableResource):
 
             else:
                 # assign all environment variable to env
-                for k,v in os.environ.items():
-                    env[k] = env.get(k,v)
+                for k, v in os.environ.items():
+                    env[k] = env.get(k, v)
 
                 # define variable to use to compute metadata during run
-                current_stream=None
+                current_stream = None
                 metadata_text = []
                 metadata = {}
 
-                for line in sling._exec_cmd(cmd, env=env): #noqa
-                    if line == "": # if empty line -- skipped
+                for line in sling._exec_cmd(cmd, env=env):  # noqa
+                    if line == "":  # if empty line -- skipped
                         continue
-                    text = self._clean_timestamp_log(line) # else clean timestamp
-                    logger.info(text) # log info to dagster log
-                    
+                    text = self._clean_timestamp_log(line)  # else clean timestamp
+                    logger.info(text)  # log info to dagster log
+
                     # if no current stream is chosen
                     if current_stream is None:
                         # Try to match stream name with stream keyword
                         matched = re.findall("stream (.*)$", text)
-                        
+
                         # If found, extract stream name, stream config, asset key
                         if matched:
                             current_stream = matched[0]
-                            current_config = replication_config.get("streams", {}).get(current_stream,{})
-                            asset_key = dagster_sling_translator.get_asset_spec({"name":current_stream,"config":current_config}).key
+                            current_config = replication_config.get("streams", {}).get(
+                                current_stream, {}
+                            )
+                            asset_key = dagster_sling_translator.get_asset_spec(
+                                {"name": current_stream, "config": current_config}
+                            ).key
                             logger.debug(current_stream)
                             logger.debug(current_config)
                             logger.debug(asset_key)
@@ -520,8 +531,12 @@ class SlingResource(ConfigurableResource):
                             matched = re.findall(r"Sling Replication [|] .* [|] (\S*)$", text)
                             if matched:
                                 current_stream = matched[0]
-                                current_config = replication_config.get("streams", {}).get(current_stream,{})
-                                asset_key = dagster_sling_translator.get_asset_spec({"name":current_stream,"config":current_config}).key
+                                current_config = replication_config.get("streams", {}).get(
+                                    current_stream, {}
+                                )
+                                asset_key = dagster_sling_translator.get_asset_spec(
+                                    {"name": current_stream, "config": current_config}
+                                ).key
                                 logger.debug(current_stream)
                                 logger.debug(current_config)
                                 logger.debug(asset_key)
@@ -531,12 +546,14 @@ class SlingResource(ConfigurableResource):
                     # If current stream is already choose
                     else:
                         # Search whether the current stream ended
-                        matched = re.findall("execution succeeded",text)
+                        matched = re.findall("execution succeeded", text)
 
                         if matched:
                             # If yes, query metadata and materialize asset
-                            metadata = self._query_metadata("\n".join(metadata_text), start_time=start_time)
-                            start_time=time.time()
+                            metadata = self._query_metadata(
+                                "\n".join(metadata_text), start_time=start_time
+                            )
+                            start_time = time.time()
                             metadata["stream_name"] = current_stream
                             logger.debug(metadata)
                             logger.debug(metadata_text)
