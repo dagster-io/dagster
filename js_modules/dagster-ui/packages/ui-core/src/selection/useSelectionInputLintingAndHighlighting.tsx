@@ -16,29 +16,26 @@ import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
 export const useSelectionInputLintingAndHighlighting = ({
   cmInstance,
-  value,
   linter,
 }: {
   cmInstance: React.MutableRefObject<CodeMirror.Editor | null>;
-  value: string;
   linter: (content: string) => SyntaxError[];
 }) => {
-  const errors = useMemo(() => {
-    const errors = linter(value);
-    return errors.map((error, idx) => ({
-      ...error,
-      idx,
-    }));
-  }, [linter, value]);
+  const instance = cmInstance.current;
 
+  const [errors, setErrors] = useState<SyntaxError[]>([]);
+  const errorsRef = useUpdatingRef(errors);
   useLayoutEffect(() => {
-    if (!cmInstance.current) {
+    if (!instance) {
       return;
     }
-    applyStaticSyntaxHighlighting(cmInstance.current, errors);
-  }, [cmInstance, errors]);
-
-  const errorsRef = useUpdatingRef(errors);
+    instance.on('change', (instance) => {
+      const errors = linter(instance.getValue());
+      setErrors(errors);
+      applyStaticSyntaxHighlighting(instance, errors);
+    });
+    return;
+  }, [instance, linter]);
 
   const [error, setError] = useState<{
     error: SyntaxError;
