@@ -69,10 +69,10 @@ class ImplicitDefinitionsComponentDecl(ComponentDeclNode):
     def get_source_position_tree(self) -> Optional[SourcePositionTree]:
         return None
 
-    def load(self, context) -> Sequence[Component]:
+    def load(self, context: ComponentLoadContext) -> Sequence[Component]:
         from dagster_components.dagster import DefinitionsComponent
 
-        return [DefinitionsComponent(definitions_path=None)]
+        return [DefinitionsComponent(definitions_path=str(context.path))]
 
 
 @record
@@ -171,7 +171,14 @@ class YamlComponentDecl(ComponentDeclNode):
 @record
 class ComponentFolder(ComponentDeclNode):
     path: Path
-    sub_decls: Sequence[Union[YamlComponentDecl, PythonComponentDecl, "ComponentFolder"]]
+    sub_decls: Sequence[
+        Union[
+            YamlComponentDecl,
+            PythonComponentDecl,
+            ImplicitDefinitionsComponentDecl,
+            "ComponentFolder",
+        ]
+    ]
 
     def load(self, context: ComponentLoadContext) -> Sequence[Component]:
         components = []

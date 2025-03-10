@@ -297,6 +297,7 @@ class ComponentLoadContext:
     @property
     def path(self) -> Path:
         from dagster_components.core.component_decl_builder import (
+            ComponentFolder,
             ImplicitDefinitionsComponentDecl,
             PythonComponentDecl,
             YamlComponentDecl,
@@ -304,7 +305,12 @@ class ComponentLoadContext:
 
         if not isinstance(
             self.decl_node,
-            (YamlComponentDecl, PythonComponentDecl, ImplicitDefinitionsComponentDecl),
+            (
+                YamlComponentDecl,
+                PythonComponentDecl,
+                ImplicitDefinitionsComponentDecl,
+                ComponentFolder,
+            ),
         ):
             check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
 
@@ -354,14 +360,14 @@ class ComponentLoadContext:
         """
         abs_file_path = file_path.absolute()
         with pushd(str(self.path)):
-            abs_context_path = self.path.absolute()
-
             # Problematic
             # See https://linear.app/dagster-labs/issue/BUILD-736/highly-suspect-hardcoding-of-components-string-is-component-relative
-            component_module_relative_path = abs_context_path.parts[
-                abs_context_path.parts.index("defs") + 2 :
+            component_module_relative_path = abs_file_path.parts[
+                abs_file_path.parts.index("defs") + 2 :
             ]
-            component_module_name = ".".join([self.module_name, *component_module_relative_path])
+            component_module_name = ".".join(
+                [self.module_name, *component_module_relative_path[:-1]]
+            )
             if abs_file_path.name != "__init__.py":
                 component_module_name = f"{component_module_name}.{abs_file_path.stem}"
 
