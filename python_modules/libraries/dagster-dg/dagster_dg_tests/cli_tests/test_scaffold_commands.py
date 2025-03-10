@@ -9,6 +9,7 @@ import tomlkit
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.context import DgContext
+from dagster_dg.scaffold import REQUIRE_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
 from dagster_dg.utils import (
     create_toml_node,
     cross_platfrom_string_path,
@@ -252,6 +253,17 @@ def validate_pyproject_toml_with_editable(
         "path": str(repo_root / "python_modules" / "libraries" / "dagster-components"),
         "editable": True,
     }
+
+
+def test_scaffold_project_require_editable_dagster_with_no_editable_fails(monkeypatch) -> None:
+    monkeypatch.setenv(REQUIRE_EDITABLE_DAGSTER_PROJECTS_ENV_VAR, "1")
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke("scaffold", "project", "foo-bar")
+        assert_runner_result(result, exit_0=False)
+        assert (
+            "neither `--use-editable-dagster` nor `--use-editable-components-package-only`"
+            in result.output
+        )
 
 
 def test_scaffold_project_skip_venv_success() -> None:

@@ -67,6 +67,11 @@ def scaffold_workspace(
 # ##### PROJECT
 # ########################
 
+# When set, this will cause project scaffolding to fail if
+# neither of the `use_editable_dagster` or `use_editable_components_package_only` options are set.
+# This is a private feature designed to prevent mistakes during development.
+REQUIRE_EDITABLE_DAGSTER_PROJECTS_ENV_VAR = "DG_REQUIRE_EDITABLE_DAGSTER"
+
 
 def scaffold_project(
     path: Path,
@@ -77,6 +82,14 @@ def scaffold_project(
     populate_cache: bool = True,
 ) -> None:
     click.echo(f"Creating a Dagster project at {path}.")
+
+    if os.getenv(REQUIRE_EDITABLE_DAGSTER_PROJECTS_ENV_VAR) and not (
+        use_editable_dagster or use_editable_components_package_only
+    ):
+        exit_with_error(
+            f"Environment variable {REQUIRE_EDITABLE_DAGSTER_PROJECTS_ENV_VAR} is set, but neither"
+            " `--use-editable-dagster` nor `--use-editable-components-package-only` was specified."
+        )
 
     cli_options = DgWorkspaceScaffoldProjectOptions.get_raw_from_cli(
         use_editable_dagster, use_editable_components_package_only
