@@ -8,7 +8,7 @@ Sometimes you may want to debug an asset while it is executing. To simplify this
 
 This can be useful when debugging assets with complex transformations or assets that retrieve data from external systems where you want to work directly with the data inside of the asset.
 
-## 1. Set a pdb breakpoint in your asset
+## 1. Set a `pdb` breakpoint in your asset
 
 First, add the `context` parameter to your asset definition, and add `context.pdb.set_trace()` to the asset code where you want to add a breakpoint. You should insert your breakpoint after the variables you are interested in have been initialized but before any mutations. With `pdb` you will be able to proceed to the next statement of the asset but will not be able to reverse the state of a variable so it is better to set the break point early.
 
@@ -34,7 +34,7 @@ In the terminal where `dagster dev` is running, you should now see a `pdb` debug
 2025-03-03 15:24:55 -0600 - dagster - DEBUG - __ASSET_JOB - 202cd42f-ecf3-4504-838c-e41f58dbdf78 - 52540 - LOGS_CAPTURED - Started capturing logs in process (pid: 52540).
 2025-03-03 15:24:55 -0600 - dagster - DEBUG - __ASSET_JOB - 202cd42f-ecf3-4504-838c-e41f58dbdf78 - 52540 - pdb_asset - STEP_START - Started execution of step "pdb_asset".
 --Return--
-> /Users/dennis/code/dagster-quickstart/debugging.py(11)pdb_asset()
+> /dagster/debugging.py(11)pdb_asset()
 -> x += 5
 (Pdb)
 ```
@@ -43,7 +43,7 @@ The `pdb` debugger will start at the point in the asset where you set the breakp
 
 ```bash
 --Return--
-> /Users/dennis/code/dagster-quickstart/debugging.py(11)pdb_asset()
+> /dagster/debugging.py(11)pdb_asset()
 -> x += 5
 (Pdb) x
 10
@@ -53,17 +53,17 @@ You can navigate through the asset code using any [pdb commands](https://docs.py
 
 ```bash
 --Return--
-> /Users/dennis/code/dagster-quickstart/debugging.py(11)pdb_asset()
+> /dagster/debugging.py(11)pdb_asset()
 -> x += 5
 (Pdb) x
 10
 (Pdb) next
-> /Users/dennis/code/dagster-quickstart/debugging.py(12)pdb_asset()
+> /dagster/debugging.py(12)pdb_asset()
 -> x += 20
 (Pdb) x
 15
 (Pdb) next
-> /Users/dennis/code/dagster-quickstart/debugging.py(13)pdb_asset()
+> /dagster/debugging.py(13)pdb_asset()
 -> return x
 (Pdb) x
 35
