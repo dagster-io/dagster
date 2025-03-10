@@ -342,9 +342,9 @@ def job_api_mocks_fixture() -> Iterator[responses.RequestsMock]:
 
 
 @pytest.fixture(
-    name="all_api_mocks",
+    name="fetch_workspace_data_api_mocks",
 )
-def all_api_mocks_fixture(
+def fetch_workspace_data_api_mocks_fixture(
     job_api_mocks: responses.RequestsMock,
 ) -> Iterator[responses.RequestsMock]:
     job_api_mocks.add(
@@ -365,10 +365,19 @@ def all_api_mocks_fixture(
         json=get_sample_manifest_json(),
         status=200,
     )
-    job_api_mocks.add(
+    yield job_api_mocks
+
+
+@pytest.fixture(
+    name="all_api_mocks",
+)
+def all_api_mocks_fixture(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> Iterator[responses.RequestsMock]:
+    fetch_workspace_data_api_mocks.add(
         method=responses.GET,
         url=f"{TEST_REST_API_BASE_URL}/runs/{TEST_RUN_ID}/artifacts/run_results.json",
         json=get_sample_run_results_json(),
         status=200,
     )
-    yield job_api_mocks
+    yield fetch_workspace_data_api_mocks
