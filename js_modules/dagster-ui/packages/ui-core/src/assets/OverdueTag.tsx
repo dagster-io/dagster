@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import * as React from 'react';
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
 
 import {
   ASSET_MATERIALIZATION_UPSTREAM_TABLE_FRAGMENT,
@@ -14,7 +15,6 @@ import {OverduePopoverQuery, OverduePopoverQueryVariables} from './types/Overdue
 import {Timestamp} from '../app/time/Timestamp';
 import {timestampToString} from '../app/time/timestampToString';
 import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
-import {LiveDataForNode} from '../asset-graph/Utils';
 import {AssetKeyInput, FreshnessPolicy} from '../graphql/types';
 import {humanCronString} from '../schedules/humanCronString';
 import {LoadingSpinner} from '../ui/Loading';

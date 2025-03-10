@@ -2,12 +2,12 @@
 import {Box, Caption, Colors, Tag} from '@dagster-io/ui-components';
 import React from 'react';
 import {Link} from 'react-router-dom';
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
 
 import {MaterializationTag} from './MaterializationTag';
 import {Timestamp} from '../app/time/Timestamp';
 import {StatusCase} from '../asset-graph/AssetNodeStatusContent';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
-import {LiveDataForNode} from '../asset-graph/Utils';
 import {StatusCaseDot} from '../asset-graph/sidebar/util';
 import {titleForRun} from '../runs/RunUtils';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';

@@ -1,5 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import React from 'react';
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
 
 import {AssetKey} from './types';
 import {gql, useQuery} from '../apollo-client';
@@ -7,7 +8,6 @@ import {
   AssetOverviewMetadataEventsQuery,
   AssetOverviewMetadataEventsQueryVariables,
 } from './types/useLatestEvents.types';
-import {LiveDataForNode} from '../asset-graph/Utils';
 import {usePredicateChangeSignal} from '../hooks/usePredicateChangeSignal';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 

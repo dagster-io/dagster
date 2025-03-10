@@ -13,7 +13,7 @@ import {Link} from 'react-router-dom';
 
 import {ChecksSummaryPopover} from './AssetChecksStatusSummary';
 import {assertUnreachable} from '../../app/Util';
-import {AssetCheckLiveFragment} from '../../asset-data/types/AssetBaseDataProvider.types';
+import {AssetCheckLiveFragment} from '../../asset-data/types/AssetBaseDataQueries.types';
 import {
   AssetCheckEvaluation,
   AssetCheckExecution,

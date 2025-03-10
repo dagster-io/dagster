@@ -1,6 +1,7 @@
 import {Body, Box, Colors, MiddleTruncate, Spinner} from '@dagster-io/ui-components';
 import {useEffect} from 'react';
 import {Link} from 'react-router-dom';
+import {LiveDataForNodeWithStaleData} from 'shared/asset-graph/LiveDataForNode.oss';
 
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
@@ -13,7 +14,6 @@ import {ExecuteChecksButton} from './asset-checks/ExecuteChecksButton';
 import {assetDetailsPathForAssetCheck, assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {useGroupedEvents} from './groupByPartition';
 import {RecentAssetEvents} from './useRecentAssetEvents';
-import {LiveDataForNodeWithStaleData} from '../asset-graph/Utils';
 import {SidebarAssetFragment} from '../asset-graph/types/SidebarAssetInfo.types';
 import {PoolTag} from '../instance/PoolTag';
 import {SidebarSection} from '../pipelines/SidebarComponents';
