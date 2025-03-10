@@ -13,8 +13,9 @@ from pydantic import Field
 from typing_extensions import TypeAlias
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.components.sling_replication_collection.scaffolder import (
-    SlingReplicationComponentScaffolder,
+from dagster_components.blueprint import scaffold_with
+from dagster_components.components.sling_replication_collection.blueprint import (
+    SlingReplicationComponentBlueprint,
 )
 from dagster_components.resolved.context import ResolutionContext
 from dagster_components.resolved.core_models import (
@@ -26,7 +27,6 @@ from dagster_components.resolved.core_models import (
 )
 from dagster_components.resolved.metadata import ResolvableFieldInfo
 from dagster_components.resolved.model import FieldResolver, ResolvableModel, ResolvedFrom
-from dagster_components.scaffoldable.decorator import scaffoldable
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
@@ -97,7 +97,7 @@ def resolve_resource(
     )
 
 
-@scaffoldable(scaffolder=SlingReplicationComponentScaffolder)
+@scaffold_with(blueprint_cls=SlingReplicationComponentBlueprint)
 @dataclass
 class SlingReplicationCollectionComponent(Component, ResolvedFrom[SlingReplicationCollectionModel]):
     """Expose one or more Sling replications to Dagster as assets."""

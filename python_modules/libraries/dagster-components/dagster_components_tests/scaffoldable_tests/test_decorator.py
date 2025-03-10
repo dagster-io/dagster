@@ -1,21 +1,16 @@
 import pytest
 from dagster._check.functions import CheckError
-from dagster_components.scaffoldable.decorator import (
-    get_scaffolder,
-    is_scaffoldable_class,
-    scaffoldable,
-)
-from dagster_components.scaffoldable.scaffolder import Scaffolder
+from dagster_components.blueprint import Blueprint, get_blueprint, has_blueprint, scaffold_with
 
 
 # Example usage:
 def test_basic_usage() -> None:
-    # Example scaffolder class
-    class MyScaffolder(Scaffolder):
+    # Example blueprint class
+    class MyBlueprint(Blueprint):
         pass
 
     # Example decorated class
-    @scaffoldable(MyScaffolder)
+    @scaffold_with(MyBlueprint)
     class MyClass:
         pass
 
@@ -24,26 +19,26 @@ def test_basic_usage() -> None:
         pass
 
     # Test the functions
-    assert is_scaffoldable_class(MyClass) is True
-    assert is_scaffoldable_class(RegularClass) is False
-    assert isinstance(get_scaffolder(MyClass), MyScaffolder)
+    assert has_blueprint(MyClass) is True
+    assert has_blueprint(RegularClass) is False
+    assert isinstance(get_blueprint(MyClass), MyBlueprint)
     with pytest.raises(CheckError):
-        get_scaffolder(RegularClass)
+        get_blueprint(RegularClass)
 
 
 def test_inheritance() -> None:
-    class ScaffoldableOne(Scaffolder): ...
+    class ScaffolderOne(Blueprint): ...
 
-    class ScaffoldableTwo(Scaffolder): ...
+    class ScaffolderTwo(Blueprint): ...
 
-    @scaffoldable(ScaffoldableOne)
+    @scaffold_with(ScaffolderOne)
     class ClassOne: ...
 
-    @scaffoldable(ScaffoldableTwo)
+    @scaffold_with(ScaffolderTwo)
     class ClassTwo(ClassOne): ...
 
-    assert is_scaffoldable_class(ClassOne) is True
-    assert isinstance(get_scaffolder(ClassOne), ScaffoldableOne)
+    assert has_blueprint(ClassOne) is True
+    assert isinstance(get_blueprint(ClassOne), ScaffolderOne)
 
-    assert is_scaffoldable_class(ClassTwo) is True
-    assert isinstance(get_scaffolder(ClassTwo), ScaffoldableTwo)
+    assert has_blueprint(ClassTwo) is True
+    assert isinstance(get_blueprint(ClassTwo), ScaffolderTwo)

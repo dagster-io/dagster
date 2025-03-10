@@ -21,12 +21,11 @@ from dagster._utils.cached_method import cached_method
 from dagster._utils.source_position import SourcePositionTree
 from typing_extensions import Self
 
+from dagster_components.blueprint import BlueprintUnavailableReason, get_blueprint, scaffold_with
+from dagster_components.core.component_blueprint import DefaultComponentBlueprint
 from dagster_components.core.component_key import ComponentKey
-from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
 from dagster_components.resolved.context import ResolutionContext
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, resolve_model
-from dagster_components.scaffoldable.decorator import get_scaffolder, scaffoldable
-from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 from dagster_components.utils import format_error_message
 
 
@@ -42,7 +41,7 @@ class ComponentDeclNode(ABC):
     def get_source_position_tree(self) -> Optional[SourcePositionTree]: ...
 
 
-@scaffoldable(scaffolder=DefaultComponentScaffolder)
+@scaffold_with(blueprint_cls=DefaultComponentBlueprint)
 class Component(ABC):
     @classmethod
     def get_schema(cls) -> Optional[type["ResolvableModel"]]:
@@ -87,15 +86,13 @@ class Component(ABC):
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
 
-        scaffolder = get_scaffolder(cls)
+        blueprint = get_blueprint(cls)
 
-        if isinstance(scaffolder, ScaffolderUnavailableReason):
-            raise DagsterError(
-                f"Component {cls.__name__} is not scaffoldable: {scaffolder.message}"
-            )
+        if isinstance(blueprint, BlueprintUnavailableReason):
+            raise DagsterError(f"Component {cls.__name__} is not scaffoldable: {blueprint.message}")
 
         component_schema = cls.get_schema()
-        scaffold_params = scaffolder.get_params()
+        scaffold_params = blueprint.get_scaffold_params()
         return {
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,

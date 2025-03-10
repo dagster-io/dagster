@@ -2,12 +2,12 @@ from pathlib import Path
 
 from dagster._utils import pushd
 
-from dagster_components import Scaffolder, ScaffoldRequest
+from dagster_components import Blueprint, ScaffoldRequest
+from dagster_components.blueprint import scaffold_with
 from dagster_components.components.shim_components.base import ShimComponent
-from dagster_components.scaffoldable.decorator import scaffoldable
 
 
-class ScheduleScaffolder(Scaffolder):
+class ScheduleBlueprint(Blueprint):
     def scaffold(self, request: ScaffoldRequest, params: None) -> None:
         with pushd(str(request.target_path)):
             Path("definitions.py").write_text("""
@@ -19,6 +19,6 @@ class ScheduleScaffolder(Scaffolder):
 """)
 
 
-@scaffoldable(ScheduleScaffolder)
+@scaffold_with(ScheduleBlueprint)
 class RawScheduleComponent(ShimComponent):
     """Schedule component."""
