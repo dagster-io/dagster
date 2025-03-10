@@ -1106,7 +1106,7 @@ describe('createAssetSelectionHint', () => {
     });
   });
 
-  it('value suggestions should replace entire value=value segment in tag:value=value', () => {
+  it('value suggestions should replace entire key=value segment in tag:key=value', () => {
     expect(testAutocomplete('tag:k|ey=value')).toEqual({
       from: 4,
       list: [
