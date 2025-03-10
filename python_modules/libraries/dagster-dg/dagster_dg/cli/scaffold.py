@@ -239,6 +239,12 @@ class ComponentScaffoldSubCommand(DgClickCommand):
 @click.pass_context
 def component_scaffold_group(context: click.Context, help_: bool, **global_options: object) -> None:
     """Scaffold of a Dagster component."""
+    handle_component_scaffold_group(context, help_, **global_options)
+
+
+def handle_component_scaffold_group(
+    context: click.Context, help_: bool, **global_options: object
+) -> None:
     # Click attempts to resolve subcommands BEFORE it invokes this callback.
     # Therefore we need to manually invoke this callback during subcommand generation to make sure
     # it runs first. It will be invoked again later by Click. We make it idempotent to deal with
@@ -249,6 +255,20 @@ def component_scaffold_group(context: click.Context, help_: bool, **global_optio
     if help_:
         click.echo(context.get_help())
         context.exit(0)
+
+
+@scaffold_group.group(
+    name="defs",
+    cls=ComponentScaffoldGroup,
+    invoke_without_command=True,
+    context_settings={"help_option_names": []},
+)
+@click.option("-h", "--help", "help_", is_flag=True, help="Show this message and exit.")
+@dg_global_options
+@click.pass_context
+def component_defs_group(context: click.Context, help_: bool, **global_options: object) -> None:
+    """Scaffold a Dagster defs module."""
+    handle_component_scaffold_group(context, help_, **global_options)
 
 
 def _core_scaffold(
