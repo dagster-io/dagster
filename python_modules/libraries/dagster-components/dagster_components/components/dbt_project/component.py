@@ -117,7 +117,7 @@ class DbtProjectComponent(Component, ResolvedFrom[DbtProjectModel]):
         yield from dbt.cli(["build"], context=context).stream()
 
 
-def get_component_asset_key_for_model(
+def get_asset_key_for_model_from_module(
     context: ComponentLoadContext, dbt_component_module: ModuleType, model_name: str
 ) -> AssetKey:
     """Component-based version of dagster_dbt.get_asset_key_for_model. Returns the corresponding Dagster
@@ -134,15 +134,15 @@ def get_component_asset_key_for_model(
         .. code-block:: python
 
             from dagster import asset
-            from dagster_components.components.dbt_project import get_asset_key_for_model
+            from dagster_components.components.dbt_project import get_asset_key_for_model_from_module
             from dagster_components.core.component import ComponentLoadContext
             from my_project.defs import dbt_component
 
             ctx = ComponentLoadContext.get()
 
-            @asset(deps={get_asset_key_for_model(ctx, dbt_component, "customers")})
+            @asset(deps={get_asset_key_for_model_from_module(ctx, dbt_component, "customers")})
             def cleaned_customers():
                 ...
     """
-    defs = context.build_defs_from_component_module(dbt_component_module)
+    defs = context.load_defs(dbt_component_module)
     return get_asset_key_for_model(cast(Sequence[AssetsDefinition], defs.assets), model_name)
