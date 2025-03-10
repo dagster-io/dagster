@@ -44,7 +44,7 @@ dagster dev -f tutorial_example/dagster_defs/definitions.py
   alt="Peered asset in Dagster UI"
 />
 
-Initiate a run of the `reubild_customers_list` DAG in Airflow:
+Initiate a run of the `rebuild_customers_list` DAG in Airflow:
 
 ```bash
 airflow dags backfill rebuild_customers_list --start-date $(shell date +"%Y-%m-%d")
