@@ -35,6 +35,9 @@ def test_load_asset_specs(
     first_asset_key = next(key for key in sorted(all_assets_keys))
     assert first_asset_key.path == ["customers"]
 
+    # Clearing cache for other tests
+    workspace.load_specs.cache_clear()
+
 
 def test_load_check_specs(
     workspace: DbtCloudWorkspace,
@@ -51,3 +54,6 @@ def test_load_check_specs(
     first_check_key = next(key for key in sorted(all_checks_keys))
     assert first_check_key.name == "not_null_customers_customer_id"
     assert first_check_key.asset_key.path == ["customers"]
+
+    # Clearing cache for other tests
+    workspace.load_specs.cache_clear()
