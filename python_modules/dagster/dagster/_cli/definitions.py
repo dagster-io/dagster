@@ -95,6 +95,7 @@ def definitions_validate_command(
             version=dagster_version,
             workspace_opts=workspace_opts,
             allow_in_process=not load_with_grpc,
+            log_level=log_level,
         ) as workspace:
             if logger.parent:
                 logger.parent.handlers.clear()
