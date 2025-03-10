@@ -768,6 +768,11 @@ class DbtCloudWorkspace(ConfigurableResource):
 
     @property
     def unique_id(self) -> str:
+        """Unique ID for this dbt Cloud workspace, which is composed of the project ID and environment ID.
+
+        Returns:
+            str: the unique ID for this dbt Cloud workspace.
+        """
         return f"{self.project_id}-{self.environment_id}"
 
     @cached_method
@@ -911,6 +916,8 @@ class DbtCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[DbtCloudWorkspace
             project=None,
         )
 
+        # External facing checks are not support yet
+        # https://linear.app/dagster-labs/issue/AD-915/support-external-asset-checks-in-dbt-cloud-v2
         @multi_asset_check(specs=all_check_specs)
         def _all_asset_checks(): ...
 
