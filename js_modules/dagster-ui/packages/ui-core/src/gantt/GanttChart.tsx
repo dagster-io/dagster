@@ -170,7 +170,7 @@ export const GanttChart = (props: GanttChartProps) => {
   const onDoubleClickStep = React.useCallback(
     (stepKey: string) => {
       if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
-        const query = `+key:"${stepKey}"+`;
+        const query = `+name:"${stepKey}"+`;
         onUpdateQuery(selection.query !== query ? query : '*');
       } else {
         const query = `*${stepKey}*`;
