@@ -19,7 +19,7 @@ sidebar_custom_props:
   logo: images/integrations/airflow.svg
 ---
 
-import Beta from '../../../partials/\_Beta.md';
+import Beta from '../../partials/\_Beta.md';
 
 <Beta />
 
