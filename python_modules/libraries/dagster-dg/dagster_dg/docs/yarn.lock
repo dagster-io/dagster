@@ -1080,6 +1080,7 @@ __metadata:
   resolution: "docs@workspace:."
   dependencies:
     "@eslint/eslintrc": "npm:^3"
+    "@types/json-schema": "npm:^7.0.15"
     "@types/node": "npm:^20"
     "@types/react": "npm:^19.0.10"
     "@types/react-dom": "npm:^19"
