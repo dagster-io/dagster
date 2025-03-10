@@ -3,11 +3,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import dagster as dg
-import pandas as pd
+
+# import pandas as pd
 from dagster_components import Component, ComponentLoadContext, ResolvedFrom
 from dagster_components.resolved.core_models import AssetSpecModel, AssetSpecSequenceField
 from dagster_components.resolved.model import ResolvableModel
-from sqlalchemy import create_engine
 
 
 class SqlComponentModel(ResolvableModel):
@@ -38,19 +38,20 @@ class SqlComponent(Component, ResolvedFrom[SqlComponentModel]):
         return dg.Definitions(assets=[_asset])
 
     def execute(self, context: dg.AssetExecutionContext, resolved_sql_path: Path):
-        with open(resolved_sql_path) as f:
-            query = f.read()
+        # with open(resolved_sql_path) as f:
+        #     query = f.read()
 
-        engine = create_engine(self.sql_engine_url)
+        # engine = create_engine(self.sql_engine_url)
 
-        with engine.connect() as conn:
-            df = pd.read_sql(query, conn)
+        return dg.MaterializeResult()
+        # with engine.connect() as conn:
+        #     df = pd.read_sql(query, conn)
 
-        print(df)  # noqa
+        # print(df)
 
-        return dg.MaterializeResult(
-            metadata={
-                "query": dg.MetadataValue.md(query),
-                "df": dg.MetadataValue.md(df.head().to_markdown()),
-            },
-        )
+        # return dg.MaterializeResult(
+        #     metadata={
+        #         "query": dg.MetadataValue.md(query),
+        #         "df": dg.MetadataValue.md(df.head().to_markdown()),
+        #     },
+        # )
