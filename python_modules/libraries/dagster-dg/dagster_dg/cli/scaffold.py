@@ -16,6 +16,8 @@ from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import (
     DgRawCliConfig,
+    DgRawWorkspaceConfig,
+    DgWorkspaceScaffoldProjectOptions,
     get_config_from_cli_context,
     has_config_on_cli_context,
     normalize_cli_config,
@@ -54,9 +56,12 @@ def scaffold_group():
 
 @scaffold_group.command(name="workspace", cls=DgClickCommand)
 @click.argument("name", type=str, default=DEFAULT_WORKSPACE_NAME)
+@dg_editable_dagster_options
 @dg_global_options
-def workspace_scaffold_command(
+def scaffold_workspace_command(
     name: str,
+    use_editable_dagster: Optional[str],
+    use_editable_components_package_only: Optional[str],
     **global_options: object,
 ):
     """Initialize a new Dagster workspace.
@@ -72,7 +77,13 @@ def workspace_scaffold_command(
     │   └── pyproject.toml
 
     """  # noqa: D301
-    scaffold_workspace(name)
+    workspace_config = DgRawWorkspaceConfig(
+        scaffold_project_options=DgWorkspaceScaffoldProjectOptions.get_raw_from_cli(
+            use_editable_dagster,
+            use_editable_components_package_only,
+        )
+    )
+    scaffold_workspace(name, workspace_config)
 
 
 # ########################
@@ -238,7 +249,7 @@ class ComponentScaffoldSubCommand(DgClickCommand):
 @click.option("-h", "--help", "help_", is_flag=True, help="Show this message and exit.")
 @dg_global_options
 @click.pass_context
-def component_scaffold_group(context: click.Context, help_: bool, **global_options: object) -> None:
+def scaffold_component_group(context: click.Context, help_: bool, **global_options: object) -> None:
     """Scaffold of a Dagster component."""
     # Click attempts to resolve subcommands BEFORE it invokes this callback.
     # Therefore we need to manually invoke this callback during subcommand generation to make sure
@@ -408,7 +419,7 @@ for key, command_name in SHIM_COMPONENTS.items():
 @click.argument("name", type=str)
 @dg_global_options
 @click.pass_context
-def component_type_scaffold_command(
+def scaffold_component_type_command(
     context: click.Context, name: str, **global_options: object
 ) -> None:
     """Scaffold of a custom Dagster component type.

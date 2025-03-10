@@ -92,9 +92,9 @@ def test_components_docs_index(update_snippets: bool) -> None:
         )
 
         run_command_and_snippet_output(
-            cmd="mkdir my_existing_project/components",
+            cmd="mkdir my_existing_project/defs",
             snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-mkdir-components.txt",
+            / f"{get_next_snip_number()}-mkdir-defs.txt",
             update_snippets=update_snippets,
         )
 
@@ -112,6 +112,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 from pathlib import Path
 
                 import dagster_components as dg_components
+                import my_existing_project.defs
                 from my_existing_project import assets
 
                 import dagster as dg
@@ -120,7 +121,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
                 defs = dg.Definitions.merge(
                     dg.Definitions(assets=all_assets),
-                    dg_components.build_component_defs(Path(__file__).parent / "components"),
+                    dg_components.load_defs(my_existing_project.defs),
                 )
             """),
             snippet_path=COMPONENTS_SNIPPETS_DIR

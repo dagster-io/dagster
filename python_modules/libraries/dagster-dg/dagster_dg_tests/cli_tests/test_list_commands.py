@@ -50,7 +50,7 @@ def test_list_project_success():
 # ########################
 
 
-def test_list_components_succeeds():
+def test_list_components_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False),
@@ -124,7 +124,7 @@ def test_list_component_types_success():
             match_terminal_box_output(output.strip(), _EXPECTED_COMPONENT_TYPES)
 
 
-def test_list_component_type_json_succeeds():
+def test_list_component_type_json_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),

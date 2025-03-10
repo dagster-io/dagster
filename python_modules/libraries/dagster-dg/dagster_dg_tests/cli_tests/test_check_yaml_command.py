@@ -1,6 +1,8 @@
 import contextlib
 import re
 import shutil
+import threading
+import time
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Optional
@@ -23,6 +25,7 @@ from dagster_dg.utils import (
 )
 
 ensure_dagster_dg_tests_import()
+from dagster_dg.utils import filesystem
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
@@ -77,31 +80,12 @@ def create_project_from_components(
         yield Path.cwd()
 
 
-def test_check_component_succeeds_non_default_defs_module() -> None:
-    with ProxyRunner.test() as runner, create_project_from_components(runner):
-        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
-            create_toml_node(toml_dict, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
-
-        # We need to do all of this copying here rather than relying on the project setup
-        # fixture because that fixture assumes a default component package.
-        component_src_path = COMPONENT_INTEGRATION_TEST_DIR / BASIC_VALID_VALUE.component_path
-        component_name = component_src_path.name
-        defs_dir = Path.cwd() / "foo_bar" / "_defs" / component_name
-        defs_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(component_src_path, defs_dir, dirs_exist_ok=True)
-        assert BASIC_VALID_VALUE.component_type_filepath
-        shutil.copy(BASIC_VALID_VALUE.component_type_filepath, defs_dir / "__init__.py")
-
-        result = runner.invoke("check", "yaml")
-        assert_runner_result(result, exit_0=True)
-
-
 @pytest.mark.parametrize(
     "test_case",
     CLI_TEST_CASES,
     ids=[str(case.component_path) for case in CLI_TEST_CASES],
 )
-def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
+def test_check_yaml(test_case: ComponentValidationTestCase) -> None:
     """Tests that the check CLI prints rich error messages when attempting to
     load components with errors.
     """
@@ -124,11 +108,86 @@ def test_validation_cli(test_case: ComponentValidationTestCase) -> None:
                 assert_runner_result(result)
 
 
+def test_check_yaml_succeeds_non_default_defs_module() -> None:
+    with ProxyRunner.test() as runner, create_project_from_components(runner):
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
+            create_toml_node(toml_dict, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
+
+        # We need to do all of this copying here rather than relying on the project setup
+        # fixture because that fixture assumes a default component package.
+        component_src_path = COMPONENT_INTEGRATION_TEST_DIR / BASIC_VALID_VALUE.component_path
+        component_name = component_src_path.name
+        defs_dir = Path.cwd() / "foo_bar" / "_defs" / component_name
+        defs_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(component_src_path, defs_dir, dirs_exist_ok=True)
+        assert BASIC_VALID_VALUE.component_type_filepath
+        shutil.copy(BASIC_VALID_VALUE.component_type_filepath, defs_dir / "__init__.py")
+
+        result = runner.invoke("check", "yaml")
+        assert_runner_result(result, exit_0=True)
+
+
+def test_check_yaml_with_watch() -> None:
+    """Tests that the check CLI prints rich error messages when attempting to
+    load components with errors.
+    """
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_VALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_VALID_VALUE.component_type_filepath,
+        ) as tmpdir_valid,
+        create_project_from_components(
+            runner,
+            BASIC_INVALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_INVALID_VALUE.component_type_filepath,
+        ) as tmpdir,
+    ):
+        with pushd(tmpdir):
+            stdout = ""
+
+            def run_check(runner: ProxyRunner) -> None:
+                result = runner.invoke(
+                    "check",
+                    "yaml",
+                    "--watch",
+                    catch_exceptions=False,
+                )
+                nonlocal stdout
+                stdout = result.stdout
+
+            # Start the check command in a separate thread
+            check_thread = threading.Thread(target=run_check, args=(runner,))
+            check_thread.daemon = True  # Make thread daemon so it exits when main thread exits
+            check_thread.start()
+
+            time.sleep(10)  # Give the check command time to start
+
+            # Copy the invalid component into the valid code location
+            shutil.copy(
+                tmpdir_valid / "foo_bar" / "defs" / "basic_component_success" / "component.yaml",
+                tmpdir / "foo_bar" / "defs" / "basic_component_invalid_value" / "component.yaml",
+            )
+
+            time.sleep(2)  # Give time for the watcher to detect changes
+
+            # Signal the watcher to exit
+            filesystem.SHOULD_WATCHER_EXIT = True
+
+            time.sleep(2)
+            check_thread.join(timeout=1)
+
+            assert "All components validated successfully" in stdout
+            assert BASIC_INVALID_VALUE.check_error_msg
+            BASIC_INVALID_VALUE.check_error_msg(stdout)
+
+
 @pytest.mark.parametrize(
     "scope_check_run",
     [True, False],
 )
-def test_validation_cli_multiple_components(scope_check_run: bool) -> None:
+def test_check_yaml_multiple_components(scope_check_run: bool) -> None:
     """Ensure that the check CLI can validate multiple components in a single project, and
     that error messages from all components are displayed.
 
@@ -165,7 +224,7 @@ def test_validation_cli_multiple_components(scope_check_run: bool) -> None:
             BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
 
 
-def test_validation_cli_multiple_components_filter() -> None:
+def test_check_yaml_multiple_components_filter() -> None:
     """Ensure that the check CLI filters components to validate based on the provided paths."""
     with (
         ProxyRunner.test() as runner,
@@ -192,7 +251,7 @@ def test_validation_cli_multiple_components_filter() -> None:
                 BASIC_INVALID_VALUE.check_error_msg(str(result.stdout))
 
 
-def test_validation_cli_local_component_cache() -> None:
+def test_check_yaml_local_component_cache() -> None:
     """Tests that the check CLI properly caches local components to avoid re-loading them."""
     with (
         ProxyRunner.test(verbose=True) as runner,

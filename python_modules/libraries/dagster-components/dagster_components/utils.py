@@ -10,6 +10,7 @@ from types import ModuleType
 from typing import Any, Optional, TypeVar
 
 import click
+from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -256,3 +257,14 @@ def install_to_venv(venv_dir: Path, install_args: list[str]) -> None:
     executable = get_venv_executable(venv_dir)
     command = ["uv", "pip", "install", "--python", str(executable), *install_args]
     subprocess.run(command, check=True)
+
+
+def get_path_from_module(module: ModuleType) -> Path:
+    module_path = (
+        Path(module.__file__).parent
+        if module.__file__
+        else Path(module.__path__[0])
+        if module.__path__
+        else None
+    )
+    return check.not_none(module_path, f"Module {module.__name__} has no filepath")
