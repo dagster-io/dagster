@@ -1,6 +1,6 @@
 import pytest
 from dagster._check.functions import CheckError
-from dagster_components.blueprint import Blueprint, blueprint, get_blueprint, has_blueprint
+from dagster_components.blueprint import Blueprint, get_blueprint, has_blueprint, scaffold_with
 
 
 # Example usage:
@@ -10,7 +10,7 @@ def test_basic_usage() -> None:
         pass
 
     # Example decorated class
-    @blueprint(MyBlueprint)
+    @scaffold_with(MyBlueprint)
     class MyClass:
         pass
 
@@ -31,10 +31,10 @@ def test_inheritance() -> None:
 
     class ScaffolderTwo(Blueprint): ...
 
-    @blueprint(ScaffolderOne)
+    @scaffold_with(ScaffolderOne)
     class ClassOne: ...
 
-    @blueprint(ScaffolderTwo)
+    @scaffold_with(ScaffolderTwo)
     class ClassTwo(ClassOne): ...
 
     assert has_blueprint(ClassOne) is True

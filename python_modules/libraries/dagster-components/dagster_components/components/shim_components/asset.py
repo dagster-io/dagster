@@ -3,7 +3,7 @@ from pathlib import Path
 from dagster._utils import pushd
 
 from dagster_components import Blueprint, ScaffoldRequest
-from dagster_components.blueprint import blueprint
+from dagster_components.blueprint import scaffold_with
 from dagster_components.components.shim_components.base import ShimComponent
 
 
@@ -18,6 +18,6 @@ class AssetBlueprint(Blueprint):
 """)
 
 
-@blueprint(AssetBlueprint)
+@scaffold_with(AssetBlueprint)
 class RawAssetComponent(ShimComponent):
     """Asset definition component."""

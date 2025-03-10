@@ -3,7 +3,7 @@ from pathlib import Path
 from dagster._utils import pushd
 
 from dagster_components import Blueprint, ScaffoldRequest
-from dagster_components.blueprint import blueprint
+from dagster_components.blueprint import scaffold_with
 from dagster_components.components.shim_components.base import ShimComponent
 
 
@@ -19,6 +19,6 @@ class ScheduleBlueprint(Blueprint):
 """)
 
 
-@blueprint(ScheduleBlueprint)
+@scaffold_with(ScheduleBlueprint)
 class RawScheduleComponent(ShimComponent):
     """Schedule component."""

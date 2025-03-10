@@ -14,10 +14,10 @@ T = TypeVar("T")
 BLUEPRINT_CLS_ATTRIBUTE = "__blueprint_cls__"
 
 
-def blueprint(
+def scaffold_with(
     blueprint_cls: Union[type["Blueprint"], "BlueprintUnavailableReason"],
 ) -> Callable[[type[T]], type[T]]:
-    """A decorator that attaches a blueprint class to the decorated class.
+    """A decorator that declares what blueprint is used to scaffold the artifact.
 
     Args:
         blueprint_ls: A class that inherits from Blueprint

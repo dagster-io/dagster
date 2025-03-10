@@ -13,7 +13,7 @@ from dagster_components import (
     ScaffoldRequest,
     scaffold_component_yaml,
 )
-from dagster_components.blueprint import blueprint
+from dagster_components.blueprint import scaffold_with
 from dagster_components.resolved.core_models import AssetSpecSequenceField
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
 
@@ -48,7 +48,7 @@ class ShellCommandModel(ResolvableModel):
 
 
 # highlight-start
-@blueprint(blueprint_cls=ShellCommandBlueprint)
+@scaffold_with(blueprint_cls=ShellCommandBlueprint)
 # highlight-end
 @dataclass
 class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):

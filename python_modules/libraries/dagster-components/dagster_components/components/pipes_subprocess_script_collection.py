@@ -58,10 +58,6 @@ class PipesSubprocessScriptCollectionComponent(
         path_specs = {str(path): [AssetSpec(path.stem)] for path in list(path.rglob("*.py"))}
         return PipesSubprocessScriptCollectionComponent(specs_by_path=path_specs)
 
-    @classmethod
-    def get_schema(cls) -> type[PipesSubprocessScriptCollectionModel]:
-        return PipesSubprocessScriptCollectionModel
-
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions
 

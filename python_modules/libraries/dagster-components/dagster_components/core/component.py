@@ -18,7 +18,7 @@ from dagster._utils import pushd
 from dagster._utils.source_position import SourcePositionTree
 from typing_extensions import Self
 
-from dagster_components.blueprint import BlueprintUnavailableReason, blueprint, get_blueprint
+from dagster_components.blueprint import BlueprintUnavailableReason, get_blueprint, scaffold_with
 from dagster_components.core.component_blueprint import DefaultComponentBlueprint
 from dagster_components.core.component_key import ComponentKey
 from dagster_components.resolved.context import ResolutionContext
@@ -38,7 +38,7 @@ class ComponentDeclNode(ABC):
     def get_source_position_tree(self) -> Optional[SourcePositionTree]: ...
 
 
-@blueprint(blueprint_cls=DefaultComponentBlueprint)
+@scaffold_with(blueprint_cls=DefaultComponentBlueprint)
 class Component(ABC):
     @classmethod
     def get_schema(cls) -> Optional[type["ResolvableModel"]]:
