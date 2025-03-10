@@ -89,10 +89,7 @@ and see your new component type in the list of available component types.
 
 You can also view automatically generated documentation describing your new component type by running:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/4-dg-component-type-docs.txt" />
-
-![](/images/guides/build/projects-and-components/components/component-type-docs.png)
-
+<CliInvocationExample contents="dg docs serve" />
 
 Now, you can use this component type to create new component instances.
 
