@@ -127,7 +127,7 @@ def test_components_docs_index(
         # that we can actually run a shell script.
         create_file(
             Path("my_component_library") / "lib" / "shell_command.py",
-            contents=(COMPONENTS_SNIPPETS_DIR / "with-scaffolder.py").read_text(),
+            contents=(COMPONENTS_SNIPPETS_DIR / "with-blueprint.py").read_text(),
         )
         run_command_and_snippet_output(
             cmd="dg scaffold component 'my_component_library.lib.ShellCommand' my_shell_command",

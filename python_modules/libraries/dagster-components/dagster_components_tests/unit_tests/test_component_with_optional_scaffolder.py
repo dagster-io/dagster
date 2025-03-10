@@ -11,7 +11,7 @@ from dagster_components.component_scaffolding import get_blueprint
 class ComponentWithOptionalScaffolder(Component): ...
 
 
-def test_component_with_optional_scaffolder() -> None:
+def test_component_with_optional_blueprint() -> None:
     assert isinstance(
         get_blueprint(ComponentWithOptionalScaffolder),
         BlueprintUnavailableReason,

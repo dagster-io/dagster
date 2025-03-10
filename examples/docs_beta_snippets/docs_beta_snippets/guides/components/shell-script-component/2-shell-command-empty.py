@@ -2,7 +2,7 @@ from dagster import Definitions
 from dagster_components import (
     Component,
     ComponentLoadContext,
-    DefaultComponentBlueprint,
+    DefaultComponentScaffolder,
     ResolvableModel,
 )
 
