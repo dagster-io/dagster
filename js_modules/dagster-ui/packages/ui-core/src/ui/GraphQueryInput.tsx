@@ -95,16 +95,23 @@ export const placeholderTextForItems = (base: string, items: GraphQueryItem[]) =
 
   if (seed === 0) {
     const example = ranked.sort((a, b) => b.outcount - a.outcount)[0];
-    placeholder = `${placeholder} (ex: ${example!.name}${traversal('down')})`;
+    placeholder = `${placeholder} (ex: ${key(example!.name)}${traversal('down')})`;
   } else if (seed === 1) {
     const example = ranked.sort((a, b) => b.outcount - a.outcount)[0];
-    placeholder = `${placeholder} (ex: ${example!.name}${traversal('down', 1)})`;
+    placeholder = `${placeholder} (ex: ${key(example!.name)}${traversal('down', 1)})`;
   } else if (seed === 2) {
     const example = ranked.sort((a, b) => b.incount - a.incount)[0];
-    placeholder = `${placeholder} (ex: ${traversal('up', 2)}${example!.name})`;
+    placeholder = `${placeholder} (ex: ${traversal('up', 2)}${key(example!.name)})`;
   }
   return placeholder;
 };
+
+function key(name: string) {
+  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+    return `name:"${name}"`;
+  }
+  return name;
+}
 
 function traversal(direction: 'up' | 'down', levels?: number) {
   if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
