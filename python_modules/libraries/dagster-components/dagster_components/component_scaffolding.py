@@ -5,12 +5,8 @@ from typing import Any, Optional
 import click
 import yaml
 
+from dagster_components.blueprint import BlueprintUnavailableReason, ScaffoldRequest, get_blueprint
 from dagster_components.core.component import Component
-from dagster_components.scaffolder import (
-    ScaffolderUnavailableReason,
-    ScaffoldRequest,
-    get_scaffolder,
-)
 
 
 class ComponentDumper(yaml.Dumper):
@@ -43,9 +39,9 @@ def scaffold_component_instance(
     click.echo(f"Creating a Dagster component instance folder at {path}.")
     if not path.exists():
         path.mkdir()
-    scaffolder = get_scaffolder(component_type)
+    scaffolder = get_blueprint(component_type)
 
-    if isinstance(scaffolder, ScaffolderUnavailableReason):
+    if isinstance(scaffolder, BlueprintUnavailableReason):
         raise Exception(
             f"Component type {component_type_name} does not have a scaffolder. Reason: {scaffolder.message}."
         )

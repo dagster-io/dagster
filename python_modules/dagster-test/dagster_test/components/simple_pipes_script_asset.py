@@ -7,8 +7,8 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster_components import Component, ComponentLoadContext
+from dagster_components.blueprint import Blueprint, ScaffoldRequest, blueprint
 from dagster_components.component_scaffolding import scaffold_component_yaml
-from dagster_components.scaffolder import Scaffolder, ScaffoldRequest, scaffolder
 from pydantic import BaseModel
 
 
@@ -18,7 +18,7 @@ class SimplePipesScriptScaffoldParams(BaseModel):
     filename: str
 
 
-class SimplePipesScriptScaffolder(Scaffolder):
+class SimplePipesScriptBlueprint(Blueprint):
     @classmethod
     def get_params(cls):
         return SimplePipesScriptScaffoldParams
@@ -40,7 +40,7 @@ context.report_asset_materialization(asset_key="{asset_key}")
 """
 
 
-@scaffolder(scaffolder=SimplePipesScriptScaffolder)
+@blueprint(scaffolder=SimplePipesScriptBlueprint)
 class SimplePipesScriptComponent(Component):
     """A simple asset that runs a Python script with the Pipes subprocess client.
 

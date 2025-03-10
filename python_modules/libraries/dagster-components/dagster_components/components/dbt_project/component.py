@@ -14,7 +14,8 @@ from dagster_dbt import (
 )
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
+from dagster_components.blueprint import blueprint
+from dagster_components.components.dbt_project.blueprint import DbtProjectComponentBlueprint
 from dagster_components.resolved.core_models import (
     AssetAttributesModel,
     AssetPostProcessor,
@@ -25,7 +26,6 @@ from dagster_components.resolved.core_models import (
 )
 from dagster_components.resolved.metadata import ResolvableFieldInfo
 from dagster_components.resolved.model import FieldResolver, ResolvableModel, ResolvedFrom
-from dagster_components.scaffolder import scaffolder
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 
@@ -56,7 +56,7 @@ def resolve_dbt(context: ResolutionContext, dbt: DbtCliResource) -> DbtCliResour
     return DbtCliResource(**context.resolve_value(dbt.model_dump()))
 
 
-@scaffolder(scaffolder=DbtProjectComponentScaffolder)
+@blueprint(scaffolder=DbtProjectComponentBlueprint)
 @dataclass
 class DbtProjectComponent(Component, ResolvedFrom[DbtProjectModel]):
     """Expose a DBT project to Dagster as a set of assets."""

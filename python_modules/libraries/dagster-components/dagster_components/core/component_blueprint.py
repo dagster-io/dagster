@@ -1,9 +1,9 @@
 from typing import Any
 
-from dagster_components.scaffolder import Scaffolder, ScaffoldRequest
+from dagster_components.blueprint import Blueprint, ScaffoldRequest
 
 
-class DefaultComponentScaffolder(Scaffolder):
+class DefaultComponentBlueprint(Blueprint):
     def scaffold(self, request: ScaffoldRequest, params: Any) -> None:
         # This will be deleted once all components are converted to the new ComponentScaffolder API
         from dagster_components.component_scaffolding import scaffold_component_yaml

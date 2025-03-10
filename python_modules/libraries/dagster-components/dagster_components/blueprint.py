@@ -11,11 +11,11 @@ from pydantic import BaseModel
 T = TypeVar("T")
 
 # Constant for scaffolder attribute name
-SCAFFOLDER_ATTRIBUTE = "__scaffolder_class__"
+BLUEPRINT_ATTRIBUTE = "__blueprint__"
 
 
-def scaffolder(
-    scaffolder: Union[type["Scaffolder"], "ScaffolderUnavailableReason"],
+def blueprint(
+    scaffolder: Union[type["Blueprint"], "BlueprintUnavailableReason"],
 ) -> Callable[[type[T]], type[T]]:
     """A decorator that attaches a scaffolder class to the decorated class.
 
@@ -28,13 +28,13 @@ def scaffolder(
 
     def decorator(cls: type[T]) -> type[T]:
         # Store the scaffolder class as an attribute using the constant
-        setattr(cls, SCAFFOLDER_ATTRIBUTE, scaffolder)
+        setattr(cls, BLUEPRINT_ATTRIBUTE, scaffolder)
         return cls
 
     return decorator
 
 
-def has_scaffolder(cls: type) -> bool:
+def has_blueprint(cls: type) -> bool:
     """Determines if a class has been decorated with scaffoldable.
 
     Args:
@@ -43,12 +43,12 @@ def has_scaffolder(cls: type) -> bool:
     Returns:
         True if the class has a scaffolder attached, False otherwise
     """
-    return hasattr(cls, SCAFFOLDER_ATTRIBUTE)
+    return hasattr(cls, BLUEPRINT_ATTRIBUTE)
 
 
-def get_scaffolder(
+def get_blueprint(
     cls: type,
-) -> Union["Scaffolder", "ScaffolderUnavailableReason"]:
+) -> Union["Blueprint", "BlueprintUnavailableReason"]:
     """Retrieves the scaffolder class attached to the decorated class.
 
     Args:
@@ -57,13 +57,13 @@ def get_scaffolder(
     Returns:
         The scaffolder class attached to the decorated class. Raises CheckError if the class is not decorated with @scaffoldable.
     """
-    check.param_invariant(has_scaffolder(cls), "cls", "Class must be decorated with @scaffoldable")
-    attr = getattr(cls, SCAFFOLDER_ATTRIBUTE)
-    return attr if isinstance(attr, ScaffolderUnavailableReason) else attr()
+    check.param_invariant(has_blueprint(cls), "cls", "Class must be decorated with @scaffoldable")
+    attr = getattr(cls, BLUEPRINT_ATTRIBUTE)
+    return attr if isinstance(attr, BlueprintUnavailableReason) else attr()
 
 
 @dataclass
-class ScaffolderUnavailableReason:
+class BlueprintUnavailableReason:
     message: str
 
 
@@ -75,7 +75,7 @@ class ScaffoldRequest:
     target_path: Path
 
 
-class Scaffolder:
+class Blueprint:
     @classmethod
     def get_params(cls) -> Optional[type[BaseModel]]:
         return None
