@@ -1,6 +1,6 @@
 from pathlib import Path
 
 import {{ project_name }}.defs
-from dagster_components import build_defs
+from dagster_components import load_defs
 
-defs = build_defs(defs_root={{ project_name }}.defs)
+defs = load_defs(defs_root={{ project_name }}.defs)
