@@ -1,4 +1,4 @@
-cd ../.. && dg scaffold project project-2
+cd ../.. && dg scaffold project projects/project-2
 
 Creating a Dagster project at /.../dagster-workspace/projects/project-2.
 Scaffolded files for Dagster project at /.../dagster-workspace/projects/project-2.

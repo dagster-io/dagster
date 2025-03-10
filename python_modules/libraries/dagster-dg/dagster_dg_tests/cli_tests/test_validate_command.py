@@ -21,7 +21,7 @@ def test_validate_command_deployment_context_success():
             "project",
             "--use-editable-components-package-only",
             dagster_git_repo_dir,
-            "project-1",
+            "projects/project-1",
         )
         assert_runner_result(result)
         result = runner.invoke(
@@ -29,7 +29,7 @@ def test_validate_command_deployment_context_success():
             "project",
             "--use-editable-components-package-only",
             dagster_git_repo_dir,
-            "project-2",
+            "projects/project-2",
         )
         assert_runner_result(result)
 

@@ -87,7 +87,10 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
 
     with ProxyRunner.test() as runner, isolated_example_workspace(runner):
         result = runner.invoke(
-            "scaffold", "project", "foo-bar", "--use-editable-components-package-only", "--verbose"
+            "scaffold",
+            "project",
+            "projects/foo-bar",
+            "--verbose",
         )
         assert_runner_result(result)
         assert Path("projects/foo-bar").exists()
@@ -97,9 +100,16 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert Path("projects/foo-bar/foo_bar_tests").exists()
         assert Path("projects/foo-bar/pyproject.toml").exists()
 
-        # Check TOML content
+        # Check project TOML content
         toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())
         assert get_toml_node(toml, ("tool", "dg", "project", "root_module"), str) == "foo_bar"
+
+        # Check workspace TOML content
+        toml = tomlkit.parse(Path("pyproject.toml").read_text())
+        assert (
+            get_toml_node(toml, ("tool", "dg", "workspace", "projects", 0, "path"), str)
+            == "projects/foo-bar"
+        )
 
         # Check venv created
         assert Path("projects/foo-bar/.venv").exists()
@@ -117,6 +127,18 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
             result = runner.invoke("list", "component-type", "--verbose")
             assert_runner_result(result)
             assert "CACHE [hit]" in result.output
+
+        # Create another project, make sure it's appended correctly to the workspace TOML and exists
+        # in a different directory.
+        result = runner.invoke("scaffold", "project", "other_projects/baz", "--verbose")
+        assert_runner_result(result)
+
+        # Check workspace TOML content
+        toml = tomlkit.parse(Path("pyproject.toml").read_text())
+        assert (
+            get_toml_node(toml, ("tool", "dg", "workspace", "projects", 1, "path"), str)
+            == "other_projects/baz"
+        )
 
 
 def test_scaffold_project_outside_workspace_success(monkeypatch) -> None:
@@ -157,8 +179,11 @@ def test_scaffold_project_editable_dagster_success(
         editable_args = [option, "--"]
     else:
         editable_args = [option, str(dagster_git_repo_dir)]
-    with ProxyRunner.test() as runner, isolated_example_workspace(runner):
-        result = runner.invoke("scaffold", "project", *editable_args, "foo-bar")
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner),
+    ):
+        result = runner.invoke("scaffold", "project", *editable_args, "projects/foo-bar")
         assert_runner_result(result)
         assert Path("projects/foo-bar").exists()
         assert Path("projects/foo-bar/pyproject.toml").exists()
@@ -290,7 +315,7 @@ def test_scaffold_project_already_exists_fails() -> None:
         assert_runner_result(result)
         result = runner.invoke("scaffold", "project", "bar", "--skip-venv")
         assert_runner_result(result, exit_0=False)
-        assert "already exists" in result.output
+        assert "already specifies a project at" in result.output
 
 
 # ########################
