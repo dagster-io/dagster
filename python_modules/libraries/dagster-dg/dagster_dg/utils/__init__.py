@@ -277,7 +277,7 @@ def hash_directory_metadata(
     path: Union[str, Path],
     includes: Optional[Sequence[str]],
     excludes: Sequence[str],
-    error_on_missing: bool = False,
+    error_on_missing: bool,
 ) -> None:
     """Hashes the metadata of all files in the given directory.
 
@@ -296,12 +296,10 @@ def hash_directory_metadata(
             if includes and not any(fnmatch(name, pattern) for pattern in includes):
                 continue
             filepath = os.path.join(root, name)
-            hash_file_metadata(hasher, filepath)
+            hash_file_metadata(hasher, filepath, error_on_missing)
 
 
-def hash_file_metadata(
-    hasher: Hash, path: Union[str, Path], error_on_missing: bool = False
-) -> None:
+def hash_file_metadata(hasher: Hash, path: Union[str, Path], error_on_missing) -> None:
     """Hashes the metadata of a file.
 
     Args:

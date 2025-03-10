@@ -20,7 +20,7 @@ def hash_paths(
     paths: Sequence[Path],
     includes: Optional[Sequence[str]] = None,
     excludes: Sequence[str] = DEFAULT_FILE_EXCLUDE_PATTERNS,
-    error_on_missing: bool = False,
+    error_on_missing: bool = True,
 ) -> str:
     """Hash the given paths, including their metadata.
 
