@@ -36,6 +36,7 @@ import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {fetchPaginatedData} from '../runs/fetchPaginatedBucketData';
 import {CacheManager} from '../search/useIndexedDBCachedQuery';
+import {SyntaxError} from '../selection/CustomErrorListener';
 import {LoadingSpinner} from '../ui/Loading';
 
 type Asset = AssetTableFragment;
@@ -219,10 +220,16 @@ export const AssetsCatalogTable = ({
     enabled: !featureEnabled(FeatureFlag.flagSelectionSyntax),
   });
 
+  const [errorState, setErrorState] = useState<SyntaxError[]>([]);
   const {filterInput, filtered, loading, assetSelection, setAssetSelection} =
     useAssetSelectionInput({
       assets: partiallyFiltered,
       assetsLoading: !assets || filteredAssetsLoading,
+      onErrorStateChange: (errors) => {
+        if (errors !== errorState) {
+          setErrorState(errors);
+        }
+      },
     });
 
   useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !loading);
@@ -269,6 +276,7 @@ export const AssetsCatalogTable = ({
       assets={displayed}
       isLoading={filteredAssetsLoading || loading}
       isFiltered={isFiltered}
+      errorState={errorState}
       actionBarComponents={
         <Box flex={{gap: 12, alignItems: 'flex-start'}}>
           <ButtonGroup<AssetViewType>

@@ -75,10 +75,12 @@ import {
 import {
   EmptyDAGNotice,
   EntirelyFilteredDAGNotice,
+  InvalidSelectionQueryNotice,
   LoadingContainer,
   LoadingNotice,
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {SyntaxError} from '../selection/CustomErrorListener';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {LoadingSpinner} from '../ui/Loading';
@@ -698,6 +700,8 @@ const AssetGraphExplorerWithData = ({
   }
   const loading = (layoutLoading || dataLoading) && isInitialLayout.current;
 
+  const [errorState, setErrorState] = useState<SyntaxError[]>([]);
+
   const explorer = (
     <SplitPanelContainer
       key="explorer"
@@ -716,7 +720,11 @@ const AssetGraphExplorerWithData = ({
             {!loading && graphQueryItems.length === 0 ? (
               <EmptyDAGNotice nodeType="asset" isGraph />
             ) : !loading && Object.keys(assetGraphData.nodes).length === 0 ? (
-              <EntirelyFilteredDAGNotice nodeType="asset" />
+              errorState.length > 0 ? (
+                <InvalidSelectionQueryNotice errors={errorState} />
+              ) : (
+                <EntirelyFilteredDAGNotice nodeType="asset" />
+              )
             ) : undefined}
             {loading && !layout ? (
               <LoadingNotice async={async} nodeType="asset" />
@@ -780,6 +788,11 @@ const AssetGraphExplorerWithData = ({
                         assets={graphQueryItems}
                         value={explorerPath.opsQuery}
                         onChange={onChangeAssetSelection}
+                        onErrorStateChange={(errors) => {
+                          if (errors !== errorState) {
+                            setErrorState(errors);
+                          }
+                        }}
                       />
                     ) : (
                       <AssetGraphAssetSelectionInput
