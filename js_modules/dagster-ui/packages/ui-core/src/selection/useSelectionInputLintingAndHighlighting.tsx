@@ -29,12 +29,16 @@ export const useSelectionInputLintingAndHighlighting = ({
     if (!instance) {
       return;
     }
-    instance.on('change', (instance) => {
+    const callback = (instance: CodeMirror.Editor) => {
       const errors = linter(instance.getValue());
       setErrors(errors);
       applyStaticSyntaxHighlighting(instance, errors);
-    });
-    return;
+    };
+    instance.on('change', callback);
+    callback(instance);
+    return () => {
+      instance.off('change', callback);
+    };
   }, [instance, linter]);
 
   const [error, setError] = useState<{
