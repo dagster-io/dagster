@@ -442,15 +442,32 @@ def build_node_deps(
         node_key = NodeInvocation(node_def_name, alias=alias)
         deps[node_key] = {}
 
-        # TODO: We should be able to remove this after a refactor of `AssetsDefinition` and just use
-        # a single method. At present using `keys_by_input_name` for asset checks only will exclude
-        # `additional_deps`, so we need to use `node_keys_by_input_name`. But using
-        # `node_keys_by_input_name` breaks cycle resolution on subsettable multi-assets.
-        inputs_map = (
-            assets_def.node_keys_by_input_name
-            if has_only_asset_checks(assets_def)
-            else assets_def.keys_by_input_name
-        )
+        # For check-only nodes, we treat additional_deps as execution dependencies regardless
+        # of if these checks are blocking or not.
+        #
+        # For other nodes, we do not treat additional_deps on checks as execution dependencies.
+        #
+        # The precise reason for this is unknown.
+        execution_dep_keys: set[AssetKey] = set()
+        if has_only_asset_checks(assets_def):
+            for check in assets_def.check_specs:
+                execution_dep_keys |= {
+                    check.asset_key,
+                    *{dep.asset_key for dep in check.additional_deps},
+                }
+        else:
+            for spec in assets_def.specs:
+                execution_dep_keys |= {
+                    dep.asset_key for dep in spec.deps if spec.key in assets_def.keys
+                }
+            for check in assets_def.check_specs:
+                execution_dep_keys.add(check.asset_key)
+
+        inputs_map = {
+            input_name: node_key
+            for input_name, node_key in assets_def.node_keys_by_input_name.items()
+            if node_key in execution_dep_keys
+        }
 
         # connect each input of this AssetsDefinition to the proper upstream node
         for input_name, upstream_asset_key in inputs_map.items():
