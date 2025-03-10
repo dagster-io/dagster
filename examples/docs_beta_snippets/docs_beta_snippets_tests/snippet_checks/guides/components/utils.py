@@ -44,13 +44,13 @@ SNIPPET_ENV = {
 
 @contextmanager
 def _get_snippet_working_dir() -> Iterator[str]:
-    """If CLI_SNIPPET_WORKING_DIR is set, use it as the working directory for all snippet tests.
+    """If DAGSTER_CLI_SNIPPET_WORKING_DIR is set, use it as the working directory for all snippet tests.
     This makes it easier to debug the state of the working directory when a test fails.
     Otherwise, create a temporary directory and use that.
     """
     test_file_name = inspect.stack()[4].filename
 
-    working_dir_from_env = os.getenv("CLI_SNIPPET_WORKING_DIR")
+    working_dir_from_env = os.getenv("DAGSTER_CLI_SNIPPET_WORKING_DIR")
     if working_dir_from_env:
         path = Path(working_dir_from_env) / Path(test_file_name).stem
         path.mkdir(parents=True, exist_ok=True)
