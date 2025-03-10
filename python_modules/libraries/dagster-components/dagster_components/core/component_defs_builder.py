@@ -73,10 +73,7 @@ def defs_from_components(
 
     return Definitions.merge(
         *[
-            *[
-                c.build_defs(context.with_rendering_scope(c.get_additional_scope()))
-                for c in components
-            ],
+            *[c.build_defs(context.with_rendering_scope(c.get_udfs())) for c in components],
             Definitions(resources=resources),
         ]
     )

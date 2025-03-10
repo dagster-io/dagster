@@ -7,7 +7,7 @@ import dagster as dg
 
 
 class SubclassWithScope(SlingReplicationCollectionComponent):
-    def get_additional_scope(self) -> Mapping[str, Any]:
+    def get_udfs(self) -> Mapping[str, Any]:
         def _custom_cron(cron_schedule: str) -> dg.AutomationCondition:
             return (
                 dg.AutomationCondition.on_cron(cron_schedule)
