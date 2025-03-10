@@ -254,7 +254,7 @@ class DefinitionsModuleCache:
         context = ComponentLoadContext(
             module_name=module.__name__,
             decl_node=decl_node,
-            resolution_context=ResolutionContext.default(),
+            resolution_context=ResolutionContext.default(decl_node.get_source_position_tree()),
             module_cache=self,
         )
         with use_component_load_context(context):
