@@ -94,12 +94,12 @@ class RemoteRepository:
         self,
         repository_snap: RepositorySnap,
         repository_handle: RepositoryHandle,
-        instance: DagsterInstance,
+        auto_materialize_use_sensors: bool,
         ref_to_data_fn: Optional[Callable[[JobRefSnap], JobDataSnap]] = None,
     ):
         self.repository_snap = check.inst_param(repository_snap, "repository_snap", RepositorySnap)
 
-        self._instance = instance
+        self._auto_materialize_use_sensors = auto_materialize_use_sensors
 
         if repository_snap.job_datas is not None:
             self._job_map: dict[str, Union[JobDataSnap, JobRefSnap]] = {
@@ -189,7 +189,7 @@ class RemoteRepository:
             for sensor_snap in self.repository_snap.sensors
         }
 
-        if not self._instance.auto_materialize_use_sensors:
+        if not self._auto_materialize_use_sensors:
             return sensor_datas
 
         # if necessary, create a default automation condition sensor

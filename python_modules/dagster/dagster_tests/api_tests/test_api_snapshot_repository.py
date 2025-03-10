@@ -169,7 +169,7 @@ def test_defer_snapshots(instance: DagsterInstance, env):
         repo = RemoteRepository(
             repository_snap,
             RepositoryHandle.from_location(repository_name="bar_repo", code_location=code_location),
-            instance=instance,
+            auto_materialize_use_sensors=True,
             ref_to_data_fn=_ref_to_data,
         )
         jobs = repo.get_all_jobs()
