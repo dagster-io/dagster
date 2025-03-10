@@ -1,3 +1,6 @@
+from dagster_components.component_scaffolding import (
+    scaffold_component_yaml as scaffold_component_yaml,
+)
 from dagster_components.core.component import (
     Component as Component,
     ComponentLoadContext as ComponentLoadContext,
@@ -22,9 +25,6 @@ from dagster_components.resolved.model import (
     ResolvableModel as ResolvableModel,
     ResolvedFrom as ResolvedFrom,
     ResolvedKwargs as ResolvedKwargs,
-)
-from dagster_components.component_scaffolding import (
-    scaffold_component_yaml as scaffold_component_yaml,
 )
 from dagster_components.scaffolder import (
     Scaffolder as Scaffolder,

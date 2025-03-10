@@ -4,9 +4,9 @@ from typing import Optional
 import click
 from pydantic import TypeAdapter
 
+from dagster_components.component_scaffolding import scaffold_component_instance
 from dagster_components.core.component import load_component_type
 from dagster_components.core.component_key import ComponentKey
-from dagster_components.component_scaffolding import scaffold_component_instance
 from dagster_components.scaffolder import ScaffolderUnavailableReason, get_scaffolder
 
 

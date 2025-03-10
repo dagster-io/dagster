@@ -1,6 +1,11 @@
-from typing import Callable, TypeVar, Union
+from abc import abstractmethod
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Callable, Optional, TypeVar, Union
 
 from dagster import _check as check
+from dagster._record import record
+from pydantic import BaseModel
 
 # Type variable for generic class handling
 T = TypeVar("T")
@@ -55,15 +60,6 @@ def get_scaffolder(
     check.param_invariant(has_scaffolder(cls), "cls", "Class must be decorated with @scaffoldable")
     attr = getattr(cls, SCAFFOLDER_ATTRIBUTE)
     return attr if isinstance(attr, ScaffolderUnavailableReason) else attr()
-
-
-from abc import abstractmethod
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Optional
-
-from dagster._record import record
-from pydantic import BaseModel
 
 
 @dataclass
