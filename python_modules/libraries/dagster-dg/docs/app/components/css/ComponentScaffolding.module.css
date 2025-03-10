@@ -1,0 +1,24 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.commandContainer {
+  background-color: var(--color-background-lighter);
+  padding: 24px 64px 24px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  position: relative;
+}
+
+.commandContainer pre {
+  overflow-x: auto;
+}
+
+.buttonContainer {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+}
