@@ -97,7 +97,7 @@ def isolated_example_project_foo_bar(
     skip_venv: bool = False,
     populate_cache: bool = False,
     component_dirs: Sequence[Path] = [],
-) -> Iterator[None]:
+) -> Iterator[Path]:
     """Scaffold a project named foo_bar in an isolated filesystem.
 
     Args:
@@ -132,7 +132,7 @@ def isolated_example_project_foo_bar(
                 components_dir = Path.cwd() / "foo_bar" / "defs" / component_name
                 components_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(src_dir, components_dir, dirs_exist_ok=True)
-            yield
+            yield project_path
 
 
 @contextmanager
@@ -391,6 +391,9 @@ class ProxyRunner:
             index = len(args)
         all_args = [*args[:index], *(self.append_args or []), *args[index:]]
 
+        # print("****************** ALL ARGS ******************")
+        # print(f"all_args: {all_args}")
+        # print("*" * 50)
         # For some reason the context setting `max_content_width` is not respected when using the
         # CliRunner, so we have to set it manually.
         result = self.original.invoke(

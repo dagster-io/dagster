@@ -107,7 +107,7 @@ def dev_command(
 
     # In a project context, we can just run `dagster dev` directly, using `dagster` from the
     # project's environment.
-    temp_workspace_file_cm = temp_workspace_file(dg_context)
+    temp_workspace_file_cm = create_temp_workspace_file(dg_context)
     if dg_context.is_project:
         cmd_location = dg_context.get_executable("dagster")
         if dg_context.use_dg_managed_environment:
@@ -172,7 +172,7 @@ def dev_command(
 
 
 @contextmanager
-def temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
+def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
     with NamedTemporaryFile(mode="w+", delete=True) as temp_workspace_file:
         entries = []
         if dg_context.is_project:
