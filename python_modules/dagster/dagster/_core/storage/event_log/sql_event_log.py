@@ -251,6 +251,8 @@ class SqlEventLogStorage(EventLogStorage):
         # https://github.com/dagster-io/dagster/issues/3945
 
         values = self._get_asset_entry_values(event, event_id, self.has_asset_key_index_cols())
+        if not values:
+            return
         insert_statement = AssetKeyTable.insert().values(
             asset_key=event.dagster_event.asset_key.to_string(), **values
         )
