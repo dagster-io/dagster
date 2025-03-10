@@ -44,7 +44,7 @@ If your instance is using the <PyObject section="libraries" module="dagster_k8s"
 
 Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for more information about containers, Pod Specs, etc.
 
-The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
+The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using snake case (for example, `volume_mounts`) . For example:
 
 <CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_job.py" startAfter="start_k8s_config" endBefore="end_k8s_config" />
 
