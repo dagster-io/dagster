@@ -5,7 +5,6 @@ from dagster_components import ResolutionContext
 from dagster_components.resolved.model import (
     FieldResolver,
     ResolvableModel,
-    Resolved,
     ResolvedFrom,
     resolve_model,
 )
@@ -24,7 +23,7 @@ class InnerObject(BaseModel, ResolvedFrom["InnerModel"]):
 class TargetObject(BaseModel, ResolvedFrom["TargetModel"]):
     int_val: int
     str_val: str
-    inners: Optional[Sequence[Resolved[InnerObject]]]
+    inners: Optional[Sequence[InnerObject]]
 
 
 class InnerModel(ResolvableModel):
