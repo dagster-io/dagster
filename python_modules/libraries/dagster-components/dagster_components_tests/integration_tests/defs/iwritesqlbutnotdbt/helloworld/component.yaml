@@ -1,2 +1,6 @@
 type: dagster_components_tests.integration_tests.lib.iwritesqlbutnotdbt.SqlComponent
-attributes: {}
+attributes:
+  sql_path: "somepath"
+  sql_engine_url: "someurl"
+  asset_specs:
+    - key: a_key
