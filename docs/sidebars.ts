@@ -100,7 +100,6 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Migrate',
-      link: {type: 'doc', id: 'guides/migrate/index'},
       collapsed: false,
       items: [
         {

@@ -519,13 +519,23 @@
     },
     {
       "source": "/integrations/airflow/migrating-to-dagster",
-      "destination": "/integrations/libraries/airlift/airflow-to-dagster/",
-      "permanent": false
+      "destination": "/guides/migrate/airflow-to-dagster/"
+    },
+    {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/",
+      "destination": "/guides/migrate/airflow-to-dagster/"
+    },
+    {
+      "source": "/integrations/libraries/airlift/federation-tutorial/",
+      "destination": "/guides/migrate/airflow-to-dagster/federation/"
+    },
+    {
+      "source": "/integrations/libraries/airlift/operator-migration/",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/"
     },
     {
       "source": "/integrations/airflow/reference",
-      "destination": "/integrations/libraries/airlift/",
-      "permanent": false
+      "destination": "/integrations/libraries/airlift/"
     },
     {
       "source": "/deployment/open-source",
