@@ -13,9 +13,9 @@ from dagster_components import (
     ScaffoldRequest,
     scaffold_component_yaml,
 )
-from dagster_components.fold.decorator import foldable
 from dagster_components.resolved.core_models import AssetSpecSequenceField
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
+from dagster_components.scaffolder import scaffolder
 
 import dagster as dg
 
@@ -48,7 +48,7 @@ class ShellCommandModel(ResolvableModel):
 
 
 # highlight-start
-@foldable(scaffolder=ShellCommandScaffolder)
+@scaffolder(scaffolder=ShellCommandScaffolder)
 # highlight-end
 @dataclass
 class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):

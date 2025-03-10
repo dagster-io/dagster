@@ -9,11 +9,6 @@ from dagster_components.core.component_defs_builder import (
 from dagster_components.core.component_scaffolder import (
     DefaultComponentScaffolder as DefaultComponentScaffolder,
 )
-from dagster_components.fold.scaffolder import (
-    Scaffolder as Scaffolder,
-    ScaffolderUnavailableReason as ScaffolderUnavailableReason,
-    ScaffoldRequest as ScaffoldRequest,
-)
 from dagster_components.resolved.context import ResolutionContext as ResolutionContext
 from dagster_components.resolved.core_models import (
     AssetAttributesModel as AssetAttributesModel,
@@ -28,5 +23,12 @@ from dagster_components.resolved.model import (
     ResolvedFrom as ResolvedFrom,
     ResolvedKwargs as ResolvedKwargs,
 )
-from dagster_components.scaffold import scaffold_component_yaml as scaffold_component_yaml
+from dagster_components.component_scaffolding import (
+    scaffold_component_yaml as scaffold_component_yaml,
+)
+from dagster_components.scaffolder import (
+    Scaffolder as Scaffolder,
+    ScaffolderUnavailableReason as ScaffolderUnavailableReason,
+    ScaffoldRequest as ScaffoldRequest,
+)
 from dagster_components.version import __version__ as __version__

@@ -12,11 +12,11 @@ from dagster_components import Component, ComponentLoadContext
 from dagster_components.components.definitions_component.scaffolder import (
     DefinitionsComponentScaffolder,
 )
-from dagster_components.fold.decorator import foldable
 from dagster_components.resolved.model import ResolvableModel
+from dagster_components.scaffolder import scaffolder
 
 
-@foldable(scaffolder=DefinitionsComponentScaffolder)
+@scaffolder(scaffolder=DefinitionsComponentScaffolder)
 class DefinitionsComponent(Component, ResolvableModel):
     """Wraps an arbitrary set of Dagster definitions."""
 

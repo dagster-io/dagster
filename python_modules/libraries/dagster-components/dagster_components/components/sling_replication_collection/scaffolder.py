@@ -3,7 +3,7 @@ from typing import Any
 import yaml
 
 from dagster_components.core.component_scaffolder import Scaffolder, ScaffoldRequest
-from dagster_components.scaffold import scaffold_component_yaml
+from dagster_components.component_scaffolding import scaffold_component_yaml
 
 
 class SlingReplicationComponentScaffolder(Scaffolder):

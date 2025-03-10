@@ -6,8 +6,11 @@ import click
 import yaml
 
 from dagster_components.core.component import Component
-from dagster_components.fold.decorator import get_scaffolder
-from dagster_components.fold.scaffolder import ScaffolderUnavailableReason, ScaffoldRequest
+from dagster_components.scaffolder import (
+    ScaffolderUnavailableReason,
+    ScaffoldRequest,
+    get_scaffolder,
+)
 
 
 class ComponentDumper(yaml.Dumper):

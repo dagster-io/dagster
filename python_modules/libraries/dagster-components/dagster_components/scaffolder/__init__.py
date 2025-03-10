@@ -2,8 +2,6 @@ from typing import Callable, TypeVar, Union
 
 from dagster import _check as check
 
-from dagster_components.fold.scaffolder import Scaffolder
-
 # Type variable for generic class handling
 T = TypeVar("T")
 
@@ -11,10 +9,7 @@ T = TypeVar("T")
 SCAFFOLDER_ATTRIBUTE = "__scaffolder_class__"
 
 
-from dagster_components.fold.scaffolder import ScaffolderUnavailableReason
-
-
-def foldable(
+def scaffolder(
     scaffolder: Union[type["Scaffolder"], "ScaffolderUnavailableReason"],
 ) -> Callable[[type[T]], type[T]]:
     """A decorator that attaches a scaffolder class to the decorated class.
@@ -34,7 +29,7 @@ def foldable(
     return decorator
 
 
-def is_foldable(cls: type) -> bool:
+def has_scaffolder(cls: type) -> bool:
     """Determines if a class has been decorated with scaffoldable.
 
     Args:
@@ -57,6 +52,37 @@ def get_scaffolder(
     Returns:
         The scaffolder class attached to the decorated class. Raises CheckError if the class is not decorated with @scaffoldable.
     """
-    check.param_invariant(is_foldable(cls), "cls", "Class must be decorated with @scaffoldable")
+    check.param_invariant(has_scaffolder(cls), "cls", "Class must be decorated with @scaffoldable")
     attr = getattr(cls, SCAFFOLDER_ATTRIBUTE)
     return attr if isinstance(attr, ScaffolderUnavailableReason) else attr()
+
+
+from abc import abstractmethod
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Optional
+
+from dagster._record import record
+from pydantic import BaseModel
+
+
+@dataclass
+class ScaffolderUnavailableReason:
+    message: str
+
+
+@record
+class ScaffoldRequest:
+    # fully qualified class name of the scaffolded class
+    type_name: str
+    # target path for the scaffold request. Typically used to construct absolute paths
+    target_path: Path
+
+
+class Scaffolder:
+    @classmethod
+    def get_params(cls) -> Optional[type[BaseModel]]:
+        return None
+
+    @abstractmethod
+    def scaffold(self, request: ScaffoldRequest, params: Any) -> None: ...

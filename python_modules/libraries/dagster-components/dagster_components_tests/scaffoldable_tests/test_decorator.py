@@ -1,7 +1,6 @@
 import pytest
 from dagster._check.functions import CheckError
-from dagster_components.fold.decorator import foldable, get_scaffolder, is_foldable
-from dagster_components.fold.scaffolder import Scaffolder
+from dagster_components.scaffolder import Scaffolder, get_scaffolder, has_scaffolder, scaffolder
 
 
 # Example usage:
@@ -11,7 +10,7 @@ def test_basic_usage() -> None:
         pass
 
     # Example decorated class
-    @foldable(MyScaffolder)
+    @scaffolder(MyScaffolder)
     class MyClass:
         pass
 
@@ -20,26 +19,26 @@ def test_basic_usage() -> None:
         pass
 
     # Test the functions
-    assert is_foldable(MyClass) is True
-    assert is_foldable(RegularClass) is False
+    assert has_scaffolder(MyClass) is True
+    assert has_scaffolder(RegularClass) is False
     assert isinstance(get_scaffolder(MyClass), MyScaffolder)
     with pytest.raises(CheckError):
         get_scaffolder(RegularClass)
 
 
 def test_inheritance() -> None:
-    class ScaffoldableOne(Scaffolder): ...
+    class ScaffolderOne(Scaffolder): ...
 
-    class ScaffoldableTwo(Scaffolder): ...
+    class ScaffolderTwo(Scaffolder): ...
 
-    @foldable(ScaffoldableOne)
+    @scaffolder(ScaffolderOne)
     class ClassOne: ...
 
-    @foldable(ScaffoldableTwo)
+    @scaffolder(ScaffolderTwo)
     class ClassTwo(ClassOne): ...
 
-    assert is_foldable(ClassOne) is True
-    assert isinstance(get_scaffolder(ClassOne), ScaffoldableOne)
+    assert has_scaffolder(ClassOne) is True
+    assert isinstance(get_scaffolder(ClassOne), ScaffolderOne)
 
-    assert is_foldable(ClassTwo) is True
-    assert isinstance(get_scaffolder(ClassTwo), ScaffoldableTwo)
+    assert has_scaffolder(ClassTwo) is True
+    assert isinstance(get_scaffolder(ClassTwo), ScaffolderTwo)
