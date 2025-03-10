@@ -114,7 +114,11 @@ def create_project_from_components(
     injecting the provided local component defn into each component's __init__.py.
     """
     location_name = f"my_location_{str(random.random()).replace('.', '')}"
-    with tempfile.TemporaryDirectory() as tmpdir:
+
+    # Using mkdtemp instead of TemporaryDirectory so that the directory is accessible
+    # from launched procsses (such as duckdb)
+    tmpdir = tempfile.mkdtemp()
+    try:
         project_root = Path(tmpdir) / location_name
         project_root.mkdir()
 
@@ -144,6 +148,8 @@ def create_project_from_components(
 
             with ensure_loadable_path(project_root):
                 yield project_root, location_name
+    finally:
+        shutil.rmtree(tmpdir)
 
 
 # ########################
