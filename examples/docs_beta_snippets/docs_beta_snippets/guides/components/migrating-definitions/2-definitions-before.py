@@ -18,5 +18,5 @@ defs = dg.Definitions.merge(
         jobs=[sync_tables_job, regenerate_analytics_job],
         schedules=[sync_tables_daily_schedule, regenerate_analytics_hourly_schedule],
     ),
-    dg_components.build_defs(components),
+    dg_components.load_defs(components),
 )

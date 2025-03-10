@@ -24,7 +24,7 @@ from dagster_components.components.sling_replication_collection.component import
     SlingReplicationCollectionModel,
 )
 from dagster_components.core.component_decl_builder import ComponentFileModel
-from dagster_components.core.component_defs_builder import YamlComponentDecl, build_defs
+from dagster_components.core.component_defs_builder import YamlComponentDecl, load_defs
 from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_sling import SlingResource
 
@@ -180,7 +180,7 @@ def test_load_from_path() -> None:
         assert resource.connections[0].password == "password"
 
         module = importlib.import_module("defs")
-        defs = build_defs(module)
+        defs = load_defs(module)
         assert defs.get_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),
             AssetKey(["foo", "input_duckdb"]),

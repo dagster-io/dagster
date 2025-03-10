@@ -109,17 +109,17 @@ def build_component_defs(
         f"{Path(components_root).parent.name}.{Path(components_root).name}"
     )
 
-    return build_defs(defs_root=defs_root, resources=resources, component_types=component_types)
+    return load_defs(defs_root=defs_root, resources=resources, component_types=component_types)
 
 
 # Public method so optional Nones are fine
 @suppress_dagster_warnings
-def build_defs(
+def load_defs(
     defs_root: ModuleType,
     resources: Optional[Mapping[str, object]] = None,
     component_types: Optional[dict[ComponentKey, type[Component]]] = None,
 ) -> "Definitions":
-    """Build a Definitions object containing all Dagster defs in the given module.
+    """Constructs a Definitions object, loading all Dagster defs in the given module.
 
     Args:
         defs_root (Path): The path to the defs root, typically `package.defs`.
