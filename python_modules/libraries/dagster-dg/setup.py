@@ -39,6 +39,7 @@ setup(
         "markdown",
         "jsonschema",
         "psutil",
+        "yaspin",
         "PyYAML>=5.1",
         "rich",
         "watchdog",

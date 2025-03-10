@@ -4,7 +4,7 @@ import click
 
 from dagster_dg.cli.check import check_group
 from dagster_dg.cli.dev import dev_command
-from dagster_dg.cli.docs import docs_group
+from dagster_dg.cli.docs import docs_command
 from dagster_dg.cli.init import init_command
 from dagster_dg.cli.list import list_group
 from dagster_dg.cli.scaffold import scaffold_group
@@ -24,7 +24,7 @@ def create_dg_cli():
         name="dg",
         commands={
             "check": check_group,
-            "docs": docs_group,
+            "docs": docs_command,
             "utils": utils_group,
             "list": list_group,
             "scaffold": scaffold_group,

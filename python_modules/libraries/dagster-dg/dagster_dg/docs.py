@@ -4,12 +4,13 @@ import tempfile
 import textwrap
 import webbrowser
 from collections.abc import Iterator, Mapping, Sequence, Set
+from itertools import groupby
 from typing import Any, Optional, Union
 
 import markdown
 import yaml
 
-from dagster_dg.component import RemoteComponentType
+from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
 from dagster_dg.yaml_utils import parse_yaml_with_source_positions
 from dagster_dg.yaml_utils.source_position import SourcePositionTree
 
@@ -317,3 +318,35 @@ def markdown_for_component_type(remote_component_type: RemoteComponentType) -> s
 {sample_yaml}
 </textarea>
 """
+
+
+def json_for_all_components(registry: RemoteComponentRegistry) -> list[dict[str, Any]]:
+    component_json = [
+        (component.namespace.split(".")[0], json_for_component_type(component))
+        for _, component in registry.items()
+        if component.component_schema
+    ]
+    return [
+        {
+            "name": namespace,
+            "componentTypes": [
+                namespace_and_component[1] for namespace_and_component in components
+            ],
+        }
+        for namespace, components in groupby(component_json, key=lambda x: x[0])
+    ]
+
+
+def json_for_component_type(remote_component_type: RemoteComponentType) -> dict[str, Any]:
+    component_type_name = f"{remote_component_type.namespace}.{remote_component_type.name}"
+    sample_yaml = generate_sample_yaml(
+        component_type_name, remote_component_type.component_schema or {}
+    )
+    return {
+        "name": f"{remote_component_type.namespace}.{remote_component_type.name}",
+        "author": "",
+        "tags": [],
+        "example": sample_yaml,
+        "schema": json.dumps(remote_component_type.component_schema),
+        "description": remote_component_type.description,
+    }
