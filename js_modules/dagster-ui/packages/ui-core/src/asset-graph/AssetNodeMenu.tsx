@@ -107,14 +107,14 @@ export const useAssetNodeMenu = ({
             }}
           />
         ) : null}
-        {upstream.length || !graphData ? (
+        {(upstream.length || !graphData) && onChangeExplorerPath ? (
           <MenuItem
             text="Show upstream graph"
             icon="arrow_back"
             onClick={() => showGraph(upstreamGraphQuery(node.assetKey))}
           />
         ) : null}
-        {downstream.length || !graphData ? (
+        {(downstream.length || !graphData) && onChangeExplorerPath ? (
           <MenuItem
             text="Show downstream graph"
             icon="arrow_forward"
