@@ -23,7 +23,7 @@ import Beta from '../../../partials/\_Beta.md';
 
 <Beta />
 
-Airlift is a toolkit for integrating Dagster and Airflow. Using `dagster-airflift`, you can:
+Airlift is a toolkit for integrating Dagster and Airflow. Using [`dagster-airflift`](/api/python-api/libraries/dagster-airlift), you can:
 
 - Observe Airflow instances from within Dagster
 - Accelerate the migration of Airflow DAGs to Dagster assets with opinionated tooling
