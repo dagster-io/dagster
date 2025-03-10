@@ -1,4 +1,5 @@
 import {ParserRuleContext} from 'antlr4ts';
+import {TerminalNode} from 'antlr4ts/tree/TerminalNode';
 
 import {BaseSelectionVisitor} from './BaseSelectionVisitor';
 import {SelectionAutoCompleteProvider, Suggestion} from './SelectionAutoCompleteProvider';
@@ -10,6 +11,7 @@ import {
 import {
   AllExpressionContext,
   AndTokenContext,
+  AttributeExpressionContext,
   AttributeNameContext,
   AttributeValueContext,
   ColonTokenContext,
@@ -166,6 +168,22 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     }
   }
 
+  public visitTerminal(ctx: TerminalNode) {
+    if (
+      this.nodeIncludesCursor({
+        start: {startIndex: ctx.payload.startIndex},
+        stop: {stopIndex: ctx.payload.stopIndex},
+      })
+    ) {
+      if (ctx.text === '=') {
+        const parent = ctx.parent;
+        if (parent?.constructor.name === AttributeExpressionContext.name) {
+          this.forceVisitCtx.add((parent as AttributeExpressionContext).attributeValue(1));
+        }
+      }
+    }
+  }
+
   public visitAttributeValue(ctx: AttributeValueContext) {
     const stopIndex = ctx.stop!.stopIndex;
     if (
@@ -178,6 +196,13 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     }
     this.startReplacementIndex = ctx.start!.startIndex;
     this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
+
+    const parentContext = ctx.parent;
+    if (parentContext?.constructor.name === AttributeExpressionContext.name) {
+      const context = parentContext as AttributeExpressionContext;
+      this.startReplacementIndex = context.colonToken().start.startIndex + 1;
+      this.stopReplacementIndex = context.stop!.stopIndex + 1;
+    }
 
     const parentChildren = ctx.parent?.children ?? [];
     if (parentChildren[0]?.constructor.name === AttributeNameContext.name) {
