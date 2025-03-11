@@ -166,14 +166,14 @@ def dev_command(
             get_possibly_temporary_instance_for_cli("dagster dev", logger=logger)
         )
 
+        logger.info("Launching Dagster services...")
+
         with _optionally_create_temp_workspace(
             use_legacy_code_server_behavior=use_legacy_code_server_behavior,
             workspace_opts=workspace_opts,
             instance=instance,
             code_server_log_level=code_server_log_level,
         ) as workspace_args:
-            logger.info("Launching Dagster services...")
-
             args = [
                 "--instance-ref",
                 serialize_value(instance.get_ref()),
