@@ -1,5 +1,5 @@
 import json
-from typing import Any, Literal, Union
+from typing import Literal, Union
 
 import click
 from dagster._cli.utils import assert_no_remaining_opts
@@ -10,13 +10,15 @@ from dagster._cli.workspace.cli_target import (
 )
 from dagster._core.definitions.asset_job import is_reserved_asset_job_name
 from dagster._utils.hosted_user_process import recon_repository_from_origin
+from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.serdes.serdes import serialize_value
 from pydantic import ConfigDict, TypeAdapter, create_model
 
 from dagster_components.core.component import (
     Component,
-    ComponentTypeMetadata,
     discover_entry_point_library_objects,
     discover_library_objects,
+    get_library_object_snap,
 )
 from dagster_components.core.defs import (
     DgAssetMetadata,
@@ -25,7 +27,6 @@ from dagster_components.core.defs import (
     DgScheduleMetadata,
     DgSensorMetadata,
 )
-from dagster_components.core.library_object_key import LibraryObjectKey
 
 
 @click.group(name="list")
@@ -33,23 +34,19 @@ def list_cli():
     """Commands for listing Dagster components and related entities."""
 
 
-@list_cli.command(name="library-objects")
+@list_cli.command(name="library")
 @click.option("--entry-points/--no-entry-points", is_flag=True, default=True)
 @click.argument("extra_modules", nargs=-1, type=str)
 @click.pass_context
-def list_library_objects_command(
+def list_library_command(
     ctx: click.Context, entry_points: bool, extra_modules: tuple[str, ...]
 ) -> None:
     """List registered library objects."""
-    output: dict[str, Any] = {}
-    component_types = _load_component_types(entry_points, extra_modules)
-    for key in sorted(component_types.keys(), key=lambda k: k.to_typename()):
-        output[key.to_typename()] = ComponentTypeMetadata(
-            name=key.name,
-            namespace=key.namespace,
-            **component_types[key].get_metadata(),
-        )
-    click.echo(json.dumps(output))
+    library_objects = _load_library_objects(entry_points, extra_modules)
+    serialized_snaps = serialize_value(
+        [get_library_object_snap(key, obj) for key, obj in library_objects.items()]
+    )
+    click.echo(serialized_snaps)
 
 
 @list_cli.command(name="all-components-schema")
@@ -137,12 +134,22 @@ def list_definitions_command(ctx: click.Context, **other_opts: object) -> None:
 # ########################
 
 
+def _load_library_objects(
+    entry_points: bool, extra_modules: tuple[str, ...]
+) -> dict[LibraryObjectKey, object]:
+    objects = {}
+    if entry_points:
+        objects.update(discover_entry_point_library_objects())
+    if extra_modules:
+        objects.update(discover_library_objects(extra_modules))
+    return objects
+
+
 def _load_component_types(
     entry_points: bool, extra_modules: tuple[str, ...]
 ) -> dict[LibraryObjectKey, type[Component]]:
-    component_types = {}
-    if entry_points:
-        component_types.update(discover_entry_point_library_objects())
-    if extra_modules:
-        component_types.update(discover_library_objects(extra_modules))
-    return component_types
+    return {
+        key: obj
+        for key, obj in _load_library_objects(entry_points, extra_modules).items()
+        if isinstance(obj, type) and issubclass(obj, Component)
+    }

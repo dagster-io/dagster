@@ -8,12 +8,12 @@ from typing import Any, NamedTuple, Optional
 
 import click
 import yaml
+from dagster_shared.serdes.objects import LibraryObjectKey
 
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import RemoteLibraryObjectRegistry, all_components_schema_from_dg_context
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
-from dagster_dg.library_object_key import LibraryObjectKey
 from dagster_dg.utils import (
     DgClickCommand,
     DgClickGroup,
@@ -87,36 +87,36 @@ def inspect_component_type_command(
             "Only one of --description, --scaffold-params-schema, and --component-schema can be specified."
         )
 
-    component_type_metadata = registry.get_component_type(component_key)
+    component_type_snap = registry.get_component_type(component_key)
 
     if description:
-        if component_type_metadata.description:
-            click.echo(component_type_metadata.description)
+        if component_type_snap.description:
+            click.echo(component_type_snap.description)
         else:
             click.echo("No description available.")
     elif scaffold_params_schema:
-        if component_type_metadata.scaffolder_schema:
-            click.echo(_serialize_json_schema(component_type_metadata.scaffolder_schema))
+        if component_type_snap.scaffolder_schema:
+            click.echo(_serialize_json_schema(component_type_snap.scaffolder_schema))
         else:
             click.echo("No scaffold params schema defined.")
     elif component_schema:
-        if component_type_metadata.schema:
-            click.echo(_serialize_json_schema(component_type_metadata.schema))
+        if component_type_snap.schema:
+            click.echo(_serialize_json_schema(component_type_snap.schema))
         else:
             click.echo("No component schema defined.")
 
     # print all available metadata
     else:
         click.echo(component_type)
-        if component_type_metadata.description:
+        if component_type_snap.description:
             click.echo("\nDescription:\n")
-            click.echo(component_type_metadata.description)
-        if component_type_metadata.scaffolder_schema:
+            click.echo(component_type_snap.description)
+        if component_type_snap.scaffolder_schema:
             click.echo("\nScaffold params schema:\n")
-            click.echo(_serialize_json_schema(component_type_metadata.scaffolder_schema))
-        if component_type_metadata.schema:
+            click.echo(_serialize_json_schema(component_type_snap.scaffolder_schema))
+        if component_type_snap.schema:
             click.echo("\nComponent schema:\n")
-            click.echo(_serialize_json_schema(component_type_metadata.schema))
+            click.echo(_serialize_json_schema(component_type_snap.schema))
 
 
 def _serialize_json_schema(schema: Mapping[str, Any]) -> str:

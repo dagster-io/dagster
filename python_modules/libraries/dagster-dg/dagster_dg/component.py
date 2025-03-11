@@ -1,51 +1,16 @@
 import copy
 import json
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, Optional
 
-from dagster_dg.library_object_key import LibraryObjectKey
+import dagster_shared.check as check
+from dagster_shared.serdes import deserialize_value, serialize_value
+from dagster_shared.serdes.objects import ComponentTypeSnap, LibraryObjectKey, LibraryObjectSnap
+
 from dagster_dg.utils import is_valid_json
 
 if TYPE_CHECKING:
     from dagster_dg.context import DgContext
-
-
-@dataclass
-class RemoteScaffolder:
-    schema: Optional[Mapping[str, Any]]  # json schema
-
-    @staticmethod
-    def from_json(json: Optional[dict[str, Any]]) -> Optional["RemoteScaffolder"]:
-        return RemoteScaffolder(**json) if json else None
-
-
-@dataclass
-class RemoteLibraryObject:
-    name: str
-    namespace: str
-    scaffolder: Optional[RemoteScaffolder]
-
-    @property
-    def scaffolder_schema(self) -> Optional[Mapping[str, Any]]:
-        return self.scaffolder.schema if self.scaffolder else None
-
-    @staticmethod
-    def from_json(json: dict[str, Any]) -> "RemoteLibraryObject":
-        scaffolder = RemoteScaffolder.from_json(json.pop("scaffolder", None))
-
-        objtype = json.pop("objtype")
-        if objtype == "component-type":
-            return RemoteComponentType(scaffolder=scaffolder, **json)
-        else:
-            raise ValueError(f"Unknown object type: {objtype}")
-
-
-@dataclass
-class RemoteComponentType(RemoteLibraryObject):
-    summary: Optional[str]
-    description: Optional[str]
-    schema: Optional[Mapping[str, Any]]  # json schema
 
 
 class RemoteLibraryObjectRegistry:
@@ -72,21 +37,21 @@ class RemoteLibraryObjectRegistry:
 
         return RemoteLibraryObjectRegistry(object_data)
 
-    def __init__(self, components: dict[LibraryObjectKey, RemoteLibraryObject]):
-        self._objects: dict[LibraryObjectKey, RemoteLibraryObject] = copy.copy(components)
+    def __init__(self, components: dict[LibraryObjectKey, LibraryObjectSnap]):
+        self._objects: dict[LibraryObjectKey, LibraryObjectSnap] = copy.copy(components)
 
     @staticmethod
     def empty() -> "RemoteLibraryObjectRegistry":
         return RemoteLibraryObjectRegistry({})
 
-    def get(self, key: LibraryObjectKey) -> RemoteLibraryObject:
+    def get(self, key: LibraryObjectKey) -> LibraryObjectSnap:
         """Resolves a library object within the scope of a given component directory."""
         return self._objects[key]
 
-    def get_component_type(self, key: LibraryObjectKey) -> RemoteComponentType:
+    def get_component_type(self, key: LibraryObjectKey) -> ComponentTypeSnap:
         """Resolves a component type within the scope of a given component directory."""
         obj = self.get(key)
-        if not isinstance(obj, RemoteComponentType):
+        if not isinstance(obj, ComponentTypeSnap):
             raise ValueError(f"Expected component type, got {obj}")
         return obj
 
@@ -96,7 +61,7 @@ class RemoteLibraryObjectRegistry:
     def keys(self) -> Iterable[LibraryObjectKey]:
         yield from sorted(self._objects.keys(), key=lambda k: k.to_typename())
 
-    def items(self) -> Iterable[tuple[LibraryObjectKey, RemoteLibraryObject]]:
+    def items(self) -> Iterable[tuple[LibraryObjectKey, LibraryObjectSnap]]:
         yield from self._objects.items()
 
     def __repr__(self) -> str:
@@ -122,7 +87,7 @@ def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[st
 
 def _load_entry_point_components(
     dg_context: "DgContext",
-) -> dict[LibraryObjectKey, RemoteLibraryObject]:
+) -> dict[LibraryObjectKey, LibraryObjectSnap]:
     if dg_context.has_cache:
         cache_key = dg_context.get_cache_key("component_registry_data")
         raw_registry_data = dg_context.cache.get(cache_key)
@@ -131,7 +96,7 @@ def _load_entry_point_components(
         raw_registry_data = None
 
     if not raw_registry_data:
-        raw_registry_data = dg_context.external_components_command(["list", "library-objects"])
+        raw_registry_data = dg_context.external_components_command(["list", "library"])
         if dg_context.has_cache and cache_key and is_valid_json(raw_registry_data):
             dg_context.cache.set(cache_key, raw_registry_data)
 
@@ -140,9 +105,9 @@ def _load_entry_point_components(
 
 def _load_module_library_objects(
     dg_context: "DgContext", modules: Sequence[str]
-) -> dict[LibraryObjectKey, RemoteLibraryObject]:
+) -> dict[LibraryObjectKey, LibraryObjectSnap]:
     modules_to_fetch = set(modules)
-    data: dict[LibraryObjectKey, RemoteLibraryObject] = {}
+    data: dict[LibraryObjectKey, LibraryObjectSnap] = {}
     if dg_context.has_cache:
         for module in modules:
             cache_key = dg_context.get_cache_key_for_module(module)
@@ -155,7 +120,7 @@ def _load_module_library_objects(
         raw_local_object_data = dg_context.external_components_command(
             [
                 "list",
-                "library-objects",
+                "library",
                 "--no-entry-points",
                 *modules_to_fetch,
             ]
@@ -174,14 +139,12 @@ def _load_module_library_objects(
 
 def _parse_raw_registry_data(
     raw_registry_data: str,
-) -> dict[LibraryObjectKey, RemoteLibraryObject]:
-    return {
-        LibraryObjectKey.from_typename(typename): RemoteLibraryObject.from_json(metadata)
-        for typename, metadata in json.loads(raw_registry_data).items()
-    }
+) -> dict[LibraryObjectKey, LibraryObjectSnap]:
+    deserialized = check.is_list(deserialize_value(raw_registry_data), of_type=LibraryObjectSnap)
+    return {obj.key: obj for obj in deserialized}
 
 
 def _dump_raw_registry_data(
-    registry_data: Mapping[LibraryObjectKey, RemoteLibraryObject],
+    registry_data: Mapping[LibraryObjectKey, LibraryObjectSnap],
 ) -> str:
-    return json.dumps({key.to_typename(): asdict(obj) for key, obj in registry_data.items()})
+    return serialize_value(list(registry_data.values()))

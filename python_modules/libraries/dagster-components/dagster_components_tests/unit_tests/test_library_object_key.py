@@ -1,19 +1,7 @@
-import inspect
 from pathlib import Path
 
 import pytest
-from dagster_components.core.library_object_key import LibraryObjectKey
-
-
-def test_component_key_synced() -> None:
-    """Because these modules cannot share a dependency outside of tests, we rely on a janky unit test
-    to make sure their definitions remain in sync.
-    """
-    import dagster_components.core.library_object_key as dagster_components_key
-    import dagster_dg.library_object_key as dagster_dg_key
-
-    assert inspect.getsource(dagster_components_key) == inspect.getsource(dagster_dg_key)
-
+from dagster_shared.serdes.objects import LibraryObjectKey
 
 dirpath = Path(".")
 

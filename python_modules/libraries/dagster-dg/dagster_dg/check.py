@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, NamedTuple, Optional
 
 import click
+from dagster_shared.serdes.objects import LibraryObjectKey
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from dagster_shared.yaml_utils.source_position import (
     LineCol,
@@ -16,7 +17,6 @@ from yaml.scanner import ScannerError
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.component import RemoteLibraryObjectRegistry
 from dagster_dg.context import DgContext
-from dagster_dg.library_object_key import LibraryObjectKey
 
 COMPONENT_FILE_SCHEMA = {
     "type": "object",

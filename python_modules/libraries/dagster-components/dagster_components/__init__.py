@@ -1,3 +1,5 @@
+from dagster_shared.serdes.objects import LibraryObjectKey as LibraryObjectKey
+
 from dagster_components.component_scaffolding import (
     scaffold_component_yaml as scaffold_component_yaml,
 )
