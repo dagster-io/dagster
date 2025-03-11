@@ -1244,5 +1244,6 @@ def test_remove_class() -> None:
     class MyModelWithoutField:
         nums: list[int]
     
-    deserialize_value(m_str, whitelist_map=test_env)
+    m = MyModelWithoutField(nums=[1, 2, 3])
+    assert m == deserialize_value(m_str, whitelist_map=test_env)
 
