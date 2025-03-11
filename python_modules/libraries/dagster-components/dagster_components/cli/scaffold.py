@@ -2,11 +2,11 @@ from pathlib import Path
 from typing import Optional
 
 import click
+from dagster_shared.serdes.objects import LibraryObjectKey
 from pydantic import TypeAdapter
 
 from dagster_components.component_scaffolding import scaffold_component_instance
 from dagster_components.core.component import load_component_type
-from dagster_components.core.library_object_key import LibraryObjectKey
 from dagster_components.scaffold import ScaffolderUnavailableReason, get_scaffolder
 
 

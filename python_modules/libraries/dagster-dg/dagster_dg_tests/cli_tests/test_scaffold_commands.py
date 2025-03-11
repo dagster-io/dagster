@@ -9,7 +9,6 @@ import tomlkit
 from dagster_dg.cli.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
 from dagster_dg.component import RemoteLibraryObjectRegistry
 from dagster_dg.context import DgContext
-from dagster_dg.library_object_key import LibraryObjectKey
 from dagster_dg.utils import (
     create_toml_node,
     cross_platfrom_string_path,
@@ -20,6 +19,7 @@ from dagster_dg.utils import (
     modify_toml_as_dict,
     pushd,
 )
+from dagster_shared.serdes.objects import LibraryObjectKey
 from typing_extensions import TypeAlias
 
 ensure_dagster_dg_tests_import()

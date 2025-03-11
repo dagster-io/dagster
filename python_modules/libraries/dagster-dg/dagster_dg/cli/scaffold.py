@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 import click
 from click.core import ParameterSource
+from dagster_shared.serdes.objects import LibraryObjectKey, LibraryObjectSnap
 from typer.rich_utils import rich_format_help
 
 from dagster_dg.cli.shared_options import (
@@ -12,7 +13,7 @@ from dagster_dg.cli.shared_options import (
     dg_editable_dagster_options,
     dg_global_options,
 )
-from dagster_dg.component import RemoteLibraryObject, RemoteLibraryObjectRegistry
+from dagster_dg.component import RemoteLibraryObjectRegistry
 from dagster_dg.config import (
     DgRawCliConfig,
     DgRawWorkspaceConfig,
@@ -23,7 +24,6 @@ from dagster_dg.config import (
     set_config_on_cli_context,
 )
 from dagster_dg.context import DgContext
-from dagster_dg.library_object_key import LibraryObjectKey
 from dagster_dg.scaffold import (
     scaffold_component_instance,
     scaffold_component_type,
@@ -328,7 +328,7 @@ def _create_component_shim_scaffold_subcommand(
 
 
 def _create_component_scaffold_subcommand(
-    component_key: LibraryObjectKey, component_type: RemoteLibraryObject
+    component_key: LibraryObjectKey, component_type: LibraryObjectSnap
 ) -> DgClickCommand:
     # We need to "reset" the help option names to the default ones because we inherit the parent
     # value of context settings from the parent group, which has been customized.
@@ -352,7 +352,7 @@ def _create_component_scaffold_subcommand(
         json_params: Mapping[str, Any],
         **key_value_params: Any,
     ) -> None:
-        f"""Scaffold of a {component_type.name} component.
+        f"""Scaffold of a {component_key.name} component.
 
         This command must be run inside a Dagster project directory. The component scaffold will be
         placed in submodule `<project_name>.components.<COMPONENT_NAME>`.

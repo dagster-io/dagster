@@ -19,7 +19,7 @@ from dagster_dg_tests.utils import ProxyRunner, assert_runner_result
 
 def test_init_command_success(monkeypatch) -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("init", input="helloworld\n")
+        result = runner.invoke("init", "--no-use-dg-managed-environment", input="helloworld\n")
         assert_runner_result(result)
         assert not Path("dagster-workspace").exists()
 
@@ -32,7 +32,11 @@ def test_init_command_success(monkeypatch) -> None:
 def test_init_command_success_with_workspace_name(monkeypatch) -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke(
-            "init", "--workspace-name", "dagster-workspace", input="helloworld\n"
+            "init",
+            "--no-use-dg-managed-environment",
+            "--workspace-name",
+            "dagster-workspace",
+            input="helloworld\n",
         )
         assert_runner_result(result)
         assert Path("dagster-workspace").exists()
@@ -55,7 +59,12 @@ def test_init_command_success_with_workspace_name(monkeypatch) -> None:
 def test_init_override_project_name_prompt_with_workspace(monkeypatch) -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke(
-            "init", "--project-name", "goodbyeworld", "--workspace-name", "my-workspace"
+            "init",
+            "--no-use-dg-managed-environment",
+            "--project-name",
+            "goodbyeworld",
+            "--workspace-name",
+            "my-workspace",
         )
         assert_runner_result(result)
         assert Path("my-workspace").exists()
@@ -70,7 +79,9 @@ def test_init_override_project_name_prompt_with_workspace(monkeypatch) -> None:
 
 def test_init_override_project_name_prompt_without_workspace(monkeypatch) -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("init", "--project-name", "goodbyeworld")
+        result = runner.invoke(
+            "init", "--no-use-dg-managed-environment", "--project-name", "goodbyeworld"
+        )
         assert_runner_result(result)
         assert Path("goodbyeworld").exists()
         assert Path("goodbyeworld/goodbyeworld").exists()
