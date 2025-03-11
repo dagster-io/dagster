@@ -30,7 +30,7 @@ As a baseline, here's a job that does not use nesting. It starts with an op that
 
 We can put the ops that perform the Celsius-to-Fahrenheit conversion into their own sub-graph and invoke that sub-graph from our job's main graph:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/nested_graphs.py" /> startAfter="start_composite_solid_example_marker" endBefore="end_composite_solid_example_marker" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/nested_graphs.py" startAfter="start_composite_solid_example_marker" endBefore="end_composite_solid_example_marker" />
 
 When executed, the above example will do the exact same thing as the non-nested version, but the nesting allows better organization of code and simplifies the presentation of the main graph in the Dagster UI.
 
