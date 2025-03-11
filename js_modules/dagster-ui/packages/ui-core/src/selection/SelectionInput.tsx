@@ -79,7 +79,15 @@ export const SelectionAutoCompleteInput = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const cmInstance = useRef<CodeMirror.Editor | null>(null);
 
-  const [showResults, setShowResults] = useState({current: false});
+  const [selectedIndexRef, setSelectedIndex] = useState({current: -1});
+  const [showResults, _setShowResults] = useState({current: false});
+  const setShowResults = useCallback(
+    (showResults: {current: boolean}) => {
+      selectedIndexRef.current = -1;
+      _setShowResults(showResults);
+    },
+    [_setShowResults, selectedIndexRef],
+  );
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [innerValue, setInnerValue] = useState(value);
   const cursorPositionRef = useUpdatingRef(cursorPosition);
@@ -92,8 +100,6 @@ export const SelectionAutoCompleteInput = ({
   const hintContainerRef = useRef<HTMLDivElement | null>(null);
 
   const focusRef = useRef(false);
-
-  const [selectedIndexRef, setSelectedIndex] = useState({current: -1});
 
   // Memoize the stringified results to avoid resetting the selected index down below
   const resultsJson = useMemo(() => {
