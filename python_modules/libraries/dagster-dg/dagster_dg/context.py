@@ -352,7 +352,7 @@ class DgContext:
     # ########################
 
     # It is possible for a single package to define multiple entry points under the
-    # `dagster.components` entry point group. At present, `dg` only cares about the first one, which
+    # `dagster_dg.library` entry point group. At present, `dg` only cares about the first one, which
     # it uses for all component type scaffolding operations.
 
     @property
@@ -380,12 +380,12 @@ class DgContext:
         if not self.pyproject_toml_path.exists():
             return {}
         toml = tomlkit.parse(self.pyproject_toml_path.read_text())
-        if not has_toml_node(toml, ("project", "entry-points", "dagster.components")):
+        if not has_toml_node(toml, ("project", "entry-points", "dagster_dg.library")):
             return {}
         else:
             return get_toml_node(
                 toml,
-                ("project", "entry-points", "dagster.components"),
+                ("project", "entry-points", "dagster_dg.library"),
                 (tomlkit.items.Table, tomlkit.items.InlineTable),
             ).unwrap()
 

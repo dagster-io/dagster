@@ -176,7 +176,7 @@ def isolated_example_component_library_foo_bar(
                 if lib_module_name:
                     set_toml_node(
                         toml,
-                        ("project", "entry-points", "dagster.components", "foo_bar"),
+                        ("project", "entry-points", "dagster_dg.library", "foo_bar"),
                         lib_module_name,
                     )
                     Path(*lib_module_name.split(".")).mkdir(exist_ok=True)

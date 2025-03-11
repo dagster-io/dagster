@@ -158,7 +158,7 @@ def test_list_component_type_bad_entry_point_fails(capfd):
         assert expected_error_message in result.output
 
         captured = capfd.readouterr()
-        assert "Error loading entry point `foo_bar` in group `dagster.components`." in captured.err
+        assert "Error loading entry point `foo_bar` in group `dagster_dg.library`." in captured.err
 
 
 # ########################
