@@ -41,6 +41,7 @@ setup(
         "PyYAML>=5.1",
         "rich",
         "watchdog",
+        "yaspin",
         # We use some private APIs of typer so we hard-pin here. This shouldn't need to be
         # frequently updated since is designed to be used from an isolated environment.
         "typer==0.15.1",
