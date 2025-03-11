@@ -8,7 +8,7 @@ In a Dagster+ Hybrid deployment, the orchestration control plane is run by Dagst
 
 :::note
 
-For an overview of the Hybrid design, including security considerations, see [Dagster+ Hybrid architecture](architecture).
+For an overview of the Hybrid design, including security considerations, see [Dagster+ Hybrid architecture](/dagster-plus/deployment/deployment-types/hybrid/architecture).
 
 :::
 
