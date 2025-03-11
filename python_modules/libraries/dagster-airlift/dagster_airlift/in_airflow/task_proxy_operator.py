@@ -6,13 +6,11 @@ from typing import Any, Callable
 
 import requests
 from airflow.models import BaseOperator
-from dagster._annotations import beta
 
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.in_airflow.base_asset_operator import BaseDagsterAssetsOperator, Context
 
 
-@beta
 class BaseProxyTaskToDagsterOperator(BaseDagsterAssetsOperator):
     """An operator that proxies task execution to Dagster assets with metadata that map to this task's dag ID and task ID.
 
@@ -46,7 +44,6 @@ class BaseProxyTaskToDagsterOperator(BaseDagsterAssetsOperator):
         return build_dagster_task(task, cls)
 
 
-@beta
 class DefaultProxyTaskToDagsterOperator(BaseProxyTaskToDagsterOperator):
     """The default task proxying operator - which opens a blank session and expects the dagster URL to be set in the environment.
     The dagster url is expected to be set in the environment as DAGSTER_URL.
