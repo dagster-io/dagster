@@ -22,8 +22,6 @@ class RemoteScaffolder:
 
 @dataclass
 class RemoteLibraryObject:
-    name: str
-    namespace: str
     scaffolder: Optional[RemoteScaffolder]
 
     @property
@@ -33,12 +31,12 @@ class RemoteLibraryObject:
     @staticmethod
     def from_json(json: dict[str, Any]) -> "RemoteLibraryObject":
         scaffolder = RemoteScaffolder.from_json(json.pop("scaffolder", None))
+        component_type = json.pop("component_type", None)
 
-        objtype = json.pop("objtype")
-        if objtype == "component-type":
-            return RemoteComponentType(scaffolder=scaffolder, **json)
+        if component_type:
+            return RemoteComponentType(scaffolder=scaffolder, **component_type)
         else:
-            raise ValueError(f"Unknown object type: {objtype}")
+            return RemoteLibraryObject(scaffolder=scaffolder, **json)
 
 
 @dataclass

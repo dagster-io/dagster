@@ -1,11 +1,14 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union
 
 from dagster import _check as check
 from dagster._record import record
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from dagster_components.core.component import ScaffolderMetadata
 
 # Type variable for generic class handling
 T = TypeVar("T")
@@ -79,6 +82,11 @@ class Scaffolder:
     @classmethod
     def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
         return None
+
+    @classmethod
+    def get_metadata(cls) -> "ScaffolderMetadata":
+        params_schema = cls.get_scaffold_params()
+        return {"schema": params_schema.model_json_schema() if params_schema else None}
 
     @abstractmethod
     def scaffold(self, request: ScaffoldRequest, params: Any) -> None: ...

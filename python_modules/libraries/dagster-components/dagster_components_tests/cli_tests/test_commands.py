@@ -46,22 +46,21 @@ def test_list_library_objects_from_module():
     ]
 
     assert result["dagster_test.components.SimpleAssetComponent"] == {
-        "objtype": "component-type",
-        "schema": {
-            "additionalProperties": False,
-            "properties": {
-                "asset_key": {"title": "Asset Key", "type": "string"},
-                "value": {"title": "Value", "type": "string"},
+        "component_type": {
+            "schema": {
+                "additionalProperties": False,
+                "properties": {
+                    "asset_key": {"title": "Asset Key", "type": "string"},
+                    "value": {"title": "Value", "type": "string"},
+                },
+                "required": ["asset_key", "value"],
+                "title": "SimpleAssetComponentModel",
+                "type": "object",
             },
-            "required": ["asset_key", "value"],
-            "title": "SimpleAssetComponentModel",
-            "type": "object",
+            "description": "A simple asset that returns a constant string value.",
+            "summary": "A simple asset that returns a constant string value.",
         },
-        "description": "A simple asset that returns a constant string value.",
-        "name": "SimpleAssetComponent",
-        "namespace": "dagster_test.components",
-        "scaffolder": None,
-        "summary": "A simple asset that returns a constant string value.",
+        "scaffolder": {"schema": None},
     }
 
     pipes_script_params_schema = {
@@ -75,13 +74,12 @@ def test_list_library_objects_from_module():
     }
 
     assert result["dagster_test.components.SimplePipesScriptComponent"] == {
-        "objtype": "component-type",
-        "name": "SimplePipesScriptComponent",
-        "namespace": "dagster_test.components",
-        "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
-        "description": "A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
+        "component_type": {
+            "schema": pipes_script_params_schema,
+            "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
+            "description": "A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
+        },
         "scaffolder": {"schema": pipes_script_params_schema},
-        "schema": pipes_script_params_schema,
     }
 
 

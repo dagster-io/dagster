@@ -14,9 +14,9 @@ from pydantic import ConfigDict, TypeAdapter, create_model
 
 from dagster_components.core.component import (
     Component,
-    ComponentTypeMetadata,
     discover_entry_point_library_objects,
     discover_library_objects,
+    get_library_object_metadata,
 )
 from dagster_components.core.defs import (
     DgAssetMetadata,
@@ -42,13 +42,9 @@ def list_library_objects_command(
 ) -> None:
     """List registered library objects."""
     output: dict[str, Any] = {}
-    component_types = _load_component_types(entry_points, extra_modules)
-    for key in sorted(component_types.keys(), key=lambda k: k.to_typename()):
-        output[key.to_typename()] = ComponentTypeMetadata(
-            name=key.name,
-            namespace=key.namespace,
-            **component_types[key].get_metadata(),
-        )
+    library_objects = _load_library_objects(entry_points, extra_modules)
+    for key in sorted(library_objects.keys(), key=lambda k: k.to_typename()):
+        output[key.to_typename()] = get_library_object_metadata(library_objects[key])
     click.echo(json.dumps(output))
 
 
@@ -137,12 +133,22 @@ def list_definitions_command(ctx: click.Context, **other_opts: object) -> None:
 # ########################
 
 
+def _load_library_objects(
+    entry_points: bool, extra_modules: tuple[str, ...]
+) -> dict[LibraryObjectKey, object]:
+    objects = {}
+    if entry_points:
+        objects.update(discover_entry_point_library_objects())
+    if extra_modules:
+        objects.update(discover_library_objects(extra_modules))
+    return objects
+
+
 def _load_component_types(
     entry_points: bool, extra_modules: tuple[str, ...]
 ) -> dict[LibraryObjectKey, type[Component]]:
-    component_types = {}
-    if entry_points:
-        component_types.update(discover_entry_point_library_objects())
-    if extra_modules:
-        component_types.update(discover_library_objects(extra_modules))
-    return component_types
+    return {
+        key: obj
+        for key, obj in _load_library_objects(entry_points, extra_modules).items()
+        if isinstance(obj, type) and issubclass(obj, Component)
+    }

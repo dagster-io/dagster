@@ -11,7 +11,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Literal, Optional, TypedDict, TypeVar, Union
+from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
 
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
@@ -25,8 +25,10 @@ from dagster_components.core.component_scaffolder import DefaultComponentScaffol
 from dagster_components.core.library_object_key import LibraryObjectKey
 from dagster_components.resolved.context import ResolutionContext
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, resolve_model
-from dagster_components.scaffold import ScaffolderUnavailableReason, get_scaffolder, scaffold_with
+from dagster_components.scaffold import Scaffolder, get_scaffolder, scaffold_with
 from dagster_components.utils import format_error_message
+
+LIBRARY_OBJECT_ATTR = "__dg_library_object__"
 
 
 class ComponentsEntryPointLoadError(DagsterError):
@@ -43,6 +45,9 @@ class ComponentDeclNode(ABC):
 
 @scaffold_with(DefaultComponentScaffolder)
 class Component(ABC):
+    @classmethod
+    def __dg_library_object__(cls) -> None: ...
+
     @classmethod
     def get_schema(cls) -> Optional[type["ResolvableModel"]]:
         from dagster_components.resolved.model import ResolvedFrom, get_model_type
@@ -82,26 +87,13 @@ class Component(ABC):
             )
 
     @classmethod
-    def get_metadata(cls) -> "ComponentTypeInternalMetadata":
+    def get_metadata(cls) -> "ComponentTypeMetadata":
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
-
-        scaffolder = get_scaffolder(cls)
-
-        if isinstance(scaffolder, ScaffolderUnavailableReason):
-            raise DagsterError(
-                f"Component {cls.__name__} is not scaffoldable: {scaffolder.message}"
-            )
-
         component_schema = cls.get_schema()
-        scaffold_params = scaffolder.get_scaffold_params()
         return {
-            "objtype": "component-type",
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,
-            "scaffolder": None
-            if scaffold_params is None
-            else {"schema": scaffold_params.model_json_schema()},
             "schema": None if component_schema is None else component_schema.model_json_schema(),
         }
 
@@ -124,20 +116,15 @@ class ScaffolderMetadata(TypedDict):
     schema: Optional[Any]  # json schema
 
 
-class LibraryObjectInternalMetadata(TypedDict):
-    objtype: Literal["component-type"]
-    scaffolder: Optional[ScaffolderMetadata]
-
-
-class ComponentTypeInternalMetadata(LibraryObjectInternalMetadata):
+class ComponentTypeMetadata(TypedDict):
     summary: Optional[str]
     description: Optional[str]
     schema: Optional[Any]  # json schema
 
 
-class ComponentTypeMetadata(ComponentTypeInternalMetadata):
-    name: str
-    namespace: str
+class LibraryObjectMetadata(TypedDict):
+    component_type: Optional[ComponentTypeMetadata]
+    scaffolder: Optional[ScaffolderMetadata]
 
 
 def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.metadata.EntryPoint]:
@@ -168,7 +155,7 @@ def load_component_type(object_key: LibraryObjectKey) -> type[Component]:
         raise DagsterError(f"Error loading module `{module_name}`.") from e
 
 
-def discover_entry_point_library_objects() -> dict[LibraryObjectKey, type[Component]]:
+def discover_entry_point_library_objects() -> dict[LibraryObjectKey, object]:
     """Discover library objects registered in the Python environment via the
     `dg_library` entry point group.
 
@@ -177,7 +164,7 @@ def discover_entry_point_library_objects() -> dict[LibraryObjectKey, type[Compon
     component types and is loaded by default. Other entry points resolve to various sets of test
     component types. This method will only ever load one builtin component library.
     """
-    component_types: dict[LibraryObjectKey, type[Component]] = {}
+    objects: dict[LibraryObjectKey, object] = {}
     entry_points = get_entry_points_from_python_environment(DG_LIBRARY_ENTRY_POINT_GROUP)
 
     for entry_point in entry_points:
@@ -196,34 +183,46 @@ def discover_entry_point_library_objects() -> dict[LibraryObjectKey, type[Compon
                 f"Invalid entry point {entry_point.name} in group {DG_LIBRARY_ENTRY_POINT_GROUP}. "
                 f"Value expected to be a module, got {root_module}."
             )
-        for name, component_type in get_library_objects_in_module(root_module):
+        for name, obj in get_library_objects_in_module(root_module):
             key = LibraryObjectKey(name=name, namespace=entry_point.value)
-            component_types[key] = component_type
-    return component_types
+            objects[key] = obj
+    return objects
 
 
-def discover_library_objects(modules: Sequence[str]) -> dict[LibraryObjectKey, type[Component]]:
-    component_types: dict[LibraryObjectKey, type[Component]] = {}
+def discover_library_objects(modules: Sequence[str]) -> dict[LibraryObjectKey, object]:
+    objects: dict[LibraryObjectKey, object] = {}
     for extra_module in modules:
-        for name, component_type in get_library_objects_in_module(
-            importlib.import_module(extra_module)
-        ):
+        for name, obj in get_library_objects_in_module(importlib.import_module(extra_module)):
             key = LibraryObjectKey(name=name, namespace=extra_module)
-            component_types[key] = component_type
-    return component_types
+            objects[key] = obj
+    return objects
 
 
 def get_library_objects_in_module(
     module: ModuleType,
-) -> Iterable[tuple[str, type[Component]]]:
+) -> Iterable[tuple[str, object]]:
     for attr in dir(module):
         value = getattr(module, attr)
-        if (
-            isinstance(value, type)
-            and issubclass(value, Component)
-            and not inspect.isabstract(value)
-        ):
+        if hasattr(value, LIBRARY_OBJECT_ATTR) and not inspect.isabstract(value):
             yield attr, value
+
+
+def get_library_object_metadata(obj: object) -> LibraryObjectMetadata:
+    if isinstance(obj, type) and issubclass(obj, Component):
+        component_type_metadata = obj.get_metadata()
+    else:
+        component_type_metadata = None
+
+    scaffolder = get_scaffolder(obj) if isinstance(obj, type) else None
+    if isinstance(scaffolder, Scaffolder):
+        scaffolder_metadata = scaffolder.get_metadata()
+    else:
+        scaffolder_metadata = None
+
+    return {
+        "component_type": component_type_metadata,
+        "scaffolder": scaffolder_metadata,
+    }
 
 
 T = TypeVar("T")

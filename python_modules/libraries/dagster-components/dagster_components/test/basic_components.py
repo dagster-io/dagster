@@ -1,5 +1,5 @@
 """Sample local components for testing validation. Paired with test cases
-in integration_tests/components/validation.
+in integration_tests/integration_test_defs/validation.
 """
 
 from collections.abc import Mapping
