@@ -88,10 +88,16 @@ GLOBAL_OPTIONS = {
             help="Enable management of the virtual environment with uv.",
         ),
         click.Option(
-            ["--require-local-venv/--no-require-local-venv"],
+            ["--use-local-venv/--no-use-local-venv"],
             is_flag=True,
-            default=DgCliConfig.require_local_venv,
-            help="Require use of a local virtual environment (`.venv` found in ancestors of the working directory).",
+            default=DgCliConfig.use_local_venv,
+            help=textwrap.dedent("""
+                Use a local virtual environment to spawn subprocesses. A local venv is a virtual
+                environment found in a `.venv` directory in the project or workspace root. In a
+                project context, if this option is set and no local venv is found, commands will
+                exit with an error. In a workspace context, if this option is set and no local venv
+                is found, subprocesses will be spawned using `uv tool run`.
+            """).strip(),
         ),
     ]
 }

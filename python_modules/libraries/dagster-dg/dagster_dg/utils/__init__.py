@@ -36,16 +36,6 @@ def is_macos() -> bool:
     return sys.platform == "darwin"
 
 
-def resolve_local_venv(start_path: Path) -> Optional[Path]:
-    path = start_path
-    while path != path.parent:
-        venv_path = path / ".venv"
-        if venv_path.exists():
-            return venv_path
-        path = path.parent
-    return None
-
-
 def clear_screen():
     if is_windows():
         os.system("cls")
@@ -362,10 +352,10 @@ def generate_missing_dagster_components_in_local_venv_error_message(venv_path: s
 
 
 NO_LOCAL_VENV_ERROR_MESSAGE = """
-This command resolves the `dagster-components` executable from a virtual environment in an ancestor
-directory, but no virtual environment (`.venv` dir) could be found. Please create a virtual
-environment in an ancestor directory or use the `--no-require-local-venv` flag to allow use of
-`dagster-components` from the ambient Python environment.
+This command resolves the `dagster-components` executable from a virtual environment in the project/package
+root directory, but no virtual environment (`.venv` dir) could be found. Please create a virtual
+environment in the root of your project/package or use the `--no-use-local-venv` flag to use the
+ambient Python environment for all operations.
 """
 
 NOT_WORKSPACE_ERROR_MESSAGE = """

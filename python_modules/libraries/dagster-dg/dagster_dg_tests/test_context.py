@@ -1,4 +1,5 @@
 import re
+import subprocess
 from collections.abc import Sequence
 from contextlib import contextmanager
 from pathlib import Path
@@ -94,6 +95,91 @@ def test_context_outside_project_or_workspace():
 
 
 # ########################
+# ##### EXECUTABLE RESOLUTION TESTS
+# ########################
+
+
+def test_executable_resolution_using_local_venv():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        project_context = DgContext.for_project_environment(Path.cwd(), {})
+
+        # Create a venv in the workspace root
+        with pushd(project_context.workspace_root_path):
+            subprocess.check_output(["uv", "venv"])
+
+        assert project_context.is_project
+        assert project_context.root_path == Path.cwd()
+        assert project_context.has_venv
+        assert project_context.venv_path == project_context.root_path / ".venv"
+
+        # Resolve with the local venv
+        assert str(project_context.get_executable("python")).startswith(
+            str(project_context.venv_path)
+        )
+
+        # When venv is present at workspace root, use it
+        workspace_context = DgContext.for_workspace_environment(
+            project_context.workspace_root_path, {}
+        )
+        assert workspace_context.is_workspace
+        assert workspace_context.has_venv
+        assert workspace_context.venv_path == workspace_context.root_path / ".venv"
+        assert str(workspace_context.get_executable("python")).startswith(
+            str(workspace_context.venv_path)
+        )
+
+        # Go outside the workspace root. Now we should not be able to resolve anything because no
+        # venv.
+        general_context = DgContext.from_file_discovery_and_command_line_config(
+            workspace_context.root_path.parent, {}
+        )
+        assert not general_context.has_venv
+        with pytest.raises(DgError, match="Cannot resolve executable `python`"):
+            general_context.get_executable("python")
+
+
+def test_executable_resolution_using_ambient_environment():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        project_context = DgContext.for_project_environment(Path.cwd(), {"use_local_venv": False})
+
+        # Pop up to the workspace level, make sure we resolve to the same env
+        with pushd(project_context.workspace_root_path):
+            # Create a venv in the workspace root that we will NOT resolve to
+            subprocess.check_output(["uv", "venv"])
+
+        assert project_context.is_project
+        assert project_context.root_path == Path.cwd()
+        assert project_context.has_venv
+
+        # Don't resolve using the local venv, either in the project or in the workspace root
+        assert not str(project_context.get_executable("python")).startswith(
+            str(project_context.workspace_root_path)
+        )
+
+        workspace_context = DgContext.for_workspace_environment(
+            project_context.workspace_root_path, {"use_local_venv": False}
+        )
+        assert workspace_context.is_workspace
+        assert workspace_context.has_venv
+        assert not str(workspace_context.get_executable("python")).startswith(
+            str(workspace_context.root_path)
+        )
+
+        # Go outside the workspace root and make sure we can still resolve executables
+        general_context = DgContext.from_file_discovery_and_command_line_config(
+            workspace_context.root_path.parent, {"use_local_venv": False}
+        )
+        assert not general_context.has_venv
+        assert general_context.get_executable("python")
+
+
+# ########################
 # ##### CONFIG TESTS
 # ########################
 
@@ -131,7 +217,7 @@ def test_invalid_config_workspace():
             ["tool.dg.cli.verbose", bool, 1],
             ["tool.dg.cli.use_dg_managed_environment", bool, 1],
             ["tool.dg.cli.use_component_modules", Sequence[str], 1],
-            ["tool.dg.cli.require_local_venv", bool, 1],
+            ["tool.dg.cli.use_local_venv", bool, 1],
             ["tool.dg.workspace.projects", list, 1],
             ["tool.dg.workspace.projects[1]", dict, 1],
             ["tool.dg.workspace.projects[0].path", str, 1],

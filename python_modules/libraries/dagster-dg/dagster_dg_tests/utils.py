@@ -360,7 +360,7 @@ class ProxyRunner:
         verbose: bool = False,
         disable_cache: bool = False,
         console_width: int = DG_CLI_MAX_OUTPUT_WIDTH,
-        require_local_venv: bool = True,
+        use_local_venv: bool = True,
     ) -> Iterator[Self]:
         # We set the `COLUMNS` environment variable because this determines the width of output from
         # `rich`, which we use for generating tables etc.
@@ -375,7 +375,7 @@ class ProxyRunner:
                 "--cache-dir",
                 str(cache_dir),
                 *(["--verbose"] if verbose else []),
-                *(["--no-require-local-venv"] if not require_local_venv else []),
+                *(["--no-use-local-venv"] if not use_local_venv else []),
                 *(["--disable-cache"] if disable_cache else []),
             ]
             yield cls(CliRunner(), append_args=append_opts, console_width=console_width)

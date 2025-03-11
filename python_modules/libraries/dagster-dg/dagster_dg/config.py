@@ -161,7 +161,7 @@ class DgCliConfig:
             set of test components.
         use_dg_managed_environment (bool): If True, `dg` will build and manage a virtual environment
             using `uv`. Note that disabling the managed enviroment will also disable caching.
-        require_local_venv (bool): If True, commands that access an environment with
+        use_local_venv (bool): If True, commands that access an environment with
             dagster-components will only use a `.venv` directory discovered in the ancestor tree. If no
             `.venv` directory is discovered, an error will be raised. Note that this disallows the use
             of both the system python environment and non-local but activated virtual environments.
@@ -172,7 +172,7 @@ class DgCliConfig:
     verbose: bool = False
     use_component_modules: list[str] = field(default_factory=list)
     use_dg_managed_environment: bool = True
-    require_local_venv: bool = True
+    use_local_venv: bool = True
 
     @classmethod
     def default(cls) -> Self:
@@ -192,7 +192,7 @@ class DgCliConfig:
             use_dg_managed_environment=merged.get(
                 "use_dg_managed_environment", DgCliConfig.use_dg_managed_environment
             ),
-            require_local_venv=merged.get("require_local_venv", DgCliConfig.require_local_venv),
+            use_local_venv=merged.get("use_local_venv", DgCliConfig.use_local_venv),
         )
 
 
@@ -203,7 +203,7 @@ class DgRawCliConfig(TypedDict, total=False):
     verbose: bool
     use_component_modules: Sequence[str]
     use_dg_managed_environment: bool
-    require_local_venv: bool
+    use_local_venv: bool
 
 
 # ########################
