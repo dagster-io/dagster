@@ -81,12 +81,15 @@ export const SelectionAutoCompleteInput = ({
 
   const [selectedIndexRef, setSelectedIndex] = useState({current: -1});
   const [showResults, _setShowResults] = useState({current: false});
+  const showResultsRef = useUpdatingRef(showResults.current);
   const setShowResults = useCallback(
-    (showResults: {current: boolean}) => {
-      selectedIndexRef.current = -1;
-      _setShowResults(showResults);
+    (nextShowResults: {current: boolean}) => {
+      if (showResultsRef.current !== nextShowResults.current) {
+        selectedIndexRef.current = -1;
+      }
+      _setShowResults(nextShowResults);
     },
-    [_setShowResults, selectedIndexRef],
+    [_setShowResults, selectedIndexRef, showResultsRef],
   );
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [innerValue, setInnerValue] = useState(value);
@@ -316,9 +319,10 @@ export const SelectionAutoCompleteInput = ({
       showResults,
       selectedIndexRef,
       selectedItem,
+      onSelect,
       onSelectionChange,
       innerValueRef,
-      onSelect,
+      setShowResults,
       autoCompleteResults?.list.length,
     ],
   );
