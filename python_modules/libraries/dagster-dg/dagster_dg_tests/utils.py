@@ -1,3 +1,4 @@
+import contextlib
 import os
 import shutil
 import subprocess
@@ -432,3 +433,29 @@ def print_exception_info(
     formatted_traceback = "".join(traceback.format_tb(exc_traceback))
     print(formatted_traceback)  # noqa: T201
     print(f"{exc_type.__name__}: {exc_value}")  # noqa: T201
+
+
+COMPONENT_INTEGRATION_TEST_DIR = (
+    Path(__file__).parent.parent.parent
+    / "dagster-components"
+    / "dagster_components_tests"
+    / "integration_tests"
+    / "components"
+)
+
+
+@contextlib.contextmanager
+def create_project_from_components(
+    runner: ProxyRunner, *src_paths: str, local_component_defn_to_inject: Optional[Path] = None
+) -> Iterator[Path]:
+    """Scaffolds a project with the given components in a temporary directory,
+    injecting the provided local component defn into each component's __init__.py.
+    """
+    origin_paths = [COMPONENT_INTEGRATION_TEST_DIR / src_path for src_path in src_paths]
+    with isolated_example_project_foo_bar(runner, component_dirs=origin_paths):
+        for src_path in src_paths:
+            components_dir = Path.cwd() / "foo_bar" / "defs" / src_path.split("/")[-1]
+            if local_component_defn_to_inject:
+                shutil.copy(local_component_defn_to_inject, components_dir / "__init__.py")
+
+        yield Path.cwd()

@@ -2,29 +2,18 @@ import subprocess
 import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, NamedTuple, Optional
+from typing import Any
 
 import click
-from jsonschema import Draft202012Validator, ValidationError
-from yaml.scanner import ScannerError
 
-from dagster_dg.cli.check_utils import error_dict_to_formatted_error
+from dagster_dg.check import check_yaml
 from dagster_dg.cli.dev import format_forwarded_option
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.cli.utils import create_dagster_cli_cmd
-from dagster_dg.component import RemoteComponentRegistry
-from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, DgClickGroup, pushd
 from dagster_dg.utils.filesystem import watch_paths
-from dagster_dg.yaml_utils import parse_yaml_with_source_positions
-from dagster_dg.yaml_utils.source_position import (
-    LineCol,
-    SourcePosition,
-    SourcePositionTree,
-    ValueAndSourcePositionTree,
-)
 
 
 @click.group(name="check", cls=DgClickGroup)
@@ -35,35 +24,6 @@ def check_group():
 # ########################
 # ##### COMPONENT
 # ########################
-
-COMPONENT_FILE_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "type": {"type": "string"},
-        "attributes": {"type": "object"},
-    },
-    "additionalProperties": False,
-}
-
-
-def _scaffold_value_and_source_position_tree(
-    filename: str, row: int, col: int
-) -> ValueAndSourcePositionTree:
-    return ValueAndSourcePositionTree(
-        value=None,
-        source_position_tree=SourcePositionTree(
-            position=SourcePosition(
-                filename=filename, start=LineCol(row, col), end=LineCol(row, col)
-            ),
-            children={},
-        ),
-    )
-
-
-class ErrorInput(NamedTuple):
-    component_name: Optional[ComponentKey]
-    error: ValidationError
-    source_position_tree: ValueAndSourcePositionTree
 
 
 @check_group.command(name="yaml", cls=DgClickCommand)
@@ -78,104 +38,12 @@ def check_yaml_command(
     **global_options: object,
 ) -> None:
     """Check component.yaml files against their schemas, showing validation errors."""
-    resolved_paths = [Path(path).absolute() for path in paths]
-    top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
-
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+    resolved_paths = [Path(path).absolute() for path in paths]
 
     def run_check(_: Any = None) -> bool:
-        validation_errors: list[ErrorInput] = []
-
-        component_contents_by_key: dict[ComponentKey, Any] = {}
-        modules_to_fetch = set()
-        for component_dir in dg_context.defs_path.iterdir():
-            if resolved_paths and not any(
-                path == component_dir or path in component_dir.parents for path in resolved_paths
-            ):
-                continue
-
-            component_path = component_dir / "component.yaml"
-
-            if component_path.exists():
-                text = component_path.read_text()
-                try:
-                    component_doc_tree = parse_yaml_with_source_positions(
-                        text, filename=str(component_path)
-                    )
-                except ScannerError as se:
-                    validation_errors.append(
-                        ErrorInput(
-                            None,
-                            ValidationError(f"Unable to parse YAML: {se.context}, {se.problem}"),
-                            _scaffold_value_and_source_position_tree(
-                                filename=str(component_path),
-                                row=se.problem_mark.line + 1 if se.problem_mark else 1,
-                                col=se.problem_mark.column + 1 if se.problem_mark else 1,
-                            ),
-                        )
-                    )
-                    continue
-
-                # First, validate the top-level structure of the component file
-                # (type and params keys) before we try to validate the params themselves.
-                top_level_errs = list(
-                    top_level_component_validator.iter_errors(component_doc_tree.value)
-                )
-                for err in top_level_errs:
-                    validation_errors.append(ErrorInput(None, err, component_doc_tree))
-                if top_level_errs:
-                    continue
-
-                raw_key = component_doc_tree.value.get("type")
-                component_instance_module = dg_context.get_component_instance_module_name(
-                    component_dir.name
-                )
-                qualified_key = (
-                    f"{component_instance_module}{raw_key}" if raw_key.startswith(".") else raw_key
-                )
-                key = ComponentKey.from_typename(qualified_key)
-                component_contents_by_key[key] = component_doc_tree
-
-                # We need to fetch components from any modules local to the project because these are
-                # not cached with the components from the general environment.
-                if key.namespace.startswith(dg_context.defs_module_name):
-                    modules_to_fetch.add(key.namespace)
-
-        # Fetch the local component types, if we need any local components
-        component_registry = RemoteComponentRegistry.from_dg_context(
-            dg_context, extra_modules=list(modules_to_fetch)
-        )
-        for key, component_doc_tree in component_contents_by_key.items():
-            try:
-                json_schema = component_registry.get(key).component_schema or {}
-
-                v = Draft202012Validator(json_schema)
-                for err in v.iter_errors(component_doc_tree.value["attributes"]):
-                    validation_errors.append(ErrorInput(key, err, component_doc_tree))
-            except KeyError:
-                # No matching component type found
-                validation_errors.append(
-                    ErrorInput(
-                        None,
-                        ValidationError(f"Component type '{key.to_typename()}' not found."),
-                        component_doc_tree,
-                    )
-                )
-        if validation_errors:
-            for key, error, component_doc_tree in validation_errors:
-                click.echo(
-                    error_dict_to_formatted_error(
-                        key,
-                        error,
-                        source_position_tree=component_doc_tree.source_position_tree,
-                        prefix=["attributes"] if key else [],
-                    )
-                )
-            return False
-        else:
-            click.echo("All components validated successfully.")
-            return True
+        return check_yaml(dg_context, resolved_paths)
 
     if watch:
         watched_paths = (

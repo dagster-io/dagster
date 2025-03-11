@@ -1,11 +1,8 @@
-import contextlib
 import re
 import shutil
 import threading
 import time
-from collections.abc import Iterator
 from pathlib import Path
-from typing import Optional
 
 import pytest
 from dagster_components.test.test_cases import (
@@ -26,18 +23,12 @@ from dagster_dg.utils import (
 
 ensure_dagster_dg_tests_import()
 from dagster_dg.utils import filesystem
+
 from dagster_dg_tests.utils import (
+    COMPONENT_INTEGRATION_TEST_DIR,
     ProxyRunner,
     assert_runner_result,
-    isolated_example_project_foo_bar,
-)
-
-COMPONENT_INTEGRATION_TEST_DIR = (
-    Path(__file__).parent.parent.parent.parent
-    / "dagster-components"
-    / "dagster_components_tests"
-    / "integration_tests"
-    / "components"
+    create_project_from_components,
 )
 
 CLI_TEST_CASES = [
@@ -61,23 +52,6 @@ CLI_TEST_CASES = [
         ),
     ),
 ]
-
-
-@contextlib.contextmanager
-def create_project_from_components(
-    runner: ProxyRunner, *src_paths: str, local_component_defn_to_inject: Optional[Path] = None
-) -> Iterator[Path]:
-    """Scaffolds a project with the given components in a temporary directory,
-    injecting the provided local component defn into each component's __init__.py.
-    """
-    origin_paths = [COMPONENT_INTEGRATION_TEST_DIR / src_path for src_path in src_paths]
-    with isolated_example_project_foo_bar(runner, component_dirs=origin_paths):
-        for src_path in src_paths:
-            components_dir = Path.cwd() / "foo_bar" / "defs" / src_path.split("/")[-1]
-            if local_component_defn_to_inject:
-                shutil.copy(local_component_defn_to_inject, components_dir / "__init__.py")
-
-        yield Path.cwd()
 
 
 @pytest.mark.parametrize(
@@ -170,7 +144,7 @@ def test_check_yaml_with_watch() -> None:
                 tmpdir / "foo_bar" / "defs" / "basic_component_invalid_value" / "component.yaml",
             )
 
-            time.sleep(2)  # Give time for the watcher to detect changes
+            time.sleep(10)  # Give time for the watcher to detect changes
 
             # Signal the watcher to exit
             filesystem.SHOULD_WATCHER_EXIT = True

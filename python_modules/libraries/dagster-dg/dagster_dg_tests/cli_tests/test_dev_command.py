@@ -12,9 +12,14 @@ from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import, 
 from dagster_graphql.client import DagsterGraphQLClient
 
 ensure_dagster_dg_tests_import()
+
+from dagster_components.test.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
+from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd
+
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
+    create_project_from_components,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
 )
@@ -111,13 +116,49 @@ def test_dev_forwards_options_to_dagster_dev():
             "3000",
         ]
         try:
-            dev_process = _launch_dev_command(options)
+            dev_process = _launch_dev_command(options + ["--no-check-yaml"])
             time.sleep(0.5)
             child_process = _get_child_processes(dev_process.pid)[0]
             assert " ".join(options) in " ".join(child_process.cmdline())
         finally:
             dev_process.terminate()
             dev_process.communicate()
+
+
+def test_implicit_yaml_check_from_dg_dev() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_MISSING_VALUE.component_path,
+            BASIC_INVALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+        ) as tmpdir,
+    ):
+        with pushd(str(tmpdir)):
+            result = runner.invoke("dev")
+            assert result.exit_code != 0, str(result.stdout)
+
+            assert BASIC_INVALID_VALUE.check_error_msg and BASIC_MISSING_VALUE.check_error_msg
+            BASIC_INVALID_VALUE.check_error_msg(str(result.stdout))
+            BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
+
+
+def test_implicit_yaml_check_from_dg_dev_workspace() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_MISSING_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+        ) as tmpdir,
+    ):
+        with pushd(Path(tmpdir).parent):
+            result = runner.invoke("dev")
+            assert result.exit_code != 0, str(result.stdout)
+
+            assert BASIC_MISSING_VALUE.check_error_msg
+            BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
 
 
 # ########################
