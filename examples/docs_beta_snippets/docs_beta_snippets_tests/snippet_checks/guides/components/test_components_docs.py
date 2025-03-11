@@ -323,3 +323,46 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 / f"{next_snip_no()}-duckdb-select-orders.txt",
                 update_snippets=update_snippets,
             )
+
+            # Automation condition stuff
+            create_file(
+                Path("jaffle_platform") / "defs" / "ingest_files" / "component.yaml",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-component-ingest-automation.yaml",
+                contents=format_multiline("""
+                    type: dagster_components.dagster_sling.SlingReplicationCollectionComponent
+
+                    attributes:
+                      replications:
+                        - path: replication.yaml
+                      asset_post_processors:
+                        - target: "*"
+                          attributes:
+                            automation_condition: "{{ automation_condition.on_cron('@daily') }}"
+                            metadata:
+                              automation_condition: "on_cron(@daily)"
+                    """),
+            )
+            create_file(
+                Path("jaffle_platform") / "defs" / "jdbt" / "component.yaml",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-component-jdbt-automation.yaml",
+                contents=format_multiline("""
+                    type: dagster_components.dagster_dbt.DbtProjectComponent
+
+                    attributes:
+                      dbt:
+                        project_dir: ../../../dbt/jdbt
+                      asset_attributes:
+                        key: "target/main/{{ node.name }}"
+                      asset_post_processors:
+                        - target: "*"
+                          attributes:
+                            automation_condition: "{{ automation_condition.eager() }}"
+                            metadata:
+                                automation_condition: "eager"
+                    """),
+            )
+            _run_command(
+                "DAGSTER_IS_DEV_CLI=1 uv run dagster asset materialize --select '*' -m jaffle_platform.definitions"
+            )
