@@ -27,11 +27,11 @@ Ops support a variety of useful features for data orchestration, such as:
 
 - **Input and output management**: Ops have defined [inputs and outputs](#inputs-and-outputs), analogous to the arguments and return value(s) of a Python function. An input or output can be annotated with a [Dagster type](/concepts/types) for arbitrarily complex runtime validation. Outputs can additionally be tagged with an [IO Manager](/concepts/io-management/io-managers) to manage storage of the associated data in between ops. This enables easy swapping of I/O strategy depending on the execution environment, as well as efficient caching of data intermediates.
 
-- **Configuration**: Operations in a data pipeline are often parameterized by both upstream data (e.g. a stream of database records) and configuration parameters independent of upstream data (e.g. a "chunk size" of incoming records to operate on). Define configuration parameters by providing an associated [config schema](/concepts/configuration/config-schema) to the op.
+- **Configuration**: Operations in a data pipeline are often parameterized by both upstream data (e.g. a stream of database records) and configuration parameters independent of upstream data (e.g. a "chunk size" of incoming records to operate on). Define configuration parameters by providing an associated [config schema](/guides/operate/configuration/run-configuration) to the op.
 
 - **Event streams**: Ops emit a stream of [events](/concepts/ops-jobs-graphs/op-events) during execution. Certain events are emitted by default - such as indicating the start of an op's execution - but op authors are additionally given access to an event API.
 
-  This can be used to report data asset creation or modification (<PyObject object="AssetMaterialization"/>), the result of a data quality check (<PyObject object="ExpectationResult"/>), or other arbitrary information. Event streams can be visualized in [the Dagster UI](/concepts/webserver/ui). This rich log of execution facilitates debugging, inspection, and real-time monitoring of running jobs.
+  This can be used to report data asset creation or modification (<PyObject object="AssetMaterialization"/>), the result of a data quality check (<PyObject object="ExpectationResult"/>), or other arbitrary information. Event streams can be visualized in [the Dagster UI](/guides/operate/webserver#dagster-ui-reference). This rich log of execution facilitates debugging, inspection, and real-time monitoring of running jobs.
 
 - **Testability**: The properties that enable flexible execution of ops also facilitate versatile testing. Ops can be [tested](/concepts/testing) in isolation or as part of a pipeline. Further, the [resource](/concepts/resources) API allows external systems (e.g. databases) to be stubbed or substituted as needed.
 
@@ -110,7 +110,7 @@ While many use cases can be served using built-in python annotations, <PyObject 
 
 ### Op configuration
 
-Ops in Dagster can specify a config schema which makes them configurable and parameterizable at execution time. The configuration system is explained in detail in the [Config schema documentation](/concepts/configuration/config-schema).
+Ops in Dagster can specify a config schema which makes them configurable and parameterizable at execution time. The configuration system is explained in detail in the [Config schema documentation](/guides/operate/configuration/run-configuration).
 
 Op functions can specify an annotated `config` parameter for the op's configuration. The config class, which subclasses <PyObject object="Config"/> (which wraps [`pydantic.BaseModel`](https://docs.pydantic.dev/usage/models/#basic-model-usage)) specifies the configuration schema for the op. Op configuration can be used to specify op behavior at runtime, making ops more flexible and reusable.
 

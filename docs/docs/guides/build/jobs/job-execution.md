@@ -10,12 +10,12 @@ This guide is applicable to both [ops](/guides/build/ops/) and [jobs](/guides/bu
 
 :::
 
-Dagster provides several methods to execute [op](docs_snippets/docs_snippets/concepts/ops-jobs-graphs/op-jobs) and [asset jobs](docs_snippets/docs_snippets/concepts/assets/asset-jobs). This guide explains different ways to do one-off execution of jobs using the [Dagster UI](#dagster-ui), [command line](#command-line), or [Python APIs](#python-apis).
+Dagster provides several methods to execute [op](op-jobs) and [asset jobs](asset-jobs). This guide explains different ways to do one-off execution of jobs using the [Dagster UI](#dagster-ui), [command line](#command-line), or [Python APIs](#python-apis).
 
 You can also launch jobs in other ways:
 
-- [Schedules](docs_snippets/docs_snippets/concepts/automation/schedules) can be used to launch runs on a fixed interval.
-- [Sensors](docs_snippets/docs_snippets/concepts/partitions-schedules-sensors/sensors) allow you to launch runs based on external state changes.
+- [Schedules](/guides/automate/schedules/) can be used to launch runs on a fixed interval.
+- [Sensors](/guides/automate/sensors/) allow you to launch runs based on external state changes.
 
 ## Relevant APIs
 
@@ -46,7 +46,7 @@ Click on the **Launchpad** tab, then press the **Launch Run** button to execute 
 
 ![Job run](/images/guides/build/ops/pipeline-run.png)
 
-By default, Dagster will run the job using the <PyObject module="dagster" object="multiprocess_executor" /> - that means each step in the job runs in its own process, and steps that don't depend on each other can run in parallel.
+By default, Dagster will run the job using the <PyObject section="execution" module="dagster" object="multiprocess_executor" /> - that means each step in the job runs in its own process, and steps that don't depend on each other can run in parallel.
 
 The Launchpad also offers a configuration editor to let you interactively build up the configuration. Refer to the [Dagster UI documentation](docs_snippets/docs_snippets/concepts/webserver/ui#launchpad-tab) for more info.
 
@@ -55,8 +55,8 @@ The Launchpad also offers a configuration editor to let you interactively build 
 
 The dagster CLI includes the following commands for job execution:
 
-- [`dagster job execute`](/api/python-apicli#dagster-pipeline-execute) for direct execution
-- [`dagster job launch`](/api/python-apicli#dagster-pipeline-launch) for launching runs asynchronously using the [run launcher](/deployment/run-launcher) on your instance
+- [`dagster job execute`](/api/python-api/cli#dagster-pipeline-execute) for direct execution
+- [`dagster job launch`](/api/python-api/cli#dagster-pipeline-launch) for launching runs asynchronously using the [run launcher](/guides/deploy/execution/run-launchers) on your instance
 
 To execute your job directly, run:
 
@@ -71,12 +71,12 @@ dagster job execute -f my_job.py
 
 Dagster includes Python APIs for execution that are useful when writing tests or scripts.
 
-<PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" /> executes a job and
-returns an <PyObject section="jobs" module="dagster" object="ExecuteInProcessResult" />.
+<PyObject section="execution" module="dagster" object="JobDefinition.execute_in_process" /> executes a job and
+returns an <PyObject section="execution" module="dagster" object="ExecuteInProcessResult" />.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_execute_marker" endBefore="end_execute_marker" />
 
-You can find the full API documentation in [Execution API](/api/python-apiexecution) and learn more about the testing use cases in [Testing](docs_snippets/docs_snippets/concepts/testing).
+You can find the full API documentation in [Execution API](/api/python-api/execution) and learn more about the testing use cases in the [testing documentation](/guides/test/).
 
 </TabItem>
 </Tabs>
@@ -111,7 +111,7 @@ Let's take a look at some examples:
 
 ### Specifying op selection
 
-Use this selection syntax in the `op_selection` argument to the <PyObject object="JobDefinition" method="execute_in_process" />:
+Use this selection syntax in the `op_selection` argument to the <PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" />:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_op_selection_marker" endBefore="end_op_selection_marker" />
 
@@ -121,9 +121,9 @@ Similarly, you can specify the same op selection in the Dagster UI Launchpad:
 
 ## Controlling job execution
 
-Each <PyObject section="jobs" module="dagster" object="JobDefinition" /> contains an <PyObject section="jobs" module="dagster" object="ExecutorDefinition" /> that determines how it will be executed.
+Each <PyObject section="jobs" module="dagster" object="JobDefinition" /> contains an <PyObject section="internals" module="dagster" object="ExecutorDefinition" /> that determines how it will be executed.
 
-This `executor_def` property can be set to allow for different types of isolation and parallelism, ranging from executing all the ops in the same process to executing each op in its own Kubernetes pod. See [Executors](/deployment/executors) for more details.
+This `executor_def` property can be set to allow for different types of isolation and parallelism, ranging from executing all the ops in the same process to executing each op in its own Kubernetes pod. See [Executors](/guides/operate/run-executors) for more details.
 
 ### Default job executor
 
@@ -155,6 +155,6 @@ For example, the following job will execute at most two ops at once with the `da
 
 These limits are only applied on a per-run basis. You can apply op concurrency limits across multiple runs using the <PyObject section="libraries" module="dagster_celery" object="celery_executor" /> or <PyObject section="libraries" module="dagster_celery_k8s" object="celery_k8s_job_executor" />.
 
-Refer to the [Limiting concurrency in data pipelines guide](/guides/limiting-concurrency-in-data-pipelines) for more info about op concurrency, and how to limit run concurrency.
+Refer to the [Managing concurrency in data pipelines guide](/guides/operate/managing-concurrency) for more info about op concurrency, and how to limit run concurrency.
 
 :::

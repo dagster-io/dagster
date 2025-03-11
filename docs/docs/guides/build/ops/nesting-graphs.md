@@ -4,7 +4,7 @@ description: To organize the ops inside a job, you can nest sets of ops into sub
 sidebar_position: 5000
 ---
 
-To organize the [ops](docs_snippets/docs_snippets/concepts/ops-jobs-graphs/ops) inside a [job](docs_snippets/docs_snippets/concepts/ops-jobs-graphs/op-jobs), you can nest sets of ops into sub-graphs.
+To organize the [ops](docs_snippets/docs_snippets/guides/build/ops/ inside a [job](docs_snippets/docs_snippets/concepts/ops-jobs-graphs/op-jobs), you can nest sets of ops into sub-graphs.
 
 ## Relevant APIs
 

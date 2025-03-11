@@ -17,7 +17,7 @@ When an exception occurs during op execution, Dagster provides tools to retry th
 
 ## Overview
 
-In Dagster, code is executed within an [op](/concepts/ops-jobs-graphs/ops). Sometimes this code can fail for transient reasons, and the desired behavior is to retry and run the function again.
+In Dagster, code is executed within an [op](/guides/build/ops/. Sometimes this code can fail for transient reasons, and the desired behavior is to retry and run the function again.
 
 Dagster provides both declarative <PyObject module="dagster" object="RetryPolicy"  />s as well as manual <PyObject module="dagster" object="RetryRequested" /> exceptions to enable this behavior.
 

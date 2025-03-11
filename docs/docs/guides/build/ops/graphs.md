@@ -4,7 +4,7 @@ description: Op graphs are sets of interconnected ops or sub-graphs and form the
 sidebar_position: 4000
 ---
 
-A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
+A graph is a set of interconnected [ops](/guides/build/ops/)or sub-graphs. While individual ops typically perform simple tasks, ops can be assembled into a graph to accomplish complex tasks.
 
 Graphs can be used in three different ways:
 
