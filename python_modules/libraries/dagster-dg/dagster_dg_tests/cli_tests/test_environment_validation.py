@@ -56,6 +56,7 @@ REGISTRY_CONTEXT_COMMANDS = [
 
 
 PROJECT_CONTEXT_COMMANDS = [
+    CommandSpec(("launch",), "--assets", "foo"),
     CommandSpec(("utils", "configure-editor"), "vscode"),
     CommandSpec(("check", "yaml")),
     CommandSpec(("list", "component")),
