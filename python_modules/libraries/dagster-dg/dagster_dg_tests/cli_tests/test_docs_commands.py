@@ -10,6 +10,7 @@ from unittest import mock
 
 import requests
 from dagster_dg.cli import docs
+
 from dagster_dg_tests.utils import ProxyRunner, assert_runner_result, isolated_components_venv
 
 # ########################

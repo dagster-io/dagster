@@ -84,7 +84,7 @@ def check_yaml_command(
     "--check-yaml/--no-check-yaml",
     flag_value=True,
     default=True,
-    help="Whether to schema-check component.yaml files for the project before starting the dev server.",
+    help="Whether to schema-check component.yaml files for the project before loading and checking all definitions.",
 )
 @dg_global_options
 @click.pass_context
