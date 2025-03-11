@@ -60,7 +60,7 @@ Partition data are accessed within an asset by context. We want to create an ass
                   product_name,
                   sum(dollar_amount) as total_dollar_amount
               from joined_data where strftime(date, '%Y-%m') = '{month_to_fetch}'
-              group by '{month_to_fetch}', rep_name, product_name;
+              group by rep_name, product_name;
               """
           )
 
@@ -123,7 +123,7 @@ def product_performance(context: dg.AssetExecutionContext, duckdb: DuckDBResourc
                 sum(quantity) as total_units_sold
             from joined_data 
             where category = '{product_category_str}'
-            group by '{product_category_str}', product_name;
+            group by product_name;
             """
         )
         preview_query = f"select * from product_performance where product_category = '{product_category_str}';"
