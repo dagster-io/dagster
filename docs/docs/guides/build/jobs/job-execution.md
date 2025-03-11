@@ -10,7 +10,7 @@ This guide is applicable to both [ops](/guides/build/ops/) and [jobs](/guides/bu
 
 :::
 
-Dagster provides several methods to execute [op](op-jobs) and [asset jobs](asset-jobs). This guide explains different ways to do one-off execution of jobs using the [Dagster UI](#dagster-ui), [command line](#command-line), or [Python APIs](#python-apis).
+Dagster provides several methods to execute [op](op-jobs) and [asset jobs](asset-jobs). This guide explains different ways to do one-off execution of jobs using the Dagster UI, command line, or Python APIs.
 
 You can also launch jobs in other ways:
 
@@ -32,7 +32,7 @@ Dagster supports the following methods to execute one-off jobs. Click the tabs f
 
 Using the Dagster UI, you can view, interact, and execute jobs.
 
-To view your job in the UI, use the [`dagster dev`](/api/python-apicli#dagster-dev) command:
+To view your job in the UI, use the [`dagster dev`](/api/python-api/cli#dagster-dev) command:
 
 ```bash
 dagster dev -f my_job.py
@@ -48,15 +48,15 @@ Click on the **Launchpad** tab, then press the **Launch Run** button to execute 
 
 By default, Dagster will run the job using the <PyObject section="execution" module="dagster" object="multiprocess_executor" /> - that means each step in the job runs in its own process, and steps that don't depend on each other can run in parallel.
 
-The Launchpad also offers a configuration editor to let you interactively build up the configuration. Refer to the [Dagster UI documentation](docs_snippets/docs_snippets/concepts/webserver/ui#launchpad-tab) for more info.
+The Launchpad also offers a configuration editor to let you interactively build up the configuration. Refer to the [run configuration documentation](/guides/operate/configuration/run-configuration#specifying-runtime-configuration) for more info.
 
 </TabItem>
 <TabItem value="Command line">
 
 The dagster CLI includes the following commands for job execution:
 
-- [`dagster job execute`](/api/python-api/cli#dagster-pipeline-execute) for direct execution
-- [`dagster job launch`](/api/python-api/cli#dagster-pipeline-launch) for launching runs asynchronously using the [run launcher](/guides/deploy/execution/run-launchers) on your instance
+- [`dagster job execute`](/api/python-api/cli#dagster-job) for direct execution
+- [`dagster job launch`](/api/python-api/cli#dagster-job) for launching runs asynchronously using the [run launcher](/guides/deploy/execution/run-launchers) on your instance
 
 To execute your job directly, run:
 
@@ -71,7 +71,7 @@ dagster job execute -f my_job.py
 
 Dagster includes Python APIs for execution that are useful when writing tests or scripts.
 
-<PyObject section="execution" module="dagster" object="JobDefinition.execute_in_process" /> executes a job and
+<PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" /> executes a job and
 returns an <PyObject section="execution" module="dagster" object="ExecuteInProcessResult" />.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/job_execution.py" startAfter="start_execute_marker" endBefore="end_execute_marker" />

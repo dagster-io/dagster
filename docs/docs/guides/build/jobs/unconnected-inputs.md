@@ -55,7 +55,7 @@ In this example, we wrote a function to load the input and decorated it with <Py
 </TabItem>
 <TabItem value="Option 2: Use a class to implement the InputManager interface">
 
-In this example, we defined a class that implements the <PyObject module="dagster" object="InputManager" /> interface:
+In this example, we defined a class that implements the <PyObject section="io-managers" module="dagster" object="InputManager" /> interface:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/io_management/input_managers.py" startAfter="start_load_unconnected_input" endBefore="end_load_unconnected_input" />
 

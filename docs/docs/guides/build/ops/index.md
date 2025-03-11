@@ -19,7 +19,7 @@ The computational core of an [asset definition](/guides/build/assets/) is an op.
 
 Ops support a variety of useful features for data orchestration, such as:
 
-- **Flexible execution strategies**: Painlessly transition from development to production with ops, as they are sealed units of logic independent of execution strategy. Collections of ops - called [graphs](/guides/build/ops/graphs) - can be bound via [jobs](/guides/build/jobs/) to an appropriate [executor](/deployment/executors) for single-process execution or distribution across a cluster.
+- **Flexible execution strategies**: Painlessly transition from development to production with ops, as they are sealed units of logic independent of execution strategy. Collections of ops - called [graphs](/guides/build/ops/graphs) - can be bound via [jobs](/guides/build/jobs/) to an appropriate [executor](/guides/operate/run-executors) for single-process execution or distribution across a cluster.
 
 - **Pluggable external systems**: If your data pipeline interfaces with external systems, you may want to use local substitutes during development over a cloud-based production system. Dagster provides [resources](/guides/build/external-resources/) as an abstraction layer for this purpose.
 
@@ -42,7 +42,7 @@ Ops support a variety of useful features for data orchestration, such as:
 | <PyObject section="ops" module="dagster" object="op" object="op" decorator />      | A decorator used to define ops. Returns an <PyObject section="ops" module="dagster" object="OpDefinition" />. The decorated function is called the "compute function". |
 | <PyObject section="ops" module="dagster" object="In" />                | An input to an op. Defined on the `ins` argument to the <PyObject section="ops" module="dagster" object="op" object="op" decorator/> decorator. |
 | <PyObject section="ops" module="dagster" object="Out" />               | An output of an op. Defined on the `out` argument to the <PyObject section="ops" module="dagster" object="op" object="op" displayText="op" decorator /> decorator. |
-| <PyObject section="ops" module="dagster" object="OpExecutionContext" /> | An object exposing Dagster system APIs for resource access, logging, and more. Can be injected into an op by specifying `context` as the first argument of the compute function. |
+| <PyObject section="execution" module="dagster" object="OpExecutionContext" /> | An object exposing Dagster system APIs for resource access, logging, and more. Can be injected into an op by specifying `context` as the first argument of the compute function. |
 | <PyObject section="ops" module="dagster" object="OpDefinition" />     | Class for ops. You will rarely want to instantiate this class directly. Instead, you should use the <PyObject section="ops" module="dagster" object="op" object="op" decorator />. |
 
 ## Defining an op

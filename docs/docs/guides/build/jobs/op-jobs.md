@@ -87,7 +87,7 @@ You can supply a <PyObject section="config" module="dagster" object="RunConfig"/
 
 Supplying a <PyObject section="partitions" module="dagster" object="PartitionedConfig" /> will create a partitioned op job. This defines a discrete set of partitions along with a function for generating config for a partition. Op job runs can be configured by selecting a partition.
 
-Refer to the [Partitioning ops documentation](/guides/build/partitions/partitioning-ops) for more info and examples.
+Refer to the [Partitioning ops documentation](/guides/build/partitions-and-backfills/partitioning-ops) for more info and examples.
 
 ### Config mapping
 

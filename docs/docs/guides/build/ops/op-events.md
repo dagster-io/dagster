@@ -45,7 +45,7 @@ For many use cases, Dagster ops can be used directly with python's native type a
 
 Check out the docs on [Op Outputs](/guides/build/ops#outputs) to learn more about this functionality.
 
-Dagster also provides the <PyObject section="ops" module="dagster" object="Output"/> object, which opens up additional functionality to outputs when using Dagster, such as [specifying output metadata](/guides/build/ops/op-events#attaching-metadata-to-outputs) and [conditional branching](/guides/build/graphs#with-conditional-branching), all while maintaining coherent type annotations.
+Dagster also provides the <PyObject section="ops" module="dagster" object="Output"/> object, which opens up additional functionality to outputs when using Dagster, such as [specifying output metadata](#attaching-metadata-to-outputs-experimental) and [conditional branching](/guides/build/ops/graphs#with-conditional-branching), all while maintaining coherent type annotations.
 
 <PyObject section="ops" module="dagster" object="Output"/> objects can be either returned or yielded. The Output
 type is also generic, for use with return annotations:
@@ -56,7 +56,7 @@ When <PyObject section="ops" module="dagster" object="Output"/> objects are yiel
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_yield_outputs" endBefore="end_yield_outputs" />
 
-#### Attaching Metadata to Outputs <Experimental/>
+#### Attaching metadata to outputs (Experimental)
 
 If there is information specific to an op output that you would like to log, you can use an <PyObject section="ops" module="dagster" object="Output"/> object to attach metadata to the op's output. To do this, use the `metadata` parameter on the object, which expects a mapping of string labels to metadata values.
 
@@ -66,12 +66,9 @@ The following example demonstrates how you might use this functionality:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_op_output_3" endBefore="end_op_output_3" />
 
-### Asset Materializations
+### Asset materializations
 
-<PyObject section="ops" module="dagster" object="AssetMaterialization" /> events tell Dagster that you have written
-some data asset to an external system. The classic example would be writing to a
-table in a database, but really any sort of persisted object that you would want
-to keep track of can be considered an asset.
+<PyObject section="ops" module="dagster" object="AssetMaterialization" /> events tell Dagster that you have written some data asset to an external system. The classic example would be writing to a table in a database, but really any sort of persisted object that you would want to keep track of can be considered an asset.
 
 Generally, you'd want to send this event directly after you persist the asset to your external system. All <PyObject section="ops" module="dagster" object="AssetMaterialization" /> events must define an `asset_key`, which is a unique identifier to describe the asset you are persisting. They can optionally include a `partition` if they're persisting a particular [partition](/guides/build/partitions-and-backfills/partitioning-assets) of an asset.
 
@@ -87,13 +84,13 @@ When yielding asset materializations, outputs must also be yielded via an <PyObj
 
 To learn more about assets and how they are surfaced once you send this event, check out the [Asset Catalog](/guides/operate/webserver#assets) documentation.
 
-#### Attaching Metadata to Asset Materializations
+#### Attaching metadata to asset materializations
 
 Attaching metadata to Asset Materializations is an important way of tracking aspects of a given asset over time. This functions essentially identically to other events which accept a `metadata` parameter, allowing you to attach a set of structured labels and values to display.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/assets/materialization_ops.py" startAfter="start_materialization_ops_marker_2" endBefore="end_materialization_ops_marker_2" />
 
-### Asset Observations
+### Asset observations
 
 <PyObject section="assets" module="dagster" object="AssetObservation" /> events record metadata about assets. Unlike
 asset materializations, asset observations do not signify that an asset has been
@@ -107,13 +104,13 @@ In the example above, an observation tracks the number of rows in an asset persi
 
 To learn more about asset observations, check out the [Asset Observation](/guides/build/assets/metadata-and-tags/asset-observations) documentation.
 
-### Expectation Results
+### Expectation results
 
-Ops can emit structured events to represent the results of a data quality test. The data quality event class is the <PyObject object="ExpectationResult" />. To generate an expectation result, we can log or yield an <PyObject section="ops" module="dagster" object="ExpectationResult" /> event in our op.
+Ops can emit structured events to represent the results of a data quality test. The data quality event class is the <PyObject section="ops" module="dagster" object="ExpectationResult" />. To generate an expectation result, we can log or yield an <PyObject section="ops" module="dagster" object="ExpectationResult" /> event in our op.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_expectation_op" endBefore="end_expectation_op" />
 
-#### Attaching Metadata to Expectation Results
+#### Attaching metadata to expectation results
 
 Like many other event types in Dagster, there are a variety of types of metadata that can be associated with an expectation result event, all through the <PyObject section="metadata" module="dagster" object="MetadataValue"/> class. Each expectation event optionally takes a dictionary of metadata that is then displayed in the event log.
 
@@ -133,7 +130,7 @@ A <PyObject section="ops" module="dagster" object="Failure" /> can include a dic
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_events.py" startAfter="start_failure_op" endBefore="end_failure_op" />
 
-### Retry Requests
+### Retry requests
 
 <PyObject section="ops" module="dagster" object="RetryRequested" /> exceptions are useful when you experience failures
 that are possible to recover from. For example, if you have a flaky operation that

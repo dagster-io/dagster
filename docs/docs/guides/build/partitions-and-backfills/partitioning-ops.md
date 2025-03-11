@@ -34,7 +34,7 @@ Before continuing, you should be familiar with:
 | <PyObject section="partitions" module="dagster" object="monthly_partitioned_config" decorator /> | Decorator for constructing partitioned config where each partition is a month.                      |
 | <PyObject section="partitions" module="dagster" object="static_partitioned_config" decorator />  | Decorator for constructing partitioned config for a static set of partition keys.                   |
 | <PyObject section="partitions" module="dagster" object="dynamic_partitioned_config" decorator /> | Decorator for constructing partitioned config for a set of partition keys that can grow over time.  |
-| <PyObject section="partitions" module="dagster" object="build_schedule_from_partitioned_job" />  | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
+| `build_schedule_from_partitioned_job`  | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
 
 ## Defining jobs with time partitions
 
@@ -47,39 +47,17 @@ The most common kind of partitioned job is a time-partitioned job - each partiti
 
 Before we dive in, let's look at a non-partitioned job that computes some data for a given date:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/date_config_job.py
-from dagster import Config, OpExecutionContext, job, op
-
-
-class ProcessDateConfig(Config):
-    date: str
-
-
-@op
-def process_data_for_date(context: OpExecutionContext, config: ProcessDateConfig):
-    date = config.date
-    context.log.info(f"processing data for {date}")
-
-
-@job
-def do_stuff():
-    process_data_for_date()
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/date_config_job.py" />
 
 It takes, as config, a string `date`. This piece of config defines which date to compute data for. For example, if you wanted to compute for `May 5th, 2020`, you would execute the graph with the following config:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/config.yaml
-graph:
-  process_data_for_date:
-    config:
-      date: "2020-05-05"
-```
+<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/config.yaml" />
 
 ### Date-partitioned job
 
 With the job above, it's possible to supply any value for the `date` param. This means if you wanted to launch a backfill, Dagster wouldn't know what values to run it on. You can instead build a partitioned job that operates on a defined set of dates.
 
-First, define the <PyObject object="PartitionedConfig"/>. In this case, because each partition is a date, you can use the <PyObject object="daily_partitioned_config" decorator /> decorator. This decorator defines the full set of partitions - every date between the start date and the current date, as well as how to determine the run config for a given partition.
+First, define the <PyObject section="partitions" module="dagster" object="PartitionedConfig"/>. In this case, because each partition is a date, you can use the <PyObject section="partitions" module="dagster" object="daily_partitioned_config" decorator /> decorator. This decorator defines the full set of partitions - every date between the start date and the current date, as well as how to determine the run config for a given partition.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partitioned_job.py" startAfter="start_partitioned_config" endBefore="end_partitioned_config" />
 
@@ -97,13 +75,13 @@ Not all jobs are partitioned by time. For example, the following example shows a
 
 Running a partitioned job on a schedule is a common use case. For example, if your job has a partition for each date, you likely want to run that job every day, on the partition for that day.
 
-Refer to the [Schedule documentation](/guides/build/schedules/) for more info about constructing both schedules for asset and op-based jobs.
+Refer to the [Schedule documentation](/guides/automate/schedules/) for more info about constructing both schedules for asset and op-based jobs.
 
 ## Partitions in the Dagster UI
 
 In the UI, you can view runs by partition in the **Partitions tab** of a **Job** page:
 
-![Partitions tab](/images/guides/build/partition-and-backfills/partitioned-job.png)
+![Partitions tab](/images/guides/build/partitions-and-backfills/partitioned-job.png)
 
 In the **Run Matrix**, each column corresponds to one of the partitions in the job. The time listed corresponds to the start time of the partition. Each row corresponds to one of the steps in the job. You can click on an individual box to navigate to logs and run information for the step.
 
