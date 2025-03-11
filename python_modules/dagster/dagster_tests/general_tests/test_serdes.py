@@ -1217,3 +1217,32 @@ def test_get_storage_name():
 
     with pytest.raises(CheckError):
         get_storage_name(Wat, whitelist_map=test_env)
+
+def test_remove_class() -> None:
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    @record
+    class MyField:
+        name: str
+
+    @_whitelist_for_serdes(test_env)
+    @record
+    class MyModel:
+        nums: list[int]
+        field: MyField
+
+    m = MyModel(nums=[1, 2, 3], field=MyField(name="foo"))
+    m_str = serialize_value(m, whitelist_map=test_env)
+    assert m == deserialize_value(m_str, whitelist_map=test_env)
+
+
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env, storage_name="MyModel")
+    @record
+    class MyModelWithoutField:
+        nums: list[int]
+    
+    deserialize_value(m_str, whitelist_map=test_env)
+
