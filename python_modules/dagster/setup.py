@@ -111,6 +111,7 @@ setup(
         "rich",
         "filelock",
         f"dagster-pipes{pin}",
+        f"dagster-shared{pin}",
         "antlr4-python3-runtime",
     ],
     extras_require={

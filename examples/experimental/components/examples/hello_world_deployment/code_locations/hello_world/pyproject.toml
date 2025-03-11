@@ -7,6 +7,7 @@ dependencies = [
     "dagster-graphql",
     "dagster-pipes",
     "dagster-webserver",
+    "dagster-shared",
 ]
 
 [project.optional-dependencies]
@@ -28,5 +29,4 @@ dagster = { path = "../../../../../../../python_modules/dagster", editable = tru
 dagster-graphql = { path = "../../../../../../../python_modules/dagster-graphql", editable = true }
 dagster-webserver = { path = "../../../../../../../python_modules/dagster-webserver", editable = true }
 dagster-pipes = { path = "../../../../../../../python_modules/dagster-pipes", editable = true }
-
-
+dagster-shared = { path = "../../../../../../../python_modules/libraries/dagster-shared", editable = true }
