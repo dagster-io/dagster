@@ -209,3 +209,28 @@ def test_translator_custom_metadata(
             "table_name_in_destination_1",
         ]
         assert "dagster/kind/fivetran" in asset_spec.tags
+
+
+class MyAssetFactoryCustomTranslator(DagsterFivetranTranslator):
+    def get_asset_spec(self, data: FivetranConnectorTableProps) -> AssetSpec:
+        default_spec = super().get_asset_spec(data)
+        return default_spec.replace_attributes(group_name="my_group_name")
+
+
+def test_translator_custom_group_name_with_asset_factory(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
+        resource = FivetranWorkspace(
+            account_id=TEST_ACCOUNT_ID,
+            api_key=EnvVar("FIVETRAN_API_KEY"),
+            api_secret=EnvVar("FIVETRAN_API_SECRET"),
+        )
+
+        my_fivetran_assets = build_fivetran_assets_definitions(
+            workspace=resource, dagster_fivetran_translator=MyAssetFactoryCustomTranslator()
+        )
+
+        first_assets_def = next(assets_def for assets_def in my_fivetran_assets)
+        first_asset_spec = next(asset_spec for asset_spec in first_assets_def.specs)
+        assert first_asset_spec.group_name == "my_group_name"
