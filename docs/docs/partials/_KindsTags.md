@@ -98,6 +98,7 @@
 | `montecarlo`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-montecarlo-color.svg" width={20} height={20} />                     |
 | `mysql`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-mysql-color.svg" width={20} height={20} />                          |
 | `net`                 | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-microsoft-color.svg" width={20} height={20} />                      |
+| `notdiamond`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-notdiamond-color.svg" width={20} height={20} />                     |
 | `noteable`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-noteable-color.svg" width={20} height={20} />                       |
 | `notion`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-notion-color.svg" width={20} height={20} />                         |
 | `numpy`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-numpy-color.svg" width={20} height={20} />                          |
@@ -180,6 +181,7 @@
 | `typescript`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-typescript-color.svg" width={20} height={20} />                     |
 | `vercel`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-vercel-color.svg" width={20} height={20} />                         |
 | `wandb`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-w&b-color.svg" width={20} height={20} />                            |
+| `weaviate`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-weaviate-color.svg" width={20} height={20} />                       |
 | `x`                   | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-x-color.svg" width={20} height={20} />                              |
 | `xgboost`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-xgboost-color.svg" width={20} height={20} />                        |
 | `youtube`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-youtube-color.svg" width={20} height={20} />                        |
