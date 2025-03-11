@@ -205,6 +205,23 @@ def test_replace_automation_conditions() -> None:
     )
 
 
+def test_replace_automation_condition_since() -> None:
+    a = AutomationCondition.in_latest_time_window().with_label("in_latest_time_window")
+    b = AutomationCondition.any_deps_match(AutomationCondition.in_progress())
+    c = (~AutomationCondition.any_deps_in_progress()).with_label("not_any_deps_in_progress")
+    d = AutomationCondition.missing()
+
+    orig = a.since(b | c)
+
+    assert orig.replace(a, d) == d.since(b | c)
+    assert orig.replace(b, d) == a.since(d | c)
+    assert orig.replace("not_any_deps_in_progress", d) == a.since(b | d)
+
+    assert AutomationCondition.eager() != AutomationCondition.eager().replace(
+        "handled", AutomationCondition.newly_updated()
+    )
+
+
 @pytest.mark.parametrize("method", ["allow", "ignore"])
 def test_filter_automation_condition(method: str) -> None:
     a = AutomationCondition.in_latest_time_window()
