@@ -30,7 +30,7 @@ export const linkToAssetTableWithKindFilter = (kind: string) => {
 export const linkToAssetTableWithTagFilter = (tag: Omit<DefinitionTag, '__typename'>) => {
   if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
     return `/assets?${qs.stringify({
-      'asset-selection': `tag:${tag}`,
+      'asset-selection': `tag:"${tag.key}"${tag.value ? `="${tag.value}"` : ''}`,
     })}`;
   }
   return `/assets?${qs.stringify({
@@ -61,6 +61,11 @@ export const linkToAssetTableWithColumnsFilter = (columns: string[]) => {
 };
 
 export const linkToAssetTableWithColumnTagFilter = (tag: Omit<DefinitionTag, '__typename'>) => {
+  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+    return `/assets?${qs.stringify({
+      'asset-selection': `column_tag:"${tag.key}"${tag.value ? `="${tag.value}"` : ''}`,
+    })}`;
+  }
   return `/assets?${qs.stringify({
     columnTags: JSON.stringify([tag]),
   })}`;
