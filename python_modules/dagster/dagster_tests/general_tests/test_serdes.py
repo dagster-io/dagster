@@ -1236,9 +1236,7 @@ def test_remove_class() -> None:
     m_str = serialize_value(m, whitelist_map=test_env)
     assert m == deserialize_value(m_str, whitelist_map=test_env)
 
-
     test_env = WhitelistMap.create()
-
     @_whitelist_for_serdes(test_env, storage_name="MyModel")
     @record
     class MyModelWithoutField:
