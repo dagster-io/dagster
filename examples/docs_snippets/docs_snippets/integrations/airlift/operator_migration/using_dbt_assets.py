@@ -1,10 +1,10 @@
-from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+import dagster_dbt as dg_dbt
 
-from dagster import AssetExecutionContext
+import dagster as dg
 
-project = DbtProject(project_dir="path/to/dbt_project")
+project = dg_dbt.DbtProject(project_dir="path/to/dbt_project")
 
 
-@dbt_assets(manifest=project.manifest_path)
-def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+@dg_dbt.dbt_assets(manifest=project.manifest_path)
+def my_dbt_assets(context: dg.AssetExecutionContext, dbt: dg_dbt.DbtCliResource):
     yield from dbt.cli(["run"], context=context).stream()
