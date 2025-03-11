@@ -54,5 +54,5 @@ else
   cp sphinx/_build/json/objects.inv static/.
 fi
 
-# generation kinds tags partial generation
+# generate kinds tags partial
 uv run --no-project scripts/rebuild-kinds-tags.py
