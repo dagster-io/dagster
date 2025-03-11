@@ -42,7 +42,7 @@ def _get_component_print_script_result(venv_root: Path) -> subprocess.CompletedP
     dagster_components_path = get_venv_executable(venv_root, "dagster-components")
     assert dagster_components_path.exists()
     result = subprocess.run(
-        [str(dagster_components_path), "list", "component-types"],
+        [str(dagster_components_path), "list", "library-objects"],
         capture_output=True,
         text=True,
         check=False,
