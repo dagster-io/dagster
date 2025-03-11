@@ -7,7 +7,7 @@ from dbt.cli.main import dbtRunner
 from pydantic import BaseModel, Field
 
 from dagster_components.component_scaffolding import scaffold_component_yaml
-from dagster_components.core.component_blueprint import Blueprint, ScaffoldRequest
+from dagster_components.core.component_scaffolder import Scaffolder, ScaffoldRequest
 
 
 class DbtScaffoldParams(BaseModel):
@@ -15,7 +15,7 @@ class DbtScaffoldParams(BaseModel):
     project_path: Optional[str] = None
 
 
-class DbtProjectComponentBlueprint(Blueprint):
+class DbtProjectComponentScaffolder(Scaffolder):
     @classmethod
     def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
         return DbtScaffoldParams

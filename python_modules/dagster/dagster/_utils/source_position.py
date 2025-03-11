@@ -84,19 +84,19 @@ class HasSourcePositionAndKeyPath:
 
     @property
     def source_position(self) -> SourcePosition:
-        """Returns the underlying source position of the blueprint, including
+        """Returns the underlying source position of the object, including
         the source file and line number.
         """
         return check.not_none(check.not_none(self._source_position_and_key_path).source_position)
 
     @property
     def source_file(self) -> Path:
-        """Path to the source file where the blueprint is defined."""
+        """Path to the source file where the object is defined."""
         return Path(check.not_none(self.source_position.filename))
 
     @property
     def source_file_name(self) -> str:
-        """Name of the source file where the blueprint is defined."""
+        """Name of the source file where the object is defined."""
         return self.source_file.name
 
 

@@ -7,21 +7,21 @@ from typing import Any
 
 from dagster_components import (
     AssetSpecModel,
-    Blueprint,
     Component,
     ComponentLoadContext,
+    Scaffolder,
     ScaffoldRequest,
     scaffold_component_yaml,
 )
-from dagster_components.blueprint import scaffold_with
 from dagster_components.resolved.core_models import ResolvedAssetSpec
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
+from dagster_components.scaffold import scaffold_with
 
 import dagster as dg
 
 
 # highlight-start
-class ShellCommandBlueprint(Blueprint):
+class ShellCommandScaffolder(Scaffolder):
     """Scaffolds a template shell script alongside a filled-out component YAML file."""
 
     def scaffold(self, request: ScaffoldRequest, params: Any) -> None:
@@ -48,7 +48,7 @@ class ShellCommandModel(ResolvableModel):
 
 
 # highlight-start
-@scaffold_with(blueprint_cls=ShellCommandBlueprint)
+@scaffold_with(ShellCommandScaffolder)
 # highlight-end
 @dataclass
 class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):

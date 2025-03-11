@@ -1,8 +1,8 @@
-from dagster_components.blueprint import scaffold_with
-from dagster_components.components.shim_components.base import ShimBlueprint, ShimComponent
+from dagster_components.components.shim_components.base import ShimComponent, ShimScaffolder
+from dagster_components.scaffold import scaffold_with
 
 
-class AssetBlueprint(ShimBlueprint):
+class AssetScaffolder(ShimScaffolder):
     def get_text(self) -> str:
         return """# import dagster as dg
 # 
@@ -12,6 +12,6 @@ class AssetBlueprint(ShimBlueprint):
 """
 
 
-@scaffold_with(AssetBlueprint)
+@scaffold_with(AssetScaffolder)
 class RawAssetComponent(ShimComponent):
     """Asset definition component."""

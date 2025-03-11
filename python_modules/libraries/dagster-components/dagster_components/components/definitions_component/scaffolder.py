@@ -4,16 +4,16 @@ from typing import Optional
 from dagster._utils import pushd
 from pydantic import BaseModel
 
-from dagster_components.blueprint import Blueprint
 from dagster_components.component_scaffolding import scaffold_component_yaml
-from dagster_components.core.component_blueprint import ScaffoldRequest
+from dagster_components.core.component_scaffolder import ScaffoldRequest
+from dagster_components.scaffold import Scaffolder
 
 
 class DefinitionsScaffoldParams(BaseModel):
     definitions_path: Optional[str] = None
 
 
-class DefinitionsComponentBlueprint(Blueprint):
+class DefinitionsComponentScaffolder(Scaffolder):
     @classmethod
     def get_scaffold_params(cls):
         return DefinitionsScaffoldParams
