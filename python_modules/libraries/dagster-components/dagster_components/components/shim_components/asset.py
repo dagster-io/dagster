@@ -10,9 +10,9 @@ from dagster_components.components.shim_components.base import ShimComponent
 class AssetBlueprint(Blueprint):
     def scaffold(self, request: ScaffoldRequest, params: None) -> None:
         with pushd(str(request.target_path)):
-            Path("definitions.py").write_text("""
-# import dagster as dg
+            Path("definitions.py").write_text("""# import dagster as dg
 # 
+#
 # @dg.asset
 # def my_asset(context: dg.AssetExecutionContext) -> dg.MaterializeResult: ...
 """)

@@ -49,6 +49,7 @@ class DefinitionsComponent(Component, ResolvableModel):
             if self.definitions_path
             else list(context.path.rglob("*.py"))
         )
+
         return Definitions.merge(
             *(self._build_defs_for_path(context, defs_path) for defs_path in defs_paths)
         )

@@ -10,9 +10,9 @@ from dagster_components.components.shim_components.base import ShimComponent
 class ScheduleBlueprint(Blueprint):
     def scaffold(self, request: ScaffoldRequest, params: None) -> None:
         with pushd(str(request.target_path)):
-            Path("definitions.py").write_text("""
-# import dagster as dg
+            Path("definitions.py").write_text("""# import dagster as dg
 # 
+#
 # @dg.schedule(cron_schedule=..., target=...)
 # def my_schedule(context: dg.ScheduleEvaluationContext): ...
 

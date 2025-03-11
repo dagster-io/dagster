@@ -1,4 +1,5 @@
 import contextlib
+import random
 import shutil
 import tempfile
 import textwrap
@@ -108,23 +109,32 @@ def inject_component(
 @contextlib.contextmanager
 def create_project_from_components(
     *src_paths: str, local_component_defn_to_inject: Optional[Path] = None
-) -> Iterator[Path]:
+) -> Iterator[tuple[Path, str]]:
     """Scaffolds a project with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.
     """
+    location_name = f"my_location_{str(random.random()).replace('.', '')}"
     with tempfile.TemporaryDirectory() as tmpdir:
-        project_root = Path(tmpdir) / "my_location"
+        project_root = Path(tmpdir) / location_name
         project_root.mkdir()
+
+        python_module_root = project_root / location_name
+        python_module_root.mkdir()
+        (python_module_root / "__init__.py").touch()
+
+        defs_dir = python_module_root / "defs"
+        defs_dir.mkdir()
+        (defs_dir / "__init__.py").touch()
 
         with alter_sys_path(to_add=[str(project_root)], to_remove=[]):
             with open(project_root / "pyproject.toml", "w") as f:
-                f.write(generate_component_lib_pyproject_toml("my_location", is_project=True))
+                f.write(generate_component_lib_pyproject_toml(location_name, is_project=True))
 
             for src_path in src_paths:
                 component_name = src_path.split("/")[-1]
 
-                components_dir = project_root / "my_location" / "defs" / component_name
-                components_dir.mkdir(parents=True, exist_ok=True)
+                components_dir = defs_dir / component_name
+                components_dir.mkdir()
 
                 _setup_component_in_folder(
                     src_path=src_path,
@@ -133,7 +143,7 @@ def create_project_from_components(
                 )
 
             with ensure_loadable_path(project_root):
-                yield project_root
+                yield project_root, location_name
 
 
 # ########################

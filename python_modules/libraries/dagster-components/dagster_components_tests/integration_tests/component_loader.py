@@ -1,5 +1,4 @@
 import importlib
-import sys
 from pathlib import Path
 from typing import Optional
 
@@ -17,11 +16,7 @@ def load_test_component_defs(
     """
     with create_project_from_components(
         src_path, local_component_defn_to_inject=local_component_defn_to_inject
-    ) as code_location_dir:
-        sys.path.append(str(code_location_dir))
+    ) as (_, project_name):
+        module = importlib.import_module(f"{project_name}.defs.{Path(src_path).stem}")
 
-        module = importlib.import_module(f"my_location.defs.{Path(src_path).stem}")
-
-        return DefinitionsModuleCache(resources={}).load_defs(
-            module=module,
-        )
+        return DefinitionsModuleCache(resources={}).load_defs(module=module)
