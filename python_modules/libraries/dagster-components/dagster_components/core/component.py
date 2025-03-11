@@ -138,7 +138,7 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
         return importlib.metadata.entry_points().get(group, [])
 
 
-COMPONENTS_ENTRY_POINT_GROUP = "dagster.components"
+DG_LIBRARY_ENTRY_POINT_GROUP = "dagster_dg.library"
 
 
 def load_component_type(component_key: ComponentKey) -> type[Component]:
@@ -169,7 +169,7 @@ def discover_entry_point_component_types() -> dict[ComponentKey, type[Component]
     component types. This method will only ever load one builtin component library.
     """
     component_types: dict[ComponentKey, type[Component]] = {}
-    entry_points = get_entry_points_from_python_environment(COMPONENTS_ENTRY_POINT_GROUP)
+    entry_points = get_entry_points_from_python_environment(DG_LIBRARY_ENTRY_POINT_GROUP)
 
     for entry_point in entry_points:
         try:
@@ -177,14 +177,14 @@ def discover_entry_point_component_types() -> dict[ComponentKey, type[Component]
         except Exception as e:
             raise ComponentsEntryPointLoadError(
                 format_error_message(f"""
-                    Error loading entry point `{entry_point.name}` in group `{COMPONENTS_ENTRY_POINT_GROUP}`.
+                    Error loading entry point `{entry_point.name}` in group `{DG_LIBRARY_ENTRY_POINT_GROUP}`.
                     Please fix the error or uninstall the package that defines this entry point.
                 """)
             ) from e
 
         if not isinstance(root_module, ModuleType):
             raise DagsterError(
-                f"Invalid entry point {entry_point.name} in group {COMPONENTS_ENTRY_POINT_GROUP}. "
+                f"Invalid entry point {entry_point.name} in group {DG_LIBRARY_ENTRY_POINT_GROUP}. "
                 f"Value expected to be a module, got {root_module}."
             )
         for name, component_type in get_component_types_in_module(root_module):
