@@ -595,15 +595,26 @@ def test_scaffold_asset() -> None:
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "asset", "assets/foo")
+        result = runner.invoke("scaffold", "asset", "assets/foo.py")
         assert_runner_result(result)
-        assert Path("foo_bar/defs/assets/foo/definitions.py").exists()
-        assert not Path("foo_bar/defs/assets/foo/component.yaml").exists()
+        assert Path("foo_bar/defs/assets/foo.py").exists()
+        assert Path("foo_bar/defs/assets/foo.py").read_text().startswith("# import dagster as dg")
+        assert not Path("foo_bar/defs/assets/foo.py").is_dir()
+        assert not Path("foo_bar/defs/assets/component.yaml").exists()
 
-        result = runner.invoke("scaffold", "asset", "assets/bar")
+        result = runner.invoke("scaffold", "asset", "assets/bar.py")
         assert_runner_result(result)
-        assert Path("foo_bar/defs/assets/bar/definitions.py").exists()
-        assert not Path("foo_bar/defs/assets/bar/component.yaml").exists()
+        assert Path("foo_bar/defs/assets/bar.py").exists()
+        assert not Path("foo_bar/defs/assets/component.yaml").exists()
+
+
+def test_scaffold_bad_extension() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "asset", "assets/foo")
+        assert_runner_result(result, exit_0=False)
 
 
 def test_scaffold_sensor() -> None:
@@ -611,10 +622,10 @@ def test_scaffold_sensor() -> None:
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "sensor", "my_sensor")
+        result = runner.invoke("scaffold", "sensor", "my_sensor.py")
         assert_runner_result(result)
-        assert Path("foo_bar/defs/my_sensor/definitions.py").exists()
-        assert not Path("foo_bar/defs/my_sensor/component.yaml").exists()
+        assert Path("foo_bar/defs/my_sensor.py").exists()
+        assert not Path("foo_bar/defs/component.yaml").exists()
 
 
 # ##### REAL COMPONENTS
