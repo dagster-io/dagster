@@ -423,8 +423,46 @@ class SlingResource(ConfigurableResource):
     ) -> Iterator[SlingEventType]:
         # if translator has not been defined on metadata _or_ through param, then use the default constructor
 
+        with self._setup_config():
+            
+            env = os.environ.copy()
+
+            if not stream:
+                ##### Old method use _run which is not streamable #####
+                generator = self._batch_sling_replicate(
+                    context=context,
+                    replication_config=replication_config,
+                    dagster_sling_translator=dagster_sling_translator,
+                    env=env,
+                    debug=debug,
+                )
+            
+
+            else:
+                #### New method use sling _exec_cmd to stream log from sling to dagster log
+                generator = self._stream_sling_replicate(
+                    context=context,
+                    replication_config=replication_config,
+                    dagster_sling_translator=dagster_sling_translator,
+                    env=env,
+                    debug=debug,
+                )
+
+            yield from generator
+
+    def _batch_sling_replicate(self, 
+                               context: Union[OpExecutionContext, AssetExecutionContext],
+                               replication_config: dict[str, Any],
+                               dagster_sling_translator: DagsterSlingTranslator,
+                               env:dict,
+                               debug: bool,
+                               ) -> Generator[Union[MaterializeResult, AssetMaterialization], None, None]:
+        '''
+        Underlying function to run replication and fetch metadata in batch mode
+        '''
         # convert to dict to enable updating the index
         context_streams = self._get_replication_streams_for_context(context)
+
         if context_streams:
             replication_config.update({"streams": context_streams})
         stream_definitions = get_streams_from_replication(replication_config)
@@ -432,143 +470,173 @@ class SlingResource(ConfigurableResource):
         # extract the destination name from the replication config
         destination_name = replication_config.get("target")
 
-        with self._setup_config():
-            uid = uuid.uuid4()
-            temp_dir = tempfile.gettempdir()
-            temp_file = os.path.join(temp_dir, f"sling-replication-{uid}.json")
-            env = os.environ.copy()
+        uid = uuid.uuid4()
+        temp_dir = tempfile.gettempdir()
+        temp_file = os.path.join(temp_dir, f"sling-replication-{uid}.json")
 
-            with open(temp_file, "w") as file:
+        with open(temp_file, "w") as file:
                 json.dump(replication_config, file, cls=sling.JsonEncoder)
 
-            logger.debug(f"Replication config: {replication_config}")
+        logger.debug(f"Replication config: {replication_config}")
 
-            debug_str = "-d" if debug else ""
+        debug_str = "-d" if debug else ""
 
-            cmd = f"{sling.SLING_BIN} run {debug_str} -r {temp_file}"
+        cmd = f"{sling.SLING_BIN} run {debug_str} -r {temp_file}"
 
-            logger.debug(f"Running Sling replication with command: {cmd}")
+        logger.debug(f"Running Sling replication with command: {cmd}")
 
-            # Get start time from wall clock
-            start_time = time.time()
+        # Get start time from wall clock
+        start_time = time.time()
 
-            ##### Old method use _run which is not streamable #####
-
-            if not stream:
-                results = sling._run(  # noqa
+        results = sling._run(  # noqa
                     cmd=cmd,
                     temp_file=temp_file,
                     return_output=True,
                     env=env,
                 )
 
-                end_time = time.time()
-                for row in results.split("\n"):
-                    clean_line = self._clean_line(row)
-                    logger.debug(clean_line + "\n")
-                    self._stdout.append(clean_line)
+        end_time = time.time()
+        os.remove(temp_file)
 
-                for stream_definition in stream_definitions:
-                    asset_key = dagster_sling_translator.get_asset_spec(stream_definition).key
+        for row in results.split("\n"):
+            clean_line = self._clean_line(row)
+            logger.debug(clean_line + "\n")
+            self._stdout.append(clean_line)
 
-                    object_key = (stream_definition.get("config") or {}).get("object")
-                    destination_stream_name = object_key or stream_definition["name"]
-                    table_name = None
-                    if destination_name and destination_stream_name:
-                        table_name = ".".join([destination_name, destination_stream_name])
+        for stream_definition in stream_definitions:
+            asset_key = dagster_sling_translator.get_asset_spec(stream_definition).key
 
-                    metadata = {
-                        "elapsed_time": end_time - start_time,
-                        "stream_name": stream_definition["name"],
-                        **TableMetadataSet(
-                            table_name=table_name,
-                        ),
-                    }
+            object_key = (stream_definition.get("config") or {}).get("object")
+            destination_stream_name = object_key or stream_definition["name"]
+            table_name = None
+            if destination_name and destination_stream_name:
+                table_name = ".".join([destination_name, destination_stream_name])
 
+            metadata = {
+                "elapsed_time": end_time - start_time,
+                "stream_name": stream_definition["name"],
+                **TableMetadataSet(
+                    table_name=table_name,
+                ),
+            }
+
+            if context.has_assets_def:
+                yield MaterializeResult(asset_key=asset_key, metadata=metadata)
+            else:
+                yield AssetMaterialization(asset_key=asset_key, metadata=metadata)
+
+    def _stream_sling_replicate(self, 
+                               context: Union[OpExecutionContext, AssetExecutionContext],
+                               replication_config: dict[str, Any],
+                               dagster_sling_translator: DagsterSlingTranslator,
+                               env:dict,
+                               debug: bool,
+                               ) -> Generator[Union[MaterializeResult, AssetMaterialization], None, None]:
+        '''
+        Underlying function to run replication and fetch metadata in stream mode
+        '''
+
+        # define variable to use to compute metadata during run
+        current_stream = None
+        metadata_text = []
+        metadata = {}
+
+        # convert to dict to enable updating the index
+        context_streams = self._get_replication_streams_for_context(context)
+
+        if context_streams:
+            replication_config.update({"streams": context_streams})
+
+        uid = uuid.uuid4()
+        temp_dir = tempfile.gettempdir()
+        temp_file = os.path.join(temp_dir, f"sling-replication-{uid}.json")
+
+        with open(temp_file, "w") as file:
+                json.dump(replication_config, file, cls=sling.JsonEncoder)
+
+        logger.debug(f"Replication config: {replication_config}")
+
+        debug_str = "-d" if debug else ""
+
+        cmd = f"{sling.SLING_BIN} run {debug_str} -r {temp_file}"
+
+        logger.debug(f"Running Sling replication with command: {cmd}")
+
+        # Get start time from wall clock
+        start_time = time.time()
+
+        for line in sling._exec_cmd(cmd, env=env):  # noqa
+            if line == "":  # if empty line -- skipped
+                continue
+            text = self._clean_timestamp_log(line)  # else clean timestamp
+            logger.info(text)  # log info to dagster log
+
+            # if no current stream is chosen
+            if current_stream is None:
+                # Try to match stream name with stream keyword
+                matched = re.findall("stream (.*)$", text)
+
+                # If found, extract stream name, stream config, asset key
+                if matched:
+                    current_stream = matched[0]
+                    current_config = replication_config.get("streams", {}).get(
+                        current_stream, {}
+                    )
+                    asset_key = dagster_sling_translator.get_asset_spec(
+                        {"name": current_stream, "config": current_config}
+                    ).key
+                    if debug:
+                        logger.debug(current_stream)
+                        logger.debug(current_config)
+                        logger.debug(asset_key)
+                # Else search for single replication format
+                else:
+                    # If found, extract stream name, stream config, asset key
+                    matched = re.findall(r"Sling Replication [|] .* [|] (\S*)$", text)
+                    if matched:
+                        current_stream = matched[0]
+                        current_config = replication_config.get("streams", {}).get(
+                            current_stream, {}
+                        )
+                        asset_key = dagster_sling_translator.get_asset_spec(
+                            {"name": current_stream, "config": current_config}
+                        ).key
+                        if debug:
+                            logger.debug(current_stream)
+                            logger.debug(current_config)
+                            logger.debug(asset_key)
+                    # Else log that no stream found. This is normal for a few line. But if multiple line come up, further evaluate might be needed for other pattern
+                    else:
+                        logger.debug("no match stream name")
+            # If current stream is already choose
+            else:
+                # Search whether the current stream ended
+                matched = re.findall("execution succeeded", text)
+
+                if matched:
+                    # If yes, query metadata and materialize asset
+                    metadata = self._query_metadata(
+                        "\n".join(metadata_text), start_time=start_time
+                    )
+                    start_time = time.time()
+                    metadata["stream_name"] = current_stream
+                    if debug:
+                        logger.debug(metadata)
+                        logger.debug(metadata_text)
                     if context.has_assets_def:
                         yield MaterializeResult(asset_key=asset_key, metadata=metadata)
                     else:
                         yield AssetMaterialization(asset_key=asset_key, metadata=metadata)
+                        
+                    current_stream = None
+                    metadata_text = []
 
-            #### New method use sling _exec_cmd to stream log from sling to dagster log
+                metadata_text.append(text)
 
-            else:
-                # assign all environment variable to env
-                for k, v in os.environ.items():
-                    env[k] = env.get(k, v)
+        # clean up unused file
+        os.remove(temp_file)
 
-                # define variable to use to compute metadata during run
-                current_stream = None
-                metadata_text = []
-                metadata = {}
-
-                for line in sling._exec_cmd(cmd, env=env):  # noqa
-                    if line == "":  # if empty line -- skipped
-                        continue
-                    text = self._clean_timestamp_log(line)  # else clean timestamp
-                    logger.info(text)  # log info to dagster log
-
-                    # if no current stream is chosen
-                    if current_stream is None:
-                        # Try to match stream name with stream keyword
-                        matched = re.findall("stream (.*)$", text)
-
-                        # If found, extract stream name, stream config, asset key
-                        if matched:
-                            current_stream = matched[0]
-                            current_config = replication_config.get("streams", {}).get(
-                                current_stream, {}
-                            )
-                            asset_key = dagster_sling_translator.get_asset_spec(
-                                {"name": current_stream, "config": current_config}
-                            ).key
-                            logger.debug(current_stream)
-                            logger.debug(current_config)
-                            logger.debug(asset_key)
-                        # Else search for single replication format
-                        else:
-                            # If found, extract stream name, stream config, asset key
-                            matched = re.findall(r"Sling Replication [|] .* [|] (\S*)$", text)
-                            if matched:
-                                current_stream = matched[0]
-                                current_config = replication_config.get("streams", {}).get(
-                                    current_stream, {}
-                                )
-                                asset_key = dagster_sling_translator.get_asset_spec(
-                                    {"name": current_stream, "config": current_config}
-                                ).key
-                                logger.debug(current_stream)
-                                logger.debug(current_config)
-                                logger.debug(asset_key)
-                            # Else log that no stream found. This is normal for a few line. But if multiple line come up, further evaluate might be needed for other pattern
-                            else:
-                                logger.debug("no match stream name")
-                    # If current stream is already choose
-                    else:
-                        # Search whether the current stream ended
-                        matched = re.findall("execution succeeded", text)
-
-                        if matched:
-                            # If yes, query metadata and materialize asset
-                            metadata = self._query_metadata(
-                                "\n".join(metadata_text), start_time=start_time
-                            )
-                            start_time = time.time()
-                            metadata["stream_name"] = current_stream
-                            logger.debug(metadata)
-                            logger.debug(metadata_text)
-                            if context.has_assets_def:
-                                yield MaterializeResult(asset_key=asset_key, metadata=metadata)
-                            else:
-                                yield AssetMaterialization(asset_key=asset_key, metadata=metadata)
-                            current_stream = None
-                            metadata_text = []
-                            continue
-
-                        metadata_text.append(text)
-
-                os.remove(temp_file)
-
+                    
     def stream_raw_logs(self) -> Generator[str, None, None]:
         """Returns a generator of raw logs from the Sling CLI."""
         yield from self._stdout
