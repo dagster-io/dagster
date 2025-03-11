@@ -1,14 +1,25 @@
 import json
+from dataclasses import asdict
 from pathlib import Path
+from typing import Any
 
 import click
 from rich.console import Console
 from rich.table import Table
 
+from dagster_dg.cli.scaffold import SHIM_COMPONENTS
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
+from dagster_dg.defs import (
+    DgAssetMetadata,
+    DgDefinitionMetadata,
+    DgJobMetadata,
+    DgScheduleMetadata,
+    DgSensorMetadata,
+)
+from dagster_dg.error import DgError
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 
 
@@ -24,13 +35,13 @@ def list_group():
 
 @list_group.command(name="project", cls=DgClickCommand)
 @dg_global_options
-def project_list_command(**global_options: object) -> None:
+def list_project_command(**global_options: object) -> None:
     """List projects in the current workspace."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_workspace_environment(Path.cwd(), cli_config)
 
-    for project in dg_context.get_project_names():
-        click.echo(project)
+    for project in dg_context.project_specs:
+        click.echo(project.path)
 
 
 # ########################
@@ -40,7 +51,7 @@ def project_list_command(**global_options: object) -> None:
 
 @list_group.command(name="component", cls=DgClickCommand)
 @dg_global_options
-def component_list_command(**global_options: object) -> None:
+def list_component_command(**global_options: object) -> None:
     """List Dagster component instances defined in the current project."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
@@ -63,13 +74,13 @@ def component_list_command(**global_options: object) -> None:
     help="Output as JSON instead of a table.",
 )
 @dg_global_options
-def component_type_list(output_json: bool, **global_options: object) -> None:
+def list_component_type_command(output_json: bool, **global_options: object) -> None:
     """List registered Dagster components in the current project environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
 
-    sorted_keys = sorted(registry.keys(), key=lambda k: k.to_typename())
+    sorted_keys = sorted(registry.keys() - SHIM_COMPONENTS.keys(), key=lambda k: k.to_typename())
 
     # JSON
     if output_json:
@@ -89,7 +100,111 @@ def component_type_list(output_json: bool, **global_options: object) -> None:
         table = Table(border_style="dim")
         table.add_column("Component Type", style="bold cyan", no_wrap=True)
         table.add_column("Summary")
-        for key in sorted(registry.keys(), key=lambda k: k.to_typename()):
+        for key in sorted_keys:
             table.add_row(key.to_typename(), registry.get(key).summary)
         console = Console()
         console.print(table)
+
+
+# ########################
+# ##### DEFS
+# ########################
+
+
+@list_group.command(name="defs", cls=DgClickCommand)
+@click.option(
+    "--json",
+    "output_json",
+    is_flag=True,
+    default=False,
+    help="Output as JSON instead of a table.",
+)
+@dg_global_options
+def list_defs_command(output_json: bool, **global_options: object) -> None:
+    """List registered Dagster components in the current project environment."""
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+
+    result = dg_context.external_components_command(
+        ["list", "definitions", "-m", dg_context.code_location_target_module_name]
+    )
+    definitions = [_resolve_definition(x) for x in json.loads(result)]
+
+    # JSON
+    if output_json:  # pass it straight through
+        json_output = [asdict(defn) for defn in definitions]
+        click.echo(json.dumps(json_output, indent=4))
+
+    # TABLE
+    else:
+        assets = [item for item in definitions if isinstance(item, DgAssetMetadata)]
+        jobs = [item for item in definitions if isinstance(item, DgJobMetadata)]
+        schedules = [item for item in definitions if isinstance(item, DgScheduleMetadata)]
+        sensors = [item for item in definitions if isinstance(item, DgSensorMetadata)]
+
+        if len(definitions) == 0:
+            click.echo("No definitions are defined for this project.")
+
+        console = Console()
+        if assets:
+            click.echo("Assets")
+            table = Table(border_style="dim")
+            table.add_column("Key")
+            table.add_column("Group")
+            table.add_column("Deps")
+            table.add_column("Kinds")
+            table.add_column("Description")
+
+            for asset in sorted(assets, key=lambda x: x.key):
+                table.add_row(
+                    asset.key,
+                    asset.group,
+                    "\n".join(asset.deps),
+                    "\n".join(asset.kinds),
+                    asset.description,
+                )
+            console.print(table)
+            click.echo("")
+
+        if jobs:
+            click.echo("Jobs")
+            table = Table(border_style="dim")
+            table.add_column("Name")
+
+            for schedule in schedules:
+                table.add_row(schedule.name)
+            console.print(table)
+            click.echo("")
+
+        if schedules:
+            click.echo("Schedules")
+            table = Table(border_style="dim")
+            table.add_column("Name")
+            table.add_column("Cron schedule")
+
+            for schedule in schedules:
+                table.add_row(schedule.name, schedule.cron_schedule)
+            console.print(table)
+            click.echo("")
+
+        if sensors:
+            click.echo("Sensors")
+            table = Table(border_style="dim")
+            table.add_column("Name")
+
+            for schedule in schedules:
+                table.add_row(schedule.name)
+            console.print(table)
+
+
+def _resolve_definition(item: dict[str, Any]) -> DgDefinitionMetadata:
+    if item["type"] == "asset":
+        return DgAssetMetadata(**item)
+    elif item["type"] == "job":
+        return DgJobMetadata(**item)
+    elif item["type"] == "schedule":
+        return DgScheduleMetadata(**item)
+    elif item["type"] == "sensor":
+        return DgSensorMetadata(**item)
+    else:
+        raise DgError(f"Unexpected item type: {item['type']}")

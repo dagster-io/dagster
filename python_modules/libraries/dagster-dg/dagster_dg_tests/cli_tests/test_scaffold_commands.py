@@ -6,17 +6,19 @@ from typing import Literal, get_args
 
 import pytest
 import tomlkit
+from dagster_dg.cli.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.context import DgContext
 from dagster_dg.utils import (
+    create_toml_node,
     cross_platfrom_string_path,
     discover_git_root,
     ensure_dagster_dg_tests_import,
-    get_toml_value,
-    has_toml_value,
+    get_toml_node,
+    has_toml_node,
+    modify_toml_as_dict,
     pushd,
-    set_toml_value,
 )
 from typing_extensions import TypeAlias
 
@@ -29,7 +31,6 @@ from dagster_dg_tests.utils import (
     isolated_example_component_library_foo_bar,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
-    modify_pyproject_toml,
     standardize_box_characters,
 )
 
@@ -87,7 +88,10 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
 
     with ProxyRunner.test() as runner, isolated_example_workspace(runner):
         result = runner.invoke(
-            "scaffold", "project", "foo-bar", "--use-editable-components-package-only", "--verbose"
+            "scaffold",
+            "project",
+            "projects/foo-bar",
+            "--verbose",
         )
         assert_runner_result(result)
         assert Path("projects/foo-bar").exists()
@@ -96,13 +100,18 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert Path("projects/foo-bar/foo_bar/defs").exists()
         assert Path("projects/foo-bar/foo_bar_tests").exists()
         assert Path("projects/foo-bar/pyproject.toml").exists()
+        assert Path("projects/foo-bar/.gitignore").exists()
 
-        # Check TOML content
+        # Check project TOML content
         toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())
+        assert get_toml_node(toml, ("tool", "dg", "project", "root_module"), str) == "foo_bar"
+
+        # Check workspace TOML content
+        toml = tomlkit.parse(Path("pyproject.toml").read_text())
         assert (
-            get_toml_value(toml, ("tool", "dagster", "module_name"), str) == "foo_bar.definitions"
+            get_toml_node(toml, ("tool", "dg", "workspace", "projects", 0, "path"), str)
+            == "projects/foo-bar"
         )
-        assert get_toml_value(toml, ("tool", "dagster", "code_location_name"), str) == "foo-bar"
 
         # Check venv created
         assert Path("projects/foo-bar/.venv").exists()
@@ -120,6 +129,43 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
             result = runner.invoke("list", "component-type", "--verbose")
             assert_runner_result(result)
             assert "CACHE [hit]" in result.output
+
+        # Create another project, make sure it's appended correctly to the workspace TOML and exists
+        # in a different directory.
+        result = runner.invoke("scaffold", "project", "other_projects/baz", "--verbose")
+        assert_runner_result(result)
+
+        # Check workspace TOML content
+        toml = tomlkit.parse(Path("pyproject.toml").read_text())
+        assert (
+            get_toml_node(toml, ("tool", "dg", "workspace", "projects", 1, "path"), str)
+            == "other_projects/baz"
+        )
+
+
+def test_scaffold_project_inside_workspace_applies_scaffold_project_options(monkeypatch):
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, use_editable_components_package_only=False),
+    ):
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
+            create_toml_node(
+                toml_dict,
+                ("tool", "dg", "workspace", "scaffold_project_options", "use_editable_dagster"),
+                True,
+            )
+
+        result = runner.invoke(
+            "scaffold",
+            "project",
+            "projects/foo-bar",
+        )
+        assert_runner_result(result)
+        # Check that use_editable_dagster was applied
+        toml = tomlkit.parse(Path("projects/foo-bar/pyproject.toml").read_text())
+        assert has_toml_node(toml, ("tool", "uv", "sources", "dagster"))
 
 
 def test_scaffold_project_outside_workspace_success(monkeypatch) -> None:
@@ -160,8 +206,11 @@ def test_scaffold_project_editable_dagster_success(
         editable_args = [option, "--"]
     else:
         editable_args = [option, str(dagster_git_repo_dir)]
-    with ProxyRunner.test() as runner, isolated_example_workspace(runner):
-        result = runner.invoke("scaffold", "project", *editable_args, "foo-bar")
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, use_editable_components_package_only=False),
+    ):
+        result = runner.invoke("scaffold", "project", *editable_args, "projects/foo-bar")
         assert_runner_result(result)
         assert Path("projects/foo-bar").exists()
         assert Path("projects/foo-bar/pyproject.toml").exists()
@@ -176,35 +225,50 @@ def validate_pyproject_toml_with_editable(
     repo_root: Path,
 ) -> None:
     if option == "--use-editable-dagster":
-        assert get_toml_value(toml, ("tool", "uv", "sources", "dagster"), dict) == {
+        assert get_toml_node(toml, ("tool", "uv", "sources", "dagster"), dict) == {
             "path": str(repo_root / "python_modules" / "dagster"),
             "editable": True,
         }
-        assert get_toml_value(toml, ("tool", "uv", "sources", "dagster-pipes"), dict) == {
+        assert get_toml_node(toml, ("tool", "uv", "sources", "dagster-pipes"), dict) == {
             "path": str(repo_root / "python_modules" / "dagster-pipes"),
             "editable": True,
         }
-        assert get_toml_value(toml, ("tool", "uv", "sources", "dagster-webserver"), dict) == {
+        assert get_toml_node(toml, ("tool", "uv", "sources", "dagster-webserver"), dict) == {
             "path": str(repo_root / "python_modules" / "dagster-webserver"),
             "editable": True,
         }
         # Check for presence of one random package with no component to ensure we are
         # preemptively adding all packages
-        assert get_toml_value(toml, ("tool", "uv", "sources", "dagstermill"), dict) == {
+        assert get_toml_node(toml, ("tool", "uv", "sources", "dagstermill"), dict) == {
             "path": str(repo_root / "python_modules" / "libraries" / "dagstermill"),
             "editable": True,
         }
     else:
-        assert not has_toml_value(toml, ("tool", "uv", "sources", "dagster"))
-        assert not has_toml_value(toml, ("tool", "uv", "sources", "dagster-pipes"))
-        assert not has_toml_value(toml, ("tool", "uv", "sources", "dagster-webserver"))
-        assert not has_toml_value(toml, ("tool", "uv", "sources", "dagstermill"))
+        assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster"))
+        assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster-pipes"))
+        assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster-webserver"))
+        assert not has_toml_node(toml, ("tool", "uv", "sources", "dagstermill"))
 
     # dagster-components should be in sources in both cases
-    assert get_toml_value(toml, ("tool", "uv", "sources", "dagster-components"), dict) == {
+    assert get_toml_node(toml, ("tool", "uv", "sources", "dagster-components"), dict) == {
         "path": str(repo_root / "python_modules" / "libraries" / "dagster-components"),
         "editable": True,
     }
+
+
+def test_scaffold_project_use_editable_dagster_env_var_succeeds(monkeypatch) -> None:
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
+    monkeypatch.setenv(DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR, "1")
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        # We need to use subprocess rather than runner here because the environment variable affects
+        # CLI defaults set at process startup.
+        subprocess.check_output(["dg", "scaffold", "project", "foo-bar"], text=True)
+        with open("foo-bar/pyproject.toml") as f:
+            toml = tomlkit.parse(f.read())
+            validate_pyproject_toml_with_editable(
+                toml, "--use-editable-dagster", dagster_git_repo_dir
+            )
 
 
 def test_scaffold_project_skip_venv_success() -> None:
@@ -281,7 +345,10 @@ def test_scaffold_project_editable_dagster_no_env_var_no_value_fails(
     option: EditableOption, monkeypatch
 ) -> None:
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", "")
-    with ProxyRunner.test() as runner, isolated_example_workspace(runner):
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_workspace(runner, use_editable_components_package_only=False),
+    ):
         result = runner.invoke("scaffold", "project", option, "--", "bar")
         assert_runner_result(result, exit_0=False)
         assert "require the `DAGSTER_GIT_REPO_DIR`" in result.output
@@ -293,7 +360,7 @@ def test_scaffold_project_already_exists_fails() -> None:
         assert_runner_result(result)
         result = runner.invoke("scaffold", "project", "bar", "--skip-venv")
         assert_runner_result(result, exit_0=False)
-        assert "already exists" in result.output
+        assert "already specifies a project at" in result.output
 
 
 # ########################
@@ -469,8 +536,8 @@ def test_scaffold_component_succeeds_non_default_defs_module() -> None:
     ):
         alt_lib_path = Path("foo_bar/_defs")
         alt_lib_path.mkdir(parents=True)
-        with modify_pyproject_toml() as toml:
-            set_toml_value(toml, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
+            create_toml_node(toml_dict, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
         result = runner.invoke(
             "scaffold",
             "component",
@@ -492,8 +559,8 @@ def test_scaffold_component_fails_defs_module_does_not_exist() -> None:
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        with modify_pyproject_toml() as toml:
-            set_toml_value(toml, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
+        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
+            create_toml_node(toml_dict, ("tool", "dg", "project", "defs_module"), "foo_bar._defs")
         result = runner.invoke(
             "scaffold",
             "component",
@@ -519,6 +586,47 @@ def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
         component_yaml_path = Path("foo_bar/defs/qux/component.yaml")
         assert component_yaml_path.exists()
         assert "type: foo_bar.lib.Baz" in component_yaml_path.read_text()
+
+
+# ##### SHIMS
+
+
+def test_scaffold_asset() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "asset", "assets/foo.py")
+        assert_runner_result(result)
+        assert Path("foo_bar/defs/assets/foo.py").exists()
+        assert Path("foo_bar/defs/assets/foo.py").read_text().startswith("# import dagster as dg")
+        assert not Path("foo_bar/defs/assets/foo.py").is_dir()
+        assert not Path("foo_bar/defs/assets/component.yaml").exists()
+
+        result = runner.invoke("scaffold", "asset", "assets/bar.py")
+        assert_runner_result(result)
+        assert Path("foo_bar/defs/assets/bar.py").exists()
+        assert not Path("foo_bar/defs/assets/component.yaml").exists()
+
+
+def test_scaffold_bad_extension() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "asset", "assets/foo")
+        assert_runner_result(result, exit_0=False)
+
+
+def test_scaffold_sensor() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "sensor", "my_sensor.py")
+        assert_runner_result(result)
+        assert Path("foo_bar/defs/my_sensor.py").exists()
+        assert not Path("foo_bar/defs/component.yaml").exists()
 
 
 # ##### REAL COMPONENTS
@@ -629,4 +737,4 @@ def test_scaffold_component_type_fails_components_lib_package_does_not_exist(cap
         assert_runner_result(result, exit_0=False)
 
         captured = capfd.readouterr()
-        assert "Error loading entry point `foo_bar` in group `dagster.components`." in captured.err
+        assert "Error loading entry point `foo_bar` in group `dagster_dg.library`." in captured.err

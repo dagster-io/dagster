@@ -10,6 +10,7 @@ from types import ModuleType
 from typing import Any, Optional, TypeVar
 
 import click
+from dagster import _check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -18,8 +19,11 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.tags import build_kind_tag
 from dagster._core.errors import DagsterError
 
-from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.objects import AssetAttributesSchema
+from dagster_components.resolved.context import ResolutionContext
+from dagster_components.resolved.core_models import (
+    AssetAttributesModel,
+    resolve_asset_attributes_to_mapping,
+)
 
 T = TypeVar("T")
 
@@ -72,13 +76,17 @@ def get_path_for_package(package_name: str) -> str:
 @dataclass
 class TranslatorResolvingInfo:
     obj_name: str
-    asset_attributes: AssetAttributesSchema
+    asset_attributes: AssetAttributesModel
     resolution_context: ResolutionContext
 
     def get_resolved_attribute(self, attribute: str, obj: Any, default_method) -> Any:
-        resolved_attributes = self.resolution_context.with_scope(
-            **{self.obj_name: obj}
-        ).resolve_value(self.asset_attributes)
+        resolved_attributes = resolve_asset_attributes_to_mapping(
+            context=self.resolution_context.at_path("asset_attributes").with_scope(
+                **{self.obj_name: obj}
+            ),
+            model=self.asset_attributes,
+        )
+
         return (
             resolved_attributes[attribute]
             if attribute in resolved_attributes
@@ -95,9 +103,11 @@ class TranslatorResolvingInfo:
         """
         attribute_value = dict(default_method(obj) or {})
 
-        resolved_attributes = self.resolution_context.with_scope(
-            **{self.obj_name: obj}
-        ).resolve_value(self.asset_attributes)
+        resolved_attributes = resolve_asset_attributes_to_mapping(
+            context=self.resolution_context.with_scope(**{self.obj_name: obj}),
+            model=self.asset_attributes,
+        )
+
         if attribute in resolved_attributes:
             attribute_value.update(resolved_attributes[attribute])
         return attribute_value
@@ -120,8 +130,9 @@ class TranslatorResolvingInfo:
 
         ```
         """
-        resolved_attributes = self.resolution_context.with_scope(**context).resolve_value(
-            self.asset_attributes
+        resolved_attributes = resolve_asset_attributes_to_mapping(
+            model=self.asset_attributes,
+            context=self.resolution_context.with_scope(**context),
         )
         return base_spec.replace_attributes(**resolved_attributes)
 
@@ -246,3 +257,14 @@ def install_to_venv(venv_dir: Path, install_args: list[str]) -> None:
     executable = get_venv_executable(venv_dir)
     command = ["uv", "pip", "install", "--python", str(executable), *install_args]
     subprocess.run(command, check=True)
+
+
+def get_path_from_module(module: ModuleType) -> Path:
+    module_path = (
+        Path(module.__file__).parent
+        if module.__file__
+        else Path(module.__path__[0])
+        if module.__path__
+        else None
+    )
+    return check.not_none(module_path, f"Module {module.__name__} has no filepath")

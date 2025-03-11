@@ -89,10 +89,7 @@ and see your new component type in the list of available component types.
 
 You can also view automatically generated documentation describing your new component type by running:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/4-dg-component-type-docs.txt" />
-
-![](/images/guides/build/projects-and-components/components/component-type-docs.png)
-
+<CliInvocationExample contents="dg docs serve" />
 
 Now, you can use this component type to create new component instances.
 
@@ -100,19 +97,19 @@ Now, you can use this component type to create new component instances.
 
 Once your component type is registered, instances of the component type can be scaffolded using the `dg scaffold component` command:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/6-scaffold-instance-of-component.txt" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/4-scaffold-instance-of-component.txt" />
 
 By default, this will create a new directory alongside an unpopulated `component.yaml` file. However, you can customize this behavior by decorating your component_type with `scaffoldable`.
 
 In this case, we might want to scaffold a template shell script alongside a filled-out `component.yaml` file, which we accomplish with a custom scaffolder:
 
-<CodeExample  path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-scaffolder.py" language="python" title="my_component_library/lib/shell_command.py"/>
+<CodeExample  path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-blueprint.py" language="python" title="my_component_library/lib/shell_command.py"/>
 
 Now, when we run `dg scaffold component`, we'll see that a template shell script is created alongside a filled-out `component.yaml` file:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/7-scaffolded-component.yaml" language="yaml" title="my_component_library/components/my_shell_command/component.yaml" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/5-scaffolded-component.yaml" language="yaml" title="my_component_library/components/my_shell_command/component.yaml" />
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/8-scaffolded-component-script.sh" language="bash" title="my_component_library/components/my_shell_command/script.sh" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/6-scaffolded-component-script.sh" language="bash" title="my_component_library/components/my_shell_command/script.sh" />
 
 ## [Advanced] Providing resolution logic for non-standard types
 

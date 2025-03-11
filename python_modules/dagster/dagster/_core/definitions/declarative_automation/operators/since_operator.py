@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import Sequence
+from typing import Union
 
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -8,7 +9,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._record import record
+from dagster._record import copy, record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 
@@ -54,4 +55,26 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
 
         return AutomationResult(
             context=context, true_subset=true_subset, child_results=[trigger_result, reset_result]
+        )
+
+    def replace(
+        self, old: Union[AutomationCondition, str], new: AutomationCondition
+    ) -> AutomationCondition:
+        """Replaces all instances of ``old`` across any sub-conditions with ``new``.
+
+        If ``old`` is a string, then conditions with a label matching
+        that string will be replaced.
+
+        Args:
+            old (Union[AutomationCondition, str]): The condition to replace.
+            new (AutomationCondition): The condition to replace with.
+        """
+        return (
+            new
+            if old in [self, self.get_label()]
+            else copy(
+                self,
+                trigger_condition=self.trigger_condition.replace(old, new),
+                reset_condition=self.reset_condition.replace(old, new),
+            )
         )

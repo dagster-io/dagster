@@ -19,6 +19,7 @@ from dagster_airlift.core import (
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
 
+# asset-check-update-start
 @asset_check(asset=AssetKey(["customers_csv"]))
 def validate_exported_csv() -> AssetCheckResult:
     csv_path = Path(os.environ["TUTORIAL_EXAMPLE_DIR"]) / "customers.csv"
@@ -39,6 +40,9 @@ def validate_exported_csv() -> AssetCheckResult:
         description=f"Export CSV {csv_path} exists",
         metadata={"rows": rows},
     )
+
+
+# asset-check-update-end
 
 
 def dbt_project_path() -> Path:

@@ -47,20 +47,21 @@ def test_list_components_types_from_module():
     ]
 
     assert result["dagster_test.components.SimpleAssetComponent"] == {
-        "name": "SimpleAssetComponent",
-        "namespace": "dagster_test.components",
-        "summary": "A simple asset that returns a constant string value.",
-        "description": "A simple asset that returns a constant string value.",
-        "scaffold_params_schema": None,
         "component_schema": {
+            "additionalProperties": False,
             "properties": {
                 "asset_key": {"title": "Asset Key", "type": "string"},
                 "value": {"title": "Value", "type": "string"},
             },
             "required": ["asset_key", "value"],
-            "title": "SimpleAssetSchema",
+            "title": "SimpleAssetComponentModel",
             "type": "object",
         },
+        "description": "A simple asset that returns a constant string value.",
+        "name": "SimpleAssetComponent",
+        "namespace": "dagster_test.components",
+        "scaffold_params_schema": None,
+        "summary": "A simple asset that returns a constant string value.",
     }
 
     pipes_script_params_schema = {
@@ -92,7 +93,7 @@ def test_list_components_types_from_project() -> None:
         "definitions/local_component_sample",
         "definitions/other_local_component_sample",
         "definitions/default_file",
-    ) as tmpdir:
+    ) as (tmpdir, location_name):
         with new_cwd(str(tmpdir)):
             result = runner.invoke(
                 cli,
@@ -100,7 +101,7 @@ def test_list_components_types_from_project() -> None:
                     "list",
                     "component-types",
                     "--no-entry-points",
-                    "my_location.defs.local_component_sample",
+                    f"{location_name}.defs.local_component_sample",
                 ],
             )
 
@@ -108,7 +109,9 @@ def test_list_components_types_from_project() -> None:
 
             result = json.loads(result.output)
             assert len(result) == 1
-            assert set(result.keys()) == {"my_location.defs.local_component_sample.MyComponent"}
+            assert set(result.keys()) == {
+                f"{location_name}.defs.local_component_sample.MyComponent"
+            }
 
             # Add a second module
             result = runner.invoke(
@@ -117,8 +120,8 @@ def test_list_components_types_from_project() -> None:
                     "list",
                     "component-types",
                     "--no-entry-points",
-                    "my_location.defs.local_component_sample",
-                    "my_location.defs.other_local_component_sample",
+                    f"{location_name}.defs.local_component_sample",
+                    f"{location_name}.defs.other_local_component_sample",
                 ],
             )
 
@@ -127,8 +130,8 @@ def test_list_components_types_from_project() -> None:
             result = json.loads(result.output)
             assert len(result) == 2
             assert set(result.keys()) == {
-                "my_location.defs.local_component_sample.MyComponent",
-                "my_location.defs.other_local_component_sample.MyNewComponent",
+                f"{location_name}.defs.local_component_sample.MyComponent",
+                f"{location_name}.defs.other_local_component_sample.MyNewComponent",
             }
 
             # Add another, non-local component directory, which no-ops
@@ -138,9 +141,9 @@ def test_list_components_types_from_project() -> None:
                     "list",
                     "component-types",
                     "--no-entry-points",
-                    "my_location.defs.local_component_sample",
-                    "my_location.defs.other_local_component_sample",
-                    "my_location.defs.default_file",
+                    f"{location_name}.defs.local_component_sample",
+                    f"{location_name}.defs.other_local_component_sample",
+                    f"{location_name}.defs.default_file",
                 ],
             )
 

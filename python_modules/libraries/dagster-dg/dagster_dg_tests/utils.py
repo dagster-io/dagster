@@ -1,3 +1,4 @@
+import contextlib
 import os
 import shutil
 import subprocess
@@ -11,20 +12,20 @@ from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import Any, Optional, Union
 
-import tomlkit
 from click.testing import CliRunner, Result
 from dagster_dg.cli import (
     DG_CLI_MAX_OUTPUT_WIDTH,
     cli as dg_cli,
 )
 from dagster_dg.utils import (
-    delete_toml_value,
+    delete_toml_node,
     discover_git_root,
     get_venv_executable,
     install_to_venv,
     is_windows,
+    modify_toml,
     pushd,
-    set_toml_value,
+    set_toml_node,
 )
 from typing_extensions import Self
 
@@ -62,6 +63,7 @@ def isolated_example_workspace(
     runner: Union[CliRunner, "ProxyRunner"],
     project_name: Optional[str] = None,
     create_venv: bool = False,
+    use_editable_components_package_only: bool = True,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
@@ -72,8 +74,11 @@ def isolated_example_workspace(
     ):
         result = runner.invoke(
             "init",
-            "--use-editable-components-package-only",
-            dagster_git_repo_dir,
+            *(
+                ["--use-editable-components-package-only", dagster_git_repo_dir]
+                if use_editable_components_package_only
+                else []
+            ),
             input=f"\n{project_name or ''}\n",
         )
         assert_runner_result(result)
@@ -108,12 +113,11 @@ def isolated_example_project_foo_bar(
     """
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    project_path = Path("foo-bar")
     if in_workspace:
         fs_context = isolated_example_workspace(runner)
-        project_path = Path("projects/foo-bar")
     else:
         fs_context = runner.isolated_filesystem()
-        project_path = Path("foo-bar")
     with fs_context:
         result = runner.invoke(
             "scaffold",
@@ -164,15 +168,15 @@ def isolated_example_component_library_foo_bar(
             shutil.rmtree(Path("foo_bar/defs"))
 
             # Make it not a project
-            with modify_pyproject_toml() as toml:
-                delete_toml_value(toml, ("tool", "dg"))
+            with modify_toml(Path("pyproject.toml")) as toml:
+                delete_toml_node(toml, ("tool", "dg"))
 
                 # We need to set any alternative lib package name _before_ we install into the
                 # environment, since it affects entry points which are set at install time.
                 if lib_module_name:
-                    set_toml_value(
+                    set_toml_node(
                         toml,
-                        ("project", "entry-points", "dagster.components", "foo_bar"),
+                        ("project", "entry-points", "dagster_dg.library", "foo_bar"),
                         lib_module_name,
                     )
                     Path(*lib_module_name.split(".")).mkdir(exist_ok=True)
@@ -431,10 +435,27 @@ def print_exception_info(
     print(f"{exc_type.__name__}: {exc_value}")  # noqa: T201
 
 
-@contextmanager
-def modify_pyproject_toml() -> Iterator[tomlkit.TOMLDocument]:
-    with open("pyproject.toml") as f:
-        toml = tomlkit.parse(f.read())
-    yield toml
-    with open("pyproject.toml", "w") as f:
-        f.write(tomlkit.dumps(toml))
+COMPONENT_INTEGRATION_TEST_DIR = (
+    Path(__file__).parent.parent.parent
+    / "dagster-components"
+    / "dagster_components_tests"
+    / "integration_tests"
+    / "components"
+)
+
+
+@contextlib.contextmanager
+def create_project_from_components(
+    runner: ProxyRunner, *src_paths: str, local_component_defn_to_inject: Optional[Path] = None
+) -> Iterator[Path]:
+    """Scaffolds a project with the given components in a temporary directory,
+    injecting the provided local component defn into each component's __init__.py.
+    """
+    origin_paths = [COMPONENT_INTEGRATION_TEST_DIR / src_path for src_path in src_paths]
+    with isolated_example_project_foo_bar(runner, component_dirs=origin_paths):
+        for src_path in src_paths:
+            components_dir = Path.cwd() / "foo_bar" / "defs" / src_path.split("/")[-1]
+            if local_component_defn_to_inject:
+                shutil.copy(local_component_defn_to_inject, components_dir / "__init__.py")
+
+        yield Path.cwd()

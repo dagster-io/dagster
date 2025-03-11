@@ -123,6 +123,7 @@ export const AssetGraphSettingsButton = ({
         case Shortcut.Direction:
           return (
             <ShortcutHandler
+              key={shortcut.type}
               onShortcut={() => setDirection(direction === 'vertical' ? 'horizontal' : 'vertical')}
               shortcutFilter={(e) => e.altKey && e.code === 'KeyO'}
             >
@@ -132,6 +133,7 @@ export const AssetGraphSettingsButton = ({
         case Shortcut.ExpandAllGroups:
           return (
             <ShortcutHandler
+              key={shortcut.type}
               onShortcut={() =>
                 shortcut.setExpandedGroups(
                   shortcut.expandedGroups?.length === 0 ? (shortcut.allGroups ?? []) : [],
@@ -145,6 +147,7 @@ export const AssetGraphSettingsButton = ({
         case Shortcut.HideEdgesToNodesOutsideQuery:
           return (
             <ShortcutHandler
+              key={shortcut.type}
               onShortcut={() =>
                 shortcut.setHideEdgesToNodesOutsideQuery(!hideEdgesToNodesOutsideQuery)
               }

@@ -1,8 +1,11 @@
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Annotated, Optional
+from types import ModuleType
+from typing import Annotated, Optional, cast
 
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster_dbt import (
@@ -12,72 +15,64 @@ from dagster_dbt import (
     DbtProject,
     dbt_assets,
 )
+from dagster_dbt.asset_utils import get_asset_key_for_model as get_asset_key_for_model
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
-from dagster_components.core.schema.metadata import ResolvableFieldInfo
-from dagster_components.core.schema.objects import (
-    AssetAttributesSchema,
+from dagster_components.blueprint import scaffold_with
+from dagster_components.components.dbt_project.blueprint import DbtProjectComponentBlueprint
+from dagster_components.resolved.core_models import (
+    AssetAttributesModel,
     AssetPostProcessor,
-    AssetPostProcessorSchema,
+    AssetPostProcessorModel,
     OpSpec,
-    OpSpecSchema,
+    OpSpecModel,
     ResolutionContext,
 )
-from dagster_components.core.schema.resolvable_from_schema import (
-    DSLFieldResolver,
-    DSLSchema,
-    ResolvableFromSchema,
-)
-from dagster_components.scaffoldable.decorator import scaffoldable
+from dagster_components.resolved.metadata import ResolvableFieldInfo
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
 from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
 
 
-class DbtProjectSchema(DSLSchema):
+class DbtProjectModel(ResolvableModel):
     dbt: DbtCliResource
-    op: Optional[OpSpecSchema] = None
+    op: Optional[OpSpecModel] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesSchema],
+        Optional[AssetAttributesModel],
         ResolvableFieldInfo(required_scope={"node"}),
     ] = None
-    asset_post_processors: Optional[Sequence[AssetPostProcessorSchema]] = None
+    asset_post_processors: Optional[Sequence[AssetPostProcessorModel]] = None
     select: str = "fqn:*"
     exclude: Optional[str] = None
 
 
-@scaffoldable(scaffolder=DbtProjectComponentScaffolder)
+def resolve_translator(context: ResolutionContext, model: DbtProjectModel) -> DagsterDbtTranslator:
+    if model.asset_attributes and model.asset_attributes.deps:
+        # TODO: Consider supporting alerting deps in the future
+        raise ValueError("deps are not supported for dbt_project component")
+    return get_wrapped_translator_class(DagsterDbtTranslator)(
+        resolving_info=TranslatorResolvingInfo(
+            "node", model.asset_attributes or AssetAttributesModel(), context
+        )
+    )
+
+
+def resolve_dbt(context: ResolutionContext, dbt: DbtCliResource) -> DbtCliResource:
+    return DbtCliResource(**context.resolve_value(dbt.model_dump()))
+
+
+@scaffold_with(blueprint_cls=DbtProjectComponentBlueprint)
 @dataclass
-class DbtProjectComponent(Component, ResolvableFromSchema[DbtProjectSchema]):
+class DbtProjectComponent(Component, ResolvedFrom[DbtProjectModel]):
     """Expose a DBT project to Dagster as a set of assets."""
 
-    @staticmethod
-    def resolve_dbt(context: ResolutionContext, dbt: DbtCliResource) -> DbtCliResource:
-        return DbtCliResource(**context.resolve_value(dbt.model_dump()))
-
-    dbt: Annotated[DbtCliResource, DSLFieldResolver(resolve_dbt)]
-    op: Annotated[Optional[OpSpec], DSLFieldResolver(OpSpec.from_optional)] = None
-
-    @staticmethod
-    def resolve_translator(
-        context: ResolutionContext, schema: DbtProjectSchema
-    ) -> DagsterDbtTranslator:
-        if schema.asset_attributes and schema.asset_attributes.deps:
-            # TODO: Consider supporting alerting deps in the future
-            raise ValueError("deps are not supported for dbt_project component")
-        return get_wrapped_translator_class(DagsterDbtTranslator)(
-            resolving_info=TranslatorResolvingInfo(
-                "node", schema.asset_attributes or AssetAttributesSchema(), context
-            )
-        )
-
-    # This requires from_parent because it access asset_attributes in the schema
-    translator: Annotated[
-        DagsterDbtTranslator, DSLFieldResolver.from_parent(resolve_translator)
-    ] = field(default_factory=DagsterDbtTranslator)
-
+    dbt: Annotated[DbtCliResource, Resolver(resolve_dbt)]
+    op: Annotated[Optional[OpSpec], Resolver.from_annotation()] = None
+    # This requires from_parent because it access asset_attributes in the model
+    translator: Annotated[DagsterDbtTranslator, Resolver.from_model(resolve_translator)] = field(
+        default_factory=DagsterDbtTranslator
+    )
     asset_post_processors: Annotated[
-        Optional[Sequence[AssetPostProcessor]],
-        DSLFieldResolver(AssetPostProcessor.from_optional_seq),
+        Optional[Sequence[AssetPostProcessor]], Resolver.from_annotation()
     ] = None
     select: str = "fqn:*"
     exclude: Optional[str] = None
@@ -119,3 +114,34 @@ class DbtProjectComponent(Component, ResolvableFromSchema[DbtProjectSchema]):
 
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
         yield from dbt.cli(["build"], context=context).stream()
+
+
+def get_asset_key_for_model_from_module(
+    context: ComponentLoadContext, dbt_component_module: ModuleType, model_name: str
+) -> AssetKey:
+    """Component-based version of dagster_dbt.get_asset_key_for_model. Returns the corresponding Dagster
+    asset key for a dbt model, seed, or snapshot, loaded from the passed component path.
+
+    Args:
+        dbt_component_module (ModuleType): The module that was used to load the dbt project.
+        model_name (str): The name of the dbt model, seed, or snapshot.
+
+    Returns:
+        AssetKey: The corresponding Dagster asset key.
+
+    Examples:
+        .. code-block:: python
+
+            from dagster import asset
+            from dagster_components.components.dbt_project import get_asset_key_for_model_from_module
+            from dagster_components.core.component import ComponentLoadContext
+            from my_project.defs import dbt_component
+
+            ctx = ComponentLoadContext.get()
+
+            @asset(deps={get_asset_key_for_model_from_module(ctx, dbt_component, "customers")})
+            def cleaned_customers():
+                ...
+    """
+    defs = context.load_defs(dbt_component_module)
+    return get_asset_key_for_model(cast(Sequence[AssetsDefinition], defs.assets), model_name)

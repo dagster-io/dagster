@@ -28,6 +28,7 @@ interface Props {
   view?: AssetViewType;
   kindFilter?: StaticSetFilter<string>;
   isLoading?: boolean;
+  onChangeAssetSelection?: (selection: string) => void;
 }
 
 export const VirtualizedAssetTable = (props: Props) => {
@@ -42,6 +43,7 @@ export const VirtualizedAssetTable = (props: Props) => {
     view = 'flat',
     kindFilter,
     isLoading,
+    onChangeAssetSelection,
   } = props;
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -117,6 +119,7 @@ export const VirtualizedAssetTable = (props: Props) => {
                 onToggleChecked={onToggleFactory(row.displayKey)}
                 onRefresh={onRefresh}
                 kindFilter={kindFilter}
+                onChangeAssetSelection={onChangeAssetSelection}
               />
             );
           })}

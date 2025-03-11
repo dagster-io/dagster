@@ -37,6 +37,7 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
 │ docs       Commands for generating docs from your Dagster code.                        │
 │ init       Initialize a new Dagster workspace and a first project within that          │
 │            workspace.                                                                  │
+│ launch     Launch a Dagster run.                                                       │
 │ list       Commands for listing Dagster entities.                                      │
 │ scaffold   Commands for scaffolding Dagster code.                                      │
 │ utils      Assorted utility commands.                                                  │

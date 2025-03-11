@@ -4,11 +4,10 @@ from typing import Optional
 import click
 from pydantic import TypeAdapter
 
+from dagster_components.blueprint import BlueprintUnavailableReason, get_blueprint
+from dagster_components.component_scaffolding import scaffold_component_instance
 from dagster_components.core.component import load_component_type
 from dagster_components.core.component_key import ComponentKey
-from dagster_components.scaffold import scaffold_component_instance
-from dagster_components.scaffoldable.decorator import get_scaffolder
-from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
 
 
 @click.group(name="scaffold")
@@ -29,12 +28,12 @@ def scaffold_component_command(
     component_type_cls = load_component_type(key)
 
     if json_params:
-        scaffolder = get_scaffolder(component_type_cls)
-        if isinstance(scaffolder, ScaffolderUnavailableReason):
+        blueprint = get_blueprint(component_type_cls)
+        if isinstance(blueprint, BlueprintUnavailableReason):
             raise Exception(
-                f"Component type {component_type} does not have a scaffolder. Reason: {scaffolder.message}."
+                f"Component type {component_type} does not have a blueprint. Reason: {blueprint.message}."
             )
-        scaffold_params = TypeAdapter(scaffolder.get_params()).validate_json(json_params)
+        scaffold_params = TypeAdapter(blueprint.get_scaffold_params()).validate_json(json_params)
     else:
         scaffold_params = {}
 

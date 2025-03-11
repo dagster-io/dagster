@@ -71,6 +71,7 @@ from dagster._grpc.server import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCo
 from dagster._time import get_current_timestamp
 from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._utils.env import using_dagster_dev
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
@@ -821,7 +822,14 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
 
         except Exception:
             error = serializable_error_info_from_exc_info(sys.exc_info())
-            warnings.warn(f"Error loading repository location {location_name}:{error.to_string()}")
+            # In dagster dev, the code server process already logs the error, so we don't need to log it again from
+            # the workspace process context
+            if using_dagster_dev():
+                warnings.warn(f"Error loading repository location {location_name}")
+            else:
+                warnings.warn(
+                    f"Error loading repository location {location_name}:{error.to_string()}"
+                )
 
         load_time = get_current_timestamp()
         if isinstance(location, GrpcServerCodeLocation):

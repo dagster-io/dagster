@@ -76,7 +76,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-pyproject.toml",
             update_snippets=update_snippets,
             snippet_replace_regex=[
-                re_ignore_before("[tool.dagster]"),
+                re_ignore_before("[tool.dg]"),
                 re_ignore_after('root_module = "jaffle_platform"'),
             ],
         )
@@ -92,7 +92,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             snippet_replace_regex=[
                 re_ignore_before("[project.entry-points]"),
                 re_ignore_after(
-                    '"dagster.components" = { jaffle_platform = "jaffle_platform.lib"}'
+                    '"dagster_dg.library" = { jaffle_platform = "jaffle_platform.lib"}'
                 ),
             ],
         )

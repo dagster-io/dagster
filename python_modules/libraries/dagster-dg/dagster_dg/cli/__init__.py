@@ -2,10 +2,12 @@ from pathlib import Path
 
 import click
 
+from dagster_dg.cache import DgCache
 from dagster_dg.cli.check import check_group
 from dagster_dg.cli.dev import dev_command
 from dagster_dg.cli.docs import docs_group
 from dagster_dg.cli.init import init_command
+from dagster_dg.cli.launch import launch_command
 from dagster_dg.cli.list import list_group
 from dagster_dg.cli.scaffold import scaffold_group
 from dagster_dg.cli.shared_options import dg_global_options
@@ -26,6 +28,7 @@ def create_dg_cli():
             "check": check_group,
             "docs": docs_group,
             "utils": utils_group,
+            "launch": launch_command,
             "list": list_group,
             "scaffold": scaffold_group,
             "dev": dev_command,
@@ -81,7 +84,11 @@ def create_dg_cli():
             dg_context = DgContext.from_file_discovery_and_command_line_config(
                 Path.cwd(), cli_config
             )
-            dg_context.cache.clear_all()
+            # Normally we would access the cache through the DgContext, but cache is currently
+            # disabled outside of a project context. When that restriction is lifted, we will change
+            # this to access the cache through the DgContext.
+            cache = DgCache.from_config(dg_context.config)
+            cache.clear_all()
             if context.invoked_subcommand is None:
                 context.exit(0)
         elif rebuild_component_registry:

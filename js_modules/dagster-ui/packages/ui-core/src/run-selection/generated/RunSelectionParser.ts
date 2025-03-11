@@ -36,7 +36,7 @@ export class RunSelectionParser extends Parser {
   public static readonly ROOTS = 13;
   public static readonly QUOTED_STRING = 14;
   public static readonly UNQUOTED_STRING = 15;
-  public static readonly UNQUOTED_REGEX_STRING = 16;
+  public static readonly UNQUOTED_WILDCARD_STRING = 16;
   public static readonly WS = 17;
   public static readonly RULE_start = 0;
   public static readonly RULE_expr = 1;
@@ -62,9 +62,9 @@ export class RunSelectionParser extends Parser {
 
   private static readonly _LITERAL_NAMES: Array<string | undefined> = [
     undefined,
-    "'and'",
-    "'or'",
-    "'not'",
+    undefined,
+    undefined,
+    undefined,
     "'*'",
     "'+'",
     undefined,
@@ -93,7 +93,7 @@ export class RunSelectionParser extends Parser {
     'ROOTS',
     'QUOTED_STRING',
     'UNQUOTED_STRING',
-    'UNQUOTED_REGEX_STRING',
+    'UNQUOTED_WILDCARD_STRING',
     'WS',
   ];
   public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(
@@ -589,7 +589,7 @@ export class RunSelectionParser extends Parser {
             ((1 << _la) &
               ((1 << RunSelectionParser.QUOTED_STRING) |
                 (1 << RunSelectionParser.UNQUOTED_STRING) |
-                (1 << RunSelectionParser.UNQUOTED_REGEX_STRING))) !==
+                (1 << RunSelectionParser.UNQUOTED_WILDCARD_STRING))) !==
               0
           )
         ) {
@@ -1346,8 +1346,8 @@ export class KeyValueContext extends ParserRuleContext {
   public UNQUOTED_STRING(): TerminalNode | undefined {
     return this.tryGetToken(RunSelectionParser.UNQUOTED_STRING, 0);
   }
-  public UNQUOTED_REGEX_STRING(): TerminalNode | undefined {
-    return this.tryGetToken(RunSelectionParser.UNQUOTED_REGEX_STRING, 0);
+  public UNQUOTED_WILDCARD_STRING(): TerminalNode | undefined {
+    return this.tryGetToken(RunSelectionParser.UNQUOTED_WILDCARD_STRING, 0);
   }
   constructor(parent: ParserRuleContext | undefined, invokingState: number) {
     super(parent, invokingState);

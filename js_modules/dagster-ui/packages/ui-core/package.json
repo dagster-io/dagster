@@ -89,7 +89,7 @@
     "@babel/preset-env": "^7.7.1",
     "@babel/preset-react": "^7.13.13",
     "@babel/preset-typescript": "7.15.0",
-    "@babel/runtime": "^7.13.10",
+    "@babel/runtime": "^7.26.10",
     "@blueprintjs/popover2": "^2",
     "@blueprintjs/select": "^5",
     "@chromatic-com/storybook": "^3.2.5",

@@ -4,7 +4,7 @@ import {createProvider} from '../SelectionAutoCompleteProvider';
 describe('createAssetSelectionHint', () => {
   const attributesMap = {
     key: ['asset1', 'asset2', 'asset3'],
-    tag: ['tag1', 'tag2', 'tag3'],
+    tag: ['tag1', 'tag2', 'tag3', 'key=value1', 'key=value2'],
     owner: ['marco@dagsterlabs.com', 'team:frontend'],
     group: ['group1', 'group2'],
     kind: ['kind1', 'kind2'],
@@ -64,6 +64,12 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({
           text: '"tag3"',
         }),
+        expect.objectContaining({
+          text: '"key=value1"',
+        }),
+        expect.objectContaining({
+          text: '"key=value2"',
+        }),
       ],
       from: 4, // cursor location
       to: 4, // cursor location
@@ -79,6 +85,12 @@ describe('createAssetSelectionHint', () => {
         }),
         expect.objectContaining({
           text: '"tag3"',
+        }),
+        expect.objectContaining({
+          text: '"key=value1"',
+        }),
+        expect.objectContaining({
+          text: '"key=value2"',
         }),
       ],
       from: 4, // cursor location
@@ -1091,6 +1103,43 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({text: 'code_location:"assumptions@location3"'}),
       ],
       to: 4,
+    });
+  });
+
+  it('value suggestions should replace entire key=value segment in tag:key=value', () => {
+    expect(testAutocomplete('tag:k|ey=value')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({text: '"key=value1"'}),
+        expect.objectContaining({text: '"key=value2"'}),
+      ],
+      to: 13,
+    });
+
+    expect(testAutocomplete('tag:key|=value')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({text: '"key=value1"'}),
+        expect.objectContaining({text: '"key=value2"'}),
+      ],
+      to: 13,
+    });
+
+    expect(testAutocomplete('tag:key=|value')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({text: '"key=value1"'}),
+        expect.objectContaining({text: '"key=value2"'}),
+      ],
+      to: 13,
+    });
+    expect(testAutocomplete('tag:key=val|ue')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({text: '"key=value1"'}),
+        expect.objectContaining({text: '"key=value2"'}),
+      ],
+      to: 13,
     });
   });
 });

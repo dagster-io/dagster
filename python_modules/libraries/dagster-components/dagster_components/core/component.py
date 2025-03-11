@@ -1,3 +1,5 @@
+import contextlib
+import contextvars
 import dataclasses
 import importlib
 import importlib.metadata
@@ -9,29 +11,22 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, TypeVar
+from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
 
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import pushd
+from dagster._utils.cached_method import cached_method
+from dagster._utils.source_position import SourcePositionTree
 from typing_extensions import Self
 
+from dagster_components.blueprint import BlueprintUnavailableReason, get_blueprint, scaffold_with
+from dagster_components.core.component_blueprint import DefaultComponentBlueprint
 from dagster_components.core.component_key import ComponentKey
-from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
-from dagster_components.core.schema.base import ResolvableSchema, resolve_as
-from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.resolvable_from_schema import (
-    DSLSchema,
-    ResolvableFromSchema,
-    resolve_schema_to_resolvable,
-)
-from dagster_components.scaffoldable.decorator import get_scaffolder, scaffoldable
-from dagster_components.scaffoldable.scaffolder import ScaffolderUnavailableReason
+from dagster_components.resolved.context import ResolutionContext
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, resolve_model
 from dagster_components.utils import format_error_message
-
-if TYPE_CHECKING:
-    from dagster_components.core.schema.resolvable_from_schema import EitherSchema
 
 
 class ComponentsEntryPointLoadError(DagsterError):
@@ -42,21 +37,21 @@ class ComponentDeclNode(ABC):
     @abstractmethod
     def load(self, context: "ComponentLoadContext") -> Sequence["Component"]: ...
 
+    @abstractmethod
+    def get_source_position_tree(self) -> Optional[SourcePositionTree]: ...
 
-@scaffoldable(scaffolder=DefaultComponentScaffolder)
+
+@scaffold_with(blueprint_cls=DefaultComponentBlueprint)
 class Component(ABC):
     @classmethod
-    def get_schema(cls) -> Optional[type["EitherSchema"]]:
-        from dagster_components.core.schema.resolvable_from_schema import (
-            ResolvableFromSchema,
-            get_schema_type,
-        )
+    def get_schema(cls) -> Optional[type["ResolvableModel"]]:
+        from dagster_components.resolved.model import ResolvedFrom, get_model_type
 
-        if issubclass(cls, DSLSchema):
+        if issubclass(cls, ResolvableModel):
             return cls
 
-        if issubclass(cls, ResolvableFromSchema):
-            return get_schema_type(cls)
+        if issubclass(cls, ResolvedFrom):
+            return get_model_type(cls)
         return None
 
     @classmethod
@@ -67,36 +62,37 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
-    def load(cls, attributes: Optional["EitherSchema"], context: "ComponentLoadContext") -> Self:
-        if issubclass(cls, DSLSchema):
+    def load(cls, attributes: Optional["ResolvableModel"], context: "ComponentLoadContext") -> Self:
+        if issubclass(cls, ResolvableModel):
             # If the Component is a DSLSchema, the attributes in this case are an instance of itself
             assert isinstance(attributes, cls)
             return attributes
 
-        if issubclass(cls, ResolvableFromSchema):
+        elif issubclass(cls, ResolvedFrom):
             return (
-                resolve_schema_to_resolvable(attributes, cls, context.resolution_context)
+                resolve_model(attributes, cls, context.resolution_context.at_path("attributes"))
                 if attributes
                 else cls()
             )
-
-        assert isinstance(attributes, ResolvableSchema)
-        return resolve_as(attributes, cls, context.resolution_context) if attributes else cls()
+        else:
+            # Ideally we would detect this at class declaration time. A metaclass is difficult
+            # to do because the way our users can mixin other frameworks that themselves use metaclasses.
+            check.failed(
+                f"Unsupported component type {cls}. Must inherit from either ResolvableModel or ResolvedFrom."
+            )
 
     @classmethod
     def get_metadata(cls) -> "ComponentTypeInternalMetadata":
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
 
-        scaffolder = get_scaffolder(cls)
+        blueprint = get_blueprint(cls)
 
-        if isinstance(scaffolder, ScaffolderUnavailableReason):
-            raise DagsterError(
-                f"Component {cls.__name__} is not scaffoldable: {scaffolder.message}"
-            )
+        if isinstance(blueprint, BlueprintUnavailableReason):
+            raise DagsterError(f"Component {cls.__name__} is not scaffoldable: {blueprint.message}")
 
         component_schema = cls.get_schema()
-        scaffold_params = scaffolder.get_params()
+        scaffold_params = blueprint.get_scaffold_params()
         return {
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,
@@ -142,7 +138,7 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
         return importlib.metadata.entry_points().get(group, [])
 
 
-COMPONENTS_ENTRY_POINT_GROUP = "dagster.components"
+DG_LIBRARY_ENTRY_POINT_GROUP = "dagster_dg.library"
 
 
 def load_component_type(component_key: ComponentKey) -> type[Component]:
@@ -173,7 +169,7 @@ def discover_entry_point_component_types() -> dict[ComponentKey, type[Component]
     component types. This method will only ever load one builtin component library.
     """
     component_types: dict[ComponentKey, type[Component]] = {}
-    entry_points = get_entry_points_from_python_environment(COMPONENTS_ENTRY_POINT_GROUP)
+    entry_points = get_entry_points_from_python_environment(DG_LIBRARY_ENTRY_POINT_GROUP)
 
     for entry_point in entry_points:
         try:
@@ -181,14 +177,14 @@ def discover_entry_point_component_types() -> dict[ComponentKey, type[Component]
         except Exception as e:
             raise ComponentsEntryPointLoadError(
                 format_error_message(f"""
-                    Error loading entry point `{entry_point.name}` in group `{COMPONENTS_ENTRY_POINT_GROUP}`.
+                    Error loading entry point `{entry_point.name}` in group `{DG_LIBRARY_ENTRY_POINT_GROUP}`.
                     Please fix the error or uninstall the package that defines this entry point.
                 """)
             ) from e
 
         if not isinstance(root_module, ModuleType):
             raise DagsterError(
-                f"Invalid entry point {entry_point.name} in group {COMPONENTS_ENTRY_POINT_GROUP}. "
+                f"Invalid entry point {entry_point.name} in group {DG_LIBRARY_ENTRY_POINT_GROUP}. "
                 f"Value expected to be a module, got {root_module}."
             )
         for name, component_type in get_component_types_in_module(root_module):
@@ -225,11 +221,63 @@ T = TypeVar("T")
 
 
 @dataclass
-class ComponentLoadContext:
-    module_name: str
+class DefinitionsModuleCache:
+    """Cache used when loading a code location's component hierarchy.
+    Stores resources and a cache to ensure we don't load the same component multiple times.
+    """
+
     resources: Mapping[str, object]
+
+    def load_defs(self, module: ModuleType) -> Definitions:
+        """Loads a set of Dagster definitions from a components Python module.
+
+        Args:
+            module (ModuleType): The Python module to load definitions from.
+
+        Returns:
+            Definitions: The set of Dagster definitions loaded from the module.
+        """
+        return self._load_defs_inner(module)
+
+    @cached_method
+    def _load_defs_inner(self, module: ModuleType) -> Definitions:
+        from dagster_components.core.component_decl_builder import module_to_decl_node
+        from dagster_components.core.component_defs_builder import defs_from_components
+
+        decl_node = module_to_decl_node(module)
+        if not decl_node:
+            raise Exception(f"No component found at module {module}")
+
+        context = ComponentLoadContext(
+            module_name=module.__name__,
+            decl_node=decl_node,
+            resolution_context=ResolutionContext.default(decl_node.get_source_position_tree()),
+            module_cache=self,
+        )
+        with use_component_load_context(context):
+            components = decl_node.load(context)
+            return defs_from_components(
+                resources=self.resources, context=context, components=components
+            )
+
+
+@dataclass
+class ComponentLoadContext:
+    """Context for loading a single component."""
+
+    module_name: str
     decl_node: Optional[ComponentDeclNode]
     resolution_context: ResolutionContext
+    module_cache: DefinitionsModuleCache
+
+    @staticmethod
+    def current() -> "ComponentLoadContext":
+        context = active_component_load_context.get()
+        if context is None:
+            raise DagsterError(
+                "No active component load context, `ComponentLoadContext.current()` must be called inside of a component's `build_defs` method"
+            )
+        return context
 
     @staticmethod
     def for_test(
@@ -239,19 +287,31 @@ class ComponentLoadContext:
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
             module_name="test",
-            resources=resources or {},
             decl_node=decl_node,
-            resolution_context=ResolutionContext.default(),
+            resolution_context=ResolutionContext.default(
+                decl_node.get_source_position_tree() if decl_node else None
+            ),
+            module_cache=DefinitionsModuleCache(resources=resources or {}),
         )
 
     @property
     def path(self) -> Path:
         from dagster_components.core.component_decl_builder import (
+            ComponentFolder,
+            ImplicitDefinitionsComponentDecl,
             PythonComponentDecl,
             YamlComponentDecl,
         )
 
-        if not isinstance(self.decl_node, (YamlComponentDecl, PythonComponentDecl)):
+        if not isinstance(
+            self.decl_node,
+            (
+                YamlComponentDecl,
+                PythonComponentDecl,
+                ImplicitDefinitionsComponentDecl,
+                ComponentFolder,
+            ),
+        ):
             check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
 
         return self.decl_node.path
@@ -265,11 +325,15 @@ class ComponentLoadContext:
     def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
         return dataclasses.replace(self, decl_node=decl_node)
 
-    def resolve(self, value: ResolvableSchema, as_type: type[T]) -> T:
-        return self.resolution_context.resolve_value(value, as_type=as_type)
-
     def normalize_component_type_str(self, type_str: str) -> str:
         return f"{self.module_name}{type_str}" if type_str.startswith(".") else type_str
+
+    def load_defs(self, module: ModuleType) -> Definitions:
+        """Builds the set of Dagster definitions for a component module.
+
+        This is useful for resolving dependencies on other components.
+        """
+        return self.module_cache.load_defs(module)
 
     def load_component_relative_python_module(self, file_path: Path) -> ModuleType:
         """Load a python module relative to the component's context path. This is useful for loading code
@@ -297,7 +361,6 @@ class ComponentLoadContext:
         abs_file_path = file_path.absolute()
         with pushd(str(self.path)):
             abs_context_path = self.path.absolute()
-
             # Problematic
             # See https://linear.app/dagster-labs/issue/BUILD-736/highly-suspect-hardcoding-of-components-string-is-component-relative
             component_module_relative_path = abs_context_path.parts[
@@ -308,6 +371,20 @@ class ComponentLoadContext:
                 component_module_name = f"{component_module_name}.{abs_file_path.stem}"
 
             return importlib.import_module(component_module_name)
+
+
+active_component_load_context: contextvars.ContextVar[Union[ComponentLoadContext, None]] = (
+    contextvars.ContextVar("active_component_load_context", default=None)
+)
+
+
+@contextlib.contextmanager
+def use_component_load_context(component_load_context: ComponentLoadContext):
+    token = active_component_load_context.set(component_load_context)
+    try:
+        yield
+    finally:
+        active_component_load_context.reset(token)
 
 
 COMPONENT_LOADER_FN_ATTR = "__dagster_component_loader_fn"

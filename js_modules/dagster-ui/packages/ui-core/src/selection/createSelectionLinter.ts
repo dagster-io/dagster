@@ -3,6 +3,7 @@ import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
 
 import {CustomErrorListener, SyntaxError} from './CustomErrorListener';
 import {parseInput} from './SelectionInputParser';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 import {AttributeNameContext} from './generated/SelectionAutoCompleteParser';
 import {SelectionAutoCompleteVisitor} from './generated/SelectionAutoCompleteVisitor';
 
@@ -22,7 +23,7 @@ export function createSelectionLinter({
   supportedAttributes: readonly string[];
   unsupportedAttributeMessages?: Record<string, string>;
 }) {
-  return (text: string) => {
+  const linter = (text: string) => {
     if (!text.length) {
       return [];
     }
@@ -59,6 +60,7 @@ export function createSelectionLinter({
 
     return lintErrors.concat(attributeVisitor.getErrors());
   };
+  return weakMapMemoize(linter, {maxEntries: 20});
 }
 
 class InvalidAttributeVisitor

@@ -8,10 +8,7 @@ from typing import TYPE_CHECKING
 import pytest
 from dagster import AssetKey
 from dagster._utils.env import environ
-from dagster_components.components.dbt_project.component import (
-    DbtProjectComponent,
-    DbtProjectSchema,
-)
+from dagster_components.components.dbt_project.component import DbtProjectComponent, DbtProjectModel
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
@@ -78,7 +75,7 @@ def test_python_attributes_node_rename(dbt_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    attributes = decl_node.get_attributes(DbtProjectSchema)
+    attributes = decl_node.get_attributes(DbtProjectModel)
     component = DbtProjectComponent.load(attributes=attributes, context=context)
     assert get_asset_keys(component) == JAFFLE_SHOP_KEYS_WITH_PREFIX
 
@@ -97,7 +94,7 @@ def test_python_attributes_group(dbt_path: Path) -> None:
         ),
     )
     context = script_load_context(decl_node)
-    attributes = decl_node.get_attributes(DbtProjectSchema)
+    attributes = decl_node.get_attributes(DbtProjectModel)
     comp = DbtProjectComponent.load(attributes=attributes, context=context)
     assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS
     defs: Definitions = comp.build_defs(script_load_context(None))
@@ -136,7 +133,7 @@ def test_render_vars_root(dbt_path: Path) -> None:
             ),
         )
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(DbtProjectSchema)
+        attributes = decl_node.get_attributes(DbtProjectModel)
         comp = DbtProjectComponent.load(attributes=attributes, context=context)
         assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS
         defs: Definitions = comp.build_defs(script_load_context())
@@ -159,6 +156,6 @@ def test_render_vars_asset_key(dbt_path: Path) -> None:
             ),
         )
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(DbtProjectSchema)
+        attributes = decl_node.get_attributes(DbtProjectModel)
         comp = DbtProjectComponent.load(attributes=attributes, context=context)
         assert get_asset_keys(comp) == JAFFLE_SHOP_KEYS_WITH_PREFIX

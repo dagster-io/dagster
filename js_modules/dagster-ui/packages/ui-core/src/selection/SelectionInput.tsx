@@ -2,7 +2,15 @@ import {Box, Colors, Icon, Popover, UnstyledButton} from '@dagster-io/ui-compone
 import useResizeObserver from '@react-hook/resize-observer';
 import CodeMirror, {Editor, EditorChange} from 'codemirror';
 import debounce from 'lodash/debounce';
-import React, {KeyboardEvent, useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import React, {
+  KeyboardEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import styled from 'styled-components';
 
 import {SyntaxError} from './CustomErrorListener';
@@ -29,8 +37,10 @@ type SelectionAutoCompleteInputProps = {
   onChange: (value: string) => void;
   useAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'];
   saveOnBlur?: boolean;
+  onErrorStateChange?: (errors: SyntaxError[]) => void;
 };
 
+const emptyArray: SyntaxError[] = [];
 export const SelectionAutoCompleteInput = ({
   id,
   value,
@@ -39,6 +49,7 @@ export const SelectionAutoCompleteInput = ({
   linter,
   useAutoComplete,
   saveOnBlur = false,
+  onErrorStateChange,
 }: SelectionAutoCompleteInputProps) => {
   const trackEvent = useTrackEvent();
 
@@ -68,7 +79,18 @@ export const SelectionAutoCompleteInput = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const cmInstance = useRef<CodeMirror.Editor | null>(null);
 
-  const [showResults, setShowResults] = useState({current: false});
+  const [selectedIndexRef, setSelectedIndex] = useState({current: -1});
+  const [showResults, _setShowResults] = useState({current: false});
+  const showResultsRef = useUpdatingRef(showResults.current);
+  const setShowResults = useCallback(
+    (nextShowResults: {current: boolean}) => {
+      if (showResultsRef.current !== nextShowResults.current) {
+        selectedIndexRef.current = -1;
+      }
+      _setShowResults(nextShowResults);
+    },
+    [_setShowResults, selectedIndexRef, showResultsRef],
+  );
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [innerValue, setInnerValue] = useState(value);
   const cursorPositionRef = useUpdatingRef(cursorPosition);
@@ -82,8 +104,6 @@ export const SelectionAutoCompleteInput = ({
 
   const focusRef = useRef(false);
 
-  const [selectedIndexRef, setSelectedIndex] = useState({current: 0});
-
   // Memoize the stringified results to avoid resetting the selected index down below
   const resultsJson = useMemo(() => {
     return JSON.stringify(autoCompleteResults?.list.map((l) => l.text));
@@ -95,7 +115,7 @@ export const SelectionAutoCompleteInput = ({
   // Handle selection reset
   useDangerousRenderEffect(() => {
     if (prevAutoCompleteResults?.from !== autoCompleteResults?.from || prevJson !== resultsJson) {
-      selectedIndexRef.current = 0;
+      selectedIndexRef.current = -1;
     }
   }, [resultsJson, autoCompleteResults, prevAutoCompleteResults, prevJson, selectedIndexRef]);
 
@@ -185,7 +205,6 @@ export const SelectionAutoCompleteInput = ({
 
   const errorTooltip = useSelectionInputLintingAndHighlighting({
     cmInstance,
-    value: innerValue,
     linter,
   });
 
@@ -217,7 +236,7 @@ export const SelectionAutoCompleteInput = ({
       setCursorPosition(cursor.ch);
       requestAnimationFrame(() => {
         // Reset selected index on value change
-        setSelectedIndex({current: 0});
+        setSelectedIndex({current: -1});
       });
     }
   }, [value]);
@@ -261,15 +280,17 @@ export const SelectionAutoCompleteInput = ({
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
       if (e.key === 'Enter') {
-        e.stopPropagation();
-        e.preventDefault();
-        onSelectionChange(innerValueRef.current);
-        setShowResults({current: false});
-      }
-      if (!showResults.current) {
+        if (selectedIndexRef.current !== -1 && selectedItem) {
+          onSelect(selectedItem);
+        } else {
+          e.stopPropagation();
+          e.preventDefault();
+          onSelectionChange(innerValueRef.current);
+          setShowResults({current: false});
+        }
+      } else if (!showResults.current) {
         return;
-      }
-      if (e.key === 'ArrowDown' && !e.shiftKey && !e.ctrlKey) {
+      } else if (e.key === 'ArrowDown' && !e.shiftKey && !e.ctrlKey) {
         e.preventDefault();
         e.stopPropagation();
         setSelectedIndex((prev) => ({
@@ -296,11 +317,13 @@ export const SelectionAutoCompleteInput = ({
     },
     [
       showResults,
-      onSelectionChange,
-      innerValueRef,
-      autoCompleteResults?.list.length,
+      selectedIndexRef,
       selectedItem,
       onSelect,
+      onSelectionChange,
+      innerValueRef,
+      setShowResults,
+      autoCompleteResults?.list.length,
     ],
   );
 
@@ -356,6 +379,19 @@ export const SelectionAutoCompleteInput = ({
   );
 
   useResizeObserver(inputRef, adjustHeight);
+
+  const errors = useMemo(() => {
+    const linterErrors = linter(value);
+    if (linterErrors.length > 0) {
+      return linterErrors;
+    }
+    // Keep the reference the same to avoid re-rendering
+    return emptyArray;
+  }, [linter, value]);
+
+  useEffect(() => {
+    onErrorStateChange?.(errors);
+  }, [onErrorStateChange, errors]);
 
   return (
     <div onBlur={onBlur} style={{width: '100%'}}>

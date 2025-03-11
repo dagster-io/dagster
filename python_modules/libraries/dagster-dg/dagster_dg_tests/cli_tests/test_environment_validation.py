@@ -37,6 +37,9 @@ NO_REQUIRED_CONTEXT_COMMANDS = [
     CommandSpec(("scaffold", "project"), "foo"),
     CommandSpec(("init",), "foo"),
     CommandSpec(("scaffold", "workspace"), "foo"),
+    CommandSpec(("scaffold", "asset"), "foo"),
+    CommandSpec(("scaffold", "schedule"), "foo"),
+    CommandSpec(("scaffold", "sensor"), "foo"),
 ]
 
 
@@ -46,16 +49,18 @@ COMPONENT_LIBRARY_CONTEXT_COMMANDS = [
 
 REGISTRY_CONTEXT_COMMANDS = [
     CommandSpec(tuple(), "--rebuild-component-registry"),
-    CommandSpec(("docs", "component-type"), DEFAULT_COMPONENT_TYPE),
+    CommandSpec(("docs", "serve")),
     CommandSpec(("list", "component-type")),
     CommandSpec(("utils", "inspect-component-type"), DEFAULT_COMPONENT_TYPE),
 ]
 
 
 PROJECT_CONTEXT_COMMANDS = [
+    CommandSpec(("launch",), "--assets", "foo"),
     CommandSpec(("utils", "configure-editor"), "vscode"),
     CommandSpec(("check", "yaml")),
     CommandSpec(("list", "component")),
+    CommandSpec(("list", "defs")),
     CommandSpec(("scaffold", "component"), DEFAULT_COMPONENT_TYPE, "foot"),
 ]
 

@@ -834,7 +834,6 @@ def build_fivetran_assets_definitions(
             connector_id=connector_id,
             workspace=workspace,
             name=connector_id,
-            group_name=connector_id,
             dagster_fivetran_translator=dagster_fivetran_translator,
             connector_selector_fn=connector_selector_fn,
         )

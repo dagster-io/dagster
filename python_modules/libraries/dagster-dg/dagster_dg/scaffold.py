@@ -5,11 +5,24 @@ from pathlib import Path
 from typing import Any, Optional
 
 import click
+import tomlkit
+import tomlkit.items
 
 from dagster_dg.component import RemoteComponentRegistry
-from dagster_dg.config import discover_workspace_root
+from dagster_dg.config import (
+    DgRawWorkspaceConfig,
+    DgWorkspaceScaffoldProjectOptions,
+    discover_workspace_root,
+)
 from dagster_dg.context import DgContext
-from dagster_dg.utils import exit_with_error, scaffold_subtree
+from dagster_dg.utils import (
+    exit_with_error,
+    get_toml_node,
+    has_toml_node,
+    modify_toml,
+    scaffold_subtree,
+    set_toml_node,
+)
 
 # ########################
 # ##### WORKSPACE
@@ -18,6 +31,7 @@ from dagster_dg.utils import exit_with_error, scaffold_subtree
 
 def scaffold_workspace(
     workspace_name: str,
+    workspace_config: Optional[DgRawWorkspaceConfig] = None,
 ) -> Path:
     # Can't create a workspace that is a child of another workspace
     new_workspace_path = Path.cwd() / workspace_name
@@ -37,6 +51,14 @@ def scaffold_workspace(
         ),
         project_name=workspace_name,
     )
+
+    if workspace_config is not None:
+        with modify_toml(new_workspace_path / "pyproject.toml") as toml:
+            for k, v in workspace_config.items():
+                # Ignore empty collections and None, but not False
+                if v != {} and v != [] and v is not None:
+                    set_toml_node(toml, ("tool", "dg", "workspace", k), v)
+
     click.echo(f"Scaffolded files for Dagster workspace at {new_workspace_path}.")
     return new_workspace_path
 
@@ -56,24 +78,42 @@ def scaffold_project(
 ) -> None:
     click.echo(f"Creating a Dagster project at {path}.")
 
-    if use_editable_dagster and use_editable_components_package_only:
+    cli_options = DgWorkspaceScaffoldProjectOptions.get_raw_from_cli(
+        use_editable_dagster, use_editable_components_package_only
+    )
+    workspace_options = (
+        dg_context.config.workspace.scaffold_project_options
+        if dg_context.config.workspace
+        else None
+    )
+
+    final_use_editable_dagster = cli_options.get(
+        "use_editable_dagster",
+        workspace_options.use_editable_dagster if workspace_options else None,
+    )
+    final_use_editable_components_package_only = cli_options.get(
+        "use_editable_components_package_only",
+        workspace_options.use_editable_components_package_only if workspace_options else None,
+    )
+
+    if final_use_editable_dagster and final_use_editable_components_package_only:
         exit_with_error(
             "Cannot specify both --use-editable-dagster and --use-editable-components-package-only."
         )
-    elif use_editable_dagster:
+    elif final_use_editable_dagster:
         editable_dagster_root = (
             _get_editable_dagster_from_env()
-            if use_editable_dagster == "TRUE"
-            else use_editable_dagster
+            if final_use_editable_dagster is True
+            else final_use_editable_dagster
         )
         deps = EDITABLE_DAGSTER_DEPENDENCIES
         dev_deps = EDITABLE_DAGSTER_DEV_DEPENDENCIES
         sources = _gather_dagster_packages(Path(editable_dagster_root))
-    elif use_editable_components_package_only:
+    elif final_use_editable_components_package_only:
         editable_dagster_root = (
             _get_editable_dagster_from_env()
-            if use_editable_components_package_only == "TRUE"
-            else use_editable_components_package_only
+            if final_use_editable_components_package_only is True
+            else final_use_editable_components_package_only
         )
         deps = EDITABLE_COMPONENTS_ONLY_DEPENDENCIES
         dev_deps = EDITABLE_COMPONENTS_ONLY_DEV_DEPENDENCIES
@@ -100,7 +140,6 @@ def scaffold_project(
         ),
         dependencies=dependencies_str,
         dev_dependencies=dev_dependencies_str,
-        code_location_name=path.name,
         uv_sources=uv_sources_str,
     )
     click.echo(f"Scaffolded files for Dagster project at {path}.")
@@ -111,6 +150,31 @@ def scaffold_project(
         cl_dg_context.ensure_uv_lock()
         if populate_cache:
             RemoteComponentRegistry.from_dg_context(cl_dg_context)  # Populate the cache
+
+    # Update pyproject.toml
+    if cl_dg_context.is_workspace:
+        entry = {
+            "path": str(cl_dg_context.root_path.relative_to(cl_dg_context.workspace_root_path)),
+        }
+
+        with modify_toml(dg_context.pyproject_toml_path) as toml:
+            if not has_toml_node(toml, ("tool", "dg", "workspace", "projects")):
+                projects = tomlkit.aot()
+                set_toml_node(toml, ("tool", "dg", "workspace", "projects"), projects)
+                item = tomlkit.table()
+            else:
+                projects = get_toml_node(
+                    toml,
+                    ("tool", "dg", "workspace", "projects"),
+                    (tomlkit.items.AoT, tomlkit.items.Array),
+                )
+                if isinstance(projects, tomlkit.items.Array):
+                    item = tomlkit.inline_table()
+                else:
+                    item = tomlkit.table()
+            for key, value in entry.items():
+                item[key] = value
+            projects.append(item)
 
 
 # Despite the fact that editable dependencies are resolved through tool.uv.sources, we need to set

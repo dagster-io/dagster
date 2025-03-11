@@ -1,4 +1,5 @@
 import contextlib
+import random
 import shutil
 import tempfile
 import textwrap
@@ -13,7 +14,7 @@ from typing import AbstractSet, Any, Iterable, Optional, TypeVar  # noqa: UP035
 import tomlkit
 from click.testing import Result
 from dagster import AssetKey, DagsterInstance
-from dagster._utils import pushd
+from dagster._utils import alter_sys_path, pushd
 from dagster_components.core.component import Component, ComponentDeclNode, ComponentLoadContext
 from dagster_components.utils import ensure_loadable_path
 
@@ -57,7 +58,7 @@ def generate_component_lib_pyproject_toml(name: str, is_project: bool = False) -
         ]
 
         [project.entry-points]
-        "dagster.components" = {{ {pkg_name} = "{pkg_name}.lib" }}
+        "dagster_dg.library" = {{ {pkg_name} = "{pkg_name}.lib" }}
     """)
     if is_project:
         return base + textwrap.dedent("""
@@ -108,30 +109,41 @@ def inject_component(
 @contextlib.contextmanager
 def create_project_from_components(
     *src_paths: str, local_component_defn_to_inject: Optional[Path] = None
-) -> Iterator[Path]:
+) -> Iterator[tuple[Path, str]]:
     """Scaffolds a project with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.
     """
+    location_name = f"my_location_{str(random.random()).replace('.', '')}"
     with tempfile.TemporaryDirectory() as tmpdir:
-        project_root = Path(tmpdir) / "my_location"
+        project_root = Path(tmpdir) / location_name
         project_root.mkdir()
-        with open(project_root / "pyproject.toml", "w") as f:
-            f.write(generate_component_lib_pyproject_toml("my_location", is_project=True))
 
-        for src_path in src_paths:
-            component_name = src_path.split("/")[-1]
+        python_module_root = project_root / location_name
+        python_module_root.mkdir()
+        (python_module_root / "__init__.py").touch()
 
-            components_dir = project_root / "my_location" / "defs" / component_name
-            components_dir.mkdir(parents=True, exist_ok=True)
+        defs_dir = python_module_root / "defs"
+        defs_dir.mkdir()
+        (defs_dir / "__init__.py").touch()
 
-            _setup_component_in_folder(
-                src_path=src_path,
-                dst_path=str(components_dir),
-                local_component_defn_to_inject=local_component_defn_to_inject,
-            )
+        with alter_sys_path(to_add=[str(project_root)], to_remove=[]):
+            with open(project_root / "pyproject.toml", "w") as f:
+                f.write(generate_component_lib_pyproject_toml(location_name, is_project=True))
 
-        with ensure_loadable_path(project_root):
-            yield project_root
+            for src_path in src_paths:
+                component_name = src_path.split("/")[-1]
+
+                components_dir = defs_dir / component_name
+                components_dir.mkdir()
+
+                _setup_component_in_folder(
+                    src_path=src_path,
+                    dst_path=str(components_dir),
+                    local_component_defn_to_inject=local_component_defn_to_inject,
+                )
+
+            with ensure_loadable_path(project_root):
+                yield project_root, location_name
 
 
 # ########################

@@ -1,4 +1,5 @@
 import shutil
+import sys
 import tempfile
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, nullcontext
@@ -11,13 +12,11 @@ from dagster import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
-from dagster_components.components.dbt_project.component import (
-    DbtProjectComponent,
-    DbtProjectSchema,
-)
+from dagster_components.components.dbt_project.component import DbtProjectComponent, DbtProjectModel
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import (
     YamlComponentDecl,
+    build_component_defs,
     build_components_from_component_folder,
     defs_from_components,
 )
@@ -76,7 +75,7 @@ def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
             },
         ),
     )
-    attributes = decl_node.get_attributes(DbtProjectSchema)
+    attributes = decl_node.get_attributes(DbtProjectModel)
     context = script_load_context(decl_node)
     component = DbtProjectComponent.load(attributes=attributes, context=context)
     assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
@@ -187,6 +186,16 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
             False,
         ),
         ({"deps": ["customers"]}, None, True),
+        (
+            {"automation_condition": "{{ automation_condition.eager() }}"},
+            lambda asset_spec: asset_spec.automation_condition is not None,
+            False,
+        ),
+        (
+            {"key": "{{ node.name }}"},
+            lambda asset_spec: asset_spec.key == AssetKey("stg_customers"),
+            False,
+        ),
     ],
     ids=[
         "group_name",
@@ -198,6 +207,8 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
         "description",
         "metadata",
         "deps",
+        "automation_condition",
+        "key",
     ],
 )
 def test_asset_attributes(
@@ -220,13 +231,28 @@ def test_asset_attributes(
         )
         context = script_load_context(decl_node)
         component = DbtProjectComponent.load(
-            attributes=decl_node.get_attributes(DbtProjectSchema), context=context
+            attributes=decl_node.get_attributes(DbtProjectModel), context=context
         )
         assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
         defs = component.build_defs(script_load_context())
         assets_def: AssetsDefinition = defs.get_assets_def("stg_customers")
     if assertion:
         assert assertion(assets_def.get_asset_spec(AssetKey("stg_customers")))
+
+
+IGNORED_KEYS = {"skippable"}
+
+
+def test_asset_attributes_is_comprehensive():
+    all_asset_attribute_keys = []
+    for test_arg in test_asset_attributes.pytestmark[0].args[1]:
+        all_asset_attribute_keys.extend(test_arg[0].keys())
+    from dagster_components.resolved.core_models import AssetAttributesModel
+
+    assert (
+        set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS
+        == set(all_asset_attribute_keys)
+    ), f"The test_asset_attributes test does not cover all fields, missing: {set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS - set(all_asset_attribute_keys)}"
 
 
 def test_subselection(dbt_path: Path) -> None:
@@ -242,7 +268,7 @@ def test_subselection(dbt_path: Path) -> None:
     )
     context = script_load_context(decl_node)
     component = DbtProjectComponent.load(
-        attributes=decl_node.get_attributes(DbtProjectSchema), context=context
+        attributes=decl_node.get_attributes(DbtProjectModel), context=context
     )
     assert get_asset_keys(component) == {AssetKey("raw_customers")}
 
@@ -260,6 +286,28 @@ def test_exclude(dbt_path: Path) -> None:
     )
     context = script_load_context(decl_node)
     component = DbtProjectComponent.load(
-        attributes=decl_node.get_attributes(DbtProjectSchema), context=context
+        attributes=decl_node.get_attributes(DbtProjectModel), context=context
     )
     assert get_asset_keys(component) == set(JAFFLE_SHOP_KEYS) - {AssetKey("customers")}
+
+
+DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH = (
+    Path(__file__).parent.parent / "code_locations" / "dependency_on_dbt_project_location"
+)
+
+
+def test_dependency_on_dbt_project():
+    # Ensure DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH is an importable python module
+    sys.path.append(str(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH.parent))
+
+    project = DbtProject(
+        Path(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH) / "defs/jaffle_shop_dbt/jaffle_shop"
+    )
+    project.preparer.prepare(project)
+
+    defs = build_component_defs(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH / "defs", {})
+    assert AssetKey("downstream_of_customers") in defs.get_asset_graph().get_all_asset_keys()
+    downstream_of_customers_def = defs.get_assets_def("downstream_of_customers")
+    assert set(downstream_of_customers_def.asset_deps[AssetKey("downstream_of_customers")]) == {
+        AssetKey("customers")
+    }

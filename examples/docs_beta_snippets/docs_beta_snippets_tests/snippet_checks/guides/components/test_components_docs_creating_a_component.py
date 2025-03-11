@@ -86,37 +86,39 @@ def test_components_docs_index(
             snippet_replace_regex=[MASK_MY_COMPONENT_LIBRARY],
         )
 
-        run_command_and_snippet_output(
-            cmd="dg docs component-type my_component_library.lib.ShellCommand --output cli > docs.html",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-component-type-docs.txt",
-            update_snippets=update_snippets,
-            ignore_output=True,
-            snippet_replace_regex=[("--output cli > docs.html", "")],
-        )
+        # Disabled for now, since the new dg docs command does not support output to console
 
-        check_file(
-            Path("docs.html"),
-            COMPONENTS_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-component-type-docs.html",
-            update_snippets=update_snippets,
-        )
+        # run_command_and_snippet_output(
+        #     cmd="dg docs component-type my_component_library.lib.ShellCommand --output cli > docs.html",
+        #     snippet_path=COMPONENTS_SNIPPETS_DIR
+        #     / f"{get_next_snip_number()}-dg-component-type-docs.txt",
+        #     update_snippets=update_snippets,
+        #     ignore_output=True,
+        #     snippet_replace_regex=[("--output cli > docs.html", "")],
+        # )
 
-        # Open the docs in the browser
-        screenshot_page(
-            get_selenium_driver,
-            "file://" + str(Path("docs.html").absolute()),
-            DAGSTER_ROOT
-            / "docs"
-            / "static"
-            / "images"
-            / "guides"
-            / "build"
-            / "projects-and-components"
-            / "components"
-            / "component-type-docs.png",
-            update_screenshots=update_screenshots,
-        )
+        # check_file(
+        #     Path("docs.html"),
+        #     COMPONENTS_SNIPPETS_DIR
+        #     / f"{get_next_snip_number()}-dg-component-type-docs.html",
+        #     update_snippets=update_snippets,
+        # )
+
+        # # Open the docs in the browser
+        # screenshot_page(
+        #     get_selenium_driver,
+        #     "file://" + str(Path("docs.html").absolute()),
+        #     DAGSTER_ROOT
+        #     / "docs"
+        #     / "static"
+        #     / "images"
+        #     / "guides"
+        #     / "build"
+        #     / "projects-and-components"
+        #     / "components"
+        #     / "component-type-docs.png",
+        #     update_screenshots=update_screenshots,
+        # )
 
         #########################################################
         # Test component we use in docs                         #
@@ -127,7 +129,7 @@ def test_components_docs_index(
         # that we can actually run a shell script.
         create_file(
             Path("my_component_library") / "lib" / "shell_command.py",
-            contents=(COMPONENTS_SNIPPETS_DIR / "with-scaffolder.py").read_text(),
+            contents=(COMPONENTS_SNIPPETS_DIR / "with-blueprint.py").read_text(),
         )
         run_command_and_snippet_output(
             cmd="dg scaffold component 'my_component_library.lib.ShellCommand' my_shell_command",

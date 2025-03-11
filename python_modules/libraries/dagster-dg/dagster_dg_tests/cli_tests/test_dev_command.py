@@ -12,16 +12,21 @@ from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import, 
 from dagster_graphql.client import DagsterGraphQLClient
 
 ensure_dagster_dg_tests_import()
+
+from dagster_components.test.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
+from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd
+
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
+    create_project_from_components,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
 )
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_command_workspace_context_success(monkeypatch):
+def test_dev_workspace_context_success(monkeypatch):
     # The command will use `uv tool run dagster dev` to start the webserver if it
     # cannot find a venv with `dagster` and `dagster-webserver` installed. `uv tool run` will
     # pull the `dagster` package from PyPI. To avoid this, we ensure the workspace directory has a
@@ -51,7 +56,7 @@ def test_dev_command_workspace_context_success(monkeypatch):
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_command_project_context_success():
+def test_dev_project_context_success():
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
         port = _find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
@@ -61,7 +66,7 @@ def test_dev_command_project_context_success():
 @pytest.mark.skipif(
     is_windows() == "Windows", reason="Temporarily skipping (signal issues in CLI).."
 )
-def test_dev_command_has_options_of_dagster_dev():
+def test_dev_has_options_of_dagster_dev():
     from dagster._cli.dev import dev_command as dagster_dev_command
     from dagster_dg.cli import dev_command as dev_command
 
@@ -93,8 +98,8 @@ def test_dev_command_has_options_of_dagster_dev():
 
 # Modify this test with a new option whenever a new forwarded option is added to `dagster-dev`.
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_command_forwards_options_to_dagster_dev():
-    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+def test_dev_forwards_options_to_dagster_dev():
+    with ProxyRunner.test() as runner, isolated_example_workspace(runner, "foo-bar"):
         port = _find_free_port()
         options = [
             "--code-server-log-level",
@@ -111,20 +116,49 @@ def test_dev_command_forwards_options_to_dagster_dev():
             "3000",
         ]
         try:
-            dev_process = _launch_dev_command(options)
+            dev_process = _launch_dev_command(options + ["--no-check-yaml"])
             time.sleep(0.5)
             child_process = _get_child_processes(dev_process.pid)[0]
-            expected_cmdline = [
-                "uv",
-                "run",
-                "dagster",
-                "dev",
-                *options,
-            ]
-            assert child_process.cmdline() == expected_cmdline
+            assert " ".join(options) in " ".join(child_process.cmdline())
         finally:
             dev_process.terminate()
             dev_process.communicate()
+
+
+def test_implicit_yaml_check_from_dg_dev() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_MISSING_VALUE.component_path,
+            BASIC_INVALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+        ) as tmpdir,
+    ):
+        with pushd(str(tmpdir)):
+            result = runner.invoke("dev")
+            assert result.exit_code != 0, str(result.stdout)
+
+            assert BASIC_INVALID_VALUE.check_error_msg and BASIC_MISSING_VALUE.check_error_msg
+            BASIC_INVALID_VALUE.check_error_msg(str(result.stdout))
+            BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
+
+
+def test_implicit_yaml_check_from_dg_dev_workspace() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_MISSING_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+        ) as tmpdir,
+    ):
+        with pushd(Path(tmpdir).parent):
+            result = runner.invoke("dev")
+            assert result.exit_code != 0, str(result.stdout)
+
+            assert BASIC_MISSING_VALUE.check_error_msg
+            BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
 
 
 # ########################
