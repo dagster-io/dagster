@@ -11,7 +11,7 @@ import {RepoAddress} from '../workspace/types';
 export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
   if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
     return `/assets?${qs.stringify({
-      'asset-selection': `group:${groupMetadata.groupName} and code_location:${buildRepoPathForHuman(groupMetadata.repositoryLocationName, groupMetadata.repositoryName)}`,
+      'asset-selection': `group:${groupMetadata.groupName} and code_location:"${buildRepoPathForHuman(groupMetadata.repositoryLocationName, groupMetadata.repositoryName)}"`,
     })}`;
   }
   return `/assets?${qs.stringify({groups: JSON.stringify([groupMetadata])})}`;
@@ -20,7 +20,7 @@ export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) =>
 export const linkToAssetTableWithKindFilter = (kind: string) => {
   if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
     return `/assets?${qs.stringify({
-      'asset-selection': `kind:${kind}`,
+      'asset-selection': `kind:"${kind}"`,
     })}`;
   }
   return `/assets?${qs.stringify({
@@ -42,7 +42,7 @@ export const linkToAssetTableWithTagFilter = (tag: Omit<DefinitionTag, '__typena
 export const linkToAssetTableWithAssetOwnerFilter = (owner: AssetOwner) => {
   if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
     return `/assets?${qs.stringify({
-      'asset-selection': `owner:${owner.__typename === 'TeamAssetOwner' ? owner.team : owner.email}`,
+      'asset-selection': `owner:"${owner.__typename === 'TeamAssetOwner' ? owner.team : owner.email}"`,
     })}`;
   }
   return `/assets?${qs.stringify({
@@ -53,7 +53,7 @@ export const linkToAssetTableWithAssetOwnerFilter = (owner: AssetOwner) => {
 export const linkToAssetTableWithColumnsFilter = (columns: string[]) => {
   if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
     return `/assets?${qs.stringify({
-      'asset-selection': `column:${columns.join(',')}`,
+      'asset-selection': columns.map((column) => `column:"${column}"`).join(' or '),
     })}`;
   }
   return `/assets?${qs.stringify({
