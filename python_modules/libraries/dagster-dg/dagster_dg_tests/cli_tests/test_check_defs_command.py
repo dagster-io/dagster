@@ -1,12 +1,15 @@
 from pathlib import Path
 
 import pytest
-from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import, is_windows
+from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import, is_windows, pushd
 
 ensure_dagster_dg_tests_import()
+from dagster_components.test.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
+
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
+    create_project_from_components,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
 )
@@ -50,3 +53,39 @@ def test_check_defs_project_context_success():
         (Path("foo_bar") / "definitions.py").write_text("invalid")
         result = runner.invoke("check", "defs")
         assert result.exit_code == 1
+
+
+def test_implicit_yaml_check_from_dg_check_defs() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_MISSING_VALUE.component_path,
+            BASIC_INVALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+        ) as tmpdir,
+    ):
+        with pushd(str(tmpdir)):
+            result = runner.invoke("check", "defs")
+            assert result.exit_code != 0, str(result.stdout)
+
+            assert BASIC_INVALID_VALUE.check_error_msg and BASIC_MISSING_VALUE.check_error_msg
+            BASIC_INVALID_VALUE.check_error_msg(str(result.stdout))
+            BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
+
+
+def test_implicit_yaml_check_from_dg_check_defs_workspace() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_MISSING_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+        ) as tmpdir,
+    ):
+        with pushd(str(Path(tmpdir).parent)):
+            result = runner.invoke("dev")
+            assert result.exit_code != 0, str(result.stdout)
+
+            assert BASIC_MISSING_VALUE.check_error_msg
+            BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
