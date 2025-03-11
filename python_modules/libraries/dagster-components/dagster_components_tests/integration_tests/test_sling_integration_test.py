@@ -240,6 +240,16 @@ def test_sling_subclass() -> None:
             == {AssetKey("customers")},
             False,
         ),
+        (
+            {"automation_condition": "{{ automation_condition.eager() }}"},
+            lambda asset_spec: asset_spec.automation_condition is not None,
+            False,
+        ),
+        (
+            {"key": "overridden_key"},
+            lambda asset_spec: asset_spec.key == AssetKey("overridden_key"),
+            False,
+        ),
     ],
     ids=[
         "group_name",
@@ -251,6 +261,8 @@ def test_sling_subclass() -> None:
         "description",
         "metadata",
         "deps",
+        "automation_condition",
+        "key",
     ],
 )
 def test_asset_attributes(
@@ -270,9 +282,25 @@ def test_asset_attributes(
         component = SlingReplicationCollectionComponent.load(attributes=attrs, context=context)
         defs = component.build_defs(context)
 
-        assets_def: AssetsDefinition = defs.get_assets_def("input_duckdb")
+        key = attributes.get("key", "input_duckdb")
+        assets_def: AssetsDefinition = defs.get_assets_def(key)
     if assertion:
-        assert assertion(assets_def.get_asset_spec(AssetKey("input_duckdb")))
+        assert assertion(assets_def.get_asset_spec(AssetKey(key)))
+
+
+IGNORED_KEYS = {"skippable"}
+
+
+def test_asset_attributes_is_comprehensive():
+    all_asset_attribute_keys = []
+    for test_arg in test_asset_attributes.pytestmark[0].args[1]:
+        all_asset_attribute_keys.extend(test_arg[0].keys())
+    from dagster_components.resolved.core_models import AssetAttributesModel
+
+    assert (
+        set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS
+        == set(all_asset_attribute_keys)
+    ), f"The test_asset_attributes test does not cover all fields, missing: {set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS - set(all_asset_attribute_keys)}"
 
 
 def test_scaffold_sling():
