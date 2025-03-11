@@ -1,9 +1,13 @@
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Literal, Optional, Union
+from typing import Annotated, Any, Literal, Optional, Union
 
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
@@ -32,6 +36,22 @@ from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_transl
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 
 
+class DagsterSlingTranslatorAutomationCondition(DagsterSlingTranslator):
+    """Subclassed to pull in any overridden impl for get_automation_condition
+    into produced asset specs.
+    """
+
+    def get_automation_condition(
+        self, stream_definition: Mapping[str, Any]
+    ) -> Optional[AutomationCondition]: ...
+
+    def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
+        asset_spec = super().get_asset_spec(stream_definition)
+        return asset_spec.replace_attributes(
+            automation_condition=self.get_automation_condition(stream_definition)
+        )
+
+
 def resolve_translator(
     context: ResolutionContext, model: "SlingReplicationModel"
 ) -> DagsterSlingTranslator:
@@ -40,7 +60,7 @@ def resolve_translator(
         raise ValueError("owners are not supported for sling_replication_collection component")
     if model.asset_attributes and model.asset_attributes.code_version:
         raise ValueError("code_version is not supported for sling_replication_collection component")
-    return get_wrapped_translator_class(DagsterSlingTranslator)(
+    return get_wrapped_translator_class(DagsterSlingTranslatorAutomationCondition)(
         resolving_info=TranslatorResolvingInfo(
             "stream_definition",
             model.asset_attributes or AssetAttributesModel(),
