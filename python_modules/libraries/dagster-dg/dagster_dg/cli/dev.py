@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Optional, TypeVar
 
 import click
-import psutil
 
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.cli.utils import create_dagster_cli_cmd
@@ -20,6 +19,7 @@ from dagster_dg.utils import DgClickCommand, pushd
 T = TypeVar("T")
 
 _CHECK_SUBPROCESS_INTERVAL = 5
+_SUBPROCESS_WAIT_TIMEOUT = 60
 
 
 @click.command(name="dev", cls=DgClickCommand)
@@ -127,16 +127,10 @@ def dev_command(
                 "Received keyboard interrupt. Shutting down dagster-dev process.", fg="yellow"
             )
         finally:
-            # For reasons not fully understood, directly interrupting the `uv run` process does not
-            # work as intended. The interrupt signal is not correctly propagated to the `dagster
-            # dev` process, and so that process never shuts down. Therefore, we send the signal
-            # directly to the `dagster dev` process (the only child of the `uv run` process). This
-            # will cause `dagster dev` to terminate which in turn will cause `uv run` to terminate.
-            dagster_dev_pid = _get_child_process_pid(uv_run_dagster_dev_process)
-            _interrupt_subprocess(dagster_dev_pid)
+            _interrupt_subprocess(uv_run_dagster_dev_process.pid)
 
             try:
-                uv_run_dagster_dev_process.wait(timeout=10)
+                uv_run_dagster_dev_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
             except subprocess.TimeoutExpired:
                 click.secho("`dagster dev` did not terminate in time. Killing it.")
                 uv_run_dagster_dev_process.kill()
@@ -144,13 +138,6 @@ def dev_command(
 
 def format_forwarded_option(option: str, value: object) -> list[str]:
     return [] if value is None else [option, str(value)]
-
-
-def _get_child_process_pid(proc: "subprocess.Popen") -> int:
-    children = psutil.Process(proc.pid).children(recursive=False)
-    if len(children) != 1:
-        raise ValueError(f"Expected exactly one child process, but found {len(children)}")
-    return children[0].pid
 
 
 # Windows subprocess termination utilities. See here for why we send CTRL_BREAK_EVENT on Windows:
@@ -162,7 +149,8 @@ def _interrupt_subprocess(pid: int) -> None:
     if sys.platform == "win32":
         os.kill(pid, signal.CTRL_BREAK_EVENT)
     else:
-        os.kill(pid, signal.SIGINT)
+        # uv tool run appears to forward SIGTERM but not SIGINT - see https://github.com/astral-sh/uv/issues/12108
+        os.kill(pid, signal.SIGTERM)
 
 
 def _open_subprocess(command: Sequence[str]) -> "subprocess.Popen":

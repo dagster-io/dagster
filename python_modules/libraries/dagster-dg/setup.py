@@ -38,7 +38,6 @@ setup(
         "typing_extensions>=4.4.0,<5",
         "markdown",
         "jsonschema",
-        "psutil",
         "PyYAML>=5.1",
         "rich",
         "watchdog",
@@ -57,6 +56,7 @@ setup(
         "test": [
             "click",
             "dagster-components",
+            "psutil",
             "pydantic",
             "pytest",
         ],
