@@ -4,13 +4,14 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {GroupMetadata} from './BuildAssetSearchResults';
 import {featureEnabled} from '../app/Flags';
 import {AssetOwner, DefinitionTag} from '../graphql/types';
+import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
   if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
     return `/assets?${qs.stringify({
-      'asset-selection': `group:${groupMetadata.groupName} and code_location:${groupMetadata.repositoryLocationName}`,
+      'asset-selection': `group:${groupMetadata.groupName} and code_location:${buildRepoPathForHuman(groupMetadata.repositoryLocationName, groupMetadata.repositoryName)}`,
     })}`;
   }
   return `/assets?${qs.stringify({groups: JSON.stringify([groupMetadata])})}`;
