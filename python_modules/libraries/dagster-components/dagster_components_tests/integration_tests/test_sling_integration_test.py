@@ -25,7 +25,7 @@ from dagster_components.components.sling_replication_collection.component import
 )
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import YamlComponentDecl, load_defs
-from dagster_components.utils import ensure_dagster_components_tests_import
+from dagster_components.utils import ensure_dagster_components_tests_import, get_path_from_module
 from dagster_sling import SlingResource
 
 ensure_dagster_components_tests_import()
@@ -180,7 +180,13 @@ def test_load_from_path() -> None:
         assert resource.connections[0].password == "password"
 
         module = importlib.import_module("defs")
+        # assert that we are finding the one we just created
+        assert "var/folders" in str(get_path_from_module(module))
+        # module.__spec__.submodule_search_locations._path has a billion things
         defs = load_defs(module)
+        # import code
+
+        # code.interact(local=locals())
         assert defs.get_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),
             AssetKey(["foo", "input_duckdb"]),
