@@ -1,7 +1,12 @@
 ---
 title: 'Unconnected inputs in op jobs'
 description: "Learn to work with unconnected inputs in op jobs."
+sidebar_position: 400
 ---
+
+import OpsNote from '../../../partials/\_OpsNote.md';
+
+<OpsNote />
 
 Ops in a job may have input definitions that don't correspond to the outputs of upstream ops.
 

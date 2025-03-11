@@ -1,8 +1,12 @@
 ---
 title: 'Op retries'
 description: Retry ops on exception using RetryPolicy and RetryRequested
-sidebar_position: 3000
+sidebar_position: 300
 ---
+
+import OpsNote from '../../../partials/\_OpsNote.md';
+
+<OpsNote />
 
 When an exception occurs during op execution, Dagster provides tools to retry that op within the same job run.
 

@@ -1,7 +1,7 @@
 ---
 title: Job execution
 description: Dagster provides several methods to execute jobs.
-sidebar_position: 3000
+sidebar_position: 300
 ---
 
 :::note

@@ -1,8 +1,12 @@
 ---
 title: "Dynamic graphs"
 description: Dagster APIs for runtime determined graph structures.
-sidebar_position: 6000
+sidebar_position: 600
 ---
+
+import OpsNote from '../../../partials/\_OpsNote.md';
+
+<OpsNote />
 
 The ability for portions of a [graph](/guides/build/ops/graphs) to be duplicated at runtime.
 

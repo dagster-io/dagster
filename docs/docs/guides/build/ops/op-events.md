@@ -1,10 +1,12 @@
 ---
-title: 'Op events'
+title: 'Op events and exceptions'
 description: Within the body of an op, it is possible to communicate with the Dagster framework either by yielding an event, or raising an exception.
-sidebar_position: 1000
+sidebar_position: 100
 ---
 
-# Op events and exceptions
+import OpsNote from '../../../partials/\_OpsNote.md';
+
+<OpsNote />
 
 Within the body of an op, it is possible to communicate with the Dagster framework either by yielding an event, logging an event, or raising an exception. This page describes these different possibilities and the scenarios in which you might use them.
 

@@ -1,8 +1,12 @@
 ---
 title: 'Nesting op graphs'
 description: To organize the ops inside a job, you can nest sets of ops into sub-graphs.
-sidebar_position: 5000
+sidebar_position: 500
 ---
+
+import OpsNote from '../../../partials/\_OpsNote.md';
+
+<OpsNote />
 
 To organize the [ops](/guides/build/ops/) inside a [job](/guides/build/jobs/op-jobs), you can nest sets of ops into sub-graphs.
 

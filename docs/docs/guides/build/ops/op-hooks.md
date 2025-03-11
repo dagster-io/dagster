@@ -1,8 +1,12 @@
 ---
 title: 'Op hooks'
 description: Op hooks let you define success and failure handling policies on ops.
-sidebar_position: 2000
+sidebar_position: 200
 ---
+
+import OpsNote from '../../../partials/\_OpsNote.md';
+
+<OpsNote />
 
 Op hooks let you define success and failure handling policies on ops.
 
