@@ -9,7 +9,7 @@ from rich.table import Table
 
 from dagster_dg.cli.scaffold import SHIM_COMPONENTS
 from dagster_dg.cli.shared_options import dg_global_options
-from dagster_dg.component import RemoteComponentRegistry
+from dagster_dg.component import RemoteLibraryObjectRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.defs import (
@@ -78,7 +78,7 @@ def list_component_type_command(output_json: bool, **global_options: object) -> 
     """List registered Dagster components in the current project environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
-    registry = RemoteComponentRegistry.from_dg_context(dg_context)
+    registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
 
     sorted_keys = sorted(registry.keys() - SHIM_COMPONENTS.keys(), key=lambda k: k.to_typename())
 

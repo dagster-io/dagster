@@ -12,7 +12,7 @@ from dagster_components.core.component import (
     Component,
     ComponentLoadContext,
     DefinitionsModuleCache,
-    discover_entry_point_component_types,
+    discover_entry_point_library_objects,
 )
 from dagster_components.core.component_decl_builder import (
     ComponentDeclNode,
@@ -20,7 +20,7 @@ from dagster_components.core.component_decl_builder import (
     YamlComponentDecl,
     path_to_decl_node,
 )
-from dagster_components.core.component_key import ComponentKey
+from dagster_components.core.library_object_key import LibraryObjectKey
 from dagster_components.utils import get_path_from_module
 
 if TYPE_CHECKING:
@@ -72,7 +72,7 @@ def defs_from_components(
 def build_component_defs(
     components_root: Path,
     resources: Optional[Mapping[str, object]] = None,
-    component_types: Optional[dict[ComponentKey, type[Component]]] = None,
+    component_types: Optional[dict[LibraryObjectKey, type[Component]]] = None,
 ) -> "Definitions":
     """Build a Definitions object for all the component instances in a given code location.
 
@@ -92,7 +92,7 @@ def build_component_defs(
 def load_defs(
     defs_root: ModuleType,
     resources: Optional[Mapping[str, object]] = None,
-    component_types: Optional[dict[ComponentKey, type[Component]]] = None,
+    component_types: Optional[dict[LibraryObjectKey, type[Component]]] = None,
 ) -> "Definitions":
     """Constructs a Definitions object, loading all Dagster defs in the given module.
 
@@ -100,12 +100,12 @@ def load_defs(
         defs_root (Path): The path to the defs root, typically `package.defs`.
         resources (Optional[Mapping[str, object]]): A mapping of resource keys to resources
             to apply to the definitions.
-        component_types (Optional[dict[ComponentKey, type[Component]]]): A mapping of
+        component_types (Optional[dict[LibraryObjectKey, type[Component]]]): A mapping of
             component keys to component types.
     """
     from dagster._core.definitions.definitions_class import Definitions
 
-    component_types = component_types or discover_entry_point_component_types()
+    component_types = component_types or discover_entry_point_library_objects()
     components_root_dir = get_path_from_module(defs_root)
 
     all_defs: list[Definitions] = []

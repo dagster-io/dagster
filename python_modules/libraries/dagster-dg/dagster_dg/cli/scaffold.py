@@ -12,8 +12,7 @@ from dagster_dg.cli.shared_options import (
     dg_editable_dagster_options,
     dg_global_options,
 )
-from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
-from dagster_dg.component_key import ComponentKey
+from dagster_dg.component import RemoteLibraryObject, RemoteLibraryObjectRegistry
 from dagster_dg.config import (
     DgRawCliConfig,
     DgRawWorkspaceConfig,
@@ -24,6 +23,7 @@ from dagster_dg.config import (
     set_config_on_cli_context,
 )
 from dagster_dg.context import DgContext
+from dagster_dg.library_object_key import LibraryObjectKey
 from dagster_dg.scaffold import (
     scaffold_component_instance,
     scaffold_component_type,
@@ -198,7 +198,7 @@ class ComponentScaffoldGroup(DgClickGroup):
         config = get_config_from_cli_context(cli_context)
         dg_context = DgContext.for_defined_registry_environment(Path.cwd(), config)
 
-        registry = RemoteComponentRegistry.from_dg_context(dg_context)
+        registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
         for key, component_type in registry.items():
             command = _create_component_scaffold_subcommand(key, component_type)
             self.add_command(command)
@@ -266,15 +266,15 @@ def scaffold_component_group(context: click.Context, help_: bool, **global_optio
 def _core_scaffold(
     cli_context: click.Context,
     cli_config: DgRawCliConfig,
-    component_key: ComponentKey,
+    object_key: LibraryObjectKey,
     instance_name: str,
     key_value_params,
     json_params,
 ) -> None:
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
-    registry = RemoteComponentRegistry.from_dg_context(dg_context)
-    if not registry.has(component_key):
-        exit_with_error(f"Component type `{component_key.to_typename()}` not found.")
+    registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
+    if not registry.has(object_key):
+        exit_with_error(f"Scaffoldable object type `{object_key.to_typename()}` not found.")
     elif dg_context.has_component_instance(instance_name):
         exit_with_error(f"A component instance named `{instance_name}` already exists.")
 
@@ -300,14 +300,14 @@ def _core_scaffold(
 
     scaffold_component_instance(
         Path(dg_context.defs_path) / instance_name,
-        component_key.to_typename(),
+        object_key.to_typename(),
         scaffold_params,
         dg_context,
     )
 
 
 def _create_component_shim_scaffold_subcommand(
-    component_key: ComponentKey, command_name: str
+    component_key: LibraryObjectKey, command_name: str
 ) -> DgClickCommand:
     # We need to "reset" the help option names to the default ones because we inherit the parent
     # value of context settings from the parent group, which has been customized.
@@ -332,7 +332,7 @@ def _create_component_shim_scaffold_subcommand(
 
 
 def _create_component_scaffold_subcommand(
-    component_key: ComponentKey, component_type: RemoteComponentType
+    component_key: LibraryObjectKey, component_type: RemoteLibraryObject
 ) -> DgClickCommand:
     # We need to "reset" the help option names to the default ones because we inherit the parent
     # value of context settings from the parent group, which has been customized.
@@ -400,9 +400,9 @@ def _create_component_scaffold_subcommand(
 # ########################
 
 SHIM_COMPONENTS = {
-    ComponentKey("dagster_components.dagster", "RawAssetComponent"): "asset",
-    ComponentKey("dagster_components.dagster", "RawSensorComponent"): "sensor",
-    ComponentKey("dagster_components.dagster", "RawScheduleComponent"): "schedule",
+    LibraryObjectKey("dagster_components.dagster", "RawAssetComponent"): "asset",
+    LibraryObjectKey("dagster_components.dagster", "RawSensorComponent"): "sensor",
+    LibraryObjectKey("dagster_components.dagster", "RawScheduleComponent"): "schedule",
 }
 
 for key, command_name in SHIM_COMPONENTS.items():
@@ -429,10 +429,10 @@ def scaffold_component_type_command(
     """
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_component_library_environment(Path.cwd(), cli_config)
-    registry = RemoteComponentRegistry.from_dg_context(dg_context)
+    registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
 
     module_name = snakecase(name)
-    component_key = ComponentKey(
+    component_key = LibraryObjectKey(
         name=name, namespace=dg_context.default_component_library_module_name
     )
     if registry.has(component_key):

@@ -8,7 +8,7 @@ import click
 import tomlkit
 import tomlkit.items
 
-from dagster_dg.component import RemoteComponentRegistry
+from dagster_dg.component import RemoteLibraryObjectRegistry
 from dagster_dg.config import (
     DgRawWorkspaceConfig,
     DgWorkspaceScaffoldProjectOptions,
@@ -149,7 +149,7 @@ def scaffold_project(
     if cl_dg_context.use_dg_managed_environment and not skip_venv:
         cl_dg_context.ensure_uv_lock()
         if populate_cache:
-            RemoteComponentRegistry.from_dg_context(cl_dg_context)  # Populate the cache
+            RemoteLibraryObjectRegistry.from_dg_context(cl_dg_context)  # Populate the cache
 
     # Update pyproject.toml
     if cl_dg_context.is_workspace:
