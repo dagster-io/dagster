@@ -340,8 +340,8 @@ class DbtCliEventMessage:
         has_asset_def: bool = bool(context and context.has_assets_def)
 
         node_resource_type: str = event_node_info["resource_type"]
-        # if model materialization is incremental microbatch, node_status property is None, hence fall back to status
-        node_status: str = event_node_info["node_status"] or self.raw_event["data"]["status"].lower()
+        # if model materialization is incremental microbatch, node_status property is "None", hence fall back to status
+        node_status: str = self.raw_event["data"]["status"].lower() if event_node_info["node_status"] == "None" else event_node_info["node_status"]
         node_materialization: str = self.raw_event["data"]["node_info"]["materialized"]
 
         is_node_ephemeral = node_materialization == "ephemeral"
