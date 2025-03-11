@@ -48,7 +48,14 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
         _install_libraries_to_venv(
-            venv_path, ["dagster", "libraries/dagster-components", "dagster-pipes", "dagster-test"]
+            venv_path,
+            [
+                "dagster",
+                "libraries/dagster-components",
+                "dagster-pipes",
+                "libraries/dagster-shared",
+                "dagster-test",
+            ],
         )
 
         venv_exec_path = get_venv_executable(venv_path).parent
@@ -85,7 +92,15 @@ def isolated_example_workspace(
                 subprocess.run(["uv", "venv", ".venv"], check=True)
                 venv_path = Path.cwd() / ".venv"
                 _install_libraries_to_venv(
-                    venv_path, ["dagster", "dagster-webserver", "dagster-graphql", "dagster-test"]
+                    venv_path,
+                    [
+                        "dagster",
+                        "dagster-webserver",
+                        "dagster-graphql",
+                        "dagster-test",
+                        "dagster-pipes",
+                        "libraries/dagster-shared",
+                    ],
                 )
             yield
 
