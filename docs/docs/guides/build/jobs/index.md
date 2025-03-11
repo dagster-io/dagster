@@ -1,5 +1,5 @@
 ---
-title: Op jobs
+title: Jobs
 description: Jobs are the main unit of execution and monitoring in Dagster.
 ---
 
