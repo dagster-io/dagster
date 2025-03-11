@@ -64,6 +64,9 @@ yarn build-api-docs
 yarn build
 ```
 
+Note that building API docs requires Python to be configured on your system.
+This can be accomplished by running the `make dev_install` command as outlined in the [contributing guide](https://docs.dagster.io/about/contributing).
+
 ### Linting
 
 To check the documentation for formatting issues, use the following:
