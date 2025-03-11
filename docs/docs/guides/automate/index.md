@@ -8,7 +8,7 @@ Automation is key to building reliable, efficient data pipelines. Dagster offers
 
 Consider these factors when selecting an automation method:
 
-* **Pipeline structure**: Are you working primarily with [assets](/guides/build/assets/), [ops](/guides/build/ops), or a mix?
+* **Pipeline structure**: Are you working primarily with [assets](/guides/build/assets/), [ops](/guides/build/ops/), or a mix?
 * **Timing requirements**: Do you need regular updates or event-driven processing?
 * **Data characteristics**: Is your data partitioned? Do you need to update historical data?
 * **System integration**: Do you need to react to external events or systems?

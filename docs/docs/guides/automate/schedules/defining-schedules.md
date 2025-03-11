@@ -10,7 +10,7 @@ The following examples demonstrate how to define some basic schedules.
 <Tabs>
   <TabItem value="Using ScheduleDefinition">
 
-This example demonstrates how to define a schedule using <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" /> that will run a job every day at midnight. While this example uses op jobs, the same approach will work with [asset jobs](/guides/build/assets/asset-jobs).
+This example demonstrates how to define a schedule using <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" /> that will run a job every day at midnight. While this example uses op jobs, the same approach will work with [asset jobs](/guides/build/jobs/asset-jobs).
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py" startAfter="start_basic_schedule" endBefore="end_basic_schedule" />
 
