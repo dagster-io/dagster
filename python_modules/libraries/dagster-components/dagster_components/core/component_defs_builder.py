@@ -124,7 +124,7 @@ def load_defs(
     return Definitions.merge(*all_defs)
 
 
-def get_passed_assets_defs(defs: Definitions) -> Sequence[AssetsDefinition]:
+def get_all_passed_assets_as_assets_defs(defs: Definitions) -> Sequence[AssetsDefinition]:
     """Returns all AssetsDefinitions associated with the Definitions object. Does not support
     CacheableAssetsDefinitions.
     """
@@ -132,7 +132,7 @@ def get_passed_assets_defs(defs: Definitions) -> Sequence[AssetsDefinition]:
         not any(
             isinstance(asset_def, CacheableAssetsDefinition) for asset_def in (defs.assets or [])
         ),
-        "Cannot call get_passed_assets_defs on a Definitions object that contains CacheableAssetsDefinitions",
+        "Cannot call get_all_passed_assets_as_assets_defs on a Definitions object that contains CacheableAssetsDefinitions",
     )
 
     return [

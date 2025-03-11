@@ -16,7 +16,7 @@ from dagster_components.core.component_blueprint import (
 )
 from dagster_components.core.component_defs_builder import (
     build_component_defs as build_component_defs,
-    get_passed_assets_defs as get_passed_assets_defs,
+    get_all_passed_assets_as_assets_defs as get_all_passed_assets_as_assets_defs,
     load_defs as load_defs,
 )
 from dagster_components.resolved.context import ResolutionContext as ResolutionContext

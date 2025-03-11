@@ -6,26 +6,26 @@ from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
 )
-from dagster_components import get_passed_assets_defs
+from dagster_components import get_all_passed_assets_as_assets_defs
 
 
-def test_get_passed_asset_defs_all_assets_defs():
+def test_get_all_passed_assets_as_assets_defs_all_assets_defs():
     @dg.asset
     def my_asset():
         pass
 
     defs = dg.Definitions(assets=[my_asset])
-    assert get_passed_assets_defs(defs) == [my_asset]
+    assert get_all_passed_assets_as_assets_defs(defs) == [my_asset]
 
 
-def test_get_passed_asset_defs_all_asset_specs():
+def test_get_all_passed_assets_as_assets_defs_all_asset_specs():
     my_spec = dg.AssetSpec(key="my_asset")
     defs = dg.Definitions(assets=[my_spec])
-    assert len(get_passed_assets_defs(defs)) == 1
-    assert get_passed_assets_defs(defs)[0].key == my_spec.key
+    assert len(get_all_passed_assets_as_assets_defs(defs)) == 1
+    assert get_all_passed_assets_as_assets_defs(defs)[0].key == my_spec.key
 
 
-def test_get_passed_asset_defs_cacheable_assets_defs():
+def test_get_all_passed_assets_as_assets_defs_cacheable_assets_defs():
     class MyCacheableAssets(CacheableAssetsDefinition):
         def compute_cacheable_data(self):
             return [
@@ -52,19 +52,19 @@ def test_get_passed_asset_defs_cacheable_assets_defs():
     defs = dg.Definitions(assets=[MyCacheableAssets("a"), MyCacheableAssets("b")])
     with pytest.raises(
         CheckError,
-        match="Cannot call get_passed_assets_defs on a Definitions object that contains CacheableAssetsDefinitions",
+        match="Cannot call get_all_passed_assets_as_assets_defs on a Definitions object that contains CacheableAssetsDefinitions",
     ):
-        get_passed_assets_defs(defs)
+        get_all_passed_assets_as_assets_defs(defs)
 
 
-def get_passed_asset_defs_mixed():
+def get_all_passed_assets_as_assets_defs_mixed():
     @dg.asset
     def my_asset():
         pass
 
     my_spec = dg.AssetSpec(key="my_asset")
     defs = dg.Definitions(assets=[my_asset, my_spec])
-    assert {asset.key for asset in get_passed_assets_defs(defs)} == {
+    assert {asset.key for asset in get_all_passed_assets_as_assets_defs(defs)} == {
         my_asset.key,
         my_spec.key,
     }
