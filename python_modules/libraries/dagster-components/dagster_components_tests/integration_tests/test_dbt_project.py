@@ -186,6 +186,16 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
             False,
         ),
         ({"deps": ["customers"]}, None, True),
+        (
+            {"automation_condition": "{{ automation_condition.eager() }}"},
+            lambda asset_spec: asset_spec.automation_condition is not None,
+            False,
+        ),
+        (
+            {"key": "{{ node.name }}"},
+            lambda asset_spec: asset_spec.key == AssetKey("stg_customers"),
+            False,
+        ),
     ],
     ids=[
         "group_name",
@@ -197,6 +207,8 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
         "description",
         "metadata",
         "deps",
+        "automation_condition",
+        "key",
     ],
 )
 def test_asset_attributes(
@@ -226,6 +238,21 @@ def test_asset_attributes(
         assets_def: AssetsDefinition = defs.get_assets_def("stg_customers")
     if assertion:
         assert assertion(assets_def.get_asset_spec(AssetKey("stg_customers")))
+
+
+IGNORED_KEYS = {"skippable"}
+
+
+def test_asset_attributes_is_comprehensive():
+    all_asset_attribute_keys = []
+    for test_arg in test_asset_attributes.pytestmark[0].args[1]:
+        all_asset_attribute_keys.extend(test_arg[0].keys())
+    from dagster_components.resolved.core_models import AssetAttributesModel
+
+    assert (
+        set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS
+        == set(all_asset_attribute_keys)
+    ), f"The test_asset_attributes test does not cover all fields, missing: {set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS - set(all_asset_attribute_keys)}"
 
 
 def test_subselection(dbt_path: Path) -> None:
