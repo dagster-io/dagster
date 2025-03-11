@@ -1,12 +1,8 @@
 import os
 import sqlite3
-from unittest import mock
 
 from dagster import AssetExecutionContext, AssetKey, file_relative_path
 from dagster._core.definitions.materialize import materialize
-
-from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
-
 from dagster_sling import SlingReplicationParam, sling_assets
 
 
@@ -46,6 +42,7 @@ def test_default_sling_replicate(
     assert counts == 4
     counts = sqlite_connection.execute("SELECT count(1) FROM main.products").fetchone()[0]
     assert counts == 4
+
 
 def test_streams_sling_replicate(
     csv_to_sqlite_dataworks_replication: SlingReplicationParam,
@@ -111,6 +108,7 @@ def test_streams_sling_replicate(
     counts = sqlite_connection.execute("SELECT count(1) FROM main.products").fetchone()[0]
     assert counts == 4
 
+
 def test_stream_sling_replicate_metadata(
     csv_to_sqlite_dataworks_replication: SlingReplicationParam,
     path_to_temp_sqlite_db: str,
@@ -159,8 +157,8 @@ def test_stream_sling_replicate_metadata(
     path_name = os.path.abspath(
         file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/dataworks/")
     )
-    product_name_path = os.path.join(path_name,"Products.csv")
+    product_name_path = os.path.join(path_name, "Products.csv")
 
     assert products_metadata["stream_name"].value == f"file://{product_name_path}"
-    assert products_metadata["row_count"].value == '4'
+    assert products_metadata["row_count"].value == "4"
     assert products_metadata["destination_table"].value == "main.products"
