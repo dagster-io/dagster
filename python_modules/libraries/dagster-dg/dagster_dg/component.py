@@ -12,18 +12,44 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class RemoteScaffolder:
+class RemoteObject:
+    """Any remote object that the dg system is aware of."""
+
+    summary: Optional[str]
+    description: Optional[str]
+
+    @staticmethod
+    def from_json(json: dict[str, Any]) -> "RemoteObject":
+        objtype = json.pop("objtype", None)
+        if objtype == "object":
+            return RemoteObject(**json)
+        elif objtype == "component-type":
+            return RemoteComponentType(**json)
+        elif objtype == "scaffolder":
+            return RemoteScaffolder(**json)
+        raise ValueError(f"Unknown object type: {objtype}")
+
+
+@dataclass
+class RemoteComponentType(RemoteObject):
+    schema: Optional[Mapping[str, Any]]  # json schema
+
+
+@dataclass
+class RemoteScaffolder(RemoteObject):
     schema: Optional[Mapping[str, Any]]  # json schema
 
     @staticmethod
-    def from_json(json: Optional[dict[str, Any]]) -> Optional["RemoteScaffolder"]:
-        return RemoteScaffolder(**json) if json else None
+    def from_json(json: dict[str, Any]) -> "RemoteScaffolder":
+        remote_obj = RemoteObject.from_json(json)
+        if isinstance(remote_obj, RemoteScaffolder):
+            return remote_obj
+        raise ValueError(f"Expected scaffolder, got {remote_obj}")
 
 
 @dataclass
 class RemoteLibraryObject:
-    name: str
-    namespace: str
+    object: RemoteObject
     scaffolder: Optional[RemoteScaffolder]
 
     @property
@@ -32,20 +58,12 @@ class RemoteLibraryObject:
 
     @staticmethod
     def from_json(json: dict[str, Any]) -> "RemoteLibraryObject":
-        scaffolder = RemoteScaffolder.from_json(json.pop("scaffolder", None))
-
-        objtype = json.pop("objtype")
-        if objtype == "component-type":
-            return RemoteComponentType(scaffolder=scaffolder, **json)
-        else:
-            raise ValueError(f"Unknown object type: {objtype}")
-
-
-@dataclass
-class RemoteComponentType(RemoteLibraryObject):
-    summary: Optional[str]
-    description: Optional[str]
-    schema: Optional[Mapping[str, Any]]  # json schema
+        object_json = json.pop("object")
+        scaffolder_json = json.pop("scaffolder", None)
+        return RemoteLibraryObject(
+            object=RemoteObject.from_json(object_json),
+            scaffolder=RemoteScaffolder.from_json(scaffolder_json) if scaffolder_json else None,
+        )
 
 
 class RemoteLibraryObjectRegistry:
@@ -85,7 +103,7 @@ class RemoteLibraryObjectRegistry:
 
     def get_component_type(self, key: LibraryObjectKey) -> RemoteComponentType:
         """Resolves a component type within the scope of a given component directory."""
-        obj = self.get(key)
+        obj = self.get(key).object
         if not isinstance(obj, RemoteComponentType):
             raise ValueError(f"Expected component type, got {obj}")
         return obj

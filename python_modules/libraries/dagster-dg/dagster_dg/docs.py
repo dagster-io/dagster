@@ -7,6 +7,7 @@ from typing import Any, Optional, TypedDict, Union
 import yaml
 
 from dagster_dg.component import RemoteComponentType, RemoteLibraryObjectRegistry
+from dagster_dg.library_object_key import LibraryObjectKey
 from dagster_dg.yaml_utils import parse_yaml_with_source_positions
 from dagster_dg.yaml_utils.source_position import SourcePositionTree
 
@@ -175,9 +176,9 @@ def json_for_all_components(
 ) -> list[ComponentTypeNamespaceJson]:
     """Returns a list of JSON representations of all component types in the registry."""
     component_json = [
-        (component.namespace.split(".")[0], json_for_component_type(component))
-        for _, component in registry.items()
-        if component.component_schema
+        (key.namespace.split(".")[0], json_for_component_type(key, library_obj.obj))
+        for key, library_obj in registry.items()
+        if isinstance(library_obj.obj, RemoteComponentType) and library_obj.obj.schema is not None
     ]
     return [
         ComponentTypeNamespaceJson(
@@ -188,16 +189,16 @@ def json_for_all_components(
     ]
 
 
-def json_for_component_type(remote_component_type: RemoteComponentType) -> ComponentTypeJson:
-    component_type_name = f"{remote_component_type.namespace}.{remote_component_type.name}"
-    sample_yaml = generate_sample_yaml(
-        component_type_name, remote_component_type.component_schema or {}
-    )
+def json_for_component_type(
+    key: LibraryObjectKey, remote_component_type: RemoteComponentType
+) -> ComponentTypeJson:
+    typename = key.to_typename()
+    sample_yaml = generate_sample_yaml(typename, remote_component_type.schema or {})
     return ComponentTypeJson(
-        name=component_type_name,
+        name=typename,
         author="",
         tags=[],
         example=sample_yaml,
-        schema=json.dumps(remote_component_type.component_schema),
+        schema=json.dumps(remote_component_type.schema),
         description=remote_component_type.description,
     )

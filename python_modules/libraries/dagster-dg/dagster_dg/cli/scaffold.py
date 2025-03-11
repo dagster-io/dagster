@@ -356,7 +356,7 @@ def _create_component_scaffold_subcommand(
         json_params: Mapping[str, Any],
         **key_value_params: Any,
     ) -> None:
-        f"""Scaffold of a {component_type.name} component.
+        f"""Scaffold of a {component_key.name} component.
 
         This command must be run inside a Dagster project directory. The component scaffold will be
         placed in submodule `<project_name>.components.<COMPONENT_NAME>`.
