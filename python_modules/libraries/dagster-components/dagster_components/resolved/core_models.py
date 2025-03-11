@@ -18,10 +18,10 @@ from typing_extensions import TypeAlias
 
 from dagster_components.resolved.context import ResolutionContext
 from dagster_components.resolved.model import (
-    FieldResolver,
     ResolvableModel,
     ResolvedFrom,
     ResolvedKwargs,
+    Resolver,
     resolve_fields,
 )
 
@@ -66,7 +66,7 @@ class OpSpec(ResolvedFrom["OpSpecModel"]):
     name: Optional[str] = None
     tags: Optional[dict[str, str]] = None
     backfill_policy: Annotated[
-        Optional[BackfillPolicy], FieldResolver.from_model(resolve_backfill_policy)
+        Optional[BackfillPolicy], Resolver.from_model(resolve_backfill_policy)
     ] = None
 
 
@@ -133,7 +133,7 @@ class AssetSpecModel(_ResolvableAssetAttributesMixin, ResolvableModel):
     key: str = Field(..., description="A unique identifier for the asset.")
 
 
-class SharedAssetKwargs(ResolvedKwargs["AssetAttributesModel"]):
+class SharedAssetKwargs(ResolvedKwargs["AssetAttributesModel", AssetSpec]):
     deps: Sequence[str]
     description: Optional[str]
     metadata: Mapping[str, Any]
@@ -143,29 +143,28 @@ class SharedAssetKwargs(ResolvedKwargs["AssetAttributesModel"]):
     owners: Sequence[str]
     tags: Mapping[str, str]
     kinds: Optional[Sequence[str]]
-    automation_condition: Optional[AutomationCondition]
+    automation_condition: Annotated[
+        Optional[AutomationCondition], Resolver.from_template_injection()
+    ]
 
 
 class AssetSpecKwargs(SharedAssetKwargs):
     key: Annotated[
         AssetKey,
-        FieldResolver.from_model(lambda context, schema: _resolve_asset_key(schema.key, context)),
+        Resolver.from_model(lambda context, schema: _resolve_asset_key(schema.key, context)),
     ]
 
 
 class AssetAttributesKwargs(SharedAssetKwargs):
     key: Annotated[
         Optional[AssetKey],
-        FieldResolver.from_model(
+        Resolver.from_model(
             lambda context, schema: _resolve_asset_key(schema.key, context) if schema.key else None
         ),
     ] = None
 
 
-AssetSpecSequenceField: TypeAlias = Annotated[
-    Sequence[AssetSpec],
-    FieldResolver(AssetSpecKwargs.resolver_fn(AssetSpec).from_seq),
-]
+ResolvedAssetSpec: TypeAlias = Annotated[AssetSpec, Resolver.from_resolved_kwargs(AssetSpecKwargs)]
 
 
 class AssetAttributesModel(_ResolvableAssetAttributesMixin, ResolvableModel):
@@ -188,7 +187,7 @@ def resolve_asset_attributes_to_mapping(
 
 
 ResolvedAssetAttributes: TypeAlias = Annotated[
-    Mapping[str, Any], FieldResolver(resolve_asset_attributes_to_mapping)
+    Mapping[str, Any], Resolver(resolve_asset_attributes_to_mapping)
 ]
 
 
@@ -246,4 +245,4 @@ def resolve_schema_to_post_processor(
 
 @dataclass
 class AssetPostProcessor(ResolvedFrom[AssetPostProcessorModel]):
-    fn: Annotated[PostProcessorFn, FieldResolver.from_model(resolve_schema_to_post_processor)]
+    fn: Annotated[PostProcessorFn, Resolver.from_model(resolve_schema_to_post_processor)]

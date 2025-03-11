@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, Optional
 
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -10,12 +10,16 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.resolved.context import ResolutionContext
-from dagster_components.resolved.core_models import AssetSpecKwargs, AssetSpecModel
+from dagster_components.resolved.core_models import (
+    AssetSpecKwargs,
+    AssetSpecModel,
+    ResolvedAssetSpec,
+)
 from dagster_components.resolved.model import (
-    FieldResolver,
     ResolvableModel,
     ResolvedFrom,
     ResolvedKwargs,
+    Resolver,
     resolve_fields,
     resolve_model_using_kwargs_cls,
 )
@@ -33,8 +37,10 @@ class ExistingBusinessObjectModel(ResolvableModel):
     value: str
 
 
-class ExistingBusinessObjectKwargs(ResolvedKwargs[ExistingBusinessObjectModel]):
-    value: Annotated[int, FieldResolver(lambda context, val: int(val))]
+class ExistingBusinessObjectKwargs(
+    ResolvedKwargs[ExistingBusinessObjectModel, ExistingBusinessObject]
+):
+    value: Annotated[int, Resolver(lambda context, val: int(val))]
 
 
 def test_resolve_fields_on_transform() -> None:
@@ -67,13 +73,16 @@ def test_with_resolution_spec_on_component():
     ):
         business_object: Annotated[
             ExistingBusinessObject,
-            FieldResolver.from_spec(ExistingBusinessObjectKwargs, ExistingBusinessObject),
+            Resolver.from_resolved_kwargs(ExistingBusinessObjectKwargs),
         ]
 
         def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...
 
     comp_instance = ComponentWithExistingBusinessObject.load(
-        attributes=ExistingBusinessObjectModel(value="1"), context=ComponentLoadContext.for_test()
+        attributes=ComponentWithExistingBusinessObjectModel(
+            business_object=ExistingBusinessObjectModel(value="1")
+        ),
+        context=ComponentLoadContext.for_test(),
     )
 
     assert isinstance(comp_instance, ComponentWithExistingBusinessObject)
@@ -82,7 +91,7 @@ def test_with_resolution_spec_on_component():
 
 ExistingBusinessObjectField: TypeAlias = Annotated[
     ExistingBusinessObject,
-    FieldResolver.from_spec(ExistingBusinessObjectKwargs, ExistingBusinessObject),
+    Resolver.from_resolved_kwargs(ExistingBusinessObjectKwargs),
 ]
 
 
@@ -110,14 +119,20 @@ def test_reuse_across_components():
         def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...
 
     comp_instance_one = ComponentWithExistingBusinessObjectOne.load(
-        attributes=ExistingBusinessObjectModel(value="1"), context=ComponentLoadContext.for_test()
+        attributes=ComponentWithExistingBusinessObjectSchemaTwo(
+            business_object=ExistingBusinessObjectModel(value="1")
+        ),
+        context=ComponentLoadContext.for_test(),
     )
 
     assert isinstance(comp_instance_one, ComponentWithExistingBusinessObjectOne)
     assert comp_instance_one.business_object.value == 1
 
     comp_instance_one = ComponentWithExistingBusinessObjectTwo.load(
-        attributes=ExistingBusinessObjectModel(value="2"), context=ComponentLoadContext.for_test()
+        attributes=ComponentWithExistingBusinessObjectSchemaTwo(
+            business_object=ExistingBusinessObjectModel(value="2")
+        ),
+        context=ComponentLoadContext.for_test(),
     )
 
     assert isinstance(comp_instance_one, ComponentWithExistingBusinessObjectTwo)
@@ -173,23 +188,29 @@ def test_asset_spec():
     assert kitchen_sink_spec.automation_condition.get_label() == "eager"
 
 
-def test_asset_spec_seq() -> None:
+def test_resolved_asset_spec() -> None:
     class SomeObjectModel(ResolvableModel):
+        spec: AssetSpecModel
+        maybe_spec: Optional[AssetSpecModel]
         specs: Sequence[AssetSpecModel]
+        maybe_specs: Optional[Sequence[AssetSpecModel]]
 
     @dataclass
     class SomeObject(ResolvedFrom[SomeObjectModel]):
-        specs: Annotated[
-            Sequence[AssetSpec],
-            FieldResolver(AssetSpecKwargs.resolver_fn(AssetSpec).from_seq),
-        ]
+        spec: ResolvedAssetSpec
+        maybe_spec: Optional[ResolvedAssetSpec]
+        specs: Sequence[ResolvedAssetSpec]
+        maybe_specs: Optional[Sequence[ResolvedAssetSpec]]
 
     some_object = resolve_model_using_kwargs_cls(
         model=SomeObjectModel(
+            spec=AssetSpecModel(key="asset0"),
+            maybe_spec=None,
             specs=[
                 AssetSpecModel(key="asset1"),
                 AssetSpecModel(key="asset2"),
-            ]
+            ],
+            maybe_specs=None,
         ),
         kwargs_cls=SomeObject,
         context=ResolutionContext.default(),

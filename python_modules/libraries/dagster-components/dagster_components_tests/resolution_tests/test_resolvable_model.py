@@ -2,12 +2,7 @@ from collections.abc import Sequence
 from typing import Annotated, Optional
 
 from dagster_components import ResolutionContext
-from dagster_components.resolved.model import (
-    FieldResolver,
-    ResolvableModel,
-    ResolvedFrom,
-    resolve_model,
-)
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver, resolve_model
 from pydantic import BaseModel
 
 
@@ -16,14 +11,14 @@ def resolve_val1(context: ResolutionContext, schema: "InnerModel") -> int:
 
 
 class InnerObject(BaseModel, ResolvedFrom["InnerModel"]):
-    val1_renamed: Annotated[int, FieldResolver.from_model(resolve_val1)]
+    val1_renamed: Annotated[int, Resolver.from_model(resolve_val1)]
     val2: Optional[str]
 
 
 class TargetObject(BaseModel, ResolvedFrom["TargetModel"]):
     int_val: int
     str_val: str
-    inners: Annotated[Optional[Sequence[InnerObject]], FieldResolver(InnerObject.from_optional_seq)]
+    inners: Annotated[Optional[Sequence[InnerObject]], Resolver.from_annotation()]
 
 
 class InnerModel(ResolvableModel):
