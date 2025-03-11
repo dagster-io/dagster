@@ -47,7 +47,14 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
         _install_libraries_to_venv(
-            venv_path, ["dagster", "libraries/dagster-components", "dagster-pipes", "dagster-test"]
+            venv_path,
+            [
+                "dagster",
+                "libraries/dagster-components",
+                "dagster-pipes",
+                "libraries/dagster-dg",
+                "dagster-test",
+            ],
         )
 
         venv_exec_path = get_venv_executable(venv_path).parent

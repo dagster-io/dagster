@@ -185,6 +185,7 @@ def scaffold_project(
 EDITABLE_DAGSTER_DEPENDENCIES = (
     "dagster",
     "dagster-pipes",
+    "dagster-dg",
     "dagster-components",
     "dagster-test[components]",  # we include dagster-test for testing purposes
 )

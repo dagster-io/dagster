@@ -44,6 +44,7 @@ copy_py $ROOT/python_modules/dagster \
         $ROOT/python_modules/dagster-pipes \
         $ROOT/python_modules/dagster-webserver \
         $ROOT/python_modules/dagster-graphql \
+        $ROOT/python_modules/libraries/dagster-dg \
         python_modules/
 
 copy_py $ROOT/python_modules/libraries/dagster-postgres \
