@@ -19,11 +19,11 @@ sidebar_custom_props:
   logo: images/integrations/airflow.svg
 ---
 
-import Beta from '../../../partials/\_Beta.md';
+import Beta from '../../partials/\_Beta.md';
 
 <Beta />
 
-Airlift is a toolkit for integrating Dagster and Airflow. Using `dagster-airflift`, you can:
+Airlift is a toolkit for integrating Dagster and Airflow. Using [`dagster-airflift`](/api/python-api/libraries/dagster-airlift), you can:
 
 - Observe Airflow instances from within Dagster
 - Accelerate the migration of Airflow DAGs to Dagster assets with opinionated tooling
@@ -48,14 +48,20 @@ You can use Airlift to migrate an Airflow DAG to Dagster assets. Airlift enables
 - Has task-by-task rollback to reduce risk
 - Retains Airflow DAG structure and execution history during the migration
 
-To get started, see "[Migrating from Airflow to Dagster](/integrations/libraries/airlift/airflow-to-dagster/)".
+To get started, see "[Migrate from Airflow to Dagster at the task level](/guides/migrate/airflow-to-dagster/task-level-migration)".
+
+:::note
+
+If you need to migrate at the DAG level, see "[Migrate from Airflow to Dagster at the DAG level](/guides/migrate/airflow-to-dagster/dag-level-migration)".
+
+:::
 
 ## Federating execution between Airflow instances with Dagster
 
-You can use Airflit to observe DAGs from multiple Airflow instances, and federate execution between them using Dagster as a centralized control plane.
+You can use Airlift to observe DAGs from multiple Airflow instances, and federate execution between them using Dagster as a centralized control plane.
 
-To get started, see "[Federating execution between Airflow instances with Dagster](/integrations/libraries/airlift/federation-tutorial/)".
+To get started, see "[Federate execution between Airflow instances with Dagster](/guides/migrate/airflow-to-dagster/federation/)".
 
-## Migrating common Airflow operators to Dagster
+## Airflow operator migration
 
-You can easily migrate common Airflow operators to Dagster. For more information, see the "[Migrating common Airflow operators to Dagster](/integrations/libraries/airlift/operator-migration/)".
+You can easily migrate common Airflow operators to Dagster. For more information, see "[Airflow operator migration](/guides/migrate/airflow-to-dagster/airflow-operator-migration/)".

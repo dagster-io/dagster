@@ -7,7 +7,9 @@ from dagster import (
     AssetExecutionContext,
     AssetKey,
     AssetSpec,
+    # highlight-start
     DailyPartitionsDefinition,
+    # highlight-end
     Definitions,
     asset_check,
 )
@@ -20,7 +22,9 @@ from dagster_airlift.core import (
 )
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 
+# highlight-start
 PARTITIONS_DEF = DailyPartitionsDefinition(start_date=get_current_datetime_midnight())
+# highlight-end
 
 
 @asset_check(asset=AssetKey(["customers_csv"]))
@@ -54,7 +58,9 @@ def dbt_project_path() -> Path:
 @dbt_assets(
     manifest=dbt_project_path() / "target" / "manifest.json",
     project=DbtProject(dbt_project_path()),
+    # highlight-start
     partitions_def=PARTITIONS_DEF,
+    # highlight-end
 )
 def dbt_project_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
@@ -64,11 +70,15 @@ mapped_assets = assets_with_task_mappings(
     dag_id="rebuild_customers_list",
     task_mappings={
         "load_raw_customers": [
+            # highlight-start
             AssetSpec(key=["raw_data", "raw_customers"], partitions_def=PARTITIONS_DEF)
+            # highlight-end
         ],
         "build_dbt_models": [dbt_project_assets],
         "export_customers": [
+            # highlight-start
             AssetSpec(key="customers_csv", deps=["customers"], partitions_def=PARTITIONS_DEF)
+            # highlight-end
         ],
     },
 )

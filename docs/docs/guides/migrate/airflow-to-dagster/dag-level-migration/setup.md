@@ -1,17 +1,17 @@
 ---
-title: "Set up a local environment"
+title: "Setup"
 sidebar_position: 100
 ---
 
-In this step, we'll
+In order the complete this tutorial, you'll need to:
 
-- Install the example code
-- Set up a local environment
-- Ensure we can run Airflow locally.
+- Create a virtual environment
+- Install Dagster and the tutorial example code
+- Set up a local Airflow instance
 
-## Installation & project structure
+## Create a virtual environment
 
-First, we'll create a fresh virtual environment using `uv`.
+First, create a fresh virtual environment using `uv` and activate it:
 
 ```bash
 pip install uv
@@ -19,14 +19,16 @@ uv venv
 source .venv/bin/activate
 ```
 
-Next, we'll install Dagster, and verify that the dagster CLI is available.
+## Install Dagster and the tutorial example code
+
+Next, install Dagster and verify that the `dagster` CLI is available:
 
 ```bash
 uv pip install dagster
 dagster --version
 ```
 
-First, we'll create a fresh virtual environment using `uv`.
+Finally, install the tutorial example code:
 
 ```bash
 dagster project from-example --name airlift-migration-tutorial --example airlift-migration-tutorial
@@ -34,7 +36,7 @@ dagster project from-example --name airlift-migration-tutorial --example airlift
 
 ### Project structure
 
-The following explains the structure of the repo.
+The tutorial example contains the following files and directories:
 
 ```plaintext
 tutorial_example
@@ -49,17 +51,17 @@ tutorial_example
 │   ├── dags.py: The Airflow DAG definition
 ```
 
-## Running Airflow locally
+## Set up a local Airflow instance
 
-The tutorial example involves running a local Airflow instance. This can be done by running the following commands from the root of the `airlift-migration-tutorial` directory.
+This tutorial involves running a local Airflow instance, which you can do by following commands from the root of the `airlift-migration-tutorial` directory.
 
-First, install the required python packages:
+First, install the required Python packages:
 
 ```bash
 make airflow_install
 ```
 
-Next, scaffold the Airflow instance, and initialize the dbt project:
+Next, scaffold the Airflow instance and initialize the `dbt` project:
 
 ```bash
 make airflow_setup
@@ -73,10 +75,10 @@ make airflow_run
 
 This will run the Airflow Web UI in a shell. You should now be able to access the Airflow UI at `http://localhost:8080`, with the default username and password set to `admin`.
 
-You should be able to see the `rebuild_customers_list` DAG in the Airflow UI, made up of three tasks: `load_raw_customers`, `run_dbt_model`, and `export_customers`.
+You should be able to see the `rebuild_customers_list` DAG in the Airflow UI, made up of three tasks: `load_raw_customers`, `run_dbt_model`, and `export_customers`:
 
 ![Rebuild customers list DAG](/images/integrations/airlift/rebuild_customers_dag.png)
 
 ## Next steps
 
-The next step is to peer a Dagster installation with the Airflow Instance. [Click here](peer) to follow along for part 2.
+In the next step, "[Peer your Airflow instance with a Dagster code location](peer)", we'll peer our Dagster installation with our Airflow instance.
