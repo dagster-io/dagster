@@ -14,9 +14,9 @@ from jsonschema import Draft202012Validator, ValidationError
 from yaml.scanner import ScannerError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
-from dagster_dg.component import RemoteComponentRegistry
-from dagster_dg.component_key import ComponentKey
+from dagster_dg.component import RemoteLibraryObjectRegistry
 from dagster_dg.context import DgContext
+from dagster_dg.library_object_key import LibraryObjectKey
 
 COMPONENT_FILE_SCHEMA = {
     "type": "object",
@@ -43,7 +43,7 @@ def _scaffold_value_and_source_position_tree(
 
 
 class ErrorInput(NamedTuple):
-    component_name: Optional[ComponentKey]
+    object_key: Optional[LibraryObjectKey]
     error: ValidationError
     source_position_tree: ValueAndSourcePositionTree
 
@@ -56,7 +56,7 @@ def check_yaml(
 
     validation_errors: list[ErrorInput] = []
 
-    component_contents_by_key: dict[ComponentKey, Any] = {}
+    component_contents_by_key: dict[LibraryObjectKey, Any] = {}
     modules_to_fetch = set()
     for component_dir in dg_context.defs_path.iterdir():
         if resolved_paths and not any(
@@ -103,7 +103,7 @@ def check_yaml(
             qualified_key = (
                 f"{component_instance_module}{raw_key}" if raw_key.startswith(".") else raw_key
             )
-            key = ComponentKey.from_typename(qualified_key)
+            key = LibraryObjectKey.from_typename(qualified_key)
             component_contents_by_key[key] = component_doc_tree
 
             # We need to fetch components from any modules local to the project because these are
@@ -112,7 +112,7 @@ def check_yaml(
                 modules_to_fetch.add(key.namespace)
 
     # Fetch the local component types, if we need any local components
-    component_registry = RemoteComponentRegistry.from_dg_context(
+    component_registry = RemoteLibraryObjectRegistry.from_dg_context(
         dg_context, extra_modules=list(modules_to_fetch)
     )
     for key, component_doc_tree in component_contents_by_key.items():

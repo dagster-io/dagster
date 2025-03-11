@@ -8,7 +8,7 @@ import yaml
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
-from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
+from dagster_dg.component import RemoteComponentType, RemoteLibraryObjectRegistry
 
 REF_BASE = "#/$defs/"
 JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY = "dagster_required_scope"
@@ -170,7 +170,9 @@ class ComponentTypeNamespaceJson(TypedDict):
     componentTypes: list[ComponentTypeJson]
 
 
-def json_for_all_components(registry: RemoteComponentRegistry) -> list[ComponentTypeNamespaceJson]:
+def json_for_all_components(
+    registry: RemoteLibraryObjectRegistry,
+) -> list[ComponentTypeNamespaceJson]:
     """Returns a list of JSON representations of all component types in the registry."""
     component_json = [
         (component.namespace.split(".")[0], json_for_component_type(component))
