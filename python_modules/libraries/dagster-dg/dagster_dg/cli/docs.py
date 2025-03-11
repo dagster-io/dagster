@@ -46,7 +46,7 @@ def serve_docs_command(
     component_key = None
     if component_type:
         component_key = ComponentKey.from_typename(component_type)
-        if not registry.has(component_key):
+        if not component_key or not registry.has(component_key):
             exit_with_error(f"Component type `{component_type}` not found.")
 
     with pushd(DOCS_DIR):
@@ -54,7 +54,10 @@ def serve_docs_command(
         DOCS_JSON_PATH.write_text(json.dumps(json_for_all_components(registry), indent=2))
         with yaspin(text="Verifying docs dependencies", color="blue") as spinner:
             yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
-            subprocess.check_output(["yarn", "install"], stdin=yes.stdout)
+            try:
+                subprocess.check_output(["yarn", "install"], stdin=yes.stdout)
+            finally:
+                yes.terminate()
             spinner.ok("✓")
 
         spinner = yaspin(text="Starting docs server", color="blue")
