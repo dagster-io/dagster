@@ -336,6 +336,8 @@ class DbtCliEventMessage:
             started_at = dateutil.parser.isoparse(event_node_info["node_started_at"])
             finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
             default_metadata["Execution Duration"] = (finished_at - started_at).total_seconds()
+        else:
+            default_metadata["Execution Duration"] = self.raw_event["data"]["execution_time"]
 
         has_asset_def: bool = bool(context and context.has_assets_def)
 
