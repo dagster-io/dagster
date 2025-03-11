@@ -6,7 +6,7 @@ from typing import Any
 
 import click
 
-from dagster_dg.check import check_yaml
+from dagster_dg.check import check_yaml as check_yaml_fn
 from dagster_dg.cli.dev import format_forwarded_option
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.cli.utils import create_dagster_cli_cmd
@@ -43,7 +43,7 @@ def check_yaml_command(
     resolved_paths = [Path(path).absolute() for path in paths]
 
     def run_check(_: Any = None) -> bool:
-        return check_yaml(dg_context, resolved_paths)
+        return check_yaml_fn(dg_context, resolved_paths)
 
     if watch:
         watched_paths = (
@@ -79,6 +79,12 @@ def check_yaml_command(
     flag_value=True,
     default=False,
     help="Show verbose error messages, including system frames in stack traces.",
+)
+@click.option(
+    "--check-yaml/--no-check-yaml",
+    flag_value=True,
+    default=True,
+    help="Whether to schema-check component.yaml files for the project before loading and checking all definitions.",
 )
 @dg_global_options
 @click.pass_context
@@ -124,6 +130,21 @@ def check_definitions_command(
             workspace_file,
         ),
     ):
+        if check_yaml_fn:
+            overall_check_result = True
+            project_dirs = (
+                [project.path for project in dg_context.project_specs]
+                if dg_context.is_workspace
+                else [dg_context.root_path]
+            )
+            for project_dir in project_dirs:
+                check_result = check_yaml_fn(
+                    dg_context.for_project_environment(project_dir, cli_config),
+                    [],
+                )
+                overall_check_result = overall_check_result and check_result
+            if not overall_check_result:
+                click.get_current_context().exit(1)
         print(f"Using {cmd_location}")  # noqa: T201
         if workspace_file:  # only non-None deployment context
             cmd.extend(["--workspace", workspace_file])
