@@ -75,3 +75,14 @@ export const linkToAssetTableWithColumnTagFilter = (tag: Omit<DefinitionTag, '__
 export const linkToCodeLocation = (repoAddress: RepoAddress) => {
   return `/locations/${repoAddressAsURLString(repoAddress)}/assets`;
 };
+
+export const linkToAssetTableWithTableNameFilter = (tableName: string) => {
+  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+    return `/assets?${qs.stringify({
+      'asset-selection': `table_name:"${tableName}"`,
+    })}`;
+  }
+  return `/assets?${qs.stringify({
+    tableNames: JSON.stringify([tableName]),
+  })}`;
+};
