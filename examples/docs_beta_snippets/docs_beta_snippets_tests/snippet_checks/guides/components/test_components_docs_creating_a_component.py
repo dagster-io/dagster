@@ -86,6 +86,8 @@ def test_components_docs_index(
             snippet_replace_regex=[MASK_MY_COMPONENT_LIBRARY],
         )
 
+        # Disabled for now, since the new dg docs command does not support output to console
+
         # run_command_and_snippet_output(
         #     cmd="dg docs component-type my_component_library.lib.ShellCommand --output cli > docs.html",
         #     snippet_path=COMPONENTS_SNIPPETS_DIR

@@ -48,8 +48,6 @@ def test_docs_component_type_success():
         assert "dagster_test.components.ComplexAssetComponent" in docs_contents
         docs.SHOULD_DOCS_EXIT = True
 
-        assert False, url
-
 
 def _includes_ignore_indent(text: str, substr: str) -> bool:
     # ensure that the substr is present in the text, ignoring any leading whitespace on each
