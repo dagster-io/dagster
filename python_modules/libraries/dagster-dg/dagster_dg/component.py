@@ -12,17 +12,40 @@ if TYPE_CHECKING:
 
 
 @dataclass
+class RemoteScaffolder:
+    schema: Optional[Mapping[str, Any]]  # json schema
+
+    @staticmethod
+    def from_json(json: Optional[dict[str, Any]]) -> Optional["RemoteScaffolder"]:
+        return RemoteScaffolder(**json) if json else None
+
+
+@dataclass
 class RemoteLibraryObject:
     name: str
     namespace: str
+    scaffolder: Optional[RemoteScaffolder]
+
+    @property
+    def scaffolder_schema(self) -> Optional[Mapping[str, Any]]:
+        return self.scaffolder.schema if self.scaffolder else None
+
+    @staticmethod
+    def from_json(json: dict[str, Any]) -> "RemoteLibraryObject":
+        scaffolder = RemoteScaffolder.from_json(json.pop("scaffolder", None))
+
+        objtype = json.pop("objtype")
+        if objtype == "component-type":
+            return RemoteComponentType(scaffolder=scaffolder, **json)
+        else:
+            raise ValueError(f"Unknown object type: {objtype}")
+
+
+@dataclass
+class RemoteComponentType(RemoteLibraryObject):
     summary: Optional[str]
     description: Optional[str]
-    scaffold_params_schema: Optional[Mapping[str, Any]]  # json schema
-    component_schema: Optional[Mapping[str, Any]]  # json schema
-
-
-# temporary alias
-RemoteComponentType = RemoteLibraryObject
+    schema: Optional[Mapping[str, Any]]  # json schema
 
 
 class RemoteLibraryObjectRegistry:
@@ -59,6 +82,13 @@ class RemoteLibraryObjectRegistry:
     def get(self, key: LibraryObjectKey) -> RemoteLibraryObject:
         """Resolves a library object within the scope of a given component directory."""
         return self._objects[key]
+
+    def get_component_type(self, key: LibraryObjectKey) -> RemoteComponentType:
+        """Resolves a component type within the scope of a given component directory."""
+        obj = self.get(key)
+        if not isinstance(obj, RemoteComponentType):
+            raise ValueError(f"Expected component type, got {obj}")
+        return obj
 
     def has(self, key: LibraryObjectKey) -> bool:
         return key in self._objects
@@ -101,7 +131,7 @@ def _load_entry_point_components(
         raw_registry_data = None
 
     if not raw_registry_data:
-        raw_registry_data = dg_context.external_components_command(["list", "component-types"])
+        raw_registry_data = dg_context.external_components_command(["list", "library-objects"])
         if dg_context.has_cache and cache_key and is_valid_json(raw_registry_data):
             dg_context.cache.set(cache_key, raw_registry_data)
 
@@ -125,7 +155,7 @@ def _load_module_library_objects(
         raw_local_object_data = dg_context.external_components_command(
             [
                 "list",
-                "component-types",
+                "library-objects",
                 "--no-entry-points",
                 *modules_to_fetch,
             ]
@@ -146,7 +176,7 @@ def _parse_raw_registry_data(
     raw_registry_data: str,
 ) -> dict[LibraryObjectKey, RemoteLibraryObject]:
     return {
-        LibraryObjectKey.from_typename(typename): RemoteLibraryObject(**metadata)
+        LibraryObjectKey.from_typename(typename): RemoteLibraryObject.from_json(metadata)
         for typename, metadata in json.loads(raw_registry_data).items()
     }
 

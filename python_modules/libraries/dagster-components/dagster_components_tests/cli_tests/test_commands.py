@@ -17,23 +17,22 @@ from dagster_components_tests.utils import (
 )
 
 
-def test_list_component_types_from_entry_points():
+def test_list_library_objects_from_entry_points():
     runner = CliRunner()
 
     # First check the default behavior. We don't check the actual content because that may note be
     # stable (we are loading from all entry points).
-    result = runner.invoke(cli, ["list", "component-types"])
+    result = runner.invoke(cli, ["list", "library-objects"])
     assert result.exit_code == 0
     result = json.loads(result.output)
     assert len(result) > 1
 
 
-def test_list_components_types_from_module():
+def test_list_library_objects_from_module():
     runner = CliRunner()
-    # Now check what we get when we load directly from the test component library. This has stable
-    # results.
+    # Now check what we get when we load directly from the test library. This has stable results.
     result = runner.invoke(
-        cli, ["list", "component-types", "--no-entry-points", "dagster_test.components"]
+        cli, ["list", "library-objects", "--no-entry-points", "dagster_test.components"]
     )
     assert result.exit_code == 0
     result = json.loads(result.output)
@@ -47,7 +46,8 @@ def test_list_components_types_from_module():
     ]
 
     assert result["dagster_test.components.SimpleAssetComponent"] == {
-        "component_schema": {
+        "objtype": "component-type",
+        "schema": {
             "additionalProperties": False,
             "properties": {
                 "asset_key": {"title": "Asset Key", "type": "string"},
@@ -60,7 +60,7 @@ def test_list_components_types_from_module():
         "description": "A simple asset that returns a constant string value.",
         "name": "SimpleAssetComponent",
         "namespace": "dagster_test.components",
-        "scaffold_params_schema": None,
+        "scaffolder": None,
         "summary": "A simple asset that returns a constant string value.",
     }
 
@@ -75,16 +75,17 @@ def test_list_components_types_from_module():
     }
 
     assert result["dagster_test.components.SimplePipesScriptComponent"] == {
+        "objtype": "component-type",
         "name": "SimplePipesScriptComponent",
         "namespace": "dagster_test.components",
         "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
         "description": "A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
-        "scaffold_params_schema": pipes_script_params_schema,
-        "component_schema": pipes_script_params_schema,
+        "scaffolder": {"schema": pipes_script_params_schema},
+        "schema": pipes_script_params_schema,
     }
 
 
-def test_list_components_types_from_project() -> None:
+def test_list_library_objects_from_project() -> None:
     """Tests that the list CLI picks components we add."""
     runner = CliRunner()
 
@@ -99,7 +100,7 @@ def test_list_components_types_from_project() -> None:
                 cli,
                 [
                     "list",
-                    "component-types",
+                    "library-objects",
                     "--no-entry-points",
                     f"{location_name}.defs.local_component_sample",
                 ],
@@ -118,7 +119,7 @@ def test_list_components_types_from_project() -> None:
                 cli,
                 [
                     "list",
-                    "component-types",
+                    "library-objects",
                     "--no-entry-points",
                     f"{location_name}.defs.local_component_sample",
                     f"{location_name}.defs.other_local_component_sample",
@@ -139,7 +140,7 @@ def test_list_components_types_from_project() -> None:
                 cli,
                 [
                     "list",
-                    "component-types",
+                    "library-objects",
                     "--no-entry-points",
                     f"{location_name}.defs.local_component_sample",
                     f"{location_name}.defs.other_local_component_sample",

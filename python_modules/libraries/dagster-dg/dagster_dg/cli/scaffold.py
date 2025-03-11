@@ -384,9 +384,8 @@ def _create_component_scaffold_subcommand(
         )
 
     # If there are defined scaffold params, add them to the command
-    schema = component_type.scaffold_params_schema
-    if schema:
-        for key, field_info in schema["properties"].items():
+    if component_type.scaffolder_schema:
+        for key, field_info in component_type.scaffolder_schema["properties"].items():
             # All fields are currently optional because they can also be passed under
             # `--json-params`
             option = json_schema_property_to_click_option(key, field_info, required=False)

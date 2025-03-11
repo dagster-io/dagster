@@ -11,7 +11,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
+from typing import Any, Callable, Literal, Optional, TypedDict, TypeVar, Union
 
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
@@ -96,14 +96,13 @@ class Component(ABC):
         component_schema = cls.get_schema()
         scaffold_params = scaffolder.get_scaffold_params()
         return {
+            "objtype": "component-type",
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,
-            "scaffold_params_schema": None
+            "scaffolder": None
             if scaffold_params is None
-            else scaffold_params.model_json_schema(),
-            "component_schema": None
-            if component_schema is None
-            else component_schema.model_json_schema(),
+            else {"schema": scaffold_params.model_json_schema()},
+            "schema": None if component_schema is None else component_schema.model_json_schema(),
         }
 
     @classmethod
@@ -121,11 +120,19 @@ def _clean_docstring(docstring: str) -> str:
         return f"{first_line}\n{rest}"
 
 
-class ComponentTypeInternalMetadata(TypedDict):
+class ScaffolderMetadata(TypedDict):
+    schema: Optional[Any]  # json schema
+
+
+class LibraryObjectInternalMetadata(TypedDict):
+    objtype: Literal["component-type"]
+    scaffolder: Optional[ScaffolderMetadata]
+
+
+class ComponentTypeInternalMetadata(LibraryObjectInternalMetadata):
     summary: Optional[str]
     description: Optional[str]
-    scaffold_params_schema: Optional[Any]  # json schema
-    component_schema: Optional[Any]  # json schema
+    schema: Optional[Any]  # json schema
 
 
 class ComponentTypeMetadata(ComponentTypeInternalMetadata):
