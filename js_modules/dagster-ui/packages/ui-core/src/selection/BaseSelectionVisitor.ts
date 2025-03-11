@@ -161,22 +161,14 @@ export class BaseSelectionVisitor
 }
 
 function isWhitespaceContext(ctx: ParserRuleContext) {
-  if (ctx instanceof PostAttributeValueWhitespaceContext) {
-    return true;
-  }
-  if (ctx instanceof PostExpressionWhitespaceContext) {
-    return true;
-  }
-  if (ctx instanceof PostLogicalOperatorWhitespaceContext) {
-    return true;
-  }
-  if (ctx instanceof PostNeighborTraversalWhitespaceContext) {
-    return true;
-  }
-  if (ctx instanceof PostNotOperatorWhitespaceContext) {
-    return true;
-  }
-  if (ctx instanceof PostUpwardTraversalWhitespaceContext) {
+  if (
+    ctx instanceof PostAttributeValueWhitespaceContext ||
+    ctx instanceof PostExpressionWhitespaceContext ||
+    ctx instanceof PostLogicalOperatorWhitespaceContext ||
+    ctx instanceof PostNeighborTraversalWhitespaceContext ||
+    ctx instanceof PostNotOperatorWhitespaceContext ||
+    ctx instanceof PostUpwardTraversalWhitespaceContext
+  ) {
     return true;
   }
   return false;
