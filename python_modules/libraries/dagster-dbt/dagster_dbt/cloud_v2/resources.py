@@ -18,9 +18,9 @@ from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
 from dagster_dbt.asset_utils import build_dbt_specs
-from dagster_dbt.cloud_v2.types import DbtCloudJob, DbtCloudWorkspaceData
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.run_handler import DbtCloudJobRunHandler
+from dagster_dbt.cloud_v2.types import DbtCloudJob, DbtCloudWorkspaceData
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
