@@ -4,7 +4,7 @@ description: To organize the ops inside a job, you can nest sets of ops into sub
 sidebar_position: 5000
 ---
 
-To organize the [ops](docs_snippets/docs_snippets/guides/build/ops/ inside a [job](docs_snippets/docs_snippets/concepts/ops-jobs-graphs/op-jobs), you can nest sets of ops into sub-graphs.
+To organize the [ops](/guides/build/ops/) inside a [job](/guides/build/ops/op-jobs), you can nest sets of ops into sub-graphs.
 
 ## Relevant APIs
 
@@ -41,7 +41,7 @@ As shown in the example above, sub-graphs can have inputs and outputs - `celsius
 - The `number` input of the `celsius_to_fahrenheit` graph is passed as an argument to the `multiply_by_one_point_eight` op. This means that, when an outer graph invokes `celsius_to_fahrenheit` and provides the output of another op or sub-graph for the `number` arg, the output of that op or sub-graph will be passed to `multiply_by_one_point_eight`, and `multiply_by_one_point_eight` will not execute until the upstream op that produces the output has completed.
 - The implementation of the `celsius_to_fahrenheit` graph returns the result of the `add_thirty_two` op. This means that, when an outer graph invokes `celsius_to_fahrenheit` and passes its output to the input of another node, the output of `add_thirty_two` will be provided to that node, and any ops that ultimately receive that input will not execute until `add_thirty_two` has completed.
 
-If you want to add a description to an input (that will display in the UI), you can provide a <PyObject object="GraphIn" /> when constructing the graph.
+If you want to add a description to an input (that will display in the UI), you can provide a <PyObject section="graphs" module="dagster" object="GraphIn" /> when constructing the graph.
 
 ### Sub-graph configuration
 
@@ -57,7 +57,7 @@ To kick off a run of this job, you will need to specify the config for both `add
 
 ### Configuration mapping
 
-Sub-graphs can dictate config for the ops and sub-graphs inside them. If the full config is known at the time that you're defining the graph, you can pass a dictionary to the `config` argument of the <PyObject object="graph" decorator /> decorator.
+Sub-graphs can dictate config for the ops and sub-graphs inside them. If the full config is known at the time that you're defining the graph, you can pass a dictionary to the `config` argument of the <PyObject section="graphs" module="dagster" object="graph" decorator /> decorator.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/graph_provides_config.py" />
 

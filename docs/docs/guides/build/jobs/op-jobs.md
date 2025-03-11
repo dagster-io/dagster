@@ -9,7 +9,7 @@ Looking to materialize [asset definitions](/guides/build/assets/) instead of ops
 
 :::
 
-[Jobs](/guides/build/jobs/) are the main unit of execution and monitoring in Dagster. An op job executes a [graph](/concepts/ops-jobs-graphs/graphs) of [ops](/guides/build/ops/).
+[Jobs](/guides/build/jobs/) are the main unit of execution and monitoring in Dagster. An op job executes a [graph](/guides/build/ops/graphs) of [ops](/guides/build/ops/).
 
 Op jobs can be launched in a few different ways:
 

@@ -13,7 +13,7 @@ Op hooks let you define success and failure handling policies on ops.
 | <PyObject section="hooks" module="dagster" object="failure_hook" decorator /> | The decorator to define a callback on op failure.                                                                          |
 | <PyObject section="hooks" module="dagster" object="success_hook" decorator /> | The decorator to define a callback on op success.                                                                          |
 | <PyObject section="hooks" module="dagster" object="HookContext"  />           | The context object available to a hook function.                                                                           |
-| <PyObject section="hooks" module="dagster" object="build_hook_context" />     | A function for building a <PyObject object="HookContext" /> outside of execution, intended to be used when testing a hook. |
+| <PyObject section="hooks" module="dagster" object="build_hook_context" />     | A function for building a <PyObject section="hooks" module="dagster" object="HookContext" /> outside of execution, intended to be used when testing a hook. |
 
 ## Overview
 
@@ -25,7 +25,7 @@ A <PyObject section="hooks" module="dagster" object="success_hook" decorator /> 
 
 ### Hook context
 
-As you may have noticed, the hook function takes one argument, which is an instance of <PyObject module="dagster" object="HookContext" />. The available properties on this context are:
+As you may have noticed, the hook function takes one argument, which is an instance of <PyObject section="hooks" module="dagster" object="HookContext" />. The available properties on this context are:
 
 - `context.job_name`: the name of the job where the hook is triggered.
 - `context.log`: loggers
@@ -46,7 +46,7 @@ Dagster provides different ways to trigger op hooks.
 
 For example, you want to send a slack message to a channel when any op fails in a job. In this case, we will be applying a hook on a job, which will apply the hook on every op instance within in that job.
 
-The <PyObject section="jobs" module="dagster" object="job" decorator /> decorator accepts `hooks` as a parameter. Likewise, when creating a job from a graph, hooks are also accepted as a parameter in the <PyObject object="GraphDefinition" method="to_job" /> function. In the below example, we can pass the `slack_message_on_failure` hook above in a set as a parameter to <PyObject module="dagster" object="job" displayText="@job" />. Then, slack messages will be sent when any op in the job fails.
+The <PyObject section="jobs" module="dagster" object="job" decorator /> decorator accepts `hooks` as a parameter. Likewise, when creating a job from a graph, hooks are also accepted as a parameter in the <PyObject section="graphs" module="dagster" object="GraphDefinition" method="to_job" /> function. In the below example, we can pass the `slack_message_on_failure` hook above in a set as a parameter to <PyObject section="jobs" module="dagster" object="job" decorator />. Then, slack messages will be sent when any op in the job fails.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_marker_1" endBefore="end_repo_marker_1" />
 
@@ -54,7 +54,7 @@ When you run this job, you can provide configuration to the slack resource in th
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/prod_op_hooks.yaml" />
 
-or by using the [configured API](/concepts/configuration/configured):
+or by using the [configured API](/api/python-api/config#dagster.configured):
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_marker_1_with_configured" endBefore="end_repo_marker_1_with_configured" />
 
@@ -88,9 +88,9 @@ Hooks use resource keys to access resources. After including the resource key in
 
 It also enables you to switch resource values in different jobs so that, for example, you can send slack messages only while executing a production job and mock the slack resource while testing.
 
-Because executing a production job and a testing job share the same core of business logic, we can build these jobs from a shared [graph](/concepts/ops-jobs-graphs/op-jobs#from-a-graph). In the <PyObject object="GraphDefinition" method="to_job" /> method, which builds a job from a graph, you can specify environment-specific hooks and resources.
+Because executing a production job and a testing job share the same core of business logic, we can build these jobs from a shared [graph](/guides/build/jobs/op-jobs#from-a-graph). In the <PyObject object="GraphDefinition" method="to_job" /> method, which builds a job from a graph, you can specify environment-specific hooks and resources.
 
-In this case, we can mock the `slack_resource` using a helper function <PyObject module="dagster" object="ResourceDefinition" displayText="ResourceDefinition.hardcoded_resource()"/>, so it won't send slack messages during development.
+In this case, we can mock the `slack_resource` using a helper function <PyObject section="resources" module="dagster" object="ResourceDefinition" displayText="ResourceDefinition.hardcoded_resource()"/>, so it won't send slack messages during development.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/op_hooks.py" startAfter="start_repo_marker_3" endBefore="end_repo_marker_3" />
 
@@ -108,4 +108,4 @@ When you add a hook to a job, the hook will be added to every op in the job indi
 
 You may find the need to set up job-level policies. For example, you may want to run some code for every job failure.
 
-Dagster provides a way to create a sensor that reacts to job failure events. You can find details at [Run failure sensor](/concepts/partitions-schedules-sensors/sensors#run-failure-sensor) on the [Sensors](/concepts/partitions-schedules-sensors/sensors) page.
+Dagster provides a way to create a sensor that reacts to job failure events. You can find detail in the [Sensors docs](/guides/automate/sensors/).

@@ -8,16 +8,16 @@ A graph is a set of interconnected [ops](/guides/build/ops/)or sub-graphs. While
 
 Graphs can be used in three different ways:
 
-- [**To back assets**](/concepts/assets/graph-backed-assets) - Basic assets are computed using a single op, but if computing one of your assets requires multiple discrete steps, you can compute it using a graph instead.
-- [**Directly inside a job**](/concepts/ops-jobs-graphs/op-jobs) - Each op job contains a graph.
-- [**Inside other graphs**](/concepts/ops-jobs-graphs/nesting-graphs) - You can build complex graphs out of simpler graphs.
+- [**To back assets**](/guides/build/assets/defining-assets#graph-asset) - Basic assets are computed using a single op, but if computing one of your assets requires multiple discrete steps, you can compute it using a graph instead.
+- [**Directly inside a job**](/guides/build/jobs/op-jobs) - Each op job contains a graph.
+- [**Inside other graphs**](/guides/build/ops/nesting-graphs) - You can build complex graphs out of simpler graphs.
 
 ## Relevant APIs
 
 | Name                                                   | Description                                                                                                                                                                                                                       |
 | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject section="graphs" module="dagster" object="graph" decorator /> | The decorator used to define an op graph, which can form the basis for multiple jobs. |
-| <PyObject section="graphs" module="dagster" object="GraphDefinition" /> | An op graph definition, which is a set of ops (or [sub-graphs](/concepts/ops-jobs-graphs/nesting-graphs)) wired together. Forms the core of a job. Typically constructed using the <PyObject section="jobs" module="dagster" object="job" decorator /> decorator. |
+| <PyObject section="graphs" module="dagster" object="GraphDefinition" /> | An op graph definition, which is a set of ops (or [sub-graphs](/guides/build/ops/nesting-graphs)) wired together. Forms the core of a job. Typically constructed using the <PyObject section="jobs" module="dagster" object="job" decorator /> decorator. |
 
 ## Creating op graphs
 
@@ -26,7 +26,7 @@ Graphs can be used in three different ways:
 
 ### Using the `@graph` decorator
 
-To create an op graph, use the <PyObject module="dagster" object="graph" decorator /> decorator.
+To create an op graph, use the <PyObject section="graphs" module="dagster" object="graph" decorator /> decorator.
 
 In the following example, we return one output from the root op (`return_one`) and pass data along through single inputs and outputs:
 
@@ -45,7 +45,7 @@ Need some inspiration? Using the patterns below, you can build op graphs:
 
 #### Reuse an op definition
 
-You can use the same op definition multiple times in the same graph. Note that this approach can also apply to [op jobs](/concepts/ops-jobs-graphs/op-jobs).
+You can use the same op definition multiple times in the same graph. Note that this approach can also apply to [op jobs](/guides/build/jobs/op-jobs).
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/graphs/graphs.py" startAfter="start_multiple_usage_graph" endBefore="end_multiple_usage_graph" />
 
@@ -93,11 +93,11 @@ In this example, we have 10 ops that all output the number `1`. The `sum_fan_in`
 
 #### That contain other op graphs
 
-Op graphs can contain other op graphs. Refer to the [Nesting op graphs documentation](/concepts/ops-jobs-graphs/nesting-graphs) for more info and examples.
+Op graphs can contain other op graphs. Refer to the [Nesting op graphs documentation](/guides/build/ops/nesting-graphs) for more info and examples.
 
 #### Using dynamic outputs
 
-Using dynamic outputs, you can duplicate portions of an op graph at runtime. Refer to the [Dynamic graphs documentation](/concepts/ops-jobs-graphs/dynamic-graphs) for more info and examples.
+Using dynamic outputs, you can duplicate portions of an op graph at runtime. Refer to the [Dynamic graphs documentation](/guides/build/ops/dynamic-graphs) for more info and examples.
 
 ## Defining and constructing dependencies
 
@@ -111,7 +111,7 @@ Dependencies in Dagster are primarily _data dependencies_. Using data dependenci
 
 If you have an op, say `Op A`, that does not depend on any outputs of another op, say `Op B`, there theoretically shouldn't be a reason for `Op A` to run after `Op B`. In most cases, these two ops should be parallelizable. However, there are some cases where an explicit ordering is required, but it doesn't make sense to pass data through inputs and outputs to model the dependency.
 
-If you need to model an explicit ordering dependency, you can use the <PyObject object="Nothing"/> Dagster type on the input definition of the downstream op. This type specifies that you are passing "nothing" via Dagster between the ops, while still using inputs and outputs to model the dependency between the two ops.
+If you need to model an explicit ordering dependency, you can use the <PyObject section="types" module="dagster" object="Nothing"/> Dagster type on the input definition of the downstream op. This type specifies that you are passing "nothing" via Dagster between the ops, while still using inputs and outputs to model the dependency between the two ops.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/graphs/order_based_dependency.py" startAfter="start_marker" endBefore="end_marker" />
 
@@ -121,11 +121,11 @@ In this example, `create_table_2` has an input of type `Nothing` meaning that it
 
 Note that in most cases, it is usually possible to pass some data dependency. In the example above, even though we probably don't want to pass the table data itself between the ops, we could pass table pointers. For example, `create_table_1` could return a `table_pointer` output of type `str` with a value of `table_1`, and this table name can be used in `create_table_2` to more accurately model the data dependency.
 
-Dagster also provides more advanced abstractions to handle dependencies and IO. If you find that you are finding it difficult to model data dependencies when using external storage, check out [IO managers](/concepts/io-management/io-managers).
+Dagster also provides more advanced abstractions to handle dependencies and IO. If you find that you are finding it difficult to model data dependencies when using external storage, check out [IO managers](/guides/build/io-managers/).
 
 ### Loading an asset as an input
 
-You can supply an asset as an input to one of the ops in a graph. Dagster can then use the [I/O manager](/concepts/io-management/io-managers) on the asset to load the input value for the op.
+You can supply an asset as an input to one of the ops in a graph. Dagster can then use the [I/O manager](/guides/build/io-managers/) on the asset to load the input value for the op.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/assets_ops_graphs/op_graph_asset_input.py" />
 
@@ -143,9 +143,9 @@ If the asset is partitioned, then:
 
 #### Using `GraphDefinitions`
 
-You may run into a situation where you need to programmatically construct the dependencies for a graph. In that case, you can directly define the <PyObject module="dagster" object="GraphDefinition"/> object.
+You may run into a situation where you need to programmatically construct the dependencies for a graph. In that case, you can directly define the <PyObject section="graphs" module="dagster" object="GraphDefinition"/> object.
 
-To construct a GraphDefinition, you need to pass the constructor a graph name, a list of op or graph definitions, and a dictionary defining the dependency structure. The dependency structure declares the dependencies of each op’s inputs on the outputs of other ops in the graph. The top-level keys of the dependency dictionary are the string names of ops or graphs. If you are using op aliases, be sure to use the aliased name. Values of the top-level keys are also dictionary, which maps input names to a <PyObject object="DependencyDefinition"/>.
+To construct a GraphDefinition, you need to pass the constructor a graph name, a list of op or graph definitions, and a dictionary defining the dependency structure. The dependency structure declares the dependencies of each op’s inputs on the outputs of other ops in the graph. The top-level keys of the dependency dictionary are the string names of ops or graphs. If you are using op aliases, be sure to use the aliased name. Values of the top-level keys are also dictionary, which maps input names to a <PyObject section="graphs" module="dagster" object="DependencyDefinition"/>.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/jobs.py" startAfter="start_pipeline_definition_marker" endBefore="end_pipeline_definition_marker" />
 
@@ -168,10 +168,10 @@ You can programmatically generate a GraphDefinition from this YAML:
 
 ### Inside assets
 
-Op graphs can be used to create [asset definitions](/concepts/assets/software-defined-assets). Graph-backed assets are useful if you have an existing op graph that produces and consumes assets.
+Op graphs can be used to create [asset definitions](/guides/build/assets/). Graph-backed assets are useful if you have an existing op graph that produces and consumes assets.
 
-Wrapping your graph inside an asset definition gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph. Refer to the [graph-backed assets documentation](/concepts/assets/graph-backed-assets) for more info and examples.
+Wrapping your graph inside an asset definition gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph. Refer to the [graph-backed assets documentation](/guides/build/assets/defining-assets#graph-asset) for more info and examples.
 
 ### Directly inside op jobs
 
-Ready to start using your op graphs in Dagster op jobs? Refer to the [Op jobs documentation](/concepts/ops-jobs-graphs/op-jobs) for detailed info and examples.
+Ready to start using your op graphs in Dagster op jobs? Refer to the [Op jobs documentation](/guides/build/jobs/op-jobs) for detailed info and examples.

@@ -4,18 +4,18 @@ description: Dagster APIs for runtime determined graph structures.
 sidebar_position: 6000
 ---
 
-The ability for portions of a [graph](/concepts/ops-jobs-graphs/graphs) to be duplicated at runtime.
+The ability for portions of a [graph](/guides/build/ops/graphs) to be duplicated at runtime.
 
 ## Relevant APIs
 
 | Name                                                 | Description                                                                                   |
 | ---------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| <PyObject section="ops" module="dagster" object="DynamicOut" />    | Declare that an op will return dynamic outputs                                                |
-| <PyObject section="ops" module="dagster" object="DynamicOutput" /> | The object that an op will yield repeatedly, each containing a value and a unique mapping_key |
+| <PyObject section="dynamic" module="dagster" object="DynamicOut" />    | Declare that an op will return dynamic outputs                                                |
+| <PyObject section="dynamic" module="dagster" object="DynamicOutput" /> | The object that an op will yield repeatedly, each containing a value and a unique mapping_key |
 
 ## Overview
 
-The basic unit of computation in Dagster is the [op](/guides/build/ops/. In certain cases it is desirable to run the same op multiple times on different pieces of similar data.
+The basic unit of computation in Dagster is the [op](/guides/build/ops/). In certain cases it is desirable to run the same op multiple times on different pieces of similar data.
 
 Dynamic outputs are the tool Dagster provides to allow resolving the pieces of data at runtime and having downstream copies of the ops created for each piece.
 
@@ -31,7 +31,7 @@ While, the implementation of `expensive_processing` can internally do something 
 
 ### A dynamic job
 
-With this motivation we will break up the computation using Dynamic Outputs. First we will define our new op that will use dynamic outputs. First we use <PyObject module="dagster" object="DynamicOut" /> to declare that this op will return dynamic outputs. Then in the function we `yield` a number of <PyObject module="dagster" object="DynamicOutput" /> objects that each contain a value and a unique `mapping_key`.
+With this motivation we will break up the computation using Dynamic Outputs. First we will define our new op that will use dynamic outputs. First we use <PyObject section="dynamic" module="dagster" object="DynamicOut" /> to declare that this op will return dynamic outputs. Then in the function we `yield` a number of <PyObject section="dynamic" module="dagster" object="DynamicOutput" /> objects that each contain a value and a unique `mapping_key`.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_out_start" endBefore="dyn_out_end" />
 
@@ -49,11 +49,11 @@ Within our `@job` decorated composition function, the object representing the dy
 
 ### Returning dynamic outputs
 
-In addition to yielding, <PyObject object="DynamicOutput" /> objects can also be returned as part of a list.
+In addition to yielding, <PyObject section="dynamic" module="dagster" object="DynamicOutput" /> objects can also be returned as part of a list.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/dynamic.py" startAfter="dyn_out_return_start" endBefore="dyn_out_return_end" />
 
-<PyObject section="ops" module="dagster" object="DynamicOutput" /> can be used as a generic type annotation describing the expected type of the output.
+<PyObject section="dynamic" module="dagster" object="DynamicOutput" /> can be used as a generic type annotation describing the expected type of the output.
 
 ### Chaining
 
