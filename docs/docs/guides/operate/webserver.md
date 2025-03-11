@@ -47,7 +47,7 @@ Note that several Dagster features, like schedules and sensors, require the Dags
 
 **Asset catalog (OSS)**
 
-- **Description**: The **Asset catalog** page lists all [assets](/guides/build/assets/) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [code location](/guides/deploy/code-locations/), and [tags]/guides/build/assets/metadata-and-tags/index.md#tags). Clicking an asset opens the **Asset details** page for that asset. You can also navigate to the **Global asset lineage** page, reload definitions, and materialize assets.
+- **Description**: The **Asset catalog** page lists all [assets](/guides/build/assets/) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [code location](/guides/deploy/code-locations/), and [tags](/guides/build/assets/metadata-and-tags/index.md#tags). Clicking an asset opens the **Asset details** page for that asset. You can also navigate to the **Global asset lineage** page, reload definitions, and materialize assets.
 
 - **Accessed by:** Clicking **Assets** in the top navigation bar
 
@@ -64,7 +64,7 @@ This feature is only available in Dagster+ Pro.
 
 :::
 
-- **Description**: This version of the **Asset catalog** page includes all the information and functionality of the original page, broken out by compute kind, asset group, [code location](/guides/deploy/code-locations/), [tags]/guides/build/assets/metadata-and-tags/index.md#tags), and [owners]/guides/build/assets/metadata-and-tags/index.md#owners), etc. On this page, you can:
+- **Description**: This version of the **Asset catalog** page includes all the information and functionality of the original page, broken out by compute kind, asset group, [code location](/guides/deploy/code-locations/), [tags](/guides/build/assets/metadata-and-tags/index.md#tags), and [owners](/guides/build/assets/metadata-and-tags/index.md#owners), etc. On this page, you can:
 
   - View all [assets](/guides/build/assets/) in your Dagster deployment
   - View details about a specific asset by clicking on it
