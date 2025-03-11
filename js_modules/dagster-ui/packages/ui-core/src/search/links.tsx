@@ -41,7 +41,7 @@ export const linkToAssetTableWithTagFilter = (tag: Omit<DefinitionTag, '__typena
 export const linkToAssetTableWithAssetOwnerFilter = (owner: AssetOwner) => {
   if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
     return `/assets?${qs.stringify({
-      'asset-selection': `owner:${owner}`,
+      'asset-selection': `owner:${owner.__typename === 'TeamAssetOwner' ? owner.team : owner.email}`,
     })}`;
   }
   return `/assets?${qs.stringify({
