@@ -47,7 +47,7 @@ def has_python_files(folder_path: Path) -> bool:
     """
     if not folder_path.is_dir():
         return False
-    return any(folder_path.glob("*.py"))
+    return any(path.name != "__init__.py" for path in folder_path.glob("*.py"))
 
 
 @record
