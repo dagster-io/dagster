@@ -4,31 +4,40 @@ import logging
 import time
 from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import Any, NamedTuple, Optional, cast
+from functools import lru_cache
+from typing import Any, NamedTuple, Optional, Union, cast
 from urllib.parse import urlencode, urljoin
 
 import requests
 from dagster import (
+    AssetCheckSpec,
+    AssetSpec,
     ConfigurableResource,
+    Definitions,
     Failure,
     IAttachDifferentObjectToOpContext,
     MetadataValue,
     __version__,
     _check as check,
     get_dagster_logger,
+    multi_asset_check,
     resource,
 )
 from dagster._annotations import beta, preview
 from dagster._config.pythonic_config.resource import ResourceDependency
+from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field
 from requests.exceptions import RequestException
 
+from dagster_dbt.asset_utils import build_dbt_specs
 from dagster_dbt.cloud.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud.run_handler import DbtCloudJobRunHandler
 from dagster_dbt.cloud.types import DbtCloudJob, DbtCloudOutput, DbtCloudWorkspaceData
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 DBT_DEFAULT_HOST = "https://cloud.getdbt.com/"
 DBT_API_V2_PATH = "api/v2/accounts/"
@@ -714,7 +723,7 @@ def dbt_cloud_resource(context) -> DbtCloudResource:
 # ------------------
 
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
-LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
+DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX = "__dbt_cloud"
 
 
 def get_dagster_adhoc_job_name(project_id: int, environment_id: int) -> str:
@@ -756,6 +765,15 @@ class DbtCloudWorkspace(ConfigurableResource):
         default=15,
         description="Time (in seconds) after which the requests to dbt Cloud are declared timed out.",
     )
+
+    @property
+    def unique_id(self) -> str:
+        """Unique ID for this dbt Cloud workspace, which is composed of the project ID and environment ID.
+
+        Returns:
+            str: the unique ID for this dbt Cloud workspace.
+        """
+        return f"{self.project_id}-{self.environment_id}"
 
     @cached_method
     def get_client(self) -> DbtCloudWorkspaceClient:
@@ -815,3 +833,92 @@ class DbtCloudWorkspace(ConfigurableResource):
             job_id=job.id,
             manifest=run_handler.get_manifest(),
         )
+
+    # Cache spec retrieval for a specific translator class.
+    @lru_cache(maxsize=1)
+    def load_specs(
+        self, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+    ) -> Sequence[Union[AssetSpec, AssetCheckSpec]]:
+        dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
+
+        with self.process_config_and_initialize_cm() as initialized_workspace:
+            defs = DbtCloudWorkspaceDefsLoader(
+                workspace=initialized_workspace,
+                translator=dagster_dbt_translator,
+            ).build_defs()
+            asset_specs = check.is_list(
+                defs.assets,
+                AssetSpec,
+            )
+            asset_check_specs = check.is_list(
+                [
+                    check_spec
+                    for asset_def in defs.asset_checks or []
+                    for check_spec in asset_def.check_specs
+                ],
+                AssetCheckSpec,
+            )
+            return [*asset_specs, *asset_check_specs]
+
+    def load_asset_specs(
+        self, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+    ) -> Sequence[AssetSpec]:
+        return [
+            spec
+            for spec in self.load_specs(dagster_dbt_translator=dagster_dbt_translator)
+            if isinstance(spec, AssetSpec)
+        ]
+
+    def load_check_specs(
+        self, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+    ) -> Sequence[AssetCheckSpec]:
+        return [
+            spec
+            for spec in self.load_specs(dagster_dbt_translator=dagster_dbt_translator)
+            if isinstance(spec, AssetCheckSpec)
+        ]
+
+
+@preview
+def load_dbt_cloud_asset_specs(
+    workspace: DbtCloudWorkspace, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+) -> Sequence[AssetSpec]:
+    return workspace.load_asset_specs(dagster_dbt_translator=dagster_dbt_translator)
+
+
+@preview
+def load_dbt_cloud_check_specs(
+    workspace: DbtCloudWorkspace, dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+) -> Sequence[AssetCheckSpec]:
+    return workspace.load_check_specs(dagster_dbt_translator=dagster_dbt_translator)
+
+
+@preview
+@record
+class DbtCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[DbtCloudWorkspaceData]):
+    workspace: DbtCloudWorkspace
+    translator: DagsterDbtTranslator
+
+    @property
+    def defs_key(self) -> str:
+        return f"{DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX}.{self.workspace.unique_id}"
+
+    def fetch_state(self) -> DbtCloudWorkspaceData:
+        return self.workspace.fetch_workspace_data()
+
+    def defs_from_state(self, state: DbtCloudWorkspaceData) -> Definitions:
+        all_asset_specs, all_check_specs = build_dbt_specs(
+            manifest=state.manifest,
+            translator=self.translator,
+            select="fqn:*",
+            exclude="",
+            io_manager_key=None,
+            project=None,
+        )
+
+        # External facing checks are not supported yet
+        # https://linear.app/dagster-labs/issue/AD-915/support-external-asset-checks-in-dbt-cloud-v2
+        @multi_asset_check(specs=all_check_specs)
+        def _all_asset_checks(): ...
+
+        return Definitions(assets=all_asset_specs, asset_checks=[_all_asset_checks])
