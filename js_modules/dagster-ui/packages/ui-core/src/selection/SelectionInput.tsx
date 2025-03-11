@@ -196,7 +196,6 @@ export const SelectionAutoCompleteInput = ({
 
   const errorTooltip = useSelectionInputLintingAndHighlighting({
     cmInstance,
-    value: innerValue,
     linter,
   });
 
