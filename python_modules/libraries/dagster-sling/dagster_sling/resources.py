@@ -250,9 +250,9 @@ class SlingResource(ConfigurableResource):
 
         if tmp:
             if target_type == "database":
-                tmp_metadata["destination_table"] = tmp[0][1]
+                tmp_metadata["destination_table"] = re.sub(r"[^\w\s.]","",tmp[0][1])
             if target_type == "file system":
-                tmp_metadata["destination_file"] = tmp[0][1]
+                tmp_metadata["destination_file"] = re.sub(r"[^\w\s.]","",tmp[0][1])
             tmp_metadata["elapsed_time"] = end_time - start_time
             tmp_metadata["row_count"] = tmp[0][0]
 
@@ -437,7 +437,6 @@ class SlingResource(ConfigurableResource):
                     debug=debug,
                 )
             
-
             else:
                 #### New method use sling _exec_cmd to stream log from sling to dagster log
                 generator = self._stream_sling_replicate(
@@ -496,7 +495,6 @@ class SlingResource(ConfigurableResource):
                 )
 
         end_time = time.time()
-        os.remove(temp_file)
 
         for row in results.split("\n"):
             clean_line = self._clean_line(row)
