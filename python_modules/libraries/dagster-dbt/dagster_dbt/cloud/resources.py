@@ -853,7 +853,7 @@ class DbtCloudWorkspace(ConfigurableResource):
             asset_check_specs = check.is_list(
                 [
                     check_spec
-                    for asset_def in defs.asset_checks
+                    for asset_def in defs.asset_checks or []
                     for check_spec in asset_def.check_specs
                 ],
                 AssetCheckSpec,
