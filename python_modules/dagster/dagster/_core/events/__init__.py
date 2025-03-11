@@ -1546,7 +1546,7 @@ class DagsterEvent(
     @staticmethod
     def build_asset_failed_to_materialize_event(
         job_name: str,
-        step_key: str,
+        step_key: Optional[str],
         asset_failed_to_materialize_data: "AssetFailedToMaterializeData",
     ) -> "DagsterEvent":
         return DagsterEvent(
