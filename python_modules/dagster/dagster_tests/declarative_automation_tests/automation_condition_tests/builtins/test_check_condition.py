@@ -5,6 +5,7 @@ from dagster import (
     AssetCheckSpec,
     AssetKey,
     AssetMaterialization,
+    AssetSelection,
     AssetSpec,
     AutomationCondition,
     DagsterInstance,
@@ -247,5 +248,66 @@ def test_blocking_checks_with_eager() -> None:
     assert result.total_requested == 1
 
     # don't launch again
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 0
+
+
+@pytest.mark.parametrize(
+    "condition",
+    [
+        AutomationCondition.any_deps_match(
+            AutomationCondition.any_checks_match(AutomationCondition.check_failed()).allow(
+                AssetSelection.checks(AssetCheckKey(AssetKey("A"), "allow_check"))
+            ),
+        ),
+        AutomationCondition.any_deps_match(
+            AutomationCondition.any_checks_match(AutomationCondition.check_failed()).ignore(
+                AssetSelection.checks(AssetCheckKey(AssetKey("A"), "ignore_check"))
+            ),
+        ),
+    ],
+)
+def test_check_selection(condition: AutomationCondition) -> None:
+    @asset
+    def A() -> None: ...
+
+    @asset_check(asset=A)
+    def ignore_check(context) -> AssetCheckResult:
+        passed = "passed" in context.run.tags
+        return AssetCheckResult(passed=passed)
+
+    @asset_check(asset=A)
+    def allow_check(context) -> AssetCheckResult:
+        passed = "passed" in context.run.tags
+        return AssetCheckResult(passed=passed)
+
+    @asset(deps=[A], automation_condition=condition)
+    def B() -> None: ...
+
+    defs = Definitions(assets=[A, B], asset_checks=[ignore_check, allow_check])
+    instance = DagsterInstance.ephemeral()
+
+    # no checks evaluated
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # ignore_check fails, but it's ignored
+    defs.get_implicit_global_asset_job_def().get_subset(
+        asset_check_selection={ignore_check.check_key}
+    ).execute_in_process(instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 0
+
+    # allow_check fails, not ignored
+    defs.get_implicit_global_asset_job_def().get_subset(
+        asset_check_selection={allow_check.check_key}
+    ).execute_in_process(instance=instance, raise_on_error=False)
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 1
+
+    # allow_check passes, now back to normal
+    defs.get_implicit_global_asset_job_def().get_subset(
+        asset_check_selection={allow_check.check_key}
+    ).execute_in_process(tags={"passed": ""}, instance=instance)
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0

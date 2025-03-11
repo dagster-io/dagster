@@ -39,6 +39,9 @@ if TYPE_CHECKING:
         AutomationContext,
     )
     from dagster._core.definitions.declarative_automation.operators import AndAutomationCondition
+    from dagster._core.definitions.declarative_automation.operators.check_operators import (
+        ChecksAutomationCondition,
+    )
     from dagster._core.definitions.declarative_automation.operators.dep_operators import (
         DepsAutomationCondition,
     )
@@ -313,7 +316,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @staticmethod
     def any_checks_match(
         condition: "AutomationCondition[AssetCheckKey]", blocking_only: bool = False
-    ) -> "BuiltinAutomationCondition":
+    ) -> "ChecksAutomationCondition":
         """Returns an AutomationCondition that is true for if at least one of the target's
         checks evaluate to True for the given condition.
 
@@ -331,7 +334,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @staticmethod
     def all_checks_match(
         condition: "AutomationCondition[AssetCheckKey]", blocking_only: bool = False
-    ) -> "BuiltinAutomationCondition[AssetKey]":
+    ) -> "ChecksAutomationCondition":
         """Returns an AutomationCondition that is true for an asset partition if all of its checks
         evaluate to True for the given condition.
 
