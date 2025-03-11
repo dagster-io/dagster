@@ -87,7 +87,7 @@ def inspect_component_type_command(
             "Only one of --description, --scaffold-params-schema, and --component-schema can be specified."
         )
 
-    component_type_metadata = registry.get(component_key)
+    component_type_metadata = registry.get_component_type(component_key)
 
     if description:
         if component_type_metadata.description:
@@ -95,13 +95,13 @@ def inspect_component_type_command(
         else:
             click.echo("No description available.")
     elif scaffold_params_schema:
-        if component_type_metadata.scaffold_params_schema:
-            click.echo(_serialize_json_schema(component_type_metadata.scaffold_params_schema))
+        if component_type_metadata.scaffolder_schema:
+            click.echo(_serialize_json_schema(component_type_metadata.scaffolder_schema))
         else:
             click.echo("No scaffold params schema defined.")
     elif component_schema:
-        if component_type_metadata.component_schema:
-            click.echo(_serialize_json_schema(component_type_metadata.component_schema))
+        if component_type_metadata.schema:
+            click.echo(_serialize_json_schema(component_type_metadata.schema))
         else:
             click.echo("No component schema defined.")
 
@@ -111,12 +111,12 @@ def inspect_component_type_command(
         if component_type_metadata.description:
             click.echo("\nDescription:\n")
             click.echo(component_type_metadata.description)
-        if component_type_metadata.scaffold_params_schema:
+        if component_type_metadata.scaffolder_schema:
             click.echo("\nScaffold params schema:\n")
-            click.echo(_serialize_json_schema(component_type_metadata.scaffold_params_schema))
-        if component_type_metadata.component_schema:
+            click.echo(_serialize_json_schema(component_type_metadata.scaffolder_schema))
+        if component_type_metadata.schema:
             click.echo("\nComponent schema:\n")
-            click.echo(_serialize_json_schema(component_type_metadata.component_schema))
+            click.echo(_serialize_json_schema(component_type_metadata.schema))
 
 
 def _serialize_json_schema(schema: Mapping[str, Any]) -> str:

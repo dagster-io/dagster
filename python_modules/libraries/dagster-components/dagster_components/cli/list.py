@@ -33,14 +33,14 @@ def list_cli():
     """Commands for listing Dagster components and related entities."""
 
 
-@list_cli.command(name="component-types")
+@list_cli.command(name="library-objects")
 @click.option("--entry-points/--no-entry-points", is_flag=True, default=True)
 @click.argument("extra_modules", nargs=-1, type=str)
 @click.pass_context
-def list_component_types_command(
+def list_library_objects_command(
     ctx: click.Context, entry_points: bool, extra_modules: tuple[str, ...]
 ) -> None:
-    """List registered Dagster components."""
+    """List registered library objects."""
     output: dict[str, Any] = {}
     component_types = _load_component_types(entry_points, extra_modules)
     for key in sorted(component_types.keys(), key=lambda k: k.to_typename()):
