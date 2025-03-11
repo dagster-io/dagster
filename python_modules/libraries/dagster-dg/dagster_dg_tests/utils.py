@@ -64,7 +64,7 @@ def isolated_example_workspace(
     runner: Union[CliRunner, "ProxyRunner"],
     project_name: Optional[str] = None,
     create_venv: bool = False,
-    use_editable_components_package_only: bool = True,
+    use_editable_dagster: bool = True,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
@@ -75,11 +75,7 @@ def isolated_example_workspace(
     ):
         result = runner.invoke(
             "init",
-            *(
-                ["--use-editable-components-package-only", dagster_git_repo_dir]
-                if use_editable_components_package_only
-                else []
-            ),
+            *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
             input=f"\n{project_name or ''}\n",
         )
         assert_runner_result(result)
@@ -123,7 +119,7 @@ def isolated_example_project_foo_bar(
         args = [
             "scaffold",
             "project",
-            "--use-editable-components-package-only",
+            "--use-editable-dagster",
             dagster_git_repo_dir,
             *(["--no-use-dg-managed-environment"] if skip_venv else []),
             *(["--no-populate-cache"] if not populate_cache else []),
@@ -161,7 +157,7 @@ def isolated_example_component_library_foo_bar(
         result = runner.invoke(
             "scaffold",
             "project",
-            "--use-editable-components-package-only",
+            "--use-editable-dagster",
             dagster_git_repo_dir,
             "--skip-venv",
             "foo-bar",
