@@ -6,7 +6,7 @@ from pydantic import TypeAdapter
 
 from dagster_components.component_scaffolding import scaffold_component_instance
 from dagster_components.core.component import load_component_type
-from dagster_components.core.component_key import ComponentKey
+from dagster_components.core.library_object_key import LibraryObjectKey
 from dagster_components.scaffold import ScaffolderUnavailableReason, get_scaffolder
 
 
@@ -24,7 +24,7 @@ def scaffold_component_command(
     component_path: Path,
     json_params: Optional[str],
 ) -> None:
-    key = ComponentKey.from_typename(component_type)
+    key = LibraryObjectKey.from_typename(component_type)
     component_type_cls = load_component_type(key)
 
     if json_params:
