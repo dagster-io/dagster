@@ -103,7 +103,7 @@ By default, this will create a new directory alongside an unpopulated `component
 
 In this case, we might want to scaffold a template shell script alongside a filled-out `component.yaml` file, which we accomplish with a custom scaffolder:
 
-<CodeExample  path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-blueprint.py" language="python" title="my_component_library/lib/shell_command.py"/>
+<CodeExample  path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-scaffolder.py" language="python" title="my_component_library/lib/shell_command.py"/>
 
 Now, when we run `dg scaffold component`, we'll see that a template shell script is created alongside a filled-out `component.yaml` file:
 
