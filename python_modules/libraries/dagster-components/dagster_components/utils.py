@@ -111,33 +111,6 @@ class TranslatorResolvingInfo:
         )
 
 
-def get_wrapped_translator_class(translator_type: type):
-    """Temporary hack to allow wrapping of many methods of a given translator class. Will be removed
-    once all translators implement `get_asset_spec`.
-    """
-    check.invariant(
-        hasattr(translator_type, "get_asset_spec"),
-        "Translator must implement get_asset_spec",
-    )
-
-    class WrappedTranslator(translator_type):
-        def __init__(self, *, resolving_info: TranslatorResolvingInfo):
-            self.base_translator = translator_type()
-            self.resolving_info = resolving_info
-            self._specs_map: dict[int, AssetSpec] = {}
-
-        def get_asset_spec(self, obj: Any) -> AssetSpec:
-            if id(obj) not in self._specs_map:
-                base_spec = self.base_translator.get_asset_spec(obj)
-                self._specs_map[id(obj)] = self.resolving_info.get_asset_spec(
-                    base_spec,
-                    {self.resolving_info.obj_name: obj},
-                )
-            return self._specs_map[id(obj)]
-
-    return WrappedTranslator
-
-
 def load_module_from_path(module_name, path) -> ModuleType:
     # Create a spec from the file path
     spec = importlib.util.spec_from_file_location(module_name, path)

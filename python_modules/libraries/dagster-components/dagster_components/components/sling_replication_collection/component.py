@@ -31,7 +31,7 @@ from dagster_components.resolved.core_models import (
 from dagster_components.resolved.metadata import ResolvableFieldInfo
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
 from dagster_components.scaffold import scaffold_with
-from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
+from dagster_components.utils import TranslatorResolvingInfo
 
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 
@@ -52,6 +52,19 @@ class DagsterSlingTranslatorAutomationCondition(DagsterSlingTranslator):
         )
 
 
+class ComponentsDagsterSlingTranslator(DagsterSlingTranslator):
+    def __init__(self, *, resolving_info: TranslatorResolvingInfo):
+        super().__init__()
+        self.resolving_info = resolving_info
+
+    def get_asset_spec(self, obj: Any) -> AssetSpec:
+        base_spec = super().get_asset_spec(obj)
+        return self.resolving_info.get_asset_spec(
+            base_spec,
+            {self.resolving_info.obj_name: obj},
+        )
+
+
 def resolve_translator(
     context: ResolutionContext, model: "SlingReplicationModel"
 ) -> DagsterSlingTranslator:
@@ -60,7 +73,7 @@ def resolve_translator(
         raise ValueError("owners are not supported for sling_replication_collection component")
     if model.asset_attributes and model.asset_attributes.code_version:
         raise ValueError("code_version is not supported for sling_replication_collection component")
-    return get_wrapped_translator_class(DagsterSlingTranslatorAutomationCondition)(
+    return ComponentsDagsterSlingTranslator(
         resolving_info=TranslatorResolvingInfo(
             "stream_definition",
             model.asset_attributes or AssetAttributesModel(),
