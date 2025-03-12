@@ -11,7 +11,7 @@ import {RepoAddress} from '../workspace/types';
 export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
   if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
     return `/assets?${qs.stringify({
-      'asset-selection': `group:${groupMetadata.groupName} and code_location:"${buildRepoPathForHuman(groupMetadata.repositoryLocationName, groupMetadata.repositoryName)}"`,
+      'asset-selection': `group:"${groupMetadata.groupName}" and code_location:"${buildRepoPathForHuman(groupMetadata.repositoryName, groupMetadata.repositoryLocationName)}"`,
     })}`;
   }
   return `/assets?${qs.stringify({groups: JSON.stringify([groupMetadata])})}`;
