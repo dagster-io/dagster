@@ -530,6 +530,14 @@
       "destination": "/guides/migrate/airflow-to-dagster/federation/"
     },
     {
+      "source": "/integrations/libraries/airlift/federation-tutorial/observe",
+      "destination": "/guides/migrate/airflow-to-dagster/federation/observe"
+    },
+    {
+      "source": "/integrations/libraries/airlift/federation-tutorial/federated-execution",
+      "destination": "/guides/migrate/airflow-to-dagster/federation/federate-execution"
+    },
+    {
       "source": "/integrations/libraries/airlift/operator-migration/",
       "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/"
     },
@@ -537,14 +545,26 @@
       "source": "/integrations/libraries/airlift/airflow-to-dagster/peer",
       "destination": "/guides/migrate/airflow-to-dagster/",
       "permanent": false
-    },    {
+    },
+    {
       "source": "/integrations/libraries/airlift/airflow-to-dagster/observe",
       "destination": "/guides/migrate/airflow-to-dagster/",
       "permanent": false
     },
     {
-      "source": "/integrations/libraries/airlift/airflow-to-dagster/decommission",
-      "destination": "/guides/migrate/airflow-to-dagster/"
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/migrate",
+      "destination": "/guides/migrate/airflow-to-dagster/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/decomission",
+      "destination": "/guides/migrate/airflow-to-dagster/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/migrate-a-full-dag",
+      "destination": "/guides/migrate/airflow-to-dagster/dag-level-migration/",
+      "permanent": false
     },
     {
       "source": "/integrations/airflow/reference",
