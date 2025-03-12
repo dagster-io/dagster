@@ -5,12 +5,12 @@ from typing import Any
 
 import pytest
 import responses
-from dagster_dbt.cloud.resources import (
+from dagster_dbt.cloud_v2.resources import (
     DbtCloudCredentials,
     DbtCloudWorkspace,
     get_dagster_adhoc_job_name,
 )
-from dagster_dbt.cloud.types import DbtCloudJobRunStatusType
+from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType
 
 tests_path = Path(__file__).joinpath("..").resolve()
 manifest_path = tests_path.joinpath("manifest.json")

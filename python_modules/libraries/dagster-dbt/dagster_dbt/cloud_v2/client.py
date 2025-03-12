@@ -11,7 +11,7 @@ from dagster._utils.cached_method import cached_method
 from pydantic import Field
 from requests.exceptions import RequestException
 
-from dagster_dbt.cloud.types import DbtCloudJobRunStatusType, DbtCloudRun
+from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun
 
 LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
 DEFAULT_POLL_INTERVAL = 1
