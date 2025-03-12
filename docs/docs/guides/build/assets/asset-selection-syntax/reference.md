@@ -96,5 +96,5 @@ You can use `roots(selection)` and `sinks(selection)` functions to return the si
 | `sinks(*)` | Select all assets without any downstream dependencies. |
 | `roots(group:"public_data")` | Selects root assets within the `public_data` group.|
 | `sinks(group:"public_data")` | Selects sink assets within the `public_data` group. |
-| `roots(+group:"public_data")` | Selects all root assets that feed into the `public_data` group, but do not belong to that group. |
-| `sinks(group:"public_data"+)` | Selects all sink assets that depend on assets in the `public_data` group, but do not belong to that group. |
+| `roots(+group:"public_data")` | Selects all root assets that feed into the `public_data` group. |
+| `sinks(group:"public_data"+)` | Selects all sink assets that depend on assets in the `public_data` group. |
