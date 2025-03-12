@@ -571,7 +571,7 @@
     },
     {
       "source": "/integrations/airlift/tutorial/setup",
-      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/setup",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/setup"
     },
     {
       "source": "/integrations/libraries/airlift/federation-tutorial/federated-execution",
