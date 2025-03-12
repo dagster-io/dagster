@@ -1886,6 +1886,782 @@
         }
       ],
       "destination": "/about/changelog"
+    },
+    {
+      "source": "/_modules/dagster_airbyte/asset_defs",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_airbyte/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_airlift/core/airflow_instance",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_airlift/in_airflow/base_asset_operator",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_aws/ecs/executor/",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_aws/ecs/launcher",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_aws/pipes/clients/ecs",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_aws/pipes/context_injectors",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_aws/redshift/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_aws/s3/compute_log_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_aws/s3/file_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_aws/s3/io_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_aws/s3/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_aws/secretsmanager/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_azure/adls2/io_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_azure/adls2/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_azure/blob/compute_log_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_celery_docker/executor",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_celery_k8s/executor",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_celery_k8s/launcher",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_celery/executor",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_databricks/databricks",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_databricks/databricks_pyspark_step_launcher",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_databricks/pipes",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_databricks/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_datahub/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_dbt/asset_decorator",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_dbt/asset_utils",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_dbt/cloud/asset_defs",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_dbt/cloud/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_dbt/core/dbt_cli_event",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_dbt/core/dbt_cli_invocation",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_dbt/core/dbt_event_iterator",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_dbt/core/resource",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_dbt/dagster_dbt_translator",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_dbt/dbt_manifest_asset_selection",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_dbt/dbt_project",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_dbt/errors",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_dbt/freshness_builder",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_deltalake/io_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_docker/docker_executor",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_docker/docker_run_launcher",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_docker/ops/docker_container_op",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_docker/pipes",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_duckdb_pandas/duckdb_pandas_type_handler",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_duckdb_pyspark/duckdb_pyspark_type_handler",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_duckdb/io_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_duckdb/resource",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_embedded_elt/dlt/asset_decorator",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_embedded_elt/dlt/resource",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_embedded_elt/dlt/translator",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_embedded_elt/sling/asset_decorator",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_embedded_elt/sling/dagster_sling_translator",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_embedded_elt/sling/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_fivetran/asset_defs",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_fivetran/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_gcp/bigquery/io_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_gcp/gcs/io_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_gcp/gcs/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_gcp/gcs/sensor",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_github/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_graphql/client/client",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_k8s/executor",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_k8s/launcher",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_k8s/ops/k8s_job_op",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_k8s/pipes",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_mlflow/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_msteams/hooks",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_msteams/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_mysql/event_log/event_log",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_mysql/run_storage/run_storage",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_mysql/schedule_storage/schedule_storage",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_pandas/data_frame",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_polars/io_managers/base",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_polars/io_managers/bigquery",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_polars/io_managers/delta",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_polars/io_managers/parquet",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_postgres/event_log/event_log",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_postgres/run_storage/run_storage",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_postgres/schedule_storage/schedule_storage",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_powerbi/assets",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_pyspark/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_shell/ops",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_slack/hooks",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_slack/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_slack/sensors",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_snowflake/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_snowflake/snowflake_io_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster_ssh/resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_config/config_schema",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_config/config_type",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_config/field",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_config/field_utils",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_config/pythonic_config/config",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_config/pythonic_config/resource",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/asset_check_result",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/asset_check_spec",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/asset_dep",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/asset_key",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/asset_out",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/asset_selection",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/asset_spec",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/assets",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/auto_materialize_rule",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/backfill_policy",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/declarative_automation/automation_condition",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/decorators/asset_check_decorator",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/decorators/asset_decorator",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/decorators/op_decorator",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/decorators/repository_decorator",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/decorators/schedule_decorator",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/decorators/sensor_decorator",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/definitions_class",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/dependency",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/events",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/executor_definition",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/graph_definition",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/hook_definition",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/input",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/job_definition",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/load_asset_checks_from_modules",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/load_assets_from_modules",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/materialize",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/metadata",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/metadata/metadata_value",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/metadata/source_code",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/multi_asset_sensor_definition",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/multi_dimensional_partitions",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/op_definition",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/output",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/partition",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/partition_mapping",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/partitioned_schedule",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/policy",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/reconstruct",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/repository_definition/repository_data",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/repository_definition/repository_definition",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/resource_definition",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/run_request",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/run_status_sensor_definition",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/schedule_definition",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/sensor_definition",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/source_asset",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/time_window_partition_mapping",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/time_window_partitions",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/unresolved_asset_job_definition",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/utils",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/errors",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/event_api",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/events",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/events/log",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/api",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/build_resources",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/asset_execution_context",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/hook",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/init",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/input",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/invocation",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/op_execution_context",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/output",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/system",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/instance",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/instance/ref",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/launcher/default_run_launcher",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/log_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/pipes/context",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/pipes/utils",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/run_coordinator/queued_run_coordinator",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/scheduler/scheduler",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/dagster_run",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/event_log/base",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/event_log/sql_event_log",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/event_log/sqlite/consolidated_sqlite_event_log",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/event_log/sqlite/sqlite_event_log",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/file_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/fs_io_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/io_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/local_compute_log_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/mem_io_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/runs/base",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/runs/sql_run_storage",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/runs/sqlite/sqlite_run_storage",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/schedules/sql_schedule_storage",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/upath_io_manager",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_core/types/dagster_type",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_serdes/config_class",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_utils",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_utils/alert",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_utils/forked_pdb",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_utils/log",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagster/_utils/warnings",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagstermill/context",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagstermill/factory",
+      "destination": ""
+    },
+    {
+      "source": "/_modules/dagstermill/io_managers",
+      "destination": ""
     }
   ]
 }
