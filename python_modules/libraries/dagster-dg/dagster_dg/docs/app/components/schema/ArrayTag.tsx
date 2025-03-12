@@ -4,12 +4,10 @@ import styles from './css/ArrayTag.module.css';
 interface Props {
   items: JSONSchema7['items'];
   defs: Record<string, JSONSchema7Definition> | undefined;
-  onClick: (item: JSONSchema7Definition) => void;
 }
 
 export default function ArrayTag({items, defs}: Props) {
   const itemName = getItemName(items, defs);
-
   return <div className={styles.tag}>Array&lt;{itemName}&gt;</div>;
 }
 
