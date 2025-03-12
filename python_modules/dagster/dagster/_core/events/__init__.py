@@ -1595,7 +1595,7 @@ class AssetFailedToMaterializeReason(Enum):
     )
     SKIPPED_OPTIONAL = "SKIPPED_OPTIONAL"  # The asset is optional and was not materialized
     UPSTREAM_SKIPPED = "UPSTREAM_SKIPPED"  # An upstream asset is optional and was not materialized, so the step for the asset was not run
-    RUN_USER_TERMINATED = "RUN_USER_TERMINATED"  # A user to an action to terminate the run
+    RUN_USER_TERMINATED = "RUN_USER_TERMINATED"  # A user took an action to terminate the run
     RUN_SYSTEM_TERMINATED = (
         "RUN_SYSTEM_TERMINATED"  # An external event resulted in the run being terminated
     )
