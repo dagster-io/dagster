@@ -3,8 +3,14 @@ title: 'Using existing definitions with components'
 sidebar_position: 100
 ---
 
+import Preview from '../../../partials/\_Preview.md';
+
+<Preview />
+
 :::note
+
 This guide covers using existing Python definitions with components. This guide presupposes a components-enabled project. See the [getting started guide](/guides/labs/components/) or [Making an existing project components-compatible](/guides/labs/components/incrementally-adopting-components/existing-project) guide for more information.
+
 :::
 
 When adding components to an existing Dagster project, it is often useful to restructure your definitions into component folders, making it easier to eventually migrate them entirely to using components.

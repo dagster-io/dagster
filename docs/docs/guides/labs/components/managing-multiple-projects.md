@@ -3,11 +3,9 @@ title: 'Managing multiple projects with Components'
 sidebar_position: 40
 ---
 
-:::info
+import Preview from '../../../partials/\_Preview.md';
 
-This feature is still in development and might change in patch releases. It’s not production-ready, and the documentation may also evolve. Stay tuned for updates.
-
-:::
+<Preview />
 
 You can use a _workspace_ directory to manage multiple projects within a single coherent directory structure.
 

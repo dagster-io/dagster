@@ -3,6 +3,10 @@ title: 'Components ETL pipeline tutorial'
 sidebar_position: 10
 ---
 
+import Preview from '../../../partials/\_Preview.md';
+
+<Preview />
+
 ## Setup
 
 ### 1. Install project dependencies

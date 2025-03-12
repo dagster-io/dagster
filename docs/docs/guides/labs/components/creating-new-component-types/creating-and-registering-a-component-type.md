@@ -3,11 +3,9 @@ title: 'Creating and registering a component type'
 sidebar_position: 100
 ---
 
-:::info
+import Preview from '../../../partials/\_Preview.md';
 
-This feature is still in development and might change in patch releases. It’s not production ready, and the documentation may also evolve. Stay tuned for updates.
-
-:::
+<Preview />
 
 The `dagster-components` system makes it easy to create new component types that can be reused across your project.
 
