@@ -3,10 +3,10 @@ from typing import Optional
 import pytest
 import responses
 from dagster import Failure
-from dagster_dbt.cloud.resources import DbtCloudWorkspace
-from dagster_dbt.cloud.types import DbtCloudJobRunStatusType
+from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
+from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType
 
-from dagster_dbt_tests.cloud.preview.conftest import (
+from dagster_dbt_tests.cloud_v2.conftest import (
     TEST_ACCOUNT_ID,
     TEST_ADHOC_JOB_NAME,
     TEST_ENVIRONMENT_ID,

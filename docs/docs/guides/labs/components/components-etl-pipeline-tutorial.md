@@ -214,7 +214,7 @@ attributes:
     - path: replication.yaml
   asset_attributes:
     - target: "*"
-	    attributes:
+      attributes:
         automation_condition: "{{ automation_condition.on_cron('@daily') }}"
         metadata:
           automation_condition: "on_cron(@daily)"

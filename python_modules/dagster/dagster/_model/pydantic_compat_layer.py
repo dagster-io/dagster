@@ -95,6 +95,4 @@ def build_validation_error(
 
 def json_schema_from_type(model_type: Union[type[BaseModel], type[Sequence[BaseModel]]]):
     """Pydantic version stable way to get the JSON schema for a Pydantic model."""
-    # This nicely handles the case where the per_file_blueprint_type is actually
-    # a union type etc.
     return TypeAdapter(model_type).json_schema()

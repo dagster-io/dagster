@@ -4,13 +4,14 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {GroupMetadata} from './BuildAssetSearchResults';
 import {featureEnabled} from '../app/Flags';
 import {AssetOwner, DefinitionTag} from '../graphql/types';
+import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
   if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
     return `/assets?${qs.stringify({
-      'asset-selection': `group:${groupMetadata.groupName} and code_location:${groupMetadata.repositoryLocationName}`,
+      'asset-selection': `group:"${groupMetadata.groupName}" and code_location:"${buildRepoPathForHuman(groupMetadata.repositoryName, groupMetadata.repositoryLocationName)}"`,
     })}`;
   }
   return `/assets?${qs.stringify({groups: JSON.stringify([groupMetadata])})}`;
@@ -19,7 +20,7 @@ export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) =>
 export const linkToAssetTableWithKindFilter = (kind: string) => {
   if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
     return `/assets?${qs.stringify({
-      'asset-selection': `kind:${kind}`,
+      'asset-selection': `kind:"${kind}"`,
     })}`;
   }
   return `/assets?${qs.stringify({
@@ -41,7 +42,7 @@ export const linkToAssetTableWithTagFilter = (tag: Omit<DefinitionTag, '__typena
 export const linkToAssetTableWithAssetOwnerFilter = (owner: AssetOwner) => {
   if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
     return `/assets?${qs.stringify({
-      'asset-selection': `owner:${owner.__typename === 'TeamAssetOwner' ? owner.team : owner.email}`,
+      'asset-selection': `owner:"${owner.__typename === 'TeamAssetOwner' ? owner.team : owner.email}"`,
     })}`;
   }
   return `/assets?${qs.stringify({
@@ -52,7 +53,7 @@ export const linkToAssetTableWithAssetOwnerFilter = (owner: AssetOwner) => {
 export const linkToAssetTableWithColumnsFilter = (columns: string[]) => {
   if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
     return `/assets?${qs.stringify({
-      'asset-selection': `column:${columns.join(',')}`,
+      'asset-selection': columns.map((column) => `column:"${column}"`).join(' or '),
     })}`;
   }
   return `/assets?${qs.stringify({
@@ -73,4 +74,15 @@ export const linkToAssetTableWithColumnTagFilter = (tag: Omit<DefinitionTag, '__
 
 export const linkToCodeLocation = (repoAddress: RepoAddress) => {
   return `/locations/${repoAddressAsURLString(repoAddress)}/assets`;
+};
+
+export const linkToAssetTableWithTableNameFilter = (tableName: string) => {
+  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+    return `/assets?${qs.stringify({
+      'asset-selection': `table_name:"${tableName}"`,
+    })}`;
+  }
+  return `/assets?${qs.stringify({
+    tableNames: JSON.stringify([tableName]),
+  })}`;
 };

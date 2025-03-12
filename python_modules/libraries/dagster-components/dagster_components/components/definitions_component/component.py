@@ -9,14 +9,14 @@ from dagster._core.definitions.module_loaders.utils import find_objects_in_modul
 from pydantic import Field
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.blueprint import scaffold_with
-from dagster_components.components.definitions_component.blueprint import (
-    DefinitionsComponentBlueprint,
+from dagster_components.components.definitions_component.scaffolder import (
+    DefinitionsComponentScaffolder,
 )
 from dagster_components.resolved.model import ResolvableModel
+from dagster_components.scaffold import scaffold_with
 
 
-@scaffold_with(blueprint_cls=DefinitionsComponentBlueprint)
+@scaffold_with(DefinitionsComponentScaffolder)
 class DefinitionsComponent(Component, ResolvableModel):
     """Wraps an arbitrary set of Dagster definitions."""
 
