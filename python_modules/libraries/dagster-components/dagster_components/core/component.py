@@ -337,21 +337,22 @@ class ComponentLoadContext:
         """
         return self.module_cache.load_defs(module)
 
-    def load_component_relative_python_module(self, file_path: Path) -> ModuleType:
-        """Load a python module relative to the component's context path. This is useful for loading code
-        the resides within the component directory, loaded during `build_defs` method of a component.
+    def load_relative_python_module(self, file_path: Path) -> ModuleType:
+        """Load a python module relative to the module that contains defs for this project, which is typically
+        my_project.defs.  This is useful for loading code the resides within the component directory,
+        loaded during `build_defs` method of a component.
 
         Example:
             .. code-block:: python
 
                 def build_defs(self, context: ComponentLoadContext) -> Definitions:
                     return load_definitions_from_module(
-                        context.load_component_relative_python_module(
+                        context.load_relative_python_module(
                             Path(self.definitions_path) if self.definitions_path else Path("definitions.py")
                         )
                     )
 
-        In a typical setup you end up with module names such as "a_project.components.my_component.my_python_file".
+        In a typical setup you end up with module names such as "a_project.defs.my_component.my_python_file".
 
         This handles "__init__.py" files by ending the module name at the parent directory
         (e.g "a_project.components.my_component") if the file resides at "a_project/defs/my_component/__init__.py".
@@ -362,15 +363,22 @@ class ComponentLoadContext:
         """
         abs_file_path = file_path.absolute()
         with pushd(str(self.path)):
-            abs_context_path = self.path.absolute()
             # Problematic
             # See https://linear.app/dagster-labs/issue/BUILD-736/highly-suspect-hardcoding-of-components-string-is-component-relative
-            component_module_relative_path = abs_context_path.parts[
-                abs_context_path.parts.index("defs") + 2 :
-            ]
-            component_module_name = ".".join([self.module_name, *component_module_relative_path])
-            if abs_file_path.name != "__init__.py":
-                component_module_name = f"{component_module_name}.{abs_file_path.stem}"
+            module_id = self.module_name.split(".")[-1]
+            abs_path_parts = self.path.absolute().parts
+            if module_id not in abs_path_parts:
+                # special-case for top-level module
+                component_module_name = self.module_name
+            else:
+                component_module_relative_path = abs_file_path.parts[
+                    abs_path_parts.index(module_id) + 1 : -1
+                ]
+                component_module_name = ".".join(
+                    [self.module_name, *component_module_relative_path]
+                )
+                if abs_file_path.name != "__init__.py":
+                    component_module_name = f"{component_module_name}.{abs_file_path.stem}"
 
             return importlib.import_module(component_module_name)
 
