@@ -319,3 +319,23 @@ def test_scaffold_sling():
         assert result.exit_code == 0
         assert Path("bar/components/qux/replication.yaml").exists()
         assert Path("bar/components/qux/component.yaml").exists()
+
+
+def test_spec_is_available_in_scope() -> None:
+    with temp_sling_component_instance(
+        [
+            {
+                "path": "./replication.yaml",
+                "asset_attributes": {"metadata": {"asset_key": "{{ spec.key.path }}"}},
+            }
+        ]
+    ) as decl_node:
+        context = script_load_context(decl_node)
+        attrs = decl_node.get_attributes(SlingReplicationCollectionModel)
+        component = SlingReplicationCollectionComponent.load(attributes=attrs, context=context)
+        defs = component.build_defs(context)
+
+        assets_def: AssetsDefinition = defs.get_assets_def("input_duckdb")
+        assert assets_def.get_asset_spec(AssetKey("input_duckdb")).metadata["asset_key"] == [
+            "input_duckdb"
+        ]
