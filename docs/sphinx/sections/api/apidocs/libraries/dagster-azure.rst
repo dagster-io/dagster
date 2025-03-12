@@ -13,7 +13,7 @@ Resources
 .. autoconfigurable:: dagster_azure.adls2.ADLS2Resource
   :annotation: ResourceDefinition
 
-.. autoconfigurable:: dagster_azure.adls2.FakeADLS2Resource
+.. autoconfigurable:: dagster_azure.fakes.FakeADLS2Resource
     :annotation: ResourceDefinition
 
 .. autoconfigurable:: dagster_azure.blob.AzureBlobStorageResource

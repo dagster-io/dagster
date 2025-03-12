@@ -4,37 +4,28 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from dagster_components import (
-    AssetSpecSchema,
+    AssetSpecModel,
     Component,
     ComponentLoadContext,
-    ResolutionContext,
-    ResolvableSchema,
+    ResolvableModel,
+    ResolvedFrom,
 )
+from dagster_components.resolved.core_models import ResolvedAssetSpec
 
 import dagster as dg
 
 
-class ShellScriptSchema(ResolvableSchema):
+class ShellCommandModel(ResolvableModel):
     script_path: str
-    asset_specs: Sequence[AssetSpecSchema]
-
-
-def resolve_asset_specs(
-    context: ResolutionContext, schema: ShellScriptSchema
-) -> Sequence[dg.AssetSpec]:
-    return context.resolve_value(schema.asset_specs)
+    asset_specs: Sequence[AssetSpecModel]
 
 
 @dataclass
-class ShellCommand(Component):
+class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
     """Models a shell script as a Dagster asset."""
 
     script_path: str
-    asset_specs: Sequence[dg.AssetSpec]
-
-    @classmethod
-    def get_schema(cls) -> type[ShellScriptSchema]:
-        return ShellScriptSchema
+    asset_specs: Sequence[ResolvedAssetSpec]
 
     def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
         resolved_script_path = Path(load_context.path, self.script_path).absolute()

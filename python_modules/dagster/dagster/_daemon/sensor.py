@@ -1233,21 +1233,28 @@ def _submit_backfill_request(
 
 
 def is_under_min_interval(state: InstigatorState, remote_sensor: RemoteSensor) -> bool:
-    instigator_data = _sensor_instigator_data(state)
-    if not instigator_data:
-        return False
-
-    if not instigator_data.last_tick_start_timestamp and not instigator_data.last_tick_timestamp:
+    elapsed = get_elapsed(state)
+    if elapsed is None:
         return False
 
     if not remote_sensor.min_interval_seconds:
         return False
 
-    elapsed = get_current_timestamp() - max(
+    return elapsed < remote_sensor.min_interval_seconds
+
+
+def get_elapsed(state: InstigatorState) -> Optional[float]:
+    instigator_data = _sensor_instigator_data(state)
+    if not instigator_data:
+        return None
+
+    if not instigator_data.last_tick_start_timestamp and not instigator_data.last_tick_timestamp:
+        return None
+
+    return get_current_timestamp() - max(
         instigator_data.last_tick_timestamp or 0,
         instigator_data.last_tick_start_timestamp or 0,
     )
-    return elapsed < remote_sensor.min_interval_seconds
 
 
 def _fetch_existing_runs(

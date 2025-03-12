@@ -85,7 +85,7 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
             / f"{get_next_snip_number()}-project-pyproject.toml",
             update_snippets=update_snippets,
             snippet_replace_regex=[
-                re_ignore_before("[tool.dagster]"),
+                re_ignore_before("[tool.dg]"),
                 re_ignore_after('root_module = "project_1"'),
             ],
         )
@@ -111,7 +111,7 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
 
         # Scaffold new project
         run_command_and_snippet_output(
-            cmd="cd ../.. && dg scaffold project project-2 --use-editable-dagster",
+            cmd="cd ../.. && dg scaffold project projects/project-2 --use-editable-dagster",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffold-project.txt",
             update_snippets=update_snippets,

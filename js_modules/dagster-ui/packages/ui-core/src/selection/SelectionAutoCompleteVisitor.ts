@@ -1,4 +1,5 @@
 import {ParserRuleContext} from 'antlr4ts';
+import {TerminalNode} from 'antlr4ts/tree/TerminalNode';
 
 import {BaseSelectionVisitor} from './BaseSelectionVisitor';
 import {SelectionAutoCompleteProvider, Suggestion} from './SelectionAutoCompleteProvider';
@@ -10,6 +11,7 @@ import {
 import {
   AllExpressionContext,
   AndTokenContext,
+  AttributeExpressionContext,
   AttributeNameContext,
   AttributeValueContext,
   ColonTokenContext,
@@ -17,6 +19,7 @@ import {
   FunctionNameContext,
   IncompleteAttributeExpressionMissingValueContext,
   IncompletePlusTraversalExpressionContext,
+  IncompletePlusTraversalExpressionMissingValueContext,
   IncompleteUpTraversalExpressionContext,
   LeftParenTokenContext,
   OrTokenContext,
@@ -165,6 +168,17 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     }
   }
 
+  public visitTerminal(ctx: TerminalNode) {
+    if (this.nodeIncludesCursor(ctx)) {
+      if (ctx.text === '=') {
+        const parent = ctx.parent;
+        if (parent instanceof AttributeExpressionContext) {
+          this.forceVisitCtx.add(parent.attributeValue(1));
+        }
+      }
+    }
+  }
+
   public visitAttributeValue(ctx: AttributeValueContext) {
     const stopIndex = ctx.stop!.stopIndex;
     if (
@@ -178,8 +192,14 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this.startReplacementIndex = ctx.start!.startIndex;
     this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
 
+    const parentContext = ctx.parent;
+    if (parentContext instanceof AttributeExpressionContext) {
+      this.startReplacementIndex = parentContext.colonToken().start.startIndex + 1;
+      this.stopReplacementIndex = parentContext.postAttributeValueWhitespace().start!.startIndex;
+    }
+
     const parentChildren = ctx.parent?.children ?? [];
-    if (parentChildren[0]?.constructor.name === AttributeNameContext.name) {
+    if (parentChildren[0] instanceof AttributeNameContext) {
       const rawValue = getValueNodeValue(ctx.value());
       this.addAttributeValueResults(parentChildren[0].text, rawValue);
     }
@@ -191,12 +211,12 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       let valueNode: ParserRuleContext | null = null;
 
       const parentChildren = ctx.parent?.children ?? [];
-      if (parentChildren[0]?.constructor.name === AttributeNameContext.name) {
+      if (parentChildren[0] instanceof AttributeNameContext) {
         attributeName = parentChildren[0] as ParserRuleContext;
       }
-      if (parentChildren[1]?.constructor.name === AttributeValueContext.name) {
+      if (parentChildren[1] instanceof AttributeValueContext) {
         valueNode = parentChildren[1] as ParserRuleContext;
-      } else if (parentChildren[2]?.constructor.name === AttributeValueContext.name) {
+      } else if (parentChildren[2] instanceof AttributeValueContext) {
         valueNode = parentChildren[2] as ParserRuleContext;
       }
 
@@ -258,6 +278,20 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     this.list.push(
       this.createOperatorSuggestion({text: '+', type: 'up-traversal', displayText: '+'}),
     );
+  }
+
+  public visitIncompletePlusTraversalExpressionMissingValue(
+    ctx: IncompletePlusTraversalExpressionMissingValueContext,
+  ) {
+    const value = getValueNodeValue(ctx.value());
+    if (this.nodeIncludesCursor(ctx.value())) {
+      this.startReplacementIndex = ctx.value().start.startIndex;
+      this.stopReplacementIndex = ctx.value().stop!.stopIndex + 1;
+      this.addUnmatchedValueResults(value, DEFAULT_TEXT_CALLBACK, {
+        excludePlus: true,
+      });
+      return;
+    }
   }
 
   public visitIncompletePlusTraversalExpression(ctx: IncompletePlusTraversalExpressionContext) {

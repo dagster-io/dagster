@@ -14,10 +14,10 @@ def upload_to_db(df):
 
 
 # start_asset
-from dagster import asset
+import dagster as dg
 
 
-@asset(key=TABLE_URI)
+@dg.asset(key=TABLE_URI)
 def write_to_db() -> None:
     for raw_file in RAW_DATA_DIR.iterdir():
         df = contents_as_df(raw_file)

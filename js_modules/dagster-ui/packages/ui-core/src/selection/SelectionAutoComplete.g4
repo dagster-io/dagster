@@ -48,6 +48,7 @@ incompleteExpr:
 	| leftParenToken postLogicalOperatorWhitespace			# UnclosedExpressionlessParenthesizedExpression
 	| DIGITS? PLUS postNeighborTraversalWhitespace			# IncompletePlusTraversalExpression
 	| DIGITS postDigitsWhitespace							# IncompleteUpTraversalExpression
+	| PLUS value postExpressionWhitespace					# IncompletePlusTraversalExpressionMissingValue
 	| colonToken attributeValue postExpressionWhitespace	# IncompleteAttributeExpressionMissingKey;
 
 expressionLessParenthesizedExpr:
@@ -108,9 +109,9 @@ value:
 	| IDENTIFIER						# UnquotedStringValue;
 
 // Tokens for operators and keywords
-AND: 'and';
-OR: 'or';
-NOT: 'not';
+AND: 'and' | 'AND';
+OR: 'or' | 'OR';
+NOT: 'not' | 'NOT';
 
 STAR: '*';
 PLUS: '+';

@@ -6,23 +6,25 @@ from pathlib import Path
 from typing import Any
 
 from dagster_components import (
-    AssetSpecSchema,
+    AssetSpecModel,
     Component,
     ComponentLoadContext,
-    ComponentScaffolder,
-    ComponentScaffoldRequest,
-    ResolvableSchema,
+    Scaffolder,
+    ScaffoldRequest,
     scaffold_component_yaml,
 )
+from dagster_components.resolved.core_models import ResolvedAssetSpec
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
+from dagster_components.scaffold import scaffold_with
 
 import dagster as dg
 
 
 # highlight-start
-class ShellCommandScaffolder(ComponentScaffolder):
+class ShellCommandScaffolder(Scaffolder):
     """Scaffolds a template shell script alongside a filled-out component YAML file."""
 
-    def scaffold(self, request: ComponentScaffoldRequest, params: Any) -> None:
+    def scaffold(self, request: ScaffoldRequest, params: Any) -> None:
         scaffold_component_yaml(
             request,
             {
@@ -32,7 +34,7 @@ class ShellCommandScaffolder(ComponentScaffolder):
                 ],
             },
         )
-        script_path = Path(request.component_instance_root_path) / "script.sh"
+        script_path = Path(request.target_path) / "script.sh"
         script_path.write_text("#!/bin/bash\n\necho 'Hello, world!'")
         os.chmod(script_path, 0o755)
 
@@ -40,21 +42,20 @@ class ShellCommandScaffolder(ComponentScaffolder):
 # highlight-end
 
 
-class ShellScriptSchema(ResolvableSchema):
+class ShellCommandModel(ResolvableModel):
     script_path: str
-    asset_specs: Sequence[AssetSpecSchema]
+    asset_specs: Sequence[AssetSpecModel]
 
 
+# highlight-start
+@scaffold_with(ShellCommandScaffolder)
+# highlight-end
 @dataclass
-class ShellCommand(Component):
+class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
     """Models a shell script as a Dagster asset."""
 
     script_path: str
-    asset_specs: Sequence[dg.AssetSpec]
-
-    @classmethod
-    def get_schema(cls) -> type[ShellScriptSchema]:
-        return ShellScriptSchema
+    asset_specs: Sequence[ResolvedAssetSpec]
 
     def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
         resolved_script_path = Path(load_context.path, self.script_path).absolute()
@@ -67,11 +68,3 @@ class ShellCommand(Component):
 
     def execute(self, resolved_script_path: Path, context: dg.AssetExecutionContext):
         return subprocess.run(["sh", str(resolved_script_path)], check=True)
-
-    # highlight-start
-    @classmethod
-    def get_scaffolder(cls) -> ComponentScaffolder:
-        return ShellCommandScaffolder()
-
-
-# highlight-end

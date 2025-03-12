@@ -133,6 +133,12 @@ def asset_with_version():
 
 When an asset with a code version is materialized, the generated `AssetMaterialization` is tagged with the version. The UI will indicate when an asset has a different code version than the code version used for its most recent materialization.
 
+## Assets with multi-part keys
+
+Assets are often objects in systems with hierarchical namespaces, like filesystems. Because of this, it often makes sense for an asset key to be a list of strings, instead of just a single string. To define an asset with a multi-part asset key, use the `key_prefix` argument with a list of strings. The full asset key is formed by prepending the `key_prefix` to the asset name (which defaults to the name of the decorated function).
+
+<CodeExample path="docs_snippets/docs_snippets/concepts/assets/multi_component_asset_key.py" startAfter="start_marker" endBefore="end_marker" />
+
 ## Next steps
 
 - Enrich Dagster's built-in data catalog with [asset metadata](/guides/build/assets/metadata-and-tags/)

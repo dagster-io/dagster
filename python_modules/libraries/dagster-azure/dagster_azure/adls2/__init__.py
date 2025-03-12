@@ -1,8 +1,3 @@
-from dagster_azure.adls2.fake_adls2_resource import (
-    FakeADLS2Resource as FakeADLS2Resource,
-    FakeADLS2ServiceClient as FakeADLS2ServiceClient,
-    fake_adls2_resource as fake_adls2_resource,
-)
 from dagster_azure.adls2.file_manager import (
     ADLS2FileHandle as ADLS2FileHandle,
     ADLS2FileManager as ADLS2FileManager,

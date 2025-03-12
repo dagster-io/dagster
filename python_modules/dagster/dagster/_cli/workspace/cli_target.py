@@ -234,6 +234,7 @@ def get_workspace_from_cli_opts(
     version: str,
     workspace_opts: "WorkspaceOpts",
     allow_in_process: bool = False,
+    log_level: str = "INFO",
 ) -> Iterator[WorkspaceRequestContext]:
     load_target = workspace_opts.to_load_target(allow_in_process)
     if isinstance(load_target, InProcessWorkspaceLoadTarget):
@@ -246,6 +247,7 @@ def get_workspace_from_cli_opts(
         version=version,
         read_only=False,
         workspace_load_target=load_target,
+        code_server_log_level=log_level,
     ) as workspace_process_context:
         yield workspace_process_context.create_request_context()
 

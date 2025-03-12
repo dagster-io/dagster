@@ -31,9 +31,9 @@ if TYPE_CHECKING:
     from mypy_boto3_emr import EMRClient
     from mypy_boto3_emr.literals import ClusterStateType
     from mypy_boto3_emr.type_defs import (
-        ConfigurationUnionTypeDef,
+        ConfigurationTypeDef,
         DescribeClusterOutputTypeDef,
-        RunJobFlowInputRequestTypeDef,
+        RunJobFlowInputTypeDef,
         RunJobFlowOutputTypeDef,
     )
 
@@ -91,7 +91,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
         self,
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
-        run_job_flow_params: "RunJobFlowInputRequestTypeDef",
+        run_job_flow_params: "RunJobFlowInputTypeDef",
         extras: Optional[dict[str, Any]] = None,
     ) -> PipesClientCompletedInvocation:
         """Run a job on AWS EMR, enriched with the pipes protocol.
@@ -132,11 +132,11 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
                 raise
 
     def _enrich_params(
-        self, session: PipesSession, params: "RunJobFlowInputRequestTypeDef"
-    ) -> "RunJobFlowInputRequestTypeDef":
+        self, session: PipesSession, params: "RunJobFlowInputTypeDef"
+    ) -> "RunJobFlowInputTypeDef":
         params["Configurations"] = emr_inject_pipes_env_vars(
             session,
-            cast(list["ConfigurationUnionTypeDef"], params.get("Configurations", [])),
+            cast(list["ConfigurationTypeDef"], params.get("Configurations", [])),
             emr_flavor="standard",
         )
 
@@ -153,7 +153,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
         self,
         context: Union[OpExecutionContext, AssetExecutionContext],
         session: PipesSession,
-        params: "RunJobFlowInputRequestTypeDef",
+        params: "RunJobFlowInputTypeDef",
     ) -> "RunJobFlowOutputTypeDef":
         response = self._client.run_job_flow(**params)
 

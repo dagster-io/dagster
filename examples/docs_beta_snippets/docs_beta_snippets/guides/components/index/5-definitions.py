@@ -1,5 +1,6 @@
 from pathlib import Path
 
-from dagster_components import build_component_defs
+import jaffle_platform.defs
+from dagster_components import load_defs
 
-defs = build_component_defs(components_root=Path(__file__).parent / "defs")
+defs = load_defs(defs_root=jaffle_platform.defs)

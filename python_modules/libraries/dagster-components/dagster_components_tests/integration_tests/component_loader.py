@@ -1,9 +1,9 @@
-import sys
+import importlib
 from pathlib import Path
 from typing import Optional
 
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_components.core.component_defs_builder import build_defs_from_component_path
+from dagster_components.core.component_defs_builder import DefinitionsModuleCache
 
 from dagster_components_tests.utils import create_project_from_components
 
@@ -16,11 +16,7 @@ def load_test_component_defs(
     """
     with create_project_from_components(
         src_path, local_component_defn_to_inject=local_component_defn_to_inject
-    ) as code_location_dir:
-        sys.path.append(str(code_location_dir))
+    ) as (_, project_name):
+        module = importlib.import_module(f"{project_name}.defs.{Path(src_path).stem}")
 
-        return build_defs_from_component_path(
-            components_root=Path(code_location_dir) / "my_location" / "defs",
-            path=Path(code_location_dir) / "my_location" / "defs" / Path(src_path).stem,
-            resources={},
-        )
+        return DefinitionsModuleCache(resources={}).load_defs(module=module)

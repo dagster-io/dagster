@@ -11,8 +11,8 @@ def _noop(*args, **kwargs):
     pass
 
 
-@pytest.mark.filterwarnings("ignore::dagster._utils.warnings.PreviewWarning")
-@pytest.mark.filterwarnings("ignore::dagster._utils.warnings.BetaWarning")
+@pytest.mark.filterwarnings("ignore::dagster.PreviewWarning")
+@pytest.mark.filterwarnings("ignore::dagster.BetaWarning")
 def test_happy_path():
     # Given
     stop_it = threading.Event()
@@ -49,8 +49,8 @@ def test_happy_path():
     )
 
 
-@pytest.mark.filterwarnings("ignore::dagster._utils.warnings.PreviewWarning")
-@pytest.mark.filterwarnings("ignore::dagster._utils.warnings.BetaWarning")
+@pytest.mark.filterwarnings("ignore::dagster.PreviewWarning")
+@pytest.mark.filterwarnings("ignore::dagster.BetaWarning")
 def test_unhappy_path():
     # Given
     stop_it = threading.Event()
@@ -104,8 +104,8 @@ def test_unhappy_path():
     mock_read.assert_has_calls(calls)
 
 
-@pytest.mark.filterwarnings("ignore::dagster._utils.warnings.PreviewWarning")
-@pytest.mark.filterwarnings("ignore::dagster._utils.warnings.BetaWarning")
+@pytest.mark.filterwarnings("ignore::dagster.PreviewWarning")
+@pytest.mark.filterwarnings("ignore::dagster.BetaWarning")
 def test_happy_path_startup_exception():
     # Given
     stop_it = threading.Event()

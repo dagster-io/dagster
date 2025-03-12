@@ -4,28 +4,26 @@ from typing import Optional
 from dagster._utils import pushd
 from pydantic import BaseModel
 
-from dagster_components.core.component import ComponentScaffolder
-from dagster_components.core.component_scaffolder import ComponentScaffoldRequest
-from dagster_components.scaffold import scaffold_component_yaml
+from dagster_components.component_scaffolding import scaffold_component_yaml
+from dagster_components.core.component_scaffolder import ScaffoldRequest
+from dagster_components.scaffold import Scaffolder
 
 
-class DefinitionsScaffoldSchema(BaseModel):
+class DefinitionsScaffoldParams(BaseModel):
     definitions_path: Optional[str] = None
 
 
-class DefinitionsComponentScaffolder(ComponentScaffolder):
+class DefinitionsComponentScaffolder(Scaffolder):
     @classmethod
-    def get_schema(cls):
-        return DefinitionsScaffoldSchema
+    def get_scaffold_params(cls):
+        return DefinitionsScaffoldParams
 
-    def scaffold(
-        self, request: ComponentScaffoldRequest, params: DefinitionsScaffoldSchema
-    ) -> None:
+    def scaffold(self, request: ScaffoldRequest, params: DefinitionsScaffoldParams) -> None:
         scaffold_params = (
-            params if isinstance(params, DefinitionsScaffoldSchema) else DefinitionsScaffoldSchema()
+            params if isinstance(params, DefinitionsScaffoldParams) else DefinitionsScaffoldParams()
         )
 
-        with pushd(str(request.component_instance_root_path)):
+        with pushd(str(request.target_path)):
             Path(
                 scaffold_params.definitions_path
                 if scaffold_params.definitions_path

@@ -1,6 +1,7 @@
 import shlex
 import shutil
 import subprocess
+import warnings
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from pathlib import Path
@@ -10,11 +11,12 @@ import tomlkit
 import tomlkit.items
 from typing_extensions import Self
 
-from dagster_dg.cache import CachableDataType, DgCache, hash_paths
+from dagster_dg.cache import CachableDataType, DgCache
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.config import (
     DgConfig,
     DgRawCliConfig,
+    DgWorkspaceProjectSpec,
     discover_config_file,
     load_dg_root_file_config,
     load_dg_workspace_file_config,
@@ -29,28 +31,27 @@ from dagster_dg.utils import (
     NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE,
     exit_with_error,
     generate_missing_dagster_components_in_local_venv_error_message,
-    get_toml_value,
+    generate_tool_dg_cli_in_project_in_workspace_error_message,
+    get_toml_node,
     get_venv_executable,
-    has_toml_value,
+    has_toml_node,
     pushd,
     resolve_local_venv,
     strip_activated_venv_from_env_vars,
 )
+from dagster_dg.utils.filesystem import hash_paths
 
 # Project
-_DEFAULT_PROJECT_COMPONENTS_LIB_SUBMODULE: Final = "lib"
-_DEFAULT_PROJECT_COMPONENTS_SUBMODULE: Final = "defs"
-
-# Workspace
-_WORKSPACE_PROJECTS_DIR: Final = "projects"
+_DEFAULT_PROJECT_DEFS_SUBMODULE: Final = "defs"
+_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE: Final = "definitions"
 
 
 class DgContext:
     root_path: Path
-    workspace_root_path: Optional[Path]
     config: DgConfig
     cli_opts: Optional[DgRawCliConfig] = None
     _cache: Optional[DgCache] = None
+    _workspace_root_path: Optional[Path]
 
     # We need to preserve CLI options for the context to be able to derive new contexts, because
     # cli_options override everything else. If we didn't maintain them we wouldn't be able to tell
@@ -64,7 +65,7 @@ class DgContext:
     ):
         self.config = config
         self.root_path = root_path
-        self.workspace_root_path = workspace_root_path
+        self._workspace_root_path = workspace_root_path
         self.cli_opts = cli_opts
         if config.cli.disable_cache or not self.use_dg_managed_environment:
             self._cache = None
@@ -136,33 +137,41 @@ class DgContext:
         path: Path,
         command_line_config: DgRawCliConfig,
     ) -> Self:
-        config_path = discover_config_file(path)
+        root_config_path = discover_config_file(path)
         workspace_config_path = discover_config_file(
             path, lambda x: bool(x.get("directory_type") == "workspace")
         )
 
-        if config_path:
-            root_path = config_path.parent
-            root_file_config = load_dg_root_file_config(config_path)
-            if workspace_config_path:
-                workspace_root_path = workspace_config_path.parent
-
-                # If the workspace config is different from the root config, we need to load the
-                # workspace config.
-                container_workspace_file_config = (
-                    load_dg_workspace_file_config(workspace_config_path)
-                    if config_path != workspace_config_path
-                    else None
-                )
-
-            else:
-                container_workspace_file_config = None
+        if root_config_path:
+            root_path = root_config_path.parent
+            root_file_config = load_dg_root_file_config(root_config_path)
+            if workspace_config_path is None:
                 workspace_root_path = None
+                container_workspace_file_config = None
+
+            # Only load the workspace config if the workspace root is different from the first
+            # detected root.
+            elif workspace_config_path == root_config_path:
+                workspace_root_path = workspace_config_path.parent
+                container_workspace_file_config = None
+            else:
+                workspace_root_path = workspace_config_path.parent
+                container_workspace_file_config = load_dg_workspace_file_config(
+                    workspace_config_path
+                )
+                if "cli" in root_file_config:
+                    del root_file_config["cli"]
+                    warnings.warn(
+                        generate_tool_dg_cli_in_project_in_workspace_error_message(
+                            root_path, workspace_root_path
+                        )
+                    )
         else:
             root_path = Path.cwd()
             workspace_root_path = None
             root_file_config = None
             container_workspace_file_config = None
+
         config = DgConfig.from_partial_configs(
             root_file_config=root_file_config,
             container_workspace_file_config=container_workspace_file_config,
@@ -202,12 +211,19 @@ class DgContext:
     def has_cache(self) -> bool:
         return self._cache is not None
 
+    def component_registry_paths(self) -> list[Path]:
+        """Paths that should be watched for changes to the component registry."""
+        return [
+            self.root_path / "uv.lock",
+            *([self.default_component_library_path] if self.is_component_library else []),
+        ]
+
     # Allowing open-ended str data_type for now so we can do module names
     def get_cache_key(self, data_type: Union[CachableDataType, str]) -> tuple[str, str, str]:
         path_parts = [str(part) for part in self.root_path.parts if part != self.root_path.anchor]
         paths_to_hash = [
             self.root_path / "uv.lock",
-            *([self.default_components_library_path] if self.is_component_library else []),
+            *([self.default_component_library_path] if self.is_component_library else []),
         ]
         env_hash = hash_paths(paths_to_hash)
         return ("_".join(path_parts), env_hash, data_type)
@@ -227,33 +243,29 @@ class DgContext:
 
     @property
     def is_workspace(self) -> bool:
-        return self.workspace_root_path is not None
-
-    def get_workspace_project_path(self, name: str) -> Path:
-        if not self.workspace_root_path:
-            raise DgError("`get_workspace_project_path` is only available in a workspace context")
-        return self.workspace_root_path / _WORKSPACE_PROJECTS_DIR / name
-
-    def has_project(self, name: str) -> bool:
-        if not self.is_workspace:
-            raise DgError("`has_project` is only available in a workspace context")
-
-        return self.get_workspace_project_path(name).is_dir()
+        return self._workspace_root_path is not None
 
     @property
-    def project_root_path(self) -> Path:
-        if not self.workspace_root_path:
-            raise DgError("`project_root_path` is only available in a workspace context")
-        return self.workspace_root_path / _WORKSPACE_PROJECTS_DIR
+    def workspace_root_path(self) -> Path:
+        if not self._workspace_root_path:
+            raise DgError("`workspace_root_path` is only available in a workspace context")
+        return self._workspace_root_path
 
-    def get_project_names(self) -> Iterable[str]:
-        return [loc.name for loc in sorted(self.project_root_path.iterdir())]
+    def has_project(self, relative_path: Path) -> bool:
+        if not self.is_workspace:
+            raise DgError("`has_project` is only available in a workspace context")
+        return bool(
+            next(
+                (spec for spec in self.project_specs if spec.path == relative_path),
+                None,
+            )
+        )
 
-    def get_project_path(self, name: str) -> Path:
-        return self.project_root_path / name
-
-    def get_project_root_module(self, name: str) -> Path:
-        return self.project_root_path / name
+    @property
+    def project_specs(self) -> list[DgWorkspaceProjectSpec]:
+        if not self.config.workspace:
+            raise DgError("`project_specs` is only available in a workspace context")
+        return self.config.workspace.projects
 
     # ########################
     # ##### GENERAL PYTHON PACKAGE METHODS
@@ -264,7 +276,7 @@ class DgContext:
         if self.config.project:
             return self.config.project.root_module
         elif self.is_component_library:
-            return self.default_components_library_module.split(".")[0]
+            return self.default_component_library_module_name.split(".")[0]
         else:
             raise DgError("Cannot determine root package name")
 
@@ -291,47 +303,56 @@ class DgContext:
         return self.root_path / get_venv_executable(Path(".venv"))
 
     @cached_property
-    def components_module_name(self) -> str:
+    def defs_module_name(self) -> str:
         if not self.config.project:
-            raise DgError("`components_module_name` is only available in a Dagster project context")
+            raise DgError("`defs_module_name` is only available in a Dagster project context")
         return (
-            self.config.project.components_module
-            or f"{self.root_module_name}.{_DEFAULT_PROJECT_COMPONENTS_SUBMODULE}"
+            self.config.project.defs_module
+            or f"{self.root_module_name}.{_DEFAULT_PROJECT_DEFS_SUBMODULE}"
         )
 
     @cached_property
-    def components_path(self) -> Path:
+    def defs_path(self) -> Path:
         if not self.is_project:
-            raise DgError("`components_path` is only available in a Dagster project context")
-        return self.get_path_for_local_module(self.components_module_name)
+            raise DgError("`defs_path` is only available in a Dagster project context")
+        return self.get_path_for_local_module(self.defs_module_name)
 
     def get_component_instance_names(self) -> Iterable[str]:
-        return [str(instance_path.name) for instance_path in self.components_path.iterdir()]
+        return [str(p.name) for p in self.defs_path.iterdir() if p.is_dir()]
 
-    def get_component_instance_module(self, name: str) -> str:
-        return f"{self.components_module_name}.{name}"
+    def get_component_instance_module_name(self, name: str) -> str:
+        return f"{self.defs_module_name}.{name}"
 
     def has_component_instance(self, name: str) -> bool:
-        return (self.components_path / name).is_dir()
+        return (self.defs_path / name).is_dir()
 
     @property
-    def definitions_module_name(self) -> str:
-        if not self.is_project:
+    def code_location_target_module_name(self) -> str:
+        if not self.config.project:
             raise DgError(
-                "`definitions_module_name` is only available in a Dagster project context"
+                "`code_location_target_module_name` is only available in a Dagster project context"
             )
-        return f"{self.root_module_name}.definitions"
+        return (
+            self.config.project.code_location_target_module
+            or f"{self.root_module_name}.{_DEFAULT_PROJECT_CODE_LOCATION_TARGET_MODULE}"
+        )
 
     @cached_property
-    def definitions_path(self) -> Path:
-        return self.get_path_for_local_module(self.definitions_module_name)
+    def code_location_target_path(self) -> Path:
+        return self.get_path_for_local_module(self.code_location_target_module_name)
+
+    @property
+    def code_location_name(self) -> str:
+        if not self.config.project:
+            raise DgError("`code_location_name` is only available in a Dagster project context")
+        return self.config.project.code_location_name or self.project_name
 
     # ########################
     # ##### COMPONENT LIBRARY METHODS
     # ########################
 
     # It is possible for a single package to define multiple entry points under the
-    # `dagster.components` entry point group. At present, `dg` only cares about the first one, which
+    # `dagster_dg.library` entry point group. At present, `dg` only cares about the first one, which
     # it uses for all component type scaffolding operations.
 
     @property
@@ -339,30 +360,32 @@ class DgContext:
         return bool(self._dagster_components_entry_points)
 
     @cached_property
-    def default_components_library_module(self) -> str:
+    def default_component_library_module_name(self) -> str:
         if not self._dagster_components_entry_points:
             raise DgError(
-                "`default_components_library_module_name` is only available in a component library context"
+                "`default_component_library_module_name` is only available in a component library context"
             )
         return next(iter(self._dagster_components_entry_points.values()))
 
     @cached_property
-    def default_components_library_path(self) -> Path:
+    def default_component_library_path(self) -> Path:
         if not self.is_component_library:
-            raise DgError("`components_lib_path` is only available in a component library context")
-        return self.get_path_for_local_module(self.default_components_library_module)
+            raise DgError(
+                "`default_component_library_path` is only available in a component library context"
+            )
+        return self.get_path_for_local_module(self.default_component_library_module_name)
 
     @cached_property
     def _dagster_components_entry_points(self) -> Mapping[str, str]:
         if not self.pyproject_toml_path.exists():
             return {}
         toml = tomlkit.parse(self.pyproject_toml_path.read_text())
-        if not has_toml_value(toml, ("project", "entry-points", "dagster.components")):
+        if not has_toml_node(toml, ("project", "entry-points", "dagster_dg.library")):
             return {}
         else:
-            return get_toml_value(
+            return get_toml_node(
                 toml,
-                ("project", "entry-points", "dagster.components"),
+                ("project", "entry-points", "dagster_dg.library"),
                 (tomlkit.items.Table, tomlkit.items.InlineTable),
             ).unwrap()
 

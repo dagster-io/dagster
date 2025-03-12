@@ -400,7 +400,7 @@ class InProcessCodeLocation(CodeLocation):
             self._repositories[repo_name] = RemoteRepository(
                 RepositorySnap.from_def(repo_def),
                 RepositoryHandle.from_location(repository_name=repo_name, code_location=self),
-                instance=instance,
+                auto_materialize_use_sensors=instance.auto_materialize_use_sensors,
             )
 
     @property
@@ -740,7 +740,7 @@ class GrpcServerCodeLocation(CodeLocation):
                         repository_name=repo_name,
                         code_location=self,
                     ),
-                    instance,
+                    auto_materialize_use_sensors=instance.auto_materialize_use_sensors,
                 )
                 for repo_name, repo_data in self._repository_snaps.items()
             }

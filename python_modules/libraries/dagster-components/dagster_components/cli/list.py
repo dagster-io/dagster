@@ -2,6 +2,14 @@ import json
 from typing import Any, Literal, Union
 
 import click
+from dagster._cli.utils import assert_no_remaining_opts
+from dagster._cli.workspace.cli_target import (
+    PythonPointerOpts,
+    get_repository_python_origin_from_cli_opts,
+    python_pointer_options,
+)
+from dagster._core.definitions.asset_job import is_reserved_asset_job_name
+from dagster._utils.hosted_user_process import recon_repository_from_origin
 from pydantic import ConfigDict, TypeAdapter, create_model
 
 from dagster_components.core.component import (
@@ -11,6 +19,13 @@ from dagster_components.core.component import (
     discover_entry_point_component_types,
 )
 from dagster_components.core.component_key import ComponentKey
+from dagster_components.core.defs import (
+    DgAssetMetadata,
+    DgDefinitionMetadata,
+    DgJobMetadata,
+    DgScheduleMetadata,
+    DgSensorMetadata,
+)
 
 
 @click.group(name="list")
@@ -63,6 +78,58 @@ def list_all_components_schema_command(entry_points: bool, extra_modules: tuple[
             )
     union_type = Union[tuple(schemas)]  # type: ignore
     click.echo(json.dumps(TypeAdapter(union_type).json_schema()))
+
+
+@list_cli.command(name="definitions")
+@python_pointer_options
+@click.pass_context
+def list_definitions_command(ctx: click.Context, **other_opts: object) -> None:
+    """List registered Dagster components."""
+    python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
+    repository_origin = get_repository_python_origin_from_cli_opts(python_pointer_opts)
+    recon_repo = recon_repository_from_origin(repository_origin)
+    repo_def = recon_repo.get_definition()
+
+    all_defs: list[DgDefinitionMetadata] = []
+
+    asset_graph = repo_def.asset_graph
+    for key in sorted(list(asset_graph.get_all_asset_keys()), key=lambda key: key.to_user_string()):
+        node = asset_graph.get(key)
+        all_defs.append(
+            DgAssetMetadata(
+                type="asset",
+                key=key.to_user_string(),
+                deps=sorted([k.to_user_string() for k in node.parent_keys]),
+                group=node.group_name,
+                kinds=sorted(list(node.kinds)),
+                description=node.description,
+                automation_condition=node.automation_condition.__name__
+                if node.automation_condition
+                else None,
+            )
+        )
+    for job in repo_def.get_all_jobs():
+        if not is_reserved_asset_job_name(job.name):
+            all_defs.append(DgJobMetadata(type="job", name=job.name))
+    for schedule in repo_def.schedule_defs:
+        schedule_str = (
+            schedule.cron_schedule
+            if isinstance(schedule.cron_schedule, str)
+            else ", ".join(schedule.cron_schedule)
+        )
+        all_defs.append(
+            DgScheduleMetadata(
+                type="schedule",
+                name=schedule.name,
+                cron_schedule=schedule_str,
+            )
+        )
+    for sensor in repo_def.sensor_defs:
+        all_defs.append(DgSensorMetadata(type="sensor", name=sensor.name))
+
+    click.echo(json.dumps(all_defs))
 
 
 # ########################

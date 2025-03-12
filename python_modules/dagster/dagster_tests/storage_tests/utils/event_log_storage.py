@@ -17,6 +17,7 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    AssetOut,
     AssetRecordsFilter,
     DagsterInstance,
     EventLogRecord,
@@ -33,6 +34,9 @@ from dagster import (
     asset,
     in_process_executor,
     job,
+    materialize,
+    materialize_to_memory,
+    multi_asset,
     op,
     resource,
 )
@@ -1292,6 +1296,265 @@ class TestEventLogStorage:
         assert record.event_log_entry.dagster_event
         assert record.event_log_entry.dagster_event.asset_key == asset_key
         assert result.cursor == EventLogCursor.from_storage_id(record.storage_id).to_string()
+
+    def _get_planned_asset_keys_from_event_log(self, instance, run_id):
+        return set(event.asset_key for event in self._get_planned_events(instance, run_id))
+
+    def _get_planned_events(self, instance, run_id):
+        records = instance.get_records_for_run(
+            run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+        ).records
+        planned_events = [record.event_log_entry.dagster_event for record in records]
+        assert all(event.is_asset_materialization_planned for event in planned_events)
+        return planned_events
+
+    def _get_planned_asset_keys_from_execution_plan_snapshot(
+        self, instance, run_id
+    ) -> set[AssetKey]:
+        run = check.not_none(instance.get_run_by_id(run_id))
+
+        execution_plan_snapshot = instance.get_execution_plan_snapshot(
+            run.execution_plan_snapshot_id
+        )
+
+        return execution_plan_snapshot.asset_selection
+
+    def test_asset_mat_planned_event_step_key(self, instance):
+        @asset
+        def my_asset():
+            return 0
+
+        result = materialize([my_asset], instance=instance)
+        planned_events = self._get_planned_events(instance, result.run_id)
+        assert len(planned_events) == 1
+        planned_event = planned_events[0]
+        assert planned_event.event_specific_data.asset_key == AssetKey("my_asset")
+        assert planned_event.step_key == "my_asset"
+
+    def test_non_assets_job_no_register_event(self, instance):
+        @op
+        def my_op():
+            pass
+
+        @job
+        def my_job():
+            my_op()
+
+        result = my_job.execute_in_process(instance=instance)
+        assert self._get_planned_events(instance, result.run_id) == []
+
+    def test_multi_asset_mat_planned_event_step_key(self, instance):
+        @multi_asset(
+            outs={
+                "my_out_name": AssetOut(key=AssetKey("my_asset_name")),
+                "my_other_out_name": AssetOut(key=AssetKey("my_other_asset")),
+            }
+        )
+        def my_asset():
+            yield Output(1, "my_out_name")
+            yield Output(2, "my_other_out_name")
+
+        result = materialize([my_asset], instance=instance)
+        planned_events = self._get_planned_events(instance, result.run_id)
+        assert len(planned_events) == 2
+        assert all(event.is_asset_materialization_planned for event in planned_events)
+        assert all(event.step_key == "my_asset" for event in planned_events)
+        assert set(event.asset_key for event in planned_events) == {
+            AssetKey("my_asset_name"),
+            AssetKey("my_other_asset"),
+        }
+
+    def test_multi_asset_asset_materialization_planned_events(self, instance):
+        @multi_asset(
+            outs={
+                "my_out_name": AssetOut(key=AssetKey("my_asset_name")),
+                "my_other_out_name": AssetOut(key=AssetKey("my_other_asset")),
+            }
+        )
+        def my_asset():
+            yield Output(1, "my_out_name")
+            yield Output(2, "my_other_out_name")
+
+        with instance_for_test() as instance:
+            result = materialize([my_asset], instance=instance)
+            assert self._get_planned_asset_keys_from_event_log(instance, result.run_id) == {
+                AssetKey("my_asset_name"),
+                AssetKey("my_other_asset"),
+            }
+            assert self._get_planned_asset_keys_from_execution_plan_snapshot(
+                instance, result.run_id
+            ) == {
+                AssetKey("my_asset_name"),
+                AssetKey("my_other_asset"),
+            }
+
+    def test_asset_materialization_planned_event_yielded_op_selection(self, instance):
+        @asset
+        def asset_one():
+            raise Exception("foo")
+
+        @asset
+        def never_runs_asset(asset_one):
+            return asset_one
+
+        asset_job = Definitions(
+            assets=[asset_one, never_runs_asset],
+        ).get_implicit_global_asset_job_def()
+
+        # test with only one asset selected
+        result = asset_job.execute_in_process(
+            instance=instance, raise_on_error=False, op_selection=["asset_one"]
+        )
+        run_id = result.run_id
+
+        assert self._get_planned_asset_keys_from_event_log(instance, run_id) == {
+            AssetKey("asset_one")
+        }
+        assert self._get_planned_asset_keys_from_execution_plan_snapshot(instance, run_id) == {
+            AssetKey("asset_one")
+        }
+
+    def test_asset_materialization_planned_event_yielded_never_run_asset(self, instance):
+        @asset
+        def asset_one():
+            raise Exception("foo")
+
+        @asset
+        def never_runs_asset(asset_one):
+            return asset_one
+
+        asset_job = Definitions(
+            assets=[asset_one, never_runs_asset],
+        ).get_implicit_global_asset_job_def()
+
+        result = asset_job.execute_in_process(instance=instance, raise_on_error=False)
+        run_id = result.run_id
+
+        assert self._get_planned_asset_keys_from_event_log(instance, run_id) == {
+            AssetKey("asset_one"),
+            AssetKey("never_runs_asset"),
+        }
+        assert self._get_planned_asset_keys_from_execution_plan_snapshot(instance, run_id) == {
+            AssetKey("asset_one"),
+            AssetKey("never_runs_asset"),
+        }
+
+    def test_asset_partition_materialization_planned_events(self, instance):
+        @asset(partitions_def=StaticPartitionsDefinition(["a", "b"]))
+        def my_asset():
+            return 0
+
+        @asset()
+        def my_other_asset(my_asset):
+            pass
+
+        with instance_for_test() as instance:
+            result = materialize_to_memory(
+                [my_asset, my_other_asset], instance=instance, partition_key="b"
+            )
+            planned_events = self._get_planned_events(instance, result.run_id)
+            assert len(planned_events) == 2
+            [my_asset_event] = [
+                event for event in planned_events if event.asset_key == AssetKey("my_asset")
+            ]
+            [my_other_asset_event] = [
+                event for event in planned_events if event.asset_key == AssetKey("my_other_asset")
+            ]
+            assert my_asset_event.event_specific_data.partition == "b"
+            assert my_other_asset_event.event_specific_data.partition is None
+
+    def test_single_run_backfill_with_unpartitioned_and_partitioned_mix(self, storage, instance):
+        partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+        @asset(partitions_def=partitions_def)
+        def partitioned():
+            return 0
+
+        @asset
+        def unpartitioned():
+            return 0
+
+        result = materialize_to_memory(
+            [partitioned, unpartitioned],
+            instance=instance,
+            tags={ASSET_PARTITION_RANGE_START_TAG: "a", ASSET_PARTITION_RANGE_END_TAG: "b"},
+        )
+
+        planned_events = self._get_planned_events(instance, result.run_id)
+
+        if storage.supports_partition_subset_in_asset_materialization_planned_events:
+            assert len(planned_events) == 2
+            [partitioned_event] = [
+                event for event in planned_events if event.asset_key == partitioned.key
+            ]
+            [unpartitioned_event] = [
+                event for event in planned_events if event.asset_key == unpartitioned.key
+            ]
+            assert (
+                partitioned_event.event_specific_data.partitions_subset
+                == partitions_def.subset_with_partition_keys(["a", "b"])
+            )
+            assert unpartitioned_event.event_specific_data.partitions_subset is None
+        else:
+            assert len(planned_events) == 3
+            partitioned_events = [
+                event for event in planned_events if event.asset_key == partitioned.key
+            ]
+            assert len(partitioned_events) == 2
+            assert {partitioned_event.partition for partitioned_event in partitioned_events} == {
+                "a",
+                "b",
+            }
+            assert all(
+                not partitioned_event.partitions_subset for partitioned_event in partitioned_events
+            )
+            [unpartitioned_event] = [
+                event for event in planned_events if event.asset_key == unpartitioned.key
+            ]
+            assert unpartitioned_event.event_specific_data.partitions_subset is None
+
+    def test_subset_on_asset_materialization_planned_event_for_single_run_backfill_allowed(
+        self, storage, instance
+    ):
+        partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+        @asset(partitions_def=partitions_def)
+        def my_asset():
+            return 0
+
+        result = materialize_to_memory(
+            [my_asset],
+            instance=instance,
+            tags={ASSET_PARTITION_RANGE_START_TAG: "a", ASSET_PARTITION_RANGE_END_TAG: "b"},
+        )
+
+        planned_events = self._get_planned_events(instance, result.run_id)
+
+        if storage.supports_partition_subset_in_asset_materialization_planned_events:
+            assert len(planned_events) == 1
+            planned_event = planned_events[0]
+            assert planned_event.asset_key == AssetKey("my_asset")
+            assert (
+                planned_event.event_specific_data.partitions_subset
+                == partitions_def.subset_with_partition_keys(["a", "b"])
+            )
+            assert all(
+                not planned_event.event_specific_data.partition for planned_event in planned_events
+            )
+        else:
+            assert len(planned_events) == 2
+            assert all(
+                planned_event.asset_key == AssetKey("my_asset") for planned_event in planned_events
+            )
+
+            assert all(
+                not planned_event.event_specific_data.partitions_subset
+                for planned_event in planned_events
+            )
+
+            assert {
+                planned_event.event_specific_data.partition for planned_event in planned_events
+            } == {"a", "b"}
 
     def test_asset_materialization_range(self, storage, test_run_id):
         partitions_def = StaticPartitionsDefinition(["a", "b"])

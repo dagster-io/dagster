@@ -48,6 +48,7 @@ from dagster._daemon.daemon import SensorDaemon
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import serialize_pp
 from dagster._time import create_datetime, datetime_from_timestamp
+from dagster_test.utils.data_factory import dagster_run as create_dagster_run
 
 win_py36 = _seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
@@ -152,34 +153,11 @@ class TestRunStorage:
     def fake_partition_set_origin(cls, partition_set_name):
         return cls.fake_repo_target().get_partition_set_origin(partition_set_name)
 
-    @staticmethod
-    def build_run(
-        run_id,
-        job_name,
-        tags=None,
-        status=DagsterRunStatus.NOT_STARTED,
-        parent_run_id=None,
-        root_run_id=None,
-        job_snapshot_id=None,
-        remote_job_origin=None,
-    ):
-        return DagsterRun(
-            job_name=job_name,
-            run_id=run_id,
-            run_config=None,
-            tags=tags,
-            status=status,
-            root_run_id=root_run_id,
-            parent_run_id=parent_run_id,
-            job_snapshot_id=job_snapshot_id,
-            remote_job_origin=remote_job_origin,
-        )
-
     def test_basic_storage(self, storage):
         assert storage
         run_id = make_new_run_id()
         added = storage.add_run(
-            TestRunStorage.build_run(run_id=run_id, job_name="some_pipeline", tags={"foo": "bar"})
+            create_dagster_run(run_id=run_id, job_name="some_pipeline", tags={"foo": "bar"})
         )
         assert added
         runs = storage.get_runs()
@@ -200,7 +178,7 @@ class TestRunStorage:
 
         assert storage
         run_id = make_new_run_id()
-        storage.add_run(TestRunStorage.build_run(run_id=run_id, job_name="some_pipeline"))
+        storage.add_run(create_dagster_run(run_id=run_id, job_name="some_pipeline"))
         assert len(storage.get_runs()) == 1
         storage.wipe()
         assert list(storage.get_runs()) == []
@@ -216,8 +194,8 @@ class TestRunStorage:
         assert storage
         one = make_new_run_id()
         two = make_new_run_id()
-        storage.add_run(TestRunStorage.build_run(run_id=one, job_name="some_pipeline"))
-        storage.add_run(TestRunStorage.build_run(run_id=two, job_name="some_other_pipeline"))
+        storage.add_run(create_dagster_run(run_id=one, job_name="some_pipeline"))
+        storage.add_run(create_dagster_run(run_id=two, job_name="some_other_pipeline"))
         assert len(storage.get_runs()) == 2
         some_runs = storage.get_runs(RunsFilter(job_name="some_pipeline"))
         assert len(some_runs) == 1
@@ -234,10 +212,10 @@ class TestRunStorage:
         origin_one = self.fake_job_origin(job_name, "fake_repo_one")
         origin_two = self.fake_job_origin(job_name, "fake_repo_two")
         storage.add_run(
-            TestRunStorage.build_run(run_id=one, job_name=job_name, remote_job_origin=origin_one)
+            create_dagster_run(run_id=one, job_name=job_name, remote_job_origin=origin_one)
         )
         storage.add_run(
-            TestRunStorage.build_run(run_id=two, job_name=job_name, remote_job_origin=origin_two)
+            create_dagster_run(run_id=two, job_name=job_name, remote_job_origin=origin_two)
         )
         one_runs = storage.get_runs(
             RunsFilter(tags={REPOSITORY_LABEL_TAG: "fake_repo_one@fake:fake"})
@@ -263,14 +241,14 @@ class TestRunStorage:
         one = make_new_run_id()
         two = make_new_run_id()
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=one,
                 job_name="some_pipeline",
                 job_snapshot_id=job_snapshot_a_id,
             )
         )
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=two,
                 job_name="some_other_pipeline",
                 job_snapshot_id=job_snapshot_b_id,
@@ -290,8 +268,8 @@ class TestRunStorage:
         one = make_new_run_id()
         two = make_new_run_id()
 
-        storage.add_run(TestRunStorage.build_run(run_id=one, job_name="foo"))
-        storage.add_run(TestRunStorage.build_run(run_id=two, job_name="bar"))
+        storage.add_run(create_dagster_run(run_id=one, job_name="foo"))
+        storage.add_run(create_dagster_run(run_id=two, job_name="bar"))
 
         assert storage.get_run_tags(tag_keys=["tag1", "tag2"]) == []
 
@@ -384,8 +362,8 @@ class TestRunStorage:
     def test_get_run_tags(self, storage: RunStorage):
         one = make_new_run_id()
         two = make_new_run_id()
-        storage.add_run(TestRunStorage.build_run(run_id=one, job_name="foo"))
-        storage.add_run(TestRunStorage.build_run(run_id=two, job_name="foo"))
+        storage.add_run(create_dagster_run(run_id=one, job_name="foo"))
+        storage.add_run(create_dagster_run(run_id=two, job_name="foo"))
         storage.add_run_tags(
             one,
             {
@@ -434,7 +412,7 @@ class TestRunStorage:
         four = make_new_run_id()
 
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=one,
                 job_name="some_pipeline",
                 tags={"tag": "hello", "tag2": "world"},
@@ -442,7 +420,7 @@ class TestRunStorage:
             )
         )
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=two,
                 job_name="some_pipeline",
                 tags={"tag": "hello"},
@@ -451,13 +429,13 @@ class TestRunStorage:
         )
 
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=three, job_name="other_pipeline", status=DagsterRunStatus.SUCCESS
             )
         )
 
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=four,
                 job_name="some_other_pipeline",
                 tags={"tag": "goodbye"},
@@ -586,20 +564,20 @@ class TestRunStorage:
         two = make_new_run_id()
         three = make_new_run_id()
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=one,
                 job_name="some_pipeline",
                 tags={"mytag": "hello", "mytag2": "world"},
             )
         )
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=two,
                 job_name="some_pipeline",
                 tags={"mytag": "goodbye", "mytag2": "world"},
             )
         )
-        storage.add_run(TestRunStorage.build_run(run_id=three, job_name="some_pipeline"))
+        storage.add_run(create_dagster_run(run_id=three, job_name="some_pipeline"))
         assert len(storage.get_runs()) == 3
 
         run_count = storage.get_runs_count(
@@ -624,20 +602,20 @@ class TestRunStorage:
         two = make_new_run_id()
         three = make_new_run_id()
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=one,
                 job_name="some_pipeline",
                 tags={"mytag": "hello", "mytag2": "world"},
             )
         )
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=two,
                 job_name="some_pipeline",
                 tags={"mytag": "goodbye", "mytag2": "world"},
             )
         )
-        storage.add_run(TestRunStorage.build_run(run_id=three, job_name="some_pipeline"))
+        storage.add_run(create_dagster_run(run_id=three, job_name="some_pipeline"))
         assert len(storage.get_runs()) == 3
 
         some_runs = storage.get_runs(RunsFilter(tags={"mytag": "hello", "mytag2": "world"}))
@@ -657,15 +635,13 @@ class TestRunStorage:
         assert storage
         one, two, three = [make_new_run_id(), make_new_run_id(), make_new_run_id()]
         storage.add_run(
-            TestRunStorage.build_run(run_id=one, job_name="some_pipeline", tags={"mytag": "hello"})
+            create_dagster_run(run_id=one, job_name="some_pipeline", tags={"mytag": "hello"})
         )
         storage.add_run(
-            TestRunStorage.build_run(run_id=two, job_name="some_pipeline", tags={"mytag": "hello"})
+            create_dagster_run(run_id=two, job_name="some_pipeline", tags={"mytag": "hello"})
         )
         storage.add_run(
-            TestRunStorage.build_run(
-                run_id=three, job_name="some_pipeline", tags={"mytag": "hello"}
-            )
+            create_dagster_run(run_id=three, job_name="some_pipeline", tags={"mytag": "hello"})
         )
 
         all_runs = storage.get_runs()
@@ -701,15 +677,13 @@ class TestRunStorage:
 
         one, two, three = [make_new_run_id(), make_new_run_id(), make_new_run_id()]
         storage.add_run(
-            TestRunStorage.build_run(run_id=one, job_name="some_pipeline", tags={"mytag": "hello"})
+            create_dagster_run(run_id=one, job_name="some_pipeline", tags={"mytag": "hello"})
         )
         storage.add_run(
-            TestRunStorage.build_run(run_id=two, job_name="some_pipeline", tags={"mytag": "hello"})
+            create_dagster_run(run_id=two, job_name="some_pipeline", tags={"mytag": "hello"})
         )
         storage.add_run(
-            TestRunStorage.build_run(
-                run_id=three, job_name="some_pipeline", tags={"mytag": "hello"}
-            )
+            create_dagster_run(run_id=three, job_name="some_pipeline", tags={"mytag": "hello"})
         )
 
         assert storage.get_run_ids(RunsFilter(job_name="some_pipeline")) == [three, two, one]
@@ -722,22 +696,22 @@ class TestRunStorage:
         three = make_new_run_id()
         four = make_new_run_id()
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=one, job_name="some_pipeline", status=DagsterRunStatus.NOT_STARTED
             )
         )
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=two, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=three, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=four, job_name="some_pipeline", status=DagsterRunStatus.FAILURE
             )
         )
@@ -766,7 +740,7 @@ class TestRunStorage:
         assert storage
         one = make_new_run_id()
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=one, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
@@ -801,17 +775,17 @@ class TestRunStorage:
         assert storage
         [one, two, three] = [make_new_run_id() for _ in range(3)]
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=one, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=two, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=three, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
@@ -865,17 +839,17 @@ class TestRunStorage:
         two = make_new_run_id()
         three = make_new_run_id()
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=one, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=two, job_name="some_pipeline", status=DagsterRunStatus.FAILURE
             )
         )
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=three, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
@@ -955,19 +929,19 @@ class TestRunStorage:
         two = make_new_run_id()
         three = make_new_run_id()
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=one, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         time.sleep(2)
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=two, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         time.sleep(2)
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=three, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
@@ -995,22 +969,22 @@ class TestRunStorage:
         three = make_new_run_id()
         four = make_new_run_id()
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=one, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=two, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=three, job_name="some_pipeline", status=DagsterRunStatus.NOT_STARTED
             )
         )
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=four, job_name="some_pipeline", status=DagsterRunStatus.STARTED
             )
         )
@@ -1044,7 +1018,7 @@ class TestRunStorage:
 
         assert storage
         run_id = make_new_run_id()
-        storage.add_run(TestRunStorage.build_run(run_id=run_id, job_name="some_pipeline"))
+        storage.add_run(create_dagster_run(run_id=run_id, job_name="some_pipeline"))
         assert len(storage.get_runs()) == 1
         storage.delete_run(run_id)
         assert list(storage.get_runs()) == []
@@ -1056,7 +1030,7 @@ class TestRunStorage:
         assert storage
         run_id = make_new_run_id()
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=run_id,
                 job_name="some_pipeline",
                 tags={run_id: run_id},
@@ -1173,14 +1147,14 @@ class TestRunStorage:
         two = make_new_run_id()
 
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=one,
                 job_name="some_pipeline",
                 status=DagsterRunStatus.SUCCESS,
             )
         )
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=two,
                 job_name="some_pipeline",
                 status=DagsterRunStatus.SUCCESS,
@@ -1196,7 +1170,7 @@ class TestRunStorage:
 
     def test_fetch_run_group(self, storage: RunStorage):
         assert storage
-        root_run = TestRunStorage.build_run(run_id=make_new_run_id(), job_name="foo_job")
+        root_run = create_dagster_run(run_id=make_new_run_id(), job_name="foo_job")
         runs = [root_run]
 
         # Create 3 children and 3 descendants of the rightmost child:
@@ -1212,7 +1186,7 @@ class TestRunStorage:
 
         for _ in range(3):
             runs.append(
-                TestRunStorage.build_run(
+                create_dagster_run(
                     run_id=make_new_run_id(),
                     job_name="foo_job",
                     root_run_id=root_run.run_id,
@@ -1225,7 +1199,7 @@ class TestRunStorage:
             root_run_id = runs[-1].root_run_id if runs[-1].root_run_id else runs[-1].run_id
             parent_run_id = runs[-1].run_id
             runs.append(
-                TestRunStorage.build_run(
+                create_dagster_run(
                     run_id=make_new_run_id(),
                     job_name="foo_job",
                     root_run_id=root_run_id,
@@ -1252,14 +1226,14 @@ class TestRunStorage:
 
     def test_fetch_run_group_not_found(self, storage: RunStorage):
         assert storage
-        run = TestRunStorage.build_run(run_id=make_new_run_id(), job_name="foo_job")
+        run = create_dagster_run(run_id=make_new_run_id(), job_name="foo_job")
         storage.add_run(run)
 
         with pytest.raises(DagsterRunNotFoundError):
             storage.get_run_group(make_new_run_id())
 
     def test_partition_status(self, storage: RunStorage):
-        one = TestRunStorage.build_run(
+        one = create_dagster_run(
             run_id=make_new_run_id(),
             job_name="foo_job",
             status=DagsterRunStatus.FAILURE,
@@ -1269,7 +1243,7 @@ class TestRunStorage:
             },
         )
         storage.add_run(one)
-        two = TestRunStorage.build_run(
+        two = create_dagster_run(
             run_id=make_new_run_id(),
             job_name="foo_job",
             status=DagsterRunStatus.FAILURE,
@@ -1279,7 +1253,7 @@ class TestRunStorage:
             },
         )
         storage.add_run(two)
-        two_retried = TestRunStorage.build_run(
+        two_retried = create_dagster_run(
             run_id=make_new_run_id(),
             job_name="foo_job",
             status=DagsterRunStatus.SUCCESS,
@@ -1289,7 +1263,7 @@ class TestRunStorage:
             },
         )
         storage.add_run(two_retried)
-        three = TestRunStorage.build_run(
+        three = create_dagster_run(
             run_id=make_new_run_id(),
             job_name="foo_job",
             status=DagsterRunStatus.SUCCESS,
@@ -1299,7 +1273,7 @@ class TestRunStorage:
             },
         )
         storage.add_run(three)
-        wrong_job = TestRunStorage.build_run(
+        wrong_job = create_dagster_run(
             run_id=make_new_run_id(),
             job_name="bar_job",
             status=DagsterRunStatus.SUCCESS,
@@ -1389,7 +1363,7 @@ class TestRunStorage:
         storage.add_backfill(backfill)
         run_in_backfill_id = make_new_run_id()
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=run_in_backfill_id,
                 job_name="some_pipeline",
                 status=DagsterRunStatus.SUCCESS,
@@ -1398,7 +1372,7 @@ class TestRunStorage:
         )
         run_not_in_backfill_id = make_new_run_id()
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=run_not_in_backfill_id,
                 job_name="some_pipeline",
                 status=DagsterRunStatus.SUCCESS,
@@ -1546,7 +1520,7 @@ class TestRunStorage:
 
         run_id = make_new_run_id()
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=run_id,
                 job_name="some_pipeline",
                 status=DagsterRunStatus.SUCCESS,
@@ -1593,7 +1567,7 @@ class TestRunStorage:
 
         run_id = make_new_run_id()
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=run_id,
                 job_name="some_pipeline",
                 status=DagsterRunStatus.SUCCESS,
@@ -1635,7 +1609,7 @@ class TestRunStorage:
             all_backfills.append(backfill)
 
             storage.add_run(
-                TestRunStorage.build_run(
+                create_dagster_run(
                     run_id=make_new_run_id(),
                     job_name="some_pipeline",
                     status=DagsterRunStatus.SUCCESS,
@@ -1681,7 +1655,7 @@ class TestRunStorage:
 
         run_id = make_new_run_id()
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=run_id,
                 job_name="fake",
                 status=DagsterRunStatus.SUCCESS,
@@ -1691,7 +1665,7 @@ class TestRunStorage:
 
         # a run for a different job that is not part of a backfill
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=make_new_run_id(),
                 job_name="a_different_pipeline",
                 status=DagsterRunStatus.SUCCESS,
@@ -1728,7 +1702,7 @@ class TestRunStorage:
 
         run_id = make_new_run_id()
         storage.add_run(
-            TestRunStorage.build_run(
+            create_dagster_run(
                 run_id=run_id,
                 job_name="fake",
                 status=DagsterRunStatus.SUCCESS,
@@ -1752,7 +1726,7 @@ class TestRunStorage:
 
     def test_handle_run_event_job_success_test(self, storage, instance):
         run_id = make_new_run_id()
-        run_to_add = TestRunStorage.build_run(job_name="pipeline_name", run_id=run_id)
+        run_to_add = create_dagster_run(job_name="pipeline_name", run_id=run_id)
         storage.add_run(run_to_add)
 
         dagster_job_start_event = DagsterEvent(
@@ -1809,7 +1783,7 @@ class TestRunStorage:
         self._skip_in_memory(storage)
 
         run_id = make_new_run_id()
-        run_to_add = TestRunStorage.build_run(job_name="pipeline_name", run_id=run_id)
+        run_to_add = create_dagster_run(job_name="pipeline_name", run_id=run_id)
 
         storage.add_run(run_to_add)
 
@@ -1885,10 +1859,10 @@ class TestRunStorage:
         origin_one = self.fake_job_origin(job_name, "fake_repo_one")
         origin_two = self.fake_job_origin(job_name, "fake_repo_two")
         storage.add_run(
-            TestRunStorage.build_run(run_id=one, job_name=job_name, remote_job_origin=origin_one)
+            create_dagster_run(run_id=one, job_name=job_name, remote_job_origin=origin_one)
         )
         storage.add_run(
-            TestRunStorage.build_run(run_id=two, job_name=job_name, remote_job_origin=origin_one)
+            create_dagster_run(run_id=two, job_name=job_name, remote_job_origin=origin_one)
         )
 
         one_runs = storage.get_runs(

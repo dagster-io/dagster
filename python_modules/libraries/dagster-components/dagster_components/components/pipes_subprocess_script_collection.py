@@ -1,5 +1,7 @@
 import shutil
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
 
@@ -8,62 +10,50 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from pydantic import BaseModel, ConfigDict, Field
-from pydantic.dataclasses import dataclass
 
-from dagster_components import FieldResolver
 from dagster_components.core.component import Component, ComponentLoadContext
-from dagster_components.core.schema.base import ResolvableSchema
-from dagster_components.core.schema.context import ResolutionContext
-from dagster_components.core.schema.objects import AssetSpecSchema
+from dagster_components.resolved.core_models import AssetSpecModel, ResolvedAssetSpec
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 
-class PipesSubprocessScriptSpec(BaseModel):
+class PipesSubprocessScriptModel(ResolvableModel):
     path: str
-    assets: Sequence[AssetSpec]
-
-    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
-
-
-class PipesSubprocessScriptSchema(ResolvableSchema[PipesSubprocessScriptSpec]):
-    path: str
-    assets: Sequence[AssetSpecSchema]
-
-
-class PipesSubprocessScriptCollectionSchema(
-    ResolvableSchema["PipesSubprocessScriptCollectionComponent"]
-):
-    scripts: Sequence[PipesSubprocessScriptSchema]
-
-
-def resolve_specs_by_path(
-    context: ResolutionContext, schema: PipesSubprocessScriptCollectionSchema
-) -> Mapping[str, Sequence[AssetSpec]]:
-    return {spec.path: spec.assets for spec in context.resolve_value(schema.scripts)}
+    assets: Sequence[AssetSpecModel]
 
 
 @dataclass
-class PipesSubprocessScriptCollectionComponent(Component):
+class PipesSubprocessScript(ResolvedFrom[PipesSubprocessScriptModel]):
+    path: str
+    assets: Sequence[ResolvedAssetSpec]
+
+
+class PipesSubprocessScriptCollectionModel(ResolvableModel):
+    scripts: Sequence[PipesSubprocessScriptModel]
+
+
+@dataclass
+class PipesSubprocessScriptCollectionComponent(
+    Component, ResolvedFrom[PipesSubprocessScriptCollectionModel]
+):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
 
-    specs_by_path: Annotated[
-        Mapping[str, Sequence[AssetSpec]], FieldResolver(resolve_specs_by_path)
-    ] = Field(
-        ...,
-        description="A mapping from Python script paths to the assets that are produced by the script.",
-    )
+    scripts: Annotated[Sequence[PipesSubprocessScript], Resolver.from_annotation()]
+
+    @cached_property
+    def specs_by_path(self) -> Mapping[str, Sequence[AssetSpec]]:
+        return {script.path: script.assets for script in self.scripts}
 
     @staticmethod
     def introspect_from_path(path: Path) -> "PipesSubprocessScriptCollectionComponent":
-        path_specs = {str(path): [AssetSpec(path.stem)] for path in list(path.rglob("*.py"))}
-        return PipesSubprocessScriptCollectionComponent(specs_by_path=path_specs)
-
-    @classmethod
-    def get_schema(cls) -> type[PipesSubprocessScriptCollectionSchema]:
-        return PipesSubprocessScriptCollectionSchema
+        return PipesSubprocessScriptCollectionComponent(
+            [
+                PipesSubprocessScript(path=str(path), assets=[AssetSpec(path.stem)])
+                for path in list(path.rglob("*.py"))
+            ]
+        )
 
     def build_defs(self, context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions

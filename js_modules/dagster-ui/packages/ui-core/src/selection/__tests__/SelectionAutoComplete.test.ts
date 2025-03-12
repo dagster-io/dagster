@@ -4,11 +4,11 @@ import {createProvider} from '../SelectionAutoCompleteProvider';
 describe('createAssetSelectionHint', () => {
   const attributesMap = {
     key: ['asset1', 'asset2', 'asset3'],
-    tag: ['tag1', 'tag2', 'tag3'],
+    tag: ['tag1', 'tag2', 'tag3', 'key=value1', 'key=value2'],
     owner: ['marco@dagsterlabs.com', 'team:frontend'],
     group: ['group1', 'group2'],
     kind: ['kind1', 'kind2'],
-    code_location: ['repo1@location1', 'repo2@location2'],
+    code_location: ['repo1@location1', 'repo2@location2', 'assumptions@location3'],
   };
   const provider = createProvider({
     attributesMap,
@@ -64,6 +64,12 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({
           text: '"tag3"',
         }),
+        expect.objectContaining({
+          text: '"key=value1"',
+        }),
+        expect.objectContaining({
+          text: '"key=value2"',
+        }),
       ],
       from: 4, // cursor location
       to: 4, // cursor location
@@ -79,6 +85,12 @@ describe('createAssetSelectionHint', () => {
         }),
         expect.objectContaining({
           text: '"tag3"',
+        }),
+        expect.objectContaining({
+          text: '"key=value1"',
+        }),
+        expect.objectContaining({
+          text: '"key=value2"',
         }),
       ],
       from: 4, // cursor location
@@ -202,6 +214,9 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({
           text: 'code_location:"repo2@location2"',
         }),
+        expect.objectContaining({
+          text: 'code_location:"assumptions@location3"',
+        }),
       ],
       from: 0, // start of input
       to: 1, // cursor location
@@ -316,6 +331,9 @@ describe('createAssetSelectionHint', () => {
         }),
         expect.objectContaining({
           text: '"repo2@location2"',
+        }),
+        expect.objectContaining({
+          text: '"assumptions@location3"',
         }),
       ],
       from: 14,
@@ -1071,6 +1089,57 @@ describe('createAssetSelectionHint', () => {
       from: 4,
       list: [expect.objectContaining({text: '+'})],
       to: 4,
+    });
+  });
+
+  it('suggests things for the value after an upstream traversal', () => {
+    expect(testAutocomplete('+ass|')).toEqual({
+      from: 1,
+      list: [
+        expect.objectContaining({text: 'key:"*ass*"'}),
+        expect.objectContaining({text: 'key:"asset1"'}),
+        expect.objectContaining({text: 'key:"asset2"'}),
+        expect.objectContaining({text: 'key:"asset3"'}),
+        expect.objectContaining({text: 'code_location:"assumptions@location3"'}),
+      ],
+      to: 4,
+    });
+  });
+
+  it('value suggestions should replace entire key=value segment in tag:key=value', () => {
+    expect(testAutocomplete('tag:k|ey=value or key:"test"')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({text: '"key=value1"'}),
+        expect.objectContaining({text: '"key=value2"'}),
+      ],
+      to: 13,
+    });
+
+    expect(testAutocomplete('tag:key|=value or key:"test"')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({text: '"key=value1"'}),
+        expect.objectContaining({text: '"key=value2"'}),
+      ],
+      to: 13,
+    });
+
+    expect(testAutocomplete('tag:key=|value or key:"test"')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({text: '"key=value1"'}),
+        expect.objectContaining({text: '"key=value2"'}),
+      ],
+      to: 13,
+    });
+    expect(testAutocomplete('tag:key=val|ue or key:"test"')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({text: '"key=value1"'}),
+        expect.objectContaining({text: '"key=value2"'}),
+      ],
+      to: 13,
     });
   });
 });

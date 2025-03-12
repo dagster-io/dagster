@@ -6,6 +6,7 @@ alert_policies:
   - TICK_FAILURE
   name: schedule-sensor-failure-email
   notification_service:
-    email_addresses:
-    - richard.hendricks@hooli.com
-    - nelson.bighetti@hooli.com
+    email:
+      email_addresses:
+      - richard.hendricks@hooli.com
+      - nelson.bighetti@hooli.com

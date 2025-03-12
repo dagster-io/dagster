@@ -6,24 +6,21 @@ import dagster._check as check
 from dbt.cli.main import dbtRunner
 from pydantic import BaseModel, Field
 
-from dagster_components.core.component_scaffolder import (
-    ComponentScaffolder,
-    ComponentScaffoldRequest,
-)
-from dagster_components.scaffold import scaffold_component_yaml
+from dagster_components.component_scaffolding import scaffold_component_yaml
+from dagster_components.core.component_scaffolder import Scaffolder, ScaffoldRequest
 
 
-class DbtScaffoldSchema(BaseModel):
+class DbtScaffoldParams(BaseModel):
     init: bool = Field(default=False)
     project_path: Optional[str] = None
 
 
-class DbtProjectComponentScaffolder(ComponentScaffolder):
+class DbtProjectComponentScaffolder(Scaffolder):
     @classmethod
-    def get_schema(cls) -> Optional[type[BaseModel]]:
-        return DbtScaffoldSchema
+    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
+        return DbtScaffoldParams
 
-    def scaffold(self, request: ComponentScaffoldRequest, params: DbtScaffoldSchema) -> None:
+    def scaffold(self, request: ScaffoldRequest, params: DbtScaffoldParams) -> None:
         cwd = os.getcwd()
         if params.project_path:
             # NOTE: CWD is not set "correctly" above so we prepend "../../.." as a temporary hack to

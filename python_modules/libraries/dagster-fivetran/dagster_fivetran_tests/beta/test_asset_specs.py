@@ -1,3 +1,4 @@
+import pytest
 import responses
 from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -16,6 +17,9 @@ from dagster_fivetran_tests.beta.conftest import (
     TEST_ANOTHER_ACCOUNT_ID,
     TEST_API_KEY,
     TEST_API_SECRET,
+    TEST_CONNECTOR_ID,
+    TEST_CONNECTOR_NAME,
+    TEST_DESTINATION_SERVICE,
 )
 
 
@@ -28,6 +32,59 @@ def test_fetch_fivetran_workspace_data(
 
     actual_workspace_data = resource.fetch_fivetran_workspace_data()
     assert len(actual_workspace_data.connectors_by_id) == 1
+    assert len(actual_workspace_data.destinations_by_id) == 1
+
+
+@pytest.mark.parametrize(
+    "attribute, value, expected_result",
+    [
+        (None, None, 1),
+        ("name", TEST_CONNECTOR_NAME, 1),
+        ("id", TEST_CONNECTOR_ID, 1),
+        ("service", TEST_DESTINATION_SERVICE, 1),
+        ("name", "non_matching_name", 0),
+        ("id", "non_matching_id", 0),
+        ("service", "non_matching_service", 0),
+    ],
+    ids=[
+        "no_selector_present_connector",
+        "connector_name_selector_present_connector",
+        "connector_id_selector_present_connector",
+        "service_selector_present_connector",
+        "connector_name_selector_absent_connector",
+        "connector_id_selector_absent_connector",
+        "service_selector_absent_connector",
+    ],
+)
+def test_fivetran_connector_selector(
+    attribute: str,
+    value: str,
+    expected_result: int,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+
+    connector_selector_fn = (
+        (lambda connector: getattr(connector, attribute) == value) if attribute else None
+    )
+    actual_workspace_data = resource.fetch_fivetran_workspace_data(
+        connector_selector_fn=connector_selector_fn
+    )
+    assert len(actual_workspace_data.connectors_by_id) == expected_result
+
+
+def test_missing_schemas_fivetran_workspace_data(
+    missing_schemas_fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+
+    actual_workspace_data = resource.fetch_fivetran_workspace_data()
+    # The connector is discarded because it's missing its schemas
+    assert len(actual_workspace_data.connectors_by_id) == 0
     assert len(actual_workspace_data.destinations_by_id) == 1
 
 
@@ -56,7 +113,7 @@ def test_translator_spec(
         ]
 
         first_asset_metadata = next(asset.metadata for asset in all_assets)
-        assert FivetranMetadataSet.extract(first_asset_metadata).connector_id == "connector_id"
+        assert FivetranMetadataSet.extract(first_asset_metadata).connector_id == TEST_CONNECTOR_ID
 
 
 def test_cached_load_spec_single_resource(
@@ -152,3 +209,28 @@ def test_translator_custom_metadata(
             "table_name_in_destination_1",
         ]
         assert "dagster/kind/fivetran" in asset_spec.tags
+
+
+class MyAssetFactoryCustomTranslator(DagsterFivetranTranslator):
+    def get_asset_spec(self, data: FivetranConnectorTableProps) -> AssetSpec:
+        default_spec = super().get_asset_spec(data)
+        return default_spec.replace_attributes(group_name="my_group_name")
+
+
+def test_translator_custom_group_name_with_asset_factory(
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    with environ({"FIVETRAN_API_KEY": TEST_API_KEY, "FIVETRAN_API_SECRET": TEST_API_SECRET}):
+        resource = FivetranWorkspace(
+            account_id=TEST_ACCOUNT_ID,
+            api_key=EnvVar("FIVETRAN_API_KEY"),
+            api_secret=EnvVar("FIVETRAN_API_SECRET"),
+        )
+
+        my_fivetran_assets = build_fivetran_assets_definitions(
+            workspace=resource, dagster_fivetran_translator=MyAssetFactoryCustomTranslator()
+        )
+
+        first_assets_def = next(assets_def for assets_def in my_fivetran_assets)
+        first_asset_spec = next(asset_spec for asset_spec in first_assets_def.specs)
+        assert first_asset_spec.group_name == "my_group_name"

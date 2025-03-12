@@ -25,6 +25,7 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     AssetSelection,
+    BetaWarning,
     DataProvenance,
     DataVersion,
     Definitions,
@@ -34,10 +35,10 @@ from dagster import (
     OpExecutionContext,
     Out,
     Output,
+    PreviewWarning,
     SourceAsset,
     define_asset_job,
 )
-from dagster._utils.warnings import BetaWarning, PreviewWarning
 from typing_extensions import TypedDict
 
 from dagster_test.toys.user_computed_data_versions.external_system import (

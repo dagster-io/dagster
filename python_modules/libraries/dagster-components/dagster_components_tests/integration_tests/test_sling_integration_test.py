@@ -1,3 +1,4 @@
+import importlib
 import shutil
 import tempfile
 from collections.abc import Iterator, Mapping
@@ -15,13 +16,15 @@ from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test
+from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster_components.cli import cli
 from dagster_components.components.sling_replication_collection.component import (
     SlingReplicationCollectionComponent,
+    SlingReplicationCollectionModel,
 )
 from dagster_components.core.component_decl_builder import ComponentFileModel
-from dagster_components.core.component_defs_builder import YamlComponentDecl, build_component_defs
+from dagster_components.core.component_defs_builder import YamlComponentDecl, load_defs
 from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_sling import SlingResource
 
@@ -52,7 +55,10 @@ def temp_sling_component_instance(
     """Sets up a temporary directory with a replication.yaml and component.yaml file that reference
     the proper temp path.
     """
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with (
+        tempfile.TemporaryDirectory() as temp_dir,
+        alter_sys_path(to_add=[str(temp_dir)], to_remove=[]),
+    ):
         with environ({"HOME": temp_dir, "SOME_PASSWORD": "password"}):
             shutil.copytree(STUB_LOCATION_PATH, temp_dir, dirs_exist_ok=True)
 
@@ -75,7 +81,7 @@ def temp_sling_component_instance(
 def test_python_attributes() -> None:
     with temp_sling_component_instance([{"path": "./replication.yaml"}]) as decl_node:
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.get_schema())
+        attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
         component = SlingReplicationCollectionComponent.load(attributes, context)
 
         replications = component.replications
@@ -99,7 +105,7 @@ def test_python_attributes_op_name() -> None:
         ]
     ) as decl_node:
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.get_schema())
+        attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
         component = SlingReplicationCollectionComponent.load(attributes, context=context)
         replications = component.replications
         assert len(replications) == 1
@@ -121,7 +127,7 @@ def test_python_attributes_op_tags() -> None:
         ]
     ) as decl_node:
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.get_schema())
+        attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
         component = SlingReplicationCollectionComponent.load(attributes=attributes, context=context)
         replications = component.replications
         assert len(replications) == 1
@@ -139,7 +145,7 @@ def test_python_params_include_metadata() -> None:
         ]
     ) as decl_node:
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.get_schema())
+        attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
         component = SlingReplicationCollectionComponent.load(attributes=attributes, context=context)
         replications = component.replications
         assert len(replications) == 1
@@ -173,7 +179,8 @@ def test_load_from_path() -> None:
         assert resource.connections[0].type == "duckdb"
         assert resource.connections[0].password == "password"
 
-        defs = build_component_defs(components_root=decl_node.path.parent)
+        module = importlib.import_module("defs")
+        defs = load_defs(module)
         assert defs.get_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),
             AssetKey(["foo", "input_duckdb"]),
@@ -195,7 +202,7 @@ def test_sling_subclass() -> None:
         ),
     )
     context = script_load_context(decl_node)
-    attributes = decl_node.get_attributes(DebugSlingReplicationComponent.get_schema())
+    attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
     component_inst = DebugSlingReplicationComponent.load(attributes=attributes, context=context)
     assert component_inst.build_defs(context).get_asset_graph().get_all_asset_keys() == {
         AssetKey("input_csv"),
@@ -233,6 +240,16 @@ def test_sling_subclass() -> None:
             == {AssetKey("customers")},
             False,
         ),
+        (
+            {"automation_condition": "{{ automation_condition.eager() }}"},
+            lambda asset_spec: asset_spec.automation_condition is not None,
+            False,
+        ),
+        (
+            {"key": "overridden_key"},
+            lambda asset_spec: asset_spec.key == AssetKey("overridden_key"),
+            False,
+        ),
     ],
     ids=[
         "group_name",
@@ -244,6 +261,8 @@ def test_sling_subclass() -> None:
         "description",
         "metadata",
         "deps",
+        "automation_condition",
+        "key",
     ],
 )
 def test_asset_attributes(
@@ -259,13 +278,29 @@ def test_asset_attributes(
         ) as decl_node,
     ):
         context = script_load_context(decl_node)
-        attrs = decl_node.get_attributes(SlingReplicationCollectionComponent.get_schema())
+        attrs = decl_node.get_attributes(SlingReplicationCollectionModel)
         component = SlingReplicationCollectionComponent.load(attributes=attrs, context=context)
         defs = component.build_defs(context)
 
-        assets_def: AssetsDefinition = defs.get_assets_def("input_duckdb")
+        key = attributes.get("key", "input_duckdb")
+        assets_def: AssetsDefinition = defs.get_assets_def(key)
     if assertion:
-        assert assertion(assets_def.get_asset_spec(AssetKey("input_duckdb")))
+        assert assertion(assets_def.get_asset_spec(AssetKey(key)))
+
+
+IGNORED_KEYS = {"skippable"}
+
+
+def test_asset_attributes_is_comprehensive():
+    all_asset_attribute_keys = []
+    for test_arg in test_asset_attributes.pytestmark[0].args[1]:
+        all_asset_attribute_keys.extend(test_arg[0].keys())
+    from dagster_components.resolved.core_models import AssetAttributesModel
+
+    assert (
+        set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS
+        == set(all_asset_attribute_keys)
+    ), f"The test_asset_attributes test does not cover all fields, missing: {set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS - set(all_asset_attribute_keys)}"
 
 
 def test_scaffold_sling():

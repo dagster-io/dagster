@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from mypy_boto3_emr_serverless.type_defs import (
         GetJobRunResponseTypeDef,
         MonitoringConfigurationTypeDef,
-        StartJobRunRequestRequestTypeDef,
+        StartJobRunRequestTypeDef,
         StartJobRunResponseTypeDef,
     )
 
@@ -88,7 +88,7 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         self,
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
-        start_job_run_params: "StartJobRunRequestRequestTypeDef",
+        start_job_run_params: "StartJobRunRequestTypeDef",
         extras: Optional[dict[str, Any]] = None,
     ) -> PipesClientCompletedInvocation:
         """Run a workload on AWS EMR Serverless, enriched with the pipes protocol.
@@ -131,8 +131,8 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
         self,
         context: Union[OpExecutionContext, AssetExecutionContext],
         session: PipesSession,
-        params: "StartJobRunRequestRequestTypeDef",
-    ) -> "StartJobRunRequestRequestTypeDef":
+        params: "StartJobRunRequestTypeDef",
+    ) -> "StartJobRunRequestTypeDef":
         # inject Dagster tags
         tags = params.get("tags", {})
         params["tags"] = {**tags, **session.default_remote_invocation_info}
@@ -157,12 +157,12 @@ class PipesEMRServerlessClient(PipesClient, TreatAsResourceParam):
             ]
         )
 
-        return cast("StartJobRunRequestRequestTypeDef", params)
+        return cast("StartJobRunRequestTypeDef", params)
 
     def _start(
         self,
         context: Union[OpExecutionContext, AssetExecutionContext],
-        params: "StartJobRunRequestRequestTypeDef",
+        params: "StartJobRunRequestTypeDef",
     ) -> "StartJobRunResponseTypeDef":
         response = self.client.start_job_run(**params)
         job_run_id = response["jobRunId"]

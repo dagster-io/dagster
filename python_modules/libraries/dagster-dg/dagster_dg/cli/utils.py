@@ -1,11 +1,15 @@
+import contextlib
 import json
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from tempfile import NamedTemporaryFile
+from typing import Any, NamedTuple, Optional
 
 import click
+import yaml
 
-from dagster_dg.cli.global_options import dg_global_options
+from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry, all_components_schema_from_dg_context
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.config import normalize_cli_config
@@ -117,3 +121,59 @@ def inspect_component_type_command(
 
 def _serialize_json_schema(schema: Mapping[str, Any]) -> str:
     return json.dumps(schema, indent=4)
+
+
+def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, str]]:
+    entry = {
+        "working_directory": str(dg_context.root_path),
+        "module_name": str(dg_context.code_location_target_module_name),
+        "location_name": dg_context.code_location_name,
+    }
+    if dg_context.use_dg_managed_environment:
+        entry["executable_path"] = str(dg_context.project_python_executable)
+    return {"python_module": entry}
+
+
+@contextmanager
+def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
+    with NamedTemporaryFile(mode="w+", delete=True) as temp_workspace_file:
+        entries = []
+        if dg_context.is_project:
+            entries.append(_workspace_entry_for_project(dg_context))
+        elif dg_context.is_workspace:
+            for spec in dg_context.project_specs:
+                project_root = dg_context.root_path / spec.path
+                project_context: DgContext = dg_context.with_root_path(project_root)
+                entries.append(_workspace_entry_for_project(project_context))
+        yaml.dump({"load_from": entries}, temp_workspace_file)
+        temp_workspace_file.flush()
+        yield temp_workspace_file.name
+
+
+class DagsterCliCmd(NamedTuple):
+    cmd_location: str
+    cmd: list[str]
+    workspace_file: Optional[str]
+
+
+@contextlib.contextmanager
+def create_dagster_cli_cmd(
+    dg_context: DgContext, forward_options: list[str], run_cmds: list[str]
+) -> Iterator[DagsterCliCmd]:
+    cmd = [*run_cmds, *forward_options]
+    if dg_context.is_project:
+        cmd_location = dg_context.get_executable("dagster")
+        with create_temp_workspace_file(dg_context) as temp_workspace_file:
+            yield DagsterCliCmd(
+                cmd_location=str(cmd_location), cmd=cmd, workspace_file=temp_workspace_file
+            )
+        # yield CommandArgs(cmd_location=str(cmd_location), cmd=cmd, workspace_file=None)
+    elif dg_context.is_workspace:
+        with create_temp_workspace_file(dg_context) as temp_workspace_file:
+            yield DagsterCliCmd(
+                cmd=cmd,
+                cmd_location="ephemeral",
+                workspace_file=temp_workspace_file,
+            )
+    else:
+        exit_with_error("This command must be run inside a code location or deployment directory.")

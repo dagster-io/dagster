@@ -1,4 +1,4 @@
 dg list project
 
-project-1
-project-2
+projects/project-1
+projects/project-2

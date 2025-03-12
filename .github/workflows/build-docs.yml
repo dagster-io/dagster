@@ -16,6 +16,8 @@ on:
       - '!docs/README.md'
       - '!docs/CONTRIBUTING.md'
       - '!docs/content-templates/**'
+      # Required for `yarn rebuild-kinds-tags`
+      - js_modules/dagster-ui/packages/ui-core/src/graph/OpTags.tsx
   pull_request:
     paths:
       - docs/**
@@ -28,6 +30,8 @@ on:
       - '!docs/README.md'
       - '!docs/CONTRIBUTING.md'
       - '!docs/content-templates/**'
+      # Required for `yarn rebuild-kinds-tags`
+      - js_modules/dagster-ui/packages/ui-core/src/graph/OpTags.tsx
     types:
       - opened
       - reopened

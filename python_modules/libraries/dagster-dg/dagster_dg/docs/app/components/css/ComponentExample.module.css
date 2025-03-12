@@ -1,0 +1,18 @@
+.container {
+  background-color: var(--color-background-lighter);
+  padding: 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  position: relative;
+}
+
+.code {
+  overflow-x: auto;
+}
+
+.buttonContainer {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+}
