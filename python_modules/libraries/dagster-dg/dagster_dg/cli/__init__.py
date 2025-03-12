@@ -70,7 +70,7 @@ def create_dg_cli():
         rebuild_component_registry: bool,
         **global_options: object,
     ):
-        """CLI for working with Dagster components."""
+        """CLI for managing Dagster projects."""
         context = click.get_current_context()
         if install_completion:
             import dagster_dg.completion
