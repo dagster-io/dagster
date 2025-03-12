@@ -543,22 +543,22 @@
     },
     {
       "source": "/integrations/libraries/airlift/airflow-to-dagster/peer",
-      "destination": "/guides/migrate/airflow-to-dagster/",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/peer",
       "permanent": false
     },
     {
       "source": "/integrations/libraries/airlift/airflow-to-dagster/observe",
-      "destination": "/guides/migrate/airflow-to-dagster/",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/observe",
       "permanent": false
     },
     {
       "source": "/integrations/libraries/airlift/airflow-to-dagster/migrate",
-      "destination": "/guides/migrate/airflow-to-dagster/",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/migrate",
       "permanent": false
     },
     {
       "source": "/integrations/libraries/airlift/airflow-to-dagster/decomission",
-      "destination": "/guides/migrate/airflow-to-dagster/",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/decommission",
       "permanent": false
     },
     {
