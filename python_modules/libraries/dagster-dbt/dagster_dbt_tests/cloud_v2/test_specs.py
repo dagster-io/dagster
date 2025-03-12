@@ -1,7 +1,7 @@
 import responses
-from dagster_dbt.cloud.resources import DbtCloudWorkspace
+from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 
-from dagster_dbt_tests.cloud.preview.conftest import (
+from dagster_dbt_tests.cloud_v2.conftest import (
     TEST_ENVIRONMENT_ID,
     TEST_JOB_ID,
     TEST_PROJECT_ID,

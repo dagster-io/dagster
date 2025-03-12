@@ -4,8 +4,8 @@ from typing import Any, Optional
 from dagster._annotations import preview
 from dagster._record import record
 
-from dagster_dbt.cloud.client import DbtCloudWorkspaceClient
-from dagster_dbt.cloud.types import DbtCloudJobRunStatusType, DbtCloudRun
+from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
+from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun
 
 
 @preview
