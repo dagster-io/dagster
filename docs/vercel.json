@@ -1897,87 +1897,87 @@
     },
     {
       "source": "/_modules/dagster_airbyte/asset_defs",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-airbyte"
     },
     {
       "source": "/_modules/dagster_airbyte/resources",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-airbyte"
     },
     {
       "source": "/_modules/dagster_airlift/core/airflow_instance",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-airlift#core-dagster_airliftcore"
     },
     {
       "source": "/_modules/dagster_airlift/in_airflow/base_asset_operator",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-airlift#in-airflow-dagster_airliftin_airflow"
     },
     {
       "source": "/_modules/dagster_aws/ecs/executor/",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-aws#ecs"
     },
     {
       "source": "/_modules/dagster_aws/ecs/launcher",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-aws#ecs"
     },
     {
       "source": "/_modules/dagster_aws/pipes/clients/ecs",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-aws#clients"
     },
     {
       "source": "/_modules/dagster_aws/pipes/context_injectors",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-aws#context-injectors"
     },
     {
       "source": "/_modules/dagster_aws/redshift/resources",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-aws#redshift"
     },
     {
       "source": "/_modules/dagster_aws/s3/compute_log_manager",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-aws#s3"
     },
     {
       "source": "/_modules/dagster_aws/s3/file_manager",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-aws#file-manager"
     },
     {
       "source": "/_modules/dagster_aws/s3/io_manager",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-aws#s3"
     },
     {
       "source": "/_modules/dagster_aws/s3/resources",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-aws#s3"
     },
     {
       "source": "/_modules/dagster_aws/secretsmanager/resources",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-aws#secretsmanager"
     },
     {
       "source": "/_modules/dagster_azure/adls2/io_manager",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-azure#io-manager"
     },
     {
       "source": "/_modules/dagster_azure/adls2/resources",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-azure#resources"
     },
     {
       "source": "/_modules/dagster_azure/blob/compute_log_manager",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-azure"
     },
     {
       "source": "/_modules/dagster_celery_docker/executor",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-celery-docker"
     },
     {
       "source": "/_modules/dagster_celery_k8s/executor",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-celery-k8s"
     },
     {
       "source": "/_modules/dagster_celery_k8s/launcher",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-celery-k8s"
     },
     {
       "source": "/_modules/dagster_celery/executor",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-celery"
     },
     {
       "source": "/_modules/dagster_databricks/databricks",
