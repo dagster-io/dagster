@@ -22,8 +22,8 @@ COMPONENTS_SNIPPETS_DIR = (
     / "docs_beta_snippets"
     / "docs_beta_snippets"
     / "guides"
-    / "components"
-    / "existing-project"
+    / "dg"
+    / "migrating-project"
 )
 
 MY_EXISTING_PROJECT = Path(__file__).parent / "my-existing-project"
@@ -109,8 +109,6 @@ def test_components_docs_index(update_snippets: bool) -> None:
         create_file(
             Path("my_existing_project") / "definitions.py",
             contents=format_multiline("""
-                from pathlib import Path
-
                 import dagster_components as dg_components
                 import my_existing_project.defs
                 from my_existing_project import assets
