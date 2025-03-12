@@ -1,8 +1,8 @@
-import {ASSETS_GRAPH_LIVE_QUERY} from '../../asset-data/AssetBaseDataProvider';
+import {ASSETS_GRAPH_LIVE_QUERY} from '../../asset-data/AssetBaseDataQueries';
 import {
   AssetGraphLiveQuery,
   AssetGraphLiveQueryVariables,
-} from '../../asset-data/types/AssetBaseDataProvider.types';
+} from '../../asset-data/types/AssetBaseDataQueries.types';
 import {MockStaleReasonData} from '../../asset-graph/__fixtures__/AssetNode.fixtures';
 import {
   Asset,

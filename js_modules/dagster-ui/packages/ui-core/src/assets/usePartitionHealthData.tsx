@@ -1,6 +1,7 @@
 import isEqual from 'lodash/isEqual';
 import keyBy from 'lodash/keyBy';
 import {useEffect, useMemo, useState} from 'react';
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
 
 import {AssetPartitionStatus, emptyAssetPartitionStatusCounts} from './AssetPartitionStatus';
 import {Transition, assembleRangesFromTransitions} from './MultipartitioningSupport';
@@ -12,7 +13,6 @@ import {
   PartitionHealthQueryVariables,
 } from './types/usePartitionHealthData.types';
 import {assertUnreachable} from '../app/Util';
-import {LiveDataForNode} from '../asset-graph/Utils';
 import {PartitionDefinitionType, PartitionRangeStatus} from '../graphql/types';
 import {assembleIntoSpans} from '../partitions/SpanRepresentation';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';

@@ -3,12 +3,12 @@ import {act, render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 import {RecoilRoot} from 'recoil';
 
-import {ASSETS_GRAPH_LIVE_QUERY} from '../../asset-data/AssetBaseDataProvider';
+import {ASSETS_GRAPH_LIVE_QUERY} from '../../asset-data/AssetBaseDataQueries';
 import {AssetLiveDataProvider} from '../../asset-data/AssetLiveDataProvider';
 import {
   AssetGraphLiveQuery,
   AssetGraphLiveQueryVariables,
-} from '../../asset-data/types/AssetBaseDataProvider.types';
+} from '../../asset-data/types/AssetBaseDataQueries.types';
 import {
   AssetGraphQuery,
   AssetGraphQueryVariables,

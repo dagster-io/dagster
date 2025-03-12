@@ -1,5 +1,6 @@
 import uniq from 'lodash/uniq';
 import React, {useCallback, useMemo, useRef} from 'react';
+import {LiveDataForNodeWithStaleData} from 'shared/asset-graph/LiveDataForNode.oss';
 
 import {AssetBaseData, __resetForJest as __resetBaseData} from './AssetBaseDataProvider';
 import {
@@ -7,7 +8,7 @@ import {
   __resetForJest as __resetStaleData,
 } from './AssetStaleStatusDataProvider';
 import {observeAssetEventsInRuns} from '../asset-graph/AssetRunLogObserver';
-import {LiveDataForNodeWithStaleData, tokenForAssetKey} from '../asset-graph/Utils';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {LiveDataPollRateContext} from '../live-data-provider/LiveDataProvider';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';

@@ -1,3 +1,5 @@
+import {LiveDataForNodeWithStaleData} from 'shared/asset-graph/LiveDataForNode.oss';
+
 import {
   AssetCheckExecutionResolvedStatus,
   AssetCheckSeverity,
@@ -15,7 +17,6 @@ import {
   buildMaterializationEvent,
   buildRun,
 } from '../../graphql/types';
-import {LiveDataForNodeWithStaleData} from '../Utils';
 import {AssetNodeFragment} from '../types/AssetNode.types';
 
 export const MockStaleReasonData: StaleCause = {

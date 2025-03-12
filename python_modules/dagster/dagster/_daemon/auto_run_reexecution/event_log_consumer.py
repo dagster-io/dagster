@@ -24,6 +24,7 @@ _EVENT_LOG_FETCH_LIMIT = int(os.environ.get("DAGSTER_EVENT_LOG_CONSUMER_DAEMON_F
 DAGSTER_EVENT_TYPES = [DagsterEventType.RUN_FAILURE, DagsterEventType.RUN_SUCCESS]
 
 
+# Should rename this the eventlogrunconsumer or something
 class EventLogConsumerDaemon(IntervalDaemon):
     def __init__(
         self,

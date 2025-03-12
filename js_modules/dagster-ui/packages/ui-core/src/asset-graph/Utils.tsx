@@ -1,20 +1,14 @@
 import {pathHorizontalDiagonal, pathVerticalDiagonal} from '@vx/shape';
 import memoize from 'lodash/memoize';
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
 
 import {AssetNodeKeyFragment} from './types/AssetNode.types';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {COMMON_COLLATOR} from '../app/Util';
 import {
-  AssetCheckLiveFragment,
-  AssetLatestInfoFragment,
   AssetLatestInfoRunFragment,
-  AssetNodeLiveFragment,
-  AssetNodeLiveFreshnessInfoFragment,
   AssetNodeLiveMaterializationFragment,
-  AssetNodeLiveObservationFragment,
-} from '../asset-data/types/AssetBaseDataProvider.types';
-import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
-import {RunStatus} from '../graphql/types';
+} from '../asset-data/types/AssetBaseDataQueries.types';
 
 export enum AssetGraphViewType {
   GLOBAL = 'global',
@@ -32,10 +26,6 @@ export enum AssetGraphViewType {
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 type AssetKey = AssetNodeKeyFragment;
-type AssetLiveNode = AssetNodeLiveFragment & {
-  freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null | undefined;
-};
-type AssetLatestInfo = AssetLatestInfoFragment;
 
 export const __ASSET_JOB_PREFIX = '__ASSET_JOB';
 export const __ANONYMOUS_ASSET_JOB_PREFIX = '__anonymous_asset_job';
@@ -151,77 +141,9 @@ export const buildSVGPathVertical = pathVerticalDiagonal({
   y: (s: any) => s.y,
 });
 
-export interface LiveDataForNode {
-  stepKey: string;
-  unstartedRunIds: string[]; // run in progress and step not started
-  inProgressRunIds: string[]; // run in progress and step in progress
-  runWhichFailedToMaterialize: AssetLatestInfoRunFragment | null;
-  lastMaterialization: AssetNodeLiveMaterializationFragment | null;
-  lastMaterializationRunStatus: RunStatus | null; // only available if runWhichFailedToMaterialize is null
-  freshnessInfo: AssetNodeLiveFreshnessInfoFragment | null | undefined;
-  lastObservation: AssetNodeLiveObservationFragment | null;
-  assetChecks: AssetCheckLiveFragment[];
-  partitionStats: {
-    numMaterialized: number;
-    numMaterializing: number;
-    numPartitions: number;
-    numFailed: number;
-  } | null;
-  opNames: string[];
-}
-
-export type LiveDataForNodeWithStaleData = LiveDataForNode & {
-  staleStatus: AssetStaleDataFragment['staleStatus'];
-  staleCauses: AssetStaleDataFragment['staleCauses'];
-};
-
-export const MISSING_LIVE_DATA: LiveDataForNodeWithStaleData = {
-  unstartedRunIds: [],
-  inProgressRunIds: [],
-  runWhichFailedToMaterialize: null,
-  freshnessInfo: null,
-  lastMaterialization: null,
-  lastMaterializationRunStatus: null,
-  lastObservation: null,
-  partitionStats: null,
-  staleStatus: null,
-  staleCauses: [],
-  assetChecks: [],
-  opNames: [],
-  stepKey: '',
-};
-
 export interface LiveData {
   [assetId: GraphId]: LiveDataForNode;
 }
-
-export const buildLiveDataForNode = (
-  assetNode: AssetLiveNode,
-  assetLatestInfo?: AssetLatestInfo,
-): LiveDataForNode => {
-  const lastMaterialization = assetNode.assetMaterializations[0] || null;
-  const lastObservation = assetNode.assetObservations[0] || null;
-  const latestRun = assetLatestInfo?.latestRun ? assetLatestInfo.latestRun : null;
-
-  return {
-    lastMaterialization,
-    lastMaterializationRunStatus:
-      latestRun && lastMaterialization?.runId === latestRun.id ? latestRun.status : null,
-    lastObservation,
-    assetChecks:
-      assetNode.assetChecksOrError.__typename === 'AssetChecks'
-        ? assetNode.assetChecksOrError.checks
-        : [],
-    stepKey: stepKeyForAsset(assetNode),
-    freshnessInfo: assetNode.freshnessInfo,
-    inProgressRunIds: assetLatestInfo?.inProgressRunIds || [],
-    unstartedRunIds: assetLatestInfo?.unstartedRunIds || [],
-    partitionStats: assetNode.partitionStats || null,
-    runWhichFailedToMaterialize:
-      latestRun && shouldDisplayRunFailure(latestRun, lastMaterialization) ? latestRun : null,
-    opNames: assetNode.opNames,
-  };
-};
 
 export function shouldDisplayRunFailure(
   latestRun: AssetLatestInfoRunFragment,

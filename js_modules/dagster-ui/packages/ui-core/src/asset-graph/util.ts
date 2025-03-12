@@ -1,5 +1,7 @@
+import {LiveDataForNode} from 'shared/asset-graph/LiveDataForNode.oss';
+
 import {StatusCase, buildAssetNodeStatusContent} from './AssetNodeStatusContent';
-import {LiveDataForNode, tokenForAssetKey} from './Utils';
+import {tokenForAssetKey} from './Utils';
 import {assertUnreachable} from '../app/Util';
 import {AssetKeyInput} from '../graphql/types';
 
