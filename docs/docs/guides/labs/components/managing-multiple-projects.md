@@ -82,7 +82,6 @@ And finally, let's check the available component types in `project-2`:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/9-component-type-list.txt"  />
 
-
 As you can see, we are back to only the default list of component types. This is because we are now using the environment of `project-2`, in which we have not installed `dagster-components[sling]`.
 
 ## Load workspace with `dg`
