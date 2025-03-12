@@ -414,7 +414,7 @@ Selects sink assets that depend on assets in the `public_data` group, but do not
 
 <Tabs groupId="examples">
     <TabItem value="dagster-ui" label="Dagster UI">
-    ![Roots that feed to public_data group](/images/guides/build/assets/asset-selection-syntax/select-sinks-of-public-data-group.png)
+    ![Sinks that depend on public_data group](/images/guides/build/assets/asset-selection-syntax/select-sinks-of-public-data-group.png)
     </TabItem>
     <TabItem value="python" label="Python">
     ```python
