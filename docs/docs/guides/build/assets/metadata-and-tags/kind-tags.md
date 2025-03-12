@@ -1,6 +1,6 @@
 ---
 title: "Kind tags"
-description: "Use kind tags to easily categorize assets within you Dagster project."
+description: "Use kind tags to easily categorize assets within your Dagster project."
 sidebar_position: 2000
 ---
 
