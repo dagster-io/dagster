@@ -1,10 +1,6 @@
 ---
 title: Asset jobs
-<<<<<<< HEAD:docs/docs/guides/build/assets/asset-jobs.md
-sidebar_position: 1200
-=======
 sidebar_position: 100
->>>>>>> master:docs/docs/guides/build/jobs/asset-jobs.md
 ---
 
 Jobs are the main unit of execution and monitoring for [asset definitions](/guides/build/assets/defining-assets) in Dagster. An asset job is a type of job that targets a [selection of assets](/guides/build/assets/asset-selection-syntax) and can be launched:
