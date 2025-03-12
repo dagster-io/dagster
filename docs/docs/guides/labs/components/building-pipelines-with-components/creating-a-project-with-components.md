@@ -3,7 +3,7 @@ title: 'Creating a project with components'
 sidebar_position: 100
 ---
 
-import Preview from '../../../partials/\_Preview.md';
+import Preview from '../../../../partials/\_Preview.md';
 
 <Preview />
 

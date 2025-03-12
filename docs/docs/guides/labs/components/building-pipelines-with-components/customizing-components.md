@@ -3,7 +3,7 @@ title: 'Customizing components'
 sidebar_position: 400
 ---
 
-import Preview from '../../../partials/\_Preview.md';
+import Preview from '../../../../partials/\_Preview.md';
 
 <Preview />
 

@@ -3,7 +3,7 @@ title: 'Using existing definitions with components'
 sidebar_position: 100
 ---
 
-import Preview from '../../../partials/\_Preview.md';
+import Preview from '../../../../partials/\_Preview.md';
 
 <Preview />
 
