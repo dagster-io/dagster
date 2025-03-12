@@ -534,6 +534,19 @@
       "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/"
     },
     {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/peer",
+      "destination": "/guides/migrate/airflow-to-dagster/",
+      "permanent": false
+    },    {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/observe",
+      "destination": "/guides/migrate/airflow-to-dagster/",
+      "permanent": false
+    },
+    {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/decommission",
+      "destination": "/guides/migrate/airflow-to-dagster/"
+    },
+    {
       "source": "/integrations/airflow/reference",
       "destination": "/integrations/libraries/airlift/"
     },
