@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections.abc import Generator, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager, ExitStack
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
 
 from typing_extensions import Self
 
@@ -47,6 +47,16 @@ from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
     from dagster._daemon.daemon import DaemonIterator
+
+
+# scheduler_id, next_iteration_timestamp, now
+SchedulerDelayInstrumentation = Callable[[str, float, float], None]
+
+
+def default_scheduler_delay_instrumentation(
+    scheduler_id: str, next_iteration_timestamp: float, now_timestamp: float
+) -> None:
+    pass
 
 
 # how often do we update the job row in the database with the last iteration timestamp.  This
@@ -189,6 +199,7 @@ def execute_scheduler_iteration_loop(
     max_catchup_runs: int,
     max_tick_retries: int,
     shutdown_event: threading.Event,
+    scheduler_delay_instrumentation: SchedulerDelayInstrumentation = default_scheduler_delay_instrumentation,
 ) -> "DaemonIterator":
     from dagster._daemon.daemon import SpanMarker
 
@@ -235,6 +246,7 @@ def execute_scheduler_iteration_loop(
                     scheduler_run_futures=scheduler_run_futures,
                     max_catchup_runs=max_catchup_runs,
                     max_tick_retries=max_tick_retries,
+                    scheduler_delay_instrumentation=scheduler_delay_instrumentation,
                 )
             except Exception:
                 error_info = DaemonErrorCapture.process_exception(
@@ -267,6 +279,7 @@ def launch_scheduled_runs(
     max_catchup_runs: int = DEFAULT_MAX_CATCHUP_RUNS,
     max_tick_retries: int = 0,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
+    scheduler_delay_instrumentation: SchedulerDelayInstrumentation = default_scheduler_delay_instrumentation,
 ) -> "DaemonIterator":
     instance = workspace_process_context.instance
 
@@ -411,6 +424,13 @@ def launch_scheduled_runs(
                 ):
                     # Not enough time has passed for this schedule, don't bother creating a thread
                     continue
+
+                if previous_iteration_times:
+                    scheduler_delay_instrumentation(
+                        schedule.selector_id,
+                        previous_iteration_times.next_iteration_timestamp,
+                        now_timestamp,
+                    )
 
                 future = threadpool_executor.submit(
                     launch_scheduled_runs_for_schedule,
