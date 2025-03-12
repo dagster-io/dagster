@@ -2,7 +2,7 @@ dg --help
 
 Usage: dg [OPTIONS] COMMAND [ARGS]...                                                    
                                                                                           
- CLI for working with Dagster components.                                                 
+ CLI for managing Dagster projects.                                                       
                                                                                           
 ╭─ Options ──────────────────────────────────────────────────────────────────────────────╮
 │ --clear-cache                           Clear the cache.                               │
