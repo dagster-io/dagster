@@ -60,6 +60,7 @@ def main(
         "python_modules/dagster-test",
         "python_modules/dagster-webserver",
         "python_modules/dagit",
+        "python_modules/libraries/dagster-shared",
         "python_modules/libraries/dagster-managed-elements",
         "python_modules/libraries/dagster-airbyte",
         "python_modules/libraries/dagster-aws[stubs,test]",

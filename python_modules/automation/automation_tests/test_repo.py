@@ -7,7 +7,7 @@ from automation.utils import discover_git_root, get_all_repo_packages, git_ls_fi
 # Some libraries are excluded because they either:
 # - lack a Dagster dependency, which is a prerequisite for registering in the DagsterLibraryRegistry.
 # - are temporary or on a separate release schedule from the rest of the libraries.
-EXCLUDE_LIBRARIES = ["dagster-components", "dagster-dg"]
+EXCLUDE_LIBRARIES = ["dagster-components", "dagster-dg", "dagster-shared"]
 
 
 def test_all_libraries_register() -> None:

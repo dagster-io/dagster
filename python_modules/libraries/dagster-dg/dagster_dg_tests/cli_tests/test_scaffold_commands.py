@@ -229,6 +229,10 @@ def validate_pyproject_toml_with_editable(
             "path": str(repo_root / "python_modules" / "dagster-pipes"),
             "editable": True,
         }
+        assert get_toml_node(toml, ("tool", "uv", "sources", "dagster-shared"), dict) == {
+            "path": str(repo_root / "python_modules" / "libraries" / "dagster-shared"),
+            "editable": True,
+        }
         assert get_toml_node(toml, ("tool", "uv", "sources", "dagster-webserver"), dict) == {
             "path": str(repo_root / "python_modules" / "dagster-webserver"),
             "editable": True,
@@ -242,6 +246,7 @@ def validate_pyproject_toml_with_editable(
     else:
         assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster"))
         assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster-pipes"))
+        assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster-shared"))
         assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster-webserver"))
         assert not has_toml_node(toml, ("tool", "uv", "sources", "dagstermill"))
 
