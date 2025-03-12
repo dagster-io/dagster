@@ -34,5 +34,13 @@ def test_definitions_component_empty() -> None:
 
 
 def test_definitions_component_with_definitions_object() -> None:
-    with pytest.raises(ValueError, match="Found a Definitions object"):
-        load_test_component_defs("definitions_implicit/definitions_object_relative_imports")
+    defs = load_test_component_defs("definitions_implicit/definitions_object_relative_imports")
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {
+        AssetKey("asset_in_some_file"),
+        AssetKey("asset_in_other_file"),
+    }
+
+
+def test_definitions_component_with_mulitple_definitions_objects() -> None:
+    with pytest.raises(ValueError, match="Found multiple files "):
+        load_test_component_defs("definitions_implicit/definitions_object_multiple")
