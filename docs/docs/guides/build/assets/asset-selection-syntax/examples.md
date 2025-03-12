@@ -3,7 +3,7 @@ title: 'Asset selection examples'
 sidebar_position: 200
 ---
 
-This page contains common example asset selection queries and their implementation in Python, CLI, and the Dagster UI. For a full explanation of the filters, layers, operands, and functions that you can use to construct your own queries, see "[Asset selection syntax reference](reference)".
+This page contains common example asset selection queries and their implementation in Python, CLI, and the Dagster UI. For a full explanation of the filters, layers, operands, and functions that you can use to construct your own queries, see "[Asset selection syntax reference](/guides/build/assets/asset-selection-syntax/reference)".
 
 The examples in this section use the following asset graph to demonstrate how to use the selection syntax:
 
