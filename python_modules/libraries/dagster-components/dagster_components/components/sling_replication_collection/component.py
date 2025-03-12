@@ -61,7 +61,7 @@ class ComponentsDagsterSlingTranslator(DagsterSlingTranslator):
         base_spec = super().get_asset_spec(obj)
         return self.resolving_info.get_asset_spec(
             base_spec,
-            {self.resolving_info.obj_name: obj},
+            {self.resolving_info.obj_name: obj, "spec": base_spec},
         )
 
 
