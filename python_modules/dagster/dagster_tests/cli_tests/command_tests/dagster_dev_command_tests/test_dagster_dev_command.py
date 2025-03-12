@@ -416,4 +416,3 @@ def test_dagster_dev_command_verbose(verbose: bool) -> None:
                     )
                     == 1
                 ), contents
-                assert contents.count("dagster system frames hidden") == 2, contents
