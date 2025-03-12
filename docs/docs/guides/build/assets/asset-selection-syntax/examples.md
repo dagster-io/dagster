@@ -18,6 +18,9 @@ key:"raw_data_b"+ and +key:"summary_stats_2"
 Selects all assets on the path from the `raw_data_b` asset to the `summary_stats_2` asset.
 
 <Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![All assets on the path between two assets](/images/guides/build/assets/asset-selection-syntax/select-assets-between-two-assets.png)
+    </TabItem>
     <TabItem value="python" label="Python">
     ```python
     raw_data_b_summary_stats_2_job = define_asset_job(
@@ -31,9 +34,6 @@ Selects all assets on the path from the `raw_data_b` asset to the `summary_stats
     dagster asset materialize --select 'key:"raw_data_b"+ and +key:"summary_stats_2"'
     ```
     </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-    ![All assets on the path between two assets](/images/guides/build/assets/asset-selection-syntax/select-assets-between-two-assets.png)
-    </TabItem>
 </Tabs>
 
 ## Select all assets on the path between two sets of assets
@@ -45,6 +45,9 @@ Selects all assets on the path from the `raw_data_b` asset to the `summary_stats
 Selects all assets on the paths between the `raw_data_a` or `raw_data_b` assets and the `a_b_c_for_sales` and `b_c_for_sales` assets.
 
 <Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![All assets between two sets of assets](/images/guides/build/assets/asset-selection-syntax/select-assets-between-two-sets-of-assets.png)
+    </TabItem>
     <TabItem value="python" label="Python">
     ```python
     assets_on_path_job = define_asset_job(
@@ -58,9 +61,6 @@ Selects all assets on the paths between the `raw_data_a` or `raw_data_b` assets 
     dagster asset materialize --select '(key:"raw_data_a" or key:"raw_data_b")+ and +(key:"a_b_c_for_sales" or key:"b_c_for_sales")'
     ```
     </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-    ![All assets between two sets of assets](/images/guides/build/assets/asset-selection-syntax/select-assets-between-two-sets-of-assets.png)
-    </TabItem>
 </Tabs>
 
 ## Select all assets on the path between two sets of assets by tag
@@ -72,6 +72,9 @@ tag:"private"+ and +tag:"public"
 Selects all assets on the paths between assets tagged with `private` and assets tagged with `public`.
 
 <Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![All assets on the path between two sets of assets by tag](/images/guides/build/assets/asset-selection-syntax/select-assets-between-sets-by-tag.png)
+    </TabItem>
     <TabItem value="python" label="Python">
     ```python
     private_public_assets_job = define_asset_job(
@@ -85,9 +88,6 @@ Selects all assets on the paths between assets tagged with `private` and assets 
     dagster asset materialize --select 'tag:"private"+ and +tag:"public"'
     ```
     </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-    ![All assets on the path between two sets of assets by tag](/images/guides/build/assets/asset-selection-syntax/select-assets-between-sets-by-tag.png)
-    </TabItem>
 </Tabs>
 
 ## Select all assets on the path between two groups of assets \{#asset-path}
@@ -99,6 +99,9 @@ group:"sensitive_data"+ and +group:"public_data"
 Selects all assets on the paths from the `sensitive_data` group to the `public_data` group.
 
 <Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![All assets on the path between two groups of assets](/images/guides/build/assets/asset-selection-syntax/select-assets-between-two-groups.png)
+    </TabItem>
     <TabItem value="python" label="Python">
     ```python
     sensitive_to_public_asset_job = define_asset_job(
@@ -112,9 +115,6 @@ Selects all assets on the paths from the `sensitive_data` group to the `public_d
     dagster asset materialize --select 'group:"sensitive_data"+ and +group:"public_data"'
     ```
     </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-    ![All assets on the path between two groups of assets](/images/guides/build/assets/asset-selection-syntax/select-assets-between-two-groups.png)
-    </TabItem>
 </Tabs>
 
 ## Select assets between two assets that go through the "middle" asset
@@ -126,6 +126,9 @@ key:"raw_data_c"+ and +key:"combo_a_b_c_data"+ and +key:"summary_stats_1"
 Selects all assets on the path between the `raw_data_c` asset and `summary_stats_1` asset that go through the `combo_a_b_c_data` asset.
 
 <Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![All assets between two assets that go through a middle asset](/images/guides/build/assets/asset-selection-syntax/select-assets-through-middle-asset.png)
+    </TabItem>
     <TabItem value="python" label="Python">
     ```python
     middle_asset_job = define_asset_job(
@@ -138,9 +141,6 @@ Selects all assets on the path between the `raw_data_c` asset and `summary_stats
     dagster asset list --select 'key:"raw_data_c"+ and +key:"combo_a_b_c_data"+ and +key:"summary_stats_1"'
     dagster asset materialize --select 'key:"raw_data_c"+ and +key:"combo_a_b_c_data"+ and +key:"summary_stats_1"'
     ```
-    </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-    ![All assets between two assets that go through a middle asset](/images/guides/build/assets/asset-selection-syntax/select-assets-through-middle-asset.png)
     </TabItem>
 </Tabs>
 
@@ -164,6 +164,9 @@ def raw_data_a() -> None:
 ```
 
 <Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![Select assets with multiple key components](/images/guides/build/assets/asset-selection-syntax/select-assets-multiple-key-components.png)
+    </TabItem>
     <TabItem value="python" label="Python">
     ```python
     my_prefix_job = define_asset_job(name="my_prefix_job", selection='key:"my_prefix/raw_data_a"')
@@ -174,9 +177,6 @@ def raw_data_a() -> None:
     dagster asset list --select 'key:"my_prefix/raw_data_a"'
     dagster asset materialize --select 'key:"my_prefix/raw_data_a"'
     ```
-    </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-    ![Select assets with multiple key components](/images/guides/build/assets/asset-selection-syntax/select-assets-multiple-key-components.png)
     </TabItem>
 </Tabs>
 
@@ -189,6 +189,9 @@ key:"summary_stats_1" or key:"summary_stats_2"
 ```
 
 <Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![Select multiple assets with or](/images/guides/build/assets/asset-selection-syntax/select-multiple-assets-with-or.png)
+    </TabItem>
     <TabItem value="python" label="Python">
     ```python
     summary_stats_assets_job = define_asset_job(
@@ -202,9 +205,6 @@ key:"summary_stats_1" or key:"summary_stats_2"
     dagster asset materialize --select 'key:"summary_stats_1" or key:"summary_stats_2"'
     ```
     </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-    ![Select multiple assets with or](/images/guides/build/assets/asset-selection-syntax/select-multiple-assets-with-or.png)
-    </TabItem>
 </Tabs>
 
 ## Select downstream assets with a filter \{#filters}
@@ -216,6 +216,9 @@ key:"combo_a_b_c_data"+ and kind:"csv"
 Selects one layer downstream of `combo_a_b_c_data`, limited to assets of kind `csv`.
 
 <Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![Select downstream assets with a filter](/images/guides/build/assets/asset-selection-syntax/select-downstream-assets-with-filters.png)
+    </TabItem>
     <TabItem value="python" label="Python">
     ```python
     downstream_csv_job = define_asset_job(
@@ -229,9 +232,6 @@ Selects one layer downstream of `combo_a_b_c_data`, limited to assets of kind `c
     dagster asset materialize --select 'key:"combo_a_b_c_data"+ and kind:"csv"'
     ```
     </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-    ![Select downstream assets with a filter](/images/guides/build/assets/asset-selection-syntax/select-downstream-assets-with-filters.png)
-    </TabItem>
 </Tabs>
 
 ## Select assets without a specific tag \{#not-tag}
@@ -243,6 +243,9 @@ owner:"nora.dagster@example.com" and not tag:"customer_data"
 Selects all assets owned by `nora.dagster@example.com` **excluding** any assets tagged with `customer_data`.
 
 <Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![Select assets with a specific owner and without a specific tag](/images/guides/build/assets/asset-selection-syntax/select-assets-owner-not-tag.png)
+    </TabItem>
     <TabItem value="python" label="Python">
     ```python
     data_eng_not_private_job = define_asset_job(
@@ -255,9 +258,6 @@ Selects all assets owned by `nora.dagster@example.com` **excluding** any assets 
     dagster asset list --select 'owner:"nora.dagster@example.com" and not tag:"customer_data"'
     dagster asset materialize --select 'owner:"nora.dagster@example.com" and not tag:"customer_data"'
     ```
-    </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-    ![Select assets with a specific owner and without a specific tag](/images/guides/build/assets/asset-selection-syntax/select-assets-owner-not-tag.png)
     </TabItem>
 </Tabs>
 
@@ -272,6 +272,9 @@ Selects all assets owned by `nora.dagster@example.com` **excluding** any assets 
 Selects assets that are either owned by the sales team and of kind `csv`, **or** that belong to the `public_data` group.
 
 <Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![Select a parentheses group or assets that belong in a named group](/images/guides/build/assets/asset-selection-syntax/select-parentheses-group-or-named-group.png)
+    </TabItem>
     <TabItem value="python" label="Python">
     ```python
     sales_csv_public_job = define_asset_job(
@@ -280,11 +283,10 @@ Selects assets that are either owned by the sales team and of kind `csv`, **or**
     ```
     </TabItem>
     <TabItem value="cli" label="CLI">
+    ```shell
     dagster asset list --select '(owner:"team:sales" and kind:"csv") or group:"public_data"'
     dagster asset materialize --select '(owner:"team:sales" and kind:"csv") or group:"public_data"'
-    </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-    ![Select a parentheses group or assets that belong in a named group](/images/guides/build/assets/asset-selection-syntax/select-parentheses-group-or-named-group.png)
+    ```
     </TabItem>
 </Tabs>
 
@@ -297,6 +299,9 @@ not (kind:"s3" or kind:"csv") and key:"raw*"
 Selects assets whose keys contain `raw` and are **not** of the kind `s3` or `csv`.
 
 <Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![Exclude parentheses group with not and select assets that match a key wildcard](/images/guides/build/assets/asset-selection-syntax/select-assets-not-in-parentheses-group-with-wildcard.png)
+    </TabItem>
     <TabItem value="python" label="Python">
     ```python
     not_s3_csv_raw_job = define_asset_job(
@@ -305,21 +310,16 @@ Selects assets whose keys contain `raw` and are **not** of the kind `s3` or `csv
     ```
     </TabItem>
     <TabItem value="cli" label="CLI">
+    ```shell
     dagster asset list --select 'not (kind:"s3" or kind:"csv") and key:"raw*"'
     dagster asset materialize --select 'not (kind:"s3" or kind:"csv") and key:"raw*"'
-    </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-    ![Exclude parentheses group with not and select assets that match a key wildcard](/images/guides/build/assets/asset-selection-syntax/select-assets-not-in-parentheses-group-with-wildcard.png)
+    ```
     </TabItem>
 </Tabs>
 
 ## Select roots or sinks
 
 The examples in this section operate on a selection of assets in the `public_data` group:
-
-```shell
-group:"public_data"
-```
 
 ![Graph of assets in public_data group](/images/guides/build/assets/asset-selection-syntax/all-public-data-group.png)
 
@@ -332,6 +332,9 @@ roots(group:"public_data")
 Selects root assets within the `public_data` group.
 
 <Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![Roots within public_data group](/images/guides/build/assets/asset-selection-syntax/roots-within-public-data-group.png)
+    </TabItem>
     <TabItem value="python" label="Python">
     ```python
     roots_within_public_data_job = define_asset_job(
@@ -340,11 +343,10 @@ Selects root assets within the `public_data` group.
     ```
     </TabItem>
     <TabItem value="cli" label="CLI">
+    ```shell
     dagster asset list --select 'roots(group:"public_data")'
     dagster asset materialize --select 'roots(group:"public_data")'
-    </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-    ![Roots within public_data group](/images/guides/build/assets/asset-selection-syntax/roots-within-public-data-group.png)
+    ```
     </TabItem>
 </Tabs>
 
@@ -357,6 +359,9 @@ sinks(group:"public_data")
 Selects sink assets within the `public_data` group.
 
 <Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![Sinks within public_data group](/images/guides/build/assets/asset-selection-syntax/sinks-within-public-data-group.png)
+    </TabItem>
     <TabItem value="python" label="Python">
     ```python
     sinks_within_public_data_job = define_asset_job(
@@ -365,11 +370,10 @@ Selects sink assets within the `public_data` group.
     ```
     </TabItem>
     <TabItem value="cli" label="CLI">
+    ```shell
     dagster asset list --select 'sinks(group:"public_data")'
     dagster asset materialize --select 'sinks(group:"public_data")'
-    </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-    ![Sinks within public_data group](/images/guides/build/assets/asset-selection-syntax/sinks-within-public-data-group.png)
+    ```
     </TabItem>
 </Tabs>
 
@@ -382,6 +386,9 @@ roots(+group:"public_data")
 Selects root assets that feed into the `public_data` group, but do not belong to that group.
 
 <Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![Roots that feed to public_data group](/images/guides/build/assets/asset-selection-syntax/roots-of-public-data-group.png)
+    </TabItem>
     <TabItem value="python" label="Python">
     ```python
     roots_feed_to_public_data_job = define_asset_job(
@@ -390,11 +397,10 @@ Selects root assets that feed into the `public_data` group, but do not belong to
     ```
     </TabItem>
     <TabItem value="cli" label="CLI">
+    ```shell
     dagster asset list --select 'roots(+group:"public_data")'
     dagster asset materialize --select 'roots(+group:"public_data")'
-    </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-    ![Roots that feed to public_data group](/images/guides/build/assets/asset-selection-syntax/roots-of-public-data-group.png)
+    ```
     </TabItem>
 </Tabs>
 
@@ -404,7 +410,12 @@ Selects root assets that feed into the `public_data` group, but do not belong to
 sinks(group:"public_data"+)
 ```
 
+Selects sink assets that depend on assets in the `public_data` group, but do not belong to that group.
+
 <Tabs groupId="examples">
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![Roots that feed to public_data group](/images/guides/build/assets/asset-selection-syntax/sinks-of-public-data-group.png)
+    </TabItem>
     <TabItem value="python" label="Python">
     ```python
     sinks_feed_to_public_data_job = define_asset_job(
@@ -413,12 +424,9 @@ sinks(group:"public_data"+)
     ```
     </TabItem>
     <TabItem value="cli" label="CLI">
+    ```shell
     dagster asset list --select 'sinks(group:"public_data"+)'
     dagster asset materialize --select 'sinks(group:"public_data"+)'
-    </TabItem>
-    <TabItem value="dagster-ui" label="Dagster UI">
-    ![Roots that feed to public_data group](/images/guides/build/assets/asset-selection-syntax/sinks-of-public-data-group.png)
+    ```
     </TabItem>
 </Tabs>
-
-Selects sink assets that depend on assets in the `public_data` group, but do not belong to that group.
