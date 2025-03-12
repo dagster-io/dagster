@@ -82,6 +82,10 @@
       "destination": "/api/python-api/:path*"
     },
     {
+      "source": "/apidocs/external-assets-rest",
+      "destination": "/api/python-api/external-assets-rest-api"
+    },
+    {
       "source": "/api/libraries/:path*",
       "destination": "/api/python-api/libraries/:path*",
       "permanent": false
@@ -530,8 +534,44 @@
       "destination": "/guides/migrate/airflow-to-dagster/federation/"
     },
     {
+      "source": "/integrations/airlift/federation-tutorial/overview",
+      "destination": "/guides/migrate/airflow-to-dagster/federation/"
+    },
+    {
+      "source": "/integrations/airlift/full_dag",
+      "destination": "/guides/migrate/airflow-to-dagster/dag-level-migration/"
+    },
+    {
+      "source": "/integrations/airlift/operator-migration/kubernetes-pod-operator",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/kubernetes-pod-operator"
+    },
+    {
+      "source": "/integrations/airlift/operator-migration/bash-operator-general",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/bash-operator-general"
+    },
+    {
+      "source": "/integrations/airlift/operator-migration/bash-operator-dbt",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/bash-operator-dbt"
+    },
+    {
+      "source": "/integrations/airlift/operator-migration/python-operator",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/python-operator"
+    },
+    {
+      "source": "/integrations/airlift/reference",
+      "destination": "/guides/migrate/airflow-to-dagster/migration-reference"
+    },
+    {
       "source": "/integrations/libraries/airlift/federation-tutorial/observe",
       "destination": "/guides/migrate/airflow-to-dagster/federation/observe"
+    },
+    {
+      "source": "/integrations/airlift/tutorial",
+      "destination": "/guides/migrate/airflow-to-dagster/"
+    },
+    {
+      "source": "/integrations/airlift/tutorial/setup",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/setup",
     },
     {
       "source": "/integrations/libraries/airlift/federation-tutorial/federated-execution",
@@ -564,6 +604,10 @@
     {
       "source": "/integrations/airflow/reference",
       "destination": "/integrations/libraries/airlift/"
+    },
+    {
+      "source": "/integrations/airlift/airflow-dagster-equivalents",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/"
     },
     {
       "source": "/deployment/open-source",
