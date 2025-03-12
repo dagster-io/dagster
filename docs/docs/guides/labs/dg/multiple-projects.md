@@ -1,6 +1,6 @@
 ---
-title: 'Managing multiple projects with Components'
-sidebar_position: 40
+title: 'Managing multiple projects with dg'
+sidebar_position: 600
 ---
 
 import Preview from '../../../partials/\_Preview.md';

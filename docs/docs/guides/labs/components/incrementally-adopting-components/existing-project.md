@@ -3,7 +3,7 @@ title: 'Using components in an existing project'
 sidebar_position: 200
 ---
 
-import Preview from '../../../partials/\_Preview.md';
+import Preview from '../../../../partials/\_Preview.md';
 
 <Preview />
 
