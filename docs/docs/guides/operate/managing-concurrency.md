@@ -10,7 +10,7 @@ You often want to control the number of concurrent runs for a Dagster job, a spe
 
 :::note
 
-This article assumes familiarity with [assets](/guides/build/assets/) and [jobs](/guides/build/assets/asset-jobs)
+This article assumes familiarity with [assets](/guides/build/assets/) and [jobs](/guides/build/jobs/).
 
 :::
 
