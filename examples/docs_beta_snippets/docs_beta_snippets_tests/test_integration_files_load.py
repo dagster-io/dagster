@@ -42,6 +42,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/looker/asset_graph_filtered.py",
     f"{snippets_folder}/looker/asset_metadata.py",
     f"{snippets_folder}/looker/pdts.py",
+    f"{snippets_folder}/qdrant.py",
 }
 
 

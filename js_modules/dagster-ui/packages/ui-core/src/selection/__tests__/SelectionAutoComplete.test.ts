@@ -1107,7 +1107,7 @@ describe('createAssetSelectionHint', () => {
   });
 
   it('value suggestions should replace entire key=value segment in tag:key=value', () => {
-    expect(testAutocomplete('tag:k|ey=value')).toEqual({
+    expect(testAutocomplete('tag:k|ey=value or key:"test"')).toEqual({
       from: 4,
       list: [
         expect.objectContaining({text: '"key=value1"'}),
@@ -1116,7 +1116,7 @@ describe('createAssetSelectionHint', () => {
       to: 13,
     });
 
-    expect(testAutocomplete('tag:key|=value')).toEqual({
+    expect(testAutocomplete('tag:key|=value or key:"test"')).toEqual({
       from: 4,
       list: [
         expect.objectContaining({text: '"key=value1"'}),
@@ -1125,7 +1125,7 @@ describe('createAssetSelectionHint', () => {
       to: 13,
     });
 
-    expect(testAutocomplete('tag:key=|value')).toEqual({
+    expect(testAutocomplete('tag:key=|value or key:"test"')).toEqual({
       from: 4,
       list: [
         expect.objectContaining({text: '"key=value1"'}),
@@ -1133,7 +1133,7 @@ describe('createAssetSelectionHint', () => {
       ],
       to: 13,
     });
-    expect(testAutocomplete('tag:key=val|ue')).toEqual({
+    expect(testAutocomplete('tag:key=val|ue or key:"test"')).toEqual({
       from: 4,
       list: [
         expect.objectContaining({text: '"key=value1"'}),

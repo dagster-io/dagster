@@ -698,6 +698,10 @@
       "destination": "/guides/build/assets/asset-jobs"
     },
     {
+      "source": "/guides/build/assets/asset-jobs",
+      "destination": "/guides/build/jobs/asset-jobs"
+    },
+    {
       "source": "/concepts/assets/asset-observations",
       "destination": "/guides/build/assets/metadata-and-tags/asset-observations"
     },
@@ -876,6 +880,10 @@
     {
       "source": "/concepts/ops-jobs-graphs/dynamic-graphs",
       "destination": "/guides/build/graphs"
+    },
+    {
+      "source": "/guides/build/graphs",
+      "destination": "/guides/build/ops/graphs"
     },
     {
       "source": "/concepts/ops-jobs-graphs/jobs",

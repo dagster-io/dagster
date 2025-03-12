@@ -135,7 +135,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             e.g. `team:finops`.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
-        kinds: (Optional[Set[str]]): A list of strings representing the kinds of the asset. These
+        kinds: (Optional[Set[str]]): A set of strings representing the kinds of the asset. These
             will be made visible in the Dagster UI.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
