@@ -207,7 +207,7 @@ key:"summary_stats_1" or key:"summary_stats_2"
     </TabItem>
 </Tabs>
 
-## Select downstream assets with a filter \{#filters}
+## Select downstream assets with a filter \{#filter}
 
 ```shell
 key:"combo_a_b_c_data"+ and kind:"csv"
@@ -217,7 +217,7 @@ Selects one layer downstream of `combo_a_b_c_data`, limited to assets of kind `c
 
 <Tabs groupId="examples">
     <TabItem value="dagster-ui" label="Dagster UI">
-    ![Select downstream assets with a filter](/images/guides/build/assets/asset-selection-syntax/select-downstream-assets-with-filters.png)
+    ![Select downstream assets with a filter](/images/guides/build/assets/asset-selection-syntax/select-downstream-assets-with-filter.png)
     </TabItem>
     <TabItem value="python" label="Python">
     ```python
@@ -321,9 +321,9 @@ Selects assets whose keys contain `raw` and are **not** of the kind `s3` or `csv
 
 The examples in this section operate on a selection of assets in the `public_data` group:
 
-![Graph of assets in public_data group](/images/guides/build/assets/asset-selection-syntax/all-public-data-group.png)
+![Graph of assets in public_data group](/images/guides/build/assets/asset-selection-syntax/select-all-public-data-group.png)
 
-### Find all root assets within an asset selection
+### Select all root assets within an asset selection
 
 ```shell
 roots(group:"public_data")
@@ -333,7 +333,7 @@ Selects root assets within the `public_data` group.
 
 <Tabs groupId="examples">
     <TabItem value="dagster-ui" label="Dagster UI">
-    ![Roots within public_data group](/images/guides/build/assets/asset-selection-syntax/roots-within-public-data-group.png)
+    ![Roots within public_data group](/images/guides/build/assets/asset-selection-syntax/select-roots-within-public-data-group.png)
     </TabItem>
     <TabItem value="python" label="Python">
     ```python
@@ -350,7 +350,7 @@ Selects root assets within the `public_data` group.
     </TabItem>
 </Tabs>
 
-### Find all sink assets within an asset selection
+### Select all sink assets within an asset selection
 
 ```shell
 sinks(group:"public_data")
@@ -360,7 +360,7 @@ Selects sink assets within the `public_data` group.
 
 <Tabs groupId="examples">
     <TabItem value="dagster-ui" label="Dagster UI">
-    ![Sinks within public_data group](/images/guides/build/assets/asset-selection-syntax/sinks-within-public-data-group.png)
+    ![Sinks within public_data group](/images/guides/build/assets/asset-selection-syntax/select-sinks-within-public-data-group.png)
     </TabItem>
     <TabItem value="python" label="Python">
     ```python
@@ -377,7 +377,7 @@ Selects sink assets within the `public_data` group.
     </TabItem>
 </Tabs>
 
-### Find all root assets that feed into an asset selection
+### Select all root assets that feed into an asset selection
 
 ```shell
 roots(+group:"public_data")
@@ -387,7 +387,7 @@ Selects root assets that feed into the `public_data` group, but do not belong to
 
 <Tabs groupId="examples">
     <TabItem value="dagster-ui" label="Dagster UI">
-    ![Roots that feed to public_data group](/images/guides/build/assets/asset-selection-syntax/roots-of-public-data-group.png)
+    ![Roots that feed to public_data group](/images/guides/build/assets/asset-selection-syntax/select-roots-of-public-data-group.png)
     </TabItem>
     <TabItem value="python" label="Python">
     ```python
@@ -404,7 +404,7 @@ Selects root assets that feed into the `public_data` group, but do not belong to
     </TabItem>
 </Tabs>
 
-### Find all sink assets that depend on assets in a selection
+### Select all sink assets that depend on assets in a selection
 
 ```shell
 sinks(group:"public_data"+)
@@ -414,7 +414,7 @@ Selects sink assets that depend on assets in the `public_data` group, but do not
 
 <Tabs groupId="examples">
     <TabItem value="dagster-ui" label="Dagster UI">
-    ![Roots that feed to public_data group](/images/guides/build/assets/asset-selection-syntax/sinks-of-public-data-group.png)
+    ![Roots that feed to public_data group](/images/guides/build/assets/asset-selection-syntax/select-sinks-of-public-data-group.png)
     </TabItem>
     <TabItem value="python" label="Python">
     ```python
