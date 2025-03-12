@@ -94,7 +94,7 @@ You can use `roots(selection)` and `sinks(selection)` functions to return the si
 |--------|--------------|
 | `roots(*)` | Find all assets without any upstream dependencies. |
 | `sinks(*)` | Find all assets without any downstream dependencies. |
-| `roots(owner:"team:billing")` | Find all the root assets within the selection of assets owned by the billing team. |
-| `sinks(owner:"team:billing")` | Find all the sink assets within the selection of assets owned by the billing team. |
-| `roots(+owner:"team:billing")` | Find all root assets that feed into assets owned by the billing team. |
-| `sinks(owner:"team:billing"+)` | Find all sink assets that depend on assets owned by the billing team. |
+| `roots(group:"public_data")` | Find all the root assets within the set of assets in the `public_data` group. |
+| `sinks(group:"public_data")` | Find all the sink assets within the set of assets in the `public_data` group. |
+| `roots(+group:"public_data")` | Find all root assets that feed into assets in the `public_data` group, but that are not part of that group. |
+| `sinks(group:"public_data"+)` | Find all sink assets that depend on assets in the `public_data` group, but that are not part of that group. |

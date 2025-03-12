@@ -312,3 +312,113 @@ Selects assets whose keys contain `raw` and are **not** of the kind `s3` or `csv
     ![Exclude parentheses group with not and select assets that match a key wildcard](/images/guides/build/assets/asset-selection-syntax/select-assets-not-in-parentheses-group-with-wildcard.png)
     </TabItem>
 </Tabs>
+
+## Select roots or sinks
+
+The examples in this section operate on a selection of assets in the `public_data` group:
+
+```shell
+group:"public_data"
+```
+
+![Graph of assets in public_data group](/images/guides/build/assets/asset-selection-syntax/all-public-data-group.png)
+
+### Find all root assets within an asset selection
+
+```shell
+roots(group:"public_data")
+```
+
+Selects root assets within the `public_data` group.
+
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+    ```python
+    roots_within_public_data_job = define_asset_job(
+        name="roots_within_public_data_job", selection='roots(group:"public_data")'
+    )
+    ```
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+    dagster asset list --select 'roots(group:"public_data")'
+    dagster asset materialize --select 'roots(group:"public_data")'
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![Roots within public_data group](/images/guides/build/assets/asset-selection-syntax/roots-within-public-data-group.png)
+    </TabItem>
+</Tabs>
+
+### Find all sink assets within an asset selection
+
+```shell
+sinks(group:"public_data")
+```
+
+Selects sink assets within the `public_data` group.
+
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+    ```python
+    sinks_within_public_data_job = define_asset_job(
+        name="sinks_within_public_data_job", selection='sinks(group:"public_data")'
+    )
+    ```
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+    dagster asset list --select 'sinks(group:"public_data")'
+    dagster asset materialize --select 'sinks(group:"public_data")'
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![Sinks within public_data group](/images/guides/build/assets/asset-selection-syntax/sinks-within-public-data-group.png)
+    </TabItem>
+</Tabs>
+
+### Find all root assets that feed into an asset selection
+
+```shell
+roots(+group:"public_data")
+```
+
+Selects root assets that feed into the `public_data` group, but do not belong to that group.
+
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+    ```python
+    roots_feed_to_public_data_job = define_asset_job(
+        name="roots_feed_to_public_data_job", selection='roots(+group:"public_data")'
+    )
+    ```
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+    dagster asset list --select 'roots(+group:"public_data")'
+    dagster asset materialize --select 'roots(+group:"public_data")'
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![Roots that feed to public_data group](/images/guides/build/assets/asset-selection-syntax/roots-of-public-data-group.png)
+    </TabItem>
+</Tabs>
+
+### Find all sink assets that depend on assets in a selection
+
+```shell
+sinks(group:"public_data"+)
+```
+
+<Tabs groupId="examples">
+    <TabItem value="python" label="Python">
+    ```python
+    sinks_feed_to_public_data_job = define_asset_job(
+        name="sinks_feed_to_public_data_job", selection='sinks(group:"public_data"+)'
+    )
+    ```
+    </TabItem>
+    <TabItem value="cli" label="CLI">
+    dagster asset list --select 'sinks(group:"public_data"+)'
+    dagster asset materialize --select 'sinks(group:"public_data"+)'
+    </TabItem>
+    <TabItem value="dagster-ui" label="Dagster UI">
+    ![Roots that feed to public_data group](/images/guides/build/assets/asset-selection-syntax/sinks-of-public-data-group.png)
+    </TabItem>
+</Tabs>
+
+Selects sink assets that depend on assets in the `public_data` group, but do not belong to that group.
