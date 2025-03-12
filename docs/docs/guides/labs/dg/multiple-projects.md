@@ -68,7 +68,7 @@ And now we have a new available component:
 
 ## Add a second project to the workspace
 
-As noted above, environments are scoped per project.  `dg` commands will only use the environment of `project-1` when we are inside the `project-1` directory.
+As noted above, environments are scoped per project.  `dg` commands will only use the environment of `project-1` when you are inside the `project-1` directory.
 
 Let's create another project to demonstrate this:
 
@@ -81,7 +81,6 @@ Now we have two projects. We can list them with:
 And finally, let's check the available component types in `project-2`:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/9-component-type-list.txt"  />
-
 
 As you can see, we are back to only the default list of component types. This is because we are now using the environment of `project-2`, in which we have not installed `dagster-components[sling]`.
 
