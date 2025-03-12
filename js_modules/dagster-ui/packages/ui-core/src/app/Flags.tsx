@@ -135,3 +135,10 @@ export const setFeatureFlags = (flags: FeatureFlagMap) => {
   setFeatureFlagsInternal(flags);
   featureFlagsChannel.postMessage('updated');
 };
+
+export const toggleFeatureFlag = (flag: FeatureFlag) => {
+  const flags = getFeatureFlagsWithoutDefaultValues();
+  flags[flag] = !flags[flag];
+  setFeatureFlags(flags);
+  featureFlagsChannel.postMessage('updated');
+};
