@@ -271,6 +271,11 @@ class SchedulerDaemon(DagsterDaemon):
     def daemon_type(cls) -> str:
         return "SCHEDULER"
 
+    def scheduler_delay_instrumentation(
+        self, scheduler_id: str, next_iteration_timestamp: float, now_timestamp: float
+    ) -> None:
+        pass
+
     def core_loop(
         self,
         workspace_process_context: IWorkspaceProcessContext,
@@ -286,6 +291,7 @@ class SchedulerDaemon(DagsterDaemon):
             scheduler.max_catchup_runs,
             scheduler.max_tick_retries,
             shutdown_event,
+            self.scheduler_delay_instrumentation,
         )
 
 
