@@ -45,7 +45,7 @@ export const AssetSelectionInput = ({
   const onChange = useCallback(
     (value: string) => {
       if (parseAssetSelectionQuery([], value) instanceof Error && isUnmatchedValueQuery(value)) {
-        _onChange(`key:"${value}"`);
+        _onChange(`key:"*${value}*"`);
       } else {
         _onChange(value);
       }
