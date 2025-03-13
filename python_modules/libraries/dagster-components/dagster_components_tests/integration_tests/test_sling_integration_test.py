@@ -25,6 +25,7 @@ from dagster_components.components.sling_replication_collection.component import
 )
 from dagster_components.core.component_decl_builder import ComponentFileModel
 from dagster_components.core.component_defs_builder import YamlComponentDecl, load_defs
+from dagster_components.resolved.context import ResolutionException
 from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_sling import SlingResource
 
@@ -270,7 +271,7 @@ def test_asset_attributes(
     assertion: Optional[Callable[[AssetSpec], bool]],
     should_error: bool,
 ) -> None:
-    wrapper = pytest.raises(ValueError) if should_error else nullcontext()
+    wrapper = pytest.raises(ResolutionException) if should_error else nullcontext()
     with (
         wrapper,
         temp_sling_component_instance(

@@ -1,6 +1,9 @@
+import sys
+import traceback
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -187,7 +190,11 @@ def _get_resolver(
     annotation: type,
     top_level_auto_resolve: Optional[_AutoResolve],
 ) -> Optional[_ModelResolver]:
-    if top_level_auto_resolve and isinstance(annotation, type):
+    if (
+        top_level_auto_resolve
+        and isinstance(annotation, type)
+        and not isinstance(annotation, GenericAlias)  # prevent exceptions on 3.9
+    ):
         if top_level_auto_resolve.via and annotation is get_resolved_kwargs_target_type(
             top_level_auto_resolve.via
         ):
@@ -195,7 +202,6 @@ def _get_resolver(
                 kwargs_type=top_level_auto_resolve.via,
                 target_type=annotation,
             )
-
         if issubclass(annotation, ResolvedFrom):
             return _DirectResolver(annotation)
 
@@ -305,14 +311,30 @@ class Resolver:
         """Resolve this field by invoking the function which will receive the entire parent ResolvableModel."""
         return Resolver(ParentFn(fn))
 
-    def execute(self, context: "ResolutionContext", model: ResolvableModel, field_name: str) -> Any:
-        if isinstance(self.fn, ParentFn):
-            return self.fn.callable(context, model)
-        elif isinstance(self.fn, AttrWithContextFn):
-            attr = getattr(model, field_name)
-            return self.fn.callable(context.at_path(field_name), attr)
-        else:
-            raise ValueError(f"Unsupported DSLFieldResolver type: {self.fn}")
+    def execute(
+        self,
+        context: "ResolutionContext",
+        model: ResolvableModel,
+        field_name: str,
+    ) -> Any:
+        from dagster_components.resolved.context import ResolutionException
+
+        try:
+            if isinstance(self.fn, ParentFn):
+                return self.fn.callable(context, model)
+            elif isinstance(self.fn, AttrWithContextFn):
+                attr = getattr(model, field_name)
+                return self.fn.callable(context.at_path(field_name), attr)
+        except ResolutionException:
+            raise  # already processed
+        except Exception:
+            raise context.build_resolve_fn_exc(
+                traceback.format_exception(*sys.exc_info()),
+                field_name=field_name,
+                model=model,
+            ) from None
+
+        raise ValueError(f"Unsupported Resolver type: {self.fn}")
 
 
 ResolvedType: TypeAlias = Union[type[ResolvedKwargs], type[ResolvedFrom]]
