@@ -23,7 +23,7 @@ from dagster_airlift.core.sensor.sensor_builder import (
     DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     build_airflow_polling_sensor,
 )
-from dagster_airlift.core.serialization.compute import compute_serialized_data
+from dagster_airlift.core.serialization.compute import DagSelectorFn, compute_serialized_data
 from dagster_airlift.core.serialization.defs_construction import (
     construct_automapped_dag_assets_defs,
     construct_dag_assets_defs,
