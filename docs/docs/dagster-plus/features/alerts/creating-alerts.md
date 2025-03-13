@@ -27,7 +27,7 @@ Before you can create alert policies, you will need to [configure an alert notif
 
 ## Using the CLI
 
-1. Create an alert policy configuration file. For examples, see the [example configuratio reference](/dagster-plus/features/alerts/example-config).
+1. Create an alert policy configuration file. For examples, see the [example configuration reference](/dagster-plus/features/alerts/example-config).
 2. Sync the alert policy configuration file to your Dagster+ deployment:
 
 ```bash
