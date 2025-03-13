@@ -7,17 +7,17 @@ import Preview from '../../../../partials/\_Preview.md';
 
 <Preview />
 
-:::note Prerequisites
-
-Before creating a project with components, you must follow the [steps to install `uv` and `dg`](/guides/labs/components/index.md#installation).
-
-:::
-
 After [installing dependencies](/guides/labs/components/index.md#installation), you can scaffold a components-ready project. In the example below, we scaffold a project called `jaffle-platform`:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/2-scaffold.txt"  />
 
 This command builds a project and initializes a new Python virtual environment inside of it. When using `dg`'s default environment management behavior, you won't need to worry about activating this virtual environment yourself.
+
+:::note
+
+To create and manage multiple components-ready projects, see "[Managing multiple projects with dg](/guides/labs/dg/multiple-projects)". Each project will have its own `uv`-managed Python environment.
+
+:::
 
 ## Project structure
 
