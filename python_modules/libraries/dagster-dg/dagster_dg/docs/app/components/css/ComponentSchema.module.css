@@ -100,6 +100,46 @@
   color: var(--color-text-blue);
 }
 
+.scopeFnReturnType {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.scopeFnParameters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scopeFnParameter {
+  font-size: 14px;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+  background-color: var(--color-background-blue);
+  padding: 12px;
+}
+
+.propertyScopes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.propertyScope {
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  background-color: var(--color-background-blue);
+  padding: 12px;
+}
+
+
 .propertyExamples {
   font-size: 14px;
   color: var(--color-text-light);

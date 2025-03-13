@@ -176,9 +176,10 @@ def json_for_all_components(
 ) -> list[ComponentTypeNamespaceJson]:
     """Returns a list of JSON representations of all component types in the registry."""
     component_json = [
-        (key.namespace.split(".")[0], json_for_component_type(key, library_obj.obj))
+        (key.namespace.split(".")[0], json_for_component_type(key, library_obj.object))
         for key, library_obj in registry.items()
-        if isinstance(library_obj.obj, RemoteComponentType) and library_obj.obj.schema is not None
+        if isinstance(library_obj.object, RemoteComponentType)
+        and library_obj.object.schema is not None
     ]
     return [
         ComponentTypeNamespaceJson(
