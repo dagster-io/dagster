@@ -249,9 +249,9 @@ class SlingResource(ConfigurableResource):
             tmp = re.findall(r"inserted ([0-9]*) rows .*into ([\w.:/;-_\"\'{}]*)", metadata_string)
 
         if tmp:
-            if target_type == "database":
+            if target_type and target_type[0] == "database":
                 tmp_metadata["destination_table"] = re.sub(r"[^\w\s.]", "", tmp[0][1])
-            if target_type == "file system":
+            if target_type and target_type[0] == "file system":
                 tmp_metadata["destination_file"] = re.sub(r"[^\w\s.]", "", tmp[0][1])
             tmp_metadata["elapsed_time"] = end_time - start_time
             tmp_metadata["row_count"] = tmp[0][0]
@@ -599,7 +599,8 @@ class SlingResource(ConfigurableResource):
                             logger.debug(asset_key)
                     # Else log that no stream found. This is normal for a few line. But if multiple line come up, further evaluate might be needed for other pattern
                     else:
-                        logger.debug("no match stream name")
+                        if debug:
+                            logger.debug("no match stream name")
             # If current stream is already choose
             else:
                 # Search whether the current stream ended
@@ -610,9 +611,7 @@ class SlingResource(ConfigurableResource):
                     metadata = self._query_metadata("\n".join(metadata_text), start_time=start_time)
                     start_time = time.time()
                     metadata["stream_name"] = current_stream
-                    if debug:
-                        logger.debug(metadata)
-                        logger.debug(metadata_text)
+                    logger.debug(metadata)
                     if context.has_assets_def:
                         yield MaterializeResult(asset_key=asset_key, metadata=metadata)
                     else:
