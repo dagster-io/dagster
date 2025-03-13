@@ -69,10 +69,14 @@ def resolve_translator(
     context: ResolutionContext, model: "SlingReplicationModel"
 ) -> DagsterSlingTranslator:
     # TODO: Consider supporting owners and code_version in the future
-    if model.asset_attributes and model.asset_attributes.owners:
-        raise ValueError("owners are not supported for sling_replication_collection component")
-    if model.asset_attributes and model.asset_attributes.code_version:
-        raise ValueError("code_version is not supported for sling_replication_collection component")
+    if model.asset_attributes and isinstance(model.asset_attributes, AssetAttributesModel):
+        if model.asset_attributes.owners:
+            raise ValueError("owners are not supported for sling_replication_collection component")
+        if model.asset_attributes.code_version:
+            raise ValueError(
+                "code_version is not supported for sling_replication_collection component"
+            )
+
     return ComponentsDagsterSlingTranslator(
         resolving_info=TranslatorResolvingInfo(
             "stream_definition",
@@ -104,7 +108,7 @@ class SlingReplicationModel(ResolvableModel):
         description="The metadata to include on materializations of the assets produced by the Sling replication.",
     )
     asset_attributes: Annotated[
-        Optional[AssetAttributesModel],
+        Optional[Union[str, AssetAttributesModel]],
         ResolvableFieldInfo(required_scope={"stream_definition"}),
     ] = Field(
         None,

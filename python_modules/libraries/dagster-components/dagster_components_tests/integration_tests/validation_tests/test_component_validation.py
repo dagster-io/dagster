@@ -37,6 +37,16 @@ DEFS_TEST_CASES = [
             "_inner_error()",
         ),
     ),
+    ComponentValidationTestCase(
+        component_path="validation/basic_component_resolve_exc",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
+        should_error=True,
+        validate_error_msg=msg_includes_all_of(
+            "component.yaml:6",
+            'raise Exception("boom")',
+            "_inner_error()",
+        ),
+    ),
 ]
 
 

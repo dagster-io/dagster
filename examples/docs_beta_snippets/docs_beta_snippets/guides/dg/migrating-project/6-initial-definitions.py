@@ -1,5 +1,6 @@
-import dagster as dg
 from my_existing_project import assets
+
+import dagster as dg
 
 all_assets = dg.load_assets_from_modules([assets])
 
