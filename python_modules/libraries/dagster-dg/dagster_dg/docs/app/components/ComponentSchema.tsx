@@ -25,22 +25,19 @@ export default function ComponentSchema({schema}: Props) {
   }
 
   const jsonSchema: JSONSchema7 = json;
-  const title = jsonSchema.title;
-  const defs = jsonSchema.$defs;
-  const properties = jsonSchema.properties ?? {};
-
-  return <Root title={title} properties={properties} defs={defs} />;
+  return <SchemaRoot schema={jsonSchema} defs={jsonSchema.$defs} />;
 }
 
-function Root({
-  title,
-  properties,
+function SchemaRoot({
+  schema,
   defs,
 }: {
-  title: string | undefined;
-  properties: Record<string, JSONSchema7Definition>;
+  schema: JSONSchema7;
   defs: Record<string, JSONSchema7Definition> | undefined;
 }) {
+  const title = schema.title;
+  const properties = schema.properties ?? {};
+
   return (
     <div className={styles.schemaContainer}>
       {title ? <div className={styles.schemaTitle}>{title}</div> : null}
@@ -72,25 +69,9 @@ function Property({
 
   const {anyOf, type, description, default: defaultValue, $ref, required, examples} = property;
 
-  const expandable =
-    !!$ref ||
-    (type === 'array' &&
-      property.items &&
-      Object.values(property.items).some((item) => typeof item !== 'boolean' && !!item.$ref)) ||
-    !!(
-      anyOf &&
-      anyOf.some(
-        (item) =>
-          typeof item !== 'boolean' &&
-          (item.type === 'object' || item.type === 'array' || !!item.$ref),
-      )
-    );
+  const expandable = isExpandableProperty(property);
 
   const firstExample = examples ? (Array.isArray(examples) ? examples[0] : examples) : null;
-
-  const onClick = () => {
-    console.log(name, property);
-  };
 
   return (
     <div className={styles.propertyRoot}>
@@ -105,9 +86,9 @@ function Property({
         <div className={styles.property}>
           <div className={styles.propertyNameAndTypes}>
             <div className={styles.propertyName}>{name}</div>
-            {$ref ? <PropertyRef ref={$ref} defs={defs} onClick={onClick} /> : null}
-            {type ? <PropertyType property={property} defs={defs} onClick={onClick} /> : null}
-            {anyOf ? <PropertyAnyOf anyOf={anyOf} defs={defs} onClick={onClick} /> : null}
+            {$ref ? <PropertyRef ref={$ref} defs={defs} /> : null}
+            {type ? <PropertyType property={property} defs={defs} /> : null}
+            {anyOf ? <PropertyAnyOf anyOf={anyOf} defs={defs} /> : null}
           </div>
           {required ? <div className={styles.required}>required</div> : null}
         </div>
@@ -134,6 +115,41 @@ function Property({
   );
 }
 
+function isExpandableProperty(property: JSONSchema7): boolean {
+  const {type, anyOf, $ref} = property;
+
+  if ($ref) {
+    return true;
+  }
+
+  if (type === 'array') {
+    const {items} = property;
+    if (items === undefined || items === true || items === false) {
+      return false;
+    }
+
+    if (Array.isArray(items)) {
+      return items
+        .filter((item): item is JSONSchema7 => filterSchema(item))
+        .some((item) => isExpandableProperty(item));
+    }
+
+    return isExpandableProperty(items);
+  }
+
+  if (anyOf) {
+    return anyOf
+      .filter((item): item is JSONSchema7 => filterSchema(item))
+      .some((item) => isExpandableProperty(item));
+  }
+
+  return false;
+}
+
+function filterSchema(property: JSONSchema7Definition) {
+  return property !== undefined && property !== true && property !== false;
+}
+
 function ExpandedRoot({
   property,
   defs,
@@ -145,12 +161,30 @@ function ExpandedRoot({
     return null;
   }
 
-  const {properties, anyOf, $ref, title} = property;
+  const {properties, anyOf, $ref, type} = property;
 
   if (properties) {
     return (
       <div className={styles.expansion}>
-        <Root title={title} properties={properties} defs={defs} />
+        <SchemaRoot schema={property} defs={defs} />
+      </div>
+    );
+  }
+
+  if (type === 'array') {
+    const items = Array.isArray(property.items)
+      ? property.items
+      : property.items
+        ? [property.items]
+        : [];
+
+    return (
+      <div className={styles.expansion}>
+        {items
+          .filter((item) => typeof item !== 'boolean' && typeof item !== 'undefined')
+          .map((item, ii) => {
+            return <ExpandedRoot key={ii} property={item} defs={defs} />;
+          })}
       </div>
     );
   }
@@ -174,7 +208,7 @@ function ExpandedRoot({
       if (typeof definition !== 'boolean' && typeof definition !== 'undefined') {
         return (
           <div className={styles.expansion}>
-            <Root title={refName} properties={definition.properties ?? {}} defs={defs} />
+            <SchemaRoot schema={definition} defs={defs} />
           </div>
         );
       }
@@ -208,17 +242,15 @@ function propertyTypeToString(typeName: JSONSchema7TypeName) {
 function PropertyRef({
   ref,
   defs,
-  onClick,
 }: {
   ref: string;
   defs: Record<string, JSONSchema7Definition> | undefined;
-  onClick: () => void;
 }) {
   const refName = ref.split('/').pop();
   if (refName) {
     const definition = defs?.[refName];
     if (definition) {
-      return <PropertyType title={refName} property={definition} defs={defs} onClick={onClick} />;
+      return <PropertyType title={refName} property={definition} defs={defs} />;
     }
   }
   return null;
@@ -228,15 +260,13 @@ function PropertyType({
   title,
   property,
   defs,
-  onClick,
 }: {
   title?: string;
   property: JSONSchema7Definition;
   defs: Record<string, JSONSchema7Definition> | undefined;
-  onClick: () => void;
 }) {
   if (property === true || property === false) {
-    return <TypeTag name={String(property)} onClick={onClick} />;
+    return <TypeTag name={String(property)} />;
   }
 
   if (!property) {
@@ -249,7 +279,7 @@ function PropertyType({
     return (
       <div>
         {items.map((item) => (
-          <TypeTag key={item} name={propertyTypeToString(item)} onClick={onClick} />
+          <TypeTag key={item} name={propertyTypeToString(item)} />
         ))}
       </div>
     );
@@ -258,7 +288,7 @@ function PropertyType({
   if (type === 'array') {
     return (
       <div>
-        <ArrayTag items={property.items} defs={defs} onClick={onClick} />
+        <ArrayTag items={property.items} defs={defs} />
       </div>
     );
   }
@@ -269,19 +299,19 @@ function PropertyType({
     if (refName) {
       const definition = defs?.[refName];
       if (definition !== undefined) {
-        return <PropertyType title={refName} property={definition} defs={defs} onClick={onClick} />;
+        return <PropertyType title={refName} property={definition} defs={defs} />;
       }
     }
     return null;
   }
 
   if (title) {
-    return <TypeTag name={title} onClick={onClick} />;
+    return <TypeTag name={title} />;
   }
 
   switch (type) {
     case 'object':
-      return <TypeTag name={propertyTypeToString(type)} onClick={onClick} />;
+      return <TypeTag name={propertyTypeToString(type)} />;
     case 'string':
     case 'number':
     case 'boolean':
@@ -296,17 +326,15 @@ function PropertyType({
 function PropertyAnyOf({
   anyOf,
   defs,
-  onClick,
 }: {
   anyOf: JSONSchema7['anyOf'];
   defs: Record<string, JSONSchema7Definition> | undefined;
-  onClick: () => void;
 }) {
   return (
     <div className={styles.anyOf}>
-      <div>Any of:</div>
+      <div className={styles.anyOfLabel}>Any of:</div>
       {(anyOf ?? []).map((definition, ii) => {
-        return <PropertyType key={ii} property={definition} defs={defs} onClick={onClick} />;
+        return <PropertyType key={ii} property={definition} defs={defs} />;
       })}
     </div>
   );

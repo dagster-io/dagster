@@ -9,13 +9,7 @@
   color: var(--color-text-light);
 }
 
-.clickable {
+.objectType {
   background-color: var(--color-background-cyan);
   color: var(--color-text-cyan);
-  transition: background-color 0.1s linear;
-  cursor: pointer;
-}
-
-.clickable:hover {
-  background-color: var(--color-background-gray-hover);
 }
