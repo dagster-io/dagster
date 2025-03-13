@@ -12,6 +12,7 @@ from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
     MASK_SLING_PROMO,
     MASK_SLING_WARNING,
     MASK_TIME,
+    MASK_USING_ENVIRONMENT,
     format_multiline,
     isolated_snippet_generation_environment,
 )
@@ -59,7 +60,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             snippet_replace_regex=[
                 MASK_EDITABLE_DAGSTER,
                 MASK_JAFFLE_PLATFORM,
-                (r"\nUsing[\s\S]*", "\n..."),
+                MASK_USING_ENVIRONMENT,
             ],
         )
 
