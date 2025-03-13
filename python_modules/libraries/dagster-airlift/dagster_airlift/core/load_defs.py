@@ -42,7 +42,7 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
     mapped_assets: Sequence[MappedAsset]
     source_code_retrieval_enabled: Optional[bool]
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS
-    dag_selector_fn: Optional[Callable[[DagInfo], bool]] = None
+    dag_selector_fn: Optional[DagSelectorFn] = None
 
     @property
     def defs_key(self) -> str:
