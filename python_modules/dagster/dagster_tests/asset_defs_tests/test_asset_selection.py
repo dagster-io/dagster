@@ -813,6 +813,12 @@ def test_from_string():
     ) | AssetSelection.assets("my_asset").upstream(depth=MAX_NUM, include_self=True)
     assert AssetSelection.from_string("tag:foo=bar") == AssetSelection.tag("foo", "bar")
     assert AssetSelection.from_string("tag:foo") == AssetSelection.tag("foo", "")
+    assert AssetSelection.from_string("key:prefix/thing") == KeyWildCardAssetSelection(
+        selected_key_wildcard="prefix/thing"
+    )
+    assert AssetSelection.from_string('key:"prefix/thing*"') == KeyWildCardAssetSelection(
+        selected_key_wildcard="prefix/thing*"
+    )
 
 
 def test_tag():

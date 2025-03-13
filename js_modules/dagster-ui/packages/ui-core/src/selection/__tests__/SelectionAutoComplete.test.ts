@@ -3,7 +3,7 @@ import {createProvider} from '../SelectionAutoCompleteProvider';
 
 describe('createAssetSelectionHint', () => {
   const attributesMap = {
-    key: ['asset1', 'asset2', 'asset3'],
+    key: ['asset1', 'asset2', 'asset3', 'prefix/thing1', 'prefix/thing2'],
     tag: ['tag1', 'tag2', 'tag3', 'key=value1', 'key=value2'],
     owner: ['marco@dagsterlabs.com', 'team:frontend'],
     group: ['group1', 'group2'],
@@ -559,6 +559,12 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({
           text: '"asset3"',
         }),
+        expect.objectContaining({
+          text: '"prefix/thing1"',
+        }),
+        expect.objectContaining({
+          text: '"prefix/thing2"',
+        }),
       ],
       from: 56, // cursor location
       to: 56, // cursor location
@@ -1029,6 +1035,8 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({text: '"asset1"'}),
         expect.objectContaining({text: '"asset2"'}),
         expect.objectContaining({text: '"asset3"'}),
+        expect.objectContaining({text: '"prefix/thing1"'}),
+        expect.objectContaining({text: '"prefix/thing2"'}),
       ],
       to: 60,
     });
@@ -1152,6 +1160,18 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({text: 'code_location:"repo2@location2"'}),
       ],
       to: 4,
+    });
+  });
+
+  it('Allows slashes in identifiers', () => {
+    expect(testAutocomplete('prefix/th|ing')).toEqual({
+      from: 0,
+      list: [
+        expect.objectContaining({text: 'key:"*prefix/thing*"'}),
+        expect.objectContaining({text: 'key:"prefix/thing1"'}),
+        expect.objectContaining({text: 'key:"prefix/thing2"'}),
+      ],
+      to: 12,
     });
   });
 });
