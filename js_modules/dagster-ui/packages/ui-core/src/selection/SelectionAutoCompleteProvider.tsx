@@ -218,14 +218,15 @@ export const createProvider = <
     value: TAttributeMap[keyof TAttributeMap][0];
     query: string;
   }) {
+    const queryLower = query.toLowerCase();
     if (typeof value !== 'string') {
       return (
-        value.key.includes(query) ||
-        value.value?.includes(query) ||
-        `${value.key}=${value.value ?? ''}`.includes(query)
+        value.key.toLowerCase().includes(queryLower) ||
+        value.value?.toLowerCase().includes(queryLower) ||
+        `${value.key}=${value.value ?? ''}`.toLowerCase().includes(queryLower)
       );
     }
-    return value.includes(query);
+    return value.toLowerCase().includes(queryLower);
   }
 
   function createAttributeSuggestion({
