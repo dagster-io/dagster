@@ -27,10 +27,9 @@ Before you can create alert policies, you will need to [configure an alert notif
 
 ## Using the CLI
 
-To sync an alert policy configuration file to your Dagster+ deployment, run the following command:
+1. Create an alert policy configuration file. For examples, see the [example configuratio reference](/dagster-plus/features/alerts/example-config).
+2. Sync the alert policy configuration file to your Dagster+ deployment:
 
 ```bash
 dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
 ```
-
-For example alert policy configuration files, see the [alert policy types reference](/dagster-plus/features/alerts/alert-policy-types).
