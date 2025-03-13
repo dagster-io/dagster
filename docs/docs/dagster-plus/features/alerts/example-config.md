@@ -142,7 +142,7 @@ Alerting when a Hybrid agent becomes unavailable is only available for [Hybrid d
 
 <Tabs groupId="notification_service">
   <TabItem value='email' label='Email'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/credit-budget-alert.yaml" language="yaml" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/credit-budget-alert-email.yaml" language="yaml" />
   </TabItem>
   <TabItem value='microsoft_teams' label='Microsoft Teams'>
     <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/credit-budget-alert-microsoft_teams.yaml" language="yaml" />
