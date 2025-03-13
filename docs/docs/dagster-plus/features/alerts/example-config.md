@@ -15,16 +15,16 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
 
 <Tabs groupId="notification_service">
   <TabItem value='email' label='Email'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-email.yaml" language="yaml" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/asset-materialization-failure-alert-email.yaml" language="yaml" />
   </TabItem>
   <TabItem value='microsoft_teams' label='Microsoft Teams'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-microsoft_teams.yaml" language="yaml" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/asset-materialization-failure-alert-microsoft_teams.yaml" language="yaml" />
   </TabItem>
   <TabItem value='pagerduty' label='PagerDuty'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-pagerduty.yaml" language="yaml" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/asset-materialization-failure-alert-pagerduty.yaml" language="yaml" />
   </TabItem>
   <TabItem value='slack' label='Slack'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-slack.yaml" language="yaml" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/asset-materialization-failure-alert-slack.yaml" language="yaml" />
   </TabItem>
 </Tabs>
 
