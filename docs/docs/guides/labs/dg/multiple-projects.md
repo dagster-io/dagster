@@ -21,7 +21,7 @@ A workspace does not define a Python environment by default. Instead, Python env
 
 To scaffold a new workspace with an initial project called `project-1`, run `dg init`:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/1-dg-init.txt" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/workspace/1-dg-init.txt" />
 
 This will create a new directory called `workspace` with a `projects` subdirectory that contains `project-1`. It will also set up a new `uv`-managed Python environment for this project. 
 
@@ -29,11 +29,11 @@ This will create a new directory called `workspace` with a `projects` subdirecto
 
 The new workspace has the following structure:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/2-tree.txt" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/workspace/2-tree.txt" />
 
 The `pyproject.toml` file for the `workspace` folder contains an `is_workspace` setting that marks this directory as a workspace:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/3-pyproject.toml" language="TOML" title="workspace/pyproject.toml" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/workspace/3-pyproject.toml" language="TOML" title="workspace/pyproject.toml" />
 
 :::note
 
@@ -44,45 +44,19 @@ The `pyproject.toml` file for the `workspace` folder contains an `is_workspace` 
 The `project-1` directory contains a `pyproject.toml` file that defines
 it as a Dagster project:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/4-project-pyproject.toml" language="TOML" title="workspace/projects/project-1/pyproject.toml" />
-
-### Review available component types
-
-Let's enter this directory and search for registered component types:
-
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/5-component-type-list.txt"  />
-
-This is the default set of component types available in every new project. We can add to it by installing `dagster-components[sling]`:
-
-<CliInvocationExample contents="uv add 'dagster-components[sling]'" />
-
-:::note
-
-Due to a bug in `sling` package metadata, if you are on a MacOS computer with an Apple Silicon chip, you may also need to run `uv add sling_mac_arm64`.
-
-:::
-
-And now we have a new available component:
-
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/6-component-type-list.txt"  />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/workspace/4-project-pyproject.toml" language="TOML" title="workspace/projects/project-1/pyproject.toml" />
 
 ## Add a second project to the workspace
 
 As noted above, environments are scoped per project.  `dg` commands will only use the environment of `project-1` when you are inside the `project-1` directory.
 
-Let's create another project to demonstrate this:
+Let's create another project:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/7-scaffold-project.txt"  />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/workspace/5-scaffold-project.txt"  />
 
 Now we have two projects. We can list them with:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/8-project-list.txt"  />
-
-And finally, let's check the available component types in `project-2`:
-
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/workspace/9-component-type-list.txt"  />
-
-As you can see, we are back to only the default list of component types. This is because we are now using the environment of `project-2`, in which we have not installed `dagster-components[sling]`.
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/workspace/6-project-list.txt"  />
 
 ## Load workspace with `dg`
 
