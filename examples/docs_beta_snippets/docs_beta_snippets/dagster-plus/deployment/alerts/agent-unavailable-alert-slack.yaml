@@ -1,10 +1,10 @@
 # alert_policies.yaml
 
 alert_policies:
-  description: Sends a Slack message when a code location fails to load.
+  description: Sends a Slack message when a Hybrid agent becomes unavailable.
   event_types:
-  - CODE_LOCATION_ERROR
-  name: code-location-error-slack
+  - AGENT_UNAVAILABLE
+  name: agent-unavailable-alert-slack
   notification_service:
     slack:
       slack_channel_name: notifications

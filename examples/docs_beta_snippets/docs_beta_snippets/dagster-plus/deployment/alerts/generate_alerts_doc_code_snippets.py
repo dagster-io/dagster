@@ -102,7 +102,7 @@ ALERT_TYPES = [
 By default, these alerts will target all runs in the deployment, but they can be scoped to runs with a specific tag.""",
         ui_label="Run alert",
         ui_prose="5. Select **Job failure**.\n\nIf desired, add **tags** in the format `{key}:{value}` to filter the runs that will be considered.",
-        alert_name="schedule-sensor-failure",
+        alert_name="run-alert-failure",
         event_types=["JOB_FAILURE"],
         config_snippet={"tags": {"important": "true"}},
     ),
@@ -129,7 +129,7 @@ By default, these alerts will target all runs in the deployment, but they can be
 By default, these alerts will target all assets in the deployment, but they can be scoped to a specific asset or group of assets.""",
         ui_label="Asset alert",
         ui_prose="5. Select **Failure** under the **Materializations** heading.\n\nIf desired, select a **target** from the dropdown menu to scope this alert to a specific asset or group.",
-        alert_name="schedule-sensor-failure",
+        alert_name="asset-materialization-failure-alert",
         event_types=["ASSET_MATERIALIZATION_FAILED"],
         config_snippet={
             "alert_targets": [
@@ -187,15 +187,23 @@ Alerts are sent only when a schedule/sensor transitions from **success** to **fa
     AlertType(
         condition_description="when a Hybrid agent becomes unavailable",
         mdx_prose=""":::note
-This is only available for [Hybrid](/todo) deployments.
+This is only available for [Hybrid](/dagster-plus/deployment/deployment-types/hybrid/) deployments.
 :::
 
 You can set up alerts to fire if your Hybrid agent hasn't sent a heartbeat in the last 5 minutes.""",
-        ui_label="Code location error alert",
-        alert_name="code-location-error",
+        ui_label="Agent unavailable alert",
+        alert_name="agent-unavailable-alert",
         event_types=["AGENT_UNAVAILABLE"],
         config_snippet=None,
     ),
+    AlertType(
+        condition_description="when a credit budget limit has been exceeded",
+        mdx_prose="",
+        ui_label="Credit budget alert",
+        alert_name="credit-budget-alert",
+        event_types=["INSIGHTS_CONSUMPTION_EXCEEDED"],
+        config_snippet=None,
+    )
 ]
 
 

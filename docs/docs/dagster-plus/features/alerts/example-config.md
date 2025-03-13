@@ -51,16 +51,16 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
 
 <Tabs groupId="notification_service">
   <TabItem value='email' label='Email'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-email.yaml" language="yaml" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/run-alert-failure-email.yaml" language="yaml" />
   </TabItem>
   <TabItem value='microsoft_teams' label='Microsoft Teams'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-microsoft_teams.yaml" language="yaml" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/run-alert-failure-microsoft_teams.yaml" language="yaml" />
   </TabItem>
   <TabItem value='pagerduty' label='PagerDuty'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-pagerduty.yaml" language="yaml" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/run-alert-failure-pagerduty.yaml" language="yaml" />
   </TabItem>
   <TabItem value='slack' label='Slack'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-slack.yaml" language="yaml" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/run-alert-failure-slack.yaml" language="yaml" />
   </TabItem>
 </Tabs>
 
@@ -115,10 +115,6 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
   </TabItem>
 </Tabs>
 
-## Insights metric alert
-
-TODO
-
 ## Agent downtime alert
 
 :::note
@@ -129,19 +125,32 @@ Alerting when a Hybrid agent becomes unavailable is only available for [Hybrid d
 
 <Tabs groupId="notification_service">
   <TabItem value='email' label='Email'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/code-location-error-email.yaml" language="yaml" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/agent-unavailable-alert-email.yaml" language="yaml" />
   </TabItem>
   <TabItem value='microsoft_teams' label='Microsoft Teams'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/code-location-error-microsoft_teams.yaml" language="yaml" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/agent-unavailable-alert-microsoft_teams.yaml" language="yaml" />
   </TabItem>
   <TabItem value='pagerduty' label='PagerDuty'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/code-location-error-pagerduty.yaml" language="yaml" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/agent-unavailable-alert-pagerduty.yaml" language="yaml" />
   </TabItem>
   <TabItem value='slack' label='Slack'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/code-location-error-slack.yaml" language="yaml" />
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/agent-unavailable-alert-slack.yaml" language="yaml" />
   </TabItem>
 </Tabs>
 
 ## Credit budget alert
 
-TODO
+<Tabs groupId="notification_service">
+  <TabItem value='email' label='Email'>
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/credit-budget-alert.yaml" language="yaml" />
+  </TabItem>
+  <TabItem value='microsoft_teams' label='Microsoft Teams'>
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/credit-budget-alert-microsoft_teams.yaml" language="yaml" />
+  </TabItem>
+  <TabItem value='pagerduty' label='PagerDuty'>
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/credit-budget-alert-pagerduty.yaml" language="yaml" />
+  </TabItem>
+  <TabItem value='slack' label='Slack'>
+    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/credit-budget-alert-slack.yaml" language="yaml" />
+  </TabItem>
+</Tabs>
