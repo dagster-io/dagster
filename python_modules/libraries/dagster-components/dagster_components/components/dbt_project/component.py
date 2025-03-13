@@ -37,7 +37,7 @@ from dagster_components.resolved.core_models import (
     OpSpecModel,
     ResolutionContext,
 )
-from dagster_components.resolved.metadata import ResolvableFieldInfo
+from dagster_components.resolved.metadata import ResolvableFieldInfo, ScopeMetadata
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
 from dagster_components.scaffold import scaffold_with
 from dagster_components.utils import TranslatorResolvingInfo
@@ -48,7 +48,7 @@ class DbtProjectModel(ResolvableModel):
     op: Optional[OpSpecModel] = None
     asset_attributes: Annotated[
         Optional[AssetAttributesModel],
-        ResolvableFieldInfo(required_scope={"node"}),
+        ResolvableFieldInfo(required_scope={"node": ScopeMetadata()}),
     ] = None
     asset_post_processors: Optional[Sequence[AssetPostProcessorModel]] = None
     select: str = "fqn:*"

@@ -28,7 +28,7 @@ from dagster_components.resolved.core_models import (
     OpSpec,
     OpSpecModel,
 )
-from dagster_components.resolved.metadata import ResolvableFieldInfo
+from dagster_components.resolved.metadata import ResolvableFieldInfo, ScopeMetadata
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
 from dagster_components.scaffold import scaffold_with
 from dagster_components.utils import TranslatorResolvingInfo
@@ -105,7 +105,7 @@ class SlingReplicationModel(ResolvableModel):
     )
     asset_attributes: Annotated[
         Optional[AssetAttributesModel],
-        ResolvableFieldInfo(required_scope={"stream_definition"}),
+        ResolvableFieldInfo(required_scope={"stream_definition": ScopeMetadata()}),
     ] = Field(
         None,
         description="Customizations to the assets produced by the Sling replication.",

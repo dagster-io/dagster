@@ -24,6 +24,7 @@ from typing_extensions import Self
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
 from dagster_components.core.library_object_key import LibraryObjectKey
 from dagster_components.resolved.context import ResolutionContext
+from dagster_components.resolved.metadata import ResolvableFieldInfo, ScopeMetadata
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, resolve_model
 from dagster_components.scaffold import Scaffolder, get_scaffolder, scaffold_with
 from dagster_components.utils import format_error_message
@@ -91,11 +92,26 @@ class Component(ABC):
         docstring = cls.__doc__
         clean_docstring = _clean_docstring(docstring) if docstring else None
         component_schema = cls.get_schema()
+
+        json_schema = (
+            {
+                **component_schema.model_json_schema(),
+                "dagster_required_scope": "bar",
+            }
+            if component_schema
+            else None
+        )
+
+        if json_schema:
+            json_schema["dagster_required_scope"] = get_scope_metadata(cls).json_schema_extra[
+                "dagster_required_scope"
+            ]
+
         return {
             "objtype": "component-type",
             "summary": clean_docstring.split("\n\n")[0] if clean_docstring else None,
             "description": clean_docstring if clean_docstring else None,
-            "schema": None if component_schema is None else component_schema.model_json_schema(),
+            "schema": json_schema,
         }
 
     @classmethod
@@ -424,3 +440,20 @@ def component(
 
 def is_component_loader(obj: Any) -> bool:
     return getattr(obj, COMPONENT_LOADER_FN_ATTR, False)
+
+
+def get_scope_metadata(component_type: type[Component]) -> ResolvableFieldInfo:
+    context = ResolutionContext.default().with_scope(**component_type.get_additional_scope())
+
+    required_scope = {}
+    for key, value in context.scope.items():
+        if isinstance(value, Callable):
+            required_scope[key] = ScopeMetadata(
+                scope_type=type(value),
+                description=value.__doc__,
+                scope_parameters=inspect.signature(value).parameters,
+                scope_return_type=inspect.signature(value).return_annotation,
+            )
+        else:
+            required_scope[key] = ScopeMetadata(scope_type=type(value), description=None)
+    return ResolvableFieldInfo(required_scope=required_scope)

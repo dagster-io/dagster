@@ -1,12 +1,58 @@
+import inspect
 from collections.abc import Iterator, Mapping, Sequence, Set
+from dataclasses import dataclass
+from inspect import Parameter
 from typing import Any, Optional, Union
 
 import dagster._check as check
 from pydantic.fields import FieldInfo
+from typing_extensions import get_args
 
 REF_BASE = "#/$defs/"
 REF_TEMPLATE = f"{REF_BASE}{{model}}"
 JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY = "dagster_required_scope"
+
+
+@dataclass
+class ScopeMetadata:
+    scope_type: type = Any
+    description: Optional[str] = None
+    scope_parameters: Optional[Mapping[str, Parameter]] = None
+    scope_return_type: Optional[type] = None
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "scope_type": get_str_representation(self.scope_type),
+            "description": self.description,
+            "scope_parameters": (
+                {
+                    k: {
+                        "name": k,
+                        "type": get_str_representation(v.annotation),
+                        **(
+                            {"default": str(v.default)}
+                            if v.default is not inspect.Parameter.empty
+                            else {}
+                        ),
+                    }
+                    for k, v in self.scope_parameters.items()
+                }
+                if self.scope_parameters
+                else None
+            ),
+            "scope_return_type": get_str_representation(self.scope_return_type)
+            if self.scope_return_type
+            else None,
+        }
+
+
+def get_str_representation(typ: type) -> str:
+    args = get_args(typ)
+
+    if len(args) == 0:
+        return typ.__name__
+    else:
+        return f"{typ.__name__}[{', '.join(get_str_representation(arg) for arg in args)}]"
 
 
 class ResolvableFieldInfo(FieldInfo):
@@ -22,10 +68,20 @@ class ResolvableFieldInfo(FieldInfo):
     def __init__(
         self,
         *,
-        required_scope: Optional[Set[str]] = None,
+        required_scope: Optional[Union[dict[str, ScopeMetadata], set[str]]] = None,
     ):
+        required_scope = (
+            {key: ScopeMetadata() for key in required_scope}
+            if isinstance(required_scope, set)
+            else required_scope
+        )
         super().__init__(
-            json_schema_extra={JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY: list(required_scope or [])},
+            json_schema_extra={
+                JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY: {
+                    scope_name: scope_metadata.to_json()
+                    for scope_name, scope_metadata in (required_scope or {}).items()
+                }
+            },
         )
 
 
