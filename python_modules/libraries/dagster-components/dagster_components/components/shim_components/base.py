@@ -1,9 +1,9 @@
 from abc import abstractmethod
 
-from dagster_components import Blueprint, Component, ScaffoldRequest
+from dagster_components import Component, Scaffolder, ScaffoldRequest
 
 
-class ShimBlueprint(Blueprint):
+class ShimScaffolder(Scaffolder):
     @abstractmethod
     def get_text(self) -> str: ...
     def scaffold(self, request: ScaffoldRequest, params: None) -> None:

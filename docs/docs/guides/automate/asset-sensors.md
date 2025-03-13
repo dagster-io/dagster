@@ -9,7 +9,7 @@ This guide covers the most common use cases for asset sensors, such as defining 
 
 :::note
 
-This documentation assumes familiarity with [assets](/guides/build/assets/) and [jobs](/guides/build/assets/asset-jobs)
+This documentation assumes familiarity with [assets](/guides/build/assets/) and [jobs](/guides/build/jobs/).
 
 :::
 

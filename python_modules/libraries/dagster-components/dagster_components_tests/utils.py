@@ -90,7 +90,7 @@ def temp_code_location_bar() -> Iterator[None]:
 def _setup_component_in_folder(
     src_path: str, dst_path: str, local_component_defn_to_inject: Optional[Path]
 ) -> None:
-    origin_path = Path(__file__).parent / "integration_tests" / "components" / src_path
+    origin_path = Path(__file__).parent / "integration_tests" / "integration_test_defs" / src_path
 
     shutil.copytree(origin_path, dst_path, dirs_exist_ok=True)
     if local_component_defn_to_inject:

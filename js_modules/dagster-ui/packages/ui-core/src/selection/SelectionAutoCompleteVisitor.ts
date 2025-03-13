@@ -195,7 +195,7 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
     const parentContext = ctx.parent;
     if (parentContext instanceof AttributeExpressionContext) {
       this.startReplacementIndex = parentContext.colonToken().start.startIndex + 1;
-      this.stopReplacementIndex = parentContext.stop!.stopIndex + 1;
+      this.stopReplacementIndex = parentContext.postAttributeValueWhitespace().start!.startIndex;
     }
 
     const parentChildren = ctx.parent?.children ?? [];

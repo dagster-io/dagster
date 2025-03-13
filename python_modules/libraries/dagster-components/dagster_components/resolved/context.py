@@ -2,7 +2,7 @@ import os
 import sys
 import traceback
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, overload
 
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -12,6 +12,9 @@ from dagster._utils.source_position import SourcePositionTree
 from jinja2 import Undefined
 from jinja2.exceptions import UndefinedError
 from jinja2.nativetypes import NativeTemplate
+
+if TYPE_CHECKING:
+    from dagster_components.resolved.model import ResolvableModel
 
 T = TypeVar("T")
 
@@ -88,6 +91,24 @@ class ResolutionContext:
             if line.strip().startswith("File") and not template_seen:
                 continue
             msg_parts.append(line)
+
+        return ResolutionException("".join(msg_parts))
+
+    def build_resolve_fn_exc(
+        self,
+        fmt_exc: list[str],
+        field_name: str,
+        model: "ResolvableModel",
+    ) -> ResolutionException:
+        msg_parts = []
+        loc = self._location()
+        if loc:
+            msg_parts.append(loc + "\n")
+
+        msg_parts.append(
+            f"Exception occurred in Resolver for field '{field_name}' resolving from {model.__class__.__name__}({model}).\n"
+        )
+        msg_parts.extend(fmt_exc)
 
         return ResolutionException("".join(msg_parts))
 

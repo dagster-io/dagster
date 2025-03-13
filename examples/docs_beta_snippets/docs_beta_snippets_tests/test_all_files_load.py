@@ -30,6 +30,12 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/components/migrating-definitions/5-elt-nested-definitions.py",
     f"{snippets_folder}/guides/components/migrating-definitions/7-definitions-after.py",
     f"{snippets_folder}/guides/components/migrating-definitions/10-definitions-after-all.py",
+    # there are no defs defined in the snippets and so it would fail to load
+    f"{snippets_folder}/guides/dg/migrating-definitions/2-definitions-before.py",
+    f"{snippets_folder}/guides/dg/migrating-definitions/4-definitions-after.py",
+    f"{snippets_folder}/guides/dg/migrating-definitions/7-definitions-after-all.py",
+    f"{snippets_folder}/guides/dg/migrating-project/6-initial-definitions.py",
+    f"{snippets_folder}/guides/dg/migrating-project/7-updated-definitions.py",
 }
 EXCLUDED_DIRS = {
     # integrations are excluded because they have external dependencies that are easier to manage in

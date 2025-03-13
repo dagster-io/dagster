@@ -1,8 +1,8 @@
-from dagster_components.blueprint import scaffold_with
-from dagster_components.components.shim_components.base import ShimBlueprint, ShimComponent
+from dagster_components.components.shim_components.base import ShimComponent, ShimScaffolder
+from dagster_components.scaffold import scaffold_with
 
 
-class ScheduleBlueprint(ShimBlueprint):
+class ScheduleScaffolder(ShimScaffolder):
     def get_text(self) -> str:
         return """# import dagster as dg
 # 
@@ -13,6 +13,6 @@ class ScheduleBlueprint(ShimBlueprint):
 """
 
 
-@scaffold_with(ScheduleBlueprint)
+@scaffold_with(ScheduleScaffolder)
 class RawScheduleComponent(ShimComponent):
     """Schedule component."""

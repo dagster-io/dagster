@@ -1,3 +1,4 @@
+import {useCallback} from 'react';
 import {useAssetSelectionAutoCompleteProvider as defaultUseAssetSelectionAutoCompleteProvider} from 'shared/asset-selection/input/useAssetSelectionAutoCompleteProvider.oss';
 
 import {assetSelectionSyntaxSupportedAttributes, unsupportedAttributeMessages} from './util';
@@ -8,6 +9,8 @@ import {SelectionAutoCompleteInput} from '../../selection/SelectionInput';
 import {createSelectionLinter} from '../../selection/createSelectionLinter';
 import {AssetSelectionLexer} from '../generated/AssetSelectionLexer';
 import {AssetSelectionParser} from '../generated/AssetSelectionParser';
+import {isUnmatchedValueQuery} from '../isUnmatchedValueQuery';
+import {parseAssetSelectionQuery} from '../parseAssetSelectionQuery';
 
 export interface AssetSelectionInputProps {
   assets: AssetGraphQueryItem[];
@@ -30,7 +33,7 @@ const defaultLinter = createSelectionLinter({
 
 export const AssetSelectionInput = ({
   value,
-  onChange,
+  onChange: _onChange,
   assets,
   linter = defaultLinter,
   useAssetSelectionAutoComplete = defaultUseAssetSelectionAutoCompleteProvider,
@@ -38,6 +41,17 @@ export const AssetSelectionInput = ({
   onErrorStateChange,
 }: AssetSelectionInputProps) => {
   const {useAutoComplete} = useAssetSelectionAutoComplete(assets);
+
+  const onChange = useCallback(
+    (value: string) => {
+      if (parseAssetSelectionQuery([], value) instanceof Error && isUnmatchedValueQuery(value)) {
+        _onChange(`key:"*${value}*"`);
+      } else {
+        _onChange(value);
+      }
+    },
+    [_onChange],
+  );
 
   return (
     <SelectionAutoCompleteInput
