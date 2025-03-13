@@ -12,6 +12,8 @@ spark_docs:
 
 	# Clean up formatting
 	ruff format --config ../../pyproject.toml ../libraries/dagster-spark/dagster_spark/configs_spark.py
+	ruff format --config ../../pyproject.toml ../libraries/dagster-aws/dagster_aws/emr/configs_spark.py
 
 	# Clean up imports
 	autoflake --in-place --remove-all-unused-imports ../libraries/dagster-spark/dagster_spark/configs_spark.py
+	autoflake --in-place --remove-all-unused-imports ../libraries/dagster-aws/dagster_aws/emr/configs_spark.py

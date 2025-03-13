@@ -11,10 +11,10 @@ from dagster import Bool, Field, Int, Permissive, Shape, String
 
 from dagster_gcp.dataproc.types_dataproc_cluster import (
     Component,
-    consumeReservationType,
-    metricSource,
-    preemptibility,
-    privateIpv6GoogleAccess,
+    ConsumeReservationType,
+    MetricSource,
+    Preemptibility,
+    PrivateIpv6GoogleAccess,
 )
 
 
@@ -101,7 +101,7 @@ def define_dataproc_cluster_config():
                                 is_required=True,
                             ),
                             "privateIpv6GoogleAccess": Field(
-                                privateIpv6GoogleAccess,
+                                PrivateIpv6GoogleAccess,
                                 description="""Optional. The type of IPv6 access for a cluster.""",
                                 is_required=True,
                             ),
@@ -151,7 +151,7 @@ def define_dataproc_cluster_config():
                                 Shape(
                                     fields={
                                         "consumeReservationType": Field(
-                                            consumeReservationType,
+                                            ConsumeReservationType,
                                             description="""Optional. Type of reservation to
                                             consume""",
                                             is_required=True,
@@ -359,7 +359,7 @@ def define_dataproc_cluster_config():
                                 is_required=True,
                             ),
                             "preemptibility": Field(
-                                preemptibility,
+                                Preemptibility,
                                 description="""Optional. Specifies the preemptibility of the
                                 instance group.The default value for master and worker groups is
                                 NON_PREEMPTIBLE. This default cannot be changed.The default value
@@ -639,7 +639,7 @@ def define_dataproc_cluster_config():
                                 is_required=True,
                             ),
                             "preemptibility": Field(
-                                preemptibility,
+                                Preemptibility,
                                 description="""Optional. Specifies the preemptibility of the
                                 instance group.The default value for master and worker groups is
                                 NON_PREEMPTIBLE. This default cannot be changed.The default value
@@ -919,7 +919,7 @@ def define_dataproc_cluster_config():
                                 is_required=True,
                             ),
                             "preemptibility": Field(
-                                preemptibility,
+                                Preemptibility,
                                 description="""Optional. Specifies the preemptibility of the
                                 instance group.The default value for master and worker groups is
                                 NON_PREEMPTIBLE. This default cannot be changed.The default value
@@ -1697,7 +1697,7 @@ def define_dataproc_cluster_config():
                                     Shape(
                                         fields={
                                             "metricSource": Field(
-                                                metricSource,
+                                                MetricSource,
                                                 description="""Required. A standard set of metrics is
                                             collected unless metricOverrides are specified for the
                                             metric source (see Custom metrics
@@ -1891,7 +1891,7 @@ def define_dataproc_cluster_config():
                                                             is_required=True,
                                                         ),
                                                         "preemptibility": Field(
-                                                            preemptibility,
+                                                            Preemptibility,
                                                             description="""Optional. Specifies the
                                                         preemptibility of the instance group.The
                                                         default value for master and worker groups
