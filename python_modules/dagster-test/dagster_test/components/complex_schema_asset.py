@@ -12,7 +12,7 @@ from dagster_components.resolved.core_models import (
     AssetPostProcessorModel,
     OpSpecModel,
 )
-from dagster_components.resolved.metadata import ResolvableFieldInfo
+from dagster_components.resolved.metadata import ResolvableFieldInfo, ScopeMetadata
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
 from pydantic import Field
 
@@ -25,7 +25,8 @@ class ComplexAssetModel(ResolvableModel):
     obj_value: dict[str, str] = Field(..., examples=[{"key_1": "value_1", "key_2": "value_2"}])
     op: Optional[OpSpecModel] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesModel], ResolvableFieldInfo(required_scope={"node"})
+        Optional[AssetAttributesModel],
+        ResolvableFieldInfo(required_scope={"node": ScopeMetadata()}),
     ] = None
     asset_post_processors: Optional[Sequence[AssetPostProcessorModel]] = None
 
