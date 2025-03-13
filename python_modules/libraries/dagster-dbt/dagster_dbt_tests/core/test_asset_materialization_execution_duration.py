@@ -186,7 +186,7 @@ def test_incremental_log_model_result_to_asset():
     finished_at = datetime.strptime(node_finished_at, timestamp_format)
     execution_duration_seconds = (finished_at - started_at).total_seconds()
 
-    # this test only makes sense it data.execution_time differs from (node_finished_at - node_started_at)
+    # this test only makes sense if data.execution_time differs from (node_finished_at - node_started_at)
     assert incremental_log_model_result["data"]["execution_time"] != execution_duration_seconds
 
     # we expect AssetMaterialization to source Execution Duration from (node_finished_at - node_started_at) instead of
