@@ -1,3 +1,4 @@
+import importlib
 import os
 import sys
 import traceback
@@ -7,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, overload
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._record import copy, record
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from jinja2 import Undefined
@@ -23,10 +25,18 @@ def env_scope(key: str) -> Optional[str]:
     return os.environ.get(key)
 
 
+def defs_scope(key: str) -> Definitions:
+    from dagster_components import ComponentLoadContext
+
+    module = importlib.import_module(key)
+    return ComponentLoadContext.current().load_defs(module)
+
+
 def automation_condition_scope() -> Mapping[str, Any]:
     return {
         "eager": AutomationCondition.eager,
         "on_cron": AutomationCondition.on_cron,
+        "defs": defs_scope,
     }
 
 
@@ -48,7 +58,11 @@ class ResolutionContext:
     @staticmethod
     def default(source_position_tree: Optional[SourcePositionTree] = None) -> "ResolutionContext":
         return ResolutionContext(
-            scope={"env": env_scope, "automation_condition": automation_condition_scope()},
+            scope={
+                "env": env_scope,
+                "automation_condition": automation_condition_scope(),
+                "defs": defs_scope,
+            },
             source_position_tree=source_position_tree,
         )
 
