@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Optional
 
 import dagster as dg
-from dagster_components.scaffold import scaffold_with
 import duckdb
 from dagster_components import (
     AssetSpecModel,
@@ -18,6 +17,7 @@ from dagster_components import (
     scaffold_component_yaml,
 )
 from dagster_components.resolved.core_models import ResolvedAssetSpec
+from dagster_components.scaffold import scaffold_with
 from pydantic import BaseModel
 
 
@@ -57,7 +57,7 @@ class DuckDbComponent(Component, ResolvedFrom[DuckDbComponentModel]):
         assert len(self.assets) >= 1, "Must have asset"
         name = f"run_{self.assets[0].key.to_user_string()}"
         sql_file_path = (load_context.path / Path(self.sql_file)).absolute()
-        assert sql_file_path.exists(), f"Path {path} does not exist."
+        assert sql_file_path.exists(), f"Path {sql_file_path} does not exist."
 
         @dg.multi_asset(name=name, specs=self.assets)
         def _asset(context: dg.AssetExecutionContext):
