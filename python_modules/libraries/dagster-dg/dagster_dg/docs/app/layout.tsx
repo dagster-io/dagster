@@ -6,7 +6,6 @@ import './css/colors.css';
 import './css/globals.css';
 import styles from './css/layout.module.css';
 
-import getContents from '@/util/getContents';
 import PackageTree from '@/app/components/PackageTree';
 import Header from '@/app/components/Header';
 import clsx from 'clsx';
@@ -34,7 +33,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
-  const contents = await getContents();
   return (
     <html lang="en">
       <body className={clsx(geistSans.variable, geistMono.variable)}>
@@ -42,7 +40,7 @@ export default async function RootLayout({
           <Header />
           <div className={styles.contentContainer}>
             <div className={styles.sidebar}>
-              <PackageTree contents={contents} />
+              <PackageTree />
             </div>
             <div className={styles.main}>{children}</div>
           </div>
