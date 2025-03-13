@@ -9,6 +9,7 @@ import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
 import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {workerSpawner} from '../workers/workerSpawner';
 
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 
@@ -27,7 +28,7 @@ export const getFullOpLayout = memoize(layoutOpGraph, _opLayoutCacheKey);
 
 const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraphOptions) => {
   return new Promise<OpGraphLayout>((resolve) => {
-    const worker = spawnNewLayoutWorker();
+    const worker = spawnLayoutWorker();
     worker.onMessage((event) => {
       resolve(event.data);
       worker.terminate();
@@ -77,7 +78,7 @@ const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
 export const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
-      const worker = spawnNewLayoutWorker();
+      const worker = spawnLayoutWorker();
       worker.onMessage((event) => {
         resolve(event.data);
         worker.terminate();
@@ -91,7 +92,7 @@ export const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
 const asyncGetFullAssetLayout = asyncMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
-      const worker = spawnNewLayoutWorker();
+      const worker = spawnLayoutWorker();
       worker.onMessage((event) => {
         resolve(event.data);
         worker.terminate();
@@ -102,21 +103,9 @@ const asyncGetFullAssetLayout = asyncMemoize(
   _assetLayoutCacheKey,
 );
 
-// Have the next layout worker ready to go
-let nextLayoutWorker: Worker | null = new Worker(
-  new URL('../workers/dagre_layout.worker', import.meta.url),
+const spawnLayoutWorker = workerSpawner(
+  () => new Worker(new URL('../workers/dagre_layout.worker', import.meta.url)),
 );
-let currentLayoutWorker: Worker | null = null;
-function spawnNewLayoutWorker() {
-  // Make sure we only have one worker at a time
-  if (currentLayoutWorker) {
-    currentLayoutWorker.terminate();
-  }
-  currentLayoutWorker = nextLayoutWorker;
-  nextLayoutWorker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
-  return currentLayoutWorker;
-}
-
 // Helper Hooks:
 // - Automatically switch between sync and async loading strategies
 // - Re-layout when the cache key function returns a different value
