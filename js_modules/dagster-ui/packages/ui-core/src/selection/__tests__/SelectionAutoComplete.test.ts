@@ -1164,7 +1164,7 @@ describe('createAssetSelectionHint', () => {
   });
 
   it('Allows slashes in identifiers', () => {
-    expect(testAutocomplete('prefix/thing')).toEqual({
+    expect(testAutocomplete('prefix/th|ing')).toEqual({
       from: 0,
       list: [
         expect.objectContaining({text: 'key:"*prefix/thing*"'}),
