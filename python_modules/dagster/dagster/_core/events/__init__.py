@@ -1608,14 +1608,14 @@ class AssetFailedToMaterializeReason(Enum):
 MATERIALIZATION_ATTEMPT_FAILED_TYPES = [
     AssetFailedToMaterializeReason.COMPUTE_FAILED,
     AssetFailedToMaterializeReason.UPSTREAM_COMPUTE_FAILED,
-    AssetFailedToMaterializeReason.RUN_SYSTEM_TERMINATED,
+    AssetFailedToMaterializeReason.UNEXPECTED_TERMINATION,
     AssetFailedToMaterializeReason.UNKNOWN,
 ]
 
 MATERIALIZATION_ATTEMPT_SKIPPED_TYPES = [
     AssetFailedToMaterializeReason.SKIPPED_OPTIONAL,
     AssetFailedToMaterializeReason.UPSTREAM_SKIPPED,
-    AssetFailedToMaterializeReason.RUN_USER_TERMINATED,
+    AssetFailedToMaterializeReason.USER_TERMINATION,
 ]
 
 
