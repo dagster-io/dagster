@@ -11,6 +11,7 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import public
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.metadata import TableMetadataSet, TextMetadataValue
 from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.utils import exhaust_iterator_and_yield_results_with_exception, imap
@@ -25,7 +26,9 @@ if TYPE_CHECKING:
 
 logger = get_dagster_logger()
 
-DbtDagsterEventType = Union[Output, AssetMaterialization, AssetCheckResult, AssetObservation]
+DbtDagsterEventType = Union[
+    Output, AssetMaterialization, AssetCheckResult, AssetObservation, AssetCheckEvaluation
+]
 
 # We define DbtEventIterator as a generic type for the sake of type hinting.
 # This is so that users who inspect the type of the return value of `DbtCliInvocation.stream()`
