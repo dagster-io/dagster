@@ -440,7 +440,7 @@ COMPONENT_INTEGRATION_TEST_DIR = (
     / "dagster-components"
     / "dagster_components_tests"
     / "integration_tests"
-    / "components"
+    / "integration_test_defs"
 )
 
 
