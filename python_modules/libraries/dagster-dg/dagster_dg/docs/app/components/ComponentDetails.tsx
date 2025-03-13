@@ -26,7 +26,9 @@ export default function ComponentDetails({config}: Props) {
       </div>
       <ComponentSchema schema={config.schema} />
       <div className={styles.sectionHeader} id="example">
-        <h2>Example YAML</h2>
+        <h2>
+          Example <code>component.yaml</code>
+        </h2>
         <a href="#example">#</a>
       </div>
       <ComponentExample yaml={config.example} />
