@@ -117,7 +117,7 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
 
 ## Insight metric alert
 
-TK
+TODO
 
 ## Agent downtime alert
 
@@ -144,4 +144,4 @@ Alerting when a Hybrid agent becomes unavailable is only available for [Hybrid d
 
 ## Credit budget alert
 
-TK
+TODO
