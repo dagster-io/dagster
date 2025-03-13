@@ -1234,7 +1234,6 @@ __metadata:
     react-dom: "npm:^19.0.0"
     react-markdown: "npm:^10.1.0"
     remark-gfm: "npm:^4.0.1"
-    strip-markdown: "npm:^6.0.0"
     typescript: "npm:^5"
   languageName: unknown
   linkType: soft
@@ -4115,15 +4114,6 @@ __metadata:
   version: 3.1.1
   resolution: "strip-json-comments@npm:3.1.1"
   checksum: 10c0/9681a6257b925a7fa0f285851c0e613cc934a50661fa7bb41ca9cbbff89686bb4a0ee366e6ecedc4daafd01e83eee0720111ab294366fe7c185e935475ebcecd
-  languageName: node
-  linkType: hard
-
-"strip-markdown@npm:^6.0.0":
-  version: 6.0.0
-  resolution: "strip-markdown@npm:6.0.0"
-  dependencies:
-    "@types/mdast": "npm:^4.0.0"
-  checksum: 10c0/209b3fa4f6a0c655124143c40e7a7cf7e764cf339a1429649f8b0cb905ee165d77aff58456753edb24e02c05f1e0881aca7d775e3a162d804ea5d4b69a09a0ae
   languageName: node
   linkType: hard
 

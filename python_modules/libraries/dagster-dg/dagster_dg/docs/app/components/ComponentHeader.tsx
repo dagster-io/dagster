@@ -2,27 +2,36 @@ import {ComponentType} from '@/util/types';
 
 import styles from './css/ComponentHeader.module.css';
 import ComponentTags from '@/app/components/ComponentTags';
-import Markdown from 'react-markdown';
+import Markdown, {Components} from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import stripMarkdown from 'strip-markdown';
+import {HTMLProps} from 'react';
 
 interface Props {
   config: ComponentType;
-  descriptionStyle: 'plaintext' | 'markdown';
+  descriptionStyle: 'truncated' | 'full';
 }
 
 export default function ComponentHeader({config, descriptionStyle}: Props) {
+  const {description, name} = config;
+
+  // For truncated display, use only the first line in the description.
+  const displayedDescription =
+    descriptionStyle === 'truncated'
+      ? (description.split('\n').find((str) => str.trim().length > 0) ?? '')
+      : description;
+
   return (
     <div className={styles.container}>
       <div className={styles.heading}>
         <div className={styles.icon} />
         <div className={styles.headingContent}>
-          <h1>{config.name}</h1>
+          <h1>{name}</h1>
           <div className={styles.description}>
             <Markdown
-              remarkPlugins={descriptionStyle === 'markdown' ? [remarkGfm] : [stripMarkdown]}
+              remarkPlugins={[remarkGfm]}
+              components={descriptionStyle === 'truncated' ? componentsMinusLinks : undefined}
             >
-              {config.description}
+              {displayedDescription}
             </Markdown>
           </div>
         </div>
@@ -31,3 +40,7 @@ export default function ComponentHeader({config, descriptionStyle}: Props) {
     </div>
   );
 }
+
+const componentsMinusLinks: Components = {
+  a: ({children}: HTMLProps<HTMLAnchorElement>) => <span>{children}</span>,
+};
