@@ -149,7 +149,9 @@ class ConfigParser:
             # Optionally write enum includes
             if self.all_enums:
                 printer.line(
-                    "from .types_{} import {}".format(suffix, ", ".join(self.all_enums.keys()))
+                    "from dagster_gcp.dataproc.types_{} import {}".format(
+                        suffix, ", ".join(self.all_enums.keys())
+                    )
                 )
                 printer.blank_line()
 
