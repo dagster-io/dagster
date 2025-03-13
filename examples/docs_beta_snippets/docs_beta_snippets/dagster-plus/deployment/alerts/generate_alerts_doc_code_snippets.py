@@ -185,7 +185,7 @@ Alerts are sent only when a schedule/sensor transitions from **success** to **fa
         config_snippet=None,
     ),
     AlertType(
-        condition_description="Sends an email when a Hybrid agent hasn't sent a heartbeat in the last 5 minutes",
+        condition_description="when a Hybrid agent hasn't sent a heartbeat in the last 5 minutes",
         mdx_prose=""":::note
 This is only available for [Hybrid](/dagster-plus/deployment/deployment-types/hybrid/) deployments.
 :::
