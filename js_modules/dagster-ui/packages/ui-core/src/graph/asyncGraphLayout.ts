@@ -102,14 +102,19 @@ const asyncGetFullAssetLayout = asyncMemoize(
   _assetLayoutCacheKey,
 );
 
-let layoutWorker: Worker | null = null;
+// Have the next layout worker ready to go
+let nextLayoutWorker: Worker | null = new Worker(
+  new URL('../workers/dagre_layout.worker', import.meta.url),
+);
+let currentLayoutWorker: Worker | null = null;
 function spawnNewLayoutWorker() {
   // Make sure we only have one worker at a time
-  if (layoutWorker) {
-    layoutWorker.terminate();
+  if (currentLayoutWorker) {
+    currentLayoutWorker.terminate();
   }
-  layoutWorker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
-  return layoutWorker;
+  currentLayoutWorker = nextLayoutWorker;
+  nextLayoutWorker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
+  return currentLayoutWorker;
 }
 
 // Helper Hooks:
