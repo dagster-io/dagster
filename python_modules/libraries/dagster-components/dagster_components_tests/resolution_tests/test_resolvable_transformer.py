@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Annotated, Optional
 
+from dagster import AssetKey
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -23,7 +24,6 @@ from dagster_components.resolved.model import (
     resolve_fields,
     resolve_model_using_kwargs_cls,
 )
-from dagster_components.utils import AssetKey
 from typing_extensions import TypeAlias
 
 

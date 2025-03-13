@@ -39,3 +39,29 @@
   color: var(--color-text-light);
   line-height: 1.5;
 }
+
+.description a {
+  color: var(--color-link-default);
+  text-decoration: underline;
+}
+
+.description pre {
+  font-family: var(--font-geist-mono);
+  margin: 8px 0;
+  white-space: pre-wrap;
+}
+
+.description code {
+  font-family: var(--font-geist-mono);
+  background-color: var(--color-background-lighter);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.description p {
+  margin: 0;
+}
+
+.description p + p {
+  margin-top: 12px;
+}
