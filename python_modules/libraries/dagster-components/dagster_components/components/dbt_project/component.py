@@ -2,7 +2,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from types import ModuleType
-from typing import Annotated, Any, Optional, cast
+from typing import Annotated, Any, Optional, Union, cast
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -47,7 +47,7 @@ class DbtProjectModel(ResolvableModel):
     dbt: DbtCliResource
     op: Optional[OpSpecModel] = None
     asset_attributes: Annotated[
-        Optional[AssetAttributesModel],
+        Optional[Union[str, AssetAttributesModel]],
         ResolvableFieldInfo(required_scope={"node"}),
     ] = None
     asset_post_processors: Optional[Sequence[AssetPostProcessorModel]] = None
@@ -129,7 +129,11 @@ def resolve_translator(context: ResolutionContext, model: DbtProjectModel) -> Da
         ) -> Optional[AutomationCondition]:
             return self.get_asset_spec(dbt_resource_props).automation_condition
 
-    if model.asset_attributes and model.asset_attributes.deps:
+    if (
+        model.asset_attributes
+        and isinstance(model.asset_attributes, AssetAttributesModel)
+        and model.asset_attributes.deps
+    ):
         # TODO: Consider supporting alerting deps in the future
         raise ValueError("deps are not supported for dbt_project component")
     return DagsterDbtTranslatorWithSpecs(

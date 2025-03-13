@@ -75,5 +75,5 @@ Now, your project is fully compatible with `dg`! `dg` can be used to scaffold ne
 
 ## Next steps
 
-- [Restructure existing definitions](migrating-definitions)
+- [Restructure existing definitions](/guides/labs/dg/incrementally-adopting-dg/migrating-definitions)
 - [Add a new definition to your project](/guides/labs/dg/dagster-definitions)
