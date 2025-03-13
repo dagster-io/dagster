@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Optional
 
 import dagster as dg
+from dagster_components.scaffold import scaffold_with
 import duckdb
 from dagster_components import (
     AssetSpecModel,
@@ -44,6 +45,7 @@ class DuckDbComponentModel(ResolvableModel):
     assets: Sequence[AssetSpecModel]
 
 
+@scaffold_with(DuckDbComponentScaffolder)
 @dataclass
 class DuckDbComponent(Component, ResolvedFrom[DuckDbComponentModel]):
     """A component that allows you to write SQL without learning dbt or Dagster's concepts."""
@@ -55,7 +57,7 @@ class DuckDbComponent(Component, ResolvedFrom[DuckDbComponentModel]):
         assert len(self.assets) >= 1, "Must have asset"
         name = f"run_{self.assets[0].key.to_user_string()}"
         sql_file_path = (load_context.path / Path(self.sql_file)).absolute()
-        # assert path.exists(), f"Path {path} does not exist."
+        assert sql_file_path.exists(), f"Path {path} does not exist."
 
         @dg.multi_asset(name=name, specs=self.assets)
         def _asset(context: dg.AssetExecutionContext):
