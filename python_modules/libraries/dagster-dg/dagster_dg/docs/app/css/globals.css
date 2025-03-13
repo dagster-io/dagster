@@ -228,6 +228,10 @@ a {
   text-decoration: none;
 }
 
+code {
+  font-family: var(--font-geist-mono);
+}
+
 @media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;

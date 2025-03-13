@@ -1,3 +1,9 @@
+.outer {
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
 .container {
   display: flex;
   flex-direction: row;
@@ -5,6 +11,7 @@
   gap: 16px;
   height: 100%;
   overflow-y: auto;
+  padding-right: 300px;
 }
 
 .main {
@@ -14,11 +21,13 @@
 }
 
 .tableOfContents {
-  width: 200px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
   box-shadow: inset 1px 0 0 0 var(--color-keyline-default);
   margin-top: 24px;
   padding: 0 16px 0 16px;
-  overflow-y: auto;
 }
 
 .tableOfContents ol {

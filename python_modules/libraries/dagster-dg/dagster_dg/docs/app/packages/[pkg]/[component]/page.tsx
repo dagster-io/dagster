@@ -20,9 +20,11 @@ export default async function ComponentPage({params}: Props) {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.main}>
-        <ComponentDetails config={componentConfig} />
+    <div className={styles.outer}>
+      <div className={styles.container}>
+        <div className={styles.main}>
+          <ComponentDetails config={componentConfig} />
+        </div>
       </div>
       <div className={styles.tableOfContents}>
         <ol>
@@ -33,7 +35,9 @@ export default async function ComponentPage({params}: Props) {
             <a href="#schema">Schema</a>
           </li>
           <li>
-            <a href="#example">Example YAML</a>
+            <a href="#example">
+              Example <code>component.yaml</code>
+            </a>
           </li>
         </ol>
       </div>
