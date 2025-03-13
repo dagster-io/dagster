@@ -16,6 +16,7 @@ from docs_beta_snippets_tests.snippet_checks.utils import (
 )
 
 MASK_MY_EXISTING_PROJECT = (r" \/.*?\/my-existing-project", " /.../my-existing-project")
+MASK_ISORT = (r"#isort:skip-file", "# definitions.py")
 MASK_VENV = (r"Using.*\.venv.*", "")
 
 
@@ -52,6 +53,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
             Path("my_existing_project") / "definitions.py",
             SNIPPETS_DIR / f"{get_next_snip_number()}-definitions-before.py",
             update_snippets=update_snippets,
+            snippet_replace_regex=[MASK_ISORT],
         )
 
         _run_command(cmd="uv venv")

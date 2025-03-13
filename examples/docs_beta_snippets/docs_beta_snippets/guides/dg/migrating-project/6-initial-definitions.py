@@ -1,3 +1,4 @@
+# isort: skip_file
 from my_existing_project import assets
 
 import dagster as dg
