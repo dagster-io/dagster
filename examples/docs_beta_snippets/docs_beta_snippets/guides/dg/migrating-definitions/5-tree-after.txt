@@ -9,11 +9,13 @@ tree
 │   │   ├── assets.py
 │   │   └── jobs.py
 │   ├── definitions.py
-│   ├── defs
-│   └── elt
+│   └── defs
 │       ├── __init__.py
-│       ├── assets.py
-│       └── jobs.py
-└── pyproject.toml
+│       └── elt
+│           ├── __init__.py
+│           ├── assets.py
+│           └── jobs.py
+├── pyproject.toml
+└── uv.lock
 
-5 directories, 10 files
+5 directories, 12 files
