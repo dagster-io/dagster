@@ -112,6 +112,9 @@ from dagster._config.source import (
     StringSource as StringSource,
 )
 from dagster._core.definitions import AssetCheckResult as AssetCheckResult
+from dagster._core.definitions.asset_check_evaluation import (
+    AssetCheckEvaluation as AssetCheckEvaluation,
+)
 from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
     build_last_update_freshness_checks as build_last_update_freshness_checks,
 )

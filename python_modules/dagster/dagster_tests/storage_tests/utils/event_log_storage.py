@@ -5868,10 +5868,43 @@ class TestEventLogStorage:
             )
         )
 
-        # since no planned event is logged, we don't create a row in the sumary table
-        assert not storage.get_asset_check_execution_history(
+        assert (
+            len(
+                storage.get_asset_check_execution_history(
+                    AssetCheckKey(asset_key=AssetKey(["my_asset"]), name="my_check"), limit=10
+                )
+            )
+            == 1
+        )
+
+    def test_yield_asset_check_evaluation_from_op(
+        self, storage: EventLogStorage, instance: DagsterInstance
+    ):
+        @op
+        def yield_asset_check_evaluation():
+            yield AssetCheckEvaluation(
+                asset_key=AssetKey(["my_asset"]),
+                check_name="my_check",
+                passed=True,
+                metadata={},
+            )
+            yield Output(1)
+
+        @job
+        def yield_asset_check_evaluation_job():
+            yield_asset_check_evaluation()
+
+        result = yield_asset_check_evaluation_job.execute_in_process(instance=instance)
+        run_id = result.run_id
+
+        checks = storage.get_asset_check_execution_history(
             AssetCheckKey(asset_key=AssetKey(["my_asset"]), name="my_check"), limit=10
         )
+        assert len(checks) == 1
+        assert checks[0].status == AssetCheckExecutionRecordStatus.SUCCEEDED
+        assert checks[0].run_id == run_id
+        assert checks[0].event
+        assert checks[0].event.dagster_event_type == DagsterEventType.ASSET_CHECK_EVALUATION
 
     def test_external_asset_event(
         self,

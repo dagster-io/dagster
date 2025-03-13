@@ -204,11 +204,6 @@ def execute_core_compute(
                     handle
                 )
                 emitted_result_names.add(output_name)
-        elif isinstance(step_output, AssetCheckEvaluation):
-            output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
-                step_output.asset_check_key
-            )
-            emitted_result_names.add(output_name)
         elif isinstance(step_output, AssetCheckResult):
             if step_output.asset_key and step_output.check_name:
                 handle = AssetCheckKey(step_output.asset_key, step_output.check_name)
