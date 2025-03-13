@@ -356,7 +356,7 @@ def _create_component_scaffold_subcommand(
         json_params: Mapping[str, Any],
         **key_value_params: Any,
     ) -> None:
-        f"""Scaffold of a {component_type.name} component.
+        f"""Scaffold of a {component_key.name} component.
 
         This command must be run inside a Dagster project directory. The component scaffold will be
         placed in submodule `<project_name>.components.<COMPONENT_NAME>`.
@@ -384,9 +384,8 @@ def _create_component_scaffold_subcommand(
         )
 
     # If there are defined scaffold params, add them to the command
-    schema = component_type.scaffold_params_schema
-    if schema:
-        for key, field_info in schema["properties"].items():
+    if component_type.scaffolder_schema:
+        for key, field_info in component_type.scaffolder_schema["properties"].items():
             # All fields are currently optional because they can also be passed under
             # `--json-params`
             option = json_schema_property_to_click_option(key, field_info, required=False)

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from dagster._utils import pushd
+from dagster_components import Component
 from dagster_components.core.component import discover_entry_point_library_objects
 from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_dg.utils import get_venv_executable
@@ -42,7 +43,7 @@ def _get_component_print_script_result(venv_root: Path) -> subprocess.CompletedP
     dagster_components_path = get_venv_executable(venv_root, "dagster-components")
     assert dagster_components_path.exists()
     result = subprocess.run(
-        [str(dagster_components_path), "list", "component-types"],
+        [str(dagster_components_path), "list", "library-objects"],
         capture_output=True,
         text=True,
         check=False,
@@ -141,9 +142,10 @@ def test_components_from_dagster():
 def test_all_dagster_components_have_defined_summary():
     registry = discover_entry_point_library_objects()
     for component_name, component_type in registry.items():
-        assert component_type.get_metadata()[
-            "summary"
-        ], f"Component {component_name} has no summary defined"
+        if isinstance(component_type, type) and issubclass(component_type, Component):
+            assert component_type.get_metadata()[
+                "summary"
+            ], f"Component {component_name} has no summary defined"
 
 
 # Our pyproject.toml installs local dagster components
