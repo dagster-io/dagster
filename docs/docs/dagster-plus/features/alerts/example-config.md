@@ -64,7 +64,7 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
   </TabItem>
 </Tabs>
 
-### Alerting when a run is taking too long
+### Alerting when a run is taking too long to complete
 
 <Tabs groupId="notification_service">
   <TabItem value='email' label='Email'>
@@ -115,7 +115,7 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
   </TabItem>
 </Tabs>
 
-## Insight metric alert
+## Insights metric alert
 
 TODO
 
