@@ -1,6 +1,7 @@
 import contextlib
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import traceback
@@ -459,3 +460,10 @@ def create_project_from_components(
                 shutil.copy(local_component_defn_to_inject, components_dir / "__init__.py")
 
         yield Path.cwd()
+
+
+def find_free_port() -> int:
+    with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(("", 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]

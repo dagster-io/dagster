@@ -33,9 +33,11 @@ LOCALHOST_URL_REGEX = re.compile(b".*(http://localhost.*)\n")
 
 @docs_group.command(name="serve", cls=DgClickCommand)
 @click.argument("component_type", type=str, default="")
+@click.option("--port", type=int, default=3004)
 @dg_global_options
 def serve_docs_command(
-    component_type: Optional[str] = None,
+    component_type: Optional[str],
+    port: int,
     **global_options: object,
 ) -> None:
     """Get detailed information on a registered Dagster component type."""
@@ -62,7 +64,9 @@ def serve_docs_command(
 
         spinner = yaspin(text="Starting docs server", color="blue")
         try:
-            yarn_dev = subprocess.Popen(["yarn", "dev"], stdout=subprocess.PIPE)
+            yarn_dev = subprocess.Popen(
+                ["yarn", "dev", "--port", str(port)], stdout=subprocess.PIPE
+            )
             assert yarn_dev.stdout is not None
             base_url = None
             for line in iter(yarn_dev.stdout.readline, b""):

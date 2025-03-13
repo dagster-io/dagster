@@ -1,6 +1,4 @@
-import contextlib
 import signal
-import socket
 import subprocess
 import time
 from pathlib import Path
@@ -20,6 +18,7 @@ from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     create_project_from_components,
+    find_free_port,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
 )
@@ -49,7 +48,7 @@ def test_dev_workspace_context_success(monkeypatch):
             "project-2",
         )
         assert_runner_result(result)
-        port = _find_free_port()
+        port = find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
         projects = {"project-1", "project-2"}
         _assert_projects_loaded_and_exit(projects, port, dev_process)
@@ -58,7 +57,7 @@ def test_dev_workspace_context_success(monkeypatch):
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_project_context_success():
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
-        port = _find_free_port()
+        port = find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
         _assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)
 
@@ -100,7 +99,7 @@ def test_dev_has_options_of_dagster_dev():
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_forwards_options_to_dagster_dev():
     with ProxyRunner.test() as runner, isolated_example_workspace(runner, "foo-bar"):
-        port = _find_free_port()
+        port = find_free_port()
         options = [
             "--code-server-log-level",
             "debug",
@@ -200,13 +199,6 @@ def _assert_no_child_processes_running(child_procs: list[psutil.Process]) -> Non
 def _get_child_processes(pid) -> list[psutil.Process]:
     parent = psutil.Process(pid)
     return parent.children(recursive=True)
-
-
-def _find_free_port() -> int:
-    with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(("", 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
 
 
 def _ping_webserver(port: int) -> None:
