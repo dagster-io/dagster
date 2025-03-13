@@ -121,7 +121,7 @@ def list_component_type_command(output_json: bool, **global_options: object) -> 
 )
 @dg_global_options
 def list_defs_command(output_json: bool, **global_options: object) -> None:
-    """List registered Dagster components in the current project environment."""
+    """List registered Dagster definitions in the current project environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
