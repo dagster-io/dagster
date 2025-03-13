@@ -11,7 +11,7 @@ Alert policies are configured on a per-deployment basis. This means, for example
 
 :::note
 
-Before you can create alert policies, you will need to [configure an alert notification service](configuring-an-alert-notification-service).
+Before you can create alert policies, you will need to [configure an alert notification service](/dagster-plus/features/alerts/configuring-an-alert-notification-service).
 
 :::
 
@@ -20,88 +20,17 @@ Before you can create alert policies, you will need to [configure an alert notif
 1. In the Dagster UI, click **Deployment**.
 2. In the left sidebar, click **Alert policies**.
 3. Click **Create alert policy**.
-4. Choose the [policy type](alert-policy-types) from the menu and click **Continue**.
+4. Choose the [policy type](/dagster-plus/features/alerts/alert-policy-types) from the menu and click **Continue**.
 5. Choose targets and events (if applicable) for your alert and click **Continue**.
 6. Choose a notification channel for your alert and click **Continue**.
 7. Review and save your alert and click **Save alert**.
 
 ## Using the CLI
 
-Execute the following command to sync the configured alert policy to your Dagster+ deployment.
+To sync an alert policy configuration file to your Dagster+ deployment, run the following command:
 
 ```bash
 dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
 ```
 
-For example configurations, see below.
-
-### Asset
-
-### Run
-
-### Code location
-
-### Automation
-
-#### Alerting when a schedule or sensor tick fails
-
-<Tabs groupId="notification_service">
-  <TabItem value='email' label='Email'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-email.yaml" language="yaml" />
-  </TabItem>
-  <TabItem value='microsoft_teams' label='Microsoft Teams'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-microsoft_teams.yaml" language="yaml" />
-  </TabItem>
-  <TabItem value='pagerduty' label='PagerDuty'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-pagerduty.yaml" language="yaml" />
-  </TabItem>
-  <TabItem value='slack' label='Slack'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/schedule-sensor-failure-slack.yaml" language="yaml" />
-  </TabItem>
-</Tabs>
-
-### Insight metric
-
-### Agent downtime
-
-### Credit budget
-
-## Alerting when a code location fails to load
-
-<Tabs groupId="notification_service">
-  <TabItem value='email' label='Email'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/code-location-error-email.yaml" language="yaml" />
-  </TabItem>
-  <TabItem value='microsoft_teams' label='Microsoft Teams'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/code-location-error-microsoft_teams.yaml" language="yaml" />
-  </TabItem>
-  <TabItem value='pagerduty' label='PagerDuty'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/code-location-error-pagerduty.yaml" language="yaml" />
-  </TabItem>
-  <TabItem value='slack' label='Slack'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/code-location-error-slack.yaml" language="yaml" />
-  </TabItem>
-</Tabs>
-
-## Alerting when a Hybrid agent becomes unavailable
-
-:::note
-
-Alerting when a Hybrid agent becomes unavailable is only available for [Hybrid deployments](/dagster-plus/deployment/deployment-types/hybrid/).
-
-:::
-
-<Tabs groupId="notification_service">
-  <TabItem value='email' label='Email'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/code-location-error-email.yaml" language="yaml" />
-  </TabItem>
-  <TabItem value='microsoft_teams' label='Microsoft Teams'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/code-location-error-microsoft_teams.yaml" language="yaml" />
-  </TabItem>
-  <TabItem value='pagerduty' label='PagerDuty'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/code-location-error-pagerduty.yaml" language="yaml" />
-  </TabItem>
-  <TabItem value='slack' label='Slack'>
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/code-location-error-slack.yaml" language="yaml" />
-  </TabItem>
-</Tabs>
+For example alert policy configuration files, see the [alert policy types reference](/dagster-plus/features/alerts/alert-policy-types).
