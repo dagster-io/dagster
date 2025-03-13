@@ -42,7 +42,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         )
 
         run_command_and_snippet_output(
-            cmd="dg scaffold asset assets/my_asset.py",
+            cmd="dg scaffold dagster.asset assets/my_asset.py",
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-scaffold.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_MY_PROJECT],
