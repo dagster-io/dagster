@@ -3,12 +3,12 @@ from dagster_components.scaffold import scaffold_with
 
 
 class ScheduleScaffolder(ShimScaffolder):
-    def get_text(self) -> str:
-        return """# import dagster as dg
+    def get_text(self, filename: str) -> str:
+        return f"""# import dagster as dg
 # 
 #
 # @dg.schedule(cron_schedule=..., target=...)
-# def my_schedule(context: dg.ScheduleEvaluationContext): ...
+# def {filename}(context: dg.ScheduleEvaluationContext): ...
 
 """
 
