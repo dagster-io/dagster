@@ -9,8 +9,8 @@ parse_dataproc_configs.py \
 
 from dagster import Enum, EnumValue
 
-Privateipv6Googleaccess = Enum(
-    name="Privateipv6Googleaccess",
+PrivateIpv6GoogleAccess = Enum(
+    name="PrivateIpv6GoogleAccess",
     enum_values=[
         EnumValue(
             "PRIVATE_IPV6_GOOGLE_ACCESS_UNSPECIFIED",
@@ -36,8 +36,8 @@ Privateipv6Googleaccess = Enum(
     ],
 )
 
-Consumereservationtype = Enum(
-    name="Consumereservationtype",
+ConsumeReservationType = Enum(
+    name="ConsumeReservationType",
     enum_values=[
         EnumValue("TYPE_UNSPECIFIED", description=""""""),
         EnumValue("NO_RESERVATION", description="""Do not consume from any allocated capacity."""),
@@ -91,8 +91,8 @@ Component = Enum(
     ],
 )
 
-Metricsource = Enum(
-    name="Metricsource",
+MetricSource = Enum(
+    name="MetricSource",
     enum_values=[
         EnumValue(
             "METRIC_SOURCE_UNSPECIFIED",
