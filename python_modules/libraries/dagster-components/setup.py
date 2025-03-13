@@ -44,11 +44,13 @@ setup(
             "dagster-components-dagster = dagster_components.dagster",
             "dagster-components-dbt = dagster_components.dagster_dbt",
             "dagster-components-sling = dagster_components.dagster_sling",
+            "dagster-components-airlift = dagster_components.dagster_airlift",
         ],
     },
     extras_require={
         "sling": ["dagster-sling"],
         "dbt": ["dagster-dbt"],
+        "airlift": ["dagster-airlift"],
         "test": ["dagster-test", "dbt-duckdb", "dagster-dg", "tomlkit", "jsonschema"],
     },
 )
