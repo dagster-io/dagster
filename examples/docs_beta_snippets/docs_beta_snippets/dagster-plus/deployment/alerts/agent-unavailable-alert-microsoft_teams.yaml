@@ -1,7 +1,8 @@
 # alert_policies.yaml
 
 alert_policies:
-  description: Sends a Microsoft Teams webhook when a Hybrid agent becomes unavailable.
+  description: Sends a Microsoft Teams webhook Sends an email when a Hybrid agent
+    hasn't sent a heartbeat in the last 5 minutes.
   event_types:
   - AGENT_UNAVAILABLE
   name: agent-unavailable-alert-microsoft_teams

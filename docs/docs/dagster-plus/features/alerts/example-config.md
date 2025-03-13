@@ -115,7 +115,7 @@ dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml
   </TabItem>
 </Tabs>
 
-## Agent downtime alert
+## Agent unavailable alert
 
 :::note
 
