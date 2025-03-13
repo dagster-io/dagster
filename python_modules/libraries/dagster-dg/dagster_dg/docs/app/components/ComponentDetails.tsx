@@ -14,7 +14,7 @@ interface Props {
 export default function ComponentDetails({config}: Props) {
   return (
     <div>
-      <ComponentHeader config={config} />
+      <ComponentHeader config={config} descriptionStyle="markdown" />
       <div className={styles.sectionHeader} id="scaffolding">
         <h2>Scaffolding</h2>
         <a href="#scaffolding">#</a>

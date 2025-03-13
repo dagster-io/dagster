@@ -15,7 +15,10 @@
     "highlight.js": "^11.11.1",
     "next": "15.2.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "strip-markdown": "^6.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
