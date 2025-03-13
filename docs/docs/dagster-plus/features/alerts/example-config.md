@@ -140,6 +140,12 @@ Alerting when a Hybrid agent becomes unavailable is only available for [Hybrid d
 
 ## Credit budget alert
 
+:::note
+
+The example configuration below can be used in both Serverless and Hybrid deployments.
+
+:::
+
 <Tabs groupId="notification_service">
   <TabItem value='email' label='Email'>
     <CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/credit-budget-alert-email.yaml" language="yaml" />
