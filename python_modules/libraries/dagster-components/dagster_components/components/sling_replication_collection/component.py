@@ -108,7 +108,7 @@ class SlingReplicationModel(ResolvableModel):
         description="The metadata to include on materializations of the assets produced by the Sling replication.",
     )
     asset_attributes: Annotated[
-        Optional[Union[AssetAttributesModel, str]],
+        Optional[Union[str, AssetAttributesModel]],
         ResolvableFieldInfo(required_scope={"stream_definition"}),
     ] = Field(
         None,
