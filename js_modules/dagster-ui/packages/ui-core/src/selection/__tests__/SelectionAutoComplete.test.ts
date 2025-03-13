@@ -1142,4 +1142,16 @@ describe('createAssetSelectionHint', () => {
       to: 13,
     });
   });
+
+  it('should be case insensitive', () => {
+    expect(testAutocomplete('REPO|')).toEqual({
+      from: 0,
+      list: [
+        expect.objectContaining({text: 'key:"*REPO*"'}),
+        expect.objectContaining({text: 'code_location:"repo1@location1"'}),
+        expect.objectContaining({text: 'code_location:"repo2@location2"'}),
+      ],
+      to: 4,
+    });
+  });
 });

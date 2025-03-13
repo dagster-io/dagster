@@ -220,12 +220,12 @@ export const createProvider = <
   }) {
     if (typeof value !== 'string') {
       return (
-        value.key.includes(query) ||
-        value.value?.includes(query) ||
-        `${value.key}=${value.value ?? ''}`.includes(query)
+        value.key.toLowerCase().includes(query.toLowerCase()) ||
+        value.value?.toLowerCase().includes(query.toLowerCase()) ||
+        `${value.key}=${value.value ?? ''}`.toLowerCase().includes(query.toLowerCase())
       );
     }
-    return value.includes(query);
+    return value.toLowerCase().includes(query.toLowerCase());
   }
 
   function createAttributeSuggestion({
