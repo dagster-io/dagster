@@ -136,9 +136,7 @@ def scaffold_project_command(
     │   └── __init__.py
     └── pyproject.toml
 
-    The `<name>.components` directory holds components (which can be created with `dg scaffold
-    component`).  The `<name>.lib` directory holds custom component types scoped to the project
-    (which can be created with `dg scaffold component-type`).
+    The `<name>.lib` directory holds Python objects that can be targeted by the `dg scaffold` command or have dg-inspectable metadata. Custom component types in the project live in `<name>.lib`. These types can be created with `dg scaffold component-type`.
     """  # noqa: D301
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
