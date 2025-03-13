@@ -8,11 +8,16 @@ import {useState} from 'react';
 import clsx from 'clsx';
 import ArrayTag from '@/app/components/schema/ArrayTag';
 
+type ExtendedJSONSchema7Definition = JSONSchema7Definition & {
+  dagster_required_scope?: Record<string, string>;
+};
+
 interface Props {
   schema: string;
+  name: string;
 }
 
-export default function ComponentSchema({schema}: Props) {
+export default function ComponentSchema({schema, name}: Props) {
   let json;
   try {
     json = JSON.parse(schema);
@@ -27,25 +32,41 @@ export default function ComponentSchema({schema}: Props) {
   const jsonSchema: JSONSchema7 = json;
   const title = jsonSchema.title;
   const defs = jsonSchema.$defs;
-  const properties = jsonSchema.properties ?? {};
 
-  return <Root title={title} properties={properties} defs={defs} />;
+  console.log(jsonSchema);
+
+  return (
+    <Root
+      title={undefined}
+      properties={{type: {type: 'string', default: name}, attributes: jsonSchema}}
+      defs={defs}
+      startExpanded
+    />
+  );
 }
 
 function Root({
   title,
   properties,
   defs,
+  startExpanded,
 }: {
   title: string | undefined;
-  properties: Record<string, JSONSchema7Definition>;
-  defs: Record<string, JSONSchema7Definition> | undefined;
+  properties: Record<string, ExtendedJSONSchema7Definition>;
+  defs: Record<string, ExtendedJSONSchema7Definition> | undefined;
+  startExpanded?: boolean;
 }) {
   return (
     <div className={styles.schemaContainer}>
       {title ? <div className={styles.schemaTitle}>{title}</div> : null}
       {Object.entries(properties).map(([key, property]) => (
-        <Property key={key} name={key} property={property} defs={defs} />
+        <Property
+          key={key}
+          name={key}
+          property={property}
+          defs={defs}
+          startExpanded={startExpanded}
+        />
       ))}
     </div>
   );
@@ -55,12 +76,14 @@ function Property({
   name,
   property,
   defs,
+  startExpanded,
 }: {
   name: string;
-  property: JSONSchema7Definition;
-  defs: Record<string, JSONSchema7Definition> | undefined;
+  property: ExtendedJSONSchema7Definition;
+  defs: Record<string, ExtendedJSONSchema7Definition> | undefined;
+  startExpanded?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(startExpanded ?? false);
 
   const onToggleExpansion = () => {
     setExpanded((current) => !current);
@@ -70,10 +93,20 @@ function Property({
     return null;
   }
 
-  const {anyOf, type, description, default: defaultValue, $ref, required, examples} = property;
+  const {
+    anyOf,
+    type,
+    description,
+    default: defaultValue,
+    $ref,
+    required,
+    examples,
+    dagster_required_scope: scope,
+  } = property;
 
   const expandable =
     !!$ref ||
+    type === 'object' ||
     (type === 'array' &&
       property.items &&
       Object.values(property.items).some((item) => typeof item !== 'boolean' && !!item.$ref)) ||
@@ -111,9 +144,44 @@ function Property({
           </div>
           {required ? <div className={styles.required}>required</div> : null}
         </div>
-        {description || defaultValue || examples ? (
+        {description || defaultValue || examples || scope ? (
           <div className={styles.propertyDescriptionContainer}>
             <div className={styles.propertyDescription}>{description}</div>
+            {scope ? (
+              <div className={styles.propertyScopes}>
+                <div className={styles.schemaTitle}>Scopes</div>
+                {Object.entries(scope).map(([key, value]) => (
+                  <div className={styles.propertyScope} key={key}>
+                    <div className={styles.propertyNameAndTypes}>
+                      <div className={styles.propertyName}>{key}</div>
+                      <TypeTag name={value.scope_type} onClick={onClick} />
+                    </div>
+                    <div className={styles.propertyDescriptionContainer}>
+                      <div className={styles.propertyDescription}>{value.description}</div>
+                      {value.scope_parameters ? (
+                        <div className={styles.scopeFnParameters}>
+                          Parameters:{' '}
+                          {Object.entries(value.scope_parameters).map(([key, value]) => (
+                            <div key={key} className={styles.scopeFnParameter}>
+                              <div className={styles.propertyNameAndTypes}>
+                                {key} <TypeTag name={value.type} onClick={onClick} />
+                              </div>
+                              <div className={styles.propertyDefaultValue}>{value.default}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                      {value.scope_return_type ? (
+                        <div className={styles.scopeFnReturnType}>
+                          Return value:
+                          <TypeTag name={value.scope_return_type} onClick={onClick} />
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             {defaultValue ? (
               <div className={styles.propertyDefault}>
                 default:{' '}

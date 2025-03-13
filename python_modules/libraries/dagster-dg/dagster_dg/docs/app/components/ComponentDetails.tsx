@@ -29,7 +29,7 @@ export default function ComponentDetails({config}: Props) {
         <h2>Schema</h2>
         <a href="#schema">#</a>
       </div>
-      <ComponentSchema schema={config.schema} />
+      <ComponentSchema schema={config.schema} name={config.name} />
     </div>
   );
 }
