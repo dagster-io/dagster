@@ -332,10 +332,9 @@ class DbtCliEventMessage:
             "invocation_id": invocation_id,
         }
 
-        if (
-                event_node_info.get("node_started_at") in ["", "None", None] and
-                event_node_info.get("node_finished_at") in ["", "None", None]
-        ):
+        if event_node_info.get("node_started_at") in ["", "None", None] and event_node_info.get(
+            "node_finished_at"
+        ) in ["", "None", None]:
             # if model materialization is incremental microbatch, node_started_at and node_finished_at are empty strings
             # and require fallback to data.execution_time
             default_metadata["Execution Duration"] = self.raw_event["data"]["execution_time"]
