@@ -203,7 +203,7 @@ You can set up alerts to fire if your Hybrid agent hasn't sent a heartbeat in th
         alert_name="credit-budget-alert",
         event_types=["INSIGHTS_CONSUMPTION_EXCEEDED"],
         config_snippet=None,
-    )
+    ),
 ]
 
 
