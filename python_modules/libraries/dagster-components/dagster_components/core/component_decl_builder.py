@@ -164,6 +164,7 @@ class YamlComponentDecl(ComponentDeclNode):
         component_type = load_component_type(key)
         component_schema = component_type.get_schema()
         context = context.with_rendering_scope(component_type.get_additional_scope())
+
         attributes = self.get_attributes(component_schema) if component_schema else None
         return [component_type.load(attributes, context)]
 

@@ -244,8 +244,9 @@ def serializable_error_info_from_exc_info(
 
 
 DAGSTER_FRAMEWORK_SUBSTRINGS = [
-    "/site-packages/dagster/",
-    "/python_modules/dagster/dagster/",
+    "/site-packages/dagster",
+    "/python_modules/dagster",
+    "/python_modules/libraries/dagster",
 ]
 
 IMPORT_MACHINERY_SUBSTRINGS = [

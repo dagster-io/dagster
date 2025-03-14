@@ -9,11 +9,11 @@ import Preview from '../../../../partials/\_Preview.md';
 
 To add components to your project, you can instantiate them from the command line, which will create a new directory inside your `components/` folder that contains a `component.yaml` file.
 
-If you want to use Python to add components to your project instead, see "[Adding components to your project with Python](adding-components-python)".
+If you want to use Python to add components to your project instead, see "[Adding components to your project with Python](/guides/labs/components/building-pipelines-with-components/adding-components-python)".
 
 :::note Prerequisites
 
-Before adding a component with Python, you must either [create a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components) or [migrate an existing project to components](/guides/labs/components/incrementally-adopting-components/existing-project).
+Before adding a component, you must either [create a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components) or [migrate an existing project to `dg`](/guides/labs/dg/incrementally-adopting-dg/migrating-project).
 
 :::
 

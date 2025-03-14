@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Union
 
 import click
 from dagster import _check as check
@@ -74,8 +74,32 @@ TRANSLATOR_MERGE_ATTRIBUTES = {"metadata", "tags"}
 @dataclass
 class TranslatorResolvingInfo:
     obj_name: str
-    asset_attributes: AssetAttributesModel
+    asset_attributes: Union[str, AssetAttributesModel]
     resolution_context: ResolutionContext
+
+    def _resolve_asset_attributes(
+        self, context: Mapping[str, Any]
+    ) -> Union[AssetSpec, AssetAttributesModel]:
+        """Resolves the user-specified asset attributes into an AssetAttributesModel, or an AssetSpec
+        if the UDF returns one.
+        """
+        if isinstance(self.asset_attributes, AssetAttributesModel):
+            return self.asset_attributes
+
+        resolved_asset_attributes = self.resolution_context.with_scope(**context).resolve_value(
+            self.asset_attributes
+        )
+
+        if isinstance(resolved_asset_attributes, AssetSpec):
+            return resolved_asset_attributes
+        elif isinstance(resolved_asset_attributes, AssetAttributesModel):
+            return resolved_asset_attributes
+        elif isinstance(resolved_asset_attributes, dict):
+            return AssetAttributesModel(**(resolved_asset_attributes))
+        else:
+            check.failed(
+                f"Unexpected return value for asset_attributes UDF: {type(resolved_asset_attributes)}"
+            )
 
     def get_asset_spec(self, base_spec: AssetSpec, context: Mapping[str, Any]) -> AssetSpec:
         """Returns an AssetSpec that combines the base spec with attributes resolved using the provided context.
@@ -95,8 +119,12 @@ class TranslatorResolvingInfo:
 
         ```
         """
+        resolved_asset_attributes = self._resolve_asset_attributes(context)
+        if isinstance(resolved_asset_attributes, AssetSpec):
+            return resolved_asset_attributes
+
         resolved_attributes = resolve_asset_attributes_to_mapping(
-            model=self.asset_attributes,
+            model=resolved_asset_attributes,
             context=self.resolution_context.with_scope(**context),
         )
         if "code_version" in resolved_attributes:

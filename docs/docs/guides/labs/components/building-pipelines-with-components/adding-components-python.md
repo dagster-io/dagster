@@ -11,7 +11,7 @@ In some cases, you may want to add a component to your project with Python rathe
 
 :::note Prerequisites
 
-Before adding a component with Python, you must either [create a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components) or [migrate an existing project to components](/guides/labs/components/incrementally-adopting-components/existing-project).
+Before adding a component with Python, you must either [create a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components) or [migrate an existing project to `dg`](/guides/labs/dg/incrementally-adopting-dg/migrating-project).
 
 :::
 

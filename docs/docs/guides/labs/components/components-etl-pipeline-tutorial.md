@@ -210,39 +210,13 @@ Now that you've defined some assets, you can automate them to keep them up to da
 
 Navigate to `defs/ingest_files/component.yaml` and add the `automation_condition` below to automatically pull in data with Sling every day:
 
-```yaml create=jaffle_platform/defs/ingest_files/component.yaml title="jaffle-platform/jaffle_platform/defs/ingest_files/component.yaml"
-type: dagster_components.dagster_sling.SlingReplicationCollectionComponent
-
-attributes:
-  replications:
-    - path: replication.yaml
-  asset_attributes:
-    - target: "*"
-      attributes:
-        automation_condition: "{{ automation_condition.on_cron('@daily') }}"
-        metadata:
-          automation_condition: "on_cron(@daily)"
-```
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/26-component-ingest-automation.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/ingest_files/component.yaml" />
 
 ### 2. Automate dbt transformation
 
 Next, update the dbt project so it executes after the Sling replication runs. Navigate to `components/jdbt/component.yaml` and add the `automation_condition` below:
 
-```yaml create=jaffle_platform/defs/jdbt/component.yaml title="jaffle-platform/jaffle_platform/defs/jdbt/component.yaml"
-type: dagster_components.dagster_dbt.DbtProjectComponent
-
-attributes:
-  dbt:
-    project_dir: ../../../dbt/jdbt
-  asset_attributes:
-    key: "target/main/{{ node.name }}"
-  transforms:
-    - target: "*"
-      attributes:
-        automation_condition: "{{ automation_condition.eager() }}"
-      metadata:
-        automation_condition: "eager"
-```
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/27-component-jdbt-automation.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/jdbt/component.yaml" />
 
 ## Next steps
 

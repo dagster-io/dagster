@@ -9,6 +9,7 @@ from dagster_fivetran.resources import (
     FIVETRAN_API_VERSION,
     FIVETRAN_CONNECTOR_ENDPOINT,
 )
+from dagster_fivetran.translator import FivetranConnectorSetupStateType
 from dagster_fivetran.types import FivetranOutput
 
 TEST_MAX_TIME_STR = "2024-12-01T15:45:29.013729Z"
@@ -49,80 +50,87 @@ SAMPLE_GROUPS = {
     },
 }
 
+
 # Taken from Fivetran API documentation
 # https://fivetran.com/docs/rest-api/api-reference/groups/list-all-connectors-in-group
-SAMPLE_CONNECTORS_FOR_GROUP = {
-    "code": "Success",
-    "message": "Operation performed.",
-    "data": {
-        "items": [
-            {
-                "id": TEST_CONNECTOR_ID,
-                "service": TEST_DESTINATION_SERVICE,
-                "schema": TEST_CONNECTOR_NAME,
-                "paused": False,
-                "status": {
-                    "tasks": [
+def get_connectors_for_group(setup_state: str) -> Mapping[str, Any]:
+    return {
+        "code": "Success",
+        "message": "Operation performed.",
+        "data": {
+            "items": [
+                {
+                    "id": TEST_CONNECTOR_ID,
+                    "service": TEST_DESTINATION_SERVICE,
+                    "schema": TEST_CONNECTOR_NAME,
+                    "paused": False,
+                    "status": {
+                        "tasks": [
+                            {
+                                "code": "resync_table_warning",
+                                "message": "Resync Table Warning",
+                                "details": "string",
+                            }
+                        ],
+                        "warnings": [
+                            {
+                                "code": "resync_table_warning",
+                                "message": "Resync Table Warning",
+                                "details": "string",
+                            }
+                        ],
+                        "schema_status": "ready",
+                        "update_state": "delayed",
+                        "setup_state": setup_state,
+                        "sync_state": "scheduled",
+                        "is_historical_sync": False,
+                        "rescheduled_for": "2024-12-01T15:43:29.013729Z",
+                    },
+                    "config": {"property1": {}, "property2": {}},
+                    "daily_sync_time": "14:00",
+                    "succeeded_at": "2024-12-01T15:45:29.013729Z",
+                    "sync_frequency": 360,
+                    "group_id": TEST_GROUP_ID,
+                    "connected_by": "user_id",
+                    "setup_tests": [
                         {
-                            "code": "resync_table_warning",
-                            "message": "Resync Table Warning",
-                            "details": "string",
+                            "title": "Test Title",
+                            "status": "PASSED",
+                            "message": "Test Passed",
+                            "details": "Test Details",
                         }
                     ],
-                    "warnings": [
-                        {
-                            "code": "resync_table_warning",
-                            "message": "Resync Table Warning",
-                            "details": "string",
-                        }
-                    ],
-                    "schema_status": "ready",
-                    "update_state": "delayed",
-                    "setup_state": "connected",
-                    "sync_state": "scheduled",
-                    "is_historical_sync": False,
-                    "rescheduled_for": "2024-12-01T15:43:29.013729Z",
-                },
-                "config": {"property1": {}, "property2": {}},
-                "daily_sync_time": "14:00",
-                "succeeded_at": "2024-12-01T15:45:29.013729Z",
-                "sync_frequency": 360,
-                "group_id": TEST_GROUP_ID,
-                "connected_by": "user_id",
-                "setup_tests": [
-                    {
-                        "title": "Test Title",
-                        "status": "PASSED",
-                        "message": "Test Passed",
-                        "details": "Test Details",
-                    }
-                ],
-                "source_sync_details": {},
-                "service_version": 0,
-                "created_at": "2024-12-01T15:41:29.013729Z",
-                "failed_at": "2024-12-01T15:43:29.013729Z",
-                "private_link_id": "string",
-                "proxy_agent_id": "string",
-                "networking_method": "Directly",
-                "connect_card": {
-                    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkIjp7ImxvZ2luIjp0cnVlLCJ1c2VyIjoiX2FjY291bnR3b3J0aHkiLCJhY2NvdW50IjoiX21vb25iZWFtX2FjYyIsImdyb3VwIjoiX21vb25iZWFtIiwiY29ubmVjdG9yIjoiY29iYWx0X2VsZXZhdGlvbiIsIm1ldGhvZCI6IlBiZkNhcmQiLCJpZGVudGl0eSI6ZmFsc2V9LCJpYXQiOjE2Njc4MzA2MzZ9.YUMGUbzxW96xsKJLo4bTorqzx8Q19GTrUi3WFRFM8BU",
-                    "uri": "https://fivetran.com/connect-card/setup?auth=eyJ0eXAiOiJKV1QiLCJh...",
-                },
-                "pause_after_trial": False,
-                "data_delay_threshold": 0,
-                "data_delay_sensitivity": "LOW",
-                "schedule_type": "auto",
-                "local_processing_agent_id": "string",
-                "connect_card_config": {
-                    "redirect_uri": "https://your.site/path",
-                    "hide_setup_guide": True,
-                },
-                "hybrid_deployment_agent_id": "string",
-            }
-        ],
-        "nextCursor": "cursor_value",
-    },
-}
+                    "source_sync_details": {},
+                    "service_version": 0,
+                    "created_at": "2024-12-01T15:41:29.013729Z",
+                    "failed_at": "2024-12-01T15:43:29.013729Z",
+                    "private_link_id": "string",
+                    "proxy_agent_id": "string",
+                    "networking_method": "Directly",
+                    "connect_card": {
+                        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkIjp7ImxvZ2luIjp0cnVlLCJ1c2VyIjoiX2FjY291bnR3b3J0aHkiLCJhY2NvdW50IjoiX21vb25iZWFtX2FjYyIsImdyb3VwIjoiX21vb25iZWFtIiwiY29ubmVjdG9yIjoiY29iYWx0X2VsZXZhdGlvbiIsIm1ldGhvZCI6IlBiZkNhcmQiLCJpZGVudGl0eSI6ZmFsc2V9LCJpYXQiOjE2Njc4MzA2MzZ9.YUMGUbzxW96xsKJLo4bTorqzx8Q19GTrUi3WFRFM8BU",
+                        "uri": "https://fivetran.com/connect-card/setup?auth=eyJ0eXAiOiJKV1QiLCJh...",
+                    },
+                    "pause_after_trial": False,
+                    "data_delay_threshold": 0,
+                    "data_delay_sensitivity": "LOW",
+                    "schedule_type": "auto",
+                    "local_processing_agent_id": "string",
+                    "connect_card_config": {
+                        "redirect_uri": "https://your.site/path",
+                        "hide_setup_guide": True,
+                    },
+                    "hybrid_deployment_agent_id": "string",
+                }
+            ],
+            "nextCursor": "cursor_value",
+        },
+    }
+
+
+SAMPLE_CONNECTORS_FOR_GROUP = get_connectors_for_group(
+    setup_state=FivetranConnectorSetupStateType.CONNECTED.value
+)
 
 # Taken from Fivetran API documentation
 # https://fivetran.com/docs/rest-api/api-reference/destinations/destination-details
@@ -539,6 +547,50 @@ def missing_schemas_fetch_workspace_data_api_mocks_fixture(
         url=f"{get_fivetran_connector_api_url(connector_id)}/schemas",
         json=MISSING_SCHEMAS_SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
         status=200,
+    )
+    yield fetch_workspace_data_api_mocks
+
+
+@pytest.fixture(
+    name="incomplete_connector_fetch_workspace_data_api_mocks",
+)
+def incomplete_connector_fetch_workspace_data_api_mocks_fixture(
+    connector_id: str,
+    destination_id: str,
+    group_id: str,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> Iterator[responses.RequestsMock]:
+    fetch_workspace_data_api_mocks.replace(
+        method_or_response=responses.GET,
+        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{group_id}/connectors",
+        json=get_connectors_for_group(setup_state=FivetranConnectorSetupStateType.INCOMPLETE.value),
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.remove(
+        method_or_response=responses.GET,
+        url=f"{get_fivetran_connector_api_url(connector_id)}/schemas",
+    )
+    yield fetch_workspace_data_api_mocks
+
+
+@pytest.fixture(
+    name="broken_connector_fetch_workspace_data_api_mocks",
+)
+def broken_connector_fetch_workspace_data_api_mocks_fixture(
+    connector_id: str,
+    destination_id: str,
+    group_id: str,
+    fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> Iterator[responses.RequestsMock]:
+    fetch_workspace_data_api_mocks.replace(
+        method_or_response=responses.GET,
+        url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{group_id}/connectors",
+        json=get_connectors_for_group(setup_state=FivetranConnectorSetupStateType.BROKEN.value),
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.remove(
+        method_or_response=responses.GET,
+        url=f"{get_fivetran_connector_api_url(connector_id)}/schemas",
     )
     yield fetch_workspace_data_api_mocks
 
