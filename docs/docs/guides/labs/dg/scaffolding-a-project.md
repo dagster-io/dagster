@@ -1,6 +1,6 @@
 ---
 title: 'Scaffolding a project'
-sidebar_position: 200
+sidebar_position: 100
 ---
 
 import Preview from '../../../partials/\_Preview.md';
