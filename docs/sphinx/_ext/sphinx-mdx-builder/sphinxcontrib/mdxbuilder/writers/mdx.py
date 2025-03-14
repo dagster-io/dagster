@@ -204,7 +204,7 @@ class MdxTranslator(SphinxTranslator):
                 return None
 
             # unwrap the root function if function is wrapped
-            while hasattr(obj, '__wrapped__'):
+            while hasattr(obj, "__wrapped__"):
                 obj = obj.__wrapped__
 
             try:
@@ -213,7 +213,7 @@ class MdxTranslator(SphinxTranslator):
                     return None
 
                 # get relative path, and trim `..`
-                repo_path = os.path.relpath(source_file).replace('../', '')
+                repo_path = os.path.relpath(source_file).replace("../", "")
                 source_line = inspect.getsourcelines(obj)[1]
 
                 return f"{self.github_url}/{repo_path}#L{source_line}"
