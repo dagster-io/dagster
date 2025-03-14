@@ -293,6 +293,48 @@ def get_asset_materializations(
     return [event_record.event_log_entry for event_record in event_records]
 
 
+def get_asset_failed_to_materialize_events(
+    graphene_info: "ResolveInfo",
+    asset_key: AssetKey,
+    partitions: Optional[Sequence[str]] = None,
+    limit: Optional[int] = None,
+    before_timestamp: Optional[float] = None,
+    after_timestamp: Optional[float] = None,
+    storage_ids: Optional[Sequence[int]] = None,
+) -> Sequence[EventLogEntry]:
+    check.inst_param(asset_key, "asset_key", AssetKey)
+    check.opt_int_param(limit, "limit")
+    check.opt_float_param(before_timestamp, "before_timestamp")
+
+    instance = graphene_info.context.instance
+    records_filter = AssetRecordsFilter(
+        asset_key=asset_key,
+        asset_partitions=partitions,
+        before_timestamp=before_timestamp,
+        after_timestamp=after_timestamp,
+        storage_ids=storage_ids,
+    )
+    if limit is None:
+        event_records = []
+        cursor = None
+        while True:
+            event_records_result = instance.fetch_failed_materializations(
+                records_filter=records_filter,
+                cursor=cursor,
+                limit=get_max_event_records_limit(),
+            )
+            cursor = event_records_result.cursor
+            event_records.extend(event_records_result.records)
+            if not event_records_result.has_more:
+                break
+    else:
+        event_records = instance.fetch_materializations(
+            records_filter=records_filter, limit=limit
+        ).records
+
+    return [event_record.event_log_entry for event_record in event_records]
+
+
 def get_asset_observations(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
