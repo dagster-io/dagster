@@ -225,7 +225,14 @@ class ConfigParser:
         else:
             raise Exception("unknown type: ", obj)
 
-        return Field(fields, is_required=None, description=obj.get("description"))
+        description = obj.get("description")
+        is_required = None
+        if description is not None:
+            if description.startswith("Optional."):
+                is_required = False
+            elif description.startswith("Required."):
+                is_required = True
+        return Field(fields, is_required=is_required, description=description)
 
     def extract_schema_for_object(self, object_name, name):
         # Reset enums for this object

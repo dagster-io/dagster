@@ -22,7 +22,7 @@ def define_dataproc_job_config():
                                 description="""Optional. The ID of the Google Cloud Platform project
                                 that the job belongs to. If specified, must match the request
                                 project ID.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "jobId": Field(
                                 String,
@@ -31,7 +31,7 @@ def define_dataproc_job_config():
                                 underscores (_), or hyphens (-). The maximum length is 100
                                 characters.If not specified by the caller, the job ID will be
                                 provided by the server.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
@@ -51,7 +51,7 @@ def define_dataproc_job_config():
                                 Permissive(),
                                 description="""Optional. Cluster labels to identify a cluster where
                                 the job will be submitted.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
@@ -83,27 +83,27 @@ def define_dataproc_job_config():
                                 include arguments, such as -libjars or -Dfoo=bar, that can be set as
                                 job properties, since a collision might occur that causes an
                                 incorrect job submission.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "jarFileUris": Field(
                                 [String],
                                 description="""Optional. Jar file URIs to add to the CLASSPATHs of
                                 the Hadoop driver and tasks.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "fileUris": Field(
                                 [String],
                                 description="""Optional. HCFS (Hadoop Compatible Filesystem) URIs of
                                 files to be copied to the working directory of Hadoop drivers and
                                 distributed tasks. Useful for naively parallel tasks.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "archiveUris": Field(
                                 [String],
                                 description="""Optional. HCFS URIs of archives to be extracted in
                                 the working directory of Hadoop drivers and tasks. Supported file
                                 types: .jar, .tar, .tar.gz, .tgz, or .zip.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "properties": Field(
                                 Permissive(),
@@ -111,7 +111,7 @@ def define_dataproc_job_config():
                                 to configure Hadoop. Properties that conflict with values set by the
                                 Dataproc API might be overwritten. Can include properties set in
                                 /etc/hadoop/conf/*-site and classes in user code.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "loggingConfig": Field(
                                 Shape(
@@ -159,27 +159,27 @@ def define_dataproc_job_config():
                                 include arguments, such as --conf, that can be set as job
                                 properties, since a collision may occur that causes an incorrect job
                                 submission.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "jarFileUris": Field(
                                 [String],
                                 description="""Optional. HCFS URIs of jar files to add to the
                                 CLASSPATHs of the Spark driver and tasks.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "fileUris": Field(
                                 [String],
                                 description="""Optional. HCFS URIs of files to be placed in the
                                 working directory of each executor. Useful for naively parallel
                                 tasks.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "archiveUris": Field(
                                 [String],
                                 description="""Optional. HCFS URIs of archives to be extracted into
                                 the working directory of each executor. Supported file types: .jar,
                                 .tar, .tar.gz, .tgz, and .zip.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "properties": Field(
                                 Permissive(),
@@ -187,7 +187,7 @@ def define_dataproc_job_config():
                                 to configure Spark. Properties that conflict with values set by the
                                 Dataproc API might be overwritten. Can include properties set in
                                 /etc/spark/conf/spark-defaults.conf and classes in user code.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "loggingConfig": Field(
                                 Shape(
@@ -226,34 +226,34 @@ def define_dataproc_job_config():
                                 include arguments, such as --conf, that can be set as job
                                 properties, since a collision may occur that causes an incorrect job
                                 submission.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "pythonFileUris": Field(
                                 [String],
                                 description="""Optional. HCFS file URIs of Python files to pass to
                                 the PySpark framework. Supported file types: .py, .egg, and
                                 .zip.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "jarFileUris": Field(
                                 [String],
                                 description="""Optional. HCFS URIs of jar files to add to the
                                 CLASSPATHs of the Python driver and tasks.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "fileUris": Field(
                                 [String],
                                 description="""Optional. HCFS URIs of files to be placed in the
                                 working directory of each executor. Useful for naively parallel
                                 tasks.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "archiveUris": Field(
                                 [String],
                                 description="""Optional. HCFS URIs of archives to be extracted into
                                 the working directory of each executor. Supported file types: .jar,
                                 .tar, .tar.gz, .tgz, and .zip.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "properties": Field(
                                 Permissive(),
@@ -261,7 +261,7 @@ def define_dataproc_job_config():
                                 to configure PySpark. Properties that conflict with values set by
                                 the Dataproc API might be overwritten. Can include properties set in
                                 /etc/spark/conf/spark-defaults.conf and classes in user code.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "loggingConfig": Field(
                                 Shape(
@@ -319,13 +319,13 @@ def define_dataproc_job_config():
                                 description="""Optional. Whether to continue executing queries if a
                                 query fails. The default value is false. Setting to true can be
                                 useful when executing independent parallel queries.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "scriptVariables": Field(
                                 Permissive(),
                                 description="""Optional. Mapping of query variable names to values
                                 (equivalent to the Hive command: SET name="value";).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "properties": Field(
                                 Permissive(),
@@ -334,14 +334,14 @@ def define_dataproc_job_config():
                                 the Dataproc API might be overwritten. Can include properties set in
                                 /etc/hadoop/conf/*-site.xml, /etc/hive/conf/hive-site.xml, and
                                 classes in user code.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "jarFileUris": Field(
                                 [String],
                                 description="""Optional. HCFS URIs of jar files to add to the
                                 CLASSPATH of the Hive server and Hadoop MapReduce (MR) tasks. Can
                                 contain Hive SerDes and UDFs.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
@@ -382,13 +382,13 @@ def define_dataproc_job_config():
                                 description="""Optional. Whether to continue executing queries if a
                                 query fails. The default value is false. Setting to true can be
                                 useful when executing independent parallel queries.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "scriptVariables": Field(
                                 Permissive(),
                                 description="""Optional. Mapping of query variable names to values
                                 (equivalent to the Pig command: name=[value]).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "properties": Field(
                                 Permissive(),
@@ -397,14 +397,14 @@ def define_dataproc_job_config():
                                 Dataproc API might be overwritten. Can include properties set in
                                 /etc/hadoop/conf/*-site.xml, /etc/pig/conf/pig.properties, and
                                 classes in user code.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "jarFileUris": Field(
                                 [String],
                                 description="""Optional. HCFS URIs of jar files to add to the
                                 CLASSPATH of the Pig Client and Hadoop MapReduce (MR) tasks. Can
                                 contain Pig UDFs.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "loggingConfig": Field(
                                 Shape(
@@ -443,21 +443,21 @@ def define_dataproc_job_config():
                                 include arguments, such as --conf, that can be set as job
                                 properties, since a collision may occur that causes an incorrect job
                                 submission.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "fileUris": Field(
                                 [String],
                                 description="""Optional. HCFS URIs of files to be placed in the
                                 working directory of each executor. Useful for naively parallel
                                 tasks.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "archiveUris": Field(
                                 [String],
                                 description="""Optional. HCFS URIs of archives to be extracted into
                                 the working directory of each executor. Supported file types: .jar,
                                 .tar, .tar.gz, .tgz, and .zip.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "properties": Field(
                                 Permissive(),
@@ -465,7 +465,7 @@ def define_dataproc_job_config():
                                 to configure SparkR. Properties that conflict with values set by the
                                 Dataproc API might be overwritten. Can include properties set in
                                 /etc/spark/conf/spark-defaults.conf and classes in user code.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "loggingConfig": Field(
                                 Shape(
@@ -521,20 +521,20 @@ def define_dataproc_job_config():
                                 Permissive(),
                                 description="""Optional. Mapping of query variable names to values
                                 (equivalent to the Spark SQL command: SET name="value";).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "properties": Field(
                                 Permissive(),
                                 description="""Optional. A mapping of property names to values, used
                                 to configure Spark SQL\'s SparkConf. Properties that conflict with
                                 values set by the Dataproc API might be overwritten.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "jarFileUris": Field(
                                 [String],
                                 description="""Optional. HCFS URIs of jar files to be added to the
                                 Spark CLASSPATH.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "loggingConfig": Field(
                                 Shape(
@@ -591,20 +591,20 @@ def define_dataproc_job_config():
                                 description="""Optional. Whether to continue executing queries if a
                                 query fails. The default value is false. Setting to true can be
                                 useful when executing independent parallel queries.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "outputFormat": Field(
                                 String,
                                 description="""Optional. The format in which query output will be
                                 displayed. See the Presto documentation for supported output
                                 formats""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "clientTags": Field(
                                 [String],
                                 description="""Optional. Presto client tags to attach to this
                                 query""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "properties": Field(
                                 Permissive(),
@@ -612,7 +612,7 @@ def define_dataproc_job_config():
                                 to set Presto session properties
                                 (https://prestodb.io/docs/current/sql/set-session.html) Equivalent
                                 to using the --session flag in the Presto CLI""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "loggingConfig": Field(
                                 Shape(
@@ -671,20 +671,20 @@ def define_dataproc_job_config():
                                 description="""Optional. Whether to continue executing queries if a
                                 query fails. The default value is false. Setting to true can be
                                 useful when executing independent parallel queries.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "outputFormat": Field(
                                 String,
                                 description="""Optional. The format in which query output will be
                                 displayed. See the Trino documentation for supported output
                                 formats""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "clientTags": Field(
                                 [String],
                                 description="""Optional. Trino client tags to attach to this
                                 query""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "properties": Field(
                                 Permissive(),
@@ -692,7 +692,7 @@ def define_dataproc_job_config():
                                 to set Trino session properties
                                 (https://trino.io/docs/current/sql/set-session.html) Equivalent to
                                 using the --session flag in the Trino CLI""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "loggingConfig": Field(
                                 Shape(
@@ -740,19 +740,19 @@ def define_dataproc_job_config():
                                 include arguments, such as --conf, that can be set as job
                                 properties, since a collision might occur that causes an incorrect
                                 job submission.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "jarFileUris": Field(
                                 [String],
                                 description="""Optional. HCFS URIs of jar files to add to the
                                 CLASSPATHs of the Flink driver and tasks.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "savepointUri": Field(
                                 String,
                                 description="""Optional. HCFS URI of the savepoint, which contains
                                 the last saved progress for starting the current job.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "properties": Field(
                                 Permissive(),
@@ -760,7 +760,7 @@ def define_dataproc_job_config():
                                 to configure Flink. Properties that conflict with values set by the
                                 Dataproc API might be overwritten. Can include properties set in
                                 /etc/flink/conf/flink-defaults.conf and classes in user code.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "loggingConfig": Field(
                                 Shape(
@@ -798,7 +798,7 @@ def define_dataproc_job_config():
                     present, must contain 1 to 63 characters, and must conform to RFC 1035
                     (https://www.ietf.org/rfc/rfc1035.txt). No more than 32 labels can be associated
                     with a job.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "scheduling": Field(
                     Shape(
@@ -812,7 +812,7 @@ def define_dataproc_job_config():
                                 10-minute window.Maximum value is 10.Note: This restartable job
                                 option is not supported in Dataproc workflow templates
                                 (https://cloud.google.com/dataproc/docs/concepts/workflows/using-workflows#adding_jobs_to_a_template).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "maxFailuresTotal": Field(
                                 Int,
@@ -822,7 +822,7 @@ def define_dataproc_job_config():
                                 failed.Maximum value is 240.Note: Currently, this restartable job
                                 option is not supported in Dataproc workflow templates
                                 (https://cloud.google.com/dataproc/docs/concepts/workflows/using-workflows#adding_jobs_to_a_template).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),

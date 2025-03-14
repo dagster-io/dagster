@@ -33,7 +33,7 @@ def define_dataproc_cluster_config():
                     (https://cloud.google.com/dataproc/docs/concepts/configuring-clusters/staging-bucket)).
                     This field requires a Cloud Storage bucket name, not a gs://... URI to a Cloud
                     Storage bucket.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "tempBucket": Field(
                     String,
@@ -47,7 +47,7 @@ def define_dataproc_cluster_config():
                     (https://cloud.google.com/dataproc/docs/concepts/configuring-clusters/staging-bucket)).
                     This field requires a Cloud Storage bucket name, not a gs://... URI to a Cloud
                     Storage bucket.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "gceClusterConfig": Field(
                     Shape(
@@ -61,7 +61,7 @@ def define_dataproc_cluster_config():
                                 Examples:
                                 https://www.googleapis.com/compute/v1/projects/[project_id]/zones/[zone]
                                 projects/[project_id]/zones/[zone] [zone]""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "networkUri": Field(
                                 String,
@@ -75,7 +75,7 @@ def define_dataproc_cluster_config():
                                 Examples:
                                 https://www.googleapis.com/compute/v1/projects/[project_id]/global/networks/default
                                 projects/[project_id]/global/networks/default default""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "subnetworkUri": Field(
                                 String,
@@ -84,7 +84,7 @@ def define_dataproc_cluster_config():
                                 full URL, partial URI, or short name are valid. Examples:
                                 https://www.googleapis.com/compute/v1/projects/[project_id]/regions/[region]/subnetworks/sub0
                                 projects/[project_id]/regions/[region]/subnetworks/sub0 sub0""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "internalIpOnly": Field(
                                 Bool,
@@ -98,12 +98,12 @@ def define_dataproc_cluster_config():
                                 addresses.When set to false: Cluster VMs are not restricted to
                                 internal IP addresses. Ephemeral external IP addresses are assigned
                                 to each cluster VM.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "privateIpv6GoogleAccess": Field(
                                 PrivateIpv6GoogleAccess,
                                 description="""Optional. The type of IPv6 access for a cluster.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "serviceAccount": Field(
                                 String,
@@ -116,7 +116,7 @@ def define_dataproc_cluster_config():
                                 service account
                                 (https://cloud.google.com/compute/docs/access/service-accounts#default_service_account)
                                 is used.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "serviceAccountScopes": Field(
                                 [String],
@@ -131,7 +131,7 @@ def define_dataproc_cluster_config():
                                 https://www.googleapis.com/auth/bigtable.admin.table
                                 https://www.googleapis.com/auth/bigtable.data
                                 https://www.googleapis.com/auth/devstorage.full_control""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "tags": Field(
                                 [String],
@@ -145,7 +145,7 @@ def define_dataproc_cluster_config():
                                 description="""Optional. The Compute Engine metadata entries to add
                                 to all instances (see Project and instance metadata
                                 (https://cloud.google.com/compute/docs/storing-retrieving-metadata#project_and_instance_metadata)).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "reservationAffinity": Field(
                                 Shape(
@@ -154,19 +154,19 @@ def define_dataproc_cluster_config():
                                             ConsumeReservationType,
                                             description="""Optional. Type of reservation to
                                             consume""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "key": Field(
                                             String,
                                             description="""Optional. Corresponds to the label key of
                                             reservation resource.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "values": Field(
                                             [String],
                                             description="""Optional. Corresponds to the label values
                                             of reservation resource.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
@@ -203,19 +203,19 @@ def define_dataproc_cluster_config():
                                             Bool,
                                             description="""Optional. Defines whether instances have
                                             Secure Boot enabled.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "enableVtpm": Field(
                                             Bool,
                                             description="""Optional. Defines whether instances have
                                             the vTPM enabled.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "enableIntegrityMonitoring": Field(
                                             Bool,
                                             description="""Optional. Defines whether instances have
                                             integrity monitoring enabled.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
@@ -231,7 +231,7 @@ def define_dataproc_cluster_config():
                                             Bool,
                                             description="""Optional. Defines whether the instance
                                             should have confidential compute enabled.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
@@ -246,7 +246,7 @@ def define_dataproc_cluster_config():
                                 (https://cloud.google.com/resource-manager/docs/tags/tags-creating-and-managing)
                                 to add to all instances (see Use secure tags in Dataproc
                                 (https://cloud.google.com/dataproc/docs/guides/attach-secure-tags)).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
@@ -262,7 +262,7 @@ def define_dataproc_cluster_config():
                                 description="""Optional. The number of VM instances in the instance
                                 group. For HA cluster master_config groups, must be set to 3. For
                                 standard cluster master_config groups, must be set to 1.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "imageUri": Field(
                                 String,
@@ -276,7 +276,7 @@ def define_dataproc_cluster_config():
                                 projects/[project_id]/global/images/family/[custom-image-family-name]If
                                 the URI is unspecified, it will be inferred from
                                 SoftwareConfig.image_version or the system default.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "machineTypeUri": Field(
                                 String,
@@ -290,7 +290,7 @@ def define_dataproc_cluster_config():
                                 (https://cloud.google.com/dataproc/docs/concepts/configuring-clusters/auto-zone#using_auto_zone_placement)
                                 feature, you must use the short name of the machine type resource,
                                 for example, n1-standard-2.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "diskConfig": Field(
                                 Shape(
@@ -303,13 +303,13 @@ def define_dataproc_cluster_config():
                                             (Persistent Disk Solid State Drive), or "pd-standard"
                                             (Persistent Disk Hard Disk Drive). See Disk types
                                             (https://cloud.google.com/compute/docs/disks#disk-types).""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "bootDiskSizeGb": Field(
                                             Int,
                                             description="""Optional. Size in GB of the boot disk
                                             (default is 500GB).""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "numLocalSsds": Field(
                                             Int,
@@ -322,7 +322,7 @@ def define_dataproc_cluster_config():
                                             contains only basic config and installed binaries.Note:
                                             Local SSD options may vary by machine type and number of
                                             vCPUs selected.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "localSsdInterface": Field(
                                             String,
@@ -331,7 +331,7 @@ def define_dataproc_cluster_config():
                                             Computer System Interface), "nvme" (Non-Volatile Memory
                                             Express). See local SSD performance
                                             (https://cloud.google.com/compute/docs/disks/local-ssd#performance).""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "bootDiskProvisionedIops": Field(
                                             String,
@@ -340,7 +340,7 @@ def define_dataproc_cluster_config():
                                             operations per second that the disk can handle. This
                                             field is supported only if boot_disk_type is
                                             hyperdisk-balanced.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "bootDiskProvisionedThroughput": Field(
                                             String,
@@ -350,7 +350,7 @@ def define_dataproc_cluster_config():
                                             Values must be greater than or equal to 1. This field is
                                             supported only if boot_disk_type is
                                             hyperdisk-balanced.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
@@ -364,7 +364,7 @@ def define_dataproc_cluster_config():
                                 instance group.The default value for master and worker groups is
                                 NON_PREEMPTIBLE. This default cannot be changed.The default value
                                 for secondary instances is PREEMPTIBLE.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "managedGroupConfig": Field(
                                 Shape(
@@ -404,14 +404,14 @@ def define_dataproc_cluster_config():
                                 ],
                                 description="""Optional. The Compute Engine accelerator
                                 configuration for these instances.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "minCpuPlatform": Field(
                                 String,
                                 description="""Optional. Specifies the minimum cpu platform for the
                                 Instance Group. See Dataproc -> Minimum CPU Platform
                                 (https://cloud.google.com/dataproc/docs/concepts/compute/dataproc-min-cpu).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "minNumInstances": Field(
                                 Int,
@@ -424,7 +424,7 @@ def define_dataproc_cluster_config():
                                 cluster is resized to 4 instances and placed in a RUNNING state. If
                                 2 instances are created and 3 instances fail, the cluster in placed
                                 in an ERROR state. The failed VMs are not deleted.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "instanceFlexibilityPolicy": Field(
                                 Shape(
@@ -447,7 +447,7 @@ def define_dataproc_cluster_config():
                                                         create 5 standard VMs and then start mixing
                                                         spot and standard VMs for remaining 10
                                                         instances.""",
-                                                        is_required=True,
+                                                        is_required=False,
                                                     ),
                                                     "standardCapacityPercentAboveBase": Field(
                                                         Int,
@@ -463,7 +463,7 @@ def define_dataproc_cluster_config():
                                                         start mixing spot and standard VMs for
                                                         remaining 10 instances. The mix will be 30%
                                                         standard and 70% spot.""",
-                                                        is_required=True,
+                                                        is_required=False,
                                                     ),
                                                 },
                                             ),
@@ -479,7 +479,7 @@ def define_dataproc_cluster_config():
                                                             [String],
                                                             description="""Optional. Full machine-type
                                                         names, e.g. "n1-standard-16".""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                         "rank": Field(
                                                             Int,
@@ -491,7 +491,7 @@ def define_dataproc_cluster_config():
                                                         based on availability. Machine types and
                                                         instance selections with the same priority
                                                         have the same preference.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                     },
                                                 )
@@ -499,7 +499,7 @@ def define_dataproc_cluster_config():
                                             description="""Optional. List of instance selection
                                             options that the group will use when creating new
                                             VMs.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
@@ -520,7 +520,7 @@ def define_dataproc_cluster_config():
                                             required_registration_fraction of instances are not
                                             available. This will include instance creation, agent
                                             registration, and service registration (if enabled).""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
@@ -542,7 +542,7 @@ def define_dataproc_cluster_config():
                                 description="""Optional. The number of VM instances in the instance
                                 group. For HA cluster master_config groups, must be set to 3. For
                                 standard cluster master_config groups, must be set to 1.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "imageUri": Field(
                                 String,
@@ -556,7 +556,7 @@ def define_dataproc_cluster_config():
                                 projects/[project_id]/global/images/family/[custom-image-family-name]If
                                 the URI is unspecified, it will be inferred from
                                 SoftwareConfig.image_version or the system default.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "machineTypeUri": Field(
                                 String,
@@ -570,7 +570,7 @@ def define_dataproc_cluster_config():
                                 (https://cloud.google.com/dataproc/docs/concepts/configuring-clusters/auto-zone#using_auto_zone_placement)
                                 feature, you must use the short name of the machine type resource,
                                 for example, n1-standard-2.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "diskConfig": Field(
                                 Shape(
@@ -583,13 +583,13 @@ def define_dataproc_cluster_config():
                                             (Persistent Disk Solid State Drive), or "pd-standard"
                                             (Persistent Disk Hard Disk Drive). See Disk types
                                             (https://cloud.google.com/compute/docs/disks#disk-types).""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "bootDiskSizeGb": Field(
                                             Int,
                                             description="""Optional. Size in GB of the boot disk
                                             (default is 500GB).""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "numLocalSsds": Field(
                                             Int,
@@ -602,7 +602,7 @@ def define_dataproc_cluster_config():
                                             contains only basic config and installed binaries.Note:
                                             Local SSD options may vary by machine type and number of
                                             vCPUs selected.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "localSsdInterface": Field(
                                             String,
@@ -611,7 +611,7 @@ def define_dataproc_cluster_config():
                                             Computer System Interface), "nvme" (Non-Volatile Memory
                                             Express). See local SSD performance
                                             (https://cloud.google.com/compute/docs/disks/local-ssd#performance).""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "bootDiskProvisionedIops": Field(
                                             String,
@@ -620,7 +620,7 @@ def define_dataproc_cluster_config():
                                             operations per second that the disk can handle. This
                                             field is supported only if boot_disk_type is
                                             hyperdisk-balanced.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "bootDiskProvisionedThroughput": Field(
                                             String,
@@ -630,7 +630,7 @@ def define_dataproc_cluster_config():
                                             Values must be greater than or equal to 1. This field is
                                             supported only if boot_disk_type is
                                             hyperdisk-balanced.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
@@ -644,7 +644,7 @@ def define_dataproc_cluster_config():
                                 instance group.The default value for master and worker groups is
                                 NON_PREEMPTIBLE. This default cannot be changed.The default value
                                 for secondary instances is PREEMPTIBLE.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "managedGroupConfig": Field(
                                 Shape(
@@ -684,14 +684,14 @@ def define_dataproc_cluster_config():
                                 ],
                                 description="""Optional. The Compute Engine accelerator
                                 configuration for these instances.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "minCpuPlatform": Field(
                                 String,
                                 description="""Optional. Specifies the minimum cpu platform for the
                                 Instance Group. See Dataproc -> Minimum CPU Platform
                                 (https://cloud.google.com/dataproc/docs/concepts/compute/dataproc-min-cpu).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "minNumInstances": Field(
                                 Int,
@@ -704,7 +704,7 @@ def define_dataproc_cluster_config():
                                 cluster is resized to 4 instances and placed in a RUNNING state. If
                                 2 instances are created and 3 instances fail, the cluster in placed
                                 in an ERROR state. The failed VMs are not deleted.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "instanceFlexibilityPolicy": Field(
                                 Shape(
@@ -727,7 +727,7 @@ def define_dataproc_cluster_config():
                                                         create 5 standard VMs and then start mixing
                                                         spot and standard VMs for remaining 10
                                                         instances.""",
-                                                        is_required=True,
+                                                        is_required=False,
                                                     ),
                                                     "standardCapacityPercentAboveBase": Field(
                                                         Int,
@@ -743,7 +743,7 @@ def define_dataproc_cluster_config():
                                                         start mixing spot and standard VMs for
                                                         remaining 10 instances. The mix will be 30%
                                                         standard and 70% spot.""",
-                                                        is_required=True,
+                                                        is_required=False,
                                                     ),
                                                 },
                                             ),
@@ -759,7 +759,7 @@ def define_dataproc_cluster_config():
                                                             [String],
                                                             description="""Optional. Full machine-type
                                                         names, e.g. "n1-standard-16".""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                         "rank": Field(
                                                             Int,
@@ -771,7 +771,7 @@ def define_dataproc_cluster_config():
                                                         based on availability. Machine types and
                                                         instance selections with the same priority
                                                         have the same preference.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                     },
                                                 )
@@ -779,7 +779,7 @@ def define_dataproc_cluster_config():
                                             description="""Optional. List of instance selection
                                             options that the group will use when creating new
                                             VMs.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
@@ -800,7 +800,7 @@ def define_dataproc_cluster_config():
                                             required_registration_fraction of instances are not
                                             available. This will include instance creation, agent
                                             registration, and service registration (if enabled).""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
@@ -822,7 +822,7 @@ def define_dataproc_cluster_config():
                                 description="""Optional. The number of VM instances in the instance
                                 group. For HA cluster master_config groups, must be set to 3. For
                                 standard cluster master_config groups, must be set to 1.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "imageUri": Field(
                                 String,
@@ -836,7 +836,7 @@ def define_dataproc_cluster_config():
                                 projects/[project_id]/global/images/family/[custom-image-family-name]If
                                 the URI is unspecified, it will be inferred from
                                 SoftwareConfig.image_version or the system default.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "machineTypeUri": Field(
                                 String,
@@ -850,7 +850,7 @@ def define_dataproc_cluster_config():
                                 (https://cloud.google.com/dataproc/docs/concepts/configuring-clusters/auto-zone#using_auto_zone_placement)
                                 feature, you must use the short name of the machine type resource,
                                 for example, n1-standard-2.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "diskConfig": Field(
                                 Shape(
@@ -863,13 +863,13 @@ def define_dataproc_cluster_config():
                                             (Persistent Disk Solid State Drive), or "pd-standard"
                                             (Persistent Disk Hard Disk Drive). See Disk types
                                             (https://cloud.google.com/compute/docs/disks#disk-types).""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "bootDiskSizeGb": Field(
                                             Int,
                                             description="""Optional. Size in GB of the boot disk
                                             (default is 500GB).""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "numLocalSsds": Field(
                                             Int,
@@ -882,7 +882,7 @@ def define_dataproc_cluster_config():
                                             contains only basic config and installed binaries.Note:
                                             Local SSD options may vary by machine type and number of
                                             vCPUs selected.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "localSsdInterface": Field(
                                             String,
@@ -891,7 +891,7 @@ def define_dataproc_cluster_config():
                                             Computer System Interface), "nvme" (Non-Volatile Memory
                                             Express). See local SSD performance
                                             (https://cloud.google.com/compute/docs/disks/local-ssd#performance).""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "bootDiskProvisionedIops": Field(
                                             String,
@@ -900,7 +900,7 @@ def define_dataproc_cluster_config():
                                             operations per second that the disk can handle. This
                                             field is supported only if boot_disk_type is
                                             hyperdisk-balanced.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "bootDiskProvisionedThroughput": Field(
                                             String,
@@ -910,7 +910,7 @@ def define_dataproc_cluster_config():
                                             Values must be greater than or equal to 1. This field is
                                             supported only if boot_disk_type is
                                             hyperdisk-balanced.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
@@ -924,7 +924,7 @@ def define_dataproc_cluster_config():
                                 instance group.The default value for master and worker groups is
                                 NON_PREEMPTIBLE. This default cannot be changed.The default value
                                 for secondary instances is PREEMPTIBLE.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "managedGroupConfig": Field(
                                 Shape(
@@ -964,14 +964,14 @@ def define_dataproc_cluster_config():
                                 ],
                                 description="""Optional. The Compute Engine accelerator
                                 configuration for these instances.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "minCpuPlatform": Field(
                                 String,
                                 description="""Optional. Specifies the minimum cpu platform for the
                                 Instance Group. See Dataproc -> Minimum CPU Platform
                                 (https://cloud.google.com/dataproc/docs/concepts/compute/dataproc-min-cpu).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "minNumInstances": Field(
                                 Int,
@@ -984,7 +984,7 @@ def define_dataproc_cluster_config():
                                 cluster is resized to 4 instances and placed in a RUNNING state. If
                                 2 instances are created and 3 instances fail, the cluster in placed
                                 in an ERROR state. The failed VMs are not deleted.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "instanceFlexibilityPolicy": Field(
                                 Shape(
@@ -1007,7 +1007,7 @@ def define_dataproc_cluster_config():
                                                         create 5 standard VMs and then start mixing
                                                         spot and standard VMs for remaining 10
                                                         instances.""",
-                                                        is_required=True,
+                                                        is_required=False,
                                                     ),
                                                     "standardCapacityPercentAboveBase": Field(
                                                         Int,
@@ -1023,7 +1023,7 @@ def define_dataproc_cluster_config():
                                                         start mixing spot and standard VMs for
                                                         remaining 10 instances. The mix will be 30%
                                                         standard and 70% spot.""",
-                                                        is_required=True,
+                                                        is_required=False,
                                                     ),
                                                 },
                                             ),
@@ -1039,7 +1039,7 @@ def define_dataproc_cluster_config():
                                                             [String],
                                                             description="""Optional. Full machine-type
                                                         names, e.g. "n1-standard-16".""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                         "rank": Field(
                                                             Int,
@@ -1051,7 +1051,7 @@ def define_dataproc_cluster_config():
                                                         based on availability. Machine types and
                                                         instance selections with the same priority
                                                         have the same preference.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                     },
                                                 )
@@ -1059,7 +1059,7 @@ def define_dataproc_cluster_config():
                                             description="""Optional. List of instance selection
                                             options that the group will use when creating new
                                             VMs.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
@@ -1080,7 +1080,7 @@ def define_dataproc_cluster_config():
                                             required_registration_fraction of instances are not
                                             available. This will include instance creation, agent
                                             registration, and service registration (if enabled).""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
@@ -1106,7 +1106,7 @@ def define_dataproc_cluster_config():
                                 the "preview" version
                                 (https://cloud.google.com/dataproc/docs/concepts/versioning/dataproc-versions#other_versions).
                                 If unspecified, it defaults to the latest Debian version.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "properties": Field(
                                 Permissive(),
@@ -1119,13 +1119,13 @@ def define_dataproc_cluster_config():
                                 spark-defaults.conf yarn: yarn-site.xmlFor more information, see
                                 Cluster properties
                                 (https://cloud.google.com/dataproc/docs/concepts/cluster-properties).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "optionalComponents": Field(
                                 [Component],
                                 description="""Optional. The set of components to activate on the
                                 cluster.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
@@ -1150,7 +1150,7 @@ def define_dataproc_cluster_config():
                                 creation fails with an explanatory error message (the name of the
                                 executable that caused the error and the exceeded timeout period) if
                                 the executable is not completed at end of the timeout period.""",
-                                    is_required=True,
+                                    is_required=False,
                                 ),
                             },
                         )
@@ -1163,7 +1163,7 @@ def define_dataproc_cluster_config():
                     http://metadata/computeMetadata/v1/instance/attributes/dataproc-role) if [[
                     "${ROLE}" == \'Master\' ]]; then ... master specific actions ... else ... worker
                     specific actions ... fi """,
-                    is_required=True,
+                    is_required=False,
                 ),
                 "encryptionConfig": Field(
                     Shape(
@@ -1175,7 +1175,7 @@ def define_dataproc_cluster_config():
                                 CMEK with cluster data
                                 (https://cloud.google.com//dataproc/docs/concepts/configuring-clusters/customer-managed-encryption#use_cmek_with_cluster_data)
                                 for more information.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "kmsKey": Field(
                                 String,
@@ -1204,7 +1204,7 @@ def define_dataproc_cluster_config():
                                 scriptVariables and queryList.queries PrestoJob
                                 (https://cloud.google.com/dataproc/docs/reference/rest/v1/PrestoJob)
                                 scriptVariables and queryList.queries""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
@@ -1222,7 +1222,7 @@ def define_dataproc_cluster_config():
                                 https://www.googleapis.com/compute/v1/projects/[project_id]/locations/[dataproc_region]/autoscalingPolicies/[policy_id]
                                 projects/[project_id]/locations/[dataproc_region]/autoscalingPolicies/[policy_id]Note
                                 that the policy must be in the same project and Dataproc region.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
@@ -1240,27 +1240,27 @@ def define_dataproc_cluster_config():
                                             description="""Optional. Flag to indicate whether to
                                             Kerberize the cluster (default: false). Set this field
                                             to true to enable Kerberos on a cluster.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "rootPrincipalPasswordUri": Field(
                                             String,
                                             description="""Optional. The Cloud Storage URI of a KMS
                                             encrypted file containing the root principal
                                             password.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "kmsKeyUri": Field(
                                             String,
                                             description="""Optional. The URI of the KMS key used to
                                             encrypt sensitive files.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "keystoreUri": Field(
                                             String,
                                             description="""Optional. The Cloud Storage URI of the
                                             keystore file used for SSL encryption. If not provided,
                                             Dataproc will provide a self-signed certificate.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "truststoreUri": Field(
                                             String,
@@ -1268,7 +1268,7 @@ def define_dataproc_cluster_config():
                                             truststore file used for SSL encryption. If not
                                             provided, Dataproc will provide a self-signed
                                             certificate.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "keystorePasswordUri": Field(
                                             String,
@@ -1276,7 +1276,7 @@ def define_dataproc_cluster_config():
                                             encrypted file containing the password to the user
                                             provided keystore. For the self-signed certificate, this
                                             password is generated by Dataproc.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "keyPasswordUri": Field(
                                             String,
@@ -1284,7 +1284,7 @@ def define_dataproc_cluster_config():
                                             encrypted file containing the password to the user
                                             provided key. For the self-signed certificate, this
                                             password is generated by Dataproc.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "truststorePasswordUri": Field(
                                             String,
@@ -1292,28 +1292,28 @@ def define_dataproc_cluster_config():
                                             encrypted file containing the password to the user
                                             provided truststore. For the self-signed certificate,
                                             this password is generated by Dataproc.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "crossRealmTrustRealm": Field(
                                             String,
                                             description="""Optional. The remote realm the Dataproc
                                             on-cluster KDC will trust, should the user enable cross
                                             realm trust.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "crossRealmTrustKdc": Field(
                                             String,
                                             description="""Optional. The KDC (IP or hostname) for
                                             the remote trusted realm in a cross realm trust
                                             relationship.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "crossRealmTrustAdminServer": Field(
                                             String,
                                             description="""Optional. The admin server (IP or
                                             hostname) for the remote trusted realm in a cross realm
                                             trust relationship.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "crossRealmTrustSharedPasswordUri": Field(
                                             String,
@@ -1321,28 +1321,28 @@ def define_dataproc_cluster_config():
                                             encrypted file containing the shared password between
                                             the on-cluster Kerberos realm and the remote trusted
                                             realm, in a cross realm trust relationship.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "kdcDbKeyUri": Field(
                                             String,
                                             description="""Optional. The Cloud Storage URI of a KMS
                                             encrypted file containing the master key of the KDC
                                             database.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "tgtLifetimeHours": Field(
                                             Int,
                                             description="""Optional. The lifetime of the ticket
                                             granting ticket, in hours. If not specified, or user
                                             specifies 0, then default value 10 will be used.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "realm": Field(
                                             String,
                                             description="""Optional. The name of the on-cluster
                                             Kerberos realm. If not specified, the uppercased domain
                                             of hostnames will be the realm.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
@@ -1380,14 +1380,14 @@ def define_dataproc_cluster_config():
                                 cause the cluster to be deleted. Minimum value is 5 minutes; maximum
                                 value is 14 days (see JSON representation of Duration
                                 (https://developers.google.com/protocol-buffers/docs/proto3#json)).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "autoDeleteTime": Field(
                                 String,
                                 description="""Optional. The time when cluster will be auto-deleted
                                 (see JSON representation of Timestamp
                                 (https://developers.google.com/protocol-buffers/docs/proto3#json)).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "autoDeleteTtl": Field(
                                 String,
@@ -1396,7 +1396,7 @@ def define_dataproc_cluster_config():
                                 value is 10 minutes; maximum value is 14 days (see JSON
                                 representation of Duration
                                 (https://developers.google.com/protocol-buffers/docs/proto3#json)).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
@@ -1410,7 +1410,7 @@ def define_dataproc_cluster_config():
                                 Bool,
                                 description="""Optional. If true, enable http access to specific
                                 ports on the cluster from external sources. Defaults to false.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
@@ -1443,13 +1443,13 @@ def define_dataproc_cluster_config():
                                             description="""Optional. The target GKE cluster to
                                             deploy to. Format:
                                             \'projects/{project}/locations/{location}/clusters/{cluster_id}\'""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "clusterNamespace": Field(
                                             String,
                                             description="""Optional. A namespace within the GKE
                                             cluster to deploy into.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
@@ -1464,7 +1464,7 @@ def define_dataproc_cluster_config():
                                 be in the same project and region as the Dataproc cluster (the GKE
                                 cluster can be zonal or regional). Format:
                                 \'projects/{project}/locations/{location}/clusters/{cluster_id}\'""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "nodePoolTarget": Field(
                                 [
@@ -1495,7 +1495,7 @@ def define_dataproc_cluster_config():
                                                                     name of a Compute Engine machine
                                                                     type
                                                                     (https://cloud.google.com/compute/docs/machine-types).""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                     "localSsdCount": Field(
                                                                         Int,
@@ -1506,7 +1506,7 @@ def define_dataproc_cluster_config():
                                                                     disks allowable per zone (see
                                                                     Adding Local SSDs
                                                                     (https://cloud.google.com/compute/docs/disks/local-ssd)).""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                     "preemptible": Field(
                                                                         Bool,
@@ -1524,7 +1524,7 @@ def define_dataproc_cluster_config():
                                                                     CONTROLLER role is not assigned
                                                                     (the DEFAULT node pool will
                                                                     assume the CONTROLLER role).""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                     "accelerators": Field(
                                                                         [
@@ -1567,7 +1567,7 @@ def define_dataproc_cluster_config():
                                                                     of hardware accelerators
                                                                     (https://cloud.google.com/compute/docs/gpus)
                                                                     to attach to each node.""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                     "minCpuPlatform": Field(
                                                                         String,
@@ -1581,7 +1581,7 @@ def define_dataproc_cluster_config():
                                                                     names of CPU platforms, such as
                                                                     "Intel Haswell"` or Intel Sandy
                                                                     Bridge".""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                     "bootDiskKmsKey": Field(
                                                                         String,
@@ -1594,7 +1594,7 @@ def define_dataproc_cluster_config():
                                                                     node pool. Specify the key using
                                                                     the following format:
                                                                     projects/{project}/locations/{location}/keyRings/{key_ring}/cryptoKeys/{crypto_key}""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                     "spot": Field(
                                                                         Bool,
@@ -1613,7 +1613,7 @@ def define_dataproc_cluster_config():
                                                                     CONTROLLER role is not assigned
                                                                     (the DEFAULT node pool will
                                                                     assume the CONTROLLER role).""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                 },
                                                             ),
@@ -1635,7 +1635,7 @@ def define_dataproc_cluster_config():
                                                         region.If a location is not specified during
                                                         node pool creation, Dataproc on GKE will
                                                         choose the zone.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                         "autoscaling": Field(
                                                             Shape(
@@ -1682,7 +1682,7 @@ def define_dataproc_cluster_config():
                                 Dataproc constructs a DEFAULT GkeNodePoolTarget. Each role can be
                                 given to only one GkeNodePoolTarget. All node pools must have the
                                 same location settings.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
@@ -1728,7 +1728,7 @@ def define_dataproc_cluster_config():
                                             unaffected. For example, if both SPARK and YARN metric
                                             sources are enabled, and overrides are provided for
                                             Spark metrics only, all YARN metrics are collected.""",
-                                                is_required=True,
+                                                is_required=False,
                                             ),
                                         },
                                     )
@@ -1769,7 +1769,7 @@ def define_dataproc_cluster_config():
                                                         cluster master_config groups, must be set to
                                                         3. For standard cluster master_config
                                                         groups, must be set to 1.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                         "imageUri": Field(
                                                             String,
@@ -1786,7 +1786,7 @@ def define_dataproc_cluster_config():
                                                         the URI is unspecified, it will be inferred
                                                         from SoftwareConfig.image_version or the
                                                         system default.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                         "machineTypeUri": Field(
                                                             String,
@@ -1802,7 +1802,7 @@ def define_dataproc_cluster_config():
                                                         feature, you must use the short name of the
                                                         machine type resource, for example,
                                                         n1-standard-2.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                         "diskConfig": Field(
                                                             Shape(
@@ -1819,14 +1819,14 @@ def define_dataproc_cluster_config():
                                                                     (Persistent Disk Hard Disk
                                                                     Drive). See Disk types
                                                                     (https://cloud.google.com/compute/docs/disks#disk-types).""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                     "bootDiskSizeGb": Field(
                                                                         Int,
                                                                         description="""Optional. Size in
                                                                     GB of the boot disk (default is
                                                                     500GB).""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                     "numLocalSsds": Field(
                                                                         Int,
@@ -1844,7 +1844,7 @@ def define_dataproc_cluster_config():
                                                                     binaries.Note: Local SSD options
                                                                     may vary by machine type and
                                                                     number of vCPUs selected.""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                     "localSsdInterface": Field(
                                                                         String,
@@ -1856,7 +1856,7 @@ def define_dataproc_cluster_config():
                                                                     (Non-Volatile Memory Express).
                                                                     See local SSD performance
                                                                     (https://cloud.google.com/compute/docs/disks/local-ssd#performance).""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                     "bootDiskProvisionedIops": Field(
                                                                         String,
@@ -1868,7 +1868,7 @@ def define_dataproc_cluster_config():
                                                                     disk can handle. This field is
                                                                     supported only if boot_disk_type
                                                                     is hyperdisk-balanced.""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                     "bootDiskProvisionedThroughput": Field(
                                                                         String,
@@ -1882,7 +1882,7 @@ def define_dataproc_cluster_config():
                                                                     is supported only if
                                                                     boot_disk_type is
                                                                     hyperdisk-balanced.""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                 },
                                                             ),
@@ -1898,7 +1898,7 @@ def define_dataproc_cluster_config():
                                                         is NON_PREEMPTIBLE. This default cannot be
                                                         changed.The default value for secondary
                                                         instances is PREEMPTIBLE.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                         "managedGroupConfig": Field(
                                                             Shape(
@@ -1945,7 +1945,7 @@ def define_dataproc_cluster_config():
                                                             description="""Optional. The Compute Engine
                                                         accelerator configuration for these
                                                         instances.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                         "minCpuPlatform": Field(
                                                             String,
@@ -1953,7 +1953,7 @@ def define_dataproc_cluster_config():
                                                         minimum cpu platform for the Instance Group.
                                                         See Dataproc -> Minimum CPU Platform
                                                         (https://cloud.google.com/dataproc/docs/concepts/compute/dataproc-min-cpu).""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                         "minNumInstances": Field(
                                                             Int,
@@ -1971,7 +1971,7 @@ def define_dataproc_cluster_config():
                                                         2 instances are created and 3 instances
                                                         fail, the cluster in placed in an ERROR
                                                         state. The failed VMs are not deleted.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                         "instanceFlexibilityPolicy": Field(
                                                             Shape(
@@ -2007,7 +2007,7 @@ def define_dataproc_cluster_config():
                                                                                 standard VMs for
                                                                                 remaining 10
                                                                                 instances.""",
-                                                                                    is_required=True,
+                                                                                    is_required=False,
                                                                                 ),
                                                                                 "standardCapacityPercentAboveBase": Field(
                                                                                     Int,
@@ -2036,7 +2036,7 @@ def define_dataproc_cluster_config():
                                                                                 instances. The mix
                                                                                 will be 30% standard
                                                                                 and 70% spot.""",
-                                                                                    is_required=True,
+                                                                                    is_required=False,
                                                                                 ),
                                                                             },
                                                                         ),
@@ -2056,7 +2056,7 @@ def define_dataproc_cluster_config():
                                                                                 Full machine-type
                                                                                 names, e.g.
                                                                                 "n1-standard-16".""",
-                                                                                        is_required=True,
+                                                                                        is_required=False,
                                                                                     ),
                                                                                     "rank": Field(
                                                                                         Int,
@@ -2078,7 +2078,7 @@ def define_dataproc_cluster_config():
                                                                                 with the same
                                                                                 priority have the
                                                                                 same preference.""",
-                                                                                        is_required=True,
+                                                                                        is_required=False,
                                                                                     ),
                                                                                 },
                                                                             )
@@ -2087,7 +2087,7 @@ def define_dataproc_cluster_config():
                                                                     instance selection options that
                                                                     the group will use when creating
                                                                     new VMs.""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                 },
                                                             ),
@@ -2116,7 +2116,7 @@ def define_dataproc_cluster_config():
                                                                     creation, agent registration,
                                                                     and service registration (if
                                                                     enabled).""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                 },
                                                             ),
@@ -2141,7 +2141,7 @@ def define_dataproc_cluster_config():
                                             from 1 to 63 characters and conform to RFC 1035
                                             (https://www.ietf.org/rfc/rfc1035.txt). The node group
                                             must have no more than 32 labels.""",
-                                                is_required=True,
+                                                is_required=False,
                                             ),
                                         },
                                     ),
@@ -2155,13 +2155,13 @@ def define_dataproc_cluster_config():
                                 specified.The ID must contain only letters (a-z, A-Z), numbers
                                 (0-9), underscores (_), and hyphens (-). Cannot begin or end with
                                 underscore or hyphen. Must consist of from 3 to 33 characters.""",
-                                    is_required=True,
+                                    is_required=False,
                                 ),
                             },
                         )
                     ],
                     description="""Optional. The node group settings.""",
-                    is_required=True,
+                    is_required=False,
                 ),
             },
         ),
