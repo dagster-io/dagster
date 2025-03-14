@@ -21,7 +21,7 @@ The `dg scaffold project` command creates a directory with a standard Python pac
 
 - The top-level package `my_project` contains the deployable code that defines
   your Dagster pipelines.
-- `my_project/defs` will contains your Dagster definitions.
+- `my_project/defs` will contain your Dagster definitions.
 - `my_project/lib` is where you will define custom component types, and
   optionally other code you wish to share across Dagster definitions.
 - `my_project/definitions.py` is the entry point that Dagster will load when
