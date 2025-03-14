@@ -22,7 +22,7 @@ The Java Pipes client provides a Java implementation of the Dagster Pipes protoc
 
 ### Installation and examples
 
-For installation information and examples, see the [community integrations GitHub repository](https://github.com/dagster-io/community-integrations/blob/main/libraries/pipes/implementations/rust/README.md).
+For installation information and examples, see the [community integrations GitHub repository](https://github.com/dagster-io/community-integrations/blob/main/libraries/pipes/implementations/java/README.md).
 
 ### About Java
 
