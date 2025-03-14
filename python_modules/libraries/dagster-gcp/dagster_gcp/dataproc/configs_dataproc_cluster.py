@@ -138,7 +138,7 @@ def define_dataproc_cluster_config():
                                 description="""The Compute Engine network tags to add to all
                                 instances (see Tagging instances
                                 (https://cloud.google.com/vpc/docs/add-remove-network-tags)).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "metadata": Field(
                                 Permissive(),
@@ -172,7 +172,7 @@ def define_dataproc_cluster_config():
                                 ),
                                 description="""Reservation Affinity for consuming Zonal
                                 reservation.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "nodeGroupAffinity": Field(
                                 Shape(
@@ -194,7 +194,7 @@ def define_dataproc_cluster_config():
                                 description="""Node Group Affinity for clusters using sole-tenant
                                 node groups. The Dataproc NodeGroupAffinity resource is not related
                                 to the Dataproc NodeGroup resource.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "shieldedInstanceConfig": Field(
                                 Shape(
@@ -222,7 +222,7 @@ def define_dataproc_cluster_config():
                                 description="""Shielded Instance Config for clusters using Compute
                                 Engine Shielded VMs
                                 (https://cloud.google.com/security/shielded-cloud/shielded-vm).""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "confidentialInstanceConfig": Field(
                                 Shape(
@@ -238,7 +238,7 @@ def define_dataproc_cluster_config():
                                 description="""Confidential Instance Config for clusters using
                                 Confidential VMs
                                 (https://cloud.google.com/compute/confidential-vm/docs)""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "resourceManagerTags": Field(
                                 Permissive(),
@@ -252,7 +252,7 @@ def define_dataproc_cluster_config():
                     ),
                     description="""Common config settings for resources of Compute Engine cluster
                     instances, applicable to all instances in the cluster.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "masterConfig": Field(
                     Shape(
@@ -356,7 +356,7 @@ def define_dataproc_cluster_config():
                                 ),
                                 description="""Specifies the config of disk options for a group of
                                 VM instances.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "preemptibility": Field(
                                 Preemptibility,
@@ -372,7 +372,7 @@ def define_dataproc_cluster_config():
                                 ),
                                 description="""Specifies the resources used to actively manage an
                                 instance group.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "accelerators": Field(
                                 [
@@ -391,13 +391,13 @@ def define_dataproc_cluster_config():
                                             (https://cloud.google.com/dataproc/docs/concepts/configuring-clusters/auto-zone#using_auto_zone_placement)
                                             feature, you must use the short name of the accelerator
                                             type resource, for example, nvidia-tesla-t4.""",
-                                                is_required=True,
+                                                is_required=False,
                                             ),
                                             "acceleratorCount": Field(
                                                 Int,
                                                 description="""The number of the accelerator cards of
                                             this type exposed to this instance.""",
-                                                is_required=True,
+                                                is_required=False,
                                             ),
                                         },
                                     )
@@ -469,7 +469,7 @@ def define_dataproc_cluster_config():
                                             ),
                                             description="""Defines how Dataproc should create VMs
                                             with a mixture of provisioning models.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "instanceSelectionList": Field(
                                             [
@@ -505,7 +505,7 @@ def define_dataproc_cluster_config():
                                 ),
                                 description="""Instance flexibility Policy allowing a mixture of VM
                                 shapes and provisioning models.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "startupConfig": Field(
                                 Shape(
@@ -526,13 +526,13 @@ def define_dataproc_cluster_config():
                                 ),
                                 description="""Configuration to handle the startup of instances
                                 during cluster create and update process.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
                     description="""The config settings for Compute Engine resources in an instance
                     group, such as a master or worker group.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "workerConfig": Field(
                     Shape(
@@ -636,7 +636,7 @@ def define_dataproc_cluster_config():
                                 ),
                                 description="""Specifies the config of disk options for a group of
                                 VM instances.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "preemptibility": Field(
                                 Preemptibility,
@@ -652,7 +652,7 @@ def define_dataproc_cluster_config():
                                 ),
                                 description="""Specifies the resources used to actively manage an
                                 instance group.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "accelerators": Field(
                                 [
@@ -671,13 +671,13 @@ def define_dataproc_cluster_config():
                                             (https://cloud.google.com/dataproc/docs/concepts/configuring-clusters/auto-zone#using_auto_zone_placement)
                                             feature, you must use the short name of the accelerator
                                             type resource, for example, nvidia-tesla-t4.""",
-                                                is_required=True,
+                                                is_required=False,
                                             ),
                                             "acceleratorCount": Field(
                                                 Int,
                                                 description="""The number of the accelerator cards of
                                             this type exposed to this instance.""",
-                                                is_required=True,
+                                                is_required=False,
                                             ),
                                         },
                                     )
@@ -749,7 +749,7 @@ def define_dataproc_cluster_config():
                                             ),
                                             description="""Defines how Dataproc should create VMs
                                             with a mixture of provisioning models.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "instanceSelectionList": Field(
                                             [
@@ -785,7 +785,7 @@ def define_dataproc_cluster_config():
                                 ),
                                 description="""Instance flexibility Policy allowing a mixture of VM
                                 shapes and provisioning models.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "startupConfig": Field(
                                 Shape(
@@ -806,13 +806,13 @@ def define_dataproc_cluster_config():
                                 ),
                                 description="""Configuration to handle the startup of instances
                                 during cluster create and update process.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
                     description="""The config settings for Compute Engine resources in an instance
                     group, such as a master or worker group.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "secondaryWorkerConfig": Field(
                     Shape(
@@ -916,7 +916,7 @@ def define_dataproc_cluster_config():
                                 ),
                                 description="""Specifies the config of disk options for a group of
                                 VM instances.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "preemptibility": Field(
                                 Preemptibility,
@@ -932,7 +932,7 @@ def define_dataproc_cluster_config():
                                 ),
                                 description="""Specifies the resources used to actively manage an
                                 instance group.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "accelerators": Field(
                                 [
@@ -951,13 +951,13 @@ def define_dataproc_cluster_config():
                                             (https://cloud.google.com/dataproc/docs/concepts/configuring-clusters/auto-zone#using_auto_zone_placement)
                                             feature, you must use the short name of the accelerator
                                             type resource, for example, nvidia-tesla-t4.""",
-                                                is_required=True,
+                                                is_required=False,
                                             ),
                                             "acceleratorCount": Field(
                                                 Int,
                                                 description="""The number of the accelerator cards of
                                             this type exposed to this instance.""",
-                                                is_required=True,
+                                                is_required=False,
                                             ),
                                         },
                                     )
@@ -1029,7 +1029,7 @@ def define_dataproc_cluster_config():
                                             ),
                                             description="""Defines how Dataproc should create VMs
                                             with a mixture of provisioning models.""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                         "instanceSelectionList": Field(
                                             [
@@ -1065,7 +1065,7 @@ def define_dataproc_cluster_config():
                                 ),
                                 description="""Instance flexibility Policy allowing a mixture of VM
                                 shapes and provisioning models.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "startupConfig": Field(
                                 Shape(
@@ -1086,13 +1086,13 @@ def define_dataproc_cluster_config():
                                 ),
                                 description="""Configuration to handle the startup of instances
                                 during cluster create and update process.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
                     description="""The config settings for Compute Engine resources in an instance
                     group, such as a master or worker group.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "softwareConfig": Field(
                     Shape(
@@ -1131,7 +1131,7 @@ def define_dataproc_cluster_config():
                     ),
                     description="""Specifies the selection and config of software inside the
                     cluster.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "initializationActions": Field(
                     [
@@ -1209,7 +1209,7 @@ def define_dataproc_cluster_config():
                         },
                     ),
                     description="""Encryption settings for the cluster.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "autoscalingConfig": Field(
                     Shape(
@@ -1227,7 +1227,7 @@ def define_dataproc_cluster_config():
                         },
                     ),
                     description="""Autoscaling Policy config associated with the cluster.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "securityConfig": Field(
                     Shape(
@@ -1347,7 +1347,7 @@ def define_dataproc_cluster_config():
                                     },
                                 ),
                                 description="""Specifies Kerberos related configuration.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "identityConfig": Field(
                                 Shape(
@@ -1362,13 +1362,13 @@ def define_dataproc_cluster_config():
                                 ),
                                 description="""Identity related configuration, including service
                                 account based secure multi-tenancy user mappings.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
                     description="""Security related configuration, including encryption, Kerberos,
                     etc.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "lifecycleConfig": Field(
                     Shape(
@@ -1401,7 +1401,7 @@ def define_dataproc_cluster_config():
                         },
                     ),
                     description="""Specifies the cluster auto-delete schedule configuration.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "endpointConfig": Field(
                     Shape(
@@ -1415,7 +1415,7 @@ def define_dataproc_cluster_config():
                         },
                     ),
                     description="""Endpoint config for this cluster""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "metastoreConfig": Field(
                     Shape(
@@ -1430,7 +1430,7 @@ def define_dataproc_cluster_config():
                         },
                     ),
                     description="""Specifies a Metastore configuration.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "gkeClusterConfig": Field(
                     Shape(
@@ -1456,7 +1456,7 @@ def define_dataproc_cluster_config():
                                 description="""Deprecated. Used only for the deprecated beta. A
                                 full, namespace-isolated deployment target for an existing GKE
                                 cluster.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "gkeClusterTarget": Field(
                                 String,
@@ -1537,7 +1537,7 @@ def define_dataproc_cluster_config():
                                                                                 accelerator cards
                                                                                 exposed to an
                                                                                 instance.""",
-                                                                                        is_required=True,
+                                                                                        is_required=False,
                                                                                     ),
                                                                                     "acceleratorType": Field(
                                                                                         String,
@@ -1546,7 +1546,7 @@ def define_dataproc_cluster_config():
                                                                                 resource namename
                                                                                 (see GPUs on Compute
                                                                                 Engine).""",
-                                                                                        is_required=True,
+                                                                                        is_required=False,
                                                                                     ),
                                                                                     "gpuPartitionSize": Field(
                                                                                         String,
@@ -1558,7 +1558,7 @@ def define_dataproc_cluster_config():
                                                                                 NVIDIA mig user
                                                                                 guide
                                                                                 (https://docs.nvidia.com/datacenter/tesla/mig-user-guide/#partitioning).""",
-                                                                                        is_required=True,
+                                                                                        is_required=False,
                                                                                     ),
                                                                                 },
                                                                             )
@@ -1619,7 +1619,7 @@ def define_dataproc_cluster_config():
                                                             ),
                                                             description="""Parameters that describe
                                                         cluster nodes.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                         "locations": Field(
                                                             [String],
@@ -1646,7 +1646,7 @@ def define_dataproc_cluster_config():
                                                                     number of nodes in the node
                                                                     pool. Must be >= 0 and <=
                                                                     max_node_count.""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                     "maxNodeCount": Field(
                                                                         Int,
@@ -1656,7 +1656,7 @@ def define_dataproc_cluster_config():
                                                                     and must be > 0. Note: Quota
                                                                     must be sufficient to scale up
                                                                     the cluster.""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                 },
                                                             ),
@@ -1664,14 +1664,14 @@ def define_dataproc_cluster_config():
                                                         contains information the cluster autoscaler
                                                         needs to adjust the size of the node pool to
                                                         the current cluster usage.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                     },
                                                 ),
                                                 description="""The configuration of a GKE node pool used
                                             by a Dataproc-on-GKE cluster
                                             (https://cloud.google.com/dataproc/docs/concepts/jobs/dataproc-gke#create-a-dataproc-on-gke-cluster).""",
-                                                is_required=True,
+                                                is_required=False,
                                             ),
                                         },
                                     )
@@ -1687,7 +1687,7 @@ def define_dataproc_cluster_config():
                         },
                     ),
                     description="""The cluster\'s GKE config.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "dataprocMetricConfig": Field(
                     Shape(
@@ -1739,7 +1739,7 @@ def define_dataproc_cluster_config():
                         },
                     ),
                     description="""Dataproc metric config.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "auxiliaryNodeGroups": Field(
                     [
@@ -1752,7 +1752,7 @@ def define_dataproc_cluster_config():
                                                 String,
                                                 description="""The Node group resource name
                                             (https://aip.dev/122).""",
-                                                is_required=True,
+                                                is_required=False,
                                             ),
                                             "roles": Field(
                                                 [Component],
@@ -1888,7 +1888,7 @@ def define_dataproc_cluster_config():
                                                             ),
                                                             description="""Specifies the config of disk
                                                         options for a group of VM instances.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                         "preemptibility": Field(
                                                             Preemptibility,
@@ -1906,7 +1906,7 @@ def define_dataproc_cluster_config():
                                                             ),
                                                             description="""Specifies the resources used
                                                         to actively manage an instance group.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                         "accelerators": Field(
                                                             [
@@ -1930,14 +1930,14 @@ def define_dataproc_cluster_config():
                                                                     name of the accelerator type
                                                                     resource, for example,
                                                                     nvidia-tesla-t4.""",
-                                                                            is_required=True,
+                                                                            is_required=False,
                                                                         ),
                                                                         "acceleratorCount": Field(
                                                                             Int,
                                                                             description="""The number of the
                                                                     accelerator cards of this type
                                                                     exposed to this instance.""",
-                                                                            is_required=True,
+                                                                            is_required=False,
                                                                         ),
                                                                     },
                                                                 )
@@ -2044,7 +2044,7 @@ def define_dataproc_cluster_config():
                                                                     Dataproc should create VMs with
                                                                     a mixture of provisioning
                                                                     models.""",
-                                                                        is_required=True,
+                                                                        is_required=False,
                                                                     ),
                                                                     "instanceSelectionList": Field(
                                                                         [
@@ -2094,7 +2094,7 @@ def define_dataproc_cluster_config():
                                                             description="""Instance flexibility Policy
                                                         allowing a mixture of VM shapes and
                                                         provisioning models.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                         "startupConfig": Field(
                                                             Shape(
@@ -2123,14 +2123,14 @@ def define_dataproc_cluster_config():
                                                             description="""Configuration to handle the
                                                         startup of instances during cluster create
                                                         and update process.""",
-                                                            is_required=True,
+                                                            is_required=False,
                                                         ),
                                                     },
                                                 ),
                                                 description="""The config settings for Compute Engine
                                             resources in an instance group, such as a master or
                                             worker group.""",
-                                                is_required=True,
+                                                is_required=False,
                                             ),
                                             "labels": Field(
                                                 Permissive(),
@@ -2147,7 +2147,7 @@ def define_dataproc_cluster_config():
                                     ),
                                     description="""Dataproc Node Group. The Dataproc NodeGroup resource
                                 is not related to the Dataproc NodeGroupAffinity resource.""",
-                                    is_required=True,
+                                    is_required=False,
                                 ),
                                 "nodeGroupId": Field(
                                     String,
@@ -2166,5 +2166,5 @@ def define_dataproc_cluster_config():
             },
         ),
         description="""The cluster config.""",
-        is_required=True,
+        is_required=False,
     )

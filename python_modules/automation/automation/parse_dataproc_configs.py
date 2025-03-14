@@ -226,12 +226,7 @@ class ConfigParser:
             raise Exception("unknown type: ", obj)
 
         description = obj.get("description")
-        is_required = None
-        if description is not None:
-            if description.startswith("Optional."):
-                is_required = False
-            elif description.startswith("Required."):
-                is_required = True
+        is_required = description is not None and description.startswith("Required.")
         return Field(fields, is_required=is_required, description=description)
 
     def extract_schema_for_object(self, object_name, name):
