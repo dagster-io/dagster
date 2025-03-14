@@ -429,6 +429,12 @@ class GrapheneFailedToMaterializeEvent(graphene.ObjectType, AssetEventMixin):
         )
 
 
+class GrapheneAssetMaterializationEventType(graphene.Union):
+    class Meta:
+        types = (GrapheneFailedToMaterializeEvent, GrapheneMaterializationEvent)
+        name = "AssetMaterializationEventType"
+
+
 class GrapheneObservationEvent(graphene.ObjectType, AssetEventMixin):
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneDisplayableEvent)
