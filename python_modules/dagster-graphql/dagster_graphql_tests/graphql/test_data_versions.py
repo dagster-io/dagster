@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional
 
 from dagster import (
     AssetIn,
@@ -21,14 +21,12 @@ from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import (
-    GqlAssetKey,
-    GqlResult,
     define_out_of_process_context,
     execute_dagster_graphql,
     infer_job_selector,
     infer_repository_selector,
+    materialize_assets,
 )
 
 from dagster_graphql_tests.graphql.test_assets import (
@@ -67,12 +65,11 @@ def get_repo_v2():
 
 
 def test_dependencies_changed():
-    repo_v1 = get_repo_v1()
     repo_v2 = get_repo_v2()
 
     with instance_for_test(synchronous_run_coordinator=True) as instance:
         with define_out_of_process_context(__file__, "get_repo_v1", instance) as context_v1:
-            assert _materialize_assets(context_v1, repo_v1)
+            assert materialize_assets(context_v1)
             wait_for_runs_to_finish(context_v1.instance)
         with define_out_of_process_context(__file__, "get_repo_v2", instance) as context_v2:
             assert _fetch_data_versions(context_v2, repo_v2)
@@ -89,7 +86,7 @@ def test_stale_status():
             assert foo["staleStatus"] == "MISSING"
             assert foo["staleCauses"] == []
 
-            assert _materialize_assets(context, repo)
+            assert materialize_assets(context)
             wait_for_runs_to_finish(context.instance)
 
             result = _fetch_data_versions(context, repo)
@@ -98,7 +95,7 @@ def test_stale_status():
             assert foo["staleStatus"] == "FRESH"
             assert foo["staleCauses"] == []
 
-            assert _materialize_assets(context, repo, asset_selection=[AssetKey(["foo"])])
+            assert materialize_assets(context, asset_selection=[AssetKey(["foo"])])
             wait_for_runs_to_finish(context.instance)
 
             result = _fetch_data_versions(context, repo)
@@ -139,8 +136,6 @@ def get_repo_partitioned():
 
 
 def test_stale_status_partitioned():
-    repo = get_repo_partitioned()
-
     with instance_for_test(synchronous_run_coordinator=True) as instance:
         with define_out_of_process_context(__file__, "get_repo_partitioned", instance) as context:
             for key in ["foo", "bar"]:
@@ -155,8 +150,8 @@ def test_stale_status_partitioned():
                 assert node["staleCauses"] == []  # always returns empty for this undefined field
                 assert node["staleCausesByPartition"] == [[], []]
 
-            assert _materialize_assets(
-                context, repo, [AssetKey(["foo"]), AssetKey(["bar"])], ["alpha", "beta"]
+            assert materialize_assets(
+                context, [AssetKey(["foo"]), AssetKey(["bar"])], ["alpha", "beta"]
             )
             wait_for_runs_to_finish(context.instance)
 
@@ -170,9 +165,8 @@ def test_stale_status_partitioned():
                 assert node["staleCauses"] == []
                 assert node["staleCausesByPartition"] == [[], []]
 
-            assert _materialize_assets(
+            assert materialize_assets(
                 context,
-                repo,
                 [AssetKey(["foo"])],
                 ["alpha", "beta"],
                 run_config_data={"ops": {"foo": {"config": {"prefix": "from_config"}}}},
@@ -226,7 +220,7 @@ def test_data_version_from_tags():
     repo_v1 = get_repo_v1()
     with instance_for_test(synchronous_run_coordinator=True) as instance:
         with define_out_of_process_context(__file__, "get_repo_v1", instance) as context_v1:
-            assert _materialize_assets(context_v1, repo_v1)
+            assert materialize_assets(context_v1)
             wait_for_runs_to_finish(context_v1.instance)
             result = _fetch_data_versions(context_v1, repo_v1)
             tags = result.data["assetNodes"][0]["assetMaterializations"][0]["tags"]
@@ -344,56 +338,6 @@ def test_source_asset_job_name():
 
             # Make sure observable source asset appears in explicit observation job
             assert "bar_job" in bar_jobs
-
-
-def _materialize_assets(
-    context: WorkspaceRequestContext,
-    repo: RepositoryDefinition,
-    asset_selection: Optional[Sequence[AssetKey]] = None,
-    partition_keys: Optional[Sequence[str]] = None,
-    run_config_data: Optional[Mapping[str, Any]] = None,
-) -> Union[GqlResult, Sequence[GqlResult]]:
-    gql_asset_selection = (
-        cast(Sequence[GqlAssetKey], [key.to_graphql_input() for key in asset_selection])
-        if asset_selection
-        else None
-    )
-    selector = infer_job_selector(
-        context, repo.get_implicit_asset_job_names()[0], asset_selection=gql_asset_selection
-    )
-    if partition_keys:
-        results = []
-        for key in partition_keys:
-            results.append(
-                execute_dagster_graphql(
-                    context,
-                    LAUNCH_PIPELINE_EXECUTION_MUTATION,
-                    variables={
-                        "executionParams": {
-                            "selector": selector,
-                            "executionMetadata": {
-                                "tags": [{"key": "dagster/partition", "value": key}]
-                            },
-                            "runConfigData": run_config_data,
-                        }
-                    },
-                )
-            )
-        return results
-    else:
-        selector = infer_job_selector(
-            context, repo.get_implicit_asset_job_names()[0], asset_selection=gql_asset_selection
-        )
-        return execute_dagster_graphql(
-            context,
-            LAUNCH_PIPELINE_EXECUTION_MUTATION,
-            variables={
-                "executionParams": {
-                    "selector": selector,
-                    "runConfigData": run_config_data,
-                }
-            },
-        )
 
 
 def _fetch_data_versions(context: WorkspaceRequestContext, repo: RepositoryDefinition):

@@ -9,9 +9,6 @@ from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import RawMetadataValue, normalize_metadata
-from dagster._core.definitions.metadata.metadata_value import (
-    CodeLocationReconstructionMetadataValue,
-)
 from dagster._core.definitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
@@ -87,7 +84,10 @@ class _Repository:
     ) -> RepositoryDefinition:
         from dagster._core.definitions import AssetsDefinition, SourceAsset
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
-        from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
+        from dagster._core.definitions.definitions_load_context import (
+            DefinitionsLoadContext,
+            DefinitionsLoadType,
+        )
 
         check.callable_param(fn, "fn")
 
@@ -95,14 +95,14 @@ class _Repository:
             self.name = fn.__name__
 
         cacheable_asset_data: dict[str, Sequence[AssetsDefinitionCacheableData]] = {}
-        reconstruction_metadata = {
-            k: v
-            for k, v in self.metadata.items()
-            if isinstance(v, CodeLocationReconstructionMetadataValue)
-        }
 
         repository_definitions = fn()
         context = DefinitionsLoadContext.get()
+
+        if context.load_type == DefinitionsLoadType.INITIALIZATION:
+            reconstruction_metadata = context.get_pending_reconstruction_metadata()
+        else:
+            reconstruction_metadata = context.reconstruction_metadata
 
         if isinstance(repository_definitions, list):
             bad_defns = []

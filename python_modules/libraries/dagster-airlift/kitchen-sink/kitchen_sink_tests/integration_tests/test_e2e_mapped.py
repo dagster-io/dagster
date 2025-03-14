@@ -285,9 +285,9 @@ def test_respect_airflow_retries(
     dagster_home: str,
 ) -> None:
     """Airflow doesn't actually have dag-level retries; only task-level retries. This test just ensures that we handle task-level retries gracefully."""
-    from kitchen_sink.dagster_defs.mapped_defs import materialize_dags
+    from kitchen_sink.dagster_defs.mapped_defs import UNMAPPED_SPECS_INSTANCE_NAME, materialize_dags
 
-    af_instance = local_airflow_instance()
+    af_instance = local_airflow_instance(UNMAPPED_SPECS_INSTANCE_NAME)
 
     dagster_instance = DagsterInstance.get()
     result = materialize(
