@@ -116,6 +116,7 @@ def test_antlr_tree_invalid(selection_str):
     [
         ("key:a", KeyWildCardAssetSelection(selected_key_wildcard="a")),
         ('key:"*/a+"', KeyWildCardAssetSelection(selected_key_wildcard="*/a+")),
+        ("key:prefix/thing", KeyWildCardAssetSelection(selected_key_wildcard="prefix/thing")),
         (
             "not key:a",
             AssetSelection.all(include_sources=True)

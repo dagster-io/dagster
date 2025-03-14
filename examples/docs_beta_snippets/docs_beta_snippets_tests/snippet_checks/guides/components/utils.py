@@ -15,7 +15,14 @@ MASK_SLING_WARNING = (r"warning.*\n", "")
 MASK_SLING_PROMO = (r"Follow Sling.*\n", "")
 MASK_SLING_DOWNLOAD_DUCKDB = (r".*downloading duckdb.*\n", "")
 MASK_EDITABLE_DAGSTER = (r" --use-editable-dagster", "")
-MASK_JAFFLE_PLATFORM = (r"\/.*?\/jaffle-platform", "/.../jaffle-platform")
+MASK_USING_ENVIRONMENT = (r"\nUsing[\s\S]*", "\n...")
+
+
+def make_project_path_mask(project_name: str):
+    return (rf"\/.*?\/{project_name}", f"/.../{project_name}")
+
+
+MASK_JAFFLE_PLATFORM = make_project_path_mask("jaffle-platform")
 
 DAGSTER_ROOT = Path(__file__).parent.parent.parent.parent.parent.parent.parent
 COMPONENTS_SNIPPETS_DIR = (

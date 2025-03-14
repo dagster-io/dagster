@@ -1,4 +1,7 @@
+# isort:skip_file
 import dagster_components as dg_components
+
+import dagster as dg
 import my_existing_project.defs
 from my_existing_project.analytics import assets as analytics_assets
 from my_existing_project.analytics.jobs import (
@@ -7,8 +10,6 @@ from my_existing_project.analytics.jobs import (
 )
 from my_existing_project.elt import assets as elt_assets
 from my_existing_project.elt.jobs import sync_tables_daily_schedule, sync_tables_job
-
-import dagster as dg
 
 defs = dg.Definitions.merge(
     dg.Definitions(
