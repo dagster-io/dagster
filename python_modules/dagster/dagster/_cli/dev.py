@@ -275,7 +275,7 @@ def _optionally_create_temp_workspace(
     """If not in legacy mode, spin up grpc servers and write a workspace file pointing at them.
     If in legacy mode, do nothing and return the target args.
     """
-    if not use_legacy_code_server_behavior:
+    if not use_legacy_code_server_behavior and False:
         with WorkspaceProcessContext(
             instance=instance,
             workspace_load_target=workspace_opts.to_load_target(),
