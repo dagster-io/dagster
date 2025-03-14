@@ -3013,9 +3013,8 @@ class TestEventLogStorage:
         assert storage.get_materialized_partitions(c, after_cursor=9999999999) == set()
         assert storage.get_materialized_partitions(d, after_cursor=9999999999) == set()
 
-    def test_write_asset_materialization_failures(self, storage, instance):
+    def test_write_asset_materialization_failures(self, storage, instance, test_run_id):
         a = AssetKey(["a"])
-        run_id = make_new_run_id()
 
         partitions = list(string.ascii_uppercase)
 
@@ -3041,10 +3040,10 @@ class TestEventLogStorage:
         failure_events = [event for events in failure_events_by_step for event in events]
 
         for failure_event in failure_events:
-            instance.report_dagster_event(failure_event, run_id)
+            instance.report_dagster_event(failure_event, test_run_id)
 
         failure_records = instance.get_records_for_run(
-            run_id=run_id, of_type=DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+            run_id=test_run_id, of_type=DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
         ).records
 
         assert len(failure_records) == 15
