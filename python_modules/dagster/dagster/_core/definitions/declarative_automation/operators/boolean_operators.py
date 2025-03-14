@@ -2,8 +2,6 @@ import asyncio
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Union
 
-from typing_extensions import TypeIs
-
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_key import T_EntityKey
@@ -13,41 +11,12 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._core.definitions.declarative_automation.operators.dep_operators import (
-    DepsAutomationCondition,
-)
+from dagster._core.definitions.declarative_automation.operators.utils import has_allow_ignore
 from dagster._record import copy, record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AssetSelection
-
-
-def _has_allow_ignore(
-    condition: AutomationCondition,
-) -> TypeIs[
-    Union[
-        DepsAutomationCondition,
-        "AndAutomationCondition",
-        "OrAutomationCondition",
-        "NotAutomationCondition",
-    ]
-]:
-    from dagster._core.definitions.declarative_automation.operators.boolean_operators import (
-        AndAutomationCondition,
-        NotAutomationCondition,
-        OrAutomationCondition,
-    )
-
-    return isinstance(
-        condition,
-        (
-            DepsAutomationCondition,
-            AndAutomationCondition,
-            OrAutomationCondition,
-            NotAutomationCondition,
-        ),
-    )
 
 
 @whitelist_for_serdes(storage_name="AndAssetCondition")
@@ -130,7 +99,7 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         return copy(
             self,
             operands=[
-                child.allow(selection) if _has_allow_ignore(child) else child
+                child.allow(selection) if has_allow_ignore(child) else child
                 for child in self.operands
             ],
         )
@@ -150,7 +119,7 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         return copy(
             self,
             operands=[
-                child.ignore(selection) if _has_allow_ignore(child) else child
+                child.ignore(selection) if has_allow_ignore(child) else child
                 for child in self.operands
             ],
         )
@@ -231,7 +200,7 @@ class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         return copy(
             self,
             operands=[
-                child.allow(selection) if _has_allow_ignore(child) else child
+                child.allow(selection) if has_allow_ignore(child) else child
                 for child in self.operands
             ],
         )
@@ -251,7 +220,7 @@ class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         return copy(
             self,
             operands=[
-                child.ignore(selection) if _has_allow_ignore(child) else child
+                child.ignore(selection) if has_allow_ignore(child) else child
                 for child in self.operands
             ],
         )
@@ -320,7 +289,7 @@ class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         return copy(
             self,
             operand=self.operand.allow(selection)
-            if _has_allow_ignore(self.operand)
+            if has_allow_ignore(self.operand)
             else self.operand,
         )
 
@@ -339,6 +308,6 @@ class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         return copy(
             self,
             operand=self.operand.ignore(selection)
-            if _has_allow_ignore(self.operand)
+            if has_allow_ignore(self.operand)
             else self.operand,
         )
