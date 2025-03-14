@@ -3,11 +3,9 @@ title: 'pyproject.toml settings'
 sidebar_position: 500
 ---
 
-:::note
+import Preview from '../../../../partials/\_Preview.md';
 
-This article assumes you have already [created a project with components](creating-a-project-with-components).
-
-:::
+<Preview />
 
 `pyproject.toml` contains `tool.dagster` and `tool.dg` sections:
 

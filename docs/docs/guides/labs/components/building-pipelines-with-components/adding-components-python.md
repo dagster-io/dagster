@@ -3,11 +3,9 @@ title: 'Adding components to your project with Python'
 sidebar_position: 300
 ---
 
-:::info
+import Preview from '../../../../partials/\_Preview.md';
 
-This feature is still in development and might change in patch releases. It’s not production ready, and the documentation may also evolve. Stay tuned for updates.
-
-:::
+<Preview />
 
 In some cases, you may want to add a component to your project with Python rather than a `component.yaml` file.
 

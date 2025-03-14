@@ -7,9 +7,7 @@ import Preview from '../../../partials/\_Preview.md';
 
 <Preview />
 
-{/* TODO what is dg, who is it for, and why would they use it */}
-
-The `dg` command line tool lives in the published Python package `dagster-dg`. `dg` is designed to be globally installed and has no dependency on `dagster` itself. `dg` allows you to quickly scaffold Dagster projects, and, if you wish, populate them with [components](/guides/labs/components/).
+`dg` is a new command line interface designed for the local setup and development experience that allows you to quickly scaffold Dagster projects and optionally populate them with [Dagster Components](/guides/labs/components/). It is designed to be globally installed and has no dependency on `dagster` itself.
 
 ## Installation
 
@@ -24,3 +22,9 @@ import InstallUv from '../../../partials/\_InstallUv.md';
 import InstallDg from '../../../partials/\_InstallDg.md';
 
 <InstallDg />
+
+## `dg` API reference
+
+import DgReference from '../../../partials/\_DgReference.md';
+
+<DgReference />

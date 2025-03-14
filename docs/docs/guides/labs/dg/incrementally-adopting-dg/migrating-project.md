@@ -1,11 +1,15 @@
 ---
-title: 'Making a project dg-compatible'
+title: 'Converting an existing project to use dg'
 sidebar_position: 200
 ---
 
+import Preview from '../../../../partials/\_Preview.md';
+
+<Preview />
+
 :::note
 
-This guide is only relevant if you are starting from an _existing_ Dagster project. This setup is unnecessary if you used `dg scaffold project` to create your project.
+This guide is only relevant if you are starting from an _existing_ Dagster project. This setup is unnecessary if you [scaffolded a new project](/guides/labs/dg/scaffolding-a-project) with `dg scaffold project`.
 
 :::
 
