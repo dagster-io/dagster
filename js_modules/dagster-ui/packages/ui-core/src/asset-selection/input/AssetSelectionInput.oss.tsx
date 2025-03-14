@@ -1,3 +1,4 @@
+import {useCallback} from 'react';
 import {useAssetSelectionAutoCompleteProvider as defaultUseAssetSelectionAutoCompleteProvider} from 'shared/asset-selection/input/useAssetSelectionAutoCompleteProvider.oss';
 
 import {assetSelectionSyntaxSupportedAttributes, unsupportedAttributeMessages} from './util';
@@ -8,15 +9,19 @@ import {SelectionAutoCompleteInput} from '../../selection/SelectionInput';
 import {createSelectionLinter} from '../../selection/createSelectionLinter';
 import {AssetSelectionLexer} from '../generated/AssetSelectionLexer';
 import {AssetSelectionParser} from '../generated/AssetSelectionParser';
+import {isUnmatchedValueQuery} from '../isUnmatchedValueQuery';
+import {parseAssetSelectionQuery} from '../parseAssetSelectionQuery';
 
 export interface AssetSelectionInputProps {
   assets: AssetGraphQueryItem[];
   value: string;
   onChange: (value: string) => void;
+  onErrorStateChange?: (errors: SyntaxError[]) => void;
   linter?: (content: string) => SyntaxError[];
   useAssetSelectionAutoComplete?: (
     assets: AssetGraphQueryItem[],
   ) => Pick<SelectionAutoCompleteProvider, 'useAutoComplete'>;
+  saveOnBlur?: boolean;
 }
 
 const defaultLinter = createSelectionLinter({
@@ -28,12 +33,25 @@ const defaultLinter = createSelectionLinter({
 
 export const AssetSelectionInput = ({
   value,
-  onChange,
+  onChange: _onChange,
   assets,
   linter = defaultLinter,
   useAssetSelectionAutoComplete = defaultUseAssetSelectionAutoCompleteProvider,
+  saveOnBlur = false,
+  onErrorStateChange,
 }: AssetSelectionInputProps) => {
   const {useAutoComplete} = useAssetSelectionAutoComplete(assets);
+
+  const onChange = useCallback(
+    (value: string) => {
+      if (parseAssetSelectionQuery([], value) instanceof Error && isUnmatchedValueQuery(value)) {
+        _onChange(`key:"*${value}*"`);
+      } else {
+        _onChange(value);
+      }
+    },
+    [_onChange],
+  );
 
   return (
     <SelectionAutoCompleteInput
@@ -43,6 +61,8 @@ export const AssetSelectionInput = ({
       linter={linter}
       value={value}
       onChange={onChange}
+      saveOnBlur={saveOnBlur}
+      onErrorStateChange={onErrorStateChange}
     />
   );
 };

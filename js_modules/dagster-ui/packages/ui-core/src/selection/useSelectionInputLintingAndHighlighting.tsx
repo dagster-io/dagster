@@ -3,8 +3,6 @@ import {
   Box,
   Colors,
   Icon,
-  MiddleTruncate,
-  MonoSmall,
   PopoverContentStyle,
   PopoverWrapperStyle,
 } from '@dagster-io/ui-components';
@@ -18,29 +16,30 @@ import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
 export const useSelectionInputLintingAndHighlighting = ({
   cmInstance,
-  value,
   linter,
 }: {
   cmInstance: React.MutableRefObject<CodeMirror.Editor | null>;
-  value: string;
   linter: (content: string) => SyntaxError[];
 }) => {
-  const errors = useMemo(() => {
-    const errors = linter(value);
-    return errors.map((error, idx) => ({
-      ...error,
-      idx,
-    }));
-  }, [linter, value]);
+  const instance = cmInstance.current;
 
+  const [errors, setErrors] = useState<SyntaxError[]>([]);
+  const errorsRef = useUpdatingRef(errors);
   useLayoutEffect(() => {
-    if (!cmInstance.current) {
+    if (!instance) {
       return;
     }
-    applyStaticSyntaxHighlighting(cmInstance.current, errors);
-  }, [cmInstance, errors]);
-
-  const errorsRef = useUpdatingRef(errors);
+    const callback = (instance: CodeMirror.Editor) => {
+      const errors = linter(instance.getValue());
+      setErrors(errors);
+      applyStaticSyntaxHighlighting(instance, errors);
+    };
+    instance.on('change', callback);
+    callback(instance);
+    return () => {
+      instance.off('change', callback);
+    };
+  }, [instance, linter]);
 
   const [error, setError] = useState<{
     error: SyntaxError;
@@ -84,18 +83,11 @@ export const useSelectionInputLintingAndHighlighting = ({
       return null;
     }
     if (error.error.offendingSymbol) {
-      return (
-        <Box flex={{direction: 'row', alignItems: 'center'}}>
-          Unexpected input
-          <div style={{width: 4}} />
-          <MonoSmall color={Colors.textRed()}>
-            <div style={{maxWidth: 200}}>
-              <MiddleTruncate text={error.error.offendingSymbol} />
-            </div>
-          </MonoSmall>
-          .
-        </Box>
-      );
+      const symbol = error.error.offendingSymbol;
+      if (symbol === '<EOF>') {
+        return 'Selection is incomplete';
+      }
+      return <Box flex={{direction: 'row', alignItems: 'center'}}>{error.error.message}</Box>;
     }
     if (error.error.message) {
       return error.error.message;

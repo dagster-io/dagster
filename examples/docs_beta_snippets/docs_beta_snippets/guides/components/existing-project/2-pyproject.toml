@@ -1,8 +1,0 @@
-...
-[tool.dg]
-is_project = true
-
-[tool.dagster]
-module_name = "my_existing_project.definitions"
-code_location_name = "my_existing_project"
-...

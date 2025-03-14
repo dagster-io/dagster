@@ -1,0 +1,67 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.heading {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+}
+
+.icon {
+  flex: 0 0 48px;
+  height: 48px;
+  width: 48px;
+  border-radius: 8px;
+  background-color: var(--color-background-lighter);
+  box-shadow: 0 0 0 1px var(--color-keyline-default);
+}
+
+.headingContent {
+  flex: 1;
+  overflow: hidden;
+}
+
+.heading h1 {
+  font-size: 18px;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.description {
+  font-size: 14px;
+  color: var(--color-text-light);
+  line-height: 1.5;
+}
+
+.description a {
+  color: var(--color-link-default);
+  text-decoration: underline;
+}
+
+.description pre {
+  font-family: var(--font-geist-mono);
+  margin: 8px 0;
+  white-space: pre-wrap;
+}
+
+.description code {
+  font-family: var(--font-geist-mono);
+  background-color: var(--color-background-lighter);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.description p {
+  margin: 0;
+}
+
+.description p + p {
+  margin-top: 12px;
+}

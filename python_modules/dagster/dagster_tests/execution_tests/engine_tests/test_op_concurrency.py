@@ -246,7 +246,7 @@ def test_parallel_concurrency(instance, parallel_recon_job):
 
 
 def _has_concurrency_blocked_event(events, concurrency_key):
-    message_str = f"blocked by concurrency limit for key {concurrency_key}"
+    message_str = f"blocked by limit for pool {concurrency_key}"
     for event in events:
         if message_str in event.message:
             return True
@@ -400,7 +400,7 @@ def test_multiprocess_simple_job_has_blocked_message(instance):
     threading.Thread(target=_unblock_concurrency_key, args=(instance, TIMEOUT), daemon=True).start()
 
     for event in execute_run_iterator(recon_simple_job, run, instance=instance):
-        if "blocked by concurrency limit for key foo" in event.message:  # pyright: ignore[reportOperatorIssue]
+        if "blocked by limit for pool foo" in event.message:  # pyright: ignore[reportOperatorIssue]
             has_blocked_message = True
             break
         if time.time() - start > TIMEOUT:

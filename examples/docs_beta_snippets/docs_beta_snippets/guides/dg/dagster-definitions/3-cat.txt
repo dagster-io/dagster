@@ -1,0 +1,7 @@
+cat my_project/defs/assets/my_asset.py
+
+# import dagster as dg
+# 
+#
+# @dg.asset
+# def my_asset(context: dg.AssetExecutionContext) -> dg.MaterializeResult: ...

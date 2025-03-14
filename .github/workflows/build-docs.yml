@@ -13,6 +13,11 @@ on:
       - examples/getting_started_etl_tutorial/**
       - examples/airlift-migration-tutorial/**
       - .github/workflows/build-docs.yml
+      - '!docs/README.md'
+      - '!docs/CONTRIBUTING.md'
+      - '!docs/content-templates/**'
+      # Required for `yarn rebuild-kinds-tags`
+      - js_modules/dagster-ui/packages/ui-core/src/graph/OpTags.tsx
   pull_request:
     paths:
       - docs/**
@@ -22,6 +27,11 @@ on:
       - examples/getting_started_etl_tutorial/**
       - examples/airlift-migration-tutorial/**
       - .github/workflows/build-docs.yml
+      - '!docs/README.md'
+      - '!docs/CONTRIBUTING.md'
+      - '!docs/content-templates/**'
+      # Required for `yarn rebuild-kinds-tags`
+      - js_modules/dagster-ui/packages/ui-core/src/graph/OpTags.tsx
     types:
       - opened
       - reopened

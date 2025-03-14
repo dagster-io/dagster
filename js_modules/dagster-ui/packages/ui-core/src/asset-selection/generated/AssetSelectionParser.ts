@@ -46,7 +46,7 @@ export class AssetSelectionParser extends Parser {
   public static readonly ROOTS = 23;
   public static readonly QUOTED_STRING = 24;
   public static readonly UNQUOTED_STRING = 25;
-  public static readonly UNQUOTED_REGEX_STRING = 26;
+  public static readonly UNQUOTED_WILDCARD_STRING = 26;
   public static readonly WS = 27;
   public static readonly RULE_start = 0;
   public static readonly RULE_expr = 1;
@@ -73,9 +73,9 @@ export class AssetSelectionParser extends Parser {
   private static readonly _LITERAL_NAMES: Array<string | undefined> = [
     undefined,
     "'='",
-    "'and'",
-    "'or'",
-    "'not'",
+    undefined,
+    undefined,
+    undefined,
     "'*'",
     "'+'",
     undefined,
@@ -123,7 +123,7 @@ export class AssetSelectionParser extends Parser {
     'ROOTS',
     'QUOTED_STRING',
     'UNQUOTED_STRING',
-    'UNQUOTED_REGEX_STRING',
+    'UNQUOTED_WILDCARD_STRING',
     'WS',
   ];
   public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(
@@ -750,7 +750,7 @@ export class AssetSelectionParser extends Parser {
             ((1 << _la) &
               ((1 << AssetSelectionParser.QUOTED_STRING) |
                 (1 << AssetSelectionParser.UNQUOTED_STRING) |
-                (1 << AssetSelectionParser.UNQUOTED_REGEX_STRING))) !==
+                (1 << AssetSelectionParser.UNQUOTED_WILDCARD_STRING))) !==
               0
           )
         ) {
@@ -1819,8 +1819,8 @@ export class KeyValueContext extends ParserRuleContext {
   public UNQUOTED_STRING(): TerminalNode | undefined {
     return this.tryGetToken(AssetSelectionParser.UNQUOTED_STRING, 0);
   }
-  public UNQUOTED_REGEX_STRING(): TerminalNode | undefined {
-    return this.tryGetToken(AssetSelectionParser.UNQUOTED_REGEX_STRING, 0);
+  public UNQUOTED_WILDCARD_STRING(): TerminalNode | undefined {
+    return this.tryGetToken(AssetSelectionParser.UNQUOTED_WILDCARD_STRING, 0);
   }
   constructor(parent: ParserRuleContext | undefined, invokingState: number) {
     super(parent, invokingState);

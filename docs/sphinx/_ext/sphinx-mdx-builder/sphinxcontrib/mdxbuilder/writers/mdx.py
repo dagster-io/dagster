@@ -325,21 +325,13 @@ class MdxTranslator(SphinxTranslator):
 
         content = node.astext()
 
-        # Skip render of messages from `dagster_sphinx` `inject_param_flag`
-        # https://github.com/dagster-io/dagster/blob/colton/inline-flags/docs/sphinx/_ext/dagster-sphinx/dagster_sphinx/docstring_flags.py#L36-L63
-        if "This parameter may break" in content:
-            return
-
-        if "This parameter will be removed" in content:
-            return
-
         # Prevents wrapped lines in list items, for example in parameter descriptions:
         #
         # Args:
         #     group_name (Optional[str], optional): The name of the asset group.
-        #     dagster_airbyte_translator (Optional[DagsterAirbyteTranslator], optional): The translator to use
-        #         to convert Airbyte content into :py:class:`dagster.AssetSpec`.
-        #         Defaults to :py:class:`DagsterAirbyteTranslator`.
+        #     some_translator (Optional[SomeTranslator], optional): The translator to use
+        #         to convert content into :py:class:`some.Spec`.
+        #         Defaults to :py:class:`SomeTranslator`.
         if self.in_list_item:
             content = content.replace("\n", " ")
 

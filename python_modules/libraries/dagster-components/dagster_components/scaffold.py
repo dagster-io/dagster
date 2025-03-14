@@ -1,62 +1,84 @@
-from collections.abc import Mapping
+from abc import abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Callable, Optional, TypeVar, Union
 
-import click
-import yaml
+from dagster import _check as check
+from dagster._record import record
+from pydantic import BaseModel
 
-from dagster_components.core.component import Component
-from dagster_components.core.component_scaffolder import (
-    ComponentScaffolderUnavailableReason,
-    ComponentScaffoldRequest,
-)
+# Type variable for generic class handling
+T = TypeVar("T")
 
-
-class ComponentDumper(yaml.Dumper):
-    def write_line_break(self) -> None:
-        # add an extra line break between top-level keys
-        if self.indent == 0:
-            super().write_line_break()
-        super().write_line_break()
+# Constant for object attribute name
+SCAFFOLDER_CLS_ATTRIBUTE = "__scaffolder_cls__"
 
 
-def scaffold_component_yaml(
-    request: ComponentScaffoldRequest, attributes: Optional[Mapping[str, Any]]
-) -> None:
-    with open(request.component_instance_root_path / "component.yaml", "w") as f:
-        component_data = {"type": request.component_type_name, "attributes": attributes or {}}
-        yaml.dump(
-            component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
-        )
-        f.writelines([""])
+def scaffold_with(
+    scaffolder_cls: Union[type["Scaffolder"], "ScaffolderUnavailableReason"],
+) -> Callable[[type[T]], type[T]]:
+    """A decorator that declares what scaffolder is used to scaffold the artifact.
+
+    Args:
+        scaffolder_cls: A class that inherits from Scaffolder
+
+    Returns:
+        Decorator function that enhances the target class
+    """
+
+    def decorator(cls: type[T]) -> type[T]:
+        # Store the scaffolder class as an attribute using the constant
+        setattr(cls, SCAFFOLDER_CLS_ATTRIBUTE, scaffolder_cls)
+        return cls
+
+    return decorator
 
 
-def scaffold_component_instance(
-    path: Path,
-    component_type: type[Component],
-    component_type_name: str,
-    scaffold_params: Mapping[str, Any],
-) -> None:
-    click.echo(f"Creating a Dagster component instance folder at {path}.")
-    if not path.exists():
-        path.mkdir()
-    scaffolder = component_type.get_scaffolder()
+def has_scaffolder(cls: type) -> bool:
+    """Determines if a class has been decorated with `@scaffold_with`.
 
-    if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
-        raise Exception(
-            f"Component type {component_type_name} does not have a scaffolder. Reason: {scaffolder.message}."
-        )
+    Args:
+        cls: The class to check
 
-    scaffolder.scaffold(
-        ComponentScaffoldRequest(
-            component_type_name=component_type_name,
-            component_instance_root_path=path,
-        ),
-        scaffold_params,
-    )
+    Returns:
+        True if the class has a Scaffolder attached, False otherwise
+    """
+    return hasattr(cls, SCAFFOLDER_CLS_ATTRIBUTE)
 
-    component_yaml_path = path / "component.yaml"
-    if not component_yaml_path.exists():
-        raise Exception(
-            f"Currently all components require a component.yaml file. Please ensure your implementation of scaffold writes this file at {component_yaml_path}."
-        )
+
+def get_scaffolder(
+    cls: type,
+) -> Union["Scaffolder", "ScaffolderUnavailableReason"]:
+    """Retrieves the scaffolder class attached to the decorated class.
+
+    Args:
+        cls: The class to inspect
+
+    Returns:
+        The scaffolder class attached to the decorated class. Raises CheckError if the class is not decorated with @scaffold_with.
+    """
+    check.param_invariant(has_scaffolder(cls), "cls", "Class must be decorated with @scaffold_with")
+    attr = getattr(cls, SCAFFOLDER_CLS_ATTRIBUTE)
+    return attr if isinstance(attr, ScaffolderUnavailableReason) else attr()
+
+
+@dataclass
+class ScaffolderUnavailableReason:
+    message: str
+
+
+@record
+class ScaffoldRequest:
+    # fully qualified class name of the decorated class
+    type_name: str
+    # target path for the scaffold request. Typically used to construct absolute paths
+    target_path: Path
+
+
+class Scaffolder:
+    @classmethod
+    def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
+        return None
+
+    @abstractmethod
+    def scaffold(self, request: ScaffoldRequest, params: Any) -> None: ...

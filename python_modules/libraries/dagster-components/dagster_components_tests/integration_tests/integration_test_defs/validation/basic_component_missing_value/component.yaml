@@ -1,0 +1,4 @@
+type: .MyComponent
+
+attributes:
+  a_string: "test"

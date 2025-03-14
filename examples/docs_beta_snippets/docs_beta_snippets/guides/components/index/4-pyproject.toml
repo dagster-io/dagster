@@ -1,9 +1,7 @@
 ...
-[tool.dagster]
-module_name = "jaffle_platform.definitions"
-code_location_name = "jaffle-platform"
-
 [tool.dg]
-is_project = true
-is_component_lib = true
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "jaffle_platform"
 ...

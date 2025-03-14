@@ -120,6 +120,7 @@ export const lightThemeColors = css`
   --color-data-viz-yellow-alt: var(--color-dataviz-yellow300);
   --color-checkbox-unchecked: var(--color-core-gray400);
   --color-checkbox-checked: var(--color-core-blue500);
+  --color-checkbox-disabled: var(--color-core-gray700);
   --color-blue-gradient: linear-gradient(
     var(--color-core-gray10),
     var(--color-translucent-blue10) 100%

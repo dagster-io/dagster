@@ -1,5 +1,0 @@
-type: my_component@file:__init__.py
-
-attributes:
-  a_string: "test"
-  an_int: {}

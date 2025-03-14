@@ -1,0 +1,148 @@
+.schemaContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.schemaTitle {
+  font-family: var(--font-geist-mono);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--color-text-light);
+}
+
+.propertyRoot {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: flex-start;
+  background-color: var(--color-background-gray);
+  padding: 12px;
+}
+
+.propertyContainer {
+  flex: 1;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.expandButton {
+  margin-top: 2px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  height: 20px;
+  width: 20px;
+}
+
+.expandButton:disabled {
+  opacity: 0.8;
+  cursor: default;
+}
+
+.expandButton .chevron {
+  transform: rotate(-90deg);
+  transition: transform 0.1s linear;
+}
+
+.expandButton.expanded .chevron {
+  transform: rotate(0deg);
+}
+
+.property {
+  font-size: 14px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.propertyNameAndTypes {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.propertyName {
+  font-family: var(--font-geist-mono);
+  font-weight: 600;
+  margin-right: 12px;
+}
+
+.propertyDescriptionContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.propertyDescription {
+  font-size: 14px;
+  color: var(--color-text-light);
+}
+
+.propertyDefault {
+  font-size: 14px;
+  color: var(--color-text-light);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.propertyDefaultValue {
+  font-family: var(--font-geist-mono);
+  color: var(--color-text-blue);
+}
+
+.propertyExamples {
+  font-size: 14px;
+  color: var(--color-text-light);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.propertyExamplesValue {
+  font-family: var(--font-geist-mono);
+  color: var(--color-text-blue);
+}
+
+.required {
+  background-color: var(--color-background-blue);
+  border: none;
+  border-radius: 4px;
+  font-family: var(--font-geist-mono);
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-blue);
+}
+
+.anyOf {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.anyOfLabel {
+  white-space: nowrap;
+}
+
+.expansion {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

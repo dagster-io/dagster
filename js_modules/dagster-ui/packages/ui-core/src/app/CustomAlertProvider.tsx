@@ -80,7 +80,7 @@ export const CustomAlertProvider = () => {
           <Body ref={body}>{alert.body}</Body>
         </DialogBody>
       ) : null}
-      <DialogFooter>
+      <DialogFooter topBorder>
         <Button autoFocus={false} onClick={onCopy}>
           Copy
         </Button>

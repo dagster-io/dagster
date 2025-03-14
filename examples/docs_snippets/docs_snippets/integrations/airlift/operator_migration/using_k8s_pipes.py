@@ -1,6 +1,6 @@
-from dagster_k8s import PipesK8sClient
+import dagster_k8s as dg_k8s
 
-from dagster import AssetExecutionContext, asset
+import dagster as dg
 
 container_cfg = {
     "name": "hello-world-pod",
@@ -10,10 +10,10 @@ container_cfg = {
 }
 
 
-@asset
-def execute_hello_world_task(context: AssetExecutionContext):
+@dg.asset
+def execute_hello_world_task(context: dg.AssetExecutionContext):
     return (
-        PipesK8sClient()
+        dg_k8s.PipesK8sClient()
         .run(
             context=context,
             base_pod_meta={"name": "hello-world-pod"},

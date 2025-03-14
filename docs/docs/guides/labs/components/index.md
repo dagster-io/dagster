@@ -1,6 +1,6 @@
 ---
 title: "Components"
-sidebar_position: 10
+sidebar_position: 20
 ---
 
 :::info
@@ -26,27 +26,15 @@ To use the Components framework, you must install the `dg` command line tool, wh
 
 ### 1. Install uv
 
-We will use the Python package manager [`uv`](https://docs.astral.sh/uv/) to install a globally available `dg`:
+import InstallUv from '../../../partials/\_InstallUv.md';
 
-<CliInvocationExample contents="brew install uv" />
+<InstallUv />
 
 ### 2. Install the dg command line tool
 
-Once you have installed `uv`, use it to install `dg`.
+import InstallDg from '../../../partials/\_InstallDg.md';
 
-<CliInvocationExample contents="uv tool install dagster-dg" />
-
-:::tip
-
-`uv tool install` installs python packages from PyPI into isolated environments and exposes their executables on your shell path. This means the `dg` command should now be available. It will always execute in an isolated environment separate from any project environment.
-
-:::
-
-:::note
-
-If you have a local clone of the `dagster` repo, you can install a local version of `dg` with `uv tool install -e $DAGSTER_GIT_REPO_DIR/python_modules/libraries/dagster-dg`. This will create an isolated environment for `dg` just like the standard `uv tool install`, but the environment will contain an editable installation of `dagster-dg`.
-
-:::
+<InstallDg />
 
 ## dg API reference
 

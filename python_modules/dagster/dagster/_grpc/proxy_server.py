@@ -107,6 +107,17 @@ class DagsterProxyApiServicer(DagsterApiServicer):
 
         self.__last_heartbeat_time = time.time()
         self.__server_heartbeat_thread = None
+
+        # Map runs to the client that launched them, so that we can route
+        # termination requests
+        self._run_clients: dict[str, DagsterGrpcClient] = {}
+
+        self._reload_location()
+
+        # Wait for the code server to have started before starting the heartbeat clock,
+        # since the code loading and the server being ready is what will trigger the
+        # heartbeats coming in from the client
+
         if server_heartbeat:
             self.__server_heartbeat_thread = threading.Thread(
                 target=self._server_heartbeat_thread,
@@ -117,12 +128,6 @@ class DagsterProxyApiServicer(DagsterApiServicer):
             self.__server_heartbeat_thread.start()
 
         self.__cleanup_thread.start()
-
-        # Map runs to the client that launched them, so that we can route
-        # termination requests
-        self._run_clients: dict[str, DagsterGrpcClient] = {}
-
-        self._reload_location()
 
     def _reload_location(self):
         from dagster._grpc.client import client_heartbeat_thread

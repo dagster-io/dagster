@@ -1,0 +1,7 @@
+type: .MyComponent
+
+attributes:
+  a_string: "a string"
+  an_int: 5
+  # doesn't exist
+  a_bool: false

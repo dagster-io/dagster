@@ -77,6 +77,7 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -234,6 +235,7 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -449,6 +451,12 @@ export type AssetConditionEvaluationRecordFragment = {
                 description: string | null;
               }
             | {
+                __typename: 'PoolMetadataEntry';
+                pool: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'PythonArtifactMetadataEntry';
                 module: string;
                 name: string;
@@ -621,6 +629,12 @@ export type AssetConditionEvaluationRecordFragment = {
             | {
                 __typename: 'PipelineRunMetadataEntry';
                 runId: string;
+                label: string;
+                description: string | null;
+              }
+            | {
+                __typename: 'PoolMetadataEntry';
+                pool: string;
                 label: string;
                 description: string | null;
               }
@@ -867,6 +881,12 @@ export type GetEvaluationsQuery = {
                         description: string | null;
                       }
                     | {
+                        __typename: 'PoolMetadataEntry';
+                        pool: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
                         __typename: 'PythonArtifactMetadataEntry';
                         module: string;
                         name: string;
@@ -1049,6 +1069,12 @@ export type GetEvaluationsQuery = {
                     | {
                         __typename: 'PipelineRunMetadataEntry';
                         runId: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'PoolMetadataEntry';
+                        pool: string;
                         label: string;
                         description: string | null;
                       }
@@ -1294,6 +1320,12 @@ export type GetSlimEvaluationsQuery = {
                         description: string | null;
                       }
                     | {
+                        __typename: 'PoolMetadataEntry';
+                        pool: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
                         __typename: 'PythonArtifactMetadataEntry';
                         module: string;
                         name: string;
@@ -1476,6 +1508,12 @@ export type GetSlimEvaluationsQuery = {
                     | {
                         __typename: 'PipelineRunMetadataEntry';
                         runId: string;
+                        label: string;
+                        description: string | null;
+                      }
+                    | {
+                        __typename: 'PoolMetadataEntry';
+                        pool: string;
                         label: string;
                         description: string | null;
                       }
@@ -1706,6 +1744,12 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'PoolMetadataEntry';
+                pool: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'PythonArtifactMetadataEntry';
                 module: string;
                 name: string;
@@ -1882,6 +1926,12 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 description: string | null;
               }
             | {
+                __typename: 'PoolMetadataEntry';
+                pool: string;
+                label: string;
+                description: string | null;
+              }
+            | {
                 __typename: 'PythonArtifactMetadataEntry';
                 module: string;
                 name: string;
@@ -1974,8 +2024,8 @@ export type GetEvaluationsSpecificPartitionQuery = {
   } | null;
 };
 
-export const GetEvaluationsQueryVersion = 'ffbe804f3dcaaf3923223096d1cd5cdd39773945fe75045d131e0144bee5c3d9';
+export const GetEvaluationsQueryVersion = '93c5decc8c895eb31dbb5b5d67c091c20cbe3760b50ed51141c59910de362321';
 
-export const GetSlimEvaluationsQueryVersion = '040bf5d6f79ce3c06d75f4410e5386df795c546f10d3180e3ee7cb3ddac949e3';
+export const GetSlimEvaluationsQueryVersion = 'aedf850fe6beb1b4206c61098d672999602cbd50733c417ba211be8b631249e4';
 
-export const GetEvaluationsSpecificPartitionQueryVersion = '7c47ec6fee7ebf9edf6c5d57294f5a603e6a599884841eb211a1de9422c3791c';
+export const GetEvaluationsSpecificPartitionQueryVersion = '7ac0cbaefd83d34fc24a1059a7adabeb0d2fb16243f5d0c319f029dd554be8f8';

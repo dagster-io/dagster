@@ -9,7 +9,7 @@ This guide covers the most common use cases for asset sensors, such as defining 
 
 :::note
 
-This documentation assumes familiarity with [assets](/guides/build/assets/) and [jobs](/guides/build/assets/asset-jobs)
+This documentation assumes familiarity with [assets](/guides/build/assets/) and [jobs](/guides/build/jobs/).
 
 :::
 
@@ -110,7 +110,7 @@ The `@multi_asset_sensor` has been marked as deprecated, but will not be removed
 
 When building a pipeline, you may want to monitor multiple assets with a single sensor. This can be accomplished with a multi-asset sensor.
 
-The following example uses a `@multi_asset_sensor` to monitor multiple assets and trigger a job when any of the assets are materialized:
+The following example uses a `@multi_asset_sensor` to monitor two assets that triggers an asset job once both have been materialized. You can also trigger op jobs this way.
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/automation/multi-asset-sensor.py" language="python" />
 

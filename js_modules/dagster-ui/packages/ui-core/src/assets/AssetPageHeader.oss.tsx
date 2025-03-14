@@ -11,10 +11,12 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {Link, useLocation} from 'react-router-dom';
+import {useContext} from 'react';
+import {Link, useHistory, useLocation} from 'react-router-dom';
 import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
 import styled from 'styled-components';
 
+import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {AnchorButton} from '../ui/AnchorButton';
@@ -35,6 +37,9 @@ export const AssetPageHeader = ({
   view: _view,
   ...extra
 }: Props) => {
+  const history = useHistory();
+  const {basePath} = useContext(AppContext);
+
   const copy = useCopyToClipboard();
   const copyableString = assetKey.path.join('/');
   const [didCopy, setDidCopy] = React.useState(false);
@@ -59,20 +64,38 @@ export const AssetPageHeader = ({
   }, [copy, copyableString]);
 
   const location = useLocation();
+  const filterStateQueryString = getAssetFilterStateQueryString(location.search);
 
   const breadcrumbs = React.useMemo(() => {
-    const list: BreadcrumbProps[] = [...headerBreadcrumbs];
-
+    const keyPathItems: BreadcrumbProps[] = [];
     assetKey.path.reduce((accum: string, elem: string) => {
-      const href = `${accum}/${encodeURIComponent(elem)}?${getAssetFilterStateQueryString(
-        location.search,
-      )}`;
-      list.push({text: elem, href});
+      const href = `${accum}/${encodeURIComponent(elem)}`;
+      keyPathItems.push({text: elem, href});
       return href;
     }, '/assets');
 
-    return list;
-  }, [assetKey.path, headerBreadcrumbs, location.search]);
+    // Use createHref to prepend the basePath on all items. We don't have control over the
+    // breadcrumb overflow rendering, and Blueprint renders the overflow items with no awareness
+    // of the basePath. This allows us to render appropriate href values for the overflow items,
+    // and we can then remove the basePath for individual rendered breadcrumbs, which we are
+    // able to control.
+    const headerItems = headerBreadcrumbs.map((item) => {
+      return {
+        ...item,
+        href: item.href ? history.createHref({pathname: item.href}) : undefined,
+      };
+    });
+
+    // Attach the filter state querystring to key path items.
+    const keyPathItemsWithSearch = keyPathItems.map((item) => {
+      return {
+        ...item,
+        href: history.createHref({pathname: item.href, search: filterStateQueryString}),
+      };
+    });
+
+    return [...headerItems, ...keyPathItemsWithSearch];
+  }, [assetKey.path, headerBreadcrumbs, filterStateQueryString, history]);
 
   return (
     <PageHeader
@@ -86,13 +109,20 @@ export const AssetPageHeader = ({
                   {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
                 </TruncatedHeading>
               )}
-              breadcrumbRenderer={({text, href}) => (
-                <TruncatedHeading key={href}>
-                  <BreadcrumbLink to={href || '#'}>
-                    {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
-                  </BreadcrumbLink>
-                </TruncatedHeading>
-              )}
+              breadcrumbRenderer={({text, href}) => {
+                // Strip the leading basePath. It is prepended in order to make overflow
+                // items have the correct href values since we can't control the overflow
+                // rendering. Here, however, we can do what we want, and we render with
+                // react-router Link components that don't need the basePath.
+                const pathWithoutBase = href ? href.replace(basePath, '') : '';
+                return (
+                  <TruncatedHeading key={href}>
+                    <BreadcrumbLink to={pathWithoutBase || '#'}>
+                      {typeof text === 'string' ? <MiddleTruncate text={text} /> : text}
+                    </BreadcrumbLink>
+                  </TruncatedHeading>
+                );
+              }}
               $numHeaderBreadcrumbs={headerBreadcrumbs.length}
               popoverProps={{
                 minimal: true,

@@ -63,7 +63,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Monitor',
+      label: 'Monitor & debug',
       collapsed: false,
       link: {type: 'doc', id: 'guides/monitor/index'},
       items: [
@@ -100,7 +100,6 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Migrate',
-      link: {type: 'doc', id: 'guides/migrate/index'},
       collapsed: false,
       items: [
         {

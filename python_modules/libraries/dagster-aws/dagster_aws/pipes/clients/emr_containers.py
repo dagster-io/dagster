@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from mypy_boto3_emr_containers.client import EMRContainersClient
     from mypy_boto3_emr_containers.type_defs import (
         DescribeJobRunResponseTypeDef,
-        StartJobRunRequestRequestTypeDef,
+        StartJobRunRequestTypeDef,
         StartJobRunResponseTypeDef,
     )
 
@@ -87,7 +87,7 @@ class PipesEMRContainersClient(PipesClient, TreatAsResourceParam):
         self,
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
-        start_job_run_params: "StartJobRunRequestRequestTypeDef",
+        start_job_run_params: "StartJobRunRequestTypeDef",
         extras: Optional[dict[str, Any]] = None,
     ) -> PipesClientCompletedInvocation:
         """Run a workload on AWS EMR Containers, enriched with the pipes protocol.
@@ -129,8 +129,8 @@ class PipesEMRContainersClient(PipesClient, TreatAsResourceParam):
         self,
         context: Union[OpExecutionContext, AssetExecutionContext],
         session: PipesSession,
-        params: "StartJobRunRequestRequestTypeDef",
-    ) -> "StartJobRunRequestRequestTypeDef":
+        params: "StartJobRunRequestTypeDef",
+    ) -> "StartJobRunRequestTypeDef":
         # inject Dagster tags
         tags = params.get("tags", {})
         params["tags"] = {**tags, **session.default_remote_invocation_info}
@@ -139,15 +139,15 @@ class PipesEMRContainersClient(PipesClient, TreatAsResourceParam):
 
         if self.pipes_params_bootstrap_method == "env":
             params["configurationOverrides"] = params.get("configurationOverrides", {})
-            params["configurationOverrides"]["applicationConfiguration"] = params[
+            params["configurationOverrides"]["applicationConfiguration"] = params[  # type: ignore
                 "configurationOverrides"
             ].get("applicationConfiguration", [])
             # we can reuse the same method as in standard EMR
             # since configurations format is the same
-            params["configurationOverrides"]["applicationConfiguration"] = (
+            params["configurationOverrides"]["applicationConfiguration"] = (  # type: ignore
                 emr_inject_pipes_env_vars(
                     session,
-                    params["configurationOverrides"]["applicationConfiguration"],
+                    params["configurationOverrides"]["applicationConfiguration"],  # type: ignore
                     emr_flavor="containers",
                 )
             )
@@ -164,14 +164,14 @@ class PipesEMRContainersClient(PipesClient, TreatAsResourceParam):
                 for key, value in session.get_bootstrap_cli_arguments().items():
                     spark_submit_job_driver["sparkSubmitParameters"] += f" {key} {value}"
 
-            params["jobDriver"]["sparkSubmitJobDriver"] = spark_submit_job_driver
+            params["jobDriver"]["sparkSubmitJobDriver"] = spark_submit_job_driver  # type: ignore
 
-        return cast("StartJobRunRequestRequestTypeDef", params)
+        return cast("StartJobRunRequestTypeDef", params)
 
     def _start(
         self,
         context: Union[OpExecutionContext, AssetExecutionContext],
-        params: "StartJobRunRequestRequestTypeDef",
+        params: "StartJobRunRequestTypeDef",
     ) -> "StartJobRunResponseTypeDef":
         response = self.client.start_job_run(**params)
 

@@ -92,22 +92,46 @@ describe('humanCronString', () => {
     });
 
     describe('With timezone offset', () => {
-      it('applies timezone offset for westward timezones, if provided', () => {
+      it('applies timezone offset for westward standard timezones, if provided', () => {
         const userTimezone = 'America/Los_Angeles';
+
+        // Determine timezone shorthand from actual date, to avoid DST issues.
+        const format = Intl.DateTimeFormat('en-US', {
+          timeZone: userTimezone,
+          timeZoneName: 'short',
+        });
+
+        const formatted = format.formatToParts(new Date());
+        const timezoneShorthand = formatted.find((part) => part.type === 'timeZoneName')?.value;
+
         const timezoneConfig = {
           longTimezoneName: userTimezone,
-          tzOffset: -1, // Difference between MST and PST
+          tzOffset: -1, // Difference between Mountain time and Pacific time
         };
-        expect(humanCronString('@daily', timezoneConfig)).toBe('At 11:00 PM PST');
+
+        const expectedOutput = `At 11:00 PM ${timezoneShorthand}`;
+        expect(humanCronString('@daily', timezoneConfig)).toBe(expectedOutput);
       });
 
       it('applies timezone offset for eastward timezones, if provided', () => {
         const userTimezone = 'America/St_Johns';
+
+        // Determine timezone shorthand from actual date, to avoid DST issues.
+        const format = Intl.DateTimeFormat('en-US', {
+          timeZone: userTimezone,
+          timeZoneName: 'short',
+        });
+
+        const formatted = format.formatToParts(new Date());
+        const timezoneShorthand = formatted.find((part) => part.type === 'timeZoneName')?.value;
+
         const timezoneConfig = {
           longTimezoneName: userTimezone,
-          tzOffset: 4.5, // Difference between Newfoundland standard time and PST
+          tzOffset: 4.5, // Difference between Newfoundland time and Pacific time
         };
-        expect(humanCronString('@daily', timezoneConfig)).toBe('At 04:30 AM GMT-3:30');
+
+        const expectedOutput = `At 04:30 AM ${timezoneShorthand}`;
+        expect(humanCronString('@daily', timezoneConfig)).toBe(expectedOutput);
       });
 
       it('applies timezone offset for timezones across the dateline, if provided', () => {

@@ -1,4 +1,4 @@
-cd workspace && tree
+cd dagster-workspace && tree
 
 .
 ├── libraries
@@ -6,8 +6,9 @@ cd workspace && tree
 │   └── project-1
 │       ├── project_1
 │       │   ├── __init__.py
-│       │   ├── components
 │       │   ├── definitions.py
+│       │   ├── defs
+│       │   │   └── __init__.py
 │       │   └── lib
 │       │       └── __init__.py
 │       ├── project_1_tests

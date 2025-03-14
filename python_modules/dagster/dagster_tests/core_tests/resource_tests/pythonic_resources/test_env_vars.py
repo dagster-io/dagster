@@ -267,3 +267,21 @@ def test_env_var_alongside_enum() -> None:
     assert result.success
     assert result.output_for_node("an_asset") == ("BAR", "foo")
     assert executed["yes"]
+
+
+def test_env_var_err_at_instantiation() -> None:
+    if "UNSET_ENV_VAR" in os.environ:
+        del os.environ["UNSET_ENV_VAR"]
+
+    class ResourceWithString(ConfigurableResource):
+        a_str: str
+
+    with pytest.raises(
+        DagsterInvalidConfigError,
+        match=(
+            'You have attempted to fetch the environment variable "UNSET_ENV_VAR" which is not set.'
+        ),
+    ):
+        ResourceWithString(
+            a_str=EnvVar("UNSET_ENV_VAR"),
+        ).process_config_and_initialize()

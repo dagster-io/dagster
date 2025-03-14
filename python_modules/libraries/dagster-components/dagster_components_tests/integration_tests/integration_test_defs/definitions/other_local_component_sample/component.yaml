@@ -1,0 +1,5 @@
+type: .MyNewComponent
+
+attributes:
+  a_string: "a string"
+  an_int: 5

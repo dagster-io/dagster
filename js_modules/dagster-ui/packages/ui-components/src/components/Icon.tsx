@@ -95,6 +95,7 @@ import cost_rupee from '../icon-svgs/cost_rupee.svg';
 import cost_yen from '../icon-svgs/cost_yen.svg';
 import cpu from '../icon-svgs/cpu.svg';
 import create from '../icon-svgs/create.svg';
+import create_view from '../icon-svgs/create_view.svg';
 import credit_card from '../icon-svgs/credit_card.svg';
 import credits from '../icon-svgs/credits.svg';
 import curly_braces from '../icon-svgs/curly_braces.svg';
@@ -506,6 +507,7 @@ export const Icons = {
   cost_yen,
   cpu,
   create,
+  create_view,
   credit_card,
   credits,
   curly_braces,

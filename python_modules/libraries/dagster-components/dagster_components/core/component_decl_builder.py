@@ -1,8 +1,10 @@
 import inspect
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from types import ModuleType
 from typing import Any, Optional, TypeVar, Union
 
+from dagster import _check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._record import record
 from dagster._utils import pushd
@@ -12,25 +14,65 @@ from dagster._utils.pydantic_yaml import (
 )
 from dagster._utils.source_position import SourcePositionTree
 from dagster._utils.yaml_utils import parse_yaml_with_source_positions
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from dagster_components.core.component import (
     Component,
     ComponentDeclNode,
     ComponentLoadContext,
-    ComponentTypeRegistry,
     is_component_loader,
+    load_component_type,
 )
 from dagster_components.core.component_key import ComponentKey
 from dagster_components.utils import load_module_from_path
 
 
 class ComponentFileModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     type: str
     attributes: Optional[Mapping[str, Any]] = None
 
 
 T = TypeVar("T", bound=BaseModel)
+
+
+def has_python_files(folder_path: Path) -> bool:
+    """Check if a folder contains any Python files excluding __init__.py.
+
+    Args:
+        folder_path (Path): Path object representing the folder to check
+    Returns:
+        bool: True if folder contains .py files (except __init__.py), False otherwise
+    """
+    if not folder_path.is_dir():
+        return False
+    return any(folder_path.glob("*.py"))
+
+
+@record
+class ImplicitDefinitionsComponentDecl(ComponentDeclNode):
+    path: Path
+
+    @staticmethod
+    def exists_at(path: Path) -> bool:
+        if YamlComponentDecl.exists_at(path):
+            return False
+        if PythonComponentDecl.exists_at(path):
+            return False
+        return has_python_files(path)
+
+    @staticmethod
+    def from_path(path: Path) -> "ImplicitDefinitionsComponentDecl":
+        return ImplicitDefinitionsComponentDecl(path=path)
+
+    def get_source_position_tree(self) -> Optional[SourcePositionTree]:
+        return None
+
+    def load(self, context: ComponentLoadContext) -> Sequence[Component]:
+        from dagster_components.dagster import DefinitionsComponent
+
+        return [DefinitionsComponent(definitions_path=None)]
 
 
 @record
@@ -48,6 +90,9 @@ class PythonComponentDecl(ComponentDeclNode):
     @staticmethod
     def from_path(path: Path) -> "PythonComponentDecl":
         return PythonComponentDecl(path=path)
+
+    def get_source_position_tree(self) -> Optional[SourcePositionTree]:
+        return None
 
     def load(self, context: ComponentLoadContext) -> Sequence[Component]:
         module = load_module_from_path(
@@ -97,10 +142,8 @@ class YamlComponentDecl(ComponentDeclNode):
             source_position_tree=parsed.source_position_tree,
         )
 
-    def get_component_type(self, registry: ComponentTypeRegistry) -> type[Component]:
-        parsed_defs = self.component_file_model
-        key = ComponentKey.from_typename(parsed_defs.type, self.path)
-        return registry.get(key)
+    def get_source_position_tree(self) -> Optional[SourcePositionTree]:
+        return self.source_position_tree
 
     def get_attributes(self, schema: type[T]) -> T:
         with pushd(str(self.path)):
@@ -116,9 +159,12 @@ class YamlComponentDecl(ComponentDeclNode):
                 return TypeAdapter(schema).validate_python(self.component_file_model.attributes)
 
     def load(self, context: ComponentLoadContext) -> Sequence[Component]:
-        component_type = self.get_component_type(context.registry)
+        type_str = context.normalize_component_type_str(self.component_file_model.type)
+        key = ComponentKey.from_typename(type_str)
+        component_type = load_component_type(key)
         component_schema = component_type.get_schema()
         context = context.with_rendering_scope(component_type.get_additional_scope())
+
         attributes = self.get_attributes(component_schema) if component_schema else None
         return [component_type.load(attributes, context)]
 
@@ -126,7 +172,14 @@ class YamlComponentDecl(ComponentDeclNode):
 @record
 class ComponentFolder(ComponentDeclNode):
     path: Path
-    sub_decls: Sequence[Union[YamlComponentDecl, PythonComponentDecl, "ComponentFolder"]]
+    sub_decls: Sequence[
+        Union[
+            YamlComponentDecl,
+            PythonComponentDecl,
+            ImplicitDefinitionsComponentDecl,
+            "ComponentFolder",
+        ]
+    ]
 
     def load(self, context: ComponentLoadContext) -> Sequence[Component]:
         components = []
@@ -134,6 +187,9 @@ class ComponentFolder(ComponentDeclNode):
             sub_context = context.for_decl_node(sub_decl)
             components.extend(sub_decl.load(sub_context))
         return components
+
+    def get_source_position_tree(self) -> Optional[SourcePositionTree]:
+        return None
 
 
 def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
@@ -148,6 +204,8 @@ def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
         return YamlComponentDecl.from_path(path)
     elif PythonComponentDecl.exists_at(path):
         return PythonComponentDecl.from_path(path)
+    elif ImplicitDefinitionsComponentDecl.exists_at(path):
+        return ImplicitDefinitionsComponentDecl.from_path(path)
 
     subs = []
     for subpath in path.iterdir():
@@ -156,3 +214,24 @@ def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
             subs.append(component)
 
     return ComponentFolder(path=path, sub_decls=subs)
+
+
+def module_to_decl_node(module: ModuleType) -> Optional[ComponentDeclNode]:
+    """Given a Python module, returns a corresponding component declaration node.
+
+    Args:
+        module (ModuleType): The Python module to convert to a component declaration node.
+
+    Returns:
+        Optional[ComponentDeclNode]: The corresponding component declaration node, or None if the module does not contain a component.
+    """
+    module_path = (
+        Path(module.__file__).parent
+        if module.__file__
+        else Path(module.__path__[0])
+        if module.__path__
+        else None
+    )
+    return path_to_decl_node(
+        check.not_none(module_path, f"Module {module.__name__} has no filepath")
+    )

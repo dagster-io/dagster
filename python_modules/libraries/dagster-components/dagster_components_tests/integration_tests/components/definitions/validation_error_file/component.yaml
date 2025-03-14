@@ -1,4 +1,0 @@
-type: definitions@dagster_components
-
-attributes:
-  definitions_path: {}

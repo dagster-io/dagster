@@ -550,7 +550,7 @@ def test_blocked_concurrency_limits():
                 assert result.success
                 assert any(
                     [
-                        "blocked by concurrency limit for key foo" in (event.message or "")
+                        "blocked by limit for pool foo" in (event.message or "")
                         for event in result.all_events
                     ]
                 )
@@ -591,7 +591,7 @@ def test_blocked_concurrency_limits_legacy_keys():
                 assert result.success
                 assert any(
                     [
-                        "blocked by concurrency limit for key foo" in (event.message or "")
+                        "blocked by limit for pool foo" in (event.message or "")
                         for event in result.all_events
                     ]
                 )

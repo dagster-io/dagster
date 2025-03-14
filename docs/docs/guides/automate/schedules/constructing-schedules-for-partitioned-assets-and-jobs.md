@@ -18,7 +18,7 @@ This article assumes familiarity with:
 - [Schedules](index.md)
 - [Partitions](/guides/build/partitions-and-backfills/partitioning-assets)
 - [Asset definitions](/guides/build/assets/defining-assets)
-- [Asset jobs](/guides/build/assets/asset-jobs) and op jobs
+- [Asset jobs](/guides/build/jobs/asset-jobs) and [op jobs](/guides/build/jobs/op-jobs)
 
 :::
 
@@ -130,5 +130,5 @@ If we only want to target the `Antarctica` partition, we can create a schedule l
 | <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />                  | Decorator that defines a schedule that executes according to a given cron schedule.                 |
 | <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job" /> | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
 | <PyObject section="schedules-sensors" module="dagster" object="RunRequest" />                          | A class that represents all the information required to launch a single run.                        |
-| <PyObject section="assets" module="dagster" object="define_asset_job" />                    | A function for defining a job from a selection of assets.                                           |
+| <PyObject section="assets" module="dagster" object="define_asset_job" />                    | A function for defining a job from a [selection of assets](/guides/build/assets/asset-selection-syntax).                                           |
 | <PyObject section="jobs" module="dagster" object="job" decorator />                       | The decorator used to define a job.                                                                 |

@@ -3,13 +3,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from dagster import AssetSpec, AutomationCondition, Definitions
-from dagster_components import (
-    AssetAttributesSchema,
-    Component,
-    ComponentLoadContext,
-    ResolvableSchema,
-    registered_component_type,
-)
+from dagster_components import AssetAttributesModel, Component, ComponentLoadContext
+from dagster_components.resolved.core_models import ResolvedAssetAttributes
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
 
 
 def my_custom_fn(a: str, b: str) -> str:
@@ -20,14 +16,13 @@ def my_custom_automation_condition(cron_schedule: str) -> AutomationCondition:
     return AutomationCondition.cron_tick_passed(cron_schedule) & ~AutomationCondition.in_progress()
 
 
-class CustomScopeSchema(ResolvableSchema):
-    asset_attributes: AssetAttributesSchema
+class CustomScopeModel(ResolvableModel):
+    asset_attributes: AssetAttributesModel
 
 
-@registered_component_type(name="custom_scope_component")
 @dataclass
-class HasCustomScope(Component):
-    asset_attributes: Mapping[str, Any]
+class HasCustomScope(Component, ResolvedFrom[CustomScopeModel]):
+    asset_attributes: ResolvedAssetAttributes
 
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:
@@ -37,10 +32,6 @@ class HasCustomScope(Component):
             "custom_fn": my_custom_fn,
             "custom_automation_condition": my_custom_automation_condition,
         }
-
-    @classmethod
-    def get_schema(cls):
-        return CustomScopeSchema
 
     def build_defs(self, context: ComponentLoadContext):
         return Definitions(assets=[AssetSpec(key="key", **self.asset_attributes)])

@@ -1,32 +1,28 @@
 import contextlib
+import random
 import shutil
 import tempfile
 import textwrap
+import traceback
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import TracebackType
 from typing import AbstractSet, Any, Iterable, Optional, TypeVar  # noqa: UP035
 
 import tomlkit
+from click.testing import Result
 from dagster import AssetKey, DagsterInstance
-from dagster._utils import pushd
-from dagster_components.core.component import (
-    Component,
-    ComponentDeclNode,
-    ComponentLoadContext,
-    ComponentTypeRegistry,
-)
+from dagster._utils import alter_sys_path, pushd
+from dagster_components.core.component import Component, ComponentDeclNode, ComponentLoadContext
+from dagster_components.utils import ensure_loadable_path
 
 T = TypeVar("T")
 
 
-def registry() -> ComponentTypeRegistry:
-    return ComponentTypeRegistry.from_entry_point_discovery()
-
-
 def script_load_context(decl_node: Optional[ComponentDeclNode] = None) -> ComponentLoadContext:
-    return ComponentLoadContext.for_test(registry=registry(), decl_node=decl_node)
+    return ComponentLoadContext.for_test(decl_node=decl_node)
 
 
 def get_asset_keys(component: Component) -> AbstractSet[AssetKey]:
@@ -62,11 +58,7 @@ def generate_component_lib_pyproject_toml(name: str, is_project: bool = False) -
         ]
 
         [project.entry-points]
-        "dagster.components" = {{ {pkg_name} = "{pkg_name}.lib"}}
-
-        [tool.dg]
-        is_component_lib = true
-
+        "dagster_dg.library" = {{ {pkg_name} = "{pkg_name}.lib" }}
     """)
     if is_project:
         return base + textwrap.dedent("""
@@ -98,7 +90,7 @@ def temp_code_location_bar() -> Iterator[None]:
 def _setup_component_in_folder(
     src_path: str, dst_path: str, local_component_defn_to_inject: Optional[Path]
 ) -> None:
-    origin_path = Path(__file__).parent / "integration_tests" / "components" / src_path
+    origin_path = Path(__file__).parent / "integration_tests" / "integration_test_defs" / src_path
 
     shutil.copytree(origin_path, dst_path, dirs_exist_ok=True)
     if local_component_defn_to_inject:
@@ -115,31 +107,70 @@ def inject_component(
 
 
 @contextlib.contextmanager
-def create_code_location_from_components(
+def create_project_from_components(
     *src_paths: str, local_component_defn_to_inject: Optional[Path] = None
-) -> Iterator[Path]:
-    """Scaffolds a code location with the given components in a temporary directory,
+) -> Iterator[tuple[Path, str]]:
+    """Scaffolds a project with the given components in a temporary directory,
     injecting the provided local component defn into each component's __init__.py.
     """
+    location_name = f"my_location_{str(random.random()).replace('.', '')}"
     with tempfile.TemporaryDirectory() as tmpdir:
-        code_location_dir = Path(tmpdir) / "my_location"
-        code_location_dir.mkdir()
-        with open(code_location_dir / "pyproject.toml", "w") as f:
-            f.write(generate_component_lib_pyproject_toml("my_location", is_project=True))
+        project_root = Path(tmpdir) / location_name
+        project_root.mkdir()
 
-        for src_path in src_paths:
-            component_name = src_path.split("/")[-1]
+        python_module_root = project_root / location_name
+        python_module_root.mkdir()
+        (python_module_root / "__init__.py").touch()
 
-            components_dir = code_location_dir / "my_location" / "components" / component_name
-            components_dir.mkdir(parents=True, exist_ok=True)
+        defs_dir = python_module_root / "defs"
+        defs_dir.mkdir()
+        (defs_dir / "__init__.py").touch()
 
-            _setup_component_in_folder(
-                src_path=src_path,
-                dst_path=str(components_dir),
-                local_component_defn_to_inject=local_component_defn_to_inject,
-            )
+        with alter_sys_path(to_add=[str(project_root)], to_remove=[]):
+            with open(project_root / "pyproject.toml", "w") as f:
+                f.write(generate_component_lib_pyproject_toml(location_name, is_project=True))
 
-        yield code_location_dir
+            for src_path in src_paths:
+                component_name = src_path.split("/")[-1]
+
+                components_dir = defs_dir / component_name
+                components_dir.mkdir()
+
+                _setup_component_in_folder(
+                    src_path=src_path,
+                    dst_path=str(components_dir),
+                    local_component_defn_to_inject=local_component_defn_to_inject,
+                )
+
+            with ensure_loadable_path(project_root):
+                yield project_root, location_name
+
+
+# ########################
+# ##### CLI RUNNER
+# ########################
+
+
+def assert_runner_result(result: Result, exit_0: bool = True) -> None:
+    try:
+        assert result.exit_code == 0 if exit_0 else result.exit_code != 0
+    except AssertionError:
+        if result.output:
+            print(result.output)  # noqa: T201
+        if result.exc_info:
+            print_exception_info(result.exc_info)
+        raise
+
+
+def print_exception_info(
+    exc_info: tuple[type[BaseException], BaseException, TracebackType],
+) -> None:
+    """Prints a nicely formatted traceback for the current exception."""
+    exc_type, exc_value, exc_traceback = exc_info
+    print("Exception Traceback (most recent call last):")  # noqa: T201
+    formatted_traceback = "".join(traceback.format_tb(exc_traceback))
+    print(formatted_traceback)  # noqa: T201
+    print(f"{exc_type.__name__}: {exc_value}")  # noqa: T201
 
 
 # ########################

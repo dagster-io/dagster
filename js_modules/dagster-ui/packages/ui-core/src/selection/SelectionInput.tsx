@@ -2,7 +2,15 @@ import {Box, Colors, Icon, Popover, UnstyledButton} from '@dagster-io/ui-compone
 import useResizeObserver from '@react-hook/resize-observer';
 import CodeMirror, {Editor, EditorChange} from 'codemirror';
 import debounce from 'lodash/debounce';
-import React, {KeyboardEvent, useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import React, {
+  KeyboardEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import styled from 'styled-components';
 
 import {SyntaxError} from './CustomErrorListener';
@@ -12,6 +20,7 @@ import {SelectionAutoCompleteInputCSS} from './SelectionInputHighlighter';
 import {useSelectionInputLintingAndHighlighting} from './useSelectionInputLintingAndHighlighting';
 import {useTrackEvent} from '../app/analytics';
 import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
+import {usePrevious} from '../hooks/usePrevious';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 
 import 'codemirror/addon/edit/closebrackets';
@@ -27,8 +36,11 @@ type SelectionAutoCompleteInputProps = {
   value: string;
   onChange: (value: string) => void;
   useAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'];
+  saveOnBlur?: boolean;
+  onErrorStateChange?: (errors: SyntaxError[]) => void;
 };
 
+const emptyArray: SyntaxError[] = [];
 export const SelectionAutoCompleteInput = ({
   id,
   value,
@@ -36,6 +48,8 @@ export const SelectionAutoCompleteInput = ({
   onChange,
   linter,
   useAutoComplete,
+  saveOnBlur = false,
+  onErrorStateChange,
 }: SelectionAutoCompleteInputProps) => {
   const trackEvent = useTrackEvent();
 
@@ -65,7 +79,18 @@ export const SelectionAutoCompleteInput = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const cmInstance = useRef<CodeMirror.Editor | null>(null);
 
-  const [showResults, setShowResults] = useState({current: false});
+  const [selectedIndexRef, setSelectedIndex] = useState({current: -1});
+  const [showResults, _setShowResults] = useState({current: false});
+  const showResultsRef = useUpdatingRef(showResults.current);
+  const setShowResults = useCallback(
+    (nextShowResults: {current: boolean}) => {
+      if (showResultsRef.current !== nextShowResults.current) {
+        selectedIndexRef.current = -1;
+      }
+      _setShowResults(nextShowResults);
+    },
+    [_setShowResults, selectedIndexRef, showResultsRef],
+  );
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [innerValue, setInnerValue] = useState(value);
   const cursorPositionRef = useUpdatingRef(cursorPosition);
@@ -79,11 +104,23 @@ export const SelectionAutoCompleteInput = ({
 
   const focusRef = useRef(false);
 
-  const [selectedIndexRef, setSelectedIndex] = useState({current: 0});
+  // Memoize the stringified results to avoid resetting the selected index down below
+  const resultsJson = useMemo(() => {
+    return JSON.stringify(autoCompleteResults?.list.map((l) => l.text));
+  }, [autoCompleteResults]);
 
+  const prevJson = usePrevious(resultsJson);
+  const prevAutoCompleteResults = usePrevious(autoCompleteResults);
+
+  // Handle selection reset
   useDangerousRenderEffect(() => {
-    // Rather then using a useEffect + setState (extra render), we just set the current value directly
-    selectedIndexRef.current = 0;
+    if (prevAutoCompleteResults?.from !== autoCompleteResults?.from || prevJson !== resultsJson) {
+      selectedIndexRef.current = -1;
+    }
+  }, [resultsJson, autoCompleteResults, prevAutoCompleteResults, prevJson, selectedIndexRef]);
+
+  // Handle hiding results
+  useDangerousRenderEffect(() => {
     if (!autoCompleteResults.list.length && !loading) {
       showResults.current = false;
     }
@@ -168,7 +205,6 @@ export const SelectionAutoCompleteInput = ({
 
   const errorTooltip = useSelectionInputLintingAndHighlighting({
     cmInstance,
-    value: innerValue,
     linter,
   });
 
@@ -200,7 +236,7 @@ export const SelectionAutoCompleteInput = ({
       setCursorPosition(cursor.ch);
       requestAnimationFrame(() => {
         // Reset selected index on value change
-        setSelectedIndex({current: 0});
+        setSelectedIndex({current: -1});
       });
     }
   }, [value]);
@@ -244,47 +280,57 @@ export const SelectionAutoCompleteInput = ({
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
       if (e.key === 'Enter') {
-        onSelectionChange(innerValueRef.current);
-        setShowResults({current: false});
-      }
-      if (!showResults.current) {
+        if (selectedIndexRef.current !== -1 && selectedItem) {
+          onSelect(selectedItem);
+        } else {
+          e.stopPropagation();
+          e.preventDefault();
+          onSelectionChange(innerValueRef.current);
+          setShowResults({current: false});
+        }
+      } else if (!showResults.current) {
         return;
-      }
-      if (e.key === 'ArrowDown' && !e.shiftKey && !e.ctrlKey) {
+      } else if (e.key === 'ArrowDown' && !e.shiftKey && !e.ctrlKey) {
         e.preventDefault();
+        e.stopPropagation();
         setSelectedIndex((prev) => ({
           current: (prev.current + 1) % (autoCompleteResults?.list.length ?? 0),
         }));
       } else if (e.key === 'ArrowUp' && !e.shiftKey && !e.ctrlKey) {
         e.preventDefault();
+        e.stopPropagation();
         setSelectedIndex((prev) => ({
           current:
             prev.current - 1 < 0 ? (autoCompleteResults?.list.length ?? 1) - 1 : prev.current - 1,
         }));
       } else if (e.key === 'Tab') {
         e.preventDefault();
+        e.stopPropagation();
         if (selectedItem) {
           onSelect(selectedItem);
         }
       } else if (e.key === 'Escape') {
         e.preventDefault();
+        e.stopPropagation();
         setShowResults({current: false});
       }
     },
     [
       showResults,
-      onSelectionChange,
-      innerValueRef,
-      autoCompleteResults?.list.length,
+      selectedIndexRef,
       selectedItem,
       onSelect,
+      onSelectionChange,
+      innerValueRef,
+      setShowResults,
+      autoCompleteResults?.list.length,
     ],
   );
 
   /**
    * Popover doesn't seem to support canOutsideClickClose, so we have to do this ourselves.
    */
-  React.useLayoutEffect(() => {
+  useLayoutEffect(() => {
     const listener = (e: MouseEvent) => {
       if (
         inputRef.current?.contains(e.target as Node) ||
@@ -308,25 +354,44 @@ export const SelectionAutoCompleteInput = ({
     });
   }, [adjustHeight, isEmpty]);
 
-  const onBlur = useCallback((ev: React.FocusEvent<HTMLDivElement>) => {
-    const current = ev.relatedTarget;
-    const hintsVisible = !!hintContainerRef.current?.querySelector('.CodeMirror-hints');
-    if (
-      inputRef.current?.contains(current) ||
-      editorRef.current?.contains(current) ||
-      hintContainerRef.current?.contains(current) ||
-      hintsVisible
-    ) {
-      ev.preventDefault();
-      return;
-    }
-    focusRef.current = false;
-    cmInstance.current?.setOption('lineWrapping', false);
-    cmInstance.current?.setSize('100%', '20px');
-    setCurrentHeight(20);
-  }, []);
+  const onBlur = useCallback(
+    (ev: React.FocusEvent<HTMLDivElement>) => {
+      const current = ev.relatedTarget;
+      const hintsVisible = !!hintContainerRef.current?.querySelector('.CodeMirror-hints');
+      if (saveOnBlur) {
+        onSelectionChange(innerValueRef.current);
+      }
+      if (
+        inputRef.current?.contains(current) ||
+        editorRef.current?.contains(current) ||
+        hintContainerRef.current?.contains(current) ||
+        hintsVisible
+      ) {
+        ev.preventDefault();
+        return;
+      }
+      focusRef.current = false;
+      cmInstance.current?.setOption('lineWrapping', false);
+      cmInstance.current?.setSize('100%', '20px');
+      setCurrentHeight(20);
+    },
+    [saveOnBlur, onSelectionChange, innerValueRef],
+  );
 
   useResizeObserver(inputRef, adjustHeight);
+
+  const errors = useMemo(() => {
+    const linterErrors = linter(value);
+    if (linterErrors.length > 0) {
+      return linterErrors;
+    }
+    // Keep the reference the same to avoid re-rendering
+    return emptyArray;
+  }, [linter, value]);
+
+  useEffect(() => {
+    onErrorStateChange?.(errors);
+  }, [onErrorStateChange, errors]);
 
   return (
     <div onBlur={onBlur} style={{width: '100%'}}>

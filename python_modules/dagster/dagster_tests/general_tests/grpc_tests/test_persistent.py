@@ -567,7 +567,7 @@ def test_load_timeout():
 def test_server_heartbeat_timeout_code_server_cli() -> None:
     """Test that without a heartbeat from the calling process, the server will eventually time out."""
     port = find_free_port()
-    python_file = file_relative_path(__file__, "grpc_repo.py")
+    python_file = file_relative_path(__file__, "slow_grpc_repo.py")
 
     subprocess_args = [
         "dagster",
