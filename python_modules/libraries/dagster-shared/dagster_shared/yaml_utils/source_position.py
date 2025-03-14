@@ -69,6 +69,7 @@ class SourcePositionTree(NamedTuple):
         self,
         yaml_path: KeyPath,
         inline_error_message: str,
+        value_error,
     ):
         source_position, source_position_path = self.lookup_closest_and_path(yaml_path, trace=None)
 
@@ -92,28 +93,34 @@ class SourcePositionTree(NamedTuple):
             lines = f.readlines()
             lines_with_line_numbers = list(zip(range(1, len(lines) + 1), lines))
 
-            filtered_lines_with_line_numbers = (
-                lines_with_line_numbers[
-                    max(
-                        0, preceding_source_position.start.line - OFFSET_LINES_BEFORE
-                    ) : source_position.start.line
-                ]
-                + [
-                    (
-                        None,
-                        _format_indented_error_msg(
-                            source_position.start.col,
-                            inline_error_message,
-                        ),
-                    )
-                ]
-                + lines_with_line_numbers[
-                    source_position.start.line : source_position.end.line + OFFSET_LINES_AFTER
-                ]
+            pre_error_lines = lines_with_line_numbers[
+                max(
+                    0, preceding_source_position.start.line - OFFSET_LINES_BEFORE
+                ) : source_position.start.line
+            ]
+            source_idx = source_position.start.line - 1
+            source_line = (
+                lines_with_line_numbers[source_idx][1]
+                # parse errors near end of file can spill out of bounds
+                if source_idx < len(lines_with_line_numbers)
+                else ""
             )
+            error_ptr = (
+                None,
+                _format_indented_error_msg(
+                    value_error,
+                    source_position,
+                    source_line,
+                    inline_error_message,
+                ),
+            )
+            post_error_lines = lines_with_line_numbers[
+                source_position.start.line : source_position.end.line + OFFSET_LINES_AFTER
+            ]
+
             # Combine the filtered lines with the line numbers, and add empty lines before and after
             lines_with_line_numbers = _prepend_lines_with_line_numbers(
-                [(None, ""), *filtered_lines_with_line_numbers, (None, "")]
+                [(None, ""), *pre_error_lines, error_ptr, *post_error_lines, (None, "")]
             )
             code_snippet = "\n".join(lines_with_line_numbers)
 
@@ -125,9 +132,23 @@ class SourcePositionTree(NamedTuple):
         )
 
 
-def _format_indented_error_msg(col: int, msg: str) -> str:
+def _format_indented_error_msg(
+    value_error: bool,
+    source_pos: SourcePosition,
+    source_line: str,
+    msg: str,
+) -> str:
     """Format an error message with a caret pointing to the column where the error occurred."""
-    return " " * (col - 1) + f"^ {msg}"
+    inset = source_pos.start.col
+    if value_error:
+        source_key_end_col = source_pos.end.col
+        source_line_end_col = len(source_line)
+
+        approx_middle = source_key_end_col + int((source_line_end_col - source_key_end_col) / 2)
+        if approx_middle > source_pos.start.col:  # sanity check we got a reasonable value
+            inset = approx_middle
+
+    return " " * (inset - 1) + f"^ {msg}"
 
 
 def _prepend_lines_with_line_numbers(
