@@ -26,6 +26,4 @@ For installation information and examples, see the [community integrations GitHu
 
 ### About Java
 
-Oracle Java is the #1 programming language and development platform. It reduces costs, shortens development timeframes, drives innovation, and improves application services. Java continues to be the development platform of choice for enterprises and developers For more information, see the Java docs.
-
 [Java](https://www.java.com/en/) is a programming language and computing platform first released by Sun Microsystems in 1995. It has evolved from humble beginnings to power a large share of today’s digital world, by providing the reliable platform upon which many services and applications are built. New, innovative products and digital services designed for the future continue to rely on Java, as well. To get started with Java, see the [Java developer resources](https://dev.java/).

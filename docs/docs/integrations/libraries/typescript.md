@@ -1,10 +1,10 @@
 ---
 layout: Integration
 status: published
-name: Typescript
-title: Dagster & Typescript
-sidebar_label: Typescript
-excerpt: The Typescript Pipes client allows integration between any Typescript process and the Dagster orchestrator.
+name: TypeScript
+title: Dagster & TypesScript
+sidebar_label: TypeScript
+excerpt: The TypeScript Pipes client allows integration between any TypeScript process and the Dagster orchestrator.
 date: 2025-03-14
 apireflink: 
 docslink: https://docs.dagster.io/integrations/libraries/typescript
@@ -18,7 +18,7 @@ sidebar_custom_props:
   logo: images/integrations/typescript.svg
 ---
 
-The [`dagster-pipes-typescript` npm package](https://www.npmjs.com/package/@dagster-io/dagster-pipes) is a Dagster Pipes implementation for the Typescript programming language that allows integration between any Typescript process and the Dagster orchestrator.
+The [`dagster-pipes-typescript` npm package](https://www.npmjs.com/package/@dagster-io/dagster-pipes) is a Dagster Pipes implementation for the TypeScript programming language that allows integration between any TypeScript process and the Dagster orchestrator.
 
 For more information, see the [community integrations GitHub repository](https://github.com/dagster-io/community-integrations/blob/main/libraries/pipes/implementations/typescript/README.md).
 
@@ -41,4 +41,4 @@ For a usage example, see the [README](https://github.com/dagster-io/community-in
 
 ### About Typescript
 
-[TypeScript](https://www.typescriptlang.org/) is a strongly typed programming language that builds on JavaScript, giving you better tooling at any scale. To get started with Typescript, see the [Typescript docs](https://www.typescriptlang.org/docs/).
+[TypeScript](https://www.typescriptlang.org/) is a strongly typed programming language that builds on JavaScript, giving you better tooling at any scale. To get started with TypeScript, see the [TypeScript docs](https://www.typescriptlang.org/docs/).
