@@ -142,7 +142,7 @@ class SlingReplicationCollectionComponent(Component, ResolvedFrom[SlingReplicati
 
     dg scaffold component dagster_components.dagster_sling.SlingReplicationCollectionComponent {component_name} to get started.
 
-    This will create a component.yaml as well as a `replication.yaml`which is a Sling-specific configuration
+    This will create a component.yaml as well as a `replication.yaml` which is a Sling-specific configuration
     file. See Sling's [documentation](https://docs.slingdata.io/concepts/replication#overview) on `replication.yaml`.
     """
 
