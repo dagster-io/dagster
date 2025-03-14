@@ -3,8 +3,14 @@ title: 'Autoloading existing Dagster definitions'
 sidebar_position: 100
 ---
 
+import Preview from '../../../../partials/\_Preview.md';
+
+<Preview />
+
 :::note
+
 This guide covers using existing Python definitions with dg. This guide presupposes a dg-enabled project. See the [Making a project dg-compatible](/guides/labs/dg/incrementally-adopting-dg/migrating-project) guide for more information.
+
 :::
 
 In projects that heavily use `dg`, it's typical to keep all definitions underneath the `defs/` directory. However, if you've converted an existing project to use `dg`, you may have definitions located in various other modules. This guide will show you how to move these existing definitions into the `defs` directory in a way that will allow them to be automatically loaded.
