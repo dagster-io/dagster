@@ -269,7 +269,7 @@ def get_validated_partition_keys(
 def get_last_planned_storage_id(
     instance: DagsterInstance, asset_key: AssetKey, asset_record: Optional["AssetRecord"]
 ) -> int:
-    if instance.event_log_storage.asset_records_have_last_planned_materialization_storage_id:
+    if instance.event_log_storage.asset_records_have_last_planned_and_failed_materializations:
         return (
             (asset_record.asset_entry.last_planned_materialization_storage_id or 0)
             if asset_record
