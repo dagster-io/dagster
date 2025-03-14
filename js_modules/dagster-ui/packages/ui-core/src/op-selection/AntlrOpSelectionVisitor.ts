@@ -139,8 +139,10 @@ export class AntlrOpSelectionVisitor<T extends GraphQueryItem>
 
   visitNameExpr(ctx: NameExprContext) {
     const value: string = getValue(ctx.keyValue());
-    const regex: RegExp = new RegExp(`^${escapeRegExp(value).replaceAll('\\*', '.*')}$`);
-    const selection = [...this.all_ops].filter((i) => regex.test(i.name));
+    const regex: RegExp = new RegExp(
+      `^${escapeRegExp(value.toLowerCase()).replaceAll('\\*', '.*')}$`,
+    );
+    const selection = [...this.all_ops].filter((i) => regex.test(i.name.toLowerCase()));
     selection.forEach((i) => this.focus_ops.add(i));
     return new Set(selection);
   }

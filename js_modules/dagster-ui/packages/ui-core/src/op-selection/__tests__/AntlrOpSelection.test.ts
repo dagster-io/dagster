@@ -61,11 +61,13 @@ describe('parseOpSelectionQuery', () => {
 
     it('should parse name query', () => {
       assertQueryResult('name:A', ['A']);
+      assertQueryResult('name:a', ['A']);
     });
 
     it('should handle name wildcard queries', () => {
       assertQueryResult('name:*A*', ['A']);
       assertQueryResult('name:B*', ['B', 'B2']);
+      assertQueryResult('name:b*', ['B', 'B2']);
     });
 
     it('should parse and query', () => {
