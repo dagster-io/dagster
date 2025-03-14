@@ -213,7 +213,7 @@ class MdxTranslator(SphinxTranslator):
                     return None
 
                 # get relative path, and trim `..`
-                repo_path = os.path.relpath(source_file).replace("../", "")
+                repo_path = re.sub(r'\.\./+', '', os.path.relpath(source_file))
                 source_line = inspect.getsourcelines(obj)[1]
 
                 return f"{self.github_url}/{repo_path}#L{source_line}"
