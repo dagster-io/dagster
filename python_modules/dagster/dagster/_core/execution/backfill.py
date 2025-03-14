@@ -357,30 +357,6 @@ class PartitionBackfill(
 
             return self.partition_names
 
-    def get_num_cancelable(self) -> int:
-        """This method is only valid for job backfills. It eturns the number of partitions that are have
-        not yet been requested by the backfill.
-
-        For asset backfills, returns 0.
-        """
-        if self.is_asset_backfill:
-            return 0
-
-        if self.status != BulkActionStatus.REQUESTED:
-            return 0
-
-        if self.partition_names is None:
-            check.failed("Expected partition_names to not be None for job backfill")
-
-        checkpoint = self.last_submitted_partition_name
-        total_count = len(self.partition_names)
-        checkpoint_idx = (
-            self.partition_names.index(checkpoint) + 1
-            if checkpoint and checkpoint in self.partition_names
-            else 0
-        )
-        return max(0, total_count - checkpoint_idx)
-
     def with_status(self, status):
         check.inst_param(status, "status", BulkActionStatus)
         return self._replace(status=status)
