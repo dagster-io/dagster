@@ -36,7 +36,7 @@ def define_dataproc_job_config():
                         },
                     ),
                     description="""Encapsulates the full scoping used to reference a job.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "placement": Field(
                     Shape(
@@ -56,7 +56,7 @@ def define_dataproc_job_config():
                         },
                     ),
                     description="""Dataproc job config.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "hadoopJob": Field(
                     Shape(
@@ -68,14 +68,14 @@ def define_dataproc_job_config():
                                 \'gs://foo-bucket/analytics-binaries/extract-useful-metrics-mr.jar\'
                                 \'hdfs:/tmp/test-samples/custom-wordcount.jar\'
                                 \'file:///home/usr/lib/hadoop-mapreduce/hadoop-mapreduce-examples.jar\'""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "mainClass": Field(
                                 String,
                                 description="""The name of the driver\'s main class. The jar file
                                 containing the class must be in the default CLASSPATH or specified
                                 in jar_file_uris.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "args": Field(
                                 [String],
@@ -122,12 +122,12 @@ def define_dataproc_job_config():
                                             driver. This can include "root" package name to
                                             configure rootLogger. Examples: - \'com.google = FATAL\'
                                             - \'root = INFO\' - \'org.apache = DEBUG\'""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
                                 description="""The runtime logging config of the job.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
@@ -135,7 +135,7 @@ def define_dataproc_job_config():
                     (https://hadoop.apache.org/docs/current/hadoop-mapreduce-client/hadoop-mapreduce-client-core/MapReduceTutorial.html)
                     jobs on Apache Hadoop YARN
                     (https://hadoop.apache.org/docs/r2.7.1/hadoop-yarn/hadoop-yarn-site/YARN.html).""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "sparkJob": Field(
                     Shape(
@@ -144,14 +144,14 @@ def define_dataproc_job_config():
                                 String,
                                 description="""The HCFS URI of the jar file that contains the main
                                 class.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "mainClass": Field(
                                 String,
                                 description="""The name of the driver\'s main class. The jar file
                                 that contains the class must be in the default CLASSPATH or
                                 specified in SparkJob.jar_file_uris.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "args": Field(
                                 [String],
@@ -198,18 +198,18 @@ def define_dataproc_job_config():
                                             driver. This can include "root" package name to
                                             configure rootLogger. Examples: - \'com.google = FATAL\'
                                             - \'root = INFO\' - \'org.apache = DEBUG\'""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
                                 description="""The runtime logging config of the job.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
                     description="""A Dataproc job for running Apache Spark
                     (https://spark.apache.org/) applications on YARN.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "pysparkJob": Field(
                     Shape(
@@ -272,19 +272,19 @@ def define_dataproc_job_config():
                                             driver. This can include "root" package name to
                                             configure rootLogger. Examples: - \'com.google = FATAL\'
                                             - \'root = INFO\' - \'org.apache = DEBUG\'""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
                                 description="""The runtime logging config of the job.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
                     description="""A Dataproc job for running Apache PySpark
                     (https://spark.apache.org/docs/latest/api/python/index.html#pyspark-overview)
                     applications on YARN.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "hiveJob": Field(
                     Shape(
@@ -293,7 +293,7 @@ def define_dataproc_job_config():
                                 String,
                                 description="""The HCFS URI of the script that contains Hive
                                 queries.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "queryList": Field(
                                 Shape(
@@ -312,7 +312,7 @@ def define_dataproc_job_config():
                                     },
                                 ),
                                 description="""A list of queries to run on a cluster.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "continueOnFailure": Field(
                                 Bool,
@@ -347,7 +347,7 @@ def define_dataproc_job_config():
                     ),
                     description="""A Dataproc job for running Apache Hive (https://hive.apache.org/)
                     queries on YARN.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "pigJob": Field(
                     Shape(
@@ -356,7 +356,7 @@ def define_dataproc_job_config():
                                 String,
                                 description="""The HCFS URI of the script that contains the Pig
                                 queries.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "queryList": Field(
                                 Shape(
@@ -375,7 +375,7 @@ def define_dataproc_job_config():
                                     },
                                 ),
                                 description="""A list of queries to run on a cluster.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "continueOnFailure": Field(
                                 Bool,
@@ -415,18 +415,18 @@ def define_dataproc_job_config():
                                             driver. This can include "root" package name to
                                             configure rootLogger. Examples: - \'com.google = FATAL\'
                                             - \'root = INFO\' - \'org.apache = DEBUG\'""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
                                 description="""The runtime logging config of the job.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
                     description="""A Dataproc job for running Apache Pig (https://pig.apache.org/)
                     queries on YARN.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "sparkRJob": Field(
                     Shape(
@@ -476,18 +476,18 @@ def define_dataproc_job_config():
                                             driver. This can include "root" package name to
                                             configure rootLogger. Examples: - \'com.google = FATAL\'
                                             - \'root = INFO\' - \'org.apache = DEBUG\'""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
                                 description="""The runtime logging config of the job.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
                     description="""A Dataproc job for running Apache SparkR
                     (https://spark.apache.org/docs/latest/sparkr.html) applications on YARN.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "sparkSqlJob": Field(
                     Shape(
@@ -496,7 +496,7 @@ def define_dataproc_job_config():
                                 String,
                                 description="""The HCFS URI of the script that contains SQL
                                 queries.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "queryList": Field(
                                 Shape(
@@ -515,7 +515,7 @@ def define_dataproc_job_config():
                                     },
                                 ),
                                 description="""A list of queries to run on a cluster.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "scriptVariables": Field(
                                 Permissive(),
@@ -545,18 +545,18 @@ def define_dataproc_job_config():
                                             driver. This can include "root" package name to
                                             configure rootLogger. Examples: - \'com.google = FATAL\'
                                             - \'root = INFO\' - \'org.apache = DEBUG\'""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
                                 description="""The runtime logging config of the job.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
                     description="""A Dataproc job for running Apache Spark SQL
                     (https://spark.apache.org/sql/) queries.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "prestoJob": Field(
                     Shape(
@@ -565,7 +565,7 @@ def define_dataproc_job_config():
                                 String,
                                 description="""The HCFS URI of the script that contains SQL
                                 queries.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "queryList": Field(
                                 Shape(
@@ -584,7 +584,7 @@ def define_dataproc_job_config():
                                     },
                                 ),
                                 description="""A list of queries to run on a cluster.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "continueOnFailure": Field(
                                 Bool,
@@ -623,12 +623,12 @@ def define_dataproc_job_config():
                                             driver. This can include "root" package name to
                                             configure rootLogger. Examples: - \'com.google = FATAL\'
                                             - \'root = INFO\' - \'org.apache = DEBUG\'""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
                                 description="""The runtime logging config of the job.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
@@ -636,7 +636,7 @@ def define_dataproc_job_config():
                     queries. IMPORTANT: The Dataproc Presto Optional Component
                     (https://cloud.google.com/dataproc/docs/concepts/components/presto) must be
                     enabled when the cluster is created to submit a Presto job to the cluster.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "trinoJob": Field(
                     Shape(
@@ -645,7 +645,7 @@ def define_dataproc_job_config():
                                 String,
                                 description="""The HCFS URI of the script that contains SQL
                                 queries.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "queryList": Field(
                                 Shape(
@@ -664,7 +664,7 @@ def define_dataproc_job_config():
                                     },
                                 ),
                                 description="""A list of queries to run on a cluster.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "continueOnFailure": Field(
                                 Bool,
@@ -703,12 +703,12 @@ def define_dataproc_job_config():
                                             driver. This can include "root" package name to
                                             configure rootLogger. Examples: - \'com.google = FATAL\'
                                             - \'root = INFO\' - \'org.apache = DEBUG\'""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
                                 description="""The runtime logging config of the job.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
@@ -716,7 +716,7 @@ def define_dataproc_job_config():
                     IMPORTANT: The Dataproc Trino Optional Component
                     (https://cloud.google.com/dataproc/docs/concepts/components/trino) must be
                     enabled when the cluster is created to submit a Trino job to the cluster.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "flinkJob": Field(
                     Shape(
@@ -725,14 +725,14 @@ def define_dataproc_job_config():
                                 String,
                                 description="""The HCFS URI of the jar file that contains the main
                                 class.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "mainClass": Field(
                                 String,
                                 description="""The name of the driver\'s main class. The jar file
                                 that contains the class must be in the default CLASSPATH or
                                 specified in jarFileUris.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                             "args": Field(
                                 [String],
@@ -771,24 +771,24 @@ def define_dataproc_job_config():
                                             driver. This can include "root" package name to
                                             configure rootLogger. Examples: - \'com.google = FATAL\'
                                             - \'root = INFO\' - \'org.apache = DEBUG\'""",
-                                            is_required=True,
+                                            is_required=False,
                                         ),
                                     },
                                 ),
                                 description="""The runtime logging config of the job.""",
-                                is_required=True,
+                                is_required=False,
                             ),
                         },
                     ),
                     description="""A Dataproc job for running Apache Flink applications on YARN.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "status": Field(
                     Shape(
                         fields={},
                     ),
                     description="""Dataproc job status.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "labels": Field(
                     Permissive(),
@@ -827,7 +827,7 @@ def define_dataproc_job_config():
                         },
                     ),
                     description="""Job scheduling options.""",
-                    is_required=True,
+                    is_required=False,
                 ),
                 "driverSchedulingConfig": Field(
                     Shape(
@@ -847,10 +847,10 @@ def define_dataproc_job_config():
                         },
                     ),
                     description="""Driver scheduling configuration.""",
-                    is_required=True,
+                    is_required=False,
                 ),
             },
         ),
         description="""A Dataproc job resource.""",
-        is_required=True,
+        is_required=False,
     )
