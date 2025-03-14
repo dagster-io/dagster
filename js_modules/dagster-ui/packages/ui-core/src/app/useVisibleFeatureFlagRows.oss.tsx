@@ -34,6 +34,10 @@ export const useVisibleFeatureFlagRows = () => [
     ),
   },
   {
+    key: 'Revert to separate asset graph groups per code location',
+    flagType: FeatureFlag.flagAssetGraphGroupsPerCodeLocation,
+  },
+  {
     key: 'Enable new selection syntax for Asset/Op/Run graphs',
     flagType: FeatureFlag.flagSelectionSyntax,
     label: (
