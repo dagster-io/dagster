@@ -279,8 +279,8 @@ def run() -> None:
     serialized = serialize(result)
 
     output_files = [
-        "python_modules/libraries/dagster-spark/dagster_spark/configs_spark.py",
-        "python_modules/libraries/dagster-aws/dagster_aws/emr/configs_spark.py",
+        "../libraries/dagster-spark/dagster_spark/configs_spark.py",
+        "../libraries/dagster-aws/dagster_aws/emr/configs_spark.py",
     ]
     for output_file in output_files:
         with open(output_file, "wb") as f:
