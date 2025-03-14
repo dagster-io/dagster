@@ -22,7 +22,7 @@ Our public, stable Python API includes:
 
 ### Preview APIs
 
-The `Preview` marker allows us to offer new APIs to users and rapidly iterate based on their feedback. Preview APIs are marked as such in the [API reference](/api) and usually raise an `PreviewWarning` when used.
+The `Preview` marker allows us to offer new APIs to users and rapidly iterate based on their feedback. Preview APIs are marked as such in the [API reference](/api) and usually raise a `PreviewWarning` when used.
 
 Preview APIs may have breaking changes in patch version releases. These features are not considered ready for production use.
 
@@ -34,7 +34,7 @@ Beta APIs may have breaking changes in minor version releases, with behavior cha
 
 ### Superseded APIs
 
-The `Superseded ` marker indicates that an API is still available, but is no longer the best practice. Usually, a better alternative is available. Superseded APIs are marked as such in the [API reference](/api) and usually raise an `SupersessionWarning` when used.
+The `Superseded` marker indicates that an API is still available, but is no longer the best practice. Usually, a better alternative is available. Superseded APIs are marked as such in the [API reference](/api) and usually raise a `SupersessionWarning` when used.
 
 Like non-deprecated public stable APIs, superseded public stable APIs won't break within any major release after 1.0.
 
