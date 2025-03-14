@@ -197,10 +197,9 @@ class MdxTranslator(SphinxTranslator):
             for part in parts:
                 if hasattr(obj, part):
                     obj = getattr(obj, part)
-                else:
-                    return None
 
             if not obj:
+                logger.warning(f"No object for {fullname}")
                 return None
 
             # unwrap the root function if function is wrapped
@@ -210,6 +209,7 @@ class MdxTranslator(SphinxTranslator):
             try:
                 source_file = inspect.getsourcefile(obj)
                 if not source_file:
+                    logger.warning(f"No source file for {fullname}")
                     return None
 
                 # get relative path, and trim `..`
