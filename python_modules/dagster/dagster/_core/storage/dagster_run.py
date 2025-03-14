@@ -634,11 +634,23 @@ class RunsFilter(IHaveNew):
         updated_after: Optional[datetime] = None,
         updated_before: Optional[datetime] = None,
         created_after: Optional[datetime] = None,
-        created_before: Optional[datetime] = None,
+        created_before: Optional[Union[datetime, float]] = None,
         exclude_subruns: Optional[bool] = None,
     ):
         check.invariant(run_ids != [], "When filtering on run ids, a non-empty list must be used.")
+        
+                # If 'created_before' is provided, we need to ensure it's in the correct format.
+        if created_before is not None:
+            # If 'created_before' is a datetime object, convert it to a Unix timestamp (float)
+            if isinstance(created_before, datetime.datetime):
+                created_before = created_before.timestamp()
+            # Otherwise, if it's not already a numeric value (int or float), raise an error.
+            elif not isinstance(created_before, (int, float)):
+                raise TypeError(
+                    f"created_before must be a datetime or numeric timestamp; got {type(created_before).__name__}"
+                )
 
+        
         return super().__new__(
             cls,
             run_ids=run_ids,
