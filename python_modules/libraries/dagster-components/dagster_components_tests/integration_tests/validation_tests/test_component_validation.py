@@ -26,6 +26,7 @@ DEFS_TEST_CASES = [
         validate_error_msg=msg_includes_all_of(
             "'fake' not found in scope",
             'a_string: "{{ fake.x }}"',
+            "                ^ 'fake' is undefined",
             "component.yaml:4",
             "available scope is: env, automation_condition",
         ),
@@ -36,7 +37,8 @@ DEFS_TEST_CASES = [
         should_error=True,
         validate_error_msg=msg_includes_all_of(
             "component.yaml:4",
-            "{{ error() }}",
+            'a_string: "{{ error() }}"',
+            "                ^ Exception: boom",
             'raise Exception("boom")',
             "_inner_error()",
         ),
@@ -48,6 +50,7 @@ DEFS_TEST_CASES = [
         validate_error_msg=msg_includes_all_of(
             "component.yaml:6",
             "throw: true",
+            "         ^ Exception: boom",
             'raise Exception("boom")',
             "_inner_error()",
         ),
