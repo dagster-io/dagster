@@ -1,6 +1,6 @@
 ---
 title: 'Scaffolding traditional Dagster definitions'
-sidebar_position: 500
+sidebar_position: 200
 ---
 
 import Preview from '../../../partials/\_Preview.md';

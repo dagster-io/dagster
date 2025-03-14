@@ -22,3 +22,9 @@ import InstallUv from '../../../partials/\_InstallUv.md';
 import InstallDg from '../../../partials/\_InstallDg.md';
 
 <InstallDg />
+
+## `dg` API reference
+
+import DgReference from '../../../partials/\_DgReference.md';
+
+<DgReference />
