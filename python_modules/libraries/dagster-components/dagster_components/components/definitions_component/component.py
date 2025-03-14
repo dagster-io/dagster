@@ -31,7 +31,7 @@ class DefinitionsComponent(Component, ResolvableModel):
         explicit_defs: dict[Path, Definitions] = {}
         loaded_defs: dict[Path, Definitions] = {}
         for defs_path in defs_paths:
-            defs_module = context.load_component_relative_python_module(defs_path)
+            defs_module = context.load_relative_python_module(defs_path)
             defs_attrs = list(find_objects_in_module_of_types(defs_module, Definitions))
 
             if len(defs_attrs) > 1:
@@ -47,7 +47,8 @@ class DefinitionsComponent(Component, ResolvableModel):
         if len(explicit_defs) > 1:
             raise ValueError(
                 f"Found multiple files ({', '.join(path.name for path in explicit_defs)}) with explicit Definitions objects. "
-                "At most one Definitions object may be defined in a given directory."
+                "At most one Definitions object may be defined in a given directory. This error can occur if you have a file "
+                "named `definitions.py` in the same directory as other files defining `Definitions` objects."
             )
         elif len(explicit_defs) == 1:
             return next(iter(explicit_defs.values()))
@@ -55,10 +56,6 @@ class DefinitionsComponent(Component, ResolvableModel):
             return Definitions.merge(*loaded_defs.values())
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        defs_paths = (
-            [Path(self.definitions_path)]
-            if self.definitions_path
-            else list(context.path.rglob("*.py"))
-        )
-
+        path = Path(self.definitions_path) if self.definitions_path else context.path
+        defs_paths = list(path.rglob("*.py")) if path.is_dir() else [path]
         return self._build_defs_for_paths(context, defs_paths)

@@ -12,7 +12,6 @@ from dagster_components.core.component import (
     Component,
     ComponentLoadContext,
     DefinitionsModuleCache,
-    discover_entry_point_component_types,
 )
 from dagster_components.core.component_decl_builder import (
     ComponentDeclNode,
@@ -20,7 +19,6 @@ from dagster_components.core.component_decl_builder import (
     YamlComponentDecl,
     path_to_decl_node,
 )
-from dagster_components.core.component_key import ComponentKey
 from dagster_components.utils import get_path_from_module
 
 if TYPE_CHECKING:
@@ -72,7 +70,6 @@ def defs_from_components(
 def build_component_defs(
     components_root: Path,
     resources: Optional[Mapping[str, object]] = None,
-    component_types: Optional[dict[ComponentKey, type[Component]]] = None,
 ) -> "Definitions":
     """Build a Definitions object for all the component instances in a given code location.
 
@@ -84,7 +81,7 @@ def build_component_defs(
         f"{Path(components_root).parent.name}.{Path(components_root).name}"
     )
 
-    return load_defs(defs_root=defs_root, resources=resources, component_types=component_types)
+    return load_defs(defs_root=defs_root, resources=resources)
 
 
 # Public method so optional Nones are fine
@@ -92,7 +89,6 @@ def build_component_defs(
 def load_defs(
     defs_root: ModuleType,
     resources: Optional[Mapping[str, object]] = None,
-    component_types: Optional[dict[ComponentKey, type[Component]]] = None,
 ) -> "Definitions":
     """Constructs a Definitions object, loading all Dagster defs in the given module.
 
@@ -105,14 +101,16 @@ def load_defs(
     """
     from dagster._core.definitions.definitions_class import Definitions
 
-    component_types = component_types or discover_entry_point_component_types()
     components_root_dir = get_path_from_module(defs_root)
-
     all_defs: list[Definitions] = []
     module_cache = DefinitionsModuleCache(resources=resources or {})
-    for component_path in [item for item in components_root_dir.iterdir() if item.is_dir()]:
-        defs = module_cache.load_defs(
-            module=importlib.import_module(f"{defs_root.__name__}.{component_path.name}"),
-        )
+    for component_path in [
+        item for item in components_root_dir.iterdir() if item.name != "__init__.py"
+    ]:
+        if component_path.is_file():
+            module_name = f"{defs_root.__name__}.{component_path.stem}"
+        else:
+            module_name = f"{defs_root.__name__}.{component_path.name}"
+        defs = module_cache.load_defs(module=importlib.import_module(module_name))
         all_defs.append(defs)
     return Definitions.merge(*all_defs)

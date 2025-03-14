@@ -37,30 +37,16 @@ class ComponentFileModel(BaseModel):
 T = TypeVar("T", bound=BaseModel)
 
 
-def has_python_files(folder_path: Path) -> bool:
-    """Check if a folder contains any Python files excluding __init__.py.
-
-    Args:
-        folder_path (Path): Path object representing the folder to check
-    Returns:
-        bool: True if folder contains .py files (except __init__.py), False otherwise
-    """
-    if not folder_path.is_dir():
-        return False
-    return any(folder_path.glob("*.py"))
-
-
 @record
 class ImplicitDefinitionsComponentDecl(ComponentDeclNode):
     path: Path
 
     @staticmethod
     def exists_at(path: Path) -> bool:
-        if YamlComponentDecl.exists_at(path):
-            return False
-        if PythonComponentDecl.exists_at(path):
-            return False
-        return has_python_files(path)
+        if path.is_file() and path.suffix == ".py":
+            return True
+        else:
+            return (path / "definitions.py").exists()
 
     @staticmethod
     def from_path(path: Path) -> "ImplicitDefinitionsComponentDecl":
@@ -72,7 +58,7 @@ class ImplicitDefinitionsComponentDecl(ComponentDeclNode):
     def load(self, context: ComponentLoadContext) -> Sequence[Component]:
         from dagster_components.dagster import DefinitionsComponent
 
-        return [DefinitionsComponent(definitions_path=None)]
+        return [DefinitionsComponent(definitions_path=str(self.path))]
 
 
 @record
@@ -193,11 +179,9 @@ class ComponentFolder(ComponentDeclNode):
 
 
 def path_to_decl_node(path: Path) -> Optional[ComponentDeclNode]:
-    # right now, we only support two types of components, both of which are folders
-    # if the folder contains a component.yaml file, it's a component instance
-    # otherwise, it's a folder containing sub-components
-
     if not path.is_dir():
+        if ImplicitDefinitionsComponentDecl.exists_at(path):
+            return ImplicitDefinitionsComponentDecl.from_path(path)
         return None
 
     if YamlComponentDecl.exists_at(path):
