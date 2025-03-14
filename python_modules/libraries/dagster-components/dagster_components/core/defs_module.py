@@ -1,6 +1,7 @@
 import inspect
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
+from functools import cached_property
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Optional, TypeVar
@@ -277,3 +278,34 @@ class PythonComponentDecl(DefsModuleDecl):
                 context=context,
                 component=component_loader(context),
             )
+
+
+@record
+class DirectForTestComponentDecl(DefsModuleDecl):
+    component_type: type[Component]
+    attributes_yaml: str
+
+    @cached_property
+    def _obj_and_tree(self) -> tuple[Any, SourcePositionTree]:
+        parsed = parse_yaml_with_source_positions(self.attributes_yaml)
+        attr_schema = check.not_none(
+            self.component_type.get_schema(), "Component must have schema for direct test"
+        )
+        obj = _parse_and_populate_model_with_annotated_errors(
+            cls=attr_schema, obj_parse_root=parsed, obj_key_path_prefix=[]
+        )
+        return obj, parsed.source_position_tree
+
+    def get_source_position_tree(self) -> SourcePositionTree:
+        _, tree = self._obj_and_tree
+        return tree
+
+    def load(self, context: ComponentLoadContext):
+        context = context.with_rendering_scope(self.component_type.get_additional_scope())
+        obj, tree = self._obj_and_tree
+        attr_schema = check.not_none(
+            self.component_type.get_schema(), "Component must have schema for direct test"
+        )
+        with enrich_validation_errors_with_source_position(tree, []):
+            attributes = TypeAdapter(attr_schema).validate_python(obj)
+        return [self.component_type.load(attributes, context)]
