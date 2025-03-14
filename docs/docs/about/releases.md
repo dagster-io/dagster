@@ -28,7 +28,7 @@ Preview APIs may have breaking changes in patch version releases. These features
 
 ### Beta APIs
 
-The `Beta` marker allows us to offer new APIs to users and rapidly iterate based on their feedback. Beta APIs are marked as such in the [API reference](/api) and usually raise an `BetaWarning` when used.
+The `Beta` marker allows us to offer new APIs to users and rapidly iterate based on their feedback. Beta APIs are marked as such in the [API reference](/api) and usually raise a `BetaWarning` when used.
 
 Beta APIs may have breaking changes in minor version releases, with behavior changes in patch releases, but we try to avoid breaking them within minor releases if they have been around for a long time.
 
