@@ -95,15 +95,17 @@ export const RunsFeedBackfillPage = () => {
           <Alert intent="error" title={error.graphQLErrors.map((err) => err.message)} />
         )}
         <Box flex={{direction: 'column'}} style={{flex: 1, position: 'relative', minHeight: 0}}>
+          <Box border={selectedTab === 'overview' ? null : 'bottom'}>
+            <BackfillOverviewDetails backfill={backfill} />
+            {isDaemonHealthy ? null : (
+              <Box padding={{horizontal: 24, bottom: 16}}>
+                <DaemonNotRunningAlert />
+              </Box>
+            )}
+          </Box>
+
           {selectedTab === 'overview' && (
             <Box style={{overflow: 'hidden'}} flex={{direction: 'column'}}>
-              {isDaemonHealthy ? null : (
-                <Box padding={{horizontal: 24, top: 16}}>
-                  <DaemonNotRunningAlert />
-                </Box>
-              )}
-
-              <BackfillOverviewDetails backfill={backfill} />
               {backfill.isAssetBackfill ? (
                 <BackfillAssetPartitionsTable backfill={backfill} />
               ) : (
