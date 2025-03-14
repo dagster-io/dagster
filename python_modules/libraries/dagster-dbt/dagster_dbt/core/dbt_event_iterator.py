@@ -211,9 +211,7 @@ class DbtEventIterator(Iterator[T]):
     @public
     def fetch_row_counts(
         self,
-    ) -> (
-        "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
-    ):
+    ) -> "DbtEventIterator[Union[Output, AssetMaterialization, AssetCheckResult, AssetObservation, AssetCheckEvaluation]]":
         """Functionality which will fetch row counts for materialized dbt
         models in a dbt run once they are built. Note that row counts will not be fetched
         for views, since this requires running the view's SQL query which may be costly.
@@ -229,9 +227,7 @@ class DbtEventIterator(Iterator[T]):
     def fetch_column_metadata(
         self,
         with_column_lineage: bool = True,
-    ) -> (
-        "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
-    ):
+    ) -> "DbtEventIterator[Union[Output, AssetMaterialization, AssetCheckResult, AssetObservation, AssetCheckEvaluation]]":
         """Functionality which will fetch column schema metadata for dbt models in a run
         once they're built. It will also fetch schema information for upstream models and generate
         column lineage metadata using sqlglot, if enabled.
@@ -310,9 +306,7 @@ class DbtEventIterator(Iterator[T]):
         self,
         skip_config_check: bool = False,
         record_observation_usage: bool = True,
-    ) -> (
-        "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
-    ):
+    ) -> "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]":
         """Associate each warehouse query with the produced asset materializations for use in Dagster
         Plus Insights. Currently supports Snowflake and BigQuery.
 
