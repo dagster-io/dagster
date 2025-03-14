@@ -22,6 +22,17 @@ class SourcePosition(NamedTuple):
         return f"{self.filename}:{self.start.line}"
 
 
+class YamlSourcedError(NamedTuple):
+    file_name: str
+    start_line_no: int
+    location: str
+    snippet: str
+
+
+OFFSET_LINES_BEFORE = 2
+OFFSET_LINES_AFTER = 3
+
+
 class SourcePositionTree(NamedTuple):
     """Represents a tree where every node has a SourcePosition."""
 
@@ -53,6 +64,87 @@ class SourcePositionTree(NamedTuple):
         if head not in self.children:
             return self.position, trace
         return self.children[head].lookup_closest_and_path(tail, trace)
+
+    def source_error(
+        self,
+        yaml_path: KeyPath,
+        inline_error_message: str,
+    ):
+        source_position, source_position_path = self.lookup_closest_and_path(yaml_path, trace=None)
+
+        # Retrieves dotted path representation of the location of the error in the YAML file, e.g.
+        # attributes.nested.foo.an_int
+        location = ".".join(str(p) for p in yaml_path).split(" at ")[0]
+
+        # Find the first source position that has a different start line than the current source position
+        # This is e.g. the parent json key of the current source position
+        preceding_source_position = next(
+            iter(
+                [
+                    value
+                    for value in reversed(list(source_position_path))
+                    if value.start.line < source_position.start.line
+                ]
+            ),
+            source_position,
+        )
+        with open(source_position.filename) as f:
+            lines = f.readlines()
+            lines_with_line_numbers = list(zip(range(1, len(lines) + 1), lines))
+
+            filtered_lines_with_line_numbers = (
+                lines_with_line_numbers[
+                    max(
+                        0, preceding_source_position.start.line - OFFSET_LINES_BEFORE
+                    ) : source_position.start.line
+                ]
+                + [
+                    (
+                        None,
+                        _format_indented_error_msg(
+                            source_position.start.col,
+                            inline_error_message,
+                        ),
+                    )
+                ]
+                + lines_with_line_numbers[
+                    source_position.start.line : source_position.end.line + OFFSET_LINES_AFTER
+                ]
+            )
+            # Combine the filtered lines with the line numbers, and add empty lines before and after
+            lines_with_line_numbers = _prepend_lines_with_line_numbers(
+                [(None, ""), *filtered_lines_with_line_numbers, (None, "")]
+            )
+            code_snippet = "\n".join(lines_with_line_numbers)
+
+        return YamlSourcedError(
+            file_name=source_position.filename,
+            start_line_no=source_position.start.line,
+            location=location,
+            snippet=code_snippet,
+        )
+
+
+def _format_indented_error_msg(col: int, msg: str) -> str:
+    """Format an error message with a caret pointing to the column where the error occurred."""
+    return " " * (col - 1) + f"^ {msg}"
+
+
+def _prepend_lines_with_line_numbers(
+    lines_with_numbers: Sequence[tuple[Optional[int], str]],
+) -> Sequence[str]:
+    """Prepend each line with a line number, right-justified to the maximum line number length.
+
+    Args:
+        lines_with_numbers: A sequence of tuples, where the first element is the line number and the
+            second element is the line content. Some lines may have a `None` line number, which
+            will be rendered as an empty string, used for e.g. inserted error message lines.
+    """
+    max_line_number_length = max([len(str(n)) for n, _ in lines_with_numbers])
+    return [
+        f"{(str(n) if n else '').rjust(max_line_number_length)} | {line.rstrip()}"
+        for n, line in lines_with_numbers
+    ]
 
 
 class ValueAndSourcePositionTree(NamedTuple):
@@ -87,12 +179,15 @@ class HasSourcePositionAndKeyPath:
         """Returns the underlying source position of the object, including
         the source file and line number.
         """
-        return check.not_none(check.not_none(self._source_position_and_key_path).source_position)
+        assert self._source_position_and_key_path
+        assert self._source_position_and_key_path.source_position
+        return self._source_position_and_key_path.source_position
 
     @property
     def source_file(self) -> Path:
         """Path to the source file where the object is defined."""
-        return Path(check.not_none(self.source_position.filename))
+        assert self._source_position_and_key_path
+        return Path(self.source_position.filename)
 
     @property
     def source_file_name(self) -> str:
@@ -106,13 +201,10 @@ def populate_source_position_and_key_paths(
     key_path: KeyPath = [],
 ) -> None:
     """Populate the SourcePositionAndKeyPath for the given object and its children.
-
     This function recursively traverses the object and its children, setting the
     SourcePositionAndKeyPath on each object that subclasses HasSourcePositionAndKeyPath.
-
     If the obj is a collection, its children are the elements in the collection. If obj is an
     object, its children are its attributes.
-
     The SourcePositionAndKeyPath is set based on the provided source position tree, which contains
     the source position information for the object and its children.
 
