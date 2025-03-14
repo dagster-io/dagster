@@ -83,6 +83,7 @@ describe('parseAssetSelectionQuery', () => {
 
     it('should parse key query', () => {
       assertQueryResult('key:A', ['A']);
+      assertQueryResult('key:a', ['A']);
     });
 
     it('should parse and query', () => {
@@ -99,6 +100,7 @@ describe('parseAssetSelectionQuery', () => {
     it('should parse not query', () => {
       assertQueryResult('not key:A', ['B', 'B2', 'C']);
       assertQueryResult('NOT key:A', ['B', 'B2', 'C']);
+      assertQueryResult('NOT key:a', ['B', 'B2', 'C']);
     });
 
     it('should parse upstream plus query', () => {
