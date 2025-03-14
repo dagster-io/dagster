@@ -1895,5 +1895,6 @@
       ],
       "destination": "/about/changelog"
     }
-  ]
+  ],
+  "trailingSlash": false
 }
