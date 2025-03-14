@@ -2120,7 +2120,7 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._event_storage.fetch_materializations(records_filter, limit, cursor, ascending)
 
     @traced
-    def fetch_failed_to_materialize_events(
+    def fetch_failed_materializations(
         self,
         records_filter: Union[AssetKey, "AssetRecordsFilter"],
         limit: int,
@@ -2140,10 +2140,9 @@ class DagsterInstance(DynamicPartitionsStore):
         Returns:
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
-        if self._event_storage.asset_records_have_last_planned_and_failed_materializations:
-            return self._event_storage.fetch_failed_materializations(
-                records_filter, limit, cursor, ascending
-            )
+        return self._event_storage.fetch_failed_materializations(
+            records_filter, limit, cursor, ascending
+        )
 
     @traced
     @deprecated(breaking_version="2.0")
