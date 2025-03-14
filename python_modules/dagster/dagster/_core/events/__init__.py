@@ -1646,6 +1646,14 @@ class AssetFailedToMaterializeData(
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
+    @property
+    def tags(self):
+        return None
+
+    @property
+    def metadata():
+        return {}
+
 
 @whitelist_for_serdes
 class StepMaterializationData(
