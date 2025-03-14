@@ -275,15 +275,17 @@ class GrapheneAsset(graphene.ObjectType):
         beforeTimestampMillis: Optional[str] = None,
         afterTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Sequence[GrapheneMaterializationEvent]:
-        from dagster_graphql.implementation.fetch_assets import get_asset_materializations
+    ) -> Sequence[GrapheneFailedToMaterializeEvent]:
+        from dagster_graphql.implementation.fetch_assets import (
+            get_asset_failed_to_materialize_events,
+        )
 
         before_timestamp = parse_timestamp(beforeTimestampMillis)
         after_timestamp = parse_timestamp(afterTimestampMillis)
         if partitionInLast and self._definition:
             partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
 
-        events = get_asset_materializations(
+        events = get_asset_failed_to_materialize_events(
             graphene_info,
             self.key,
             partitions=partitions,
@@ -291,7 +293,7 @@ class GrapheneAsset(graphene.ObjectType):
             after_timestamp=after_timestamp,
             limit=limit,
         )
-        return [GrapheneMaterializationEvent(event=event) for event in events]
+        return [GrapheneFailedToMaterializeEvent(event=event) for event in events]
 
     def resolve_assetObservations(
         self,
