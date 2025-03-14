@@ -11,6 +11,10 @@ import {
   AttributeValueContext,
   AttributeValueWhitespaceContext,
   ColonTokenContext,
+  CommaExpressionWrapper1Context,
+  CommaExpressionWrapper2Context,
+  CommaExpressionWrapper3Context,
+  CommaTokenContext,
   DownTraversalContext,
   DownTraversalExprContext,
   DownTraversalExpressionContext,
@@ -249,6 +253,19 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
   exitOrExpression?: (ctx: OrExpressionContext) => void;
 
   /**
+   * Enter a parse tree produced by the `CommaExpressionWrapper1`
+   * labeled alternative in `SelectionAutoCompleteParser.expr`.
+   * @param ctx the parse tree
+   */
+  enterCommaExpressionWrapper1?: (ctx: CommaExpressionWrapper1Context) => void;
+  /**
+   * Exit a parse tree produced by the `CommaExpressionWrapper1`
+   * labeled alternative in `SelectionAutoCompleteParser.expr`.
+   * @param ctx the parse tree
+   */
+  exitCommaExpressionWrapper1?: (ctx: CommaExpressionWrapper1Context) => void;
+
+  /**
    * Enter a parse tree produced by the `IncompleteAndExpression`
    * labeled alternative in `SelectionAutoCompleteParser.expr`.
    * @param ctx the parse tree
@@ -273,6 +290,19 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitIncompleteOrExpression?: (ctx: IncompleteOrExpressionContext) => void;
+
+  /**
+   * Enter a parse tree produced by the `CommaExpressionWrapper2`
+   * labeled alternative in `SelectionAutoCompleteParser.expr`.
+   * @param ctx the parse tree
+   */
+  enterCommaExpressionWrapper2?: (ctx: CommaExpressionWrapper2Context) => void;
+  /**
+   * Exit a parse tree produced by the `CommaExpressionWrapper2`
+   * labeled alternative in `SelectionAutoCompleteParser.expr`.
+   * @param ctx the parse tree
+   */
+  exitCommaExpressionWrapper2?: (ctx: CommaExpressionWrapper2Context) => void;
 
   /**
    * Enter a parse tree produced by the `IncompleteNotExpression`
@@ -312,6 +342,19 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitUnmatchedValue?: (ctx: UnmatchedValueContext) => void;
+
+  /**
+   * Enter a parse tree produced by the `CommaExpressionWrapper3`
+   * labeled alternative in `SelectionAutoCompleteParser.expr`.
+   * @param ctx the parse tree
+   */
+  enterCommaExpressionWrapper3?: (ctx: CommaExpressionWrapper3Context) => void;
+  /**
+   * Exit a parse tree produced by the `CommaExpressionWrapper3`
+   * labeled alternative in `SelectionAutoCompleteParser.expr`.
+   * @param ctx the parse tree
+   */
+  exitCommaExpressionWrapper3?: (ctx: CommaExpressionWrapper3Context) => void;
 
   /**
    * Enter a parse tree produced by the `ExpressionlessParenthesizedExpression`
@@ -721,6 +764,17 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitFunctionName?: (ctx: FunctionNameContext) => void;
+
+  /**
+   * Enter a parse tree produced by `SelectionAutoCompleteParser.commaToken`.
+   * @param ctx the parse tree
+   */
+  enterCommaToken?: (ctx: CommaTokenContext) => void;
+  /**
+   * Exit a parse tree produced by `SelectionAutoCompleteParser.commaToken`.
+   * @param ctx the parse tree
+   */
+  exitCommaToken?: (ctx: CommaTokenContext) => void;
 
   /**
    * Enter a parse tree produced by `SelectionAutoCompleteParser.orToken`.
