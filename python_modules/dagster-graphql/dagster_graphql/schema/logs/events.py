@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
 import graphene
-from dagster._core.definitions import ExpectationResult
+from dagster._core.definitions import AssetKey, ExpectationResult
 from dagster._core.events import AssetLineageInfo, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.objects import ErrorSource
@@ -407,6 +407,28 @@ class GrapheneMaterializationEvent(graphene.ObjectType, AssetEventMixin):
         ]
 
 
+class GrapheneFailedToMaterializeEvent(graphene.ObjectType, AssetEventMixin):
+    class Meta:
+        interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneDisplayableEvent)
+        name = "MaterializationEvent"
+
+    def __init__(self, event: EventLogEntry):
+        dagster_event = check.not_none(event.dagster_event)
+        failed_data = dagster_event.asset_failed_to_materialize_data
+        super().__init__(
+            **construct_basic_params(event),
+            **{
+                "label": " ".join(check.inst(dagster_event.asset_key, AssetKey).path),
+                "description": "Failed to materialize",
+            },
+        )
+        AssetEventMixin.__init__(
+            self,
+            event=event,
+            metadata=failed_data,
+        )
+
+
 class GrapheneObservationEvent(graphene.ObjectType, AssetEventMixin):
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneDisplayableEvent)
@@ -595,6 +617,7 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneStepExpectationResultEvent,
             GrapheneMaterializationEvent,
             GrapheneObservationEvent,
+            GrapheneFailedToMaterializeEvent,
             GrapheneEngineEvent,
             GrapheneHookCompletedEvent,
             GrapheneHookSkippedEvent,
