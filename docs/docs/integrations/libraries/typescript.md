@@ -20,6 +20,7 @@ sidebar_custom_props:
 
 The [`dagster-pipes-typescript` npm package](https://www.npmjs.com/package/@dagster-io/dagster-pipes) is a Dagster Pipes implementation for the Typescript programming language that allows integration between any Typescript process and the Dagster orchestrator.
 
+For more information, see the [community integrations GitHub repository](https://github.com/dagster-io/community-integrations/blob/main/libraries/pipes/implementations/typescript/README.md).
 
 ### Prerequisites
 
@@ -40,4 +41,4 @@ For a usage example, see the [README](https://github.com/dagster-io/community-in
 
 ### About Typescript
 
-[TypeScript](https://www.typescriptlang.org/) is a strongly typed programming language that builds on JavaScript, giving you better tooling at any scale. For more information, see the [Typescript docs](https://www.typescriptlang.org/docs/).
+[TypeScript](https://www.typescriptlang.org/) is a strongly typed programming language that builds on JavaScript, giving you better tooling at any scale. To get started with Typescript, see the [Typescript docs](https://www.typescriptlang.org/docs/).
