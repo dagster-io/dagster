@@ -284,7 +284,15 @@ class DbtEventIterator(Iterator[T]):
                 event_stream = exhaust_iterator_and_yield_results_with_exception(self)
 
         def _threadpool_wrap_map_fn() -> (
-            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]
+            Iterator[
+                Union[
+                    Output,
+                    AssetMaterialization,
+                    AssetObservation,
+                    AssetCheckResult,
+                    AssetCheckEvaluation,
+                ]
+            ]
         ):
             with ThreadPoolExecutor(
                 max_workers=self._dbt_cli_invocation.postprocessing_threadpool_num_threads,
