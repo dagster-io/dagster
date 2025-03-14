@@ -455,11 +455,17 @@ const AssetGraphExplorerWithData = ({
   );
 
   const onFilterToGroup = (group: AssetGroup | GroupLayout) => {
-    const codeLocationFilter = buildRepoPathForHuman(
-      group.repositoryName,
-      group.repositoryLocationName,
-    );
-    onChangeAssetSelection(`group:"${group.groupName}" and code_location:"${codeLocationFilter}"`);
+    const filters: string[] = [`group:"${group.groupName}"`];
+
+    if (group.repositoryName && group.repositoryLocationName) {
+      const codeLocationFilter = buildRepoPathForHuman(
+        group.repositoryName,
+        group.repositoryLocationName,
+      );
+      filters.push(`code_location:"${codeLocationFilter}"`);
+    }
+
+    onChangeAssetSelection(filters.join(' and '));
   };
 
   const svgViewport = layout ? (
@@ -899,8 +905,10 @@ const AssetGraphExplorerWithData = ({
 
 export interface AssetGroup {
   groupName: string;
-  repositoryName: string;
-  repositoryLocationName: string;
+
+  // remove when groups-outside-code-location feature flag is shipped
+  repositoryName?: string;
+  repositoryLocationName?: string;
 }
 
 const SVGContainer = styled.svg`

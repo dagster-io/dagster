@@ -13,8 +13,10 @@ export type FolderNodeGroupType = {
   groupNode: {
     groupName: string;
     assets: GraphNode[];
-    repositoryName: string;
-    repositoryLocationName: string;
+
+    // remove when groups-outside-code-location feature flag is shipped
+    repositoryName?: string;
+    repositoryLocationName?: string;
   };
 };
 
