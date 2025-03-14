@@ -37,6 +37,58 @@ describe('multipartitioning support', () => {
       expect(mergedRanges(KEYS, [])).toEqual([]);
     });
 
+    it('does not throw errors if ranges refer to indexes beyond the length of KEYS (dynamic partitions, partially refreshed data)', () => {
+      expect(
+        mergedRanges(KEYS, [
+          [
+            {
+              start: {idx: 0, key: 'A'},
+              end: {idx: 4, key: 'E'},
+              value: [AssetPartitionStatus.MATERIALIZED],
+            },
+            {
+              start: {idx: 6, key: 'G'},
+              end: {idx: 7, key: 'H'},
+              value: [AssetPartitionStatus.MATERIALIZED],
+            },
+          ],
+          [
+            {
+              start: {idx: 3, key: 'A'},
+              end: {idx: 10, key: 'K'}, // K does not exist in KEYS
+              value: [AssetPartitionStatus.MATERIALIZED],
+            },
+          ],
+        ]),
+      ).toEqual([
+        {
+          start: {idx: 0, key: 'A'},
+          end: {idx: 2, key: 'C'},
+          value: ['MATERIALIZED', 'MISSING'],
+        },
+        {
+          start: {idx: 3, key: 'D'},
+          end: {idx: 4, key: 'E'},
+          value: ['MATERIALIZED'],
+        },
+        {
+          start: {idx: 5, key: 'F'},
+          end: {idx: 5, key: 'F'},
+          value: ['MATERIALIZED', 'MISSING'],
+        },
+        {
+          start: {idx: 6, key: 'G'},
+          end: {idx: 7, key: 'H'},
+          value: ['MATERIALIZED'],
+        },
+        {
+          start: {idx: 8, key: 'I'},
+          end: {idx: 8, key: 'I'},
+          value: ['MATERIALIZED', 'MISSING'],
+        },
+      ]);
+    });
+
     it('makes no modifications to a single range set', () => {
       expect(mergedRanges(KEYS, [[A_I_Partial]])).toEqual([A_I_Partial]);
       expect(mergedRanges(KEYS, [[A_I]])).toEqual([A_I]);
