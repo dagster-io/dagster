@@ -12,6 +12,7 @@ from typing import Any, Final, NamedTuple, Optional, Union, cast
 
 import orjson
 from dagster import (
+    AssetCheckEvaluation,
     AssetCheckResult,
     AssetExecutionContext,
     AssetMaterialization,
@@ -283,9 +284,7 @@ class DbtCliInvocation:
     @public
     def stream(
         self,
-    ) -> (
-        "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
-    ):
+    ) -> "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]":
         """Stream the events from the dbt CLI process and convert them to Dagster events.
 
         Returns:
