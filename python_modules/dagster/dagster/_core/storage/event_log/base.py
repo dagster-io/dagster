@@ -653,6 +653,16 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
+    def fetch_failed_materializations(
+        self,
+        records_filter: Union[AssetKey, AssetRecordsFilter],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        raise NotImplementedError()
+
+    @abstractmethod
     def fetch_observations(
         self,
         records_filter: Union[AssetKey, AssetRecordsFilter],

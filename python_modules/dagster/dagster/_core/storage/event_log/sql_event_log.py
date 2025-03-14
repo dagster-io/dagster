@@ -991,6 +991,15 @@ class SqlEventLogStorage(EventLogStorage):
 
         return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
 
+    def fetch_failed_materializations(
+        self,
+        records_filter: Union[AssetKey, AssetRecordsFilter],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        return EventRecordsResult(records=[], cursor=cursor, has_more=False)
+
     def fetch_observations(
         self,
         records_filter: Union[AssetKey, AssetRecordsFilter],
