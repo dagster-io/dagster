@@ -1,5 +1,6 @@
 import inspect
 import logging
+import os
 import re
 import textwrap
 from collections.abc import Sequence
@@ -202,20 +203,19 @@ class MdxTranslator(SphinxTranslator):
             if not obj:
                 return None
 
+            # unwrap the root function if function is wrapped
+            while hasattr(obj, '__wrapped__'):
+                obj = obj.__wrapped__
+
             try:
                 source_file = inspect.getsourcefile(obj)
                 if not source_file:
                     return None
 
-                # Convert from absolute path to relative path within the repository
-                # This will need to be adjusted based on your repository structure
-                repo_path = source_file
-                for potential_dir in ["python_modules", "src"]:
-                    if potential_dir in source_file:
-                        repo_path = source_file[source_file.find(potential_dir) :]
-                        break
-
+                # get relative path, and trim `..`
+                repo_path = os.path.relpath(source_file).replace('../', '')
                 source_line = inspect.getsourcelines(obj)[1]
+
                 return f"{self.github_url}/{repo_path}#L{source_line}"
             except (TypeError, OSError):
                 return None
