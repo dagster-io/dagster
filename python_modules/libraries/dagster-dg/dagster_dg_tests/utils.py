@@ -120,7 +120,7 @@ def isolated_example_project_foo_bar(
     else:
         fs_context = runner.isolated_filesystem()
     with fs_context:
-        result = runner.invoke(
+        args = [
             "scaffold",
             "project",
             "--use-editable-components-package-only",
@@ -128,7 +128,9 @@ def isolated_example_project_foo_bar(
             *(["--no-use-dg-managed-environment"] if skip_venv else []),
             *(["--no-populate-cache"] if not populate_cache else []),
             "foo-bar",
-        )
+        ]
+        result = runner.invoke(*args)
+
         assert_runner_result(result)
         with clear_module_from_cache("foo_bar"), pushd(project_path):
             # _install_libraries_to_venv(Path(".venv"), ["dagster-test"])
