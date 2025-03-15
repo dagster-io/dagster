@@ -31,7 +31,7 @@ from dagster_components.resolved.core_models import (
 from dagster_components.resolved.metadata import ResolvableFieldInfo
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
 from dagster_components.scaffold import scaffold_with
-from dagster_components.utils import TranslatorResolvingInfo, get_wrapped_translator_class
+from dagster_components.utils import TranslatorResolvingInfo
 
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 
@@ -52,15 +52,32 @@ class DagsterSlingTranslatorAutomationCondition(DagsterSlingTranslator):
         )
 
 
+class ComponentsDagsterSlingTranslator(DagsterSlingTranslator):
+    def __init__(self, *, resolving_info: TranslatorResolvingInfo):
+        super().__init__()
+        self.resolving_info = resolving_info
+
+    def get_asset_spec(self, obj: Any) -> AssetSpec:
+        base_spec = super().get_asset_spec(obj)
+        return self.resolving_info.get_asset_spec(
+            base_spec,
+            {self.resolving_info.obj_name: obj, "spec": base_spec},
+        )
+
+
 def resolve_translator(
     context: ResolutionContext, model: "SlingReplicationModel"
 ) -> DagsterSlingTranslator:
     # TODO: Consider supporting owners and code_version in the future
-    if model.asset_attributes and model.asset_attributes.owners:
-        raise ValueError("owners are not supported for sling_replication_collection component")
-    if model.asset_attributes and model.asset_attributes.code_version:
-        raise ValueError("code_version is not supported for sling_replication_collection component")
-    return get_wrapped_translator_class(DagsterSlingTranslatorAutomationCondition)(
+    if model.asset_attributes and isinstance(model.asset_attributes, AssetAttributesModel):
+        if model.asset_attributes.owners:
+            raise ValueError("owners are not supported for sling_replication_collection component")
+        if model.asset_attributes.code_version:
+            raise ValueError(
+                "code_version is not supported for sling_replication_collection component"
+            )
+
+    return ComponentsDagsterSlingTranslator(
         resolving_info=TranslatorResolvingInfo(
             "stream_definition",
             model.asset_attributes or AssetAttributesModel(),
@@ -91,7 +108,7 @@ class SlingReplicationModel(ResolvableModel):
         description="The metadata to include on materializations of the assets produced by the Sling replication.",
     )
     asset_attributes: Annotated[
-        Optional[AssetAttributesModel],
+        Optional[Union[str, AssetAttributesModel]],
         ResolvableFieldInfo(required_scope={"stream_definition"}),
     ] = Field(
         None,
@@ -118,7 +135,16 @@ def resolve_resource(
 @scaffold_with(SlingReplicationComponentScaffolder)
 @dataclass
 class SlingReplicationCollectionComponent(Component, ResolvedFrom[SlingReplicationCollectionModel]):
-    """Expose one or more Sling replications to Dagster as assets."""
+    """Expose one or more Sling replications to Dagster as assets.
+
+    [Sling](https://slingdata.io/) is a Powerful Data Integration tool enabling seamless ELT
+    operations as well as quality checks across files, databases, and storage systems.
+
+    dg scaffold component dagster_components.dagster_sling.SlingReplicationCollectionComponent {component_name} to get started.
+
+    This will create a component.yaml as well as a `replication.yaml` which is a Sling-specific configuration
+    file. See Sling's [documentation](https://docs.slingdata.io/concepts/replication#overview) on `replication.yaml`.
+    """
 
     resource: Annotated[SlingResource, Resolver.from_model(resolve_resource)] = ...
     replications: Annotated[Sequence[SlingReplicationSpecModel], Resolver.from_annotation()] = ...

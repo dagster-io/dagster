@@ -177,7 +177,7 @@ const config: Config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: '1.10.4 (master)',
+              label: '1.10.5 (master)',
               path: '/',
             },
           },

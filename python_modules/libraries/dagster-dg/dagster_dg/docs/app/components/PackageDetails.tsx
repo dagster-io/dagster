@@ -17,7 +17,7 @@ export default function PackageDetails({pkg}: Props) {
           key={component.name}
           className={styles.componentItem}
         >
-          <ComponentHeader config={component} />
+          <ComponentHeader config={component} descriptionStyle="truncated" />
         </Link>
       ))}
     </div>

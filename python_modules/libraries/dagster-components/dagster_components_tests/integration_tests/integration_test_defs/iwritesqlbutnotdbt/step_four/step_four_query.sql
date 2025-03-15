@@ -1,0 +1,1 @@
+SELECT * from 'raw_customers.csv'

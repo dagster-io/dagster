@@ -78,7 +78,9 @@ def _serializable_error_info_from_tb(tb: traceback.TracebackException) -> Serial
         tb.stack.format(),
         tb.exc_type.__name__ if tb.exc_type is not None else None,
         _serializable_error_info_from_tb(tb.__cause__) if tb.__cause__ else None,
-        _serializable_error_info_from_tb(tb.__context__) if tb.__context__ else None,
+        _serializable_error_info_from_tb(tb.__context__)
+        if tb.__context__ and not tb.__suppress_context__
+        else None,
     )
 
 
@@ -242,8 +244,9 @@ def serializable_error_info_from_exc_info(
 
 
 DAGSTER_FRAMEWORK_SUBSTRINGS = [
-    "/site-packages/dagster/",
-    "/python_modules/dagster/dagster/",
+    "/site-packages/dagster",
+    "/python_modules/dagster",
+    "/python_modules/libraries/dagster",
 ]
 
 IMPORT_MACHINERY_SUBSTRINGS = [

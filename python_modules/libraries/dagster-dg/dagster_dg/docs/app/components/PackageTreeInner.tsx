@@ -6,8 +6,12 @@ import styles from './css/PackageTree.module.css';
 import clsx from 'clsx';
 import {usePathname} from 'next/navigation';
 import Link from 'next/link';
-import {useState} from 'react';
+import {useLayoutEffect, useState} from 'react';
 
+function extractFromPathname(pathname: string) {
+  const [selectedPkg, selectedComponent] = pathname.split('/').slice(2);
+  return {selectedPkg, selectedComponent};
+}
 interface Props {
   contents: Contents | null;
 }
@@ -15,10 +19,21 @@ interface Props {
 export default function PackageTree({contents}: Props) {
   const pathname = usePathname();
 
-  const [selectedPkg, selectedComponent] = pathname.split('/').slice(2);
+  const {selectedPkg, selectedComponent} = extractFromPathname(pathname);
   const [expandedPkgs, setExpandedPkgs] = useState<Set<string>>(
     () => new Set(selectedPkg ? [selectedPkg] : []),
   );
+
+  useLayoutEffect(() => {
+    setExpandedPkgs((current) => {
+      const {selectedPkg} = extractFromPathname(pathname);
+      const copy = new Set(current);
+      if (selectedPkg) {
+        copy.add(selectedPkg);
+      }
+      return copy;
+    });
+  }, [pathname]);
 
   const [search, setSearch] = useState('');
 
@@ -63,33 +78,40 @@ export default function PackageTree({contents}: Props) {
       <div className={styles.treeContainer}>
         {contents?.map((pkg) => (
           <div key={pkg.name}>
-            <Link
-              href={`/packages/${pkg.name}`}
-              className={clsx(
-                styles.pkgLink,
-                expandedPkgs.has(pkg.name) ? styles.expanded : null,
-                selectedPkg === pkg.name && !selectedComponent ? styles.selected : null,
-              )}
-              onClick={() => {
-                onTogglePkg(pkg.name);
-              }}
-            >
-              <svg
-                className={styles.chevron}
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                xmlns="http://www.w3.org/2000/svg"
+            <div className={styles.pkgItem}>
+              <button
+                className={clsx(
+                  styles.expandButton,
+                  expandedPkgs.has(pkg.name) ? styles.expanded : null,
+                )}
+                onClick={() => onTogglePkg(pkg.name)}
               >
-                <path
-                  d="M5.83301 8.33337L9.99967 12.5L14.1663 8.33337H5.83301Z"
+                <svg
+                  className={styles.chevron}
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
                   fill="currentColor"
-                />
-              </svg>
-              <TempIcon />
-              <div className={styles.pkgName}>{pkg.name}</div>
-            </Link>
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5.83301 8.33337L9.99967 12.5L14.1663 8.33337H5.83301Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
+              <Link
+                href={`/packages/${pkg.name}`}
+                className={clsx(
+                  styles.pkgLink,
+                  expandedPkgs.has(pkg.name) ? styles.expanded : null,
+                  selectedPkg === pkg.name && !selectedComponent ? styles.selected : null,
+                )}
+              >
+                <TempFolderIcon />
+                <div className={styles.pkgName}>{pkg.name}</div>
+              </Link>
+            </div>
             {expandedPkgs.has(pkg.name) ? (
               <div className={styles.componentList}>
                 {pkg.componentTypes.map((componentType) => {
@@ -114,6 +136,24 @@ export default function PackageTree({contents}: Props) {
     </div>
   );
 }
+
+const TempFolderIcon = () => {
+  return (
+    <svg
+      className={styles.icon}
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M16.667 5.00004H10.0003L8.33366 3.33337H3.33366C2.41699 3.33337 1.67533 4.08337 1.67533 5.00004L1.66699 15C1.66699 15.9167 2.41699 16.6667 3.33366 16.6667H16.667C17.5837 16.6667 18.3337 15.9167 18.3337 15V6.66671C18.3337 5.75004 17.5837 5.00004 16.667 5.00004ZM16.667 15H3.33366V6.66671H16.667V15Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+};
 
 const TempIcon = () => {
   return (

@@ -20,6 +20,7 @@ from dagster_components.core.component_defs_builder import (
     build_components_from_component_folder,
     defs_from_components,
 )
+from dagster_components.resolved.core_models import AssetAttributesModel
 from dagster_dbt import DbtProject
 
 from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
@@ -311,3 +312,68 @@ def test_dependency_on_dbt_project():
     assert set(downstream_of_customers_def.asset_deps[AssetKey("downstream_of_customers")]) == {
         AssetKey("customers")
     }
+
+
+def test_spec_is_available_in_scope(dbt_path: Path) -> None:
+    decl_node = YamlComponentDecl(
+        path=dbt_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="  ",
+            attributes={
+                "dbt": {"project_dir": "jaffle_shop"},
+                "asset_attributes": {"metadata": {"asset_key": "{{ spec.key.path }}"}},
+            },
+        ),
+    )
+    context = script_load_context(decl_node)
+    component = DbtProjectComponent.load(
+        attributes=decl_node.get_attributes(DbtProjectComponent.get_schema()),  # type: ignore
+        context=context,
+    )
+    defs = component.build_defs(script_load_context())
+    assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("stg_customers"))
+    assert assets_def.get_asset_spec(AssetKey("stg_customers")).metadata["asset_key"] == [
+        "stg_customers"
+    ]
+
+
+def map_spec(spec: AssetSpec) -> AssetSpec:
+    return spec.replace_attributes(tags={"is_custom_spec": "yes"})
+
+
+def map_spec_to_attributes(spec: AssetSpec) -> AssetAttributesModel:
+    return AssetAttributesModel(tags={"is_custom_spec": "yes"})
+
+
+def map_spec_to_attributes_dict(spec: AssetSpec) -> dict[str, Any]:
+    return {"tags": {"is_custom_spec": "yes"}}
+
+
+@pytest.mark.parametrize("map_fn", [map_spec, map_spec_to_attributes, map_spec_to_attributes_dict])
+def test_udf_map_spec(dbt_path: Path, map_fn: Callable[[AssetSpec], Any]) -> None:
+    @dataclass
+    class DebugDbtProjectComponent(DbtProjectComponent):
+        @classmethod
+        def get_additional_scope(cls) -> Mapping[str, Any]:
+            return {"map_spec": map_fn}
+
+    decl_node = YamlComponentDecl(
+        path=dbt_path / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="debug_dbt_project",
+            attributes={
+                "dbt": {"project_dir": "jaffle_shop"},
+                "asset_attributes": "{{ map_spec(spec) }}",
+            },
+        ),
+    )
+    context = script_load_context(decl_node).with_rendering_scope(
+        DebugDbtProjectComponent.get_additional_scope()
+    )
+    component = DebugDbtProjectComponent.load(
+        attributes=decl_node.get_attributes(DebugDbtProjectComponent.get_schema()),  # type: ignore
+        context=context,
+    )
+    defs = component.build_defs(script_load_context())
+    assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("stg_customers"))
+    assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["is_custom_spec"] == "yes"

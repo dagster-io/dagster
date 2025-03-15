@@ -1,0 +1,13 @@
+type: dagster_components.dagster_dbt.DbtProjectComponent
+
+attributes:
+  dbt:
+    project_dir: ../../../dbt/jdbt
+  asset_attributes:
+    key: "target/main/{{ node.name }}"
+  asset_post_processors:
+    - target: "*"
+      attributes:
+        automation_condition: "{{ automation_condition.eager() }}"
+        metadata:
+            automation_condition: "eager"

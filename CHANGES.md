@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.10.5 (core) / 0.26.5 (libraries)
+
+### New
+
+- `async def yield_for_execution` is now supported on `ConfigurableResource`. An `event_loop` argument has been added to context builders to support direct execution.
+- `dagster dev` deduplicates stacktraces when code locations fail to load, and will by default truncate them to highlight only user code frames.
+- Improved error message experience for resources expecting an env var which was not provided.
+- [ui] An updated asset selection syntax is now available in the asset graph, insights, and alerts. The new syntax allows combining logical operators, lineage operators, and attribute filters.
+- [dagster-polars] The minimal compatible `deltalake` version has been bumped to `0.25.0`; the `PolarsDeltaIOManager` is now using the `rust` engine for writing DeltaLake tables by default.
+
+### Bugfixes
+
+- Fixed a bug with AutomationCondition.replace() that would cause it to not effect `AutomationCondition.since()` conditions.
+- Fixed a bug that could cause invalid circular dependency errors when using asset checks with additional dependencies.
+- Fixed an issue in Dagster OSS where failed runs of multiple partitions didn't update those partitions as failed in the Dagster UI or trigger failure automation conditions.
+- Fixed an issue where `dagster dev` would fail to load code that took more than 45 seconds to import unless the `--use-legacy-code-server-behavior` flag was used.
+- [dagster-airbyte] Fixed an issue that caused the group name of assets created using `build_airbyte_assets_definitions` function to error when attempting to modify the default group name.
+- [dagster-fivetran] Fixed an issue that caused the group name of assets created using `build_fivetran_assets_definitions` function to error when attempting to modify the default group name.
+
 ## 1.10.4 (core) / 0.26.4 (libraries)
 
 ### New

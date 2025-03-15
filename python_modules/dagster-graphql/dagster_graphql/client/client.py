@@ -12,6 +12,7 @@ from gql import Client, gql
 from gql.transport import Transport
 from gql.transport.exceptions import TransportServerError
 from gql.transport.requests import RequestsHTTPTransport
+from requests.auth import AuthBase
 
 from dagster_graphql.client.client_queries import (
     CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,
@@ -73,6 +74,7 @@ class DagsterGraphQLClient:
         use_https: bool = False,
         timeout: int = 300,
         headers: Optional[dict[str, str]] = None,
+        auth: Optional[AuthBase] = None,
     ):
         self._hostname = check.str_param(hostname, "hostname")
         self._port_number = check.opt_int_param(port_number, "port_number")
@@ -89,7 +91,7 @@ class DagsterGraphQLClient:
             "transport",
             Transport,
             default=RequestsHTTPTransport(
-                url=self._url, use_json=True, timeout=timeout, headers=headers
+                url=self._url, use_json=True, timeout=timeout, headers=headers, auth=auth
             ),
         )
         try:
