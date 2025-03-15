@@ -1,5 +1,5 @@
 from dagster_components.component_scaffolding import (
-    scaffold_component_yaml as scaffold_component_yaml,
+    scaffold_component_decl as scaffold_component_decl,
 )
 from dagster_components.core.component import (
     Component as Component,

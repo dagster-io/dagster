@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, TypeVar, U
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
+from dagster._seven import is_subclass
 from dagster._utils import pushd
 from dagster._utils.cached_method import cached_method
 from typing_extensions import Self
@@ -51,6 +52,32 @@ class Component(ABC):
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:
         return {}
+
+    @classmethod
+    def from_dict(
+        cls, context: ResolutionContext, attributes: Optional[Mapping[str, Any]]
+    ) -> "Component":
+        """Load a Component from a dictionary of attributes."""
+        check.param_invariant(
+            is_subclass(cls, ResolvableModel) or is_subclass(cls, ResolvedFrom), "cls"
+        )
+
+        if not attributes:
+            return cls()
+
+        model_cls = cls.get_schema()
+        check.not_none(model_cls, "Component must have a schema to load from dict")
+        assert model_cls
+
+        model = model_cls.model_validate(attributes)
+
+        if issubclass(cls, ResolvableModel):
+            return check.inst(model, Component)
+
+        check.invariant(is_subclass(cls, ResolvedFrom), "cls must be a subclass of Resolved")
+        assert issubclass(cls, ResolvedFrom)
+
+        return resolve_model(model=model, resolvable_type=cls, context=context)
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...

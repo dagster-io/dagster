@@ -1,13 +1,18 @@
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast
 
 import click
+from dagster import _check as check
 from pydantic import TypeAdapter
 
 from dagster_components.component_scaffolding import scaffold_component_instance
 from dagster_components.core.component import load_component_type
 from dagster_components.core.component_key import ComponentKey
-from dagster_components.scaffold import ScaffolderUnavailableReason, get_scaffolder
+from dagster_components.scaffold import (
+    DeclFormatOptions,
+    ScaffolderUnavailableReason,
+    get_scaffolder,
+)
 
 
 @click.group(name="scaffold")
@@ -19,10 +24,18 @@ def scaffold_cli() -> None:
 @click.argument("component_type", type=str)
 @click.argument("component_path", type=Path)
 @click.option("--json-params", type=str, default=None)
+@click.option(
+    "--format",
+    type=click.Choice(["yaml", "python"], case_sensitive=False),
+    default="yaml",
+    help="Format of the component configuration (yaml or python)",
+    # dest="decl_format",
+)
 def scaffold_component_command(
     component_type: str,
     component_path: Path,
     json_params: Optional[str],
+    format: str,  # noqa required for click magic
 ) -> None:
     key = ComponentKey.from_typename(component_type)
     component_type_cls = load_component_type(key)
@@ -37,9 +50,15 @@ def scaffold_component_command(
     else:
         scaffold_params = {}
 
+    check.invariant(
+        format in ["yaml", "python"],
+        "decl_format must be either 'yaml' or 'python'",
+    )
+
     scaffold_component_instance(
         component_path,
         component_type_cls,
         component_type,
         scaffold_params,
+        cast(DeclFormatOptions, format),
     )
