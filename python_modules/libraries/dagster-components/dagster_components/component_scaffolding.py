@@ -25,12 +25,30 @@ class ComponentDumper(yaml.Dumper):
 def scaffold_component_decl(
     request: ScaffoldRequest, attributes: Optional[Mapping[str, Any]]
 ) -> None:
-    with open(request.target_path / "component.yaml", "w") as f:
-        component_data = {"type": request.type_name, "attributes": attributes or {}}
-        yaml.dump(
-            component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
+    if request.decl_format == "yaml":
+        with open(request.target_path / "component.yaml", "w") as f:
+            component_data = {"type": request.type_name, "attributes": attributes or {}}
+            yaml.dump(
+                component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
+            )
+            f.writelines([""])
+
+    elif request.decl_format == "python":
+        class_name = request.type_name.split(".")[-1]  # get the class name only
+        package_name = ".".join(request.type_name.split(".")[:-1])  # package name
+        with open(request.target_path / "component.py", "w") as f:
+            f.write(f"""from dagster_components import component, ComponentLoadContext
+from {package_name} import {class_name}
+
+
+@component
+def load(context: ComponentLoadContext) -> {class_name}:
+    return {class_name}()
+""")
+    else:
+        raise Exception(
+            f"Decl format {request.decl_format} is not supported for component scaffolding."
         )
-        f.writelines([""])
 
 
 def scaffold_component_instance(
@@ -63,7 +81,8 @@ def scaffold_component_instance(
 
     if not issubclass(component_type, ShimComponent):
         component_yaml_path = path / "component.yaml"
-        if not component_yaml_path.exists():
+        component_py_path = path / "component.py"
+        if not (component_yaml_path.exists() or component_py_path.exists()):
             raise Exception(
-                f"Currently all components require a component.yaml file. Please ensure your implementation of scaffold writes this file at {component_yaml_path}."
+                f"Currently all components require a component.yaml or a component.py file. Please ensure your implementation of scaffold writes this file at {component_yaml_path}."
             )
