@@ -2277,211 +2277,211 @@
     },
     {
       "source": "/_modules/dagster/_core/definitions/asset_check_result",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/asset_check_spec",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/asset_dep",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/asset_key",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/asset_out",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/asset_selection",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/asset_spec",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/assets",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/auto_materialize_rule",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/backfill_policy",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/declarative_automation/automation_condition",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/decorators/asset_check_decorator",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/decorators/asset_decorator",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/decorators/op_decorator",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/decorators/repository_decorator",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/decorators/schedule_decorator",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/decorators/sensor_decorator",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/definitions_class",
-      "destination": ""
+      "destination": "/api/python-api/definitions#dagster.Definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/dependency",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/events",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/executor_definition",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/graph_definition",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/hook_definition",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/input",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/job_definition",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/load_asset_checks_from_modules",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/load_assets_from_modules",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/materialize",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/metadata",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/metadata/metadata_value",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/metadata/source_code",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/multi_asset_sensor_definition",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/multi_dimensional_partitions",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/op_definition",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/output",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/partition",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/partition_mapping",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/partitioned_schedule",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/policy",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/reconstruct",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/repository_definition/repository_data",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/repository_definition/repository_definition",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/resource_definition",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/run_request",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/run_status_sensor_definition",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/schedule_definition",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/sensor_definition",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/source_asset",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/time_window_partition_mapping",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/time_window_partitions",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/unresolved_asset_job_definition",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/definitions/utils",
-      "destination": ""
+      "destination": "/api/python-api/definitions"
     },
     {
       "source": "/_modules/dagster/_core/errors",
