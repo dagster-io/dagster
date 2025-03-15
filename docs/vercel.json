@@ -2253,27 +2253,27 @@
     },
     {
       "source": "/_modules/dagster/_config/config_schema",
-      "destination": ""
+      "destination": "/api/python-api/config#dagster.ConfigSchema"
     },
     {
       "source": "/_modules/dagster/_config/config_type",
-      "destination": ""
+      "destination": "/api/python-api/config"
     },
     {
       "source": "/_modules/dagster/_config/field",
-      "destination": ""
+      "destination": "/api/python-api/config#dagster.Field"
     },
     {
       "source": "/_modules/dagster/_config/field_utils",
-      "destination": ""
+      "destination": "/api/python-api/config#config-utilities"
     },
     {
       "source": "/_modules/dagster/_config/pythonic_config/config",
-      "destination": ""
+      "destination": "/api/python-api/config#dagster.Config"
     },
     {
       "source": "/_modules/dagster/_config/pythonic_config/resource",
-      "destination": ""
+      "destination": "/api/python-api/config#pythonic-config-system"
     },
     {
       "source": "/_modules/dagster/_core/definitions/asset_check_result",
