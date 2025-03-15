@@ -1,0 +1,10 @@
+# alert_policies.yaml
+
+alert_policies:
+  description: Sends a PagerDuty alert when a credit budget limit has been exceeded.
+  event_types:
+  - INSIGHTS_CONSUMPTION_EXCEEDED
+  name: credit-budget-alert-pagerduty
+  notification_service:
+    pagerduty:
+      integration_key: <pagerduty_integration_key>

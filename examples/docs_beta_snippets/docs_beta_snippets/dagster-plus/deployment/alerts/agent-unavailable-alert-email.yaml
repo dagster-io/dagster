@@ -1,10 +1,11 @@
 # alert_policies.yaml
 
 alert_policies:
-  description: Sends an email when a code location fails to load.
+  description: Sends an email when a Hybrid agent hasn't sent a heartbeat in the last
+    5 minutes.
   event_types:
-  - CODE_LOCATION_ERROR
-  name: code-location-error-email
+  - AGENT_UNAVAILABLE
+  name: agent-unavailable-alert-email
   notification_service:
     email:
       email_addresses:
