@@ -2,7 +2,7 @@
 layout: Integration
 status: published
 name: TypeScript
-title: Dagster & TypesScript
+title: Dagster & TypeScript
 sidebar_label: TypeScript
 excerpt: The TypeScript Pipes client allows integration between any TypeScript process and the Dagster orchestrator.
 date: 2025-03-14
