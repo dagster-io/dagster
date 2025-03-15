@@ -17,7 +17,7 @@ class ComponentDumper(yaml.Dumper):
         super().write_line_break()
 
 
-def scaffold_component_yaml(
+def scaffold_component_decl(
     request: ScaffoldRequest, attributes: Optional[Mapping[str, Any]]
 ) -> None:
     with open(request.target_path / "component.yaml", "w") as f:
