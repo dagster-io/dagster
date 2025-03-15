@@ -6,7 +6,12 @@ import click
 import yaml
 
 from dagster_components.core.component import Component
-from dagster_components.scaffold import ScaffolderUnavailableReason, ScaffoldRequest, get_scaffolder
+from dagster_components.scaffold import (
+    DeclFormatOptions,
+    ScaffolderUnavailableReason,
+    ScaffoldRequest,
+    get_scaffolder,
+)
 
 
 class ComponentDumper(yaml.Dumper):
@@ -33,6 +38,7 @@ def scaffold_component_instance(
     component_type: type[Component],
     component_type_name: str,
     scaffold_params: Mapping[str, Any],
+    decl_format: DeclFormatOptions,
 ) -> None:
     from dagster_components.components.shim_components.base import ShimComponent
 
@@ -50,6 +56,7 @@ def scaffold_component_instance(
         ScaffoldRequest(
             type_name=component_type_name,
             target_path=path,
+            decl_format=decl_format,
         ),
         scaffold_params,
     )
