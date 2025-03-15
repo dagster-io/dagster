@@ -81,7 +81,7 @@ class OpSpecModel(ResolvableModel):
 
 
 class _ResolvableAssetAttributesMixin(BaseModel):
-    deps: Sequence[str] = Field(
+    deps: Union[str, Sequence[str]] = Field(
         default_factory=list,
         description="The asset keys for the upstream assets that this asset depends on.",
         examples=[["my_database/my_schema/upstream_table"]],
