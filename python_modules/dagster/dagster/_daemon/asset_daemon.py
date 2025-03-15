@@ -524,12 +524,13 @@ class AssetDaemon(DagsterDaemon):
                 if not get_has_migrated_sensor_names(instance):
                     # Do a one-time migration to copy state from sensors with the legacy default
                     # name to the new default name
-                    self._logger.info(
-                        "Renaming any states corresponding to the legacy default name"
-                    )
-                    all_sensor_states = self._copy_default_auto_materialize_sensor_states(
-                        instance, all_sensor_states
-                    )
+                    if all_sensor_states:
+                        self._logger.info(
+                            "Renaming any states corresponding to the legacy default name"
+                        )
+                        all_sensor_states = self._copy_default_auto_materialize_sensor_states(
+                            instance, all_sensor_states
+                        )
                     set_has_migrated_sensor_names(instance)
 
                 self._checked_migrations = True
