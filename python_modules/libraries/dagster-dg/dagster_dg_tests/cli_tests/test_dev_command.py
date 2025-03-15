@@ -35,7 +35,7 @@ def test_dev_workspace_context_success(monkeypatch):
         result = runner.invoke(
             "scaffold",
             "project",
-            "--use-editable-components-package-only",
+            "--use-editable-dagster",
             dagster_git_repo_dir,
             "project-1",
         )
@@ -43,7 +43,7 @@ def test_dev_workspace_context_success(monkeypatch):
         result = runner.invoke(
             "scaffold",
             "project",
-            "--use-editable-components-package-only",
+            "--use-editable-dagster",
             dagster_git_repo_dir,
             "project-2",
         )

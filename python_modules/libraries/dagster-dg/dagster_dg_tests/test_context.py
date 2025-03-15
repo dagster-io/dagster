@@ -141,11 +141,6 @@ def test_invalid_config_workspace():
                 Union[bool, str],
                 1,
             ],
-            [
-                "tool.dg.workspace.scaffold_project_options.use_editable_components_package_only",
-                Union[bool, str],
-                1,
-            ],
         ]
         for path, expected_type, val in cases:
             with _reset_pyproject_toml():

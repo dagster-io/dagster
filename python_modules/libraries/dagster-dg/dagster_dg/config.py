@@ -285,17 +285,12 @@ class DgRawWorkspaceProjectSpec(TypedDict, total=False):
 @dataclass
 class DgWorkspaceScaffoldProjectOptions:
     use_editable_dagster: Union[str, bool] = False
-    use_editable_components_package_only: Union[str, bool] = False
 
     @classmethod
     def from_raw(cls, raw: "DgRawWorkspaceNewProjectOptions") -> Self:
         return cls(
             use_editable_dagster=raw.get(
                 "use_editable_dagster", DgWorkspaceScaffoldProjectOptions.use_editable_dagster
-            ),
-            use_editable_components_package_only=raw.get(
-                "use_editable_components_package_only",
-                DgWorkspaceScaffoldProjectOptions.use_editable_components_package_only,
             ),
         )
 
@@ -305,25 +300,17 @@ class DgWorkspaceScaffoldProjectOptions:
     def get_raw_from_cli(
         cls,
         use_editable_dagster: Optional[str],
-        use_editable_components_package_only: Optional[str],
     ) -> "DgRawWorkspaceNewProjectOptions":
         raw_scaffold_project_options: DgRawWorkspaceNewProjectOptions = {}
         if use_editable_dagster:
             raw_scaffold_project_options["use_editable_dagster"] = (
                 True if use_editable_dagster == "TRUE" else use_editable_dagster
             )
-        if use_editable_components_package_only:
-            raw_scaffold_project_options["use_editable_components_package_only"] = (
-                True
-                if use_editable_components_package_only == "TRUE"
-                else use_editable_components_package_only
-            )
         return raw_scaffold_project_options
 
 
 class DgRawWorkspaceNewProjectOptions(TypedDict, total=False):
     use_editable_dagster: Union[str, bool]
-    use_editable_components_package_only: Union[str, bool]
 
 
 # ########################
