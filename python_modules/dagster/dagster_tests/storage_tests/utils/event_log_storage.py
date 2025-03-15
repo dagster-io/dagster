@@ -118,6 +118,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     MULTIDIMENSIONAL_PARTITION_PREFIX,
 )
+from dagster._core.storage.utils import AssetKeyOrdering
 from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
@@ -2918,6 +2919,45 @@ class TestEventLogStorage:
             '["b", "x"]',
             '["b", "y"]',
             '["b", "z"]',
+        ]
+
+        # query ordering
+        asset_keys_asc = storage.get_asset_keys(
+            order_by=AssetKeyOrdering.LAST_MATERIALIZATION_TIMESTMAP_ASC
+        )
+        assert len(asset_keys_asc) == 6
+        asset_keys_desc = storage.get_asset_keys(
+            order_by=AssetKeyOrdering.LAST_MATERIALIZATION_TIMESTMAP_DESC
+        )
+        assert len(asset_keys_desc) == 6
+        assert [asset_key.to_string() for asset_key in asset_keys_asc] == list(
+            reversed([asset_key.to_string() for asset_key in asset_keys_desc])
+        )
+
+        # run a second op so that some assets have a more recent materialization time
+        test_run_id_2 = make_new_run_id()
+
+        @op
+        def gen_op_2():
+            yield AssetMaterialization(asset_key=AssetKey(["a"]))
+            yield AssetMaterialization(asset_key=AssetKey(["c"]))
+            yield AssetMaterialization(asset_key=AssetKey(["banana"]))
+            yield Output(1)
+
+        _synthesize_events(lambda: gen_op_2(), instance=instance, run_id=test_run_id_2)
+
+        asset_keys = storage.get_asset_keys(
+            order_by=AssetKeyOrdering.LAST_MATERIALIZATION_TIMESTMAP_DESC
+        )
+        asset_records = storage.get_asset_records()
+        assert len(asset_keys) == 6
+        assert [asset_key.to_string() for asset_key in asset_keys] == [
+            asset_record.asset_entry.asset_key.to_string()
+            for asset_record in sorted(
+                asset_records,
+                key=lambda x: x.asset_entry.last_materialization_record.event_log_entry.timestamp,
+                reverse=True,
+            )
         ]
 
     def test_get_materialized_partitions(self, storage, instance):
