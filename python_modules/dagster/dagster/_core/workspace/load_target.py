@@ -116,6 +116,7 @@ def get_origins_from_toml(
                 attribute=None,
                 working_directory=os.getcwd(),
                 location_name=dagster_block.get("code_location_name"),
+                autoload_definitions=dagster_block.get("autoload", False),
             ).create_origins()
         elif "modules" in dagster_block and is_valid_modules_list(dagster_block.get("modules")):
             origins = []
@@ -127,6 +128,7 @@ def get_origins_from_toml(
                             attribute=None,
                             working_directory=os.getcwd(),
                             location_name=dagster_block.get("code_location_name"),
+                            autoload_definitions=dagster_block.get("autoload", False),
                         ).create_origins()
                     )
             return origins
@@ -183,6 +185,7 @@ class ModuleTarget(
             ("attribute", Optional[str]),
             ("working_directory", Optional[str]),
             ("location_name", Optional[str]),
+            ("autoload_definitions", bool),
         ],
     ),
     WorkspaceLoadTarget,
@@ -194,6 +197,7 @@ class ModuleTarget(
                 self.attribute,
                 self.working_directory,
                 location_name=self.location_name,
+                autoload_definitions=self.autoload_definitions,
             )
         ]
 
