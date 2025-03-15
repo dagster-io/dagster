@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 from pathlib import Path
+from pprint import pformat
 from typing import Any, Optional
 
 import click
@@ -43,7 +44,7 @@ from {package_name} import {class_name}
 
 @component
 def load(context: ComponentLoadContext) -> {class_name}:
-    return {class_name}()
+    return {class_name}.from_dict({pformat(attributes or {}, indent=4)})
 """)
     else:
         raise Exception(
