@@ -2485,191 +2485,191 @@
     },
     {
       "source": "/_modules/dagster/_core/errors",
-      "destination": ""
+      "destination": "/api/python-api/errors"
     },
     {
       "source": "/_modules/dagster/_core/event_api",
-      "destination": ""
+      "destination": "/api/python-api/"
     },
     {
       "source": "/_modules/dagster/_core/events",
-      "destination": ""
+      "destination": "/api/python-api/execution#dagster.DagsterEvent"
     },
     {
       "source": "/_modules/dagster/_core/events/log",
-      "destination": ""
+      "destination": "/api/python-api/"
     },
     {
       "source": "/_modules/dagster/_core/execution/api",
-      "destination": ""
+      "destination": "/api/python-api/execution"
     },
     {
       "source": "/_modules/dagster/_core/execution/build_resources",
-      "destination": ""
+      "destination": "/api/python-api/execution"
     },
     {
       "source": "/_modules/dagster/_core/execution/context/asset_execution_context",
-      "destination": ""
+      "destination": "/api/python-api/execution#dagster.AssetExecutionContext"
     },
     {
       "source": "/_modules/dagster/_core/execution/context/hook",
-      "destination": ""
+      "destination": "/api/python-api/execution#contexts"
     },
     {
       "source": "/_modules/dagster/_core/execution/context/init",
-      "destination": ""
+      "destination": "/api/python-api/execution#contexts"
     },
     {
       "source": "/_modules/dagster/_core/execution/context/input",
-      "destination": ""
+      "destination": "/api/python-api/execution#contexts"
     },
     {
       "source": "/_modules/dagster/_core/execution/context/invocation",
-      "destination": ""
+      "destination": "/api/python-api/execution#contexts"
     },
     {
       "source": "/_modules/dagster/_core/execution/context/op_execution_context",
-      "destination": ""
+      "destination": "/api/python-api/execution#contexts"
     },
     {
       "source": "/_modules/dagster/_core/execution/context/output",
-      "destination": ""
+      "destination": "/api/python-api/execution#contexts"
     },
     {
       "source": "/_modules/dagster/_core/execution/context/system",
-      "destination": ""
+      "destination": "/api/python-api/execution#contexts"
     },
     {
       "source": "/_modules/dagster/_core/instance",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster.DagsterInstance"
     },
     {
       "source": "/_modules/dagster/_core/instance/ref",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster._core.instance.InstanceRef"
     },
     {
       "source": "/_modules/dagster/_core/launcher/default_run_launcher",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster._core.launcher.DefaultRunLauncher"
     },
     {
       "source": "/_modules/dagster/_core/log_manager",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster._core.storage.compute_log_manager.ComputeLogManager"
     },
     {
       "source": "/_modules/dagster/_core/pipes/context",
-      "destination": ""
+      "destination": "/api/python-api/pipes"
     },
     {
       "source": "/_modules/dagster/_core/pipes/utils",
-      "destination": ""
+      "destination": "/api/python-api/pipes"
     },
     {
       "source": "/_modules/dagster/_core/run_coordinator/queued_run_coordinator",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster._core.run_coordinator.QueuedRunCoordinator"
     },
     {
       "source": "/_modules/dagster/_core/scheduler/scheduler",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster._core.scheduler.Scheduler"
     },
     {
       "source": "/_modules/dagster/_core/storage/dagster_run",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster.DagsterRun"
     },
     {
       "source": "/_modules/dagster/_core/storage/event_log/base",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster._core.storage.event_log.EventLogStorage"
     },
     {
       "source": "/_modules/dagster/_core/storage/event_log/sql_event_log",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster._core.storage.event_log.SqlEventLogStorage"
     },
     {
       "source": "/_modules/dagster/_core/storage/event_log/sqlite/consolidated_sqlite_event_log",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster._core.storage.event_log.ConsolidatedSqliteEventLogStorage"
     },
     {
       "source": "/_modules/dagster/_core/storage/event_log/sqlite/sqlite_event_log",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster._core.storage.event_log.SqliteEventLogStorage"
     },
     {
       "source": "/_modules/dagster/_core/storage/file_manager",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster._core.storage.file_manager.FileManager"
     },
     {
       "source": "/_modules/dagster/_core/storage/fs_io_manager",
-      "destination": ""
+      "destination": "/api/python-api/internals#storage"
     },
     {
       "source": "/_modules/dagster/_core/storage/io_manager",
-      "destination": ""
+      "destination": "/api/python-api/internals#storage"
     },
     {
       "source": "/_modules/dagster/_core/storage/local_compute_log_manager",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster._core.storage.local_compute_log_manager.LocalComputeLogManager"
     },
     {
       "source": "/_modules/dagster/_core/storage/mem_io_manager",
-      "destination": ""
+      "destination": "/api/python-api/internals#storage"
     },
     {
       "source": "/_modules/dagster/_core/storage/runs/base",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster.DagsterRun"
     },
     {
       "source": "/_modules/dagster/_core/storage/runs/sql_run_storage",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster._core.storage.runs.SqlRunStorage"
     },
     {
       "source": "/_modules/dagster/_core/storage/runs/sqlite/sqlite_run_storage",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster._core.storage.runs.SqliteRunStorage"
     },
     {
       "source": "/_modules/dagster/_core/storage/schedules/sql_schedule_storage",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster._core.storage.schedules.SqlScheduleStorage"
     },
     {
       "source": "/_modules/dagster/_core/storage/upath_io_manager",
-      "destination": ""
+      "destination": "/api/python-api/internals#storage"
     },
     {
       "source": "/_modules/dagster/_core/types/dagster_type",
-      "destination": ""
+      "destination": "/api/python-api/types#dagster.DagsterType"
     },
     {
       "source": "/_modules/dagster/_serdes/config_class",
-      "destination": ""
+      "destination": "/api/python-api/internals#dagster._serdes.ConfigurableClass"
     },
     {
       "source": "/_modules/dagster/_utils",
-      "destination": ""
+      "destination": "/api/python-api/utilities"
     },
     {
       "source": "/_modules/dagster/_utils/alert",
-      "destination": ""
+      "destination": "/api/python-api/utilities"
     },
     {
       "source": "/_modules/dagster/_utils/forked_pdb",
-      "destination": ""
+      "destination": "/api/python-api/utilities#dagster._utils.forked_pdb.ForkedPdb"
     },
     {
       "source": "/_modules/dagster/_utils/log",
-      "destination": ""
+      "destination": "/api/python-api/utilities#dagster.get_dagster_logger"
     },
     {
       "source": "/_modules/dagster/_utils/warnings",
-      "destination": ""
+      "destination": "/api/python-api/utilities#dagster.PreviewWarning"
     },
     {
       "source": "/_modules/dagstermill/context",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagstermill#dagstermill.DagstermillExecutionContext"
     },
     {
       "source": "/_modules/dagstermill/factory",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagstermill"
     },
     {
       "source": "/_modules/dagstermill/io_managers",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagstermill#dagstermill.ConfigurableLocalOutputNotebookIOManager"
     }
   ]
 }
