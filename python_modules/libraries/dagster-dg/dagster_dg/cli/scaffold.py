@@ -268,6 +268,7 @@ def _core_scaffold(
     instance_name: str,
     key_value_params,
     json_params,
+    decl_format: str,
 ) -> None:
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
     registry = RemoteComponentRegistry.from_dg_context(dg_context)
@@ -301,6 +302,7 @@ def _core_scaffold(
         component_key.to_typename(),
         scaffold_params,
         dg_context,
+        decl_format,
     )
 
 
@@ -315,16 +317,23 @@ def _create_component_shim_scaffold_subcommand(
         context_settings={"help_option_names": ["-h", "--help"]},
     )
     @click.argument("instance_name", type=str)
+    @click.option(
+        "--format",
+        type=click.Choice(["yaml", "python"], case_sensitive=False),
+        default="yaml",
+        help="Format of the component configuration (yaml or python)",
+    )
     @dg_global_options
     @click.pass_context
     def scaffold_component_shim_command(
         cli_context: click.Context,
         instance_name: str,
+        format: str,  # noqa Required for click magic
         **global_options: object,
     ) -> None:
         """Scaffold of a definition."""
         cli_config = normalize_cli_config(global_options, cli_context)
-        _core_scaffold(cli_context, cli_config, component_key, instance_name, {}, {})
+        _core_scaffold(cli_context, cli_config, component_key, instance_name, {}, {}, format)
 
     return scaffold_component_shim_command
 
@@ -347,11 +356,18 @@ def _create_component_scaffold_subcommand(
         help="JSON string of component parameters.",
         callback=parse_json_option,
     )
+    @click.option(
+        "--format",
+        type=click.Choice(["yaml", "python"], case_sensitive=False),
+        default="yaml",
+        help="Format of the component configuration (yaml or python)",
+    )
     @click.pass_context
     def scaffold_component_command(
         cli_context: click.Context,
         component_instance_name: str,
         json_params: Mapping[str, Any],
+        format: str,  # noqa Required for click magic
         **key_value_params: Any,
     ) -> None:
         f"""Scaffold of a {component_type.name} component.
@@ -379,6 +395,7 @@ def _create_component_scaffold_subcommand(
             component_instance_name,
             key_value_params,
             json_params,
+            format,
         )
 
     # If there are defined scaffold params, add them to the command
@@ -389,6 +406,16 @@ def _create_component_scaffold_subcommand(
             # `--json-params`
             option = json_schema_property_to_click_option(key, field_info, required=False)
             scaffold_component_command.params.append(option)
+
+    scaffold_component_command.params.append(
+        click.Option(
+            ["--format"],
+            type=click.Choice(["yaml", "python"], case_sensitive=False),
+            required=False,
+            default="yaml",
+            help="Format of the component configuration (yaml or python)",
+        )
+    )
 
     return scaffold_component_command
 

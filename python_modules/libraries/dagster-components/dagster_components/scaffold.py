@@ -1,11 +1,12 @@
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, Callable, Literal, Optional, TypeVar, Union
 
 from dagster import _check as check
 from dagster._record import record
 from pydantic import BaseModel
+from typing_extensions import TypeAlias
 
 # Type variable for generic class handling
 T = TypeVar("T")
@@ -67,12 +68,16 @@ class ScaffolderUnavailableReason:
     message: str
 
 
+DeclFormatOptions: TypeAlias = Literal["yaml", "python"]
+
+
 @record
 class ScaffoldRequest:
     # fully qualified class name of the decorated class
     type_name: str
     # target path for the scaffold request. Typically used to construct absolute paths
     target_path: Path
+    decl_format: DeclFormatOptions
 
 
 class Scaffolder:
