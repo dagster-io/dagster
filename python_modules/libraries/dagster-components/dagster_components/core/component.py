@@ -400,5 +400,12 @@ def component(
     return fn
 
 
+def loader(
+    fn: Callable[[ComponentLoadContext], T_Component],
+) -> Callable[[ComponentLoadContext], T_Component]:
+    setattr(fn, COMPONENT_LOADER_FN_ATTR, True)
+    return fn
+
+
 def is_component_loader(obj: Any) -> bool:
     return getattr(obj, COMPONENT_LOADER_FN_ATTR, False)
