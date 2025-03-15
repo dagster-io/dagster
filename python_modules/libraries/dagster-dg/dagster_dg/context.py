@@ -36,7 +36,6 @@ from dagster_dg.utils import (
     get_venv_executable,
     has_toml_node,
     pushd,
-    resolve_local_venv,
     strip_activated_venv_from_env_vars,
 )
 from dagster_dg.utils.filesystem import hash_paths
@@ -167,7 +166,7 @@ class DgContext:
                         )
                     )
         else:
-            root_path = Path.cwd()
+            root_path = path
             workspace_root_path = None
             root_file_config = None
             container_workspace_file_config = None
@@ -430,34 +429,27 @@ class DgContext:
 
     @property
     def has_venv(self) -> bool:
-        return resolve_local_venv(self.root_path) is not None
+        return self.venv_path.exists()
 
     @cached_property
     def venv_path(self) -> Path:
-        path = resolve_local_venv(self.root_path)
-        if not path:
-            raise DgError("Cannot find .venv")
-        return path
+        return self.root_path / ".venv"
 
     def has_executable(self, command: str) -> bool:
         return self._resolve_executable(command) is not None
 
     def get_executable(self, command: str) -> Path:
         if not (executable := self._resolve_executable(command)):
-            raise DgError(f"Cannot find executable {command}")
+            raise DgError(f"Cannot resolve executable `{command}`")
         return executable
 
     def _resolve_executable(self, command: str) -> Optional[Path]:
-        if (
-            self.has_venv
-            and (venv_exec := get_venv_executable(self.venv_path, command))
-            and venv_exec.exists()
-        ):
-            return venv_exec
-        elif not self.use_dg_managed_environment and (global_exec := shutil.which(command)):
-            return Path(global_exec)
+        if self.config.cli.use_local_venv:
+            venv_exec = get_venv_executable(self.venv_path, command)
+            return venv_exec if venv_exec.exists() else None
         else:
-            return None
+            global_exec = shutil.which(command)
+            return Path(global_exec) if global_exec else None
 
     @property
     def environment_desc(self) -> str:
@@ -492,10 +484,10 @@ class DgContext:
 
 
 def _validate_dagster_components_availability(context: DgContext) -> None:
-    if context.config.cli.require_local_venv:
+    if context.config.cli.use_local_venv:
         if not context.has_venv:
             exit_with_error(NO_LOCAL_VENV_ERROR_MESSAGE)
-        elif not get_venv_executable(context.venv_path, "dagster-components").exists():
+        elif not context.has_executable("dagster-components"):
             exit_with_error(
                 generate_missing_dagster_components_in_local_venv_error_message(
                     str(context.venv_path)

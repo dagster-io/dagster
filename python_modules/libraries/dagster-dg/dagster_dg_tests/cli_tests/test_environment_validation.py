@@ -4,7 +4,7 @@ from pathlib import Path
 import click
 import pytest
 from dagster_dg.cli import cli
-from dagster_dg.utils import ensure_dagster_dg_tests_import, get_venv_executable, resolve_local_venv
+from dagster_dg.utils import ensure_dagster_dg_tests_import, get_venv_executable
 
 ensure_dagster_dg_tests_import()
 
@@ -163,9 +163,9 @@ def test_no_local_dagster_components_failure(spec: CommandSpec) -> None:
 )
 def test_no_ambient_dagster_components_failure(spec: CommandSpec) -> None:
     with ProxyRunner.test(use_fixed_test_components=True) as runner, runner.isolated_filesystem():
-        cli_args = _add_global_cli_options(spec.to_cli_args(), "--no-require-local-venv")
+        cli_args = _add_global_cli_options(spec.to_cli_args(), "--no-use-local-venv")
         # Set $PATH to /dev/null to ensure that the `dagster-components` executable is not found
-        result = runner.invoke(*cli_args, "--no-require-local-venv", env={"PATH": "/dev/null"})
+        result = runner.invoke(*cli_args, env={"PATH": "/dev/null"})
         assert_runner_result(result, exit_0=False)
         assert "Could not find the `dagster-components` executable" in result.output
 
@@ -235,8 +235,8 @@ def _add_global_cli_options(cli_args: tuple[str, ...], *global_opts: str) -> lis
 
 
 def _uninstall_dagster_components_from_local_venv(path: Path) -> None:
-    local_venv = resolve_local_venv(Path.cwd())
-    assert local_venv, f"No local venv resolvable from {path}"
+    local_venv = path / ".venv"
+    assert local_venv.exists(), f"No local venv resolvable from {path}"
     subprocess.check_output(
         [
             "uv",
