@@ -7,9 +7,9 @@ from typing import Literal, get_args
 import pytest
 import tomlkit
 from dagster_dg.cli.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
-from dagster_dg.component import RemoteComponentRegistry
-from dagster_dg.component_key import ComponentKey
+from dagster_dg.component import RemoteLibraryObjectRegistry
 from dagster_dg.context import DgContext
+from dagster_dg.library_object_key import LibraryObjectKey
 from dagster_dg.utils import (
     create_toml_node,
     cross_platfrom_string_path,
@@ -686,8 +686,8 @@ def test_scaffold_component_type_success() -> None:
         assert_runner_result(result)
         assert Path("foo_bar/lib/baz.py").exists()
         dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
-        registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        assert registry.has(ComponentKey(name="Baz", namespace="foo_bar.lib"))
+        registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
+        assert registry.has(LibraryObjectKey(name="Baz", namespace="foo_bar.lib"))
 
 
 def test_scaffold_component_type_already_exists_fails() -> None:
@@ -715,8 +715,8 @@ def test_scaffold_component_type_succeeds_non_default_component_lib_package() ->
         assert_runner_result(result)
         assert Path("foo_bar/_lib/baz.py").exists()
         dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
-        registry = RemoteComponentRegistry.from_dg_context(dg_context)
-        assert registry.has(ComponentKey(name="Baz", namespace="foo_bar._lib"))
+        registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
+        assert registry.has(LibraryObjectKey(name="Baz", namespace="foo_bar._lib"))
 
 
 def test_scaffold_component_type_fails_components_lib_package_does_not_exist(capfd) -> None:

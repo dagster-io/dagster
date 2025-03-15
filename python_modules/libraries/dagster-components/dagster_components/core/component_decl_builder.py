@@ -23,7 +23,7 @@ from dagster_components.core.component import (
     is_component_loader,
     load_component_type,
 )
-from dagster_components.core.component_key import ComponentKey
+from dagster_components.core.library_object_key import LibraryObjectKey
 from dagster_components.utils import load_module_from_path
 
 
@@ -160,7 +160,7 @@ class YamlComponentDecl(ComponentDeclNode):
 
     def load(self, context: ComponentLoadContext) -> Sequence[Component]:
         type_str = context.normalize_component_type_str(self.component_file_model.type)
-        key = ComponentKey.from_typename(type_str)
+        key = LibraryObjectKey.from_typename(type_str)
         component_type = load_component_type(key)
         component_schema = component_type.get_schema()
         context = context.with_rendering_scope(component_type.get_additional_scope())

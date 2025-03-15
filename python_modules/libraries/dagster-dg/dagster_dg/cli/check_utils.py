@@ -6,7 +6,7 @@ import click
 import typer
 from jsonschema import ValidationError
 
-from dagster_dg.component_key import ComponentKey
+from dagster_dg.library_object_key import LibraryObjectKey
 from dagster_dg.yaml_utils.source_position import SourcePositionTree
 
 
@@ -67,7 +67,7 @@ OFFSET_LINES_AFTER = 3
 
 
 def error_dict_to_formatted_error(
-    component_key: Optional[ComponentKey],
+    object_key: Optional[LibraryObjectKey],
     error_details: ValidationError,
     source_position_tree: SourcePositionTree,
     prefix: Sequence[str] = (),
@@ -76,7 +76,7 @@ def error_dict_to_formatted_error(
     a code snippet of the offending YAML file.
 
     Args:
-        component_name: The name of the component that the error occurred in, e.g. "my_component".
+        object_key: The key of the component that the error occurred in.
         error_details: The JSON Schema ValidationError object.
         source_position_tree: The SourcePositionTree object, which contains the source position of
             each line in the YAML file.
@@ -141,6 +141,6 @@ def error_dict_to_formatted_error(
     )
     fmt_location = typer.style(location, fg=typer.colors.BRIGHT_WHITE)
     fmt_name = typer.style(
-        f"{component_key.to_typename()} " if component_key else "", fg=typer.colors.RED
+        f"{object_key.to_typename()} " if object_key else "", fg=typer.colors.RED
     )
     return f"{fmt_filename} - {fmt_name}{fmt_location} {error_details.message}\n{code_snippet}\n"

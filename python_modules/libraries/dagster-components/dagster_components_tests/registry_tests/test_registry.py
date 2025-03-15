@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from dagster._utils import pushd
-from dagster_components.core.component import discover_entry_point_component_types
+from dagster_components.core.component import discover_entry_point_library_objects
 from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_dg.utils import get_venv_executable
 
@@ -139,7 +139,7 @@ def test_components_from_dagster():
 
 
 def test_all_dagster_components_have_defined_summary():
-    registry = discover_entry_point_component_types()
+    registry = discover_entry_point_library_objects()
     for component_name, component_type in registry.items():
         assert component_type.get_metadata()[
             "summary"
