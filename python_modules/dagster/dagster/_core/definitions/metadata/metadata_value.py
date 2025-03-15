@@ -420,7 +420,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
                         metadata={
                             "errors": MetadataValue.table(
                                 records=[
-                                    TableRecord(code="invalid-data-type", row=2, col="name"),
+                                    TableRecord(data={"code": "invalid-data-type", "row": 2, "col": "name"})
                                 ],
                                 schema=TableSchema(
                                     columns=[
