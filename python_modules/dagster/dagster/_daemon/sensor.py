@@ -31,6 +31,7 @@ from dagster._core.errors import (
     DagsterCodeLocationLoadError,
     DagsterError,
     DagsterInvalidInvocationError,
+    DagsterTickMaxRunsExceededError,
     DagsterUserCodeUnreachableError,
 )
 from dagster._core.execution.backfill import PartitionBackfill
@@ -1094,6 +1095,14 @@ def _handle_run_requests_and_automation_condition_evaluations(
             return make_new_backfill_id()
         else:
             return make_new_run_id()
+
+    # here do the check for # of run requests
+    max_num_runs_per_tick = instance.max_num_runs_launched_per_tick()
+    if max_num_runs_per_tick and len(raw_run_requests) > max_num_runs_per_tick:
+        raise DagsterTickMaxRunsExceededError(
+            f"Sensor {remote_sensor.name} requested {len(raw_run_requests)} runs, which exceeds the "
+            f"limit of {max_num_runs_per_tick} runs per tick."
+        )
 
     reserved_run_ids = [reserved_run_id(run_request) for run_request in raw_run_requests]
 
