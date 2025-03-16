@@ -2791,7 +2791,7 @@ class FileSource(GeneratedAirbyteSource):
                 FileSource.LocalFilesystemLimited,
             ),
         )
-        super().__init__("File", name)
+        super().__init__("File (CSV, JSON, Excel, Feather, Parquet)", name)
 
 
 class GlassfrogSource(GeneratedAirbyteSource):
