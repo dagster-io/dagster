@@ -328,7 +328,7 @@ def get_asset_failed_to_materialize_events(
             if not event_records_result.has_more:
                 break
     else:
-        event_records = instance.fetch_materializations(
+        event_records = instance.fetch_failed_materializations(
             records_filter=records_filter, limit=limit
         ).records
 
