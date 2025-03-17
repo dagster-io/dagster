@@ -276,7 +276,7 @@ class GrapheneAsset(graphene.ObjectType):
         beforeTimestampMillis: Optional[str] = None,
         afterTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Sequence[GrapheneFailedToMaterializeEvent]:
+    ) -> Sequence[GrapheneAssetMaterializationEventType]:
         from dagster_graphql.implementation.fetch_assets import (
             get_asset_failed_to_materialize_events,
             get_asset_materializations,
