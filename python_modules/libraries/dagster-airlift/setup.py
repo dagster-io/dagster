@@ -79,8 +79,6 @@ setup(
         "mwaa": [
             "boto3>=1.18.0"
         ],  # confirms that mwaa is available in the environment (can't find exactly which version adds mwaa support, but I can confirm that 1.18.0 and greater have it.)
-        "dbt": [f"dagster-dbt{pin}"],
-        "k8s": [f"dagster-k8s{pin}"],
         "test": [
             "pytest",
             f"dagster-dbt{pin}",
