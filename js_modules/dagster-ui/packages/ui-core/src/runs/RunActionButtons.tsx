@@ -189,18 +189,18 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         return Promise.resolve();
       }
 
-      const legacySelection = selection.keys.map((k) => `${k}*`).join(',');
-      const selectionAndDownstreamQuery = featureEnabled(FeatureFlag.flagSelectionSyntax)
+      const selectionForPythonFiltering = selection.keys.map((k) => `${k}*`).join(',');
+      const selectionForUIFiltering = featureEnabled(FeatureFlag.flagSelectionSyntax)
         ? selection.keys.map((k) => `name:"${k}"*`).join(' or ')
-        : legacySelection;
+        : selectionForPythonFiltering;
 
-      const selectionKeys = filterRunSelectionByQuery(graph, selectionAndDownstreamQuery).all.map(
+      const selectionKeys = filterRunSelectionByQuery(graph, selectionForUIFiltering).all.map(
         (node) => node.name,
       );
 
       await reexecuteWithSelection({
         keys: selectionKeys,
-        query: legacySelection,
+        query: selectionForPythonFiltering,
       });
     },
   };
