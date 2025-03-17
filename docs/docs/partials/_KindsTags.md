@@ -177,6 +177,7 @@
 | `stripe`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-stripe-color.svg" width={20} height={20} />                         |
 | `superset`            | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-superset-color.svg" width={20} height={20} />                       |
 | `tableau`             | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-tableau-color.svg" width={20} height={20} />                        |
+| `talend`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-talend-color.svg" width={20} height={20} />                         |
 | `teams`               | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-teams-color.svg" width={20} height={20} />                          |
 | `tecton`              | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-tecton-color.svg" width={20} height={20} />                         |
 | `tensorflow`          | <img src="/images/guides/build/assets/metadata-tags/kinds/icons/tool-tensorflow-color.svg" width={20} height={20} />                     |

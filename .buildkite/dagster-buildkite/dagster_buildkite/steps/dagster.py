@@ -71,7 +71,7 @@ def build_repo_wide_ruff_steps() -> List[CommandStep]:
     return [
         CommandStepBuilder(":zap: ruff")
         .run(
-            "pip install -e python_modules/dagster[ruff] -e python_modules/dagster-pipes",
+            "pip install -e python_modules/dagster[ruff] -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
             "make check_ruff",
         )
         .on_test_image(AvailablePythonVersion.get_default())
@@ -177,7 +177,7 @@ def build_sql_schema_check_steps() -> List[CommandStep]:
         CommandStepBuilder(":mysql: mysql-schema")
         .on_test_image(AvailablePythonVersion.get_default())
         .run(
-            "pip install -e python_modules/dagster -e python_modules/dagster-pipes",
+            "pip install -e python_modules/dagster -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
             "python scripts/check_schemas.py",
         )
         .with_skip(skip_mysql_if_no_changes_to_dependencies(["dagster"]))
@@ -190,8 +190,9 @@ def build_graphql_python_client_backcompat_steps() -> List[CommandStep]:
         CommandStepBuilder(":graphql: GraphQL Python Client backcompat")
         .on_test_image(AvailablePythonVersion.get_default())
         .run(
-            "pip install -e python_modules/dagster[test] -e python_modules/dagster-pipes -e"
-            " python_modules/dagster-graphql -e python_modules/automation",
+            "pip install -e python_modules/dagster[test] -e python_modules/dagster-pipes"
+            " -e python_modules/libraries/dagster-shared -e python_modules/dagster-graphql"
+            " -e python_modules/automation",
             "dagster-graphql-client query check",
         )
         .with_skip(

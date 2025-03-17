@@ -42,7 +42,7 @@ setup(
         # Dialect.SET_OP_DISTINCT_BY_DEFAULT was introduced in version 25.19.0:
         # https://github.com/tobymao/sqlglot/blob/v25.19.0/sqlglot/dialects/dialect.py
         "sqlglot>=25.19.0",
-        "python-liquid",
+        "python-liquid<2",
         "cattrs<23.2",  # https://github.com/looker-open-source/sdk-codegen/issues/1410
     ],
     zip_safe=False,

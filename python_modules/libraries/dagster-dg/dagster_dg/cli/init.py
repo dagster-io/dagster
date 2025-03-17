@@ -23,7 +23,6 @@ _DEFAULT_INIT_PROJECTS_DIR: Final = "projects"
 @dg_global_options
 def init_command(
     use_editable_dagster: Optional[str],
-    use_editable_components_package_only: Optional[str],
     **global_options: object,
 ):
     """Initialize a new Dagster workspace and a first project within that workspace.
@@ -50,7 +49,6 @@ def init_command(
     workspace_config = DgRawWorkspaceConfig(
         scaffold_project_options=DgWorkspaceScaffoldProjectOptions.get_raw_from_cli(
             use_editable_dagster,
-            use_editable_components_package_only,
         )
     )
 
@@ -82,7 +80,6 @@ def init_command(
             project_path,
             workspace_dg_context,
             use_editable_dagster=use_editable_dagster,
-            use_editable_components_package_only=use_editable_components_package_only,
             skip_venv=False,
             populate_cache=True,
         )

@@ -118,4 +118,4 @@ def test_init_project_editable_dagster_no_env_var_no_value_fails(
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("init", option, input="\nhelloworld\n")
         assert_runner_result(result, exit_0=False)
-        assert "require the `DAGSTER_GIT_REPO_DIR`" in result.output
+        assert "requires the `DAGSTER_GIT_REPO_DIR`" in result.output
