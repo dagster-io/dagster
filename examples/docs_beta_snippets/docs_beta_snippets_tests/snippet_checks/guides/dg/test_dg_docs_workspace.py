@@ -16,24 +16,24 @@ from docs_beta_snippets_tests.snippet_checks.utils import (
     run_command_and_snippet_output,
 )
 
-COMPONENTS_SNIPPETS_DIR = (
+DG_SNIPPETS_DIR = (
     DAGSTER_ROOT
     / "examples"
     / "docs_beta_snippets"
     / "docs_beta_snippets"
     / "guides"
-    / "components"
+    / "dg"
     / "workspace"
 )
 MASK_MY_WORKSPACE = (r"\/.*?\/dagster-workspace", "/.../dagster-workspace")
 
 
-def test_components_docs_workspace(update_snippets: bool) -> None:
+def test_dg_docs_workspace(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment() as get_next_snip_number:
         # Scaffold workspace
         run_command_and_snippet_output(
             cmd='echo "\nproject-1\n" | dg init --use-editable-dagster',
-            snippet_path=COMPONENTS_SNIPPETS_DIR
+            snippet_path=DG_SNIPPETS_DIR
             / f"{get_next_snip_number()}-dg-init.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
@@ -59,7 +59,7 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
 
         run_command_and_snippet_output(
             cmd="cd dagster-workspace && tree",
-            snippet_path=COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-tree.txt",
+            snippet_path=DG_SNIPPETS_DIR / f"{get_next_snip_number()}-tree.txt",
             update_snippets=update_snippets,
             # Remove --sort size from tree output, sadly OSX and Linux tree
             # sort differently when using alpha sort
@@ -70,7 +70,7 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
         )
         check_file(
             "pyproject.toml",
-            COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-pyproject.toml",
+            DG_SNIPPETS_DIR / f"{get_next_snip_number()}-pyproject.toml",
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 re_ignore_before("[tool.dagster]"),
@@ -81,7 +81,7 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
         # Validate project toml
         check_file(
             "projects/project-1/pyproject.toml",
-            COMPONENTS_SNIPPETS_DIR
+            DG_SNIPPETS_DIR
             / f"{get_next_snip_number()}-project-pyproject.toml",
             update_snippets=update_snippets,
             snippet_replace_regex=[
@@ -93,7 +93,7 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
         # Check component types
         run_command_and_snippet_output(
             cmd="cd projects/project-1 && dg list component-type",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
+            snippet_path=DG_SNIPPETS_DIR
             / f"{get_next_snip_number()}-component-type-list.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_MY_WORKSPACE],
@@ -103,7 +103,7 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
         )
         run_command_and_snippet_output(
             cmd="dg list component-type",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
+            snippet_path=DG_SNIPPETS_DIR
             / f"{get_next_snip_number()}-component-type-list.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_MY_WORKSPACE],
@@ -112,7 +112,7 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
         # Scaffold new project
         run_command_and_snippet_output(
             cmd="cd ../.. && dg scaffold project projects/project-2 --use-editable-dagster",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
+            snippet_path=DG_SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffold-project.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
@@ -125,7 +125,7 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
         # List projects
         run_command_and_snippet_output(
             cmd="dg list project",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
+            snippet_path=DG_SNIPPETS_DIR
             / f"{get_next_snip_number()}-project-list.txt",
             update_snippets=update_snippets,
         )
@@ -133,7 +133,7 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
         # Check component types in new project
         run_command_and_snippet_output(
             cmd="cd projects/project-2 && dg list component-type",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
+            snippet_path=DG_SNIPPETS_DIR
             / f"{get_next_snip_number()}-component-type-list.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_MY_WORKSPACE],
@@ -154,7 +154,7 @@ def test_components_docs_workspace(update_snippets: bool) -> None:
                       location_name: project_2
                       executable_path: projects/project-2/.venv/bin/python
             """),
-            COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-workspace.yaml",
+            DG_SNIPPETS_DIR / f"{get_next_snip_number()}-workspace.yaml",
         )
 
         # Ensure dagster loads
