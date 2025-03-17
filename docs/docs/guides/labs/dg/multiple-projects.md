@@ -7,7 +7,14 @@ import Preview from '../../../partials/\_Preview.md';
 
 <Preview />
 
-To manage multiple projects, you can scaffold a workspace directory with `dg`.
+:::note
+
+If you're just getting started, we recommend [scaffolding a single project](/guides/labs/dg/scaffolding-a-project) instead of a workspace with multiple projects.
+
+:::
+
+
+If you need to collaborate with multiple teams, or work with conflicting dependencies that require isolation from each other, you can scaffold a workspace directory that contains multiple projects, each with their own separate Python environment.
 
 A workspace directory contains a root `pyproject.toml` with workspace-level settings, and a `projects` directory with one or more projects.
 
