@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional, Union
 import dagster._check as check
 import graphene
 from dagster._core.definitions import AssetKey, ExpectationResult
-from dagster._core.events import AssetLineageInfo, DagsterEventType
+from dagster._core.events import AssetFailedToMaterializeReason, AssetLineageInfo, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.objects import ErrorSource
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
@@ -407,29 +407,17 @@ class GrapheneMaterializationEvent(graphene.ObjectType, AssetEventMixin):
         ]
 
 
-class GrapheneAssetFailedToMaterializeReason(graphene.Enum):
-    COMPUTE_FAILED = "COMPUTE_FAILED"  # The step to compute the asset failed
-    UPSTREAM_COMPUTE_FAILED = (
-        "UPSTREAM_COMPUTE_FAILED"  # An upstream step failed, so the step for the asset was not run
-    )
-    SKIPPED_OPTIONAL = "SKIPPED_OPTIONAL"  # The asset is optional and was not materialized
-    UPSTREAM_SKIPPED = "UPSTREAM_SKIPPED"  # An upstream asset is optional and was not materialized, so the step for the asset was not run
-    USER_TERMINATION = "USER_TERMINATION"  # A user took an action to terminate the run
-    UNEXPECTED_TERMINATION = (
-        "UNEXPECTED_TERMINATION"  # An external event resulted in the run being terminated
-    )
-    UNKNOWN = "UNKNOWN"
-
-    class Meta:
-        name = "AssetFailedToMaterializeReason"
+GrapheneAssetFailedToMaterializeReason = graphene.Enum.from_enum(
+    AssetFailedToMaterializeReason, name="AssetFailedToMaterializeReason"
+)
 
 
 class GrapheneFailedToMaterializeEvent(graphene.ObjectType, AssetEventMixin):
-    failedToMaterializeReason = GrapheneAssetFailedToMaterializeReason
-
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneDisplayableEvent)
         name = "FailedToMaterializeEvent"
+
+    failedToMaterializeReason = graphene.NonNull(GrapheneAssetFailedToMaterializeReason)
 
     def __init__(self, event: EventLogEntry):
         dagster_event = check.not_none(event.dagster_event)
@@ -448,7 +436,7 @@ class GrapheneFailedToMaterializeEvent(graphene.ObjectType, AssetEventMixin):
         )
 
     def resolve_failedToMaterializeReason(self, _graphene_info: ResolveInfo):
-        return GrapheneAssetFailedToMaterializeReason(self.failed_data.reason.value)
+        return self.failed_data.reason
 
 
 class GrapheneAssetMaterializationEventType(graphene.Union):
