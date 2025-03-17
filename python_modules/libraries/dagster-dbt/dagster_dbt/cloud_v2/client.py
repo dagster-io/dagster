@@ -276,3 +276,35 @@ class DbtCloudWorkspaceClient(DagsterModel):
 
     def get_run_manifest_json(self, run_id: int) -> Mapping[str, Any]:
         return self.get_run_artifact(run_id=run_id, path="manifest.json")
+
+    def get_project_details(self, project_id: int) -> Mapping[str, Any]:
+        """Retrieves the details of a given dbt Cloud Project.
+
+        Args:
+            project_id (str): The dbt Cloud Project ID. You can retrieve this value from the
+                URL of the "Explore" tab in the dbt Cloud UI.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
+        return self._make_request(
+            method="get",
+            endpoint=f"projects/{project_id}",
+            base_url=self.api_v2_url,
+        )
+
+    def get_environment_details(self, environment_id: int) -> Mapping[str, Any]:
+        """Retrieves the details of a given dbt Cloud Environment.
+
+        Args:
+            environment_id (str): The dbt Cloud Environment ID. You can retrieve this value from the
+                URL of the given environment page the dbt Cloud UI.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
+        return self._make_request(
+            method="get",
+            endpoint=f"environments/{environment_id}",
+            base_url=self.api_v2_url,
+        )
