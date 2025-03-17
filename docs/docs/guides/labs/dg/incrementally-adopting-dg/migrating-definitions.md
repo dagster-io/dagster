@@ -23,7 +23,7 @@ Let's walk through an example of migrating your existing definitions, with a pro
 
 At the top level, we load definitions from various modules:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/migrating-definitions/2-definitions-before.py" title="my_existing_project/definitions.py" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/migrating-definitions/2-definitions-before.py" startAfter="start" title="my_existing_project/definitions.py" />
 
 Each of these modules contains a variety of Dagster definitions, including assets, jobs, and schedules.
 
