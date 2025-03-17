@@ -17,7 +17,6 @@ from dagster import (
     sensor,
 )
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.reconstruct import initialize_repository_def_from_pointer
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils.test.definitions import (
@@ -32,7 +31,6 @@ from dagster_airlift.core import (
     task_defs,
 )
 from dagster_airlift.core.load_defs import (
-    build_full_automapped_dags_from_airflow_instance,
     enrich_airflow_mapped_assets,
     load_airflow_dag_asset_specs,
 )
@@ -41,15 +39,11 @@ from dagster_airlift.core.serialization.compute import (
     build_airlift_metadata_mapping_info,
     compute_serialized_data,
 )
-from dagster_airlift.core.serialization.defs_construction import (
-    key_for_automapped_task_asset,
-    make_default_dag_asset_key,
-)
+from dagster_airlift.core.serialization.defs_construction import make_default_dag_asset_key
 from dagster_airlift.core.serialization.serialized_data import (
     SerializedAirflowDefinitionsData,
     TaskHandle,
 )
-from dagster_airlift.core.top_level_dag_def_api import assets_with_task_mappings
 from dagster_airlift.core.utils import is_task_mapped_asset_spec, metadata_for_task_mapping
 from dagster_airlift.test import make_instance
 
@@ -461,42 +455,6 @@ def test_multiple_tasks_to_single_asset_metadata() -> None:
     ]
 
 
-def test_automapped_build() -> None:
-    airflow_instance = make_instance(
-        dag_and_task_structure={"dag1": ["task1", "task2", "standalone"]},
-        task_deps={"task1": ["task2"]},
-    )
-    defs = build_full_automapped_dags_from_airflow_instance(
-        airflow_instance=airflow_instance,
-    )
-
-    dag1_task1 = key_for_automapped_task_asset(airflow_instance.name, "dag1", "task1")
-    dag1_task2 = key_for_automapped_task_asset(airflow_instance.name, "dag1", "task2")
-    dag1_standalone = key_for_automapped_task_asset(airflow_instance.name, "dag1", "standalone")
-
-    specs = {spec.key: spec for spec in defs.get_all_asset_specs()}
-
-    assert specs[dag1_task1].deps == []
-    assert specs[dag1_task2].deps == [AssetDep(dag1_task1)]
-    assert specs[dag1_standalone].deps == []
-
-    assert make_test_dag_asset_key("dag1") in specs
-
-    assert specs[dag1_task1].metadata["Dag ID"] == "dag1"
-    assert specs[dag1_task1].metadata["Task ID"] == "task1"
-    assert specs[dag1_task1].description == 'Automapped task in dag "dag1" with task_id "task1"'
-    assert specs[dag1_task2].metadata["Dag ID"] == "dag1"
-    assert specs[dag1_task2].metadata["Task ID"] == "task2"
-
-    assert "dagster/kind/airflow" in specs[dag1_task1].tags
-    assert "dagster/kind/task" in specs[dag1_task1].tags
-
-    assert set(specs[make_test_dag_asset_key("dag1")].deps) == {
-        AssetDep(dag1_standalone),
-        AssetDep(dag1_task2),
-    }
-
-
 def test_multiple_tasks_dag_defs() -> None:
     @asset
     def other_asset() -> None: ...
@@ -718,54 +676,6 @@ def test_double_instance() -> None:
         make_default_dag_asset_key("instance_one", "dag1"),
         make_default_dag_asset_key("instance_two", "dag1"),
     }
-
-
-def test_automapped_dag_with_two_tasks() -> None:
-    airflow_instance = make_instance(
-        dag_and_task_structure={"dag1": ["task1", "task2"]}, task_deps={"task1": ["task2"]}
-    )
-
-    full_defs = build_full_automapped_dags_from_airflow_instance(airflow_instance=airflow_instance)
-
-    all_specs = {spec.key: spec for spec in full_defs.get_all_asset_specs()}
-
-    task_one_key = key_for_automapped_task_asset(airflow_instance.name, "dag1", "task1")
-    task_two_key = key_for_automapped_task_asset(airflow_instance.name, "dag1", "task2")
-    assert task_one_key in all_specs
-    assert task_two_key in all_specs
-
-    assert all_specs[task_one_key].deps == []
-    assert all_specs[task_two_key].deps == [AssetDep(task_one_key)]
-
-
-def test_automapped_dag_with_two_tasks_plus_explicit_defs() -> None:
-    airflow_instance = make_instance(
-        dag_and_task_structure={"dag1": ["task1", "task2"]}, task_deps={"task1": ["task2"]}
-    )
-
-    explicit_asset_1 = AssetKey("explicit_asset1")
-    full_defs = build_full_automapped_dags_from_airflow_instance(
-        airflow_instance=airflow_instance,
-        defs=Definitions(
-            assets=assets_with_task_mappings(
-                dag_id="dag1",
-                task_mappings={
-                    "task1": [AssetSpec(explicit_asset_1)],
-                },
-            )
-        ),
-    )
-
-    all_specs = {spec.key: spec for spec in full_defs.get_all_asset_specs()}
-    assert explicit_asset_1 in all_specs
-
-    task_one_key = key_for_automapped_task_asset(airflow_instance.name, "dag1", "task1")
-    task_two_key = key_for_automapped_task_asset(airflow_instance.name, "dag1", "task2")
-    assert task_one_key in all_specs
-    assert task_two_key in all_specs
-
-    assert all_specs[task_one_key].deps == []
-    assert all_specs[task_two_key].deps == [AssetDep(task_one_key)]
 
 
 def test_enrich() -> None:
