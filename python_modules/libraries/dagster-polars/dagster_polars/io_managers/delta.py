@@ -159,8 +159,12 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     ):
         context_metadata = context.definition_metadata or {}
         streaming = context_metadata.get("streaming", False)
-        engine_type: pl.EngineType = "streaming" if streaming else "auto"
-        return self.write_df_to_path(context, df.collect(engine=engine_type), path)
+
+        # workaround for bug introduced in polars 1.25.4 where streaming=False stopped working
+        if streaming:
+            return self.write_df_to_path(context, df.collect(streaming=True), path)
+        else:
+            return self.write_df_to_path(context, df.collect(), path)
 
     def write_df_to_path(
         self,
