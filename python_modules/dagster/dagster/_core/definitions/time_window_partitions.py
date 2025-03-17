@@ -144,9 +144,12 @@ class TimeWindow(NamedTuple):
 
 
 class TimeWindowCursor:
-    def __init__(self, current_timestamp: int, cursor_timestamp: int):
+    def __init__(
+        self, current_timestamp: int, cursor_timestamp: int, partitions_past_current_time: int = 0
+    ):
         self.current_timestamp = current_timestamp
         self.cursor_timestamp = cursor_timestamp
+        self.partitions_past_current_time = partitions_past_current_time
 
     def __str__(self) -> str:
         return self.to_string()
@@ -156,6 +159,7 @@ class TimeWindowCursor:
             {
                 "cursor_timestamp": self.cursor_timestamp,
                 "current_timestamp": self.current_timestamp,
+                "partitions_past_current_time": self.partitions_past_current_time,
             }
         )
         return base64.b64encode(bytes(raw, encoding="utf-8")).decode("utf-8")
@@ -168,9 +172,10 @@ class TimeWindowCursor:
         try:
             cursor_timestamp = int(raw["cursor_timestamp"])
             current_timestamp = int(raw["current_timestamp"])
+            partitions_past_current_time = int(raw.get("partitions_past_current_time", 0))
         except ValueError:
             raise ValueError(f"Invalid cursor: {cursor}")
-        return TimeWindowCursor(current_timestamp, cursor_timestamp)
+        return TimeWindowCursor(current_timestamp, cursor_timestamp, partitions_past_current_time)
 
 
 @whitelist_for_serdes(
@@ -518,14 +523,15 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             time_window_cursor = TimeWindowCursor.from_cursor(cursor)
             start_ts = time_window_cursor.cursor_timestamp
             current_timestamp = time_window_cursor.current_timestamp
+            partitions_past_current_time = time_window_cursor.partitions_past_current_time
         else:
             start_ts = self.start.timestamp()
             current_timestamp = self._get_current_timestamp(current_time)
+            partitions_past_current_time = 0
 
-        partitions_past_current_time = 0
         partition_keys: list[str] = []
         has_more = False
-        curr_ts = start_ts
+
         for time_window in self._iterate_time_windows(start_ts):
             if self.end and time_window.end.timestamp() > self.end.timestamp():
                 break
@@ -538,28 +544,38 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                         time_window.start, self.timezone, self.fmt, self.cron_schedule
                     )
                 )
-                curr_ts = time_window.end.timestamp()
-
                 if time_window.end.timestamp() > current_timestamp:
                     partitions_past_current_time += 1
-
-                if limit and len(partition_keys) >= (limit - max(0, self.end_offset)):
+                if limit and len(partition_keys) >= limit - min(0, self.end_offset):
                     has_more = True
                     break
             else:
                 break
 
-        if self.end_offset < 0:
+        if has_more:
+            # exited due to limit; subset in case we overshot (if end_offset < 0)
+            partition_keys = partition_keys[:limit]
+        elif self.end_offset < 0:
+            # only subset if we did not eject early due to the limit
             partition_keys = partition_keys[: self.end_offset]
 
+        if partition_keys:
+            last_partition_key = partition_keys[-1]
+            last_time_window = self.time_window_for_partition_key(last_partition_key)
+            next_cursor = TimeWindowCursor(
+                current_timestamp=int(current_timestamp),
+                cursor_timestamp=int(last_time_window.end.timestamp()),
+                partitions_past_current_time=partitions_past_current_time,
+            )
+        else:
+            next_cursor = TimeWindowCursor(
+                current_timestamp=int(current_timestamp),
+                cursor_timestamp=int(start_ts),
+                partitions_past_current_time=partitions_past_current_time,
+            )
         return Connection(
             results=partition_keys,
-            cursor=str(
-                TimeWindowCursor(
-                    current_timestamp=int(current_timestamp),
-                    cursor_timestamp=int(curr_ts),
-                )
-            ),
+            cursor=str(next_cursor),
             has_more=has_more,
         )
 
