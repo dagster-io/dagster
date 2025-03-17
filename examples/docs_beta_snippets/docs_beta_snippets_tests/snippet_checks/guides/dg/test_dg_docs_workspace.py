@@ -87,27 +87,6 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
                 re_ignore_after('root_module = "project_1"'),
             ],
         )
-
-        # Check component types
-        """
-        run_command_and_snippet_output(
-            cmd="cd projects/project-1 && dg list component-type",
-            snippet_path=DG_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-component-type-list.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_WORKSPACE],
-        )
-        _run_command(
-            f"uv add sling_mac_arm64 && uv add --editable '{EDITABLE_DIR / 'dagster-sling'!s}' && uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}[sling]'"
-        )
-        run_command_and_snippet_output(
-            cmd="dg list component-type",
-            snippet_path=DG_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-component-type-list.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_WORKSPACE],
-        )
-        """
         
         # Scaffold new project
         run_command_and_snippet_output(
@@ -128,17 +107,6 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             snippet_path=DG_SNIPPETS_DIR / f"{get_next_snip_number()}-project-list.txt",
             update_snippets=update_snippets,
         )
-
-        """
-        # Check component types in new project
-        run_command_and_snippet_output(
-            cmd="cd projects/project-2 && dg list component-type",
-            snippet_path=DG_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-component-type-list.txt",
-            update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_WORKSPACE],
-        )
-        """
 
         # Create workspace.yaml file
         _run_command("cd ../../")
