@@ -86,7 +86,12 @@ def test_components_docs_index(update_snippets: bool) -> None:
         )
 
         _run_command(
-            f"uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}' '{DAGSTER_ROOT / 'python_modules' / 'dagster'!s}' '{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}'"
+            f"uv add --editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-components'!s}' "
+            f"'{DAGSTER_ROOT / 'python_modules' / 'dagster'!s}' "
+            f"'{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-shared'!s}' "
+            f"'{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}' "
+            f"'{DAGSTER_ROOT / 'python_modules' / 'dagster-pipes'!s}' "
+            f"'{DAGSTER_ROOT / 'python_modules' / 'dagster-graphql'!s}'"
         )
         _run_command(
             "uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"

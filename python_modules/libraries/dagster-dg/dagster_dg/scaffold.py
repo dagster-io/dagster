@@ -98,7 +98,6 @@ def scaffold_project(
         deps = EDITABLE_DAGSTER_DEPENDENCIES
         dev_deps = EDITABLE_DAGSTER_DEV_DEPENDENCIES
         sources = _gather_dagster_packages(Path(editable_dagster_root))
-
     else:
         editable_dagster_root = None
         deps = PYPI_DAGSTER_DEPENDENCIES
@@ -162,6 +161,7 @@ def scaffold_project(
 EDITABLE_DAGSTER_DEPENDENCIES = (
     "dagster",
     "dagster-pipes",
+    "dagster-shared",
     "dagster-components",
     "dagster-test[components]",  # we include dagster-test for testing purposes
 )
