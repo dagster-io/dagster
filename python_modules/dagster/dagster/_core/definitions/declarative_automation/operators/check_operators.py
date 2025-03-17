@@ -1,7 +1,8 @@
 import asyncio
 from abc import abstractmethod
-from typing import AbstractSet  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional  # noqa: UP035
 
+import dagster._check as check
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -13,8 +14,11 @@ from dagster._core.definitions.declarative_automation.automation_context import 
 from dagster._core.definitions.declarative_automation.operators.dep_operators import (
     EntityMatchesCondition,
 )
-from dagster._record import record
+from dagster._record import copy, record
 from dagster._serdes.serdes import whitelist_for_serdes
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.asset_selection import AssetSelection
 
 
 @record
@@ -22,6 +26,9 @@ class ChecksAutomationCondition(BuiltinAutomationCondition[AssetKey]):
     operand: AutomationCondition[AssetCheckKey]
 
     blocking_only: bool = False
+    # Should be AssetSelection, but this causes circular reference issues
+    allow_selection: Optional[Any] = None
+    ignore_selection: Optional[Any] = None
 
     @property
     @abstractmethod
@@ -30,22 +37,58 @@ class ChecksAutomationCondition(BuiltinAutomationCondition[AssetKey]):
     @property
     def name(self) -> str:
         name = self.base_name
+        props = []
         if self.blocking_only:
-            name += "(blocking_only=True)"
+            props.append("blocking_only=True")
+        if self.allow_selection is not None:
+            props.append(f"allow_selection={self.allow_selection}")
+        if self.ignore_selection is not None:
+            props.append(f"ignore_selection={self.ignore_selection}")
+
+        if props:
+            name += f"({','.join(props)})"
         return name
 
     @property
     def requires_cursor(self) -> bool:
         return False
 
+    def allow(self, selection: "AssetSelection") -> "ChecksAutomationCondition":
+        """Returns a copy of this condition that will only consider dependencies within the provided
+        AssetSelection.
+        """
+        from dagster._core.definitions.asset_selection import AssetSelection
+
+        check.inst_param(selection, "selection", AssetSelection)
+        allow_selection = (
+            selection if self.allow_selection is None else selection | self.allow_selection
+        )
+        return copy(self, allow_selection=allow_selection)
+
+    def ignore(self, selection: "AssetSelection") -> "ChecksAutomationCondition":
+        """Returns a copy of this condition that will ignore dependencies within the provided
+        AssetSelection.
+        """
+        from dagster._core.definitions.asset_selection import AssetSelection
+
+        check.inst_param(selection, "selection", AssetSelection)
+        ignore_selection = (
+            selection if self.ignore_selection is None else selection | self.ignore_selection
+        )
+        return copy(self, ignore_selection=ignore_selection)
+
     def _get_check_keys(
         self, key: AssetKey, asset_graph: BaseAssetGraph[BaseAssetNode]
     ) -> AbstractSet[AssetCheckKey]:
         check_keys = asset_graph.get(key).check_keys
         if self.blocking_only:
-            return {ck for ck in check_keys if asset_graph.get(ck).blocking}
-        else:
-            return check_keys
+            check_keys = {ck for ck in check_keys if asset_graph.get(ck).blocking}
+        if self.allow_selection is not None:
+            check_keys &= self.allow_selection.resolve_checks(asset_graph)
+        if self.ignore_selection is not None:
+            check_keys -= self.ignore_selection.resolve_checks(asset_graph)
+
+        return check_keys
 
 
 @whitelist_for_serdes
