@@ -23,8 +23,7 @@ def test_polars_parquet_io_manager_read_write(
 
     @asset(io_manager_def=session_polars_parquet_io_manager)
     def downstream(upstream: pl.LazyFrame) -> pl.DataFrame:
-        engine_type: pl.EngineType = "streaming"
-        return upstream.collect(engine=engine_type)
+        return upstream.collect(streaming=True)
 
     result = materialize(
         [upstream, downstream],
