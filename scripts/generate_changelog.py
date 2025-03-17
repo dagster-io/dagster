@@ -24,6 +24,7 @@ CATEGORIES = {
     "BREAKING": "Breaking Changes",
     "DEPRECATE": "Deprecations",
     "Plus": "Dagster Plus",
+    "DG": "dg & Components (Preview)",
     None: "Invalid",
 }
 
