@@ -603,7 +603,7 @@ def test_asset_checks_evaluations(
             if isinstance(event, AssetCheckEvaluation):
                 assert cast(int, event.metadata["Execution Duration"].value) > 0
 
-        # Sanity check that we don't have AssetCheckResult events whe using an op
+        # Sanity check that we don't have AssetCheckResult events when using an op
         assert not any([event for event in events if isinstance(event, AssetCheckResult)])
 
         expected_results = [
