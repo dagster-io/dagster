@@ -603,8 +603,11 @@ def test_asset_checks_evaluations(
             if isinstance(event, AssetCheckEvaluation):
                 assert cast(int, event.metadata["Execution Duration"].value) > 0
 
+        # Sanity check that we don't have AssetCheckResult events whe using an op
+        assert not any([event for event in events if isinstance(event, AssetCheckResult)])
+
         expected_results = [
-            AssetCheckResult(
+            AssetCheckEvaluation(
                 passed=True,
                 asset_key=AssetKey(["customers"]),
                 check_name="unique_customers_customer_id",
@@ -617,7 +620,7 @@ def test_asset_checks_evaluations(
                     "dagster_dbt/failed_row_count": 0,
                 },
             ),
-            AssetCheckResult(
+            AssetCheckEvaluation(
                 passed=True,
                 asset_key=AssetKey(["customers"]),
                 check_name="not_null_customers_customer_id",
@@ -630,7 +633,7 @@ def test_asset_checks_evaluations(
                     "dagster_dbt/failed_row_count": 0,
                 },
             ),
-            AssetCheckResult(
+            AssetCheckEvaluation(
                 passed=False,
                 asset_key=AssetKey(["fail_tests_model"]),
                 check_name="unique_fail_tests_model_id",
@@ -644,7 +647,7 @@ def test_asset_checks_evaluations(
                     "dagster_dbt/failed_row_count": 1,
                 },
             ),
-            AssetCheckResult(
+            AssetCheckEvaluation(
                 passed=False,
                 asset_key=AssetKey(["fail_tests_model"]),
                 check_name="accepted_values_fail_tests_model_first_name__foo__bar__baz",
