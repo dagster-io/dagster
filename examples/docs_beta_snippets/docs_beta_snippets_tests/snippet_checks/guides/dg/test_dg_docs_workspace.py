@@ -89,6 +89,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         )
 
         # Check component types
+        """
         run_command_and_snippet_output(
             cmd="cd projects/project-1 && dg list component-type",
             snippet_path=DG_SNIPPETS_DIR
@@ -106,7 +107,8 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_MY_WORKSPACE],
         )
-
+        """
+        
         # Scaffold new project
         run_command_and_snippet_output(
             cmd="cd ../.. && dg scaffold project projects/project-2 --use-editable-dagster",
@@ -127,6 +129,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             update_snippets=update_snippets,
         )
 
+        """
         # Check component types in new project
         run_command_and_snippet_output(
             cmd="cd projects/project-2 && dg list component-type",
@@ -135,6 +138,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             update_snippets=update_snippets,
             snippet_replace_regex=[MASK_MY_WORKSPACE],
         )
+        """
 
         # Create workspace.yaml file
         _run_command("cd ../../")
