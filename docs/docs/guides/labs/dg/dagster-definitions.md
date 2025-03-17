@@ -1,5 +1,5 @@
 ---
-title: 'Scaffolding traditional Dagster definitions'
+title: 'Scaffolding Dagster definitions'
 sidebar_position: 200
 ---
 
