@@ -81,7 +81,7 @@ class AssetCheckEvaluation(
             The name of the check.
         passed (bool):
             The pass/fail result of the check.
-        metadata (Dict[str, MetadataValue]):
+        metadata (Optional[Mapping[str, MetadataValue]]):
             Arbitrary user-provided metadata about the asset.  Keys are displayed string labels, and
             values are one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
@@ -98,13 +98,13 @@ class AssetCheckEvaluation(
         asset_key: AssetKey,
         check_name: str,
         passed: bool,
-        metadata: Mapping[str, MetadataValue],
+        metadata: Optional[Mapping[str, MetadataValue]] = None,
         target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
         description: Optional[str] = None,
     ):
         normed_metadata = normalize_metadata(
-            check.dict_param(metadata, "metadata", key_type=str),
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
         return super().__new__(
