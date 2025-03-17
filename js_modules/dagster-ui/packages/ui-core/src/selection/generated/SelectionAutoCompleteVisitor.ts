@@ -11,6 +11,10 @@ import {
   AttributeValueContext,
   AttributeValueWhitespaceContext,
   ColonTokenContext,
+  CommaExpressionWrapper1Context,
+  CommaExpressionWrapper2Context,
+  CommaExpressionWrapper3Context,
+  CommaTokenContext,
   DownTraversalContext,
   DownTraversalExprContext,
   DownTraversalExpressionContext,
@@ -185,6 +189,14 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
   visitOrExpression?: (ctx: OrExpressionContext) => Result;
 
   /**
+   * Visit a parse tree produced by the `CommaExpressionWrapper1`
+   * labeled alternative in `SelectionAutoCompleteParser.expr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitCommaExpressionWrapper1?: (ctx: CommaExpressionWrapper1Context) => Result;
+
+  /**
    * Visit a parse tree produced by the `IncompleteAndExpression`
    * labeled alternative in `SelectionAutoCompleteParser.expr`.
    * @param ctx the parse tree
@@ -199,6 +211,14 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
    * @return the visitor result
    */
   visitIncompleteOrExpression?: (ctx: IncompleteOrExpressionContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `CommaExpressionWrapper2`
+   * labeled alternative in `SelectionAutoCompleteParser.expr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitCommaExpressionWrapper2?: (ctx: CommaExpressionWrapper2Context) => Result;
 
   /**
    * Visit a parse tree produced by the `IncompleteNotExpression`
@@ -223,6 +243,14 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
    * @return the visitor result
    */
   visitUnmatchedValue?: (ctx: UnmatchedValueContext) => Result;
+
+  /**
+   * Visit a parse tree produced by the `CommaExpressionWrapper3`
+   * labeled alternative in `SelectionAutoCompleteParser.expr`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitCommaExpressionWrapper3?: (ctx: CommaExpressionWrapper3Context) => Result;
 
   /**
    * Visit a parse tree produced by the `ExpressionlessParenthesizedExpression`
@@ -476,6 +504,13 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
    * @return the visitor result
    */
   visitFunctionName?: (ctx: FunctionNameContext) => Result;
+
+  /**
+   * Visit a parse tree produced by `SelectionAutoCompleteParser.commaToken`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitCommaToken?: (ctx: CommaTokenContext) => Result;
 
   /**
    * Visit a parse tree produced by `SelectionAutoCompleteParser.orToken`.

@@ -14,7 +14,7 @@ sidebar_position: 300
 This guide assumes familiarity with:
 
 - [Schedules](index.md)
-- Jobs, either [asset](/guides/build/assets/asset-jobs) or op-based
+- Jobs, either [asset](/guides/build/jobs/asset-jobs) or op-based
 - [Partitions](/guides/build/partitions-and-backfills/partitioning-assets)
 
 :::

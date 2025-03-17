@@ -19,6 +19,7 @@ import {SelectionInputAutoCompleteResults} from './SelectionInputAutoCompleteRes
 import {SelectionAutoCompleteInputCSS} from './SelectionInputHighlighter';
 import {useSelectionInputLintingAndHighlighting} from './useSelectionInputLintingAndHighlighting';
 import {useTrackEvent} from '../app/analytics';
+import {upgradeSyntax} from '../asset-selection/syntaxUpgrader';
 import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
 import {usePrevious} from '../hooks/usePrevious';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
@@ -34,10 +35,11 @@ type SelectionAutoCompleteInputProps = {
   placeholder: string;
   linter: (content: string) => SyntaxError[];
   value: string;
-  onChange: (value: string) => void;
   useAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'];
   saveOnBlur?: boolean;
   onErrorStateChange?: (errors: SyntaxError[]) => void;
+  onChange: (value: string) => void;
+  wildcardAttributeName: string;
 };
 
 const emptyArray: SyntaxError[] = [];
@@ -50,6 +52,7 @@ export const SelectionAutoCompleteInput = ({
   useAutoComplete,
   saveOnBlur = false,
   onErrorStateChange,
+  wildcardAttributeName,
 }: SelectionAutoCompleteInputProps) => {
   const trackEvent = useTrackEvent();
 
@@ -70,10 +73,14 @@ export const SelectionAutoCompleteInput = ({
 
   const onSelectionChange = useCallback(
     (selection: string) => {
-      onChange(selection);
-      trackSelection(selection);
+      let nextValue = selection;
+      if (wildcardAttributeName) {
+        nextValue = upgradeSyntax(selection, wildcardAttributeName);
+      }
+      onChange(nextValue);
+      trackSelection(nextValue);
     },
-    [onChange, trackSelection],
+    [onChange, trackSelection, wildcardAttributeName],
   );
 
   const editorRef = useRef<HTMLDivElement>(null);

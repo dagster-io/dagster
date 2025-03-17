@@ -16,11 +16,14 @@ expr:
 	| notToken postNotOperatorWhitespace expr					# NotExpression
 	| expr andToken postLogicalOperatorWhitespace expr			# AndExpression
 	| expr orToken postLogicalOperatorWhitespace expr			# OrExpression
+	| expr commaToken expr										# CommaExpressionWrapper1
 	| expr andToken postLogicalOperatorWhitespace				# IncompleteAndExpression
 	| expr orToken postLogicalOperatorWhitespace				# IncompleteOrExpression
+	| expr commaToken											# CommaExpressionWrapper2
 	| notToken postNotOperatorWhitespace						# IncompleteNotExpression
 	| STAR postExpressionWhitespace								# AllExpression
-	| value postExpressionWhitespace							# UnmatchedValue;
+	| value postExpressionWhitespace							# UnmatchedValue
+	| commaToken												# CommaExpressionWrapper3;
 
 // Allowed expressions within traversal contexts
 traversalAllowedExpr:
@@ -70,6 +73,8 @@ attributeName: IDENTIFIER;
 attributeValue: value;
 
 functionName: IDENTIFIER;
+
+commaToken: COMMA postLogicalOperatorWhitespace;
 
 orToken: OR;
 
@@ -131,7 +136,9 @@ INCOMPLETE_RIGHT_QUOTED_STRING: (~["\\\r\n:()=])* '"';
 EQUAL: '=';
 
 // Identifiers (attributes and functions)
-IDENTIFIER: [a-zA-Z_*][a-zA-Z0-9_*]*;
+IDENTIFIER: [a-zA-Z_*][a-zA-Z0-9_*/]*;
 
 // Whitespace
 WS: [ \t\r\n]+;
+
+COMMA: ',';

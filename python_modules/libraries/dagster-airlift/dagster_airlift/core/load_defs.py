@@ -42,7 +42,7 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
     mapped_assets: Sequence[MappedAsset]
     source_code_retrieval_enabled: Optional[bool]
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS
-    dag_selector_fn: Optional[Callable[[DagInfo], bool]] = None
+    dag_selector_fn: Optional[DagSelectorFn] = None
 
     @property
     def defs_key(self) -> str:
@@ -75,7 +75,7 @@ def build_defs_from_airflow_instance(
     defs: Optional[Definitions] = None,
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
-    dag_selector_fn: Optional[DagSelectorFn] = None,
+    dag_selector_fn: Optional[Callable[[DagInfo], bool]] = None,
     source_code_retrieval_enabled: Optional[bool] = None,
     default_sensor_status: Optional[DefaultSensorStatus] = None,
 ) -> Definitions:
@@ -104,7 +104,7 @@ def build_defs_from_airflow_instance(
         sensor_minimum_interval_seconds (int): The minimum interval in seconds between sensor runs.
         event_transformer_fn (DagsterEventTransformerFn): A function that allows for modifying the Dagster events
             produced by the sensor.
-        dag_selector_fn (Optional[DagSelectorFn]): A function that allows for filtering which DAGs assets are created for.
+        dag_selector_fn (Optional[Callable[[DagInfo], bool]]): A function that allows for filtering which DAGs assets are created for.
         source_code_retrieval_enabled (Optional[bool]): Whether to retrieve source code for the Airflow DAGs. By default, source code is retrieved when the number of DAGs is under 50 for performance reasons. This setting overrides the default behavior.
         default_sensor_status (Optional[DefaultSensorStatus]): The default status for the sensor. By default, the sensor will be enabled.
 
@@ -369,7 +369,7 @@ def enrich_airflow_mapped_assets(
 def load_airflow_dag_asset_specs(
     airflow_instance: AirflowInstance,
     mapped_assets: Optional[Sequence[MappedAsset]] = None,
-    dag_selector_fn: Optional[DagSelectorFn] = None,
+    dag_selector_fn: Optional[Callable[[DagInfo], bool]] = None,
     source_code_retrieval_enabled: Optional[bool] = None,
 ) -> Sequence[AssetSpec]:
     """Load asset specs for Airflow DAGs from the provided :py:class:`AirflowInstance`, and link upstreams from mapped assets."""

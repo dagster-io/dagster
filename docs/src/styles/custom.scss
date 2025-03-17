@@ -507,7 +507,7 @@ dt {
   box-shadow: 0px 1px 0px var(--theme-color-keyline);
   font-weight: 600;
   font-size: 15px;
-  padding-bottom: 0px;
+  padding-bottom: 2px;
 }
 
 dd {
@@ -743,4 +743,8 @@ div[class^='announcementBar_'] {
       border-top-left-radius: 0 !important;
       border-top-right-radius: 0 !important;
     }
+  }
+
+  .source-link {
+    float: right;
   }

@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Annotated, Optional
 
+from dagster import AssetKey
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -23,7 +24,6 @@ from dagster_components.resolved.model import (
     resolve_fields,
     resolve_model_using_kwargs_cls,
 )
-from dagster_components.utils import AssetKey
 from typing_extensions import TypeAlias
 
 
@@ -155,7 +155,7 @@ def test_asset_spec():
 
     kitchen_sink_model = AssetSpecModel(
         key="kitchen_sink",
-        deps=["upstream"],
+        deps=["upstream", "prefixed/upstream"],
         description="A kitchen sink",
         metadata={"key": "value"},
         group_name="group_name",
@@ -175,7 +175,10 @@ def test_asset_spec():
     )
 
     assert kitchen_sink_spec.key == AssetKey("kitchen_sink")
-    assert kitchen_sink_spec.deps == [AssetDep(asset="upstream")]
+    assert kitchen_sink_spec.deps == [
+        AssetDep(asset=AssetKey(["upstream"])),
+        AssetDep(asset=AssetKey(["prefixed", "upstream"])),
+    ]
     assert kitchen_sink_spec.description == "A kitchen sink"
     assert kitchen_sink_spec.metadata == {"key": "value"}
     assert kitchen_sink_spec.group_name == "group_name"

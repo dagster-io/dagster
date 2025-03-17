@@ -1,5 +1,4 @@
 import keyBy from 'lodash/keyBy';
-import memoize from 'lodash/memoize';
 import reject from 'lodash/reject';
 import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
@@ -25,6 +24,7 @@ import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
+import {workerSpawner} from '../workers/workerSpawner';
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
@@ -353,23 +353,20 @@ export const ASSET_GRAPH_QUERY = gql`
   ${ASSET_NODE_FRAGMENT}
 `;
 
-const getWorker = memoize(
-  (_key: 'computeGraphWorker' | 'buildGraphWorker') =>
-    new Worker(new URL('./ComputeGraphData.worker', import.meta.url)),
+const spawnComputeGraphDataWorker = workerSpawner(
+  () => new Worker(new URL('./ComputeGraphData.worker', import.meta.url)),
 );
 
-if (typeof jest === 'undefined') {
-  // Pre-warm workers
-  getWorker('computeGraphWorker');
-  getWorker('buildGraphWorker');
-}
+const spawnBuildGraphDataWorker = workerSpawner(
+  () => new Worker(new URL('./ComputeGraphData.worker', import.meta.url)),
+);
 
 let _id = 0;
 async function computeGraphDataWrapper(
   props: Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
 ): Promise<GraphDataState> {
   if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
-    const worker = getWorker('computeGraphWorker');
+    const worker = spawnComputeGraphDataWorker();
     return new Promise<GraphDataState>((resolve) => {
       const id = ++_id;
       const removeMessageListener = worker.onMessage((event: MessageEvent) => {
@@ -401,7 +398,7 @@ async function buildGraphDataWrapper(
   props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,
 ): Promise<GraphData> {
   if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
-    const worker = getWorker('buildGraphWorker');
+    const worker = spawnBuildGraphDataWorker();
     return new Promise<GraphData>((resolve) => {
       const id = ++_id;
       const removeMessageListener = worker.onMessage((event: MessageEvent) => {

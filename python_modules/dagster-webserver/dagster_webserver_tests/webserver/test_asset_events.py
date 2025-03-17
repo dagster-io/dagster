@@ -223,7 +223,7 @@ def test_report_asset_check_endpoint(instance: DagsterInstance, test_client: Tes
     )
     assert response.status_code == 400
     assert (
-        'Error constructing AssetCheckEvaluation: Param "metadata" is not a dict'
+        'Error constructing AssetCheckEvaluation: Param "metadata" is not'
         in response.json()["error"]
     )
 

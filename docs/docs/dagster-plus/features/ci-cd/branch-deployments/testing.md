@@ -17,9 +17,9 @@ With these tools, we can merge changes with confidence in the impact on our data
 Here's an overview of the main concepts we'll be using:
 
 - [Assets](/guides/build/assets/) - We'll define three assets that each persist a table to Snowflake.
-- [Ops](/guides/build/ops) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones.
-- [Graphs](/guides/build/graphs) - We'll build graphs that define the order our ops should run.
-- [Jobs](/guides/build/assets/asset-jobs) - We'll define jobs by binding our graphs to resources.
+- [Ops](/guides/build/ops/) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones.
+- [Graphs](/guides/build/ops/graphs) - We'll build graphs that define the order our ops should run.
+- [Jobs](/guides/build/jobs/asset-jobs) - We'll define jobs by binding our graphs to resources.
 - [Resources](/guides/build/external-resources/) - We'll use the <PyObject section="libraries" module="dagster_snowflake" object="SnowflakeResource" /> to swap in different Snowflake connections to our jobs depending on environment.
 - [I/O managers](/guides/build/io-managers/) - We'll use a Snowflake I/O manager to persist asset outputs to Snowflake.
 

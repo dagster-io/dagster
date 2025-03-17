@@ -81,7 +81,7 @@
     "path-to-regexp@2.2.1": "3.3.0"
   },
   "engines": {
-    "node": ">=18.0"
+    "node": "20.x"
   },
   "packageManager": "yarn@4.5.0"
 }

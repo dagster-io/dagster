@@ -31,7 +31,8 @@
 }
 
 .search:focus {
-  box-shadow: var(--color-border-default) inset 0px 0px 0px 1px,
+  box-shadow:
+    var(--color-border-default) inset 0px 0px 0px 1px,
     var(--color-keyline-default) inset 2px 2px 1.5px,
     var(--color-focus-ring) 0 0 0 2px;
 }
@@ -39,6 +40,33 @@
 .treeContainer {
   padding: 12px;
   font-size: 14px;
+}
+
+.pkgItem {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  background-color: var(--color-background-default);
+  cursor: pointer;
+}
+
+.expandButton {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.expandButton .chevron {
+  transition: transform 0.1s ease-in-out;
+  transform: rotate(-90deg);
+}
+
+.expandButton.expanded .chevron {
+  transform: rotate(0deg);
 }
 
 .pkgLink {
@@ -71,17 +99,6 @@
   background-color: var(--color-background-blue);
 }
 
-.pkgLink .chevron {
-  height: 16px;
-  width: 16px;
-  transform: rotate(-90deg);
-  transition: transform 0.1s ease-in-out;
-}
-
-.expanded .chevron {
-  transform: rotate(0deg);
-}
-
 .componentList {
   display: flex;
   flex-direction: column;
@@ -94,8 +111,8 @@
   align-items: center;
   flex-direction: row;
   gap: 4px;
-  margin-left: 12px;
-  padding: 8px 12px;
+  margin-left: 20px;
+  padding: 8px 4px;
   border-radius: 8px;
   background-color: var(--color-background-default);
   user-select: none;

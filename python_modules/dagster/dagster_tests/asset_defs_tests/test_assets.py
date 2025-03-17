@@ -2355,6 +2355,19 @@ def test_asset_out_with_tags():
         def assets(): ...
 
 
+def test_asset_out_with_kinds():
+    @multi_asset(outs={"asset1": AssetOut(kinds={"a", "b"})})
+    def assets(): ...
+
+    assert assets.specs_by_key[AssetKey("asset1")].kinds == {"a", "b"}
+
+    # the error contains "tag" because that's how kinds are currently implemented
+    with pytest.raises(DagsterInvalidDefinitionError, match="Found invalid tag key"):
+
+        @multi_asset(outs={"asset1": AssetOut(kinds={"a%", "b"})})  # key has illegal character
+        def assets(): ...
+
+
 def test_asset_spec_skippable():
     @op(out=Out(is_required=False))
     def op1():

@@ -72,15 +72,12 @@ def scaffold_project(
     path: Path,
     dg_context: DgContext,
     use_editable_dagster: Optional[str],
-    use_editable_components_package_only: Optional[str],
     skip_venv: bool = False,
     populate_cache: bool = True,
 ) -> None:
     click.echo(f"Creating a Dagster project at {path}.")
 
-    cli_options = DgWorkspaceScaffoldProjectOptions.get_raw_from_cli(
-        use_editable_dagster, use_editable_components_package_only
-    )
+    cli_options = DgWorkspaceScaffoldProjectOptions.get_raw_from_cli(use_editable_dagster)
     workspace_options = (
         dg_context.config.workspace.scaffold_project_options
         if dg_context.config.workspace
@@ -91,16 +88,8 @@ def scaffold_project(
         "use_editable_dagster",
         workspace_options.use_editable_dagster if workspace_options else None,
     )
-    final_use_editable_components_package_only = cli_options.get(
-        "use_editable_components_package_only",
-        workspace_options.use_editable_components_package_only if workspace_options else None,
-    )
 
-    if final_use_editable_dagster and final_use_editable_components_package_only:
-        exit_with_error(
-            "Cannot specify both --use-editable-dagster and --use-editable-components-package-only."
-        )
-    elif final_use_editable_dagster:
+    if final_use_editable_dagster:
         editable_dagster_root = (
             _get_editable_dagster_from_env()
             if final_use_editable_dagster is True
@@ -109,19 +98,6 @@ def scaffold_project(
         deps = EDITABLE_DAGSTER_DEPENDENCIES
         dev_deps = EDITABLE_DAGSTER_DEV_DEPENDENCIES
         sources = _gather_dagster_packages(Path(editable_dagster_root))
-    elif final_use_editable_components_package_only:
-        editable_dagster_root = (
-            _get_editable_dagster_from_env()
-            if final_use_editable_components_package_only is True
-            else final_use_editable_components_package_only
-        )
-        deps = EDITABLE_COMPONENTS_ONLY_DEPENDENCIES
-        dev_deps = EDITABLE_COMPONENTS_ONLY_DEV_DEPENDENCIES
-        sources = [
-            x
-            for x in _gather_dagster_packages(Path(editable_dagster_root))
-            if x.name in ("dagster-components", "dagster-test")
-        ]
     else:
         editable_dagster_root = None
         deps = PYPI_DAGSTER_DEPENDENCIES
@@ -185,12 +161,11 @@ def scaffold_project(
 EDITABLE_DAGSTER_DEPENDENCIES = (
     "dagster",
     "dagster-pipes",
+    "dagster-shared",
     "dagster-components",
     "dagster-test[components]",  # we include dagster-test for testing purposes
 )
-EDITABLE_COMPONENTS_ONLY_DEPENDENCIES = ("dagster-components", "dagster-test[components]")
 EDITABLE_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver", "dagster-graphql")
-EDITABLE_COMPONENTS_ONLY_DEV_DEPENDENCIES = ("dagster-webserver",)
 PYPI_DAGSTER_DEPENDENCIES = ("dagster-components",)
 PYPI_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver",)
 
@@ -198,8 +173,8 @@ PYPI_DAGSTER_DEV_DEPENDENCIES = ("dagster-webserver",)
 def _get_editable_dagster_from_env() -> str:
     if not os.environ.get("DAGSTER_GIT_REPO_DIR"):
         exit_with_error(
-            "The `--use-editable-dagster` and `--use-editable-components-package-only` options, when used as flags,"
-            " require the `DAGSTER_GIT_REPO_DIR` environment variable to be set."
+            "The `--use-editable-dagster` option "
+            "requires the `DAGSTER_GIT_REPO_DIR` environment variable to be set."
         )
     return os.environ["DAGSTER_GIT_REPO_DIR"]
 

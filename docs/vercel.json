@@ -82,6 +82,10 @@
       "destination": "/api/python-api/:path*"
     },
     {
+      "source": "/apidocs/external-assets-rest",
+      "destination": "/api/python-api/external-assets-rest-api"
+    },
+    {
       "source": "/api/libraries/:path*",
       "destination": "/api/python-api/libraries/:path*",
       "permanent": false
@@ -530,12 +534,80 @@
       "destination": "/guides/migrate/airflow-to-dagster/federation/"
     },
     {
+      "source": "/integrations/airlift/federation-tutorial/overview",
+      "destination": "/guides/migrate/airflow-to-dagster/federation/"
+    },
+    {
+      "source": "/integrations/airlift/full_dag",
+      "destination": "/guides/migrate/airflow-to-dagster/dag-level-migration/"
+    },
+    {
+      "source": "/integrations/airlift/operator-migration/kubernetes-pod-operator",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/kubernetes-pod-operator"
+    },
+    {
+      "source": "/integrations/airlift/operator-migration/bash-operator-general",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/bash-operator-general"
+    },
+    {
+      "source": "/integrations/airlift/operator-migration/bash-operator-dbt",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/bash-operator-dbt"
+    },
+    {
+      "source": "/integrations/airlift/operator-migration/python-operator",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/python-operator"
+    },
+    {
+      "source": "/integrations/airlift/reference",
+      "destination": "/guides/migrate/airflow-to-dagster/migration-reference"
+    },
+    {
+      "source": "/integrations/libraries/airlift/federation-tutorial/observe",
+      "destination": "/guides/migrate/airflow-to-dagster/federation/observe"
+    },
+    {
+      "source": "/integrations/airlift/tutorial",
+      "destination": "/guides/migrate/airflow-to-dagster/"
+    },
+    {
+      "source": "/integrations/airlift/tutorial/setup",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/setup"
+    },
+    {
+      "source": "/integrations/libraries/airlift/federation-tutorial/federated-execution",
+      "destination": "/guides/migrate/airflow-to-dagster/federation/federate-execution"
+    },
+    {
       "source": "/integrations/libraries/airlift/operator-migration/",
       "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/"
     },
     {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/peer",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/peer"
+    },
+    {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/observe",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/observe"
+    },
+    {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/migrate",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/migrate"
+    },
+    {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/decomission",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/decommission"
+    },
+    {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/migrate-a-full-dag",
+      "destination": "/guides/migrate/airflow-to-dagster/dag-level-migration/"
+    },
+    {
       "source": "/integrations/airflow/reference",
       "destination": "/integrations/libraries/airlift/"
+    },
+    {
+      "source": "/integrations/airlift/airflow-dagster-equivalents",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/"
     },
     {
       "source": "/deployment/open-source",
@@ -624,6 +696,10 @@
     {
       "source": "/concepts/assets/asset-jobs",
       "destination": "/guides/build/assets/asset-jobs"
+    },
+    {
+      "source": "/guides/build/assets/asset-jobs",
+      "destination": "/guides/build/jobs/asset-jobs"
     },
     {
       "source": "/concepts/assets/asset-observations",
@@ -804,6 +880,10 @@
     {
       "source": "/concepts/ops-jobs-graphs/dynamic-graphs",
       "destination": "/guides/build/graphs"
+    },
+    {
+      "source": "/guides/build/graphs",
+      "destination": "/guides/build/ops/graphs"
     },
     {
       "source": "/concepts/ops-jobs-graphs/jobs",

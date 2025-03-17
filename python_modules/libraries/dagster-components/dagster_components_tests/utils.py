@@ -90,7 +90,7 @@ def temp_code_location_bar() -> Iterator[None]:
 def _setup_component_in_folder(
     src_path: str, dst_path: str, local_component_defn_to_inject: Optional[Path]
 ) -> None:
-    origin_path = Path(__file__).parent / "integration_tests" / "components" / src_path
+    origin_path = Path(__file__).parent / "integration_tests" / "integration_test_defs" / src_path
 
     shutil.copytree(origin_path, dst_path, dirs_exist_ok=True)
     if local_component_defn_to_inject:
@@ -114,7 +114,11 @@ def create_project_from_components(
     injecting the provided local component defn into each component's __init__.py.
     """
     location_name = f"my_location_{str(random.random()).replace('.', '')}"
-    with tempfile.TemporaryDirectory() as tmpdir:
+
+    # Using mkdtemp instead of TemporaryDirectory so that the directory is accessible
+    # from launched procsses (such as duckdb)
+    tmpdir = tempfile.mkdtemp()
+    try:
         project_root = Path(tmpdir) / location_name
         project_root.mkdir()
 
@@ -144,6 +148,8 @@ def create_project_from_components(
 
             with ensure_loadable_path(project_root):
                 yield project_root, location_name
+    finally:
+        shutil.rmtree(tmpdir)
 
 
 # ########################

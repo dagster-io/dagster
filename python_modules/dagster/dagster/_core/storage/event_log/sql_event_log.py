@@ -251,6 +251,8 @@ class SqlEventLogStorage(EventLogStorage):
         # https://github.com/dagster-io/dagster/issues/3945
 
         values = self._get_asset_entry_values(event, event_id, self.has_asset_key_index_cols())
+        if not values:
+            return
         insert_statement = AssetKeyTable.insert().values(
             asset_key=event.dagster_event.asset_key.to_string(), **values
         )
@@ -3036,6 +3038,30 @@ class SqlEventLogStorage(EventLogStorage):
                     ),
                 )
             ).rowcount
+
+            # TODO fix the idx_asset_check_executions_unique index so that this can be a single
+            # upsert
+            if rows_updated == 0:
+                rows_updated = conn.execute(
+                    AssetCheckExecutionsTable.insert().values(
+                        asset_key=evaluation.asset_key.to_string(),
+                        check_name=evaluation.check_name,
+                        run_id=event.run_id,
+                        execution_status=(
+                            AssetCheckExecutionRecordStatus.SUCCEEDED.value
+                            if evaluation.passed
+                            else AssetCheckExecutionRecordStatus.FAILED.value
+                        ),
+                        evaluation_event=serialize_value(event),
+                        evaluation_event_timestamp=datetime.utcfromtimestamp(event.timestamp),
+                        evaluation_event_storage_id=event_id,
+                        materialization_event_storage_id=(
+                            evaluation.target_materialization_data.storage_id
+                            if evaluation.target_materialization_data
+                            else None
+                        ),
+                    )
+                ).rowcount
 
         # 0 isn't normally expected, but occurs with the external instance of step launchers where
         # they don't have planned events.

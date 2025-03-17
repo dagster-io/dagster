@@ -1,3 +1,5 @@
+import inspect
+import os
 import textwrap
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -13,7 +15,14 @@ MASK_SLING_WARNING = (r"warning.*\n", "")
 MASK_SLING_PROMO = (r"Follow Sling.*\n", "")
 MASK_SLING_DOWNLOAD_DUCKDB = (r".*downloading duckdb.*\n", "")
 MASK_EDITABLE_DAGSTER = (r" --use-editable-dagster", "")
-MASK_JAFFLE_PLATFORM = (r"\/.*?\/jaffle-platform", "/.../jaffle-platform")
+MASK_USING_ENVIRONMENT = (r"\nUsing[\s\S]*", "\n...")
+
+
+def make_project_path_mask(project_name: str):
+    return (rf"\/.*?\/{project_name}", f"/.../{project_name}")
+
+
+MASK_JAFFLE_PLATFORM = make_project_path_mask("jaffle-platform")
 
 DAGSTER_ROOT = Path(__file__).parent.parent.parent.parent.parent.parent.parent
 COMPONENTS_SNIPPETS_DIR = (
@@ -41,6 +50,24 @@ SNIPPET_ENV = {
 
 
 @contextmanager
+def _get_snippet_working_dir() -> Iterator[str]:
+    """If DAGSTER_CLI_SNIPPET_WORKING_DIR is set, use it as the working directory for all snippet tests.
+    This makes it easier to debug the state of the working directory when a test fails.
+    Otherwise, create a temporary directory and use that.
+    """
+    test_file_name = inspect.stack()[4].filename
+
+    working_dir_from_env = os.getenv("DAGSTER_CLI_SNIPPET_WORKING_DIR")
+    if working_dir_from_env:
+        path = Path(working_dir_from_env) / Path(test_file_name).stem
+        path.mkdir(parents=True, exist_ok=True)
+        yield str(path)
+    else:
+        with TemporaryDirectory() as tempdir:
+            yield (tempdir)
+
+
+@contextmanager
 def isolated_snippet_generation_environment() -> Iterator[Callable[[], int]]:
     snip_number = 0
 
@@ -49,7 +76,7 @@ def isolated_snippet_generation_environment() -> Iterator[Callable[[], int]]:
         snip_number += 1
         return snip_number
 
-    with TemporaryDirectory() as tempdir, pushd(tempdir), environ(SNIPPET_ENV):
+    with _get_snippet_working_dir() as tempdir, pushd(tempdir), environ(SNIPPET_ENV):
         yield get_next_snip_number
 
 

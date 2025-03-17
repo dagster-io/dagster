@@ -41,6 +41,7 @@ export const AssetSelectionInput = ({
 
   return (
     <SelectionAutoCompleteInput
+      wildcardAttributeName="key"
       id="asset-selection-input"
       useAutoComplete={useAutoComplete}
       placeholder="Search and filter assets"

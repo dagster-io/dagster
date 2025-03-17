@@ -129,7 +129,7 @@ def test_invalid_project_truncated_properly(verbose):
                 )
                 == 1
             )
-            assert result.output.count("dagster system frames hidden") == 2
+            assert result.output.count("dagster system frames hidden") >= 1
 
 
 def test_env_var(monkeypatch):

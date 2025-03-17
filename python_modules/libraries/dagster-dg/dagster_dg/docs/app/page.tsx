@@ -27,7 +27,7 @@ export default async function Home() {
           key={component.name}
           className={styles.componentItem}
         >
-          <ComponentHeader config={component} />
+          <ComponentHeader config={component} descriptionStyle="truncated" />
         </Link>
       ))}
     </div>

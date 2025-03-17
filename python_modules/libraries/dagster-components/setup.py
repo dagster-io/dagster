@@ -34,7 +34,10 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_components_tests*", "examples*"]),
-    install_requires=["dagster>=1.9.5", "typer"],
+    install_requires=[
+        f"dagster{pin}",
+        "typer",
+    ],
     zip_safe=False,
     entry_points={
         "console_scripts": [
@@ -49,6 +52,14 @@ setup(
     extras_require={
         "sling": ["dagster-sling"],
         "dbt": ["dagster-dbt"],
-        "test": ["dagster-test", "dbt-duckdb", "dagster-dg", "tomlkit", "jsonschema"],
+        "test": [
+            "dagster-test",
+            "dbt-duckdb",
+            "dagster-dg",
+            "tomlkit",
+            "jsonschema",
+            "pandas",
+            "duckdb",
+        ],
     },
 )

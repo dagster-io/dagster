@@ -1,5 +1,6 @@
 ---
 title: "Asset versioning and caching"
+sidebar_position: 1300
 ---
 
 import Beta from '../../../partials/\_Beta.md';

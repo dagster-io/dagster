@@ -1,6 +1,7 @@
 import contextlib
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import traceback
@@ -47,7 +48,14 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
         _install_libraries_to_venv(
-            venv_path, ["dagster", "libraries/dagster-components", "dagster-pipes", "dagster-test"]
+            venv_path,
+            [
+                "dagster",
+                "libraries/dagster-components",
+                "dagster-pipes",
+                "libraries/dagster-shared",
+                "dagster-test",
+            ],
         )
 
         venv_exec_path = get_venv_executable(venv_path).parent
@@ -63,7 +71,7 @@ def isolated_example_workspace(
     runner: Union[CliRunner, "ProxyRunner"],
     project_name: Optional[str] = None,
     create_venv: bool = False,
-    use_editable_components_package_only: bool = True,
+    use_editable_dagster: bool = True,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
@@ -74,11 +82,7 @@ def isolated_example_workspace(
     ):
         result = runner.invoke(
             "init",
-            *(
-                ["--use-editable-components-package-only", dagster_git_repo_dir]
-                if use_editable_components_package_only
-                else []
-            ),
+            *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
             input=f"\n{project_name or ''}\n",
         )
         assert_runner_result(result)
@@ -88,7 +92,15 @@ def isolated_example_workspace(
                 subprocess.run(["uv", "venv", ".venv"], check=True)
                 venv_path = Path.cwd() / ".venv"
                 _install_libraries_to_venv(
-                    venv_path, ["dagster", "dagster-webserver", "dagster-graphql", "dagster-test"]
+                    venv_path,
+                    [
+                        "dagster",
+                        "dagster-webserver",
+                        "dagster-graphql",
+                        "dagster-test",
+                        "dagster-pipes",
+                        "libraries/dagster-shared",
+                    ],
                 )
             yield
 
@@ -119,15 +131,17 @@ def isolated_example_project_foo_bar(
     else:
         fs_context = runner.isolated_filesystem()
     with fs_context:
-        result = runner.invoke(
+        args = [
             "scaffold",
             "project",
-            "--use-editable-components-package-only",
+            "--use-editable-dagster",
             dagster_git_repo_dir,
             *(["--no-use-dg-managed-environment"] if skip_venv else []),
             *(["--no-populate-cache"] if not populate_cache else []),
             "foo-bar",
-        )
+        ]
+        result = runner.invoke(*args)
+
         assert_runner_result(result)
         with clear_module_from_cache("foo_bar"), pushd(project_path):
             # _install_libraries_to_venv(Path(".venv"), ["dagster-test"])
@@ -158,7 +172,7 @@ def isolated_example_component_library_foo_bar(
         result = runner.invoke(
             "scaffold",
             "project",
-            "--use-editable-components-package-only",
+            "--use-editable-dagster",
             dagster_git_repo_dir,
             "--skip-venv",
             "foo-bar",
@@ -440,7 +454,7 @@ COMPONENT_INTEGRATION_TEST_DIR = (
     / "dagster-components"
     / "dagster_components_tests"
     / "integration_tests"
-    / "components"
+    / "integration_test_defs"
 )
 
 
@@ -459,3 +473,10 @@ def create_project_from_components(
                 shutil.copy(local_component_defn_to_inject, components_dir / "__init__.py")
 
         yield Path.cwd()
+
+
+def find_free_port() -> int:
+    with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(("", 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]

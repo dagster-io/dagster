@@ -88,6 +88,32 @@ def test_missing_schemas_fivetran_workspace_data(
     assert len(actual_workspace_data.destinations_by_id) == 1
 
 
+def test_incomplete_connector_fivetran_workspace_data(
+    incomplete_connector_fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+
+    actual_workspace_data = resource.fetch_fivetran_workspace_data()
+    # The connector is discarded because it's incomplete
+    assert len(actual_workspace_data.connectors_by_id) == 0
+    assert len(actual_workspace_data.destinations_by_id) == 1
+
+
+def test_broken_connector_fivetran_workspace_data(
+    broken_connector_fetch_workspace_data_api_mocks: responses.RequestsMock,
+) -> None:
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+
+    actual_workspace_data = resource.fetch_fivetran_workspace_data()
+    # The connector is discarded because it's broken
+    assert len(actual_workspace_data.connectors_by_id) == 0
+    assert len(actual_workspace_data.destinations_by_id) == 1
+
+
 def test_translator_spec(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
