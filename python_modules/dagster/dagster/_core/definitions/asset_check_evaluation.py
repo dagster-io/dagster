@@ -127,12 +127,7 @@ class AssetCheckEvaluation(
         return AssetCheckKey(self.asset_key, self.check_name)
 
     def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "AssetCheckEvaluation":
-        return AssetCheckEvaluation(
-            asset_key=self.asset_key,
-            check_name=self.check_name,
-            passed=self.passed,
-            metadata=metadata,
-            target_materialization_data=self.target_materialization_data,
-            severity=self.severity,
-            description=self.description,
+        normed_metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
+        return self._replace(metadata=normed_metadata)
