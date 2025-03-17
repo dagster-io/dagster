@@ -4,23 +4,8 @@ from pathlib import Path
 from dagster import AssetKey
 from dagster_components import load_defs
 from dagster_components.core.component import DefinitionsModuleCache
-from dagster_components.core.component_decl_builder import PythonComponentDecl
-
-from dagster_components_tests.utils import script_load_context
 
 LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "python_script_location"
-
-
-def test_python_params() -> None:
-    node = PythonComponentDecl(path=Path(LOCATION_PATH / "defs" / "script_python_decl"))
-    context = script_load_context(node)
-    components = node.load(context)
-    assert len(components) == 1
-    component = components[0]
-
-    assert component.build_defs(context).get_asset_graph().get_all_asset_keys() == {
-        AssetKey("cool_script")
-    }
 
 
 def test_load_from_path() -> None:

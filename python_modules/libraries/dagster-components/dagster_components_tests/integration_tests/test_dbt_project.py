@@ -8,22 +8,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import pytest
-from dagster import AssetKey
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
+from dagster import AssetKey, AssetsDefinition, AssetSpec, BackfillPolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster_components.components.dbt_project.component import DbtProjectComponent, DbtProjectModel
-from dagster_components.core.component_decl_builder import ComponentFileModel
-from dagster_components.core.component_defs_builder import (
-    YamlComponentDecl,
-    build_component_defs,
-    build_components_from_component_folder,
-    defs_from_components,
-)
+from dagster_components.core.component_defs_builder import build_component_defs
+from dagster_components.core.defs_module import ComponentFileModel, YamlComponentDecl
 from dagster_components.resolved.core_models import AssetAttributesModel
 from dagster_dbt import DbtProject
 
-from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
+from dagster_components_tests.integration_tests.component_loader import load_test_component_defs
+from dagster_components_tests.utils import get_asset_keys, script_load_context
 
 if TYPE_CHECKING:
     from dagster import AssetsDefinition
@@ -101,24 +95,13 @@ def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
 
 
 def test_load_from_path(dbt_path: Path) -> None:
-    components = build_components_from_component_folder(script_load_context(), dbt_path / "defs")
-    assert len(components) == 1
-    assert get_asset_keys(components[0]) == JAFFLE_SHOP_KEYS
+    with load_test_component_defs(str(dbt_path / COMPONENT_RELPATH)) as defs:
+        assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
 
-    assert_assets(components[0], len(JAFFLE_SHOP_KEYS))
-
-    defs = defs_from_components(
-        context=script_load_context(),
-        components=components,
-        resources={},
-    )
-
-    assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
-
-    for asset_node in defs.get_asset_graph().asset_nodes:
-        assert asset_node.tags["foo"] == "bar"
-        assert asset_node.tags["another"] == "one"
-        assert asset_node.metadata["something"] == 1
+        for asset_node in defs.get_asset_graph().asset_nodes:
+            assert asset_node.tags["foo"] == "bar"
+            assert asset_node.tags["another"] == "one"
+            assert asset_node.metadata["something"] == 1
 
 
 def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
