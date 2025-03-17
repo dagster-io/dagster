@@ -87,7 +87,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
                 re_ignore_after('root_module = "project_1"'),
             ],
         )
-        
+
         # Scaffold new project
         run_command_and_snippet_output(
             cmd="cd ../.. && dg scaffold project projects/project-2 --use-editable-dagster",
