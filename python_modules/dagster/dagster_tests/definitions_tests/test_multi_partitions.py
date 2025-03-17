@@ -1,4 +1,5 @@
 from datetime import datetime
+from unittest import mock
 
 import pytest
 from dagster import (
@@ -681,3 +682,142 @@ def test_multipartitions_range_cartesian_multiple_keys_in_both_ranges():
         MultiPartitionKey({"a": "2024-01-03", "b": "3"}),
         MultiPartitionKey({"a": "2024-01-03", "b": "4"}),
     ]
+
+
+def test_basic_pagination():
+    """Test basic pagination works correctly."""
+    # Create partitions with small dimensions
+    dimension_a = StaticPartitionsDefinition(["a1", "a2", "a3"])
+    dimension_b = StaticPartitionsDefinition(["b1", "b2"])
+
+    multi_partitions = MultiPartitionsDefinition({"dim_a": dimension_a, "dim_b": dimension_b})
+
+    # First page with limit=3
+    connection = multi_partitions.get_partition_key_connection(cursor=None, limit=3)
+
+    # Should get first 3 combinations
+    assert len(connection.results) == 3
+    assert connection.has_more
+
+    # Check the actual partition keys
+    expected_keys = [
+        {"dim_a": "a1", "dim_b": "b1"},
+        {"dim_a": "a1", "dim_b": "b2"},
+        {"dim_a": "a2", "dim_b": "b1"},
+    ]
+    for i, key in enumerate(connection.results):
+        assert isinstance(key, MultiPartitionKey)
+        assert key.keys_by_dimension == expected_keys[i]
+
+    # Get next page
+    connection2 = multi_partitions.get_partition_key_connection(cursor=connection.cursor, limit=3)
+
+    # Should get remaining combinations
+    assert len(connection2.results) == 3
+    assert not connection2.has_more
+
+    # Check the actual partition keys
+    expected_keys2 = [
+        {"dim_a": "a2", "dim_b": "b2"},
+        {"dim_a": "a3", "dim_b": "b1"},
+        {"dim_a": "a3", "dim_b": "b2"},
+    ]
+    for i, key in enumerate(connection2.results):
+        assert isinstance(key, MultiPartitionKey)
+        assert key.keys_by_dimension == expected_keys2[i]
+
+
+def test_pagination_accumulation():
+    """Test multiple pagination calls accumulate the full cross product."""
+    # Create partitions with dimensions that make a 4x5=20 cross product
+    dimension_a = StaticPartitionsDefinition(["a1", "a2", "a3", "a4"])
+    dimension_b = StaticPartitionsDefinition(["b1", "b2", "b3", "b4", "b5"])
+
+    multi_partitions = MultiPartitionsDefinition({"dim_a": dimension_a, "dim_b": dimension_b})
+
+    # Use small page size to test pagination
+    limit = 4
+
+    all_results = []
+    cursor = None
+    has_more = True
+
+    # Paginate through all results
+    while has_more:
+        connection = multi_partitions.get_partition_key_connection(cursor=cursor, limit=limit)
+        all_results.extend(connection.results)
+        cursor = connection.cursor
+        has_more = connection.has_more
+
+    # Should have all 20 combinations
+    assert len(all_results) == 20
+
+    # Check we have the correct combinations by reconstructing the expected set
+    expected_combinations = []
+    for a_val in ["a1", "a2", "a3", "a4"]:
+        for b_val in ["b1", "b2", "b3", "b4", "b5"]:
+            expected_combinations.append({"dim_a": a_val, "dim_b": b_val})
+
+    # Convert results to dictionary form for easier comparison
+    result_dicts = [key.keys_by_dimension for key in all_results]
+
+    # Verify all expected combinations are present
+    for expected in expected_combinations:
+        assert expected in result_dicts
+
+    # Verify no duplicates
+    assert len(result_dicts) == len(expected_combinations)
+
+
+def test_empty_dimension():
+    """Test behavior when one dimension is empty."""
+    dimension_a = StaticPartitionsDefinition(["a1", "a2"])
+    dimension_b = StaticPartitionsDefinition([])  # Empty dimension
+
+    multi_partitions = MultiPartitionsDefinition({"dim_a": dimension_a, "dim_b": dimension_b})
+
+    connection = multi_partitions.get_partition_key_connection(cursor=None, limit=10)
+
+    # Should return empty results since one dimension is empty
+    assert len(connection.results) == 0
+    assert not connection.has_more
+
+
+def test_dimension_ordering():
+    """Test that dimension ordering is consistent regardless of input order."""
+    # Create same partitions but with different ordering in constructor
+    dimension_a = StaticPartitionsDefinition(["a1", "a2"])
+    dimension_b = StaticPartitionsDefinition(["b1", "b2"])
+
+    multi_partitions1 = MultiPartitionsDefinition({"dim_a": dimension_a, "dim_b": dimension_b})
+
+    multi_partitions2 = MultiPartitionsDefinition({"dim_b": dimension_b, "dim_a": dimension_a})
+
+    # Get all results from both
+    connection1 = multi_partitions1.get_partition_key_connection(cursor=None, limit=10)
+    connection2 = multi_partitions2.get_partition_key_connection(cursor=None, limit=10)
+
+    # Results should be identical due to lexicographic ordering by dimension name
+    assert connection1.results == connection2.results
+
+
+def test_large_cross_product_memory_usage():
+    """Test memory efficiency with large dimensions."""
+    large_dimension_a = StaticPartitionsDefinition([f"a{i}" for i in range(1000)])
+    large_dimension_b = StaticPartitionsDefinition([f"b{i}" for i in range(1000)])
+
+    multi_partitions = MultiPartitionsDefinition(
+        {"dim_a": large_dimension_a, "dim_b": large_dimension_b}
+    )
+
+    with (
+        mock.patch("itertools.product") as mock_product,
+        mock.patch.object(multi_partitions, "get_partition_keys") as mock_get_partition_keys,
+    ):
+        connection = multi_partitions.get_partition_key_connection(cursor=None, limit=10)
+
+        # Verify we got the right number of results
+        assert len(connection.results) == 10
+        assert connection.has_more
+        mock_product.assert_not_called()
+        mock_get_partition_keys.assert_not_called()

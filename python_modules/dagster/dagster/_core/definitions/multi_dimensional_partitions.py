@@ -376,7 +376,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         for dim_name, results in dimension_keys.items():
             if last_seen_key and dim_name in last_seen_key.keys_by_dimension:
                 try:
-                    idx = results.index(last_seen_key.keys_by_dimension[dim_name]) + 1
+                    idx = results.index(last_seen_key.keys_by_dimension[dim_name])
                     dimension_start_indices[dim_name] = idx
                 except ValueError:
                     # Key no longer exists, start from beginning for this dimension
@@ -388,17 +388,10 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             dim_name: dimension_start_indices.get(dim_name, 0) for dim_name in dimension_keys.keys()
         }
 
-        def get_next_key() -> Optional[MultiPartitionKey]:
-            if any(
-                current_indices[dim_name] >= len(dimension_keys[dim_name])
-                for dim_name in current_indices
-            ):
-                return None
+        def _invalid(indices):
+            return any(indices[dim_name] >= len(dimension_keys[dim_name]) for dim_name in indices)
 
-            partition_tuple = {}
-            for dim_name, idx in current_indices.items():
-                partition_tuple[dim_name] = dimension_keys[dim_name][idx]
-
+        def _advance_indices():
             sorted_dim_names = sorted(current_indices.keys())
             for i in range(len(sorted_dim_names) - 1, -1, -1):
                 dim_name = sorted_dim_names[i]
@@ -408,16 +401,34 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
                 if i > 0:
                     current_indices[dim_name] = 0
 
+        def _partition_key_from_indices(indices) -> Optional[MultiPartitionKey]:
+            if _invalid(indices):
+                return None
+
+            partition_tuple = {}
+            for dim_name, idx in indices.items():
+                partition_tuple[dim_name] = dimension_keys[dim_name][idx]
+
             return MultiPartitionKey(partition_tuple)
+
+        def get_next_key() -> Optional[MultiPartitionKey]:
+            _advance_indices()
+            return _partition_key_from_indices(current_indices)
 
         # Generate up to limit partition keys
         partition_keys = []
         new_last_seen_key = last_seen_key
 
         while True:
-            partition_key = get_next_key()
+            if new_last_seen_key is None:
+                partition_key = _partition_key_from_indices(current_indices)
+            else:
+                _advance_indices()
+                partition_key = _partition_key_from_indices(current_indices)
+
             if not partition_key:
                 break
+
             partition_keys.append(partition_key)
             new_last_seen_key = partition_key
 
