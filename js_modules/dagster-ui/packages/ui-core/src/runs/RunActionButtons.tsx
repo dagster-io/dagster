@@ -188,9 +188,11 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         console.warn('Run execution plan must be present to launch from-selected execution');
         return Promise.resolve();
       }
+
+      const legacySelection = selection.keys.map((k) => `${k}*`).join(',');
       const selectionAndDownstreamQuery = featureEnabled(FeatureFlag.flagSelectionSyntax)
         ? selection.keys.map((k) => `name:"${k}"*`).join(' or ')
-        : selection.keys.map((k) => `${k}*`).join(',');
+        : legacySelection;
 
       const selectionKeys = filterRunSelectionByQuery(graph, selectionAndDownstreamQuery).all.map(
         (node) => node.name,
@@ -198,7 +200,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
 
       await reexecuteWithSelection({
         keys: selectionKeys,
-        query: selectionAndDownstreamQuery,
+        query: legacySelection,
       });
     },
   };
