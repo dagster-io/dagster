@@ -59,6 +59,7 @@ from dagster._core.executor.base import Executor
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
+from dagster._core.types.connection import Connection
 from dagster._utils.test.definitions import scoped_definitions_load_context
 
 
@@ -966,6 +967,14 @@ def test_invalid_partitions_subclass():
             dynamic_partitions_store: Any = None,
         ) -> Sequence[str]:
             return ["a", "b", "c"]
+
+        def get_partition_key_connection(
+            self, current_time=None, dynamic_partitions_store=None, cursor=None, limit=None
+        ):
+            partition_keys = self.get_partition_keys(
+                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+            )
+            return Connection.create_from_offset_list(partition_keys, cursor=cursor, limit=limit)
 
     @asset(partitions_def=CustomPartitionsDefinition())
     def asset1():
