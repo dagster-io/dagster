@@ -319,7 +319,11 @@ class DgContext:
         return self.get_path_for_local_module(self.defs_module_name)
 
     def get_component_instance_names(self) -> Iterable[str]:
-        return [str(p.name) for p in self.defs_path.iterdir() if p.is_dir() and str(p.name) not in _EXCLUDED_COMPONENT_DIRECTORIES]
+        return [
+            str(p.name)
+            for p in self.defs_path.iterdir()
+            if p.is_dir() and str(p.name) not in _EXCLUDED_COMPONENT_DIRECTORIES
+        ]
 
     def get_component_instance_module_name(self, name: str) -> str:
         return f"{self.defs_module_name}.{name}"
