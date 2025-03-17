@@ -191,7 +191,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
 
       const selectionForPythonFiltering = selection.keys.map((k) => `${k}*`).join(',');
       const selectionForUIFiltering = featureEnabled(FeatureFlag.flagSelectionSyntax)
-        ? selection.keys.map((k) => `name:"${k}"*`).join(' or ')
+        ? selection.keys.map((k) => `name:"${k}"+`).join(' or ')
         : selectionForPythonFiltering;
 
       const selectionKeys = filterRunSelectionByQuery(graph, selectionForUIFiltering).all.map(
