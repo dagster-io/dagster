@@ -1,6 +1,6 @@
 import datetime
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping, Sequence, Set
 from functools import cached_property
 from typing import TYPE_CHECKING, Generic, Optional, Union
 
@@ -473,6 +473,28 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         )
 
         return LatestRunExecutedWithRootTargetCondition()
+
+    @staticmethod
+    def executed_with_tags(
+        *,
+        tag_keys: Optional[Set[str]] = None,
+        tag_values: Optional[Mapping[str, str]] = None,
+    ) -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if the latest run that updated the target was
+        launched from the declarative automation system.
+
+        Args:
+            tag_keys (Optional[AbstractSet[str]]): If provided, the condition will only be true if the
+                latest run that updated the target was launched with all of the provided tags.
+            tag_values (Optional[Mapping[str, str]]): If provided, the condition will only be true if the
+                latest run that updated the target was launched with all of the provided values for the
+                specified keys.
+        """
+        from dagster._core.definitions.declarative_automation.operands import (
+            LatestRunExecutedWithTagsCondition,
+        )
+
+        return LatestRunExecutedWithTagsCondition(tag_keys=tag_keys, tag_values=tag_values)
 
     @public
     @staticmethod
