@@ -188,17 +188,19 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         console.warn('Run execution plan must be present to launch from-selected execution');
         return Promise.resolve();
       }
-      const selectionAndDownstreamQuery = featureEnabled(FeatureFlag.flagSelectionSyntax)
-        ? selection.keys.map((k) => `name:"${k}"*`).join(' or ')
-        : selection.keys.map((k) => `${k}*`).join(',');
 
-      const selectionKeys = filterRunSelectionByQuery(graph, selectionAndDownstreamQuery).all.map(
+      const selectionForPythonFiltering = selection.keys.map((k) => `${k}*`).join(',');
+      const selectionForUIFiltering = featureEnabled(FeatureFlag.flagSelectionSyntax)
+        ? selection.keys.map((k) => `name:"${k}"+`).join(' or ')
+        : selectionForPythonFiltering;
+
+      const selectionKeys = filterRunSelectionByQuery(graph, selectionForUIFiltering).all.map(
         (node) => node.name,
       );
 
       await reexecuteWithSelection({
         keys: selectionKeys,
-        query: selectionAndDownstreamQuery,
+        query: selectionForPythonFiltering,
       });
     },
   };

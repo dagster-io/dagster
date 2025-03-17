@@ -153,6 +153,12 @@ class AssetSpecKwargs(SharedAssetKwargs):
         AssetKey,
         Resolver.from_model(lambda context, schema: _resolve_asset_key(schema.key, context)),
     ]
+    deps: Annotated[
+        Sequence[AssetKey],
+        Resolver.from_model(
+            lambda context, schema: [_resolve_asset_key(dep, context) for dep in schema.deps]
+        ),
+    ]
 
 
 class AssetAttributesKwargs(SharedAssetKwargs):

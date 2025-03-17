@@ -121,7 +121,7 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         # with open("projects/bar/pyproject.toml") as f:
         #     toml = tomlkit.parse(f.read())
         #
-        #     # No tool.uv.sources added without --use-editable-components-package-only
+        #     # No tool.uv.sources added without --use-editable-dagster
         #     assert "uv" not in toml["tool"]
 
         # Check cache was populated
@@ -148,7 +148,7 @@ def test_scaffold_project_inside_workspace_applies_scaffold_project_options(monk
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     with (
         ProxyRunner.test() as runner,
-        isolated_example_workspace(runner, use_editable_components_package_only=False),
+        isolated_example_workspace(runner, use_editable_dagster=False),
     ):
         with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
             create_toml_node(
@@ -174,9 +174,7 @@ def test_scaffold_project_outside_workspace_success(monkeypatch) -> None:
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
 
     with ProxyRunner.test() as runner, runner.isolated_filesystem(), clear_module_from_cache("bar"):
-        result = runner.invoke(
-            "scaffold", "project", "foo-bar", "--use-editable-components-package-only"
-        )
+        result = runner.invoke("scaffold", "project", "foo-bar", "--use-editable-dagster")
         assert_runner_result(result)
         assert Path("foo-bar").exists()
         assert Path("foo-bar/foo_bar").exists()
@@ -190,9 +188,7 @@ def test_scaffold_project_outside_workspace_success(monkeypatch) -> None:
         assert Path("foo-bar/uv.lock").exists()
 
 
-EditableOption: TypeAlias = Literal[
-    "--use-editable-dagster", "--use-editable-components-package-only"
-]
+EditableOption: TypeAlias = Literal["--use-editable-dagster"]
 
 
 @pytest.mark.parametrize("option", get_args(EditableOption))
@@ -208,7 +204,7 @@ def test_scaffold_project_editable_dagster_success(
         editable_args = [option, str(dagster_git_repo_dir)]
     with (
         ProxyRunner.test() as runner,
-        isolated_example_workspace(runner, use_editable_components_package_only=False),
+        isolated_example_workspace(runner, use_editable_dagster=False),
     ):
         result = runner.invoke("scaffold", "project", *editable_args, "projects/foo-bar")
         assert_runner_result(result)
@@ -233,6 +229,10 @@ def validate_pyproject_toml_with_editable(
             "path": str(repo_root / "python_modules" / "dagster-pipes"),
             "editable": True,
         }
+        assert get_toml_node(toml, ("tool", "uv", "sources", "dagster-shared"), dict) == {
+            "path": str(repo_root / "python_modules" / "libraries" / "dagster-shared"),
+            "editable": True,
+        }
         assert get_toml_node(toml, ("tool", "uv", "sources", "dagster-webserver"), dict) == {
             "path": str(repo_root / "python_modules" / "dagster-webserver"),
             "editable": True,
@@ -246,6 +246,7 @@ def validate_pyproject_toml_with_editable(
     else:
         assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster"))
         assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster-pipes"))
+        assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster-shared"))
         assert not has_toml_node(toml, ("tool", "uv", "sources", "dagster-webserver"))
         assert not has_toml_node(toml, ("tool", "uv", "sources", "dagstermill"))
 
@@ -296,7 +297,7 @@ def test_scaffold_project_no_populate_cache_success(monkeypatch) -> None:
             "project",
             "--no-populate-cache",
             "foo-bar",
-            "--use-editable-components-package-only",
+            "--use-editable-dagster",
         )
         assert_runner_result(result)
         assert Path("foo-bar").exists()
@@ -325,7 +326,7 @@ def test_scaffold_project_no_use_dg_managed_environment_success(monkeypatch) -> 
             "project",
             "--no-use-dg-managed-environment",
             "foo-bar",
-            "--use-editable-components-package-only",
+            "--use-editable-dagster",
         )
         assert_runner_result(result)
         assert Path("foo-bar").exists()
@@ -347,11 +348,11 @@ def test_scaffold_project_editable_dagster_no_env_var_no_value_fails(
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", "")
     with (
         ProxyRunner.test() as runner,
-        isolated_example_workspace(runner, use_editable_components_package_only=False),
+        isolated_example_workspace(runner, use_editable_dagster=False),
     ):
         result = runner.invoke("scaffold", "project", option, "--", "bar")
         assert_runner_result(result, exit_0=False)
-        assert "require the `DAGSTER_GIT_REPO_DIR`" in result.output
+        assert "requires the `DAGSTER_GIT_REPO_DIR`" in result.output
 
 
 def test_scaffold_project_already_exists_fails() -> None:

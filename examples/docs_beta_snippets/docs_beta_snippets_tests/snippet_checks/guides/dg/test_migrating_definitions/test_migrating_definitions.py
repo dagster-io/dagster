@@ -3,7 +3,6 @@ from pathlib import Path
 from dagster._utils.env import environ
 from docs_beta_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
-    EDITABLE_DIR,
     format_multiline,
     isolated_snippet_generation_environment,
 )
@@ -59,7 +58,12 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         _run_command(cmd="uv venv")
         _run_command(cmd="uv sync")
         _run_command(
-            f"uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}' '{DAGSTER_ROOT / 'python_modules' / 'dagster'!s}' '{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}'"
+            f"uv add --editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-components'!s}' "
+            f"'{DAGSTER_ROOT / 'python_modules' / 'dagster'!s}' "
+            f"'{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-shared'!s}' "
+            f"'{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}' "
+            f"'{DAGSTER_ROOT / 'python_modules' / 'dagster-pipes'!s}' "
+            f"'{DAGSTER_ROOT / 'python_modules' / 'dagster-graphql'!s}'"
         )
 
         _run_command("mkdir -p my_existing_project/defs/elt")

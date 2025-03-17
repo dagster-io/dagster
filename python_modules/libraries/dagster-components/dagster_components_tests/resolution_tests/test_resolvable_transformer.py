@@ -155,7 +155,7 @@ def test_asset_spec():
 
     kitchen_sink_model = AssetSpecModel(
         key="kitchen_sink",
-        deps=["upstream"],
+        deps=["upstream", "prefixed/upstream"],
         description="A kitchen sink",
         metadata={"key": "value"},
         group_name="group_name",
@@ -175,7 +175,10 @@ def test_asset_spec():
     )
 
     assert kitchen_sink_spec.key == AssetKey("kitchen_sink")
-    assert kitchen_sink_spec.deps == [AssetDep(asset="upstream")]
+    assert kitchen_sink_spec.deps == [
+        AssetDep(asset=AssetKey(["upstream"])),
+        AssetDep(asset=AssetKey(["prefixed", "upstream"])),
+    ]
     assert kitchen_sink_spec.description == "A kitchen sink"
     assert kitchen_sink_spec.metadata == {"key": "value"}
     assert kitchen_sink_spec.group_name == "group_name"

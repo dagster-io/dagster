@@ -5889,8 +5889,15 @@ class TestEventLogStorage:
                 )
             )
 
-    def test_asset_check_evaluation_without_planned_event(self, storage: EventLogStorage):
-        run_id = make_new_run_id()
+    def test_asset_check_evaluation_without_planned_event(
+        self, storage: EventLogStorage, test_run_id: str
+    ):
+        check_key = AssetCheckKey(asset_key=AssetKey(["my_asset"]), name="my_check")
+
+        check_summary_record = storage.get_asset_check_summary_records([check_key])[check_key]
+        assert not check_summary_record.last_check_execution_record
+
+        run_id = test_run_id
         storage.store_event(
             EventLogEntry(
                 error_info=None,
@@ -5915,9 +5922,50 @@ class TestEventLogStorage:
             )
         )
 
-        # since no planned event is logged, we don't create a row in the sumary table
-        assert not storage.get_asset_check_execution_history(
-            AssetCheckKey(asset_key=AssetKey(["my_asset"]), name="my_check"), limit=10
+        check_summary_record = storage.get_asset_check_summary_records([check_key])[check_key]
+        check_execution_record = check_summary_record.last_check_execution_record
+
+        assert check_execution_record
+        assert check_execution_record.status == AssetCheckExecutionRecordStatus.SUCCEEDED
+        assert check_execution_record.run_id == run_id
+        assert check_execution_record.event
+        assert (
+            check_execution_record.event.dagster_event_type
+            == DagsterEventType.ASSET_CHECK_EVALUATION
+        )
+
+    def test_yield_asset_check_evaluation_from_op(
+        self, storage: EventLogStorage, instance: DagsterInstance
+    ):
+        @op
+        def yield_asset_check_evaluation():
+            yield AssetCheckEvaluation(
+                asset_key=AssetKey(["my_asset"]),
+                check_name="my_check",
+                passed=True,
+                metadata={},
+            )
+            yield Output(1)
+
+        @job
+        def yield_asset_check_evaluation_job():
+            yield_asset_check_evaluation()
+
+        result = yield_asset_check_evaluation_job.execute_in_process(instance=instance)
+        run_id = result.run_id
+
+        check_key = AssetCheckKey(asset_key=AssetKey(["my_asset"]), name="my_check")
+
+        check_summary_record = storage.get_asset_check_summary_records([check_key])[check_key]
+        check_execution_record = check_summary_record.last_check_execution_record
+
+        assert check_execution_record
+        assert check_execution_record.status == AssetCheckExecutionRecordStatus.SUCCEEDED
+        assert check_execution_record.run_id == run_id
+        assert check_execution_record.event
+        assert (
+            check_execution_record.event.dagster_event_type
+            == DagsterEventType.ASSET_CHECK_EVALUATION
         )
 
     def test_external_asset_event(

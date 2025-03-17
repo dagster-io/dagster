@@ -49,7 +49,9 @@ export interface PartitionHealthData {
 export interface PartitionHealthDataMerged {
   dimensions: PartitionHealthDimension[];
 
+  // Slower - looks up indexes and then calls `stateForKeyIdx`
   stateForKey: (dimensionKeys: string[]) => AssetPartitionStatus[];
+
   stateForKeyIdx: (dimenstionIdxs: number[]) => AssetPartitionStatus[];
 
   rangesForSingleDimension: (
@@ -132,7 +134,7 @@ export function buildPartitionHealthData(data: PartitionHealthQuery, loadKey: As
       return AssetPartitionStatus.MISSING;
     }
     if (!d0Range.subranges || dIndexes.length === 1) {
-      return d0Range.value[0]!; // 1D case
+      return d0Range.value[0] ?? AssetPartitionStatus.MISSING; // 1D case
     }
     const d1Range = d0Range.subranges.find(
       (r) => r.start.idx <= dIndexes[1]! && r.end.idx >= dIndexes[1]!,
