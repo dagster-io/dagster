@@ -3,7 +3,7 @@ import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import pytest
 from dagster._core.definitions.definitions_class import Definitions
@@ -15,13 +15,13 @@ from dagster_components_tests.utils import create_project_from_components
 
 @contextmanager
 def load_test_component_defs(
-    src_path: str, local_component_defn_to_inject: Optional[Path] = None
+    src_path: Union[str, Path], local_component_defn_to_inject: Optional[Path] = None
 ) -> Iterator[Definitions]:
     """Loads a component from a test component project, making the provided local component defn
     available in that component's __init__.py.
     """
     with create_project_from_components(
-        src_path, local_component_defn_to_inject=local_component_defn_to_inject
+        str(src_path), local_component_defn_to_inject=local_component_defn_to_inject
     ) as (_, project_name):
         module = importlib.import_module(f"{project_name}.defs.{Path(src_path).stem}")
 

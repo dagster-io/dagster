@@ -11,14 +11,13 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, TypeVar, Union
 
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import pushd
 from dagster._utils.cached_method import cached_method
-from dagster._utils.source_position import SourcePositionTree
 from typing_extensions import Self
 
 from dagster_components.core.component_key import ComponentKey
@@ -26,19 +25,14 @@ from dagster_components.core.component_scaffolder import DefaultComponentScaffol
 from dagster_components.resolved.context import ResolutionContext
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, resolve_model
 from dagster_components.scaffold import ScaffolderUnavailableReason, get_scaffolder, scaffold_with
-from dagster_components.utils import format_error_message
+from dagster_components.utils import format_error_message, get_path_from_module
+
+if TYPE_CHECKING:
+    from dagster_components.core.defs_module import DefsModuleDecl
 
 
 class ComponentsEntryPointLoadError(DagsterError):
     pass
-
-
-class ComponentDeclNode(ABC):
-    @abstractmethod
-    def load(self, context: "ComponentLoadContext") -> Sequence["Component"]: ...
-
-    @abstractmethod
-    def get_source_position_tree(self) -> Optional[SourcePositionTree]: ...
 
 
 @scaffold_with(DefaultComponentScaffolder)
@@ -241,32 +235,33 @@ class DefinitionsModuleCache:
 
     @cached_method
     def _load_defs_inner(self, module: ModuleType) -> Definitions:
-        from dagster_components.core.component_decl_builder import module_to_decl_node
-        from dagster_components.core.component_defs_builder import defs_from_components
+        from dagster_components.core.defs_module import DefsModuleDecl
 
-        decl_node = module_to_decl_node(module)
+        decl_node = DefsModuleDecl.from_module(module)
         if not decl_node:
             raise Exception(f"No component found at module {module}")
 
         context = ComponentLoadContext(
-            module_name=module.__name__,
+            defs_root=get_path_from_module(module),
+            defs_module_name=module.__name__,
             decl_node=decl_node,
-            resolution_context=ResolutionContext.default(decl_node.get_source_position_tree()),
+            resolution_context=ResolutionContext.default(
+                source_position_tree=decl_node.get_source_position_tree()
+            ),
             module_cache=self,
         )
+        defs_module = decl_node.load(context)
         with use_component_load_context(context):
-            components = decl_node.load(context)
-            return defs_from_components(
-                resources=self.resources, context=context, components=components
-            )
+            return defs_module.build_defs()
 
 
 @dataclass
 class ComponentLoadContext:
     """Context for loading a single component."""
 
-    module_name: str
-    decl_node: Optional[ComponentDeclNode]
+    defs_root: Path
+    defs_module_name: str
+    decl_node: Optional["DefsModuleDecl"]
     resolution_context: ResolutionContext
     module_cache: DefinitionsModuleCache
 
@@ -283,38 +278,19 @@ class ComponentLoadContext:
     def for_test(
         *,
         resources: Optional[Mapping[str, object]] = None,
-        decl_node: Optional[ComponentDeclNode] = None,
+        decl_node: Optional["DefsModuleDecl"] = None,
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
-            module_name="test",
+            defs_root=Path.cwd(),
+            defs_module_name="test",
             decl_node=decl_node,
-            resolution_context=ResolutionContext.default(
-                decl_node.get_source_position_tree() if decl_node else None
-            ),
+            resolution_context=ResolutionContext.default(),
             module_cache=DefinitionsModuleCache(resources=resources or {}),
         )
 
     @property
     def path(self) -> Path:
-        from dagster_components.core.component_decl_builder import (
-            ComponentFolder,
-            ImplicitDefinitionsComponentDecl,
-            PythonComponentDecl,
-            YamlComponentDecl,
-        )
-
-        if not isinstance(
-            self.decl_node,
-            (
-                YamlComponentDecl,
-                PythonComponentDecl,
-                ImplicitDefinitionsComponentDecl,
-                ComponentFolder,
-            ),
-        ):
-            check.failed(f"Unsupported decl_node type {type(self.decl_node)}")
-
-        return self.decl_node.path
+        return check.not_none(self.decl_node).path
 
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
         return dataclasses.replace(
@@ -322,11 +298,31 @@ class ComponentLoadContext:
             resolution_context=self.resolution_context.with_scope(**rendering_scope),
         )
 
-    def for_decl_node(self, decl_node: ComponentDeclNode) -> "ComponentLoadContext":
-        return dataclasses.replace(self, decl_node=decl_node)
+    def for_decl(self, decl: "DefsModuleDecl") -> "ComponentLoadContext":
+        return dataclasses.replace(self, decl_node=decl)
+
+    def defs_relative_module_name(self, path: Path) -> str:
+        """Returns the name of the python module at the given path, relative to the project root."""
+        container_path = self.path.parent if self.path.is_file() else self.path
+        with pushd(str(container_path)):
+            relative_path = path.resolve().relative_to(self.defs_root.resolve())
+            if path.name == "__init__.py":
+                # e.g. "a_project/defs/something/__init__.py" -> "a_project.defs.something"
+                relative_parts = relative_path.parts[:-1]
+            elif path.is_file():
+                # e.g. "a_project/defs/something/file.py" -> "a_project.defs.something.file"
+                relative_parts = [*relative_path.parts[:-1], relative_path.stem]
+            else:
+                # e.g. "a_project/defs/something/" -> "a_project.defs.something"
+                relative_parts = relative_path.parts
+            return ".".join([self.defs_module_name, *relative_parts])
 
     def normalize_component_type_str(self, type_str: str) -> str:
-        return f"{self.module_name}{type_str}" if type_str.startswith(".") else type_str
+        return (
+            f"{self.defs_relative_module_name(self.path)}{type_str}"
+            if type_str.startswith(".")
+            else type_str
+        )
 
     def load_defs(self, module: ModuleType) -> Definitions:
         """Builds the set of Dagster definitions for a component module.
@@ -335,42 +331,30 @@ class ComponentLoadContext:
         """
         return self.module_cache.load_defs(module)
 
-    def load_component_relative_python_module(self, file_path: Path) -> ModuleType:
-        """Load a python module relative to the component's context path. This is useful for loading code
-        the resides within the component directory, loaded during `build_defs` method of a component.
+    def load_defs_relative_python_module(self, path: Path) -> ModuleType:
+        """Load a python module relative to the defs's context path. This is useful for loading code
+        the resides within the defs directory.
 
         Example:
             .. code-block:: python
 
                 def build_defs(self, context: ComponentLoadContext) -> Definitions:
                     return load_definitions_from_module(
-                        context.load_component_relative_python_module(
+                        context.load_defs_relative_python_module(
                             Path(self.definitions_path) if self.definitions_path else Path("definitions.py")
                         )
                     )
 
-        In a typical setup you end up with module names such as "a_project.components.my_component.my_python_file".
+        In a typical setup you end up with module names such as "a_project.defs.my_component.my_python_file".
 
         This handles "__init__.py" files by ending the module name at the parent directory
-        (e.g "a_project.components.my_component") if the file resides at "a_project/defs/my_component/__init__.py".
+        (e.g "a_project.defs.my_component") if the file resides at "a_project/defs/my_component/__init__.py".
 
         This calls importlib.import_module with that module name, going through the python module import system.
 
-        It is as if one typed "import a_project.components.my_component.my_python_file" in the python interpreter.
+        It is as if one typed "import a_project.defs.my_component.my_python_file" in the python interpreter.
         """
-        abs_file_path = file_path.absolute()
-        with pushd(str(self.path)):
-            abs_context_path = self.path.absolute()
-            # Problematic
-            # See https://linear.app/dagster-labs/issue/BUILD-736/highly-suspect-hardcoding-of-components-string-is-component-relative
-            component_module_relative_path = abs_context_path.parts[
-                abs_context_path.parts.index("defs") + 2 :
-            ]
-            component_module_name = ".".join([self.module_name, *component_module_relative_path])
-            if abs_file_path.name != "__init__.py":
-                component_module_name = f"{component_module_name}.{abs_file_path.stem}"
-
-            return importlib.import_module(component_module_name)
+        return importlib.import_module(self.defs_relative_module_name(path))
 
 
 active_component_load_context: contextvars.ContextVar[Union[ComponentLoadContext, None]] = (

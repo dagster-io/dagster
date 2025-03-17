@@ -24,8 +24,12 @@ from dagster_components.components.sling_replication_collection.component import
     SlingReplicationCollectionComponent,
     SlingReplicationCollectionModel,
 )
-from dagster_components.core.component_decl_builder import ComponentFileModel
-from dagster_components.core.component_defs_builder import YamlComponentDecl, load_defs
+from dagster_components.core.component_defs_builder import load_defs
+from dagster_components.core.defs_module import (
+    ComponentFileModel,
+    DefsModuleDecl,
+    YamlComponentDecl,
+)
 from dagster_components.resolved.context import ResolutionException
 from dagster_components.resolved.core_models import AssetAttributesModel
 from dagster_components.utils import ensure_dagster_components_tests_import
@@ -80,7 +84,9 @@ def temp_sling_component_instance(
                 # update the defs yaml to add a duckdb instance
                 data["attributes"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
 
-            yield YamlComponentDecl.from_path(Path(temp_dir) / COMPONENT_RELPATH)
+            decl_node = DefsModuleDecl.from_path(Path(temp_dir) / COMPONENT_RELPATH)
+            assert isinstance(decl_node, YamlComponentDecl)
+            yield decl_node
 
 
 def test_python_attributes() -> None:
@@ -172,12 +178,10 @@ def test_python_params_include_metadata() -> None:
 def test_load_from_path() -> None:
     with temp_sling_component_instance() as decl_node:
         context = script_load_context(decl_node)
-        components = decl_node.load(context)
-        assert len(components) == 1
-        component = components[0]
-        assert isinstance(component, SlingReplicationCollectionComponent)
+        defs_module = decl_node.load(context)
+        assert isinstance(defs_module.component, SlingReplicationCollectionComponent)
 
-        resource = getattr(component, "resource")
+        resource = getattr(defs_module.component, "resource")
         assert isinstance(resource, SlingResource)
         assert len(resource.connections) == 1
         assert resource.connections[0].name == "DUCKDB"
