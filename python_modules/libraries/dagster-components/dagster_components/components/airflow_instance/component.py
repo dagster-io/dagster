@@ -66,7 +66,11 @@ class AirflowDagModel(ResolvableModel):
         description="Asset specs to optionally associate with each task within the DAG.",
     )
     make_executable: bool = Field(
-        default=True, description="Whether to make the DAG executable in Dagster."
+        default=True,
+        description=(
+            "Whether to make the DAG executable in Dagster. "
+            "This makes all affiliated Dagster assets executable, with the backing computation kicking off a run of the DAG in Airflow."
+        ),
     )
 
 
@@ -170,6 +174,8 @@ class AirflowInstanceComponent(Component, ResolvedFrom[AirflowInstanceModel]):
             specs = [
                 *dg_airlift_core.assets_with_dag_mappings(
                     {dag.dag_id: cast(Sequence[AssetSpec], dag.asset_specs)}
+                    if dag.asset_specs
+                    else {}
                 ),
                 *dg_airlift_core.assets_with_task_mappings(
                     dag_id=dag.dag_id,
