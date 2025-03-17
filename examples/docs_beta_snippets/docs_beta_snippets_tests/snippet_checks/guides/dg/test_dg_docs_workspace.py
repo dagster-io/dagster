@@ -33,8 +33,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         # Scaffold workspace
         run_command_and_snippet_output(
             cmd='echo "\nproject-1\n" | dg init --use-editable-dagster',
-            snippet_path=DG_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-init.txt",
+            snippet_path=DG_SNIPPETS_DIR / f"{get_next_snip_number()}-dg-init.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 MASK_EDITABLE_DAGSTER,
@@ -81,8 +80,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         # Validate project toml
         check_file(
             "projects/project-1/pyproject.toml",
-            DG_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-project-pyproject.toml",
+            DG_SNIPPETS_DIR / f"{get_next_snip_number()}-project-pyproject.toml",
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 re_ignore_before("[tool.dg]"),
@@ -125,8 +123,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         # List projects
         run_command_and_snippet_output(
             cmd="dg list project",
-            snippet_path=DG_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-project-list.txt",
+            snippet_path=DG_SNIPPETS_DIR / f"{get_next_snip_number()}-project-list.txt",
             update_snippets=update_snippets,
         )
 
