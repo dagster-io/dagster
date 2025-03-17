@@ -7,7 +7,7 @@ import pytest
 from dagster import AssetSpec, Definitions
 from dagster._core.test_utils import environ
 from dagster_airlift.core import build_defs_from_airflow_instance
-from dagster_airlift.core.top_level_dag_def_api import dag_defs, task_defs
+from dagster_airlift.core.top_level_dag_def_api import assets_with_task_mappings
 from dagster_airlift.dbt import dbt_defs
 from dagster_airlift.test import make_instance
 from dagster_dbt.dbt_project import DbtProject
@@ -51,14 +51,16 @@ def test_dbt_defs(dbt_project_path: Path, dbt_project_setup: None, init_load_con
     )
 
     initial_defs = Definitions.merge(
-        dag_defs(
-            "dag_one",
-            task_defs("task_one", dbt_defs_inst),
+        Definitions(
+            assets=assets_with_task_mappings(
+                dag_id="dag_one",
+                task_mappings={"task_one": dbt_defs_inst.assets},
+            ),
         ),
-        dag_defs(
-            "dag_two",
-            task_defs(
-                "task_two", Definitions(assets=[AssetSpec("downstream", deps=["customers"])])
+        Definitions(
+            assets=assets_with_task_mappings(
+                dag_id="dag_two",
+                task_mappings={"task_two": [AssetSpec("downstream", deps=["customers"])]},
             ),
         ),
     )

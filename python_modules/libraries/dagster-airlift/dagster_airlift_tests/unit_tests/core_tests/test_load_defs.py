@@ -25,11 +25,7 @@ from dagster._utils.test.definitions import (
     unwrap_reconstruction_metadata,
 )
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
-from dagster_airlift.core import (
-    build_defs_from_airflow_instance as build_defs_from_airflow_instance,
-    dag_defs,
-    task_defs,
-)
+from dagster_airlift.core import assets_with_task_mappings, build_defs_from_airflow_instance
 from dagster_airlift.core.load_defs import (
     enrich_airflow_mapped_assets,
     load_airflow_dag_asset_specs,
@@ -455,7 +451,7 @@ def test_multiple_tasks_to_single_asset_metadata() -> None:
     ]
 
 
-def test_multiple_tasks_dag_defs() -> None:
+def test_multiple_tasks_with_multiple_task_mappings() -> None:
     @asset
     def other_asset() -> None: ...
 
@@ -466,32 +462,24 @@ def test_multiple_tasks_dag_defs() -> None:
         airflow_instance=make_instance(
             {"weekly_dag": ["task1"], "daily_dag": ["task1"], "other_dag": ["task1"]}
         ),
-        defs=Definitions.merge(
-            dag_defs(
-                "other_dag",
-                task_defs(
-                    "task1",
-                    Definitions(assets=[other_asset]),
+        defs=Definitions(
+            assets=[
+                other_asset,
+                *assets_with_multiple_task_mappings(
+                    assets=[scheduled_twice],
+                    task_handles=[
+                        {"dag_id": "weekly_dag", "task_id": "task1"},
+                        {"dag_id": "daily_dag", "task_id": "task1"},
+                    ],
                 ),
-            ),
-            Definitions(
-                assets=[
-                    *assets_with_multiple_task_mappings(
-                        assets=[scheduled_twice],
-                        task_handles=[
-                            {"dag_id": "weekly_dag", "task_id": "task1"},
-                            {"dag_id": "daily_dag", "task_id": "task1"},
-                        ],
-                    )
-                ],
-            ),
+            ],
         ),
     )
 
     Definitions.validate_loadable(defs)
 
 
-def test_mixed_multiple_tasks_single_task_mapping_defs_sep_dags() -> None:
+def test_mixed_multiple_tasks_using_task_mappings() -> None:
     @asset
     def single_targeted_asset() -> None: ...
 
@@ -503,15 +491,13 @@ def test_mixed_multiple_tasks_single_task_mapping_defs_sep_dags() -> None:
             {"weekly_dag": ["task1"], "daily_dag": ["task1"], "other_dag": ["task1"]}
         ),
         defs=Definitions.merge(
-            dag_defs(
-                "other_dag",
-                task_defs(
-                    "task1",
-                    Definitions(assets=[single_targeted_asset]),
-                ),
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="other_dag", task_mappings={"task1": [single_targeted_asset]}
+                )
             ),
             Definitions(
-                assets_with_multiple_task_mappings(
+                assets=assets_with_multiple_task_mappings(
                     assets=[double_targeted_asset],
                     task_handles=[
                         {"dag_id": "weekly_dag", "task_id": "task1"},
@@ -544,7 +530,7 @@ def test_mixed_multiple_tasks_single_task_mapping_defs_sep_dags() -> None:
     }
 
 
-def test_mixed_multiple_task_single_task_mapping_same_dags() -> None:
+def test_task_mappings_in_same_dags() -> None:
     @asset
     def other_asset() -> None: ...
 
@@ -570,11 +556,10 @@ def test_mixed_multiple_task_single_task_mapping_same_dags() -> None:
                     )
                 ]
             ),
-            dag_defs(
-                "weekly_dag",
-                task_defs(
-                    "task_for_other_asset",
-                    Definitions(assets=[other_asset]),
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="weekly_dag",
+                    task_mappings={"task_for_other_asset": [other_asset]},
                 ),
             ),
         ),
@@ -600,7 +585,7 @@ def test_mixed_multiple_task_single_task_mapping_same_dags() -> None:
     }
 
 
-def test_mixed_multiple_task_single_task_mapping_same_task() -> None:
+def test_task_mappings_with_same_task_id() -> None:
     @asset
     def other_asset() -> None: ...
 
@@ -624,11 +609,10 @@ def test_mixed_multiple_task_single_task_mapping_same_task() -> None:
                     ],
                 )
             ),
-            dag_defs(
-                "weekly_dag",
-                task_defs(
-                    "task1",
-                    Definitions(assets=[other_asset]),
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="weekly_dag",
+                    task_mappings={"task1": [other_asset]},
                 ),
             ),
         ),
