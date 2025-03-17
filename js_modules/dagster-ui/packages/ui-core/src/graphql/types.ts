@@ -99,11 +99,21 @@ export type ArrayConfigType = ConfigType &
 
 export type Asset = {
   __typename: 'Asset';
+  assetMaterializationHistory: Array<AssetMaterializationEventType>;
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   definition: Maybe<AssetNode>;
   id: Scalars['String']['output'];
   key: AssetKey;
+};
+
+export type AssetAssetMaterializationHistoryArgs = {
+  afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
+  beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
+  eventTypeSelector?: InputMaybe<MaterializationHistoryEventTypeSelector>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  partitionInLast?: InputMaybe<Scalars['Int']['input']>;
+  partitions?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 export type AssetAssetMaterializationsArgs = {
@@ -347,6 +357,16 @@ export enum AssetEventType {
   ASSET_OBSERVATION = 'ASSET_OBSERVATION',
 }
 
+export enum AssetFailedToMaterializeReason {
+  COMPUTE_FAILED = 'COMPUTE_FAILED',
+  SKIPPED_OPTIONAL = 'SKIPPED_OPTIONAL',
+  UNEXPECTED_TERMINATION = 'UNEXPECTED_TERMINATION',
+  UNKNOWN = 'UNKNOWN',
+  UPSTREAM_COMPUTE_FAILED = 'UPSTREAM_COMPUTE_FAILED',
+  UPSTREAM_SKIPPED = 'UPSTREAM_SKIPPED',
+  USER_TERMINATION = 'USER_TERMINATION',
+}
+
 export type AssetFreshnessInfo = {
   __typename: 'AssetFreshnessInfo';
   currentLagMinutes: Maybe<Scalars['Float']['output']>;
@@ -391,6 +411,8 @@ export type AssetLineageInfo = {
   assetKey: AssetKey;
   partitions: Array<Scalars['String']['output']>;
 };
+
+export type AssetMaterializationEventType = FailedToMaterializeEvent | MaterializationEvent;
 
 export type AssetMaterializationPlannedEvent = MessageEvent &
   RunEvent & {
@@ -1016,6 +1038,7 @@ export type DagsterRunEvent =
   | ExecutionStepStartEvent
   | ExecutionStepSuccessEvent
   | ExecutionStepUpForRetryEvent
+  | FailedToMaterializeEvent
   | HandledOutputEvent
   | HookCompletedEvent
   | HookErroredEvent
@@ -1610,6 +1633,49 @@ export type ExpectationResult = DisplayableEvent & {
   >;
   success: Scalars['Boolean']['output'];
 };
+
+export type FailedToMaterializeEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename: 'FailedToMaterializeEvent';
+    assetKey: Maybe<AssetKey>;
+    description: Maybe<Scalars['String']['output']>;
+    eventType: Maybe<DagsterEventType>;
+    failedToMaterializeReason: AssetFailedToMaterializeReason;
+    label: Maybe<Scalars['String']['output']>;
+    level: LogLevel;
+    message: Scalars['String']['output'];
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | CodeReferencesMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PoolMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | TimestampMetadataEntry
+      | UrlMetadataEntry
+    >;
+    partition: Maybe<Scalars['String']['output']>;
+    runId: Scalars['String']['output'];
+    runOrError: RunOrError;
+    solidHandleID: Maybe<Scalars['String']['output']>;
+    stepKey: Maybe<Scalars['String']['output']>;
+    stepStats: RunStepStats;
+    tags: Array<EventTag>;
+    timestamp: Scalars['String']['output'];
+  };
 
 export type FailureMetadata = DisplayableEvent & {
   __typename: 'FailureMetadata';
@@ -2567,6 +2633,12 @@ export type MaterializationEvent = DisplayableEvent &
     tags: Array<EventTag>;
     timestamp: Scalars['String']['output'];
   };
+
+export enum MaterializationHistoryEventTypeSelector {
+  ALL = 'ALL',
+  FAILED_TO_MATERIALIZE = 'FAILED_TO_MATERIALIZE',
+  MATERIALIZATION = 'MATERIALIZATION',
+}
 
 export type MaterializationUpstreamDataVersion = {
   __typename: 'MaterializationUpstreamDataVersion';
@@ -5984,6 +6056,10 @@ export const buildAsset = (
   relationshipsToOmit.add('Asset');
   return {
     __typename: 'Asset',
+    assetMaterializationHistory:
+      overrides && overrides.hasOwnProperty('assetMaterializationHistory')
+        ? overrides.assetMaterializationHistory!
+        : [],
     assetMaterializations:
       overrides && overrides.hasOwnProperty('assetMaterializations')
         ? overrides.assetMaterializations!
@@ -8540,6 +8616,61 @@ export const buildExpectationResult = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     success: overrides && overrides.hasOwnProperty('success') ? overrides.success! : false,
+  };
+};
+
+export const buildFailedToMaterializeEvent = (
+  overrides?: Partial<FailedToMaterializeEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'FailedToMaterializeEvent'} & FailedToMaterializeEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('FailedToMaterializeEvent');
+  return {
+    __typename: 'FailedToMaterializeEvent',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+          ? ({} as AssetKey)
+          : buildAssetKey({}, relationshipsToOmit),
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'et',
+    eventType:
+      overrides && overrides.hasOwnProperty('eventType')
+        ? overrides.eventType!
+        : DagsterEventType.ALERT_FAILURE,
+    failedToMaterializeReason:
+      overrides && overrides.hasOwnProperty('failedToMaterializeReason')
+        ? overrides.failedToMaterializeReason!
+        : AssetFailedToMaterializeReason.COMPUTE_FAILED,
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'aliquam',
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'libero',
+    metadataEntries:
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    partition:
+      overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'voluptatibus',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'et',
+    runOrError:
+      overrides && overrides.hasOwnProperty('runOrError')
+        ? overrides.runOrError!
+        : relationshipsToOmit.has('PythonError')
+          ? ({} as PythonError)
+          : buildPythonError({}, relationshipsToOmit),
+    solidHandleID:
+      overrides && overrides.hasOwnProperty('solidHandleID')
+        ? overrides.solidHandleID!
+        : 'voluptatem',
+    stepKey:
+      overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'reprehenderit',
+    stepStats:
+      overrides && overrides.hasOwnProperty('stepStats')
+        ? overrides.stepStats!
+        : relationshipsToOmit.has('RunStepStats')
+          ? ({} as RunStepStats)
+          : buildRunStepStats({}, relationshipsToOmit),
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'enim',
   };
 };
 
