@@ -118,6 +118,7 @@ def test_fetched_airflow_data() -> None:
     fetched_airflow_data = FetchedAirflowData(
         dag_infos={
             "dag1": DagInfo(
+                instance_name="test",
                 webserver_url=ws_url,
                 dag_id="dag1",
                 metadata={},

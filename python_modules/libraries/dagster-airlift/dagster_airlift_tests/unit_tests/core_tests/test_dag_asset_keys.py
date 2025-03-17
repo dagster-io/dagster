@@ -15,11 +15,17 @@ def produce_valid_name(dag_info: DagInfo) -> str:
 
 def test_dag_info_asset_key() -> None:
     # Airflow allows "exclusively alphanumeric characters, dashes, dots and underscores (all ASCII)"
-    dag_info_hyphen = DagInfo(webserver_url="", dag_id="my-test-dag-id", metadata={})
+    dag_info_hyphen = DagInfo(
+        instance_name="test", webserver_url="", dag_id="my-test-dag-id", metadata={}
+    )
     assert check_valid_name(produce_valid_name(dag_info_hyphen))
 
-    dag_info_slash = DagInfo(webserver_url="", dag_id="my-test/dag-id", metadata={})
+    dag_info_slash = DagInfo(
+        instance_name="test", webserver_url="", dag_id="my-test/dag-id", metadata={}
+    )
     assert check_valid_name(produce_valid_name(dag_info_slash))
 
-    dag_info_dot = DagInfo(webserver_url="", dag_id="my-test.dag-id", metadata={})
+    dag_info_dot = DagInfo(
+        instance_name="test", webserver_url="", dag_id="my-test.dag-id", metadata={}
+    )
     assert check_valid_name(produce_valid_name(dag_info_dot))

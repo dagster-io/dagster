@@ -37,9 +37,11 @@ from dagster_airlift.core.serialization.compute import (
 )
 from dagster_airlift.core.serialization.defs_construction import make_default_dag_asset_key
 from dagster_airlift.core.serialization.serialized_data import (
+    DagInfo,
     SerializedAirflowDefinitionsData,
     TaskHandle,
 )
+from dagster_airlift.core.translator import DagsterAirflowTranslator
 from dagster_airlift.core.utils import is_task_mapped_asset_spec, metadata_for_task_mapping
 from dagster_airlift.test import make_instance
 
@@ -263,6 +265,7 @@ def test_peered_dags() -> None:
     ]:
         dag_asset_spec = repo_def.assets_defs_by_key[dag_asset_key].specs_by_key[dag_asset_key]
         assert "dagster/kind/airflow" in dag_asset_spec.tags
+        assert "dagster/kind/dag" in dag_asset_spec.tags
 
 
 def test_observed_assets() -> None:
@@ -699,3 +702,36 @@ def test_load_dags_upstream() -> None:
     assert dag_asset_spec.key == make_default_dag_asset_key("test_instance", "dag")
     assert len(list(dag_asset_spec.deps)) == 1
     assert next(iter(dag_asset_spec.deps)).asset_key == AssetKey("a")
+
+
+def test_translator() -> None:
+    class MyCustomTranslator(DagsterAirflowTranslator):
+        def get_asset_spec(self, dag_info: "DagInfo") -> AssetSpec:
+            return (
+                super()
+                .get_asset_spec(dag_info)
+                .merge_attributes(metadata={"custom_key": "custom_value"})
+            )
+
+    instance = make_instance({"dag": ["task"]})
+    translator = MyCustomTranslator()
+    dag_assets = load_airflow_dag_asset_specs(
+        airflow_instance=instance,
+        translator=translator,
+    )
+    assert len(dag_assets) == 1
+    assert dag_assets[0].key == make_default_dag_asset_key("test_instance", "dag")
+    assert dag_assets[0].metadata["custom_key"] == "custom_value"
+
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=instance,
+        translator=translator,
+    )
+    assert defs.assets
+    assets_lst = list(defs.assets)
+    assert len(assets_lst) == 1
+    assert isinstance(assets_lst[0], AssetsDefinition)
+    assert len(list(assets_lst[0].specs)) == 1
+    spec = next(iter(assets_lst[0].specs))
+    assert spec.key == make_default_dag_asset_key("test_instance", "dag")
+    assert spec.metadata["custom_key"] == "custom_value"

@@ -32,12 +32,14 @@ from dagster_airlift.core.serialization.serialized_data import (
     DagInfo,
     SerializedAirflowDefinitionsData,
 )
+from dagster_airlift.core.translator import DagsterAirflowTranslator
 from dagster_airlift.core.utils import get_metadata_key, spec_iterator
 
 
 @dataclass
 class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDefinitionsData]):
     airflow_instance: AirflowInstance
+    translator: DagsterAirflowTranslator
     mapped_assets: Sequence[MappedAsset]
     source_code_retrieval_enabled: Optional[bool]
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS
@@ -62,7 +64,7 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
         return Definitions(
             assets=[
                 *_apply_airflow_data_to_specs(self.mapped_assets, serialized_airflow_data),
-                *construct_dag_assets_defs(serialized_airflow_data),
+                *construct_dag_assets_defs(serialized_airflow_data, translator=self.translator),
             ]
         )
 
@@ -77,6 +79,7 @@ def build_defs_from_airflow_instance(
     dag_selector_fn: Optional[Callable[[DagInfo], bool]] = None,
     source_code_retrieval_enabled: Optional[bool] = None,
     default_sensor_status: Optional[DefaultSensorStatus] = None,
+    translator: Optional[DagsterAirflowTranslator] = None,
 ) -> Definitions:
     """Builds a :py:class:`dagster.Definitions` object from an Airflow instance.
 
@@ -221,10 +224,13 @@ def build_defs_from_airflow_instance(
         mapped_assets=mapped_assets,
         dag_selector_fn=dag_selector_fn,
         source_code_retrieval_enabled=source_code_retrieval_enabled,
+        translator=translator or DagsterAirflowTranslator(),
     ).get_or_fetch_state()
     mapped_and_constructed_assets = [
         *_apply_airflow_data_to_specs(mapped_assets, serialized_airflow_data),
-        *construct_dag_assets_defs(serialized_airflow_data),
+        *construct_dag_assets_defs(
+            serialized_airflow_data, translator=translator or DagsterAirflowTranslator()
+        ),
     ]
     defs_with_airflow_assets = replace_assets_in_defs(
         defs=defs, assets=mapped_and_constructed_assets
@@ -292,12 +298,14 @@ def enrich_airflow_mapped_assets(
     mapped_assets: Sequence[MappedAsset],
     airflow_instance: AirflowInstance,
     source_code_retrieval_enabled: Optional[bool],
+    translator: Optional[DagsterAirflowTranslator] = None,
 ) -> Sequence[AssetsDefinition]:
     """Enrich Airflow-mapped assets with metadata from the provided :py:class:`AirflowInstance`."""
     serialized_data = AirflowInstanceDefsLoader(
         airflow_instance=airflow_instance,
         mapped_assets=mapped_assets,
         source_code_retrieval_enabled=source_code_retrieval_enabled,
+        translator=translator or DagsterAirflowTranslator(),
     ).get_or_fetch_state()
     return list(_apply_airflow_data_to_specs(mapped_assets, serialized_data))
 
@@ -308,6 +316,7 @@ def load_airflow_dag_asset_specs(
     mapped_assets: Optional[Sequence[MappedAsset]] = None,
     dag_selector_fn: Optional[Callable[[DagInfo], bool]] = None,
     source_code_retrieval_enabled: Optional[bool] = None,
+    translator: Optional[DagsterAirflowTranslator] = None,
 ) -> Sequence[AssetSpec]:
     """Load asset specs for Airflow DAGs from the provided :py:class:`AirflowInstance`, and link upstreams from mapped assets."""
     serialized_data = AirflowInstanceDefsLoader(
@@ -315,5 +324,12 @@ def load_airflow_dag_asset_specs(
         mapped_assets=mapped_assets or [],
         dag_selector_fn=dag_selector_fn,
         source_code_retrieval_enabled=source_code_retrieval_enabled,
+        translator=translator or DagsterAirflowTranslator(),
     ).get_or_fetch_state()
-    return list(spec_iterator(construct_dag_assets_defs(serialized_data)))
+    return list(
+        spec_iterator(
+            construct_dag_assets_defs(
+                serialized_data, translator=translator or DagsterAirflowTranslator()
+            )
+        )
+    )

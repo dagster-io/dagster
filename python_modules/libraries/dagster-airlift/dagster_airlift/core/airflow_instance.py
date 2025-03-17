@@ -91,6 +91,7 @@ class AirflowInstance:
                 dags = response.json()
                 dag_responses.extend(
                     DagInfo(
+                        instance_name=self.name,
                         webserver_url=webserver_url,
                         dag_id=dag["dag_id"],
                         metadata=dag,

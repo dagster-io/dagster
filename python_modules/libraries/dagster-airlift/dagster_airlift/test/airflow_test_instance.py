@@ -150,8 +150,9 @@ class AirflowInstanceFake(AirflowInstance):
         return "indicates found source code"
 
 
-def make_dag_info(dag_id: str, file_token: Optional[str]) -> DagInfo:
+def make_dag_info(instance_name: str, dag_id: str, file_token: Optional[str]) -> DagInfo:
     return DagInfo(
+        instance_name=instance_name,
         webserver_url="http://dummy.domain",
         dag_id=dag_id,
         metadata={"file_token": file_token if file_token else "dummy_file_token"},
@@ -231,7 +232,9 @@ def make_instance(
     dag_infos = []
     task_infos = []
     for dag_id, task_ids in dag_and_task_structure.items():
-        dag_info = make_dag_info(dag_id=dag_id, file_token=dag_id)
+        dag_info = make_dag_info(
+            instance_name=instance_name or "test_instance", dag_id=dag_id, file_token=dag_id
+        )
         dag_infos.append(dag_info)
         task_infos.extend(
             [

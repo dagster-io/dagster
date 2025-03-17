@@ -32,6 +32,10 @@ def airflow_kind_dict() -> dict:
     return {f"{KIND_PREFIX}airflow": ""}
 
 
+def dag_kind_dict() -> dict:
+    return {f"{KIND_PREFIX}dag": ""}
+
+
 def airlift_mapped_kind_dict() -> dict:
     return {f"{KIND_PREFIX}airliftmapped": ""}
 

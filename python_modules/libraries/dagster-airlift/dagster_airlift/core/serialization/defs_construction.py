@@ -7,11 +7,7 @@ from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.storage.tags import KIND_PREFIX
 
 from dagster_airlift.constants import AUTOMAPPED_TASK_METADATA_KEY
-from dagster_airlift.core.dag_asset import (
-    dag_asset_metadata,
-    dag_description,
-    peered_dag_asset_metadata,
-)
+from dagster_airlift.core.dag_asset import add_source_code, dag_asset_metadata
 from dagster_airlift.core.serialization.serialized_data import (
     DagHandle,
     SerializedAirflowDefinitionsData,
@@ -19,8 +15,8 @@ from dagster_airlift.core.serialization.serialized_data import (
     TaskHandle,
     TaskInfo,
 )
+from dagster_airlift.core.translator import DagsterAirflowTranslator
 from dagster_airlift.core.utils import (
-    airflow_kind_dict,
     airlift_mapped_kind_dict,
     convert_to_valid_dagster_name,
     metadata_for_task_mapping,
@@ -71,16 +67,17 @@ def enrich_spec_with_airflow_dag_metadata(
     )
 
 
-def make_dag_external_asset(instance_name: str, dag_data: SerializedDagData) -> AssetsDefinition:
-    return external_asset_from_spec(
-        AssetSpec(
-            key=make_default_dag_asset_key(instance_name, dag_data.dag_id),
-            description=dag_description(dag_data.dag_info),
-            metadata=peered_dag_asset_metadata(dag_data.dag_info, dag_data.source_code),
-            tags={**airflow_kind_dict(), f"{KIND_PREFIX}dag": ""},
-            deps=dag_data.leaf_asset_keys,
+def make_dag_external_asset(
+    *, dag_data: SerializedDagData, translator: DagsterAirflowTranslator
+) -> AssetsDefinition:
+    spec = translator.get_asset_spec(dag_data.dag_info)
+    if dag_data.source_code:
+        spec = add_source_code(
+            translator.get_asset_spec(dag_data.dag_info), source_code=dag_data.source_code
         )
-    )
+    spec = spec.merge_attributes(deps=dag_data.leaf_asset_keys)
+
+    return external_asset_from_spec(spec)
 
 
 def get_airflow_data_to_spec_mapper(
@@ -104,9 +101,10 @@ def get_airflow_data_to_spec_mapper(
 
 def construct_dag_assets_defs(
     serialized_data: SerializedAirflowDefinitionsData,
+    translator: DagsterAirflowTranslator,
 ) -> Sequence[AssetsDefinition]:
     return [
-        make_dag_external_asset(serialized_data.instance_name, dag_data)
+        make_dag_external_asset(dag_data=dag_data, translator=translator)
         for dag_data in serialized_data.dag_datas.values()
     ]
 
@@ -134,58 +132,6 @@ def metadata_for_automapped_task_asset(task_info: TaskInfo) -> Mapping[str, Any]
         },
         **metadata_for_task_mapping(task_id=task_info.task_id, dag_id=task_info.dag_id),
     }
-
-
-def construct_automapped_dag_assets_defs(
-    serialized_data: SerializedAirflowDefinitionsData,
-) -> Sequence[AssetsDefinition]:
-    dag_specs = []
-    task_specs = []
-    for dag_data in serialized_data.dag_datas.values():
-        leaf_tasks = set()
-        upstream_deps: dict[str, set[str]] = {task_id: set() for task_id in dag_data.task_infos}
-        for task_id, task_info in dag_data.task_infos.items():
-            if not task_info.downstream_task_ids:
-                leaf_tasks.add(task_id)
-            for downstream_id in task_info.downstream_task_ids:
-                upstream_deps[downstream_id].add(task_id)
-
-        task_specs.extend(
-            AssetSpec(
-                key=key_for_automapped_task_asset(
-                    serialized_data.instance_name, dag_data.dag_id, task_id
-                ),
-                deps=[
-                    key_for_automapped_task_asset(
-                        serialized_data.instance_name, dag_data.dag_id, upstream_task_id
-                    )
-                    for upstream_task_id in upstream_task_ids
-                ],
-                description=description_for_automapped_task_asset(dag_data.task_infos[task_id]),
-                tags=tags_for_automapped_task_asset(),
-                metadata=metadata_for_automapped_task_asset(dag_data.task_infos[task_id]),
-            )
-            for task_id, upstream_task_ids in upstream_deps.items()
-        )
-
-        dag_specs.append(
-            AssetSpec(
-                key=make_default_dag_asset_key(serialized_data.instance_name, dag_data.dag_id),
-                description=dag_description(dag_data.dag_info),
-                metadata=peered_dag_asset_metadata(dag_data.dag_info, dag_data.source_code),
-                tags=airflow_kind_dict(),
-                deps=set(
-                    [
-                        key_for_automapped_task_asset(
-                            serialized_data.instance_name, dag_data.dag_id, task_id
-                        )
-                        for task_id in leaf_tasks
-                    ]
-                ).union(dag_data.leaf_asset_keys),
-            )
-        )
-
-    return task_specs + dag_specs
 
 
 def make_default_dag_asset_key(instance_name: str, dag_id: str) -> AssetKey:

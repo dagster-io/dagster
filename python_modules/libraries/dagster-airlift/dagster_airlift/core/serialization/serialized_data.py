@@ -42,6 +42,7 @@ class DagInfo:
             https://airflow.apache.org/docs/apache-airflow/stable/stable-rest-api-ref.html#operation/get_dags
     """
 
+    instance_name: str
     webserver_url: str
     dag_id: str
     metadata: PublicAttr[dict[str, Any]]
