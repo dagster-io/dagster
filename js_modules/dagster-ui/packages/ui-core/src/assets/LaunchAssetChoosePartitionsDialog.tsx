@@ -168,7 +168,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       return mergedAssetHealth([]);
     }
     if (target.type === 'job' || assetHealthLoading) {
-      return mergedAssetHealth(assetHealth, true);
+      return mergedAssetHealth(assetHealth);
     }
     return assetHealth.find(itemWithAssetKey(target.anchorAssetKey)) || mergedAssetHealth([]);
   }, [assetHealth, assetHealthLoading, target]);
