@@ -14,6 +14,7 @@ from dagster import (
     AssetSelection,
     ExecuteInProcessResult,
     OpExecutionContext,
+    Output,
     asset_check,
     job,
     materialize,
@@ -688,15 +689,16 @@ def test_asset_checks_evaluations(
             )
 
         yield from events
+        yield Output(None)
 
-        @job
-        def my_dbt_job():
-            return my_dbt_op()
+    @job
+    def my_dbt_job():
+        my_dbt_op()
 
-        result = my_dbt_job.execute_in_process(
-            resources={"dbt": DbtCliResource(project_dir=os.fspath(test_asset_checks_path))}
-        )
-        assert result.success
+    result = my_dbt_job.execute_in_process(
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_asset_checks_path))}
+    )
+    assert result.success
 
 
 @pytest.mark.parametrize(
