@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel
 
@@ -17,15 +17,16 @@ class AirflowInstanceComponentScaffolder(Scaffolder):
     def get_scaffold_params(cls) -> Optional[type[BaseModel]]:
         return AirflowScaffoldParams
 
-    def scaffold(self, request: ScaffoldRequest, params: AirflowScaffoldParams) -> None:
+    def scaffold(self, request: ScaffoldRequest, params: Any) -> None:
+        scaffold_params = AirflowScaffoldParams(**params)
         scaffold_component_yaml(
             request,
             {
                 "auth": {
                     "type": "basic_auth",
-                    "webserver_url": params.webserver_url,
-                    "username": params.username,
-                    "password": params.password,
+                    "webserver_url": scaffold_params.webserver_url,
+                    "username": scaffold_params.username,
+                    "password": scaffold_params.password,
                 },
                 "name": request.target_path.stem,
             },

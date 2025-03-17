@@ -8,10 +8,13 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_airlift.core.airflow_instance import AirflowAuthBackend
 from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
+from dagster_dbt.asset_utils import get_asset_key_for_model as get_asset_key_for_model
 from pydantic import Field
 
-from dagster_components import AssetPostProcessorModel, Component
-from dagster_components.core.component import ComponentLoadContext
+from dagster_components import AssetPostProcessorModel, Component, ComponentLoadContext
+from dagster_components.components.airflow_instance.scaffolder import (
+    AirflowInstanceComponentScaffolder,
+)
 from dagster_components.resolved.context import ResolutionContext
 from dagster_components.resolved.core_models import (
     AssetAttributesModel,
@@ -19,6 +22,7 @@ from dagster_components.resolved.core_models import (
     ResolvedAssetSpec,
 )
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
+from dagster_components.scaffold import scaffold_with
 
 
 class AirflowBasicAuthBackendModel(ResolvableModel):
@@ -98,6 +102,7 @@ def resolve_auth(context: ResolutionContext, model: AirflowInstanceModel) -> Air
         raise ValueError(f"Unsupported auth type: {model.auth.type}")
 
 
+@scaffold_with(AirflowInstanceComponentScaffolder)
 @dataclass
 class AirflowInstanceComponent(Component, ResolvedFrom[AirflowInstanceModel]):
     """Represent an Airflow instance in Dagster as a set of assets. Automatically polls
