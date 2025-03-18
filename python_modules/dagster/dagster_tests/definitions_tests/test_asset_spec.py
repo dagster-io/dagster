@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import dagster as dg
 import pytest
@@ -13,9 +13,11 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from pydantic import BaseModel, TypeAdapter
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
 
 
 def test_validate_asset_owner() -> None:
@@ -206,9 +208,9 @@ def test_map_asset_specs_mixed_specs_defs() -> None:
 
     assert all(
         spec.owners == ["ben@dagsterlabs.com"]
-        for spec in cast(AssetsDefinition, mapped_specs_and_defs[0]).specs
+        for spec in cast("AssetsDefinition", mapped_specs_and_defs[0]).specs
     )
-    assert cast(AssetSpec, mapped_specs_and_defs[1]).owners == ["ben@dagsterlabs.com"]
+    assert cast("AssetSpec", mapped_specs_and_defs[1]).owners == ["ben@dagsterlabs.com"]
 
 
 def test_map_asset_specs_multi_asset() -> None:

@@ -435,7 +435,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         return self._get_primary_and_secondary_dimension()[1]
 
     def get_tags_for_partition_key(self, partition_key: str) -> Mapping[str, str]:
-        partition_key = cast(MultiPartitionKey, self.get_partition_key_from_str(partition_key))
+        partition_key = cast("MultiPartitionKey", self.get_partition_key_from_str(partition_key))
         tags = {**super().get_tags_for_partition_key(partition_key)}
         tags.update(get_tags_from_multi_partition_key(partition_key))
         return tags
@@ -463,7 +463,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     def time_window_partitions_def(self) -> TimeWindowPartitionsDefinition:
         check.invariant(self.has_time_window_dimension, "Must have time window dimension")
         return cast(
-            TimeWindowPartitionsDefinition,
+            "TimeWindowPartitionsDefinition",
             check.inst(self.primary_dimension.partitions_def, TimeWindowPartitionsDefinition),
         )
 
@@ -473,9 +473,9 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
 
         time_window_dimension = self.time_window_dimension
         return cast(
-            TimeWindowPartitionsDefinition, time_window_dimension.partitions_def
+            "TimeWindowPartitionsDefinition", time_window_dimension.partitions_def
         ).time_window_for_partition_key(
-            cast(MultiPartitionKey, partition_key).keys_by_dimension[time_window_dimension.name]
+            cast("MultiPartitionKey", partition_key).keys_by_dimension[time_window_dimension.name]
         )
 
     def get_multipartition_keys_with_dimension_value(

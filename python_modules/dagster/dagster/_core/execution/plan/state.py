@@ -60,7 +60,7 @@ class PastExecutionState(
         )
 
     def get_parent_state(self) -> Optional["PastExecutionState"]:
-        return cast(Optional[PastExecutionState], self.parent_state)
+        return cast("Optional[PastExecutionState]", self.parent_state)
 
 
 # Previously, step_output_versions was stored as a list of StepOutputVersionData objects. It
@@ -91,8 +91,8 @@ class StepOutputVersionSerializer(FieldSerializer):
         mapping: dict[StepOutputHandle, str] = {}
         for unknown_serdes_value in value:
             item = unknown_serdes_value.value
-            step_output_handle = cast(StepOutputHandle, item["step_output_handle"])
-            version = cast(str, item["version"])
+            step_output_handle = cast("StepOutputHandle", item["step_output_handle"])
+            version = cast("str", item["version"])
             mapping[step_output_handle] = version
             context.clear_ignored_unknown_values(unknown_serdes_value)
         return mapping
@@ -307,7 +307,7 @@ def _derive_state_of_past_run(
                 _update_tracking_dict(interrupted_steps_in_parent_run_logs, step_handle)
 
     # expand type to allow filling in None mappings for skips
-    dynamic_outputs = cast(dict[str, dict[str, Optional[list[str]]]], observed_dynamic_outputs)
+    dynamic_outputs = cast("dict[str, dict[str, Optional[list[str]]]]", observed_dynamic_outputs)
     to_retry: TrackingDict = defaultdict(set)
     execution_deps = execution_plan.execution_deps()
     for step_snap in execution_plan.topological_steps():

@@ -3,15 +3,17 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import pytest
 import yaml
 from dagster import AssetsDefinition, materialize
 from dagster_dbt.cli.app import app
 from dagster_dbt.core.resource import DbtCliResource
-from dagster_dbt.dbt_project import DbtProject
 from typer.testing import CliRunner
+
+if TYPE_CHECKING:
+    from dagster_dbt.dbt_project import DbtProject
 
 runner = CliRunner()
 
@@ -206,8 +208,10 @@ def test_prepare_and_package_with_state(
     assert result.exit_code == 0
 
     scaffold_defs_module = importlib.import_module(f"{project_name}.{project_name}.definitions")
-    my_dbt_assets = cast(AssetsDefinition, getattr(scaffold_defs_module, "jaffle_shop_dbt_assets"))
-    project = cast(DbtProject, getattr(scaffold_defs_module, "jaffle_shop_project"))
+    my_dbt_assets = cast(
+        "AssetsDefinition", getattr(scaffold_defs_module, "jaffle_shop_dbt_assets")
+    )
+    project = cast("DbtProject", getattr(scaffold_defs_module, "jaffle_shop_project"))
     dbt = DbtCliResource(project_dir=project)
 
     assert project.packaged_project_dir

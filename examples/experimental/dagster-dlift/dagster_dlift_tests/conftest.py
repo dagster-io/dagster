@@ -45,9 +45,9 @@ def build_expected_requests(
     }
 
 
-def jaffle_shop_contents() -> (
-    Mapping[DbtCloudContentType, Mapping[str, Optional[AbstractSet[str]]]]
-):
+def jaffle_shop_contents() -> Mapping[
+    DbtCloudContentType, Mapping[str, Optional[AbstractSet[str]]]
+]:
     return {
         DbtCloudContentType.MODEL: {
             "model.jaffle_shop.customers": {

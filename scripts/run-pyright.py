@@ -430,7 +430,7 @@ def run_pyright(
             raise Exception(f"Pyright output was not valid JSON. Output was:\n\n{output}")
     return {
         "returncode": result.returncode,
-        "output": cast(PyrightOutput, json_result),
+        "output": cast("PyrightOutput", json_result),
     }
 
 
@@ -467,7 +467,7 @@ def merge_pyright_results(result_1: RunResult, result_2: RunResult) -> RunResult
         "output": {
             "time": output_1["time"],
             "version": output_1["version"],
-            "summary": cast(Summary, summary),
+            "summary": cast("Summary", summary),
             "generalDiagnostics": diagnostics,
         },
     }
@@ -519,7 +519,7 @@ def get_hints(output: PyrightOutput) -> Sequence[str]:
     dagster_pyright_version = get_dagster_pyright_version()
     if dagster_pyright_version != output["version"]:
         hints.append(
-            f'Your local version of pyright is {output["version"]}, which does not match Dagster\'s'
+            f"Your local version of pyright is {output['version']}, which does not match Dagster's"
             f" pinned version of {dagster_pyright_version}. Please run `make install_pyright` to"
             " install the correct version."
         )

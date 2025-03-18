@@ -1,7 +1,7 @@
 import logging
 import time
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Callable, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -18,7 +18,6 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import CodeLocation, RemoteJob, RemotePartitionSet
 from dagster._core.remote_representation.external_data import PartitionSetExecutionParamSnap
-from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import (
     NOT_FINISHED_STATUSES,
     DagsterRun,
@@ -40,6 +39,9 @@ from dagster._time import get_current_timestamp
 from dagster._utils import check_for_debug_crash
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
+
+if TYPE_CHECKING:
+    from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 
 # out of abundance of caution, sleep at checkpoints in case we are pinning CPU by submitting lots
 # of jobs all at once
@@ -65,7 +67,7 @@ def execute_job_backfill_iteration(
     partition_set = _get_partition_set(workspace_process_context, backfill)
 
     # refetch in case the backfill status has changed
-    backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
+    backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
     if backfill.status == BulkActionStatus.CANCELING:
         for all_runs_canceled in cancel_backfill_runs_and_cancellation_complete(
             instance=instance, backfill_id=backfill.backfill_id
@@ -108,7 +110,7 @@ def execute_job_backfill_iteration(
             ):
                 yield None
                 # before submitting, refetch the backfill job to check for status changes
-                backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
+                backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
                 if backfill.status != BulkActionStatus.REQUESTED:
                     return
 
@@ -116,7 +118,7 @@ def execute_job_backfill_iteration(
 
         if has_more:
             # refetch, in case the backfill was updated in the meantime
-            backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
+            backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
             instance.update_backfill(backfill.with_partition_checkpoint(checkpoint))
             yield None
             time.sleep(CHECKPOINT_INTERVAL)
@@ -134,7 +136,7 @@ def execute_job_backfill_iteration(
                 )
                 instance.update_backfill(backfill.with_partition_checkpoint(checkpoint))
                 return
-            partition_names = cast(Sequence[str], backfill.partition_names)
+            partition_names = cast("Sequence[str]", backfill.partition_names)
             logger.info(
                 f"Backfill completed for {backfill.backfill_id} for"
                 f" {len(partition_names)} partitions"
@@ -167,7 +169,7 @@ def execute_job_backfill_iteration(
 def _get_partition_set(
     workspace_process_context: IWorkspaceProcessContext, backfill_job: PartitionBackfill
 ) -> RemotePartitionSet:
-    origin = cast(RemotePartitionSetOrigin, backfill_job.partition_set_origin)
+    origin = cast("RemotePartitionSetOrigin", backfill_job.partition_set_origin)
 
     location_name = origin.repository_origin.code_location_origin.location_name
 
@@ -217,7 +219,7 @@ def _get_partitions_chunk(
     chunk_size: int,
     partition_set: RemotePartitionSet,
 ) -> tuple[Sequence[Union[str, PartitionKeyRange]], str, bool]:
-    partition_names = cast(Sequence[str], backfill_job.partition_names)
+    partition_names = cast("Sequence[str]", backfill_job.partition_names)
     checkpoint = backfill_job.last_submitted_partition_name
     backfill_policy = partition_set.backfill_policy
 
@@ -321,14 +323,14 @@ def submit_backfill_runs(
     partition_names_or_ranges: Optional[Sequence[Union[str, PartitionKeyRange]]] = None,
 ) -> Iterable[Optional[str]]:
     """Returns the run IDs of the submitted runs."""
-    origin = cast(RemotePartitionSetOrigin, backfill_job.partition_set_origin)
+    origin = cast("RemotePartitionSetOrigin", backfill_job.partition_set_origin)
 
     repository_origin = origin.repository_origin
     repo_name = repository_origin.repository_name
     location_name = repository_origin.code_location_origin.location_name
 
     if not partition_names_or_ranges:
-        partition_names_or_ranges = cast(Sequence[str], backfill_job.partition_names)
+        partition_names_or_ranges = cast("Sequence[str]", backfill_job.partition_names)
 
     workspace = create_workspace()
     code_location = workspace.get_code_location(location_name)

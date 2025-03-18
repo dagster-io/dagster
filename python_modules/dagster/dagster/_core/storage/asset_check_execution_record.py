@@ -108,7 +108,7 @@ class AssetCheckExecutionRecord(
     def evaluation(self) -> Optional[AssetCheckEvaluation]:
         if self.event and self.event.dagster_event:
             return cast(
-                AssetCheckEvaluation,
+                "AssetCheckEvaluation",
                 self.event.dagster_event.event_specific_data,
             )
         return None

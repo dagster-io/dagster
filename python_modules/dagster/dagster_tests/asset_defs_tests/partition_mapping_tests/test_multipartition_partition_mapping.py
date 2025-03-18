@@ -919,9 +919,9 @@ def test_multi_partition_mapping_with_asset_deps():
             assert current_partition_key - asset_1_key == timedelta(days=1)
             assert current_partition_key - asset_2_key == timedelta(days=2)
         else:
-            assert (
-                False
-            ), "partition keys for asset_1, asset_2, and multi_asset_2 should be MultiPartitionKeys"
+            assert False, (
+                "partition keys for asset_1, asset_2, and multi_asset_2 should be MultiPartitionKeys"
+            )
 
         return
 

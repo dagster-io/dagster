@@ -1105,7 +1105,7 @@ class GrapheneQuery(graphene.ObjectType):
         return sorted(nodes, key=lambda node: node.id)
 
     def resolve_assetNodeOrError(self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput):
-        asset_key_input = cast(Mapping[str, Sequence[str]], assetKey)
+        asset_key_input = cast("Mapping[str, Sequence[str]]", assetKey)
         return get_asset_node(graphene_info, AssetKey.from_graphql_input(asset_key_input))
 
     @capture_error
@@ -1132,7 +1132,7 @@ class GrapheneQuery(graphene.ObjectType):
         assetKeys: Sequence[GrapheneAssetKeyInput],
     ):
         assert assetKeys is not None
-        raw_asset_keys = cast(Sequence[Mapping[str, Sequence[str]]], assetKeys)
+        raw_asset_keys = cast("Sequence[Mapping[str, Sequence[str]]]", assetKeys)
         asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in raw_asset_keys)
         return get_additional_required_keys(graphene_info, asset_keys)
 
@@ -1142,7 +1142,7 @@ class GrapheneQuery(graphene.ObjectType):
         assetKeys: Sequence[GrapheneAssetKeyInput],
     ):
         assert assetKeys is not None
-        raw_asset_keys = cast(Sequence[Mapping[str, Sequence[str]]], assetKeys)
+        raw_asset_keys = cast("Sequence[Mapping[str, Sequence[str]]]", assetKeys)
         asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in raw_asset_keys)
         return get_asset_node_definition_collisions(graphene_info, asset_keys)
 

@@ -819,7 +819,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             isinstance(node_def, OpDefinition),
             "The NodeDefinition for this AssetsDefinition is not of type OpDefinition.",
         )
-        return cast(OpDefinition, node_def)
+        return cast("OpDefinition", node_def)
 
     @public
     @property

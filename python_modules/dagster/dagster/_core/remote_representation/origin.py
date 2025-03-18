@@ -54,7 +54,7 @@ def _assign_loadable_target_origin_name(loadable_target_origin: LoadableTargetOr
         else (
             loadable_target_origin.module_name
             if loadable_target_origin.module_name
-            else os.path.basename(cast(str, loadable_target_origin.python_file))
+            else os.path.basename(cast("str", loadable_target_origin.python_file))
         )
     )
 
@@ -356,7 +356,7 @@ class GrpcServerCodeLocationOrigin(
             # Handle case when this is called against `dagster api grpc` servers that don't have this API method implemented
             if (
                 isinstance(e.__cause__, grpc.RpcError)
-                and cast(grpc.RpcError, e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
+                and cast("grpc.RpcError", e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
             ):
                 pass
             else:

@@ -15,7 +15,6 @@ from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._config import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.definition_config_schema import (
@@ -28,6 +27,7 @@ from dagster._core.storage.input_manager import IInputManagerDefinition, InputMa
 from dagster._core.storage.output_manager import IOutputManagerDefinition, OutputManager
 
 if TYPE_CHECKING:
+    from dagster._config import UserConfigSchema
     from dagster._core.execution.context.init import InitResourceContext
     from dagster._core.execution.context.input import InputContext
     from dagster._core.execution.context.output import OutputContext
@@ -108,7 +108,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             output_config_schema=self.output_config_schema,
         )
 
-        io_def._dagster_maintained = self._is_dagster_maintained()  # noqa: SLF001
+        io_def._dagster_maintained = self._is_dagster_maintained()
 
         return io_def
 
@@ -236,12 +236,12 @@ def io_manager(
 
     """
     if callable(config_schema) and not is_callable_valid_config_arg(config_schema):
-        config_schema = cast(IOManagerFunction, config_schema)
+        config_schema = cast("IOManagerFunction", config_schema)
         return _IOManagerDecoratorCallable()(config_schema)
 
     def _wrap(resource_fn: IOManagerFunction) -> IOManagerDefinition:
         return _IOManagerDecoratorCallable(
-            config_schema=cast(Optional[UserConfigSchema], config_schema),
+            config_schema=cast("Optional[UserConfigSchema]", config_schema),
             description=description,
             required_resource_keys=required_resource_keys,
             version=version,

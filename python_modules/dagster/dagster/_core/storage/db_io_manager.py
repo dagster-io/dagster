@@ -171,7 +171,7 @@ class DbIOManager(IOManager):
 
         self._check_supported_type(load_type)
 
-        table_slice = self._get_table_slice(context, cast(OutputContext, context.upstream_output))
+        table_slice = self._get_table_slice(context, cast("OutputContext", context.upstream_output))
 
         with self._db_client.connect(context, table_slice) as conn:
             return self._resolve_handler(load_type).load_input(context, table_slice, conn)  # type: ignore  # (pyright bug)
@@ -196,7 +196,7 @@ class DbIOManager(IOManager):
             table = asset_key_path[-1]
             # schema order of precedence: metadata, I/O manager 'schema' config, key_prefix
             if output_context_metadata.get("schema"):
-                schema = cast(str, output_context_metadata["schema"])
+                schema = cast("str", output_context_metadata["schema"])
             elif self._schema:
                 schema = self._schema
             elif len(asset_key_path) > 1:
@@ -216,7 +216,7 @@ class DbIOManager(IOManager):
 
                 if isinstance(context.asset_partitions_def, MultiPartitionsDefinition):
                     multi_partition_key_mapping = cast(
-                        MultiPartitionKey, context.asset_partition_key
+                        "MultiPartitionKey", context.asset_partition_key
                     ).keys_by_dimension
                     for part in context.asset_partitions_def.partitions_defs:
                         partition_key = multi_partition_key_mapping[part.name]
@@ -227,7 +227,9 @@ class DbIOManager(IOManager):
                         else:
                             partitions = [partition_key]
 
-                        partition_expr_str = cast(Mapping[str, str], partition_expr).get(part.name)
+                        partition_expr_str = cast("Mapping[str, str]", partition_expr).get(
+                            part.name
+                        )
                         if partition_expr is None:
                             raise ValueError(
                                 f"Asset '{context.asset_key}' has partition {part.name}, but the"
@@ -238,13 +240,14 @@ class DbIOManager(IOManager):
                             )
                         partition_dimensions.append(
                             TablePartitionDimension(
-                                partition_expr=cast(str, partition_expr_str), partitions=partitions
+                                partition_expr=cast("str", partition_expr_str),
+                                partitions=partitions,
                             )
                         )
                 elif isinstance(context.asset_partitions_def, TimeWindowPartitionsDefinition):
                     partition_dimensions.append(
                         TablePartitionDimension(
-                            partition_expr=cast(str, partition_expr),
+                            partition_expr=cast("str", partition_expr),
                             partitions=(
                                 context.asset_partitions_time_window
                                 if context.asset_partition_keys
@@ -255,14 +258,14 @@ class DbIOManager(IOManager):
                 else:
                     partition_dimensions.append(
                         TablePartitionDimension(
-                            partition_expr=cast(str, partition_expr),
+                            partition_expr=cast("str", partition_expr),
                             partitions=context.asset_partition_keys,
                         )
                     )
         else:
             table = output_context.name
             if output_context_metadata.get("schema"):
-                schema = cast(str, output_context_metadata["schema"])
+                schema = cast("str", output_context_metadata["schema"])
             elif self._schema:
                 schema = self._schema
             else:

@@ -154,12 +154,12 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
     )
 
     if "load_incluster_config" in exc_cfg:
-        load_incluster_config = cast(bool, exc_cfg["load_incluster_config"])
+        load_incluster_config = cast("bool", exc_cfg["load_incluster_config"])
     else:
         load_incluster_config = run_launcher.load_incluster_config if run_launcher else True
 
     if "kubeconfig_file" in exc_cfg:
-        kubeconfig_file = cast(Optional[str], exc_cfg["kubeconfig_file"])
+        kubeconfig_file = cast("Optional[str]", exc_cfg["kubeconfig_file"])
     else:
         kubeconfig_file = run_launcher.kubeconfig_file if run_launcher else None
 
@@ -218,7 +218,7 @@ class K8sStepHandler(StepHandler):
 
     def _get_step_key(self, step_handler_context: StepHandlerContext) -> str:
         step_keys_to_execute = cast(
-            list[str], step_handler_context.execute_step_args.step_keys_to_execute
+            "list[str]", step_handler_context.execute_step_args.step_keys_to_execute
         )
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         return step_keys_to_execute[0]
@@ -230,7 +230,7 @@ class K8sStepHandler(StepHandler):
 
         context = K8sContainerContext.create_for_run(
             step_handler_context.dagster_run,
-            cast(K8sRunLauncher, step_handler_context.instance.run_launcher),
+            cast("K8sRunLauncher", step_handler_context.instance.run_launcher),
             include_run_tags=False,  # For now don't include job-level dagster-k8s/config tags in step pods
         )
         context = context.merge(self._executor_container_context)

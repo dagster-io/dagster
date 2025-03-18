@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, NamedTuple, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union, cast
 
 from typing_extensions import Self
 
@@ -16,6 +16,9 @@ from dagster._core.definitions.definition_config_schema import (
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.resource_definition import ResourceDefinition
 
 
 class ConfigurableDefinition(ABC):
@@ -232,7 +235,7 @@ def _wrap_user_fn_if_pythonic_config(
     )
 
     config_schema_from_class = infer_schema_from_config_annotation(param.annotation, param.default)
-    config_cls = cast(type[Config], param.annotation)
+    config_cls = cast("type[Config]", param.annotation)
 
     param_name = param.name
 
@@ -316,15 +319,14 @@ def configured(
     _check_configurable_param(configurable)
 
     from dagster._config.pythonic_config import ConfigurableResourceFactory, safe_is_subclass
-    from dagster._core.definitions.resource_definition import ResourceDefinition
 
     # we specially handle ConfigurableResources, treating it as @configured of the
     # underlying resource definition (which is indeed a ConfigurableDefinition)
     if safe_is_subclass(configurable, ConfigurableResourceFactory):
         configurable_inner = cast(
-            ResourceDefinition,
+            "ResourceDefinition",
             (
-                cast(type[ConfigurableResourceFactory], configurable)
+                cast("type[ConfigurableResourceFactory]", configurable)
                 .configure_at_launch()
                 .get_resource_definition()
             ),

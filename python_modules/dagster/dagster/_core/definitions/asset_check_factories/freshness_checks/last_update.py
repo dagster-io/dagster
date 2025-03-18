@@ -185,7 +185,7 @@ def _build_freshness_multi_check(
                 datetime.datetime,
             )
 
-            last_update_time_lower_bound = cast(datetime.datetime, deadline - lower_bound_delta)
+            last_update_time_lower_bound = cast("datetime.datetime", deadline - lower_bound_delta)
 
             latest_record = retrieve_last_update_record(
                 instance=context.instance, asset_key=asset_key, partition_key=None

@@ -46,5 +46,5 @@ def test_long_names():
 
     assert (
         get_task_definition_family("foo", remote_job_origin)
-        == f"foo_{'c'*55}_d9023790_{'b'*55}_3956139d_{'a'*55}_164557fa"
+        == f"foo_{'c' * 55}_d9023790_{'b' * 55}_3956139d_{'a' * 55}_164557fa"
     )

@@ -62,7 +62,7 @@ def poll_for_materialization(
 
         mat_events = instance.get_latest_materialization_events(asset_keys=target_list)
 
-    return cast(dict[AssetKey, EventLogEntry], mat_events)
+    return cast("dict[AssetKey, EventLogEntry]", mat_events)
 
 
 def poll_for_asset_check(

@@ -222,7 +222,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         insert_event_statement = self.prepare_insert_event_batch(events)
         with self._connect() as conn:
             result = conn.execute(insert_event_statement.returning(SqlEventLogStorageTable.c.id))
-            event_ids = [cast(int, row[0]) for row in result.fetchall()]
+            event_ids = [cast("int", row[0]) for row in result.fetchall()]
 
         # We only update the asset table with the last event
         self.store_asset_event(events[-1], event_ids[-1])

@@ -174,7 +174,7 @@ def get_current_evaluation_id(
             sensor_origin.get_id(), sensor_origin.get_selector().get_id()
         )
         serialized_cursor = (
-            cast(SensorInstigatorData, instigator_state.instigator_data).cursor
+            cast("SensorInstigatorData", instigator_state.instigator_data).cursor
             if instigator_state
             else None
         )
@@ -782,7 +782,7 @@ class AssetDaemon(DagsterDaemon):
             if sensor:
                 stored_cursor = asset_daemon_cursor_from_instigator_serialized_cursor(
                     cast(
-                        SensorInstigatorData,
+                        "SensorInstigatorData",
                         check.not_none(auto_materialize_instigator_state).instigator_data,
                     ).cursor,
                     workspace_asset_graph,

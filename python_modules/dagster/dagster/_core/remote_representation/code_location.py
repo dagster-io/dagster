@@ -162,8 +162,7 @@ class CodeLocation(AbstractContextManager):
                 raise DagsterInvalidSubsetError(check.not_none(error.message))
             else:
                 check.failed(
-                    f"Failed to fetch subset data, success: {subset_result.success} error:"
-                    f" {error}"
+                    f"Failed to fetch subset data, success: {subset_result.success} error: {error}"
                 )
 
         return RemoteJob(job_data_snap, repo_handle)
@@ -758,7 +757,7 @@ class GrpcServerCodeLocation(CodeLocation):
 
     @property
     def container_image(self) -> str:
-        return cast(str, self._container_image)
+        return cast("str", self._container_image)
 
     @cached_property
     def container_context(self) -> Optional[Mapping[str, Any]]:
@@ -766,7 +765,7 @@ class GrpcServerCodeLocation(CodeLocation):
 
     @property
     def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
-        return cast(Mapping[str, CodePointer], self._repository_code_pointer_dict)
+        return cast("Mapping[str, CodePointer]", self._repository_code_pointer_dict)
 
     @property
     def executable_path(self) -> Optional[str]:

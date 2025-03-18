@@ -288,9 +288,9 @@ def _wait_for_instance_dir_to_be_written(parent_dir: Path) -> Path:
 def _validate_job_available(port: int, job_name: str) -> None:
     client = DagsterGraphQLClient(hostname="localhost", port_number=port)
     locations_and_names = client._get_repo_locations_and_names_with_pipeline(job_name)  # noqa: SLF001
-    assert (
-        len(locations_and_names) > 0
-    ), f"repo failed to load or was missing a job called '{job_name}'"
+    assert len(locations_and_names) > 0, (
+        f"repo failed to load or was missing a job called '{job_name}'"
+    )
 
 
 def _validate_expected_child_processes(dev_process: subprocess.Popen, expected_count: int) -> None:

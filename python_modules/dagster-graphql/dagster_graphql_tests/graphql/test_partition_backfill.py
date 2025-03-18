@@ -409,9 +409,9 @@ class TestPartitionBackillReadonlyFailure(ReadonlyGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data
-        assert (
-            result.data["partitionBackfillOrError"]["__typename"] == "BackfillNotFoundError"
-        ), result.data
+        assert result.data["partitionBackfillOrError"]["__typename"] == "BackfillNotFoundError", (
+            result.data
+        )
         assert "Junk" in result.data["partitionBackfillOrError"]["message"]
 
     def test_resume_backfill_failure(self, graphql_context):

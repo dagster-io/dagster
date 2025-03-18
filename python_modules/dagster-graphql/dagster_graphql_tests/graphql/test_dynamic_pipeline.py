@@ -70,9 +70,9 @@ def test_dynamic_resume_reexecution(graphql_context: WorkspaceRequestContext):
     )
     assert not retry_one.errors
     assert retry_one.data
-    assert (
-        retry_one.data["launchPipelineReexecution"]["__typename"] == "LaunchRunSuccess"
-    ), retry_one.data["launchPipelineReexecution"].get("message")
+    assert retry_one.data["launchPipelineReexecution"]["__typename"] == "LaunchRunSuccess", (
+        retry_one.data["launchPipelineReexecution"].get("message")
+    )
 
     run_id = retry_one.data["launchPipelineReexecution"]["run"]["runId"]
 
@@ -143,9 +143,9 @@ def test_dynamic_full_reexecution(graphql_context: WorkspaceRequestContext):
     )
     assert not retry_one.errors
     assert retry_one.data
-    assert (
-        retry_one.data["launchPipelineReexecution"]["__typename"] == "LaunchRunSuccess"
-    ), retry_one.data["launchPipelineReexecution"].get("message")
+    assert retry_one.data["launchPipelineReexecution"]["__typename"] == "LaunchRunSuccess", (
+        retry_one.data["launchPipelineReexecution"].get("message")
+    )
 
     run_id = retry_one.data["launchPipelineReexecution"]["run"]["runId"]
 
@@ -222,9 +222,9 @@ def test_dynamic_subset(graphql_context: WorkspaceRequestContext):
     )
     assert not retry_one.errors
     assert retry_one.data
-    assert (
-        retry_one.data["launchPipelineReexecution"]["__typename"] == "LaunchRunSuccess"
-    ), retry_one.data["launchPipelineReexecution"].get("message")
+    assert retry_one.data["launchPipelineReexecution"]["__typename"] == "LaunchRunSuccess", (
+        retry_one.data["launchPipelineReexecution"].get("message")
+    )
 
     run_id = retry_one.data["launchPipelineReexecution"]["run"]["runId"]
 

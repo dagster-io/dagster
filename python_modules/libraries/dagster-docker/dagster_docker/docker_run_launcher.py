@@ -107,10 +107,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         container_kwargs = {**container_context.container_kwargs}
         labels = container_kwargs.pop("labels", {})
 
-        if "stop_timeout" in container_kwargs:
-            # This should work, but does not due to https://github.com/docker/docker-py/issues/3168
-            # Pull it out and apply it in the terminate() method instead
-            del container_kwargs["stop_timeout"]
+        container_kwargs.pop("stop_timeout", None)
 
         if isinstance(labels, list):
             labels = {key: "" for key in labels}

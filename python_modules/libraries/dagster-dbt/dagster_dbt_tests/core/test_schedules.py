@@ -88,7 +88,7 @@ def test_dbt_build_schedule(
     assert len(job.selection.operands) == 2
 
     [dbt_assets_selection, job_selection] = cast(
-        Sequence[DbtManifestAssetSelection], job.selection.operands
+        "Sequence[DbtManifestAssetSelection]", job.selection.operands
     )
     assert dbt_assets_selection.select == "fqn:*"
     assert dbt_assets_selection.exclude == ""

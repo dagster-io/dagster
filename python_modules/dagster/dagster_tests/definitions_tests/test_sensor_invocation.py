@@ -129,7 +129,7 @@ def test_sensor_invocation_resources() -> None:
 
     # Just need to pass context, which splats out into resource parameters
     assert cast(
-        RunRequest,
+        "RunRequest",
         basic_sensor_resource_req(
             build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})
         ),
@@ -151,13 +151,13 @@ def test_sensor_invocation_resources_callable() -> None:
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=("Resource with key 'my_resource' required by sensor 'weird' was not" " provided."),
+        match=("Resource with key 'my_resource' required by sensor 'weird' was not provided."),
     ):
         weird_sensor()
 
     # Just need to pass context, which splats out into resource parameters
     assert cast(
-        RunRequest,
+        "RunRequest",
         weird_sensor(build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})),
     ).run_config == {"foo": "foo"}
 
@@ -182,7 +182,7 @@ def test_sensor_invocation_resources_direct() -> None:
 
     # Can pass resource through context
     assert cast(
-        RunRequest,
+        "RunRequest",
         basic_sensor_resource_req(
             context=build_sensor_context(resources={"my_resource": MyResource(a_str="foo")})
         ),
@@ -190,7 +190,7 @@ def test_sensor_invocation_resources_direct() -> None:
 
     # Can pass resource directly
     assert cast(
-        RunRequest,
+        "RunRequest",
         basic_sensor_resource_req(my_resource=MyResource(a_str="foo")),
     ).run_config == {"foo": "foo"}
 
@@ -205,13 +205,13 @@ def test_sensor_invocation_resources_direct() -> None:
         # We don't allow providing resources as args, this adds too much complexity
         # They must be kwargs, and we will error accordingly
         assert cast(
-            RunRequest,
+            "RunRequest",
             basic_sensor_resource_req(MyResource(a_str="foo")),
         ).run_config == {"foo": "foo"}
 
     # Can pass resource directly with context
     assert cast(
-        RunRequest,
+        "RunRequest",
         basic_sensor_resource_req(build_sensor_context(), my_resource=MyResource(a_str="foo")),
     ).run_config == {"foo": "foo"}
 
@@ -221,7 +221,7 @@ def test_sensor_invocation_resources_direct() -> None:
         return RunRequest(run_key=None, run_config={"foo": my_resource.a_str}, tags={})
 
     assert cast(
-        RunRequest,
+        "RunRequest",
         basic_sensor_with_context_resource_req(
             build_sensor_context(), my_resource=MyResource(a_str="foo")
         ),
@@ -243,7 +243,7 @@ def test_recreating_sensor_with_resource_arg() -> None:
     updated_sensor = basic_sensor_with_context_resource_req.with_updated_job(junk_job)
 
     assert cast(
-        RunRequest,
+        "RunRequest",
         updated_sensor(build_sensor_context(), my_resource=MyResource(a_str="foo")),
     ).run_config == {"foo": "foo"}
 
@@ -263,7 +263,7 @@ def test_sensor_invocation_resources_direct_many() -> None:
 
     # Can pass resource directly
     assert cast(
-        RunRequest,
+        "RunRequest",
         basic_sensor_resource_req(
             my_other_resource=MyResource(a_str="bar"), my_resource=MyResource(a_str="foo")
         ),
@@ -271,7 +271,7 @@ def test_sensor_invocation_resources_direct_many() -> None:
 
     # Pass resources both directly and in context
     assert cast(
-        RunRequest,
+        "RunRequest",
         basic_sensor_resource_req(
             context=build_sensor_context(resources={"my_other_resource": MyResource(a_str="bar")}),
             my_resource=MyResource(a_str="foo"),
@@ -299,7 +299,9 @@ def test_sensor_invocation_resources_context_manager() -> None:
 
     assert "with build_sensor_context" in str(exc_info.value)
     with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
-        assert cast(RunRequest, basic_sensor_str_resource_req(context)).run_config == {"foo": "foo"}
+        assert cast("RunRequest", basic_sensor_str_resource_req(context)).run_config == {
+            "foo": "foo"
+        }
 
 
 def test_sensor_invocation_resources_deferred() -> None:
@@ -364,7 +366,7 @@ def test_multi_asset_sensor_invocation_resources() -> None:
             repository_def=my_repo,
             resources={"my_resource": MyResource(a_str="bar")},
         )
-        assert cast(RunRequest, a_and_b_sensor(ctx)).run_config == {"foo": "bar"}
+        assert cast("RunRequest", a_and_b_sensor(ctx)).run_config == {"foo": "bar"}
 
 
 def test_multi_asset_sensor_with_source_assets() -> None:
@@ -406,7 +408,7 @@ def test_multi_asset_sensor_with_source_assets() -> None:
             instance=instance,
             repository_def=my_repo,
         )
-        run_requests = cast(list[RunRequest], my_sensor(ctx))
+        run_requests = cast("list[RunRequest]", my_sensor(ctx))
         assert len(run_requests) == 1
         assert run_requests[0].partition_key == "2023-03-01"
 
@@ -1775,7 +1777,7 @@ def test_sensor_invocation_runconfig() -> None:
             tags={},
         )
 
-    assert cast(RunRequest, basic_sensor()).run_config.get("ops", {}) == {
+    assert cast("RunRequest", basic_sensor()).run_config.get("ops", {}) == {
         "foo": {"config": {"a_str": "foo", "an_int": 55}}
     }
 

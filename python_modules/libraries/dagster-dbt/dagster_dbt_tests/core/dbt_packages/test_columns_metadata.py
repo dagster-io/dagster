@@ -489,7 +489,7 @@ def test_column_lineage_real_warehouse(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     test_metadata_manifest: dict[str, Any] = cast(
-        dict[str, Any], request.getfixturevalue(manifest_fixture_name)
+        "dict[str, Any]", request.getfixturevalue(manifest_fixture_name)
     )
     sql_dialect = target
 

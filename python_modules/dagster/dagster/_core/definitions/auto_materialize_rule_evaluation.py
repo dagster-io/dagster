@@ -71,11 +71,11 @@ class ParentUpdatedRuleEvaluationData(
     def metadata(self) -> MetadataMapping:
         return {
             **{
-                f"updated_parent_{i+1}": MetadataValue.asset(k)
+                f"updated_parent_{i + 1}": MetadataValue.asset(k)
                 for i, k in enumerate(sorted(self.updated_asset_keys))
             },
             **{
-                f"will_update_parent_{i+1}": MetadataValue.asset(k)
+                f"will_update_parent_{i + 1}": MetadataValue.asset(k)
                 for i, k in enumerate(sorted(self.will_update_asset_keys))
             },
         }
@@ -93,7 +93,7 @@ class WaitingOnAssetsRuleEvaluationData(
     def metadata(self) -> MetadataMapping:
         return {
             **{
-                f"waiting_on_ancestor_{i+1}": MetadataValue.asset(k)
+                f"waiting_on_ancestor_{i + 1}": MetadataValue.asset(k)
                 for i, k in enumerate(sorted(self.waiting_on_asset_keys))
             },
         }

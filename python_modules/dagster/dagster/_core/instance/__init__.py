@@ -777,7 +777,7 @@ class DagsterInstance(DynamicPartitionsStore):
             check.invariant(
                 self._ref, "Run coordinator not provided, and no instance ref available"
             )
-            run_coordinator = cast(InstanceRef, self._ref).run_coordinator
+            run_coordinator = cast("InstanceRef", self._ref).run_coordinator
             check.invariant(run_coordinator, "Run coordinator not configured in instance ref")
             self._run_coordinator = cast("RunCoordinator", run_coordinator)
             self._run_coordinator.register_instance(self)
@@ -802,7 +802,7 @@ class DagsterInstance(DynamicPartitionsStore):
         # that loads the instance (e.g. The EcsRunLauncher requires boto3)
         if not self._run_launcher:
             check.invariant(self._ref, "Run launcher not provided, and no instance ref available")
-            launcher = cast(InstanceRef, self._ref).run_launcher
+            launcher = cast("InstanceRef", self._ref).run_launcher
             check.invariant(launcher, "Run launcher not configured in instance ref")
             self._run_launcher = cast("RunLauncher", launcher)
             self._run_launcher.register_instance(self)
@@ -816,7 +816,7 @@ class DagsterInstance(DynamicPartitionsStore):
             check.invariant(
                 self._ref, "Compute log manager not provided, and no instance ref available"
             )
-            compute_log_manager = cast(InstanceRef, self._ref).compute_log_manager
+            compute_log_manager = cast("InstanceRef", self._ref).compute_log_manager
             check.invariant(
                 compute_log_manager, "Compute log manager not configured in instance ref"
             )
@@ -1431,9 +1431,9 @@ class DagsterInstance(DynamicPartitionsStore):
         elif check.not_none(output.properties).is_asset_partitioned and partition_tag:
             individual_partitions = [partition_tag]
 
-        assert not (
-            individual_partitions and partitions_subset
-        ), "Should set either individual_partitions or partitions_subset, but not both"
+        assert not (individual_partitions and partitions_subset), (
+            "Should set either individual_partitions or partitions_subset, but not both"
+        )
 
         if not individual_partitions and not partitions_subset:
             materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
@@ -2927,7 +2927,7 @@ class DagsterInstance(DynamicPartitionsStore):
                 )
             )
         else:
-            data = cast(SensorInstigatorData, stored_state.instigator_data)
+            data = cast("SensorInstigatorData", stored_state.instigator_data)
             return self.update_instigator_state(
                 stored_state.with_status(InstigatorStatus.RUNNING).with_data(
                     data.with_sensor_start_timestamp(get_current_timestamp())

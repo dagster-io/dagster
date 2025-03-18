@@ -6,9 +6,9 @@ from dagster_dg.utils import DgClickCommand, DgClickGroup
 # Command/Group subclasses to ensure that the help formatting is consistent.
 def test_all_commands_custom_subclass():
     def crawl(command):
-        assert isinstance(
-            command, (DgClickGroup, DgClickCommand)
-        ), f"Group is not a DgClickGroup or DgClickCommand: {command}"
+        assert isinstance(command, (DgClickGroup, DgClickCommand)), (
+            f"Group is not a DgClickGroup or DgClickCommand: {command}"
+        )
         if isinstance(command, DgClickGroup):
             for command in command.commands.values():
                 crawl(command)
@@ -20,9 +20,9 @@ def test_all_commands_custom_subclass():
 # Command/Group subclasses to ensure that the help formatting is consistent.
 def test_all_commands_have_global_options():
     def crawl(command):
-        assert isinstance(
-            command, (DgClickGroup, DgClickCommand)
-        ), f"Group is not a DgClickGroup or DgClickCommand: {command}"
+        assert isinstance(command, (DgClickGroup, DgClickCommand)), (
+            f"Group is not a DgClickGroup or DgClickCommand: {command}"
+        )
         if isinstance(command, DgClickGroup):
             for command in command.commands.values():
                 crawl(command)

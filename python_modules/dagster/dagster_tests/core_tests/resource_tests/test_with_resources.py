@@ -291,8 +291,7 @@ def test_asset_io_manager_transitive_dependencies():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "resource with key 'foo' required by resource with key 'the_resource' was not"
-            " provided."
+            "resource with key 'foo' required by resource with key 'the_resource' was not provided."
         ),
     ):
         with_resources([the_asset], resource_defs={"the_resource": the_resource})

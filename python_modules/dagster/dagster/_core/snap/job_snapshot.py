@@ -258,12 +258,12 @@ def _construct_fields(
 ) -> Mapping[str, Field]:
     fields = check.not_none(config_type_snap.fields)
     return {
-        cast(str, field.name): Field(
+        cast("str", field.name): Field(
             construct_config_type_from_snap(config_snap_map[field.type_key], config_snap_map),
             description=field.description,
             is_required=field.is_required,
             default_value=(
-                deserialize_value(cast(str, field.default_value_as_json_str))
+                deserialize_value(cast("str", field.default_value_as_json_str))
                 if field.default_provided
                 else FIELD_NO_DEFAULT_PROVIDED
             ),

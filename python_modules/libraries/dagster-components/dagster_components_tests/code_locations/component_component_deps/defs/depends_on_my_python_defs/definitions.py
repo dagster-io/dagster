@@ -1,15 +1,18 @@
-from collections.abc import Sequence
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import dagster as dg
 from component_component_deps.defs import my_python_defs  # type:ignore
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster_components.core.component import ComponentLoadContext
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from dagster._core.definitions.assets import AssetsDefinition
 
 ctx = ComponentLoadContext.current()
 
 assets_from_my_python_defs = cast(
-    Sequence[AssetsDefinition],
+    "Sequence[AssetsDefinition]",
     ctx.load_defs(my_python_defs).assets,
 )
 

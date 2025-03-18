@@ -16,7 +16,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 def my_asset(context: AssetExecutionContext):
     if context.has_tag("my_value"):
         return MaterializeResult(
-            metadata={"my_metadata": int(cast(str, context.get_tag("my_value")))}
+            metadata={"my_metadata": int(cast("str", context.get_tag("my_value")))}
         )
 
 

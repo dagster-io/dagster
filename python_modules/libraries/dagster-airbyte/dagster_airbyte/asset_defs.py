@@ -179,12 +179,12 @@ def _build_airbyte_assets_from_metadata(
     assets_defn_meta: AssetsDefinitionCacheableData,
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
 ) -> AssetsDefinition:
-    metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
-    connection_id = cast(str, metadata["connection_id"])
-    group_name = cast(Optional[str], metadata["group_name"])
-    destination_tables = cast(list[str], metadata["destination_tables"])
-    normalization_tables = cast(Mapping[str, list[str]], metadata["normalization_tables"])
-    io_manager_key = cast(Optional[str], metadata["io_manager_key"])
+    metadata = cast("Mapping[str, Any]", assets_defn_meta.extra_metadata)
+    connection_id = cast("str", metadata["connection_id"])
+    group_name = cast("Optional[str]", metadata["group_name"])
+    destination_tables = cast("list[str]", metadata["destination_tables"])
+    normalization_tables = cast("Mapping[str, list[str]]", metadata["normalization_tables"])
+    io_manager_key = cast("Optional[str]", metadata["io_manager_key"])
 
     @multi_asset(
         name=f"airbyte_sync_{connection_id.replace('-', '_')}",
@@ -501,7 +501,7 @@ class AirbyteConnectionMetadata(
     def from_config(
         cls, contents: Mapping[str, Any], destination: Mapping[str, Any]
     ) -> "AirbyteConnectionMetadata":
-        config_contents = cast(Mapping[str, Any], contents.get("configuration"))
+        config_contents = cast("Mapping[str, Any]", contents.get("configuration"))
         check.invariant(
             config_contents is not None, "Airbyte connection config is missing 'configuration' key"
         )
@@ -531,7 +531,7 @@ class AirbyteConnectionMetadata(
         ]
 
         for stream in enabled_streams:
-            name = cast(str, stream.get("stream", {}).get("name"))
+            name = cast("str", stream.get("stream", {}).get("name"))
             prefixed_name = f"{self.stream_prefix}{name}"
 
             schema = (
@@ -567,7 +567,7 @@ def _get_schema_by_table_name(
                 [
                     (k, v.schema)
                     for k, v in cast(
-                        dict[str, AirbyteTableMetadata], meta.normalization_tables
+                        "dict[str, AirbyteTableMetadata]", meta.normalization_tables
                     ).items()
                 ]
                 for meta in stream_table_metadata.values()
@@ -740,7 +740,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
         workspace_id = self._workspace_id
         if not workspace_id:
             workspaces = cast(
-                list[dict[str, Any]],
+                "list[dict[str, Any]]",
                 check.not_none(
                     self._airbyte_instance.make_request(endpoint="/workspaces/list", data={})
                 ).get("workspaces", []),
@@ -752,7 +752,7 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
             workspace_id = workspaces[0].get("workspaceId")
 
         connections = cast(
-            list[dict[str, Any]],
+            "list[dict[str, Any]]",
             check.not_none(
                 self._airbyte_instance.make_request(
                     endpoint="/connections/list", data={"workspaceId": workspace_id}
@@ -762,10 +762,10 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
 
         output_connections: list[tuple[str, AirbyteConnectionMetadata]] = []
         for connection_json in connections:
-            connection_id = cast(str, connection_json.get("connectionId"))
+            connection_id = cast("str", connection_json.get("connectionId"))
 
             operations_json = cast(
-                dict[str, Any],
+                "dict[str, Any]",
                 check.not_none(
                     self._airbyte_instance.make_request(
                         endpoint="/operations/list",
@@ -774,9 +774,9 @@ class AirbyteInstanceCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinit
                 ),
             )
 
-            destination_id = cast(str, connection_json.get("destinationId"))
+            destination_id = cast("str", connection_json.get("destinationId"))
             destination_json = cast(
-                dict[str, Any],
+                "dict[str, Any]",
                 check.not_none(
                     self._airbyte_instance.make_request(
                         endpoint="/destinations/get",
@@ -850,7 +850,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
                 connection_data = yaml.safe_load(f.read())
 
             destination_configuration_path = cast(
-                str, connection_data.get("destination_configuration_path")
+                "str", connection_data.get("destination_configuration_path")
             )
             with open(
                 os.path.join(self._project_dir, destination_configuration_path), encoding="utf-8"
@@ -886,7 +886,7 @@ class AirbyteYAMLCacheableAssetsDefinition(AirbyteCoreCacheableAssetsDefinition)
                 )
                 state_file = state_files[0]
 
-            with open(os.path.join(connection_dir, cast(str, state_file)), encoding="utf-8") as f:
+            with open(os.path.join(connection_dir, cast("str", state_file)), encoding="utf-8") as f:
                 state = yaml.safe_load(f.read())
                 connection_id = state.get("resource_id")
 

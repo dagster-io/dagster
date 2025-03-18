@@ -39,7 +39,7 @@ primary_tertiary_partition_mapping = StaticPartitionMapping(
 
 @asset(partitions_def=partitioning_scheme)
 def now_time():
-    return int(math.floor(time.time() * 100))
+    return math.floor(time.time() * 100)
 
 
 @asset(
@@ -450,7 +450,7 @@ def test_job_op_usecase_partitioned() -> Any:
         ),
     ) as runner:
         result = (
-            cast(DefinitionsRunner, runner)
+            cast("DefinitionsRunner", runner)
             .defs.get_job_def("my_math_job")
             .execute_in_process(instance=runner.instance, partition_key="A")
         )
@@ -458,7 +458,7 @@ def test_job_op_usecase_partitioned() -> Any:
         assert result.output_for_node("divide_input_by_two") == 5
 
         result = (
-            cast(DefinitionsRunner, runner)
+            cast("DefinitionsRunner", runner)
             .defs.get_job_def("my_math_job")
             .execute_in_process(instance=runner.instance, partition_key="B")
         )

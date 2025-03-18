@@ -175,7 +175,7 @@ class TypecheckAllowPartialResourceInitParams:
 
     def __get__(self: Self, obj: Any, owner: Any) -> Self:
         # no-op implementation (only used to affect type signature)
-        return cast(Self, getattr(obj, self._assigned_name))
+        return cast("Self", getattr(obj, self._assigned_name))
 
     # The annotation her has been temporarily changed from:
     #     value: Union[Self, "PartialResource[Self]"]

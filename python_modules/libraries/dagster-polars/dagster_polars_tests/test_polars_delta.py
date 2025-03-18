@@ -261,9 +261,9 @@ def test_polars_delta_native_partitioning(
             partition_key=partition_key,
         )
         saved_path = get_saved_path(result, "upstream_partitioned")
-        assert saved_path.endswith(
-            "upstream_partitioned.delta"
-        ), saved_path  # DeltaLake should handle partitioning!
+        assert saved_path.endswith("upstream_partitioned.delta"), (
+            saved_path
+        )  # DeltaLake should handle partitioning!
         assert DeltaTable(saved_path).metadata().partition_columns == ["partition"]
 
     materialize(

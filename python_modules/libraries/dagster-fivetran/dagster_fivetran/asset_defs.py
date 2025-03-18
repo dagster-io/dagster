@@ -367,12 +367,12 @@ class FivetranConnectionMetadata(
     ) -> AssetsDefinitionCacheableData:
         schema_table_meta: dict[str, RawMetadataMapping] = {}
         if "schemas" in self.schemas:
-            schemas_inner = cast(dict[str, Any], self.schemas["schemas"])
+            schemas_inner = cast("dict[str, Any]", self.schemas["schemas"])
             for schema in schemas_inner.values():
                 if schema["enabled"]:
                     schema_name = schema["name_in_destination"]
                     schema_tables: dict[str, dict[str, Any]] = cast(
-                        dict[str, dict[str, Any]], schema["tables"]
+                        "dict[str, dict[str, Any]]", schema["tables"]
                     )
                     for table in schema_tables.values():
                         if table["enabled"]:
@@ -426,10 +426,10 @@ def _build_fivetran_assets_from_metadata(
     fetch_column_metadata: bool,
     translator: Optional[type[DagsterFivetranTranslator]] = None,
 ) -> AssetsDefinition:
-    metadata = cast(Mapping[str, Any], assets_defn_meta.extra_metadata)
-    connector_id = cast(str, metadata["connector_id"])
-    io_manager_key = cast(Optional[str], metadata["io_manager_key"])
-    storage_kind = cast(Optional[str], metadata.get("storage_kind"))
+    metadata = cast("Mapping[str, Any]", assets_defn_meta.extra_metadata)
+    connector_id = cast("str", metadata["connector_id"])
+    io_manager_key = cast("Optional[str]", metadata["io_manager_key"])
+    storage_kind = cast("Optional[str]", metadata.get("storage_kind"))
 
     connection_metadata = FivetranConnectionMetadata.from_serializable_repr(
         metadata["connection_metadata"]
@@ -444,7 +444,7 @@ def _build_fivetran_assets_from_metadata(
         ),
         asset_key_prefix=list(assets_defn_meta.key_prefix or []),
         metadata_by_table_name=cast(
-            dict[str, RawMetadataMapping], assets_defn_meta.metadata_by_output_name
+            "dict[str, RawMetadataMapping]", assets_defn_meta.metadata_by_output_name
         ),
         io_manager_key=io_manager_key,
         table_to_asset_key_map=assets_defn_meta.keys_by_output_name,

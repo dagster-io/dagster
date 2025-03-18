@@ -145,17 +145,18 @@ class ConfigTypeSnap(IHaveNew):
     def get_child_type_keys(self) -> Sequence[str]:
         if ConfigTypeKind.is_closed_generic(self.kind):
             # all closed generics have type params
-            return cast(list[str], self.type_param_keys)
+            return cast("list[str]", self.type_param_keys)
         elif ConfigTypeKind.has_fields(self.kind):
             return [
-                field.type_key for field in cast(list[ConfigFieldSnap], check.not_none(self.fields))
+                field.type_key
+                for field in cast("list[ConfigFieldSnap]", check.not_none(self.fields))
             ]
         else:
             return []
 
     def has_enum_value(self, value: object) -> bool:
         check.invariant(self.kind == ConfigTypeKind.ENUM)
-        for enum_value in cast(list[ConfigEnumValueSnap], self.enum_values):
+        for enum_value in cast("list[ConfigEnumValueSnap]", self.enum_values):
             if enum_value.value == value:
                 return True
         return False

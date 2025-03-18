@@ -210,7 +210,7 @@ def _get_current_cursors(context: WorkspaceProcessContext) -> Mapping[str, Asset
 
     return {
         name: asset_daemon_cursor_from_instigator_serialized_cursor(
-            cast(SensorInstigatorData, check.not_none(state).instigator_data).cursor,
+            cast("SensorInstigatorData", check.not_none(state).instigator_data).cursor,
             request_context.asset_graph,
         )
         for name, state in _get_current_state(request_context).items()

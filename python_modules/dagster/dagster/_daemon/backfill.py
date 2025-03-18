@@ -42,7 +42,7 @@ def _get_instigation_logger_if_log_storage_enabled(
             logger_name=default_logger.name,
             console_logger=default_logger,
         ) as _logger:
-            backfill_logger = cast(logging.Logger, _logger)
+            backfill_logger = cast("logging.Logger", _logger)
             yield backfill_logger
 
     else:
@@ -154,11 +154,11 @@ def execute_backfill_jobs(
         backfill_id = backfill_job.backfill_id
 
         # refetch, in case the backfill was updated in the meantime
-        backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
+        backfill = cast("PartitionBackfill", instance.get_backfill(backfill_id))
         with _get_instigation_logger_if_log_storage_enabled(instance, backfill, logger) as _logger:
             # create a logger that will always include the backfill_id as an `extra`
             backfill_logger = cast(
-                logging.Logger,
+                "logging.Logger",
                 logging.LoggerAdapter(_logger, extra={"backfill_id": backfill.backfill_id}),
             )
 

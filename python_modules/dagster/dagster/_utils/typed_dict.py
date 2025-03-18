@@ -24,4 +24,4 @@ def init_optional_typeddict(cls: type[_TypedDictClass]) -> _TypedDictClass:
             continue
         else:
             raise Exception("fields must be either optional or typed dicts")
-    return cast(_TypedDictClass, result)
+    return cast("_TypedDictClass", result)

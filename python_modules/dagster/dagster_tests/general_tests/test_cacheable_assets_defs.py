@@ -152,9 +152,9 @@ def test_resolve_wrong_data():
         recon_repo.get_definition()
 
 
-def define_uncacheable_and_resource_dependent_cacheable_assets() -> (
-    Sequence[Union[CacheableAssetsDefinition, AssetsDefinition]]
-):
+def define_uncacheable_and_resource_dependent_cacheable_assets() -> Sequence[
+    Union[CacheableAssetsDefinition, AssetsDefinition]
+]:
     class ResourceDependentCacheableAsset(CacheableAssetsDefinition):
         def __init__(self):
             super().__init__("res_midstream")
@@ -335,7 +335,7 @@ def test_multiple_wrapped_cached_assets() -> None:
 
         my_cool_group_sel = AssetSelection.groups("my_cool_group")
         cacheable_resource_asset = cast(
-            CacheableAssetsDefinition, my_cacheable_assets_with_group_and_asset[0]
+            "CacheableAssetsDefinition", my_cacheable_assets_with_group_and_asset[0]
         )
         resolved_defs = list(
             cacheable_resource_asset.build_definitions(
@@ -346,7 +346,7 @@ def test_multiple_wrapped_cached_assets() -> None:
             len(
                 my_cool_group_sel.resolve(
                     resolved_defs
-                    + cast(list[AssetsDefinition], my_cacheable_assets_with_group_and_asset[1:])
+                    + cast("list[AssetsDefinition]", my_cacheable_assets_with_group_and_asset[1:])
                 )
             )
             == 1

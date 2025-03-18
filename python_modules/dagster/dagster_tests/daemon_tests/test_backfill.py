@@ -693,7 +693,7 @@ def test_two_backfills_at_the_same_time(
             instance=instance,
         ) as workspace_context:
             remote_repo = cast(
-                CodeLocation,
+                "CodeLocation",
                 next(
                     iter(
                         workspace_context.create_request_context()

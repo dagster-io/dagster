@@ -232,7 +232,7 @@ def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> Evaluate
     if not config_value:
         return EvaluateValueResult.for_value({})
 
-    config_value = cast(dict[object, object], config_value)
+    config_value = cast("dict[object, object]", config_value)
 
     if any(ck is None for ck in config_value.keys()):
         check.failed("Null map key not caught in validation")

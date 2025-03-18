@@ -402,6 +402,6 @@ def redshift_resource(context) -> RedshiftClient:
 )
 def fake_redshift_resource(context) -> FakeRedshiftClient:
     return cast(
-        FakeRedshiftClient,
+        "FakeRedshiftClient",
         FakeRedshiftClientResource.from_resource_context(context).get_client(),
     )

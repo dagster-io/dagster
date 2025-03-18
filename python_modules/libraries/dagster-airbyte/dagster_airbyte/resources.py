@@ -217,8 +217,8 @@ class BaseAirbyteResource(ConfigurableResource):
         """
         connection_details = self.get_connection_details(connection_id)
         job_details = self.start_sync(connection_id)
-        job_info = cast(dict[str, object], job_details.get("job", {}))
-        job_id = cast(int, job_info.get("id"))
+        job_info = cast("dict[str, object]", job_details.get("job", {}))
+        job_id = cast("int", job_info.get("id"))
 
         self._log.info(f"Job {job_id} initialized for connection_id={connection_id}.")
         start = time.monotonic()
@@ -235,7 +235,7 @@ class BaseAirbyteResource(ConfigurableResource):
                     )
                 time.sleep(poll_interval or self.poll_interval)
                 job_details = self.get_job_status(connection_id, job_id)
-                attempts = cast(list, job_details.get("attempts", []))
+                attempts = cast("list", job_details.get("attempts", []))
                 cur_attempt = len(attempts)
                 # spit out the available Airbyte log info
                 if cur_attempt:
@@ -252,7 +252,7 @@ class BaseAirbyteResource(ConfigurableResource):
                         logged_lines = 0
                         logged_attempts += 1
 
-                job_info = cast(dict[str, object], job_details.get("job", {}))
+                job_info = cast("dict[str, object]", job_details.get("job", {}))
                 state = job_info.get("status")
 
                 if state in (
@@ -577,7 +577,7 @@ class AirbyteResource(BaseAirbyteResource):
 
     def get_default_workspace(self) -> str:
         workspaces = cast(
-            list[dict[str, Any]],
+            "list[dict[str, Any]]",
             check.not_none(self.make_request_cached(endpoint="/workspaces/list", data={})).get(
                 "workspaces", []
             ),
@@ -589,7 +589,7 @@ class AirbyteResource(BaseAirbyteResource):
         definitions = check.not_none(
             self.make_request_cached(endpoint="/source_definitions/list", data={})
         )
-        source_definitions = cast(list[dict[str, Any]], definitions["sourceDefinitions"])
+        source_definitions = cast("list[dict[str, Any]]", definitions["sourceDefinitions"])
 
         return next(
             (
@@ -603,7 +603,7 @@ class AirbyteResource(BaseAirbyteResource):
     def get_destination_definition_by_name(self, name: str):
         name_lower = name.lower()
         definitions = cast(
-            dict[str, list[dict[str, str]]],
+            "dict[str, list[dict[str, str]]]",
             check.not_none(
                 self.make_request_cached(endpoint="/destination_definitions/list", data={})
             ),
@@ -619,7 +619,7 @@ class AirbyteResource(BaseAirbyteResource):
 
     def get_source_catalog_id(self, source_id: str):
         result = cast(
-            dict[str, Any],
+            "dict[str, Any]",
             check.not_none(
                 self.make_request(endpoint="/sources/discover_schema", data={"sourceId": source_id})
             ),
@@ -628,7 +628,7 @@ class AirbyteResource(BaseAirbyteResource):
 
     def get_source_schema(self, source_id: str) -> Mapping[str, Any]:
         return cast(
-            dict[str, Any],
+            "dict[str, Any]",
             check.not_none(
                 self.make_request(endpoint="/sources/discover_schema", data={"sourceId": source_id})
             ),
@@ -640,7 +640,7 @@ class AirbyteResource(BaseAirbyteResource):
         # Airbyte API changed source of truth for normalization in PR
         # https://github.com/airbytehq/airbyte/pull/21005
         norm_dest_def_spec: bool = cast(
-            dict[str, Any],
+            "dict[str, Any]",
             check.not_none(
                 self.make_request_cached(
                     endpoint="/destination_definition_specifications/get",
@@ -654,7 +654,7 @@ class AirbyteResource(BaseAirbyteResource):
 
         norm_dest_def: bool = (
             cast(
-                dict[str, Any],
+                "dict[str, Any]",
                 check.not_none(
                     self.make_request_cached(
                         endpoint="/destination_definitions/get",
@@ -687,7 +687,9 @@ class AirbyteResource(BaseAirbyteResource):
                     },
                 )
             )
-            job = next((job for job in cast(list, out["jobs"]) if job["job"]["id"] == job_id), None)
+            job = next(
+                (job for job in cast("list", out["jobs"]) if job["job"]["id"] == job_id), None
+            )
 
             return check.not_none(job)
 
@@ -722,8 +724,8 @@ class AirbyteResource(BaseAirbyteResource):
         """
         connection_details = self.get_connection_details(connection_id)
         job_details = self.start_sync(connection_id)
-        job_info = cast(dict[str, object], job_details.get("job", {}))
-        job_id = cast(int, job_info.get("id"))
+        job_info = cast("dict[str, object]", job_details.get("job", {}))
+        job_id = cast("int", job_info.get("id"))
 
         self._log.info(f"Job {job_id} initialized for connection_id={connection_id}.")
         start = time.monotonic()
@@ -740,7 +742,7 @@ class AirbyteResource(BaseAirbyteResource):
                     )
                 time.sleep(poll_interval or self.poll_interval)
                 job_details = self.get_job_status(connection_id, job_id)
-                attempts = cast(list, job_details.get("attempts", []))
+                attempts = cast("list", job_details.get("attempts", []))
                 cur_attempt = len(attempts)
                 # spit out the available Airbyte log info
                 if cur_attempt:
@@ -757,7 +759,7 @@ class AirbyteResource(BaseAirbyteResource):
                         logged_lines = 0
                         logged_attempts += 1
 
-                job_info = cast(dict[str, object], job_details.get("job", {}))
+                job_info = cast("dict[str, object]", job_details.get("job", {}))
                 state = job_info.get("status")
 
                 if state in (

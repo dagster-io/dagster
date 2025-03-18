@@ -381,4 +381,4 @@ class Field:
 
 
 def check_opt_field_param(obj: object, param_name: str) -> Optional[Field]:
-    return check.opt_inst_param(cast(Optional[Field], obj), param_name, Field)
+    return check.opt_inst_param(cast("Optional[Field]", obj), param_name, Field)

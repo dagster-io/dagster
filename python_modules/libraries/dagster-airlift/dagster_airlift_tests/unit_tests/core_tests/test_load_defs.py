@@ -392,7 +392,7 @@ def test_cached_loading() -> None:
             assert {
                 key
                 for assets_def in reloaded_repo_def.assets_defs_by_key.values()
-                for key in cast(AssetsDefinition, assets_def).keys
+                for key in cast("AssetsDefinition", assets_def).keys
             } == {AssetKey("a"), make_test_dag_asset_key("dag")}
 
 
@@ -418,7 +418,7 @@ def test_multiple_tasks_per_asset(init_load_context: None) -> None:
     # 3 Full assets definitions, but 4 keys
     assert len(list(defs.assets)) == 3
     assert {
-        key for assets_def in defs.assets for key in cast(AssetsDefinition, assets_def).keys
+        key for assets_def in defs.assets for key in cast("AssetsDefinition", assets_def).keys
     } == {
         AssetKey("a"),
         AssetKey("b"),

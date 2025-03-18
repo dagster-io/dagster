@@ -319,9 +319,9 @@ class PipesCloudWatchLogReader(PipesLogReader):
         self.thread.start()
 
     def _start(self, params: PipesParams, is_session_closed: Event) -> None:
-        log_group = cast(str, params.get("log_group") or self.log_group)
-        log_stream = cast(str, params.get("log_stream") or self.log_stream)
-        start_time = cast(int, self.start_time or params.get("start_time"))
+        log_group = cast("str", params.get("log_group") or self.log_group)
+        log_stream = cast("str", params.get("log_stream") or self.log_stream)
+        start_time = cast("int", self.start_time or params.get("start_time"))
 
         for events in tail_cloudwatch_events(
             self.client, log_group, log_stream, start_time=start_time, max_retries=self.max_retries
@@ -414,9 +414,9 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         if not events:
             return None
         else:
-            cursor = cast(str, response["nextForwardToken"])
+            cursor = cast("str", response["nextForwardToken"])
             return cursor, "\n".join(
-                cast(str, event.get("message")) for event in events if event.get("message")
+                cast("str", event.get("message")) for event in events if event.get("message")
             )
 
     def no_messages_debug_text(self) -> str:

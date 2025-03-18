@@ -874,7 +874,7 @@ class AutomationResult(Generic[T_EntityKey]):
         ret = f"AutomationResult(label={self.condition.name}, description={self.condition.description}, true={self.true_subset})"
         for child in self.child_results:
             nindent = indent + 4
-            ret += f"\n{' '*nindent}{child.pprint(indent=nindent)}"
+            ret += f"\n{' ' * nindent}{child.pprint(indent=nindent)}"
         return ret
 
     def __repr__(self) -> str:

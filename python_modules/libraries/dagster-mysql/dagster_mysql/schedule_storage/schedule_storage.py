@@ -150,7 +150,7 @@ class MySQLScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         if not row:
             return None
 
-        return cast(str, row[0])
+        return cast("str", row[0])
 
     def upgrade(self) -> None:
         with self.connect() as conn:

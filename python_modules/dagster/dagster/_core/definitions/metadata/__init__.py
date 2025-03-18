@@ -251,7 +251,7 @@ class MetadataEntry(
         value: Optional["RawMetadataValue"] = None,
     ):
         value = cast(
-            RawMetadataValue,
+            "RawMetadataValue",
             normalize_renamed_param(
                 new_val=value,
                 new_arg="value",

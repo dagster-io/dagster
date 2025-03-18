@@ -1,7 +1,6 @@
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import requests
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.sensor_definition import build_sensor_context
 from dagster._core.test_utils import instance_for_test
@@ -17,6 +16,9 @@ from kitchen_sink.airflow_instance import (
     local_airflow_instance,
 )
 from pytest_mock import MockFixture
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
 
 
 def test_configure_dag_list_limit(airflow_instance: None, mocker: MockFixture) -> None:
@@ -48,7 +50,7 @@ def test_disable_source_code_retrieval_at_scale(airflow_instance: None) -> None:
     defs = build_defs_from_airflow_instance(airflow_instance=af_instance)
     assert defs.assets
     for assets_def in defs.assets:
-        metadata = next(iter(cast(AssetsDefinition, assets_def).specs)).metadata
+        metadata = next(iter(cast("AssetsDefinition", assets_def).specs)).metadata
         assert SOURCE_CODE_METADATA_KEY not in metadata
 
     change_dag_limit_source_code(200)
@@ -57,7 +59,7 @@ def test_disable_source_code_retrieval_at_scale(airflow_instance: None) -> None:
     defs = build_defs_from_airflow_instance(airflow_instance=af_instance)
     assert defs.assets
     for assets_def in defs.assets:
-        metadata = next(iter(cast(AssetsDefinition, assets_def).specs)).metadata
+        metadata = next(iter(cast("AssetsDefinition", assets_def).specs)).metadata
         assert SOURCE_CODE_METADATA_KEY in metadata
 
     # If source code retrieval is explicitly enabled, we don't use the limit.
@@ -68,7 +70,7 @@ def test_disable_source_code_retrieval_at_scale(airflow_instance: None) -> None:
     )
     assert defs.assets
     for assets_def in defs.assets:
-        metadata = next(iter(cast(AssetsDefinition, assets_def).specs)).metadata
+        metadata = next(iter(cast("AssetsDefinition", assets_def).specs)).metadata
         assert SOURCE_CODE_METADATA_KEY in metadata
 
 

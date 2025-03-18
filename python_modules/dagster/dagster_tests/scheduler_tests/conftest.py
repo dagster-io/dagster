@@ -76,7 +76,7 @@ def workspace_fixture(
 @pytest.fixture(name="remote_repo", scope="session")
 def remote_repo_fixture(workspace_context: WorkspaceProcessContext) -> RemoteRepository:
     return cast(
-        CodeLocation,
+        "CodeLocation",
         next(
             iter(workspace_context.create_request_context().get_code_location_entries().values())
         ).code_location,

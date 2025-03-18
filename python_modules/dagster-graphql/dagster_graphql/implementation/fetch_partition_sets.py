@@ -240,7 +240,7 @@ def partition_statuses_from_run_partition_data(
 
     results = []
     for name in partition_names:
-        partition_id = f'{partition_set_name or "__NO_PARTITION_SET__"}:{name}{suffix}'
+        partition_id = f"{partition_set_name or '__NO_PARTITION_SET__'}:{name}{suffix}"
         if not partition_data_by_name.get(name):
             results.append(
                 GraphenePartitionStatus(

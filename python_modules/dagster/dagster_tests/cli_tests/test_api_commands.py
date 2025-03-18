@@ -164,9 +164,9 @@ def test_execute_run_with_secrets_loader(capfd):
 
         # Step subprocess is logged to capfd since its in a subprocess of the CLi command
         _, err = capfd.readouterr()
-        assert (
-            "STEP_FAILURE" in err and "Exception: Missing env var" in err
-        ), f"no match, result: {err}"
+        assert "STEP_FAILURE" in err and "Exception: Missing env var" in err, (
+            f"no match, result: {err}"
+        )
 
 
 def test_execute_run_fail_job():
@@ -274,9 +274,9 @@ def test_execute_run_cannot_load():
 
             assert result.exit_code != 0
 
-            assert f"Run with id '{run_id}' not found for run execution" in str(
-                result.exception
-            ), f"no match, result: {result.stdout}"
+            assert f"Run with id '{run_id}' not found for run execution" in str(result.exception), (
+                f"no match, result: {result.stdout}"
+            )
 
 
 def runner_execute_step(runner: CliRunner, cli_args, env=None):

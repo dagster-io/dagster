@@ -302,7 +302,7 @@ def test_bfs_filter_time_window_partitions():
             for asset_partition in entity_subset.expensively_compute_asset_partitions():
                 partition_date = (
                     cast(
-                        TimeWindowPartitionsDefinition,
+                        "TimeWindowPartitionsDefinition",
                         graph_view.asset_graph.get(entity_subset.key).partitions_def,
                     )
                     .time_window_for_partition_key(asset_partition.partition_key)

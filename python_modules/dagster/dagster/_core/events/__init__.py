@@ -364,7 +364,7 @@ def log_job_event(job_context: IPlanContext, event: "DagsterEvent") -> None:
 
 
 def log_resource_event(log_manager: DagsterLogManager, event: "DagsterEvent") -> None:
-    event_specific_data = cast(EngineEventData, event.event_specific_data)
+    event_specific_data = cast("EngineEventData", event.event_specific_data)
 
     log_level = logging.ERROR if event_specific_data.error else logging.DEBUG
     log_manager.log_dagster_event(level=log_level, msg=event.message or "", dagster_event=event)
@@ -565,7 +565,7 @@ class DagsterEvent(
     @property
     def node_name(self) -> str:
         check.invariant(self.node_handle is not None)
-        node_handle = cast(NodeHandle, self.node_handle)
+        node_handle = cast("NodeHandle", self.node_handle)
         return node_handle.name
 
     @public
@@ -758,39 +758,39 @@ class DagsterEvent(
     @property
     def step_input_data(self) -> "StepInputData":
         _assert_type("step_input_data", DagsterEventType.STEP_INPUT, self.event_type)
-        return cast(StepInputData, self.event_specific_data)
+        return cast("StepInputData", self.event_specific_data)
 
     @property
     def step_output_data(self) -> StepOutputData:
         _assert_type("step_output_data", DagsterEventType.STEP_OUTPUT, self.event_type)
-        return cast(StepOutputData, self.event_specific_data)
+        return cast("StepOutputData", self.event_specific_data)
 
     @property
     def step_success_data(self) -> "StepSuccessData":
         _assert_type("step_success_data", DagsterEventType.STEP_SUCCESS, self.event_type)
-        return cast(StepSuccessData, self.event_specific_data)
+        return cast("StepSuccessData", self.event_specific_data)
 
     @property
     def step_failure_data(self) -> "StepFailureData":
         _assert_type("step_failure_data", DagsterEventType.STEP_FAILURE, self.event_type)
-        return cast(StepFailureData, self.event_specific_data)
+        return cast("StepFailureData", self.event_specific_data)
 
     @property
     def step_retry_data(self) -> "StepRetryData":
         _assert_type("step_retry_data", DagsterEventType.STEP_UP_FOR_RETRY, self.event_type)
-        return cast(StepRetryData, self.event_specific_data)
+        return cast("StepRetryData", self.event_specific_data)
 
     @property
     def step_materialization_data(self) -> "StepMaterializationData":
         _assert_type(
             "step_materialization_data", DagsterEventType.ASSET_MATERIALIZATION, self.event_type
         )
-        return cast(StepMaterializationData, self.event_specific_data)
+        return cast("StepMaterializationData", self.event_specific_data)
 
     @property
     def asset_observation_data(self) -> "AssetObservationData":
         _assert_type("asset_observation_data", DagsterEventType.ASSET_OBSERVATION, self.event_type)
-        return cast(AssetObservationData, self.event_specific_data)
+        return cast("AssetObservationData", self.event_specific_data)
 
     @property
     def asset_materialization_planned_data(self) -> "AssetMaterializationPlannedData":
@@ -799,7 +799,7 @@ class DagsterEvent(
             DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
             self.event_type,
         )
-        return cast(AssetMaterializationPlannedData, self.event_specific_data)
+        return cast("AssetMaterializationPlannedData", self.event_specific_data)
 
     @property
     def asset_check_planned_data(self) -> "AssetCheckEvaluationPlanned":
@@ -808,7 +808,7 @@ class DagsterEvent(
             DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
             self.event_type,
         )
-        return cast(AssetCheckEvaluationPlanned, self.event_specific_data)
+        return cast("AssetCheckEvaluationPlanned", self.event_specific_data)
 
     @property
     def asset_failed_to_materialize_data(
@@ -819,7 +819,7 @@ class DagsterEvent(
             DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
             self.event_type,
         )
-        return cast(AssetFailedToMaterializeData, self.event_specific_data)
+        return cast("AssetFailedToMaterializeData", self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -828,31 +828,31 @@ class DagsterEvent(
             DagsterEventType.STEP_EXPECTATION_RESULT,
             self.event_type,
         )
-        return cast(StepExpectationResultData, self.event_specific_data)
+        return cast("StepExpectationResultData", self.event_specific_data)
 
     @property
     def materialization(self) -> AssetMaterialization:
         _assert_type(
             "step_materialization_data", DagsterEventType.ASSET_MATERIALIZATION, self.event_type
         )
-        return cast(StepMaterializationData, self.event_specific_data).materialization
+        return cast("StepMaterializationData", self.event_specific_data).materialization
 
     @property
     def asset_check_evaluation_data(self) -> AssetCheckEvaluation:
         _assert_type(
             "asset_check_evaluation", DagsterEventType.ASSET_CHECK_EVALUATION, self.event_type
         )
-        return cast(AssetCheckEvaluation, self.event_specific_data)
+        return cast("AssetCheckEvaluation", self.event_specific_data)
 
     @property
     def job_failure_data(self) -> "JobFailureData":
         _assert_type("job_failure_data", DagsterEventType.RUN_FAILURE, self.event_type)
-        return cast(JobFailureData, self.event_specific_data)
+        return cast("JobFailureData", self.event_specific_data)
 
     @property
     def job_canceled_data(self) -> "JobCanceledData":
         _assert_type("job_canceled_data", DagsterEventType.RUN_CANCELED, self.event_type)
-        return cast(JobCanceledData, self.event_specific_data)
+        return cast("JobCanceledData", self.event_specific_data)
 
     @property
     def engine_event_data(self) -> "EngineEventData":
@@ -868,7 +868,7 @@ class DagsterEvent(
             ],
             self.event_type,
         )
-        return cast(EngineEventData, self.event_specific_data)
+        return cast("EngineEventData", self.event_specific_data)
 
     @property
     def hook_completed_data(self) -> Optional["EventSpecificData"]:
@@ -878,7 +878,7 @@ class DagsterEvent(
     @property
     def hook_errored_data(self) -> "HookErroredData":
         _assert_type("hook_errored_data", DagsterEventType.HOOK_ERRORED, self.event_type)
-        return cast(HookErroredData, self.event_specific_data)
+        return cast("HookErroredData", self.event_specific_data)
 
     @property
     def hook_skipped_data(self) -> Optional["EventSpecificData"]:
@@ -888,7 +888,7 @@ class DagsterEvent(
     @property
     def logs_captured_data(self) -> "ComputeLogsCaptureData":
         _assert_type("logs_captured_data", DagsterEventType.LOGS_CAPTURED, self.event_type)
-        return cast(ComputeLogsCaptureData, self.event_specific_data)
+        return cast("ComputeLogsCaptureData", self.event_specific_data)
 
     @staticmethod
     def step_output_event(
@@ -1756,7 +1756,7 @@ class ObjectStoreOperationResultData(
     ):
         return super().__new__(
             cls,
-            op=cast(ObjectStoreOperationType, check.str_param(op, "op")),
+            op=cast("ObjectStoreOperationType", check.str_param(op, "op")),
             value_name=check.opt_str_param(value_name, "value_name"),
             metadata=normalize_metadata(
                 check.opt_mapping_param(metadata, "metadata", key_type=str)
@@ -2046,9 +2046,9 @@ def _handle_back_compat(
 
     # changes asset store ops in to get/set asset
     elif event_type_value == "ASSET_STORE_OPERATION":
-        assert (
-            event_specific_data is not None
-        ), "ASSET_STORE_OPERATION event must have specific data"
+        assert event_specific_data is not None, (
+            "ASSET_STORE_OPERATION event must have specific data"
+        )
         if event_specific_data["op"] in (
             "GET_ASSET",
             '{"__enum__": "AssetStoreOperationType.GET_ASSET"}',
@@ -2081,9 +2081,9 @@ def _handle_back_compat(
 
     # transform PIPELINE_INIT_FAILURE to PIPELINE_FAILURE
     if event_type_value == "PIPELINE_INIT_FAILURE":
-        assert (
-            event_specific_data is not None
-        ), "PIPELINE_INIT_FAILURE event must have specific data"
+        assert event_specific_data is not None, (
+            "PIPELINE_INIT_FAILURE event must have specific data"
+        )
         return "PIPELINE_FAILURE", {
             "__class__": "PipelineFailureData",
             "error": event_specific_data.get("error"),

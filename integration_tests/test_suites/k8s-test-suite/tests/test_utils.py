@@ -426,7 +426,8 @@ Container 'goodcontainer2' status: Terminated with exit code 0: Completed"""
                 "pullfail",
                 "missingsecret",
                 "goodpod1",
-                "goodpod2" "waitforever",
+                "goodpod2",
+                "waitforever",
                 "execformaterror",
                 "resourcelimit",
             ]:

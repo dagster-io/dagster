@@ -56,9 +56,9 @@ class TestStepHandler(StepHandler):
             assert TestStepHandler.launched_second_attempt is False
         elif attempt_count == 1:
             assert TestStepHandler.launched_first_attempt is True
-            assert (
-                TestStepHandler.launched_second_attempt
-            ), "Second attempt not launched, shouldn't be checking on it"
+            assert TestStepHandler.launched_second_attempt, (
+                "Second attempt not launched, shouldn't be checking on it"
+            )
 
         return CheckStepHealthResult.healthy()
 

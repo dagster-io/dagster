@@ -43,14 +43,14 @@ class ConfigurableIOManagerFactoryResourceDefinition(
         dagster_maintained: bool = False,
     ):
         input_config_schema_resolved: CoercableToConfigSchema = (
-            cast(type[Config], input_config_schema).to_config_schema()
+            cast("type[Config]", input_config_schema).to_config_schema()
             if safe_is_subclass(input_config_schema, Config)
-            else cast(CoercableToConfigSchema, input_config_schema)
+            else cast("CoercableToConfigSchema", input_config_schema)
         )
         output_config_schema_resolved: CoercableToConfigSchema = (
-            cast(type[Config], output_config_schema).to_config_schema()
+            cast("type[Config]", output_config_schema).to_config_schema()
             if safe_is_subclass(output_config_schema, Config)
-            else cast(CoercableToConfigSchema, output_config_schema)
+            else cast("CoercableToConfigSchema", output_config_schema)
         )
         super().__init__(
             resource_fn=resource_fn,
@@ -181,7 +181,7 @@ class PartialIOManager(
         output_config_schema = None
         if safe_is_subclass(self.resource_cls, ConfigurableIOManagerFactory):
             factory_cls: type[ConfigurableIOManagerFactory] = cast(
-                type[ConfigurableIOManagerFactory], self.resource_cls
+                "type[ConfigurableIOManagerFactory]", self.resource_cls
             )
             input_config_schema = factory_cls.input_config_schema()
             output_config_schema = factory_cls.output_config_schema()

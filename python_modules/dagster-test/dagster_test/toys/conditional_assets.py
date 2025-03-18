@@ -8,7 +8,7 @@ def may_not_materialize(context):
     random.seed()
     rand_num = random.randint(1, 10)
     context.log.info(
-        f"Random number is {rand_num}. Asset will {'not' if rand_num >=5 else ''} materialize."
+        f"Random number is {rand_num}. Asset will {'not' if rand_num >= 5 else ''} materialize."
     )
     if rand_num < 5:
         yield Output([1, 2, 3])

@@ -493,7 +493,7 @@ class ActiveExecution:
     def handle_event(self, dagster_event: DagsterEvent) -> None:
         check.inst_param(dagster_event, "dagster_event", DagsterEvent)
 
-        step_key = cast(str, dagster_event.step_key)
+        step_key = cast("str", dagster_event.step_key)
         if dagster_event.is_step_failure:
             self.mark_failed(step_key)
             if self._instance_concurrency_context:
@@ -530,7 +530,7 @@ class ActiveExecution:
             if self._instance_concurrency_context:
                 self._instance_concurrency_context.free_step(step_key)
         elif dagster_event.is_successful_output:
-            event_specific_data = cast(StepOutputData, dagster_event.event_specific_data)
+            event_specific_data = cast("StepOutputData", dagster_event.event_specific_data)
             self.mark_step_produced_output(event_specific_data.step_output_handle)
             if dagster_event.step_output_data.step_output_handle.mapping_key:
                 check.not_none(

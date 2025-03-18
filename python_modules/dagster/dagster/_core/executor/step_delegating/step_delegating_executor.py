@@ -60,11 +60,11 @@ class StepDelegatingExecutor(Executor):
             check.invariant(self._max_concurrent > 0, "max_concurrent must be > 0")
 
         self._sleep_seconds = cast(
-            float,
+            "float",
             check.opt_float_param(sleep_seconds, "sleep_seconds", default=_default_sleep_seconds()),
         )
         self._check_step_health_interval_seconds = cast(
-            int,
+            "int",
             check.opt_int_param(
                 check_step_health_interval_seconds, "check_step_health_interval_seconds", default=20
             ),

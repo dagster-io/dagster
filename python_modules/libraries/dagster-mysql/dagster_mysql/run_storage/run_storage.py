@@ -117,7 +117,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         if not row:
             return None
 
-        return cast(str, row[0])
+        return cast("str", row[0])
 
     @classmethod
     def from_config_value(

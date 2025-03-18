@@ -657,7 +657,7 @@ class ConfigurableResource(ConfigurableResourceFactory[TResValue]):
         For ConfigurableResource, this function will return itself, passing
         the actual ConfigurableResource object to user code.
         """
-        return cast(TResValue, self)
+        return cast("TResValue", self)
 
 
 def _is_fully_configured(resource: "CoercibleToResource") -> bool:
@@ -907,7 +907,7 @@ def _call_resource_fn_with_default(
     from dagster._config.validate import process_config
 
     if isinstance(obj.config_schema, ConfiguredDefinitionConfigSchema):
-        value = cast(dict[str, Any], obj.config_schema.resolve_config({}).value)
+        value = cast("dict[str, Any]", obj.config_schema.resolve_config({}).value)
         context = context.replace_config(value["config"])
     elif obj.config_schema.default_provided:
         # To explain why we need to process config here;
@@ -924,12 +924,12 @@ def _call_resource_fn_with_default(
                 evr.errors,
                 unprocessed_config,
             )
-        context = context.replace_config(cast(dict, evr.value)["config"])
+        context = context.replace_config(cast("dict", evr.value)["config"])
 
     if has_at_least_one_parameter(obj.resource_fn):
-        result = cast(ResourceFunctionWithContext, obj.resource_fn)(context)
+        result = cast("ResourceFunctionWithContext", obj.resource_fn)(context)
     else:
-        result = cast(ResourceFunctionWithoutContext, obj.resource_fn)()
+        result = cast("ResourceFunctionWithoutContext", obj.resource_fn)()
 
     is_fn_generator = (
         inspect.isgenerator(obj.resource_fn)
@@ -937,7 +937,7 @@ def _call_resource_fn_with_default(
         or isinstance(result, contextlib.AbstractContextManager)
     )
     if is_fn_generator:
-        return stack.enter_context(cast(contextlib.AbstractContextManager, result))
+        return stack.enter_context(cast("contextlib.AbstractContextManager", result))
     else:
         return result
 

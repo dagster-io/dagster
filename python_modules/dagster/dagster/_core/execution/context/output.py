@@ -258,15 +258,13 @@ class OutputContext:
     @property
     def op_def(self) -> "OpDefinition":
         """The definition of the op that produced the output."""
-        from dagster._core.definitions import OpDefinition
-
         if self._op_def is None:
             raise DagsterInvariantViolationError(
                 "Attempting to access op_def, "
                 "but it was not provided when constructing the OutputContext"
             )
 
-        return cast(OpDefinition, self._op_def)
+        return cast("OpDefinition", self._op_def)
 
     @public
     @property
@@ -544,9 +542,9 @@ class OutputContext:
             self.name is not None,
             "Unable to find the run scoped output identifier: name is None on OutputContext.",
         )
-        run_id = cast(str, self.run_id)
-        step_key = cast(str, self.step_key)
-        name = cast(str, self.name)
+        run_id = cast("str", self.run_id)
+        step_key = cast("str", self.step_key)
+        name = cast("str", self.name)
 
         if self.mapping_key:
             return [run_id, step_key, name, self.mapping_key]

@@ -71,7 +71,7 @@ class GrapheneAssetCheckEvaluation(graphene.ObjectType):
         self.timestamp = evaluation_event.timestamp
 
         evaluation_data = cast(
-            AssetCheckEvaluation,
+            "AssetCheckEvaluation",
             check.not_none(evaluation_event.dagster_event).event_specific_data,
         )
         target_materialization_data = evaluation_data.target_materialization_data

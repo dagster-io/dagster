@@ -36,7 +36,7 @@ class DagsterMySQLException(Exception):
 def get_conn(conn_string: str) -> MySQLConnectionUnion:
     parsed = urlparse(conn_string)
     conn = cast(
-        MySQLConnectionUnion,
+        "MySQLConnectionUnion",
         mysql.connect(
             user=parsed.username,
             passwd=parsed.password,
@@ -154,7 +154,7 @@ def wait_for_connection(conn_string: str, retry_limit: int = 5, retry_wait: floa
     parsed = urlparse(conn_string)
     retry_mysql_connection_fn(
         lambda: cast(
-            Union[mysql.MySQLConnection, PooledMySQLConnection],
+            "Union[mysql.MySQLConnection, PooledMySQLConnection]",
             mysql.connect(
                 user=parsed.username,
                 passwd=parsed.password,

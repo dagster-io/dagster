@@ -5,7 +5,7 @@ from argparse import ArgumentParser, Namespace
 from collections.abc import Iterable, Mapping, Sequence
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Final, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Final, Optional, Union, cast
 
 import yaml
 from dagster import (
@@ -43,6 +43,9 @@ from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.utils import get_dbt_resource_props_by_dbt_unique_id_from_manifest
 
+if TYPE_CHECKING:
+    from dbt.adapters.protocol import MacroContextGeneratorCallable
+
 IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
 if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
     from dbt.events.functions import cleanup_event_logger  # type: ignore
@@ -66,7 +69,7 @@ DAGSTER_GITHUB_REPO_DBT_PACKAGE = "https://github.com/dagster-io/dagster.git"
 def _dbt_packages_has_dagster_dbt(packages_file: Path) -> bool:
     """Checks whether any package in the passed yaml file is the Dagster dbt package."""
     packages = cast(
-        list[dict[str, Any]], yaml.safe_load(packages_file.read_text()).get("packages", [])
+        "list[dict[str, Any]]", yaml.safe_load(packages_file.read_text()).get("packages", [])
     )
     return any(package.get("git") == DAGSTER_GITHUB_REPO_DBT_PACKAGE for package in packages)
 
@@ -404,13 +407,12 @@ class DbtCliResource(ConfigurableResource):
         if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
             register_adapter(config)  # type: ignore
         else:
-            from dbt.adapters.protocol import MacroContextGeneratorCallable
             from dbt.context.providers import generate_runtime_macro_context
             from dbt.mp_context import get_mp_context
             from dbt.parser.manifest import ManifestLoader
 
             register_adapter(config, get_mp_context())
-            adapter = cast(BaseAdapter, get_adapter(config))
+            adapter = cast("BaseAdapter", get_adapter(config))
             manifest = ManifestLoader.load_macros(
                 config,
                 adapter.connections.set_query_header,  # type: ignore
@@ -418,10 +420,10 @@ class DbtCliResource(ConfigurableResource):
             )
             adapter.set_macro_resolver(manifest)
             adapter.set_macro_context_generator(
-                cast(MacroContextGeneratorCallable, generate_runtime_macro_context)
+                cast("MacroContextGeneratorCallable", generate_runtime_macro_context)
             )
 
-        adapter = cast(BaseAdapter, get_adapter(config))
+        adapter = cast("BaseAdapter", get_adapter(config))
 
         return adapter
 

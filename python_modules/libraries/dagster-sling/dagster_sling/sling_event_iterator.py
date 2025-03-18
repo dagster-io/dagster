@@ -83,7 +83,7 @@ def fetch_row_count_metadata(
     if not materialization.metadata:
         raise Exception("Missing required metadata to retrieve stream_name")
 
-    stream_name = cast(str, materialization.metadata["stream_name"])
+    stream_name = cast("str", materialization.metadata["stream_name"])
     target_table_name = _get_target_table_name(stream_name, sling_cli)
 
     if target_table_name:
@@ -111,7 +111,7 @@ def fetch_column_metadata(
     if not materialization.metadata:
         raise Exception("Missing required metadata to retrieve stream_name")
 
-    stream_name = cast(str, materialization.metadata["stream_name"])
+    stream_name = cast("str", materialization.metadata["stream_name"])
 
     upstream_assets = set()
     if isinstance(context, AssetExecutionContext):

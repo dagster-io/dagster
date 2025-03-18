@@ -200,7 +200,7 @@ class Noneable(ConfigType):
     def __init__(self, inner_type: object):
         from dagster._config.field import resolve_to_config_type
 
-        self.inner_type = cast(ConfigType, resolve_to_config_type(inner_type))
+        self.inner_type = cast("ConfigType", resolve_to_config_type(inner_type))
         super().__init__(
             key=f"Noneable.{self.inner_type.key}",
             kind=ConfigTypeKind.NONEABLE,
@@ -223,7 +223,7 @@ class Array(ConfigType):
     def __init__(self, inner_type: object):
         from dagster._config.field import resolve_to_config_type
 
-        self.inner_type = cast(ConfigType, resolve_to_config_type(inner_type))
+        self.inner_type = cast("ConfigType", resolve_to_config_type(inner_type))
         super().__init__(
             key=f"Array.{self.inner_type.key}",
             type_params=[self.inner_type],

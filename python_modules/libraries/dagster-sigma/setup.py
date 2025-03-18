@@ -22,8 +22,7 @@ setup(
     license="Apache-2.0",
     description="Build assets representing Sigma dashboards.",
     url=(
-        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
-        "dagster-sigma"
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-sigma"
     ),
     classifiers=[
         "Programming Language :: Python :: 3.9",

@@ -136,7 +136,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
     ) -> "RunJobFlowInputTypeDef":
         params["Configurations"] = emr_inject_pipes_env_vars(
             session,
-            cast(list["ConfigurationTypeDef"], params.get("Configurations", [])),
+            cast("list[ConfigurationTypeDef]", params.get("Configurations", [])),
             emr_flavor="standard",
         )
 

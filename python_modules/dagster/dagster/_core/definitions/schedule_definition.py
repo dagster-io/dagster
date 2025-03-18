@@ -304,7 +304,7 @@ class ScheduleEvaluationContext:
             self._instance = self._exit_stack.enter_context(
                 DagsterInstance.from_ref(self._instance_ref)
             )
-        return cast(DagsterInstance, self._instance)
+        return cast("DagsterInstance", self._instance)
 
     @property
     def instance_ref(self) -> Optional[InstanceRef]:
@@ -693,7 +693,7 @@ class ScheduleDefinition(IHasInternalInit):
             self._tags = normalize_tags(tags, allow_private_system_tags=False, warning_stacklevel=4)
             if tags_fn:
                 self._tags_fn = check.opt_callable_param(
-                    tags_fn, "tags_fn", default=lambda _context: cast(Mapping[str, str], {})
+                    tags_fn, "tags_fn", default=lambda _context: cast("Mapping[str, str]", {})
                 )
             else:
                 tags_fn = lambda _context: self._tags or {}
@@ -938,7 +938,7 @@ class ScheduleDefinition(IHasInternalInit):
             execution_fn = self._execution_fn.wrapped_fn
         else:
             execution_fn = cast(
-                Callable[..., "ScheduleEvaluationFunctionReturn"],
+                "Callable[..., ScheduleEvaluationFunctionReturn]",
                 self._execution_fn,
             )
 
@@ -961,7 +961,7 @@ class ScheduleDefinition(IHasInternalInit):
         else:
             # NOTE: mypy is not correctly reading this cast-- not sure why
             # (pyright reads it fine). Hence the type-ignores below.
-            result = cast(list[RunRequest], check.is_list(result, of_type=RunRequest))
+            result = cast("list[RunRequest]", check.is_list(result, of_type=RunRequest))
             check.invariant(
                 not any(not request.run_key for request in result),
                 "Schedules that return multiple RunRequests must specify a run_key in each"

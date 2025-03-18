@@ -528,7 +528,7 @@ class K8sContainerContext(
                 run_k8s_container_context,
             )
 
-        processed_context_value = cast(dict, processed_container_context.value)
+        processed_context_value = cast("dict", processed_container_context.value)
 
         return shared_container_context.merge(
             K8sContainerContext(

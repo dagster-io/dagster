@@ -319,7 +319,7 @@ class EcsStepHandler(StepHandler):
 
     def _get_step_key(self, step_handler_context: StepHandlerContext) -> str:
         step_keys_to_execute = cast(
-            list[str], step_handler_context.execute_step_args.step_keys_to_execute
+            "list[str]", step_handler_context.execute_step_args.step_keys_to_execute
         )
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         return step_keys_to_execute[0]
@@ -329,7 +329,7 @@ class EcsStepHandler(StepHandler):
     ) -> EcsContainerContext:
         return EcsContainerContext.create_for_run(
             step_handler_context.dagster_run,
-            cast(EcsRunLauncher, step_handler_context.instance.run_launcher),
+            cast("EcsRunLauncher", step_handler_context.instance.run_launcher),
         )
 
     def _run_task(self, **run_task_kwargs):

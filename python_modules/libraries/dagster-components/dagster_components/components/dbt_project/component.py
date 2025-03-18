@@ -2,11 +2,10 @@ from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import cached_property
 from types import ModuleType
-from typing import Annotated, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Annotated, Any, Optional, Union, cast
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
@@ -41,6 +40,9 @@ from dagster_components.resolved.metadata import ResolvableFieldInfo
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
 from dagster_components.scaffold import scaffold_with
 from dagster_components.utils import TranslatorResolvingInfo
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
 
 
 class DbtProjectModel(ResolvableModel):
@@ -247,4 +249,4 @@ def get_asset_key_for_model_from_module(
                 ...
     """
     defs = context.load_defs(dbt_component_module)
-    return get_asset_key_for_model(cast(Sequence[AssetsDefinition], defs.assets), model_name)
+    return get_asset_key_for_model(cast("Sequence[AssetsDefinition]", defs.assets), model_name)

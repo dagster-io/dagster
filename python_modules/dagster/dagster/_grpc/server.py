@@ -874,8 +874,8 @@ class DagsterApiServer(DagsterApiServicer):
     ) -> Iterable[dagster_api_pb2.StreamingExternalRepositoryEvent]:
         serialized_external_repository_data = self._get_serialized_external_repository_data(request)
 
-        num_chunks = int(
-            math.ceil(float(len(serialized_external_repository_data)) / STREAMING_CHUNK_SIZE)
+        num_chunks = math.ceil(
+            float(len(serialized_external_repository_data)) / STREAMING_CHUNK_SIZE
         )
 
         for i in range(num_chunks):
@@ -895,7 +895,7 @@ class DagsterApiServer(DagsterApiServicer):
     def _split_serialized_data_into_chunk_events(
         self, serialized_data: str
     ) -> Iterable[dagster_api_pb2.StreamingChunkEvent]:
-        num_chunks = int(math.ceil(float(len(serialized_data)) / STREAMING_CHUNK_SIZE))
+        num_chunks = math.ceil(float(len(serialized_data)) / STREAMING_CHUNK_SIZE)
         for i in range(num_chunks):
             start_index = i * STREAMING_CHUNK_SIZE
             end_index = min(
@@ -1129,7 +1129,7 @@ class DagsterApiServer(DagsterApiServicer):
             self._executions[run_id] = (
                 # Cast here to convert `SpawnProcess` from event into regular `Process`-- not sure
                 # why not recognized as subclass, multiprocessing typing is a little rough.
-                cast(multiprocessing.Process, execution_process),
+                cast("multiprocessing.Process", execution_process),
                 check.not_none(execute_external_job_args.instance_ref),
             )
             self._termination_events[run_id] = termination_event
@@ -1371,13 +1371,13 @@ def wait_for_grpc_server(
         if timeout > 0 and (time.time() - start_time > timeout):
             raise Exception(
                 f"Timed out waiting for gRPC server to start after {timeout}s. {additional_timeout_msg}Launched with arguments:"
-                f" \"{' '.join(subprocess_args)}\". Most recent connection error: {last_error}"
+                f' "{" ".join(subprocess_args)}". Most recent connection error: {last_error}'
             )
 
         if server_process.poll() is not None:
             raise Exception(
                 f"gRPC server exited with return code {server_process.returncode} while starting up"
-                f" with the command: \"{' '.join(subprocess_args)}\""
+                f' with the command: "{" ".join(subprocess_args)}"'
             )
 
         sleep(0.1)

@@ -117,15 +117,15 @@ def poll_for_expected_mats(
                 dagster_run = dagster_instance.get_run_by_id(dagster_run_id)
                 assert dagster_run
                 run_ids = dagster_instance.get_run_ids()
-                assert (
-                    dagster_run
-                ), f"Could not find dagster run {dagster_run_id} All run_ids {run_ids}"
-                assert (
-                    DAG_RUN_ID_TAG_KEY in dagster_run.tags
-                ), f"Could not find dagster run tag: dagster_run.tags {dagster_run.tags}"
-                assert (
-                    dagster_run.tags[DAG_RUN_ID_TAG_KEY] == airflow_run_id
-                ), "dagster run tag does not match dag run id"
+                assert dagster_run, (
+                    f"Could not find dagster run {dagster_run_id} All run_ids {run_ids}"
+                )
+                assert DAG_RUN_ID_TAG_KEY in dagster_run.tags, (
+                    f"Could not find dagster run tag: dagster_run.tags {dagster_run.tags}"
+                )
+                assert dagster_run.tags[DAG_RUN_ID_TAG_KEY] == airflow_run_id, (
+                    "dagster run tag does not match dag run id"
+                )
 
 
 def poll_for_materialization(

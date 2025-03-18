@@ -200,7 +200,7 @@ class PartitionsDefinition(ABC, Generic[T_str]):
 
         # in the simple case, simply return the single key in the range
         if partition_key_range.start == partition_key_range.end:
-            return [cast(T_str, partition_key_range.start)]
+            return [cast("T_str", partition_key_range.start)]
 
         # defer this call as it is potentially expensive
         partition_keys = self.get_partition_keys(dynamic_partitions_store=dynamic_partitions_store)
@@ -781,7 +781,7 @@ class PartitionedConfig(Generic[T_PartitionsDefinition]):
             hardcoded_config = config if config else {}
             return cls(
                 partitions_def,  # type: ignore # ignored for update, fix me!
-                run_config_for_partition_key_fn=lambda _: cast(Mapping, hardcoded_config),
+                run_config_for_partition_key_fn=lambda _: cast("Mapping", hardcoded_config),
             )
 
     def __call__(self, *args, **kwargs):

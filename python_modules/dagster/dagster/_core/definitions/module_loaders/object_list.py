@@ -220,7 +220,7 @@ class DagsterObjectsList:
     @cached_property
     def checks_defs(self) -> Sequence[AssetChecksDefinition]:
         return [
-            cast(AssetChecksDefinition, asset)
+            cast("AssetChecksDefinition", asset)
             for asset in self.loaded_defs
             if isinstance(asset, AssetsDefinition) and has_only_asset_checks(asset)
         ]

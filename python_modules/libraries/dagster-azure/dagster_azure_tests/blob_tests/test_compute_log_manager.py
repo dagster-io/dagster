@@ -123,16 +123,16 @@ compute_logs:
     storage_account: "{storage_account}"
     container: {container}
     secret_credential:
-        client_id: "{credential['client_id']}"
-        client_secret: "{credential['client_secret']}"
-        tenant_id: "{credential['tenant_id']}"
+        client_id: "{credential["client_id"]}"
+        client_secret: "{credential["client_secret"]}"
+        tenant_id: "{credential["tenant_id"]}"
     local_dir: "/tmp/cool"
     prefix: "{prefix}"
 """
 
     with tempfile.TemporaryDirectory() as tempdir:
         with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:
-            f.write(dagster_yaml.encode("utf-8"))
+            f.write(dagster_yaml.encode("utf-8"))  # codeql-suppress [*]: test
 
         instance = DagsterInstance.from_config(tempdir)
     assert instance.compute_log_manager._storage_account == storage_account  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]

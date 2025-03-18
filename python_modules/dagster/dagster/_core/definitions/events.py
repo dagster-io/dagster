@@ -454,7 +454,7 @@ class AssetMaterialization(
             asset_key = path
 
         return AssetMaterialization(
-            asset_key=cast(Union[str, AssetKey, list[str]], asset_key),
+            asset_key=cast("Union[str, AssetKey, list[str]]", asset_key),
             description=description,
             metadata={"path": MetadataValue.path(path)},
         )
@@ -740,7 +740,7 @@ class HookExecutionResult(
         return super().__new__(
             cls,
             hook_name=check.str_param(hook_name, "hook_name"),
-            is_skipped=cast(bool, check.opt_bool_param(is_skipped, "is_skipped", default=False)),
+            is_skipped=cast("bool", check.opt_bool_param(is_skipped, "is_skipped", default=False)),
         )
 
 

@@ -16,7 +16,7 @@ class StepHandle(NamedTuple("_StepHandle", [("node_handle", NodeHandle), ("key",
             cls,
             node_handle=check.inst_param(node_handle, "node_handle", NodeHandle),
             # mypy can't tell that if default is set, this is guaranteed to be a str
-            key=cast(str, check.opt_str_param(key, "key", default=str(node_handle))),
+            key=cast("str", check.opt_str_param(key, "key", default=str(node_handle))),
         )
 
     def to_key(self) -> str:
@@ -77,7 +77,7 @@ class ResolvedFromDynamicStepHandle(
             mapping_key=check.str_param(mapping_key, "mapping_key"),
             # mypy can't tell that if default is set, this is guaranteed to be a str
             key=cast(
-                str,
+                "str",
                 check.opt_str_param(key, "key", default=f"{node_handle}[{mapping_key}]"),
             ),
         )

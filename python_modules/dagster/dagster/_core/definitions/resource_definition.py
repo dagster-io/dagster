@@ -190,7 +190,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
         # Make sure telemetry info gets passed in to hardcoded resources
         if hasattr(value, "_is_dagster_maintained"):
             resource_def._dagster_maintained = value._is_dagster_maintained()  # noqa: SLF001
-            resource_def._hardcoded_resource_type = type(value)  # noqa: SLF001
+            resource_def._hardcoded_resource_type = type(value)
 
         return resource_def
 
@@ -268,7 +268,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
             if args:
                 check.opt_inst_param(args[0], context_param_name, UnboundInitResourceContext)
                 return resource_invocation_result(
-                    self, cast(Optional[UnboundInitResourceContext], args[0])
+                    self, cast("Optional[UnboundInitResourceContext]", args[0])
                 )
             else:
                 if context_param_name not in kwargs:
@@ -280,7 +280,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
                 )
 
                 return resource_invocation_result(
-                    self, cast(Optional[UnboundInitResourceContext], kwargs[context_param_name])
+                    self, cast("Optional[UnboundInitResourceContext]", kwargs[context_param_name])
                 )
         elif len(args) + len(kwargs) > 0:
             raise DagsterInvalidInvocationError(
@@ -406,7 +406,7 @@ def resource(
 
     def _wrap(resource_fn: ResourceFunction) -> "ResourceDefinition":
         return _ResourceDecoratorCallable(
-            config_schema=cast(Optional[dict[str, Any]], config_schema),
+            config_schema=cast("Optional[dict[str, Any]]", config_schema),
             description=description,
             required_resource_keys=required_resource_keys,
             version=version,

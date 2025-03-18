@@ -14,12 +14,13 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.remote_asset_graph import RemoteWorkspaceAssetGraph
 from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
 from dagster._core.execution.backfill import PartitionBackfill
-from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._utils.error import serializable_error_info_from_exc_info
 from typing_extensions import ParamSpec, TypeAlias
 
 if TYPE_CHECKING:
+    from dagster._core.workspace.context import BaseWorkspaceRequestContext
+
     from dagster_graphql.schema.errors import GrapheneError, GraphenePythonError
     from dagster_graphql.schema.util import ResolveInfo
 
@@ -35,7 +36,7 @@ def assert_permission_for_location(
 ) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
-    context = cast(BaseWorkspaceRequestContext, graphene_info.context)
+    context = cast("BaseWorkspaceRequestContext", graphene_info.context)
     if not context.has_permission_for_location(permission, location_name):
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
@@ -76,7 +77,7 @@ def check_permission(
 def assert_permission(graphene_info: "ResolveInfo", permission: str) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
-    context = cast(BaseWorkspaceRequestContext, graphene_info.context)
+    context = cast("BaseWorkspaceRequestContext", graphene_info.context)
     if not context.has_permission(permission):
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
@@ -88,7 +89,7 @@ def has_permission_for_asset_graph(
     permission: str,
 ) -> bool:
     asset_keys = set(asset_selection or [])
-    context = cast(BaseWorkspaceRequestContext, graphene_info.context)
+    context = cast("BaseWorkspaceRequestContext", graphene_info.context)
 
     if asset_keys:
         location_names = set()
@@ -242,9 +243,9 @@ class UserFacingGraphQLError(Exception):
 
 
 def pipeline_selector_from_graphql(data: Mapping[str, Any]) -> JobSubsetSelector:
-    asset_selection = cast(Optional[Iterable[dict[str, list[str]]]], data.get("assetSelection"))
+    asset_selection = cast("Optional[Iterable[dict[str, list[str]]]]", data.get("assetSelection"))
     asset_check_selection = cast(
-        Optional[Iterable[dict[str, Any]]], data.get("assetCheckSelection")
+        "Optional[Iterable[dict[str, Any]]]", data.get("assetCheckSelection")
     )
     return JobSubsetSelector(
         location_name=data["repositoryLocationName"],

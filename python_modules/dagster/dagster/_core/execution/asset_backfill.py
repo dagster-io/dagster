@@ -667,7 +667,7 @@ def _get_requested_asset_graph_subset_from_run_requests(
         if range_start and range_end:
             # When a run request targets a range of partitions, each asset is expected to
             # have the same partitions def
-            selected_assets = cast(Sequence[AssetKey], run_request.asset_selection)
+            selected_assets = cast("Sequence[AssetKey]", run_request.asset_selection)
             check.invariant(len(selected_assets) > 0)
             partition_range = PartitionKeyRange(range_start, range_end)
             entity_subsets = [
@@ -681,7 +681,7 @@ def _get_requested_asset_graph_subset_from_run_requests(
             requested_subset = requested_subset | AssetGraphSubset.from_asset_partition_set(
                 {
                     AssetKeyPartitionKey(asset_key, run_request.partition_key)
-                    for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
+                    for asset_key in cast("Sequence[AssetKey]", run_request.asset_selection)
                 },
                 asset_graph,
             )
@@ -721,7 +721,7 @@ def _submit_runs_and_update_backfill_in_chunks(
     from dagster._core.execution.backfill import BulkActionStatus
     from dagster._daemon.utils import DaemonErrorCapture
 
-    asset_graph = cast(RemoteWorkspaceAssetGraph, asset_graph_view.asset_graph)
+    asset_graph = cast("RemoteWorkspaceAssetGraph", asset_graph_view.asset_graph)
     instance = asset_graph_view.instance
 
     run_requests = asset_backfill_iteration_result.run_requests
@@ -826,8 +826,7 @@ def _check_target_partitions_subset_is_valid(
     if target_partitions_subset:  # Asset was partitioned at storage time
         if partitions_def is None:
             raise DagsterDefinitionChangedDeserializationError(
-                f"Asset {asset_key} had a PartitionsDefinition at storage-time, but no longer"
-                " does"
+                f"Asset {asset_key} had a PartitionsDefinition at storage-time, but no longer does"
             )
 
         # If the asset was time-partitioned at storage time but the time partitions def
@@ -1087,7 +1086,7 @@ def execute_asset_backfill_iteration(
             )
 
         updated_backfill = cast(
-            PartitionBackfill, instance.get_backfill(updated_backfill.backfill_id)
+            "PartitionBackfill", instance.get_backfill(updated_backfill.backfill_id)
         )
         if updated_backfill.status == BulkActionStatus.REQUESTED:
             check.invariant(
@@ -1181,7 +1180,7 @@ def execute_asset_backfill_iteration(
             )
 
         # Refetch, in case the backfill was forcibly marked as canceled in the meantime
-        backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
+        backfill = cast("PartitionBackfill", instance.get_backfill(backfill.backfill_id))
         updated_backfill: PartitionBackfill = backfill.with_asset_backfill_data(
             updated_asset_backfill_data,
             dynamic_partitions_store=instance,
@@ -1232,7 +1231,7 @@ def get_canceling_asset_backfill_iteration_data(
     """For asset backfills in the "canceling" state, fetch the asset backfill data with the updated
     materialized and failed subsets.
     """
-    asset_graph = cast(RemoteWorkspaceAssetGraph, asset_graph_view.asset_graph)
+    asset_graph = cast("RemoteWorkspaceAssetGraph", asset_graph_view.asset_graph)
     instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
     updated_materialized_subset = None
     for updated_materialized_subset in get_asset_backfill_iteration_materialized_subset(
@@ -1330,9 +1329,9 @@ def _get_subset_in_target_subset(
         asset_graph_view.iterate_asset_subsets(candidate_asset_graph_subset)
     )
 
-    assert (
-        len(candidate_entity_subsets) == 1
-    ), "Since include_execution_set=False, there should be exactly one candidate entity subset"
+    assert len(candidate_entity_subsets) == 1, (
+        "Since include_execution_set=False, there should be exactly one candidate entity subset"
+    )
 
     candidate_entity_subset = next(iter(candidate_entity_subsets))
 
@@ -1451,7 +1450,7 @@ def execute_asset_backfill_iteration_inner(
     """
     instance_queryer = asset_graph_view.get_inner_queryer_for_back_compat()
     asset_graph: RemoteWorkspaceAssetGraph = cast(
-        RemoteWorkspaceAssetGraph, asset_graph_view.asset_graph
+        "RemoteWorkspaceAssetGraph", asset_graph_view.asset_graph
     )
 
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
@@ -1791,7 +1790,7 @@ def get_can_run_with_parent_subsets(
     parent_asset_key = parent_subset.key
 
     assert isinstance(asset_graph_view.asset_graph, RemoteWorkspaceAssetGraph)
-    asset_graph: RemoteWorkspaceAssetGraph = asset_graph_view.asset_graph
+    asset_graph = asset_graph_view.asset_graph
 
     parent_node = asset_graph.get(parent_asset_key)
     candidate_node = asset_graph.get(candidate_asset_key)
@@ -1827,8 +1826,8 @@ def get_can_run_with_parent_subsets(
             ],
         )
     if (
-        parent_node.resolve_to_singular_repo_scoped_node().repository_handle
-        != candidate_node.resolve_to_singular_repo_scoped_node().repository_handle
+        parent_node.resolve_to_singular_repo_scoped_node().repository_handle  # type: ignore
+        != candidate_node.resolve_to_singular_repo_scoped_node().repository_handle  # type: ignore
     ):
         return (
             asset_graph_view.get_empty_subset(key=candidate_asset_key),

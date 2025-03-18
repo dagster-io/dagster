@@ -309,7 +309,7 @@ def build_run_step_stats_snapshot_from_events(
             materialization_events.append(event)
             by_step_key[step_key]["materialization_events"] = materialization_events
         if dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
-            expectation_data = cast(StepExpectationResultData, dagster_event.event_specific_data)
+            expectation_data = cast("StepExpectationResultData", dagster_event.event_specific_data)
             expectation_result = expectation_data.expectation_result
             step_expectation_results = by_step_key[step_key].get("expectation_results", [])
             step_expectation_results.append(expectation_result)

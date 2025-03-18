@@ -121,7 +121,7 @@ class CacheingDefinitionIndex(Generic[T_RepositoryLevelDefinition]):
             self._definition_cache[definition_name] = self._validation_fn(definition_source)
             return definition_source
         else:
-            definition = cast(Callable, definition_source)()
+            definition = cast("Callable", definition_source)()
             self._validate_and_cache_definition(definition, definition_name)
             return definition
 

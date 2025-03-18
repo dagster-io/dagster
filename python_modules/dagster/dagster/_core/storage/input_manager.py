@@ -179,7 +179,7 @@ def input_manager(
 
     def _wrap(load_fn: InputLoadFn) -> InputManagerDefinition:
         return _InputManagerDecoratorCallable(
-            config_schema=cast(CoercableToConfigSchema, config_schema),
+            config_schema=cast("CoercableToConfigSchema", config_schema),
             description=description,
             version=version,
             input_config_schema=input_config_schema,

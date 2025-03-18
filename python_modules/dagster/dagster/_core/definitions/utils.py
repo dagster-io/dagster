@@ -213,7 +213,7 @@ def config_from_files(config_files: Sequence[str]) -> Mapping[str, Any]:
             f"loaded by file/patterns {config_files}."
         ) from err
 
-    return check.is_dict(cast(dict[str, object], run_config), key_type=str)
+    return check.is_dict(cast("dict[str, object]", run_config), key_type=str)
 
 
 def config_from_yaml_strings(yaml_strings: Sequence[str]) -> Mapping[str, Any]:
@@ -238,7 +238,7 @@ def config_from_yaml_strings(yaml_strings: Sequence[str]) -> Mapping[str, Any]:
             f"Encountered error attempting to parse yaml. Parsing YAMLs {yaml_strings} "
         ) from err
 
-    return check.is_dict(cast(dict[str, object], run_config), key_type=str)
+    return check.is_dict(cast("dict[str, object]", run_config), key_type=str)
 
 
 def config_from_pkg_resources(pkg_resource_defs: Sequence[tuple[str, str]]) -> Mapping[str, Any]:

@@ -61,11 +61,11 @@ def is_second_ambiguous_time(dt: datetime, tz: str):
         return False
 
     offset_before = cast(
-        timedelta,
+        "timedelta",
         (tzinfo.utcoffset(dt.replace(fold=0)) if dt.fold else tzinfo.utcoffset(dt)),
     )
     offset_after = cast(
-        timedelta,
+        "timedelta",
         (tzinfo.utcoffset(dt) if dt.fold else tzinfo.utcoffset(dt.replace(fold=1))),
     )
     return offset_before > offset_after
@@ -858,7 +858,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             )
 
         minute_of_hour = cast(
-            int,
+            "int",
             check.opt_int_param(minute_of_hour, "minute_of_hour", default=self.minute_offset),
         )
 
@@ -868,7 +868,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             )
         else:
             hour_of_day = cast(
-                int, check.opt_int_param(hour_of_day, "hour_of_day", default=self.hour_offset)
+                "int", check.opt_int_param(hour_of_day, "hour_of_day", default=self.hour_offset)
             )
 
         if schedule_type == ScheduleType.DAILY:
@@ -1830,10 +1830,10 @@ class TimeWindowPartitionsSubset(
         Each time window is a single partition.
         """
         first_tw = cast(
-            TimeWindowPartitionsDefinition, self.partitions_def
+            "TimeWindowPartitionsDefinition", self.partitions_def
         ).get_first_partition_window(current_time=current_time)
         last_tw = cast(
-            TimeWindowPartitionsDefinition, self.partitions_def
+            "TimeWindowPartitionsDefinition", self.partitions_def
         ).get_last_partition_window(current_time=current_time)
 
         if not first_tw or not last_tw:
@@ -1904,7 +1904,7 @@ class TimeWindowPartitionsSubset(
         for tw in self._get_partition_time_windows_not_in_subset(current_time):
             partition_keys.extend(
                 cast(
-                    TimeWindowPartitionsDefinition, self.partitions_def
+                    "TimeWindowPartitionsDefinition", self.partitions_def
                 ).get_partition_keys_in_time_window(tw)
             )
         return partition_keys
@@ -1918,7 +1918,7 @@ class TimeWindowPartitionsSubset(
     ) -> Sequence[PartitionKeyRange]:
         return [
             cast(
-                TimeWindowPartitionsDefinition, self.partitions_def
+                "TimeWindowPartitionsDefinition", self.partitions_def
             ).get_partition_key_range_for_time_window(
                 window.to_public_time_window(), respect_bounds=respect_bounds
             )
@@ -1936,7 +1936,7 @@ class TimeWindowPartitionsSubset(
         """
         result_windows = [*initial_windows]
         time_windows = cast(
-            TimeWindowPartitionsDefinition, self.partitions_def
+            "TimeWindowPartitionsDefinition", self.partitions_def
         ).time_windows_for_partition_keys(frozenset(partition_keys), validate=validate)
 
         num_added_partitions = 0
@@ -2038,7 +2038,7 @@ class TimeWindowPartitionsSubset(
     ) -> "PartitionsSubset":
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
             check.failed("Partitions definition must be a TimeWindowPartitionsDefinition")
-        partitions_def = cast(TimeWindowPartitionsDefinition, partitions_def)
+        partitions_def = cast("TimeWindowPartitionsDefinition", partitions_def)
         return cls(partitions_def, 0, [])
 
     def with_partitions_def(
@@ -2184,7 +2184,7 @@ class TimeWindowPartitionsSubset(
 
         try:
             time_window = cast(
-                TimeWindowPartitionsDefinition, self.partitions_def
+                "TimeWindowPartitionsDefinition", self.partitions_def
             ).time_window_for_partition_key(partition_key)
         except ValueError:
             # invalid partition key
@@ -2244,7 +2244,7 @@ class TimeWindowPartitionsSubset(
     ) -> "PartitionsSubset":
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
             check.failed("Partitions definition must be a TimeWindowPartitionsDefinition")
-        partitions_def = cast(TimeWindowPartitionsDefinition, partitions_def)
+        partitions_def = cast("TimeWindowPartitionsDefinition", partitions_def)
 
         loaded = json.loads(serialized)
 
@@ -2478,7 +2478,7 @@ def get_time_partitions_def(
         partitions_def, MultiPartitionsDefinition
     ) and has_one_dimension_time_window_partitioning(partitions_def):
         return cast(
-            TimeWindowPartitionsDefinition, partitions_def.time_window_dimension.partitions_def
+            "TimeWindowPartitionsDefinition", partitions_def.time_window_dimension.partitions_def
         )
     else:
         return None

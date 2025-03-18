@@ -99,9 +99,9 @@ def dagster_type_loader(
     from dagster._config import resolve_to_config_type
 
     config_type = resolve_to_config_type(config_schema)
-    assert isinstance(
-        config_type, ConfigType
-    ), f"{config_schema} could not be resolved to config type"
+    assert isinstance(config_type, ConfigType), (
+        f"{config_schema} could not be resolved to config type"
+    )
     EXPECTED_POSITIONALS = ["context", "*"]
 
     def wrapper(func: DagsterTypeLoaderFn) -> DagsterTypeLoaderFromDecorator:

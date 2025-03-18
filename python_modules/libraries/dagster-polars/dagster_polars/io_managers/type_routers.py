@@ -55,13 +55,13 @@ class BaseTypeRouter(Generic[T]):
 
     def dump(self, obj: T, path: "UPath", dump_fn: F_D) -> None:
         if self.is_base_type:
-            dump_fn(cast(OutputContext, self.context), obj, path)
+            dump_fn(cast("OutputContext", self.context), obj, path)
         else:
             self.parent_type_router.dump(obj, path, dump_fn)
 
     def load(self, path: "UPath", load_fn: F_L) -> T:
         if self.is_base_type:
-            return load_fn(path, cast(InputContext, self.context))
+            return load_fn(path, cast("InputContext", self.context))
         else:
             return self.parent_type_router.load(path, load_fn)
 

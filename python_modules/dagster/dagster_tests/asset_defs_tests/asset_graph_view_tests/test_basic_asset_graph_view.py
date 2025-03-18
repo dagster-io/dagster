@@ -123,7 +123,7 @@ def test_partitions_definition_valid_subset():
             asset0.key,
         )
 
-        subset = cast(TimeWindowPartitionsSubset, entity_subset.get_internal_subset_value())
+        subset = cast("TimeWindowPartitionsSubset", entity_subset.get_internal_subset_value())
         assert subset.included_time_windows == old_partitions_subset.included_time_windows
         assert subset.partitions_def == current_partitions_def
 

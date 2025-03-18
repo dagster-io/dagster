@@ -136,7 +136,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             resolved_input_defs: Sequence[InputDefinition] = resolve_checked_op_fn_inputs(
                 decorator_name="@op",
                 fn_name=name,
-                compute_fn=cast(DecoratedOpFunction, compute_fn),
+                compute_fn=cast("DecoratedOpFunction", compute_fn),
                 explicit_input_defs=input_defs,
                 exclude_nothing=True,
             )
@@ -339,7 +339,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
     ) -> Sequence[InputDefinition]:
-        handle = cast(NodeHandle, check.inst_param(handle, "handle", NodeHandle))
+        handle = cast("NodeHandle", check.inst_param(handle, "handle", NodeHandle))
         unresolveable_input_defs = []
         for input_def in self.input_defs:
             if (

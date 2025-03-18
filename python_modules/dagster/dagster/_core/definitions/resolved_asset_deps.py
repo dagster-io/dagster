@@ -160,7 +160,7 @@ def resolve_assets_def_deps(
         for input_name, upstream_key in assets_def.keys_by_input_name.items():
             group_and_upstream_name = (group_name, upstream_key.path[-1])
             matching_asset_keys = asset_keys_by_group_and_name.get(
-                cast(tuple[str, str], group_and_upstream_name)
+                cast("tuple[str, str]", group_and_upstream_name)
             )
             if upstream_key in all_asset_keys:
                 pass

@@ -93,7 +93,7 @@ class ConfigurableClassData(
             # they do not. However, not all rehydrated classes actually have `ConfigurableClass` as
             # an ancestor due to some subtleties around multiple abstract classes that cause an
             # error when `ConfigurableClass` is added as an ancestor to storage classes.
-            klass = cast(type[ConfigurableClass], getattr(module, self.class_name))
+            klass = cast("type[ConfigurableClass]", getattr(module, self.class_name))
         except AttributeError:
             check.failed(
                 f"Couldn't find class {self.class_name} in module when attempting to load the "

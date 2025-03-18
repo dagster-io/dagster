@@ -99,7 +99,7 @@ def load_assets_from_modules(
         else tuple(t for t in get_args(AssetLoaderTypes) if t != AssetSpec)
     )
     return cast(
-        Sequence[AssetLoaderTypes],
+        "Sequence[AssetLoaderTypes]",
         ModuleScopedDagsterDefs.from_modules(modules, types_to_load=types_to_load)
         .get_object_list()
         .with_attributes(

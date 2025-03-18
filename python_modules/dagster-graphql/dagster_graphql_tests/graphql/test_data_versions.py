@@ -354,7 +354,7 @@ def _materialize_assets(
     run_config_data: Optional[Mapping[str, Any]] = None,
 ) -> Union[GqlResult, Sequence[GqlResult]]:
     gql_asset_selection = (
-        cast(Sequence[GqlAssetKey], [key.to_graphql_input() for key in asset_selection])
+        cast("Sequence[GqlAssetKey]", [key.to_graphql_input() for key in asset_selection])
         if asset_selection
         else None
     )

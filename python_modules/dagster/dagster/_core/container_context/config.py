@@ -34,4 +34,4 @@ def process_shared_container_context_config(
             container_context_config,
         )
 
-    return cast(dict[str, Any], shared_container_context.value)
+    return cast("dict[str, Any]", shared_container_context.value)

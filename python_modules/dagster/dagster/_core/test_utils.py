@@ -717,9 +717,9 @@ def raise_exception_on_warnings():
 
 def ensure_dagster_tests_import() -> None:
     dagster_package_root = (Path(dagster_init_py) / ".." / "..").resolve()
-    assert (
-        dagster_package_root / "dagster_tests"
-    ).exists(), "Could not find dagster_tests where expected"
+    assert (dagster_package_root / "dagster_tests").exists(), (
+        "Could not find dagster_tests where expected"
+    )
     sys.path.append(dagster_package_root.as_posix())
 
 

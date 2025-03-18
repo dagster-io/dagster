@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Union, cast
+from typing import TYPE_CHECKING, Union, cast
 
 from pydantic import BaseModel
 
@@ -13,9 +13,11 @@ from dagster._core.definitions.asset_check_spec import (
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
-from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.metadata import TableColumn, TableMetadataSet, TableSchema
 from dagster._core.instance import DagsterInstance
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.events import AssetMaterialization
 
 
 @beta
@@ -100,8 +102,8 @@ def build_column_schema_change_checks(
             return True, "The asset has been materialized fewer than 2 times"
 
         record, prev_record = materialization_records
-        metadata = cast(AssetMaterialization, record.asset_materialization).metadata
-        prev_metadata = cast(AssetMaterialization, prev_record.asset_materialization).metadata
+        metadata = cast("AssetMaterialization", record.asset_materialization).metadata
+        prev_metadata = cast("AssetMaterialization", prev_record.asset_materialization).metadata
 
         column_schema = TableMetadataSet.extract(metadata).column_schema
         prev_column_schema = TableMetadataSet.extract(prev_metadata).column_schema

@@ -137,7 +137,7 @@ class JobExecutionResult(ExecutionResult):
                     if result is None:
                         result = {mapping_key: value}
                     else:
-                        cast(dict, result)[mapping_key] = value
+                        cast("dict", result)[mapping_key] = value
                 else:
                     result = value
 

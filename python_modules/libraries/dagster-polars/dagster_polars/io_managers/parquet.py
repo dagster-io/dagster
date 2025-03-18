@@ -49,7 +49,7 @@ def scan_parquet(path: "UPath", context: InputContext) -> pl.LazyFrame:
     context_metadata = context.definition_metadata or {}
 
     storage_options = cast(
-        Optional[dict[str, Any]],
+        "Optional[dict[str, Any]]",
         (path.storage_options if hasattr(path, "storage_options") else None),
     )
 

@@ -155,7 +155,7 @@ class DockerContainerContext(
                 run_docker_container_context,
             )
 
-        processed_context_value = cast(Mapping[str, Any], processed_container_context.value)
+        processed_context_value = cast("Mapping[str, Any]", processed_container_context.value)
 
         return shared_container_context.merge(
             DockerContainerContext(

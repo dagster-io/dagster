@@ -3,7 +3,6 @@ import logging
 import os
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack
-from datetime import datetime
 from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union, cast, overload
 
 from typing_extensions import TypeAlias
@@ -51,6 +50,8 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from dagster._core.definitions.resource_definition import ResourceDefinition
     from dagster._core.definitions.selector import (
         CodeLocationSelector,
@@ -115,7 +116,7 @@ class RunStatusSensorCursor(
             return False
 
     def to_json(self) -> str:
-        return serialize_value(cast(NamedTuple, self))
+        return serialize_value(cast("NamedTuple", self))
 
     @staticmethod
     def from_json(json_str: str) -> "RunStatusSensorCursor":
@@ -328,7 +329,7 @@ class RunFailureSensorContext(RunStatusSensorContext):
         records = self.instance.get_records_for_run(
             run_id=self.dagster_run.run_id, of_type=DagsterEventType.STEP_FAILURE
         ).records
-        return [cast(DagsterEvent, record.event_log_entry.dagster_event) for record in records]
+        return [cast("DagsterEvent", record.event_log_entry.dagster_event) for record in records]
 
 
 @beta_param(param="repository_def")
@@ -731,7 +732,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             process_limit = _get_run_status_sensor_process_limit()
 
             fetch_limit = _get_run_status_sensor_fetch_limit(
-                monitor_all_code_locations=cast(bool, monitor_all_code_locations)
+                monitor_all_code_locations=cast("bool", monitor_all_code_locations)
             )
 
             # Fetch events after the cursor id
@@ -746,9 +747,9 @@ class RunStatusSensorDefinition(SensorDefinition):
                 # index shard instead of the run shard.
                 event_records = context.instance.fetch_run_status_changes(
                     records_filter=RunStatusChangeRecordsFilter(
-                        event_type=cast(RunStatusChangeEventType, event_type),
+                        event_type=cast("RunStatusChangeEventType", event_type),
                         after_timestamp=cast(
-                            datetime, parse_time_string(sensor_cursor.update_timestamp)
+                            "datetime", parse_time_string(sensor_cursor.update_timestamp)
                         ).timestamp(),
                     ),
                     ascending=True,
@@ -770,20 +771,13 @@ class RunStatusSensorDefinition(SensorDefinition):
                 # avoid fetching events that we will filter out later on.
                 job_names = _job_names_for_monitored(
                     cast(
-                        Sequence[
-                            Union[
-                                JobDefinition,
-                                GraphDefinition,
-                                UnresolvedAssetJobDefinition,
-                                "JobSelector",
-                            ]
-                        ],
+                        "Sequence[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition, JobSelector]]",
                         monitored_jobs,
                     )
                 )
                 event_records = context.instance.fetch_run_status_changes(
                     records_filter=RunStatusChangeRecordsFilter(
-                        event_type=cast(RunStatusChangeEventType, event_type),
+                        event_type=cast("RunStatusChangeEventType", event_type),
                         after_storage_id=sensor_cursor.record_id,
                         job_names=job_names,
                     ),
@@ -797,7 +791,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                 # API only queries the global index shard instead of the run shard.
                 event_records = context.instance.fetch_run_status_changes(
                     records_filter=RunStatusChangeRecordsFilter(
-                        event_type=cast(RunStatusChangeEventType, event_type),
+                        event_type=cast("RunStatusChangeEventType", event_type),
                         after_storage_id=sensor_cursor.record_id,
                     ),
                     ascending=True,

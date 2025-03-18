@@ -95,7 +95,7 @@ class ConfigMapping(
         outer_config = outer_evr.value
         if not receive_processed_config_values:
             outer_config = resolve_defaults(
-                cast(ConfigType, self.config_schema.config_type),
+                cast("ConfigType", self.config_schema.config_type),
                 outer_config,
             ).value
 

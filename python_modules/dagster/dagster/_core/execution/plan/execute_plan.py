@@ -65,7 +65,7 @@ def inner_plan_execution_iterator(
                     continue
 
                 step_context = cast(
-                    StepExecutionContext,
+                    "StepExecutionContext",
                     job_context.for_step(step, active_execution.get_known_state()),
                 )
                 step_event_list = []

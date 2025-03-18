@@ -506,17 +506,17 @@ def build_partition_statuses(
             {
                 PartitionRangeStatus.MATERIALIZED: materialized_partitions_subset,
                 PartitionRangeStatus.FAILED: cast(
-                    TimeWindowPartitionsSubset, failed_partitions_subset
+                    "TimeWindowPartitionsSubset", failed_partitions_subset
                 ),
                 PartitionRangeStatus.MATERIALIZING: cast(
-                    TimeWindowPartitionsSubset, in_progress_partitions_subset
+                    "TimeWindowPartitionsSubset", in_progress_partitions_subset
                 ),
             },
         )
         graphene_ranges = []
         for r in ranges:
             partition_key_range = cast(
-                TimeWindowPartitionsDefinition,
+                "TimeWindowPartitionsDefinition",
                 materialized_partitions_subset.partitions_def,
             ).get_partition_key_range_for_time_window(r.time_window)
             graphene_ranges.append(
@@ -653,7 +653,7 @@ def get_2d_run_length_encoded_partitions(
                 primary_partitions_def = primary_dim.partitions_def
                 if isinstance(primary_partitions_def, TimeWindowPartitionsDefinition):
                     time_windows = cast(
-                        TimeWindowPartitionsDefinition, primary_partitions_def
+                        "TimeWindowPartitionsDefinition", primary_partitions_def
                     ).time_windows_for_partition_keys(frozenset([start_key, end_key]))
                     start_time = time_windows[0].start.timestamp()
                     end_time = time_windows[-1].end.timestamp()

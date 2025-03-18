@@ -265,7 +265,7 @@ class AssetGraphSubset(NamedTuple):
         return AssetGraphSubset(
             partitions_subsets_by_asset_key={
                 asset_key: (
-                    cast(PartitionsDefinition, asset_graph.get(asset_key).partitions_def)
+                    cast("PartitionsDefinition", asset_graph.get(asset_key).partitions_def)
                     .empty_subset()
                     .with_partition_keys(partition_keys)
                 )

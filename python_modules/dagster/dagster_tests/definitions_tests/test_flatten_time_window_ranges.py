@@ -1,5 +1,4 @@
-from datetime import datetime
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from dagster import DailyPartitionsDefinition, PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import (
@@ -10,13 +9,16 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._time import parse_time_string
 
+if TYPE_CHECKING:
+    from datetime import datetime
+
 DATE_FORMAT = "%Y-%m-%d"
 
 
 def time_window(start: str, end: str) -> TimeWindow:
     return TimeWindow(
-        cast(datetime, parse_time_string(start)),
-        cast(datetime, parse_time_string(end)),
+        cast("datetime", parse_time_string(start)),
+        cast("datetime", parse_time_string(end)),
     )
 
 

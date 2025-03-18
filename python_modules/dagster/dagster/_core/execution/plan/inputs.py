@@ -64,7 +64,7 @@ def join_and_hash(*args: Optional[str]) -> Optional[str]:
     if None in lst:
         return None
 
-    str_lst = cast(list[str], lst)
+    str_lst = cast("list[str]", lst)
     unhashed = "".join(sorted(str_lst))
     return hashlib.sha1(unhashed.encode("utf-8")).hexdigest()
 
@@ -608,9 +608,7 @@ class FromMultipleSourcesLoadSingleSource(MultiStepInputSource, IHaveNew):
 def _load_input_with_input_manager(
     input_manager: "InputManager", context: "InputContext"
 ) -> Iterator[object]:
-    from dagster._core.execution.context.system import StepExecutionContext
-
-    step_context = cast(StepExecutionContext, context.step_context)
+    step_context = cast("StepExecutionContext", context.step_context)
     with op_execution_error_boundary(
         DagsterExecutionLoadInputError,
         msg_fn=lambda: f'Error occurred while loading input "{context.name}" of step "{step_context.step.key}":',

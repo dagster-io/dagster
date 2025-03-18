@@ -302,7 +302,7 @@ class CustomPointer(
         )
 
     def load_target(self) -> object:
-        reconstructor = cast(Callable, self.reconstructor_pointer.load_target())
+        reconstructor = cast("Callable", self.reconstructor_pointer.load_target())
 
         return reconstructor(
             *self.reconstructable_args, **{key: value for key, value in self.reconstructable_kwargs}

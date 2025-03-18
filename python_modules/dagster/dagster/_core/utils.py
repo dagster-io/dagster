@@ -140,7 +140,7 @@ def parse_env_var(env_var_str: str) -> tuple[str, str]:
         env_var_value = os.getenv(env_var_str)
         if env_var_value is None:
             raise Exception(f"Tried to load environment variable {env_var_str}, but it was not set")
-        return (env_var_str, cast(str, env_var_value))
+        return (env_var_str, cast("str", env_var_value))
 
 
 class RequestUtilizationMetrics(TypedDict):

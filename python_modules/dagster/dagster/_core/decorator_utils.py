@@ -194,7 +194,7 @@ def _wrap_with_pre_call_fn(
             pre_call_fn()
         return fn(*args, **kwargs)
 
-    return cast(T_Callable, wrapped_with_pre_call_fn)
+    return cast("T_Callable", wrapped_with_pre_call_fn)
 
 
 def apply_context_manager_decorator(
@@ -214,7 +214,7 @@ def _wrap_with_context_manager(
         with cm():
             return fn(*args, **kwargs)
 
-    return cast(T_Callable, wrapped_with_context_manager_fn)
+    return cast("T_Callable", wrapped_with_context_manager_fn)
 
 
 def _update_decoratable(decoratable: T_Decoratable, new_fn: Callable[..., Any]) -> T_Decoratable:
@@ -251,7 +251,7 @@ def _update_decoratable(decoratable: T_Decoratable, new_fn: Callable[..., Any]) 
 
     # Pyright is unable to infer based on our checks that the return type is the same as the input
     # type.
-    return cast(T_Decoratable, val)
+    return cast("T_Decoratable", val)
 
 
 def is_decoratable(obj: Any) -> TypeGuard[Decoratable]:

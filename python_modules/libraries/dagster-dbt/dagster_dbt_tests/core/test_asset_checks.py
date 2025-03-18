@@ -489,7 +489,7 @@ def test_asset_checks_results(
 
         for event in events:
             if isinstance(event, AssetCheckResult):
-                assert cast(int, event.metadata["Execution Duration"].value) > 0
+                assert cast("int", event.metadata["Execution Duration"].value) > 0
 
         expected_results = [
             AssetCheckResult(
@@ -602,7 +602,7 @@ def test_asset_checks_evaluations(
 
         for event in events:
             if isinstance(event, AssetCheckEvaluation):
-                assert cast(int, event.metadata["Execution Duration"].value) > 0
+                assert cast("int", event.metadata["Execution Duration"].value) > 0
 
         # Sanity check that we don't have AssetCheckResult events when using an op
         assert not any([event for event in events if isinstance(event, AssetCheckResult)])

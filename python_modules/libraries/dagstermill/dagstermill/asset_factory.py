@@ -198,7 +198,7 @@ def define_dagstermill_asset(
     }
 
     if safe_is_subclass(config_schema, Config):
-        config_schema = infer_schema_from_config_class(cast(type[Config], config_schema))
+        config_schema = infer_schema_from_config_class(cast("type[Config]", config_schema))
 
     return asset(
         name=name,

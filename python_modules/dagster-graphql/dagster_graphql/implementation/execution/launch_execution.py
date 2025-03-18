@@ -106,7 +106,7 @@ def launch_reexecution_from_parent_run(
     external_pipeline = get_remote_job_or_raise(graphene_info, selector)
 
     run = instance.create_reexecuted_run(
-        parent_run=cast(DagsterRun, parent_run),
+        parent_run=cast("DagsterRun", parent_run),
         code_location=repo_location,
         remote_job=external_pipeline,
         strategy=ReexecutionStrategy(strategy),

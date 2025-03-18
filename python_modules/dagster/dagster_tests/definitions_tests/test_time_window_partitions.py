@@ -38,8 +38,8 @@ DATE_FORMAT = "%Y-%m-%d"
 
 def time_window(start: str, end: str) -> TimeWindow:
     return TimeWindow(
-        cast(datetime, parse_time_string(start)),
-        cast(datetime, parse_time_string(end)),
+        cast("datetime", parse_time_string(start)),
+        cast("datetime", parse_time_string(end)),
     )
 
 
@@ -822,7 +822,7 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
             expected_keys_not_in_subset.append(full_set_keys[i])
 
     subset = cast(
-        TimeWindowPartitionsSubset,
+        "TimeWindowPartitionsSubset",
         TimeWindowPartitionsSubset.create_empty_subset(partitions_def).with_partition_keys(
             subset_keys
         ),
@@ -838,7 +838,7 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
     )
     assert (
         cast(
-            TimeWindowPartitionsSubset, partitions_def.deserialize_subset(subset.serialize())
+            "TimeWindowPartitionsSubset", partitions_def.deserialize_subset(subset.serialize())
         ).included_time_windows
         == subset.included_time_windows
     )
@@ -958,7 +958,9 @@ def test_partition_subset_with_partition_keys(initial: str, added: str):
         initial_subset_keys
     )
     assert all(partition_key in subset for partition_key in initial_subset_keys)
-    updated_subset = cast(TimeWindowPartitionsSubset, subset.with_partition_keys(added_subset_keys))
+    updated_subset = cast(
+        "TimeWindowPartitionsSubset", subset.with_partition_keys(added_subset_keys)
+    )
     assert all(partition_key in updated_subset for partition_key in added_subset_keys)
     assert (
         updated_subset.get_partition_keys_not_in_subset(
@@ -1200,7 +1202,7 @@ def test_time_window_partition_len():
     def my_partitioned_config(_start, _end):
         return {}
 
-    partitions_def = cast(TimeWindowPartitionsDefinition, my_partitioned_config.partitions_def)
+    partitions_def = cast("TimeWindowPartitionsDefinition", my_partitioned_config.partitions_def)
     assert partitions_def.get_num_partitions() == len(partitions_def.get_partition_keys())
     assert (
         partitions_def.get_partition_keys_between_indexes(50, 53)
@@ -1226,7 +1228,7 @@ def test_time_window_partition_len():
     def my_partitioned_config_2(_start, _end):
         return {}
 
-    partitions_def = cast(TimeWindowPartitionsDefinition, my_partitioned_config_2.partitions_def)
+    partitions_def = cast("TimeWindowPartitionsDefinition", my_partitioned_config_2.partitions_def)
     current_time = datetime.strptime("2021-06-20", "%Y-%m-%d")
     assert (
         partitions_def.get_partition_keys_between_indexes(50, 53, current_time=current_time)
@@ -1250,7 +1252,7 @@ def test_time_window_partition_len():
         return {}
 
     partitions_def = cast(
-        TimeWindowPartitionsDefinition, my_daily_dst_transition_partitioned_config.partitions_def
+        "TimeWindowPartitionsDefinition", my_daily_dst_transition_partitioned_config.partitions_def
     )
 
     current_time_post_transition = datetime.strptime("2024-05-22", "%Y-%m-%d")

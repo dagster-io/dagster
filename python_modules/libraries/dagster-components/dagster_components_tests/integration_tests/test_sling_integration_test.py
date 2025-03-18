@@ -302,10 +302,11 @@ def test_asset_attributes_is_comprehensive():
         all_asset_attribute_keys.extend(test_arg[0].keys())
     from dagster_components.resolved.core_models import AssetAttributesModel
 
-    assert (
-        set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS
-        == set(all_asset_attribute_keys)
-    ), f"The test_asset_attributes test does not cover all fields, missing: {set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS - set(all_asset_attribute_keys)}"
+    assert set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS == set(
+        all_asset_attribute_keys
+    ), (
+        f"The test_asset_attributes test does not cover all fields, missing: {set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS - set(all_asset_attribute_keys)}"
+    )
 
 
 def test_scaffold_sling():

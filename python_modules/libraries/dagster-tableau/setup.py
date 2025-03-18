@@ -22,8 +22,7 @@ setup(
     license="Apache-2.0",
     description="Build assets representing Tableau workbooks and sheets.",
     url=(
-        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/"
-        "dagster-tableau"
+        "https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-tableau"
     ),
     classifiers=[
         "Programming Language :: Python :: 3.9",

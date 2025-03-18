@@ -1233,7 +1233,7 @@ class ResourceSnap(IHaveNew):
         unconfigured_config_type_snap = snap_from_config_type(config_type)
 
         config_schema_default = cast(
-            Mapping[str, Any],
+            "Mapping[str, Any]",
             (
                 json.loads(resource_def.config_schema.default_value_as_json_str)
                 if resource_def.config_schema.default_provided
@@ -1359,7 +1359,7 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
         return (
             [
                 owner if (is_valid_email(owner) or owner.startswith("team:")) else f"team:{owner}"
-                for owner in cast(Sequence[str], __unpacked_value)
+                for owner in cast("Sequence[str]", __unpacked_value)
             ]
             if __unpacked_value is not None
             else None
@@ -1668,7 +1668,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                 root_node_handle.name if root_node_handle != output_handle.node_handle else None
             )
             op_defs = [
-                cast(OpDefinition, job_def.graph.get_node(node_handle).definition)
+                cast("OpDefinition", job_def.graph.get_node(node_handle).definition)
                 for node_handle in node_handles
                 if isinstance(job_def.graph.get_node(node_handle).definition, OpDefinition)
             ]

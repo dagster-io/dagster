@@ -50,4 +50,4 @@ class NamespacedTagSet(NamespacedKVSet):
     @classmethod
     def _extract_value(cls, field_name: str, value: Any) -> str:
         """Since all tag values are strings, we don't need to do any type coercion."""
-        return cast(str, value)
+        return cast("str", value)

@@ -229,7 +229,7 @@ def consume_new_runs_for_automatic_reexecution(
     retry the run again.
     """
     for run in filter_runs_to_should_retry(
-        [cast(DagsterRun, run_record.dagster_run) for run_record in run_records],
+        [cast("DagsterRun", run_record.dagster_run) for run_record in run_records],
         workspace_process_context.instance,
     ):
         yield

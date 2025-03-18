@@ -429,11 +429,11 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
     def _build_dbt_cloud_assets_from_cacheable_data(
         self, assets_definition_cacheable_data: AssetsDefinitionCacheableData
     ) -> AssetsDefinition:
-        metadata = cast(Mapping[str, Any], assets_definition_cacheable_data.extra_metadata)
-        job_id = cast(int, metadata["job_id"])
-        job_commands = cast(list[str], list(metadata["job_commands"]))
-        job_materialization_command_step = cast(int, metadata["job_materialization_command_step"])
-        fqns_by_output_name = cast(Mapping[str, list[str]], metadata["fqns_by_output_name"])
+        metadata = cast("Mapping[str, Any]", assets_definition_cacheable_data.extra_metadata)
+        job_id = cast("int", metadata["job_id"])
+        job_commands = cast("list[str]", list(metadata["job_commands"]))
+        job_materialization_command_step = cast("int", metadata["job_materialization_command_step"])
+        fqns_by_output_name = cast("Mapping[str, list[str]]", metadata["fqns_by_output_name"])
 
         @multi_asset(
             name=f"dbt_cloud_job_{job_id}",
@@ -444,7 +444,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
             compute_kind="dbt",
         )
         def _assets(context: AssetExecutionContext):
-            dbt_cloud = cast(DbtCloudClient, context.resources.dbt_cloud)
+            dbt_cloud = cast("DbtCloudClient", context.resources.dbt_cloud)
 
             # Add the partition variable as a variable to the dbt Cloud job command.
             dbt_options: list[str] = []

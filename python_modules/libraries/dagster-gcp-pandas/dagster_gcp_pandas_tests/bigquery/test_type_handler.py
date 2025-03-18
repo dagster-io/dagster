@@ -2,7 +2,7 @@ import os
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Optional, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import pandas as pd
 import pandas_gbq
@@ -28,9 +28,11 @@ from dagster import (
     materialize,
     op,
 )
-from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
 from dagster_gcp_pandas import BigQueryPandasIOManager, bigquery_pandas_io_manager
 from google.cloud import bigquery
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -211,7 +213,7 @@ def test_time_window_partitioned_asset(io_manager):
             if event.event_type_value == "ASSET_MATERIALIZATION"
         )
         meta = materialization.materialization.metadata["dagster/partition_row_count"]
-        assert cast(IntMetadataValue, meta).value == 3
+        assert cast("IntMetadataValue", meta).value == 3
 
         out_df = pandas_gbq.read_gbq(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]

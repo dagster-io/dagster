@@ -55,7 +55,7 @@ def test_dbt_cli(global_config_flags: list[str]) -> None:
 
 
 def test_dbt_cli_executable() -> None:
-    dbt_executable = cast(str, shutil.which("dbt"))
+    dbt_executable = cast("str", shutil.which("dbt"))
     invocation = DbtCliResource(
         project_dir=os.fspath(test_jaffle_shop_path), dbt_executable=dbt_executable
     ).cli(["parse"])
@@ -622,7 +622,7 @@ def test_custom_subclass():
 def test_metadata(test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource) -> None:
     def assert_on_expected_metadata(metadata):
         assert isinstance(metadata["Execution Duration"], FloatMetadataValue)
-        assert cast(float, metadata["Execution Duration"].value) > 0
+        assert cast("float", metadata["Execution Duration"].value) > 0
 
         assert isinstance(metadata["unique_id"], TextMetadataValue)
         assert isinstance(metadata["invocation_id"], TextMetadataValue)

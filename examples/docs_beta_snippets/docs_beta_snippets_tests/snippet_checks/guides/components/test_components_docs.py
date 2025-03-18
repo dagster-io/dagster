@@ -176,7 +176,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
         sling_duckdb_version = next(iter(os.listdir()), None)
         with environ(
             {
-                "PATH": f'{os.environ["PATH"]}:{sling_duckdb_path / sling_duckdb_version!s}'
+                "PATH": f"{os.environ['PATH']}:{sling_duckdb_path / sling_duckdb_version!s}"
             }
             if sling_duckdb_version
             else {}

@@ -24,7 +24,7 @@ def read_manifest_path(manifest_path: Path) -> Mapping[str, Any]:
     if not manifest_path.exists():
         raise DagsterDbtManifestNotFoundError(f"{manifest_path} does not exist.")
 
-    return cast(Mapping[str, Any], orjson.loads(manifest_path.read_bytes()))
+    return cast("Mapping[str, Any]", orjson.loads(manifest_path.read_bytes()))
 
 
 def validate_manifest(manifest: DbtManifestParam) -> Mapping[str, Any]:

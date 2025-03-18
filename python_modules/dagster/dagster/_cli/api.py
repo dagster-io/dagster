@@ -152,7 +152,7 @@ def _execute_run_command_body(
     else:
         metrics_thread, metrics_thread_shutdown_event = None, None
 
-    recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
+    recon_job = recon_job_from_origin(cast("JobPythonOrigin", dagster_run.job_code_origin))
 
     pid = os.getpid()
     instance.report_engine_event(
@@ -284,7 +284,7 @@ def _resume_run_command_body(
     else:
         metrics_thread, metrics_thread_shutdown_event = None, None
 
-    recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
+    recon_job = recon_job_from_origin(cast("JobPythonOrigin", dagster_run.job_code_origin))
 
     pid = os.getpid()
     instance.report_engine_event(
@@ -495,7 +495,7 @@ def _execute_step_command_body(
             repository_load_data = None
 
         recon_job = (
-            recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
+            recon_job_from_origin(cast("JobPythonOrigin", dagster_run.job_code_origin))
             .with_repository_load_data(repository_load_data)
             .get_subset(
                 op_selection=dagster_run.resolved_op_selection,

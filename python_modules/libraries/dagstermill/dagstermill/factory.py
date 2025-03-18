@@ -408,7 +408,7 @@ def define_dagstermill_op(
         required_resource_keys.add(io_mgr_key)
         outs = {
             **outs,
-            cast(str, output_notebook_name): Out(io_manager_key=io_mgr_key),
+            cast("str", output_notebook_name): Out(io_manager_key=io_mgr_key),
         }
 
     if isinstance(asset_key_prefix, str):
@@ -437,7 +437,7 @@ def define_dagstermill_op(
     }
 
     if safe_is_subclass(config_schema, Config):
-        config_schema = infer_schema_from_config_class(cast(type[Config], config_schema))
+        config_schema = infer_schema_from_config_class(cast("type[Config]", config_schema))
 
     return OpDefinition(
         name=name,

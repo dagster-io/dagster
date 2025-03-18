@@ -71,9 +71,11 @@ def add_emr_configuration(
             properties = {**existing_configuration.get(properties_key, {})}
             properties.update(properties)
 
-            inner_configurations = cast(list[C], existing_configuration.get(classification_key, []))
+            inner_configurations = cast(
+                "list[C]", existing_configuration.get(classification_key, [])
+            )
 
-            for inner_configuration in cast(list[C], configuration.get(configurations_key, [])):
+            for inner_configuration in cast("list[C]", configuration.get(configurations_key, [])):
                 add_emr_configuration(
                     inner_configurations,  # type: ignore
                     inner_configuration,  # type: ignore

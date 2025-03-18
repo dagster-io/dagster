@@ -144,7 +144,7 @@ def build_and_validate_named_ins(
         if dep.asset_key not in named_ins_by_asset_key:
             named_ins_by_asset_key[dep.asset_key] = NamedIn(
                 stringify_asset_key_to_input_name(dep.asset_key),
-                In(cast(type, Nothing)),
+                In(cast("type", Nothing)),
             )
 
     return named_ins_by_asset_key

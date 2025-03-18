@@ -544,7 +544,7 @@ def _reexecute_job(
                 execute_instance,
                 job_arg,
                 run_config,
-                cast(DagsterRun, parent_dagster_run),
+                cast("DagsterRun", parent_dagster_run),
                 reexecution_options.step_selection,
             )
         # else all steps will be executed and parent state is not needed

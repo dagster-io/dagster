@@ -503,7 +503,7 @@ def test_subset_with_run_config(
                 "my_sling_assets": {
                     "config": {
                         "context_streams": {
-                            f'file://{os.path.join(path_to_dataworks_folder, "Orders.csv")}': {
+                            f"file://{os.path.join(path_to_dataworks_folder, 'Orders.csv')}": {
                                 "object": "main.orders"
                             }
                         }

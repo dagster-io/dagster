@@ -95,7 +95,7 @@ def external_asset(asset_spec: AssetInfo):
     keys_by_output_name = {"result": key}
     op_def = OpDefinition(
         name=key.path[-1],
-        ins={k.to_user_string(): In(cast(type, Nothing)) for k in dependencies},
+        ins={k.to_user_string(): In(cast("type", Nothing)) for k in dependencies},
         outs={"result": Out(Nothing)},
         code_version=code_version,
         compute_fn=fn,

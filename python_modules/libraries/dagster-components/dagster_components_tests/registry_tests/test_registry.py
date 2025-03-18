@@ -141,9 +141,9 @@ def test_components_from_dagster():
 def test_all_dagster_components_have_defined_summary():
     registry = discover_entry_point_component_types()
     for component_name, component_type in registry.items():
-        assert component_type.get_metadata()[
-            "summary"
-        ], f"Component {component_name} has no summary defined"
+        assert component_type.get_metadata()["summary"], (
+            f"Component {component_name} has no summary defined"
+        )
 
 
 # Our pyproject.toml installs local dagster components

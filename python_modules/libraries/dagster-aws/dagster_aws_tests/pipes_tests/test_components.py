@@ -116,9 +116,9 @@ def test_cloudwatch_logs_reader(cloudwatch_client: "CloudWatchLogsClient", capsy
     log_group = "/pipes/tests"
     log_stream = "test-cloudwatch-logs-reader"
 
-    assert not reader.target_is_readable(
-        {"log_group": log_group, "log_stream": log_stream}
-    ), "Should not be able to read without the stream existing"
+    assert not reader.target_is_readable({"log_group": log_group, "log_stream": log_stream}), (
+        "Should not be able to read without the stream existing"
+    )
 
     cloudwatch_client.create_log_group(logGroupName=log_group)
     cloudwatch_client.create_log_stream(logGroupName=log_group, logStreamName=log_stream)
@@ -131,9 +131,9 @@ def test_cloudwatch_logs_reader(cloudwatch_client: "CloudWatchLogsClient", capsy
 
     time.sleep(0.1)
 
-    assert reader.target_is_readable(
-        {"log_group": log_group, "log_stream": log_stream}
-    ), "Should be able to read after the stream is created"
+    assert reader.target_is_readable({"log_group": log_group, "log_stream": log_stream}), (
+        "Should be able to read after the stream is created"
+    )
 
     reader.start({"log_group": log_group, "log_stream": log_stream}, is_session_closed)
 

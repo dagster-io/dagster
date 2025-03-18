@@ -405,7 +405,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             if not serialized_records:
                 return []
             return cast(
-                Sequence[EventLogEntry],
+                "Sequence[EventLogEntry]",
                 deserialize_value(pickle.loads(gzip.decompress(serialized_records))),
             )
 

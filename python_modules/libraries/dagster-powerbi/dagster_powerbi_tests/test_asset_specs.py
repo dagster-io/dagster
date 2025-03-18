@@ -324,9 +324,9 @@ def test_state_derived_defs(
                 if key.path[0] == "semantic_model":
                     continue
                 assert len(deps) > 0, f"Expected upstreams for {key}"
-                assert all(
-                    dep in repository_def.assets_defs_by_key for dep in deps
-                ), f"Asset {key} depends on {deps} which are not in the repository"
+                assert all(dep in repository_def.assets_defs_by_key for dep in deps), (
+                    f"Asset {key} depends on {deps} which are not in the repository"
+                )
 
         job_def = repository_def.get_job("all_asset_job")
         repository_load_data = repository_def.repository_load_data

@@ -82,7 +82,7 @@ class LocalExternalStepLauncher(StepLauncher):
         file_manager = LocalFileManager(".")
         events_file_handle = LocalFileHandle(events_file_path)
         events_data = file_manager.read_data(events_file_handle)
-        all_events = cast(Sequence[EventLogEntry], deserialize_value(pickle.loads(events_data)))
+        all_events = cast("Sequence[EventLogEntry]", deserialize_value(pickle.loads(events_data)))
 
         for event in all_events:
             # write each pickled event from the external instance to the local instance
@@ -224,7 +224,7 @@ def step_run_ref_to_step_context(
     # Since for_step is abstract for IPlanContext, its return type is IStepContext.
     # Since we are launching from a PlanExecutionContext, the type will always be
     # StepExecutionContext.
-    step_execution_context = cast(StepExecutionContext, step_execution_context)
+    step_execution_context = cast("StepExecutionContext", step_execution_context)
 
     return step_execution_context
 

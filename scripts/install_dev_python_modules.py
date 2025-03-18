@@ -148,7 +148,7 @@ def main(
     cmd += ["--config-settings", "editable-mode=compat"]
 
     if quiet is not None:
-        cmd.append(f'-{"q" * quiet}')
+        cmd.append(f"-{'q' * quiet}")
 
     print(" ".join(cmd))
     subprocess.run(cmd, check=True)

@@ -3,7 +3,6 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 from dagster import _check as check
-from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.definitions.dependency import (
     DependencyDefinition,
     DynamicCollectDependencyDefinition,
@@ -19,6 +18,7 @@ from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import parse_op_queries
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.composition import MappedInputPlaceholder
     from dagster._core.definitions.node_definition import NodeDefinition
 
 
@@ -183,7 +183,7 @@ def _get_graph_subset(
                 ]
                 node_deps[node_input.input_name] = MultiDependencyDefinition(
                     cast(
-                        list[Union[DependencyDefinition, type[MappedInputPlaceholder]]],
+                        "list[Union[DependencyDefinition, type[MappedInputPlaceholder]]]",
                         multi_dependencies,
                     )
                 )

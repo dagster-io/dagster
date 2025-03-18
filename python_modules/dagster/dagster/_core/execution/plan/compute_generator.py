@@ -1,7 +1,7 @@
 import inspect
 from collections.abc import AsyncIterator, Awaitable, Iterator, Mapping, Sequence
 from functools import wraps
-from typing import Any, Callable, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast
 
 from typing_extensions import get_args
 
@@ -14,7 +14,6 @@ from dagster._core.definitions import (
     Output,
     OutputDefinition,
 )
-from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.input import InputDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.result import AssetResult, ObserveResult
@@ -24,11 +23,14 @@ from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_
 from dagster._utils import is_named_tuple_instance
 from dagster._utils.warnings import disable_dagster_warnings
 
+if TYPE_CHECKING:
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+
 
 def create_op_compute_wrapper(
     op_def: OpDefinition,
 ) -> Callable[[ExecutionContextTypes, Mapping[str, InputDefinition]], Any]:
-    compute_fn = cast(DecoratedOpFunction, op_def.compute_fn)
+    compute_fn = cast("DecoratedOpFunction", op_def.compute_fn)
     fn = compute_fn.decorated_fn
     input_defs = op_def.input_defs
     output_defs = op_def.output_defs
@@ -210,7 +212,7 @@ def _validate_multi_return(
             "documentation on outputs for more: "
             "https://legacy-docs.dagster.io/concepts/ops-jobs-graphs/ops#outputs."
         )
-    output_tuple = cast(tuple, result)
+    output_tuple = cast("tuple", result)
     if not len(output_tuple) == len(output_defs):
         raise DagsterInvariantViolationError(
             "Length mismatch between returned tuple of outputs and number of "
@@ -311,7 +313,7 @@ def validate_and_coerce_op_result_to_iterator(
                             "list of DynamicOutput objects, but received an "
                             f"item with type {type(item)}."
                         )
-                    dynamic_output = cast(DynamicOutput, item)
+                    dynamic_output = cast("DynamicOutput", item)
                     _check_output_object_name(dynamic_output, output_def, position)
 
                     with disable_dagster_warnings():

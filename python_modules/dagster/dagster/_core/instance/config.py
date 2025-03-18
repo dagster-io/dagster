@@ -78,7 +78,7 @@ def dagster_instance_config(
             )
 
         custom_instance_class = cast(
-            type["DagsterInstance"],
+            "type[DagsterInstance]",
             class_from_code_pointer(
                 custom_instance_class_data["module"],
                 custom_instance_class_data["class"],

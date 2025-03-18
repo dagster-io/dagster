@@ -138,7 +138,7 @@ class GraphQLServer(ABC, Generic[TRequestContext]):
 
         if isinstance(variables, str):
             try:
-                variables = cast(dict[str, Any], json.loads(variables))
+                variables = cast("dict[str, Any]", json.loads(variables))
             except json.JSONDecodeError:
                 return PlainTextResponse(
                     "Malformed GraphQL variables. Passed as string but not valid"

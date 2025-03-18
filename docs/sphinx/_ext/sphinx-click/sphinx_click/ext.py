@@ -422,7 +422,7 @@ def nested(argument: ty.Optional[str]) -> NestedT:
             % directives.format_values(values)
         )
 
-    return ty.cast(NestedT, argument)
+    return ty.cast("NestedT", argument)
 
 
 class ClickDirective(rst.Directive):

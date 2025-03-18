@@ -335,7 +335,7 @@ def test_load_with_executor() -> None:
     defs = load_definitions_from_module(module_fake, executor=my_executor)
     assert (
         defs.executor is not None
-        and cast(dg.ExecutorDefinition, defs.executor).name == "my_executor"
+        and cast("dg.ExecutorDefinition", defs.executor).name == "my_executor"
     )
 
 

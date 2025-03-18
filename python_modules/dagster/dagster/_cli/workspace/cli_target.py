@@ -810,7 +810,7 @@ def get_remote_job_from_remote_repo(
 
 def get_run_config_from_file_list(file_list: list[str]) -> Mapping[str, object]:
     check.opt_sequence_param(file_list, "file_list", of_type=str)
-    return cast(Mapping[str, object], load_yaml_from_glob_list(file_list) if file_list else {})
+    return cast("Mapping[str, object]", load_yaml_from_glob_list(file_list) if file_list else {})
 
 
 def get_run_config_from_cli_opts(

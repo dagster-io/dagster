@@ -81,7 +81,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         params = start_job_run_params
 
         params["Arguments"] = params.get("Arguments") or {}
-        job_name = cast(str, params["JobName"])
+        job_name = cast("str", params["JobName"])
 
         with open_pipes_session(
             context=context,

@@ -184,9 +184,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             partition_by = context_metadata.get("partition_by")
 
             if partition_by is not None:
-                assert (
-                    context.partition_key is not None
-                ), "Cannot set `partition_by` for an asset without partitions."
+                assert context.partition_key is not None, (
+                    "Cannot set `partition_by` for an asset without partitions."
+                )
 
                 if isinstance(partition_by, dict) and isinstance(
                     context.partition_key, MultiPartitionKey
@@ -415,7 +415,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
             predicate = " AND ".join(
                 [
-                    f"{partition_by[dim]} in ({', '.join(map(key_to_predicate,  keys))})"
+                    f"{partition_by[dim]} in ({', '.join(map(key_to_predicate, keys))})"
                     for dim, keys in all_keys_by_dim.items()
                 ]
             )

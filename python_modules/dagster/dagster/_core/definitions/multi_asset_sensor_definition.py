@@ -684,9 +684,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         return all([partition in materialized_partitions for partition in partitions])
 
     def _get_asset(self, asset_key: AssetKey, fn_name: str) -> AssetsDefinition:
-        from dagster._core.definitions.repository_definition import RepositoryDefinition
-
-        repo_def = cast(RepositoryDefinition, self._repository_def)
+        repo_def = cast("RepositoryDefinition", self._repository_def)
         if asset_key in self._assets_by_key:
             asset_def = self._assets_by_key[asset_key]
             if asset_def is None:
@@ -1056,7 +1054,7 @@ def build_multi_asset_sensor_context(
         asset_keys: Sequence[AssetKey]
         if isinstance(monitored_assets, AssetSelection):
             asset_keys = cast(
-                list[AssetKey],
+                "list[AssetKey]",
                 list(monitored_assets.resolve(list(set(repository_def.asset_graph.assets_defs)))),
             )
         else:

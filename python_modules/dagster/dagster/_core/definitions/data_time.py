@@ -506,7 +506,7 @@ class CachingDataTimeResolver:
         if None in data_times or not data_times:
             return None
 
-        return min(cast(AbstractSet[datetime.datetime], data_times), default=None)
+        return min(cast("AbstractSet[datetime.datetime]", data_times), default=None)
 
     def _get_source_data_time(
         self, asset_key: AssetKey, current_time: datetime.datetime
@@ -529,7 +529,7 @@ class CachingDataTimeResolver:
             return None
         else:
             return datetime.datetime.fromtimestamp(
-                cast(float, data_time.value), datetime.timezone.utc
+                cast("float", data_time.value), datetime.timezone.utc
             )
 
     def get_minutes_overdue(

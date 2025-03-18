@@ -1,5 +1,4 @@
 import datetime
-import logging  # noqa: F401; used by mock in string form
 import random
 import re
 import string
@@ -4723,7 +4722,7 @@ class TestEventLogStorage:
             )
         )
 
-        index = cast(int, storage.get_maximum_record_id())
+        index = cast("int", storage.get_maximum_record_id())
         assert isinstance(index, int)
 
         for i in range(10):

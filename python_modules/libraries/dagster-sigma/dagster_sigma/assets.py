@@ -1,7 +1,10 @@
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from dagster import AssetExecutionContext, AssetsDefinition, AssetSpec, multi_asset
 from dagster._annotations import beta
+
+if TYPE_CHECKING:
+    from dagster_sigma import SigmaOrganization
 
 
 @beta
@@ -24,7 +27,6 @@ def build_materialize_workbook_assets_definition(
     Returns:
         AssetsDefinition: The AssetsDefinition which rebuilds a Sigma workbook.
     """
-    from dagster_sigma import SigmaOrganization
 
     @multi_asset(
         name=f"sigma_materialize_{spec.key.to_python_identifier()}",
@@ -32,7 +34,7 @@ def build_materialize_workbook_assets_definition(
         required_resource_keys={resource_key},
     )
     def asset_fn(context: AssetExecutionContext):
-        sigma = cast(SigmaOrganization, getattr(context.resources, resource_key))
+        sigma = cast("SigmaOrganization", getattr(context.resources, resource_key))
         yield from sigma.run_materializations_for_workbook(spec)
 
     return asset_fn

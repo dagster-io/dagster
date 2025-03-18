@@ -234,7 +234,7 @@ def infer_resource_selector(graphql_context: WorkspaceRequestContext, name: str)
 
 def ensure_dagster_graphql_tests_import() -> None:
     dagster_package_root = (Path(dagster_graphql_init_py) / ".." / "..").resolve()
-    assert (
-        dagster_package_root / "dagster_graphql_tests"
-    ).exists(), "Could not find dagster_graphql_tests where expected"
+    assert (dagster_package_root / "dagster_graphql_tests").exists(), (
+        "Could not find dagster_graphql_tests where expected"
+    )
     sys.path.append(dagster_package_root.as_posix())

@@ -1199,9 +1199,9 @@ def _get_backfill_data(
 ) -> tuple[str, AssetBackfillData]:
     assert launch_backfill_result
     assert launch_backfill_result.data
-    assert (
-        "backfillId" in launch_backfill_result.data["launchPartitionBackfill"]
-    ), _get_error_message(launch_backfill_result)
+    assert "backfillId" in launch_backfill_result.data["launchPartitionBackfill"], (
+        _get_error_message(launch_backfill_result)
+    )
 
     backfill_id = launch_backfill_result.data["launchPartitionBackfill"]["backfillId"]
 
@@ -1291,9 +1291,9 @@ def test_get_backfills_with_filters():
                         }
                     },
                 )
-                assert (
-                    "backfillId" in launch_backfill_result.data["launchPartitionBackfill"]
-                ), _get_error_message(launch_backfill_result)
+                assert "backfillId" in launch_backfill_result.data["launchPartitionBackfill"], (
+                    _get_error_message(launch_backfill_result)
+                )
 
                 backfill_id = launch_backfill_result.data["launchPartitionBackfill"]["backfillId"]
                 backfill = instance.get_backfill(backfill_id)

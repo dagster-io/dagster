@@ -347,7 +347,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
             ]
             explores_by_id = dict(
                 cast(
-                    list[tuple[str, "LookmlModelExplore"]],
+                    "list[tuple[str, LookmlModelExplore]]",
                     (
                         entry
                         for entry in executor.map(

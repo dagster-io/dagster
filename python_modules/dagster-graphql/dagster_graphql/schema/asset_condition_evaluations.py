@@ -353,7 +353,7 @@ def get_expanded_label(
     if use_label and label is not None:
         return [label]
     node_text = name or description
-    child_labels = [f'({" ".join(get_expanded_label(c, use_label=True))})' for c in children]
+    child_labels = [f"({' '.join(get_expanded_label(c, use_label=True))})" for c in children]
     if len(child_labels) == 0:
         return [node_text]
     elif len(child_labels) == 1:

@@ -133,7 +133,7 @@ class TimeWindowPartitionMapping(
             return TimeWindowPartitionsSubset.from_all_partitions_subset(subset)
         else:
             return check.inst_param(
-                cast(TimeWindowPartitionsSubset, subset),
+                cast("TimeWindowPartitionsSubset", subset),
                 param_name,
                 TimeWindowPartitionsSubset,
             )
@@ -142,7 +142,7 @@ class TimeWindowPartitionMapping(
         self, param_name: str, partitions_def: Optional[PartitionsDefinition]
     ) -> TimeWindowPartitionsDefinition:
         return check.inst_param(
-            cast(TimeWindowPartitionsDefinition, partitions_def),
+            cast("TimeWindowPartitionsDefinition", partitions_def),
             param_name,
             TimeWindowPartitionsDefinition,
         )
@@ -529,13 +529,13 @@ def _offsetted_datetime(
     for _ in range(abs(offset)):
         if offset < 0:
             prev_window = cast(
-                TimeWindow,
+                "TimeWindow",
                 partitions_def.get_prev_partition_window(result, respect_bounds=False),
             )
             result = prev_window.start
         else:
             next_window = cast(
-                TimeWindow,
+                "TimeWindow",
                 partitions_def.get_next_partition_window(result, respect_bounds=False),
             )
             result = next_window.end

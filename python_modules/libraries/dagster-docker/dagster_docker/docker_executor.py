@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import Optional, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 import dagster._check as check
 import docker
@@ -18,13 +18,15 @@ from dagster._core.executor.step_delegating.step_handler.base import (
     StepHandler,
     StepHandlerContext,
 )
-from dagster._core.origin import JobPythonOrigin
 from dagster._core.utils import parse_env_var
 from dagster._serdes.utils import hash_str
 from dagster._utils.merger import merge_dicts
 
 from dagster_docker.container_context import DockerContainerContext
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
+
+if TYPE_CHECKING:
+    from dagster._core.origin import JobPythonOrigin
 
 
 @executor(
@@ -119,7 +121,7 @@ class DockerStepHandler(StepHandler):
         from dagster_docker import DockerRunLauncher
 
         image = cast(
-            JobPythonOrigin, step_handler_context.dagster_run.job_code_origin
+            "JobPythonOrigin", step_handler_context.dagster_run.job_code_origin
         ).repository_origin.container_image
         if not image:
             image = self._image
@@ -172,7 +174,7 @@ class DockerStepHandler(StepHandler):
 
     def _get_step_key(self, step_handler_context: StepHandlerContext) -> str:
         step_keys_to_execute = cast(
-            list[str], step_handler_context.execute_step_args.step_keys_to_execute
+            "list[str]", step_handler_context.execute_step_args.step_keys_to_execute
         )
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         return step_keys_to_execute[0]
@@ -205,10 +207,7 @@ class DockerStepHandler(StepHandler):
         step_key = step_keys_to_execute[0]
 
         container_kwargs = {**container_context.container_kwargs}
-        if "stop_timeout" in container_kwargs:
-            # This should work, but does not due to https://github.com/docker/docker-py/issues/3168
-            # Pull it out and apply it in the terminate() method instead
-            del container_kwargs["stop_timeout"]
+        container_kwargs.pop("stop_timeout", None)
 
         env_vars = dict([parse_env_var(env_var) for env_var in container_context.env_vars])
         env_vars["DAGSTER_RUN_JOB_NAME"] = step_handler_context.dagster_run.job_name
@@ -301,9 +300,9 @@ class DockerStepHandler(StepHandler):
         step_keys_to_execute = check.not_none(
             step_handler_context.execute_step_args.step_keys_to_execute
         )
-        assert (
-            len(step_keys_to_execute) == 1
-        ), "Terminating multiple steps is not currently supported"
+        assert len(step_keys_to_execute) == 1, (
+            "Terminating multiple steps is not currently supported"
+        )
         step_key = step_keys_to_execute[0]
 
         container_name = self._get_container_name(step_handler_context)

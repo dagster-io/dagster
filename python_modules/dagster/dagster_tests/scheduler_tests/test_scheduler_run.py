@@ -1192,7 +1192,7 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
     ) as full_workspace_context:
         with freeze_time(freeze_datetime):
             full_location = cast(
-                CodeLocation,
+                "CodeLocation",
                 next(
                     iter(
                         full_workspace_context.create_request_context()

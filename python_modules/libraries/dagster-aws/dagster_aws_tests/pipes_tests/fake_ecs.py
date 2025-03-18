@@ -47,9 +47,9 @@ class LocalECSMockClient:
 
     def describe_task_definition(self, **kwargs):
         response = self.ecs_client.describe_task_definition(**kwargs)
-        assert (
-            len(response["taskDefinition"]["containerDefinitions"]) == 1
-        ), "Only 1 container is supported in tests"
+        assert len(response["taskDefinition"]["containerDefinitions"]) == 1, (
+            "Only 1 container is supported in tests"
+        )
         # unlike real ECS, moto doesn't use cloudwatch logging by default
         # so let's add it here
         response["taskDefinition"]["containerDefinitions"][0]["logConfiguration"] = (
@@ -84,16 +84,16 @@ class LocalECSMockClient:
             "taskDefinition"
         ]
 
-        assert (
-            len(task_definition["containerDefinitions"]) == 1
-        ), "Only 1 container is supported in tests"
+        assert len(task_definition["containerDefinitions"]) == 1, (
+            "Only 1 container is supported in tests"
+        )
 
         # execute in a separate process
         command = task_definition["containerDefinitions"][0]["command"]
 
-        assert (
-            command[0] == sys.executable
-        ), "Only the current Python interpreter is supported in tests"
+        assert command[0] == sys.executable, (
+            "Only the current Python interpreter is supported in tests"
+        )
 
         created_at = datetime.now()
 
@@ -134,7 +134,7 @@ class LocalECSMockClient:
     def describe_tasks(self, cluster: str, tasks: list[str]):
         assert len(tasks) == 1, "Only 1 task is supported in tests"
 
-        simulated_task = cast(SimulatedTaskRun, self._task_runs[tasks[0]])
+        simulated_task = cast("SimulatedTaskRun", self._task_runs[tasks[0]])
 
         response = self.ecs_client.describe_tasks(cluster=cluster, tasks=tasks)
 
@@ -144,9 +144,9 @@ class LocalECSMockClient:
             taskDefinition=response["tasks"][0]["taskDefinitionArn"]
         )["taskDefinition"]
 
-        assert (
-            len(task_definition["containerDefinitions"]) == 1
-        ), "Only 1 container is supported in tests"
+        assert len(task_definition["containerDefinitions"]) == 1, (
+            "Only 1 container is supported in tests"
+        )
 
         # need to inject container name since moto doesn't return it
 

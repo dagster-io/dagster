@@ -350,7 +350,7 @@ class DbtCliInvocation:
                 with contextlib.suppress(orjson.JSONDecodeError):
                     column_level_metadata = orjson.loads(event.raw_event["info"]["msg"])
 
-                    event_history_metadata_by_unique_id[cast(str, unique_id)] = (
+                    event_history_metadata_by_unique_id[cast("str", unique_id)] = (
                         column_level_metadata
                     )
 
@@ -405,7 +405,7 @@ class DbtCliInvocation:
     @property
     def dbt_command(self) -> str:
         """The dbt CLI command that was invoked."""
-        return " ".join(cast(Sequence[str], self.process.args))
+        return " ".join(cast("Sequence[str]", self.process.args))
 
     def _stream_stdout(self) -> Iterator[Union[str, dict[str, Any]]]:
         """Stream the stdout from the dbt CLI process."""

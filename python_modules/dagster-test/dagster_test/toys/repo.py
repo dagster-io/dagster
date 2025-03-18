@@ -1,9 +1,7 @@
 import warnings
-from collections.abc import Sequence
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from dagster import BetaWarning, PreviewWarning
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._time import get_current_timestamp
 
 # squelch preview and beta warnings since we often include preview and beta things in toys for development
@@ -70,6 +68,11 @@ from dagster_test.toys.sensors import get_toys_sensors
 from dagster_test.toys.sleepy import sleepy_job
 from dagster_test.toys.software_defined_assets import software_defined_assets
 from dagster_test.toys.unreliable import unreliable_job
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from dagster._core.definitions.assets import AssetsDefinition
 
 
 @op
@@ -168,20 +171,20 @@ def column_schema_repository():
 def table_metadata_repository():
     from dagster_test.toys import table_metadata
 
-    return cast(Sequence[AssetsDefinition], load_assets_from_modules([table_metadata]))
+    return cast("Sequence[AssetsDefinition]", load_assets_from_modules([table_metadata]))
 
 
 @repository
 def long_asset_keys_repository():
     from dagster_test.toys import long_asset_keys
 
-    return cast(Sequence[AssetsDefinition], load_assets_from_modules([long_asset_keys]))
+    return cast("Sequence[AssetsDefinition]", load_assets_from_modules([long_asset_keys]))
 
 
 @repository
 def big_honkin_assets_repository():
     return cast(
-        Sequence[AssetsDefinition], [load_assets_from_modules([big_honkin_asset_graph_module])]
+        "Sequence[AssetsDefinition]", [load_assets_from_modules([big_honkin_asset_graph_module])]
     )
 
 
@@ -214,11 +217,11 @@ def assets_with_sensors_repository():
 def conditional_assets_repository():
     from dagster_test.toys import conditional_assets
 
-    return cast(Sequence[AssetsDefinition], load_assets_from_modules([conditional_assets]))
+    return cast("Sequence[AssetsDefinition]", load_assets_from_modules([conditional_assets]))
 
 
 @repository
 def data_versions_repository():
     from dagster_test.toys import data_versions
 
-    return cast(Sequence[AssetsDefinition], load_assets_from_modules([data_versions]))
+    return cast("Sequence[AssetsDefinition]", load_assets_from_modules([data_versions]))

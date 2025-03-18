@@ -287,9 +287,9 @@ def test_max_concurrent():
             assert active_step is None, "A second step started before the first finished!"
             active_step = event.step_key
         elif event.event_type_value == DagsterEventType.STEP_SUCCESS.value:
-            assert (
-                active_step == event.step_key
-            ), "A step finished that wasn't supposed to be active!"
+            assert active_step == event.step_key, (
+                "A step finished that wasn't supposed to be active!"
+            )
             active_step = None
 
 
@@ -320,9 +320,9 @@ def test_tag_concurrency_limits():
                     assert active_step is None, "A second step started before the first finished!"
                     active_step = event.step_key
                 elif event.event_type_value == DagsterEventType.STEP_SUCCESS.value:
-                    assert (
-                        active_step == event.step_key
-                    ), "A step finished that wasn't supposed to be active!"
+                    assert active_step == event.step_key, (
+                        "A step finished that wasn't supposed to be active!"
+                    )
                     active_step = None
 
 

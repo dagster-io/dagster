@@ -45,7 +45,7 @@ def location_origins_from_yaml_paths(
         )
 
         origins_by_name.update(
-            location_origins_from_config(cast(dict, workspace_config), yaml_path)
+            location_origins_from_config(cast("dict", workspace_config), yaml_path)
         )
 
     return list(origins_by_name.values())
@@ -325,15 +325,15 @@ def _location_origin_from_target_config(
     check.str_param(yaml_path, "yaml_path")
 
     if "python_file" in target_config:
-        python_file_config = cast(Union[str, dict], target_config["python_file"])
+        python_file_config = cast("Union[str, dict]", target_config["python_file"])
         return _location_origin_from_python_file_config(python_file_config, yaml_path)
 
     elif "python_module" in target_config:
-        python_module_config = cast(Union[str, dict], target_config["python_module"])
+        python_module_config = cast("Union[str, dict]", target_config["python_module"])
         return _location_origin_from_module_config(python_module_config)
 
     elif "python_package" in target_config:
-        python_package_config = cast(Union[str, dict], target_config["python_package"])
+        python_package_config = cast("Union[str, dict]", target_config["python_package"])
         return _location_origin_from_package_config(python_package_config)
 
     else:

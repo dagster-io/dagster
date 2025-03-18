@@ -168,7 +168,7 @@ class ExecutionStep(
                 check.opt_mapping_param(logging_tags, "logging_tags"),
             ),
             # mypy can't tell that if default is set, this is guaranteed to be a str
-            key=cast(str, check.opt_str_param(key, "key", default=handle.to_key())),
+            key=cast("str", check.opt_str_param(key, "key", default=handle.to_key())),
         )
 
     @property

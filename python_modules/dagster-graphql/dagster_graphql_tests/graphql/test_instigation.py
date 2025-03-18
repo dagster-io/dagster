@@ -122,9 +122,9 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
         )
 
         assert result.data
-        assert (
-            result.data["instigationStateOrError"]["__typename"] == "InstigationState"
-        ), result.data["instigationStateOrError"]
+        assert result.data["instigationStateOrError"]["__typename"] == "InstigationState", (
+            result.data["instigationStateOrError"]
+        )
 
         # need to be running and create a sensor tick in the last 30 seconds in order to generate a
         # future tick
@@ -141,9 +141,9 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
         )
 
         assert result.data
-        assert (
-            result.data["instigationStateOrError"]["__typename"] == "InstigationState"
-        ), result.data["instigationStateOrError"]
+        assert result.data["instigationStateOrError"]["__typename"] == "InstigationState", (
+            result.data["instigationStateOrError"]
+        )
         next_tick = result.data["instigationStateOrError"]["nextTick"]
         assert next_tick
 
@@ -154,9 +154,9 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
         )
 
         assert result.data
-        assert (
-            result.data["instigationStateOrError"]["__typename"] == "InstigationState"
-        ), result.data["instigationStateOrError"]
+        assert result.data["instigationStateOrError"]["__typename"] == "InstigationState", (
+            result.data["instigationStateOrError"]
+        )
         next_tick = result.data["instigationStateOrError"]["nextTick"]
         assert next_tick
 
@@ -177,9 +177,9 @@ class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
         )
 
         assert result.data
-        assert (
-            result.data["instigationStatesOrError"]["__typename"] == "InstigationStates"
-        ), result.data["instigationStatesOrError"]
+        assert result.data["instigationStatesOrError"]["__typename"] == "InstigationStates", (
+            result.data["instigationStatesOrError"]
+        )
 
         results = result.data["instigationStatesOrError"]["results"]
         assert results == [{"name": schedule_name, "instigationType": "SCHEDULE"}]

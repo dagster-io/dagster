@@ -194,7 +194,7 @@ class SparkConfigNode:
             assert self.value
             self.value.write(printer)
         else:
-            self.children = cast(dict[str, Union[SparkConfig, SparkConfigNode]], self.children)
+            self.children = cast("dict[str, Union[SparkConfig, SparkConfigNode]]", self.children)
             retdict: dict[str, Union[SparkConfig, SparkConfigNode]]
             if self.value:
                 retdict = {"root": self.value}

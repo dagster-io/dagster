@@ -241,4 +241,6 @@ def test_full_test_coverage() -> None:
         name_substr = name.strip("'")
         assert any(
             name_substr in selection_str for selection_str in all_selection_strings_we_are_testing
-        ), f"Antlr literal {name_substr} is not under test in test_antlr_asset_selection.py:test_antlr_visit_basic"
+        ), (
+            f"Antlr literal {name_substr} is not under test in test_antlr_asset_selection.py:test_antlr_visit_basic"
+        )

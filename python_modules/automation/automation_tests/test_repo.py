@@ -25,9 +25,9 @@ def test_all_libraries_register() -> None:
         ):
             continue
         result = subprocess.run(["grep", register_call, (library_dir / library), "-r"], check=False)
-        assert (
-            result.returncode == 0
-        ), f"Dagster library {library} is missing call to {register_call}."
+        assert result.returncode == 0, (
+            f"Dagster library {library} is missing call to {register_call}."
+        )
 
 
 # We want to make sure all of our packages are published with `py.typed` files unless explicitly
@@ -64,10 +64,12 @@ def test_all_packages_have_py_typed():
                             missing_py_typed_in_manifest_in.append(str(package_root))
 
         nl = "\n"
-        assert (
-            not missing_py_typed_file
-        ), f"Missing py.typed files in these packages:\n{nl.join(missing_py_typed_file)}"
-        assert not missing_py_typed_in_manifest_in, f"Missing py.typed in MANIFEST.in for these packages:\n{nl.join(missing_py_typed_in_manifest_in)}"
+        assert not missing_py_typed_file, (
+            f"Missing py.typed files in these packages:\n{nl.join(missing_py_typed_file)}"
+        )
+        assert not missing_py_typed_in_manifest_in, (
+            f"Missing py.typed in MANIFEST.in for these packages:\n{nl.join(missing_py_typed_in_manifest_in)}"
+        )
 
 
 def _find_root_python_package(package_root: Path) -> Path:

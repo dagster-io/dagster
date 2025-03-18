@@ -154,7 +154,7 @@ def test_run_status_sensor(
             started_sensor.get_remote_origin_id(), started_sensor.selector_id
         )
         assert (
-            cast(SensorInstigatorData, check.not_none(state).instigator_data).sensor_type
+            cast("SensorInstigatorData", check.not_none(state).instigator_data).sensor_type
             == SensorType.RUN_STATUS
         )
 

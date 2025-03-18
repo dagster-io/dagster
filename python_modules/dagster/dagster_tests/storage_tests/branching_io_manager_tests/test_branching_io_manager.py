@@ -20,7 +20,7 @@ from dagster_tests.storage_tests.branching_io_manager_tests.utils import (
 
 @asset
 def now_time() -> int:
-    return int(math.floor(time.time() * 100))
+    return math.floor(time.time() * 100)
 
 
 def get_now_time_plus_N(N: int) -> AssetsDefinition:
@@ -256,7 +256,7 @@ def test_basic_workflow():
 
 @op
 def now_time_op() -> int:
-    return int(math.floor(time.time() * 100))
+    return math.floor(time.time() * 100)
 
 
 @op(ins={"now_time": In(int)})
@@ -282,7 +282,7 @@ def test_job_op_usecase() -> Any:
         ),
     ) as runner:
         assert (
-            cast(DefinitionsRunner, runner)
+            cast("DefinitionsRunner", runner)
             .defs.get_job_def("now_time_job")
             .execute_in_process(instance=runner.instance)
             .success

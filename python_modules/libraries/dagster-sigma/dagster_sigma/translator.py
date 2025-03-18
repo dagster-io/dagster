@@ -28,7 +28,7 @@ def asset_key_from_table_name(table_name: str) -> AssetKey:
 
 def _inode_from_url(url: str) -> str:
     """Builds a Sigma internal inode value from a Sigma URL."""
-    return f'inode-{url.split("/")[-1]}'
+    return f"inode-{url.split('/')[-1]}"
 
 
 class SigmaWorkbookMetadataSet(NamespacedMetadataSet):

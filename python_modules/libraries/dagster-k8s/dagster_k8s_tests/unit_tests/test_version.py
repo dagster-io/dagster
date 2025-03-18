@@ -13,9 +13,9 @@ from dagster_k8s.kubernetes_version import KUBERNETES_VERSION_UPPER_BOUND
 
 def parse_package_version(version_str: str) -> packaging.version.Version:
     parsed_version = packaging.version.parse(version_str)
-    assert isinstance(
-        parsed_version, packaging.version.Version
-    ), f"Found LegacyVersion: {version_str}"
+    assert isinstance(parsed_version, packaging.version.Version), (
+        f"Found LegacyVersion: {version_str}"
+    )
     return parsed_version
 
 

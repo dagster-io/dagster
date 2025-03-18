@@ -567,7 +567,9 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         """
         partition_key = check.opt_str_param(partition_key, "partition_key")
 
-        child_partitions_def = cast(PartitionsDefinition, self.get(child_asset_key).partitions_def)
+        child_partitions_def = cast(
+            "PartitionsDefinition", self.get(child_asset_key).partitions_def
+        )
         parent_partitions_def = self.get(parent_asset_key).partitions_def
 
         if parent_partitions_def is None:

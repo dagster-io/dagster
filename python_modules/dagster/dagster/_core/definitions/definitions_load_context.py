@@ -173,7 +173,7 @@ class StateBackedDefinitionsLoader(ABC, Generic[TState]):
     def get_or_fetch_state(self) -> TState:
         context = DefinitionsLoadContext.get()
         state = (
-            cast(TState, deserialize_value(context.reconstruction_metadata[self.defs_key]))
+            cast("TState", deserialize_value(context.reconstruction_metadata[self.defs_key]))
             if (
                 context.load_type == DefinitionsLoadType.RECONSTRUCTION
                 and self.defs_key in context.reconstruction_metadata
