@@ -232,6 +232,10 @@ class AssetCheckKey(NamedTuple):
             name=graphql_input["name"],
         )
 
+    def to_python_identifier(self) -> str:
+        # TODO make more robust and submit independently
+        return f"{self.asset_key.to_python_identifier()}_{self.name}".replace("-", "_")
+
     def to_user_string(self) -> str:
         return f"{self.asset_key.to_user_string()}:{self.name}"
 
