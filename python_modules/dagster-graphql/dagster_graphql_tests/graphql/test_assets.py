@@ -2926,6 +2926,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         )
 
     def test_asset_materialization_history(self, graphql_context: WorkspaceRequestContext):
+        """Documents current behavior of the asset materialization history query for OSS. It
+        currently does not include asset failed to materialize events.
+        """
         asset_key = AssetKey("asset_1")
         num_events = 5
         for i in range(num_events):
@@ -2976,20 +2979,11 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result["data"]["assetOrError"]
         assert len(result["data"]["assetOrError"]["assetMaterializationHistory"]) == 5
         max_timestamp_seen = 0
-        num_failed_events = 0
-        num_materialize_events = 0
         for event in result["data"]["assetOrError"]["assetMaterializationHistory"]:
-            if event["__typename"] == "FailedToMaterializeEvent":
-                num_failed_events += 1
-                assert event["failedToMaterializeReason"] == "COMPUTE_FAILED"
-            else:
-                num_materialize_events += 1
+            assert event["__typename"] == "AssetMaterialization"
             assert event["assetKey"]["path"] == ["asset_1"]
             assert int(event["timestamp"]) >= max_timestamp_seen
             max_timestamp_seen = int(event["timestamp"])
-
-        assert num_failed_events == num_materialize_events == num_events
-        assert len(result["data"]["assetOrError"]["assetMaterializations"]) == num_events
 
 
 # This is factored out of TestAssetAwareEventLog because there is a separate implementation for plus
