@@ -235,7 +235,7 @@ def migrate_run_repo_tags(run_storage: RunStorage, print_fn: Optional[PrintFn] =
 
             has_more = len(rows) >= CHUNK_SIZE
             for row in rows:
-                run = deserialize_value(cast(str, row[0]), DagsterRun)
+                run = deserialize_value(cast("str", row[0]), DagsterRun)
                 cursor = row[1]
                 write_repo_tag(conn, run)
 

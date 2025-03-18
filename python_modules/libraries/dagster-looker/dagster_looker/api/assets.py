@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 from dagster import AssetExecutionContext, AssetsDefinition, Failure, multi_asset
 from dagster._annotations import beta
@@ -13,7 +13,9 @@ from dagster_looker.api.dagster_looker_api_translator import (
     LookmlView,
     RequestStartPdtBuild,
 )
-from dagster_looker.api.resource import LookerResource
+
+if TYPE_CHECKING:
+    from dagster_looker.api.resource import LookerResource
 
 
 @beta
@@ -71,7 +73,7 @@ def build_looker_pdt_assets_definitions(
             required_resource_keys={resource_key},
         )
         def pdts(context: AssetExecutionContext):
-            looker = cast(LookerResource, getattr(context.resources, resource_key))
+            looker = cast("LookerResource", getattr(context.resources, resource_key))
 
             context.log.info(
                 f"Starting pdt build for Looker view `{request_start_pdt_build.view_name}` "

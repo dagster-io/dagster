@@ -8,7 +8,7 @@ from dagster._core.workspace.context import WorkspaceRequestContext
 class ResolveInfo(graphene.ResolveInfo):
     @property
     def context(self) -> WorkspaceRequestContext:
-        return cast(WorkspaceRequestContext, super().context)
+        return cast("WorkspaceRequestContext", super().context)
 
 
 def non_null_list(of_type):

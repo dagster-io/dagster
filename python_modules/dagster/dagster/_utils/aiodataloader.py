@@ -114,9 +114,9 @@ class DataLoader(_BaseDataLoader[KeyT, ReturnT]):
 
         self.batch_load_fn = batch_load_fn
 
-        assert iscoroutinefunctionorpartial(
-            self.batch_load_fn
-        ), f"batch_load_fn must be coroutine. Received: {self.batch_load_fn}"
+        assert iscoroutinefunctionorpartial(self.batch_load_fn), (
+            f"batch_load_fn must be coroutine. Received: {self.batch_load_fn}"
+        )
 
         if not callable(self.batch_load_fn):
             raise TypeError(
@@ -167,7 +167,7 @@ class DataLoader(_BaseDataLoader[KeyT, ReturnT]):
         """Loads a key, returning a `Future` for the value represented by that key."""
         if key is None:
             raise TypeError(
-                "The loader.load() function must be called with a value, " f"but got: {key}."
+                f"The loader.load() function must be called with a value, but got: {key}."
             )
 
         cache_key = self.get_cache_key(key)

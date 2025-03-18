@@ -76,7 +76,7 @@ class PipesFileMessageReader(PipesThreadedMessageReader):
                 return (file.tell(), chunk)
 
     def no_messages_debug_text(self) -> str:
-        return "Attempted to read messages by extracting them from a file." ""
+        return "Attempted to read messages by extracting them from a file."
 
 
 def test_file_log_reader(tmp_path_factory, capsys):

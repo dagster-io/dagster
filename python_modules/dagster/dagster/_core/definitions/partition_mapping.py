@@ -558,7 +558,7 @@ class BaseMultiPartitionMapping(ABC):
                     [
                         dep_b_keys_by_a_dim_and_key[dim_name][
                             (
-                                cast(MultiPartitionsDefinition, a_partitions_def)
+                                cast("MultiPartitionsDefinition", a_partitions_def)
                                 .get_partition_key_from_str(key)
                                 .keys_by_dimension[dim_name]
                                 if dim_name
@@ -578,7 +578,7 @@ class BaseMultiPartitionMapping(ABC):
                 b_partition_keys.add(
                     MultiPartitionKey(
                         {
-                            cast(str, (mapped_b_dim_names + unmapped_b_dim_names)[i]): key
+                            cast("str", (mapped_b_dim_names + unmapped_b_dim_names)[i]): key
                             for i, key in enumerate(b_key_values)
                         }
                     )
@@ -611,7 +611,7 @@ class BaseMultiPartitionMapping(ABC):
         result = self._get_dependency_partitions_subset(
             check.not_none(downstream_partitions_def),
             downstream_partitions_subset,
-            cast(MultiPartitionsDefinition, upstream_partitions_def),
+            cast("MultiPartitionsDefinition", upstream_partitions_def),
             a_upstream_of_b=False,
             dynamic_partitions_store=dynamic_partitions_store,
             current_time=current_time,
@@ -636,7 +636,7 @@ class BaseMultiPartitionMapping(ABC):
         result = self._get_dependency_partitions_subset(
             upstream_partitions_def,
             upstream_partitions_subset,
-            cast(MultiPartitionsDefinition, downstream_partitions_def),
+            cast("MultiPartitionsDefinition", downstream_partitions_def),
             a_upstream_of_b=True,
             dynamic_partitions_store=dynamic_partitions_store,
         )
@@ -697,7 +697,7 @@ class MultiToSingleDimensionPartitionMapping(
         )
         if not infer_mapping_result.can_infer:
             check.invariant(isinstance(infer_mapping_result.inference_failure_reason, str))
-            check.failed(cast(str, infer_mapping_result.inference_failure_reason))
+            check.failed(cast("str", infer_mapping_result.inference_failure_reason))
 
     def get_dimension_dependencies(
         self,
@@ -710,9 +710,9 @@ class MultiToSingleDimensionPartitionMapping(
 
         if not infer_mapping_result.can_infer:
             check.invariant(isinstance(infer_mapping_result.inference_failure_reason, str))
-            check.failed(cast(str, infer_mapping_result.inference_failure_reason))
+            check.failed(cast("str", infer_mapping_result.inference_failure_reason))
 
-        return [cast(DimensionDependency, infer_mapping_result.dimension_dependency)]
+        return [cast("DimensionDependency", infer_mapping_result.dimension_dependency)]
 
 
 @whitelist_for_serdes
@@ -904,11 +904,11 @@ class MultiPartitionMapping(
 
         upstream_dimension_names = {
             dim.name
-            for dim in cast(MultiPartitionsDefinition, upstream_partitions_def).partitions_defs
+            for dim in cast("MultiPartitionsDefinition", upstream_partitions_def).partitions_defs
         }
         dimension_names = {
             dim.name
-            for dim in cast(MultiPartitionsDefinition, downstream_partitions_def).partitions_defs
+            for dim in cast("MultiPartitionsDefinition", downstream_partitions_def).partitions_defs
         }
 
         for (
@@ -992,10 +992,10 @@ class StaticPartitionMapping(
             "Downstream partitions definition must be a StaticPartitionsDefinition",
         )
         self._check_upstream(
-            upstream_partitions_def=cast(StaticPartitionsDefinition, upstream_partitions_def)
+            upstream_partitions_def=cast("StaticPartitionsDefinition", upstream_partitions_def)
         )
         self._check_downstream(
-            downstream_partitions_def=cast(StaticPartitionsDefinition, downstream_partitions_def)
+            downstream_partitions_def=cast("StaticPartitionsDefinition", downstream_partitions_def)
         )
 
     @cached_method
@@ -1132,7 +1132,7 @@ def _get_infer_single_to_multi_dimension_deps_result(
             f" Instead received {len(multipartitions_defs)} multi-partitioned assets.",
         )
 
-    multipartitions_def = cast(MultiPartitionsDefinition, next(iter(multipartitions_defs)))
+    multipartitions_def = cast("MultiPartitionsDefinition", next(iter(multipartitions_defs)))
 
     single_dimension_partitions_def = next(
         iter(

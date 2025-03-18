@@ -203,6 +203,6 @@ def test_perf() -> None:
 
     avg_elapsed_time_secs = total_elapsed_time_secs / NUM_PERF_TRIALS
 
-    assert (
-        avg_elapsed_time_secs < PERF_CUTOFF_SECS
-    ), "Performance of resolve_similar_asset_names has regressed"
+    assert avg_elapsed_time_secs < PERF_CUTOFF_SECS, (
+        "Performance of resolve_similar_asset_names has regressed"
+    )

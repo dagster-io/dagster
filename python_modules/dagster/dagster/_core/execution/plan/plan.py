@@ -298,7 +298,7 @@ class _PlanBuilder:
                         handle=UnresolvedStepHandle(node_handle=handle),
                         job_name=self.job_def.name,
                         step_inputs=cast(
-                            list[Union[StepInput, UnresolvedMappedStepInput]], step_inputs
+                            "list[Union[StepInput, UnresolvedMappedStepInput]]", step_inputs
                         ),
                         step_outputs=step_outputs,
                         tags=node.tags,
@@ -309,7 +309,7 @@ class _PlanBuilder:
                         handle=StepHandle(node_handle=handle),
                         job_name=self.job_def.name,
                         step_inputs=cast(
-                            list[Union[StepInput, UnresolvedCollectStepInput]], step_inputs
+                            "list[Union[StepInput, UnresolvedCollectStepInput]]", step_inputs
                         ),
                         step_outputs=step_outputs,
                         tags=node.tags,
@@ -319,7 +319,7 @@ class _PlanBuilder:
                     new_step = ExecutionStep(
                         handle=StepHandle(node_handle=handle),
                         job_name=self.job_def.name,
-                        step_inputs=cast(list[StepInput], step_inputs),
+                        step_inputs=cast("list[StepInput]", step_inputs),
                         step_outputs=step_outputs,
                         tags=node.tags,
                         pool=node.definition.pool,
@@ -837,7 +837,7 @@ class ExecutionPlan(
 
         if bad_keys:
             raise DagsterExecutionStepNotFoundError(
-                f"Can not build subset plan from unknown step{'s' if len(bad_keys)> 1 else ''}:"
+                f"Can not build subset plan from unknown step{'s' if len(bad_keys) > 1 else ''}:"
                 f" {', '.join(bad_keys)}",
                 step_keys=bad_keys,
             )
@@ -910,7 +910,7 @@ class ExecutionPlan(
             if not isinstance(only_step, ExecutionStep):
                 return None
 
-            return cast(ExecutionStep, only_step).handle
+            return cast("ExecutionStep", only_step).handle
 
         return None
 
@@ -1248,7 +1248,7 @@ def _get_steps_to_execute_by_level(
     executable_map: Mapping[str, Union[StepHandle, ResolvedFromDynamicStepHandle]],
 ) -> Sequence[Sequence[ExecutionStep]]:
     return [
-        [cast(ExecutionStep, step_dict_by_key[step_key]) for step_key in sorted(step_key_level)]
+        [cast("ExecutionStep", step_dict_by_key[step_key]) for step_key in sorted(step_key_level)]
         for step_key_level in toposort(
             _get_executable_step_deps(step_dict, step_handles_to_execute, executable_map)
         )
@@ -1272,7 +1272,7 @@ def _get_executable_step_deps(
     step_keys_to_execute = [handle.to_key() for handle in step_handles_to_execute]
 
     for key, handle in executable_map.items():
-        step = cast(ExecutionStep, step_dict[handle])
+        step = cast("ExecutionStep", step_dict[handle])
         filtered_deps = []
         depends_on_unresolved = False
         for dep in step.get_execution_dependency_keys():

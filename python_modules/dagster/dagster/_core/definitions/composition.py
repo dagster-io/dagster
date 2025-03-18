@@ -407,7 +407,7 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
         # is an OpDefinition, then permit it to be invoked and executed like an OpDefinition.
         if not is_in_composition() and isinstance(self.node_def, OpDefinition):
             return direct_invocation_result(
-                cast(PendingNodeInvocation[OpDefinition], self), *args, **kwargs
+                cast("PendingNodeInvocation[OpDefinition]", self), *args, **kwargs
             )
 
         assert_in_composition(node_name, self.node_def)

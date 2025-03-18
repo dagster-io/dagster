@@ -280,7 +280,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 "order_by": "finished_at",
             },
         )
-        data = cast(Sequence[Mapping[str, Any]], resp["data"])
+        data = cast("Sequence[Mapping[str, Any]]", resp["data"])
         total_count = resp["extra"]["pagination"]["total_count"]
         return data, total_count
 
@@ -353,7 +353,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             List[str]: a list of artifact names taken from the response to this request.
         """
         return cast(
-            Sequence[str],
+            "Sequence[str]",
             self._make_request(
                 method="get",
                 endpoint=f"runs/{run_id}/artifacts",

@@ -123,7 +123,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
     @property
     def run(self) -> DagsterRun:
         """:class:`dagster.DagsterRun`: The job run for the context."""
-        return cast(DagsterRun, self._job_context.dagster_run)
+        return cast("DagsterRun", self._job_context.dagster_run)
 
     @property
     def log(self) -> DagsterLogManager:
@@ -141,7 +141,7 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         In interactive contexts, this may be a dagstermill-specific shim, depending whether an
         op definition was passed to ``dagstermill.get_context``.
         """
-        return cast(OpDefinition, self._job_def.node_def_named(self.op_name))
+        return cast("OpDefinition", self._job_def.node_def_named(self.op_name))
 
     @property
     def node(self) -> Node:

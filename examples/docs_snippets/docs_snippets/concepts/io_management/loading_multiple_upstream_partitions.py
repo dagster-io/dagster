@@ -27,6 +27,6 @@ result = dg.materialize(
     partition_key=start.strftime(daily_partitions.fmt),
 )
 downstream_asset_data = result.output_for_node("downstream_asset", "result")
-assert (
-    len(downstream_asset_data) == 24
-), "downstream day should map to upstream 24 hours"
+assert len(downstream_asset_data) == 24, (
+    "downstream day should map to upstream 24 hours"
+)

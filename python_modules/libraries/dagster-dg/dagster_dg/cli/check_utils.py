@@ -69,9 +69,7 @@ def error_dict_to_formatted_error(
         value_error=False,
     )
 
-    fmt_filename = (
-        f"{source.file_name}" f":{typer.style(source.start_line_no, fg=typer.colors.GREEN)}"
-    )
+    fmt_filename = f"{source.file_name}:{typer.style(source.start_line_no, fg=typer.colors.GREEN)}"
     fmt_location = typer.style(source.location, fg=typer.colors.BRIGHT_WHITE)
     fmt_name = typer.style(f"{key.to_typename()} " if key else "", fg=typer.colors.RED)
     return f"{fmt_filename} - {fmt_name}{fmt_location} {error_details.message}\n{source.snippet}\n"

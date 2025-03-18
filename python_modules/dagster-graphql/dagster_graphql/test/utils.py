@@ -236,9 +236,9 @@ def infer_resource_selector(graphql_context: WorkspaceRequestContext, name: str)
 
 def ensure_dagster_graphql_tests_import() -> None:
     dagster_package_root = (Path(dagster_graphql_init_py) / ".." / "..").resolve()
-    assert (
-        dagster_package_root / "dagster_graphql_tests"
-    ).exists(), "Could not find dagster_graphql_tests where expected"
+    assert (dagster_package_root / "dagster_graphql_tests").exists(), (
+        "Could not find dagster_graphql_tests where expected"
+    )
     sys.path.append(dagster_package_root.as_posix())
 
 
@@ -251,7 +251,7 @@ def materialize_assets(
     from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 
     gql_asset_selection = (
-        cast(Sequence[GqlAssetKey], [key.to_graphql_input() for key in asset_selection])
+        cast("Sequence[GqlAssetKey]", [key.to_graphql_input() for key in asset_selection])
         if asset_selection
         else None
     )

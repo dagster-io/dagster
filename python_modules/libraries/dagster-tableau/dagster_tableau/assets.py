@@ -1,10 +1,11 @@
 from collections.abc import Sequence
-from typing import Optional, cast
+from typing import TYPE_CHECKING, Optional, cast
 
 from dagster import AssetExecutionContext, AssetsDefinition, AssetSpec, multi_asset
 from dagster._annotations import beta
 
-from dagster_tableau.resources import BaseTableauWorkspace
+if TYPE_CHECKING:
+    from dagster_tableau.resources import BaseTableauWorkspace
 
 
 @beta
@@ -41,7 +42,7 @@ def build_tableau_materializable_assets_definition(
         required_resource_keys={resource_key},
     )
     def asset_fn(context: AssetExecutionContext):
-        tableau = cast(BaseTableauWorkspace, getattr(context.resources, resource_key))
+        tableau = cast("BaseTableauWorkspace", getattr(context.resources, resource_key))
         with tableau.get_client() as client:
             yield from client.refresh_and_materialize_workbooks(
                 specs=specs, refreshable_workbook_ids=refreshable_workbook_ids

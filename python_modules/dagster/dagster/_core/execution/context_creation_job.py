@@ -189,7 +189,7 @@ def execution_context_event_generator(
     output_capture: Optional[dict["StepOutputHandle", Any]] = None,
 ) -> Generator[Union[DagsterEvent, PlanExecutionContext], None, None]:
     scoped_resources_builder_cm = cast(
-        Callable[..., EventGenerationManager[ScopedResourcesBuilder]],
+        "Callable[..., EventGenerationManager[ScopedResourcesBuilder]]",
         check.opt_callable_param(
             scoped_resources_builder_cm,
             "scoped_resources_builder_cm",
@@ -332,7 +332,7 @@ def orchestration_context_event_generator(
 
         yield execution_context
     except DagsterError as dagster_error:
-        dagster_error = cast(DagsterUserCodeExecutionError, dagster_error)
+        dagster_error = cast("DagsterUserCodeExecutionError", dagster_error)
         user_facing_exc_info = (
             # pylint does not know original_exc_info exists is is_user_code_error is true
             dagster_error.original_exc_info if dagster_error.is_user_code_error else sys.exc_info()

@@ -354,7 +354,7 @@ class DbtCloudClient:
         """
         query_params = f"?step={step}" if step else ""
         return cast(
-            list,
+            "list",
             self.make_request(
                 "GET",
                 f"{self._account_id}/runs/{run_id}/artifacts/{query_params}",

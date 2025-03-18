@@ -52,7 +52,7 @@ class InProcessWorkspaceLoadTarget(WorkspaceLoadTarget):
         self, origin: Union[InProcessCodeLocationOrigin, Sequence[InProcessCodeLocationOrigin]]
     ):
         self._origins = cast(
-            Sequence[InProcessCodeLocationOrigin],
+            "Sequence[InProcessCodeLocationOrigin]",
             origin if isinstance(origin, list) else [origin],
         )
 

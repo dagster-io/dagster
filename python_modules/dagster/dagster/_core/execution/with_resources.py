@@ -105,6 +105,6 @@ def with_resources(
 
     transformed_defs: list[T] = []
     for definition in definitions:
-        transformed_defs.append(cast(T, definition.with_resources(resource_defs)))
+        transformed_defs.append(cast("T", definition.with_resources(resource_defs)))
 
     return transformed_defs

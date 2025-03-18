@@ -410,7 +410,7 @@ def _normalize_param_metadata(
                     f" with schema `{{raw_value: ..., type: ...}}`. Got a value `{value}`."
                 )
             _assert_param_value(value["type"], _METADATA_TYPES, method, f"{param}.{key}.type")
-            new_metadata[key] = cast(PipesMetadataValue, value)
+            new_metadata[key] = cast("PipesMetadataValue", value)
         else:
             new_metadata[key] = {"raw_value": value, "type": PIPES_METADATA_TYPE_INFER}
     return new_metadata
@@ -757,7 +757,7 @@ class PipesDefaultContextLoader(PipesContextLoader):
                 yield data
         elif self.DIRECT_KEY in params:
             data = _assert_env_param_type(params, self.DIRECT_KEY, dict, self.__class__)
-            yield cast(PipesContextData, data)
+            yield cast("PipesContextData", data)
         else:
             raise DagsterPipesError(
                 f'Invalid params for {self.__class__.__name__}, expected key "{self.FILE_PATH_KEY}"'
@@ -781,7 +781,7 @@ class ExcThread(threading.Thread):
 
         while not self.exceptions.empty():
             exc_info = self.exceptions.get()
-            sys.stderr.write(traceback.format_exception(*exc_info))  # pyright: ignore[reportCallIssue,reportArgumentType]
+            sys.stderr.write(traceback.format_exception(*exc_info))  # type: ignore
 
 
 # log writers can potentially capture other type sof logs (for example, from Spark workers)
@@ -830,9 +830,9 @@ class PipesStdioLogWriterChannel(PipesLogWriterChannel):
         # replaced by various tools and environments (e.g. Databricks) and no longer point to the original IO stream
         # more info in Python docs: https://docs.python.org/3.8/library/sys.html#sys.__stdout__
         if self.stream == "stdout":
-            return cast(TextIOWrapper, sys.__stdout__)
+            return cast("TextIOWrapper", sys.__stdout__)
         elif self.stream == "stderr":
-            return cast(TextIOWrapper, sys.__stderr__)
+            return cast("TextIOWrapper", sys.__stderr__)
         else:
             raise ValueError(f"stream must be 'stdout' or 'stderr', got {self.stream}")
 
@@ -850,7 +850,7 @@ class PipesStdioLogWriterChannel(PipesLogWriterChannel):
 
             stdio_fileno = self.stdio.fileno()
             prev_fd = os.dup(stdio_fileno)
-            os.dup2(cast(IO[bytes], tee.stdin).fileno(), stdio_fileno)
+            os.dup2(cast("IO[bytes]", tee.stdin).fileno(), stdio_fileno)
 
             thread = ExcThread(
                 target=self.handler,

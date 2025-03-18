@@ -15,7 +15,7 @@ def download_cereals():
 @op
 def find_sugariest(context: OpExecutionContext, cereals):
     sorted_by_sugar = sorted(cereals, key=lambda cereal: cereal["sugars"])
-    context.log.info(f'{sorted_by_sugar[-1]["name"]} is the sugariest cereal')
+    context.log.info(f"{sorted_by_sugar[-1]['name']} is the sugariest cereal")
 
 
 @job

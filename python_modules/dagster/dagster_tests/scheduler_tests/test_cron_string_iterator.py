@@ -486,9 +486,13 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
         for j in range(i, len(times)):
             next_time = next(fresh_cron_iter)
 
-            assert (
-                next_time.timestamp() == times[j].timestamp()
-            ), f"Expected ({datetime.datetime.from_timestamp(orig_start_timestamp, tz=get_timezone(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"  # pyright: ignore[reportAttributeAccessIssue]
+            orig_timestamp_str = datetime.datetime.fromtimestamp(
+                orig_start_timestamp, tz=get_timezone(execution_timezone)
+            )
+            diff_str = next_time.timestamp() - times[j].timestamp()
+            assert next_time.timestamp() == times[j].timestamp(), (
+                f"Expected ({orig_timestamp_str}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {diff_str})"
+            )
             prev_time = next_time
 
         start_timestamp = orig_start_timestamp + 1
@@ -515,9 +519,13 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
             for j in range(i + 1, len(times)):
                 next_time = next(fresh_cron_iter)
 
-                assert (
-                    next_time.timestamp() == times[j].timestamp()
-                ), f"Expected ({datetime.datetime.from_timestamp(start_timestamp, tz=get_timezone(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"  # pyright: ignore[reportAttributeAccessIssue]
+                orig_timestamp_str = datetime.datetime.fromtimestamp(
+                    orig_start_timestamp, tz=get_timezone(execution_timezone)
+                )
+                diff_str = next_time.timestamp() - times[j].timestamp()
+                assert next_time.timestamp() == times[j].timestamp(), (
+                    f"Expected ({orig_timestamp_str}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {diff_str})"
+                )
 
                 prev_time = next_time
 
@@ -576,9 +584,13 @@ def test_reversed_dst_transition_advances(execution_timezone, cron_string, times
             for j in range(i + 1, len(times)):
                 next_time = next(fresh_cron_iter)
 
-                assert (
-                    next_time.timestamp() == times[j].timestamp()
-                ), f"Expected ({datetime.datetime.from_timestamp(start_timestamp, tz=get_timezone(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"  # pyright: ignore[reportAttributeAccessIssue]
+                orig_timestamp_str = datetime.datetime.fromtimestamp(
+                    orig_start_timestamp, tz=get_timezone(execution_timezone)
+                )
+                diff_str = next_time.timestamp() - times[j].timestamp()
+                assert next_time.timestamp() == times[j].timestamp(), (
+                    f"Expected ({orig_timestamp_str}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {diff_str})"
+                )
 
                 prev_time = next_time
 

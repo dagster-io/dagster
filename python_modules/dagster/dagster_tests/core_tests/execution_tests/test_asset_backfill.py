@@ -120,7 +120,7 @@ def scenario(
         assets_by_repo_name = assets
 
     return AssetBackfillScenario(
-        assets_by_repo_name=cast(Mapping[str, Sequence[AssetsDefinition]], assets_by_repo_name),
+        assets_by_repo_name=cast("Mapping[str, Sequence[AssetsDefinition]]", assets_by_repo_name),
         evaluation_time=evaluation_time if evaluation_time else get_current_datetime(),
         target_root_partition_keys=target_root_partition_keys,
         last_storage_id_cursor_offset=last_storage_id_cursor_offset,
@@ -569,7 +569,7 @@ def test_materializations_outside_of_backfill():
         all_assets=one_asset_one_partition,
         asset_keys=[one_asset_one_partition[0].key],
         partition_key=cast(
-            PartitionsDefinition, one_asset_one_partition[0].partitions_def
+            "PartitionsDefinition", one_asset_one_partition[0].partitions_def
         ).get_partition_keys()[0],
         instance=instance,
         tags={},
@@ -1032,9 +1032,9 @@ def _requested_asset_partitions_in_run_request(
         # backfill was a partition by partition backfill
         for asset_key in asset_keys:
             asset_partition = AssetKeyPartitionKey(asset_key, run_request.partition_key)
-            assert (
-                asset_partition not in requested_asset_partitions
-            ), f"{asset_partition} requested twice. Requested: {requested_asset_partitions}."
+            assert asset_partition not in requested_asset_partitions, (
+                f"{asset_partition} requested twice. Requested: {requested_asset_partitions}."
+            )
             requested_asset_partitions.add(asset_partition)
     return requested_asset_partitions
 

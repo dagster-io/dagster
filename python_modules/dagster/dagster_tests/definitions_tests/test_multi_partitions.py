@@ -713,7 +713,7 @@ def test_basic_pagination():
     ]
     for i, key in enumerate(paginated_results.results):
         assert isinstance(key, MultiPartitionKey)
-        assert cast(MultiPartitionKey, key).keys_by_dimension == expected_keys[i]
+        assert cast("MultiPartitionKey", key).keys_by_dimension == expected_keys[i]
 
     paginated_results2 = multi_partitions.get_paginated_partition_keys(
         context=PartitionLoadingContext(
@@ -735,7 +735,7 @@ def test_basic_pagination():
     ]
     for i, key in enumerate(paginated_results2.results):
         assert isinstance(key, MultiPartitionKey)
-        assert cast(MultiPartitionKey, key).keys_by_dimension == expected_keys2[i]
+        assert cast("MultiPartitionKey", key).keys_by_dimension == expected_keys2[i]
 
 
 def test_reverse_pagination():
@@ -764,7 +764,7 @@ def test_reverse_pagination():
     ]
     for i, key in enumerate(paginated_results.results):
         assert isinstance(key, MultiPartitionKey)
-        assert cast(MultiPartitionKey, key).keys_by_dimension == expected_keys[i]
+        assert cast("MultiPartitionKey", key).keys_by_dimension == expected_keys[i]
 
     paginated_results2 = multi_partitions.get_paginated_partition_keys(
         context=PartitionLoadingContext(
@@ -786,7 +786,7 @@ def test_reverse_pagination():
     ]
     for i, key in enumerate(paginated_results2.results):
         assert isinstance(key, MultiPartitionKey)
-        assert cast(MultiPartitionKey, key).keys_by_dimension == expected_keys2[i]
+        assert cast("MultiPartitionKey", key).keys_by_dimension == expected_keys2[i]
 
 
 def test_pagination_accumulation():
