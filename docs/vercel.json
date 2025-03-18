@@ -2080,8 +2080,8 @@
       "destination": "/api/python-api/libraries/dagster-duckdb-pyspark#dagster_duckdb_pyspark.DuckDBPySparkTypeHandler"
     },
     {
-      "source": "/_modules/dagster_duckdb/io_manager#dagster_duckdb.DuckDBIOManager",
-      "destination": "/api/python-api/libraries/dagster-duckdb"
+      "source": "/_modules/dagster_duckdb/io_manager",
+      "destination": "/api/python-api/libraries/dagster-duckdb#dagster_duckdb.DuckDBIOManager"
     },
     {
       "source": "/_modules/dagster_duckdb/resource",
