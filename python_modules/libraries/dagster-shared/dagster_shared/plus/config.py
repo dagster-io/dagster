@@ -31,9 +31,16 @@ class DagsterPlusCliConfig:
 
 def get_active_config_path() -> Path:
     cloud_config_path = get_dagster_cloud_cli_config_path()
-    if cloud_config_path.exists():
+    dg_config_path = get_dg_config_path()
+
+    if cloud_config_path.exists() and dg_config_path.exists():
+        raise Exception(
+            f"Found Dagster Plus config in both {cloud_config_path} and {dg_config_path}. Please consolidate your config files."
+        )
+    elif cloud_config_path.exists():
         return cloud_config_path
-    return get_dg_config_path()
+
+    return dg_config_path
 
 
 def get_dg_config_path() -> Path:
