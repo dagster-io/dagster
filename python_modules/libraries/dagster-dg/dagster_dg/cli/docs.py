@@ -15,6 +15,7 @@ from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.docs import json_for_all_components
 from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error, pushd
+from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 # from pathlib import Path
 DOCS_DIR = Path(__file__).parent.parent / "docs"
@@ -35,6 +36,7 @@ LOCALHOST_URL_REGEX = re.compile(b".*(http://localhost.*)\n")
 @click.argument("component_type", type=str, default="")
 @click.option("--port", type=int, default=3004)
 @dg_global_options
+@cli_telemetry_wrapper
 def serve_docs_command(
     component_type: Optional[str],
     port: int,

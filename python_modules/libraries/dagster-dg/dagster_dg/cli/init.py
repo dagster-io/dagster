@@ -13,6 +13,7 @@ from dagster_dg.config import (
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import scaffold_project, scaffold_workspace
 from dagster_dg.utils import DgClickCommand, exit_with_error
+from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 # Workspace
 _DEFAULT_INIT_PROJECTS_DIR: Final = "projects"
@@ -21,6 +22,7 @@ _DEFAULT_INIT_PROJECTS_DIR: Final = "projects"
 @click.command(name="init", cls=DgClickCommand)
 @dg_editable_dagster_options
 @dg_global_options
+@cli_telemetry_wrapper
 def init_command(
     use_editable_dagster: Optional[str],
     **global_options: object,
