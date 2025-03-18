@@ -180,6 +180,7 @@ class DgCliConfig:
     use_component_modules: list[str] = field(default_factory=list)
     use_dg_managed_environment: bool = True
     require_local_venv: bool = True
+    telemetry_enabled: bool = True
 
     @classmethod
     def default(cls) -> Self:
@@ -200,7 +201,14 @@ class DgCliConfig:
                 "use_dg_managed_environment", DgCliConfig.use_dg_managed_environment
             ),
             require_local_venv=merged.get("require_local_venv", DgCliConfig.require_local_venv),
+            telemetry_enabled=merged.get("telemetry", {}).get(
+                "enabled", DgCliConfig.telemetry_enabled
+            ),
         )
+
+
+class RawDgTelemetryConfig(TypedDict, total=False):
+    enabled: bool
 
 
 # All fields are optional
@@ -211,6 +219,7 @@ class DgRawCliConfig(TypedDict, total=False):
     use_component_modules: Sequence[str]
     use_dg_managed_environment: bool
     require_local_venv: bool
+    telemetry: RawDgTelemetryConfig
 
 
 # ########################

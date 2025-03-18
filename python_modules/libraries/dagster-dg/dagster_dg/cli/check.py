@@ -14,6 +14,7 @@ from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, DgClickGroup, pushd
 from dagster_dg.utils.filesystem import watch_paths
+from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 
 @click.group(name="check", cls=DgClickGroup)
@@ -32,6 +33,7 @@ def check_group():
     "--watch", is_flag=True, help="Watch for changes to the component files and re-validate them."
 )
 @dg_global_options
+@cli_telemetry_wrapper
 def check_yaml_command(
     paths: Sequence[str],
     watch: bool,
@@ -88,6 +90,7 @@ def check_yaml_command(
 )
 @dg_global_options
 @click.pass_context
+@cli_telemetry_wrapper
 def check_definitions_command(
     context: click.Context,
     log_level: str,
