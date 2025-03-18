@@ -25,7 +25,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
     fetch_flattened_time_window_ranges,
 )
-from dagster._core.event_api import AssetRecordsFilter
+from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.loader import LoadingContext
@@ -251,7 +251,7 @@ def get_asset(
     return GrapheneAsset(key=asset_key, definition=def_node)
 
 
-def get_asset_materializations(
+def get_asset_materialization_event_records(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
     partitions: Optional[Sequence[str]] = None,
@@ -259,7 +259,7 @@ def get_asset_materializations(
     before_timestamp: Optional[float] = None,
     after_timestamp: Optional[float] = None,
     storage_ids: Optional[Sequence[int]] = None,
-) -> Sequence[EventLogEntry]:
+) -> Sequence[EventLogRecord]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
@@ -290,10 +290,10 @@ def get_asset_materializations(
             records_filter=records_filter, limit=limit
         ).records
 
-    return [event_record.event_log_entry for event_record in event_records]
+    return event_records
 
 
-def get_asset_failed_to_materialize_events(
+def get_asset_materializations(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
     partitions: Optional[Sequence[str]] = None,
@@ -302,6 +302,29 @@ def get_asset_failed_to_materialize_events(
     after_timestamp: Optional[float] = None,
     storage_ids: Optional[Sequence[int]] = None,
 ) -> Sequence[EventLogEntry]:
+    return [
+        event_record.event_log_entry
+        for event_record in get_asset_materialization_event_records(
+            graphene_info,
+            asset_key,
+            partitions,
+            limit,
+            before_timestamp,
+            after_timestamp,
+            storage_ids,
+        )
+    ]
+
+
+def get_asset_failed_to_materialize_event_records(
+    graphene_info: "ResolveInfo",
+    asset_key: AssetKey,
+    partitions: Optional[Sequence[str]] = None,
+    limit: Optional[int] = None,
+    before_timestamp: Optional[float] = None,
+    after_timestamp: Optional[float] = None,
+    storage_ids: Optional[Sequence[int]] = None,
+) -> Sequence[EventLogRecord]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
@@ -332,7 +355,7 @@ def get_asset_failed_to_materialize_events(
             records_filter=records_filter, limit=limit
         ).records
 
-    return [event_record.event_log_entry for event_record in event_records]
+    return event_records
 
 
 def get_asset_observations(
