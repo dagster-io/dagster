@@ -110,7 +110,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Labs',
+      label: 'Labs 🧪',
       link: {type: 'doc', id: 'guides/labs/index'},
       collapsed: false,
       items: [
