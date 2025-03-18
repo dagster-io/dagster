@@ -83,8 +83,8 @@ def cross_platfrom_string_path(path: str):
 # uv commands should be executed in an environment with no pre-existing VIRTUAL_ENV set. If this
 # variable is set (common during development) and does not match the venv resolved by uv, it prints
 # undesireable warnings.
-def strip_activated_venv_from_env_vars() -> Mapping[str, str]:
-    return {k: v for k, v in os.environ.items() if not k == "VIRTUAL_ENV"}
+def strip_activated_venv_from_env_vars(env: Mapping[str, str]) -> Mapping[str, str]:
+    return {k: v for k, v in env.items() if not k == "VIRTUAL_ENV"}
 
 
 def discover_git_root(path: Path) -> Path:
