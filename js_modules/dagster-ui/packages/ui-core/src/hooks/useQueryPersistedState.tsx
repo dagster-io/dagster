@@ -114,7 +114,7 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
       // the `replace` so that we surface any unwanted loops during development.
       if (process.env.NODE_ENV !== 'production' || !areQueriesEqual(currentQueryString, next)) {
         currentQueryString = next;
-        const nextPath = `${history.location.pathname}?${qs.stringify(next, {arrayFormat: 'brackets'})}`;
+        const nextPath = `${history.location.pathname}?${qs.stringify(next, {arrayFormat: 'indices'})}`;
         if (behavior === 'replace') {
           history.replace(nextPath);
         } else {
