@@ -1,8 +1,8 @@
 import logging
+import os
 import time
 from collections.abc import Mapping, Sequence
 from typing import Any, Optional
-import os
 
 import requests
 from dagster import Failure, MetadataValue, get_dagster_logger
