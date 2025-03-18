@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
-import {filterNoqaComments, trimMainBlock} from './codeExampleUtils';
+import {filterComments, trimMainBlock, IGNORED_COMMENT_TYPES} from './codeExampleUtils';
 
-describe('filterNoqaComments', () => {
+describe('filterComments', () => {
   it('should remove noqa comments from lines', () => {
     const input = [
       'def example_function():  # noqa',
@@ -19,14 +19,32 @@ describe('filterNoqaComments', () => {
       '',
     ];
 
-    expect(filterNoqaComments(input)).toEqual(expected);
+    expect(filterComments(input)).toEqual(expected);
+  });
+
+  it('should remove type: ignore comments from lines', () => {
+    const input = [
+      'from typing import Dict, Any  # type: ignore',
+      'x: Dict[str, Any] = {}  # type: ignore[valid-type]',
+      'y = 10  # regular comment',
+      'z = "test"  # type: ignore # and more comments',
+    ];
+
+    const expected = [
+      'from typing import Dict, Any',
+      'x: Dict[str, Any] = {}',
+      'y = 10  # regular comment',
+      'z = "test"',
+    ];
+
+    expect(filterComments(input)).toEqual(expected);
   });
 
   it('should handle empty input array', () => {
-    expect(filterNoqaComments([])).toEqual([]);
+    expect(filterComments([])).toEqual([]);
   });
 
-  it('should handle lines without noqa comments', () => {
+  it('should handle lines without ignored comments', () => {
     const input = [
       'def example_function():',
       '    x = 5  # some comment',
@@ -34,7 +52,7 @@ describe('filterNoqaComments', () => {
       '    print(x + y)',
     ];
 
-    expect(filterNoqaComments(input)).toEqual(input);
+    expect(filterComments(input)).toEqual(input);
   });
 });
 
