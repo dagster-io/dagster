@@ -18,7 +18,7 @@ from typing import (
     get_origin,
 )
 
-from dagster._check.functions import CheckError, TypeOrTupleOfTypes, failed, invariant
+from dagster_shared.check.functions import CheckError, TypeOrTupleOfTypes, failed, invariant
 
 try:
     # this type only exists in python 3.10+

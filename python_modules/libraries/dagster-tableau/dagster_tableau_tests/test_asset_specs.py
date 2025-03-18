@@ -4,10 +4,10 @@ from unittest.mock import MagicMock
 
 import pytest
 import responses
-from dagster._check.functions import CheckError
 from dagster._config.field_utils import EnvVar
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.test_utils import environ
+from dagster_shared.check import CheckError
 from dagster_tableau import TableauCloudWorkspace, TableauServerWorkspace, load_tableau_asset_specs
 from dagster_tableau.translator import DagsterTableauTranslator, TableauTranslatorData
 

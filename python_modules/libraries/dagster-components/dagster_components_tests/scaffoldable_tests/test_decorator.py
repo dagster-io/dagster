@@ -1,6 +1,6 @@
 import pytest
-from dagster._check.functions import CheckError
 from dagster_components.scaffold import Scaffolder, get_scaffolder, has_scaffolder, scaffold_with
+from dagster_shared.check import CheckError
 
 
 # Example usage:

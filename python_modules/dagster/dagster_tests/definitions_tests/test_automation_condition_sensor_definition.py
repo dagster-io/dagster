@@ -1,6 +1,6 @@
 import pytest
 from dagster import AssetSelection, DefaultSensorStatus, build_sensor_context
-from dagster._check.functions import ParameterCheckError
+from dagster._check import ParameterCheckError
 from dagster._core.definitions.automation_condition_sensor_definition import (
     AutomationConditionSensorDefinition,
 )

@@ -3,7 +3,6 @@ import operator
 
 import pytest
 from dagster import AutoMaterializePolicy, AutomationCondition, Definitions, asset
-from dagster._check.functions import CheckError
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
@@ -14,6 +13,7 @@ from dagster._core.definitions.declarative_automation.operators import (
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
+from dagster_shared.check import CheckError
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,

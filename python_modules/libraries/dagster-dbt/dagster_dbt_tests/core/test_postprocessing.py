@@ -10,7 +10,7 @@ from dagster import (
     _check as check,
     materialize,
 )
-from dagster._check.functions import CheckError
+from dagster._check import CheckError
 from dagster._core.definitions.events import AssetMaterialization, Output
 from dagster._core.definitions.metadata.metadata_value import MetadataValue, TableMetadataValue
 from dagster._core.definitions.metadata.table import TableRecord
