@@ -225,6 +225,11 @@ class DbtCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[DbtCloudWorkspace
             project=None,
         )
 
+        all_asset_specs = [
+            spec.replace_attributes(kinds={"dbtcloud"} | spec.kinds - {"dbt"})
+            for spec in all_asset_specs
+        ]
+
         # External facing checks are not supported yet
         # https://linear.app/dagster-labs/issue/AD-915/support-external-asset-checks-in-dbt-cloud-v2
         @multi_asset_check(specs=all_check_specs)
