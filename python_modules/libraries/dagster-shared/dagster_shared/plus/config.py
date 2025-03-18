@@ -25,6 +25,7 @@ class DagsterPlusCliConfig:
         return cls(**yaml.safe_load(contents))
 
     def write_to_file(self, config_file: Path):
+        config_file.parent.mkdir(parents=True, exist_ok=True)
         config_file.write_text(yaml.dump({k: v for k, v in self.__dict__.items() if v is not None}))
 
 
