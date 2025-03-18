@@ -137,7 +137,7 @@ class NewlyRequestedCondition(SubsetAutomationCondition):
         return "newly_requested"
 
     def compute_subset(self, context: AutomationContext) -> EntitySubset:
-        return context.previous_requested_subset or context.get_empty_subset()
+        return context.get_previous_requested_subset(context.key) or context.get_empty_subset()
 
 
 @whitelist_for_serdes
