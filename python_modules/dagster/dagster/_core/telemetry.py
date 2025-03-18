@@ -20,14 +20,12 @@ from collections.abc import Mapping, Sequence
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, overload
 
-import click
-import yaml
 from dagster_shared.telemetry import (
     DAGSTER_HOME_FALLBACK,
     TelemetryEntry,
     TelemetrySettings,
     dagster_home_if_set,
-    get_or_create_dir_from_dagster_home,
+    get_or_set_instance_id,
     log_action as dagster_shared_log_action,
     write_telemetry_log_line,
 )
@@ -238,46 +236,6 @@ def _get_instance_telemetry_info(
 
 def _get_instance_telemetry_enabled(instance: DagsterInstance) -> bool:
     return instance.telemetry_enabled
-
-
-def get_or_set_instance_id() -> str:
-    instance_id = _get_telemetry_instance_id()
-    if instance_id is None:
-        instance_id = _set_telemetry_instance_id()
-    return instance_id
-
-
-# Gets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
-def _get_telemetry_instance_id() -> Optional[str]:
-    telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
-    if not os.path.exists(telemetry_id_path):
-        return
-
-    with open(telemetry_id_path, encoding="utf8") as telemetry_id_file:
-        telemetry_id_yaml = yaml.safe_load(telemetry_id_file)
-        if (
-            telemetry_id_yaml
-            and INSTANCE_ID_STR in telemetry_id_yaml
-            and isinstance(telemetry_id_yaml[INSTANCE_ID_STR], str)
-        ):
-            return telemetry_id_yaml[INSTANCE_ID_STR]
-    return None
-
-
-# Sets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
-def _set_telemetry_instance_id() -> str:
-    click.secho(TELEMETRY_TEXT)
-    click.secho(SLACK_PROMPT)
-
-    telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
-    instance_id = str(uuid.uuid4())
-
-    try:  # In case we encounter an error while writing to user's file system
-        with open(telemetry_id_path, "w", encoding="utf8") as telemetry_id_file:
-            yaml.dump({INSTANCE_ID_STR: instance_id}, telemetry_id_file, default_flow_style=False)
-        return instance_id
-    except Exception:
-        return "<<unable_to_write_instance_id>>"
 
 
 def hash_name(name: str) -> str:
@@ -581,25 +539,3 @@ def log_dagster_event(event: DagsterEvent, job_context: PlanOrchestrationContext
         client_time=datetime.datetime.now(),
         metadata=metadata,
     )
-
-
-TELEMETRY_TEXT = """
-  {telemetry}
-
-  As an open-source project, we collect usage statistics to inform development priorities. For more
-  information, read https://docs.dagster.io/about/telemetry.
-
-  We will not see or store any data that is processed by your code.
-
-  To opt-out, add the following to $DAGSTER_HOME/dagster.yaml, creating that file if necessary:
-
-    telemetry:
-      enabled: false
-""".format(telemetry=click.style("Telemetry:", fg="blue", bold=True))
-
-SLACK_PROMPT = """
-  {welcome}
-
-  If you have any questions or would like to engage with the Dagster team, please join us on Slack
-  (https://bit.ly/39dvSsF).
-""".format(welcome=click.style("Welcome to Dagster!", bold=True))

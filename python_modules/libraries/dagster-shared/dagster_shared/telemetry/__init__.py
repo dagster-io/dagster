@@ -9,6 +9,9 @@ from collections.abc import Mapping
 from logging.handlers import RotatingFileHandler
 from typing import Callable, NamedTuple, Optional
 
+import click
+import yaml
+
 OS_DESC = platform.platform()
 OS_PLATFORM = platform.system()
 
@@ -16,6 +19,8 @@ OS_PLATFORM = platform.system()
 MAX_BYTES = 10485760  # 10 MB = 10 * 1024 * 1024 bytes
 
 DAGSTER_HOME_FALLBACK = "~/.dagster"
+TELEMETRY_STR = ".telemetry"
+INSTANCE_ID_STR = "instance_id"
 
 KNOWN_CI_ENV_VAR_KEYS = {
     "GITLAB_CI",  # https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
@@ -224,3 +229,84 @@ def log_action(
                 run_storage_id=run_storage_id,
             )._asdict()
         )
+
+
+def get_telemetry_enabled_from_dagster_yaml() -> bool:
+    """Lightweight check to see if telemetry is enabled by checking $DAGSTER_HOME/dagster.yaml,
+    without needing to load the entire Dagster instance.
+    """
+    dagster_home_path = dagster_home_if_set()
+    if dagster_home_path is None:
+        return True
+
+    dagster_yaml_path = os.path.join(dagster_home_path, "dagster.yaml")
+    if not os.path.exists(dagster_yaml_path):
+        return True
+
+    with open(dagster_yaml_path, encoding="utf8") as dagster_yaml_file:
+        dagster_yaml_data = yaml.safe_load(dagster_yaml_file)
+        if "telemetry" in dagster_yaml_data and "enabled" in dagster_yaml_data["telemetry"]:
+            return dagster_yaml_data["telemetry"]["enabled"]
+    return True
+
+
+def get_or_set_instance_id() -> str:
+    instance_id = _get_telemetry_instance_id()
+    if instance_id is None:
+        instance_id = _set_telemetry_instance_id()
+    return instance_id
+
+
+# Gets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
+def _get_telemetry_instance_id() -> Optional[str]:
+    telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
+    if not os.path.exists(telemetry_id_path):
+        return
+
+    with open(telemetry_id_path, encoding="utf8") as telemetry_id_file:
+        telemetry_id_yaml = yaml.safe_load(telemetry_id_file)
+        if (
+            telemetry_id_yaml
+            and INSTANCE_ID_STR in telemetry_id_yaml
+            and isinstance(telemetry_id_yaml[INSTANCE_ID_STR], str)
+        ):
+            return telemetry_id_yaml[INSTANCE_ID_STR]
+    return None
+
+
+# Sets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
+def _set_telemetry_instance_id() -> str:
+    click.secho(TELEMETRY_TEXT)
+    click.secho(SLACK_PROMPT)
+
+    telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
+    instance_id = str(uuid.uuid4())
+
+    try:  # In case we encounter an error while writing to user's file system
+        with open(telemetry_id_path, "w", encoding="utf8") as telemetry_id_file:
+            yaml.dump({INSTANCE_ID_STR: instance_id}, telemetry_id_file, default_flow_style=False)
+        return instance_id
+    except Exception:
+        return "<<unable_to_write_instance_id>>"
+
+
+TELEMETRY_TEXT = """
+  {telemetry}
+
+  As an open-source project, we collect usage statistics to inform development priorities. For more
+  information, read https://docs.dagster.io/about/telemetry.
+
+  We will not see or store any data that is processed by your code.
+
+  To opt-out, add the following to $DAGSTER_HOME/dagster.yaml, creating that file if necessary:
+
+    telemetry:
+      enabled: false
+""".format(telemetry=click.style("Telemetry:", fg="blue", bold=True))
+
+SLACK_PROMPT = """
+  {welcome}
+
+  If you have any questions or would like to engage with the Dagster team, please join us on Slack
+  (https://bit.ly/39dvSsF).
+""".format(welcome=click.style("Welcome to Dagster!", bold=True))
