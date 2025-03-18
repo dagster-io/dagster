@@ -61,7 +61,6 @@ def scaffold_group():
 def scaffold_workspace_command(
     name: str,
     use_editable_dagster: Optional[str],
-    use_editable_components_package_only: Optional[str],
     **global_options: object,
 ):
     """Initialize a new Dagster workspace.
@@ -80,7 +79,6 @@ def scaffold_workspace_command(
     workspace_config = DgRawWorkspaceConfig(
         scaffold_project_options=DgWorkspaceScaffoldProjectOptions.get_raw_from_cli(
             use_editable_dagster,
-            use_editable_components_package_only,
         )
     )
     scaffold_workspace(name, workspace_config)
@@ -113,7 +111,6 @@ def scaffold_project_command(
     skip_venv: bool,
     populate_cache: bool,
     use_editable_dagster: Optional[str],
-    use_editable_components_package_only: Optional[str],
     **global_options: object,
 ) -> None:
     """Scaffold a Dagster project file structure and a uv-managed virtual environment scoped
@@ -152,7 +149,6 @@ def scaffold_project_command(
         abs_path,
         dg_context,
         use_editable_dagster=use_editable_dagster,
-        use_editable_components_package_only=use_editable_components_package_only,
         skip_venv=skip_venv,
         populate_cache=populate_cache,
     )

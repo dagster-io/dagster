@@ -92,7 +92,7 @@ def _get_editable_package_root(pkg_name: str) -> str:
 
 def test_components_from_dagster():
     common_deps: list[str] = []
-    for pkg_name in ["dagster", "dagster-pipes"]:
+    for pkg_name in ["dagster", "dagster-pipes", "dagster-shared"]:
         common_deps.extend(["-e", _get_editable_package_root(pkg_name)])
 
     components_root = _get_editable_package_root("dagster-components")
@@ -204,6 +204,8 @@ def isolated_venv_with_component_lib_dagster_foo(
                 _get_editable_package_root("dagster-components"),
                 "-e",
                 _get_editable_package_root("dagster-pipes"),
+                "-e",
+                _get_editable_package_root("dagster-shared"),
                 "-e",
                 "dagster-foo",
             ]

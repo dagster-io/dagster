@@ -111,6 +111,15 @@ dg_global_options = make_option_group(GLOBAL_OPTIONS)
 DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR = "DG_USE_EDITABLE_DAGSTER"
 
 
+# Returns false if the environment variable is not set or is set to "false".
+def is_use_editable_env_var_true() -> bool:
+    env_var_value = os.getenv(DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR)
+    if not env_var_value:
+        return False
+
+    return env_var_value != "false"
+
+
 EDITABLE_DAGSTER_OPTIONS = {
     not_none(option.name): option
     for option in [
@@ -119,27 +128,11 @@ EDITABLE_DAGSTER_OPTIONS = {
             type=str,
             flag_value="TRUE",
             is_flag=False,
-            default="TRUE" if os.getenv(DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR) else None,
+            default="TRUE" if is_use_editable_env_var_true() else None,
             help=(
                 "Install all Dagster package dependencies from a local Dagster clone. Accepts a path to local Dagster clone root or"
                 " may be set as a flag (no value is passed). If set as a flag,"
                 " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
-            ),
-        ),
-        click.Option(
-            ["--use-editable-components-package-only"],
-            type=str,
-            flag_value="TRUE",
-            is_flag=False,
-            default=None,
-            hidden=True,
-            help=(
-                "Install the `dagster-components` dependency from a local Dagster clone. Accepts a path to local Dagster clone root or"
-                " may be set as a flag (no value is passed). If set as a flag,"
-                " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
-                " The reason this flag exists is to mimic the environment into which `dagster-components` and `dagster-dg` are released."
-                " They are released on a separate cadence from the main Dagster package, so in the wild they will always use the latest published Dagster version."
-                " `dagster-dg` unit tests should use environments constructed with this option."
             ),
         ),
     ]

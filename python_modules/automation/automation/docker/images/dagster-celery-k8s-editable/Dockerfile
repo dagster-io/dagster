@@ -8,6 +8,7 @@ RUN pip install -U uv
 RUN python -m uv pip install \
     -e dagster \
     -e dagster-pipes \
+    -e dagster-shared \
     -e dagster-graphql \
     -e dagster-postgres \
     -e dagster-k8s \

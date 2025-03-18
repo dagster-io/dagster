@@ -5,6 +5,7 @@ import re
 import string
 import sys
 import time
+from collections import defaultdict
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
@@ -76,6 +77,8 @@ from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariant
 from dagster._core.event_api import EventLogCursor, EventRecordsResult, RunStatusChangeRecordsFilter
 from dagster._core.events import (
     EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
+    AssetFailedToMaterializeData,
+    AssetFailedToMaterializeReason,
     AssetMaterializationPlannedData,
     AssetObservationData,
     DagsterEvent,
@@ -3010,6 +3013,50 @@ class TestEventLogStorage:
         assert storage.get_materialized_partitions(c, after_cursor=9999999999) == set()
         assert storage.get_materialized_partitions(d, after_cursor=9999999999) == set()
 
+    def test_write_asset_materialization_failures(self, storage, instance, test_run_id):
+        a = AssetKey(["a"])
+
+        partitions = list(string.ascii_uppercase)
+
+        failed_partitions = {"step_a": set(partitions[:10]), "step_b": set(partitions[10:15])}
+
+        failure_events_by_step: list[list[DagsterEvent]] = [
+            [
+                DagsterEvent.build_asset_failed_to_materialize_event(
+                    job_name="my_fake_job",
+                    step_key=step_key,
+                    asset_failed_to_materialize_data=AssetFailedToMaterializeData(
+                        asset_key=a,
+                        partition=partition,
+                        error=None,
+                        reason=AssetFailedToMaterializeReason.COMPUTE_FAILED,
+                    ),
+                )
+                for partition in partitions
+            ]
+            for step_key, partitions in failed_partitions.items()
+        ]
+
+        failure_events = [event for events in failure_events_by_step for event in events]
+
+        for failure_event in failure_events:
+            instance.report_dagster_event(failure_event, test_run_id)
+
+        failure_records = instance.get_records_for_run(
+            run_id=test_run_id, of_type=DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+        ).records
+
+        assert len(failure_records) == 15
+
+        failed_partitions_by_step_key = defaultdict(set)
+        for record in failure_records:
+            assert record.event_log_entry.dagster_event.is_asset_failed_to_materialize
+            failed_partitions_by_step_key[record.event_log_entry.step_key].add(
+                record.event_log_entry.dagster_event.asset_failed_to_materialize_data.partition
+            )
+
+        assert failed_partitions_by_step_key == failed_partitions
+
     def test_get_latest_storage_ids_by_partition(self, storage, instance):
         a = AssetKey(["a"])
         b = AssetKey(["b"])
@@ -5842,8 +5889,15 @@ class TestEventLogStorage:
                 )
             )
 
-    def test_asset_check_evaluation_without_planned_event(self, storage: EventLogStorage):
-        run_id = make_new_run_id()
+    def test_asset_check_evaluation_without_planned_event(
+        self, storage: EventLogStorage, test_run_id: str
+    ):
+        check_key = AssetCheckKey(asset_key=AssetKey(["my_asset"]), name="my_check")
+
+        check_summary_record = storage.get_asset_check_summary_records([check_key])[check_key]
+        assert not check_summary_record.last_check_execution_record
+
+        run_id = test_run_id
         storage.store_event(
             EventLogEntry(
                 error_info=None,
@@ -5868,9 +5922,50 @@ class TestEventLogStorage:
             )
         )
 
-        # since no planned event is logged, we don't create a row in the sumary table
-        assert not storage.get_asset_check_execution_history(
-            AssetCheckKey(asset_key=AssetKey(["my_asset"]), name="my_check"), limit=10
+        check_summary_record = storage.get_asset_check_summary_records([check_key])[check_key]
+        check_execution_record = check_summary_record.last_check_execution_record
+
+        assert check_execution_record
+        assert check_execution_record.status == AssetCheckExecutionRecordStatus.SUCCEEDED
+        assert check_execution_record.run_id == run_id
+        assert check_execution_record.event
+        assert (
+            check_execution_record.event.dagster_event_type
+            == DagsterEventType.ASSET_CHECK_EVALUATION
+        )
+
+    def test_yield_asset_check_evaluation_from_op(
+        self, storage: EventLogStorage, instance: DagsterInstance
+    ):
+        @op
+        def yield_asset_check_evaluation():
+            yield AssetCheckEvaluation(
+                asset_key=AssetKey(["my_asset"]),
+                check_name="my_check",
+                passed=True,
+                metadata={},
+            )
+            yield Output(1)
+
+        @job
+        def yield_asset_check_evaluation_job():
+            yield_asset_check_evaluation()
+
+        result = yield_asset_check_evaluation_job.execute_in_process(instance=instance)
+        run_id = result.run_id
+
+        check_key = AssetCheckKey(asset_key=AssetKey(["my_asset"]), name="my_check")
+
+        check_summary_record = storage.get_asset_check_summary_records([check_key])[check_key]
+        check_execution_record = check_summary_record.last_check_execution_record
+
+        assert check_execution_record
+        assert check_execution_record.status == AssetCheckExecutionRecordStatus.SUCCEEDED
+        assert check_execution_record.run_id == run_id
+        assert check_execution_record.event
+        assert (
+            check_execution_record.event.dagster_event_type
+            == DagsterEventType.ASSET_CHECK_EVALUATION
         )
 
     def test_external_asset_event(

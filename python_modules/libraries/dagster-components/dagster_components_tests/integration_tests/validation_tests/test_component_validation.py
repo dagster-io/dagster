@@ -10,7 +10,9 @@ from dagster_components.utils import ensure_dagster_components_tests_import
 from pydantic import ValidationError
 from yaml.scanner import ScannerError
 
-from dagster_components_tests.integration_tests.component_loader import load_test_component_defs
+from dagster_components_tests.integration_tests.component_loader import (
+    sync_load_test_component_defs,
+)
 
 ensure_dagster_components_tests_import()
 
@@ -61,7 +63,7 @@ def test_validation_messages(test_case: ComponentValidationTestCase) -> None:
     """
     if test_case.should_error:
         with pytest.raises((ValidationError, ScannerError, ResolutionException)) as e:
-            load_test_component_defs(
+            sync_load_test_component_defs(
                 str(test_case.component_path),
                 test_case.component_type_filepath,
             )
@@ -69,7 +71,7 @@ def test_validation_messages(test_case: ComponentValidationTestCase) -> None:
         assert test_case.validate_error_msg
         test_case.validate_error_msg(str(e.value))
     else:
-        load_test_component_defs(
+        sync_load_test_component_defs(
             str(test_case.component_path),
             test_case.component_type_filepath,
         )
