@@ -42,4 +42,4 @@ regenerate_cli_snippets_and_test_debug:
 	cd ../examples/docs_beta_snippets && rm -rf /tmp/cli_snippets && mkdir -p /tmp/cli_snippets && (DAGSTER_CLI_SNIPPET_WORKING_DIR=/tmp/cli_snippets tox -e docs_snapshot_update && DAGSTER_CLI_SNIPPET_WORKING_DIR=/tmp/cli_snippets  tox -e docs_snapshot_test && echo "\nSnippets regenerated and tested!") || (echo "Snippet regeneration failed. Please check the logs for more information. Working directory: /tmp/cli_snippets" && exit 1)
 
 test_cli_snippets_simulate_bk:
-	docker run --platform linux/amd64 --rm -it  -v "$(DAGSTER_GIT_REPO_DIR):/dagster" --entrypoint /bin/sh dagster/buildkite-test:py3.9-2025-01-31T181043 -c 'cd /dagster/examples/docs_beta_snippets && tox -e docs_snapshot_test -- --pdb'
+	docker run --platform linux/amd64 --rm -it  -v "$(DAGSTER_GIT_REPO_DIR):/dagster" --entrypoint /bin/sh 968703565975.dkr.ecr.us-west-2.amazonaws.com/buildkite-test:py3.9-2025-01-31T181043 -c 'cd /dagster/examples/docs_beta_snippets && tox -e docs_snapshot_test -- --pdb'
