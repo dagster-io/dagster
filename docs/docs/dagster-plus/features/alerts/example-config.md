@@ -3,6 +3,8 @@ title: 'Example alert policy configuration'
 sidebar_position: 400
 ---
 
+{/* To update or regenerate the yaml code snippets in this doc, run `python ./examples/docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/alerts/generate_alerts_doc_code_snippets.py` */}
+
 If you prefer to manage your alerts through configuration files instead of the UI, you can create a YAML file using the following snippets and adjust as needed. To sync the file to your Dagster+ deployment, run:
 
 ```bash
