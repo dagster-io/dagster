@@ -2,6 +2,7 @@ import logging
 import time
 from collections.abc import Mapping, Sequence
 from typing import Any, Optional
+import os
 
 import requests
 from dagster import Failure, MetadataValue, get_dagster_logger
@@ -13,7 +14,9 @@ from requests.exceptions import RequestException
 
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun
 
-LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
+DAGSTER_DBT_CLOUD_LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = int(
+    os.getenv("DAGSTER_DBT_CLOUD_LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT", "100")
+)
 DEFAULT_POLL_INTERVAL = 1
 DEFAULT_POLL_TIMEOUT = 60
 
@@ -168,12 +171,12 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 "account_id": self.account_id,
                 "environment_id": environment_id,
                 "project_id": project_id,
-                "limit": LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT,
+                "limit": DAGSTER_DBT_CLOUD_LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT,
                 "offset": len(results),
             },
         ):
             results.extend(jobs)
-            if len(jobs) < LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT:
+            if len(jobs) < DAGSTER_DBT_CLOUD_LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT:
                 break
         return results
 
