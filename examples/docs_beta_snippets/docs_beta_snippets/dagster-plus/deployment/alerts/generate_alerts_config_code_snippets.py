@@ -1,6 +1,6 @@
-# This script is used to generate content in `alerts.md`. It creates and formats the cross-product
+# This script is used to generate docs snippets referenced in `example-config.md`. It creates and formats the cross-product
 # of all alert types and notification services. After adding a new alert type or service, just run
-# `python generate_alerts_doc.py` and the corresponding markdown file will be updated.
+# `python generate_alerts_config_code_snippets.py` and the corresponding YAML files will be created or updated.
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, Optional
