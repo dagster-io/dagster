@@ -25,12 +25,6 @@ To send alert notifications through a channel other than email, you will need to
 6. Choose a notification channel for your alert and click **Continue**.
 7. Review and save your alert and click **Save alert**.
 
-:::tip Setting a credit budget alert on a Hybrid deployment
-
-To set a credit budget alert on a Hybrid deployment, select the "Insights metric" policy, then select "Dagster credits" from the Events dropdown.
-
-:::
-
 ## Using the CLI
 
 1. Create an alert policy configuration file. For examples, see the [example configuration reference](/dagster-plus/features/alerts/example-config).
