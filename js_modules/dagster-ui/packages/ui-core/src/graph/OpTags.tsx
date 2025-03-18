@@ -229,6 +229,7 @@ export type KnownTagType =
   | 'fivetran'
   | 'db2'
   | 'dbt'
+  | 'dbtcloud'
   | 'slack'
   | 'pytorch'
   | 'pyspark'
@@ -479,6 +480,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   dbt: {
     icon: dbt,
     content: 'dbt',
+  },
+  dbtcloud: {
+    icon: dbt,
+    content: 'dbt Cloud',
   },
   slack: {
     icon: slack,
