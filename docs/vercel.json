@@ -1913,15 +1913,15 @@
     },
     {
       "source": "/_modules/dagster_aws/ecs/executor",
-      "destination": "/api/python-api/libraries/dagster-aws#ecs"
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.ecs.ecs_executor"
     },
     {
       "source": "/_modules/dagster_aws/ecs/launcher",
-      "destination": "/api/python-api/libraries/dagster-aws#ecs"
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.ecs.EcsRunLauncher"
     },
     {
       "source": "/_modules/dagster_aws/pipes/clients/ecs",
-      "destination": "/api/python-api/libraries/dagster-aws#clients"
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.pipes.PipesECSClient"
     },
     {
       "source": "/_modules/dagster_aws/pipes/context_injectors",
@@ -1929,11 +1929,11 @@
     },
     {
       "source": "/_modules/dagster_aws/redshift/resources",
-      "destination": "/api/python-api/libraries/dagster-aws#redshift"
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.redshift.RedshiftClientResource"
     },
     {
       "source": "/_modules/dagster_aws/s3/compute_log_manager",
-      "destination": "/api/python-api/libraries/dagster-aws#s3"
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.s3.S3ComputeLogManager"
     },
     {
       "source": "/_modules/dagster_aws/s3/file_manager",
@@ -1949,7 +1949,7 @@
     },
     {
       "source": "/_modules/dagster_aws/secretsmanager/resources",
-      "destination": "/api/python-api/libraries/dagster-aws#secretsmanager"
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.secretsmanager.SecretsManagerResource"
     },
     {
       "source": "/_modules/dagster_azure/adls2/io_manager",
@@ -1961,23 +1961,23 @@
     },
     {
       "source": "/_modules/dagster_azure/blob/compute_log_manager",
-      "destination": "/api/python-api/libraries/dagster-azure"
+      "destination": "/api/python-api/libraries/dagster-azure#dagster_azure.blob.AzureBlobComputeLogManager"
     },
     {
       "source": "/_modules/dagster_celery_docker/executor",
-      "destination": "/api/python-api/libraries/dagster-celery-docker"
+      "destination": "/api/python-api/libraries/dagster-celery-docker#dagster_celery_docker.celery_docker_executor"
     },
     {
       "source": "/_modules/dagster_celery_k8s/executor",
-      "destination": "/api/python-api/libraries/dagster-celery-k8s"
+      "destination": "/api/python-api/libraries/dagster-celery-k8s#dagster_celery_k8s.celery_k8s_job_executor"
     },
     {
       "source": "/_modules/dagster_celery_k8s/launcher",
-      "destination": "/api/python-api/libraries/dagster-celery-k8s"
+      "destination": "/api/python-api/libraries/dagster-celery-k8s#dagster_celery_k8s.CeleryK8sRunLauncher"
     },
     {
       "source": "/_modules/dagster_celery/executor",
-      "destination": "/api/python-api/libraries/dagster-celery"
+      "destination": "/api/python-api/libraries/dagster-celery#dagster_celery.celery_executor"
     },
     {
       "source": "/_modules/dagster_databricks/databricks",
@@ -1989,11 +1989,11 @@
     },
     {
       "source": "/_modules/dagster_databricks/pipes",
-      "destination": ""
+      "destination": "/api/python-api/libraries/dagster-databricks#pipes"
     },
     {
       "source": "/_modules/dagster_databricks/resources",
-      "destination": "/api/python-api/libraries/dagster-databricks#pipes"
+      "destination": "api/python-api/libraries/dagster-databricks#resources"
     },
     {
       "source": "/_modules/dagster_datahub/resources",
@@ -2005,7 +2005,7 @@
     },
     {
       "source": "/_modules/dagster_dbt/asset_utils",
-      "destination": "/api/python-api/libraries/dagster-dbt"
+      "destination": "/api/python-api/libraries/dagster-dbt#utils"
     },
     {
       "source": "/_modules/dagster_dbt/cloud/asset_defs",
@@ -2021,15 +2021,15 @@
     },
     {
       "source": "/_modules/dagster_dbt/core/dbt_cli_invocation",
-      "destination": "/api/python-api/libraries/dagster-dbt#cli-resource"
+      "destination": "/api/python-api/libraries/dagster-dbt#dagster_dbt.DbtCliInvocation"
     },
     {
       "source": "/_modules/dagster_dbt/core/dbt_event_iterator",
-      "destination": "/api/python-api/libraries/dagster-dbt#dbt-core"
+      "destination": "/api/python-api/libraries/dagster-dbt#dagster_dbt.core.dbt_cli_invocation.DbtEventIterator"
     },
     {
       "source": "/_modules/dagster_dbt/core/resource",
-      "destination": "/api/python-api/libraries/dagster-dbt#resources-dbt-core"
+      "destination": "/api/python-api/libraries/dagster-dbt#dagster_dbt.DbtCliResource"
     },
     {
       "source": "/_modules/dagster_dbt/dagster_dbt_translator",
@@ -2045,31 +2045,31 @@
     },
     {
       "source": "/_modules/dagster_dbt/errors",
-      "destination": "/api/python-api/libraries/dagster-dbt#errors"
+      "destination": "/api/python-api/libraries/dagster-dbt#dagster_dbt.DagsterDbtError"
     },
     {
       "source": "/_modules/dagster_dbt/freshness_builder",
-      "destination": "/api/python-api/libraries/dagster-dbt"
+      "destination": "/api/python-api/libraries/dagster-dbt#dagster_dbt.build_freshness_checks_from_dbt_assets"
     },
     {
       "source": "/_modules/dagster_deltalake/io_manager",
-      "destination": "/api/python-api/libraries/dagster-deltalake"
+      "destination": "/api/python-api/libraries/dagster-deltalake#dagster_deltalake.DeltaLakeIOManager"
     },
     {
       "source": "/_modules/dagster_docker/docker_executor",
-      "destination": "/api/python-api/libraries/dagster-docker"
+      "destination": "/api/python-api/libraries/dagster-docker#dagster_docker.docker_executor"
     },
     {
       "source": "/_modules/dagster_docker/docker_run_launcher",
-      "destination": "/api/python-api/libraries/dagster-docker"
+      "destination": "/api/python-api/libraries/dagster-docker#dagster_docker.DockerRunLauncher"
     },
     {
       "source": "/_modules/dagster_docker/ops/docker_container_op",
-      "destination": "/api/python-api/libraries/dagster-docker#ops"
+      "destination": "/api/python-api/libraries/dagster-docker#dagster_docker.docker_container_op"
     },
     {
       "source": "/_modules/dagster_docker/pipes",
-      "destination": "/api/python-api/libraries/dagster-docker#pipes"
+      "destination": "/api/python-api/libraries/dagster-docker#dagster_docker.PipesDockerClient"
     },
     {
       "source": "/_modules/dagster_duckdb_pandas/duckdb_pandas_type_handler",
