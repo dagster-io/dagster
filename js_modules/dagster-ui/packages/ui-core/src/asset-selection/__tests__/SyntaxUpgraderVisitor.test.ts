@@ -9,5 +9,11 @@ describe('upgradeSyntax', () => {
     expect(upgradeSyntax('value1 value2', 'key')).toBe('key:"*value1*"  or key:"*value2*"');
     expect(upgradeSyntax('value1 or value2', 'key')).toBe('key:"*value1*" or key:"*value2*"');
     expect(upgradeSyntax('value1, value2', 'key')).toBe('key:"*value1*" or key:"*value2*"');
+    expect(upgradeSyntax('key:value1 or key:value2  value2', 'key')).toBe(
+      'key:value1 or key:value2   or key:"*value2*"',
+    );
+    expect(upgradeSyntax('value1 value2 key:value3', 'key')).toBe(
+      'key:"*value1*"  or key:"*value2*"  or key:value3',
+    );
   });
 });
