@@ -998,7 +998,7 @@ class SqlEventLogStorage(EventLogStorage):
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> EventRecordsResult:
-        return EventRecordsResult(records=[], cursor=cursor, has_more=False)
+        return EventRecordsResult(records=[], cursor=cursor or "", has_more=False)
 
     def fetch_observations(
         self,
