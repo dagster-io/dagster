@@ -1,6 +1,6 @@
 import {createGlobalStyle} from 'styled-components';
 
-import {darktNoRedGreenThemeColors} from './darkNoRedGreenThemeColors';
+import {darkNoRedGreenThemeColors} from './darkNoRedGreenThemeColors';
 import {darkThemeColors} from './darkThemeColors';
 import {lightNoRedGreenThemeColors} from './lightNoRedGreenThemeColors';
 import {lightThemeColors} from './lightThemeColors';
@@ -25,7 +25,7 @@ const ThemeRoot = createGlobalStyle`
     }
 
     .themeSystemNoRedGreen {
-      ${darktNoRedGreenThemeColors}
+      ${darkNoRedGreenThemeColors}
     }
   }
 
@@ -41,8 +41,8 @@ const ThemeRoot = createGlobalStyle`
     ${darkThemeColors}
   }
 
-  .darktNoRedGreenThemeColors {
-    ${darktNoRedGreenThemeColors}
+  .themeDarkNoRedGreen {
+    ${darkNoRedGreenThemeColors}
   }
 `;
 
