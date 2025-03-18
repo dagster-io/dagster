@@ -1553,12 +1553,15 @@ class DagsterEvent(
         job_name: str,
         step_key: Optional[str],
         asset_failed_to_materialize: "AssetFailedToMaterialize",
+        error: Optional[SerializableErrorInfo] = None,
     ) -> "DagsterEvent":
         return DagsterEvent(
             event_type_value=DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value,
             job_name=job_name,
             message=f"Asset {asset_failed_to_materialize.asset_key.to_string()} failed to materialize",
-            event_specific_data=AssetFailedToMaterializeData(asset_failed_to_materialize),
+            event_specific_data=AssetFailedToMaterializeData(
+                asset_failed_to_materialize, error=error
+            ),
             step_key=step_key,
         )
 
