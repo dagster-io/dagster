@@ -32,7 +32,12 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
 )
-from dagster._core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
+from dagster._core.definitions.events import (
+    AssetFailedToMaterialize,
+    AssetFailedToMaterializeReason,
+    AssetLineageInfo,
+    ObjectStoreOperationType,
+)
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataValue,
@@ -1547,13 +1552,13 @@ class DagsterEvent(
     def build_asset_failed_to_materialize_event(
         job_name: str,
         step_key: Optional[str],
-        asset_failed_to_materialize_data: "AssetFailedToMaterializeData",
+        asset_failed_to_materialize: "AssetFailedToMaterialize",
     ) -> "DagsterEvent":
         return DagsterEvent(
             event_type_value=DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value,
             job_name=job_name,
-            message=f"Asset {asset_failed_to_materialize_data.asset_key.to_string()} failed to materialize",
-            event_specific_data=asset_failed_to_materialize_data,
+            message=f"Asset {asset_failed_to_materialize.asset_key.to_string()} failed to materialize",
+            event_specific_data=AssetFailedToMaterializeData(asset_failed_to_materialize),
             step_key=step_key,
         )
 
@@ -1588,63 +1593,39 @@ class AssetObservationData(
 
 
 @whitelist_for_serdes
-class AssetFailedToMaterializeReason(Enum):
-    COMPUTE_FAILED = "COMPUTE_FAILED"  # The step to compute the asset failed
-    UPSTREAM_COMPUTE_FAILED = (
-        "UPSTREAM_COMPUTE_FAILED"  # An upstream step failed, so the step for the asset was not run
-    )
-    SKIPPED_OPTIONAL = "SKIPPED_OPTIONAL"  # The asset is optional and was not materialized
-    UPSTREAM_SKIPPED = "UPSTREAM_SKIPPED"  # An upstream asset is optional and was not materialized, so the step for the asset was not run
-    USER_TERMINATION = "USER_TERMINATION"  # A user took an action to terminate the run
-    UNEXPECTED_TERMINATION = (
-        "UNEXPECTED_TERMINATION"  # An external event resulted in the run being terminated
-    )
-    UNKNOWN = "UNKNOWN"
-
-
-# The asset can fail to materialize in two ways, an unexpected/unintentional failure that should update
-# the global state of the asset to failed, and one that indicates that the asset not materializing
-# is expected (like an optional asset, user canceled the run)
-MATERIALIZATION_ATTEMPT_FAILED_TYPES = [
-    AssetFailedToMaterializeReason.COMPUTE_FAILED,
-    AssetFailedToMaterializeReason.UPSTREAM_COMPUTE_FAILED,
-    AssetFailedToMaterializeReason.UNEXPECTED_TERMINATION,
-    AssetFailedToMaterializeReason.UNKNOWN,
-]
-
-MATERIALIZATION_ATTEMPT_SKIPPED_TYPES = [
-    AssetFailedToMaterializeReason.SKIPPED_OPTIONAL,
-    AssetFailedToMaterializeReason.UPSTREAM_SKIPPED,
-    AssetFailedToMaterializeReason.USER_TERMINATION,
-]
-
-
-@whitelist_for_serdes
 class AssetFailedToMaterializeData(
     NamedTuple(
         "AssetFailedToMaterializeData",
         [
-            ("asset_key", AssetKey),
-            ("partition", Optional[str]),
-            ("reason", AssetFailedToMaterializeReason),
+            ("asset_failed_to_materialize", AssetFailedToMaterialize),
             ("error", Optional[SerializableErrorInfo]),
         ],
     )
 ):
     def __new__(
         cls,
-        asset_key: AssetKey,
-        partition: Optional[str],
-        reason: AssetFailedToMaterializeReason,
+        asset_failed_to_materialize: AssetFailedToMaterialize,
         error: Optional[SerializableErrorInfo] = None,
     ):
         return super().__new__(
             cls,
-            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
-            partition=check.opt_str_param(partition, "partition"),
-            reason=check.inst_param(reason, "reason", AssetFailedToMaterializeReason),
+            asset_failed_to_materialize=check.inst_param(
+                asset_failed_to_materialize, "asset_failed_to_materialize", AssetFailedToMaterialize
+            ),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
+
+    @property
+    def asset_key(self) -> AssetKey:
+        return self.asset_failed_to_materialize.asset_key
+
+    @property
+    def partition(self) -> Optional[str]:
+        return self.asset_failed_to_materialize.partition
+
+    @property
+    def reason(self) -> AssetFailedToMaterializeReason:
+        return self.asset_failed_to_materialize.reason
 
 
 @whitelist_for_serdes
