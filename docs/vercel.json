@@ -1912,7 +1912,7 @@
       "destination": "/api/python-api/libraries/dagster-airlift#in-airflow-dagster_airliftin_airflow"
     },
     {
-      "source": "/_modules/dagster_aws/ecs/executor/",
+      "source": "/_modules/dagster_aws/ecs/executor",
       "destination": "/api/python-api/libraries/dagster-aws#ecs"
     },
     {
