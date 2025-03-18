@@ -1,10 +1,10 @@
-from dagster._utils.source_position import (
+from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils.source_position import (
     HasSourcePositionAndKeyPath,
     KeyPath,
     SourcePositionTree,
     populate_source_position_and_key_paths,
 )
-from dagster._utils.yaml_utils import parse_yaml_with_source_positions
 
 
 def test_parse_yaml_with_source_positions() -> None:

@@ -6,13 +6,13 @@ from glob import glob
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, cast
 
 import yaml
+from dagster_shared.yaml_utils import merge_yaml_strings, merge_yamls
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.utils import is_valid_email
 from dagster._utils.warnings import deprecation_warning, disable_dagster_warnings
-from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 DEFAULT_OUTPUT = "result"
 DEFAULT_GROUP_NAME = "default"  # asset group_name used when none is provided

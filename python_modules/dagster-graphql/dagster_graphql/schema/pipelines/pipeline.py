@@ -23,7 +23,7 @@ from dagster._core.storage.dagster_run import (
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, RUN_METRIC_TAGS, TagType, get_tag_type
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.tags import get_boolean_tag_value
-from dagster._utils.yaml_utils import dump_run_config_yaml
+from dagster_shared.yaml_utils import dump_run_config_yaml
 
 from dagster_graphql.implementation.events import from_event_record, iterate_metadata_entries
 from dagster_graphql.implementation.fetch_asset_checks import get_asset_checks_for_run_id

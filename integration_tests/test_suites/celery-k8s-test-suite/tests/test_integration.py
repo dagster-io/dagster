@@ -9,7 +9,6 @@ from dagster import DagsterEventType
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import merge_yamls
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
 from dagster_k8s_test_infra.integration_utils import (
     can_terminate_run_over_graphql,
@@ -17,6 +16,7 @@ from dagster_k8s_test_infra.integration_utils import (
     launch_run_over_graphql,
     terminate_run_over_graphql,
 )
+from dagster_shared.yaml_utils import merge_yamls
 from dagster_test.test_project import get_test_project_environments_path
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None

@@ -37,9 +37,9 @@ from dagster._core.execution.plan.objects import StepSuccessData
 from dagster._core.test_utils import nesting_graph, poll_for_step_start
 from dagster._utils import segfault
 from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import merge_yamls
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
+from dagster_shared.yaml_utils import merge_yamls
 
 IS_BUILDKITE = bool(os.getenv("BUILDKITE"))
 
