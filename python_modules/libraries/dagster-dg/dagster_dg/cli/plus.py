@@ -7,7 +7,7 @@ from dagster_shared.plus.login_server import start_login_server
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 
 
-@click.group(name="plus", cls=DgClickGroup)
+@click.group(name="plus", cls=DgClickGroup, hidden=True)
 def plus_group():
     """Commands for interacting with Dagster Plus."""
 

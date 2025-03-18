@@ -39,7 +39,6 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
 │            workspace.                                                                  │
 │ launch     Launch a Dagster run.                                                       │
 │ list       Commands for listing Dagster entities.                                      │
-│ plus       Commands for interacting with Dagster Plus.                                 │
 │ scaffold   Commands for scaffolding Dagster code.                                      │
 │ utils      Assorted utility commands.                                                  │
 ╰────────────────────────────────────────────────────────────────────────────────────────╯
