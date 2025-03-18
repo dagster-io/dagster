@@ -37,7 +37,6 @@ from dagster._core.telemetry import (
     TELEMETRY_STR,
     UPDATE_REPO_STATS,
     cleanup_telemetry_logger,
-    get_or_create_dir_from_dagster_home,
     get_or_set_instance_id,
     get_stats_from_remote_repo,
     hash_name,
@@ -47,6 +46,7 @@ from dagster._core.telemetry import (
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster._utils import file_relative_path, pushd, script_relative_path
+from dagster_shared.telemetry import get_or_create_dir_from_dagster_home
 from dagster_test.utils.data_factory import remote_repository
 
 EXPECTED_KEYS = set(
