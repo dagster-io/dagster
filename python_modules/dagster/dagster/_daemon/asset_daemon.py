@@ -2,6 +2,7 @@ import base64
 import dataclasses
 import datetime
 import logging
+import os
 import sys
 import threading
 import zlib
@@ -963,6 +964,13 @@ class AssetDaemon(DagsterDaemon):
                 evaluations_by_key = {}
         else:
             sensor_tags = {SENSOR_NAME_TAG: sensor.name, **sensor.run_tags} if sensor else {}
+
+            if os.getenv("SKIP_AUTO_MATERIALIZE_ASSET_KEYS"):
+                skip_keys = os.environ["SKIP_AUTO_MATERIALIZE_ASSET_KEYS"].split(",")
+                skip_keys = {AssetKey.from_user_string(key) for key in skip_keys}
+                auto_materialize_entity_keys = {
+                    key for key in auto_materialize_entity_keys if key not in skip_keys
+                }
 
             # mold this into a shape AutomationTickEvaluationContext expects
             asset_selection = AssetSelection.keys(
