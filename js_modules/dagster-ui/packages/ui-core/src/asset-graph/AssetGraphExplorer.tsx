@@ -84,7 +84,7 @@ import {SyntaxError} from '../selection/CustomErrorListener';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {LoadingSpinner} from '../ui/Loading';
-
+import {isIframe} from '../util/isIframe';
 type AssetNode = AssetNodeForGraphQueryFragment;
 
 type Props = {
@@ -808,14 +808,16 @@ const AssetGraphExplorerWithData = ({
                     <CreateCatalogViewButton />
                   ) : null}
                   <AssetLiveDataRefreshButton />
-                  <LaunchAssetExecutionButton
-                    preferredJobName={explorerPath.pipelineName}
-                    scope={
-                      selectedDefinitions.length
-                        ? {selected: selectedDefinitions}
-                        : {all: allDefinitionsForMaterialize}
-                    }
-                  />
+                  {isIframe() ? null : (
+                    <LaunchAssetExecutionButton
+                      preferredJobName={explorerPath.pipelineName}
+                      scope={
+                        selectedDefinitions.length
+                          ? {selected: selectedDefinitions}
+                          : {all: allDefinitionsForMaterialize}
+                      }
+                    />
+                  )}
                 </Box>
                 {featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : filterBar}
                 <IndeterminateLoadingBar
