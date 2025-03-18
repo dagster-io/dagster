@@ -2,8 +2,9 @@ from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
 import graphene
-from dagster._core.definitions import AssetKey, ExpectationResult
-from dagster._core.events import AssetFailedToMaterializeReason, AssetLineageInfo, DagsterEventType
+from dagster._core.definitions import ExpectationResult
+from dagster._core.definitions.events import AssetFailedToMaterializeReason
+from dagster._core.events import AssetLineageInfo, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.objects import ErrorSource
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
@@ -421,22 +422,20 @@ class GrapheneFailedToMaterializeEvent(graphene.ObjectType, AssetEventMixin):
 
     def __init__(self, event: EventLogEntry):
         dagster_event = check.not_none(event.dagster_event)
-        self.failed_data = dagster_event.asset_failed_to_materialize_data
+        self.failed_materialization = (
+            dagster_event.asset_failed_to_materialize_data.asset_failed_to_materialize
+        )
         super().__init__(
-            **construct_basic_params(event),
-            **{
-                "label": " ".join(check.inst(dagster_event.asset_key, AssetKey).path),
-                "description": "Failed to materialize",
-            },
+            _construct_asset_event_metadata_params(event, self.failed_materialization),
         )
         AssetEventMixin.__init__(
             self,
             event=event,
-            metadata=self.failed_data,
+            metadata=self.failed_materialization,
         )
 
     def resolve_failedToMaterializeReason(self, _graphene_info: ResolveInfo):
-        return self.failed_data.reason
+        return self.failed_materialization.reason
 
 
 class GrapheneAssetMaterializationEventType(graphene.Union):
