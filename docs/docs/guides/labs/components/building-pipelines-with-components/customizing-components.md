@@ -3,11 +3,9 @@ title: 'Customizing components'
 sidebar_position: 400
 ---
 
-:::info
+import Preview from '../../../../partials/\_Preview.md';
 
-This feature is still in development and might change in patch releases. It’s not production ready, and the documentation may also evolve. Stay tuned for updates.
-
-:::
+<Preview />
 
 You can customize the behavior of a component beyond what is available in the `component.yaml` file.
 

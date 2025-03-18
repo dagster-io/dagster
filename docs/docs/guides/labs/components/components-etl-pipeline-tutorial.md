@@ -3,6 +3,10 @@ title: 'Components ETL pipeline tutorial'
 sidebar_position: 10
 ---
 
+import Preview from '../../../partials/\_Preview.md';
+
+<Preview />
+
 ## Setup
 
 ### 1. Install project dependencies
@@ -216,4 +220,4 @@ Next, update the dbt project so it executes after the Sling replication runs. Na
 
 ## Next steps
 
-To continue your journey with components, you can [add more components to your project](/guides/labs/components/building-pipelines-with-components/adding-components) or learn how to [manage multiple projects with components](/guides/labs/components/managing-multiple-projects).
+To continue your journey with components, you can [add more components to your project](/guides/labs/components/building-pipelines-with-components/adding-components) or learn how to [manage multiple components-ready projects with `dg`](/guides/labs/dg/multiple-projects).
