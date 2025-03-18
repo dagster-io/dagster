@@ -123,7 +123,7 @@ const config: Config = {
                 },
                 {
                   href: 'https://main.archive.dagster-docs.io/',
-                  label: 'Upcoming Release (Preview)',
+                  label: 'Upcoming release (Preview)',
                 },
               ],
             }
