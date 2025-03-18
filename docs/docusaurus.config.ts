@@ -121,6 +121,10 @@ const config: Config = {
                   href: 'https://legacy-docs.dagster.io',
                   label: '1.9.9 and earlier',
                 },
+                {
+                  href: 'https://main.archive.dagster-docs.io/',
+                  label: 'Upcoming Release (Preview)',
+                },
               ],
             }
           : {
@@ -173,11 +177,14 @@ const config: Config = {
     [
       '@docusaurus/preset-classic',
       {
+
+        // We perform deployments... <todo add notes>
+
         docs: {
           lastVersion: 'current',
           versions: {
             current: {
-              label: '1.10.5 (master)',
+              label: '1.10.4',
               path: '/',
             },
           },
