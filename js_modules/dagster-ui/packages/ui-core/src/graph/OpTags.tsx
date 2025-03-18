@@ -176,6 +176,7 @@ import stitch from './kindtag-images/tool-stitch-color.svg';
 import stripe from './kindtag-images/tool-stripe-color.svg';
 import superset from './kindtag-images/tool-superset-color.svg';
 import tableau from './kindtag-images/tool-tableau-color.svg';
+import talend from './kindtag-images/tool-talend-color.svg';
 import teams from './kindtag-images/tool-teams-color.svg';
 import tecton from './kindtag-images/tool-tecton-color.svg';
 import tensorflow from './kindtag-images/tool-tensorflow-color.svg';
@@ -374,6 +375,7 @@ export type KnownTagType =
   | 'awsstepfunction'
   | 'stepfunction'
   | 'thoughtspot'
+  | 'talend'
   | 'tiktok'
   | 'trino'
   | 'twilio'
@@ -599,6 +601,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   teams: {
     icon: teams,
     content: 'Teams',
+  },
+  talend: {
+    icon: talend,
+    content: 'Talend',
   },
   mlflow: {
     icon: mlflow,

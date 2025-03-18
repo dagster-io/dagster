@@ -2671,5 +2671,6 @@
       "source": "/_modules/dagstermill/io_managers",
       "destination": "/api/python-api/libraries/dagstermill#dagstermill.ConfigurableLocalOutputNotebookIOManager"
     }
-  ]
+  ],
+  "trailingSlash": false
 }

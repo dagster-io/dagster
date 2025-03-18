@@ -135,22 +135,6 @@ EDITABLE_DAGSTER_OPTIONS = {
                 " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
             ),
         ),
-        click.Option(
-            ["--use-editable-components-package-only"],
-            type=str,
-            flag_value="TRUE",
-            is_flag=False,
-            default=None,
-            hidden=True,
-            help=(
-                "Install the `dagster-components` dependency from a local Dagster clone. Accepts a path to local Dagster clone root or"
-                " may be set as a flag (no value is passed). If set as a flag,"
-                " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
-                " The reason this flag exists is to mimic the environment into which `dagster-components` and `dagster-dg` are released."
-                " They are released on a separate cadence from the main Dagster package, so in the wild they will always use the latest published Dagster version."
-                " `dagster-dg` unit tests should use environments constructed with this option."
-            ),
-        ),
     ]
 }
 
