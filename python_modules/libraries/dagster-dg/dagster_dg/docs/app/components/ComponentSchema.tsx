@@ -74,14 +74,7 @@ function Property({
   const firstExample = examples ? (Array.isArray(examples) ? examples[0] : examples) : null;
 
   return (
-    <div className={styles.propertyRoot}>
-      <button
-        disabled={!expandable}
-        className={clsx(styles.expandButton, expanded && styles.expanded)}
-        onClick={onToggleExpansion}
-      >
-        <Chevron />
-      </button>
+    <div className={clsx(styles.propertyRoot, expanded && styles.expanded)}>
       <div className={styles.propertyContainer}>
         <div className={styles.property}>
           <div className={styles.propertyNameAndTypes}>
@@ -89,8 +82,15 @@ function Property({
             {$ref ? <PropertyRef ref={$ref} defs={defs} /> : null}
             {type ? <PropertyType property={property} defs={defs} /> : null}
             {anyOf ? <PropertyAnyOf anyOf={anyOf} defs={defs} /> : null}
+            {required || true ? <div className={styles.required}>required</div> : null}
           </div>
-          {required ? <div className={styles.required}>required</div> : null}
+          <button
+            disabled={!expandable}
+            className={clsx(styles.expandButton, expanded && styles.expanded)}
+            onClick={onToggleExpansion}
+          >
+            <Chevron />
+          </button>
         </div>
         {description || defaultValue || examples ? (
           <div className={styles.propertyDescriptionContainer}>
