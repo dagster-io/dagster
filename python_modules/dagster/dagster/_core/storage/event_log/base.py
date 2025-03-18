@@ -61,7 +61,7 @@ class AssetEntry(
             ("last_run_id", Optional[str]),
             ("asset_details", Optional[AssetDetails]),
             ("cached_status", Optional["AssetStatusCacheValue"]),
-            # Below optional fields which can be used for more performant last observation
+            # Below are optional fields which can be used for more performant
             # queries if the underlying storage supports it
             ("last_observation_record", Optional[EventLogRecord]),
             ("last_planned_materialization_storage_id", Optional[int]),

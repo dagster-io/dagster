@@ -2127,7 +2127,7 @@ class DagsterInstance(DynamicPartitionsStore):
         cursor: Optional[str] = None,
         ascending: bool = False,
     ) -> "EventRecordsResult":
-        """Return a list of materialization records stored in the event log storage.
+        """Return a list of AssetFailedToMaterialization records stored in the event log storage.
 
         Args:
             records_filter (Union[AssetKey, AssetRecordsFilter]): the filter by which to
