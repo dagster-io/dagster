@@ -109,7 +109,6 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
         )
 
         # Create workspace.yaml file
-        _run_command("cd ../../")
         create_file(
             "workspace.yaml",
             format_multiline("""
