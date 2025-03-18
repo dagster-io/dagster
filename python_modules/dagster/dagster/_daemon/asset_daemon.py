@@ -2,6 +2,7 @@ import base64
 import dataclasses
 import datetime
 import logging
+import os
 import sys
 import threading
 import zlib
@@ -81,6 +82,7 @@ _PRE_SENSOR_ASSET_DAEMON_PAUSED_KEY = "ASSET_DAEMON_PAUSED"
 _MIGRATED_CURSOR_TO_SENSORS_KEY = "MIGRATED_CURSOR_TO_SENSORS"
 _MIGRATED_SENSOR_NAMES_KEY = "MIGRATED_SENSOR_NAMES_KEY"
 
+SKIP_DECLARATIVE_AUTOMATION_KEYS_ENV_VAR = "DAGSTER_SKIP_DECLARATIVE_AUTOMATION_KEYS"
 
 EVALUATIONS_TTL_DAYS = 30
 
@@ -964,6 +966,15 @@ class AssetDaemon(DagsterDaemon):
                 evaluations_by_key = {}
         else:
             sensor_tags = {SENSOR_NAME_TAG: sensor.name, **sensor.run_tags} if sensor else {}
+
+            skip_key_env_var = os.getenv(SKIP_DECLARATIVE_AUTOMATION_KEYS_ENV_VAR)
+            if skip_key_env_var:
+                skip_keys = skip_key_env_var.split(",")
+
+                skip_keys = {AssetKey.from_user_string(key) for key in skip_keys}
+                auto_materialize_entity_keys = {
+                    key for key in auto_materialize_entity_keys if key not in skip_keys
+                }
 
             # mold this into a shape AutomationTickEvaluationContext expects
             asset_selection = AssetSelection.keys(
