@@ -168,8 +168,13 @@ def build_mapped_defs() -> Definitions:
     )
 
 
+# We need to use a different name for this instance because the reconstruction metadata key is
+# derived from the instance name, and we don't want the reconstruction metadata from the mapped defs
+# instance to clobber the reconstruction metadata from this.
+UNMAPPED_SPECS_INSTANCE_NAME = "unmapped_specs_instance"
+
 unmapped_specs = load_airflow_dag_asset_specs(
-    airflow_instance=local_airflow_instance(),
+    airflow_instance=local_airflow_instance(UNMAPPED_SPECS_INSTANCE_NAME),
     dag_selector_fn=lambda dag: dag.dag_id.startswith("unmapped"),
 )
 

@@ -419,7 +419,7 @@ def test_execute_using_repository_data():
                 call_counts = instance.run_storage.get_cursor_values(
                     {"compute_cacheable_data_called", "get_definitions_called"}
                 )
-                assert call_counts.get("compute_cacheable_data_called") == "2"
+                assert call_counts.get("compute_cacheable_data_called") == "1"
 
                 assert call_counts.get("get_definitions_called") == "9"
 
