@@ -65,7 +65,8 @@ def dev(project):
     """Starts the Dagster development server."""
     if project:
         os.chdir(project) # Change to the specified project directory
-    os.system("dagster dev") # Start the Dagster development server
+    from dagster._core.ui import ui_server_controller
+    ui_server_controller.start_server()  # Start the Dagster development server directly
 
 def main():
     click_cli = click.CommandCollection(sources=[cli], help=CLI_HELP)
