@@ -17,6 +17,7 @@ from dagster_dg.context import DgContext
 from dagster_dg.error import DgError
 from dagster_dg.utils import DgClickCommand, pushd
 from dagster_dg.utils.cli import format_forwarded_option
+from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 T = TypeVar("T")
 
@@ -76,6 +77,7 @@ _SUBPROCESS_WAIT_TIMEOUT = 60
     help="Whether to schema-check component.yaml files for the project before starting the dev server.",
 )
 @dg_global_options
+@cli_telemetry_wrapper
 def dev_command(
     code_server_log_level: str,
     log_level: str,

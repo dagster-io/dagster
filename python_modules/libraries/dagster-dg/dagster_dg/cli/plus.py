@@ -7,6 +7,7 @@ from dagster_shared.plus.login_server import start_login_server
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 from dagster_dg.utils.plus.gql import FULL_DEPLOYMENTS_QUERY
 from dagster_dg.utils.plus.gql_client import DagsterCloudGraphQLClient
+from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 
 @click.group(name="plus", cls=DgClickGroup, hidden=True)
@@ -15,6 +16,7 @@ def plus_group():
 
 
 @plus_group.command(name="login", cls=DgClickCommand)
+@cli_telemetry_wrapper
 def login_command() -> None:
     """Login to Dagster Plus."""
     server, url = start_login_server()

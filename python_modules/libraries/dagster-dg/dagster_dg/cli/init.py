@@ -12,6 +12,7 @@ from dagster_dg.config import (
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import scaffold_project, scaffold_workspace
 from dagster_dg.utils import DgClickCommand, exit_with_error
+from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 # Workspace
 _DEFAULT_INIT_PROJECTS_DIR: Final = "projects"
@@ -30,6 +31,7 @@ _DEFAULT_INIT_PROJECTS_DIR: Final = "projects"
     type=str,
     help="Name of an initial project folder to create. Setting to an empty string will skip project scaffolding.",
 )
+@cli_telemetry_wrapper
 def init_command(
     use_editable_dagster: Optional[str],
     workspace_name: Optional[str],
