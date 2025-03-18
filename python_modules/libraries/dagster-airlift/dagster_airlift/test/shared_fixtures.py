@@ -18,6 +18,7 @@ from dagster._utils import process_is_alive
 
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
+from dagster_airlift.core.filter import AirflowFilter
 
 
 ####################################################################################################
@@ -35,7 +36,7 @@ def _airflow_is_ready(port) -> bool:
             ),
             name="test",
         )
-        return len(af_instance.list_dags()) > 0
+        return len(af_instance.list_dags(AirflowFilter())) > 0
     except:
         return False
 

@@ -26,6 +26,7 @@ from dagster._utils.test.definitions import (
 )
 from dagster_airlift.constants import TASK_MAPPING_METADATA_KEY
 from dagster_airlift.core import assets_with_task_mappings, build_defs_from_airflow_instance
+from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.load_defs import (
     enrich_airflow_mapped_assets,
     load_airflow_dag_asset_specs,
@@ -735,3 +736,28 @@ def test_translator() -> None:
     spec = next(iter(assets_lst[0].specs))
     assert spec.key == make_default_dag_asset_key("test_instance", "dag")
     assert spec.metadata["custom_key"] == "custom_value"
+
+
+def test_filtering() -> None:
+    """Test using the retrieval filter to include/exclude dags."""
+    instance = make_instance({"include_dag": ["task"], "exclude_dag": ["task"]})
+    dag_assets = load_airflow_dag_asset_specs(
+        airflow_instance=instance,
+        retrieval_filter=AirflowFilter(dag_id_ilike="include"),
+    )
+    assert len(dag_assets) == 1
+    # test tag based retrieval
+    instance = make_instance(
+        {"dag1": ["task"], "dag2": ["task"]},
+        dag_props={"dag1": {"tags": ["first"]}, "dag2": {"tags": ["first", "second"]}},
+    )
+    dag_assets = load_airflow_dag_asset_specs(
+        airflow_instance=instance,
+        retrieval_filter=AirflowFilter(airflow_tags=["first"]),
+    )
+    assert len(dag_assets) == 2
+    dag_assets = load_airflow_dag_asset_specs(
+        airflow_instance=instance,
+        retrieval_filter=AirflowFilter(airflow_tags=["first", "second"]),
+    )
+    assert len(dag_assets) == 1

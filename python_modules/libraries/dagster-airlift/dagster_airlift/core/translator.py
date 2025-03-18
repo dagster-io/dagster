@@ -8,11 +8,8 @@ if TYPE_CHECKING:
 
 class DagsterAirflowTranslator:
     def get_asset_spec(self, dag_info: "DagInfo") -> AssetSpec:
-        from dagster_airlift.core.serialization.defs_construction import (
-            dag_description,
-            make_default_dag_asset_key,
-            peered_dag_asset_metadata,
-        )
+        from dagster_airlift.core.dag_asset import dag_description, peered_dag_asset_metadata
+        from dagster_airlift.core.serialization.defs_construction import make_default_dag_asset_key
         from dagster_airlift.core.utils import airflow_kind_dict, dag_kind_dict
 
         return AssetSpec(
