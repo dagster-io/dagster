@@ -24,6 +24,10 @@ from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.definitions_load_context import (
+    DefinitionsLoadContext,
+    DefinitionsLoadType,
+)
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.errors import (
@@ -239,6 +243,13 @@ class LoadedRepositories:
         self._loadable_repository_symbols: list[LoadableRepositorySymbol] = []
 
         self._container_context = container_context
+
+        # Make sure we have a persistent load context before loading any repositories.
+        DefinitionsLoadContext.set(
+            DefinitionsLoadContext(
+                DefinitionsLoadType.INITIALIZATION,
+            )
+        )
 
         if not loadable_target_origin:
             # empty workspace
