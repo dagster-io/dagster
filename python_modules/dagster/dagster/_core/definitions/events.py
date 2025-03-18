@@ -305,6 +305,8 @@ class AssetFailedToMaterialize(EventWithMetadata, IHaveNew):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
+        reason: (AssetFailedToMaterializeReason): An enum indicating why the asset failed to
+            materialize. 
     """
 
     def __new__(
