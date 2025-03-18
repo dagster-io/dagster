@@ -26,7 +26,7 @@ from dagster_shared.telemetry import (
     TelemetrySettings,
     dagster_home_if_set,
     get_or_set_instance_id,
-    log_action as dagster_shared_log_action,
+    log_telemetry_action,
     write_telemetry_log_line,
 )
 from typing_extensions import ParamSpec
@@ -506,7 +506,7 @@ def log_action(
     elapsed_time: Optional[datetime.timedelta] = None,
     metadata: Optional[Mapping[str, str]] = None,
 ) -> None:
-    dagster_shared_log_action(
+    log_telemetry_action(
         lambda: _get_instance_telemetry_info(instance),
         action,
         client_time,

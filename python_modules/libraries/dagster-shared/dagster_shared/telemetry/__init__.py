@@ -202,7 +202,7 @@ class TelemetryEntry(
         )
 
 
-def log_action(
+def log_telemetry_action(
     get_telemetry_settings: Callable[[], TelemetrySettings],
     action: str,
     client_time: Optional[datetime.datetime] = None,
