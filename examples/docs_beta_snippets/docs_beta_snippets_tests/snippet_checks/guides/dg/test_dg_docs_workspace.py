@@ -90,7 +90,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
 
         # Scaffold new project
         run_command_and_snippet_output(
-            cmd="cd ../.. && dg scaffold project projects/project-2 --use-editable-dagster",
+            cmd="dg scaffold project projects/project-2 --use-editable-dagster",
             snippet_path=DG_SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffold-project.txt",
             update_snippets=update_snippets,
