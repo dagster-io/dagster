@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Generic, Optional, TypeVar
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, EntityKey, T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -61,6 +62,8 @@ class AutomationContext(Generic[T_EntityKey]):
     _cursor: Optional[AutomationConditionCursor]
     _legacy_context: Optional[LegacyRuleEvaluationContext]
 
+    _full_cursor: AssetDaemonCursor
+
     _root_log: logging.Logger
 
     @staticmethod
@@ -84,6 +87,7 @@ class AutomationContext(Generic[T_EntityKey]):
             if condition.has_rule_condition and isinstance(key, AssetKey)
             else None,
             _root_log=evaluator.logger,
+            _full_cursor=evaluator.cursor,
         )
 
     def for_child_condition(
@@ -103,14 +107,20 @@ class AutomationContext(Generic[T_EntityKey]):
             asset_graph_view=self.asset_graph_view,
             request_subsets_by_key=self.request_subsets_by_key,
             parent_context=self,
-            _cursor=self._cursor,
+            _cursor=self._full_cursor.get_previous_condition_cursor(candidate_subset.key),
             _legacy_context=self._legacy_context.for_child(
                 child_condition, condition_unqiue_id, candidate_subset
             )
             if self._legacy_context
             else None,
             _root_log=self._root_log,
+            _full_cursor=self._full_cursor,
         )
+
+    def print_debug(self, condition, tab_level: int = 0):
+        print(" " * tab_level + str(condition))  # noqa
+        for child in condition.children:
+            self.print_debug(child, tab_level + 2)
 
     async def evaluate_async(self) -> AutomationResult[T_EntityKey]:
         if inspect.iscoroutinefunction(self.condition.evaluate):
