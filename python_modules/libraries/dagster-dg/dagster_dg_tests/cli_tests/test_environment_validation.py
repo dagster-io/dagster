@@ -40,6 +40,7 @@ NO_REQUIRED_CONTEXT_COMMANDS = [
     CommandSpec(("scaffold", "asset"), "foo"),
     CommandSpec(("scaffold", "schedule"), "foo"),
     CommandSpec(("scaffold", "sensor"), "foo"),
+    CommandSpec(("plus", "login")),
 ]
 
 
