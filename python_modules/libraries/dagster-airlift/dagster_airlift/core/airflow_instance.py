@@ -12,6 +12,7 @@ from dagster._core.errors import DagsterError
 from dagster._record import record
 from dagster._time import get_current_datetime
 
+from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.serialization.serialized_data import DagInfo, TaskInfo
 
 TERMINAL_STATES = {"success", "failed", "canceled"}
@@ -79,13 +80,21 @@ class AirflowInstance:
     def get_api_url(self) -> str:
         return f"{self.auth_backend.get_webserver_url()}/api/v1"
 
-    def list_dags(self) -> list["DagInfo"]:
+    def list_dags(self, retrieval_filter: Optional[AirflowFilter] = None) -> list["DagInfo"]:
+        retrieval_filter = retrieval_filter or AirflowFilter()
         dag_responses = []
         webserver_url = self.auth_backend.get_webserver_url()
+
         while True:
+            params = retrieval_filter.augment_request_params(
+                {
+                    "limit": self.dag_list_limit,
+                    "offset": len(dag_responses),
+                }
+            )
             response = self.auth_backend.get_session().get(
                 f"{self.get_api_url()}/dags",
-                params={"limit": self.dag_list_limit, "offset": len(dag_responses)},
+                params=params,
             )
             if response.status_code == 200:
                 dags = response.json()
