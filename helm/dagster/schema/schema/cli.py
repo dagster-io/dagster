@@ -59,6 +59,13 @@ def apply():
             f.write(helm_values.schema_json(indent=4))
             f.write("\n")
 
+@cli.command()
+@click.option('--project', type=click.Path(), help='Path to the project directory')
+def dev(project):
+    """Starts the Dagster development server."""
+    if project:
+        os.chdir(project) # Change to the specified project directory
+    os.system("dagster dev") # Start the Dagster development server
 
 def main():
     click_cli = click.CommandCollection(sources=[cli], help=CLI_HELP)
