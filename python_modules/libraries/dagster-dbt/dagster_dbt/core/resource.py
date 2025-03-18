@@ -29,7 +29,7 @@ from dbt.config.utils import parse_cli_vars
 from dbt.flags import get_flags, set_from_args
 from dbt.version import __version__ as dbt_version
 from packaging import version
-from pydantic import Field, model_validator, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
