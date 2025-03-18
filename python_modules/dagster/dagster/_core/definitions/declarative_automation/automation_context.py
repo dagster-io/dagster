@@ -60,7 +60,7 @@ class AutomationContext(Generic[T_EntityKey]):
     parent_context: Optional["AutomationContext"]
 
     _cursor: Optional[AutomationConditionCursor]
-    _daemon_cursor: Optional[AssetDaemonCursor]
+    _full_cursor: AssetDaemonCursor
     _legacy_context: Optional[LegacyRuleEvaluationContext]
 
     _root_log: logging.Logger
@@ -82,7 +82,7 @@ class AutomationContext(Generic[T_EntityKey]):
             request_subsets_by_key=evaluator.request_subsets_by_key,
             parent_context=None,
             _cursor=evaluator.cursor.get_previous_condition_cursor(key),
-            _daemon_cursor=evaluator.cursor,
+            _full_cursor=evaluator.cursor,
             _legacy_context=LegacyRuleEvaluationContext.create(key, evaluator)
             if condition.has_rule_condition and isinstance(key, AssetKey)
             else None,
@@ -107,7 +107,7 @@ class AutomationContext(Generic[T_EntityKey]):
             request_subsets_by_key=self.request_subsets_by_key,
             parent_context=self,
             _cursor=self._cursor,
-            _daemon_cursor=self._daemon_cursor,
+            _full_cursor=self._full_cursor,
             _legacy_context=self._legacy_context.for_child(
                 child_condition, condition_unqiue_id, candidate_subset
             )
@@ -218,21 +218,6 @@ class AutomationContext(Generic[T_EntityKey]):
             "Cannot access legacy context unless evaluating a condition containing a RuleCondition.",
         )
 
-    def get_previous_requested_subset(
-        self, key: T_EntityKey
-    ) -> Optional[EntitySubset[T_EntityKey]]:
-        """Returns the requested subset for the previous evaluation. If the entity has never been
-        evaluated, returns None.
-        """
-        if self._daemon_cursor is None:
-            return None
-        cursor = self._daemon_cursor.get_previous_condition_cursor(key)
-        if cursor is None:
-            return None
-        return self.asset_graph_view.get_subset_from_serializable_subset(
-            cursor.previous_requested_subset
-        )
-
     @property
     def previous_candidate_subset(self) -> Optional[EntitySubset[T_EntityKey]]:
         """Returns the candidate subset for the previous evaluation. If this node has never been
@@ -247,6 +232,19 @@ class AutomationContext(Generic[T_EntityKey]):
                 if candidate_subset
                 else None
             )
+
+    def get_previous_requested_subset(
+        self, key: T_EntityKey
+    ) -> Optional[EntitySubset[T_EntityKey]]:
+        """Returns the requested subset for the previous evaluation. If the entity has never been
+        evaluated, returns None.
+        """
+        cursor = self._full_cursor.get_previous_condition_cursor(key)
+        if cursor is None:
+            return None
+        return self.asset_graph_view.get_subset_from_serializable_subset(
+            cursor.previous_requested_subset
+        )
 
     def get_empty_subset(self) -> EntitySubset[T_EntityKey]:
         """Returns an empty EntitySubset of the currently-evaluated key."""
