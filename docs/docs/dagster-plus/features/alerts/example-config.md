@@ -3,7 +3,7 @@ title: 'Example alert policy configuration'
 sidebar_position: 400
 ---
 
-You can add the following YAML snippets to your alert policy configuration file and adjust as needed. To sync the file to your Dagster+ deployment, run:
+If you prefer to manage your alerts through configuration files instead of the UI, you can create a YAML file using the following snippets and adjust as needed. To sync the file to your Dagster+ deployment, run:
 
 ```bash
 dagster-cloud deployment alert-policies sync -a /path/to/alert_policies.yaml

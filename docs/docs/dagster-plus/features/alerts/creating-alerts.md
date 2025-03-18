@@ -11,7 +11,7 @@ Alert policies are configured on a per-deployment basis. This means, for example
 
 :::note
 
-Before you can create alert policies, you will need to [configure an alert notification service](/dagster-plus/features/alerts/configuring-an-alert-notification-service).
+To send alert notifications through a channel other than email, you will need to [configure an alert notification service](/dagster-plus/features/alerts/configuring-an-alert-notification-service).
 
 :::
 
