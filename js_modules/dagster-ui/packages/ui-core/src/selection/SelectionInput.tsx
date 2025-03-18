@@ -238,10 +238,10 @@ export const SelectionAutoCompleteInput = ({
     if (cmInstance.current && currentValue !== noNewLineValue) {
       const instance = cmInstance.current;
       const cursor = instance.getCursor();
-      instance.setValue(noNewLineValue);
-      instance.setCursor(cursor);
       setCursorPosition(cursor.ch);
       requestAnimationFrame(() => {
+        instance.setValue(noNewLineValue);
+        instance.setCursor(cursor);
         // Reset selected index on value change
         setSelectedIndex({current: -1});
       });
