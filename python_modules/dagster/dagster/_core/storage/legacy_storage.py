@@ -493,6 +493,17 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             filters, limit, cursor, ascending
         )
 
+    def fetch_failed_materializations(
+        self,
+        records_filter: Union[AssetKey, "AssetRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        return self._storage.event_log_storage.fetch_failed_materializations(
+            records_filter, limit, cursor, ascending
+        )
+
     def fetch_observations(
         self,
         filters: Union[AssetKey, "AssetRecordsFilter"],

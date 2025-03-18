@@ -6637,7 +6637,7 @@ class TestEventLogStorage:
         else:
             assert len(all_failed_records_result.records) == 5
             assert all(
-                failed_record.asset_key == asset_key_1.to_string()
+                failed_record.asset_key == asset_key_1
                 for failed_record in all_failed_records_result.records
             )
             assert not all_failed_records_result.has_more
@@ -6647,7 +6647,7 @@ class TestEventLogStorage:
             )
             assert len(first_two_failed_records_result.records) == 2
             assert all(
-                failed_record.asset_key == asset_key_1.to_string()
+                failed_record.asset_key == asset_key_1
                 for failed_record in first_two_failed_records_result.records
             )
             assert first_two_failed_records_result.has_more
@@ -6658,14 +6658,16 @@ class TestEventLogStorage:
             )
             assert len(remaining_failed_records_result.records) == 3
             assert all(
-                failed_record.asset_key == asset_key_1.to_string()
+                failed_record.asset_key == asset_key_1
                 for failed_record in remaining_failed_records_result.records
             )
             assert not remaining_failed_records_result.has_more
 
-            assert set(first_two_failed_records_result.records) | set(
-                remaining_failed_records_result.records
-            ) == set(all_failed_records_result.records)
+            assert set(
+                record.storage_id for record in first_two_failed_records_result.records
+            ) | set(record.storage_id for record in remaining_failed_records_result.records) == set(
+                record.storage_id for record in all_failed_records_result.records
+            )
 
             failed_records_for_partitions = storage.fetch_failed_materializations(
                 records_filter=AssetRecordsFilter(
@@ -6675,6 +6677,6 @@ class TestEventLogStorage:
             )
             assert len(failed_records_for_partitions.records) == 2
             assert all(
-                failed_record.asset_key == asset_key_1.to_string()
+                failed_record.asset_key == asset_key_1
                 for failed_record in failed_records_for_partitions.records
             )
