@@ -422,6 +422,7 @@ export const SelectionAutoCompleteInput = ({
       >
         <InputDiv
           $isCommitted={innerValue === value}
+          $hasErrors={errors.length > 0}
           style={{
             display: 'grid',
             gridTemplateColumns: 'auto minmax(0, 1fr) auto',
@@ -460,7 +461,7 @@ export const SelectionAutoCompleteInput = ({
   );
 };
 
-export const InputDiv = styled.div<{$isCommitted: boolean}>`
+export const InputDiv = styled.div<{$isCommitted: boolean; $hasErrors: boolean}>`
   ${SelectionAutoCompleteInputCSS}
   ${({$isCommitted}) =>
     $isCommitted
@@ -468,4 +469,10 @@ export const InputDiv = styled.div<{$isCommitted: boolean}>`
       : `
       background: ${Colors.backgroundLight()}; 
       `}
+  ${({$hasErrors}) =>
+    $hasErrors
+      ? `
+      border: 1px solid ${Colors.accentRed()};
+      `
+      : ''}
 `;

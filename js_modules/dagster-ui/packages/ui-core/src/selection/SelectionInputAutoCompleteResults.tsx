@@ -71,13 +71,21 @@ export const SelectionInputAutoCompleteResults = React.memo(
                 return (
                   <Row key={key} $height={size} $start={start}>
                     <div ref={rowVirtualizer.measureElement} data-index={index}>
-                      <MenuItem
-                        key={key}
-                        text={result.jsx}
-                        active={index === selectedIndex}
-                        onClick={() => onSelect(result)}
-                        onMouseMove={() => setSelectedIndex({current: index})}
-                      />
+                      {'type' in result && result.type === 'no-match' ? (
+                        <Box
+                          flex={{direction: 'row', alignItems: 'center', gap: 4}}
+                          style={{padding: '6px 8px 6px 12px'}}
+                        >
+                          {result.jsx}
+                        </Box>
+                      ) : (
+                        <MenuItem
+                          text={result.jsx}
+                          active={index === selectedIndex}
+                          onClick={() => onSelect(result)}
+                          onMouseMove={() => setSelectedIndex({current: index})}
+                        />
+                      )}
                     </div>
                   </Row>
                 );
