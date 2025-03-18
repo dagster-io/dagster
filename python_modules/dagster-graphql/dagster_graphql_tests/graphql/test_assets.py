@@ -10,6 +10,7 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetSelection,
+    DagsterEvent,
     DagsterEventType,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
@@ -19,11 +20,18 @@ from dagster import (
     define_asset_job,
     repository,
 )
+from dagster._core.definitions.events import (
+    AssetFailedToMaterialize,
+    AssetFailedToMaterializeReason,
+)
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+from dagster._core.events import StepMaterializationData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
+from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._time import get_current_timestamp
 from dagster._utils import Counter, safe_tempfile_path, traced_counter
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -94,6 +102,36 @@ GET_ASSET_MATERIALIZATION_WITH_PARTITION = """
                     partition
                     label
                 }
+            }
+        }
+    }
+"""
+
+GET_ASSET_MATERIALIZATION_HISTORY = """
+    query AssetQuery($assetKey: AssetKeyInput!) {
+        assetOrError(assetKey: $assetKey) {
+            ... on Asset {
+            id
+            assetMaterializationHistory {
+                __typename
+                ... on FailedToMaterializeEvent {
+                    failedToMaterializeReason
+                    assetKey {
+                    path
+                    }
+                    runId
+                    timestamp
+                }
+                ... on MaterializationEvent {
+                    assetKey {
+                    path
+                    }
+                    runId
+                    timestamp
+                }
+            }
+            ... on AssetNotFoundError {
+                __typename
             }
         }
     }
@@ -2886,6 +2924,72 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             dependencies[0]["partitionMapping"]["description"]
             == "Maps a downstream partition to any upstream partition with an overlapping time window."
         )
+
+    def test_asset_materialization_history(self, graphql_context: WorkspaceRequestContext):
+        asset_key = AssetKey("asset_1")
+        num_events = 5
+        for i in range(num_events):
+            run_id_1 = make_new_run_id()
+            failure_event = EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=run_id_1,
+                timestamp=get_current_timestamp(),
+                dagster_event=DagsterEvent.build_asset_failed_to_materialize_event(
+                    job_name="the_job",
+                    step_key="the_step",
+                    asset_failed_to_materialize=AssetFailedToMaterialize(
+                        asset_key=asset_key,
+                        partition=None,
+                        reason=AssetFailedToMaterializeReason.COMPUTE_FAILED,
+                    ),
+                ),
+            )
+            graphql_context.instance.store_event(failure_event)
+            run_id_2 = make_new_run_id()
+            materialize_event = EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=run_id_2,
+                timestamp=get_current_timestamp(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_MATERIALIZATION.value,
+                    "the_job",
+                    event_specific_data=StepMaterializationData(
+                        AssetMaterialization(
+                            asset_key=asset_key,
+                            partition=None,
+                        )
+                    ),
+                ),
+            )
+            graphql_context.instance.store_event(materialize_event)
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_MATERIALIZATION_HISTORY,
+            variable_values={"assetKey": {"path": ["asset_1"]}},
+        )
+
+        assert result["data"]
+        assert result["data"]["assetOrError"]
+        assert len(result["data"]["assetOrError"]["assetMaterializationHistory"]) == 5
+        max_timestamp_seen = 0
+        num_failed_events = 0
+        num_materialize_events = 0
+        for event in result["data"]["assetOrError"]["assetMaterializationHistory"]:
+            if event["__typename"] == "FailedToMaterializeEvent":
+                num_failed_events += 1
+                assert event["failedToMaterializeReason"] == "COMPUTE_FAILED"
+            else:
+                num_materialize_events += 1
+            assert event["assetKey"]["path"] == ["asset_1"]
+            assert int(event["timestamp"]) >= max_timestamp_seen
+            max_timestamp_seen = int(event["timestamp"])
+
+        assert num_failed_events == num_materialize_events == num_events
+        assert len(result["data"]["assetOrError"]["assetMaterializations"]) == num_events
 
 
 # This is factored out of TestAssetAwareEventLog because there is a separate implementation for plus
