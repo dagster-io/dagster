@@ -177,9 +177,9 @@ const config: Config = {
     [
       '@docusaurus/preset-classic',
       {
-
-        // We perform deployments... <todo add notes>
-
+        // Release to `docs.dagster.io` are triggered on pushes to branches prefixed with
+        // `release-*`, therefore the most recent release should be labeled as the version in that
+        // branch (eg. `release-1.10.4`). Ultimately we will automate this process.
         docs: {
           lastVersion: 'current',
           versions: {
