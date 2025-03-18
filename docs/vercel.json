@@ -1937,11 +1937,11 @@
     },
     {
       "source": "/_modules/dagster_aws/s3/file_manager",
-      "destination": "/api/python-api/libraries/dagster-aws#file-manager"
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.s3.S3FileHandle"
     },
     {
       "source": "/_modules/dagster_aws/s3/io_manager",
-      "destination": "/api/python-api/libraries/dagster-aws#s3"
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.s3.S3PickleIOManager"
     },
     {
       "source": "/_modules/dagster_aws/s3/resources",
@@ -2073,27 +2073,27 @@
     },
     {
       "source": "/_modules/dagster_duckdb_pandas/duckdb_pandas_type_handler",
-      "destination": "/api/python-api/libraries/dagster-duckdb-pandas"
+      "destination": "/api/python-api/libraries/dagster-duckdb-pandas#dagster_duckdb_pandas.DuckDBPandasTypeHandler"
     },
     {
       "source": "/_modules/dagster_duckdb_pyspark/duckdb_pyspark_type_handler",
-      "destination": "/api/python-api/libraries/dagster-duckdb-pandas"
+      "destination": "/api/python-api/libraries/dagster-duckdb-pyspark#dagster_duckdb_pyspark.DuckDBPySparkTypeHandler"
     },
     {
-      "source": "/_modules/dagster_duckdb/io_manager",
+      "source": "/_modules/dagster_duckdb/io_manager#dagster_duckdb.DuckDBIOManager",
       "destination": "/api/python-api/libraries/dagster-duckdb"
     },
     {
       "source": "/_modules/dagster_duckdb/resource",
-      "destination": "/api/python-api/libraries/dagster-duckdb"
+      "destination": "/api/python-api/libraries/dagster-duckdb#dagster_duckdb.DuckDBResource"
     },
     {
       "source": "/_modules/dagster_embedded_elt/dlt/asset_decorator",
-      "destination": "/api/python-api/libraries/dagster-dlt#assets"
+      "destination": "/api/python-api/libraries/dagster-dlt#dagster_dlt.dlt_assets"
     },
     {
       "source": "/_modules/dagster_embedded_elt/dlt/resource",
-      "destination": "/api/python-api/libraries/dagster-dlt#resources"
+      "destination": "/api/python-api/libraries/dagster-dlt#dagster_dlt.DagsterDltResource"
     },
     {
       "source": "/_modules/dagster_embedded_elt/dlt/translator",
@@ -2101,7 +2101,7 @@
     },
     {
       "source": "/_modules/dagster_embedded_elt/sling/asset_decorator",
-      "destination": "/api/python-api/libraries/dagster-sling#assets"
+      "destination": "/api/python-api/libraries/dagster-sling#dagster_sling.sling_assets"
     },
     {
       "source": "/_modules/dagster_embedded_elt/sling/dagster_sling_translator",
@@ -2109,7 +2109,7 @@
     },
     {
       "source": "/_modules/dagster_embedded_elt/sling/resources",
-      "destination": "/api/python-api/libraries/dagster-sling#resources"
+      "destination": "/api/python-api/libraries/dagster-sling#dagster_sling.SlingResource"
     },
     {
       "source": "/_modules/dagster_fivetran/asset_defs",
@@ -2121,27 +2121,27 @@
     },
     {
       "source": "/_modules/dagster_gcp/bigquery/io_manager",
-      "destination": "/api/python-api/libraries/dagster-gcp#bigquery-io-manager"
+      "destination": "/api/python-api/libraries/dagster-gcp#dagster_gcp.BigQueryIOManager"
     },
     {
       "source": "/_modules/dagster_gcp/gcs/io_manager",
-      "destination": "/api/python-api/libraries/dagster-gcp#gcs-io-manager"
+      "destination": "/api/python-api/libraries/dagster-gcp#dagster_gcp.GCSPickleIOManager"
     },
     {
       "source": "/_modules/dagster_gcp/gcs/resources",
-      "destination": "/api/python-api/libraries/dagster-gcp#gcs-resource"
+      "destination": "/api/python-api/libraries/dagster-gcp#dagster_gcp.GCSResource"
     },
     {
       "source": "/_modules/dagster_gcp/gcs/sensor",
-      "destination": "/api/python-api/libraries/dagster-gcp#gcs-sensor"
+      "destination": "/api/python-api/libraries/dagster-gcp#dagster_gcp.gcs.sensor.get_gcs_keys"
     },
     {
       "source": "/_modules/dagster_github/resources",
-      "destination": "/api/python-api/libraries/dagster-github#resources"
+      "destination": "/api/python-api/libraries/dagster-github#dagster_github.resources.GithubResource"
     },
     {
       "source": "/_modules/dagster_graphql/client/client",
-      "destination": "/api/python-api/libraries/dagster-graphql#python-client"
+      "destination": "/api/python-api/libraries/dagster-graphql#dagster_graphql.DagsterGraphQLClient"
     },
     {
       "source": "/_modules/dagster_k8s/executor",
@@ -2157,7 +2157,7 @@
     },
     {
       "source": "/_modules/dagster_k8s/pipes",
-      "destination": "/api/python-api/libraries/dagster-k8s#pipes"
+      "destination": "/api/python-api/libraries/dagster-k8s#dagster_k8s.PipesK8sClient"
     },
     {
       "source": "/_modules/dagster_mlflow/resources",
@@ -2165,11 +2165,11 @@
     },
     {
       "source": "/_modules/dagster_msteams/hooks",
-      "destination": "/api/python-api/libraries/dagster-msteams"
+      "destination": "/api/python-api/libraries/dagster-msteams#sensors"
     },
     {
       "source": "/_modules/dagster_msteams/resources",
-      "destination": "/api/python-api/libraries/dagster-msteams#resource"
+      "destination": "/api/python-api/libraries/dagster-msteams#dagster_msteams.MSTeamsResource"
     },
     {
       "source": "/_modules/dagster_mysql/event_log/event_log",
@@ -2185,11 +2185,11 @@
     },
     {
       "source": "/_modules/dagster_pandas/data_frame",
-      "destination": "/api/python-api/libraries/dagster-pandas"
+      "destination": "/api/python-api/libraries/dagster-pandas#dagster_pandas.create_dagster_pandas_dataframe_type"
     },
     {
       "source": "/_modules/dagster_polars/io_managers/base",
-      "destination": "/api/python-api/libraries/dagster-polars"
+      "destination": "/api/python-api/libraries/dagster-polars#dagster_polars.BasePolarsUPathIOManager"
     },
     {
       "source": "/_modules/dagster_polars/io_managers/bigquery",
@@ -2225,7 +2225,7 @@
     },
     {
       "source": "/_modules/dagster_shell/ops",
-      "destination": "/api/python-api/"
+      "destination": "/api/python-api/pipes"
     },
     {
       "source": "/_modules/dagster_slack/hooks",
@@ -2233,19 +2233,19 @@
     },
     {
       "source": "/_modules/dagster_slack/resources",
-      "destination": "/api/python-api/libraries/dagster-slack#dagster_slack.SlackResource"
+      "destination": "/api/python-api/libraries/dagster-slack"
     },
     {
       "source": "/_modules/dagster_slack/sensors",
-      "destination": "/api/python-api/libraries/dagster-slack#dagster_slack.make_slack_on_run_failure_sensor"
+      "destination": "/api/python-api/libraries/dagster-slack"
     },
     {
       "source": "/_modules/dagster_snowflake/resources",
-      "destination": "/api/python-api/libraries/dagster-snowflake#resource"
+      "destination": "/api/python-api/libraries/dagster-snowflake#dagster_snowflake.SnowflakeResource"
     },
     {
       "source": "/_modules/dagster_snowflake/snowflake_io_manager",
-      "destination": "/api/python-api/libraries/dagster-snowflake#io-manager"
+      "destination": "/api/python-api/libraries/dagster-snowflake#dagster_snowflake.SnowflakeIOManager"
     },
     {
       "source": "/_modules/dagster_ssh/resources",
