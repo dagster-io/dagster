@@ -357,6 +357,7 @@ class AssetFailedToMaterialize(EventWithMetadata, IHaveNew):
             metadata=metadata,
             partition=self.partition,
             tags=self.tags,
+            reason=self.reason,
         )
 
 
