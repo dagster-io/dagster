@@ -41,13 +41,12 @@ export type RunsFeedRootQuery = {
               startTime: number | null;
               endTime: number | null;
               jobName: string | null;
-              partitionNames: Array<string> | null;
               backfillStatus: Types.BulkActionStatus;
               partitionSet: {
                 __typename: 'PartitionSet';
                 id: string;
-                mode: string;
                 name: string;
+                mode: string;
                 pipelineName: string;
                 repositoryOrigin: {
                   __typename: 'RepositoryOrigin';
@@ -84,8 +83,8 @@ export type RunsFeedRootQuery = {
               repositoryOrigin: {
                 __typename: 'RepositoryOrigin';
                 id: string;
-                repositoryName: string;
                 repositoryLocationName: string;
+                repositoryName: string;
               } | null;
               tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
               assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
@@ -99,4 +98,4 @@ export type RunsFeedRootQuery = {
       };
 };
 
-export const RunsFeedRootQueryVersion = '5aac6e9b29b52642fec8a45ca86d183a0d7b2d4e092c27a107f37bf5ec4fdfc4';
+export const RunsFeedRootQueryVersion = 'fdeadb8f83b9171a43b6fd6e03c575e136ba96026012280093f4641c4e7a3454';

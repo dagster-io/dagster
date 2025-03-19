@@ -10,23 +10,10 @@ export type BackfillTerminationDialogBackfillFragment = {
   numCancelable: number;
 };
 
-export type BackfillStepStatusDialogBackfillFragment = {
+export type BackfillTableFragmentForStepStatusDialogFragment = {
   __typename: 'PartitionBackfill';
   id: string;
-  partitionNames: Array<string> | null;
-  partitionSet: {
-    __typename: 'PartitionSet';
-    id: string;
-    mode: string;
-    name: string;
-    pipelineName: string;
-    repositoryOrigin: {
-      __typename: 'RepositoryOrigin';
-      id: string;
-      repositoryName: string;
-      repositoryLocationName: string;
-    };
-  } | null;
+  partitionSet: {__typename: 'PartitionSet'; id: string} | null;
 };
 
 export type BackfillActionsBackfillFragment = {
@@ -37,18 +24,5 @@ export type BackfillActionsBackfillFragment = {
   isAssetBackfill: boolean;
   status: Types.BulkActionStatus;
   numCancelable: number;
-  partitionNames: Array<string> | null;
-  partitionSet: {
-    __typename: 'PartitionSet';
-    id: string;
-    mode: string;
-    name: string;
-    pipelineName: string;
-    repositoryOrigin: {
-      __typename: 'RepositoryOrigin';
-      id: string;
-      repositoryName: string;
-      repositoryLocationName: string;
-    };
-  } | null;
+  partitionSet: {__typename: 'PartitionSet'; id: string} | null;
 };

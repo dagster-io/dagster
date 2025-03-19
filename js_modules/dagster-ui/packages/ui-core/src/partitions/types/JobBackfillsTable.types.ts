@@ -28,12 +28,11 @@ export type JobBackfillsQuery = {
           hasCancelPermission: boolean;
           hasResumePermission: boolean;
           numCancelable: number;
-          partitionNames: Array<string> | null;
           partitionSet: {
             __typename: 'PartitionSet';
             id: string;
-            mode: string;
             name: string;
+            mode: string;
             pipelineName: string;
             repositoryOrigin: {
               __typename: 'RepositoryOrigin';
@@ -60,4 +59,4 @@ export type JobBackfillsQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const JobBackfillsQueryVersion = '508c116ec0413d5c5785307e026413123a4e177d9855aa4506f597885359fcd8';
+export const JobBackfillsQueryVersion = 'a9bbbaba978437e454ea9e874d1198be990c01860540ef0cfc7bc601b357a7d6';

@@ -16,13 +16,12 @@ export type RunsFeedTableEntryFragment_PartitionBackfill = {
   startTime: number | null;
   endTime: number | null;
   jobName: string | null;
-  partitionNames: Array<string> | null;
   backfillStatus: Types.BulkActionStatus;
   partitionSet: {
     __typename: 'PartitionSet';
     id: string;
-    mode: string;
     name: string;
+    mode: string;
     pipelineName: string;
     repositoryOrigin: {
       __typename: 'RepositoryOrigin';
@@ -60,8 +59,8 @@ export type RunsFeedTableEntryFragment_Run = {
   repositoryOrigin: {
     __typename: 'RepositoryOrigin';
     id: string;
-    repositoryName: string;
     repositoryLocationName: string;
+    repositoryName: string;
   } | null;
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;

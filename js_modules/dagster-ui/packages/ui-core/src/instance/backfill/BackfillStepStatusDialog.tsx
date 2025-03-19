@@ -1,7 +1,13 @@
-import {Button, Dialog, DialogFooter} from '@dagster-io/ui-components';
+import {Box, Button, Dialog, DialogFooter, SpinnerWithText} from '@dagster-io/ui-components';
 import {useMemo, useState} from 'react';
 
-import {BackfillStepStatusDialogBackfillFragment} from './types/BackfillFragments.types';
+import {BackfillTableFragmentForStepStatusDialogFragment} from './types/BackfillFragments.types';
+import {
+  BackfillStepStatusDialogBackfillFragment,
+  BackfillStepStatusDialogContentQuery,
+  BackfillStepStatusDialogContentQueryVariables,
+} from './types/BackfillStepStatusDialog.types';
+import {gql, useQuery} from '../../apollo-client';
 import {PartitionPerOpStatus} from '../../partitions/PartitionStepStatus';
 import {usePartitionStepQuery} from '../../partitions/usePartitionStepQuery';
 import {DagsterTag} from '../../runs/RunTag';
@@ -11,17 +17,14 @@ import {repoAddressToSelector} from '../../workspace/repoAddressToSelector';
 import {RepoAddress} from '../../workspace/types';
 
 interface Props {
-  backfill?: BackfillStepStatusDialogBackfillFragment;
+  backfill?: BackfillTableFragmentForStepStatusDialogFragment;
   onClose: () => void;
 }
 
 export function backfillCanShowStepStatus(
-  backfill?: BackfillStepStatusDialogBackfillFragment,
-): backfill is BackfillStepStatusDialogBackfillFragment & {
-  partitionSet: NonNullable<BackfillStepStatusDialogBackfillFragment['partitionSet']>;
-  partitionNames: string[];
-} {
-  return !!backfill && backfill.partitionSet !== null && backfill.partitionNames !== null;
+  backfill?: BackfillTableFragmentForStepStatusDialogFragment,
+) {
+  return !!backfill && backfill.partitionSet !== null;
 }
 
 export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
@@ -30,19 +33,8 @@ export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
       return null;
     }
 
-    const repoAddress = buildRepoAddress(
-      backfill.partitionSet.repositoryOrigin.repositoryName,
-      backfill.partitionSet.repositoryOrigin.repositoryLocationName,
-    );
-
     return (
-      <BackfillStepStatusDialogContent
-        backfill={backfill}
-        partitionSet={backfill.partitionSet}
-        partitionNames={backfill.partitionNames}
-        repoAddress={repoAddress}
-        onClose={onClose}
-      />
+      <BackfillStepStatusDialogContentNameLoader backfillId={backfill!.id} onClose={onClose} />
     );
   };
 
@@ -58,6 +50,61 @@ export const BackfillStepStatusDialog = ({backfill, onClose}: Props) => {
         <Button onClick={onClose}>Done</Button>
       </DialogFooter>
     </Dialog>
+  );
+};
+
+const BackfillStepStatusDialogContentNameLoader = ({
+  backfillId,
+  onClose,
+}: {
+  backfillId: string;
+  onClose: () => void;
+}) => {
+  const queryResult = useQuery<
+    BackfillStepStatusDialogContentQuery,
+    BackfillStepStatusDialogContentQueryVariables
+  >(BACKFILL_STEP_STATUS_DIALOG_CONTENT_QUERY, {
+    skip: !backfillId,
+    variables: {backfillId},
+  });
+
+  const {data, loading} = queryResult;
+  if (loading) {
+    return (
+      <Box style={{padding: 64}} flex={{alignItems: 'center', justifyContent: 'center'}}>
+        <SpinnerWithText label="Loading partitions…" />
+      </Box>
+    );
+  }
+
+  const backfill = data?.partitionBackfillOrError;
+  if (
+    !backfill ||
+    backfill.__typename !== 'PartitionBackfill' ||
+    !backfill.partitionSet ||
+    !backfill.partitionNames
+  ) {
+    // TODO: handle error
+    return (
+      <Box style={{padding: 64}} flex={{alignItems: 'center', justifyContent: 'center'}}>
+        <SpinnerWithText label="Loading partitions…" />
+      </Box>
+    );
+  }
+
+  const repoAddress = buildRepoAddress(
+    backfill.partitionSet.repositoryOrigin.repositoryName,
+    backfill.partitionSet.repositoryOrigin.repositoryLocationName,
+  );
+
+  return (
+    <BackfillStepStatusDialogContent
+      backfill={backfill}
+      partitionSet={backfill.partitionSet}
+      partitionNames={backfill.partitionNames}
+      repoAddress={repoAddress}
+      onClose={onClose}
+    />
   );
 };
 
@@ -107,3 +154,31 @@ const BackfillStepStatusDialogContent = ({
     />
   );
 };
+
+const BACKFILL_STEP_STATUS_DIALOG_CONTENT_QUERY = gql`
+  query BackfillStepStatusDialogContentQuery($backfillId: String!) {
+    partitionBackfillOrError(backfillId: $backfillId) {
+      ... on PartitionBackfill {
+        id
+        partitionNames
+        ...BackfillStepStatusDialogBackfillFragment
+      }
+    }
+  }
+
+  fragment BackfillStepStatusDialogBackfillFragment on PartitionBackfill {
+    id
+    partitionNames
+    partitionSet {
+      id
+      mode
+      name
+      pipelineName
+      repositoryOrigin {
+        id
+        repositoryName
+        repositoryLocationName
+      }
+    }
+  }
+`;
