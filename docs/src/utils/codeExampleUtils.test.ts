@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {filterComments, trimMainBlock, IGNORED_COMMENT_TYPES} from './codeExampleUtils';
+import {filterComments, trimMainBlock} from './codeExampleUtils';
 
 describe('filterComments', () => {
   it('should remove noqa comments from lines', () => {
@@ -35,6 +35,22 @@ describe('filterComments', () => {
       'x: Dict[str, Any] = {}',
       'y = 10  # regular comment',
       'z = "test"',
+    ];
+
+    expect(filterComments(input)).toEqual(expected);
+  });
+
+  it('should remove isort: skip_file comments from lines', () => {
+    const input = [
+      '# isort: skip_file',
+      'from typing import Dict, Any  # isort: skip',
+      'from typing import Dict, Any  # isort:skip',
+    ];
+
+    const expected = [
+      '',
+      'from typing import Dict, Any',
+      'from typing import Dict, Any',
     ];
 
     expect(filterComments(input)).toEqual(expected);
