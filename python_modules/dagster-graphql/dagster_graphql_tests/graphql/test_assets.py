@@ -111,23 +111,24 @@ GET_ASSET_MATERIALIZATION_HISTORY = """
     query AssetQuery($assetKey: AssetKeyInput!) {
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
-            id
-            assetMaterializationHistory {
-                __typename
-                ... on FailedToMaterializeEvent {
-                    failedToMaterializeReason
-                    assetKey {
-                    path
+                id
+                assetMaterializationHistory {
+                    __typename
+                    ... on FailedToMaterializeEvent {
+                        failedToMaterializeReason
+                        assetKey {
+                            path
+                        }
+                        runId
+                        timestamp
                     }
-                    runId
-                    timestamp
-                }
-                ... on MaterializationEvent {
-                    assetKey {
-                    path
+                    ... on MaterializationEvent {
+                        assetKey {
+                            path
+                        }
+                        runId
+                        timestamp
                     }
-                    runId
-                    timestamp
                 }
             }
             ... on AssetNotFoundError {
@@ -2975,11 +2976,11 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
             variables={"assetKey": {"path": ["asset_1"]}},
         )
 
-        assert result["data"]
-        assert result["data"]["assetOrError"]
-        assert len(result["data"]["assetOrError"]["assetMaterializationHistory"]) == 5
+        assert result.data
+        assert result.data["assetOrError"]
+        assert len(result.data["assetOrError"]["assetMaterializationHistory"]) == 5
         max_timestamp_seen = 0
-        for event in result["data"]["assetOrError"]["assetMaterializationHistory"]:
+        for event in result.data["assetOrError"]["assetMaterializationHistory"]:
             assert event["__typename"] == "AssetMaterialization"
             assert event["assetKey"]["path"] == ["asset_1"]
             assert int(event["timestamp"]) >= max_timestamp_seen
