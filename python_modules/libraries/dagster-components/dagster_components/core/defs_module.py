@@ -15,11 +15,13 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._record import record
 from dagster._utils import pushd
 from dagster._utils.pydantic_yaml import (
-    _parse_and_populate_model_with_annotated_errors,
     enrich_validation_errors_with_source_position,
+    parse_yaml_file_to_pydantic,
 )
-from dagster_shared.yaml_utils import parse_yaml_with_source_positions
-from dagster_shared.yaml_utils.source_position import SourcePositionTree
+from dagster_shared.yaml_utils.source_position import (
+    HasSourcePositionAndKeyPath,
+    SourcePositionTree,
+)
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from dagster_components.core.component import (
@@ -34,11 +36,18 @@ from dagster_components.utils import load_module_from_path
 T = TypeVar("T", bound=BaseModel)
 
 
-class ComponentFileModel(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
+class ComponentConfig(BaseModel, HasSourcePositionAndKeyPath):
     type: str
     attributes: Optional[Mapping[str, Any]] = None
+
+    model_config = ConfigDict(extra="forbid")
+
+    @classmethod
+    def from_path(cls, path: Path) -> Optional["ComponentConfig"]:
+        if not path.exists():
+            return None
+        else:
+            return parse_yaml_file_to_pydantic(cls, path.read_text(), str(path))
 
 
 #########
@@ -97,19 +106,6 @@ class ComponentDefsModule(DefsModule):
 #######
 # DECLS
 #######
-
-
-def _parse_component_yaml(path: Path) -> tuple[SourcePositionTree, ComponentFileModel]:
-    component_file_path = path / "component.yaml"
-    source_tree = parse_yaml_with_source_positions(
-        component_file_path.read_text(), str(component_file_path)
-    )
-    return (
-        source_tree.source_position_tree,
-        _parse_and_populate_model_with_annotated_errors(
-            cls=ComponentFileModel, obj_parse_root=source_tree, obj_key_path_prefix=[]
-        ),
-    )
 
 
 @record
@@ -205,39 +201,33 @@ class PythonModuleDecl(DefsModuleDecl):
 class YamlComponentDecl(DefsModuleDecl):
     """A component configured with a `component.yaml` file."""
 
-    component_file_model: ComponentFileModel
-    source_position_tree: Optional[SourcePositionTree] = None
+    component_config: ComponentConfig
 
     @staticmethod
     def from_path(path: Path) -> Optional["YamlComponentDecl"]:
-        if (path / "component.yaml").exists():
-            position_tree, component_file_model = _parse_component_yaml(path)
-            return YamlComponentDecl(
-                path=path,
-                component_file_model=component_file_model,
-                source_position_tree=position_tree,
-            )
+        component_config = ComponentConfig.from_path(path / "component.yaml")
+        if component_config is not None:
+            return YamlComponentDecl(path=path, component_config=component_config)
         else:
             return None
 
     def get_source_position_tree(self) -> Optional[SourcePositionTree]:
-        return self.source_position_tree
+        return self.component_config.source_position_tree
 
     def get_attributes(self, schema: type[T]) -> T:
         with pushd(str(self.path)):
-            if self.source_position_tree:
-                source_position_tree_of_attributes = self.source_position_tree.children[
-                    "attributes"
-                ]
+            source_position_tree = self.get_source_position_tree()
+            if source_position_tree:
+                source_position_tree_of_attributes = source_position_tree.children["attributes"]
                 with enrich_validation_errors_with_source_position(
                     source_position_tree_of_attributes, ["attributes"]
                 ):
-                    return TypeAdapter(schema).validate_python(self.component_file_model.attributes)
+                    return TypeAdapter(schema).validate_python(self.component_config.attributes)
             else:
-                return TypeAdapter(schema).validate_python(self.component_file_model.attributes)
+                return TypeAdapter(schema).validate_python(self.component_config.attributes)
 
     def load(self, context: ComponentLoadContext) -> ComponentDefsModule:
-        type_str = context.normalize_component_type_str(self.component_file_model.type)
+        type_str = context.normalize_component_type_str(self.component_config.type)
         key = ComponentKey.from_typename(type_str)
         component_type = load_component_type(key)
         component_schema = component_type.get_schema()

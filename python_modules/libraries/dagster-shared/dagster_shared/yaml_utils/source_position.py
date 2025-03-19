@@ -77,10 +77,20 @@ class SourcePositionAndKeyPath(NamedTuple):
 
     key_path: KeyPath
     source_position: Optional[SourcePosition]
+    source_position_tree: SourcePositionTree
 
 
 class HasSourcePositionAndKeyPath:
     _source_position_and_key_path: Optional[SourcePositionAndKeyPath] = None
+
+    @property
+    def source_position_tree(self) -> Optional[SourcePositionTree]:
+        """Returns the underlying source position tree for the object."""
+        return (
+            self._source_position_and_key_path.source_position_tree
+            if self._source_position_and_key_path
+            else None
+        )
 
     @property
     def source_position(self) -> SourcePosition:
@@ -132,7 +142,9 @@ def populate_source_position_and_key_paths(
             object.__setattr__(
                 obj,
                 "_source_position_and_key_path",
-                SourcePositionAndKeyPath(key_path, source_position_tree.position),
+                SourcePositionAndKeyPath(
+                    key_path, source_position_tree.position, source_position_tree
+                ),
             )
 
     if source_position_tree is None:

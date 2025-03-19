@@ -25,11 +25,7 @@ from dagster_components.components.sling_replication_collection.component import
     SlingReplicationCollectionModel,
 )
 from dagster_components.core.component_defs_builder import load_defs
-from dagster_components.core.defs_module import (
-    ComponentFileModel,
-    DefsModuleDecl,
-    YamlComponentDecl,
-)
+from dagster_components.core.defs_module import ComponentConfig, DefsModuleDecl, YamlComponentDecl
 from dagster_components.resolved.context import ResolutionException
 from dagster_components.resolved.core_models import AssetAttributesModel
 from dagster_components.utils import ensure_dagster_components_tests_import
@@ -205,7 +201,7 @@ def test_sling_subclass() -> None:
 
     decl_node = YamlComponentDecl(
         path=STUB_LOCATION_PATH / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
+        component_config=ComponentConfig(
             type="debug_sling_replication",
             attributes={"sling": {}, "replications": [{"path": "./replication.yaml"}]},
         ),
@@ -371,7 +367,7 @@ def test_udf_map_spec(map_fn: Callable[[AssetSpec], Any]) -> None:
 
     decl_node = YamlComponentDecl(
         path=STUB_LOCATION_PATH / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
+        component_config=ComponentConfig(
             type="debug_sling_replication",
             attributes={
                 "sling": {},
