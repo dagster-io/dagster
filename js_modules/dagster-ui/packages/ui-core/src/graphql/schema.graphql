@@ -645,10 +645,10 @@ type FailedToMaterializeEvent implements MessageEvent & StepEvent & DisplayableE
   stepStats: RunStepStats!
   partition: String
   tags: [EventTag!]!
-  failedToMaterializeReason: AssetFailedToMaterializeReason!
+  failedToMaterializeReason: AssetMaterializationFailureReason!
 }
 
-enum AssetFailedToMaterializeReason {
+enum AssetMaterializationFailureReason {
   COMPUTE_FAILED
   UPSTREAM_COMPUTE_FAILED
   SKIPPED_OPTIONAL

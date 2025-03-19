@@ -21,8 +21,8 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions.events import (
-    AssetFailedToMaterialize,
-    AssetFailedToMaterializeReason,
+    AssetMaterializationFailure,
+    AssetMaterializationFailureReason,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.events import StepMaterializationData
@@ -2943,10 +2943,10 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
                 dagster_event=DagsterEvent.build_asset_failed_to_materialize_event(
                     job_name="the_job",
                     step_key="the_step",
-                    asset_failed_to_materialize=AssetFailedToMaterialize(
+                    asset_materialization_failure=AssetMaterializationFailure(
                         asset_key=asset_key,
                         partition=None,
-                        reason=AssetFailedToMaterializeReason.COMPUTE_FAILED,
+                        reason=AssetMaterializationFailureReason.COMPUTE_FAILED,
                     ),
                 ),
             )
