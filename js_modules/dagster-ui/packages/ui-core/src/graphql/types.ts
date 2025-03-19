@@ -357,16 +357,6 @@ export enum AssetEventType {
   ASSET_OBSERVATION = 'ASSET_OBSERVATION',
 }
 
-export enum AssetFailedToMaterializeReason {
-  COMPUTE_FAILED = 'COMPUTE_FAILED',
-  SKIPPED_OPTIONAL = 'SKIPPED_OPTIONAL',
-  UNEXPECTED_TERMINATION = 'UNEXPECTED_TERMINATION',
-  UNKNOWN = 'UNKNOWN',
-  UPSTREAM_COMPUTE_FAILED = 'UPSTREAM_COMPUTE_FAILED',
-  UPSTREAM_SKIPPED = 'UPSTREAM_SKIPPED',
-  USER_TERMINATION = 'USER_TERMINATION',
-}
-
 export type AssetFreshnessInfo = {
   __typename: 'AssetFreshnessInfo';
   currentLagMinutes: Maybe<Scalars['Float']['output']>;
@@ -413,6 +403,16 @@ export type AssetLineageInfo = {
 };
 
 export type AssetMaterializationEventType = FailedToMaterializeEvent | MaterializationEvent;
+
+export enum AssetMaterializationFailureReason {
+  COMPUTE_FAILED = 'COMPUTE_FAILED',
+  SKIPPED_OPTIONAL = 'SKIPPED_OPTIONAL',
+  UNEXPECTED_TERMINATION = 'UNEXPECTED_TERMINATION',
+  UNKNOWN = 'UNKNOWN',
+  UPSTREAM_COMPUTE_FAILED = 'UPSTREAM_COMPUTE_FAILED',
+  UPSTREAM_SKIPPED = 'UPSTREAM_SKIPPED',
+  USER_TERMINATION = 'USER_TERMINATION',
+}
 
 export type AssetMaterializationPlannedEvent = MessageEvent &
   RunEvent & {
@@ -1641,7 +1641,7 @@ export type FailedToMaterializeEvent = DisplayableEvent &
     assetKey: Maybe<AssetKey>;
     description: Maybe<Scalars['String']['output']>;
     eventType: Maybe<DagsterEventType>;
-    failedToMaterializeReason: AssetFailedToMaterializeReason;
+    failedToMaterializeReason: AssetMaterializationFailureReason;
     label: Maybe<Scalars['String']['output']>;
     level: LogLevel;
     message: Scalars['String']['output'];
@@ -8642,7 +8642,7 @@ export const buildFailedToMaterializeEvent = (
     failedToMaterializeReason:
       overrides && overrides.hasOwnProperty('failedToMaterializeReason')
         ? overrides.failedToMaterializeReason!
-        : AssetFailedToMaterializeReason.COMPUTE_FAILED,
+        : AssetMaterializationFailureReason.COMPUTE_FAILED,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'aliquam',
     level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'libero',
