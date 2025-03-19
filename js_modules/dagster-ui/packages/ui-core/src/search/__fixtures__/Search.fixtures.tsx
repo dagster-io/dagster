@@ -171,6 +171,7 @@ export const buildSecondarySearch = (
               definition: null,
               assetMaterializations: [],
               assetObservations: [],
+              assetMaterializationHistory: [],
               key: {
                 __typename: 'AssetKey',
                 path: path.split(' '),
