@@ -183,7 +183,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
 
             planned_materialization_run_id = None
-            if self.instance.event_log_storage.asset_records_have_last_planned_materialization_storage_id:
+            if self.instance.event_log_storage.asset_records_have_last_planned_and_failed_materializations:
                 planned_materialization_run_id = (
                     asset_record.asset_entry.last_planned_materialization_run_id
                     if asset_record
