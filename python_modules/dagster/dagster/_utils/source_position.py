@@ -2,7 +2,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, Optional, Union, cast
 
-import dagster_shared.check as check
+from dagster import _check as check
 
 KeyPathSegment = Union[str, int]
 KeyPath = Sequence[KeyPathSegment]

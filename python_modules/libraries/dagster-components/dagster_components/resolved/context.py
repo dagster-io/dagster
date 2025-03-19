@@ -8,7 +8,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._record import copy, record
-from dagster_shared.yaml_utils.source_position import SourcePositionTree
+from dagster._utils.source_position import SourcePositionTree
 from jinja2 import Undefined
 from jinja2.exceptions import UndefinedError
 from jinja2.nativetypes import NativeTemplate

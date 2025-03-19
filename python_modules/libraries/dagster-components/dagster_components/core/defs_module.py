@@ -18,8 +18,8 @@ from dagster._utils.pydantic_yaml import (
     _parse_and_populate_model_with_annotated_errors,
     enrich_validation_errors_with_source_position,
 )
-from dagster_shared.yaml_utils import parse_yaml_with_source_positions
-from dagster_shared.yaml_utils.source_position import SourcePositionTree
+from dagster._utils.source_position import SourcePositionTree
+from dagster._utils.yaml_utils import parse_yaml_with_source_positions
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from dagster_components.core.component import (

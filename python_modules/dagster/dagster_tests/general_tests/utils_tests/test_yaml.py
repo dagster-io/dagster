@@ -1,11 +1,11 @@
 import datetime
 import os
-from pathlib import Path
 
-import dagster_shared.check as check
+import dagster._check as check
 import pytest
 import yaml
-from dagster_shared.yaml_utils import (
+from dagster._utils import file_relative_path
+from dagster._utils.yaml_utils import (
     dump_run_config_yaml,
     load_run_config_yaml,
     load_yaml_from_glob_list,
@@ -14,10 +14,6 @@ from dagster_shared.yaml_utils import (
     merge_yaml_strings,
     merge_yamls,
 )
-
-
-def file_relative_path(file, path):
-    return os.fspath((Path(file).parent / path).resolve())
 
 
 def test_load_yaml():
