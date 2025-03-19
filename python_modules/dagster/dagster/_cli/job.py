@@ -9,7 +9,7 @@ import click
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
-from dagster._check.decorator import checked
+from dagster._check import checked
 from dagster._cli.config_scaffolder import scaffold_job_config
 from dagster._cli.utils import (
     assert_no_remaining_opts,

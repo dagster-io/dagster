@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, Annotated, Optional
 
 import pytest
-from dagster._check import CheckError
-from dagster._check.builder import ImportFrom
-from dagster._check.decorator import checked
+from dagster_shared.check import CheckError
+from dagster_shared.check.builder import ImportFrom
+from dagster_shared.check.decorator import checked
 
 if TYPE_CHECKING:
     from dagster._core.test_utils import TestType

@@ -23,10 +23,10 @@ from typing import (
     Union,
 )
 
-import dagster._check as check
+import dagster_shared.check as check
 import pytest
 from dagster._annotations import PublicAttr
-from dagster._check import (
+from dagster_shared.check import (
     CheckError,
     ElementCheckError,
     EvalContext,
@@ -35,7 +35,7 @@ from dagster._check import (
     ParameterCheckError,
     build_check_call_str,
 )
-from dagster._record import record
+from dagster_shared.record import record
 
 if TYPE_CHECKING:
     from dagster._core.test_utils import TestType  # used in lazy import ForwardRef test case

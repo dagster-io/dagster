@@ -12,7 +12,7 @@ from typing import (  # noqa: UP035
 )
 
 from dagster import _check as check
-from dagster._check.functions import CheckError
+from dagster._check import CheckError
 from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset

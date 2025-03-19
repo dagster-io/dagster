@@ -3,8 +3,8 @@ from abc import ABC
 from functools import update_wrapper
 from types import MethodType
 
-import dagster._check as check
-from dagster._check.builder import (
+import dagster_shared.check as check
+from dagster_shared.check.builder import (
     INJECTED_DEFAULT_VALS_LOCAL_VAR,
     EvalContext,
     build_args_and_assignment_strs,

@@ -13,7 +13,7 @@ from typing import (  # noqa: UP035
     overload,
 )
 
-from dagster._check.record import is_record
+from dagster_shared.check.record import is_record
 
 TypeOrTupleOfTypes = Union[type, tuple[type, ...]]
 Numeric = Union[int, float]
