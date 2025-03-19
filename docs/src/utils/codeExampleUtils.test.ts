@@ -12,11 +12,11 @@ describe('filterNoqaComments', () => {
     ];
 
     const expected = [
-      'def example_function():  ',
-      '    x = 5  ',
+      'def example_function():',
+      '    x = 5',
       '    y = 10  # regular comment',
-      '    print(x + y)  ',
-      '    ',
+      '    print(x + y)',
+      '',
     ];
 
     expect(filterNoqaComments(input)).toEqual(expected);

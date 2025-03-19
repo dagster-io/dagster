@@ -11,7 +11,7 @@ export function trimMainBlock(lines: string[]): string[] {
  */
 export function filterNoqaComments(lines: string[]): string[] {
   return lines.map((line: string) => {
-    return line.replaceAll(/#.*?noqa.*?$/g, '');
+    return line.replace(/(\s*?)#.*?noqa.*?$/g, '');
   });
 }
 
