@@ -2,7 +2,7 @@ import React, {Suspense} from 'react';
 import CodeBlock from '@theme/CodeBlock';
 
 import {CODE_EXAMPLE_PATH_MAPPINGS} from '../code-examples-content';
-import {trimMainBlock, filterNoqaComments} from '../utils/codeExampleUtils';
+import {trimMainBlock, filterComments} from '../utils/codeExampleUtils';
 
 interface CodeExampleProps {
   path: string;
@@ -51,7 +51,7 @@ function processModule({
 
   lines = lines.slice(ix1, ix2);
 
-  lines = filterNoqaComments(lines);
+  lines = filterComments(lines);
   lines = trimMainBlock(lines);
   contentCache[cacheKey] = {content: lines.join('\n')};
 }

@@ -6,12 +6,15 @@ export function trimMainBlock(lines: string[]): string[] {
   return mainIndex !== -1 ? lines.slice(0, mainIndex) : lines;
 }
 
+const IGNORED_COMMENT_TYPES = ['noqa', 'type: ignore', 'isort'];
+
 /**
- * Filters `noqa` comments from lines.
+ * Filters specified comment types from lines.
  */
-export function filterNoqaComments(lines: string[]): string[] {
+export function filterComments(lines: string[]): string[] {
+  const commentPattern = new RegExp(`(\\s*?)#.*?(${IGNORED_COMMENT_TYPES.join('|')}).*?$`, 'g');
   return lines.map((line: string) => {
-    return line.replace(/(\s*?)#.*?noqa.*?$/g, '');
+    return line.replace(commentPattern, '');
   });
 }
 
