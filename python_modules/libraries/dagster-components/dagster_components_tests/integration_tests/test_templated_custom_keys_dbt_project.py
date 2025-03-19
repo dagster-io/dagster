@@ -9,15 +9,11 @@ import pytest
 from dagster import AssetKey
 from dagster._utils.env import environ
 from dagster_components.components.dbt_project.component import DbtProjectComponent, DbtProjectModel
-from dagster_components.core.component_decl_builder import ComponentFileModel
-from dagster_components.core.component_defs_builder import (
-    YamlComponentDecl,
-    build_components_from_component_folder,
-    defs_from_components,
-)
+from dagster_components.core.defs_module import ComponentFileModel, YamlComponentDecl
 from dagster_dbt import DbtProject
 
-from dagster_components_tests.utils import assert_assets, get_asset_keys, script_load_context
+from dagster_components_tests.integration_tests.component_loader import load_test_component_defs
+from dagster_components_tests.utils import get_asset_keys, script_load_context
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
@@ -103,19 +99,8 @@ def test_python_attributes_group(dbt_path: Path) -> None:
 
 
 def test_load_from_path(dbt_path: Path) -> None:
-    components = build_components_from_component_folder(script_load_context(), dbt_path / "defs")
-    assert len(components) == 1
-    assert get_asset_keys(components[0]) == JAFFLE_SHOP_KEYS_WITH_PREFIX
-
-    assert_assets(components[0], len(JAFFLE_SHOP_KEYS_WITH_PREFIX))
-
-    defs = defs_from_components(
-        context=script_load_context(),
-        components=components,
-        resources={},
-    )
-
-    assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS_WITH_PREFIX
+    with load_test_component_defs(dbt_path / COMPONENT_RELPATH) as defs:
+        assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS_WITH_PREFIX
 
 
 def test_render_vars_root(dbt_path: Path) -> None:

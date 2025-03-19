@@ -25,7 +25,7 @@ class DefinitionsComponent(Component, ResolvableModel):
     )
 
     def _build_defs_for_path(self, context: ComponentLoadContext, defs_path: Path) -> Definitions:
-        defs_module = context.load_component_relative_python_module(defs_path)
+        defs_module = context.load_defs_relative_python_module(defs_path)
         defs_attrs = list(find_objects_in_module_of_types(defs_module, Definitions))
 
         if defs_attrs and self.definitions_path is None:
