@@ -33,19 +33,17 @@ DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
 DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX = "__dbt_cloud"
 
 
-def clean_adhoc_job_name(name: str) -> str:
-    return re.sub(r"[^A-Z0-9]+", "_", name.upper())
-
-
 def get_dagster_adhoc_job_name(
     project_id: int,
     project_name: Optional[str],
     environment_id: int,
     environment_name: Optional[str],
 ) -> str:
-    return clean_adhoc_job_name(
+    name = (
         f"{DAGSTER_ADHOC_PREFIX}{project_name or project_id}__{environment_name or environment_id}"
     )
+    # Clean the name and convert it to uppercase
+    return re.sub(r"[^A-Z0-9]+", "_", name.upper())
 
 
 @preview
