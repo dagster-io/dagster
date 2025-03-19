@@ -402,6 +402,7 @@ class DagsterApiServer(DagsterApiServicer):
         # Each server is initialized with a unique UUID. This UUID is used by clients to track when
         # servers are replaced and is used for cache invalidation and reloading.
         self._server_id = check.opt_str_param(fixed_server_id, "fixed_server_id", str(uuid.uuid4()))
+        self._location_name = location_name
 
         # Client tells the server to shutdown by calling ShutdownServer (or by failing to send a
         # hearbeat, at which point this event is set. The cleanup thread will then set the server
@@ -582,6 +583,8 @@ class DagsterApiServer(DagsterApiServicer):
         return loaded_repos.reconstructables_by_name[remote_repo_origin.repository_name]
 
     def RefreshDefinitions(self, request, context):
+        self._instance.inject_env_vars(self._location_name)
+
         self._loaded_repositories.reload_repos()
         self._server_id = str(uuid.uuid4())
 
