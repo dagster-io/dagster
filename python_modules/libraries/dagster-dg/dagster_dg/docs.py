@@ -5,10 +5,10 @@ from itertools import groupby
 from typing import Any, Optional, TypedDict, Union
 
 import yaml
+from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
 from dagster_dg.component import RemoteComponentRegistry, RemoteComponentType
-from dagster_dg.yaml_utils import parse_yaml_with_source_positions
-from dagster_dg.yaml_utils.source_position import SourcePositionTree
 
 REF_BASE = "#/$defs/"
 JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY = "dagster_required_scope"

@@ -3,6 +3,13 @@ from pathlib import Path
 from typing import Any, NamedTuple, Optional
 
 import click
+from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils.source_position import (
+    LineCol,
+    SourcePosition,
+    SourcePositionTree,
+    ValueAndSourcePositionTree,
+)
 from jsonschema import Draft202012Validator, ValidationError
 from yaml.scanner import ScannerError
 
@@ -10,13 +17,6 @@ from dagster_dg.cli.check_utils import error_dict_to_formatted_error
 from dagster_dg.component import RemoteComponentRegistry
 from dagster_dg.component_key import ComponentKey
 from dagster_dg.context import DgContext
-from dagster_dg.yaml_utils import parse_yaml_with_source_positions
-from dagster_dg.yaml_utils.source_position import (
-    LineCol,
-    SourcePosition,
-    SourcePositionTree,
-    ValueAndSourcePositionTree,
-)
 
 COMPONENT_FILE_SCHEMA = {
     "type": "object",

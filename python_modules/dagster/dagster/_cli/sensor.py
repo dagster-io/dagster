@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from typing import Optional
 
 import click
+from dagster_shared.yaml_utils import dump_run_config_yaml
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -36,7 +37,6 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._utils import PrintFn
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.yaml_utils import dump_run_config_yaml
 
 
 @click.group(name="sensor")

@@ -7,6 +7,7 @@ from typing import Any, Callable, Optional, TypeVar, cast
 
 import click
 from click import UsageError
+from dagster_shared.yaml_utils import load_yaml_from_glob_list
 from typing_extensions import Never, Self, TypeAlias
 
 import dagster._check as check
@@ -40,7 +41,6 @@ from dagster._grpc.utils import get_loadable_targets
 from dagster._record import record
 from dagster._seven import JSONDecodeError, json
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.yaml_utils import load_yaml_from_glob_list
 
 logger = logging.getLogger("dagster")
 WORKSPACE_TARGET_WARNING = (

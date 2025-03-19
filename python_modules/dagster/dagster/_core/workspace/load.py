@@ -3,6 +3,8 @@ from collections import OrderedDict
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Optional, Union, cast
 
+from dagster_shared.yaml_utils import load_yaml_from_path
+
 import dagster._check as check
 from dagster._core.code_pointer import rebase_file
 from dagster._core.instance import DagsterInstance
@@ -13,7 +15,6 @@ from dagster._core.remote_representation.origin import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.config_schema import ensure_workspace_config
-from dagster._utils.yaml_utils import load_yaml_from_path
 
 if TYPE_CHECKING:
     from dagster._core.workspace.context import WorkspaceProcessContext
