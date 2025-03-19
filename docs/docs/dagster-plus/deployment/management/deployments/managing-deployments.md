@@ -115,6 +115,7 @@ concurrency:
         limit: 5
 
 run_monitoring:
+  enabled: true
   start_timeout_seconds: 1200
   cancel_timeout_seconds: 1200
 

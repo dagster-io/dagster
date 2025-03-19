@@ -40,6 +40,7 @@ or in Dagster+, add the following to your [deployment settings](/dagster-plus/de
 
 ```yaml
 run_monitoring:
+  enabled: true
   max_runtime_seconds: 7200
 ```
 
