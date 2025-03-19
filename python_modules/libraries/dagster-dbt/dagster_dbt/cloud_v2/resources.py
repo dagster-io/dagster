@@ -51,6 +51,14 @@ class DbtCloudWorkspace(ConfigurableResource):
     environment_id: int = Field(
         description="The ID of environment to use for the dbt Cloud project used in this resource."
     )
+    adhoc_job_name: Optional[str] = Field(
+        default=None,
+        description=(
+            "The name of the ad hoc job that will be created by Dagster in your dbt Cloud workspace. "
+            "This ad hoc job is used to parse your project and materialize your dbt Cloud assets. "
+            "If not provided, this job name will be generated using your project ID and environment ID."
+        ),
+    )
     request_max_retries: int = Field(
         default=3,
         description=(
@@ -99,7 +107,7 @@ class DbtCloudWorkspace(ConfigurableResource):
             DbtCloudJob: Internal representation of the dbt Cloud job.
         """
         client = self.get_client()
-        expected_job_name = get_dagster_adhoc_job_name(
+        expected_job_name = self.adhoc_job_name or get_dagster_adhoc_job_name(
             project_id=self.project_id, environment_id=self.environment_id
         )
         jobs = [

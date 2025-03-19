@@ -26,9 +26,10 @@ TEST_ENVIRONMENT_ID = 3333
 
 TEST_JOB_ID = 4444
 TEST_RUN_ID = 5555
-TEST_ADHOC_JOB_NAME = get_dagster_adhoc_job_name(
+TEST_DEFAULT_ADHOC_JOB_NAME = get_dagster_adhoc_job_name(
     project_id=TEST_PROJECT_ID, environment_id=TEST_ENVIRONMENT_ID
 )
+TEST_CUSTOM_ADHOC_JOB_NAME = "test_custom_adhoc_job_name"
 TEST_ANOTHER_JOB_NAME = "test_another_job_name"
 
 TEST_REST_API_BASE_URL = f"{TEST_ACCESS_URL}/api/v2/accounts/{TEST_ACCOUNT_ID}"
@@ -126,8 +127,18 @@ def get_sample_job_data(job_name: str) -> Mapping[str, Any]:
     }
 
 
-SAMPLE_CREATE_JOB_RESPONSE = {
-    "data": get_sample_job_data(job_name=TEST_ADHOC_JOB_NAME),
+SAMPLE_DEFAULT_CREATE_JOB_RESPONSE = {
+    "data": get_sample_job_data(job_name=TEST_DEFAULT_ADHOC_JOB_NAME),
+    "status": {
+        "code": 201,
+        "is_success": True,
+        "user_message": "string",
+        "developer_message": "string",
+    },
+}
+
+SAMPLE_CUSTOM_CREATE_JOB_RESPONSE = {
+    "data": get_sample_job_data(job_name=TEST_CUSTOM_ADHOC_JOB_NAME),
     "status": {
         "code": 201,
         "is_success": True,
@@ -335,7 +346,7 @@ def job_api_mocks_fixture() -> Iterator[responses.RequestsMock]:
         response.add(
             method=responses.POST,
             url=f"{TEST_REST_API_BASE_URL}/jobs",
-            json=SAMPLE_CREATE_JOB_RESPONSE,
+            json=SAMPLE_DEFAULT_CREATE_JOB_RESPONSE,
             status=201,
         )
         yield response
