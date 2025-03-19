@@ -34,6 +34,9 @@ def test_load_asset_specs(
     # Sanity check outputs
     first_asset_key = next(key for key in sorted(all_assets_keys))
     assert first_asset_key.path == ["customers"]
+    first_asset_kinds = next(spec.kinds for spec in sorted(all_assets))
+    assert "dbtcloud" in first_asset_kinds
+    assert "dbt" not in first_asset_kinds
 
     # Clearing cache for other tests
     workspace.load_specs.cache_clear()
