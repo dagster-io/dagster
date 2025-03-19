@@ -1,11 +1,15 @@
 import datetime
 import time
 from abc import ABC
-from collections.abc import Sequence
-from typing import Any, Optional
+from collections.abc import Iterator, Sequence
+from typing import Any, Callable, Optional, TypeVar, Union, TYPE_CHECKING
 
 import requests
-from dagster import _check as check
+from dagster import (
+    AssetExecutionContext,
+    AssetMaterialization,
+    _check as check,
+)
 from dagster._annotations import beta, public
 from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterError
@@ -15,6 +19,8 @@ from dagster._time import get_current_datetime
 from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.serialization.serialized_data import DagInfo, TaskInfo
 
+if TYPE_CHECKING:
+    from dagster_airlift.core import AirflowDefinitionsData
 TERMINAL_STATES = {"success", "failed", "canceled"}
 # This limits the number of task ids that we attempt to query from airflow's task instance rest API at a given time.
 # Airflow's batch task instance retrieval rest API doesn't have a limit parameter, but we query a single run at a time, meaning we should be getting
@@ -79,6 +85,14 @@ class AirflowInstance:
 
     def get_api_url(self) -> str:
         return f"{self.auth_backend.get_webserver_url()}/api/v1"
+
+    def get_event_logs(self, offset: Optional[int] = None) -> list[dict[str, Any]]:
+        # Airflow supports a much more fine grained log retrieval API for newer versions; but 2.7.3 and before there's many parameters missing. All we have to work with is limit, offset, and order_by.
+        response = self.auth_backend.get_session().get(
+            f"{self.get_api_url()}/eventLogs",
+            params={"offset": offset},
+        )
+        return response.json()["event_logs"]
 
     def list_dags(self, retrieval_filter: AirflowFilter) -> list["DagInfo"]:
         dag_responses = []
@@ -295,7 +309,12 @@ class AirflowInstance:
             )
 
     @public
-    def trigger_dag(self, dag_id: str, logical_date: Optional[datetime.datetime] = None) -> str:
+    def trigger_dag(
+        self,
+        dag_id: str,
+        logical_date: Optional[datetime.datetime] = None,
+        run_id: Optional[str] = None,
+    ) -> str:
         """Trigger a dag run for the given dag_id.
 
         Does not wait for the run to finish. To wait for the completed run to finish, use :py:meth:`wait_for_run_completion`.
@@ -389,6 +408,22 @@ class AirflowInstance:
             )
         return None
 
+    def launch_run(
+        self, dag_id: str, run_id: str, context: AssetExecutionContext
+    ) -> "LaunchedDagRun":
+        from dagster_airlift.core import AirflowDefinitionsData
+        run_id = self.trigger_dag(dag_id=dag_id, run_id=run_id)
+        return LaunchedDagRun(
+            # TODO: fix this to actually give me the full run upon launch
+            dag_run=self.get_dag_run(dag_id=dag_id, run_id=run_id),
+            airflow_defs_data=AirflowDefinitionsData(
+                airflow_instance=self,
+                airflow_mapped_assets=list(context.repository_def.assets_defs_by_key.values()),
+            ),
+            af_instance=self,
+            context=context,
+        )
+
 
 @record
 class TaskInstance:
@@ -447,6 +482,10 @@ class DagRun:
     @property
     def note(self) -> str:
         return self.metadata.get("note") or ""
+    
+    @property
+    def execution_date_str(self) -> str:
+        return self.metadata["execution_date"]
 
     @property
     def url(self) -> str:
@@ -493,3 +532,72 @@ class DagRun:
     @property
     def end_date(self) -> datetime.datetime:
         return datetime.datetime.fromisoformat(self.metadata["end_date"])
+
+
+AirflowDagsterEventType = Union[
+    AssetMaterialization,
+    # Can add other event types as needed
+]
+
+T = TypeVar("T", bound=AirflowDagsterEventType)
+
+
+@record
+class AirflowEvent:
+    raw_event_body: dict[str, Any]
+
+    def to_asset_event(self) -> AirflowDagsterEventType:
+        pass
+
+
+@record
+class LaunchedDagRun:
+    dag_run: DagRun
+    airflow_defs_data: "AirflowDefinitionsData"
+    af_instance: AirflowInstance
+    context: AssetExecutionContext
+
+    def stream_raw_events(self) -> Iterator[AirflowEvent]:
+        offset = 0
+        while True:
+            time.sleep(1)
+            run_logs = self.af_instance.get_event_logs(offset=offset)
+            for log in logs:
+                if log["dag_id"] == self.dag_run.dag_id and log["
+            run_logs
+            yield from run_logs
+            # Need to figure out the right ending condition. Probably when either enough time passes or the dag runs into a terminal status.
+
+    def stream_asset_events(self) -> Iterator[AirflowDagsterEventType]:
+        for event in self.stream_raw_events():
+            yield event.to_asset_event()
+
+    def stream(self) -> "AirflowEventIterator":
+        return AirflowEventIterator(
+            iterator=self.stream_asset_events(),
+            launched_dag_run=self,
+        )
+
+
+class AirflowEventIterator(Iterator[T]):
+    def __init__(
+        self,
+        iterator: Iterator[T],
+        launched_dag_run: "LaunchedDagRun",
+    ):
+        self._inner_iterator = iterator
+        self._launched_run = launched_dag_run
+
+    def __next__(self) -> T:
+        return next(self._inner_iterator)
+
+    def __iter__(self) -> "AirflowEventIterator[T]":
+        return self
+
+    def with_processor(self, processor: Callable[[T], T]) -> "AirflowEventIterator[T]":
+        def new_iterator_fn():
+            for event in self._inner_iterator:
+                new_event = processor(event)
+                yield new_event
+
+        return AirflowEventIterator(iterator=new_iterator_fn(), launched_dag_run=self._launched_run)
