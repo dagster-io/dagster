@@ -1,5 +1,7 @@
+from collections.abc import Generator
+
 import pytest
-from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
+from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace, get_dagster_adhoc_job_name
 from dagster_dbt_cloud_kitchen_sink.resources import (
     get_dbt_cloud_workspace,
     get_environment_id,
@@ -20,3 +22,24 @@ def project_id() -> int:
 @pytest.fixture
 def environment_id() -> int:
     return get_environment_id()
+
+
+@pytest.fixture
+def ensure_cleanup(
+    workspace: DbtCloudWorkspace,
+    project_id: int,
+    environment_id: int,
+) -> Generator[None, None, None]:
+    try:
+        yield
+    finally:
+        client = workspace.get_client()
+        jobs = client.list_jobs(project_id=project_id, environment_id=environment_id)
+        adhoc_job_ids = {
+            job["id"]
+            for job in jobs
+            if job["name"]
+            == get_dagster_adhoc_job_name(project_id=project_id, environment_id=environment_id)
+        }
+        for job_id in adhoc_job_ids:
+            client.destroy_job(job_id=job_id)
