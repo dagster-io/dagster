@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 from dagster import _check as check
+from dagster._config.pythonic_config.conversion_utils import infer_schema_from_config_annotation
 from dagster._core.definitions.asset_check_result import AssetCheckRecord
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -81,6 +82,46 @@ def build_autoname(assets: Sequence[AssetSpec], checks: Sequence[AssetCheckSpec]
     )
 
 
+import inspect
+from inspect import signature
+from typing import Optional, get_type_hints
+
+
+def get_config_type_annotation(cls: type) -> Optional[type]:
+    """Returns the type annotation of the 'config' argument in the 'execute' method of a class,
+    or None if 'config' does not exist.
+
+    Args:
+        cls: The class to inspect (should have an 'execute' method).
+
+    Returns:
+        The type annotation of 'config' as a class if it exists, otherwise None.
+    """
+    # Get the execute method from the class
+    method = cls.execute
+
+    # Get type hints for the method
+    type_hints = get_type_hints(method)
+
+    # Check if 'config' is in the type hints
+    if "config" in type_hints:
+        return type_hints["config"]
+
+    # If 'config' is not explicitly annotated, check if it's in **kwargs
+    # Note: this was created by ai slop not sure if it is necessary
+    sig = signature(method)
+    for param_name, param in sig.parameters.items():
+        if param_name == "config":
+            # If 'config' is explicitly named but not annotated, return None
+            return type_hints.get("config", None)
+        if param.kind == param.VAR_KEYWORD:  # **kwargs
+            # If 'config' might be in kwargs but isn't explicitly annotated, return None
+            return None
+
+    # 'config' not found in parameters
+    return None
+
+
 # When to use record versus dataclass versus BaseModel
 @dataclass(frozen=True)
 class StepComponent(Component, ABC):
@@ -117,7 +158,26 @@ class StepComponent(Component, ABC):
     pool: Optional[str]
     can_subset: bool
 
+    # def get_config_field(self) -> Optional[Field]:
+    #     config_cls = get_config_type_annotation(self.__class__)
+    #     if config_cls:
+    #         return infer_schema_from_config_annotation(
+    #             model_cls=config_cls,
+    #             config_arg_default=inspect.Parameter.empty,
+    #         )
+    #     else:
+    #         return None
+
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        config_cls = get_config_type_annotation(self.__class__)
+        if config_cls:
+            config_schema = infer_schema_from_config_annotation(
+                model_cls=config_cls,
+                config_arg_default=inspect.Parameter.empty,
+            )
+        else:
+            config_schema = None
+
         @multi_asset(
             name=self.name,
             specs=self.assets,
@@ -127,11 +187,15 @@ class StepComponent(Component, ABC):
             retry_policy=self.retry_policy,
             pool=self.pool,
             can_subset=self.can_subset,
-            # config schema
+            config_schema=config_schema,
             # required_resource_keys
         )
         def _an_asset(context: AssetExecutionContext):
-            execution_result = self.execute(ExecutionContext(context))
+            config_dict = context.op_config if config_cls else {}
+            assert isinstance(config_dict, dict)
+            config_inst = config_cls(**config_dict) if config_cls else None
+            kwargs = {"config": config_inst} if config_inst else {}
+            execution_result = self.execute(context=ExecutionContext(context), **kwargs)
             for asset_result in execution_result.asset_records or []:
                 # assume materialization result for now
                 yield MaterializeResult(
@@ -145,11 +209,14 @@ class StepComponent(Component, ABC):
         return Definitions(assets=[_an_asset])
 
     @abstractmethod
-    def execute(self, context: ExecutionContext) -> ExecutionRecord: ...
+    def execute(self, context: ExecutionContext, **kwargs) -> ExecutionRecord: ...
 
 
-def execute_step(step: StepComponent) -> ExecuteInProcessResult:
+def execute_step(step: StepComponent, run_config=None) -> ExecuteInProcessResult:
     defs = step.build_defs(ComponentLoadContext.for_test())
     keys = [spec.key for spec in defs.get_all_asset_specs()]
     assets_def = defs.get_assets_def(next(iter(keys)))
-    return materialize(assets=[assets_def])
+    return materialize(
+        assets=[assets_def],
+        run_config=run_config,
+    )

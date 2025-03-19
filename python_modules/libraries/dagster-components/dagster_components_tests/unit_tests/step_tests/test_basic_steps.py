@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 
+from dagster._config.pythonic_config.config import Config
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -9,6 +10,7 @@ from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.result import AssetRecord
 from dagster._core.events import StepMaterializationData
+from dagster._core.execution.context.invocation import build_asset_context
 from dagster_components import ComponentLoadContext
 from dagster_components.components.step.step import (
     ExecutionContext,
@@ -29,6 +31,21 @@ class ManyAssetStep(StepComponent):
     def execute(self, context: ExecutionContext) -> ExecutionRecord:
         return ExecutionRecord(
             asset_records=[AssetRecord(asset_key=asset.key) for asset in (self.assets or [])]
+        )
+
+
+class SomeConfig(Config):
+    a_value: str
+
+
+class SingleAssetWithConfigStep(StepComponent):
+    def execute(self, context: ExecutionContext, config: SomeConfig) -> ExecutionRecord:
+        return ExecutionRecord(
+            asset_records=[
+                AssetRecord(
+                    asset_key=next(iter(self.assets)).key, metadata={"config": config.a_value}
+                )
+            ]
         )
 
 
@@ -104,3 +121,16 @@ def test_kitchen_sink() -> None:
     assert assets_def.check_keys == {
         AssetCheckKey(asset_key=AssetKey("the_key"), name="check_name")
     }
+
+
+def test_step_with_config() -> None:
+    step = SingleAssetWithConfigStep(assets=[AssetSpec("the_key")])
+
+    record = step.execute(ExecutionContext(build_asset_context()), SomeConfig(a_value="foo"))
+    assert isinstance(record, ExecutionRecord)
+
+    assert get_assets_def(step).op.name == "execute__the_key"
+    assert get_assets_def(step).op.config_schema
+    assert execute_step(
+        step, run_config={"ops": {"execute__the_key": {"config": {"a_value": "foo"}}}}
+    ).success
