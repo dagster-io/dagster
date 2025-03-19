@@ -30,13 +30,23 @@ def monitor_starting_run(
     instance: DagsterInstance, run_record: RunRecord, logger: logging.Logger
 ) -> None:
     run = run_record.dagster_run
-    check.invariant(run.status == DagsterRunStatus.STARTING)
-    run_stats = instance.get_run_stats(run.run_id)
+    check.invariant(run.status in {DagsterRunStatus.STARTING, DagsterRunStatus.NOT_STARTED})
 
-    launch_time = check.not_none(
-        run_stats.launch_time, "Run in status STARTING doesn't have a launch time."
-    )
-    if time.time() - launch_time >= instance.run_monitoring_start_timeout_seconds:
+    if run.status == DagsterRunStatus.STARTING:
+        run_stats = instance.get_run_stats(run.run_id)
+
+        launch_time = check.not_none(
+            run_stats.launch_time, "Run in status STARTING doesn't have a launch time."
+        )
+    elif run.status == DagsterRunStatus.NOT_STARTED:
+        launch_time = check.not_none(
+            run_record.create_timestamp.timestamp(),
+            "Run in status NOT_STARTED doesn't have a create timestamp.",
+        )
+    else:
+        check.failed(f"Unexpected run status: {run.status}")
+
+    if get_current_timestamp() - launch_time >= instance.run_monitoring_start_timeout_seconds:
         msg = (
             "Run timed out due to taking longer than"
             f" {instance.run_monitoring_start_timeout_seconds} seconds to start."
@@ -172,7 +182,10 @@ def execute_run_monitoring_iteration(
     # TODO: consider limiting number of runs to fetch
     run_records = list(
         instance.get_run_records(
-            filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES + [DagsterRunStatus.CANCELING])
+            filters=RunsFilter(
+                statuses=IN_PROGRESS_RUN_STATUSES
+                + [DagsterRunStatus.CANCELING, DagsterRunStatus.NOT_STARTED]
+            )
         )
     )
 
@@ -187,7 +200,8 @@ def execute_run_monitoring_iteration(
 
             if (
                 instance.run_monitoring_start_timeout_seconds > 0
-                and run_record.dagster_run.status == DagsterRunStatus.STARTING
+                and run_record.dagster_run.status
+                in {DagsterRunStatus.STARTING, DagsterRunStatus.NOT_STARTED}
             ):
                 monitor_starting_run(instance, run_record, logger)
             elif run_record.dagster_run.status == DagsterRunStatus.STARTED:
