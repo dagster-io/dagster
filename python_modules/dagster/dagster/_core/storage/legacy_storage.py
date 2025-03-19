@@ -197,7 +197,9 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def add_run(self, dagster_run: "DagsterRun") -> "DagsterRun":
         return self._storage.run_storage.add_run(dagster_run)
 
-    def handle_run_event(self, run_id: str, event: "DagsterEvent") -> None:
+    def handle_run_event(
+        self, run_id: str, event: "DagsterEvent", timestamp: Optional[float] = None
+    ) -> None:
         return self._storage.run_storage.handle_run_event(run_id, event)
 
     def get_runs(
