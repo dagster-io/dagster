@@ -134,7 +134,7 @@ class AssetEntry(
         return self.last_materialization_record.storage_id
 
     @property
-    def last_failed_to_materialize(self) -> Optional["EventLogEntry"]:
+    def last_failed_to_materialize_entry(self) -> Optional["EventLogEntry"]:
         if self.last_failed_to_materialize_record is None:
             return None
         return self.last_failed_to_materialize_record.event_log_entry
