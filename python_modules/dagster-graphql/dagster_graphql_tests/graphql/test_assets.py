@@ -2972,7 +2972,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_MATERIALIZATION_HISTORY,
-            variable_values={"assetKey": {"path": ["asset_1"]}},
+            variables={"assetKey": {"path": ["asset_1"]}},
         )
 
         assert result["data"]
