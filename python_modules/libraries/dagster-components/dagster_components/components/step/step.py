@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 from dagster import _check as check
+from dagster._config.field import Field
 from dagster._config.pythonic_config.conversion_utils import infer_schema_from_config_annotation
 from dagster._core.definitions.asset_check_result import AssetCheckRecord
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
@@ -170,13 +171,6 @@ class StepComponent(Component, ABC):
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         config_cls = get_config_type_annotation(self.__class__)
-        if config_cls:
-            config_schema = infer_schema_from_config_annotation(
-                model_cls=config_cls,
-                config_arg_default=inspect.Parameter.empty,
-            )
-        else:
-            config_schema = None
 
         @multi_asset(
             name=self.name,
@@ -187,7 +181,7 @@ class StepComponent(Component, ABC):
             retry_policy=self.retry_policy,
             pool=self.pool,
             can_subset=self.can_subset,
-            config_schema=config_schema,
+            config_schema=self.config_schema_from_config_cls(config_cls),
             # required_resource_keys
         )
         def _an_asset(context: AssetExecutionContext):
@@ -207,6 +201,16 @@ class StepComponent(Component, ABC):
                 )
 
         return Definitions(assets=[_an_asset])
+
+    def config_schema_from_config_cls(self, config_cls: Optional[type]) -> Optional[Field]:
+        return (
+            infer_schema_from_config_annotation(
+                model_cls=config_cls,
+                config_arg_default=inspect.Parameter.empty,
+            )
+            if config_cls
+            else None
+        )
 
     @abstractmethod
     def execute(self, context: ExecutionContext, **kwargs) -> ExecutionRecord: ...
