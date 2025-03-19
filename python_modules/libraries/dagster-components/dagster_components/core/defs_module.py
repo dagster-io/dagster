@@ -1,9 +1,10 @@
 import inspect
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Optional, TypeVar
+from typing import Annotated, Any, Optional, TypeVar
 
 import dagster._check as check
 from dagster._core.definitions.definitions_class import Definitions
@@ -23,6 +24,7 @@ from dagster_shared.yaml_utils.source_position import (
     SourcePositionTree,
 )
 from pydantic import BaseModel, ConfigDict, TypeAdapter
+from typing_extensions import Self
 
 from dagster_components.core.component import (
     Component,
@@ -31,6 +33,9 @@ from dagster_components.core.component import (
     load_component_type,
 )
 from dagster_components.core.component_key import ComponentKey
+from dagster_components.resolved.context import ResolutionContext
+from dagster_components.resolved.core_models import AssetPostProcessor, AssetPostProcessorModel
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver, resolve_model
 from dagster_components.utils import load_module_from_path
 
 T = TypeVar("T", bound=BaseModel)
@@ -43,11 +48,30 @@ class ComponentConfig(BaseModel, HasSourcePositionAndKeyPath):
     model_config = ConfigDict(extra="forbid")
 
     @classmethod
-    def from_path(cls, path: Path) -> Optional["ComponentConfig"]:
+    def from_path(cls, path: Path) -> Optional[Self]:
         if not path.exists():
             return None
         else:
             return parse_yaml_file_to_pydantic(cls, path.read_text(), str(path))
+
+
+class DefsConfigModel(ResolvableModel):
+    post_processors: Optional[Sequence[AssetPostProcessorModel]] = None
+
+
+@dataclass
+class ResolvedDefsConfig(ResolvedFrom[DefsConfigModel]):
+    post_processors: Annotated[
+        Optional[Sequence[AssetPostProcessor]], Resolver.from_annotation()
+    ] = None
+
+    @classmethod
+    def from_path(cls, path: Path) -> Optional[Self]:
+        if not path.exists():
+            return None
+        else:
+            loaded_model = parse_yaml_file_to_pydantic(DefsConfigModel, path.read_text(), str(path))
+            return resolve_model(loaded_model, cls, ResolutionContext.default())
 
 
 #########
@@ -58,9 +82,19 @@ class ComponentConfig(BaseModel, HasSourcePositionAndKeyPath):
 @record
 class DefsModule(ABC):
     path: Path
+    defs_config: Optional[ResolvedDefsConfig]
 
     @abstractmethod
-    def build_defs(self) -> Definitions: ...
+    def _build_defs(self) -> Definitions: ...
+
+    def build_defs(self) -> Definitions:
+        defs = self._build_defs()
+        if not self.defs_config:
+            return defs
+        post_processors = self.defs_config.post_processors or []
+        for post_processor in post_processors:
+            defs = post_processor.fn(defs)
+        return defs
 
 
 @record
@@ -69,7 +103,7 @@ class SubpackageDefsModule(DefsModule):
 
     submodules: Sequence[DefsModule]
 
-    def build_defs(self) -> Definitions:
+    def _build_defs(self) -> Definitions:
         return Definitions.merge(*(submodule.build_defs() for submodule in self.submodules))
 
 
@@ -79,7 +113,7 @@ class PythonDefsModule(DefsModule):
 
     module: Any  # ModuleType
 
-    def build_defs(self) -> Definitions:
+    def _build_defs(self) -> Definitions:
         definitions_objects = list(find_objects_in_module_of_types(self.module, Definitions))
         if len(definitions_objects) == 0:
             return load_definitions_from_module(self.module)
@@ -99,7 +133,7 @@ class ComponentDefsModule(DefsModule):
     context: ComponentLoadContext
     component: Component
 
-    def build_defs(self) -> Definitions:
+    def _build_defs(self) -> Definitions:
         return self.component.build_defs(self.context)
 
 
@@ -172,6 +206,7 @@ class SubpackageDefsModuleDecl(DefsModuleDecl):
     def load(self, context: ComponentLoadContext) -> SubpackageDefsModule:
         return SubpackageDefsModule(
             path=self.path,
+            defs_config=ResolvedDefsConfig.from_path(self.path / "defs.yaml"),
             submodules=[decl.load(context.for_decl(decl)) for decl in self.subdecls],
         )
 
@@ -194,7 +229,11 @@ class PythonModuleDecl(DefsModuleDecl):
             module = context.load_defs_relative_python_module(self.path / "definitions.py")
         else:
             module = context.load_defs_relative_python_module(self.path)
-        return PythonDefsModule(path=self.path, module=module)
+        return PythonDefsModule(
+            path=self.path,
+            defs_config=ResolvedDefsConfig.from_path(self.path / "defs.yaml"),
+            module=module,
+        )
 
 
 @record
@@ -235,7 +274,12 @@ class YamlComponentDecl(DefsModuleDecl):
 
         attributes = self.get_attributes(component_schema) if component_schema else None
         component = component_type.load(attributes, context)
-        return ComponentDefsModule(path=self.path, context=context, component=component)
+        return ComponentDefsModule(
+            path=self.path,
+            defs_config=ResolvedDefsConfig.from_path(self.path / "defs.yaml"),
+            context=context,
+            component=component,
+        )
 
 
 @record
@@ -264,6 +308,7 @@ class PythonComponentDecl(DefsModuleDecl):
             _, component_loader = component_loaders[0]
             return ComponentDefsModule(
                 path=self.path,
+                defs_config=ResolvedDefsConfig.from_path(self.path / "defs.yaml"),
                 context=context,
                 component=component_loader(context),
             )
