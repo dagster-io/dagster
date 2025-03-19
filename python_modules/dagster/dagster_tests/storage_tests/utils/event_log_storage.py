@@ -3027,7 +3027,7 @@ class TestEventLogStorage:
                 DagsterEvent.build_asset_failed_to_materialize_event(
                     job_name="my_fake_job",
                     step_key=step_key,
-                    asset_failed_to_materialize=AssetMaterializationFailure(
+                    asset_materialization_failure=AssetMaterializationFailure(
                         asset_key=a,
                         partition=partition,
                         reason=AssetMaterializationFailureReason.COMPUTE_FAILED,
