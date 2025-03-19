@@ -203,7 +203,6 @@ export const RunTimeline = (props: Props) => {
                     />
                   );
                 }
-
                 return (
                   <RunTimelineRow
                     row={row.row}
@@ -620,9 +619,12 @@ const RunTimelineRow = ({
     return batches;
   }, [runs, start, end, width]);
 
+  console.log("RUNS ROW");
   if (!row.runs.length) {
     return null;
   }
+  console.log("THERE IS MORE THAN NO RUN");
+  console.log(row.runs.length);
 
   return (
     <TimelineRowContainer $height={height} $start={top}>

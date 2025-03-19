@@ -114,7 +114,7 @@ class ActiveExecution:
         self._unknown_state: set[str] = set()
 
         self._interrupted: bool = False
-
+        self._metadata: dict[str, Any] = {}
         # Start the show by loading _executable with the set of _pending steps that have no deps
         self._update()
 
@@ -584,12 +584,14 @@ class ActiveExecution:
         return len(self._in_flight) > 0
 
     def get_known_state(self) -> KnownExecutionState:
+        print(f"WOAH GETTING KNOWN STATE {id(self._metadata)}")
         return KnownExecutionState(
             previous_retry_attempts=self._retry_state.snapshot_attempts(),
             dynamic_mappings=dict(self._completed_dynamic_outputs),
             ready_outputs=self._step_outputs,
             step_output_versions=self._plan.known_state.step_output_versions,
             parent_state=self._plan.known_state.parent_state,
+            metadata=self._metadata,
         )
 
     def _prep_for_dynamic_outputs(self, step: ExecutionStep):

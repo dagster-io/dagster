@@ -1,0 +1,9 @@
+type: dagster_components.dagster_airlift.AirflowInstanceComponent
+
+attributes:
+  name: warehouse_airflow_instance
+  auth:
+    type: basic_auth
+    username: admin
+    password: admin
+    webserver_url: http://localhost:8080

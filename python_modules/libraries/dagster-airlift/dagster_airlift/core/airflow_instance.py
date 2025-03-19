@@ -2,7 +2,7 @@ import datetime
 import time
 from abc import ABC
 from collections.abc import Sequence
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 from dagster import _check as check
@@ -245,25 +245,35 @@ class AirflowInstance:
     def get_dag_runs_batch(
         self,
         dag_ids: Sequence[str],
-        end_date_gte: datetime.datetime,
-        end_date_lte: datetime.datetime,
+        end_date_gte: Optional[datetime.datetime] = None,
+        end_date_lte: Optional[datetime.datetime] = None,
+        start_date_gte: Optional[datetime.datetime] = None,
+        start_date_lte: Optional[datetime.datetime] = None,
+        states: Sequence[str] = ["success"],
         offset: int = 0,
     ) -> tuple[list["DagRun"], int]:
         """For the given list of dag_ids, return a tuple containing:
         - A list of dag runs ending within (end_date_gte, end_date_lte). Returns a maximum of batch_dag_runs_limit (which is configurable on the instance).
         - The number of total rows returned.
         """
+        json = {
+            "dag_ids": dag_ids,
+            "order_by": "end_date",
+            "states": states,
+            "page_offset": offset,
+            "page_limit": self.batch_dag_runs_limit,
+        }
+        if end_date_gte:
+            json["end_date_gte"] = end_date_gte.isoformat()
+        if end_date_lte:
+            json["end_date_lte"] = end_date_lte.isoformat()
+        if start_date_gte:
+            json["start_date_gte"] = start_date_gte.isoformat()
+        if start_date_lte:
+            json["start_date_lte"] = start_date_lte.isoformat()
         response = self.auth_backend.get_session().post(
             f"{self.get_api_url()}/dags/~/dagRuns/list",
-            json={
-                "dag_ids": dag_ids,
-                "end_date_gte": end_date_gte.isoformat(),
-                "end_date_lte": end_date_lte.isoformat(),
-                "order_by": "end_date",
-                "states": ["success"],
-                "page_offset": offset,
-                "page_limit": self.batch_dag_runs_limit,
-            },
+            json=json,
         )
         if response.status_code == 200:
             webserver_url = self.auth_backend.get_webserver_url()
@@ -323,6 +333,37 @@ class AirflowInstance:
             metadata=response.json(),
         )
 
+    def get_logs(
+        self,
+        *,
+        dag_id: str,
+        task_id: str,
+        run_id: str,
+        task_try: int = 1,
+        token: Optional[str] = None,
+    ) -> tuple[str, str]:
+        from requests.adapters import HTTPAdapter, Retry
+
+        url = f"{self.get_api_url()}/dags/{dag_id}/dagRuns/{run_id}/taskInstances/{task_id}/logs/{task_try}"
+        s = self.auth_backend.get_session()
+        retries = Retry(total=5, backoff_factor=0.1)
+        s.mount("http://", HTTPAdapter(max_retries=retries))
+        full_call = {
+            "url": url,
+            "headers": {"Accept": "application/json"},
+            "params": {"token": token} if token else {},
+            "timeout": 5,
+        }
+        print(f"Full call params: {full_call}")
+        response = s.get(**full_call)
+        if response.status_code != 200:
+            raise DagsterError(
+                f"Failed to fetch logs for {dag_id}/{task_id}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
+            )
+        content = response.json()["content"]
+        continuation_token = response.json().get("continuation_token")
+        return content, continuation_token
+
     def unpause_dag(self, dag_id: str) -> None:
         response = self.auth_backend.get_session().patch(
             f"{self.get_api_url()}/dags",
@@ -378,6 +419,170 @@ class AirflowInstance:
                 f"Failed to delete run for {dag_id}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
             )
         return None
+
+    @public
+    def get_datasets(
+        self,
+        *,
+        limit: int = 100,
+        offset: int = 0,
+        order_by: Optional[str] = None,
+        uri_pattern: Optional[str] = None,
+        dag_ids: Optional[List[str]] = None,
+    ) -> List["Dataset"]:
+        """Get datasets from the Airflow instance.
+
+        Args:
+            limit: The number of items to return. Default is 100.
+            offset: The number of items to skip before starting to collect the result set.
+            order_by: The name of the field to order the results by. Prefix a field name with - to reverse the sort order.
+            uri_pattern: If set, only return datasets with URIs matching this pattern.
+            dag_ids: One or more DAG IDs to filter datasets by associated DAGs either consuming or producing.
+
+        Returns:
+            A list of Dataset objects.
+
+        Raises:
+            DagsterError: If the request to Airflow fails.
+        """
+        params: dict[str, Any] = {"limit": limit, "offset": offset}
+
+        if order_by:
+            params["order_by"] = order_by
+
+        if uri_pattern:
+            params["uri_pattern"] = uri_pattern
+
+        if dag_ids:
+            params["dag_ids"] = ",".join(dag_ids)
+
+        response = self.auth_backend.get_session().get(
+            f"{self.get_api_url()}/datasets",
+            params=params,
+        )
+
+        if response.status_code != 200:
+            raise DagsterError(
+                f"Failed to fetch datasets. Status code: {response.status_code}, Message: {response.text}"
+            )
+
+        data = response.json()
+        datasets = []
+
+        for dataset_data in data.get("datasets", []):
+            # Create consuming dags objects
+            consuming_dags = [
+                DatasetConsumingDag(
+                    dag_id=dag_data["dag_id"],
+                    created_at=dag_data.get("created_at", ""),
+                    updated_at=dag_data.get("updated_at", ""),
+                )
+                for dag_data in dataset_data.get("consuming_dags", [])
+            ]
+
+            # Create producing tasks objects
+            producing_tasks = [
+                DatasetProducingTask(
+                    dag_id=task_data["dag_id"],
+                    task_id=task_data["task_id"],
+                    created_at=task_data.get("created_at", ""),
+                    updated_at=task_data.get("updated_at", ""),
+                )
+                for task_data in dataset_data.get("producing_tasks", [])
+            ]
+
+            # Create dataset object
+            dataset = Dataset(
+                id=dataset_data["id"],
+                uri=dataset_data["uri"],
+                extra=dataset_data.get("extra", {}),
+                created_at=dataset_data.get("created_at", ""),
+                updated_at=dataset_data.get("updated_at", ""),
+                consuming_dags=consuming_dags,
+                producing_tasks=producing_tasks,
+            )
+
+            datasets.append(dataset)
+
+        return datasets
+
+    @public
+    def get_all_datasets(
+        self,
+        *,
+        batch_size: int = 100,
+        max_datasets: Optional[int] = None,
+        order_by: Optional[str] = None,
+        uri_pattern: Optional[str] = None,
+        dag_ids: Optional[List[str]] = None,
+    ) -> List["Dataset"]:
+        """Get all datasets from the Airflow instance, handling pagination.
+
+        Args:
+            batch_size: The number of items to fetch per request. Default is 100.
+            max_datasets: The maximum number of datasets to return. If None, all datasets will be returned.
+            order_by: The name of the field to order the results by. Prefix a field name with - to reverse the sort order.
+            uri_pattern: If set, only return datasets with URIs matching this pattern.
+            dag_ids: One or more DAG IDs to filter datasets by associated DAGs either consuming or producing.
+
+        Returns:
+            A list of Dataset objects.
+        """
+        datasets = []
+        offset = 0
+
+        while True:
+            batch = self.get_datasets(
+                limit=batch_size,
+                offset=offset,
+                order_by=order_by,
+                uri_pattern=uri_pattern,
+                dag_ids=dag_ids,
+            )
+
+            datasets.extend(batch)
+
+            if len(batch) < batch_size:  # No more datasets to fetch
+                break
+
+            offset += batch_size
+
+            if max_datasets and len(datasets) >= max_datasets:
+                datasets = datasets[:max_datasets]  # Truncate to max_datasets
+                break
+
+        return datasets
+
+
+@record
+class DatasetConsumingDag:
+    dag_id: str
+    created_at: str
+    updated_at: str
+
+
+@record
+class DatasetProducingTask:
+    dag_id: str
+    task_id: str
+    created_at: str
+    updated_at: str
+
+
+@record
+class Dataset:
+    id: int
+    uri: str
+    extra: Dict[str, Any]
+    created_at: str
+    updated_at: str
+    consuming_dags: List[DatasetConsumingDag]
+    producing_tasks: List[DatasetProducingTask]
+
+    def is_produced_by_task(self, *, task_id: str, dag_id: str) -> bool:
+        return any(
+            task.task_id == task_id and task.dag_id == dag_id for task in self.producing_tasks
+        )
 
 
 @record

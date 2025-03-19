@@ -111,6 +111,7 @@ class KnownExecutionState(
             ("step_output_versions", Mapping[StepOutputHandle, str]),
             ("ready_outputs", set[StepOutputHandle]),
             ("parent_state", Optional[PastExecutionState]),
+            ("metadata", dict[str, Any]),
         ],
     )
 ):
@@ -126,7 +127,12 @@ class KnownExecutionState(
         step_output_versions: Optional[Mapping[StepOutputHandle, str]] = None,
         ready_outputs: Optional[set[StepOutputHandle]] = None,
         parent_state: Optional[PastExecutionState] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ):
+        if metadata is not None:
+            print(f"initializing with metadata: {id(metadata)}")
+        else:
+            print("initializing with no metadata")
         dynamic_mappings = check.opt_mapping_param(
             dynamic_mappings,
             "dynamic_mappings",
@@ -152,6 +158,7 @@ class KnownExecutionState(
             ),
             check.opt_set_param(ready_outputs, "ready_outputs", StepOutputHandle),
             check.opt_inst_param(parent_state, "parent_state", PastExecutionState),
+            metadata or {},
         )
 
     def get_retry_state(self) -> RetryState:
