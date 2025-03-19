@@ -62,8 +62,8 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import (
-    AssetFailedToMaterialize,
-    AssetFailedToMaterializeReason,
+    AssetMaterializationFailure,
+    AssetMaterializationFailureReason,
 )
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
@@ -3027,10 +3027,10 @@ class TestEventLogStorage:
                 DagsterEvent.build_asset_failed_to_materialize_event(
                     job_name="my_fake_job",
                     step_key=step_key,
-                    asset_failed_to_materialize=AssetFailedToMaterialize(
+                    asset_failed_to_materialize=AssetMaterializationFailure(
                         asset_key=a,
                         partition=partition,
-                        reason=AssetFailedToMaterializeReason.COMPUTE_FAILED,
+                        reason=AssetMaterializationFailureReason.COMPUTE_FAILED,
                     ),
                     error=None,
                 )

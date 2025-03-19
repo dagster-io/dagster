@@ -33,9 +33,9 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluationPlanned,
 )
 from dagster._core.definitions.events import (
-    AssetFailedToMaterialize,
-    AssetFailedToMaterializeReason,
     AssetLineageInfo,
+    AssetMaterializationFailure,
+    AssetMaterializationFailureReason,
     ObjectStoreOperationType,
 )
 from dagster._core.definitions.metadata import (
@@ -1552,15 +1552,15 @@ class DagsterEvent(
     def build_asset_failed_to_materialize_event(
         job_name: str,
         step_key: Optional[str],
-        asset_failed_to_materialize: "AssetFailedToMaterialize",
+        asset_materialization_failure: "AssetMaterializationFailure",
         error: Optional[SerializableErrorInfo] = None,
     ) -> "DagsterEvent":
         return DagsterEvent(
             event_type_value=DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value,
             job_name=job_name,
-            message=f"Asset {asset_failed_to_materialize.asset_key.to_string()} failed to materialize",
+            message=f"Asset {asset_materialization_failure.asset_key.to_string()} failed to materialize",
             event_specific_data=AssetFailedToMaterializeData(
-                asset_failed_to_materialize, error=error
+                asset_materialization_failure, error=error
             ),
             step_key=step_key,
         )
@@ -1600,35 +1600,37 @@ class AssetFailedToMaterializeData(
     NamedTuple(
         "AssetFailedToMaterializeData",
         [
-            ("asset_failed_to_materialize", AssetFailedToMaterialize),
+            ("asset_materialization_failure", AssetMaterializationFailure),
             ("error", Optional[SerializableErrorInfo]),
         ],
     )
 ):
     def __new__(
         cls,
-        asset_failed_to_materialize: AssetFailedToMaterialize,
+        asset_materialization_failure: AssetMaterializationFailure,
         error: Optional[SerializableErrorInfo] = None,
     ):
         return super().__new__(
             cls,
-            asset_failed_to_materialize=check.inst_param(
-                asset_failed_to_materialize, "asset_failed_to_materialize", AssetFailedToMaterialize
+            asset_materialization_failure=check.inst_param(
+                asset_materialization_failure,
+                "asset_materialization_failure",
+                AssetMaterializationFailure,
             ),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
         )
 
     @property
     def asset_key(self) -> AssetKey:
-        return self.asset_failed_to_materialize.asset_key
+        return self.asset_materialization_failure.asset_key
 
     @property
     def partition(self) -> Optional[str]:
-        return self.asset_failed_to_materialize.partition
+        return self.asset_materialization_failure.partition
 
     @property
-    def reason(self) -> AssetFailedToMaterializeReason:
-        return self.asset_failed_to_materialize.reason
+    def reason(self) -> AssetMaterializationFailureReason:
+        return self.asset_materialization_failure.reason
 
 
 @whitelist_for_serdes

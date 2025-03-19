@@ -251,7 +251,7 @@ class DynamicOutput(Generic[T]):
 
 
 @whitelist_for_serdes
-class AssetFailedToMaterializeReason(Enum):
+class AssetMaterializationFailureReason(Enum):
     COMPUTE_FAILED = "COMPUTE_FAILED"  # The step to compute the asset failed
     UPSTREAM_COMPUTE_FAILED = (
         "UPSTREAM_COMPUTE_FAILED"  # An upstream step failed, so the step for the asset was not run
@@ -269,16 +269,16 @@ class AssetFailedToMaterializeReason(Enum):
 # the global state of the asset to failed, and one that indicates that the asset not materializing
 # is expected (like an optional asset, user canceled the run)
 MATERIALIZATION_ATTEMPT_FAILED_TYPES = [
-    AssetFailedToMaterializeReason.COMPUTE_FAILED,
-    AssetFailedToMaterializeReason.UPSTREAM_COMPUTE_FAILED,
-    AssetFailedToMaterializeReason.UNEXPECTED_TERMINATION,
-    AssetFailedToMaterializeReason.UNKNOWN,
+    AssetMaterializationFailureReason.COMPUTE_FAILED,
+    AssetMaterializationFailureReason.UPSTREAM_COMPUTE_FAILED,
+    AssetMaterializationFailureReason.UNEXPECTED_TERMINATION,
+    AssetMaterializationFailureReason.UNKNOWN,
 ]
 
 MATERIALIZATION_ATTEMPT_SKIPPED_TYPES = [
-    AssetFailedToMaterializeReason.SKIPPED_OPTIONAL,
-    AssetFailedToMaterializeReason.UPSTREAM_SKIPPED,
-    AssetFailedToMaterializeReason.USER_TERMINATION,
+    AssetMaterializationFailureReason.SKIPPED_OPTIONAL,
+    AssetMaterializationFailureReason.UPSTREAM_SKIPPED,
+    AssetMaterializationFailureReason.USER_TERMINATION,
 ]
 
 
@@ -287,13 +287,13 @@ MATERIALIZATION_ATTEMPT_SKIPPED_TYPES = [
     field_serializers={"metadata": MetadataFieldSerializer},
 )
 @record_custom
-class AssetFailedToMaterialize(EventWithMetadata, IHaveNew):
+class AssetMaterializationFailure(EventWithMetadata, IHaveNew):
     asset_key: AssetKey
     description: Optional[str]
     metadata: Mapping[str, MetadataValue]
     partition: Optional[str]
     tags: Mapping[str, str]
-    reason: AssetFailedToMaterializeReason
+    reason: AssetMaterializationFailureReason
 
     """Event that indicates that an asset failed to materialize.
 
@@ -305,14 +305,14 @@ class AssetFailedToMaterialize(EventWithMetadata, IHaveNew):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
-        reason: (AssetFailedToMaterializeReason): An enum indicating why the asset failed to
-            materialize. 
+        reason: (AssetMaterializationFailureReason): An enum indicating why the asset failed to
+            materialize.
     """
 
     def __new__(
         cls,
         asset_key: CoercibleToAssetKey,
-        reason: AssetFailedToMaterializeReason,
+        reason: AssetMaterializationFailureReason,
         description: Optional[str] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         partition: Optional[str] = None,
@@ -352,8 +352,8 @@ class AssetFailedToMaterialize(EventWithMetadata, IHaveNew):
 
     def with_metadata(
         self, metadata: Optional[Mapping[str, RawMetadataValue]]
-    ) -> "AssetFailedToMaterialize":
-        return AssetFailedToMaterialize(
+    ) -> "AssetMaterializationFailure":
+        return AssetMaterializationFailure(
             asset_key=self.asset_key,
             description=self.description,
             metadata=metadata,
