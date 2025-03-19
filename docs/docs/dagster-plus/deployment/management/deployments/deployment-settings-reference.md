@@ -102,8 +102,9 @@ run_retries:
 
 ### SSO default role
 
-{/* dagster-plus/account/managing-users/managing-user-roles-permissions#user-permissions-reference */}
-The `sso_default_role` setting lets you configure the default role on the deployment which is granted to new users that log in via SSO. For more information on available roles, see the [Dagster+ permissions reference](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions).
+The `sso_default_role` setting lets you configure the default role in the deployment which is granted to new users that log in using [Single sign-on (SSO)](/dagster-plus/features/authentication-and-access-control/sso/). For more information on available roles, see the [Dagster+ permissions reference](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions).
+
+The setting can also be configured to `NO_ACCESS` to prevent new user accounts being created automatically upon log in.
 
 ```yaml
 sso_default_role: EDITOR
