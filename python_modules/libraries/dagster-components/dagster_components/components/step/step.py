@@ -108,16 +108,11 @@ def get_config_type_annotation(cls: type) -> Optional[type]:
     if "config" in type_hints:
         return type_hints["config"]
 
+    sig = signature(method)
     # If 'config' is not explicitly annotated, check if it's in **kwargs
     # Note: this was created by ai slop not sure if it is necessary
-    sig = signature(method)
-    for param_name, param in sig.parameters.items():
-        if param_name == "config":
-            # If 'config' is explicitly named but not annotated, return None
-            return type_hints.get("config", None)
-        if param.kind == param.VAR_KEYWORD:  # **kwargs
-            # If 'config' might be in kwargs but isn't explicitly annotated, return None
-            return None
+    if "config" in sig.parameters.keys():
+        raise ValueError("config is not annotated")
 
     # 'config' not found in parameters
     return None
