@@ -6620,10 +6620,10 @@ class TestEventLogStorage:
                     dagster_event=DagsterEvent.build_asset_failed_to_materialize_event(
                         job_name="the_job",
                         step_key="the_step",
-                        asset_failed_to_materialize=AssetFailedToMaterialize(
+                        asset_materialization_failure=AssetMaterializationFailure(
                             asset_key=asset_key,
                             partition=str(i),
-                            reason=AssetFailedToMaterializeReason.COMPUTE_FAILED,
+                            reason=AssetMaterializationFailureReason.COMPUTE_FAILED,
                         ),
                     ),
                 )
