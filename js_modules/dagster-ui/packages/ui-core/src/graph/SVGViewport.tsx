@@ -609,6 +609,7 @@ const SVGViewportInner = forwardRef<SVGViewportRef, SVGViewportProps>(
           )}
         </div>
         <ZoomSliderContainer
+          id="zoom-slider-container"
           data-testid={testId('zoom-slider-container')}
           onClick={(e: ReactMouseEvent) => {
             // Disallow click from hitting parent
