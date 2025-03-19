@@ -89,8 +89,11 @@ class SourcePositionTree(NamedTuple):
             ),
             source_position,
         )
-        with open(source_position.filename) as f:
-            lines = f.readlines()
+        if source_position.filename == "<string>":
+            code_snippet = ""
+        else:
+            with open(source_position.filename) as f:
+                lines = f.readlines()
             lines_with_line_numbers = list(zip(range(1, len(lines) + 1), lines))
 
             pre_error_lines = lines_with_line_numbers[

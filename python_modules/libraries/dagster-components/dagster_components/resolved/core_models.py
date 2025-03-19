@@ -133,7 +133,16 @@ class AssetSpecModel(_ResolvableAssetAttributesMixin, ResolvableModel):
     key: str = Field(..., description="A unique identifier for the asset.")
 
 
-class SharedAssetKwargs(ResolvedKwargs["AssetAttributesModel", AssetSpec]):
+class AssetAttributesModel(_ResolvableAssetAttributesMixin, ResolvableModel):
+    """Resolves into a dictionary of asset attributes. This is similar to AssetSpecSchema, but
+    does not require a key. This is useful in contexts where you want to modify attributes of
+    an existing AssetSpec.
+    """
+
+    key: Optional[str] = Field(default=None, description="A unique identifier for the asset.")
+
+
+class SharedAssetKwargs(ResolvedKwargs[AssetAttributesModel, AssetSpec]):
     deps: Sequence[str]
     description: Optional[str]
     metadata: Mapping[str, Any]
@@ -161,6 +170,9 @@ class AssetSpecKwargs(SharedAssetKwargs):
     ]
 
 
+ResolvedAssetSpec: TypeAlias = Annotated[AssetSpec, Resolver.from_resolved_kwargs(AssetSpecKwargs)]
+
+
 class AssetAttributesKwargs(SharedAssetKwargs):
     key: Annotated[
         Optional[AssetKey],
@@ -168,18 +180,6 @@ class AssetAttributesKwargs(SharedAssetKwargs):
             lambda context, schema: _resolve_asset_key(schema.key, context) if schema.key else None
         ),
     ] = None
-
-
-ResolvedAssetSpec: TypeAlias = Annotated[AssetSpec, Resolver.from_resolved_kwargs(AssetSpecKwargs)]
-
-
-class AssetAttributesModel(_ResolvableAssetAttributesMixin, ResolvableModel):
-    """Resolves into a dictionary of asset attributes. This is similar to AssetSpecSchema, but
-    does not require a key. This is useful in contexts where you want to modify attributes of
-    an existing AssetSpec.
-    """
-
-    key: Optional[str] = Field(default=None, description="A unique identifier for the asset.")
 
 
 def resolve_asset_attributes_to_mapping(
