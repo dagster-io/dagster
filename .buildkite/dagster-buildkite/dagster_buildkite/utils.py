@@ -351,12 +351,12 @@ def has_storage_test_fixture_changes():
     )
 
 
-def skip_if_not_dlift_commit() -> Optional[str]:
-    """If no dlift files are touched, then do NOT run. Even if on master."""
+def skip_if_not_dagster_dbt_cloud_commit() -> Optional[str]:
+    """If no dagster-dbt cloud v2 files are touched, then do NOT run. Even if on master."""
     return (
         None
-        if any("dagster-dlift" in str(path) for path in ChangedFiles.all)
-        else "Not a dlift commit"
+        if any("dagster_dbt/cloud_v2" in str(path) for path in ChangedFiles.all)
+        else "Not a dagster-dbt Cloud commit"
     )
 
 
