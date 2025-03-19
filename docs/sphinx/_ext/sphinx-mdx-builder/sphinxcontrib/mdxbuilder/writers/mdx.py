@@ -535,7 +535,7 @@ class MdxTranslator(SphinxTranslator):
         ids = node.get("ids")
 
         if ids:
-            self.add_text(f"<dt><Link id='{ids[0]}'>")
+            self.add_text(f"<dt><Link class=\"anchor\" id='{ids[0]}'>")
         else:
             self.add_text("<dt>")
 
@@ -556,6 +556,7 @@ class MdxTranslator(SphinxTranslator):
                 )
 
         if ids:
+            self.add_text(f"<a href=\"#{ids[0]}\" class=\"hash-link\"></a>")
             self.add_text("</Link></dt>")
         else:
             self.add_text("</dt>")
