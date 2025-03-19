@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Claude context file
+CLAUDE.md
 # C extensions
 *.so
 
