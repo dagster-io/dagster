@@ -123,6 +123,17 @@ def get_config_type_annotation(cls: type) -> Optional[type]:
     return None
 
 
+def config_schema_from_config_cls(config_cls: Optional[type]) -> Optional[Field]:
+    return (
+        infer_schema_from_config_annotation(
+            model_cls=config_cls,
+            config_arg_default=inspect.Parameter.empty,
+        )
+        if config_cls
+        else None
+    )
+
+
 # When to use record versus dataclass versus BaseModel
 @dataclass(frozen=True)
 class StepComponent(Component, ABC):
@@ -159,16 +170,6 @@ class StepComponent(Component, ABC):
     pool: Optional[str]
     can_subset: bool
 
-    # def get_config_field(self) -> Optional[Field]:
-    #     config_cls = get_config_type_annotation(self.__class__)
-    #     if config_cls:
-    #         return infer_schema_from_config_annotation(
-    #             model_cls=config_cls,
-    #             config_arg_default=inspect.Parameter.empty,
-    #         )
-    #     else:
-    #         return None
-
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         config_cls = get_config_type_annotation(self.__class__)
 
@@ -181,7 +182,7 @@ class StepComponent(Component, ABC):
             retry_policy=self.retry_policy,
             pool=self.pool,
             can_subset=self.can_subset,
-            config_schema=self.config_schema_from_config_cls(config_cls),
+            config_schema=config_schema_from_config_cls(config_cls),
             # required_resource_keys
         )
         def _an_asset(context: AssetExecutionContext):
@@ -201,16 +202,6 @@ class StepComponent(Component, ABC):
                 )
 
         return Definitions(assets=[_an_asset])
-
-    def config_schema_from_config_cls(self, config_cls: Optional[type]) -> Optional[Field]:
-        return (
-            infer_schema_from_config_annotation(
-                model_cls=config_cls,
-                config_arg_default=inspect.Parameter.empty,
-            )
-            if config_cls
-            else None
-        )
 
     @abstractmethod
     def execute(self, context: ExecutionContext, **kwargs) -> ExecutionRecord: ...
