@@ -85,6 +85,7 @@ import impala from './kindtag-images/tool-impala-color.svg';
 import instagram from './kindtag-images/tool-instagram-color.svg';
 import java from './kindtag-images/tool-java-color.svg';
 import javascript from './kindtag-images/tool-javascript-color.svg';
+import json from './kindtag-images/json.svg';
 import jupyter from './kindtag-images/tool-jupyter-color.svg';
 import k8s from './kindtag-images/tool-k8s-color.svg';
 import kafka from './kindtag-images/tool-kafka-color.svg';
@@ -183,6 +184,7 @@ import tensorflow from './kindtag-images/tool-tensorflow-color.svg';
 import teradata from './kindtag-images/tool-teradata-color.svg';
 import thoughtspot from './kindtag-images/tool-thoughtspot-color.svg';
 import tiktok from './kindtag-images/tool-tiktok-color.svg';
+import toml from './kindtag-images/toml.svg';
 import trino from './kindtag-images/tool-trino-color.svg';
 import twilio from './kindtag-images/tool-twilio-color.svg';
 import typescript from './kindtag-images/tool-typescript-color.svg';
@@ -218,6 +220,8 @@ type KnownTag = {
 };
 
 export type KnownTagType =
+  | 'json'
+  | 'toml'
   | 'jupyter'
   | 'ipynb'
   | 'noteable'
@@ -437,6 +441,14 @@ export type KnownTagType =
   | 'spanner';
 
 export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
+  json: {
+    icon: json,
+    content: 'json',
+  },
+  toml: {
+    icon: toml,
+    content: 'toml',
+  },
   jupyter: {
     icon: jupyter,
     content: 'jupyter',
