@@ -2,6 +2,7 @@ import hashlib
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from functools import cached_property
 from typing import Any, Optional
 
 from dagster import _check as check
@@ -165,12 +166,33 @@ class StepComponent(Component, ABC):
     pool: Optional[str]
     can_subset: bool
 
+    # def required_resource_keys(self) -> Optional[set[str]]:
+    #     return None
+
+    @cached_property
     def required_resource_keys(self) -> Optional[set[str]]:
-        return None
+        import inspect
+
+        # Get the execute method from the current class
+        execute_method = getattr(self.__class__, "execute", None)
+        if not execute_method:
+            return None
+
+        # Get the signature of the execute method
+        signature = inspect.signature(execute_method)
+
+        # Get all parameter names except 'self' and 'config'
+        params = {
+            param_name
+            for param_name in signature.parameters.keys()
+            if param_name not in ("self", "config", "context")
+        }
+
+        return params if params else None
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         config_cls = get_config_type_annotation(self.__class__)
-        required_resource_keys = self.required_resource_keys()
+        required_resource_keys = self.required_resource_keys
 
         @multi_asset(
             name=self.name,
