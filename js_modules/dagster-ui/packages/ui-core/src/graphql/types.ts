@@ -110,7 +110,7 @@ export type Asset = {
 export type AssetAssetMaterializationHistoryArgs = {
   afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
-  eventTypeSelector?: InputMaybe<MaterializationHistoryEventTypeSelector>;
+  eventTypeSelector: MaterializationHistoryEventTypeSelector;
   limit?: InputMaybe<Scalars['Int']['input']>;
   partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
