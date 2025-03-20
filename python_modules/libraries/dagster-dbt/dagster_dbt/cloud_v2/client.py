@@ -189,6 +189,30 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 break
         return results
 
+    def get_job_details(self, job_id: int) -> Mapping[str, Any]:
+        """Retrieves the details of a given dbt Cloud job.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
+        return self._make_request(
+            method="get",
+            endpoint=f"jobs/{job_id}",
+            base_url=self.api_v2_url,
+        )
+
+    def destroy_job(self, job_id: int) -> Mapping[str, Any]:
+        """Destroys a given dbt Cloud job.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
+        return self._make_request(
+            method="delete",
+            endpoint=f"jobs/{job_id}",
+            base_url=self.api_v2_url,
+        )
+
     def trigger_job_run(
         self, job_id: int, steps_override: Optional[Sequence[str]] = None
     ) -> Mapping[str, Any]:
@@ -199,7 +223,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 URL of the given job in the dbt Cloud UI.
             steps_override (Optional[Sequence[str]]): A list of dbt commands
                 that overrides the dbt commands of the dbt Cloud job. If no list is passed,
-                the dbt commands of the job are not overriden.
+                the dbt commands of the job are not overridden.
 
         Returns:
             List[Dict[str, Any]]: A List of parsed json data from the response to this request.
@@ -317,3 +341,24 @@ class DbtCloudWorkspaceClient(DagsterModel):
             endpoint=f"environments/{environment_id}",
             base_url=self.api_v2_url,
         )
+
+    def get_account_details(self) -> Mapping[str, Any]:
+        """Retrieves the details of the account associated to the dbt Cloud workspace.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
+        return self._make_request(
+            method="get",
+            endpoint="",
+            base_url=self.api_v2_url,
+        )
+
+    def verify_connection(self) -> None:
+        """Verifies the connection to the dbt Cloud REST API."""
+        try:
+            self.get_account_details()
+        except Exception as e:
+            raise Exception(
+                f"Failed to verify connection to dbt Cloud REST API with the workspace client. Exception: {e}"
+            )
