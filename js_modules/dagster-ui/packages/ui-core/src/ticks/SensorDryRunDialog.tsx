@@ -200,12 +200,16 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
 
   const launchMultipleRunsWithTelemetry = useLaunchMultipleRunsWithTelemetry();
 
-  const canLaunchAll = useMemo(() => {
-    return executionParamsList != null && executionParamsList.length > 0;
-  }, [executionParamsList]);
+  const canApply = useMemo(() => {
+    return (
+      (executionParamsList != null && executionParamsList.length > 0) ||
+      dynamicPartitionRequests?.length ||
+      0 > 0
+    );
+  }, [executionParamsList, dynamicPartitionRequests]);
 
-  const onLaunchAll = useCallback(async () => {
-    if (!canLaunchAll) {
+  const onApply = useCallback(async () => {
+    if (!canApply) {
       return;
     }
 
@@ -214,38 +218,42 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
 
     try {
       if (dynamicPartitionRequests?.length) {
-        await Promise.all(dynamicPartitionRequests.map(async (request) => {
-          if (request.type === DynamicPartitionsRequestType.ADD_PARTITIONS) {
-            await Promise.all((request.partitionKeys || []).map(async (partitionKey) => {
-              await createPartition({
+        await Promise.all(
+          dynamicPartitionRequests.map(async (request) => {
+            if (request.type === DynamicPartitionsRequestType.ADD_PARTITIONS) {
+              await Promise.all(
+                (request.partitionKeys || []).map(async (partitionKey) => {
+                  await createPartition({
+                    variables: {
+                      repositorySelector: {
+                        repositoryName: repoAddress.name,
+                        repositoryLocationName: repoAddress.location,
+                      },
+                      partitionsDefName: request.partitionsDefName,
+                      partitionKey,
+                    },
+                  });
+                }),
+              );
+            } else if (request.partitionKeys && request.partitionKeys.length) {
+              await deletePartition({
                 variables: {
                   repositorySelector: {
                     repositoryName: repoAddress.name,
                     repositoryLocationName: repoAddress.location,
                   },
                   partitionsDefName: request.partitionsDefName,
-                  partitionKey,
+                  partitionKeys: request.partitionKeys,
                 },
               });
-            }));
-          } else if (request.partitionKeys && request.partitionKeys.length) {
-            await deletePartition({
-              variables: {
-                repositorySelector: {
-                  repositoryName: repoAddress.name,
-                  repositoryLocationName: repoAddress.location,
-                },
-                partitionsDefName: request.partitionsDefName,
-                partitionKeys: request.partitionKeys,
-              },
-            });
-          }
-        }));
+            }
+          }),
+        );
       }
       if (executionParamsList) {
         await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
-        onCommitTickResult(); // persist tick
       }
+      onCommitTickResult(); // persist tick
     } catch (e) {
       console.error(e);
     }
@@ -253,7 +261,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     setLaunching(false);
     onClose();
   }, [
-    canLaunchAll,
+    canApply,
     createPartition,
     deletePartition,
     dynamicPartitionRequests,
@@ -326,18 +334,18 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
           <Box flex={{direction: 'row', gap: 8}}>
             <Button onClick={onClose}>Close</Button>
             <Tooltip
-              canShow={!canLaunchAll || launching}
-              content="Launches all runs and commits tick result"
+              canShow={!canApply || launching}
+              content="Applies requests, launches all runs, and commits tick result"
               placement="top-end"
             >
               <Button
                 icon={<Icon name="check_filled" />}
                 intent="primary"
-                disabled={!canLaunchAll || launching}
-                onClick={onLaunchAll}
+                disabled={!canApply || launching}
+                onClick={onApply}
                 data-testid={testId('launch-all')}
               >
-                <div>Launch all & commit tick result</div>
+                <div>Apply requests & commit tick result</div>
               </Button>
             </Tooltip>
           </Box>
@@ -367,8 +375,8 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     submitting,
     onClose,
     onCommitTickResult,
-    canLaunchAll,
-    onLaunchAll,
+    canApply,
+    onApply,
     submitTest,
   ]);
 
