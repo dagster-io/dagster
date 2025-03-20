@@ -622,7 +622,7 @@ type Asset {
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
-    eventTypeSelector: MaterializationHistoryEventTypeSelector
+    eventTypeSelector: MaterializationHistoryEventTypeSelector!
   ): [AssetMaterializationEventType!]!
   definition: AssetNode
 }
