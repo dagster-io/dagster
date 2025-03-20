@@ -156,7 +156,12 @@ class AssetSpecKwargs(SharedAssetKwargs):
     deps: Annotated[
         Sequence[AssetKey],
         Resolver.from_model(
-            lambda context, schema: [_resolve_asset_key(dep, context) for dep in schema.deps]
+            lambda context, schema: context.resolve_value(
+                schema.deps,
+                as_type=Sequence[AssetKey],  # Resolve any UDFs in the deps key
+            )
+            if isinstance(schema.deps, str)
+            else [_resolve_asset_key(dep, context) for dep in schema.deps]
         ),
     ]
 

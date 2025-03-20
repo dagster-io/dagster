@@ -6,4 +6,4 @@ attributes:
       assets:
         - key: script_depends_on_my_python_defs
           automation_condition: "{{ automation_condition.eager() }}"
-          deps: "{{ defs('component_component_deps_via_scope.defs.my_python_defs').get_all_asset_specs() }}"
+          deps: "{{ defs('my_python_defs').get_all_asset_specs() }}"

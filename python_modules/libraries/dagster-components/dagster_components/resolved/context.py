@@ -25,18 +25,29 @@ def env_scope(key: str) -> Optional[str]:
     return os.environ.get(key)
 
 
-def defs_scope(key: str) -> Definitions:
+def defs_scope(defs_submodule: str) -> Definitions:
+    """This function is used to load a Definitions object from a given
+    defs submodule.
+
+    Args:
+        defs_module: The name of the defs submodule to load, relative
+            to the defs root directory.
+
+    Returns:
+        A Definitions object.
+    """
     from dagster_components import ComponentLoadContext
 
-    module = importlib.import_module(key)
-    return ComponentLoadContext.current().load_defs(module)
+    ctx = ComponentLoadContext.current()
+
+    module = importlib.import_module(f"{ctx.defs_module_name}.{defs_submodule}")
+    return ctx.load_defs(module)
 
 
 def automation_condition_scope() -> Mapping[str, Any]:
     return {
         "eager": AutomationCondition.eager,
         "on_cron": AutomationCondition.on_cron,
-        "defs": defs_scope,
     }
 
 
