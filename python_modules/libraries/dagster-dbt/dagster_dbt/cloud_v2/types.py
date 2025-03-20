@@ -9,6 +9,40 @@ from dagster._serdes import whitelist_for_serdes
 
 @preview
 @record
+class DbtCloudProject:
+    """Represents a dbt Cloud Project, based on data as returned from the API."""
+
+    id: int
+    name: Optional[str]
+
+    @classmethod
+    def from_project_details(cls, project_details: Mapping[str, Any]) -> "DbtCloudProject":
+        return cls(
+            id=project_details["id"],
+            name=project_details.get("name"),
+        )
+
+
+@preview
+@record
+class DbtCloudEnvironment:
+    """Represents a dbt Cloud Environment, based on data as returned from the API."""
+
+    id: int
+    name: Optional[str]
+
+    @classmethod
+    def from_environment_details(
+        cls, environment_details: Mapping[str, Any]
+    ) -> "DbtCloudEnvironment":
+        return cls(
+            id=environment_details["id"],
+            name=environment_details.get("name"),
+        )
+
+
+@preview
+@record
 class DbtCloudJob:
     """Represents a dbt Cloud job, based on data as returned from the API."""
 

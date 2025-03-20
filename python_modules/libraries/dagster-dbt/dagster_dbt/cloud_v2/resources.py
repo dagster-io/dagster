@@ -1,3 +1,4 @@
+import re
 from collections.abc import Sequence
 from functools import lru_cache
 from typing import NamedTuple, Optional, Union
@@ -20,15 +21,29 @@ from pydantic import Field
 from dagster_dbt.asset_utils import build_dbt_specs
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.run_handler import DbtCloudJobRunHandler
-from dagster_dbt.cloud_v2.types import DbtCloudJob, DbtCloudWorkspaceData
+from dagster_dbt.cloud_v2.types import (
+    DbtCloudEnvironment,
+    DbtCloudJob,
+    DbtCloudProject,
+    DbtCloudWorkspaceData,
+)
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
 DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX = "__dbt_cloud"
 
 
-def get_dagster_adhoc_job_name(project_id: int, environment_id: int) -> str:
-    return f"{DAGSTER_ADHOC_PREFIX}{project_id}__{environment_id}"
+def get_dagster_adhoc_job_name(
+    project_id: int,
+    project_name: Optional[str],
+    environment_id: int,
+    environment_name: Optional[str],
+) -> str:
+    name = (
+        f"{DAGSTER_ADHOC_PREFIX}{project_name or project_id}__{environment_name or environment_id}"
+    )
+    # Clean the name and convert it to uppercase
+    return re.sub(r"[^A-Z0-9]+", "_", name.upper())
 
 
 @preview
@@ -107,8 +122,17 @@ class DbtCloudWorkspace(ConfigurableResource):
             DbtCloudJob: Internal representation of the dbt Cloud job.
         """
         client = self.get_client()
+        project = DbtCloudProject.from_project_details(
+            project_details=client.get_project_details(project_id=self.project_id)
+        )
+        environment = DbtCloudEnvironment.from_environment_details(
+            environment_details=client.get_environment_details(environment_id=self.environment_id)
+        )
         expected_job_name = self.adhoc_job_name or get_dagster_adhoc_job_name(
-            project_id=self.project_id, environment_id=self.environment_id
+            project_id=project.id,
+            project_name=project.name,
+            environment_id=environment.id,
+            environment_name=environment.name,
         )
         jobs = [
             DbtCloudJob.from_job_details(job_details)
@@ -125,6 +149,10 @@ class DbtCloudWorkspace(ConfigurableResource):
                 project_id=self.project_id,
                 environment_id=self.environment_id,
                 job_name=expected_job_name,
+                description=(
+                    "This job is used by Dagster to parse your dbt Cloud workspace "
+                    "and to kick off runs of dbt Cloud models."
+                ),
             )
         )
 

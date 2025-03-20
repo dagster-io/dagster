@@ -23,11 +23,16 @@ TEST_TOKEN = "test_token"
 
 TEST_PROJECT_ID = 2222
 TEST_ENVIRONMENT_ID = 3333
+TEST_PROJECT_NAME = "test_project_name"
+TEST_ENVIRONMENT_NAME = "test_environment_name"
 
 TEST_JOB_ID = 4444
 TEST_RUN_ID = 5555
 TEST_DEFAULT_ADHOC_JOB_NAME = get_dagster_adhoc_job_name(
-    project_id=TEST_PROJECT_ID, environment_id=TEST_ENVIRONMENT_ID
+    project_id=TEST_PROJECT_ID,
+    project_name=TEST_PROJECT_NAME,
+    environment_id=TEST_ENVIRONMENT_ID,
+    environment_name=TEST_ENVIRONMENT_NAME,
 )
 TEST_CUSTOM_ADHOC_JOB_NAME = "test_custom_adhoc_job_name"
 TEST_ANOTHER_JOB_NAME = "test_another_job_name"
@@ -89,7 +94,7 @@ def get_sample_job_data(job_name: str) -> Mapping[str, Any]:
         "updated_at": "2019-08-24T14:15:22Z",
         "account": {"name": "string", "state": 1, "docs_job_id": 0, "freshness_job_id": 0},
         "project": {
-            "name": "string",
+            "name": TEST_PROJECT_NAME,
             "account_id": TEST_ACCOUNT_ID,
             "description": "string",
             "connection_id": 0,
@@ -103,7 +108,7 @@ def get_sample_job_data(job_name: str) -> Mapping[str, Any]:
         "environment": {
             "account_id": TEST_ACCOUNT_ID,
             "project_id": TEST_PROJECT_ID,
-            "name": "string",
+            "name": TEST_ENVIRONMENT_NAME,
             "connection_id": 0,
             "credentials_id": 0,
             "repository_id": 0,
@@ -141,6 +146,261 @@ SAMPLE_CUSTOM_CREATE_JOB_RESPONSE = {
     "data": get_sample_job_data(job_name=TEST_CUSTOM_ADHOC_JOB_NAME),
     "status": {
         "code": 201,
+        "is_success": True,
+        "user_message": "string",
+        "developer_message": "string",
+    },
+}
+
+
+# Taken from dbt Cloud REST API documentation
+# https://docs.getdbt.com/dbt-cloud/api-v2#/operations/Retrieve%20Project
+SAMPLE_PROJECT_RESPONSE = {
+    "data": {
+        "id": TEST_PROJECT_ID,
+        "name": TEST_PROJECT_NAME,
+        "account_id": TEST_ACCOUNT_ID,
+        "description": "string",
+        "connection_id": 0,
+        "repository_id": 0,
+        "semantic_layer_config_id": 0,
+        "state": 1,
+        "dbt_project_subdirectory": "string",
+        "docs_job_id": 0,
+        "freshness_job_id": 0,
+        "created_at": "2019-08-24T14:15:22Z",
+        "updated_at": "2019-08-24T14:15:22Z",
+        "connection": {
+            "account_id": 0,
+            "project_id": 0,
+            "name": "string",
+            "type": "postgres",
+            "adapter_version": "apache_spark_v0",
+            "created_by_id": 0,
+            "created_by_service_token_id": 0,
+            "state": 1,
+            "private_link_endpoint_id": "string",
+            "oauth_configuration_id": 0,
+        },
+        "environments": [
+            {
+                "account_id": 0,
+                "project_id": 0,
+                "credentials_id": 0,
+                "connection_id": 0,
+                "extended_attributes_id": 0,
+                "name": "string",
+                "dbt_version": "string",
+                "type": "development",
+                "use_custom_branch": True,
+                "custom_branch": "string",
+                "supports_docs": True,
+                "deployment_type": "production",
+                "enable_model_query_history": False,
+                "state": 1,
+            }
+        ],
+        "repository": {
+            "account_id": 0,
+            "project_id": 0,
+            "full_name": "string",
+            "remote_backend": "azure_active_directory",
+            "git_clone_strategy": "azure_active_directory_app",
+            "deploy_key_id": 0,
+            "repository_credentials_id": 0,
+            "github_installation_id": 0,
+            "github_webhook_id": 0,
+            "state": 1,
+            "private_link_endpoint_id": "string",
+            "git_provider_id": 0,
+        },
+        "group_permissions": [
+            {
+                "account_id": 0,
+                "group_id": 0,
+                "project_id": 0,
+                "all_projects": True,
+                "permission_set": "owner",
+                "permission_level": 0,
+                "state": 1,
+                "writable_environment_categories": ["string"],
+            }
+        ],
+        "docs_job": {
+            "environment_id": 0,
+            "account_id": 0,
+            "project_id": 0,
+            "name": "string",
+            "description": "string",
+            "generate_docs": True,
+            "run_generate_sources": True,
+            "state": 1,
+            "dbt_version": "string",
+            "triggers": {
+                "github_webhook": True,
+                "schedule": True,
+                "git_provider_webhook": True,
+                "on_merge": True,
+                "custom_branch_only": True,
+            },
+            "settings": {"threads": 0, "target_name": "string"},
+            "execution": {"timeout_seconds": 0},
+            "schedule": {"cron": "string", "date": "every_day", "time": "every_hour"},
+            "execute_steps": ["string"],
+            "job_type": "ci",
+            "triggers_on_draft_pr": False,
+            "run_compare_changes": False,
+            "compare_changes_flags": "--select state:modified",
+            "run_lint": False,
+            "errors_on_lint_failure": True,
+            "deferring_environment_id": 0,
+            "deferring_job_definition_id": 0,
+        },
+        "freshness_job": {
+            "environment_id": 0,
+            "account_id": 0,
+            "project_id": 0,
+            "name": "string",
+            "description": "string",
+            "generate_docs": True,
+            "run_generate_sources": True,
+            "state": 1,
+            "dbt_version": "string",
+            "triggers": {
+                "github_webhook": True,
+                "schedule": True,
+                "git_provider_webhook": True,
+                "on_merge": True,
+                "custom_branch_only": True,
+            },
+            "settings": {"threads": 0, "target_name": "string"},
+            "execution": {"timeout_seconds": 0},
+            "schedule": {"cron": "string", "date": "every_day", "time": "every_hour"},
+            "execute_steps": ["string"],
+            "job_type": "ci",
+            "triggers_on_draft_pr": False,
+            "run_compare_changes": False,
+            "compare_changes_flags": "--select state:modified",
+            "run_lint": False,
+            "errors_on_lint_failure": True,
+            "deferring_environment_id": 0,
+            "deferring_job_definition_id": 0,
+        },
+    },
+    "status": {
+        "code": 200,
+        "is_success": True,
+        "user_message": "string",
+        "developer_message": "string",
+    },
+}
+
+# Taken from dbt Cloud REST API documentation
+# https://docs.getdbt.com/dbt-cloud/api-v2#/operations/Retrieve%20Environment
+SAMPLE_ENVIRONMENT_RESPONSE = {
+    "data": {
+        "id": TEST_ENVIRONMENT_ID,
+        "account_id": TEST_ACCOUNT_ID,
+        "project_id": TEST_PROJECT_ID,
+        "name": TEST_ENVIRONMENT_NAME,
+        "connection_id": 0,
+        "credentials_id": 0,
+        "repository_id": 0,
+        "extended_attributes_id": 0,
+        "custom_branch": "string",
+        "use_custom_branch": False,
+        "dbt_project_subdirectory": "string",
+        "dbt_version": "string",
+        "raw_dbt_version": "string",
+        "supports_docs": False,
+        "deployment_type": "production",
+        "type": "development",
+        "created_by_id": 0,
+        "state": 1,
+        "created_at": "2019-08-24T14:15:22Z",
+        "updated_at": "2019-08-24T14:15:22Z",
+        "repository": {
+            "account_id": 0,
+            "project_id": 0,
+            "full_name": "string",
+            "remote_backend": "azure_active_directory",
+            "git_clone_strategy": "azure_active_directory_app",
+            "deploy_key_id": 0,
+            "repository_credentials_id": 0,
+            "github_installation_id": 0,
+            "github_webhook_id": 0,
+            "state": 1,
+            "git_provider_id": 0,
+            "private_link_endpoint_id": "string",
+        },
+        "connection": {
+            "id": 0,
+            "account_id": 0,
+            "dbt_project_id": 0,
+            "name": "string",
+            "type": "postgres",
+            "state": 1,
+            "created_by_id": 0,
+            "created_by_service_token_id": 0,
+            "hostname": "string",
+            "dbname": "string",
+            "port": 0,
+            "tunnel_enabled": True,
+        },
+        "jobs": [
+            {
+                "account_id": 0,
+                "project_id": 0,
+                "environment_id": 0,
+                "name": "string",
+                "dbt_version": "string",
+                "deferring_environment_id": 0,
+                "deferring_job_definition_id": 0,
+                "description": "",
+                "execute_steps": ["string"],
+                "execution": {"timeout_seconds": 0},
+                "generate_docs": True,
+                "job_type": "ci",
+                "lifecycle_webhooks": True,
+                "run_compare_changes": True,
+                "compare_changes_flags": "--select state:modified",
+                "run_generate_sources": True,
+                "run_lint": True,
+                "errors_on_lint_failure": True,
+                "settings": {"threads": 0, "target_name": "string"},
+                "state": 1,
+                "triggers_on_draft_pr": False,
+                "triggers": {
+                    "github_webhook": True,
+                    "schedule": True,
+                    "git_provider_webhook": True,
+                    "on_merge": True,
+                    "custom_branch_only": True,
+                },
+                "schedule": {
+                    "date": {"type": "every_day", "days": [0], "cron": "string"},
+                    "time": {"type": "every_hour", "hours": [0], "interval": 1},
+                    "cron": "string",
+                },
+                "generate_sources": False,
+            }
+        ],
+        "custom_environment_variables": [
+            {
+                "account_id": 0,
+                "project_id": 0,
+                "name": "string",
+                "type": "project",
+                "user_id": 0,
+                "environment_id": 0,
+                "job_definition_id": 0,
+                "display_value": "string",
+                "state": 1,
+            }
+        ],
+    },
+    "status": {
+        "code": 200,
         "is_success": True,
         "user_message": "string",
         "developer_message": "string",
@@ -348,6 +608,18 @@ def job_api_mocks_fixture() -> Iterator[responses.RequestsMock]:
             url=f"{TEST_REST_API_BASE_URL}/jobs",
             json=SAMPLE_DEFAULT_CREATE_JOB_RESPONSE,
             status=201,
+        )
+        response.add(
+            method=responses.GET,
+            url=f"{TEST_REST_API_BASE_URL}/projects/{TEST_PROJECT_ID}",
+            json=SAMPLE_PROJECT_RESPONSE,
+            status=200,
+        )
+        response.add(
+            method=responses.GET,
+            url=f"{TEST_REST_API_BASE_URL}/environments/{TEST_ENVIRONMENT_ID}",
+            json=SAMPLE_ENVIRONMENT_RESPONSE,
+            status=200,
         )
         yield response
 

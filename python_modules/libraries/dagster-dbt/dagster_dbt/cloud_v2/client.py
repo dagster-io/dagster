@@ -118,7 +118,12 @@ class DbtCloudWorkspaceClient(DagsterModel):
         raise Failure(f"Max retries ({self.request_max_retries}) exceeded with url: {url}.")
 
     def create_job(
-        self, *, project_id: int, environment_id: int, job_name: str
+        self,
+        *,
+        project_id: int,
+        environment_id: int,
+        job_name: str,
+        description: Optional[str] = None,
     ) -> Mapping[str, Any]:
         """Creates a dbt cloud job in a dbt Cloud workspace for a given project and environment.
 
@@ -128,10 +133,14 @@ class DbtCloudWorkspaceClient(DagsterModel):
             environment_id (str): The dbt Cloud Environment ID. You can retrieve this value from the
                 URL of the given environment page the dbt Cloud UI.
             job_name (str): The name of the job to create.
+            description (Optional[str]): The description of the job to create.
+                Defaults to `A job that runs dbt models, sources, and tests.`
 
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request
         """
+        if not description:
+            description = "A job that runs dbt models, sources, and tests."
         return self._make_request(
             method="post",
             endpoint="jobs",
@@ -141,7 +150,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 "environment_id": environment_id,
                 "project_id": project_id,
                 "name": job_name,
-                "description": "A job that runs dbt models, sources, and tests.",
+                "description": description,
                 "job_type": "other",
             },
         )
@@ -276,3 +285,35 @@ class DbtCloudWorkspaceClient(DagsterModel):
 
     def get_run_manifest_json(self, run_id: int) -> Mapping[str, Any]:
         return self.get_run_artifact(run_id=run_id, path="manifest.json")
+
+    def get_project_details(self, project_id: int) -> Mapping[str, Any]:
+        """Retrieves the details of a given dbt Cloud Project.
+
+        Args:
+            project_id (str): The dbt Cloud Project ID. You can retrieve this value from the
+                URL of the "Explore" tab in the dbt Cloud UI.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
+        return self._make_request(
+            method="get",
+            endpoint=f"projects/{project_id}",
+            base_url=self.api_v2_url,
+        )
+
+    def get_environment_details(self, environment_id: int) -> Mapping[str, Any]:
+        """Retrieves the details of a given dbt Cloud Environment.
+
+        Args:
+            environment_id (str): The dbt Cloud Environment ID. You can retrieve this value from the
+                URL of the given environment page the dbt Cloud UI.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
+        return self._make_request(
+            method="get",
+            endpoint=f"environments/{environment_id}",
+            base_url=self.api_v2_url,
+        )
