@@ -227,10 +227,10 @@ class ReadOnlyPlusRemoteCodeLocationOrigin(
 
     def __new__(
         cls,
+        location_name: str,
         url: str,
         deployment: str,
         token: str,
-        location_name: str,
     ):
         return super().__new__(
             cls,
