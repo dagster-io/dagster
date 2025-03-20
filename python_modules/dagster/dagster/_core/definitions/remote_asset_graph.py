@@ -14,6 +14,8 @@ from typing import (  # noqa: UP035
     Union,
 )
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
@@ -42,7 +44,6 @@ from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.handle import InstigatorHandle, RepositoryHandle
 from dagster._core.workspace.workspace import CurrentWorkspace
 from dagster._record import ImportFrom, record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:

@@ -16,7 +16,7 @@ from dagster._core.snap.dep_snapshot import (
     build_dep_structure_snapshot_from_graph_def,
 )
 from dagster._serdes import serialize_pp, serialize_value
-from dagster._serdes.serdes import deserialize_value
+from dagster_shared.serdes import deserialize_value
 
 
 def serialize_rt(value: JobSnap) -> JobSnap:

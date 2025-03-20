@@ -5,6 +5,15 @@ from datetime import datetime
 from typing import Any, Callable, Generic, NamedTuple, Optional, Union
 
 import dagster_shared.seven as seven
+from dagster_shared.serdes.serdes import (
+    FieldSerializer,
+    JsonSerializableValue,
+    PackableValue,
+    UnpackContext,
+    WhitelistMap,
+    pack_value,
+    whitelist_for_serdes,
+)
 from typing_extensions import Self, TypeVar
 
 import dagster._check as check
@@ -20,18 +29,8 @@ from dagster._core.definitions.metadata.table import (
     TableSchema as TableSchema,
 )
 from dagster._core.errors import DagsterInvalidMetadata
-from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import PackableValue
 
 T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, covariant=True)
-from dagster._serdes import pack_value
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    JsonSerializableValue,
-    PackableValue,
-    UnpackContext,
-    WhitelistMap,
-)
 
 # ########################
 # ##### METADATA VALUE

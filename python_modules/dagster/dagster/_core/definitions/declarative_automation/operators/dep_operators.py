@@ -1,6 +1,8 @@
 from abc import abstractmethod
 from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional, Union  # noqa: UP035
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.asset_graph_view.asset_graph_view import U_EntityKey
@@ -13,7 +15,6 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._record import copy, record
-from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AssetSelection

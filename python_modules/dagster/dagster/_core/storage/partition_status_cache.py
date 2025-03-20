@@ -2,6 +2,9 @@ from collections.abc import Iterable, Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
+from dagster_shared.serdes import deserialize_value
+from dagster_shared.serdes.errors import DeserializationError
+
 from dagster import (
     AssetKey,
     DagsterInstance,
@@ -29,8 +32,6 @@ from dagster._core.storage.tags import (
     get_dimension_from_partition_tag,
 )
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.errors import DeserializationError
-from dagster._serdes.serdes import deserialize_value
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:

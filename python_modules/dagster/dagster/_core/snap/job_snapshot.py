@@ -2,6 +2,8 @@ from collections.abc import Mapping, Sequence
 from functools import cached_property
 from typing import AbstractSet, Any, Optional, Union, cast  # noqa: UP035
 
+from dagster_shared.serdes.serdes import RecordSerializer
+
 from dagster import _check as check
 from dagster._config import (
     FIELD_NO_DEFAULT_PROVIDED,
@@ -51,7 +53,6 @@ from dagster._core.snap.node import (
 from dagster._core.utils import toposort_flatten
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import create_snapshot_id, deserialize_value, whitelist_for_serdes
-from dagster._serdes.serdes import RecordSerializer
 
 
 def _create_job_snapshot_id(job_snap: "JobSnap"):

@@ -1,9 +1,10 @@
 from collections.abc import Sequence
 from typing import NamedTuple, Optional
 
+from dagster_shared.serdes.serdes import NamedTupleSerializer, UnknownSerdesValue
+
 import dagster._check as check
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer, UnknownSerdesValue
 from dagster._utils.error import SerializableErrorInfo
 
 

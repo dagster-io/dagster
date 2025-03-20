@@ -49,8 +49,8 @@ from dagster._daemon.asset_daemon import (
     get_has_migrated_to_sensors,
     set_auto_materialize_paused,
 )
-from dagster._serdes.serdes import deserialize_value, serialize_value
 from dagster._time import get_current_datetime, get_current_timestamp
+from dagster_shared.serdes import deserialize_value, serialize_value
 
 from dagster_tests.declarative_automation_tests.legacy_tests.updated_scenarios.basic_scenarios import (
     basic_scenarios,
