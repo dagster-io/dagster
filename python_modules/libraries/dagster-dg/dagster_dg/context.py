@@ -434,6 +434,20 @@ class DgContext:
     # ##### HELPERS
     # ########################
 
+    def external_dagster_cloud_cli_command(
+        self, command: list[str], log: bool = True, env: Optional[dict[str, str]] = None
+    ):
+        # TODO Match dagster-cloud-cli version with calling dg version
+        command = ["uv", "tool", "run", "--from", "dagster-cloud-cli", "dagster-cloud", *command]
+        with pushd(self.root_path):
+            result = subprocess.run(command, check=False, env={**os.environ, **(env or {})})
+            if result.returncode != 0:
+                exit_with_error(f"""
+                    An error occurred while executing a `dagster-cloud` command via `uv tool run`.
+
+                    `{shlex.join(command)}` exited with code {result.returncode}. Aborting.
+                """)
+
     def external_components_command(
         self,
         command: list[str],
