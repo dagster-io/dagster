@@ -9,7 +9,12 @@ def test_cloud_job_apis(
 ) -> None:
     """Tests that we can create / destroy a dagster job."""
     client = workspace.get_client()
-    job_name = get_dagster_adhoc_job_name(project_id=project_id, environment_id=environment_id)
+    job_name = get_dagster_adhoc_job_name(
+        project_id=project_id,
+        project_name=None,
+        environment_id=environment_id,
+        environment_name=None,
+    )
     created_job = DbtCloudJob.from_job_details(
         job_details=client.create_job(
             project_id=project_id,
