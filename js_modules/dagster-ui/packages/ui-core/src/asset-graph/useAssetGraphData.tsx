@@ -361,6 +361,18 @@ const spawnBuildGraphDataWorker = workerSpawner(
   () => new Worker(new URL('./ComputeGraphData.worker', import.meta.url)),
 );
 
+const EMPTY_GRAPH_DATA: GraphData = {
+  nodes: {},
+  downstream: {},
+  upstream: {},
+};
+
+const EMPTY_GRAPH_DATA_STATE: GraphDataState = {
+  graphAssetKeys: [],
+  allAssetKeys: [],
+  assetGraphData: EMPTY_GRAPH_DATA,
+};
+
 let _id = 0;
 async function computeGraphDataWrapper(
   props: Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
@@ -381,6 +393,10 @@ async function computeGraphDataWrapper(
         id,
         ...props,
       };
+      worker.onError((error) => {
+        console.error(error);
+        resolve(EMPTY_GRAPH_DATA_STATE);
+      });
       worker.postMessage(message);
     });
   }
@@ -407,6 +423,10 @@ async function buildGraphDataWrapper(
           resolve(data);
           removeMessageListener();
         }
+      });
+      worker.onError((error) => {
+        console.error(error);
+        resolve(EMPTY_GRAPH_DATA);
       });
       const message: BuildGraphDataMessageType = {
         type: 'buildGraphData',
