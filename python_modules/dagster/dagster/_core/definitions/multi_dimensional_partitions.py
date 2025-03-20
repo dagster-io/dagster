@@ -170,7 +170,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     2020-01-02|b
     ...
 
-    We recommended limiting partition counts for each asset to 25,000 partitions or fewer.
+    We recommended limiting partition counts for each asset to 100,000 partitions or fewer.
 
     Args:
         partitions_defs (Mapping[str, PartitionsDefinition]):
