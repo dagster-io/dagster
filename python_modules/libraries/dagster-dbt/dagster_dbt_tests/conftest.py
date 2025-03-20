@@ -35,8 +35,6 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> Iterator[None]:
     for item in items:
         if "cloud" in item.path.parts or "cloud_v2" in item.path.parts:
             item.add_marker(pytest.mark.cloud)
-        elif "kitchen-sink" in item.path.parts:
-            item.add_marker(pytest.mark.kitchen_sink)
         else:
             item.add_marker(pytest.mark.core)
 
