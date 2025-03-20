@@ -100,31 +100,19 @@ def has_config_param_annotation(annotation: Optional[type[Any]]) -> bool:
     )
 
 
-def get_config_type_annotation(cls: type) -> Optional[type]:
-    """Returns the type annotation of the 'config' argument in the 'execute' method of a class,
-    or None if 'config' does not exist.
-
-    Args:
-        cls: The class to inspect (should have an 'execute' method).
-
-    Returns:
-        The type annotation of 'config' as a class if it exists, otherwise None.
-    """
-    # Get the execute method from the class
-    method = cls.execute
-
+def get_config_type_param_annotation(cls: type) -> Optional[tuple[str, inspect.Parameter]]:
     # Get the signature of the execute method
-    signature = inspect.signature(method)
+    signature = inspect.signature(cls.execute)
 
     # Get all parameters annotated with a resource param
     params = [
-        param
-        for param in signature.parameters.values()
+        (name, param)
+        for (name, param) in signature.parameters.items()
         if has_config_param_annotation(param.annotation)
     ]
 
     check.invariant(len(params) <= 1)
-    return next(iter(params)).annotation if params else None
+    return next(iter(params)) if params else None
 
 
 def config_schema_from_config_cls(config_cls: Optional[type]) -> Optional[Field]:
@@ -192,7 +180,8 @@ class StepComponent(Component, ABC):
         return params if params else None
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        config_cls = get_config_type_annotation(self.__class__)
+        param_annotation = get_config_type_param_annotation(self.__class__)
+        config_cls = param_annotation[1].annotation if param_annotation else None
         required_resource_keys = self.required_resource_keys
 
         @multi_asset(
@@ -208,18 +197,19 @@ class StepComponent(Component, ABC):
             required_resource_keys=required_resource_keys,
         )
         def _an_asset(context: AssetExecutionContext):
-            if required_resource_keys or config_cls:
-                config_dict = context.op_config if config_cls else {}
-                assert isinstance(config_dict, dict)
-                config_inst = config_cls(**config_dict) if config_cls else None
-                kwargs = (
-                    {
-                        **({"config": config_inst} if config_inst else {}),
-                        **(context.resources.original_resource_dict or {}),
-                    }
-                    if config_inst or required_resource_keys
-                    else {}
-                )
+            if config_cls:
+                config_dict = check.inst(context.op_config if config_cls else {}, dict)
+                config_inst = config_cls(**config_dict)
+                config_param_name = check.not_none(param_annotation)[0]
+                config_kwarg = {config_param_name: config_inst} if config_inst else {}
+            else:
+                config_kwarg = {}
+
+            if required_resource_keys or config_kwarg:
+                kwargs = {
+                    **config_kwarg,
+                    **(context.resources.original_resource_dict or {}),
+                }
                 kwargs.pop("io_manager", None)
             else:
                 kwargs = {}
@@ -235,6 +225,16 @@ class StepComponent(Component, ABC):
                     check_results=asset_result.check_results,
                 )
 
+            # for asset_check_result in execution_result.asset_check_records or []:
+            #     yield AssetCheckResult(
+            #         asset_key=asset_check_result.asset_key,
+            #         check_name=asset_check_result.check_name,
+            #         passed=asset_check_result.passed,
+            #         metadata=asset_check_result.metadata,
+            #         severity=asset_check_result.severity,
+            #         description=asset_check_result.description,
+            #     )
+
         return Definitions(assets=[_an_asset], resources=context.module_cache.resources)
 
     @abstractmethod
@@ -247,8 +247,4 @@ def execute_step(
     defs = step.build_defs(ComponentLoadContext.for_test(resources=resources))
     keys = [spec.key for spec in defs.get_all_asset_specs()]
     assets_def = defs.get_assets_def(next(iter(keys)))
-    return materialize(
-        assets=[assets_def],
-        run_config=run_config,
-        # resources=resources,
-    )
+    return materialize(assets=[assets_def], run_config=run_config)

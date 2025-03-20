@@ -57,6 +57,19 @@ class SingleAssetWithConfigStep(StepComponent):
         )
 
 
+class SingleAssetWithConfigStepAltName(StepComponent):
+    def execute(
+        self, context: ExecutionContext, diff_name: ConfigParam[SomeConfig]
+    ) -> ExecutionRecord:
+        return ExecutionRecord(
+            asset_records=[
+                AssetRecord(
+                    asset_key=next(iter(self.assets)).key, metadata={"config": diff_name.a_value}
+                )
+            ]
+        )
+
+
 class AResource:
     def get_value(self) -> str:
         return "a_value"
@@ -165,6 +178,16 @@ def test_step_with_config() -> None:
     ).success
 
 
+def test_step_with_config_alt_name() -> None:
+    step = SingleAssetWithConfigStepAltName(assets=[AssetSpec("the_key")])
+
+    assert get_assets_def(step).op.name == "execute__the_key"
+    assert get_assets_def(step).op.config_schema
+    assert execute_step(
+        step, run_config={"ops": {"execute__the_key": {"config": {"a_value": "foo"}}}}
+    ).success
+
+
 def test_step_with_resource() -> None:
     step = SingleAssetWithResource(assets=[AssetSpec("the_key")])
     record = step.execute(ExecutionContext(build_asset_context()), a_resource=AResource())
@@ -189,3 +212,13 @@ def test_step_with_resource() -> None:
 
     mat = execute_single_asset(step, resources={"a_resource": AResource()})
     assert mat.metadata == {"resource": TextMetadataValue("a_value")}
+
+
+# class StandAloneAssetCheck(StepComponent):
+#     def execute(self, context: ExecutionContext) -> ExecutionRecord:
+#         return ExecutionRecord(asset_check_records=[AssetCheckRecord(passed=True)])
+
+
+# def test_standalone_asset_check() -> None:
+#     step = StandAloneAssetCheck(checks=[AssetCheckSpec("check_name", asset="the_key")])
+#     execute_single_asset(step)
