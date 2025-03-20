@@ -109,11 +109,7 @@ def dev_command(
     # In a workspace context, dg dev will construct a temporary
     # workspace file that points at all defined code locations and invoke:
     #     uv tool run --with dagster-webserver dagster dev
-    run_cmds = (
-        ["uv", "run", "dagster", "dev"]
-        if dg_context.is_project
-        else ["uv", "tool", "run", "--with", "dagster-webserver", "dagster", "dev"]
-    )
+    run_cmds = ["uv", "run", "dagster", "dev"] if dg_context.is_project else ["dagster", "dev"]
 
     with (
         pushd(dg_context.root_path),
