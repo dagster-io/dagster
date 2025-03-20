@@ -63,8 +63,11 @@ def error_dict_to_formatted_error(
     source = source_position_tree.source_error(
         yaml_path=yaml_path,
         inline_error_message=augment_inline_error_message(
-            last_location_part, error_details.message
+            last_location_part,
+            error_details.message,
         ),
+        # May be able to discern certain error types that at the value instead of keys
+        value_error=False,
     )
 
     fmt_filename = (

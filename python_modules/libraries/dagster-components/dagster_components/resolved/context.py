@@ -62,6 +62,7 @@ class ResolutionContext:
         source = self.source_position_tree.source_error(
             yaml_path=self.path,
             inline_error_message=inline_err,
+            value_error=True,
         )
         return [
             f"{source.file_name}:{source.start_line_no} - {source.location}\n{source.snippet}\n",
