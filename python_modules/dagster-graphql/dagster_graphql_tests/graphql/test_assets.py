@@ -108,14 +108,14 @@ GET_ASSET_MATERIALIZATION_WITH_PARTITION = """
 """
 
 GET_ASSET_MATERIALIZATION_HISTORY = """
-    query AssetQuery($assetKey: AssetKeyInput!) {
+    query AssetQuery($assetKey: AssetKeyInput!, $eventTypeSelector: MaterializationHistoryEventTypeSelector) {
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
                 id
-                assetMaterializationHistory {
+                assetMaterializationHistory(eventTypeSelector: $eventTypeSelector) {
                     __typename
                     ... on FailedToMaterializeEvent {
-                        failedToMaterializeReason
+                        materializationFailureReason
                         assetKey {
                             path
                         }
@@ -2973,7 +2973,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_MATERIALIZATION_HISTORY,
-            variables={"assetKey": {"path": ["asset_1"]}},
+            variables={"assetKey": {"path": ["asset_1"]}, "eventTypeSelector": "ALL"},
         )
 
         assert result.data
