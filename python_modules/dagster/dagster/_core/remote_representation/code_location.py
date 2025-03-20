@@ -7,7 +7,7 @@ from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from contextlib import AbstractContextManager
 from functools import cached_property
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union, cast
 
 import dagster._check as check
 from dagster._api.get_server_id import sync_get_server_id
@@ -63,7 +63,7 @@ from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
-    ReadOnlyCloudMirrorCodeLocationOrigin,
+    ReadOnlyPlusRemoteCodeLocationOrigin,
 )
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 from dagster._core.snap.job_snapshot import JobSnap
@@ -201,7 +201,7 @@ class CodeLocation(AbstractContextManager):
         job_name: str,
         partition_name: str,
         instance: DagsterInstance,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+        selected_asset_keys: Optional[set[AssetKey]],
     ) -> Union["PartitionTagsSnap", "PartitionExecutionErrorSnap"]:
         from dagster._core.remote_representation.external_data import PartitionTagsSnap
 
@@ -245,7 +245,7 @@ class CodeLocation(AbstractContextManager):
         repository_handle: RepositoryHandle,
         job_name: str,
         instance: DagsterInstance,
-        selected_asset_keys: Optional[AbstractSet[AssetKey]],
+        selected_asset_keys: Optional[set[AssetKey]],
     ) -> Union[PartitionNamesSnap, "PartitionExecutionErrorSnap"]:
         remote_repo = self.get_repository(repository_handle.repository_name)
         partition_set_name = partition_set_snap_name_for_job_name(job_name)
@@ -654,6 +654,7 @@ T = TypeVar("T", bound=PackableValue)
 
 
 def download_and_deserialize(url: str, deserialize_as: type[T]) -> T:
+    """Utility which downloads a serialized, compressed serdes object from a URL and deserializes it."""
     with tempfile.TemporaryDirectory() as temp_dir:
         file_path = os.path.join(temp_dir, "file.snap")
         with open(file_path, "wb") as f:
@@ -662,32 +663,98 @@ def download_and_deserialize(url: str, deserialize_as: type[T]) -> T:
         return deserialize_value(val=serialized_string, as_type=deserialize_as)
 
 
-def sync_get_external_repositories_from_cloud(
-    code_location_name: str, url: str, deployment: str, token: str
-) -> tuple[Mapping[str, RepositorySnap], Mapping[str, Callable[[JobRefSnap], JobDataSnap]]]:
-    repository_snaps = {}
-    repository_fns = {}
+def _create_read_only_copy_of_repo_snap(repo_snap: RepositorySnap) -> RepositorySnap:
+    """Utility which creates a version of a repository snapshot which has all assets
+    marked as unexecutable.
+    """
+    asset_nodes_new = [
+        AssetNodeSnap(
+            asset_key=asset_snap.asset_key,
+            parent_edges=asset_snap.parent_edges,
+            child_edges=asset_snap.child_edges,
+            execution_type=AssetExecutionType.UNEXECUTABLE,
+            pools=asset_snap.pools,
+            compute_kind=asset_snap.compute_kind,
+            op_name=asset_snap.op_name,
+            op_names=asset_snap.op_names,
+            code_version=asset_snap.code_version,
+            node_definition_name=asset_snap.node_definition_name,
+            graph_name=asset_snap.graph_name,
+            description=asset_snap.description,
+            job_names=asset_snap.job_names,
+            partitions=asset_snap.partitions,
+            output_name=asset_snap.output_name,
+            metadata=asset_snap.metadata,
+            tags=asset_snap.tags,
+            group_name=asset_snap.group_name,
+            freshness_policy=asset_snap.freshness_policy,
+            is_source=asset_snap.is_source,
+            is_observable=asset_snap.is_observable,
+            execution_set_identifier=asset_snap.execution_set_identifier,
+            required_top_level_resources=asset_snap.required_top_level_resources,
+            auto_materialize_policy=asset_snap.auto_materialize_policy,
+            automation_condition_snapshot=asset_snap.automation_condition_snapshot,
+            backfill_policy=asset_snap.backfill_policy,
+            auto_observe_interval_minutes=asset_snap.auto_observe_interval_minutes,
+            owners=asset_snap.owners,
+        )
+        for asset_snap in repo_snap.asset_nodes
+    ]
+    return RepositorySnap(
+        name=repo_snap.name,
+        schedules=repo_snap.schedules,
+        partition_sets=repo_snap.partition_sets,
+        sensors=repo_snap.sensors,
+        asset_nodes=asset_nodes_new,
+        job_datas=repo_snap.job_datas,
+        job_refs=repo_snap.job_refs,
+        resources=repo_snap.resources,
+        asset_check_nodes=repo_snap.asset_check_nodes,
+        metadata=repo_snap.metadata,
+        utilized_env_vars=repo_snap.utilized_env_vars,
+    )
 
-    print(f"Pulling code location {code_location_name}")
-    presigned_url_result = requests.get(
-        f"{url}/gen_code_location_snapshot_url?location_name={code_location_name}",
+
+class RemoteRepositoryData(NamedTuple):
+    snap: RepositorySnap
+    job_ref_fn: Callable[[JobRefSnap], JobDataSnap]
+
+
+def _call_plus_api(url: str, deployment: str, token: str, path: str) -> dict[str, Any]:
+    """Calls out to the Plus agent API for the given deployment."""
+    return requests.get(
+        f"{url}/{path}",
         headers={
             "Dagster-Cloud-Version": "1.0",
             "Authorization": f"Bearer {token}",
             "Dagster-Cloud-Deployment": deployment,
         },
+    ).json()
+
+
+def sync_get_external_repositories_from_cloud(
+    code_location_name: str, url: str, deployment: str, token: str
+) -> Mapping[str, RemoteRepositoryData]:
+    """Downloads repository snapshots from a Dagster Plus deployment and returns
+    a dictionary of snapshots and functions which can be used to further retrieve
+    job data.
+    """
+    data_by_repository = {}
+    presigned_url_result = _call_plus_api(
+        url, deployment, token, f"gen_code_location_snapshot_url?location_name={code_location_name}"
     )
-    repositories = presigned_url_result.json()["repositories"]
+    repositories = presigned_url_result["repositories"]
     for repository in repositories:
         repository_name = repository["repository_name"]
         presigned_url = repository["presigned_url"]
-        presigned_job_urls = repository["presigned_job_urls"]
 
-        repo_snap = download_and_deserialize(presigned_url, RepositorySnap)
-        job_snaps = [download_and_deserialize(job_url, JobSnap) for job_url in presigned_job_urls]
+        presigned_job_urls = copy(repository["presigned_job_urls"])
 
-        def ref_to_data_fn(job_ref: JobRefSnap) -> JobDataSnap:
-            job_snap = next(job_snap for job_snap in job_snaps if job_snap.name == job_ref.name)
+        def job_ref_to_data_fn(job_ref: JobRefSnap) -> JobDataSnap:
+            job_snap_url = presigned_job_urls.get(job_ref.name)
+            if not job_snap_url:
+                raise ValueError(f"Job {job_ref.name} not found in Dagster Plus snapshots")
+            job_snap = download_and_deserialize(job_snap_url, JobSnap)
             return JobDataSnap(
                 name=job_ref.name,
                 job=job_snap,
@@ -695,92 +762,24 @@ def sync_get_external_repositories_from_cloud(
                 active_presets=job_ref.active_presets,
             )
 
-        """
- asset_key: AssetKey,
-        parent_edges: Sequence[AssetParentEdgeSnap],
-        child_edges: Sequence[AssetChildEdgeSnap],
-        execution_type: Optional[AssetExecutionType] = None,
-        pools: Optional[set[str]] = None,
-        compute_kind: Optional[str] = None,
-        op_name: Optional[str] = None,
-        op_names: Optional[Sequence[str]] = None,
-        code_version: Optional[str] = None,
-        node_definition_name: Optional[str] = None,
-        graph_name: Optional[str] = None,
-        description: Optional[str] = None,
-        job_names: Optional[Sequence[str]] = None,
-        partitions: Optional[PartitionsSnap] = None,
-        output_name: Optional[str] = None,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        group_name: Optional[str] = None,
-        freshness_policy: Optional[FreshnessPolicy] = None,
-        is_source: Optional[bool] = None,
-        is_observable: bool = False,
-        execution_set_identifier: Optional[str] = None,
-        required_top_level_resources: Optional[Sequence[str]] = None,
-        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
-        automation_condition_snapshot: Optional[AutomationConditionSnapshot] = None,
-        backfill_policy: Optional[BackfillPolicy] = None,
-        auto_observe_interval_minutes: Optional[Union[float, int]] = None,
-        owners: Optional[Sequence[str]] = None,
-        """
-        asset_nodes_new = [
-            AssetNodeSnap(
-                asset_key=asset_snap.asset_key,
-                parent_edges=asset_snap.parent_edges,
-                child_edges=asset_snap.child_edges,
-                execution_type=AssetExecutionType.UNEXECUTABLE,
-                pools=asset_snap.pools,
-                compute_kind=asset_snap.compute_kind,
-                op_name=asset_snap.op_name,
-                op_names=asset_snap.op_names,
-                code_version=asset_snap.code_version,
-                node_definition_name=asset_snap.node_definition_name,
-                graph_name=asset_snap.graph_name,
-                description=asset_snap.description,
-                job_names=asset_snap.job_names,
-                partitions=asset_snap.partitions,
-                output_name=asset_snap.output_name,
-                metadata=asset_snap.metadata,
-                tags=asset_snap.tags,
-                group_name=asset_snap.group_name,
-                freshness_policy=asset_snap.freshness_policy,
-                is_source=asset_snap.is_source,
-                is_observable=asset_snap.is_observable,
-                execution_set_identifier=asset_snap.execution_set_identifier,
-                required_top_level_resources=asset_snap.required_top_level_resources,
-                auto_materialize_policy=asset_snap.auto_materialize_policy,
-                automation_condition_snapshot=asset_snap.automation_condition_snapshot,
-                backfill_policy=asset_snap.backfill_policy,
-                auto_observe_interval_minutes=asset_snap.auto_observe_interval_minutes,
-                owners=asset_snap.owners,
-            )
-            for asset_snap in repo_snap.asset_nodes
-        ]
-        repo_snap_new = RepositorySnap(
-            name=repo_snap.name,
-            schedules=repo_snap.schedules,
-            partition_sets=repo_snap.partition_sets,
-            sensors=repo_snap.sensors,
-            asset_nodes=asset_nodes_new,
-            job_datas=repo_snap.job_datas,
-            job_refs=repo_snap.job_refs,
-            resources=repo_snap.resources,
-            asset_check_nodes=repo_snap.asset_check_nodes,
-            metadata=repo_snap.metadata,
-            utilized_env_vars=repo_snap.utilized_env_vars,
+        repo_snap = download_and_deserialize(presigned_url, RepositorySnap)
+        data_by_repository[repository_name] = RemoteRepositoryData(
+            snap=_create_read_only_copy_of_repo_snap(repo_snap),
+            job_ref_fn=job_ref_to_data_fn,
         )
 
-        repository_snaps[repository_name] = repo_snap_new
-        repository_fns[repository_name] = ref_to_data_fn
-    return repository_snaps, repository_fns
+    return data_by_repository
 
 
-class ReadOnlyCloudMirrorCodeLocation(CodeLocation):
+class ReadOnlyPlusRemoteCodeLocation(CodeLocation):
+    """A non-interactable code location type which populates from a Dagster Plus
+    deployment. Retrieves repository snapshots from the Plus deployment and creates
+    non-executable versions of the definitions for use in a local development context.
+    """
+
     def __init__(
         self,
-        code_location_origin: ReadOnlyCloudMirrorCodeLocationOrigin,
+        code_location_origin: ReadOnlyPlusRemoteCodeLocationOrigin,
         instance: DagsterInstance,
         url: str,
         token: str,
@@ -789,12 +788,13 @@ class ReadOnlyCloudMirrorCodeLocation(CodeLocation):
         self._instance = instance
         self._repo_origin = code_location_origin
 
-        self.snaps, job_fns = sync_get_external_repositories_from_cloud(
+        repos = sync_get_external_repositories_from_cloud(
             code_location_name=code_location_origin.location_name,
             url=url,
             deployment=deployment,
             token=token,
         )
+        self.snaps = {k: v.snap for k, v in repos.items()}
 
         self.remote_repositories = {
             repo_name: RemoteRepository(
@@ -804,7 +804,7 @@ class ReadOnlyCloudMirrorCodeLocation(CodeLocation):
                     code_location=self,
                 ),
                 auto_materialize_use_sensors=instance.auto_materialize_use_sensors,
-                ref_to_data_fn=job_fns[repo_name],
+                ref_to_data_fn=repos[repo_name].job_ref_fn,
             )
             for repo_name, repo_data in self.snaps.items()
         }
@@ -829,9 +829,7 @@ class ReadOnlyCloudMirrorCodeLocation(CodeLocation):
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> RemoteExecutionPlan:
-        raise NotImplementedError(
-            "ReadOnlyCloudMirrorCodeLocation does not support execution plans"
-        )
+        raise NotImplementedError("ReadOnlyPlusRemoteCodeLocation does not support execution plans")
 
     def get_subset_remote_job_result(self, selector: JobSubsetSelector) -> RemoteJobSubsetResult:
         """Returns a snapshot about an RemoteJob with an op selection, which requires
@@ -839,7 +837,7 @@ class ReadOnlyCloudMirrorCodeLocation(CodeLocation):
         `get_remote_job` instead.
         """
         raise NotImplementedError(
-            "ReadOnlyCloudMirrorCodeLocation does not support subset remote job results"
+            "ReadOnlyPlusRemoteCodeLocation does not support subset remote job results"
         )
 
     def get_partition_config(
@@ -850,7 +848,7 @@ class ReadOnlyCloudMirrorCodeLocation(CodeLocation):
         instance: DagsterInstance,
     ) -> Union["PartitionConfigSnap", "PartitionExecutionErrorSnap"]:
         raise NotImplementedError(
-            "ReadOnlyCloudMirrorCodeLocation does not support partition config"
+            "ReadOnlyPlusRemoteCodeLocation does not support partition config"
         )
 
     def get_partition_tags_from_repo(
@@ -860,7 +858,7 @@ class ReadOnlyCloudMirrorCodeLocation(CodeLocation):
         partition_name: str,
         instance: DagsterInstance,
     ) -> Union["PartitionTagsSnap", "PartitionExecutionErrorSnap"]:
-        raise NotImplementedError("ReadOnlyCloudMirrorCodeLocation does not support partition tags")
+        raise NotImplementedError("ReadOnlyPlusRemoteCodeLocation does not support partition tags")
 
     def get_partition_names_from_repo(
         self,
@@ -877,7 +875,7 @@ class ReadOnlyCloudMirrorCodeLocation(CodeLocation):
         instance: DagsterInstance,
     ) -> Union["PartitionSetExecutionParamSnap", "PartitionExecutionErrorSnap"]:
         raise NotImplementedError(
-            "ReadOnlyCloudMirrorCodeLocation does not support partition set execution params"
+            "ReadOnlyPlusRemoteCodeLocation does not support partition set execution params"
         )
 
     def get_schedule_execution_data(
@@ -889,7 +887,7 @@ class ReadOnlyCloudMirrorCodeLocation(CodeLocation):
         log_key: Optional[Sequence[str]],
     ) -> "ScheduleExecutionData":
         raise NotImplementedError(
-            "ReadOnlyCloudMirrorCodeLocation does not support schedule execution data"
+            "ReadOnlyPlusRemoteCodeLocation does not support schedule execution data"
         )
 
     def get_sensor_execution_data(
@@ -904,11 +902,11 @@ class ReadOnlyCloudMirrorCodeLocation(CodeLocation):
         last_sensor_start_time: Optional[float],
     ) -> "SensorExecutionData":
         raise NotImplementedError(
-            "ReadOnlyCloudMirrorCodeLocation does not support sensor execution data"
+            "ReadOnlyPlusRemoteCodeLocation does not support sensor execution data"
         )
 
     def get_notebook_data(self, notebook_path: str) -> bytes:
-        raise NotImplementedError("ReadOnlyCloudMirrorCodeLocation does not support notebook data")
+        raise NotImplementedError("ReadOnlyPlusRemoteCodeLocation does not support notebook data")
 
     @property
     def is_reload_supported(self) -> bool:
@@ -936,7 +934,10 @@ class ReadOnlyCloudMirrorCodeLocation(CodeLocation):
 
     @property
     def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
-        return {k: FileCodePointer(python_file="foo.py", fn_name="foo") for k in self.snaps.keys()}
+        # TODO: Determine where this is used and what the correct behavior should be
+        return {
+            k: FileCodePointer(python_file="unused.py", fn_name="unused") for k in self.snaps.keys()
+        }
 
     def get_dagster_library_versions(self) -> Optional[Mapping[str, str]]:
         return None

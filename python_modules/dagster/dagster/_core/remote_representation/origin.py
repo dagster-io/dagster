@@ -24,7 +24,7 @@ if TYPE_CHECKING:
         CodeLocation,
         GrpcServerCodeLocation,
         InProcessCodeLocation,
-        ReadOnlyCloudMirrorCodeLocation,
+        ReadOnlyPlusRemoteCodeLocation,
     )
     from dagster._grpc.client import DagsterGrpcClient
 
@@ -208,9 +208,9 @@ class InProcessCodeLocationOrigin(
 
 
 @whitelist_for_serdes
-class ReadOnlyCloudMirrorCodeLocationOrigin(
+class ReadOnlyPlusRemoteCodeLocationOrigin(
     NamedTuple(
-        "_ReadOnlyCloudMirrorCodeLocationOrigin",
+        "_ReadOnlyPlusRemoteCodeLocationOrigin",
         [
             ("location_name", str),
             ("url", str),
@@ -220,23 +220,21 @@ class ReadOnlyCloudMirrorCodeLocationOrigin(
     ),
     CodeLocationOrigin,
 ):
-    """Identifies a repository location constructed in the same process. Primarily
-    used in tests, since Dagster system processes like the webserver and daemon do not
-    load user code in the same process.
+    """Identifies a non-interactable code location which is sourced from a Dagster Plus
+    deployment. Used for a local development context in order to be able to view assets
+    and other definitions from a Plus Deployment while working on local code locations.
     """
 
     def __new__(
         cls,
-        location_name: Optional[str],
         url: str,
         deployment: str,
         token: str,
+        location_name: str,
     ):
         return super().__new__(
             cls,
-            location_name=check.opt_str_param(
-                location_name, "location_name", default="Dagster Plus"
-            ),
+            location_name=check.str_param(location_name, "location_name"),
             url=check.str_param(url, "url"),
             deployment=check.str_param(deployment, "deployment"),
             token=check.str_param(token, "token"),
@@ -249,12 +247,10 @@ class ReadOnlyCloudMirrorCodeLocationOrigin(
     def get_display_metadata(self) -> Mapping[str, Any]:
         return {}
 
-    def create_location(self, instance: "DagsterInstance") -> "ReadOnlyCloudMirrorCodeLocation":
-        from dagster._core.remote_representation.code_location import (
-            ReadOnlyCloudMirrorCodeLocation,
-        )
+    def create_location(self, instance: "DagsterInstance") -> "ReadOnlyPlusRemoteCodeLocation":
+        from dagster._core.remote_representation.code_location import ReadOnlyPlusRemoteCodeLocation
 
-        return ReadOnlyCloudMirrorCodeLocation(
+        return ReadOnlyPlusRemoteCodeLocation(
             code_location_origin=self,
             instance=instance,
             url=self.url,
@@ -262,12 +258,10 @@ class ReadOnlyCloudMirrorCodeLocationOrigin(
             token=self.token,
         )
 
-    def reload_location(self, instance: "DagsterInstance") -> "ReadOnlyCloudMirrorCodeLocation":
-        from dagster._core.remote_representation.code_location import (
-            ReadOnlyCloudMirrorCodeLocation,
-        )
+    def reload_location(self, instance: "DagsterInstance") -> "ReadOnlyPlusRemoteCodeLocation":
+        from dagster._core.remote_representation.code_location import ReadOnlyPlusRemoteCodeLocation
 
-        return ReadOnlyCloudMirrorCodeLocation(
+        return ReadOnlyPlusRemoteCodeLocation(
             code_location_origin=self,
             instance=instance,
             url=self.url,

@@ -91,7 +91,7 @@ WORKSPACE_CONFIG_SCHEMA = {
                             "ssl": Field(bool, is_required=False),
                             "additional_metadata": Field(Permissive(), is_required=False),
                         },
-                        "cloud_mirror": {
+                        "plus": {
                             "url": Field(StringSource, is_required=False),
                             "deployment": Field(StringSource, is_required=False),
                             "token": Field(StringSource, is_required=False),
