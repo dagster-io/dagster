@@ -1,8 +1,9 @@
 import itertools
-from collections.abc import Sequence
+from collections.abc import Generator, Sequence
 from dataclasses import dataclass
 from typing import Annotated, Callable, Literal, Optional, Union, cast
 
+import dagster as dg
 import dagster_airlift.core as dg_airlift_core
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
@@ -64,6 +65,13 @@ class AirflowDagModel(ResolvableModel):
         default=None,
         description="Asset specs to optionally associate with each task within the DAG.",
     )
+    make_executable: bool = Field(
+        default=True,
+        description=(
+            "Whether to make the DAG executable in Dagster. "
+            "This makes all affiliated Dagster assets executable, with the backing computation kicking off a run of the DAG in Airflow."
+        ),
+    )
 
 
 @dataclass
@@ -71,6 +79,7 @@ class ResolvedAirflowDag(ResolvedFrom[AirflowDagModel]):
     dag_id: str
     asset_specs: Optional[Sequence[ResolvedAssetSpec]]
     task_mappings: Annotated[Optional[Sequence[ResolvedAirflowTask]], Resolver.from_annotation()]
+    make_executable: bool
 
 
 class AirflowInstanceModel(ResolvableModel):
@@ -138,39 +147,65 @@ class AirflowInstanceComponent(Component, ResolvedFrom[AirflowInstanceModel]):
 
         airflow_instance = self._get_instance()
 
-        mapped_assets_and_tasks = Definitions.merge(
-            Definitions(
-                assets=dg_airlift_core.assets_with_dag_mappings(
-                    {
-                        dag.dag_id: cast(Sequence[AssetSpec], dag.asset_specs)
-                        for dag in self.dag_mappings or []
-                        if dag.asset_specs
-                    }
+        mapped_assets_and_tasks = list(
+            dg_airlift_core.assets_with_dag_mappings(
+                {
+                    dag.dag_id: cast(Sequence[AssetSpec], dag.asset_specs)
+                    for dag in self.dag_mappings or []
+                    if dag.asset_specs and not dag.make_executable
+                }
+            )
+        ) + [
+            *itertools.chain.from_iterable(
+                dg_airlift_core.assets_with_task_mappings(
+                    dag_id=dag.dag_id,
+                    task_mappings={
+                        task_mapping.task_id: cast(Sequence[AssetSpec], task_mapping.asset_specs)
+                        for task_mapping in dag.task_mappings or []
+                    },
                 )
-            ),
-            Definitions(
-                assets=[
-                    *itertools.chain.from_iterable(
-                        dg_airlift_core.assets_with_task_mappings(
-                            dag_id=dag.dag_id,
-                            task_mappings={
-                                task_mapping.task_id: cast(
-                                    Sequence[AssetSpec], task_mapping.asset_specs
-                                )
-                                for task_mapping in dag.task_mappings or []
-                            },
-                        )
-                        for dag in self.dag_mappings or []
-                        if dag.task_mappings
-                    )
-                ]
-            ),
-        )
+                for dag in self.dag_mappings or []
+                if dag.task_mappings and not dag.make_executable
+            )
+        ]
+
+        mapped_assets = []
+        for dag in self.dag_mappings or []:
+            specs = [
+                *dg_airlift_core.assets_with_dag_mappings(
+                    {dag.dag_id: cast(Sequence[AssetSpec], dag.asset_specs)}
+                    if dag.asset_specs
+                    else {}
+                ),
+                *dg_airlift_core.assets_with_task_mappings(
+                    dag_id=dag.dag_id,
+                    task_mappings={
+                        task_mapping.task_id: cast(Sequence[AssetSpec], task_mapping.asset_specs)
+                        for task_mapping in dag.task_mappings or []
+                    },
+                ),
+            ]
+            if dag.make_executable:
+                if specs:
+
+                    @dg.multi_asset(specs=specs, name=dag.dag_id)
+                    def _run_dag() -> Generator[dg.MaterializeResult, None, None]:
+                        run_id = airflow_instance.trigger_dag(dag.dag_id)
+                        airflow_instance.wait_for_run_completion(dag.dag_id, run_id)
+                        if airflow_instance.get_run_state(dag.dag_id, run_id) == "success":
+                            for spec in specs:
+                                yield dg.MaterializeResult(asset_key=spec.key)
+                        else:
+                            raise Exception("Dag run failed.")
+
+                    mapped_assets.append(_run_dag)
+            else:
+                mapped_assets.extend(specs)
 
         defs = dg_airlift_core.build_defs_from_airflow_instance(
             airflow_instance=airflow_instance,
             dag_selector_fn=dag_selector_fn,
-            defs=mapped_assets_and_tasks,
+            defs=Definitions(assets=mapped_assets),
         )
 
         for post_processor in self.asset_post_processors or []:

@@ -277,3 +277,52 @@ def test_scaffold_airlift():
                     },
                 },
             }
+
+
+def test_make_dag_executable(
+    defs_for_airflow_asset: Callable[[dict[str, Any]], Definitions],
+) -> None:
+    defs = defs_for_airflow_asset(
+        {
+            "auth": {
+                "type": "basic_auth",
+                "webserver_url": "http://localhost:8080",
+                "username": "admin",
+                "password": "admin",
+            },
+            "name": "test_instance",
+            "dag_mappings": [
+                {
+                    "dag_id": "dag_1",
+                    "make_executable": True,
+                    "asset_specs": [{"key": "dag_1_asset_1"}, {"key": "dag_1_asset_2"}],
+                    "task_mappings": [
+                        {
+                            "task_id": "dag_1_task_1",
+                            "asset_specs": [
+                                {
+                                    "key": "dag_1_task_1_asset_1",
+                                    "tags": {"foo": "bar"},
+                                    "description": "foo",
+                                }
+                            ],
+                        },
+                        {
+                            "task_id": "dag_1_task_2",
+                            "asset_specs": [{"key": "dag_1_task_2_asset_1"}],
+                        },
+                    ],
+                },
+            ],
+        },
+    )
+
+    assert defs.get_asset_graph().get_all_asset_keys() == {
+        AssetKey(["dag_1_asset_1"]),
+        AssetKey(["dag_1_asset_2"]),
+        AssetKey(["dag_1_task_1_asset_1"]),
+        AssetKey(["dag_1_task_2_asset_1"]),
+        AssetKey(["test_instance", "dag", "dag_1"]),
+        AssetKey(["test_instance", "dag", "dag_2"]),
+    }
+    assert defs.get_assets_def(AssetKey(["dag_1_asset_1"])).is_executable
