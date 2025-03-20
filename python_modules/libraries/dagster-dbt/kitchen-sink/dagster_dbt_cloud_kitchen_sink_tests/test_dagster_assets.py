@@ -5,7 +5,7 @@ def test_dbt_cloud_specs(ensure_cleanup: None) -> None:
     """Test that dbt models can be successfully materialized, and that a run and job exist in the dbt cloud project."""
     all_assets_keys = [asset.key for asset in dbt_cloud_specs]
 
-    # 8 dbt models
+    # 5 dbt models
     assert len(dbt_cloud_specs) == 5
     assert len(all_assets_keys) == 5
 
