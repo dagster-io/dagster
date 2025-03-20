@@ -149,6 +149,10 @@ class DbtCloudWorkspace(ConfigurableResource):
                 project_id=self.project_id,
                 environment_id=self.environment_id,
                 job_name=expected_job_name,
+                description=(
+                    "This job is used by Dagster to parse your dbt Cloud workspace "
+                    "and to kick off runs of dbt Cloud models."
+                ),
             )
         )
 
