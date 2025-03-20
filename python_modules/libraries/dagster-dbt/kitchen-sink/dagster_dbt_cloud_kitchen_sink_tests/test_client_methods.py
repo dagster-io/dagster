@@ -38,9 +38,7 @@ def test_cloud_job_apis(
     )
     assert run.id == polled_run.id
     assert polled_run.status == DbtCloudJobRunStatusType.SUCCESS
-    run_results = DbtCloudRun.from_run_details(
-        run_details=client.get_run_results_json(run_id=polled_run.id)
-    )
+    run_results = client.get_run_results_json(run_id=polled_run.id)
     assert {result["unique_id"] for result in run_results["results"]} == {
         "model.test_environment.customers",
         "model.test_environment.stg_customers",
