@@ -94,7 +94,7 @@ export const RunsFeedBackfillPage = () => {
         {error?.graphQLErrors && (
           <Alert intent="error" title={error.graphQLErrors.map((err) => err.message)} />
         )}
-        <Box flex={{direction: 'column'}} style={{flex: 1, position: 'relative', minHeight: 0}}>
+        <Box flex={{direction: 'column'}} style={{flex: 1, minHeight: 0}}>
           <Box border={selectedTab === 'overview' ? null : 'bottom'}>
             <BackfillOverviewDetails backfill={backfill} />
             {isDaemonHealthy ? null : (
@@ -103,19 +103,20 @@ export const RunsFeedBackfillPage = () => {
               </Box>
             )}
           </Box>
-
-          {selectedTab === 'overview' && (
-            <Box style={{overflow: 'hidden'}} flex={{direction: 'column'}}>
-              {backfill.isAssetBackfill ? (
-                <BackfillAssetPartitionsTable backfill={backfill} />
-              ) : (
-                <BackfillOpJobPartitionsTable backfill={backfill} />
-              )}
-            </Box>
-          )}
-          {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} view="list" />}
-          {selectedTab === 'timeline' && <BackfillRunsTab backfill={backfill} view="timeline" />}
-          {selectedTab === 'logs' && <BackfillLogsTab backfill={backfill} />}
+          <Box flex={{direction: 'column'}} style={{flex: 1, minHeight: 0, position: 'relative'}}>
+            {selectedTab === 'overview' && (
+              <Box style={{overflow: 'hidden'}} flex={{direction: 'column'}}>
+                {backfill.isAssetBackfill ? (
+                  <BackfillAssetPartitionsTable backfill={backfill} />
+                ) : (
+                  <BackfillOpJobPartitionsTable backfill={backfill} />
+                )}
+              </Box>
+            )}
+            {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} view="list" />}
+            {selectedTab === 'timeline' && <BackfillRunsTab backfill={backfill} view="timeline" />}
+            {selectedTab === 'logs' && <BackfillLogsTab backfill={backfill} />}
+          </Box>
         </Box>
       </Box>
     );
