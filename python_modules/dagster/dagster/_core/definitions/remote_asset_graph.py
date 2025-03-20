@@ -328,7 +328,8 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     @cached_method
     def resolve_to_singular_repo_scoped_node(self) -> "RemoteRepositoryAssetNode":
         # Return a materialization node if it exists, otherwise return an observable node if it
-        # exists, otherwise return any node. This exists to preserve implicit behavior, where the
+        # exists, otherwise return any non-stub node, otherwise return any node.
+        # This exists to preserve implicit behavior, where the
         # materialization node was previously preferred over the observable node. This is a
         # temporary measure until we can appropriately scope the accessors that could apply to
         # either a materialization or observation node.
