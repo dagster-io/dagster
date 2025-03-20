@@ -418,7 +418,7 @@ class GrapheneFailedToMaterializeEvent(graphene.ObjectType, AssetEventMixin):
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneDisplayableEvent)
         name = "FailedToMaterializeEvent"
 
-    failedToMaterializeReason = graphene.NonNull(GrapheneAssetMaterializationFailureReason)
+    materializationFailureReason = graphene.NonNull(GrapheneAssetMaterializationFailureReason)
 
     def __init__(self, event: EventLogEntry):
         dagster_event = check.not_none(event.dagster_event)
@@ -434,7 +434,7 @@ class GrapheneFailedToMaterializeEvent(graphene.ObjectType, AssetEventMixin):
             metadata=self.failed_materialization,
         )
 
-    def resolve_failedToMaterializeReason(self, _graphene_info: ResolveInfo):
+    def resolve_materializationFailureReason(self, _graphene_info: ResolveInfo):
         return self.failed_materialization.reason
 
 
