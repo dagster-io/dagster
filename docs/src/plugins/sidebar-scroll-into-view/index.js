@@ -13,17 +13,15 @@
 
 const INNER_HTML = `
   function handleScrollIntoView() {
-    window.requestAnimationFrame(() => {
-      const observer = new MutationObserver(() => {
-      const element = document.querySelector('aside .menu__link--active');
-        if (element) {
-          observer.disconnect();
-          element.scrollIntoView();
-        }
-      });
-
-      observer.observe(document.body, { childList: true, subtree: true });
+    const observer = new MutationObserver(() => {
+    const element = document.querySelector('aside .menu__link--active');
+      if (element) {
+        observer.disconnect();
+        element.scrollIntoView();
+      }
     });
+
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   document.addEventListener("DOMContentLoaded", function() {
