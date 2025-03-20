@@ -1,7 +1,11 @@
 import pytest
 from dagster import AssetKey, Definitions
+from dagster._utils.env import environ
 
-from dagster_components_tests.integration_tests.component_loader import chdir as chdir
+from dagster_components_tests.integration_tests.component_loader import (
+    chdir as chdir,
+    sync_load_test_component_defs,
+)
 
 
 @pytest.mark.parametrize("defs", ["definitions_autoload/single_file"], indirect=True)
@@ -44,3 +48,52 @@ def test_autoload_definitions_nested(defs: Definitions) -> None:
         AssetKey("in_loose_defs"),
         AssetKey("in_init"),
     }
+
+
+def test_autoload_definitions_nested_with_config() -> None:
+    ENV_VAL = "abc_xyz"
+    tags_by_spec = {
+        AssetKey("top_level"): {
+            "top_level_tag": "true",
+        },
+        AssetKey("defs_obj_inner"): {
+            "top_level_tag": "true",
+            "defs_object_tag": "true",
+        },
+        AssetKey("defs_obj_outer"): {
+            "top_level_tag": "true",
+            "defs_object_tag": "true",
+        },
+        AssetKey("inner"): {
+            "top_level_tag": "true",
+            "loose_defs_tag": "true",
+        },
+        AssetKey("innerer"): {
+            "top_level_tag": "true",
+            "loose_defs_tag": "true",
+        },
+        AssetKey("in_loose_defs"): {
+            "top_level_tag": "true",
+            "loose_defs_tag": "true",
+        },
+        AssetKey("innerest_defs"): {
+            "top_level_tag": "true",
+            "loose_defs_tag": "true",
+            "env_tag": ENV_VAL,
+            "another_level_tag": "true",
+        },
+        AssetKey("in_init"): {
+            "top_level_tag": "true",
+            "loose_defs_tag": "true",
+            "env_tag": ENV_VAL,
+            "another_level_tag": "true",
+        },
+    }
+    with environ({"MY_ENV_VAR": ENV_VAL}):
+        defs = sync_load_test_component_defs(
+            "definitions_autoload/definitions_at_levels_with_config"
+        )
+        specs_by_key = {spec.key: spec for spec in defs.get_all_asset_specs()}
+        assert tags_by_spec.keys() == specs_by_key.keys()
+        for key, tags in tags_by_spec.items():
+            assert specs_by_key[key].tags == tags

@@ -1,0 +1,5 @@
+post_processors:
+  - target: "*"
+    attributes:
+      tags: 
+        loose_defs_tag: "true"

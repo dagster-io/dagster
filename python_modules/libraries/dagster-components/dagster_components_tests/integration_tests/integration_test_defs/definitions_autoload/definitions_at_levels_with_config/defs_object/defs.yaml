@@ -1,0 +1,5 @@
+post_processors:
+  - target: "*"
+    attributes:
+      tags:
+        defs_object_tag: "true"
