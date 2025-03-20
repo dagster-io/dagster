@@ -108,7 +108,9 @@ class _ModelResolver(Generic[T], ABC):
     def resolve_from_model(self, context: "ResolutionContext", model: ResolvableModel) -> T: ...
 
     def from_seq(self, context: "ResolutionContext", model: Sequence[TModel]) -> Sequence[T]:
-        return [self.resolve_from_model(context, item) for item in model]
+        return [
+            self.resolve_from_model(context.at_path(idx), item) for idx, item in enumerate(model)
+        ]
 
     def from_optional(self, context: "ResolutionContext", model: Optional[TModel]) -> Optional[T]:
         return self.resolve_from_model(context, model) if model else None
@@ -223,11 +225,13 @@ def _get_resolver(
     return _DirectResolver(resolved_from_cls)
 
 
+def _recurse(context: "ResolutionContext", field_value):
+    return context.resolve_value(field_value)
+
+
 def derive_field_resolver(annotation: Any, field_name: str) -> "Resolver":
     if _is_scalar(annotation):
-        return Resolver.from_model(
-            lambda context, model: context.resolve_value(getattr(model, field_name))
-        )
+        return Resolver(_recurse)
 
     origin = get_origin(annotation)
     args = get_args(annotation)
@@ -324,7 +328,8 @@ class Resolver:
                 return self.fn.callable(context, model)
             elif isinstance(self.fn, AttrWithContextFn):
                 attr = getattr(model, field_name)
-                return self.fn.callable(context.at_path(field_name), attr)
+                context = context.at_path(field_name)
+                return self.fn.callable(context, attr)
         except ResolutionException:
             raise  # already processed
         except Exception:
@@ -365,9 +370,7 @@ def resolve_fields(
 ) -> Mapping[str, Any]:
     """Returns a mapping of field names to resolved values for those fields."""
     return {
-        field_name: resolver.execute(
-            context=context.at_path(field_name), model=model, field_name=field_name
-        )
+        field_name: resolver.execute(context=context, model=model, field_name=field_name)
         for field_name, resolver in get_annotation_field_resolvers(kwargs_cls).items()
     }
 
