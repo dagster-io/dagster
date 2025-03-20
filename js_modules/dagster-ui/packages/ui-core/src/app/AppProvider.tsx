@@ -180,11 +180,11 @@ export const AppProvider = (props: AppProviderProps) => {
   return (
     <AppContext.Provider value={appContextValue}>
       <WebSocketProvider websocketClient={websocketClient}>
-        <GlobalStyleProvider />
         <ApolloProvider client={apolloClient}>
           <AssetLiveDataProvider>
             <PermissionsProvider>
               <BrowserRouter basename={basePath || ''}>
+                <GlobalStyleProvider />
                 <CompatRouter>
                   <TimeProvider>
                     <CodeLinkProtocolProvider>
