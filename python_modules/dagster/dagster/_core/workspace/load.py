@@ -264,7 +264,6 @@ query CliWorkspaceEntries {
     workspace {
         workspaceEntries {
             locationName
-            serializedDeploymentMetadata
         }
     }
 }
@@ -273,10 +272,22 @@ query CliWorkspaceEntries {
 
 def _fetch_from_plus_gql(url: str, deployment: str, token: str, query: str) -> dict[str, Any]:
     """Fetches data from the Plus API using a GraphQL client."""
+    protocol = "https"
+    port = None
+
+    if "://" in url:
+        protocol, url = url.split("://")
+
+    if ":" in url:
+        host, port = url.split(":")
+        port = int(port)
+    else:
+        host = url
+
     client = DagsterGraphQLClient(
-        use_https=False,
-        hostname="localhost",
-        port_number=2873,
+        use_https=protocol == "https",
+        hostname=host,
+        port_number=port,
         headers={
             "Dagster-Cloud-Version": "1.0",
             "Authorization": f"Bearer {check.str_param(token, 'token')}",

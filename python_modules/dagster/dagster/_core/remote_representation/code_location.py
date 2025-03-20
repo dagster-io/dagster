@@ -1,3 +1,4 @@
+import copy
 import os
 import sys
 import tempfile
@@ -77,7 +78,6 @@ from dagster._grpc.impl import (
     get_partition_tags,
 )
 from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
-from dagster._record import copy
 from dagster._serdes import deserialize_value
 from dagster._serdes.serdes import PackableValue
 from dagster._utils.merger import merge_dicts
@@ -748,7 +748,7 @@ def sync_get_external_repositories_from_cloud(
         repository_name = repository["repository_name"]
         presigned_url = repository["presigned_url"]
 
-        presigned_job_urls = copy(repository["presigned_job_urls"])
+        presigned_job_urls = copy.copy(repository["presigned_job_urls"])
 
         def job_ref_to_data_fn(job_ref: JobRefSnap) -> JobDataSnap:
             job_snap_url = presigned_job_urls.get(job_ref.name)

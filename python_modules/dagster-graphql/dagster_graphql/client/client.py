@@ -34,6 +34,12 @@ from dagster_graphql.client.utils import (
 )
 
 
+def _create_underlying_client(transport: Transport) -> Client:
+    return Client(
+        transport=transport,
+    )
+
+
 class DagsterGraphQLClient:
     """Official Dagster Python Client for GraphQL.
 
@@ -95,7 +101,7 @@ class DagsterGraphQLClient:
             ),
         )
         try:
-            self._client = Client(transport=self._transport, fetch_schema_from_transport=True)
+            self._client = _create_underlying_client(self._transport)
         except requests.exceptions.ConnectionError as exc:
             raise DagsterGraphQLClientError(
                 f"Error when connecting to url {self._url}. "
