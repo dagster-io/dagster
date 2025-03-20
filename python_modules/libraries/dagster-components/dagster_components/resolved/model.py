@@ -1,3 +1,4 @@
+import inspect
 import sys
 import traceback
 from abc import ABC, abstractmethod
@@ -392,23 +393,65 @@ class Resolver:
 ResolvedType: TypeAlias = Union[type[ResolvedKwargs], type[ResolvedFrom], type["Resolved"]]
 
 
+def _get_init_kwargs(target_type: ResolvedType):
+    if target_type.__init__ is object.__init__:
+        return None
+
+    sig = inspect.signature(target_type.__init__)
+    fields = {}
+
+    skipped_self = False
+    for name, param in sig.parameters.items():
+        if not skipped_self:
+            skipped_self = True
+            continue
+
+        if param.kind == param.POSITIONAL_ONLY:
+            raise ResolutionException(
+                f"Invalid Resolved type {target_type}: __init__ contains positional only parameter."
+            )
+        if param.annotation == param.empty:
+            raise ResolutionException(
+                f"Invalid Resolved type {target_type}: __init__ parameter {name} has no type hint."
+            )
+        if param.kind in (param.VAR_POSITIONAL, param.VAR_KEYWORD):
+            continue
+
+        fields[name] = param.annotation
+    return fields
+
+
+def get_annotations(resolved_type: ResolvedType):
+    if is_dataclass(resolved_type):
+        return {f.name: f.type for f in fields(resolved_type)}
+    elif _safe_is_subclass(resolved_type, ResolvedKwargs) or _safe_is_subclass(
+        resolved_type, BaseModel
+    ):
+        annotations = {}
+        # Walk through all base classes in MRO
+        for base in reversed(resolved_type.__mro__):
+            # Get annotations from current base class if they exist
+            base_annotations = getattr(base, "__annotations__", {})
+            # Update annotations dict with any new annotations found
+            # Later bases don't override earlier ones due to how update works
+            annotations.update(base_annotations)
+        return annotations
+    elif init_kwargs := _get_init_kwargs(resolved_type):
+        return init_kwargs
+    else:
+        raise ResolutionException(
+            f"Invalid Resolved type {resolved_type} could not determine fields, expected:\n"
+            "* @dataclass\n"
+            "* class with non empty __init__\n"
+        )
+
+
 def get_annotation_field_resolvers(
     kwargs_cls: ResolvedType,
 ) -> dict[str, Resolver]:
-    # Collect annotations from all base classes in MRO
-    annotations = {}
-
-    # Walk through all base classes in MRO
-    for base in reversed(kwargs_cls.__mro__):
-        # Get annotations from current base class if they exist
-        base_annotations = getattr(base, "__annotations__", {})
-        # Update annotations dict with any new annotations found
-        # Later bases don't override earlier ones due to how update works
-        annotations.update(base_annotations)
-
     return {
         field_name: derive_field_resolver(annotation, field_name)
-        for field_name, annotation in annotations.items()
+        for field_name, annotation in get_annotations(kwargs_cls).items()
     }
 
 
@@ -468,23 +511,14 @@ def derive_model_type(
     if target_type not in _DERIVED_MODEL_REGISTRY:
         name = f"{target_type.__name__}ResolvableModel"
 
-        field_set: dict[
+        model_fields: dict[
             str, Any
         ] = {}  # use Any to appease type checker when **-ing in to create_model
 
-        if is_dataclass(target_type):
-            target_fields = fields(target_type)
-        else:
-            raise ResolutionException(
-                f"Unable to derive ResolvableModel for {target_type}\n"
-                "Could not determine fields from class, expected:\n"
-                "* @dataclass"
-            )
-
-        for f in target_fields:
-            if _is_implicitly_resolved_type(f.type):
-                field_type = f.type
-            elif res := _get_model_resolution(f.type):
+        for name, annotation in get_annotations(target_type).items():
+            if _is_implicitly_resolved_type(annotation):
+                field_type = annotation
+            elif res := _get_model_resolution(annotation):
                 ttype = res[0].target_type
                 if _safe_is_subclass(ttype, ResolvedFrom):
                     model_type = get_model_type(ttype)
@@ -506,10 +540,10 @@ def derive_model_type(
             else:
                 raise ResolutionException(
                     f"Unable to derive ResolvableModel for {target_type}\n"
-                    f"{_field_error_msg(f.name, f.type)}"
+                    f"{_field_error_msg(name, annotation)}"
                 )
 
-            field_set[f.name] = (
+            model_fields[name] = (
                 field_type,
                 Field(),
             )
@@ -518,9 +552,8 @@ def derive_model_type(
             _DERIVED_MODEL_REGISTRY[target_type] = create_model(
                 name,
                 __base__=ResolvableModel,
-                **field_set,
+                **model_fields,
             )
-
         except PydanticSchemaGenerationError as e:
             raise ResolutionException(f"Unable to derive ResolvableModel for {target_type}") from e
 

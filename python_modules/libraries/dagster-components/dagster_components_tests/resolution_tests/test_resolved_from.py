@@ -6,10 +6,16 @@ from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Res
 from dagster_components.test.utils import load_direct
 
 
-def test_nested_resolvable():
-    class MyModel(ResolvableModel):
-        foo: str
+class MyModel(ResolvableModel):
+    foo: str
 
+
+class ComponentModel(ResolvableModel):
+    thing: MyModel
+    num: str
+
+
+def test_nested_resolvable():
     class ResolvableComponent(Component, ResolvableModel):
         thing: MyModel
 
@@ -23,10 +29,6 @@ thing:
         """,
     )
     assert c.thing.foo
-
-    class ComponentModel(ResolvableModel):
-        thing: MyModel
-        num: str
 
     @dataclass
     class ResolveFromComponent(Component, ResolvedFrom[ComponentModel]):
@@ -67,3 +69,28 @@ thing:
     )
     assert c.thing
     assert c.thing[0].foo
+
+
+def test_class():
+    class ResolveFromComponent(Component, ResolvedFrom[ComponentModel]):
+        def __init__(
+            self,
+            thing: MyModel,
+            num: Annotated[int, Resolver(lambda _, v: int(v))],
+        ):
+            self.thing = thing
+            self.num = num
+
+        def build_defs(self, _):
+            return []
+
+    c = load_direct(
+        ResolveFromComponent,
+        """
+num: '123'
+thing:
+  foo: hi
+        """,
+    )
+    assert c.thing.foo
+    assert c.num == 123
