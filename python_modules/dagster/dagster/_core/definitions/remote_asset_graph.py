@@ -18,7 +18,10 @@ import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_key import EntityKey
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
+    AssetExecutionType,
+)
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.base_asset_graph import (
@@ -342,6 +345,11 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
                     info.asset_node
                     for info in self.repo_scoped_asset_infos
                     if info.asset_node.is_observable
+                ),
+                (
+                    info.asset_node
+                    for info in self.repo_scoped_asset_infos
+                    if not info.asset_node.metadata.get(SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET)
                 ),
                 (info.asset_node for info in self.repo_scoped_asset_infos),
             )
