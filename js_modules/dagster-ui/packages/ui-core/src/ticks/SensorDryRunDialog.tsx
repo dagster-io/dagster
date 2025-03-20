@@ -203,9 +203,9 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
   const canApply = useMemo(() => {
     return (
       (executionParamsList != null && executionParamsList.length > 0) ||
-      dynamicPartitionRequests?.length ||
-      0 > 0
+      (dynamicPartitionRequests?.length || 0) > 0
     );
+  });
   }, [executionParamsList, dynamicPartitionRequests]);
 
   const onApply = useCallback(async () => {
