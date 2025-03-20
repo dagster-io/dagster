@@ -5,7 +5,6 @@ export const BACKFILL_TERMINATION_DIALOG_BACKFILL_FRAGMENT = gql`
     id
     status
     isAssetBackfill
-    numCancelable
   }
 `;
 
@@ -34,7 +33,6 @@ export const BACKFILL_ACTIONS_BACKFILL_FRAGMENT = gql`
     hasResumePermission
     isAssetBackfill
     status
-    numCancelable
 
     ...BackfillStepStatusDialogBackfillFragment
     ...BackfillTerminationDialogBackfillFragment
