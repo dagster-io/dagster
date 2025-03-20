@@ -1,7 +1,7 @@
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluationWithRunIds,
 )
-from dagster._serdes.serdes import deserialize_value
+from dagster_shared.serdes import deserialize_value
 
 
 def test_backcompat_unpartitioned_skipped() -> None:

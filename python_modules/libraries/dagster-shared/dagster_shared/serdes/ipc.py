@@ -12,13 +12,14 @@ from typing import Any, Callable, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.errors import DagsterError
-from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 from dagster._utils import send_interrupt
 from dagster._utils.error import (
     ExceptionInfo,
     SerializableErrorInfo,
     serializable_error_info_from_exc_info,
 )
+
+from dagster_shared.serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 
 
 def write_unary_input(input_file: str, obj: NamedTuple) -> None:

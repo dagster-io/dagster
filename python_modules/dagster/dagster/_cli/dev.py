@@ -11,6 +11,13 @@ from typing import Optional
 
 import click
 import yaml
+from dagster_shared.serdes import serialize_value
+from dagster_shared.serdes.ipc import (
+    get_ipc_shutdown_pipe,
+    interrupt_on_ipc_shutdown_message,
+    open_ipc_subprocess,
+    send_ipc_shutdown_message,
+)
 
 from dagster._annotations import deprecated
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
@@ -18,13 +25,6 @@ from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_options
 from dagster._core.instance import DagsterInstance
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._grpc.server import GrpcServerCommand
-from dagster._serdes import serialize_value
-from dagster._serdes.ipc import (
-    get_ipc_shutdown_pipe,
-    interrupt_on_ipc_shutdown_message,
-    open_ipc_subprocess,
-    send_ipc_shutdown_message,
-)
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 

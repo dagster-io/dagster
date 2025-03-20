@@ -11,9 +11,9 @@ from dagster._core.definitions.metadata.metadata_value import (
 )
 from dagster._core.definitions.metadata.table import TableColumn
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil.parser import isoparse
+from dagster_shared.serdes import whitelist_for_serdes
 
 
 def _coerce_input_to_valid_name(name: str) -> str:

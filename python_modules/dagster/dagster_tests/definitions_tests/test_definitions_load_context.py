@@ -30,8 +30,8 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance_for_test import instance_for_test
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.test.definitions import lazy_definitions, scoped_reconstruction_serdes_objects
+from dagster_shared.serdes import whitelist_for_serdes
 
 FOO_INTEGRATION_SOURCE_KEY = "foo_integration"
 

@@ -30,8 +30,8 @@ from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._grpc.client import DEFAULT_SENSOR_GRPC_TIMEOUT
 from dagster._record import record
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, get_current_datetime
+from dagster_shared.serdes import whitelist_for_serdes
 
 from dagster_airlift.constants import (
     AUTOMAPPED_TASK_METADATA_KEY,

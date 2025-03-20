@@ -8,6 +8,8 @@ from enum import Enum
 from functools import cached_property
 from typing import Any, Callable, NamedTuple, Optional, Union, cast
 
+from dagster_shared.serdes import NamedTupleSerializer
+
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition import (
@@ -28,7 +30,6 @@ from dagster._core.errors import (
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._time import (
     create_datetime,
     datetime_from_timestamp,

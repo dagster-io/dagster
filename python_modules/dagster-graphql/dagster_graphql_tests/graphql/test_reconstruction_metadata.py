@@ -55,7 +55,7 @@ def _state_backed_defs() -> None:
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
     from dagster._record import record
-    from dagster._serdes.serdes import whitelist_for_serdes
+    from dagster_shared.serdes import whitelist_for_serdes
 
     @whitelist_for_serdes
     @record

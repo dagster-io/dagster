@@ -15,6 +15,8 @@ from typing import TYPE_CHECKING, Any, ContextManager, Optional, Union  # noqa: 
 import dagster_shared.seven as seven
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
+from dagster_shared.serdes import deserialize_value
+from dagster_shared.serdes.errors import DeserializationError
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.pool import NullPool
 from tqdm import tqdm
@@ -56,8 +58,6 @@ from dagster._core.storage.sqlite import (
     create_db_conn_string,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._serdes.errors import DeserializationError
-from dagster._serdes.serdes import deserialize_value
 from dagster._utils import mkdir_p
 
 if TYPE_CHECKING:

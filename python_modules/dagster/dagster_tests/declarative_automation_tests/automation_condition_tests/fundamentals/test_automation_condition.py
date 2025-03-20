@@ -12,8 +12,8 @@ from dagster._core.definitions.declarative_automation.operators import (
 )
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._serdes import serialize_value
-from dagster._serdes.serdes import deserialize_value
 from dagster_shared.check import CheckError
+from dagster_shared.serdes import deserialize_value
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,

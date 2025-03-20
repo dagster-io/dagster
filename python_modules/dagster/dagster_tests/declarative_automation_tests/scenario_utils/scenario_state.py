@@ -60,8 +60,8 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
-from dagster._serdes.utils import create_snapshot_id
 from dagster._time import datetime_from_timestamp, get_current_datetime, parse_time_string
+from dagster_shared.serdes.utils import create_snapshot_id
 from typing_extensions import Self
 
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import run_request

@@ -44,8 +44,8 @@ from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.test_utils import freeze_time, instance_for_test, mock_workspace_from_repos
-from dagster._serdes.serdes import deserialize_value, serialize_value
 from dagster._time import create_datetime, get_current_datetime
+from dagster_shared.serdes import deserialize_value, serialize_value
 
 
 def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
