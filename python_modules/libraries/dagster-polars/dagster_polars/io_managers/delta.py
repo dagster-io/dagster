@@ -162,7 +162,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
         # workaround for bug introduced in polars 1.25.2 where streaming=False stopped working
         if streaming:
-            return self.write_df_to_path(context, df.collect(streaming=True), path)
+            return self.write_df_to_path(context, df.collect(streaming=True), path)  # type: ignore
         else:
             return self.write_df_to_path(context, df.collect(), path)
 
