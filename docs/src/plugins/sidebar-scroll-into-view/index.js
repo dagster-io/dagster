@@ -14,16 +14,21 @@
 const INNER_HTML = `
   function handleScrollIntoView() {
     window.requestAnimationFrame(() => {
-      //$('aside .menu__link--active').scrollIntoView();
+      const observer = new MutationObserver(() => {
+      const element = document.querySelector('aside .menu__link--active');
+        if (element) {
+          observer.disconnect();
+          element.scrollIntoView();
+        }
+      });
+
+      observer.observe(document.body, { childList: true, subtree: true });
     });
   }
 
   document.addEventListener("DOMContentLoaded", function() {
     handleScrollIntoView();
   });
-
-  window.addEventListener('popstate', () => handleScrollIntoView());
-  window.addEventListener('pushstate', () => handleScrollIntoView());
 `;
 
 module.exports = function (context, options) {
