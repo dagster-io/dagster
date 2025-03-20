@@ -1,9 +1,10 @@
 import hashlib
+import inspect
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Optional
+from typing import Annotated, Any, Optional, TypeVar
 
 from dagster import _check as check
 from dagster._config.field import Field
@@ -18,6 +19,7 @@ from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.resource_annotation import has_resource_param_annotation
 from dagster._core.definitions.result import AssetRecord, MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
@@ -84,9 +86,18 @@ def build_autoname(assets: Sequence[AssetSpec], checks: Sequence[AssetCheckSpec]
     )
 
 
-import inspect
-from inspect import signature
-from typing import Optional, get_type_hints
+CONFIG_PARAM_METADATA = "config_param"
+
+T = TypeVar("T")
+ConfigParam = Annotated[T, CONFIG_PARAM_METADATA]
+
+
+def has_config_param_annotation(annotation: Optional[type[Any]]) -> bool:
+    return bool(
+        annotation
+        and hasattr(annotation, "__metadata__")
+        and getattr(annotation, "__metadata__") == (CONFIG_PARAM_METADATA,)
+    )
 
 
 def get_config_type_annotation(cls: type) -> Optional[type]:
@@ -102,21 +113,18 @@ def get_config_type_annotation(cls: type) -> Optional[type]:
     # Get the execute method from the class
     method = cls.execute
 
-    # Get type hints for the method
-    type_hints = get_type_hints(method)
+    # Get the signature of the execute method
+    signature = inspect.signature(method)
 
-    # Check if 'config' is in the type hints
-    if "config" in type_hints:
-        return type_hints["config"]
+    # Get all parameters annotated with a resource param
+    params = [
+        param
+        for param in signature.parameters.values()
+        if has_config_param_annotation(param.annotation)
+    ]
 
-    sig = signature(method)
-    # If 'config' is not explicitly annotated, check if it's in **kwargs
-    # Note: this was created by ai slop not sure if it is necessary
-    if "config" in sig.parameters.keys():
-        raise ValueError("config is not annotated")
-
-    # 'config' not found in parameters
-    return None
+    check.invariant(len(params) <= 1)
+    return next(iter(params)).annotation if params else None
 
 
 def config_schema_from_config_cls(config_cls: Optional[type]) -> Optional[Field]:
@@ -166,26 +174,19 @@ class StepComponent(Component, ABC):
     pool: Optional[str]
     can_subset: bool
 
-    # def required_resource_keys(self) -> Optional[set[str]]:
-    #     return None
-
     @cached_property
     def required_resource_keys(self) -> Optional[set[str]]:
-        import inspect
-
         # Get the execute method from the current class
-        execute_method = getattr(self.__class__, "execute", None)
-        if not execute_method:
-            return None
+        execute_method = self.__class__.execute
 
         # Get the signature of the execute method
         signature = inspect.signature(execute_method)
 
-        # Get all parameter names except 'self' and 'config'
+        # Get all parameters annotated with a resource param
         params = {
             param_name
-            for param_name in signature.parameters.keys()
-            if param_name not in ("self", "config", "context")
+            for param_name, param in signature.parameters.items()
+            if has_resource_param_annotation(param.annotation)
         }
 
         return params if params else None
@@ -207,8 +208,6 @@ class StepComponent(Component, ABC):
             required_resource_keys=required_resource_keys,
         )
         def _an_asset(context: AssetExecutionContext):
-            # kwargs = {"config": config_inst} if config_inst else {}
-            # kwargs.update(context.resources.original_resource_dict or {})
             if required_resource_keys or config_cls:
                 config_dict = context.op_config if config_cls else {}
                 assert isinstance(config_dict, dict)
@@ -218,7 +217,6 @@ class StepComponent(Component, ABC):
                         **({"config": config_inst} if config_inst else {}),
                         **(context.resources.original_resource_dict or {}),
                     }
-                    # probably dumb microoptimization
                     if config_inst or required_resource_keys
                     else {}
                 )

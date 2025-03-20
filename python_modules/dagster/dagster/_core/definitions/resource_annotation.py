@@ -45,8 +45,14 @@ def _is_resource_annotation(annotation: Optional[type[Any]]) -> bool:
     ):
         return True
 
-    return hasattr(annotation, "__metadata__") and getattr(annotation, "__metadata__") == (
-        RESOURCE_PARAM_METADATA,
+    return has_resource_param_annotation(annotation)
+
+
+def has_resource_param_annotation(annotation: Optional[type[Any]]) -> bool:
+    return bool(
+        annotation
+        and hasattr(annotation, "__metadata__")
+        and getattr(annotation, "__metadata__") == (RESOURCE_PARAM_METADATA,)
     )
 
 

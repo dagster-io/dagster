@@ -11,11 +11,13 @@ from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.result import AssetRecord
 from dagster._core.events import StepMaterializationData
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster_components import ComponentLoadContext
 from dagster_components.components.step.step import (
+    ConfigParam,
     ExecutionContext,
     ExecutionRecord,
     StepComponent,
@@ -43,7 +45,9 @@ class SomeConfig(Config):
 
 
 class SingleAssetWithConfigStep(StepComponent):
-    def execute(self, context: ExecutionContext, config: SomeConfig) -> ExecutionRecord:
+    def execute(
+        self, context: ExecutionContext, config: ConfigParam[SomeConfig]
+    ) -> ExecutionRecord:
         return ExecutionRecord(
             asset_records=[
                 AssetRecord(
@@ -59,7 +63,9 @@ class AResource:
 
 
 class SingleAssetWithResource(StepComponent):
-    def execute(self, context: ExecutionContext, a_resource: AResource) -> ExecutionRecord:
+    def execute(
+        self, context: ExecutionContext, a_resource: ResourceParam[AResource]
+    ) -> ExecutionRecord:
         a_resource = check.inst(a_resource, AResource)
         return ExecutionRecord.for_asset(
             metadata={"resource": a_resource.get_value()},
