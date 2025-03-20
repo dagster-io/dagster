@@ -236,9 +236,13 @@ class AssetGraphSubset(NamedTuple):
     def __eq__(self, other) -> bool:
         return (
             isinstance(other, AssetGraphSubset)
-            and self.partitions_subsets_by_asset_key == other.partitions_subsets_by_asset_key
             and self.non_partitioned_asset_keys == other.non_partitioned_asset_keys
+            and _non_empty(self.partitions_subsets_by_asset_key)
+            == _non_empty(other.partitions_subsets_by_asset_key)
         )
+
+    def __ne__(self, other) -> bool:
+        return not self.__eq__(other)
 
     def __repr__(self) -> str:
         return (
@@ -435,3 +439,8 @@ class AssetGraphSubset(NamedTuple):
             partitions_subsets_by_asset_key=partitions_subsets_by_asset_key,
             non_partitioned_asset_keys=non_partitioned_asset_keys,
         )
+
+
+def _non_empty(d: Mapping[AssetKey, PartitionsSubset]) -> Mapping[AssetKey, PartitionsSubset]:
+    """Returns a new dictionary with only the non-empty PartitionsSubsets in d."""
+    return {k: v for k, v in d.items() if not v.is_empty}
