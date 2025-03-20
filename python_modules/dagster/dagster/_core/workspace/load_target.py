@@ -10,7 +10,7 @@ from dagster._core.remote_representation.origin import (
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
-    ReadOnlyCloudMirrorCodeLocationOrigin,
+    ReadOnlyPlusRemoteCodeLocationOrigin,
 )
 from dagster._core.workspace.load import (
     location_origin_from_module_name,
@@ -65,15 +65,15 @@ class ReadOnlyCloudMirrorWorkspaceLoadTarget(WorkspaceLoadTarget):
     def __init__(
         self,
         origin: Union[
-            ReadOnlyCloudMirrorCodeLocationOrigin, Sequence[ReadOnlyCloudMirrorCodeLocationOrigin]
+            ReadOnlyPlusRemoteCodeLocationOrigin, Sequence[ReadOnlyPlusRemoteCodeLocationOrigin]
         ],
     ):
         self._origins = cast(
-            Sequence[ReadOnlyCloudMirrorCodeLocationOrigin],
+            Sequence[ReadOnlyPlusRemoteCodeLocationOrigin],
             origin if isinstance(origin, list) else [origin],
         )
 
-    def create_origins(self) -> Sequence[ReadOnlyCloudMirrorCodeLocationOrigin]:
+    def create_origins(self) -> Sequence[ReadOnlyPlusRemoteCodeLocationOrigin]:
         return self._origins
 
 

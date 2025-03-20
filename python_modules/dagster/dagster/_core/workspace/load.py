@@ -1,7 +1,7 @@
 import os
 from collections import OrderedDict
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from dagster_graphql.client.client import DagsterGraphQLClient
 from dagster_shared.yaml_utils import load_yaml_from_path
@@ -13,7 +13,7 @@ from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
-    ReadOnlyCloudMirrorCodeLocationOrigin,
+    ReadOnlyPlusRemoteCodeLocationOrigin,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.config_schema import ensure_workspace_config
@@ -271,26 +271,8 @@ query CliWorkspaceEntries {
 """
 
 
-def _location_origins_from_cloud_mirror_config(
-    cloud_mirror_config: Mapping, yaml_path: str
-) -> Sequence[ReadOnlyCloudMirrorCodeLocationOrigin]:
-    check.mapping_param(cloud_mirror_config, "cloud_mirror_config")
-    check.str_param(yaml_path, "yaml_path")
-
-    url, organization, deployment, token = (
-        cloud_mirror_config.get("url"),
-        cloud_mirror_config.get("organization"),
-        cloud_mirror_config.get("deployment"),
-        cloud_mirror_config.get("token"),
-    )
-
-    check.invariant(
-        (url or organization) and not (url and organization),
-        "Must supply either a url or an organization",
-    )
-    if organization:
-        url = f"https://agent.{organization}.dagster.cloud"
-
+def _fetch_from_plus_gql(url: str, deployment: str, token: str, query: str) -> dict[str, Any]:
+    """Fetches data from the Plus API using a GraphQL client."""
     client = DagsterGraphQLClient(
         use_https=False,
         hostname="localhost",
@@ -301,13 +283,44 @@ def _location_origins_from_cloud_mirror_config(
             "Dagster-Cloud-Deployment": check.str_param(deployment, "deployment"),
         },
     )
+    return client._execute(query)  # noqa: SLF001
+
+
+def _location_origins_from_plus_config(
+    plus_config: Mapping, yaml_path: str
+) -> Sequence[ReadOnlyPlusRemoteCodeLocationOrigin]:
+    """Takes a plus code location config and fetches the list of code locations from the Plus API to
+    represent, returning a ReadOnlyPlusRemoteCodeLocationOrigin for each.
+    """
+    check.mapping_param(plus_config, "plus_config")
+    check.str_param(yaml_path, "yaml_path")
+
+    url, organization, deployment, token = (
+        plus_config.get("url"),
+        plus_config.get("organization"),
+        plus_config.get("deployment"),
+        plus_config.get("token"),
+    )
+
+    check.invariant(
+        (url or organization) and not (url and organization),
+        "Must supply either a url or an organization",
+    )
+    if organization:
+        url = f"https://agent.{organization}.dagster.cloud"
+
     code_location_names = [
         entry["locationName"]
-        for entry in client._execute(WORKSPACE_ENTRIES_QUERY)["workspace"]["workspaceEntries"]
+        for entry in _fetch_from_plus_gql(
+            check.str_param(url, "url"),
+            check.str_param(deployment, "deployment"),
+            check.str_param(token, "token"),
+            WORKSPACE_ENTRIES_QUERY,
+        )["workspace"]["workspaceEntries"]
     ]
 
     return [
-        ReadOnlyCloudMirrorCodeLocationOrigin(
+        ReadOnlyPlusRemoteCodeLocationOrigin(
             location_name=location_name,
             url=check.str_param(url, "url"),
             deployment=check.str_param(deployment, "deployment"),
@@ -366,10 +379,8 @@ def _location_origins_from_location_config(
     elif "grpc_server" in location_config:
         return [_location_origin_from_grpc_server_config(location_config["grpc_server"], yaml_path)]
 
-    elif "cloud_mirror" in location_config:
-        return _location_origins_from_cloud_mirror_config(
-            location_config["cloud_mirror"], yaml_path
-        )
+    elif "plus" in location_config:
+        return _location_origins_from_plus_config(location_config["plus"], yaml_path)
 
     else:
         check.not_implemented(f"Unsupported location config: {location_config}")

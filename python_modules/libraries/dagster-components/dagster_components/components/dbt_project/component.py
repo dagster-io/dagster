@@ -11,9 +11,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.execution.context.asset_execution_context import (
-    AssetExecutionContext,
-)
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster_dbt import (
     DagsterDbtTranslator,
     DbtCliResource,
@@ -23,8 +21,6 @@ from dagster_dbt import (
 )
 from dagster_dbt.asset_utils import (
     get_asset_key_for_model as get_asset_key_for_model,
-)
-from dagster_dbt.asset_utils import (
     get_asset_spec,
 )
 from dagster_dbt.dbt_manifest import validate_manifest
@@ -32,9 +28,7 @@ from dagster_dbt.utils import get_dbt_resource_props_by_dbt_unique_id_from_manif
 from typing_extensions import override
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.components.dbt_project.scaffolder import (
-    DbtProjectComponentScaffolder,
-)
+from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_components.resolved.core_models import (
     AssetAttributesModel,
     AssetPostProcessor,
@@ -61,9 +55,7 @@ class DbtProjectModel(ResolvableModel):
     exclude: Optional[str] = None
 
 
-def resolve_translator(
-    context: ResolutionContext, model: DbtProjectModel
-) -> DagsterDbtTranslator:
+def resolve_translator(context: ResolutionContext, model: DbtProjectModel) -> DagsterDbtTranslator:
     class DagsterDbtTranslatorWithSpecs(DagsterDbtTranslator):
         def __init__(self, *, resolving_info: TranslatorResolvingInfo):
             super().__init__()
@@ -85,10 +77,7 @@ def resolve_translator(
 
         @cached_property
         def group_props(self) -> Mapping[str, Any]:
-            return {
-                group["name"]: group
-                for group in self.manifest.get("groups", {}).values()
-            }
+            return {group["name"]: group for group in self.manifest.get("groups", {}).values()}
 
         def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
             if id(stream_definition) not in self._specs_map:
@@ -100,14 +89,12 @@ def resolve_translator(
                     project=self.project,
                     resource_props=stream_definition,
                 )
-                self._specs_map[id(stream_definition)] = (
-                    self.resolving_info.get_asset_spec(
-                        base_spec,
-                        {
-                            self.resolving_info.obj_name: stream_definition,
-                            "spec": base_spec,
-                        },
-                    )
+                self._specs_map[id(stream_definition)] = self.resolving_info.get_asset_spec(
+                    base_spec,
+                    {
+                        self.resolving_info.obj_name: stream_definition,
+                        "spec": base_spec,
+                    },
                 )
             return self._specs_map[id(stream_definition)]
 
@@ -116,15 +103,11 @@ def resolve_translator(
             return self.get_asset_spec(dbt_resource_props).key
 
         @override
-        def get_description(
-            self, dbt_resource_props: Mapping[str, Any]
-        ) -> Optional[str]:
+        def get_description(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
             return self.get_asset_spec(dbt_resource_props).description
 
         @override
-        def get_metadata(
-            self, dbt_resource_props: Mapping[str, Any]
-        ) -> Mapping[str, Any]:
+        def get_metadata(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
             return self.get_asset_spec(dbt_resource_props).metadata
 
         @override
@@ -132,15 +115,11 @@ def resolve_translator(
             return self.get_asset_spec(dbt_resource_props).tags
 
         @override
-        def get_group_name(
-            self, dbt_resource_props: Mapping[str, Any]
-        ) -> Optional[str]:
+        def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
             return self.get_asset_spec(dbt_resource_props).group_name
 
         @override
-        def get_code_version(
-            self, dbt_resource_props: Mapping[str, Any]
-        ) -> Optional[str]:
+        def get_code_version(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
             return self.get_asset_spec(dbt_resource_props).code_version
 
         @override
@@ -195,9 +174,9 @@ class DbtProjectComponent(Component, ResolvedFrom[DbtProjectModel]):
     dbt: Annotated[DbtCliResource, Resolver(resolve_dbt)]
     op: Annotated[Optional[OpSpec], Resolver.from_annotation()] = None
     # This requires from_parent because it access asset_attributes in the model
-    translator: Annotated[
-        DagsterDbtTranslator, Resolver.from_model(resolve_translator)
-    ] = field(default_factory=DagsterDbtTranslator)
+    translator: Annotated[DagsterDbtTranslator, Resolver.from_model(resolve_translator)] = field(
+        default_factory=DagsterDbtTranslator
+    )
     asset_post_processors: Annotated[
         Optional[Sequence[AssetPostProcessor]], Resolver.from_annotation()
     ] = None
@@ -271,6 +250,4 @@ def get_asset_key_for_model_from_module(
                 ...
     """
     defs = context.load_defs(dbt_component_module)
-    return get_asset_key_for_model(
-        cast(Sequence[AssetsDefinition], defs.assets), model_name
-    )
+    return get_asset_key_for_model(cast(Sequence[AssetsDefinition], defs.assets), model_name)
