@@ -130,7 +130,7 @@ def config_schema_from_config_cls(config_cls: Optional[type]) -> Optional[Field]
 
 
 # When to use record versus dataclass versus BaseModel
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class StepComponent(Component, ABC):
     def __init__(
         self,
@@ -165,8 +165,12 @@ class StepComponent(Component, ABC):
     pool: Optional[str]
     can_subset: bool
 
+    def required_resource_keys(self) -> Optional[set[str]]:
+        return None
+
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         config_cls = get_config_type_annotation(self.__class__)
+        required_resource_keys = self.required_resource_keys()
 
         @multi_asset(
             name=self.name,
@@ -178,13 +182,28 @@ class StepComponent(Component, ABC):
             pool=self.pool,
             can_subset=self.can_subset,
             config_schema=config_schema_from_config_cls(config_cls),
-            # required_resource_keys
+            required_resource_keys=required_resource_keys,
         )
         def _an_asset(context: AssetExecutionContext):
-            config_dict = context.op_config if config_cls else {}
-            assert isinstance(config_dict, dict)
-            config_inst = config_cls(**config_dict) if config_cls else None
-            kwargs = {"config": config_inst} if config_inst else {}
+            # kwargs = {"config": config_inst} if config_inst else {}
+            # kwargs.update(context.resources.original_resource_dict or {})
+            if required_resource_keys or config_cls:
+                config_dict = context.op_config if config_cls else {}
+                assert isinstance(config_dict, dict)
+                config_inst = config_cls(**config_dict) if config_cls else None
+                kwargs = (
+                    {
+                        **({"config": config_inst} if config_inst else {}),
+                        **(context.resources.original_resource_dict or {}),
+                    }
+                    # probably dumb microoptimization
+                    if config_inst or required_resource_keys
+                    else {}
+                )
+                kwargs.pop("io_manager", None)
+            else:
+                kwargs = {}
+
             execution_result = self.execute(context=ExecutionContext(context), **kwargs)
             for asset_result in execution_result.asset_records or []:
                 # assume materialization result for now
@@ -196,17 +215,20 @@ class StepComponent(Component, ABC):
                     check_results=asset_result.check_results,
                 )
 
-        return Definitions(assets=[_an_asset])
+        return Definitions(assets=[_an_asset], resources=context.module_cache.resources)
 
     @abstractmethod
     def execute(self, context: ExecutionContext, **kwargs) -> ExecutionRecord: ...
 
 
-def execute_step(step: StepComponent, run_config=None) -> ExecuteInProcessResult:
-    defs = step.build_defs(ComponentLoadContext.for_test())
+def execute_step(
+    step: StepComponent, run_config: Any = None, resources: Optional[Mapping[str, object]] = None
+) -> ExecuteInProcessResult:
+    defs = step.build_defs(ComponentLoadContext.for_test(resources=resources))
     keys = [spec.key for spec in defs.get_all_asset_specs()]
     assets_def = defs.get_assets_def(next(iter(keys)))
     return materialize(
         assets=[assets_def],
         run_config=run_config,
+        # resources=resources,
     )

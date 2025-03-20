@@ -1,13 +1,17 @@
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
+from typing import Optional
 
 from dagster._config.pythonic_config.config import Config
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.result import AssetRecord
 from dagster._core.events import StepMaterializationData
 from dagster._core.execution.context.invocation import build_asset_context
@@ -18,6 +22,7 @@ from dagster_components.components.step.step import (
     StepComponent,
     execute_step,
 )
+from dagster_shared import check
 
 
 class SingleAssetStep(StepComponent):
@@ -49,6 +54,24 @@ class SingleAssetWithConfigStep(StepComponent):
         )
 
 
+class AResource:
+    def get_value(self) -> str:
+        return "a_value"
+
+
+class SingleAssetWithResource(StepComponent):
+    def execute(
+        self, context: ExecutionContext, a_resource: ResourceParam[AResource]
+    ) -> ExecutionRecord:
+        a_resource = check.inst(a_resource, AResource)
+        return ExecutionRecord.for_asset(
+            metadata={"resource": a_resource.get_value()},
+        )
+
+    def required_resource_keys(self) -> set[str]:
+        return {"a_resource"}
+
+
 def get_assets_def(step: StepComponent) -> AssetsDefinition:
     defs = step.build_defs(ComponentLoadContext.for_test())
     specs = defs.get_all_asset_specs()
@@ -56,14 +79,20 @@ def get_assets_def(step: StepComponent) -> AssetsDefinition:
     return defs.get_assets_def(specs[0].key)
 
 
-def execute_single_asset(step: StepComponent) -> AssetMaterialization:
-    mats = list(execute_many_assets(step))
+def execute_single_asset(
+    step: StepComponent,
+    resources: Optional[Mapping[str, object]] = None,
+) -> AssetMaterialization:
+    mats = list(execute_many_assets(step, resources=resources))
     assert len(mats) == 1
     return mats[0]
 
 
-def execute_many_assets(step: StepComponent) -> Iterator[AssetMaterialization]:
-    result = execute_step(step)
+def execute_many_assets(
+    step: StepComponent,
+    resources: Optional[Mapping[str, object]] = None,
+) -> Iterator[AssetMaterialization]:
+    result = execute_step(step, resources=resources)
     assert result.success
     mat_events = result.get_asset_materialization_events()
     for mat_event in mat_events:
@@ -134,3 +163,29 @@ def test_step_with_config() -> None:
     assert execute_step(
         step, run_config={"ops": {"execute__the_key": {"config": {"a_value": "foo"}}}}
     ).success
+
+
+def test_step_with_resource() -> None:
+    step = SingleAssetWithResource(assets=[AssetSpec("the_key")])
+    record = step.execute(ExecutionContext(build_asset_context()), a_resource=AResource())
+    assert isinstance(record, ExecutionRecord)
+    assert next(iter(record.asset_records or [])).metadata == {"resource": "a_value"}
+
+    defs = step.build_defs(ComponentLoadContext.for_test(resources={"a_resource": AResource()}))
+    Definitions.validate_loadable(defs)
+
+    assets_def = defs.get_assets_def("the_key")
+    assert isinstance(assets_def, AssetsDefinition)
+
+    result = materialize([assets_def])
+    assert result.success
+
+    mat_events = result.get_asset_materialization_events()
+    assert len(mat_events) == 1
+    assert isinstance(mat_events[0].event_specific_data, StepMaterializationData)
+    assert mat_events[0].event_specific_data.materialization.metadata == {
+        "resource": TextMetadataValue("a_value")
+    }
+
+    mat = execute_single_asset(step, resources={"a_resource": AResource()})
+    assert mat.metadata == {"resource": TextMetadataValue("a_value")}
