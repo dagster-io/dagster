@@ -3,7 +3,6 @@ from collections import OrderedDict
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
-from dagster_graphql.client.client import DagsterGraphQLClient
 from dagster_shared.yaml_utils import load_yaml_from_path
 
 import dagster._check as check
@@ -272,29 +271,22 @@ query CliWorkspaceEntries {
 
 def _fetch_from_plus_gql(url: str, deployment: str, token: str, query: str) -> dict[str, Any]:
     """Fetches data from the Plus API using a GraphQL client."""
-    protocol = "https"
-    port = None
+    from gql import Client, gql
+    from gql.transport.requests import RequestsHTTPTransport
 
-    if "://" in url:
-        protocol, url = url.split("://")
-
-    if ":" in url:
-        host, port = url.split(":")
-        port = int(port)
-    else:
-        host = url
-
-    client = DagsterGraphQLClient(
-        use_https=protocol == "https",
-        hostname=host,
-        port_number=port,
-        headers={
-            "Dagster-Cloud-Version": "1.0",
-            "Authorization": f"Bearer {check.str_param(token, 'token')}",
-            "Dagster-Cloud-Deployment": check.str_param(deployment, "deployment"),
-        },
+    client = Client(
+        transport=RequestsHTTPTransport(
+            url=f"{url}/graphql",
+            use_json=True,
+            headers={
+                "Dagster-Cloud-Version": "1.0",
+                "Authorization": f"Bearer {check.str_param(token, 'token')}",
+                "Dagster-Cloud-Deployment": check.str_param(deployment, "deployment"),
+            },
+        )
     )
-    return client._execute(query)  # noqa: SLF001
+
+    return client.execute(gql(query))
 
 
 def _location_origins_from_plus_config(
