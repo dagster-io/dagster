@@ -34,8 +34,18 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {assertUnreachable} from '../app/Util';
 import {useTrackEvent} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {SensorSelector} from '../graphql/types';
+import {DELETE_DYNAMIC_PARTITIONS_MUTATION} from '../assets/DeleteDynamicPartitionsDialog';
+import {
+  DeleteDynamicPartitionsMutation,
+  DeleteDynamicPartitionsMutationVariables,
+} from '../assets/types/DeleteDynamicPartitionsDialog.types';
+import {DynamicPartitionsRequestType, SensorSelector} from '../graphql/types';
 import {useLaunchMultipleRunsWithTelemetry} from '../launchpad/useLaunchMultipleRunsWithTelemetry';
+import {CREATE_PARTITION_MUTATION} from '../partitions/CreatePartitionDialog';
+import {
+  AddDynamicPartitionMutation,
+  AddDynamicPartitionMutationVariables,
+} from '../partitions/types/CreatePartitionDialog.types';
 import {SET_CURSOR_MUTATION} from '../sensors/EditCursorDialog';
 import {
   SetSensorCursorMutation,
@@ -84,6 +94,14 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     SetSensorCursorMutation,
     SetSensorCursorMutationVariables
   >(SET_CURSOR_MUTATION);
+  const [createPartition] = useMutation<
+    AddDynamicPartitionMutation,
+    AddDynamicPartitionMutationVariables
+  >(CREATE_PARTITION_MUTATION);
+  const [deletePartition] = useMutation<
+    DeleteDynamicPartitionsMutation,
+    DeleteDynamicPartitionsMutationVariables
+  >(DELETE_DYNAMIC_PARTITIONS_MUTATION);
 
   const [cursor, setCursor] = useState(currentCursor);
 
@@ -101,7 +119,6 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     }),
     [repoAddress, name],
   );
-
   const executionParamsList = useMemo(
     () =>
       sensorExecutionData && sensorSelector
@@ -109,6 +126,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
         : [],
     [sensorSelector, sensorExecutionData, jobName],
   );
+  const dynamicPartitionRequests = sensorExecutionData?.evaluationResult?.dynamicPartitionsRequests;
 
   const submitTest = useCallback(async () => {
     setSubmitting(true);
@@ -195,6 +213,35 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     setLaunching(true);
 
     try {
+      if (dynamicPartitionRequests?.length) {
+        dynamicPartitionRequests.forEach(async (request) => {
+          if (request.type === DynamicPartitionsRequestType.ADD_PARTITIONS) {
+            (request.partitionKeys || []).forEach(async (partitionKey) => {
+              await createPartition({
+                variables: {
+                  repositorySelector: {
+                    repositoryName: repoAddress.name,
+                    repositoryLocationName: repoAddress.location,
+                  },
+                  partitionsDefName: request.partitionsDefName,
+                  partitionKey,
+                },
+              });
+            });
+          } else if (request.partitionKeys && request.partitionKeys.length) {
+            await deletePartition({
+              variables: {
+                repositorySelector: {
+                  repositoryName: repoAddress.name,
+                  repositoryLocationName: repoAddress.location,
+                },
+                partitionsDefName: request.partitionsDefName,
+                partitionKeys: request.partitionKeys,
+              },
+            });
+          }
+        });
+      }
       if (executionParamsList) {
         await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
         onCommitTickResult(); // persist tick
@@ -207,10 +254,14 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
     onClose();
   }, [
     canLaunchAll,
+    createPartition,
+    deletePartition,
+    dynamicPartitionRequests,
     executionParamsList,
     launchMultipleRunsWithTelemetry,
     onClose,
     onCommitTickResult,
+    repoAddress,
     trackEvent,
   ]);
 
