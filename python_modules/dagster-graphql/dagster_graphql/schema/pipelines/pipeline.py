@@ -234,7 +234,7 @@ class GrapheneAsset(graphene.ObjectType):
         beforeTimestampMillis=graphene.String(),
         afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
-        eventTypeSelector=GrapheneMaterializationHistoryEventTypeSelector(),
+        eventTypeSelector=graphene.NonNull(GrapheneMaterializationHistoryEventTypeSelector),
     )
     definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
@@ -281,14 +281,12 @@ class GrapheneAsset(graphene.ObjectType):
     def resolve_assetMaterializationHistory(
         self,
         graphene_info: ResolveInfo,
+        eventTypeSelector: GrapheneMaterializationHistoryEventTypeSelector,
         partitions: Optional[Sequence[str]] = None,
         partitionInLast: Optional[int] = None,
         beforeTimestampMillis: Optional[str] = None,
         afterTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
-        eventTypeSelector: GrapheneMaterializationHistoryEventTypeSelector = GrapheneMaterializationHistoryEventTypeSelector(
-            "ALL"
-        ),
     ) -> Sequence[GrapheneAssetMaterializationEventType]:
         from dagster_graphql.implementation.fetch_assets import (
             get_asset_failed_to_materialize_event_records,

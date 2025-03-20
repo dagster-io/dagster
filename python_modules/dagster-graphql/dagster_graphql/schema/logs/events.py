@@ -426,7 +426,7 @@ class GrapheneFailedToMaterializeEvent(graphene.ObjectType, AssetEventMixin):
             dagster_event.asset_failed_to_materialize_data.asset_materialization_failure
         )
         super().__init__(
-            _construct_asset_event_metadata_params(event, self.failed_materialization),
+            **_construct_asset_event_metadata_params(event, self.failed_materialization),
         )
         AssetEventMixin.__init__(
             self,
