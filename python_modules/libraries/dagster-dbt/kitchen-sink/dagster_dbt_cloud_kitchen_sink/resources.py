@@ -11,14 +11,6 @@ def get_environment_id() -> int:
     return int(get_env_var("KS_DBT_CLOUD_ENVIRONMENT_ID"))
 
 
-def get_project_id() -> int:
-    return int(os.getenv("KS_DBT_CLOUD_PROJECT_ID"))
-
-
-def get_environment_id() -> int:
-    return int(os.getenv("KS_DBT_CLOUD_ENVIRONMENT_ID"))
-
-
 def get_dbt_cloud_workspace() -> DbtCloudWorkspace:
     return DbtCloudWorkspace(
         credentials=DbtCloudCredentials(
