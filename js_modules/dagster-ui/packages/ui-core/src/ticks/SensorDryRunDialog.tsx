@@ -214,9 +214,9 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
 
     try {
       if (dynamicPartitionRequests?.length) {
-        dynamicPartitionRequests.forEach(async (request) => {
+        await Promise.all(dynamicPartitionRequests.map(async (request) => {
           if (request.type === DynamicPartitionsRequestType.ADD_PARTITIONS) {
-            (request.partitionKeys || []).forEach(async (partitionKey) => {
+            await Promise.all((request.partitionKeys || []).map(async (partitionKey) => {
               await createPartition({
                 variables: {
                   repositorySelector: {
@@ -227,7 +227,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
                   partitionKey,
                 },
               });
-            });
+            }));
           } else if (request.partitionKeys && request.partitionKeys.length) {
             await deletePartition({
               variables: {
@@ -240,7 +240,7 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
               },
             });
           }
-        });
+        }));
       }
       if (executionParamsList) {
         await launchMultipleRunsWithTelemetry({executionParamsList}, 'toast');
