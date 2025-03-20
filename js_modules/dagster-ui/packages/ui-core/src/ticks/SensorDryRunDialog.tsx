@@ -205,7 +205,6 @@ const SensorDryRun = ({repoAddress, name, currentCursor, onClose, jobName}: Prop
       (executionParamsList != null && executionParamsList.length > 0) ||
       (dynamicPartitionRequests?.length || 0) > 0
     );
-  });
   }, [executionParamsList, dynamicPartitionRequests]);
 
   const onApply = useCallback(async () => {
