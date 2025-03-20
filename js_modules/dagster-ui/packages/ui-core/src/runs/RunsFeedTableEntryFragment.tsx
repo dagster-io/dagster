@@ -49,7 +49,6 @@ export const RUNS_FEED_TABLE_ENTRY_FRAGMENT = gql`
       hasCancelPermission
       hasResumePermission
       isAssetBackfill
-      numCancelable
       numPartitions
       ...BackfillStepStatusDialogBackfillFragment
     }
