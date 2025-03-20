@@ -30,6 +30,7 @@ def ensure_cleanup(
     project_id: int,
     environment_id: int,
 ) -> Generator[None, None, None]:
+    """Cleans up jobs created by Dagster after the tests are completed."""
     try:
         yield
     finally:
