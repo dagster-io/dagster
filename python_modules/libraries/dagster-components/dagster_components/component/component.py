@@ -7,6 +7,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from typing_extensions import Self
 
 from dagster_components.component.component_scaffolder import DefaultComponentScaffolder
+from dagster_components.resolved.base import Resolvable
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, resolve_model
 from dagster_components.scaffold.scaffold import scaffold_with
 
@@ -28,6 +29,10 @@ class Component(ABC):
 
         if issubclass(cls, ResolvedFrom):
             return get_model_type(cls)
+
+        if issubclass(cls, Resolvable):
+            return cls.model()
+
         return None
 
     @classmethod
@@ -47,6 +52,15 @@ class Component(ABC):
         elif issubclass(cls, ResolvedFrom):
             return (
                 resolve_model(attributes, cls, context.resolution_context.at_path("attributes"))
+                if attributes
+                else cls()
+            )
+        elif issubclass(cls, Resolvable):
+            return (
+                cls.resolve_from_model(
+                    context.resolution_context.at_path("attributes"),
+                    attributes,
+                )
                 if attributes
                 else cls()
             )
