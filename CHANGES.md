@@ -1,5 +1,36 @@
 # Changelog
 
+## 1.10.6 (core) / 0.26.6 (libraries)
+
+### New
+
+- Added a new `AutomationCondition.executed_with_tags()` condition that makes it possible to filter for updates from runs with particular tags.
+- `AssetCheckEvaluation` can now be yielded from Dagster ops to log an evaluation of an asset check outside of an asset context.
+- Added the `kinds` argument to `dagster.AssetOut`, allowing kinds to be specified in `@multi_asset`.
+- [dagster-dbt] `AssetCheckEvaluations` are now yielded from `ops` leveraging `DbtCliResource.cli(...)` when asset checks are included in the dbt asset lineage.
+- [dagster-sling] The `SlingResource.replicate()` method now takes an option `stream` parameter, which allows events to be streamed as the command executes, instead of waiting until it completes (thanks, @natpatchara-w!).
+- [dagster-graphql] The `DagsterGraphQLClient` now supports an `auth` keyword argument, which is passed to the underlying `RequestsHTTPTransport` constructor.
+- [ui] The asset selection syntax input now allows slashes "/" in the freeform search.
+- [ui] The backfill pages now show summary information on all tabs for easier backfill monitoring.
+
+### Bugfixes
+
+- Fixed issue with `AutomationCondition.newly_requested()` which could cause it to fail when nested within `AutomationCondition.any_deps_match()` or `AutomationCondition.all_deps_match()`.
+- Fixed a bug with `AutomationCondition.replace()` that would cause it to not effect `AutomationCondition.since()` conditions.
+- Fixed a bug with several integrations that caused data fetched from external APIs not to be properly cached during code server initialization, leading to unnecessary API calls in run and step worker processes. This affected: `dagster-airbyte`, `dagster-dlift`, `dagster-dbt`, `dagster-fivetran`, `dagster-looker`, `dagster-powerbi`, `dagster-sigma`, and `dagster-tableau`.
+- Fixed a bug that could cause invalid circular dependency errors when using asset checks with additional dependencies.
+- [dagster-fivetran] Loading assets for a Fivetran workspace containing incomplete and broken connectors now no longer raises an exception.
+- [ui] Fixed the colorblind (no red/green) theme behavior when in dark mode.
+- [ui] The Asset > Partitions page no longer displays an error in some cases when creating dynamic partitions.
+- [ui] The Launch and Report Events buttons no longer error if you click it immediately after creating a new dynamic partition.
+
+### dg & Components (Preview)
+
+- `__pycache__` files are no longer included in the output of `dg list component` (thanks @stevenayers!)
+- When resolving the `deps` of an `AssetSpec` from yaml, multi-part asset keys are now correctly parsed (thanks @stevenayers!)
+- The entrypoint group for dg projects has been renamed from `dagster.components` to `dagster_dg.library`
+- `dg check yaml` is now run by default before `dg dev` and `dg check defs`
+
 ## 1.10.5 (core) / 0.26.5 (libraries)
 
 ### New
