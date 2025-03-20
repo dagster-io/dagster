@@ -31,7 +31,6 @@ from dagster import (
     Output,
     StaticPartitionMapping,
     TimeWindowPartitionMapping,
-    _seven,
     asset,
     daily_partitioned_config,
     define_asset_job,
@@ -102,10 +101,11 @@ from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
     consume_new_runs_for_automatic_reexecution,
 )
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._seven import IS_WINDOWS, get_system_temp_directory
 from dagster._time import get_current_timestamp
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
+from dagster_shared import seven
+from dagster_shared.seven import IS_WINDOWS, get_system_temp_directory
 
 default_resource_defs = resource_defs = {"io_manager": fs_io_manager}
 logger = logging.getLogger("dagster.test_auto_run_reexecution")
@@ -3142,7 +3142,7 @@ def test_asset_backfill_logs(
         if not log_line:
             continue
         try:
-            record_dict = _seven.json.loads(log_line)
+            record_dict = seven.json.loads(log_line)
         except json.JSONDecodeError:
             continue
         assert record_dict.get("msg")
@@ -3165,7 +3165,7 @@ def test_asset_backfill_logs(
         if not log_line:
             continue
         try:
-            record_dict = _seven.json.loads(log_line)
+            record_dict = seven.json.loads(log_line)
         except json.JSONDecodeError:
             continue
         assert record_dict.get("msg")

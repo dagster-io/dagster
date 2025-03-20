@@ -2,9 +2,10 @@ from collections.abc import Mapping, Sequence
 from inspect import Parameter, Signature, isgeneratorfunction, signature
 from typing import Any, Callable, NamedTuple, Optional
 
+from dagster_shared.seven import is_module_available
+
 from dagster._core.decorator_utils import get_type_hints
 from dagster._core.definitions.utils import NoValueSentinel
-from dagster._seven import is_module_available
 
 IS_DOCSTRING_PARSER_AVAILABLE = is_module_available("docstring_parser")
 

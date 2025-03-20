@@ -3,16 +3,10 @@ import logging
 import os
 
 import pytest
-from dagster import (
-    String,
-    _seven as seven,
-    execute_job,
-    job,
-    logger,
-    reconstructable,
-)
+from dagster import String, execute_job, job, logger, reconstructable
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import safe_tempfile_path
+from dagster_shared import seven
 from dagstermill.examples.repository import hello_logging
 from dagstermill.io_managers import (
     ConfigurableLocalOutputNotebookIOManager,

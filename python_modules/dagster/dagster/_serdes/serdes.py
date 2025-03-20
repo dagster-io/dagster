@@ -35,11 +35,11 @@ from typing import (  # noqa: UP035
     overload,
 )
 
+import dagster_shared.seven as seven
 from pydantic import BaseModel
 from typing_extensions import Self, TypeAlias, TypeVar
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._model.pydantic_compat_layer import ModelFieldCompat, model_fields
 from dagster._record import (
     IHaveNew,

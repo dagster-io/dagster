@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, ContextManager, Optional, Union  # noqa: UP035
 
+import dagster_shared.seven as seven
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection, Engine
@@ -21,7 +22,6 @@ from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._config import StringSource
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.events import AssetKey

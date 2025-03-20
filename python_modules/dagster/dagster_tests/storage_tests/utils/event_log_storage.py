@@ -31,7 +31,6 @@ from dagster import (
     RetryRequested,
     RunShardedEventsCursor,
     _check as check,
-    _seven as seven,
     asset,
     in_process_executor,
     job,
@@ -127,6 +126,7 @@ from dagster._loggers import colored_console_logger
 from dagster._serdes.serdes import deserialize_value
 from dagster._time import get_current_datetime
 from dagster._utils.concurrency import ConcurrencySlotStatus
+from dagster_shared import seven
 
 # py36 & 37 list.append not hashable
 

@@ -15,7 +15,6 @@ from dagster import (
     Out,
     Output,
     _check as check,
-    _seven,
 )
 from dagster._annotations import beta
 from dagster._config.pythonic_config import Config, infer_schema_from_config_class
@@ -29,10 +28,11 @@ from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._serdes import pack_value
-from dagster._seven import get_system_temp_directory
 from dagster._utils import mkdir_p, safe_tempfile_path
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.tags import normalize_tags
+from dagster_shared import seven
+from dagster_shared.seven import get_system_temp_directory
 from papermill.engines import papermill_engines
 from papermill.iorw import load_notebook_node, write_ipynb
 
@@ -105,7 +105,7 @@ def replace_parameters(context, nb, parameters):
         after = nb.cells
 
     nb.cells = before + [newcell] + after
-    nb.metadata.papermill["parameters"] = _seven.json.dumps(parameters)
+    nb.metadata.papermill["parameters"] = seven.json.dumps(parameters)
 
     return nb
 

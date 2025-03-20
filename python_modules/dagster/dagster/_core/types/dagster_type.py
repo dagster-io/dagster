@@ -4,14 +4,21 @@ from enum import Enum as PythonEnum
 from functools import partial
 from typing import (
     AbstractSet as TypingAbstractSet,
+)
+from typing import (
     AnyStr,
-    Iterator as TypingIterator,
     Mapping,
     Sequence,
-    Type as TypingType,
     cast,
 )
+from typing import (
+    Iterator as TypingIterator,
+)
+from typing import (
+    Type as TypingType,
+)
 
+from dagster_shared.seven import is_subclass
 from typing_extensions import get_args, get_origin
 
 import dagster._check as check
@@ -20,6 +27,8 @@ from dagster._builtins import BuiltinEnum
 from dagster._config import (
     Array,
     ConfigType,
+)
+from dagster._config import (
     Noneable as ConfigNoneable,
 )
 from dagster._core.definitions.events import DynamicOutput, Output, TypeCheck
@@ -39,7 +48,6 @@ from dagster._core.errors import (
 from dagster._core.types.builtin_config_schemas import BuiltinSchemas
 from dagster._core.types.config_schema import DagsterTypeLoader
 from dagster._serdes import whitelist_for_serdes
-from dagster._seven import is_subclass
 
 if t.TYPE_CHECKING:
     from dagster._core.definitions.node_definition import NodeDefinition
@@ -287,7 +295,7 @@ class DagsterType:
 
 
 def _validate_type_check_fn(fn: t.Callable, name: t.Optional[str]) -> bool:
-    from dagster._seven import get_arg_names
+    from dagster_shared.seven import get_arg_names
 
     args = get_arg_names(fn)
 
@@ -874,6 +882,8 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     )
     from dagster._core.types.python_dict import (
         Dict as DDict,
+    )
+    from dagster._core.types.python_dict import (
         PythonDict,
     )
     from dagster._core.types.python_set import DagsterSetApi, PythonSet

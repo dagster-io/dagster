@@ -6,6 +6,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import Any, Callable, Optional, TypeVar
 
 import click
+from dagster_shared.seven import IS_WINDOWS, JSONDecodeError, json
 from dagster_shared.yaml_utils import dump_run_config_yaml
 
 import dagster._check as check
@@ -63,7 +64,6 @@ from dagster._core.snap import JobSnap, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.telemetry import log_remote_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
-from dagster._seven import IS_WINDOWS, JSONDecodeError, json
 from dagster._time import get_current_timestamp
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, PrintFn
 from dagster._utils.error import serializable_error_info_from_exc_info

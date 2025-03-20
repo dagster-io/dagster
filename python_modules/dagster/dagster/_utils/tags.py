@@ -4,7 +4,8 @@ from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Optional, Union
 
-import dagster._seven as seven
+import dagster_shared.seven as seven
+
 from dagster import _check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import SYSTEM_TAG_PREFIX, USER_EDITABLE_SYSTEM_TAGS
