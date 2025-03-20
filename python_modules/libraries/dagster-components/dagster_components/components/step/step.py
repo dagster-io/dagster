@@ -165,12 +165,10 @@ class StepComponent(Component, ABC):
             if has_config_param_annotation(param.annotation)
         ]
 
-        check.invariant(len(params) <= 1)
+        check.invariant(len(params) <= 1, "Must only have one ConfigParam")
         return next(iter(params)) if params else None
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        param = self.config_param
-        config_cls = param.annotation if param else None
         required_resource_keys = self.required_resource_keys
 
         @multi_asset(
@@ -182,17 +180,21 @@ class StepComponent(Component, ABC):
             retry_policy=self.retry_policy,
             pool=self.pool,
             can_subset=self.can_subset,
-            config_schema=config_schema_from_config_cls(config_cls),
+            config_schema=config_schema_from_config_cls(self.config_param.annotation)
+            if self.config_param
+            else None,
             required_resource_keys=required_resource_keys,
         )
         def _an_asset(context: AssetExecutionContext):
-            if config_cls:
-                config_dict = check.inst(context.op_config if config_cls else {}, dict)
-                config_inst = config_cls(**config_dict)
-                config_param_name = check.not_none(param).name
-                config_kwarg = {config_param_name: config_inst} if config_inst else {}
-            else:
-                config_kwarg = {}
+            config_kwarg = (
+                {
+                    self.config_param.name: self.config_param.annotation(
+                        **check.inst(context.op_config, dict)
+                    )
+                }
+                if self.config_param
+                else {}
+            )
 
             if required_resource_keys or config_kwarg:
                 kwargs = {
