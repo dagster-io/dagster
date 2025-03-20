@@ -10,7 +10,13 @@ export class Worker {
 
   constructor(url: string | URL, options?: WorkerOptions) {
     this.worker = new globalThis.Worker(url, options);
-    this.onMessage((event) => {
+    this.worker.postMessage({
+      [WEB_WORKER_FEATURE_FLAGS_KEY]: getFeatureFlagsWithDefaults(),
+    });
+  }
+
+  private messageHandlerWrapper = (handler: (event: MessageEvent) => void) => {
+    return (event: MessageEvent) => {
       if (event.data.type === 'error') {
         const error = new Error(event.data.error);
         error.stack = event.data.stack;
@@ -20,12 +26,11 @@ export class Worker {
         } else {
           throw error;
         }
+      } else {
+        handler(event);
       }
-    });
-    this.worker.postMessage({
-      [WEB_WORKER_FEATURE_FLAGS_KEY]: getFeatureFlagsWithDefaults(),
-    });
-  }
+    };
+  };
 
   public onError(handler: (error: ErrorEvent) => void) {
     this.errorHandlers.push(handler);
@@ -37,8 +42,9 @@ export class Worker {
   }
 
   public onMessage(handler: (event: MessageEvent) => void) {
-    this.worker.addEventListener('message', handler);
-    return () => this.worker.removeEventListener('message', handler);
+    const wrappedHandler = this.messageHandlerWrapper(handler);
+    this.worker.addEventListener('message', wrappedHandler);
+    return () => this.worker.removeEventListener('message', wrappedHandler);
   }
 
   public postMessage(message: any) {
