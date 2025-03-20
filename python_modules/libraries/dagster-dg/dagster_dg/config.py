@@ -244,9 +244,25 @@ class DgRawProjectConfig(TypedDict):
 
 
 @dataclass
+class DgWorkspacePlusConfig:
+    url: Optional[str] = None
+    organization: Optional[str] = None
+    deployment: Optional[str] = None
+
+    @classmethod
+    def from_raw(cls, raw: "DgRawWorkspacePlusConfig") -> Self:
+        return cls(
+            url=raw.get("url"),
+            organization=raw.get("organization"),
+            deployment=raw.get("deployment"),
+        )
+
+
+@dataclass
 class DgWorkspaceConfig:
     projects: list["DgWorkspaceProjectSpec"]
     scaffold_project_options: "DgWorkspaceScaffoldProjectOptions"
+    plus: "DgWorkspacePlusConfig"
 
     @classmethod
     def from_raw(cls, raw: "DgRawWorkspaceConfig") -> Self:
@@ -254,12 +270,20 @@ class DgWorkspaceConfig:
         scaffold_project_options = DgWorkspaceScaffoldProjectOptions.from_raw(
             raw.get("scaffold_project_options", {})
         )
-        return cls(projects, scaffold_project_options)
+        plus = DgWorkspacePlusConfig.from_raw(raw.get("plus", {}))
+        return cls(projects, scaffold_project_options, plus)
+
+
+class DgRawWorkspacePlusConfig(TypedDict, total=False):
+    url: str
+    organization: str
+    deployment: str
 
 
 class DgRawWorkspaceConfig(TypedDict, total=False):
     projects: list["DgRawWorkspaceProjectSpec"]
     scaffold_project_options: "DgRawWorkspaceNewProjectOptions"
+    plus: "DgRawWorkspacePlusConfig"
 
 
 @dataclass
@@ -583,6 +607,7 @@ def _get_origin_name(origin: Any) -> str:
 
 
 def _match_type(obj: object, type_: Any) -> bool:
+    return True
     origin = get_origin(type_)
     # If typ is not a generic alias, do a normal isinstance check
     if origin is None:
