@@ -18,11 +18,11 @@ from threading import Event as ThreadingEventType
 from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, cast
 
+import dagster_shared.seven as seven
 import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.definitions_load_context import (
     DefinitionsLoadContext,

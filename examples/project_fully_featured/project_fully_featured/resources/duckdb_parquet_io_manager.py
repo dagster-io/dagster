@@ -6,7 +6,7 @@ from dagster import (
     PartitionKeyRange,
     _check as check,
 )
-from dagster._seven.temp_dir import get_system_temp_directory
+from dagster_shared.seven.temp_dir import get_system_temp_directory
 
 from .parquet_io_manager import PartitionedParquetIOManager
 

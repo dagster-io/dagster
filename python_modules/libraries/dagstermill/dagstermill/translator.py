@@ -1,6 +1,6 @@
 import papermill
 import papermill.translators
-from dagster import _seven
+from dagster_shared import seven
 
 RESERVED_INPUT_NAMES = [
     "__dm_context",
@@ -16,7 +16,7 @@ RESERVED_INPUT_NAMES = [
 
 INJECTED_BOILERPLATE = """
 # Injected parameters
-from dagster import seven as __dm_seven
+from dagster_shared import seven as __dm_seven
 import dagstermill as __dm_dagstermill
 context = __dm_dagstermill._reconstitute_job_context(
     **{{
@@ -51,7 +51,7 @@ class DagsterTranslator(papermill.translators.PythonTranslator):
         )
 
         for key in job_context_args:
-            job_context_args[key] = _seven.json.dumps(job_context_args[key])
+            job_context_args[key] = seven.json.dumps(job_context_args[key])
 
         content = INJECTED_BOILERPLATE.format(job_context_args=job_context_args)
 

@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, AbstractSet, Optional, Union, cast  # noqa: UP035
 
-import dagster._seven as seven
+import dagster_shared.seven as seven
 from dagster import (
     AssetKey,
     DagsterEventType,

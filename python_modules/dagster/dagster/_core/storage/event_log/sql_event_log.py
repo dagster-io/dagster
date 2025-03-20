@@ -17,13 +17,13 @@ from typing import (  # noqa: UP035
     cast,
 )
 
+import dagster_shared.seven as seven
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,

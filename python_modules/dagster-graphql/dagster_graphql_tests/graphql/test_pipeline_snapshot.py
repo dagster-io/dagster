@@ -2,7 +2,6 @@ from unittest import mock
 
 import pytest
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._seven import json
 from dagster_graphql.implementation.fetch_pipelines import _get_job_snapshot_from_instance
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.test.utils import (
@@ -10,6 +9,7 @@ from dagster_graphql.test.utils import (
     main_repo_location_name,
     main_repo_name,
 )
+from dagster_shared.seven import json
 
 from dagster_graphql_tests.graphql.repo import noop_job
 
