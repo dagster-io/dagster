@@ -4,9 +4,12 @@ from typing import Any, Callable
 
 import dagster_airlift.core as dg_airlift_core
 import pytest
+import yaml
+from click.testing import CliRunner
 from dagster import AssetKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster_airlift.test import make_instance
+from dagster_components.cli import cli
 from dagster_components.components.airflow_instance.component import (
     AirflowInstanceComponent,
     AirflowInstanceModel,
@@ -17,7 +20,7 @@ from dagster_components.utils import ensure_dagster_components_tests_import
 
 ensure_dagster_components_tests_import()
 
-from dagster_components_tests.utils import script_load_context
+from dagster_components_tests.utils import script_load_context, temp_code_location_bar
 
 
 @pytest.fixture
@@ -244,3 +247,33 @@ def test_load_dags_dag_and_task_mapping_complex(
     ).specs_by_key[AssetKey(["dag_1_task_1_asset_1"])]
     assert dag_1_task_1_asset_1_spec.tags["foo"] == "bar"
     assert dag_1_task_1_asset_1_spec.description == "foo"
+
+
+def test_scaffold_airlift():
+    runner = CliRunner()
+
+    with temp_code_location_bar():
+        result = runner.invoke(
+            cli,
+            [
+                "scaffold",
+                "component",
+                "dagster_components.dagster_airlift.AirflowInstanceComponent",
+                "bar/components/qux",
+            ],
+        )
+        assert result.exit_code == 0
+        assert Path("bar/components/qux/component.yaml").exists()
+        with open("bar/components/qux/component.yaml") as f:
+            assert yaml.safe_load(f) == {
+                "type": "dagster_components.dagster_airlift.AirflowInstanceComponent",
+                "attributes": {
+                    "name": "qux",
+                    "auth": {
+                        "type": "basic_auth",
+                        "webserver_url": None,
+                        "username": None,
+                        "password": None,
+                    },
+                },
+            }
