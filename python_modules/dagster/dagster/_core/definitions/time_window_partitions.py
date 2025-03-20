@@ -364,6 +364,8 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         return current_time.timestamp()
 
     def get_num_partitions_in_window(self, time_window: TimeWindow) -> int:
+        if time_window.start.timestamp() >= time_window.end.timestamp():
+            return 0
         if self.is_basic_daily:
             return (
                 date(
@@ -1705,6 +1707,14 @@ class TimeWindowPartitionsSubsetSerializer(NamedTupleSerializer):
                 num_partitions=value.num_partitions,
                 included_time_windows=value.included_time_windows,
             )
+        return value
+
+    def before_unpack(self, context, value: dict[str, Any]):
+        num_partitions = value.get("num_partitions")
+        # some objects were serialized with an invalid num_partitions, so fix that here
+        if num_partitions is not None and num_partitions < 0:
+            # set it to None so that it will be recalculated
+            value["num_partitions"] = None
         return value
 
 
