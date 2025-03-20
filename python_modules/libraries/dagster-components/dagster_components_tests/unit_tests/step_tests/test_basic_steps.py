@@ -2,6 +2,7 @@ from collections.abc import Iterator, Mapping
 from typing import Optional
 
 from dagster._config.pythonic_config.config import Config
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -15,8 +16,10 @@ from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.result import AssetRecord
 from dagster._core.events import StepMaterializationData
 from dagster._core.execution.context.invocation import build_asset_context
+from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster_components import ComponentLoadContext
 from dagster_components.components.step.step import (
+    AssetCheckRecord,
     ConfigParam,
     ExecutionContext,
     ExecutionRecord,
@@ -214,11 +217,34 @@ def test_step_with_resource() -> None:
     assert mat.metadata == {"resource": TextMetadataValue("a_value")}
 
 
-# class StandAloneAssetCheck(StepComponent):
-#     def execute(self, context: ExecutionContext) -> ExecutionRecord:
-#         return ExecutionRecord(asset_check_records=[AssetCheckRecord(passed=True)])
+def get_single_mat(result: ExecuteInProcessResult) -> AssetMaterialization:
+    mats = list(result.get_asset_materialization_events())
+    assert len(mats) == 1
+    return check.inst(mats[0].event_specific_data, StepMaterializationData).materialization
 
 
-# def test_standalone_asset_check() -> None:
-#     step = StandAloneAssetCheck(checks=[AssetCheckSpec("check_name", asset="the_key")])
-#     execute_single_asset(step)
+def get_single_asset_check_eval(result: ExecuteInProcessResult) -> AssetCheckEvaluation:
+    evals = result.get_asset_check_evaluations()
+    assert len(evals) == 1
+    return next(iter(evals))
+
+
+class SingleAssetSingleCheck(StepComponent):
+    def execute(self, context: ExecutionContext) -> ExecutionRecord:
+        return ExecutionRecord(
+            asset_records=[AssetRecord()],
+            asset_check_records=[AssetCheckRecord(passed=True)],
+        )
+
+
+def test_single_asset_single_check() -> None:
+    step = SingleAssetSingleCheck(
+        assets=[AssetSpec("the_key")],
+        checks=[AssetCheckSpec("check_name", asset="the_key")],
+    )
+    result = execute_step(step)
+    assert result.success
+    assert get_single_mat(result).asset_key == AssetKey("the_key")
+    assert get_single_asset_check_eval(result).passed
+    assert get_single_asset_check_eval(result).asset_key == AssetKey("the_key")
+    assert get_single_asset_check_eval(result).check_name == "check_name"

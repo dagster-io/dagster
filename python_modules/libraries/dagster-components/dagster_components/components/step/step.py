@@ -9,7 +9,7 @@ from typing import Annotated, Any, Optional, TypeVar
 from dagster import _check as check
 from dagster._config.field import Field
 from dagster._config.pythonic_config.conversion_utils import infer_schema_from_config_annotation
-from dagster._core.definitions.asset_check_result import AssetCheckRecord
+from dagster._core.definitions.asset_check_result import AssetCheckRecord, AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.data_version import DataVersion
@@ -225,15 +225,15 @@ class StepComponent(Component, ABC):
                     check_results=asset_result.check_results,
                 )
 
-            # for asset_check_result in execution_result.asset_check_records or []:
-            #     yield AssetCheckResult(
-            #         asset_key=asset_check_result.asset_key,
-            #         check_name=asset_check_result.check_name,
-            #         passed=asset_check_result.passed,
-            #         metadata=asset_check_result.metadata,
-            #         severity=asset_check_result.severity,
-            #         description=asset_check_result.description,
-            #     )
+            for asset_check_result in execution_result.asset_check_records or []:
+                yield AssetCheckResult(
+                    asset_key=asset_check_result.asset_key,
+                    check_name=asset_check_result.check_name,
+                    passed=asset_check_result.passed,
+                    metadata=asset_check_result.metadata,
+                    severity=asset_check_result.severity,
+                    description=asset_check_result.description,
+                )
 
         return Definitions(assets=[_an_asset], resources=context.module_cache.resources)
 
