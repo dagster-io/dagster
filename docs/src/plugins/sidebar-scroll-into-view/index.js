@@ -27,6 +27,13 @@ const INNER_HTML = `
   document.addEventListener("DOMContentLoaded", function() {
     handleScrollIntoView();
   });
+
+  const originalPushState = history.pushState;
+  history.pushState = function (...args) {
+    originalPushState.apply(this, args);
+    window.dispatchEvent(new Event('pushstate'));  // Dispatch an event for programmatic push state
+  };
+
   window.addEventListener('popstate', () => handleScrollIntoView());
   window.addEventListener('pushstate', () => handleScrollIntoView());
 `;
