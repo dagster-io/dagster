@@ -17,9 +17,11 @@ const INNER_HTML = `
     const element = document.querySelector('aside .menu__link--active');
       if (element) {
         observer.disconnect();
-        element.scrollIntoView();
+        element.scrollIntoView(); // scroll sidebar
+        document.querySelector('body').scrollIntoView(); // scroll main body back to top
       }
     });
+
 
     observer.observe(document.body, { childList: true, subtree: true });
   }
@@ -27,13 +29,6 @@ const INNER_HTML = `
   document.addEventListener("DOMContentLoaded", function() {
     handleScrollIntoView();
   });
-
-  const originalPushState = history.pushState;
-  history.pushState = function (...args) {
-    originalPushState.apply(this, args);
-    window.dispatchEvent(new Event('pushstate'));  // Dispatch an event for programmatic push state
-  };
-
   window.addEventListener('popstate', () => handleScrollIntoView());
   window.addEventListener('pushstate', () => handleScrollIntoView());
 `;
