@@ -75,6 +75,14 @@ const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOption
 
 const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
 
+const EMPTY_LAYOUT: AssetGraphLayout = {
+  width: 0,
+  height: 0,
+  nodes: {},
+  edges: [],
+  groups: {},
+};
+
 export const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
@@ -82,6 +90,10 @@ export const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
       worker.onMessage((event) => {
         resolve(event.data);
         worker.terminate();
+      });
+      worker.onError((error) => {
+        console.error(error);
+        resolve(EMPTY_LAYOUT);
       });
       worker.postMessage({type: 'layoutAssetGraph', opts, graphData});
     });
@@ -96,6 +108,10 @@ const asyncGetFullAssetLayout = asyncMemoize(
       worker.onMessage((event) => {
         resolve(event.data);
         worker.terminate();
+      });
+      worker.onError((error) => {
+        console.error(error);
+        resolve(EMPTY_LAYOUT);
       });
       worker.postMessage({type: 'layoutAssetGraph', opts, graphData});
     });
