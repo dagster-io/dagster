@@ -1,5 +1,6 @@
 import contextlib
 import json
+import os
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
@@ -8,6 +9,7 @@ from typing import Any, NamedTuple, Optional
 
 import click
 import yaml
+from dagster_shared.plus.config import DagsterPlusCliConfig, get_active_config_path
 
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import RemoteComponentRegistry, all_components_schema_from_dg_context
@@ -134,6 +136,28 @@ def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, s
     return {"python_module": entry}
 
 
+def _workspace_entry_for_cloud_context(dg_context: DgContext) -> dict[str, dict[str, str]]:
+    workspace_config = dg_context.config.workspace
+    assert workspace_config
+    plus_config = workspace_config.plus
+    assert plus_config
+    if plus_config.deployment:
+        assert plus_config.url or plus_config.organization, "Must specify url or organization"
+
+    return {
+        "plus": {
+            k: v
+            for k, v in {
+                "url": plus_config.url,
+                "organization": plus_config.organization,
+                "token": {"env": "DAGSTER_CLOUD_API_TOKEN"},
+                "deployment": plus_config.deployment,
+            }.items()
+            if v is not None
+        }
+    }
+
+
 @contextmanager
 def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
     with NamedTemporaryFile(mode="w+", delete=True) as temp_workspace_file:
@@ -141,6 +165,10 @@ def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
         if dg_context.is_project:
             entries.append(_workspace_entry_for_project(dg_context))
         elif dg_context.is_workspace:
+            workspace_config = dg_context.config.workspace
+            assert workspace_config
+            if workspace_config.plus.deployment:
+                entries.append(_workspace_entry_for_cloud_context(dg_context))
             for spec in dg_context.project_specs:
                 project_root = dg_context.root_path / spec.path
                 project_context: DgContext = dg_context.with_root_path(project_root)
@@ -160,6 +188,12 @@ class DagsterCliCmd(NamedTuple):
 def create_dagster_cli_cmd(
     dg_context: DgContext, forward_options: list[str], run_cmds: list[str]
 ) -> Iterator[DagsterCliCmd]:
+    config_path = get_active_config_path()
+    if config_path.exists():
+        plus_api_token = DagsterPlusCliConfig.from_file(config_path).user_token
+        if plus_api_token:
+            os.environ["DAGSTER_CLOUD_API_TOKEN"] = plus_api_token
+
     cmd = [*run_cmds, *forward_options]
     if dg_context.is_project:
         cmd_location = dg_context.get_executable("dagster")
