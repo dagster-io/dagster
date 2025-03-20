@@ -16,10 +16,13 @@ export type ToastConfig = {
   message: ReactNode;
   icon?: IconName;
   timeout?: number;
-  action?: {
-    text: string;
-    onClick: (e: MouseEvent<HTMLButtonElement>) => void;
-  };
+  action?:
+    | {
+        type: 'button';
+        text: string;
+        onClick: (e: MouseEvent<HTMLButtonElement>) => void;
+      }
+    | {type: 'custom'; element: ReactNode};
 };
 
 export const showToast = async (config: ToastConfig, sonnerConfig: ExternalToast = {}) => {
@@ -40,6 +43,34 @@ const Toast = (props: ToastProps) => {
   const {id, intent, message, action} = props;
   const {backgroundColor, textColor, icon, iconColor} = intentToStyles(intent);
 
+  const actionElement = () => {
+    if (!action) {
+      return null;
+    }
+
+    if (action.type === 'custom') {
+      return action.element;
+    }
+
+    return (
+      <BaseButton
+        fillColor={Colors.backgroundGray()}
+        fillColorHover={Colors.backgroundGrayHover()}
+        textColor={Colors.textDefault()}
+        strokeColor={Colors.backgroundGray()}
+        strokeColorHover={Colors.backgroundGrayHover()}
+        label={action.text}
+        style={{fontSize: 13, fontFamily: FontFamily.default}}
+        onClick={(e) => {
+          if (action.onClick) {
+            action.onClick(e);
+          }
+          toast.dismiss(id);
+        }}
+      />
+    );
+  };
+
   return (
     <div style={{backgroundColor: Colors.backgroundDefault(), borderRadius: 8}}>
       <Box
@@ -51,23 +82,7 @@ const Toast = (props: ToastProps) => {
       >
         {icon ? <Icon name={icon} color={iconColor} /> : null}
         <div style={{color: textColor}}>{message}</div>
-        {action ? (
-          <BaseButton
-            fillColor={Colors.backgroundGray()}
-            fillColorHover={Colors.backgroundGrayHover()}
-            textColor={Colors.textDefault()}
-            strokeColor={Colors.backgroundGray()}
-            strokeColorHover={Colors.backgroundGrayHover()}
-            label={action.text}
-            style={{fontSize: 13, fontFamily: FontFamily.default}}
-            onClick={(e) => {
-              if (action.onClick) {
-                action.onClick(e);
-              }
-              toast.dismiss(id);
-            }}
-          />
-        ) : null}
+        {actionElement()}
       </Box>
     </div>
   );

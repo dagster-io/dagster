@@ -74,6 +74,7 @@ export const Sizes = () => {
             message: 'Oh no an error! Look at the console!',
             timeout: 300000,
             action: {
+              type: 'button',
               text: 'View error',
               onClick: () => {
                 console.log('HERE IS AN ERROR IN THE CONSOLE');

@@ -14,6 +14,7 @@ import {showSharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {LaunchPartitionBackfillMutation} from '../instance/backfill/types/BackfillUtils.types';
 import {getBackfillPath} from '../runs/RunsFeedUtils';
+import {AnchorButton} from '../ui/AnchorButton';
 
 const DEFAULT_RUN_LAUNCHER_NAME = 'DefaultRunLauncher';
 
@@ -82,10 +83,8 @@ export async function showBackfillSuccessToast(
       </div>
     ),
     action: {
-      text: 'View',
-      onClick: () => {
-        history.push({pathname, search});
-      },
+      type: 'custom',
+      element: <AnchorButton to={history.createHref({pathname, search})}>View</AnchorButton>,
     },
   });
 }
