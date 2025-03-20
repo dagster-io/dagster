@@ -111,6 +111,7 @@ db.Index(
     JobTickTable.c.timestamp,
     JobTickTable.c.job_origin_id,
     JobTickTable.c.selector_id,
+    mysql_length={"timestamp": 64, "job_origin_id": 255, "selector_id": 255},
 )
 
 db.Index(
