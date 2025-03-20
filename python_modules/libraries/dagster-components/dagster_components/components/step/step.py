@@ -100,21 +100,6 @@ def has_config_param_annotation(annotation: Optional[type[Any]]) -> bool:
     )
 
 
-def get_config_type_param_annotation(cls: type) -> Optional[tuple[str, inspect.Parameter]]:
-    # Get the signature of the execute method
-    signature = inspect.signature(cls.execute)
-
-    # Get all parameters annotated with a resource param
-    params = [
-        (name, param)
-        for (name, param) in signature.parameters.items()
-        if has_config_param_annotation(param.annotation)
-    ]
-
-    check.invariant(len(params) <= 1)
-    return next(iter(params)) if params else None
-
-
 def config_schema_from_config_cls(config_cls: Optional[type]) -> Optional[Field]:
     return (
         infer_schema_from_config_annotation(
@@ -163,25 +148,29 @@ class StepComponent(Component, ABC):
     can_subset: bool
 
     @cached_property
-    def required_resource_keys(self) -> Optional[set[str]]:
-        # Get the execute method from the current class
-        execute_method = self.__class__.execute
-
-        # Get the signature of the execute method
-        signature = inspect.signature(execute_method)
-
+    def required_resource_keys(self) -> set[str]:
         # Get all parameters annotated with a resource param
-        params = {
+        return {
             param_name
-            for param_name, param in signature.parameters.items()
+            for param_name, param in inspect.signature(self.__class__.execute).parameters.items()
             if has_resource_param_annotation(param.annotation)
         }
 
-        return params if params else None
+    @cached_property
+    def config_param(self) -> Optional[inspect.Parameter]:
+        # Get all parameters annotated with a config param
+        params = [
+            param
+            for param in inspect.signature(self.__class__.execute).parameters.values()
+            if has_config_param_annotation(param.annotation)
+        ]
+
+        check.invariant(len(params) <= 1)
+        return next(iter(params)) if params else None
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        param_annotation = get_config_type_param_annotation(self.__class__)
-        config_cls = param_annotation[1].annotation if param_annotation else None
+        param = self.config_param
+        config_cls = param.annotation if param else None
         required_resource_keys = self.required_resource_keys
 
         @multi_asset(
@@ -200,7 +189,7 @@ class StepComponent(Component, ABC):
             if config_cls:
                 config_dict = check.inst(context.op_config if config_cls else {}, dict)
                 config_inst = config_cls(**config_dict)
-                config_param_name = check.not_none(param_annotation)[0]
+                config_param_name = check.not_none(param).name
                 config_kwarg = {config_param_name: config_inst} if config_inst else {}
             else:
                 config_kwarg = {}
