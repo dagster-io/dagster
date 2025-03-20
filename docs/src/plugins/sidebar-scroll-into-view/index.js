@@ -27,6 +27,8 @@ const INNER_HTML = `
   document.addEventListener("DOMContentLoaded", function() {
     handleScrollIntoView();
   });
+  window.addEventListener('popstate', () => handleScrollIntoView());
+  window.addEventListener('pushstate', () => handleScrollIntoView());
 `;
 
 module.exports = function (context, options) {
