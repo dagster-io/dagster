@@ -40,7 +40,12 @@ def ensure_cleanup(
             job["id"]
             for job in jobs
             if job["name"]
-            == get_dagster_adhoc_job_name(project_id=project_id, environment_id=environment_id)
+            == get_dagster_adhoc_job_name(
+                project_id=project_id,
+                project_name=None,
+                environment_id=environment_id,
+                environment_name=None,
+            )
         }
         for job_id in adhoc_job_ids:
             client.destroy_job(job_id=job_id)
