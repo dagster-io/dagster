@@ -61,6 +61,11 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
     version: AssetGraphQueryVersion,
   });
 
+  const spawnBuildGraphDataWorker = useMemo(
+    () => workerSpawner(() => new Worker(new URL('./ComputeGraphData.worker', import.meta.url))),
+    [],
+  );
+
   const nodes = fetchResult.data?.assetNodes;
   const queryItems = useMemo(
     () => (nodes ? buildGraphQueryItems(nodes) : []).map(({node}) => node),
@@ -78,9 +83,12 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
       return;
     }
     const requestId = ++currentRequestRef.current;
-    buildGraphData({
-      nodes: queryItems,
-    })
+    buildGraphData(
+      {
+        nodes: queryItems,
+      },
+      spawnBuildGraphDataWorker,
+    )
       ?.then((data) => {
         if (lastProcessedRequestRef.current < requestId) {
           lastProcessedRequestRef.current = requestId;
@@ -91,7 +99,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
         // buildGraphData is throttled and rejects promises when another call is made before the throttle delay.
         console.warn(e);
       });
-  }, [options.loading, queryItems]);
+  }, [options.loading, queryItems, spawnBuildGraphDataWorker]);
 
   return {fullAssetGraphData, loading: !fetchResult.data || fetchResult.loading || options.loading};
 }
@@ -163,6 +171,11 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   const {loading: supplementaryDataLoading, data: supplementaryData} =
     useAssetGraphSupplementaryData(opsQuery);
 
+  const spawnComputeGraphDataWorker = useMemo(
+    () => workerSpawner(() => new Worker(new URL('./ComputeGraphData.worker', import.meta.url))),
+    [],
+  );
+
   useLayoutEffect(() => {
     if (options.loading || supplementaryDataLoading) {
       return;
@@ -177,14 +190,18 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     }
 
     setGraphDataLoading(true);
-    computeGraphData({
-      repoFilteredNodes,
-      graphQueryItems,
-      opsQuery,
-      kinds,
-      hideEdgesToNodesOutsideQuery,
-      supplementaryData,
-    })
+
+    computeGraphData(
+      {
+        repoFilteredNodes,
+        graphQueryItems,
+        opsQuery,
+        kinds,
+        hideEdgesToNodesOutsideQuery,
+        supplementaryData,
+      },
+      spawnComputeGraphDataWorker,
+    )
       ?.then((data) => {
         if (lastProcessedRequestRef.current < requestId) {
           lastProcessedRequestRef.current = requestId;
@@ -210,6 +227,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     options.loading,
     supplementaryData,
     supplementaryDataLoading,
+    spawnComputeGraphDataWorker,
   ]);
 
   const loading = fetchResult.loading || graphDataLoading || supplementaryDataLoading;
@@ -353,14 +371,6 @@ export const ASSET_GRAPH_QUERY = gql`
   ${ASSET_NODE_FRAGMENT}
 `;
 
-const spawnComputeGraphDataWorker = workerSpawner(
-  () => new Worker(new URL('./ComputeGraphData.worker', import.meta.url)),
-);
-
-const spawnBuildGraphDataWorker = workerSpawner(
-  () => new Worker(new URL('./ComputeGraphData.worker', import.meta.url)),
-);
-
 const EMPTY_GRAPH_DATA: GraphData = {
   nodes: {},
   downstream: {},
@@ -376,6 +386,7 @@ const EMPTY_GRAPH_DATA_STATE: GraphDataState = {
 let _id = 0;
 async function computeGraphDataWrapper(
   props: Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
+  spawnComputeGraphDataWorker: () => Worker,
 ): Promise<GraphDataState> {
   if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
     const worker = spawnComputeGraphDataWorker();
@@ -386,6 +397,7 @@ async function computeGraphDataWrapper(
         if (data.id === id) {
           resolve(data);
           removeMessageListener();
+          worker.terminate();
         }
       });
       const message: ComputeGraphDataMessageType = {
@@ -396,6 +408,7 @@ async function computeGraphDataWrapper(
       worker.onError((error) => {
         console.error(error);
         resolve(EMPTY_GRAPH_DATA_STATE);
+        worker.terminate();
       });
       worker.postMessage(message);
     });
@@ -412,6 +425,7 @@ const buildGraphData = indexedDBAsyncMemoize<GraphData, typeof buildGraphDataWra
 
 async function buildGraphDataWrapper(
   props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,
+  spawnBuildGraphDataWorker: () => Worker,
 ): Promise<GraphData> {
   if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
     const worker = spawnBuildGraphDataWorker();
@@ -422,11 +436,13 @@ async function buildGraphDataWrapper(
         if (data.id === id) {
           resolve(data);
           removeMessageListener();
+          worker.terminate();
         }
       });
       worker.onError((error) => {
         console.error(error);
         resolve(EMPTY_GRAPH_DATA);
+        worker.terminate();
       });
       const message: BuildGraphDataMessageType = {
         type: 'buildGraphData',
