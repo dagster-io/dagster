@@ -34,6 +34,7 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
 )
 from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.types.connection import Connection
 from dagster._time import get_current_datetime
 from dagster._utils.cached_method import cached_method
 
@@ -643,6 +644,18 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 self.instance.get_dynamic_partitions(partitions_def_name)
             )
         return self._dynamic_partitions_cache[partitions_def_name]
+
+    def get_dynamic_partitions_connection(
+        self, partitions_def_name, limit, cursor=None
+    ) -> Connection[str]:
+        if partitions_def_name not in self._dynamic_partitions_cache:
+            return self.instance.get_dynamic_partitions_connection(
+                partitions_def_name, limit, cursor=cursor
+            )
+        partition_keys = self.instance.get_dynamic_partitions_connection(
+            partitions_def_name=partitions_def_name, limit=limit, cursor=cursor
+        ).results
+        return Connection.create_from_sequence(partition_keys, limit, cursor)
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         return partition_key in self.get_dynamic_partitions(partitions_def_name)

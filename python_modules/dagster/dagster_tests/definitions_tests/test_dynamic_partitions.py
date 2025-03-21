@@ -8,13 +8,41 @@ from dagster import (
     AssetKey,
     DagsterUnknownPartitionError,
     IOManager,
+    PartitionsDefinition,
     asset,
     materialize,
     materialize_to_memory,
 )
 from dagster._check import CheckError
 from dagster._core.definitions.partition import DynamicPartitionsDefinition, Partition
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.test_utils import instance_for_test
+
+
+def get_paginated_partition_keys(
+    partitions_def: PartitionsDefinition,
+    dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    current_time=None,
+    batch_size: int = 1,
+) -> list[str]:
+    all_results = []
+    cursor = None
+    has_more = True
+
+    counter = 0
+    while has_more:
+        connection = partitions_def.get_partition_key_connection(
+            limit=batch_size,
+            cursor=cursor,
+            dynamic_partitions_store=dynamic_partitions_store,
+            current_time=current_time,
+        )
+        counter += 1
+        all_results.extend(connection.results)
+        cursor = connection.cursor
+        has_more = connection.has_more
+
+    return all_results
 
 
 @pytest.mark.parametrize(
@@ -30,6 +58,7 @@ def test_dynamic_partitions_partitions(
     partitions = DynamicPartitionsDefinition(partition_fn)
 
     assert partitions.get_partition_keys() == [p.name for p in partition_fn(None)]
+    assert partitions.get_partition_keys() == get_paginated_partition_keys(partitions)
 
 
 @pytest.mark.parametrize(
@@ -43,12 +72,16 @@ def test_dynamic_partitions_keys(partition_fn: Callable[[Optional[datetime]], Se
     partitions = DynamicPartitionsDefinition(partition_fn)
 
     assert partitions.get_partition_keys() == partition_fn(None)
+    assert partitions.get_partition_keys() == get_paginated_partition_keys(partitions)
 
 
 def test_dynamic_partitions_def_methods():
     foo = DynamicPartitionsDefinition(name="foo")
     with instance_for_test() as instance:
         instance.add_dynamic_partitions("foo", ["a", "b"])
+        assert foo.get_partition_keys(
+            dynamic_partitions_store=instance
+        ) == get_paginated_partition_keys(foo, dynamic_partitions_store=instance)
         assert set(foo.get_partition_keys(dynamic_partitions_store=instance)) == {
             "a",
             "b",
@@ -73,6 +106,9 @@ def test_dynamic_partitioned_run():
 
         instance.add_dynamic_partitions("foo", ["a"])
         assert partitions_def.get_partition_keys(dynamic_partitions_store=instance) == ["a"]
+        assert get_paginated_partition_keys(partitions_def, dynamic_partitions_store=instance) == [
+            "a"
+        ]
         assert materialize([my_asset], instance=instance, partition_key="a").success
         materialization = instance.get_latest_materialization_event(AssetKey("my_asset"))
         assert materialization
