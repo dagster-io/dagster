@@ -150,23 +150,23 @@ class PartitionsDefinition(ABC, Generic[T_str]):
     @abstractmethod
     def get_partition_key_connection(
         self,
+        limit: int,
+        cursor: Optional[str] = None,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
     ) -> Connection[str]:
         """Returns a connection object that contains a list of partition keys and all the necessary
         information to paginate through them.
 
         Args:
+            limit: (int): The maximum number of partition keys to return.
+            cursor: (Optional[str]): A cursor to track the progress paginating through the returned partition key results.
             current_time (Optional[datetime]): A datetime object representing the current time, only
                 applicable to time-based partitions definitions.
             dynamic_partitions_store (Optional[DynamicPartitionsStore]): The DynamicPartitionsStore
                 object that is responsible for fetching dynamic partitions. Required when the
                 partitions definition is a DynamicPartitionsDefinition with a name defined. Users
                 can pass the DagsterInstance fetched via `context.instance` to this argument.
-            cursor: (Optional[str]): A cursor to track the progress paginating through the returned partition key results.
-            limit: (Optional[int]): The maximum number of partition keys to return.
 
 
         Returns:
@@ -395,15 +395,15 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
 
     def get_partition_key_connection(
         self,
+        limit: int,
+        cursor: Optional[str] = None,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
     ) -> Connection[str]:
         partition_keys = self.get_partition_keys(
             current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
-        return Connection.create_from_offset_list(partition_keys, cursor=cursor, limit=limit)
+        return Connection.create_from_sequence(partition_keys, limit=limit, cursor=cursor)
 
     def __hash__(self):
         return hash(self.__repr__())
@@ -590,16 +590,15 @@ class DynamicPartitionsDefinition(
 
     def get_partition_key_connection(
         self,
+        limit: int,
+        cursor: Optional[str] = None,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
     ) -> Connection[str]:
-        # TODO: this is not stable if it's using offsets, since partition keys can change
         partition_keys = self.get_partition_keys(
             current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
-        return Connection.create_from_offset_list(partition_keys, cursor=cursor, limit=limit)
+        return Connection.create_from_sequence(partition_keys, cursor=cursor, limit=limit)
 
     def has_partition_key(
         self,
@@ -1027,8 +1026,8 @@ class PartitionsSubset(ABC, Generic[T_str]):
     @abstractmethod
     def get_partition_key_connection(
         self,
+        limit: int,
         cursor: Optional[str] = None,
-        limit: Optional[int] = None,
     ) -> Connection[T_str]: ...
 
     @abstractmethod
@@ -1195,11 +1194,11 @@ class DefaultPartitionsSubset(
 
     def get_partition_key_connection(
         self,
+        limit: int,
         cursor: Optional[str] = None,
-        limit: Optional[int] = None,
     ) -> Connection[str]:
         # todo (prha): this is a bit weird since we're using offsets to index
-        return Connection.create_from_offset_list(list(self.subset), cursor=cursor, limit=limit)
+        return Connection.create_from_sequence(list(self.subset), limit=limit, cursor=cursor)
 
     def get_ranges_for_keys(self, partition_keys: Sequence[str]) -> Sequence[PartitionKeyRange]:
         cur_range_start = None
@@ -1392,14 +1391,14 @@ class AllPartitionsSubset(
 
     def get_partition_key_connection(
         self,
+        limit: int,
         cursor: Optional[str] = None,
-        limit: Optional[int] = None,
     ) -> Connection[str]:
         return self.partitions_def.get_partition_key_connection(
+            limit=limit,
+            cursor=cursor,
             current_time=self.current_time,
             dynamic_partitions_store=self.dynamic_partitions_store,
-            cursor=cursor,
-            limit=limit,
         )
 
     def get_partition_keys_not_in_subset(

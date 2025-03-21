@@ -339,10 +339,10 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
 
     def get_partition_key_connection(
         self,
+        limit: int,
+        cursor: Optional[str] = None,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-        cursor: Optional[str] = None,
-        limit: Optional[int] = None,
     ) -> Connection[str]:
         """Returns a connection object that contains a list of partition keys and all the necessary
         information to paginate through them.
@@ -355,18 +355,14 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             Connection[MultiPartitionKey]
         """
         multi_cursor = MultiPartitionCursor.from_cursor(cursor)
-        dimension_cursors = multi_cursor.dimension_cursors
         last_seen_key = multi_cursor.last_seen_key
 
         dimension_keys = {}
-        dimension_cursors = {}
         for dimension in self._partitions_defs:
-            dim_cursor = dimension_cursors.get(dimension.name)
-            conn = dimension.partitions_def.get_partition_key_connection(
-                current_time, dynamic_partitions_store, dim_cursor, limit=None
+            dimension_keys[dimension.name] = dimension.partitions_def.get_partition_keys(
+                current_time=current_time,
+                dynamic_partitions_store=dynamic_partitions_store,
             )
-            dimension_keys[dimension.name] = list(conn.results)
-            dimension_cursors[dimension.name] = conn.cursor
 
         if any(not results for results in dimension_keys.values()):
             return Connection(results=[], cursor=multi_cursor.to_string(), has_more=False)
@@ -432,13 +428,13 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             partition_keys.append(partition_key)
             new_last_seen_key = partition_key
 
-            if limit and len(partition_keys) >= limit:
+            if len(partition_keys) >= limit:
                 break
 
         # Check if we have more results
         has_more = get_next_key() is not None
 
-        next_cursor = MultiPartitionCursor(dimension_cursors, new_last_seen_key)
+        next_cursor = MultiPartitionCursor(new_last_seen_key)
 
         return Connection(results=partition_keys, cursor=next_cursor.to_string(), has_more=has_more)
 
@@ -670,7 +666,6 @@ class MultiPartitionCursor:
 
     def __init__(
         self,
-        dimension_cursors: Mapping[str, str],
         last_seen_key: Optional[MultiPartitionKey] = None,
     ):
         """Cursor object representing the pagination state for a MultiPartitionsDefinition.
@@ -679,7 +674,6 @@ class MultiPartitionCursor:
             dimension_cursors: A mapping of dimension name to that dimension's cursor.
             last_seen_keys: The last processed partition key for each dimension (for resuming).
         """
-        self.dimension_cursors = dimension_cursors
         self.last_seen_key = last_seen_key
 
     def __str__(self) -> str:
@@ -688,7 +682,6 @@ class MultiPartitionCursor:
     def to_string(self) -> str:
         raw = json.dumps(
             {
-                "dimension_cursors": self.dimension_cursors,
                 "last_seen_key": self.last_seen_key.keys_by_dimension if self.last_seen_key else {},
             }
         )
@@ -697,15 +690,9 @@ class MultiPartitionCursor:
     @classmethod
     def from_cursor(cls, cursor: Optional[str]):
         if cursor is None:
-            return MultiPartitionCursor({}, None)
+            return MultiPartitionCursor()
 
         raw = json.loads(base64.b64decode(cursor).decode("utf-8"))
-        if "dimension_cursors" not in raw or "last_seen_key" not in raw:
+        if "last_seen_key" not in raw:
             raise ValueError(f"Invalid cursor: {cursor}")
-        if raw["last_seen_key"]:
-            last_seen_key = MultiPartitionKey(raw["last_seen_key"])
-        else:
-            last_seen_key = None
-        return MultiPartitionCursor(
-            dimension_cursors=raw["dimension_cursors"], last_seen_key=last_seen_key
-        )
+        return MultiPartitionCursor(last_seen_key=MultiPartitionKey(raw["last_seen_key"]))
