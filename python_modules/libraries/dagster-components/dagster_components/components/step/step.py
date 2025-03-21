@@ -207,9 +207,6 @@ class StepComponent(Component, ABC):
             kwargs = {}
 
         execution_result = self.execute(context=ExecutionContext(context), **kwargs)
-        # import code
-
-        # code.interact(local={**locals(), **globals()})
 
         for asset_record in execution_result.asset_records or []:
             if self.is_observable:
