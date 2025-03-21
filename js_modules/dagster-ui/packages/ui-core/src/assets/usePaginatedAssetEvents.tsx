@@ -12,6 +12,7 @@ import {
 } from './types/useRecentAssetEvents.types';
 import {ASSET_EVENTS_QUERY, AssetMaterializationFragment} from './useRecentAssetEvents';
 import {useApolloClient} from '../apollo-client';
+import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 
 /** Note: This hook paginates through an asset's events, optionally beginning at ?asOf=.
@@ -57,6 +58,7 @@ export function usePaginatedAssetEvents(
           assetKey: {path: assetKey.path},
           limit: 100,
           before,
+          eventTypeSelector: MaterializationHistoryEventTypeSelector.ALL,
         },
       });
       setLoading(false);
