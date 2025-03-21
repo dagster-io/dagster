@@ -13,7 +13,7 @@ class DuckDbComponent(Component, ResolvableModel):
     csv_path: str
     asset_key: str
 
-    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
+    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
         name = f"run_{self.asset_key}"
         asset_specs = [dg.AssetSpec(key=self.asset_key)]
         path = (load_context.path / Path(self.csv_path)).absolute()

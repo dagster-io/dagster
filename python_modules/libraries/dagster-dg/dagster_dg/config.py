@@ -138,7 +138,7 @@ class DgConfig:
             cli_partials.append(command_line_config)
         cli_config = DgCliConfig.from_raw(*cli_partials) if cli_partials else DgCliConfig.default()
 
-        return cls(cli_config, project_config, workspace_config)
+        return cls(cli_config, project_config, workspace_config)  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 # ########################

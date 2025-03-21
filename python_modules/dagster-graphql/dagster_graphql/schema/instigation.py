@@ -170,7 +170,7 @@ class DynamicPartitionsRequestMixin:
 
 
 class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.ObjectType):
-    class Meta:
+    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
         name = "DynamicPartitionRequest"
 
     def __init__(
@@ -192,7 +192,7 @@ class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.O
 
 
 class GrapheneDynamicPartitionsRequestResult(DynamicPartitionsRequestMixin, graphene.ObjectType):
-    class Meta:
+    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
         name = "DynamicPartitionsRequestResult"
 
     skippedPartitionKeys = non_null_list(graphene.String)

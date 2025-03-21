@@ -200,7 +200,7 @@ def _submit_task_docker(app, plan_context, step, queue, priority, known_state):
     )
 
     task = create_docker_task(app)
-    task_signature = task.si(
+    task_signature = task.si(  # pyright: ignore[reportFunctionMemberAccess]
         execute_step_args_packed=pack_value(execute_step_args),
         docker_config=plan_context.executor.docker_config,
     )

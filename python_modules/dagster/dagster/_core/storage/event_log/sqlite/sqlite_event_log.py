@@ -142,7 +142,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return {"base_dir": StringSource}
 
     @classmethod
-    def from_config_value(
+    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, inst_data: Optional[ConfigurableClassData], config_value: "SqliteStorageConfig"
     ) -> "SqliteEventLogStorage":
         return SqliteEventLogStorage(inst_data=inst_data, **config_value)

@@ -60,11 +60,11 @@ def test_recover_with_step_in_flight():
                     DagsterEvent(
                         DagsterEventType.STEP_START.value,
                         job_name=foo_job.name,
-                        step_key=step_1.key,
+                        step_key=step_1.key,  # pyright: ignore[reportPossiblyUnboundVariable]
                     )
                 ]
             )
-            assert possibly_in_flight_steps == [step_1]
+            assert possibly_in_flight_steps == [step_1]  # pyright: ignore[reportPossiblyUnboundVariable]
 
             assert not active_execution.get_steps_to_execute()
 
@@ -73,7 +73,7 @@ def test_recover_with_step_in_flight():
                     DagsterEventType.STEP_SUCCESS.value,
                     job_name=foo_job.name,
                     event_specific_data=StepSuccessData(duration_ms=10.0),
-                    step_key=step_1.key,
+                    step_key=step_1.key,  # pyright: ignore[reportPossiblyUnboundVariable]
                 )
             )
 
@@ -252,7 +252,7 @@ class MockInstanceConcurrencyContext(InstanceConcurrencyContext):
     def global_concurrency_keys(self) -> set[str]:
         return {"foo"}
 
-    def claim(self, concurrency_key: str, step_key: str, priority: int = 0):
+    def claim(self, concurrency_key: str, step_key: str, priority: int = 0):  # pyright: ignore[reportIncompatibleMethodOverride]
         self._pending_claims.add(step_key)
         return False
 

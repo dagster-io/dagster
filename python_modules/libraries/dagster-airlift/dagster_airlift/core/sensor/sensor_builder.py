@@ -163,7 +163,7 @@ def build_airflow_polling_sensor(
             )
             latest_offset = batch_result.idx
 
-        if batch_result is not None:
+        if batch_result is not None:  # pyright: ignore[reportPossiblyUnboundVariable]
             new_cursor = AirflowPollingSensorCursor(
                 end_date_gte=end_date_gte,
                 end_date_lte=end_date_lte,

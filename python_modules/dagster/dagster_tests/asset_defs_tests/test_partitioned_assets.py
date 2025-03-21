@@ -304,7 +304,7 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
 
 def test_output_context_asset_partitions_time_window():
     class MyIOManager(IOManager):
-        def handle_output(self, context, _obj):
+        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             assert context.asset_partitions_time_window == TimeWindow(
                 parse_time_string("2021-06-06"), parse_time_string("2021-06-07")
             )
@@ -327,7 +327,7 @@ def test_input_context_asset_partitions_time_window():
     partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, _obj):
+        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             assert context.asset_partitions_time_window == TimeWindow(
                 parse_time_string("2021-06-06"), parse_time_string("2021-06-07")
             )

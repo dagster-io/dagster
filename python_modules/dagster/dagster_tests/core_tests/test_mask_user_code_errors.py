@@ -62,7 +62,7 @@ def test_masking_basic(enable_masking_user_code_errors):
         exc_info = sys.exc_info()
         err_info = serializable_error_info_from_exc_info(exc_info)
 
-    assert "hunter2" not in str(err_info)
+    assert "hunter2" not in str(err_info)  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 def test_masking_nested_user_code_err_boundaries(enable_masking_user_code_errors):
@@ -84,7 +84,7 @@ def test_masking_nested_user_code_err_boundaries(enable_masking_user_code_errors
         exc_info = sys.exc_info()
         err_info = serializable_error_info_from_exc_info(exc_info)
 
-    assert "hunter2" not in str(err_info)
+    assert "hunter2" not in str(err_info)  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 def test_masking_nested_user_code_err_boundaries_reraise(enable_masking_user_code_errors):
@@ -113,7 +113,7 @@ def test_masking_nested_user_code_err_boundaries_reraise(enable_masking_user_cod
         exc_info = sys.exc_info()
         err_info = serializable_error_info_from_exc_info(exc_info)
 
-    assert "hunter2" not in str(err_info)
+    assert "hunter2" not in str(err_info)  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 ERROR_ID_REGEX = r"[Ee]rror ID ([a-z0-9\-]+)"

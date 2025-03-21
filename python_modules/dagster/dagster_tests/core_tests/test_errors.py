@@ -45,7 +45,7 @@ def test_from_none():
     except:
         err = serializable_error_info_from_exc_info(sys.exc_info())
 
-    assert err
+    assert err  # pyright: ignore[reportPossiblyUnboundVariable]
     assert err.context
 
     try:

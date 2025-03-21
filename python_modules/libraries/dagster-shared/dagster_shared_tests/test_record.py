@@ -425,7 +425,7 @@ def test_base_class_conflicts() -> None:
     @record
     class A(AbsPropBase):
         abstract_prop: Any
-        abstract_prop_with_default: int = 0
+        abstract_prop_with_default: int = 0  # pyright: ignore[reportIncompatibleMethodOverride]
 
     assert A(abstract_prop=4).abstract_prop == 4
     assert A(abstract_prop=4).abstract_prop_with_default == 0

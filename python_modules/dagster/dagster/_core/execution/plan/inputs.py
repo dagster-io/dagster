@@ -484,7 +484,7 @@ class MultiStepInputSource(StepInputSource, ABC):
     sources: Sequence[StepInputSource]
 
     @property
-    def step_key_dependencies(self) -> AbstractSet[str]:
+    def step_key_dependencies(self) -> AbstractSet[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         keys = set()
         for source in self.sources:
             keys.update(source.step_key_dependencies)

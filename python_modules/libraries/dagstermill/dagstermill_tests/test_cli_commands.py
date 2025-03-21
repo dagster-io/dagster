@@ -110,5 +110,5 @@ def test_double_scaffold():
         assert res.exception.code == 1
         assert "already exists and continuing will overwrite the existing notebook." in res.output
     finally:
-        if os.path.exists(notebook_path):
-            os.unlink(notebook_path)
+        if os.path.exists(notebook_path):  # pyright: ignore[reportPossiblyUnboundVariable]
+            os.unlink(notebook_path)  # pyright: ignore[reportPossiblyUnboundVariable]

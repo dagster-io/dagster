@@ -1083,7 +1083,7 @@ class SensorDefinition(IHasInternalInit):
                     "RunRequest must have an asset_graph_subset to launch a backfill.",
                 )
 
-            unexpected_asset_keys = (AssetSelection.keys(*asset_keys) - asset_selection).resolve(
+            unexpected_asset_keys = (AssetSelection.keys(*asset_keys) - asset_selection).resolve(  # pyright: ignore[reportPossiblyUnboundVariable]
                 check.not_none(context.repository_def).asset_graph
             )
             if unexpected_asset_keys:
@@ -1155,7 +1155,7 @@ class SensorExecutionData(
         ],
     )
 ):
-    dagster_run_reactions: Optional[Sequence[DagsterRunReaction]]
+    dagster_run_reactions: Optional[Sequence[DagsterRunReaction]]  # pyright: ignore[reportIncompatibleVariableOverride]
 
     def __new__(
         cls,

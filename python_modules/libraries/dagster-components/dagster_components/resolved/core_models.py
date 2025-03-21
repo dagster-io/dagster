@@ -153,7 +153,7 @@ class AssetSpecKwargs(SharedAssetKwargs):
         AssetKey,
         Resolver.from_model(lambda context, schema: _resolve_asset_key(schema.key, context)),
     ]
-    deps: Annotated[
+    deps: Annotated[  # pyright: ignore[reportIncompatibleVariableOverride]
         Sequence[AssetKey],
         Resolver.from_model(
             lambda context, schema: [_resolve_asset_key(dep, context) for dep in schema.deps]

@@ -9,7 +9,7 @@ class TestMySQLScheduleStorage(TestScheduleStorage):
     __test__ = True
 
     @pytest.fixture(scope="function", name="storage")
-    def schedule_storage(self, conn_string):
+    def schedule_storage(self, conn_string):  # pyright: ignore[reportIncompatibleMethodOverride]
         storage = MySQLScheduleStorage.create_clean_storage(conn_string)
         assert storage
         return storage

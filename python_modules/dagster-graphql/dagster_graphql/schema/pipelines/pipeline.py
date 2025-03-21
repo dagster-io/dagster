@@ -126,7 +126,7 @@ class GrapheneTimePartitionRange(graphene.ObjectType):
 class GrapheneTimePartitionRangeStatus(GrapheneTimePartitionRange):
     status = graphene.NonNull(GraphenePartitionRangeStatus)
 
-    class Meta:
+    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
         name = "TimePartitionRangeStatus"
 
 
@@ -946,7 +946,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         ),
     )
 
-    class Meta:
+    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
         name = "Pipeline"
 
@@ -1022,7 +1022,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
 
 
 class GrapheneJob(GraphenePipeline):
-    class Meta:
+    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
         name = "Job"
 

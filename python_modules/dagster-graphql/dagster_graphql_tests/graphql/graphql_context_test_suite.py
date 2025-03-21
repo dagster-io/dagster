@@ -837,7 +837,7 @@ def make_graphql_context_test_suite(context_variants):
                 yield graphql_context
 
         @pytest.fixture(name="graphql_context")
-        def yield_graphql_context(self, class_scoped_graphql_context):
+        def yield_graphql_context(self, class_scoped_graphql_context):  # pyright: ignore[reportIncompatibleMethodOverride]
             instance = class_scoped_graphql_context.instance
             instance.wipe()
             instance.wipe_all_schedules()

@@ -524,7 +524,7 @@ class AirbyteResource(BaseAirbyteResource):
         )
         return {**auth_param, **self.request_additional_params}
 
-    def make_request(
+    def make_request(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, endpoint: str, data: Optional[Mapping[str, object]]
     ) -> Optional[Mapping[str, object]]:
         """Creates and sends a request to the desired Airbyte REST API endpoint.
@@ -1378,10 +1378,10 @@ class AirbyteCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, 
     def defs_key(self) -> str:
         return f"{AIRBYTE_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.workspace_id}"
 
-    def fetch_state(self) -> AirbyteWorkspaceData:
+    def fetch_state(self) -> AirbyteWorkspaceData:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.workspace.fetch_airbyte_workspace_data()
 
-    def defs_from_state(self, state: AirbyteWorkspaceData) -> Definitions:
+    def defs_from_state(self, state: AirbyteWorkspaceData) -> Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
         all_asset_specs = [
             self.translator.get_asset_spec(props)
             for props in state.to_airbyte_connection_table_props_data()

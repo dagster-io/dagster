@@ -56,7 +56,7 @@ class ADLS2FileManager(FileManager):
         self._local_handle_cache: dict[str, str] = {}
         self._temp_file_manager = TempfileManager()
 
-    def copy_handle_to_local_temp(self, file_handle: ADLS2FileHandle):
+    def copy_handle_to_local_temp(self, file_handle: ADLS2FileHandle):  # pyright: ignore[reportIncompatibleMethodOverride]
         self._download_if_not_cached(file_handle)
         return self._get_local_path(file_handle)
 
@@ -77,7 +77,7 @@ class ADLS2FileManager(FileManager):
         return file_handle
 
     @contextmanager
-    def read(self, file_handle: ADLS2FileHandle, mode: str = "rb"):
+    def read(self, file_handle: ADLS2FileHandle, mode: str = "rb"):  # pyright: ignore[reportIncompatibleMethodOverride]
         check.inst_param(file_handle, "file_handle", ADLS2FileHandle)
         check.str_param(mode, "mode")
         check.param_invariant(mode in {"r", "rb"}, "mode")
@@ -94,7 +94,7 @@ class ADLS2FileManager(FileManager):
     def _get_local_path(self, file_handle: ADLS2FileHandle) -> str:
         return self._local_handle_cache[file_handle.adls2_path]
 
-    def read_data(self, file_handle: ADLS2FileHandle) -> Any:
+    def read_data(self, file_handle: ADLS2FileHandle) -> Any:  # pyright: ignore[reportIncompatibleMethodOverride]
         with self.read(file_handle, mode="rb") as file_obj:
             return file_obj.read()
 
@@ -102,7 +102,7 @@ class ADLS2FileManager(FileManager):
         check.inst_param(data, "data", bytes)
         return self.write(io.BytesIO(data), mode="wb", ext=ext)
 
-    def write(
+    def write(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, file_obj: io.BytesIO, mode: str = "wb", ext: Optional[str] = None
     ) -> ADLS2FileHandle:
         check_file_like_obj(file_obj)

@@ -343,13 +343,13 @@ class TestGCSComputeLogManager(TestComputeLogManager):
     __test__ = True
 
     @pytest.fixture(name="compute_log_manager")
-    def compute_log_manager(self, gcs_bucket):
+    def compute_log_manager(self, gcs_bucket):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory() as temp_dir:
             yield GCSComputeLogManager(bucket=gcs_bucket, prefix="my_prefix", local_dir=temp_dir)
 
     # for streaming tests
     @pytest.fixture(name="write_manager")
-    def write_manager(self, gcs_bucket):
+    def write_manager(self, gcs_bucket):  # pyright: ignore[reportIncompatibleMethodOverride]
         # should be a different local directory as the read manager
         with tempfile.TemporaryDirectory() as temp_dir:
             yield GCSComputeLogManager(
@@ -360,7 +360,7 @@ class TestGCSComputeLogManager(TestComputeLogManager):
             )
 
     @pytest.fixture(name="read_manager")
-    def read_manager(self, gcs_bucket):
+    def read_manager(self, gcs_bucket):  # pyright: ignore[reportIncompatibleMethodOverride]
         # should be a different local directory as the write manager
         with tempfile.TemporaryDirectory() as temp_dir:
             yield GCSComputeLogManager(bucket=gcs_bucket, prefix="my_prefix", local_dir=temp_dir)

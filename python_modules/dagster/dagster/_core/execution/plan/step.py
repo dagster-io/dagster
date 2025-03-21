@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 
 class StepKindSerializer(EnumSerializer["StepKind"]):
-    def unpack(self, storage_str: str) -> "StepKind":
+    def unpack(self, storage_str: str) -> "StepKind":  # pyright: ignore[reportIncompatibleMethodOverride]
         # old name for unresolved mapped
         if storage_str == "UNRESOLVED":
             return StepKind.UNRESOLVED_MAPPED
@@ -116,7 +116,7 @@ class IExecutionStep:
         pass
 
 
-class ExecutionStep(
+class ExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_ExecutionStep",
         [
@@ -220,7 +220,7 @@ class ExecutionStep(
         return None
 
 
-class UnresolvedMappedExecutionStep(
+class UnresolvedMappedExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_UnresolvedMappedExecutionStep",
         [
@@ -382,7 +382,7 @@ def _resolved_input(
     return step_input.resolve(map_key)
 
 
-class UnresolvedCollectExecutionStep(
+class UnresolvedCollectExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_UnresolvedCollectExecutionStep",
         [

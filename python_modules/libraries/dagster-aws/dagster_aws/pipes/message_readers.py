@@ -395,7 +395,7 @@ class PipesCloudWatchMessageReader(PipesThreadedMessageReader):
         else:
             return False
 
-    def download_messages(
+    def download_messages(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, cursor: Optional[str], params: PipesParams
     ) -> Optional[tuple[str, str]]:
         params = {

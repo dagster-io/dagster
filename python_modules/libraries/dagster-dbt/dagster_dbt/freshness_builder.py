@@ -133,7 +133,7 @@ def build_freshness_checks_from_dbt_assets(
 
             freshness_checks.extend(
                 build_last_update_freshness_checks(
-                    assets=[translator.get_asset_key(dbt_resource_props)],
+                    assets=[translator.get_asset_key(dbt_resource_props)],  # pyright: ignore[reportPossiblyUnboundVariable]
                     deadline_cron=freshness_check_config.get("deadline_cron"),
                     lower_bound_delta=datetime.timedelta(seconds=lower_bound_seconds),
                     severity=severity,

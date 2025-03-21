@@ -54,7 +54,7 @@ def test_override_vanilla() -> None:
     class CustomResolver(Resolver): ...
 
     class Derived(Base):
-        value: Annotated[str, CustomResolver(lambda context, val: str(val))]
+        value: Annotated[str, CustomResolver(lambda context, val: str(val))]  # pyright: ignore[reportIncompatibleVariableOverride]
 
     resolvers = get_annotation_field_resolvers(Derived)
     assert "value" in resolvers
@@ -69,7 +69,7 @@ def test_override_dataclass() -> None:
     class CustomResolver(Resolver): ...
 
     class Derived(Base):
-        value: Annotated[str, CustomResolver(lambda context, val: str(val))]
+        value: Annotated[str, CustomResolver(lambda context, val: str(val))]  # pyright: ignore[reportIncompatibleVariableOverride]
 
     resolvers = get_annotation_field_resolvers(Derived)
     assert "value" in resolvers
@@ -83,7 +83,7 @@ def test_override_pydantic() -> None:
     class CustomResolver(Resolver): ...
 
     class Derived(Base):
-        value: Annotated[str, CustomResolver(lambda context, val: str(val))]
+        value: Annotated[str, CustomResolver(lambda context, val: str(val))]  # pyright: ignore[reportIncompatibleVariableOverride]
 
     resolvers = get_annotation_field_resolvers(Derived)
     assert "value" in resolvers

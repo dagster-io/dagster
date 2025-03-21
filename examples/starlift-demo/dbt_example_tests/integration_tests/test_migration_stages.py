@@ -97,7 +97,7 @@ def test_dagster_materializes(
             if asset_materialization:
                 break
 
-        assert asset_materialization
+        assert asset_materialization  # pyright: ignore[reportPossiblyUnboundVariable]
 
         if dagster_dev_module.endswith("observe") or dagster_dev_module.endswith("migrate"):
             asset_materialization = dagster_instance.get_latest_materialization_event(

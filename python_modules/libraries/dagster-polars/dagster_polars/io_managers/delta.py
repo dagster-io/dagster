@@ -146,7 +146,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
     """
 
-    extension: str = ".delta"
+    extension: str = ".delta"  # pyright: ignore[reportIncompatibleVariableOverride]
     mode: DeltaWriteMode = DeltaWriteMode.overwrite.value  # type: ignore
     overwrite_schema: bool = False
     version: Optional[int] = None

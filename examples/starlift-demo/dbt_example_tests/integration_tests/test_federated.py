@@ -188,4 +188,4 @@ def test_dagster_materializes(
                 if asset_materialization:
                     break
 
-        assert asset_materialization
+        assert asset_materialization  # pyright: ignore[reportPossiblyUnboundVariable]

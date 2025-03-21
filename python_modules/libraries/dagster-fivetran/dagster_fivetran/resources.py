@@ -1173,12 +1173,12 @@ class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]
     def defs_key(self) -> str:
         return f"{FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.account_id}"
 
-    def fetch_state(self) -> FivetranWorkspaceData:
+    def fetch_state(self) -> FivetranWorkspaceData:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.workspace.fetch_fivetran_workspace_data(
             connector_selector_fn=self.connector_selector_fn
         )
 
-    def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:
+    def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
         all_asset_specs = [
             self.translator.get_asset_spec(props)
             for props in state.to_fivetran_connector_table_props_data()

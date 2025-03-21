@@ -10,7 +10,7 @@ from dagster_components.scaffold import ScaffolderUnavailableReason, ScaffoldReq
 
 
 class ComponentDumper(yaml.Dumper):
-    def write_line_break(self) -> None:
+    def write_line_break(self) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         # add an extra line break between top-level keys
         if self.indent == 0:
             super().write_line_break()

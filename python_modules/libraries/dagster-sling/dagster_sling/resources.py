@@ -613,9 +613,9 @@ class SlingResource(ConfigurableResource):
                     metadata["stream_name"] = current_stream
                     logger.debug(metadata)
                     if context.has_assets_def:
-                        yield MaterializeResult(asset_key=asset_key, metadata=metadata)
+                        yield MaterializeResult(asset_key=asset_key, metadata=metadata)  # pyright: ignore[reportPossiblyUnboundVariable]
                     else:
-                        yield AssetMaterialization(asset_key=asset_key, metadata=metadata)
+                        yield AssetMaterialization(asset_key=asset_key, metadata=metadata)  # pyright: ignore[reportPossiblyUnboundVariable]
 
                     current_stream = None
                     metadata_text = []

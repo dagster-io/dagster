@@ -635,7 +635,7 @@ def all_code_locations_run_status_sensor():
 @sensor(job=the_job)
 def logging_sensor(context):
     class Handler(logging.Handler):
-        def handle(self, record):
+        def handle(self, record):  # pyright: ignore[reportIncompatibleMethodOverride]
             try:
                 self.message = record.getMessage()
             except TypeError:
@@ -660,7 +660,7 @@ def logging_sensor(context):
 @multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
 def multi_asset_logging_sensor(context: MultiAssetSensorEvaluationContext) -> SkipReason:
     class Handler(logging.Handler):
-        def handle(self, record):
+        def handle(self, record):  # pyright: ignore[reportIncompatibleMethodOverride]
             try:
                 self.message = record.getMessage()
             except TypeError:

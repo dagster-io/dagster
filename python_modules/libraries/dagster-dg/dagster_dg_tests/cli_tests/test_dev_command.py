@@ -120,8 +120,8 @@ def test_dev_forwards_options_to_dagster_dev():
             child_process = _get_child_processes(dev_process.pid)[0]
             assert " ".join(options) in " ".join(child_process.cmdline())
         finally:
-            dev_process.terminate()
-            dev_process.communicate()
+            dev_process.terminate()  # pyright: ignore[reportPossiblyUnboundVariable]
+            dev_process.communicate()  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 def test_implicit_yaml_check_from_dg_dev() -> None:

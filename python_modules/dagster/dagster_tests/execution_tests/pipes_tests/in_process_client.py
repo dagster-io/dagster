@@ -101,7 +101,7 @@ class InProcessPipesClient(PipesClient, TreatAsResourceParam):
     """
 
     @public
-    def run(
+    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],

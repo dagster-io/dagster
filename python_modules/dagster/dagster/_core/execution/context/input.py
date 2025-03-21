@@ -684,7 +684,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
         raise NotImplementedError()
 
-    def with_partition_key_range(
+    def with_partition_key_range(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         partition_key_range: PartitionKeyRange,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,

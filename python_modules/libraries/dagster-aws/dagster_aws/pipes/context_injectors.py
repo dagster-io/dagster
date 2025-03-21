@@ -34,7 +34,7 @@ class PipesS3ContextInjector(PipesContextInjector):
         self.client = client
 
     @contextmanager
-    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:
+    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:  # pyright: ignore[reportIncompatibleMethodOverride]
         key_prefix = "".join(random.choices(string.ascii_letters, k=30))
         key = os.path.join(key_prefix, _CONTEXT_FILENAME)
         self.client.put_object(

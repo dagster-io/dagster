@@ -172,7 +172,7 @@ class AssetCheckResult(
             description=self.description,
         )
 
-    def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "AssetCheckResult":
+    def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "AssetCheckResult":  # pyright: ignore[reportIncompatibleMethodOverride]
         return AssetCheckResult(
             passed=self.passed,
             asset_key=self.asset_key,

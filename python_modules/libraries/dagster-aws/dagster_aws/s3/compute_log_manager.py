@@ -209,7 +209,7 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             to_delete = [{"Key": key} for key in s3_keys_to_remove]
             self._s3_session.delete_objects(Bucket=self._s3_bucket, Delete={"Objects": to_delete})
 
-    def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
+    def download_url_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):  # pyright: ignore[reportIncompatibleMethodOverride]
         if not self.is_capture_complete(log_key):
             return None
 
@@ -218,7 +218,7 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             ClientMethod="get_object", Params={"Bucket": self._s3_bucket, "Key": s3_key}
         )
 
-    def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):
+    def display_path_for_type(self, log_key: Sequence[str], io_type: ComputeIOType):  # pyright: ignore[reportIncompatibleMethodOverride]
         if not self.is_capture_complete(log_key):
             return None
         s3_key = self._s3_key(log_key, io_type)
