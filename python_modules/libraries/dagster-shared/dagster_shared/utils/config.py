@@ -1,11 +1,24 @@
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
 import tomlkit
 import yaml
 
-DEFAULT_DG_CLI_FOLDER = os.path.join(os.path.expanduser("~"), ".dg")
+
+def is_windows() -> bool:
+    return sys.platform == "win32"
+
+
+def _get_default_dg_cli_folder() -> Path:
+    if is_windows():
+        return Path.home() / "AppData" / "dg"
+    else:
+        return Path.home() / ".dg"
+
+
+DEFAULT_DG_CLI_FOLDER = _get_default_dg_cli_folder()
 DEFAULT_DG_CLI_CONFIG = os.path.join(DEFAULT_DG_CLI_FOLDER, "config.toml")
 
 

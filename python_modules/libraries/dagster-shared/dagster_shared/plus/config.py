@@ -60,9 +60,7 @@ class DagsterPlusCliConfig:
         return cls(**raw_config)
 
     def write(self):
-        print("test")
         existing_config = _get_dagster_plus_config_path_and_raw_config()
-        print(existing_config)
         if existing_config is None:
             config_path = get_dg_config_path()
             raw_config = {}
