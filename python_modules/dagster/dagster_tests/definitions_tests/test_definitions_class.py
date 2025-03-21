@@ -969,12 +969,12 @@ def test_invalid_partitions_subclass():
             return ["a", "b", "c"]
 
         def get_partition_key_connection(
-            self, current_time=None, dynamic_partitions_store=None, cursor=None, limit=None
+            self, limit, cursor=None, current_time=None, dynamic_partitions_store=None
         ):
             partition_keys = self.get_partition_keys(
                 current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
             )
-            return Connection.create_from_offset_list(partition_keys, cursor=cursor, limit=limit)
+            return Connection.create_from_sequence(partition_keys, limit=limit, cursor=cursor)
 
     @asset(partitions_def=CustomPartitionsDefinition())
     def asset1():

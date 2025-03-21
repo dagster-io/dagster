@@ -514,10 +514,10 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
     def get_partition_key_connection(
         self,
+        limit,
+        cursor=None,
         current_time=None,
         dynamic_partitions_store=None,
-        cursor=None,
-        limit=None,
     ) -> Connection[str]:
         if cursor:
             time_window_cursor = TimeWindowCursor.from_cursor(cursor)
@@ -814,7 +814,10 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
     @functools.lru_cache(maxsize=5)
     def get_partition_key_connection_in_time_window(
-        self, time_window: TimeWindow, cursor: Optional[str] = None, limit: Optional[int] = None
+        self,
+        time_window: TimeWindow,
+        limit: Optional[int] = None,
+        cursor: Optional[str] = None,
     ) -> Connection[str]:
         result: list[str] = []
         if cursor:
@@ -2162,22 +2165,22 @@ class TimeWindowPartitionsSubset(
 
     def get_partition_key_connection(
         self,
+        limit: int,
         cursor: Optional[str] = None,
-        limit: Optional[int] = None,
     ) -> Connection[str]:
         sorted_tw = sorted(self.included_time_windows, key=lambda tw: tw.start.timestamp())
         results = []
-        remaining = limit if limit else None
+        remaining = limit
         curr_cursor = cursor
         has_more = False
         for window in sorted_tw:
-            remaining = limit - len(results) if limit else None
+            remaining = limit - len(results)
             conn = self.partitions_def.get_partition_key_connection_in_time_window(
-                window, cursor, remaining
+                time_window=window, limit=remaining, cursor=cursor
             )
             curr_cursor = conn.cursor
             results.extend(conn.results)
-            if limit and len(results) >= limit:
+            if len(results) >= limit:
                 has_more = True
                 break
         if not curr_cursor:

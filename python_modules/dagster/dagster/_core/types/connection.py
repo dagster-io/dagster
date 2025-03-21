@@ -27,8 +27,8 @@ class Connection(Generic[T]):
         self.has_more = has_more
 
     @classmethod
-    def create_from_offset_list(
-        cls, seq: Sequence[T], cursor: Optional[str] = None, limit: Optional[int] = None
+    def create_from_sequence(
+        cls, seq: Sequence[T], limit: int, cursor: Optional[str] = None
     ) -> "Connection[T]":
         """
         Create a Connection from a sequence of objects.
@@ -40,36 +40,43 @@ class Connection(Generic[T]):
             Connection[T]: A Connection object with the given sequence
         """
         if cursor:
-            offset = OffsetCursor.from_cursor(cursor).offset
+            value = ValueIndexCursor.from_cursor(cursor).value
+            if value is None or value not in seq:
+                offset = 0
+            else:
+                offset = seq.index(value) + 1
+
             seq = seq[offset:]
         else:
-            offset = 0
+            value = None
 
-        has_more = len(seq) > limit if limit else False
-        seq = seq[:limit] if limit else seq
+        has_more = len(seq) > limit
+        seq = seq[:limit]
 
-        new_cursor = str(OffsetCursor(offset + len(seq)))
+        last_seen_value = seq[-1] if seq else value
+        new_cursor = ValueIndexCursor(last_seen_value).to_string()
+
         return Connection(results=seq, cursor=new_cursor, has_more=has_more)
 
 
-class OffsetCursor:
-    def __init__(self, offset: int):
-        self.offset = offset
+class ValueIndexCursor:
+    """
+    Cursor class useful for paginating results based on a last seen value.
+    """
+
+    def __init__(self, value):
+        self.value = value
 
     def __str__(self) -> str:
         return self.to_string()
 
     def to_string(self) -> str:
-        raw = json.dumps({"offset": self.offset})
+        raw = json.dumps({"value": self.value})
         return base64.b64encode(bytes(raw, encoding="utf-8")).decode("utf-8")
 
     @classmethod
     def from_cursor(cls, cursor: str):
         raw = json.loads(base64.b64decode(cursor).decode("utf-8"))
-        if "offset" not in raw:
+        if "value" not in raw:
             raise ValueError(f"Invalid cursor: {cursor}")
-        try:
-            offset = int(raw["offset"])
-        except ValueError:
-            raise ValueError(f"Invalid cursor: {cursor}")
-        return OffsetCursor(offset)
+        return ValueIndexCursor(raw["value"])
