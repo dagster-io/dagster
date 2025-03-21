@@ -10,6 +10,7 @@ from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand
+from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 
 @click.command(name="launch", cls=DgClickCommand)
@@ -24,6 +25,7 @@ from dagster_dg.utils import DgClickCommand
     "--config-json", type=click.STRING, help="JSON string of config to use for the launched run."
 )
 @dg_global_options
+@cli_telemetry_wrapper
 def launch_command(
     assets: str,
     partition: Optional[str],

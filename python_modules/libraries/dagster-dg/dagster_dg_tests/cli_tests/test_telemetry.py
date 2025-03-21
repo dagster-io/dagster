@@ -22,12 +22,28 @@ from dagster_dg_tests.utils import (
 TELEMETRY_TEST_COMMANDS = {
     ("check", "yaml"),
     ("check", "defs"),
+    ("dev",),
+    ("docs", "serve"),
+    ("init",),
+    ("list", "defs"),
+    ("list", "project"),
+    ("list", "component"),
+    ("list", "component-type"),
+    ("plus", "login"),
+    ("scaffold", "workspace"),
+    ("scaffold", "project"),
+    ("scaffold", "component-type"),
+    ("scaffold", "sensor"),
+    ("scaffold", "schedule"),
+    ("launch",),
+    ("scaffold", "asset"),
+    ("utils", "configure-editor"),
 }
 
-# Temporary, eventually we will have explicit list of all commands that should and should not be logged
 NO_TELEMETRY_COMMANDS = {
-    tuple(key[1:]) for key in crawl_cli_commands().keys()
-} - TELEMETRY_TEST_COMMANDS
+    ("utils", "inspect-component-type"),
+    ("scaffold", "component"),
+}
 
 
 def test_all_commands_represented_in_telemetry_test() -> None:

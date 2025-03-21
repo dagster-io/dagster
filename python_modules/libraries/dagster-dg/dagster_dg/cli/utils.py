@@ -24,6 +24,7 @@ from dagster_dg.utils.editor import (
     install_or_update_yaml_schema_extension,
     recommend_yaml_extension,
 )
+from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 _DEFAULT_SCHEMA_FOLDER_NAME = ".vscode"
 
@@ -35,6 +36,7 @@ def utils_group():
 
 @utils_group.command(name="configure-editor", cls=DgClickCommand)
 @dg_global_options
+@cli_telemetry_wrapper
 @click.argument("editor", type=click.Choice(["vscode", "cursor"]))
 def configure_editor_command(
     editor: str,
@@ -68,6 +70,7 @@ def configure_editor_command(
 @click.option("--scaffold-params-schema", is_flag=True, default=False)
 @click.option("--component-schema", is_flag=True, default=False)
 @dg_global_options
+@cli_telemetry_wrapper
 def inspect_component_type_command(
     component_type: str,
     description: bool,
