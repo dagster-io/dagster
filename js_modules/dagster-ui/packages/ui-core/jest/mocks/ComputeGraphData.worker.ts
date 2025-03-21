@@ -28,6 +28,8 @@ export default class MockWorker {
       );
     }
   }
+
+  terminate() {}
 }
 
 const originalWorker = global.Worker;
