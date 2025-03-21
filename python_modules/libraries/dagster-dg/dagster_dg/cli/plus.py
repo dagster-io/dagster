@@ -1,7 +1,7 @@
 import webbrowser
 
 import click
-from dagster_shared.plus.config import DagsterPlusCliConfig, get_active_config_path
+from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.login_server import start_login_server
 
 from dagster_dg.utils import DgClickCommand, DgClickGroup
@@ -31,5 +31,5 @@ def login_command() -> None:
     new_api_token = server.get_token()
 
     config = DagsterPlusCliConfig(organization=new_org, user_token=new_api_token)
-    config.write_to_file(get_active_config_path())
+    config.write()
     click.echo(f"Authorized for organization {new_org}\n")

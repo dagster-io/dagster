@@ -1,15 +1,44 @@
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Any, NamedTuple, Optional
 
-import yaml
+from dagster_shared.merger import deep_merge_dicts
+from dagster_shared.utils.config import get_dg_config_path, load_config, write_config
 
 DEFAULT_CLOUD_CLI_FOLDER = os.path.join(os.path.expanduser("~"), ".dagster_cloud_cli")
 DEFAULT_CLOUD_CLI_CONFIG = os.path.join(DEFAULT_CLOUD_CLI_FOLDER, "config")
 
-DEFAULT_DG_CLI_FOLDER = os.path.join(os.path.expanduser("~"), ".dg")
-DEFAULT_DG_CLI_CONFIG = os.path.join(DEFAULT_DG_CLI_FOLDER, "config")
+
+class DagsterPlusConfigInfo(NamedTuple):
+    path: Path
+    raw_config: Mapping[str, Any]
+    is_dg_config: bool
+
+
+def _get_dagster_plus_config_path_and_raw_config() -> Optional[DagsterPlusConfigInfo]:
+    cloud_config_path = get_dagster_cloud_cli_config_path()
+    dg_config_path = get_dg_config_path()
+
+    dg_config = (
+        load_config(dg_config_path).get("cli", {}).get("plus", {})
+        if dg_config_path.exists()
+        else None
+    )
+    cloud_config = load_config(cloud_config_path) if cloud_config_path.exists() else None
+
+    if dg_config and cloud_config:
+        raise Exception(
+            f"Found Dagster Plus config in both {dg_config_path} and {cloud_config_path}. Please consolidate your config files."
+        )
+
+    if cloud_config is not None:
+        return DagsterPlusConfigInfo(cloud_config_path, cloud_config, is_dg_config=False)
+    elif dg_config is not None:
+        return DagsterPlusConfigInfo(dg_config_path, dg_config, is_dg_config=True)
+
+    return None
 
 
 @dataclass
@@ -19,32 +48,34 @@ class DagsterPlusCliConfig:
     user_token: Optional[str] = None
     agent_timeout: Optional[int] = None
 
+    def has_any_configuration(self) -> bool:
+        return any(self.__dict__.values())
+
     @classmethod
-    def from_file(cls, config_file: Path) -> "DagsterPlusCliConfig":
-        contents = config_file.read_text()
-        return cls(**yaml.safe_load(contents))
+    def get(cls) -> "DagsterPlusCliConfig":
+        result = _get_dagster_plus_config_path_and_raw_config()
+        if result is None:
+            raise Exception("No Dagster Plus config found")
+        _, raw_config, _ = result
+        return cls(**raw_config)
 
-    def write_to_file(self, config_file: Path):
-        config_file.parent.mkdir(parents=True, exist_ok=True)
-        config_file.write_text(yaml.dump({k: v for k, v in self.__dict__.items() if v is not None}))
+    def write(self):
+        print("test")
+        existing_config = _get_dagster_plus_config_path_and_raw_config()
+        print(existing_config)
+        if existing_config is None:
+            config_path = get_dg_config_path()
+            raw_config = {}
+            is_dg_config = True
+        else:
+            config_path, raw_config, is_dg_config = existing_config
 
+        config_to_apply = {k: v for k, v in self.__dict__.items() if v is not None}
+        if is_dg_config:
+            config_to_apply = {"cli": {"plus": config_to_apply}}
 
-def get_active_config_path() -> Path:
-    cloud_config_path = get_dagster_cloud_cli_config_path()
-    dg_config_path = get_dg_config_path()
-
-    if cloud_config_path.exists() and dg_config_path.exists():
-        raise Exception(
-            f"Found Dagster Plus config in both {cloud_config_path} and {dg_config_path}. Please consolidate your config files."
-        )
-    elif cloud_config_path.exists():
-        return cloud_config_path
-
-    return dg_config_path
-
-
-def get_dg_config_path() -> Path:
-    return Path(os.getenv("DG_CLI_CONFIG", DEFAULT_DG_CLI_CONFIG))
+        config_dict = deep_merge_dicts(raw_config, config_to_apply)
+        write_config(config_path, config_dict)
 
 
 def get_dagster_cloud_cli_config_path() -> Path:

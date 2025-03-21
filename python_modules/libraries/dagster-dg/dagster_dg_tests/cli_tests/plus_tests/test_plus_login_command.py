@@ -1,28 +1,50 @@
 import json
-import os
 import queue
 import tempfile
 import threading
 import time
+from pathlib import Path
 from unittest import mock
 
 import pytest
 import requests
+import tomlkit
+import yaml
 from click.testing import CliRunner
 from dagster_dg.cli.plus import plus_group
-from dagster_shared.plus.config import DagsterPlusCliConfig, get_active_config_path
+from dagster_shared.plus.config import DagsterPlusCliConfig
 
 
 @pytest.fixture()
-def test_config_file(monkeypatch):
-    with tempfile.TemporaryDirectory() as tmpdir:
-        config_path = os.path.join(tmpdir, "config")
+def test_cloud_cli_config_file(monkeypatch):
+    with (
+        tempfile.TemporaryDirectory() as tmp_cloud_dir,
+        tempfile.TemporaryDirectory() as tmp_dg_dir,
+    ):
+        config_path = Path(tmp_cloud_dir) / "config"
+        config_path.touch()
         monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", config_path)
+        monkeypatch.setenv("DG_CLI_CONFIG", str(Path(tmp_dg_dir) / "config.toml"))
+        yield config_path
+
+
+@pytest.fixture()
+def test_dg_cli_config_file(monkeypatch):
+    with (
+        tempfile.TemporaryDirectory() as tmp_dg_dir,
+        tempfile.TemporaryDirectory() as tmp_cloud_dir,
+    ):
+        config_path = Path(tmp_dg_dir) / "config.toml"
+        config_path.touch()
+        monkeypatch.setenv("DG_CLI_CONFIG", config_path)
+        monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(tmp_cloud_dir) / "config"))
         yield config_path
 
 
 # Test setup command, using the web auth option
-def test_setup_command_web(test_config_file):
+@pytest.mark.parametrize("fixture_name", ["test_cloud_cli_config_file", "test_dg_cli_config_file"])
+def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
+    filepath = request.getfixturevalue(fixture_name)
     runner = CliRunner()
     with (
         mock.patch(
@@ -58,5 +80,15 @@ def test_setup_command_web(test_config_file):
         assert q.get().json().get("ok") is True, "JSON response from callback not as expected"
 
         # Verify new configuration success
-        assert DagsterPlusCliConfig.from_file(get_active_config_path()).organization == "hooli"
-        assert DagsterPlusCliConfig.from_file(get_active_config_path()).user_token == "abc123"
+        assert DagsterPlusCliConfig.get().organization == "hooli"
+        assert DagsterPlusCliConfig.get().user_token == "abc123"
+
+        if fixture_name == "test_cloud_cli_config_file":
+            assert yaml.safe_load(filepath.read_text()) == {
+                "organization": "hooli",
+                "user_token": "abc123",
+            }
+        else:
+            assert tomlkit.parse(filepath.read_text()) == {
+                "cli": {"plus": {"organization": "hooli", "user_token": "abc123"}}
+            }
