@@ -1,0 +1,21 @@
+# alert_policies.yaml
+
+alert_policies:
+  alert_targets:
+  - insights_asset_threshold_target:
+      asset_key:
+      - s3
+      - report
+      metric_name: __dagster_dagster_credits
+      operator: GREATER_THAN
+      selection_period_days: 7
+      threshold: 50
+  description: Sends an email when a credit budget limit has been exceeded.
+  event_types:
+  - INSIGHTS_CONSUMPTION_EXCEEDED
+  name: credit-budget-alert-email
+  notification_service:
+    email:
+      email_addresses:
+      - richard.hendricks@hooli.com
+      - nelson.bighetti@hooli.com
