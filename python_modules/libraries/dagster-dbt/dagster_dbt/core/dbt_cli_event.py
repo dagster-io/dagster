@@ -337,7 +337,13 @@ class DbtCliEventMessage:
             "invocation_id": invocation_id,
         }
 
-        if event_node_info.get("node_started_at") and event_node_info.get("node_finished_at"):
+        if event_node_info.get("node_started_at") in ["", "None", None] and event_node_info.get(
+            "node_finished_at"
+        ) in ["", "None", None]:
+            # if model materialization is incremental microbatch, node_started_at and node_finished_at are empty strings
+            # and require fallback to data.execution_time
+            default_metadata["Execution Duration"] = self.raw_event["data"]["execution_time"]
+        elif event_node_info.get("node_started_at") and event_node_info.get("node_finished_at"):
             started_at = dateutil.parser.isoparse(event_node_info["node_started_at"])
             finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
             default_metadata["Execution Duration"] = (finished_at - started_at).total_seconds()
@@ -345,7 +351,12 @@ class DbtCliEventMessage:
         has_asset_def: bool = bool(context and context.has_assets_def)
 
         node_resource_type: str = event_node_info["resource_type"]
-        node_status: str = event_node_info["node_status"]
+        # if model materialization is incremental microbatch, node_status property is "None", hence fall back to status
+        node_status: str = (
+            self.raw_event["data"]["status"].lower()
+            if event_node_info["node_status"] in ["", "None", None]
+            else event_node_info["node_status"]
+        )
         node_materialization: str = self.raw_event["data"]["node_info"]["materialized"]
 
         is_node_ephemeral = node_materialization == "ephemeral"
