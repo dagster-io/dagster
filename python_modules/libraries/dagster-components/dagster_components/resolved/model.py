@@ -167,22 +167,33 @@ class _AutoResolve:
 class _ExpectedInjection: ...
 
 
-def _is_scalar(annotation):
+def _safe_is_subclass(obj, cls: type) -> bool:
+    return (
+        isinstance(obj, type)
+        and not isinstance(obj, GenericAlias)  # prevent exceptions on 3.9
+        and issubclass(obj, cls)
+    )
+
+
+def _is_implicitly_resolved_type(annotation):
     if annotation in (int, float, str, bool, Any, type(None)):
+        return True
+
+    if _safe_is_subclass(annotation, ResolvableModel):
         return True
 
     origin = get_origin(annotation)
     args = get_args(annotation)
 
     if origin in (Union, UnionType, list, Sequence, tuple, dict, Mapping) and all(
-        _is_scalar(arg) for arg in args
+        _is_implicitly_resolved_type(arg) for arg in args
     ):
         return True
 
     if origin is Annotated and any(isinstance(arg, _ExpectedInjection) for arg in args):
         return True
 
-    if origin is Literal and all(_is_scalar(type(arg)) for arg in args):
+    if origin is Literal and all(_is_implicitly_resolved_type(type(arg)) for arg in args):
         return True
 
     return False
@@ -192,11 +203,7 @@ def _get_resolver(
     annotation: type,
     top_level_auto_resolve: Optional[_AutoResolve],
 ) -> Optional[_ModelResolver]:
-    if (
-        top_level_auto_resolve
-        and isinstance(annotation, type)
-        and not isinstance(annotation, GenericAlias)  # prevent exceptions on 3.9
-    ):
+    if top_level_auto_resolve:
         if top_level_auto_resolve.via and annotation is get_resolved_kwargs_target_type(
             top_level_auto_resolve.via
         ):
@@ -204,7 +211,7 @@ def _get_resolver(
                 kwargs_type=top_level_auto_resolve.via,
                 target_type=annotation,
             )
-        if issubclass(annotation, ResolvedFrom):
+        if _safe_is_subclass(annotation, ResolvedFrom):
             return _DirectResolver(annotation)
 
     origin = get_origin(annotation)
@@ -220,7 +227,7 @@ def _get_resolver(
         return _KwargsResolver(kwargs_type=auto_resolve.via, target_type=args[0])
 
     resolved_from_cls = args[0]
-    if not issubclass(resolved_from_cls, ResolvedFrom):
+    if not _safe_is_subclass(resolved_from_cls, ResolvedFrom):
         check.failed("Can only annotate ResolvedFrom types with ResolveModel()")
     return _DirectResolver(resolved_from_cls)
 
@@ -230,7 +237,7 @@ def _recurse(context: "ResolutionContext", field_value):
 
 
 def derive_field_resolver(annotation: Any, field_name: str) -> "Resolver":
-    if _is_scalar(annotation):
+    if _is_implicitly_resolved_type(annotation):
         return Resolver(_recurse)
 
     origin = get_origin(annotation)
@@ -270,8 +277,10 @@ def derive_field_resolver(annotation: Any, field_name: str) -> "Resolver":
 
     check.failed(
         f"Could not derive resolver for annotation {field_name}: {annotation}.\n"
-        "Field types are expected to either be simple serializable types such as "
-        "str, float, int, bool, list, etc or Annotated with an appropriate Resolver."
+        "Field types are expected to be:\n"
+        "* serializable types such as str, float, int, bool, list, etc\n"
+        "* ResolvableModel\n"
+        "* Annotated with an appropriate Resolver."
     )
 
 
