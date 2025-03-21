@@ -130,10 +130,22 @@ ALERT_TYPES = [
         config_snippet=None,
     ),
     AlertType(
-        condition_description="when a credit budget limit has been exceeded",
-        alert_name="credit-budget-alert",
+        condition_description="when an asset has exceeded a credit usage threshold",
+        alert_name="insights-credit-alert",
         event_types=["INSIGHTS_CONSUMPTION_EXCEEDED"],
-        config_snippet=None,
+        config_snippet={
+            "alert_targets": [
+                {
+                    "insights_asset_threshold_target": {
+                        "metric_name": "__dagster_dagster_credits",
+                        "selection_period_days": 7,
+                        "threshold": 50,
+                        "operator": "GREATER_THAN",
+                        "asset_key": ["s3", "report"],
+                    }
+                },
+            ],
+        },
     ),
 ]
 
