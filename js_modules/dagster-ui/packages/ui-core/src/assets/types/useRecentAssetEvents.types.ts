@@ -541,6 +541,7 @@ export type AssetEventsQueryVariables = Types.Exact<{
   limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
   before?: Types.InputMaybe<Types.Scalars['String']['input']>;
   partitionInLast?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  eventTypeSelector: Types.MaterializationHistoryEventTypeSelector;
 }>;
 
 export type AssetEventsQuery = {
@@ -1163,4 +1164,4 @@ export type AssetEventsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-export const AssetEventsQueryVersion = 'd862f34ea1d0d1f6c1ba18be1617386b46e265d07e6a1e635cabfeb0ea14e5d9';
+export const AssetEventsQueryVersion = '5f5962b12a0391e130213013197ef9772487d52c57884c82aa2aef3186e730f5';

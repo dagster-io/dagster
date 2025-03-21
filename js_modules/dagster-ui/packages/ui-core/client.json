@@ -47,7 +47,7 @@
   "AssetOverviewMetadataEventsQuery": "114f8107c50306b1a96275b011beacf8b6422c88e387f479da4d0a45c4a08cca",
   "PartitionHealthQuery": "4f37a772c8f0e07cf2d76c18915a2a9c393fa8ea6a7b2ad355b80a225c8fe2af",
   "AssetJobPartitionSetsQuery": "43286e824ac1f7d1b30c6744ad472c034d8ed257675a720ac53bcf929e0bc7f7",
-  "AssetEventsQuery": "d862f34ea1d0d1f6c1ba18be1617386b46e265d07e6a1e635cabfeb0ea14e5d9",
+  "AssetEventsQuery": "5f5962b12a0391e130213013197ef9772487d52c57884c82aa2aef3186e730f5",
   "ReportEventPartitionDefinitionQuery": "e306421344493a9986106de14bca90ec554505d6f1965991ba502725edc41c95",
   "ReportEventMutation": "80b4987cdf27ec8fac25eb6b98b996bd4fdeb4cbfff605d647da5d4bb8244cb0",
   "AssetWipeMutation": "accefb0c47b3d4a980d16965e8af565afed787a8a987a03570df876bd734dc8f",

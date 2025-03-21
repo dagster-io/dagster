@@ -5,6 +5,7 @@ import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey, AssetViewParams} from './types';
 import {gql, useQuery} from '../apollo-client';
 import {clipEventsToSharedMinimumTime} from './clipEventsToSharedMinimumTime';
+import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
 import {
   AssetEventsQuery,
   AssetEventsQueryVariables,
@@ -66,11 +67,13 @@ export function useRecentAssetEvents(
           assetKey: {path: assetKey?.path ?? []},
           before,
           partitionInLast: 120,
+          eventTypeSelector: MaterializationHistoryEventTypeSelector.ALL,
         }
       : {
           assetKey: {path: assetKey?.path ?? []},
           before,
           limit: 100,
+          eventTypeSelector: MaterializationHistoryEventTypeSelector.ALL,
         },
   });
   const {data, loading, refetch} = queryResult;
@@ -82,21 +85,6 @@ export function useRecentAssetEvents(
       materializations: asset?.assetMaterializationHistory || [],
       observations: asset?.assetObservations || [],
     };
-    debugger;
-    // TODO: Remove this before committing
-    loaded.materializations = [
-      ...loaded.materializations,
-      ...loaded.materializations.map((o) => ({
-        ...o,
-        timestamp: parseInt(o.timestamp) + 1000 * 60,
-        __typename: 'FailedToMaterializeEvent' as const,
-      })),
-      ...loaded.materializations.map((o) => ({
-        ...o,
-        timestamp: parseInt(o.timestamp) + 1,
-        __typename: 'FailedToMaterializeEvent' as const,
-      })),
-    ];
 
     const {materializations, observations} = !loadUsingPartitionKeys
       ? clipEventsToSharedMinimumTime(loaded.materializations, loaded.observations, 100)
@@ -241,6 +229,7 @@ export const ASSET_EVENTS_QUERY = gql`
     $limit: Int
     $before: String
     $partitionInLast: Int
+    $eventTypeSelector: MaterializationHistoryEventTypeSelector!
   ) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
@@ -259,6 +248,7 @@ export const ASSET_EVENTS_QUERY = gql`
           limit: $limit
           beforeTimestampMillis: $before
           partitionInLast: $partitionInLast
+          eventTypeSelector: $eventTypeSelector
         ) {
           ...AssetSuccessfulMaterializationFragment
           ...AssetFailedToMaterializeFragment

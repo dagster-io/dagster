@@ -645,7 +645,7 @@ type FailedToMaterializeEvent implements MessageEvent & StepEvent & DisplayableE
   stepStats: RunStepStats!
   partition: String
   tags: [EventTag!]!
-  failedToMaterializeReason: AssetMaterializationFailureReason!
+  materializationFailureReason: AssetMaterializationFailureReason!
 }
 
 enum AssetMaterializationFailureReason {
