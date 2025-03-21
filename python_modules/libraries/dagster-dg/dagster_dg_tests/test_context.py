@@ -1,4 +1,5 @@
 import re
+import tempfile
 from collections.abc import Sequence
 from contextlib import contextmanager
 from pathlib import Path
@@ -23,6 +24,7 @@ from dagster_dg_tests.utils import (
     isolated_components_venv,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
+    set_env_var,
 )
 
 
@@ -91,6 +93,24 @@ def test_context_outside_project_or_workspace():
         assert context.root_path == Path.cwd()
         assert context.is_workspace is False
         assert context.config.cli.verbose is False
+
+
+def test_context_with_user_config():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_components_venv(runner),
+        tempfile.TemporaryDirectory() as temp_dir,
+        set_env_var("DG_CLI_CONFIG", str(Path(temp_dir) / "dg.toml")),
+    ):
+        (Path(temp_dir) / "dg.toml").write_text(
+            """
+            [cli]
+            verbose = true
+            """
+        )
+        context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
+        assert context.root_path == Path.cwd()
+        assert context.config.cli.verbose is True
 
 
 # ########################

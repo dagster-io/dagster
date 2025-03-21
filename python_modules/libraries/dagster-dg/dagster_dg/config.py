@@ -19,6 +19,8 @@ import click
 import tomlkit
 import tomlkit.items
 from click.core import ParameterSource
+from dagster_shared.plus.config import load_config
+from dagster_shared.utils.config import get_dg_config_path
 from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
 
 from dagster_dg.error import DgError, DgValidationError
@@ -108,6 +110,7 @@ class DgConfig:
         root_file_config: Optional["DgFileConfig"] = None,
         container_workspace_file_config: Optional["DgWorkspaceFileConfig"] = None,
         command_line_config: Optional["DgRawCliConfig"] = None,
+        user_config: Optional["DgRawCliConfig"] = None,
     ) -> Self:
         cli_partials: list[DgRawCliConfig] = []
 
@@ -136,7 +139,11 @@ class DgConfig:
 
         if command_line_config:
             cli_partials.append(command_line_config)
-        cli_config = DgCliConfig.from_raw(*cli_partials) if cli_partials else DgCliConfig.default()
+
+        all_cli_config = [user_config, *cli_partials] if user_config else cli_partials
+        cli_config = (
+            DgCliConfig.from_raw(*all_cli_config) if all_cli_config else DgCliConfig.default()
+        )
 
         return cls(cli_config, project_config, workspace_config)
 
@@ -390,6 +397,12 @@ def has_dg_file_config(
 ) -> bool:
     toml = tomlkit.parse(path.read_text()).unwrap()
     return "dg" in toml.get("tool", {}) and (predicate(toml["tool"]["dg"]) if predicate else True)
+
+
+def load_dg_user_file_config() -> DgRawCliConfig:
+    contents = load_config(get_dg_config_path()).get("cli", {})
+
+    return DgRawCliConfig(**{k: v for k, v in contents.items() if k != "plus"})
 
 
 def load_dg_root_file_config(path: Path) -> DgFileConfig:
