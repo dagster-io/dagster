@@ -24,12 +24,6 @@ To access the audit logs:
 2. Click **Organization settings**.
 3. Click the **Audit log** tab.
 
-:::warning
-
-Add screenshot
-
-:::
-
 Each entry in the audit log indicates when an action was taken, the user who performed the action, the action taken, and the deployment which the action affected. To view additional details for an action, click the **Show** button.
 
 ## Filter the audit log
