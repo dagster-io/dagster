@@ -16,7 +16,7 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 
 
 @pytest.fixture()
-def test_cloud_cli_config_file(monkeypatch):
+def setup_cloud_cli_config(monkeypatch):
     with (
         tempfile.TemporaryDirectory() as tmp_cloud_dir,
         tempfile.TemporaryDirectory() as tmp_dg_dir,
@@ -24,17 +24,17 @@ def test_cloud_cli_config_file(monkeypatch):
         config_path = Path(tmp_cloud_dir) / "config"
         config_path.touch()
         monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", config_path)
-        monkeypatch.setenv("DG_CLI_CONFIG", str(Path(tmp_dg_dir) / "config.toml"))
+        monkeypatch.setenv("DG_CLI_CONFIG", str(Path(tmp_dg_dir) / "dg.toml"))
         yield config_path
 
 
 @pytest.fixture()
-def test_dg_cli_config_file(monkeypatch):
+def setup_dg_cli_config(monkeypatch):
     with (
         tempfile.TemporaryDirectory() as tmp_dg_dir,
         tempfile.TemporaryDirectory() as tmp_cloud_dir,
     ):
-        config_path = Path(tmp_dg_dir) / "config.toml"
+        config_path = Path(tmp_dg_dir) / "dg.toml"
         config_path.touch()
         monkeypatch.setenv("DG_CLI_CONFIG", config_path)
         monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(tmp_cloud_dir) / "config"))
@@ -42,12 +42,12 @@ def test_dg_cli_config_file(monkeypatch):
 
 
 @pytest.fixture()
-def test_dg_cli_config_file_additional_config(monkeypatch):
+def setup_dg_cli_config_additional_config(monkeypatch):
     with (
         tempfile.TemporaryDirectory() as tmp_dg_dir,
         tempfile.TemporaryDirectory() as tmp_cloud_dir,
     ):
-        config_path = Path(tmp_dg_dir) / "config.toml"
+        config_path = Path(tmp_dg_dir) / "dg.toml"
         config_path.write_text(
             """
             [cli]
@@ -63,9 +63,9 @@ def test_dg_cli_config_file_additional_config(monkeypatch):
 @pytest.mark.parametrize(
     "fixture_name",
     [
-        "test_cloud_cli_config_file",
-        "test_dg_cli_config_file",
-        "test_dg_cli_config_file_additional_config",
+        "setup_cloud_cli_config",
+        "setup_dg_cli_config",
+        "setup_dg_cli_config_additional_config",
     ],
 )
 def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
@@ -108,12 +108,12 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
         assert DagsterPlusCliConfig.get().organization == "hooli"
         assert DagsterPlusCliConfig.get().user_token == "abc123"
 
-        if fixture_name == "test_cloud_cli_config_file":
+        if fixture_name == "setup_cloud_cli_config":
             assert yaml.safe_load(filepath.read_text()) == {
                 "organization": "hooli",
                 "user_token": "abc123",
             }
-        elif fixture_name == "test_dg_cli_config_file_additional_config":
+        elif fixture_name == "setup_dg_cli_config_additional_config":
             assert tomlkit.parse(filepath.read_text()) == {
                 "cli": {
                     "existing_key": "existing_value",
