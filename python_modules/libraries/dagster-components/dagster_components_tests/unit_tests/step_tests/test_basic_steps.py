@@ -143,6 +143,25 @@ def test_hello_world() -> None:
     assert materialization.metadata == {"whatami": TextMetadataValue("singleasset")}
 
 
+def test_hello_world_decorator() -> None:
+    # avoiding name collision at module scope
+    from dagster_components.components.step.step import step
+
+    @step(assets=[AssetSpec("the_key")])
+    def hello_world(context: ExecutionContext) -> ExecutionRecord:
+        return ExecutionRecord.for_asset(
+            metadata={"whatami": "singleasset"},
+        )
+
+    # directly invoke loader func
+    step_inst = hello_world(ComponentLoadContext.for_test())
+
+    assert isinstance(get_assets_def(step_inst), AssetsDefinition)
+
+    materialization = single_asset_mat(execute_step(step_inst))
+    assert materialization.metadata == {"whatami": TextMetadataValue("singleasset")}
+
+
 def test_hello_world_autoname() -> None:
     step = SingleAssetStep(assets=[AssetSpec("the_key")])
     assets_def = get_assets_def(step)

@@ -1,10 +1,10 @@
 import hashlib
 import inspect
-from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from abc import ABC
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Annotated, Any, Optional, TypeVar
+from typing import Annotated, Any, Callable, Optional, Union
 
 from dagster._config.field import Field
 from dagster._config.pythonic_config.conversion_utils import infer_schema_from_config_annotation
@@ -29,8 +29,9 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster_dbt.asset_utils import AssetSelection
 from dagster_shared import check
+from typing_extensions import TypeAlias, TypeVar
 
-from dagster_components.core.component import Component, ComponentLoadContext
+from dagster_components.core.component import Component, ComponentLoadContext, component
 
 
 class ExecutionContext:
@@ -295,8 +296,11 @@ class StepComponent(Component, ABC):
 
         raise Exception("Unreachable")
 
-    @abstractmethod
     def execute(self, context: ExecutionContext, **kwargs) -> ExecutionRecord: ...
+
+    def stream(
+        self, context, ExecutionContext, **kwargs
+    ) -> Iterator[Union[AssetRecord, AssetCheckRecord]]: ...
 
 
 def execute_step(
@@ -331,3 +335,54 @@ def mark_spec_observable(spec: AssetSpec) -> AssetSpec:
 
 def is_spec_observable(spec: AssetSpec) -> bool:
     return spec.metadata.get(OBSERVABLE_METADATA_KEY, False) is True
+
+
+ExecutionFn: TypeAlias = Callable[[ExecutionContext], ExecutionRecord]
+
+
+# TODO: need to get typehinting to work better with less gross __init__ method
+# TODO: support config and resources
+@dataclass(frozen=True, init=False)
+class StepComponentForDecorator(StepComponent):
+    def __init__(self, fn: ExecutionFn, **kwargs):
+        super().__init__(**kwargs)
+        object.__setattr__(self, "fn", fn)
+
+    fn: ExecutionFn
+
+    def execute(self, context, **kwargs):
+        return self.fn(context, **kwargs)
+
+
+ComponentLoader = Callable[[ComponentLoadContext], StepComponentForDecorator]
+
+
+def step(
+    *,
+    name: Optional[str] = None,
+    assets: Optional[Sequence[AssetSpec]] = None,
+    checks: Optional[Sequence[AssetCheckSpec]] = None,
+    description: Optional[str] = None,
+    tags: Optional[Mapping[str, Any]] = None,
+    retry_policy: Optional[RetryPolicy] = None,
+    pool: Optional[str] = None,
+    can_subset: bool = False,
+) -> Callable[[ExecutionFn], ComponentLoader]:
+    def inner(fn: ExecutionFn) -> ComponentLoader:
+        @component
+        def load_me(context: ComponentLoadContext) -> StepComponentForDecorator:
+            return StepComponentForDecorator(
+                name=name,
+                assets=assets,
+                checks=checks,
+                description=description,
+                tags=tags,
+                retry_policy=retry_policy,
+                pool=pool,
+                can_subset=can_subset,
+                fn=fn,
+            )
+
+        return load_me
+
+    return inner
