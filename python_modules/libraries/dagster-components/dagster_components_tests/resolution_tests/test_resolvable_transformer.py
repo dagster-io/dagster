@@ -9,7 +9,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_components import Component, ComponentLoadContext
+from dagster_components import Component, DefsLoadContext
 from dagster_components.resolved.context import ResolutionContext
 from dagster_components.resolved.core_models import (
     AssetSpecKwargs,
@@ -76,13 +76,13 @@ def test_with_resolution_spec_on_component():
             Resolver.from_resolved_kwargs(ExistingBusinessObjectKwargs),
         ]
 
-        def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...
+        def build_defs(self, load_context: DefsLoadContext) -> Definitions: ...
 
     comp_instance = ComponentWithExistingBusinessObject.load(
         attributes=ComponentWithExistingBusinessObjectModel(
             business_object=ExistingBusinessObjectModel(value="1")
         ),
-        context=ComponentLoadContext.for_test(),
+        context=DefsLoadContext.for_test(),
     )
 
     assert isinstance(comp_instance, ComponentWithExistingBusinessObject)
@@ -105,7 +105,7 @@ def test_reuse_across_components():
     ):
         business_object: ExistingBusinessObjectField
 
-        def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...
+        def build_defs(self, load_context: DefsLoadContext) -> Definitions: ...
 
     class ComponentWithExistingBusinessObjectSchemaTwo(ResolvableModel):
         business_object: ExistingBusinessObjectModel
@@ -116,13 +116,13 @@ def test_reuse_across_components():
     ):
         business_object: ExistingBusinessObjectField
 
-        def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...
+        def build_defs(self, load_context: DefsLoadContext) -> Definitions: ...
 
     comp_instance_one = ComponentWithExistingBusinessObjectOne.load(
         attributes=ComponentWithExistingBusinessObjectSchemaTwo(
             business_object=ExistingBusinessObjectModel(value="1")
         ),
-        context=ComponentLoadContext.for_test(),
+        context=DefsLoadContext.for_test(),
     )
 
     assert isinstance(comp_instance_one, ComponentWithExistingBusinessObjectOne)
@@ -132,7 +132,7 @@ def test_reuse_across_components():
         attributes=ComponentWithExistingBusinessObjectSchemaTwo(
             business_object=ExistingBusinessObjectModel(value="2")
         ),
-        context=ComponentLoadContext.for_test(),
+        context=DefsLoadContext.for_test(),
     )
 
     assert isinstance(comp_instance_one, ComponentWithExistingBusinessObjectTwo)

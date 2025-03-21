@@ -25,7 +25,7 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from dagster_components.core.component import (
     Component,
-    ComponentLoadContext,
+    DefsModuleLoadContext,
     is_component_loader,
     load_component_type,
 )
@@ -88,7 +88,7 @@ class PythonDefsModule(DefsModule):
 class ComponentDefsModule(DefsModule):
     """A module containing a component definition."""
 
-    context: ComponentLoadContext
+    context: DefsModuleLoadContext
     component: Component
 
     def build_defs(self) -> Definitions:
@@ -154,7 +154,7 @@ class DefsModuleDecl(ABC):
         )
 
     @abstractmethod
-    def load(self, context: ComponentLoadContext) -> DefsModule: ...
+    def load(self, context: DefsModuleLoadContext) -> DefsModule: ...
 
 
 @record
@@ -174,7 +174,7 @@ class SubpackageDefsModuleDecl(DefsModuleDecl):
         else:
             return None
 
-    def load(self, context: ComponentLoadContext) -> SubpackageDefsModule:
+    def load(self, context: DefsModuleLoadContext) -> SubpackageDefsModule:
         return SubpackageDefsModule(
             path=self.path,
             submodules=[decl.load(context.for_decl(decl)) for decl in self.subdecls],
@@ -194,7 +194,7 @@ class PythonModuleDecl(DefsModuleDecl):
         else:
             return None
 
-    def load(self, context: ComponentLoadContext) -> PythonDefsModule:
+    def load(self, context: DefsModuleLoadContext) -> PythonDefsModule:
         if self.path.is_dir():
             module = context.load_defs_relative_python_module(self.path / "definitions.py")
         else:
@@ -237,7 +237,7 @@ class YamlComponentDecl(DefsModuleDecl):
             else:
                 return TypeAdapter(schema).validate_python(self.component_file_model.attributes)
 
-    def load(self, context: ComponentLoadContext) -> ComponentDefsModule:
+    def load(self, context: DefsModuleLoadContext) -> ComponentDefsModule:
         type_str = context.normalize_component_type_str(self.component_file_model.type)
         key = ComponentKey.from_typename(type_str)
         component_type = load_component_type(key)
@@ -260,7 +260,7 @@ class PythonComponentDecl(DefsModuleDecl):
         else:
             return
 
-    def load(self, context: ComponentLoadContext) -> ComponentDefsModule:
+    def load(self, context: DefsModuleLoadContext) -> ComponentDefsModule:
         module = load_module_from_path(self.path.stem, self.path / "component.py")
         component_loaders = list(inspect.getmembers(module, is_component_loader))
         if len(component_loaders) < 1:
@@ -300,7 +300,7 @@ class DirectForTestComponentDecl(DefsModuleDecl):
         _, tree = self._obj_and_tree
         return tree
 
-    def load(self, context: ComponentLoadContext):
+    def load(self, context: DefsModuleLoadContext):
         context = context.with_rendering_scope(self.component_type.get_additional_scope())
         obj, tree = self._obj_and_tree
         attr_schema = check.not_none(

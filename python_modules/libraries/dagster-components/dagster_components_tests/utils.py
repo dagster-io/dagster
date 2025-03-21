@@ -15,28 +15,28 @@ import tomlkit
 from click.testing import Result
 from dagster import AssetKey, DagsterInstance
 from dagster._utils import alter_sys_path, pushd
-from dagster_components.core.component import Component, ComponentLoadContext
+from dagster_components.core.component import Component, DefsModuleLoadContext
 from dagster_components.core.defs_module import DefsModuleDecl
 from dagster_components.utils import ensure_loadable_path
 
 T = TypeVar("T")
 
 
-def script_load_context(decl_node: Optional[DefsModuleDecl] = None) -> ComponentLoadContext:
-    return ComponentLoadContext.for_test(decl_node=decl_node)
+def script_load_context(decl_node: Optional[DefsModuleDecl] = None) -> DefsModuleLoadContext:
+    return DefsModuleLoadContext.for_test(decl_node=decl_node)
 
 
 def get_asset_keys(component: Component) -> AbstractSet[AssetKey]:
     return {
         key
-        for key in component.build_defs(ComponentLoadContext.for_test())
+        for key in component.build_defs(DefsModuleLoadContext.for_test())
         .get_asset_graph()
         .get_all_asset_keys()
     }
 
 
 def assert_assets(component: Component, expected_assets: int) -> None:
-    defs = component.build_defs(ComponentLoadContext.for_test())
+    defs = component.build_defs(DefsModuleLoadContext.for_test())
     assert len(defs.get_asset_graph().get_all_asset_keys()) == expected_assets
     result = defs.get_implicit_global_asset_job_def().execute_in_process(
         instance=DagsterInstance.ephemeral()

@@ -16,7 +16,7 @@ from dagster_sling.resources import AssetExecutionContext
 from pydantic import Field
 from typing_extensions import TypeAlias
 
-from dagster_components import Component, ComponentLoadContext
+from dagster_components import Component, DefsLoadContext
 from dagster_components.components.sling_replication_collection.scaffolder import (
     SlingReplicationComponentScaffolder,
 )
@@ -153,7 +153,7 @@ class SlingReplicationCollectionComponent(Component, ResolvedFrom[SlingReplicati
     ] = None
 
     def build_asset(
-        self, context: ComponentLoadContext, replication_spec_model: SlingReplicationSpecModel
+        self, context: DefsLoadContext, replication_spec_model: SlingReplicationSpecModel
     ) -> AssetsDefinition:
         op_spec = replication_spec_model.op or OpSpec()
 
@@ -184,7 +184,7 @@ class SlingReplicationCollectionComponent(Component, ResolvedFrom[SlingReplicati
             iterator = iterator.fetch_row_count()
         yield from iterator
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+    def build_defs(self, context: DefsLoadContext) -> Definitions:
         defs = Definitions(
             assets=[self.build_asset(context, replication) for replication in self.replications],
         )

@@ -27,7 +27,7 @@ from dagster_dbt.dbt_manifest import validate_manifest
 from dagster_dbt.utils import get_dbt_resource_props_by_dbt_unique_id_from_manifest
 from typing_extensions import override
 
-from dagster_components import Component, ComponentLoadContext
+from dagster_components import Component, DefsLoadContext
 from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_components.resolved.core_models import (
     AssetAttributesModel,
@@ -194,7 +194,7 @@ class DbtProjectComponent(Component, ResolvedFrom[DbtProjectModel]):
             exclude=exclude,
         )
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+    def build_defs(self, context: DefsLoadContext) -> Definitions:
         self.project.prepare_if_dev()
 
         @dbt_assets(
@@ -220,7 +220,7 @@ class DbtProjectComponent(Component, ResolvedFrom[DbtProjectModel]):
 
 
 def get_asset_key_for_model_from_module(
-    context: ComponentLoadContext, dbt_component_module: ModuleType, model_name: str
+    context: DefsLoadContext, dbt_component_module: ModuleType, model_name: str
 ) -> AssetKey:
     """Component-based version of dagster_dbt.get_asset_key_for_model. Returns the corresponding Dagster
     asset key for a dbt model, seed, or snapshot, loaded from the passed component path.
@@ -237,10 +237,10 @@ def get_asset_key_for_model_from_module(
 
             from dagster import asset
             from dagster_components.components.dbt_project import get_asset_key_for_model_from_module
-            from dagster_components.core.component import ComponentLoadContext
+            from dagster_components.core.component import DefsModuleLoadContext
             from my_project.defs import dbt_component
 
-            ctx = ComponentLoadContext.get()
+            ctx = DefsModuleLoadContext.get()
 
             @asset(deps={get_asset_key_for_model_from_module(ctx, dbt_component, "customers")})
             def cleaned_customers():

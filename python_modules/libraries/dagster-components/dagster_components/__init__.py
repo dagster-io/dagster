@@ -3,7 +3,7 @@ from dagster_components.component_scaffolding import (
 )
 from dagster_components.core.component import (
     Component as Component,
-    ComponentLoadContext as ComponentLoadContext,
+    DefsModuleLoadContext as DefsLoadContext,
     component as component,
 )
 from dagster_components.core.component_defs_builder import (
