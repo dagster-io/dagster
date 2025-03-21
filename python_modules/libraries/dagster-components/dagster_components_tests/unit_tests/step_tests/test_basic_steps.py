@@ -8,6 +8,7 @@ from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import DataVersion
+from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
@@ -16,7 +17,7 @@ from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_annotation import ResourceParam
-from dagster._core.definitions.result import AssetRecord
+from dagster._core.definitions.result import AssetRecord, ObserveResult
 from dagster._core.events import AssetObservationData, StepMaterializationData
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
@@ -28,6 +29,7 @@ from dagster_components.components.step.step import (
     ExecutionRecord,
     StepComponent,
     execute_step,
+    mark_spec_observable,
 )
 from dagster_shared import check
 
@@ -324,3 +326,44 @@ def test_observable_source_asset() -> None:
     assert isinstance(observe_event.event_specific_data, AssetObservationData)
     asset_observation = observe_event.event_specific_data.asset_observation
     assert asset_observation.data_version == "my_data"
+
+
+def test_emit_observe_result_from_asset() -> None:
+    @asset
+    def emit_observe() -> ObserveResult:
+        return ObserveResult(data_version=DataVersion("my_data"))
+
+    result = materialize([emit_observe])
+    assert result.success
+
+    # I can't believe this is our behavior. This should be one event
+    observe_events = result.get_asset_observation_events()
+    assert len(observe_events) == 0
+
+    # I can't believe this is our behavior. This should be zero events
+    mat_events = result.get_asset_materialization_events()
+    assert len(mat_events) == 1
+    mat_event = mat_events[0]
+    assert isinstance(mat_event.event_specific_data, StepMaterializationData)
+    mat = mat_event.event_specific_data.materialization
+    assert mat.tags
+    assert mat.tags["dagster/data_version"] == "my_data"
+
+
+def test_osa_in_step() -> None:
+    # Note in the mental model I'm not even sure it is necesary
+    # to model this as a separate use case at all, but demonstrating
+    # how we would support backwards compat for good measure
+    class SingleObserve(StepComponent):
+        def execute(self, context: ExecutionContext) -> ExecutionRecord:
+            return ExecutionRecord.for_asset(
+                asset_key="my_asset",
+                data_version=DataVersion("my_data"),
+            )
+
+    result = execute_step(SingleObserve(assets=[mark_spec_observable(AssetSpec("my_asset"))]))
+
+    assert result.success
+
+    observe_events = result.get_asset_observation_events()
+    assert len(observe_events) == 1

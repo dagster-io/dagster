@@ -14,13 +14,17 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.asset_check_decorator import multi_asset_check
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
+from dagster._core.definitions.decorators.source_asset_decorator import (
+    multi_observable_source_asset,
+)
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.observe import observe
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_annotation import has_resource_param_annotation
-from dagster._core.definitions.result import AssetRecord, MaterializeResult
+from dagster._core.definitions.result import AssetRecord, MaterializeResult, ObserveResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster_dbt.asset_utils import AssetSelection
@@ -59,6 +63,31 @@ class ExecutionRecord:
                 )
             ]
         )
+
+    @classmethod
+    def for_observable(
+        cls,
+        asset_key: Optional[CoercibleToAssetKey] = None,
+        metadata: Optional[RawMetadataMapping] = None,
+        data_version: Optional[DataVersion] = None,
+        tags: Optional[Mapping[str, str]] = None,
+    ) -> "ExecutionRecord":
+        return ExecutionRecord(
+            asset_records=[
+                AssetRecord(
+                    asset_key=asset_key,
+                    metadata={**(metadata or {}), **{"__emit_as_observation__": True}},
+                    data_version=data_version,
+                    tags=tags,
+                )
+            ]
+        )
+
+
+def do_emit_as_observation(record: AssetRecord) -> bool:
+    return (
+        record.metadata.get("__emit_as_observation__", False) is True if record.metadata else False
+    )
 
 
 def concatenate_with_hash(strings: list[str]) -> str:
@@ -130,7 +159,14 @@ class StepComponent(Component, ABC):
     ):
         check.invariant(assets or checks, "Must pass at least one asset or check")
 
-        object.__setattr__(self, "assets", assets or [])
+        assets = assets or []
+        check.invariant(
+            all(is_spec_observable(asset) for asset in assets)
+            or all(not is_spec_observable(asset) for asset in assets),
+            "Must either be all observable or all not observable",
+        )
+
+        object.__setattr__(self, "assets", assets)
         object.__setattr__(self, "checks", checks or [])
         object.__setattr__(self, "name", name or build_autoname(self.assets, self.checks))
         object.__setattr__(self, "description", description)
@@ -138,6 +174,11 @@ class StepComponent(Component, ABC):
         object.__setattr__(self, "retry_policy", retry_policy)
         object.__setattr__(self, "pool", pool)
         object.__setattr__(self, "can_subset", can_subset)
+
+    @cached_property
+    def is_observable(self) -> bool:
+        # Fine because of invariant check in __init__
+        return any(is_spec_observable(asset) for asset in self.assets)
 
     name: str
     assets: Sequence[AssetSpec]
@@ -191,16 +232,27 @@ class StepComponent(Component, ABC):
             kwargs = {}
 
         execution_result = self.execute(context=ExecutionContext(context), **kwargs)
+        # import code
 
-        for asset_result in execution_result.asset_records or []:
-            # assume materialization result for now
-            yield MaterializeResult(
-                asset_key=asset_result.asset_key,
-                metadata=asset_result.metadata,
-                data_version=asset_result.data_version,
-                tags=asset_result.tags,
-                check_results=asset_result.check_results,
-            )
+        # code.interact(local={**locals(), **globals()})
+
+        for asset_record in execution_result.asset_records or []:
+            if self.is_observable:
+                yield ObserveResult(
+                    asset_key=asset_record.asset_key,
+                    metadata=asset_record.metadata,
+                    data_version=asset_record.data_version,
+                    tags=asset_record.tags,
+                    check_results=asset_record.check_results,
+                )
+            else:
+                yield MaterializeResult(
+                    asset_key=asset_record.asset_key,
+                    metadata=asset_record.metadata,
+                    data_version=asset_record.data_version,
+                    tags=asset_record.tags,
+                    check_results=asset_record.check_results,
+                )
 
         for asset_check_result in execution_result.asset_check_records or []:
             yield AssetCheckResult(
@@ -213,6 +265,21 @@ class StepComponent(Component, ABC):
             )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        if self.is_observable:
+            return Definitions(
+                assets=[
+                    multi_observable_source_asset(
+                        specs=self.assets,
+                        name=self.name,
+                        description=self.description,
+                        can_subset=self.can_subset,
+                        required_resource_keys=self.required_resource_keys,
+                        check_specs=self.checks,
+                        # op_tags=self.tags, not supported, apparently
+                    )(self._fn)
+                ]
+            )
+
         if self.assets:
             return Definitions(
                 assets=[
@@ -267,8 +334,25 @@ def execute_step(
     # this returns both assets_def and asset_checks_defs
     assets_defs = defs.get_asset_graph().assets_defs
     check.invariant(len(assets_defs) <= 1)
-    return materialize(
-        assets=[next(iter(assets_defs))],
-        run_config=run_config,
-        selection=AssetSelection.all() | AssetSelection.all_asset_checks(),
+    # we have to use different vebs for observe and materialize blegh
+    if step.is_observable:
+        return observe(
+            assets=[next(iter(assets_defs))],
+            run_config=run_config,
+        )
+    else:
+        return materialize(
+            assets=[next(iter(assets_defs))],
+            run_config=run_config,
+            selection=AssetSelection.all() | AssetSelection.all_asset_checks(),
+        )
+
+
+def mark_spec_observable(spec: AssetSpec) -> AssetSpec:
+    return spec.merge_attributes(
+        metadata={"__emit_as_observation__": True},
     )
+
+
+def is_spec_observable(spec: AssetSpec) -> bool:
+    return spec.metadata.get("__emit_as_observation__", False) is True
