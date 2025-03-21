@@ -7,14 +7,17 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.data_version import DataVersion
+from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
+from dagster._core.definitions.observe import observe
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.result import AssetRecord
-from dagster._core.events import StepMaterializationData
+from dagster._core.events import AssetObservationData, StepMaterializationData
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster_components import ComponentLoadContext
@@ -301,3 +304,23 @@ def test_multi_check() -> None:
 
     assert evals[k1_c1].passed
     assert not evals[k2_c2].passed
+
+
+def test_observable_source_asset() -> None:
+    @observable_source_asset(
+        key="my_asset",
+        description="my description",
+        tags={"tag": "val"},
+    )
+    def fn() -> DataVersion:
+        return DataVersion("my_data")
+
+    result = observe(assets=[fn])
+    assert result.success
+    observe_events = result.get_asset_observation_events()
+    assert len(observe_events) == 1
+
+    observe_event = observe_events[0]
+    assert isinstance(observe_event.event_specific_data, AssetObservationData)
+    asset_observation = observe_event.event_specific_data.asset_observation
+    assert asset_observation.data_version == "my_data"
