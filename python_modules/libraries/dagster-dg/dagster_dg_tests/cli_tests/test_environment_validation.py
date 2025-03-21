@@ -1,14 +1,17 @@
 import subprocess
 from pathlib import Path
 
-import click
 import pytest
-from dagster_dg.cli import cli
 from dagster_dg.utils import ensure_dagster_dg_tests_import, get_venv_executable, resolve_local_venv
 
 ensure_dagster_dg_tests_import()
 
-from dagster_dg_tests.utils import ProxyRunner, assert_runner_result, isolated_components_venv
+from dagster_dg_tests.utils import (
+    ProxyRunner,
+    assert_runner_result,
+    crawl_cli_commands,
+    isolated_components_venv,
+)
 
 # The tests in this file are designed to check error messages for basic precondition checks for
 # command execution across all CLI commands. Many commands require execution with
@@ -80,23 +83,7 @@ WORKSPACE_OR_PROJECT_CONTEXT_COMMANDS = [
 
 
 def test_all_commands_represented_in_env_check_tests() -> None:
-    commands: dict[tuple[str, ...], click.Command] = {}
-
-    # Note that this does not pick up:
-    # - all `component scaffold` subcommands, because these are dynamically generated and vary across
-    #   environment. We still test one of these below though.
-    # - special --ACTION options with callbacks (e.g. `--rebuild-component-registry`)
-    def crawl(command: click.Command, path: tuple[str, ...]) -> None:
-        assert command.name
-        new_path = (*path, command.name)
-        if isinstance(command, click.Group) and not new_path == ("dg", "scaffold", "component"):
-            for subcommand in command.commands.values():
-                assert subcommand.name
-                crawl(subcommand, new_path)
-        else:
-            commands[new_path] = command
-
-    crawl(cli, tuple())
+    commands = crawl_cli_commands()
 
     all_listed_commands = [
         spec.command

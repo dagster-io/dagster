@@ -13,9 +13,11 @@ from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import Any, Optional, Union
 
+import click
 from click.testing import CliRunner, Result
 from dagster_dg.cli import (
     DG_CLI_MAX_OUTPUT_WIDTH,
+    cli,
     cli as dg_cli,
 )
 from dagster_dg.utils import (
@@ -31,6 +33,29 @@ from dagster_dg.utils import (
 from typing_extensions import Self
 
 STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
+
+
+def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
+    """Note that this does not pick up:
+    - all `component scaffold` subcommands, because these are dynamically generated and vary across
+      environment.
+    - special --ACTION options with callbacks (e.g. `--rebuild-component-registry`).
+    """
+    commands: dict[tuple[str, ...], click.Command] = {}
+
+    def _crawl(command: click.Command, path: tuple[str, ...]):
+        assert command.name
+        new_path = (*path, command.name)
+        if isinstance(command, click.Group) and not new_path == ("dg", "scaffold", "component"):
+            for subcommand in command.commands.values():
+                assert subcommand.name
+                _crawl(subcommand, new_path)
+        else:
+            commands[new_path] = command
+
+    _crawl(cli, tuple())
+
+    return commands
 
 
 def _install_libraries_to_venv(venv_path: Path, libraries_rel_paths: Sequence[str]) -> None:
