@@ -81,7 +81,7 @@ class ConfigurableExternalIOManager(ConfigurableIOManagerFactory):
 # start_partitioned_marker
 class MyPartitionedIOManager(IOManager):
     def _get_path(self, context) -> str:
-        if context.has_partition_key:
+        if context.has_asset_partitions:
             return "/".join(context.asset_key.path + [context.asset_partition_key])
         else:
             return "/".join(context.asset_key.path)
