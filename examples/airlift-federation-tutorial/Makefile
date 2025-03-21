@@ -27,7 +27,8 @@ help:
 airflow_install:
 	pip install uv && \
 	uv pip install dagster-airlift[tutorial] && \
-	uv pip install -e $(MAKEFILE_DIR)
+	uv pip install -e $(MAKEFILE_DIR) && \
+	uv pip install duckdb pandas
 
 airflow_setup: wipe
 	mkdir -p $$WAREHOUSE_AIRFLOW_HOME
