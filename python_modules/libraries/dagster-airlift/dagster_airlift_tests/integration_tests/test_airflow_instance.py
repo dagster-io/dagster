@@ -3,6 +3,7 @@ import datetime
 import pytest
 from dagster._core.errors import DagsterError
 from dagster_airlift.core import AirflowBasicAuthBackend, AirflowInstance
+from dagster_airlift.core.filter import AirflowFilter
 
 from dagster_airlift_tests.integration_tests.conftest import assert_link_exists
 
@@ -18,7 +19,7 @@ def test_airflow_instance(airflow_instance: None) -> None:
         ),
         name="airflow_instance",
     )
-    dag_infos = instance.list_dags()
+    dag_infos = instance.list_dags(retrieval_filter=AirflowFilter())
     assert len(dag_infos) == 1
     assert dag_infos[0].dag_id == "print_dag"
     # Required for source code fetching
