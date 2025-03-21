@@ -53,10 +53,12 @@ class Component(ABC):
         return {}
 
     @abstractmethod
-    def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
+    def build_defs(self, context: "DefsModuleLoadContext") -> Definitions: ...
 
     @classmethod
-    def load(cls, attributes: Optional["ResolvableModel"], context: "ComponentLoadContext") -> Self:
+    def load(
+        cls, attributes: Optional["ResolvableModel"], context: "DefsModuleLoadContext"
+    ) -> Self:
         if issubclass(cls, ResolvableModel):
             # If the Component is a DSLSchema, the attributes in this case are an instance of itself
             assert isinstance(attributes, cls)
@@ -241,7 +243,7 @@ class DefinitionsModuleCache:
         if not decl_node:
             raise Exception(f"No component found at module {module}")
 
-        context = ComponentLoadContext(
+        context = DefsModuleLoadContext(
             defs_root=get_path_from_module(module),
             defs_module_name=module.__name__,
             decl_node=decl_node,
@@ -256,8 +258,8 @@ class DefinitionsModuleCache:
 
 
 @dataclass
-class ComponentLoadContext:
-    """Context for loading a single component."""
+class DefsModuleLoadContext:
+    """Context for loading a DefsModule."""
 
     defs_root: Path
     defs_module_name: str
@@ -266,11 +268,11 @@ class ComponentLoadContext:
     module_cache: DefinitionsModuleCache
 
     @staticmethod
-    def current() -> "ComponentLoadContext":
-        context = active_component_load_context.get()
+    def current() -> "DefsModuleLoadContext":
+        context = active_defs_module_load_context.get()
         if context is None:
             raise DagsterError(
-                "No active component load context, `ComponentLoadContext.current()` must be called inside of a component's `build_defs` method"
+                "No active component load context, `DefsModuleLoadContext.current()` must be called inside of a component's `build_defs` method"
             )
         return context
 
@@ -279,8 +281,8 @@ class ComponentLoadContext:
         *,
         resources: Optional[Mapping[str, object]] = None,
         decl_node: Optional["DefsModuleDecl"] = None,
-    ) -> "ComponentLoadContext":
-        return ComponentLoadContext(
+    ) -> "DefsModuleLoadContext":
+        return DefsModuleLoadContext(
             defs_root=Path.cwd(),
             defs_module_name="test",
             decl_node=decl_node,
@@ -292,13 +294,13 @@ class ComponentLoadContext:
     def path(self) -> Path:
         return check.not_none(self.decl_node).path
 
-    def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
+    def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "DefsModuleLoadContext":
         return dataclasses.replace(
             self,
             resolution_context=self.resolution_context.with_scope(**rendering_scope),
         )
 
-    def for_decl(self, decl: "DefsModuleDecl") -> "ComponentLoadContext":
+    def for_decl(self, decl: "DefsModuleDecl") -> "DefsModuleLoadContext":
         return dataclasses.replace(self, decl_node=decl)
 
     def defs_relative_module_name(self, path: Path) -> str:
@@ -338,7 +340,7 @@ class ComponentLoadContext:
         Example:
             .. code-block:: python
 
-                def build_defs(self, context: ComponentLoadContext) -> Definitions:
+                def build_defs(self, context: DefsModuleLoadContext) -> Definitions:
                     return load_definitions_from_module(
                         context.load_defs_relative_python_module(
                             Path(self.definitions_path) if self.definitions_path else Path("definitions.py")
@@ -357,18 +359,18 @@ class ComponentLoadContext:
         return importlib.import_module(self.defs_relative_module_name(path))
 
 
-active_component_load_context: contextvars.ContextVar[Union[ComponentLoadContext, None]] = (
+active_defs_module_load_context: contextvars.ContextVar[Union[DefsModuleLoadContext, None]] = (
     contextvars.ContextVar("active_component_load_context", default=None)
 )
 
 
 @contextlib.contextmanager
-def use_component_load_context(component_load_context: ComponentLoadContext):
-    token = active_component_load_context.set(component_load_context)
+def use_component_load_context(component_load_context: DefsModuleLoadContext):
+    token = active_defs_module_load_context.set(component_load_context)
     try:
         yield
     finally:
-        active_component_load_context.reset(token)
+        active_defs_module_load_context.reset(token)
 
 
 COMPONENT_LOADER_FN_ATTR = "__dagster_component_loader_fn"
@@ -378,8 +380,8 @@ T_Component = TypeVar("T_Component", bound=Component)
 
 
 def component(
-    fn: Callable[[ComponentLoadContext], T_Component],
-) -> Callable[[ComponentLoadContext], T_Component]:
+    fn: Callable[[DefsModuleLoadContext], T_Component],
+) -> Callable[[DefsModuleLoadContext], T_Component]:
     setattr(fn, COMPONENT_LOADER_FN_ATTR, True)
     return fn
 

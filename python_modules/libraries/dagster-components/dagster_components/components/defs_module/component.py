@@ -5,7 +5,7 @@ from typing import Annotated, Optional
 from dagster._core.definitions.definitions_class import Definitions
 from typing_extensions import Self
 
-from dagster_components import AssetPostProcessorModel, Component, ComponentLoadContext
+from dagster_components import AssetPostProcessorModel, Component, DefsLoadContext
 from dagster_components.core.defs_module import (
     DefsModule,
     PythonModuleDecl,
@@ -38,7 +38,7 @@ class DefsModuleComponent(Component):
         return DefsModuleArgsModel
 
     @classmethod
-    def load(cls, attributes: DefsModuleArgsModel, context: ComponentLoadContext) -> Self:
+    def load(cls, attributes: DefsModuleArgsModel, context: DefsLoadContext) -> Self:
         path = context.path
         decl = PythonModuleDecl.from_path(path) or SubpackageDefsModuleDecl.from_path(path)
         defs_module = decl.load(context) if decl else None
@@ -47,7 +47,7 @@ class DefsModuleComponent(Component):
         )
         return cls(post_processors=resolved_args.asset_post_processors, defs_module=defs_module)
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+    def build_defs(self, context: DefsLoadContext) -> Definitions:
         defs = self.defs_module.build_defs() if self.defs_module else Definitions()
         for post_processor in self.post_processors:
             defs = post_processor.fn(defs)

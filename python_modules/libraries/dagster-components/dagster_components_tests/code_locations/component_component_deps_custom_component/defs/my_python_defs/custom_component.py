@@ -1,9 +1,9 @@
 import dagster as dg
-from dagster_components import Component, ComponentLoadContext, ResolvableModel
+from dagster_components import Component, DefsLoadContext, ResolvableModel
 
 
 class MyBaseAssetsComponent(Component, ResolvableModel):
-    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+    def build_defs(self, context: DefsLoadContext) -> dg.Definitions:
         @dg.asset
         def my_cool_asset():
             pass

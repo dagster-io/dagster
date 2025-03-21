@@ -6,7 +6,7 @@ from pathlib import Path
 from dagster_components import (
     AssetSpecModel,
     Component,
-    ComponentLoadContext,
+    DefsLoadContext,
     ResolvableModel,
     ResolvedFrom,
 )
@@ -27,7 +27,7 @@ class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
     script_path: str
     asset_specs: Sequence[ResolvedAssetSpec]
 
-    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
+    def build_defs(self, load_context: DefsLoadContext) -> dg.Definitions:
         resolved_script_path = Path(load_context.path, self.script_path).absolute()
 
         @dg.multi_asset(name=Path(self.script_path).stem, specs=self.asset_specs)

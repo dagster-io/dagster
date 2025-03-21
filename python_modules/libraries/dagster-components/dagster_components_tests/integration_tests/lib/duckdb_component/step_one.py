@@ -5,14 +5,14 @@ from pathlib import Path
 
 import dagster as dg
 import duckdb
-from dagster_components import Component, ComponentLoadContext
+from dagster_components import Component, DefsLoadContext
 
 
 @dataclass
 class DuckDbComponent(Component):
     """A component that allows you to write SQL without learning dbt or Dagster's concepts."""
 
-    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
+    def build_defs(self, load_context: DefsLoadContext) -> dg.Definitions:
         name = "op_name"
         asset_specs = [dg.AssetSpec(key="the_key")]
         path = (load_context.path / Path("raw_customers.csv")).absolute()

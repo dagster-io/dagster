@@ -1,7 +1,7 @@
 from dagster import Definitions
 from dagster_components import (
     Component,
-    ComponentLoadContext,
+    DefsLoadContext,
     ResolvableModel,
 )
 
@@ -11,6 +11,6 @@ class ShellCommand(Component, ResolvableModel):
     COMPONENT DESCRIPTION HERE.
     """
 
-    def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
+    def build_defs(self, load_context: DefsLoadContext) -> Definitions:
         # Add definition construction logic here.
         return Definitions()

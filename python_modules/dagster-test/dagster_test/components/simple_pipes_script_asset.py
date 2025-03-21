@@ -6,7 +6,7 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from dagster_components import Component, ComponentLoadContext
+from dagster_components import Component, DefsLoadContext
 from dagster_components.component_scaffolding import scaffold_component_yaml
 from dagster_components.scaffold import Scaffolder, ScaffoldRequest, scaffold_with
 from pydantic import BaseModel
@@ -55,7 +55,7 @@ class SimplePipesScriptComponent(Component):
         self._asset_key = asset_key
         self._script_path = script_path
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+    def build_defs(self, context: DefsLoadContext) -> Definitions:
         @asset(key=self._asset_key)
         def _asset(context: AssetExecutionContext, pipes_client: PipesSubprocessClient):
             cmd = [shutil.which("python"), self._script_path]

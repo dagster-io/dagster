@@ -10,8 +10,8 @@ from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_components.core.component import (
     Component,
-    ComponentLoadContext,
     DefinitionsModuleCache,
+    DefsModuleLoadContext,
 )
 
 if TYPE_CHECKING:
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 @suppress_dagster_warnings
 def defs_from_components(
     *,
-    context: ComponentLoadContext,
+    context: DefsModuleLoadContext,
     components: Sequence[Component],
     resources: Mapping[str, object],
 ) -> "Definitions":

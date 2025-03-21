@@ -9,7 +9,7 @@ import duckdb
 from dagster_components import (
     AssetSpecModel,
     Component,
-    ComponentLoadContext,
+    DefsLoadContext,
     ResolvableModel,
     ResolvedFrom,
     Scaffolder,
@@ -53,7 +53,7 @@ class DuckDbComponent(Component, ResolvedFrom[DuckDbComponentModel]):
     assets: Sequence[ResolvedAssetSpec]
     sql_file: str
 
-    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
+    def build_defs(self, load_context: DefsLoadContext) -> dg.Definitions:
         assert len(self.assets) >= 1, "Must have asset"
         name = f"run_{self.assets[0].key.to_user_string()}"
         sql_file_path = (load_context.path / Path(self.sql_file)).absolute()

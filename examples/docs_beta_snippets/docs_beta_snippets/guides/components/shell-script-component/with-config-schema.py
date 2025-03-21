@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from dagster_components import (
     AssetSpecModel,
     Component,
-    ComponentLoadContext,
+    DefsLoadContext,
     ResolvableModel,
 )
 
@@ -16,4 +16,4 @@ class ShellCommand(Component, ResolvableModel):
     script_path: str
     asset_specs: Sequence[AssetSpecModel]
 
-    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions: ...
+    def build_defs(self, load_context: DefsLoadContext) -> dg.Definitions: ...

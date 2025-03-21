@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from dagster import AssetSpec, AutomationCondition, Definitions
-from dagster_components import AssetAttributesModel, Component, ComponentLoadContext
+from dagster_components import AssetAttributesModel, Component, DefsLoadContext
 from dagster_components.resolved.core_models import ResolvedAssetAttributes
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
 
@@ -33,5 +33,5 @@ class HasCustomScope(Component, ResolvedFrom[CustomScopeModel]):
             "custom_automation_condition": my_custom_automation_condition,
         }
 
-    def build_defs(self, context: ComponentLoadContext):
+    def build_defs(self, context: DefsLoadContext):
         return Definitions(assets=[AssetSpec(key="key", **self.asset_attributes)])

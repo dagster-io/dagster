@@ -3,7 +3,7 @@ from typing import Annotated
 
 from dagster_components import (
     Component,
-    ComponentLoadContext,
+    DefsLoadContext,
     ResolutionContext,
     ResolvableModel,
     ResolvedFrom,
@@ -33,4 +33,4 @@ class MyComponent(Component, ResolvedFrom[MyComponentModel]):
     # to a value for this field
     api_client: Annotated[MyApiClient, Resolver(resolve_api_key)]
 
-    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions: ...
+    def build_defs(self, load_context: DefsLoadContext) -> dg.Definitions: ...
