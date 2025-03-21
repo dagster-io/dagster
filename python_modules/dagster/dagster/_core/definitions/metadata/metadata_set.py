@@ -3,6 +3,8 @@ from collections.abc import Iterable, Mapping
 from functools import cache
 from typing import AbstractSet, Any, Optional  # noqa: UP035
 
+from dagster_shared.dagster_model import DagsterModel
+from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
 from typing_extensions import TypeVar
 
 from dagster import _check as check
@@ -13,8 +15,6 @@ from dagster._core.definitions.metadata.metadata_value import (
     TableColumnLineage,
     TableSchema,
 )
-from dagster._model import DagsterModel
-from dagster._model.pydantic_compat_layer import model_fields
 from dagster._utils.typing_api import flatten_unions
 
 # Python types that have a MetadataValue types that directly wraps them

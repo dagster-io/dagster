@@ -7,8 +7,8 @@ from typing import Any, Optional
 import requests
 from dagster import Failure, MetadataValue, get_dagster_logger
 from dagster._annotations import preview
-from dagster._model import DagsterModel
 from dagster._utils.cached_method import cached_method
+from dagster_shared.dagster_model import DagsterModel
 from pydantic import Field
 from requests.exceptions import RequestException
 

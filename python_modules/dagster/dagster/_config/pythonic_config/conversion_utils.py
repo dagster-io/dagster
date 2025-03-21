@@ -3,6 +3,11 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import Annotated, Any, Literal, Optional, TypeVar, Union
 
+from dagster_shared.dagster_model.pydantic_compat_layer import (
+    ModelFieldCompat,
+    PydanticUndefined,
+    model_fields,
+)
 from typing_extensions import get_args, get_origin
 
 import dagster._check as check
@@ -28,7 +33,6 @@ from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
-from dagster._model.pydantic_compat_layer import ModelFieldCompat, PydanticUndefined, model_fields
 from dagster._utils.typing_api import is_closed_python_optional_type
 
 
