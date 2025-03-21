@@ -669,10 +669,10 @@ class TableauWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]
     def defs_key(self) -> str:
         return f"{TABLEAU_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.site_name}"
 
-    def fetch_state(self) -> TableauWorkspaceData:
+    def fetch_state(self) -> TableauWorkspaceData:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.workspace.fetch_tableau_workspace_data()
 
-    def defs_from_state(self, state: TableauWorkspaceData) -> Definitions:
+    def defs_from_state(self, state: TableauWorkspaceData) -> Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
         all_external_data = [
             *state.data_sources_by_id.values(),
             *state.sheets_by_id.values(),

@@ -82,7 +82,7 @@ class StepOutputVersionSerializer(FieldSerializer):
             for k, v in value.items()
         ]
 
-    def unpack(
+    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         value: Sequence[UnknownSerdesValue],
         whitelist_map: WhitelistMap,

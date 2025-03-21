@@ -15,20 +15,20 @@ class TestMySQLRunStorage(TestRunStorage):
     __test__ = True
     # TestMySQLRunStorage::test_backfill_tags_filtering_multiple_results
 
-    def supports_backfill_tags_filtering_queries(self):
+    def supports_backfill_tags_filtering_queries(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return True
 
-    def supports_backfill_job_name_filtering_queries(self):
+    def supports_backfill_job_name_filtering_queries(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return True
 
-    def supports_backfill_id_filtering_queries(self):
+    def supports_backfill_id_filtering_queries(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return True
 
-    def supports_backfills_count(self):
+    def supports_backfills_count(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return True
 
     @pytest.fixture(name="instance", scope="function")
-    def instance(self, conn_string):
+    def instance(self, conn_string):  # pyright: ignore[reportIncompatibleMethodOverride]
         MySQLRunStorage.create_clean_storage(conn_string)
 
         with instance_for_test(
@@ -37,7 +37,7 @@ class TestMySQLRunStorage(TestRunStorage):
             yield instance
 
     @pytest.fixture(scope="function", name="storage")
-    def run_storage(self, instance):
+    def run_storage(self, instance):  # pyright: ignore[reportIncompatibleMethodOverride]
         run_storage = instance.run_storage
         assert isinstance(run_storage, MySQLRunStorage)
         return run_storage

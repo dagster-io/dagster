@@ -23,7 +23,7 @@ class EntitySubsetSerializer(DataclassSerializer):
         # backcompat
         return "AssetSubset"
 
-    def before_pack(self, value: "SerializableEntitySubset") -> "SerializableEntitySubset":
+    def before_pack(self, value: "SerializableEntitySubset") -> "SerializableEntitySubset":  # pyright: ignore[reportIncompatibleMethodOverride]
         if value.is_partitioned:
             return replace(value, value=value.subset_value.to_serializable_subset())
         return value

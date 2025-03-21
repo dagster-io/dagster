@@ -359,7 +359,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
             )
 
     @public
-    def run(
+    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],

@@ -556,10 +556,10 @@ def test_bare_executor():
     def an_asset(): ...
 
     class DummyExecutor(Executor):
-        def execute(self, plan_context, execution_plan): ...
+        def execute(self, plan_context, execution_plan): ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
         @property
-        def retries(self): ...
+        def retries(self): ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
     executor_inst = DummyExecutor()
 

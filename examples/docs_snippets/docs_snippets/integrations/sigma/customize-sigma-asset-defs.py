@@ -17,7 +17,7 @@ sigma_organization = SigmaOrganization(
 
 # A translator class lets us customize properties of the built Sigma assets, such as the owners or asset key
 class MyCustomSigmaTranslator(DagsterSigmaTranslator):
-    def get_asset_spec(self, data: SigmaWorkbookTranslatorData) -> dg.AssetSpec:
+    def get_asset_spec(self, data: SigmaWorkbookTranslatorData) -> dg.AssetSpec:  # pyright: ignore[reportIncompatibleMethodOverride]
         # We create the default asset spec using super()
         default_spec = super().get_asset_spec(data)
         # we customize the team owner tag for all Sigma assets

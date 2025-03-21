@@ -32,7 +32,7 @@ def pandas_io_manager(init_context):
 
 
 class NumpyCsvIOManager(PandasCsvIOManager):
-    def load_input(self, context) -> np.ndarray:
+    def load_input(self, context) -> np.ndarray:  # pyright: ignore[reportIncompatibleMethodOverride]
         if context.upstream_output:
             file_path = self._get_path(context.upstream_output)
             df = np.genfromtxt(file_path, delimiter=",", dtype=None)

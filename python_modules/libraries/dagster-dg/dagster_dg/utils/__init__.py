@@ -438,10 +438,10 @@ class DgClickHelpMixin:
         rich_format_help(obj=self, ctx=context, markup_mode="rich")
 
 
-class DgClickCommand(DgClickHelpMixin, click.Command): ...
+class DgClickCommand(DgClickHelpMixin, click.Command): ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
 
-class DgClickGroup(DgClickHelpMixin, click.Group): ...
+class DgClickGroup(DgClickHelpMixin, click.Group): ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
 
 # ########################

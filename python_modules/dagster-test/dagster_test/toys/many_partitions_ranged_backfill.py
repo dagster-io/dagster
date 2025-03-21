@@ -24,7 +24,7 @@ def foo(context: AssetExecutionContext):
 
 
 class DummyIOManager(IOManager):
-    def load_input(self, context, obj):
+    def load_input(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
         return 1
 
     def handle_output(self, context, obj):

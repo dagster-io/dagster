@@ -28,7 +28,7 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
     def children(self) -> Sequence[AutomationCondition[T_EntityKey]]:
         return [self.trigger_condition, self.reset_condition]
 
-    async def evaluate(
+    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         # must evaluate child condition over the entire subset to avoid missing state transitions

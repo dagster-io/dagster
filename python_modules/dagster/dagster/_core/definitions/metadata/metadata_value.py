@@ -544,7 +544,7 @@ class TextMetadataValue(
 
     @public
     @property
-    def value(self) -> Optional[str]:
+    def value(self) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Optional[str]: The wrapped text data."""
         return self.text
 
@@ -570,7 +570,7 @@ class UrlMetadataValue(
 
     @public
     @property
-    def value(self) -> Optional[str]:
+    def value(self) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Optional[str]: The wrapped URL."""
         return self.url
 
@@ -590,7 +590,7 @@ class PathMetadataValue(
 
     @public
     @property
-    def value(self) -> Optional[str]:
+    def value(self) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Optional[str]: The wrapped path."""
         return self.path
 
@@ -610,7 +610,7 @@ class NotebookMetadataValue(
 
     @public
     @property
-    def value(self) -> Optional[str]:
+    def value(self) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Optional[str]: The wrapped path to the notebook as a string."""
         return self.path
 
@@ -625,7 +625,7 @@ class JsonDataFieldSerializer(FieldSerializer):
         # return the json serializable data field as is
         return mapping
 
-    def unpack(
+    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         unpacked_value: JsonSerializableValue,
         whitelist_map: WhitelistMap,
@@ -666,7 +666,7 @@ class JsonMetadataValue(
 
     @public
     @property
-    def value(self) -> Optional[Union[Sequence[Any], Mapping[str, Any]]]:
+    def value(self) -> Optional[Union[Sequence[Any], Mapping[str, Any]]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Optional[Union[Sequence[Any], Dict[str, Any]]]: The wrapped JSON data."""
         return self.data
 
@@ -692,7 +692,7 @@ class MarkdownMetadataValue(
 
     @public
     @property
-    def value(self) -> Optional[str]:
+    def value(self) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Optional[str]: The wrapped markdown as a string."""
         return self.md_str
 
@@ -729,7 +729,7 @@ class PythonArtifactMetadataValue(
 
 
 @whitelist_for_serdes(storage_name="FloatMetadataEntryData")
-class FloatMetadataValue(
+class FloatMetadataValue(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_FloatMetadataValue",
         [
@@ -749,7 +749,7 @@ class FloatMetadataValue(
 
 
 @whitelist_for_serdes(storage_name="IntMetadataEntryData")
-class IntMetadataValue(
+class IntMetadataValue(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_IntMetadataValue",
         [
@@ -769,7 +769,7 @@ class IntMetadataValue(
 
 
 @whitelist_for_serdes(storage_name="BoolMetadataEntryData")
-class BoolMetadataValue(
+class BoolMetadataValue(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple("_BoolMetadataValue", [("value", PublicAttr[Optional[bool]])]),
     MetadataValue[bool],
 ):
@@ -784,7 +784,7 @@ class BoolMetadataValue(
 
 
 @whitelist_for_serdes
-class TimestampMetadataValue(
+class TimestampMetadataValue(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_DateTimeMetadataValue",
         [("value", PublicAttr[float])],

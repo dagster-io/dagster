@@ -96,10 +96,10 @@ def test_run_monitoring_fails_on_interrupt(
         assert DagsterKubernetesClient.production_client().delete_job(
             get_job_name_from_run_id(run_id), helm_namespace
         )
-        poll_for_finished_run(dagster_instance, run.run_id, timeout=120)
+        poll_for_finished_run(dagster_instance, run.run_id, timeout=120)  # pyright: ignore[reportPossiblyUnboundVariable]
         assert dagster_instance.get_run_by_id(run_id).status == DagsterRunStatus.FAILURE
     finally:
-        log_run_events(dagster_instance, run_id)
+        log_run_events(dagster_instance, run_id)  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 def test_run_monitoring_startup_fail(
@@ -132,7 +132,7 @@ def test_run_monitoring_startup_fail(
         assert DagsterKubernetesClient.production_client().delete_job(
             get_job_name_from_run_id(run_id), helm_namespace
         )
-        poll_for_finished_run(dagster_instance, run.run_id, timeout=120)
+        poll_for_finished_run(dagster_instance, run.run_id, timeout=120)  # pyright: ignore[reportPossiblyUnboundVariable]
         assert dagster_instance.get_run_by_id(run_id).status == DagsterRunStatus.FAILURE
     finally:
-        log_run_events(dagster_instance, run_id)
+        log_run_events(dagster_instance, run_id)  # pyright: ignore[reportPossiblyUnboundVariable]

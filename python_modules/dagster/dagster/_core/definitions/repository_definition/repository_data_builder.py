@@ -473,7 +473,7 @@ def _process_and_validate_target_job(
             )
         unresolved_jobs[job_def.name] = job_def
     else:
-        if job_def.name in jobs and jobs[job_def.name].graph != job_def.graph:
+        if job_def.name in jobs and jobs[job_def.name].graph != job_def.graph:  # pyright: ignore[reportFunctionMemberAccess]
             dupe_target_type = "unresolved asset job" if job_def.name in unresolved_jobs else "job"
             raise DagsterInvalidDefinitionError(
                 _get_error_msg_for_target_conflict(targeter, "job", job_def.name, dupe_target_type)

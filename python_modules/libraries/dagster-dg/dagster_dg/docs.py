@@ -116,7 +116,7 @@ class ComponentDumper(yaml.SafeDumper):
         # makes the output somewhat prettier by forcing lists to be indented
         return super().increase_indent(flow=flow, indentless=False)
 
-    def write_line_break(self) -> None:
+    def write_line_break(self) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         # add an extra line break between top-level keys
         if self.indent == 0:
             super().write_line_break()

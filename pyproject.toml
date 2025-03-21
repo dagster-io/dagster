@@ -46,9 +46,6 @@ venvPath = "pyright/master"
 # pyright.
 pythonVersion = "3.9"
 
-# Use "basic" ruleset. This differs from strict in several ways, but most
-# importantly it does not flag untyped code as an error.
-typeCheckingMode = "basic"
 
 # Disable reading type annotations from libraries that are not explicitly marked as typed (i.e. that
 # include a py.typed file). All imports from these libraries are given the `Unknown` type (i.e.

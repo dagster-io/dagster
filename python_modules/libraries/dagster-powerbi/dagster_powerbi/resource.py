@@ -207,7 +207,7 @@ class PowerBIWorkspace(ConfigurableResource):
             time.sleep(self.refresh_poll_interval)
 
         if status == "Failed":
-            error = last_refresh.get("serviceExceptionJson")
+            error = last_refresh.get("serviceExceptionJson")  # pyright: ignore[reportPossiblyUnboundVariable]
             raise Failure(f"Refresh failed: {error}")
 
     @cached_method
@@ -266,7 +266,7 @@ class PowerBIWorkspace(ConfigurableResource):
             now = get_current_timestamp()
 
         if status != "Succeeded":
-            raise Failure(f"Scan not successful after {ADMIN_SCAN_TIMEOUT} seconds: {scan_details}")
+            raise Failure(f"Scan not successful after {ADMIN_SCAN_TIMEOUT} seconds: {scan_details}")  # pyright: ignore[reportPossiblyUnboundVariable]
 
         return self._fetch_json(
             endpoint=f"admin/workspaces/scanResult/{scan_id}", group_scoped=False

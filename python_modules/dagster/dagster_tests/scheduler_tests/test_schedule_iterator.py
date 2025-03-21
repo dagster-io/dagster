@@ -20,7 +20,7 @@ def test_cron_schedule_advances_past_dst():
         next_time = next(time_iter)
 
     assert (
-        next_time.timestamp()
+        next_time.timestamp()  # pyright: ignore[reportPossiblyUnboundVariable]
         == create_datetime(year=2021, month=10, day=3, hour=4, tz="Australia/Sydney").timestamp()
     )
 
@@ -35,7 +35,7 @@ def test_vixie_cronstring_schedule():
         # 2:00, 3:00, 4:00, 5:00, 6:00, 7:00
         next_time = next(time_iter)
     assert (
-        next_time.timestamp()
+        next_time.timestamp()  # pyright: ignore[reportPossiblyUnboundVariable]
         == create_datetime(year=2022, month=2, day=21, hour=7, tz="US/Pacific").timestamp()
     )
 
@@ -44,7 +44,7 @@ def test_vixie_cronstring_schedule():
         # 2/22, 2/23, 2/24, 2/25, 2/26, 2/27
         next_time = next(time_iter)
     assert (
-        next_time.timestamp()
+        next_time.timestamp()  # pyright: ignore[reportPossiblyUnboundVariable]
         == create_datetime(year=2022, month=2, day=27, tz="US/Pacific").timestamp()
     )
 
@@ -53,7 +53,7 @@ def test_vixie_cronstring_schedule():
         # 2/27, 3/6, 3/13, 3/20, 3/27, 4/3
         next_time = next(time_iter)
     assert (
-        next_time.timestamp()
+        next_time.timestamp()  # pyright: ignore[reportPossiblyUnboundVariable]
         == create_datetime(year=2022, month=4, day=3, tz="US/Pacific").timestamp()
     )
 
@@ -62,7 +62,7 @@ def test_vixie_cronstring_schedule():
         # 3/1, 4/1, 5/1, 6/1, 7/1, 8/1
         next_time = next(time_iter)
     assert (
-        next_time.timestamp()
+        next_time.timestamp()  # pyright: ignore[reportPossiblyUnboundVariable]
         == create_datetime(year=2022, month=8, day=1, tz="US/Pacific").timestamp()
     )
 
@@ -71,7 +71,7 @@ def test_vixie_cronstring_schedule():
         # 1/1/2023, 1/1/2024, 1/1/2025, 1/1/2026, 1/1/2027, 1/1/2028
         next_time = next(time_iter)
     assert (
-        next_time.timestamp()
+        next_time.timestamp()  # pyright: ignore[reportPossiblyUnboundVariable]
         == create_datetime(year=2028, month=1, day=1, tz="US/Pacific").timestamp()
     )
 

@@ -61,7 +61,7 @@ class PipesFileMessageReader(PipesThreadedMessageReader):
     def get_params(self) -> Iterator[PipesParams]:
         yield {PipesDefaultMessageWriter.STDIO_KEY: PipesDefaultMessageWriter.STDOUT}
 
-    def download_messages(
+    def download_messages(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, cursor: Optional[int], params: PipesParams
     ) -> Optional[tuple[int, str]]:
         if cursor is None:

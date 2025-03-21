@@ -57,7 +57,7 @@ class ComponentsDagsterSlingTranslator(DagsterSlingTranslator):
         super().__init__()
         self.resolving_info = resolving_info
 
-    def get_asset_spec(self, obj: Any) -> AssetSpec:
+    def get_asset_spec(self, obj: Any) -> AssetSpec:  # pyright: ignore[reportIncompatibleMethodOverride]
         base_spec = super().get_asset_spec(obj)
         return self.resolving_info.get_asset_spec(
             base_spec,

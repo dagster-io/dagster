@@ -26,7 +26,7 @@ from dagster._utils.cached_method import cached_method
 TIOManagerValue = TypeVar("TIOManagerValue", bound=IOManager)
 
 
-class ConfigurableIOManagerFactoryResourceDefinition(
+class ConfigurableIOManagerFactoryResourceDefinition(  # pyright: ignore[reportIncompatibleMethodOverride]
     NestedResourcesResourceDefinition,
     IOManagerDefinition,
 ):
@@ -145,7 +145,7 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValu
         return PartialIOManager(resource_cls=cls, data=kwargs)
 
     @cached_method
-    def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
+    def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:  # pyright: ignore[reportIncompatibleMethodOverride]
         return ConfigurableIOManagerFactoryResourceDefinition(
             self.__class__,
             resource_fn=self._get_initialize_and_run_fn(),
@@ -176,7 +176,7 @@ class PartialIOManager(
     Generic[TResValue],
 ):
     @cached_method
-    def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
+    def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:  # pyright: ignore[reportIncompatibleMethodOverride]
         input_config_schema = None
         output_config_schema = None
         if safe_is_subclass(self.resource_cls, ConfigurableIOManagerFactory):

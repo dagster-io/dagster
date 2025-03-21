@@ -191,7 +191,7 @@ class MetadataFieldSerializer(FieldSerializer):
             for k, v in metadata_dict.items()
         ]
 
-    def unpack(
+    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         metadata_entries: list["MetadataEntry"],
         whitelist_map: WhitelistMap,

@@ -223,7 +223,7 @@ def _submit_task_k8s_job(app, plan_context, step, queue, priority, known_state):
         raise Exception("No image included in either executor config or the dagster job")
 
     task = create_k8s_job_task(app)
-    task_signature = task.si(
+    task_signature = task.si(  # pyright: ignore[reportFunctionMemberAccess]
         execute_step_args_packed=pack_value(execute_step_args),
         job_config_dict=job_config.to_dict(),
         job_namespace=plan_context.executor.job_namespace,

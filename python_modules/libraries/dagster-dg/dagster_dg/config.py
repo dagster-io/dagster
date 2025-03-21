@@ -145,7 +145,7 @@ class DgConfig:
             DgCliConfig.from_raw(*all_cli_config) if all_cli_config else DgCliConfig.default()
         )
 
-        return cls(cli_config, project_config, workspace_config)
+        return cls(cli_config, project_config, workspace_config)  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 # ########################

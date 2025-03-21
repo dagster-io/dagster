@@ -39,7 +39,7 @@ class NewlyTrueCondition(BuiltinAutomationCondition[T_EntityKey]):
             return None
         return context.asset_graph_view.get_subset_from_serializable_subset(true_subset)
 
-    async def evaluate(self, context: AutomationContext) -> AutomationResult:
+    async def evaluate(self, context: AutomationContext) -> AutomationResult:  # pyright: ignore[reportIncompatibleMethodOverride]
         # evaluate child condition
         child_result = await context.for_child_condition(
             self.operand,

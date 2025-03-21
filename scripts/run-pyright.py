@@ -438,6 +438,9 @@ def run_pyright(
         result = subprocess.run(shell_cmd, capture_output=True, shell=True, text=True, check=False)
         try:
             json_result = json.loads(result.stdout)
+            from pathlib import Path
+
+            Path(f"/tmp/{env}-pyright.json").write_text(result.stdout)
         except json.JSONDecodeError:
             output = (result.stdout == "" and result.stderr) or result.stdout
             raise Exception(f"Pyright output was not valid JSON. Output was:\n\n{output}")

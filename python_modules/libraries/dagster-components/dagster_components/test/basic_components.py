@@ -64,7 +64,7 @@ class MyNestedComponentSchema(BaseModel):
 
 class MyNestedComponent(Component):
     @classmethod
-    def get_schema(cls) -> type[MyNestedComponentSchema]:
+    def get_schema(cls) -> type[MyNestedComponentSchema]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return MyNestedComponentSchema
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:

@@ -229,7 +229,7 @@ IGNORED_KEYS = {"skippable"}
 
 def test_asset_attributes_is_comprehensive():
     all_asset_attribute_keys = []
-    for test_arg in test_asset_attributes.pytestmark[0].args[1]:
+    for test_arg in test_asset_attributes.pytestmark[0].args[1]:  # pyright: ignore[reportFunctionMemberAccess]
         all_asset_attribute_keys.extend(test_arg[0].keys())
     from dagster_components.resolved.core_models import AssetAttributesModel
 

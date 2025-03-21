@@ -48,7 +48,7 @@ class ObserveRequestTimestampSerializer(FieldSerializer):
     ) -> JsonSerializableValue:
         return pack_value(SerializableNonScalarKeyMapping(mapping), whitelist_map, descent_path)
 
-    def unpack(
+    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         unpacked_value: JsonSerializableValue,
         whitelist_map: WhitelistMap,

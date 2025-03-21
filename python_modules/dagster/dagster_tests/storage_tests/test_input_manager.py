@@ -45,7 +45,7 @@ def test_input_manager_override():
         return MyIOManager()
 
     class MyInputManager(MyIOManager):
-        def load_input(self, context):
+        def load_input(self, context):  # pyright: ignore[reportIncompatibleMethodOverride]
             if context.upstream_output is None:
                 assert False, "upstream output should not be None"
             else:
@@ -89,7 +89,7 @@ def test_input_manager_root_input():
         return MyIOManager()
 
     class MyInputManager(MyIOManager):
-        def load_input(self, context):
+        def load_input(self, context):  # pyright: ignore[reportIncompatibleMethodOverride]
             if context.upstream_output is None:
                 return 4
             else:
@@ -230,7 +230,7 @@ def test_input_manager_decorator():
         return MyIOManager()
 
     class MyInputManager(MyIOManager):
-        def load_input(self, context):
+        def load_input(self, context):  # pyright: ignore[reportIncompatibleMethodOverride]
             if context.upstream_output is None:
                 assert False, "upstream output should not be None"
             else:

@@ -424,7 +424,7 @@ def s3_resource_with_context_manager(context):
         context.log.info("tearing down s3_resource_with_context_manager")
         bucket = "dagster-scratch-80542c2"
         key = f"resource_termination_test/{context.run_id}"
-        s3.put_object(Bucket=bucket, Key=key, Body=b"foo")
+        s3.put_object(Bucket=bucket, Key=key, Body=b"foo")  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 @op(required_resource_keys={"s3_resource_with_context_manager"})

@@ -128,12 +128,12 @@ def test_reexecute_result_notebook():
         for materialization_event in materialization_events:
             result_path = get_path(materialization_event)
 
-        if result_path.endswith(".ipynb"):  # pyright: ignore[reportOptionalMemberAccess]
-            with open(result_path, encoding="utf8") as fd:  # pyright: ignore[reportArgumentType]
+        if result_path.endswith(".ipynb"):  # pyright: ignore[reportPossiblyUnboundVariable,reportOptionalMemberAccess]
+            with open(result_path, encoding="utf8") as fd:  # pyright: ignore[reportArgumentType,reportPossiblyUnboundVariable]
                 nb = nbformat.read(fd, as_version=4)
             ep = ExecutePreprocessor()
             ep.preprocess(nb)
-            with open(result_path, encoding="utf8") as fd:  # pyright: ignore[reportArgumentType]
+            with open(result_path, encoding="utf8") as fd:  # pyright: ignore[reportArgumentType,reportPossiblyUnboundVariable]
                 expected = _strip_execution_metadata(nb)
                 actual = _strip_execution_metadata(nbformat.read(fd, as_version=4))
                 assert actual == expected

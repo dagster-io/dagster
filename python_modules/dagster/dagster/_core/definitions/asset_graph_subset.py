@@ -132,7 +132,7 @@ class AssetGraphSubset(NamedTuple):
         for asset_key in self.asset_keys:
             yield self.get_asset_subset(asset_key, asset_graph)
 
-    def __contains__(self, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:
+    def __contains__(self, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         """If asset is an AssetKeyPartitionKey, check if the given AssetKeyPartitionKey is in the
         subset. If asset is an AssetKey, check if any of partitions of the given AssetKey are in
         the subset.

@@ -84,7 +84,7 @@ class TestRunLauncher(RunLauncher, ConfigurableClass):
     def supports_check_run_worker_health(self):
         return True
 
-    def check_run_worker_health(self, _run):
+    def check_run_worker_health(self, _run):  # pyright: ignore[reportIncompatibleMethodOverride]
         return (
             CheckRunHealthResult(WorkerStatus.RUNNING, "")
             if os.environ.get("DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT") == "healthy"
