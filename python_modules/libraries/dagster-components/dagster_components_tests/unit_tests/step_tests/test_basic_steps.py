@@ -1,6 +1,3 @@
-from collections.abc import Iterator, Mapping
-from typing import Optional
-
 from dagster._config.pythonic_config.config import Config
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
@@ -11,7 +8,7 @@ from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.observe import observe
@@ -100,32 +97,49 @@ def get_assets_def(step: StepComponent) -> AssetsDefinition:
     return defs.get_assets_def(specs[0].key)
 
 
-def execute_single_asset(
-    step: StepComponent,
-    resources: Optional[Mapping[str, object]] = None,
-) -> AssetMaterialization:
-    mats = list(execute_many_assets(step, resources=resources))
+def single_asset_mat(result: ExecuteInProcessResult) -> AssetMaterialization:
+    mats = list(asset_mats(result))
     assert len(mats) == 1
     return mats[0]
 
 
-def execute_many_assets(
-    step: StepComponent,
-    resources: Optional[Mapping[str, object]] = None,
-) -> Iterator[AssetMaterialization]:
-    result = execute_step(step, resources=resources)
-    assert result.success
-    mat_events = result.get_asset_materialization_events()
-    for mat_event in mat_events:
-        assert isinstance(mat_event.event_specific_data, StepMaterializationData)
-        yield mat_event.event_specific_data.materialization
+def asset_mats(result: ExecuteInProcessResult) -> list[AssetMaterialization]:
+    def _fn():
+        mats = result.get_asset_materialization_events()
+        for mat in mats:
+            assert isinstance(mat.event_specific_data, StepMaterializationData)
+            yield mat.event_specific_data.materialization
+
+    return list(_fn())
+
+
+def single_asset_obs(result: ExecuteInProcessResult) -> AssetObservation:
+    obs = asset_obs(result)
+    assert len(obs) == 1
+    return obs[0]
+
+
+def asset_obs(result: ExecuteInProcessResult) -> list[AssetObservation]:
+    def _fn():
+        obs = result.get_asset_observation_events()
+        for ob in obs:
+            assert isinstance(ob.event_specific_data, AssetObservationData)
+            yield ob.event_specific_data.asset_observation
+
+    return list(_fn())
+
+
+def single_asset_check_eval(result: ExecuteInProcessResult) -> AssetCheckEvaluation:
+    evals = result.get_asset_check_evaluations()
+    assert len(evals) == 1
+    return evals[0]
 
 
 def test_hello_world() -> None:
     step = SingleAssetStep(name="hello_world", assets=[AssetSpec("the_key")])
     assert isinstance(get_assets_def(step), AssetsDefinition)
 
-    materialization = execute_single_asset(step)
+    materialization = single_asset_mat(execute_step(step))
     assert materialization.metadata == {"whatami": TextMetadataValue("singleasset")}
 
 
@@ -142,7 +156,7 @@ def test_hello_many_asset() -> None:
     assets_def = get_assets_def(step)
     assert assets_def.keys == {AssetKey("the_key"), AssetKey("the_key2")}
 
-    mats = list(execute_many_assets(step))
+    mats = asset_mats(execute_step(step))
     assert len(mats) == 2
     assert mats[0].asset_key == AssetKey("the_key")
     assert mats[1].asset_key == AssetKey("the_key2")
@@ -211,27 +225,8 @@ def test_step_with_resource() -> None:
     result = materialize([assets_def])
     assert result.success
 
-    mat_events = result.get_asset_materialization_events()
-    assert len(mat_events) == 1
-    assert isinstance(mat_events[0].event_specific_data, StepMaterializationData)
-    assert mat_events[0].event_specific_data.materialization.metadata == {
-        "resource": TextMetadataValue("a_value")
-    }
-
-    mat = execute_single_asset(step, resources={"a_resource": AResource()})
+    mat = single_asset_mat(execute_step(step, resources={"a_resource": AResource()}))
     assert mat.metadata == {"resource": TextMetadataValue("a_value")}
-
-
-def get_single_mat(result: ExecuteInProcessResult) -> AssetMaterialization:
-    mats = list(result.get_asset_materialization_events())
-    assert len(mats) == 1
-    return check.inst(mats[0].event_specific_data, StepMaterializationData).materialization
-
-
-def get_single_asset_check_eval(result: ExecuteInProcessResult) -> AssetCheckEvaluation:
-    evals = result.get_asset_check_evaluations()
-    assert len(evals) == 1
-    return next(iter(evals))
 
 
 class SingleAssetSingleCheck(StepComponent):
@@ -249,10 +244,10 @@ def test_single_asset_single_check() -> None:
     )
     result = execute_step(step)
     assert result.success
-    assert get_single_mat(result).asset_key == AssetKey("the_key")
-    assert get_single_asset_check_eval(result).passed
-    assert get_single_asset_check_eval(result).asset_key == AssetKey("the_key")
-    assert get_single_asset_check_eval(result).check_name == "check_name"
+    assert single_asset_mat(result).asset_key == AssetKey("the_key")
+    assert single_asset_check_eval(result).passed
+    assert single_asset_check_eval(result).asset_key == AssetKey("the_key")
+    assert single_asset_check_eval(result).check_name == "check_name"
 
 
 class SingleCheckStep(StepComponent):
@@ -268,9 +263,7 @@ def test_single_standalone_check() -> None:
     )
     result = execute_step(step)
     assert result.success
-    evals = result.get_asset_check_evaluations()
-    assert len(evals) == 1
-    assert evals[0].asset_check_key == AssetCheckKey(
+    assert single_asset_check_eval(result).asset_check_key == AssetCheckKey(
         asset_key=AssetKey("somekey_elsewhere"), name="check_name"
     )
 
@@ -319,12 +312,7 @@ def test_observable_source_asset() -> None:
 
     result = observe(assets=[fn])
     assert result.success
-    observe_events = result.get_asset_observation_events()
-    assert len(observe_events) == 1
-
-    observe_event = observe_events[0]
-    assert isinstance(observe_event.event_specific_data, AssetObservationData)
-    asset_observation = observe_event.event_specific_data.asset_observation
+    asset_observation = single_asset_obs(result)
     assert asset_observation.data_version == "my_data"
 
 
@@ -364,6 +352,5 @@ def test_osa_in_step() -> None:
     result = execute_step(SingleObserve(assets=[mark_spec_observable(AssetSpec("my_asset"))]))
 
     assert result.success
-
-    observe_events = result.get_asset_observation_events()
-    assert len(observe_events) == 1
+    obs = single_asset_obs(result)
+    assert obs.data_version == "my_data"
