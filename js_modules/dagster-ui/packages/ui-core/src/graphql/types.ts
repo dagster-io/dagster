@@ -110,7 +110,7 @@ export type Asset = {
 export type AssetAssetMaterializationHistoryArgs = {
   afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
-  eventTypeSelector: MaterializationHistoryEventTypeSelector;
+  eventTypeSelector?: InputMaybe<MaterializationHistoryEventTypeSelector>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -1641,9 +1641,9 @@ export type FailedToMaterializeEvent = DisplayableEvent &
     assetKey: Maybe<AssetKey>;
     description: Maybe<Scalars['String']['output']>;
     eventType: Maybe<DagsterEventType>;
-    failedToMaterializeReason: AssetMaterializationFailureReason;
     label: Maybe<Scalars['String']['output']>;
     level: LogLevel;
+    materializationFailureReason: AssetMaterializationFailureReason;
     message: Scalars['String']['output'];
     metadataEntries: Array<
       | AssetMetadataEntry
@@ -8639,12 +8639,12 @@ export const buildFailedToMaterializeEvent = (
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!
         : DagsterEventType.ALERT_FAILURE,
-    failedToMaterializeReason:
-      overrides && overrides.hasOwnProperty('failedToMaterializeReason')
-        ? overrides.failedToMaterializeReason!
-        : AssetMaterializationFailureReason.COMPUTE_FAILED,
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'aliquam',
     level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
+    materializationFailureReason:
+      overrides && overrides.hasOwnProperty('materializationFailureReason')
+        ? overrides.materializationFailureReason!
+        : AssetMaterializationFailureReason.COMPUTE_FAILED,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'libero',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
