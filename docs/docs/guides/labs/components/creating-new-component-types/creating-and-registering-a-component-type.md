@@ -31,7 +31,7 @@ This will add a new file to your project in the `lib` directory:
 
 This file contains the basic structure for the new component type. There are two methods that you'll need to implement:
 
-- `get_schema`: This method should return a Pydantic based `ResolvableModel` that defines the schema for the component. This is the schema for the data that goes into `component.yaml`.
+- `get_schema`: This method should return a Pydantic-based `ResolvableModel` that defines the schema for the component. This is the schema for the data that goes into `component.yaml`.
 - `build_defs`: This method should return a `Definitions` object for this component.
 
 ## Defining a schema
@@ -56,7 +56,7 @@ Next, we'll want to translate this schema into fully resolved Python objects. Fo
 
 By convention, we'll use the `@dataclass` decorator to simplify our class definition. We can define attributes for our class that line up with the properties in our schema, but this time we'll use the fully resolved types where appropriate.
 
-Our path will still just be a string, but our `asset_specs` will be a list of `AssetSpec` objects. `dagster-components` provides an `Annotated[AssetSpec, ...]` as `ResolvedAssetSpec` which contains the necessary annotations to resolve an `AssetSpecModel` into an `AssetSpec`, so we don't need to do any additional work to resolve this field for our component.
+Our path will still just be a string, but our `asset_specs` will be a list of `AssetSpec` objects. `dagster-components` provides a `ResolvedAssetSpec` type alias (which is shorthand for `Annotated[AssetSpec, ...]`). This type contains the necessary annotations to resolve an `AssetSpecModel` into an `AssetSpec`, so we don't need to do any additional work to resolve this field for our component.
 
 
 
