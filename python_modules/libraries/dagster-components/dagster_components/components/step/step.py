@@ -64,31 +64,6 @@ class ExecutionRecord:
             ]
         )
 
-    @classmethod
-    def for_observable(
-        cls,
-        asset_key: Optional[CoercibleToAssetKey] = None,
-        metadata: Optional[RawMetadataMapping] = None,
-        data_version: Optional[DataVersion] = None,
-        tags: Optional[Mapping[str, str]] = None,
-    ) -> "ExecutionRecord":
-        return ExecutionRecord(
-            asset_records=[
-                AssetRecord(
-                    asset_key=asset_key,
-                    metadata={**(metadata or {}), **{"__emit_as_observation__": True}},
-                    data_version=data_version,
-                    tags=tags,
-                )
-            ]
-        )
-
-
-def do_emit_as_observation(record: AssetRecord) -> bool:
-    return (
-        record.metadata.get("__emit_as_observation__", False) is True if record.metadata else False
-    )
-
 
 def concatenate_with_hash(strings: list[str]) -> str:
     # Join the strings with double underscores to create the full value
@@ -348,11 +323,14 @@ def execute_step(
         )
 
 
+OBSERVABLE_METADATA_KEY = "dagster/emit_as_observation"
+
+
 def mark_spec_observable(spec: AssetSpec) -> AssetSpec:
     return spec.merge_attributes(
-        metadata={"__emit_as_observation__": True},
+        metadata={OBSERVABLE_METADATA_KEY: True},
     )
 
 
 def is_spec_observable(spec: AssetSpec) -> bool:
-    return spec.metadata.get("__emit_as_observation__", False) is True
+    return spec.metadata.get(OBSERVABLE_METADATA_KEY, False) is True
