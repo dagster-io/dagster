@@ -14,6 +14,7 @@ from typing import (  # noqa: UP035
     cast,
 )
 
+from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
 from pydantic import BaseModel
 from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
@@ -55,7 +56,6 @@ from dagster._core.errors import (
     DagsterInvalidDefinitionError,
 )
 from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
-from dagster._model.pydantic_compat_layer import model_fields
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.typing_api import is_closed_python_optional_type
