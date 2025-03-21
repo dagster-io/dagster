@@ -191,8 +191,10 @@ class AssetCheckExecutionRecord(
         ]:
             evaluation = check.not_none(self.evaluation)
             if not evaluation.target_materialization_data:
-                # check ran before the materialization was created
-                return False
+                # check ran before the materialization was created, or the check was executed
+                # from within a context that did not add materialization info, so use the
+                # event timestamps as a fallback
+                return latest_materialization.timestamp < self.create_timestamp
             else:
                 # check matches the latest materialization id
                 return (
