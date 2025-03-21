@@ -2006,17 +2006,10 @@ def test_pagination_limit():
     partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
     current_time = datetime.strptime("2021-06-05", DATE_FORMAT)
     all_keys = partitions_def.get_partition_keys(current_time)
-    for limit in [1, 3, 5, 7, 11]:
+    for limit in [1, 3, 5, 7, 11, 50]:
         connection = partitions_def.get_partition_key_connection(
             current_time=current_time, cursor=None, limit=limit
         )
-        assert len(connection.results) == limit
-        assert connection.has_more
+        assert len(connection.results) == min(limit, len(all_keys))
+        assert connection.has_more == (len(all_keys) > limit)
         assert connection.results == all_keys[:limit]
-
-    connection = partitions_def.get_partition_key_connection(
-        current_time=current_time, cursor=None, limit=None
-    )
-    assert len(connection.results) == 31
-    assert not connection.has_more
-    assert connection.results == all_keys
