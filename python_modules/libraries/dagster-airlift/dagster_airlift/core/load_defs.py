@@ -25,7 +25,6 @@ from dagster_airlift.core.sensor.sensor_builder import (
 )
 from dagster_airlift.core.serialization.compute import DagSelectorFn, compute_serialized_data
 from dagster_airlift.core.serialization.defs_construction import (
-    construct_automapped_dag_assets_defs,
     construct_dag_assets_defs,
     get_airflow_data_to_spec_mapper,
 )
@@ -241,68 +240,6 @@ def build_defs_from_airflow_instance(
                     minimum_interval_seconds=sensor_minimum_interval_seconds,
                     event_transformer_fn=event_transformer_fn,
                     default_sensor_status=default_sensor_status,
-                )
-            ]
-        ),
-    )
-
-
-@dataclass
-class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[SerializedAirflowDefinitionsData]):
-    airflow_instance: AirflowInstance
-    mapped_assets: Sequence[MappedAsset]
-    sensor_minimum_interval_seconds: int
-
-    @property
-    def defs_key(self) -> str:
-        return get_metadata_key(self.airflow_instance.name)
-
-    def fetch_state(self) -> SerializedAirflowDefinitionsData:
-        return compute_serialized_data(
-            airflow_instance=self.airflow_instance,
-            mapped_assets=self.mapped_assets,
-            dag_selector_fn=None,
-            automapping_enabled=True,
-            source_code_retrieval_enabled=True,
-        )
-
-    def defs_from_state(
-        self, serialized_airflow_data: SerializedAirflowDefinitionsData
-    ) -> Definitions:
-        return Definitions(
-            assets=[
-                *_apply_airflow_data_to_specs(self.mapped_assets, serialized_airflow_data),
-                *construct_automapped_dag_assets_defs(serialized_airflow_data),
-            ]
-        )
-
-
-def build_full_automapped_dags_from_airflow_instance(
-    *,
-    airflow_instance: AirflowInstance,
-    sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
-    defs: Optional[Definitions] = None,
-) -> Definitions:
-    defs = defs or Definitions()
-    mapped_assets = _type_narrow_defs_assets(defs or Definitions())
-    serialized_data = FullAutomappedDagsLoader(
-        airflow_instance=airflow_instance,
-        sensor_minimum_interval_seconds=sensor_minimum_interval_seconds,
-        mapped_assets=mapped_assets,
-    ).get_or_fetch_state()
-    airflow_assets = [
-        *_apply_airflow_data_to_specs(mapped_assets, serialized_data),
-        *construct_automapped_dag_assets_defs(serialized_data),
-    ]
-    resolved_defs = replace_assets_in_defs(defs=defs, assets=airflow_assets)
-    return Definitions.merge(
-        resolved_defs,
-        Definitions(
-            sensors=[
-                build_airflow_polling_sensor(
-                    minimum_interval_seconds=sensor_minimum_interval_seconds,
-                    mapped_assets=airflow_assets,
-                    airflow_instance=airflow_instance,
                 )
             ]
         ),

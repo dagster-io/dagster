@@ -92,7 +92,7 @@ def build_airflow_polling_sensor(
     """The constructed sensor polls the Airflow instance for activity, and inserts asset events into Dagster's event log.
 
     The sensor decides which Airflow dags and tasks to monitor by inspecting the metadata of the passed-in Definitions object `mapped_defs`.
-    The metadata performing this mapping is typically set by calls to `dag_defs` and `task_defs`.
+    The metadata performing this mapping is typically set by calls to `assets_with_dag_mappings` and `assets_with_task_mappings`.
 
     Using the `event_transformer_fn` argument, users can provide a function that transforms the materializations emitted by the sensor.
     The expected return type of this function is an iterable of `AssetMaterialization`, `AssetObservation`, or `AssetCheckEvaluation` objects.
