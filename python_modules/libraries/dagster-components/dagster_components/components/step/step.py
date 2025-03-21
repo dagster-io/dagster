@@ -12,6 +12,7 @@ from dagster._config.pythonic_config.conversion_utils import infer_schema_from_c
 from dagster._core.definitions.asset_check_result import AssetCheckRecord, AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -168,9 +169,7 @@ class StepComponent(Component, ABC):
         check.invariant(len(params) <= 1, "Must only have one ConfigParam")
         return next(iter(params)) if params else None
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        required_resource_keys = self.required_resource_keys
-
+    def create_multi_asset(self, context: ComponentLoadContext) -> AssetsDefinition:
         @multi_asset(
             name=self.name,
             specs=self.assets,
@@ -183,7 +182,7 @@ class StepComponent(Component, ABC):
             config_schema=config_schema_from_config_cls(self.config_param.annotation)
             if self.config_param
             else None,
-            required_resource_keys=required_resource_keys,
+            required_resource_keys=self.required_resource_keys,
         )
         def _an_asset(context: AssetExecutionContext):
             config_kwarg = (
@@ -196,7 +195,7 @@ class StepComponent(Component, ABC):
                 else {}
             )
 
-            if required_resource_keys or config_kwarg:
+            if self.required_resource_keys or config_kwarg:
                 kwargs = {
                     **config_kwarg,
                     **(context.resources.original_resource_dict or {}),
@@ -226,7 +225,12 @@ class StepComponent(Component, ABC):
                     description=asset_check_result.description,
                 )
 
-        return Definitions(assets=[_an_asset], resources=context.module_cache.resources)
+        return _an_asset
+
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        return Definitions(
+            assets=[self.create_multi_asset(context)], resources=context.module_cache.resources
+        )
 
     @abstractmethod
     def execute(self, context: ExecutionContext, **kwargs) -> ExecutionRecord: ...
