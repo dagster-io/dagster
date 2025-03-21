@@ -2052,7 +2052,7 @@ class SqlEventLogStorage(EventLogStorage):
             rows = conn.execute(query).fetchall()
 
         if rows:
-            next_cursor = StorageIdCursor(storage_id=rows[-1][0]).to_string()
+            next_cursor = StorageIdCursor(storage_id=cast(int, rows[-1][0])).to_string()
         elif cursor:
             next_cursor = cursor
         else:

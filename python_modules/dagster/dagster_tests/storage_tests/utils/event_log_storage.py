@@ -6714,3 +6714,49 @@ class TestEventLogStorage:
                 failed_record.asset_key == asset_key_1
                 for failed_record in failed_records_for_partitions.records
             )
+
+    def test_dynamic_store_pagination(self, storage: EventLogStorage):
+        assert storage.get_dynamic_partitions_connection("foo", 1).results == []
+
+        def get_paginated_partitions(partitions_def_name):
+            all_results = []
+            cursor = None
+            has_more = True
+            while has_more:
+                conn = storage.get_dynamic_partitions_connection(
+                    partitions_def_name, limit=1, cursor=cursor
+                )
+                cursor = conn.cursor
+                has_more = conn.has_more
+                all_results.extend(conn.results)
+            return all_results
+
+        storage.add_dynamic_partitions(
+            partitions_def_name="foo", partition_keys=["foo", "bar", "baz"]
+        )
+
+        # paginated results
+        assert get_paginated_partitions("foo") == ["foo", "bar", "baz"]
+
+        # Test for idempotency
+        storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=["foo"])
+        assert get_paginated_partitions("foo") == ["foo", "bar", "baz"]
+
+        # add more partitions
+        storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=["foo", "qux"])
+        assert get_paginated_partitions("foo") == ["foo", "bar", "baz", "qux"]
+
+        # partial paginated results
+        conn = storage.get_dynamic_partitions_connection("foo", 1)
+        assert conn.results == ["foo"]
+        assert conn.cursor
+        post_foo_cursor = conn.cursor
+        assert conn.has_more
+
+        # try cursored fetching when the keys before and after the cursor are removed
+        storage.delete_dynamic_partition(partitions_def_name="foo", partition_key="foo")
+        storage.delete_dynamic_partition(partitions_def_name="foo", partition_key="bar")
+        assert storage.get_dynamic_partitions_connection(
+            "foo", 1, cursor=post_foo_cursor
+        ).results == ["baz"]
+        assert storage.get_dynamic_partitions_connection("foo", 1).results == ["baz"]
