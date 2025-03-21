@@ -22,7 +22,7 @@ For a full list of `dagster-airlift` classes and methods, see the [API docs](htt
 
 ## Observe the `warehouse` Airflow instance
 
-Next, declare a reference to the `warehouse` Airflow instance, which is running at `http://localhost:8081`:
+Next, in your `airlift_federation_tutorial/dagster_defs/definitions.py` file, declare a reference to the `warehouse` Airflow instance, which is running at `http://localhost:8081`:
 
 <CodeExample
   path="airlift-federation-tutorial/snippets/observe.py"
