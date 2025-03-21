@@ -83,3 +83,30 @@ class ValueIndexCursor:
         if "value" not in raw:
             raise ValueError(f"Invalid cursor: {cursor}")
         return ValueIndexCursor(value=raw["value"])
+
+
+@record
+class StorageIdCursor:
+    storage_id: int
+
+    def __str__(self) -> str:
+        return self.to_string()
+
+    def to_string(self) -> str:
+        raw = json.dumps(
+            {
+                "storage_id": self.storage_id,
+            }
+        )
+        return base64.b64encode(bytes(raw, encoding="utf-8")).decode("utf-8")
+
+    @classmethod
+    def from_cursor(cls, cursor: str):
+        raw = json.loads(base64.b64decode(cursor).decode("utf-8"))
+        if "storage_id" not in raw:
+            raise ValueError(f"Invalid cursor: {cursor}")
+        try:
+            storage_id = int(raw["storage_id"])
+        except ValueError:
+            raise ValueError(f"Invalid cursor: {cursor}")
+        return StorageIdCursor(storage_id=storage_id)

@@ -29,6 +29,7 @@ from dagster._core.storage.event_log.base import (
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.schedules.base import ScheduleStorage
 from dagster._core.storage.sql import AlembicVersion
+from dagster._core.types.connection import Connection as PaginatedConnection
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
@@ -620,6 +621,13 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
 
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
         return self._storage.event_log_storage.get_dynamic_partitions(partitions_def_name)
+
+    def get_dynamic_partitions_connection(
+        self, partitions_def_name: str, limit: int, cursor: Optional[str] = None
+    ) -> PaginatedConnection[str]:
+        return self._storage.event_log_storage.get_dynamic_partitions_connection(
+            partitions_def_name, limit, cursor
+        )
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         return self._storage.event_log_storage.has_dynamic_partition(
