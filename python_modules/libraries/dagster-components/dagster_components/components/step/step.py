@@ -12,6 +12,7 @@ from dagster._core.definitions.asset_check_result import AssetCheckRecord, Asset
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.data_version import DataVersion
+from dagster._core.definitions.decorators.asset_check_decorator import multi_asset_check
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import CoercibleToAssetKey
@@ -22,6 +23,7 @@ from dagster._core.definitions.resource_annotation import has_resource_param_ann
 from dagster._core.definitions.result import AssetRecord, MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster_dbt.asset_utils import AssetSelection
 from dagster_shared import check
 
 from dagster_components.core.component import Component, ComponentLoadContext
@@ -168,7 +170,7 @@ class StepComponent(Component, ABC):
         check.invariant(len(params) <= 1, "Must only have one ConfigParam")
         return next(iter(params)) if params else None
 
-    def _fn(self, context: AssetExecutionContext):
+    def _fn(self, context):
         config_kwarg = (
             {
                 self.config_param.name: self.config_param.annotation(
@@ -189,6 +191,7 @@ class StepComponent(Component, ABC):
             kwargs = {}
 
         execution_result = self.execute(context=ExecutionContext(context), **kwargs)
+
         for asset_result in execution_result.asset_records or []:
             # assume materialization result for now
             yield MaterializeResult(
@@ -232,7 +235,24 @@ class StepComponent(Component, ABC):
             )
         elif self.checks:
             check.invariant(not self.assets, "Cannot have both assets and checks in this code path")
-            raise Exception("Implement me")
+            return Definitions(
+                asset_checks=[
+                    multi_asset_check(
+                        name=self.name,
+                        specs=self.checks,
+                        description=self.description,
+                        op_tags=self.tags,
+                        retry_policy=self.retry_policy,
+                        # pool=self.pool,  TODO not implemented
+                        can_subset=self.can_subset,
+                        config_schema=config_schema_from_config_cls(self.config_param.annotation)
+                        if self.config_param
+                        else None,
+                        required_resource_keys=self.required_resource_keys,
+                    )(self._fn)
+                ],
+                resources=context.module_cache.resources,
+            )
 
         raise Exception("Unreachable")
 
@@ -244,6 +264,11 @@ def execute_step(
     step: StepComponent, run_config: Any = None, resources: Optional[Mapping[str, object]] = None
 ) -> ExecuteInProcessResult:
     defs = step.build_defs(ComponentLoadContext.for_test(resources=resources))
-    keys = [spec.key for spec in defs.get_all_asset_specs()]
-    assets_def = defs.get_assets_def(next(iter(keys)))
-    return materialize(assets=[assets_def], run_config=run_config)
+    # this returns both assets_def and asset_checks_defs
+    assets_defs = defs.get_asset_graph().assets_defs
+    check.invariant(len(assets_defs) <= 1)
+    return materialize(
+        assets=[next(iter(assets_defs))],
+        run_config=run_config,
+        selection=AssetSelection.all() | AssetSelection.all_asset_checks(),
+    )

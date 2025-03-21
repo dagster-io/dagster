@@ -263,3 +263,13 @@ def test_single_standalone_check() -> None:
     )
     result = execute_step(step)
     assert result.success
+    evals = result.get_asset_check_evaluations()
+    assert len(evals) == 1
+    assert evals[0].asset_check_key == AssetCheckKey(
+        asset_key=AssetKey("somekey_elsewhere"), name="check_name"
+    )
+
+
+# def ManyCheckStep(StepComponent):
+#     def execute(self, context: ExecutionContext) -> ExecutionRecord:
+#         return
