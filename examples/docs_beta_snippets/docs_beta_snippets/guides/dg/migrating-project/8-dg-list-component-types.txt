@@ -8,6 +8,12 @@ Using /.../my-existing-project/.venv/bin/dagster-components
 │                                                                     │ arbitrary set of │
 │                                                                     │ Dagster          │
 │                                                                     │ definitions.     │
+│ dagster_components.dagster.DefsModuleComponent                      │ Wraps a          │
+│                                                                     │ DefsModule to    │
+│                                                                     │ allow the        │
+│                                                                     │ addition of      │
+│                                                                     │ arbitrary        │
+│                                                                     │ attributes.      │
 │ dagster_components.dagster.PipesSubprocessScriptCollectionComponent │ Assets that wrap │
 │                                                                     │ Python scripts   │
 │                                                                     │ executed with    │
