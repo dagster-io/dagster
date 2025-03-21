@@ -41,8 +41,12 @@ def _get_dagster_plus_config_path_and_raw_config() -> Optional[DagsterPlusConfig
     return None
 
 
+DAGSTER_CLOUD_BASE_URL = "https://dagster.cloud"
+
+
 @dataclass
 class DagsterPlusCliConfig:
+    url: Optional[str] = None
     organization: Optional[str] = None
     default_deployment: Optional[str] = None
     user_token: Optional[str] = None
@@ -74,6 +78,14 @@ class DagsterPlusCliConfig:
 
         config_dict = deep_merge_dicts(raw_config, config_to_apply)
         write_config(config_path, config_dict)
+
+    @property
+    def organization_url(self) -> str:
+        if not self.organization:
+            raise Exception("Organization not set")
+        if self.url is None:
+            return f"{DAGSTER_CLOUD_BASE_URL}/{self.organization}"
+        return f"{self.url}/{self.organization}"
 
 
 def get_dagster_cloud_cli_config_path() -> Path:
