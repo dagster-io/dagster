@@ -8,12 +8,14 @@ from dagster_components.resolved.model import Resolved, Resolver
 from dagster_components.test.utils import load_direct
 
 
+class BlankComponent(Component):
+    def build_defs(self): ...
+
+
 def test_basic():
     @dataclass
-    class MyThing(Component, Resolved):
+    class MyThing(BlankComponent, Resolved):
         name: str
-
-        def build_defs(self): ...
 
     load_direct(
         MyThing,
@@ -27,7 +29,7 @@ def test_error():
     class Foo: ...
 
     @dataclass
-    class MyNewThing(Component, Resolved):
+    class MyNewThing(BlankComponent, Resolved):
         name: str
         foo: Foo
 
@@ -43,7 +45,7 @@ def test_nested():
         num: int
 
     @dataclass
-    class MyThing(Component, Resolved):
+    class MyThing(BlankComponent, Resolved):
         name: str
         other_thing: Annotated[OtherThing, Resolver.from_annotation()]
         other_things: Annotated[Optional[list[OtherThing]], Resolver.from_annotation()]
@@ -60,3 +62,65 @@ other_things:
     - num: 4
 """,
     )
+
+
+def test_class():
+    class Person(BlankComponent, Resolved):
+        random: str  # ensure random annotations ignored
+
+        def __init__(
+            self,
+            name: str,
+            age: int,
+        ): ...
+
+        def build_defs(self): ...
+
+    load_direct(
+        Person,
+        """
+name: Rei
+age: 7
+""",
+    )
+
+    class Flexible(BlankComponent, Resolved):
+        def __init__(
+            self,
+            *args,
+            name: str,
+            **kwargs,
+        ): ...
+
+    load_direct(
+        Flexible,
+        """
+name: flex
+    """,
+    )
+
+
+def test_bad_class():
+    class Empty(BlankComponent, Resolved): ...
+
+    with pytest.raises(ResolutionException, match="class with non empty __init__"):
+        load_direct(Empty, "")
+
+    class JustSelf(BlankComponent, Resolved):
+        def __init__(
+            self,
+        ): ...
+
+    with pytest.raises(ResolutionException, match="class with non empty __init__"):
+        load_direct(JustSelf, "")
+
+    class PosOnly(BlankComponent, Resolved):
+        def __init__(
+            self,
+            a: int,
+            /,
+            b: int,
+        ): ...
+
+    with pytest.raises(ResolutionException, match="positional only parameter"):
+        load_direct(PosOnly, "")
