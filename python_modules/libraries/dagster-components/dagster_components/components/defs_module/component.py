@@ -1,27 +1,28 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated, Optional
+from typing import Optional
 
 from dagster._core.definitions.definitions_class import Definitions
 from typing_extensions import Self
 
-from dagster_components import AssetPostProcessorModel, Component, ComponentLoadContext
+from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.defs_module import (
     DefsModule,
     PythonModuleDecl,
     SubpackageDefsModuleDecl,
 )
 from dagster_components.resolved.core_models import AssetPostProcessor
-from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver, resolve_model
-
-
-class DefsModuleArgsModel(ResolvableModel):
-    asset_post_processors: Optional[Sequence[AssetPostProcessorModel]] = None
+from dagster_components.resolved.model import (
+    ResolvableModel,
+    Resolved,
+    derive_model_type,
+    resolve_model,
+)
 
 
 @dataclass
-class ResolvedDefsModuleArgs(ResolvedFrom[DefsModuleArgsModel]):
-    asset_post_processors: Annotated[Sequence[AssetPostProcessor], Resolver.from_annotation()]
+class ResolvedDefsModuleArgs(Resolved):
+    asset_post_processors: Sequence[AssetPostProcessor]
 
 
 class DefsModuleComponent(Component):
@@ -34,11 +35,11 @@ class DefsModuleComponent(Component):
         self.defs_module = defs_module
 
     @classmethod
-    def get_schema(cls) -> type[DefsModuleArgsModel]:
-        return DefsModuleArgsModel
+    def get_schema(cls):
+        return derive_model_type(ResolvedDefsModuleArgs)
 
     @classmethod
-    def load(cls, attributes: DefsModuleArgsModel, context: ComponentLoadContext) -> Self:
+    def load(cls, attributes: ResolvableModel, context: ComponentLoadContext) -> Self:
         path = context.path
         decl = PythonModuleDecl.from_path(path) or SubpackageDefsModuleDecl.from_path(path)
         defs_module = decl.load(context) if decl else None
