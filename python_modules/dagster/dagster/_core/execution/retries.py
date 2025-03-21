@@ -4,6 +4,8 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 from dagster import (
     Field,
     Selector,
@@ -11,7 +13,6 @@ from dagster import (
 )
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import MAX_RETRIES_TAG, RETRY_ON_ASSET_OR_OP_FAILURE_TAG
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.tags import get_boolean_tag_value
 
 if TYPE_CHECKING:

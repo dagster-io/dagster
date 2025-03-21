@@ -10,7 +10,7 @@ from dagster._core.workspace.context import (
     WorkspaceRequestContext,
 )
 from dagster._core.workspace.workspace import CurrentWorkspace
-from dagster._serdes.serdes import deserialize_value
+from dagster_shared.serdes import deserialize_value
 
 from dagster_webserver.cli import (
     DEFAULT_WEBSERVER_HOST,

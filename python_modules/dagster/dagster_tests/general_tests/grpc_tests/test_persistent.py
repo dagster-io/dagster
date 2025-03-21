@@ -36,12 +36,11 @@ from dagster._grpc.types import (
     SensorExecutionArgs,
     StartRunResult,
 )
-from dagster._serdes import serialize_value
-from dagster._serdes.serdes import deserialize_value
 from dagster._utils import file_relative_path, find_free_port, safe_tempfile_path_unmanaged
 from dagster._utils.error import SerializableErrorInfo
 from dagster.version import __version__ as dagster_version
 from dagster_shared import seven
+from dagster_shared.serdes import deserialize_value, serialize_value
 
 
 def entrypoints():

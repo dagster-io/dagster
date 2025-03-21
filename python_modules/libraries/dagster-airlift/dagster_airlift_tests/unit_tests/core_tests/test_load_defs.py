@@ -19,7 +19,6 @@ from dagster import (
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.reconstruct import initialize_repository_def_from_pointer
-from dagster._serdes.serdes import deserialize_value
 from dagster._utils.test.definitions import (
     lazy_definitions,
     scoped_reconstruction_metadata,
@@ -52,6 +51,7 @@ from dagster_airlift.core.serialization.serialized_data import (
 from dagster_airlift.core.top_level_dag_def_api import assets_with_task_mappings
 from dagster_airlift.core.utils import is_task_mapped_asset_spec, metadata_for_task_mapping
 from dagster_airlift.test import make_instance
+from dagster_shared.serdes import deserialize_value
 
 from dagster_airlift_tests.unit_tests.conftest import (
     assert_dependency_structure_in_assets,

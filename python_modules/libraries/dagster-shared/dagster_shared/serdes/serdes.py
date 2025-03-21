@@ -35,27 +35,37 @@ from typing import (  # noqa: UP035
     overload,
 )
 
-import dagster_shared.seven as seven
-from dagster_shared.dagster_model.pydantic_compat_layer import ModelFieldCompat, model_fields
 from pydantic import BaseModel
-from typing_extensions import Self, TypeAlias, TypeVar
+from typing_extensions import Self, TypeAlias, TypeGuard, TypeVar
 
-import dagster._check as check
-from dagster._record import (
+import dagster_shared.check as check
+from dagster_shared import seven
+from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
+from dagster_shared.record import (
     IHaveNew,
     as_dict_for_new,
     get_record_annotations,
     has_generated_new,
     is_record,
 )
-from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
-from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
-from dagster._utils.warnings import disable_dagster_warnings
+from dagster_shared.serdes.errors import DeserializationError, SerdesUsageError, SerializationError
+from dagster_shared.utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
     # There is no actual class backing Dataclasses, _typeshed provides this
     # protocol.
     from _typeshed import DataclassInstance
+
+
+# copied from dagster._utils
+def is_named_tuple_instance(obj: object) -> TypeGuard[NamedTuple]:
+    return isinstance(obj, tuple) and hasattr(obj, "_fields")
+
+
+# copied from dagster._utils
+def is_named_tuple_subclass(klass: type[object]) -> TypeGuard[type[NamedTuple]]:
+    return isinstance(klass, type) and issubclass(klass, tuple) and hasattr(klass, "_fields")
+
 
 ###################################################################################################
 # Types
@@ -756,7 +766,7 @@ class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
         return [field.alias or key for key, field in self._model_fields.items()]
 
     @cached_property
-    def _model_fields(self) -> Mapping[str, ModelFieldCompat]:
+    def _model_fields(self) -> Mapping[str, Any]:
         return model_fields(self.klass)
 
 

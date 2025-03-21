@@ -18,6 +18,12 @@ from typing import (  # noqa: F401, UP035
     cast,
 )
 
+from dagster_shared.serdes.serdes import (
+    EnumSerializer,
+    UnpackContext,
+    is_whitelisted_for_serdes_object,
+)
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions import (
@@ -55,7 +61,6 @@ from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.compute_log_manager import CapturedLogContext, LogRetrievalShellCommand
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
-from dagster._serdes.serdes import EnumSerializer, UnpackContext, is_whitelisted_for_serdes_object
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
 

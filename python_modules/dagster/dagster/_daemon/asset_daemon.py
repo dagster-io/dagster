@@ -13,6 +13,8 @@ from contextlib import ExitStack
 from types import TracebackType
 from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
 
+from dagster_shared.serdes import deserialize_value
+
 import dagster._check as check
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
@@ -72,7 +74,6 @@ from dagster._daemon.daemon import DaemonIterator, DagsterDaemon, SpanMarker
 from dagster._daemon.sensor import get_elapsed, is_under_min_interval, mark_sensor_state_for_tick
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._serdes import serialize_value
-from dagster._serdes.serdes import deserialize_value
 from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash, return_as_list
 

@@ -7,6 +7,8 @@ from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager, nullcontext
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
 
+from dagster_shared.serdes.ipc import IPCErrorMessage
+
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -51,7 +53,6 @@ from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_p
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._grpc.types import ExecuteExternalJobArgs, ExecutionPlanSnapshotArgs
 from dagster._serdes import deserialize_value
-from dagster._serdes.ipc import IPCErrorMessage
 from dagster._time import datetime_from_timestamp
 from dagster._utils import start_termination_thread
 from dagster._utils.error import serializable_error_info_from_exc_info

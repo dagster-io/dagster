@@ -6,7 +6,7 @@ import docker.errors
 from dagster import Field, In, Nothing, OpExecutionContext, StringSource, op
 from dagster._annotations import beta
 from dagster._core.utils import parse_env_var
-from dagster._serdes.utils import hash_str
+from dagster_shared.serdes.utils import hash_str
 
 from dagster_docker.container_context import DockerContainerContext
 from dagster_docker.docker_run_launcher import DockerRunLauncher

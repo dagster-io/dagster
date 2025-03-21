@@ -58,8 +58,8 @@ from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.selector.subset_selector import MAX_NUM
 from dagster._serdes import deserialize_value
-from dagster._serdes.serdes import _WHITELIST_MAP
 from dagster_shared.check import CheckError
+from dagster_shared.serdes.serdes import _WHITELIST_MAP
 from typing_extensions import TypeAlias
 
 earth = SourceAsset(["celestial", "earth"], group_name="planets")
