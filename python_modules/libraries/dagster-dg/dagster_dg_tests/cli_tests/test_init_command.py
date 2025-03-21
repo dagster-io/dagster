@@ -19,7 +19,7 @@ from dagster_dg_tests.utils import ProxyRunner, assert_runner_result
 
 def test_init_command_success(monkeypatch) -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("init", input="\nhelloworld\n")
+        result = runner.invoke("init", "--no-use-dg-managed-environment", input="\nhelloworld\n")
         assert_runner_result(result)
         assert Path("dagster-workspace").exists()
         assert Path("dagster-workspace/pyproject.toml").exists()
@@ -50,7 +50,9 @@ def test_init_command_no_project(monkeypatch) -> None:
 
 def test_init_override_workspace_name(monkeypatch) -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("init", input="my-workspace\ngoodbyeworld\n")
+        result = runner.invoke(
+            "init", "--no-use-dg-managed-environment", input="my-workspace\ngoodbyeworld\n"
+        )
         assert_runner_result(result)
         assert Path("my-workspace").exists()
         assert Path("my-workspace/pyproject.toml").exists()
