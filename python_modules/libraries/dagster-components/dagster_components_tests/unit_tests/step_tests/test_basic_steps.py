@@ -270,6 +270,34 @@ def test_single_standalone_check() -> None:
     )
 
 
-# def ManyCheckStep(StepComponent):
-#     def execute(self, context: ExecutionContext) -> ExecutionRecord:
-#         return
+class ManyCheckStep(StepComponent):
+    def execute(self, context: ExecutionContext) -> ExecutionRecord:
+        return ExecutionRecord(
+            asset_check_records=[
+                AssetCheckRecord(passed=True, asset_key="key_one", check_name="check_one"),
+                AssetCheckRecord(passed=False, asset_key="key_two", check_name="check_two"),
+            ]
+        )
+
+
+def test_multi_check() -> None:
+    step = ManyCheckStep(
+        checks=[
+            AssetCheckSpec(asset="key_one", name="check_one"),
+            AssetCheckSpec(asset="key_two", name="check_two"),
+        ],
+    )
+
+    result = execute_step(step)
+    assert result.success
+    eval_list = result.get_asset_check_evaluations()
+
+    evals = {e.asset_check_key: e for e in eval_list}
+
+    k1_c1 = AssetCheckKey(asset_key=AssetKey("key_one"), name="check_one")
+    k2_c2 = AssetCheckKey(asset_key=AssetKey("key_two"), name="check_two")
+
+    assert set(evals.keys()) == {k1_c1, k2_c2}
+
+    assert evals[k1_c1].passed
+    assert not evals[k2_c2].passed
