@@ -6,13 +6,11 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import Annotated, Any, Optional, TypeVar
 
-from dagster import _check as check
 from dagster._config.field import Field
 from dagster._config.pythonic_config.conversion_utils import infer_schema_from_config_annotation
 from dagster._core.definitions.asset_check_result import AssetCheckRecord, AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -24,6 +22,7 @@ from dagster._core.definitions.resource_annotation import has_resource_param_ann
 from dagster._core.definitions.result import AssetRecord, MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster_shared import check
 
 from dagster_components.core.component import Component, ComponentLoadContext
 
@@ -169,68 +168,73 @@ class StepComponent(Component, ABC):
         check.invariant(len(params) <= 1, "Must only have one ConfigParam")
         return next(iter(params)) if params else None
 
-    def create_multi_asset(self, context: ComponentLoadContext) -> AssetsDefinition:
-        @multi_asset(
-            name=self.name,
-            specs=self.assets,
-            description=self.description,
-            check_specs=self.checks,
-            op_tags=self.tags,
-            retry_policy=self.retry_policy,
-            pool=self.pool,
-            can_subset=self.can_subset,
-            config_schema=config_schema_from_config_cls(self.config_param.annotation)
+    def _fn(self, context: AssetExecutionContext):
+        config_kwarg = (
+            {
+                self.config_param.name: self.config_param.annotation(
+                    **check.inst(context.op_config, dict)
+                )
+            }
             if self.config_param
-            else None,
-            required_resource_keys=self.required_resource_keys,
+            else {}
         )
-        def _an_asset(context: AssetExecutionContext):
-            config_kwarg = (
-                {
-                    self.config_param.name: self.config_param.annotation(
-                        **check.inst(context.op_config, dict)
-                    )
-                }
-                if self.config_param
-                else {}
+
+        if self.required_resource_keys or config_kwarg:
+            kwargs = {
+                **config_kwarg,
+                **(context.resources.original_resource_dict or {}),
+            }
+            kwargs.pop("io_manager", None)
+        else:
+            kwargs = {}
+
+        execution_result = self.execute(context=ExecutionContext(context), **kwargs)
+        for asset_result in execution_result.asset_records or []:
+            # assume materialization result for now
+            yield MaterializeResult(
+                asset_key=asset_result.asset_key,
+                metadata=asset_result.metadata,
+                data_version=asset_result.data_version,
+                tags=asset_result.tags,
+                check_results=asset_result.check_results,
             )
 
-            if self.required_resource_keys or config_kwarg:
-                kwargs = {
-                    **config_kwarg,
-                    **(context.resources.original_resource_dict or {}),
-                }
-                kwargs.pop("io_manager", None)
-            else:
-                kwargs = {}
-
-            execution_result = self.execute(context=ExecutionContext(context), **kwargs)
-            for asset_result in execution_result.asset_records or []:
-                # assume materialization result for now
-                yield MaterializeResult(
-                    asset_key=asset_result.asset_key,
-                    metadata=asset_result.metadata,
-                    data_version=asset_result.data_version,
-                    tags=asset_result.tags,
-                    check_results=asset_result.check_results,
-                )
-
-            for asset_check_result in execution_result.asset_check_records or []:
-                yield AssetCheckResult(
-                    asset_key=asset_check_result.asset_key,
-                    check_name=asset_check_result.check_name,
-                    passed=asset_check_result.passed,
-                    metadata=asset_check_result.metadata,
-                    severity=asset_check_result.severity,
-                    description=asset_check_result.description,
-                )
-
-        return _an_asset
+        for asset_check_result in execution_result.asset_check_records or []:
+            yield AssetCheckResult(
+                asset_key=asset_check_result.asset_key,
+                check_name=asset_check_result.check_name,
+                passed=asset_check_result.passed,
+                metadata=asset_check_result.metadata,
+                severity=asset_check_result.severity,
+                description=asset_check_result.description,
+            )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions(
-            assets=[self.create_multi_asset(context)], resources=context.module_cache.resources
-        )
+        if self.assets:
+            return Definitions(
+                assets=[
+                    multi_asset(
+                        name=self.name,
+                        specs=self.assets,
+                        description=self.description,
+                        check_specs=self.checks,
+                        op_tags=self.tags,
+                        retry_policy=self.retry_policy,
+                        pool=self.pool,
+                        can_subset=self.can_subset,
+                        config_schema=config_schema_from_config_cls(self.config_param.annotation)
+                        if self.config_param
+                        else None,
+                        required_resource_keys=self.required_resource_keys,
+                    )(self._fn)
+                ],
+                resources=context.module_cache.resources,
+            )
+        elif self.checks:
+            check.invariant(not self.assets, "Cannot have both assets and checks in this code path")
+            raise Exception("Implement me")
+
+        raise Exception("Unreachable")
 
     @abstractmethod
     def execute(self, context: ExecutionContext, **kwargs) -> ExecutionRecord: ...

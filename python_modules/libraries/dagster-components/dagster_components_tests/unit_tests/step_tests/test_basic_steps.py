@@ -248,3 +248,18 @@ def test_single_asset_single_check() -> None:
     assert get_single_asset_check_eval(result).passed
     assert get_single_asset_check_eval(result).asset_key == AssetKey("the_key")
     assert get_single_asset_check_eval(result).check_name == "check_name"
+
+
+class SingleCheckStep(StepComponent):
+    def execute(self, context: ExecutionContext) -> ExecutionRecord:
+        return ExecutionRecord(
+            asset_check_records=[AssetCheckRecord(passed=True)],
+        )
+
+
+def test_single_standalone_check() -> None:
+    step = SingleCheckStep(
+        checks=[AssetCheckSpec("check_name", asset="somekey_elsewhere")],
+    )
+    result = execute_step(step)
+    assert result.success
