@@ -55,4 +55,4 @@ def login_command() -> None:
         user_token=config.user_token,
         default_deployment=selected_deployment,
     )
-    config.write_to_file(get_active_config_path())
+    config.write()
