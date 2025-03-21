@@ -18,8 +18,9 @@ import styled from 'styled-components';
 import {AssetLineageElements} from './AssetLineageElements';
 import {AssetEventGroup} from './groupByPartition';
 import {
-  AssetMaterializationFragment,
+  AssetFailedToMaterializeFragment,
   AssetObservationFragment,
+  AssetSuccessfulMaterializationFragment,
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -293,7 +294,11 @@ const DetailsTable = styled.table`
 interface PredecessorDialogProps {
   hasLineage: boolean;
   hasPartitions: boolean;
-  events: (AssetMaterializationFragment | AssetObservationFragment)[];
+  events: (
+    | AssetSuccessfulMaterializationFragment
+    | AssetObservationFragment
+    | AssetFailedToMaterializeFragment
+  )[];
 }
 
 export const AllIndividualEventsButton = ({

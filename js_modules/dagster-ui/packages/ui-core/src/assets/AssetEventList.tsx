@@ -1,6 +1,6 @@
 import {Box, Caption, Colors, Icon, Spinner, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import {useEffect, useRef} from 'react';
+import {useEffect, useMemo, useRef} from 'react';
 import styled from 'styled-components';
 
 import {RunlessEventTag} from './RunlessEventTag';
@@ -154,17 +154,28 @@ export const AssetListRow = styled(Row)<{$focused: boolean}>`
 
 const AssetEventListPartitionRow = ({group}: {group: AssetEventGroup}) => {
   const {partition, latest, timestamp} = group;
+  const failed = latest?.__typename === 'FailedToMaterializeEvent';
   return (
     <>
       <Box flex={{gap: 4, direction: 'row', alignItems: 'flex-start'}}>
         <Icon name="partition" />
         {partition}
         <div style={{flex: 1}} />
-        {!latest ? <Tag intent="none">Missing</Tag> : <Tag intent="success">Materialized</Tag>}
+        {!latest ? (
+          <Tag intent="none">Missing</Tag>
+        ) : failed ? (
+          <Tag intent="danger">Failed</Tag>
+        ) : (
+          <Tag intent="success">Materialized</Tag>
+        )}
       </Box>
 
       <Caption color={Colors.textLight()} style={{userSelect: 'none'}}>
-        {timestamp ? (
+        {failed ? (
+          <span>
+            Failed <Timestamp timestamp={{ms: Number(timestamp)}} />
+          </span>
+        ) : timestamp ? (
           <span>
             Materialized <Timestamp timestamp={{ms: Number(timestamp)}} />
           </span>
@@ -186,14 +197,22 @@ const AssetEventListEventRow = ({
   const {latest, partition, timestamp} = group;
   const run = latest?.runOrError.__typename === 'Run' ? latest.runOrError : null;
 
+  const icon = useMemo(() => {
+    switch (latest?.__typename) {
+      case 'MaterializationEvent':
+        return <Icon name="run_success" color={Colors.accentGreen()} size={16} />;
+      case 'ObservationEvent':
+        return <Icon name="observation" color={Colors.accentGreen()} size={16} />;
+      case 'FailedToMaterializeEvent':
+        return <Icon name="run_failed" color={Colors.accentRed()} size={16} />;
+    }
+    return null;
+  }, [latest?.__typename]);
+
   return (
     <>
       <Box flex={{gap: 4, direction: 'row'}}>
-        {latest?.__typename === 'MaterializationEvent' ? (
-          <Icon name="materialization" />
-        ) : (
-          <Icon name="observation" />
-        )}
+        {icon}
         <Timestamp timestamp={{ms: Number(timestamp)}} />
       </Box>
       <Box flex={{gap: 4, direction: 'row'}}>

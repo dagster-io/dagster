@@ -8,11 +8,11 @@ import {AssetKey, AssetViewParams} from './types';
 import {
   AssetEventsQuery,
   AssetEventsQueryVariables,
-  AssetMaterializationFragment,
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
-import {ASSET_EVENTS_QUERY} from './useRecentAssetEvents';
+import {ASSET_EVENTS_QUERY, AssetMaterializationFragment} from './useRecentAssetEvents';
 import {useApolloClient} from '../apollo-client';
+import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 
 /** Note: This hook paginates through an asset's events, optionally beginning at ?asOf=.
@@ -58,6 +58,7 @@ export function usePaginatedAssetEvents(
           assetKey: {path: assetKey.path},
           limit: 100,
           before,
+          eventTypeSelector: MaterializationHistoryEventTypeSelector.ALL,
         },
       });
       setLoading(false);
@@ -65,7 +66,7 @@ export function usePaginatedAssetEvents(
       const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
 
       const {materializations, observations} = clipEventsToSharedMinimumTime(
-        asset?.assetMaterializations || [],
+        asset?.assetMaterializationHistory || [],
         asset?.assetObservations || [],
         100,
       );

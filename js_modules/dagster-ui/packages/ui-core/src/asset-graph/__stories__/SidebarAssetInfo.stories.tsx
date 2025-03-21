@@ -160,7 +160,7 @@ const buildEventsMock = ({reported}: {reported: boolean}): MockedResponse<AssetE
           id: 'test.py.repo.["asset1"]',
           partitionKeys: [],
         },
-        assetMaterializations: [
+        assetMaterializationHistory: [
           {
             __typename: 'MaterializationEvent',
             description: '1234',
