@@ -28,6 +28,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     PARTITION_NAME_TAG,
 )
+from dagster._core.types.connection import Connection
 from dagster._record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 from dagster._utils.cached_method import cached_method
 from dagster._utils.error import SerializableErrorInfo
@@ -293,6 +294,13 @@ class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
             partitions_def_name, set()
         )
         return list((partition_keys | added_partition_keys) - deleted_partition_keys)
+
+    @cached_method
+    def get_dynamic_partitions_connection(
+        self, partitions_def_name: str, limit: int, cursor: Optional[str] = None
+    ) -> Connection[str]:
+        partition_keys = self.get_dynamic_partitions(partitions_def_name)
+        return Connection.create_from_sequence(partition_keys, limit, cursor)
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         return partition_key not in self.deleted_partition_keys_by_partitions_def_name.get(

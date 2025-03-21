@@ -99,6 +99,10 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_select,
     db_subquery,
 )
+from dagster._core.types.connection import (
+    Connection as PaginatedConnection,
+    StorageIdCursor,
+)
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import datetime_from_timestamp, get_current_timestamp, utc_datetime_from_naive
 from dagster._utils import PrintFn
@@ -2024,6 +2028,41 @@ class SqlEventLogStorage(EventLogStorage):
             rows = conn.execute(query).fetchall()
 
         return [cast(str, row[1]) for row in rows]
+
+    def get_dynamic_partitions_connection(
+        self, partitions_def_name: str, limit: int, cursor: Optional[str] = None
+    ) -> PaginatedConnection[str]:
+        self._check_partitions_table()
+        query = (
+            db_select(
+                [
+                    DynamicPartitionsTable.c.id,
+                    DynamicPartitionsTable.c.partition,
+                ]
+            )
+            .where(DynamicPartitionsTable.c.partitions_def_name == partitions_def_name)
+            .order_by(DynamicPartitionsTable.c.id)
+            .limit(limit)
+        )
+        if cursor:
+            last_storage_id = StorageIdCursor.from_cursor(cursor).storage_id
+            query = query.where(DynamicPartitionsTable.c.id > last_storage_id)
+
+        with self.index_connection() as conn:
+            rows = conn.execute(query).fetchall()
+
+        if rows:
+            next_cursor = StorageIdCursor(storage_id=rows[-1][0]).to_string()
+        elif cursor:
+            next_cursor = cursor
+        else:
+            next_cursor = StorageIdCursor(storage_id=-1).to_string()
+
+        return PaginatedConnection(
+            results=[cast(str, row[1]) for row in rows],
+            cursor=next_cursor,
+            has_more=len(rows) == limit,
+        )
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         self._check_partitions_table()
