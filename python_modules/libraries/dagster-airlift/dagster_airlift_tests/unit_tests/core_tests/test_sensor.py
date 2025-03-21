@@ -33,12 +33,13 @@ from dagster_airlift.constants import (
     EFFECTIVE_TIMESTAMP_METADATA_KEY,
     TASK_ID_TAG_KEY,
 )
-from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
+from dagster_airlift.core import build_defs_from_airflow_instance
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.sensor.sensor_builder import (
     AirflowPollingSensorCursor,
     AirliftSensorEventTransformerError,
 )
+from dagster_airlift.core.top_level_dag_def_api import assets_with_task_mappings
 from dagster_airlift.test import make_dag_run, make_instance
 
 from dagster_airlift_tests.unit_tests.conftest import (
@@ -611,12 +612,11 @@ def test_default_time_partitioned_asset(init_load_context: None, instance: Dagst
                 )
             ],
         ),
-        defs=dag_defs(
-            "dag",
-            task_defs(
-                "task",
-                Definitions(
-                    assets=[
+        defs=Definitions(
+            assets=assets_with_task_mappings(
+                dag_id="dag",
+                task_mappings={
+                    "task": [
                         AssetSpec(
                             key="a",
                             partitions_def=DailyPartitionsDefinition(
@@ -624,7 +624,7 @@ def test_default_time_partitioned_asset(init_load_context: None, instance: Dagst
                             ),
                         )
                     ],
-                ),
+                },
             ),
         ),
     )
@@ -663,12 +663,11 @@ def test_before_start_of_partitioned_asset(
                 )
             ],
         ),
-        defs=dag_defs(
-            "dag",
-            task_defs(
-                "task",
-                Definitions(
-                    assets=[
+        defs=Definitions(
+            assets=assets_with_task_mappings(
+                dag_id="dag",
+                task_mappings={
+                    "task": [
                         AssetSpec(
                             key="a",
                             partitions_def=DailyPartitionsDefinition(
@@ -677,7 +676,7 @@ def test_before_start_of_partitioned_asset(
                             ),
                         )
                     ],
-                ),
+                },
             ),
         ),
     )
@@ -709,12 +708,11 @@ def test_logical_date_mismatch(init_load_context: None, instance: DagsterInstanc
                 )
             ],
         ),
-        defs=dag_defs(
-            "dag",
-            task_defs(
-                "task",
-                Definitions(
-                    assets=[
+        defs=Definitions(
+            assets=assets_with_task_mappings(
+                dag_id="dag",
+                task_mappings={
+                    "task": [
                         AssetSpec(
                             key="a",
                             partitions_def=DailyPartitionsDefinition(
@@ -722,7 +720,7 @@ def test_logical_date_mismatch(init_load_context: None, instance: DagsterInstanc
                             ),
                         )
                     ],
-                ),
+                },
             ),
         ),
     )
@@ -756,12 +754,11 @@ def test_partition_offset_mismatch(init_load_context: None, instance: DagsterIns
 
     defs = build_defs_from_airflow_instance(
         airflow_instance=airflow_instance,
-        defs=dag_defs(
-            "dag",
-            task_defs(
-                "task",
-                Definitions(
-                    assets=[
+        defs=Definitions(
+            assets=assets_with_task_mappings(
+                dag_id="dag",
+                task_mappings={
+                    "task": [
                         AssetSpec(
                             key="a",
                             partitions_def=DailyPartitionsDefinition(
@@ -770,7 +767,7 @@ def test_partition_offset_mismatch(init_load_context: None, instance: DagsterIns
                             ),
                         )
                     ],
-                ),
+                },
             ),
         ),
     )
@@ -787,12 +784,11 @@ def test_partition_offset_mismatch(init_load_context: None, instance: DagsterIns
     # now, align the offset and expect success.
     defs = build_defs_from_airflow_instance(
         airflow_instance=airflow_instance,
-        defs=dag_defs(
-            "dag",
-            task_defs(
-                "task",
-                Definitions(
-                    assets=[
+        defs=Definitions(
+            assets=assets_with_task_mappings(
+                dag_id="dag",
+                task_mappings={
+                    "task": [
                         AssetSpec(
                             key="a",
                             partitions_def=DailyPartitionsDefinition(
@@ -801,7 +797,7 @@ def test_partition_offset_mismatch(init_load_context: None, instance: DagsterIns
                             ),
                         )
                     ],
-                ),
+                },
             ),
         ),
     )

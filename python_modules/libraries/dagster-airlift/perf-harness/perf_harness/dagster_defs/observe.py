@@ -3,9 +3,8 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster_airlift.core import (
     AirflowBasicAuthBackend,
     AirflowInstance,
+    assets_with_task_mappings,
     build_defs_from_airflow_instance,
-    dag_defs,
-    task_defs,
 )
 
 from perf_harness.dagster_defs.constants import (
@@ -38,13 +37,21 @@ def get_dag_defs() -> Definitions:
     all_dag_defs = []
     prev_asset_specs = []
     for i in range(get_num_dags()):
-        task_defs_list = []
+        dag_id = f"dag_{i}"
+        task_mappings = {}
         for j in range(get_num_tasks()):
             task_name = f"task_{i}_{j}"
             specs = build_asset_specs_for_task(task_name, prev_asset_specs)
-            task_defs_list.append(task_defs(task_name, Definitions(assets=specs)))
+            task_mappings[task_name] = specs
             prev_asset_specs = specs
-        all_dag_defs.append(dag_defs(f"dag_{i}", *task_defs_list))
+        all_dag_defs.append(
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id=dag_id,
+                    task_mappings=task_mappings,
+                )
+            )
+        )
     return Definitions.merge(*all_dag_defs)
 
 
