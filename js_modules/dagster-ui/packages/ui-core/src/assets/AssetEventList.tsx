@@ -1,6 +1,6 @@
 import {Box, Caption, Colors, Icon, Spinner, Tag} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import {useEffect, useRef} from 'react';
+import {useEffect, useMemo, useRef} from 'react';
 import styled from 'styled-components';
 
 import {RunlessEventTag} from './RunlessEventTag';
@@ -206,6 +206,7 @@ const AssetEventListEventRow = ({
       case 'FailedToMaterializeEvent':
         return <Icon name="run_failed" color={Colors.accentRed()} size={16} />;
     }
+    return null;
   }, [latest?.__typename]);
 
   return (
