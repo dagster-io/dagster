@@ -335,7 +335,9 @@ class GrapheneAsset(graphene.ObjectType):
             ]
 
         combined = failure_events + success_events
-        sorted_combined = sorted(combined, key=lambda event_tuple: event_tuple[0])[:limit]
+        sorted_combined = sorted(combined, key=lambda event_tuple: event_tuple[0], reverse=True)[
+            :limit
+        ]
         return [event_tuple[1] for event_tuple in sorted_combined]
 
     def resolve_assetObservations(
