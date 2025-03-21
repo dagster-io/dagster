@@ -1,36 +1,23 @@
 import os
 from collections.abc import Sequence
-from dataclasses import dataclass
 from pathlib import Path
 
 import dagster as dg
 import duckdb
-from dagster_components import (
-    AssetSpecModel,
-    Component,
-    ComponentLoadContext,
-    ResolvableModel,
-    ResolvedFrom,
-)
+from dagster_components import Component, ComponentLoadContext, Model, Resolved
 from dagster_components.resolved.core_models import ResolvedAssetSpec
 
 
-class DuckDbComponentModel(ResolvableModel):
-    sql_file: str
-    assets: Sequence[AssetSpecModel]
-
-
-@dataclass
-class DuckDbComponent(Component, ResolvedFrom[DuckDbComponentModel]):
+class DuckDbComponent(Component, Model, Resolved):
     """A component that allows you to write SQL without learning dbt or Dagster's concepts."""
 
     assets: Sequence[ResolvedAssetSpec]
     sql_file: str
 
-    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         assert len(self.assets) >= 1, "Must have asset"
         name = f"run_{self.assets[0].key.to_user_string()}"
-        path = (load_context.path / Path(self.sql_file)).absolute()
+        path = (context.path / Path(self.sql_file)).absolute()
         # assert path.exists(), f"Path {path} does not exist."
 
         @dg.multi_asset(name=name, specs=self.assets)

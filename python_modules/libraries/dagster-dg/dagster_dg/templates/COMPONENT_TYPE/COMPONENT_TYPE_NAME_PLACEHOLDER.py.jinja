@@ -2,10 +2,11 @@ from dagster import Definitions
 from dagster_components import (
     Component,
     ComponentLoadContext,
-    ResolvableModel,
+    Resolved,
+    Model,
 )
 
-class {{ name }}(Component, ResolvableModel):
+class {{ name }}(Component, Resolved, Model):
     """COMPONENT SUMMARY HERE.
 
     COMPONENT DESCRIPTION HERE.

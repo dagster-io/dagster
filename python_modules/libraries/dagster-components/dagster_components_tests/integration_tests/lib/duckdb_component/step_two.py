@@ -1,22 +1,21 @@
-from dataclasses import dataclass
 from pathlib import Path
 
 import dagster as dg
 import duckdb
-from dagster_components import Component, ComponentLoadContext, ResolvableModel
+from dagster_components import Component, ComponentLoadContext
+from pydantic import BaseModel
 
 
-@dataclass
-class DuckDbComponent(Component, ResolvableModel):
+class DuckDbComponent(Component, BaseModel):
     """A component that allows you to write SQL without learning dbt or Dagster's concepts."""
 
     csv_path: str
     asset_key: str
 
-    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         name = f"run_{self.asset_key}"
         asset_specs = [dg.AssetSpec(key=self.asset_key)]
-        path = (load_context.path / Path(self.csv_path)).absolute()
+        path = (context.path / Path(self.csv_path)).absolute()
         assert path.exists(), f"Path {path} does not exist."
 
         @dg.multi_asset(name=name, specs=asset_specs)

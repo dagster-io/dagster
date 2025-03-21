@@ -24,17 +24,12 @@ from dagster_shared.serdes.objects import (
     LibraryObjectSnap,
     ScaffolderSnap,
 )
+from pydantic import BaseModel
 from typing_extensions import Self
 
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
 from dagster_components.resolved.context import ResolutionContext
-from dagster_components.resolved.model import (
-    ResolvableModel,
-    Resolved,
-    ResolvedFrom,
-    derive_model_type,
-    resolve_model,
-)
+from dagster_components.resolved.model import Resolved, derive_model_type
 from dagster_components.scaffold import Scaffolder, get_scaffolder, scaffold_with
 from dagster_components.utils import format_error_message, get_path_from_module
 
@@ -54,17 +49,12 @@ class Component(ABC):
     def __dg_library_object__(cls) -> None: ...
 
     @classmethod
-    def get_schema(cls) -> Optional[type["ResolvableModel"]]:
-        from dagster_components.resolved.model import ResolvedFrom, get_model_type
-
-        if issubclass(cls, ResolvableModel):
-            return cls
-
-        if issubclass(cls, ResolvedFrom):
-            return get_model_type(cls)
-
+    def get_schema(cls) -> Optional[type[BaseModel]]:
         if issubclass(cls, Resolved):
             return derive_model_type(cls)
+
+        if issubclass(cls, BaseModel):
+            return cls
 
         return None
 
@@ -76,21 +66,19 @@ class Component(ABC):
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
-    def load(cls, attributes: Optional["ResolvableModel"], context: "ComponentLoadContext") -> Self:
-        if issubclass(cls, ResolvableModel):
-            # If the Component is a DSLSchema, the attributes in this case are an instance of itself
-            assert isinstance(attributes, cls)
-            return attributes
-
-        elif issubclass(cls, ResolvedFrom) or issubclass(cls, Resolved):
+    def load(cls, attributes: Optional[BaseModel], context: "ComponentLoadContext") -> Self:
+        if issubclass(cls, Resolved):
             return (
-                resolve_model(attributes, cls, context.resolution_context.at_path("attributes"))
+                cls.resolve(context.resolution_context.at_path("attributes"), attributes)
                 if attributes
                 else cls()
             )
+        elif issubclass(cls, BaseModel):
+            # could change: currently just does straight pass through for bare models, no template injection
+            return attributes if attributes else cls()  # type: ignore
         else:
-            # If the Component does not implement anything from Resolved, try to instantiate it without
-            # argument.
+            # If the Component is not Resolved or BaseModel, try to instantiate it without
+            # arguments.
             return cls()
 
     @classmethod

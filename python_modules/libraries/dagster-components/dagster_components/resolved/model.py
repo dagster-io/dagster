@@ -1,9 +1,8 @@
 import inspect
 import sys
 import traceback
-from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, fields, is_dataclass
+from dataclasses import MISSING, dataclass, fields, is_dataclass
 from enum import Enum, auto
 from functools import partial
 from types import GenericAlias
@@ -12,7 +11,6 @@ from typing import (
     Annotated,
     Any,
     Callable,
-    Generic,
     Literal,
     Optional,
     TypeVar,
@@ -22,8 +20,10 @@ from typing import (
 )
 
 from dagster import _check as check
-from pydantic import BaseModel, ConfigDict, Field, PydanticSchemaGenerationError, create_model
-from typing_extensions import TypeAlias
+from dagster_shared.record import get_record_annotations, get_record_defaults, is_record
+from pydantic import BaseModel, ConfigDict, PydanticSchemaGenerationError, create_model
+from pydantic.fields import Field, FieldInfo
+from typing_extensions import TypeAlias, TypeGuard
 
 from dagster_components.resolved.errors import ResolutionException
 
@@ -37,138 +37,21 @@ if TYPE_CHECKING:
     from dagster_components.resolved.context import ResolutionContext
 
 
-class ResolvableModel(BaseModel):
+# we will operate on any pydantic model
+TModel = TypeVar("TModel", bound=BaseModel)
+
+
+# but provide a base with recommended no-extras config
+class Model(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
-
-TModel = TypeVar("TModel", bound=ResolvableModel)
-
-
-def get_model_type(
-    resolved_from_type: type["ResolvedFrom"],
-) -> type[ResolvableModel]:
-    """Returns the first generic type argument (TModel) of the ResolvedFrom subclass at runtime."""
-    check.param_invariant(
-        issubclass(resolved_from_type, ResolvedFrom),
-        "resolvable_from_type",
-    )
-    check.param_invariant(
-        hasattr(resolved_from_type, "__orig_bases__"),
-        "resolvable_from_type",
-    )
-    for base in resolved_from_type.__orig_bases__:  # type: ignore
-        # Check if this base originates from ResolvedFrom
-        origin = getattr(base, "__origin__", None)
-        if origin is ResolvedFrom:
-            type_args = get_args(base)
-            if not type_args:
-                raise ValueError("ResolvedFrom base found but no generic type arguments present")
-            return type_args[0]
-
-    raise ValueError("No generic type arguments found in ResolvedFrom subclass")
-
-
-def get_resolved_kwargs_target_type(resolved_kwargs_type: type["ResolvedKwargs"]):
-    """Returns the generic type arguments (TModel, TObject) of a ResolvedKwargs subclass at runtime."""
-    check.param_invariant(
-        issubclass(resolved_kwargs_type, ResolvedKwargs),
-        "resolved_kwargs_type",
-    )
-    check.param_invariant(
-        hasattr(resolved_kwargs_type, "__orig_bases__"),
-        "resolved_kwargs_type",
-    )
-    for base in resolved_kwargs_type.__orig_bases__:  # type: ignore
-        # Check if this base originates from ResolvedFrom
-        origin = getattr(base, "__origin__", None)
-        if origin is ResolvedKwargs:
-            type_args = get_args(base)
-            if not type_args:
-                raise ValueError("ResolvedKwargs base found but no generic type arguments present")
-            if len(type_args) != 2:
-                raise ValueError(
-                    f"ResolvedKwargs base found but has incorrect number of type arguments, expected 2 got {len(type_args)}"
-                )
-            return type_args[1]
-
-    raise ValueError("No generic type arguments found in ResolvedKwargs subclass")
 
 
 T = TypeVar("T")
 
 
-class ResolvedFrom(Generic[TModel], ABC):
-    """Class which defines a type that can be resolved from the associated ResolvableModel."""
-
-
-class ResolvedKwargs(Generic[TModel, T], ABC):
-    """For cases where you can not inherit from ResolvedFrom on the desired target type,
-    ResolvedKwargs allows you to define an object which will be resolved from its associated
-    ResolvableModel and then passed unpacked as kwargs to create the target type.
-    """
-
-
 class _TypeContainer(Enum):
     SEQUENCE = auto()
     OPTIONAL = auto()
-
-
-@dataclass(frozen=True)
-class _ModelResolver(Generic[T], ABC):
-    target_type: type[T]
-
-    @abstractmethod
-    def resolve_from_model(self, context: "ResolutionContext", model: ResolvableModel) -> T: ...
-
-    def from_type_container_path(
-        self,
-        context: "ResolutionContext",
-        value: Any,
-        container_path: Sequence[_TypeContainer],
-    ) -> Any:
-        if not container_path:
-            return self.resolve_from_model(context, value)
-
-        container = container_path[0]
-        inner_path = container_path[1:]
-        if container is _TypeContainer.OPTIONAL:
-            return (
-                self.from_type_container_path(context, value, inner_path)
-                if value is not None
-                else None
-            )
-        elif container is _TypeContainer.SEQUENCE:
-            return [
-                self.from_type_container_path(context.at_path(idx), i, inner_path)
-                for idx, i in enumerate(value)
-            ]
-
-        check.assert_never(f"unhandled type container enum {container}")
-
-
-@dataclass(frozen=True)
-class _KwargsResolver(_ModelResolver[T]):
-    kwargs_type: type["ResolvedKwargs"]
-
-    def resolve_from_model(self, context: "ResolutionContext", model: ResolvableModel) -> T:
-        return resolve_model_using_kwargs_cls(
-            model=model,
-            kwargs_cls=self.kwargs_type,
-            context=context,
-            target_type=self.target_type,
-        )
-
-
-@dataclass(frozen=True)
-class _DirectResolver(_ModelResolver[ResolvedFrom]):
-    def resolve_from_model(
-        self, context: "ResolutionContext", model: ResolvableModel
-    ) -> ResolvedFrom:
-        return resolve_model(
-            model=model,
-            resolvable_type=self.target_type,
-            context=context,
-        )
 
 
 @dataclass
@@ -181,15 +64,13 @@ class AttrWithContextFn:
     callable: Callable[["ResolutionContext", Any], Any]
 
 
-@dataclass(frozen=True)
-class _AutoResolve:
-    via: Optional[type[ResolvedKwargs]] = None
-
-
 class _ExpectedInjection: ...
 
 
-def _safe_is_subclass(obj, cls: type) -> bool:
+TType = TypeVar("TType", bound=type)
+
+
+def _safe_is_subclass(obj, cls: TType) -> TypeGuard[type[TType]]:
     return (
         isinstance(obj, type)
         and not isinstance(obj, GenericAlias)  # prevent exceptions on 3.9
@@ -201,7 +82,10 @@ def _is_implicitly_resolved_type(annotation):
     if annotation in (int, float, str, bool, Any, type(None)):
         return True
 
-    if _safe_is_subclass(annotation, ResolvableModel):
+    if _safe_is_subclass(annotation, Resolved):
+        return False
+
+    if _safe_is_subclass(annotation, BaseModel):
         return True
 
     origin = get_origin(annotation)
@@ -212,47 +96,14 @@ def _is_implicitly_resolved_type(annotation):
     ):
         return True
 
-    if origin is Annotated and any(isinstance(arg, _ExpectedInjection) for arg in args):
-        return True
+    if origin is Annotated:
+        if any(isinstance(arg, _ExpectedInjection) for arg in args):
+            return True
 
     if origin is Literal and all(_is_implicitly_resolved_type(type(arg)) for arg in args):
         return True
 
     return False
-
-
-def _get_resolver(
-    annotation: type,
-    top_level_auto_resolve: Optional[_AutoResolve],
-) -> Optional[_ModelResolver]:
-    if top_level_auto_resolve:
-        if top_level_auto_resolve.via and annotation is get_resolved_kwargs_target_type(
-            top_level_auto_resolve.via
-        ):
-            return _KwargsResolver(
-                kwargs_type=top_level_auto_resolve.via,
-                target_type=annotation,
-            )
-        if _safe_is_subclass(annotation, ResolvedFrom) or _safe_is_subclass(annotation, Resolved):
-            return _DirectResolver(annotation)
-
-    origin = get_origin(annotation)
-    if origin is not Annotated:
-        return None
-
-    args = get_args(annotation)
-    auto_resolve = next((arg for arg in args if isinstance(arg, _AutoResolve)), None)
-    if not auto_resolve:
-        return None
-
-    if auto_resolve.via:
-        return _KwargsResolver(kwargs_type=auto_resolve.via, target_type=args[0])
-
-    resolved_from_cls = args[0]
-    if not _safe_is_subclass(resolved_from_cls, ResolvedFrom):
-        check.failed("Can only annotate ResolvedFrom types with Resolver.from_annotation()")
-
-    return _DirectResolver(resolved_from_cls)
 
 
 def _recurse(context: "ResolutionContext", field_value):
@@ -264,75 +115,135 @@ def _field_error_msg(field_name: str, annotation: Any) -> str:
         f"Could not derive resolver for annotation {field_name}: {annotation}.\n"
         "Field types are expected to be:\n"
         "* serializable types such as str, float, int, bool, list, etc\n"
-        "* ResolvableModel\n"
+        "* pydantic Models\n"
         "* Annotated with an appropriate Resolver."
     )
 
 
+def _resolve_at_path(
+    context: "ResolutionContext",
+    value: Any,
+    container_path: Sequence[_TypeContainer],
+    resolver,
+):
+    if not container_path:
+        return resolver(
+            context,
+            value,
+        )
+
+    container = container_path[0]
+    inner_path = container_path[1:]
+    if container is _TypeContainer.OPTIONAL:
+        return _resolve_at_path(context, value, inner_path, resolver) if value is not None else None
+    elif container is _TypeContainer.SEQUENCE:
+        return [
+            _resolve_at_path(context.at_path(idx), i, inner_path, resolver)
+            for idx, i in enumerate(value)
+        ]
+
+    check.assert_never(f"unhandled type container enum {container}")
+
+
 def derive_field_resolver(annotation: Any, field_name: str) -> "Resolver":
+    origin = get_origin(annotation)
+    args = get_args(annotation)
+
+    # explicit field level Resolver
+    if origin is Annotated:
+        resolver = next((arg for arg in args if isinstance(arg, Resolver)), None)
+        if resolver:
+            check.invariant(
+                _is_implicitly_resolved_type(args[0]) or resolver.model_field_type,
+                f"Resolver for {field_name} must define model_field_type {args[0]} is not model compliant.",
+            )
+            return resolver
+
     if _is_implicitly_resolved_type(annotation):
         return Resolver(_recurse)
 
+    # nested or implicit
+    res = _dig_for_resolver(annotation, [])
+    if res:
+        return res
+
+    raise ResolutionException(_field_error_msg(field_name, annotation))
+
+
+def _wrap(ttype, path: Sequence[_TypeContainer]):
+    result_type = ttype
+    for container in reversed(path):
+        if container is _TypeContainer.OPTIONAL:
+            result_type = Optional[result_type]
+        elif container is _TypeContainer.SEQUENCE:
+            # use tuple instead of Sequence for perf
+            result_type = tuple[result_type, ...]
+        else:
+            check.assert_never(f"missing _TypeContainer enum handling {container}")
+    return result_type
+
+
+def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]):
     origin = get_origin(annotation)
     args = get_args(annotation)
+    if _safe_is_subclass(annotation, Resolved):
+        return Resolver(
+            partial(
+                _resolve_at_path,
+                container_path=path,
+                resolver=annotation.resolve,
+            ),
+            model_field_type=_wrap(annotation.model(), path),
+        )
 
     if origin is Annotated:
         resolver = next((arg for arg in args if isinstance(arg, Resolver)), None)
         if resolver:
-            return resolver
-
-    res = _get_model_resolution(annotation)
-    if res:
-        return Resolver(partial(res[0].from_type_container_path, container_path=res[1]))
-
-    check.failed(_field_error_msg(field_name, annotation))
-
-
-def _get_model_resolution(
-    annotation: Any,
-) -> Optional[tuple[_ModelResolver, Sequence[_TypeContainer]]]:
-    origin = get_origin(annotation)
-    args = get_args(annotation)
-
-    top_level_auto_resolve = None
-    if origin is Annotated:
-        top_level_auto_resolve = next((arg for arg in args if isinstance(arg, _AutoResolve)), None)
-        resolver = _get_resolver(args[0], top_level_auto_resolve)
-        if resolver:
-            return (resolver, [])
-
-        origin = get_origin(args[0])
-        args = get_args(args[0])
+            check.invariant(
+                _is_implicitly_resolved_type(args[0]) or resolver.model_field_type,
+                f"Nested resolver must define model_field_type {args[0]} is not model compliant.",
+            )
+            # need to ensure nested resolvers set their model type
+            return Resolver(
+                resolver.fn.__class__(
+                    partial(
+                        _resolve_at_path,
+                        container_path=path,
+                        resolver=resolver.fn.callable,
+                    )
+                ),
+                model_field_type=_wrap(resolver.model_field_type or args[0], path),
+            )
 
     if origin in (Union, UnionType) and len(args) == 2:
         left_t, right_t = args
         if right_t is type(None):
-            resolver = _get_resolver(left_t, top_level_auto_resolve)
-            if resolver:
-                return (resolver, [_TypeContainer.OPTIONAL])
+            res = _dig_for_resolver(left_t, [*path, _TypeContainer.OPTIONAL])
+            if res:
+                return res
 
-            elif get_origin(left_t) in (Sequence, tuple, list):
-                resolver = _get_resolver(get_args(left_t)[0], top_level_auto_resolve)
-                if resolver:
-                    return resolver, [_TypeContainer.OPTIONAL, _TypeContainer.SEQUENCE]
-
-    elif origin in (Sequence, tuple, list):
-        resolver = _get_resolver(args[0], top_level_auto_resolve)
-
-        if resolver:
-            return (resolver, [_TypeContainer.SEQUENCE])
-
-    return None
+    elif origin in (Sequence, tuple, list):  # should look for tuple[T, ...] specifically
+        res = _dig_for_resolver(args[0], [*path, _TypeContainer.SEQUENCE])
+        if res:
+            return res
 
 
 class Resolver:
-    """Contains information on how to resolve a field from a ResolvableModel."""
+    """Contains information on how to resolve a field from a Resolved."""
 
     def __init__(
         self,
-        fn: Union[ParentFn, AttrWithContextFn, Callable[["ResolutionContext", Any], Any]],
+        fn: Union[
+            ParentFn,
+            AttrWithContextFn,
+            Callable[["ResolutionContext", Any], Any],
+        ],
+        model_field_type: Optional[type] = None,
+        model_field_info: Optional[FieldInfo] = None,
+        model_field_name: Optional[str] = None,
+        can_inject: bool = False,
     ):
-        """Resolve this field by invoking the function which will receive the corresponding field value from the parent ResolvableModel."""
+        """Resolve this field by invoking the function which will receive the corresponding field value from the parent Resolved."""
         if not isinstance(fn, (ParentFn, AttrWithContextFn)):
             if not callable(fn):
                 check.param_invariant(
@@ -343,40 +254,32 @@ class Resolver:
             self.fn = AttrWithContextFn(fn)
         else:
             self.fn = fn
+
+        self.model_field_type = model_field_type
+        self.model_field_info = model_field_info
+        self.model_field_name = model_field_name
+        self.can_inject = can_inject
+
         super().__init__()
 
     @staticmethod
-    def from_annotation():
-        """Resolve this field to the (potentially nested) ResolvedFrom type via its associated ResolvableModel."""
-        return _AutoResolve()
-
-    @staticmethod
-    def from_resolved_kwargs(kwargs_cls: type[ResolvedKwargs]):
-        """Resolve this field to the (potentially nested) target type of the ResolvedKwargs via its associated ResolvableModel."""
-        return _AutoResolve(via=kwargs_cls)
-
-    @staticmethod
-    def from_template_injection(via: Optional[type[ResolvedKwargs]] = None):
-        """The complex type at this field must be template injected using an appropriate scope."""
-        return _ExpectedInjection()
-
-    @staticmethod
-    def from_model(fn: Callable[["ResolutionContext", Any], Any]):
-        """Resolve this field by invoking the function which will receive the entire parent ResolvableModel."""
-        return Resolver(ParentFn(fn))
+    def from_model(fn: Callable[["ResolutionContext", Any], Any], **kwargs):
+        """Resolve this field by invoking the function which will receive the entire parent Resolved."""
+        return Resolver(ParentFn(fn), **kwargs)
 
     def execute(
         self,
         context: "ResolutionContext",
-        model: ResolvableModel,
+        model: BaseModel,
         field_name: str,
     ) -> Any:
         try:
             if isinstance(self.fn, ParentFn):
                 return self.fn.callable(context, model)
             elif isinstance(self.fn, AttrWithContextFn):
-                attr = getattr(model, field_name)
-                context = context.at_path(field_name)
+                model_field_name = self.model_field_name or field_name
+                attr = getattr(model, model_field_name)
+                context = context.at_path(model_field_name)
                 return self.fn.callable(context, attr)
         except ResolutionException:
             raise  # already processed
@@ -390,7 +293,10 @@ class Resolver:
         raise ValueError(f"Unsupported Resolver type: {self.fn}")
 
 
-ResolvedType: TypeAlias = Union[type[ResolvedKwargs], type[ResolvedFrom], type["Resolved"]]
+Injectable = Annotated[T, Resolver(_recurse, can_inject=True)]
+Injected = Annotated[T, Resolver(_recurse, model_field_type=str)]
+
+ResolvedType: TypeAlias = type["Resolved"]
 
 
 def _get_init_kwargs(target_type: ResolvedType):
@@ -410,38 +316,40 @@ def _get_init_kwargs(target_type: ResolvedType):
             raise ResolutionException(
                 f"Invalid Resolved type {target_type}: __init__ contains positional only parameter."
             )
+        if param.kind in (param.VAR_POSITIONAL, param.VAR_KEYWORD):
+            continue
         if param.annotation == param.empty:
             raise ResolutionException(
                 f"Invalid Resolved type {target_type}: __init__ parameter {name} has no type hint."
             )
-        if param.kind in (param.VAR_POSITIONAL, param.VAR_KEYWORD):
-            continue
 
-        fields[name] = param.annotation
+        fields[name] = (param.annotation, param.default is not param.empty)
     return fields
 
 
 def get_annotations(resolved_type: ResolvedType):
+    annotations = {}
     if is_dataclass(resolved_type):
-        return {f.name: f.type for f in fields(resolved_type)}
-    elif _safe_is_subclass(resolved_type, ResolvedKwargs) or _safe_is_subclass(
-        resolved_type, BaseModel
-    ):
-        annotations = {}
-        # Walk through all base classes in MRO
-        for base in reversed(resolved_type.__mro__):
-            # Get annotations from current base class if they exist
-            base_annotations = getattr(base, "__annotations__", {})
-            # Update annotations dict with any new annotations found
-            # Later bases don't override earlier ones due to how update works
-            annotations.update(base_annotations)
+        for f in fields(resolved_type):
+            has_default = f.default is not MISSING or f.default_factory is not MISSING
+            annotations[f.name] = (f.type, has_default)
+        return annotations
+    elif _safe_is_subclass(resolved_type, BaseModel):
+        for name, field_info in resolved_type.model_fields.items():
+            annotations[name] = (field_info.rebuild_annotation(), field_info.is_required)
         return annotations
     elif init_kwargs := _get_init_kwargs(resolved_type):
         return init_kwargs
+    elif is_record(resolved_type):
+        defaults = get_record_defaults(resolved_type)
+        for name, ttype in get_record_annotations(resolved_type).items():
+            annotations[name] = (ttype, name in defaults)
+        return annotations
     else:
         raise ResolutionException(
             f"Invalid Resolved type {resolved_type} could not determine fields, expected:\n"
             "* @dataclass\n"
+            "* @record\n"
             "* class with non empty __init__\n"
         )
 
@@ -451,12 +359,12 @@ def get_annotation_field_resolvers(
 ) -> dict[str, Resolver]:
     return {
         field_name: derive_field_resolver(annotation, field_name)
-        for field_name, annotation in get_annotations(kwargs_cls).items()
+        for field_name, (annotation, _) in get_annotations(kwargs_cls).items()
     }
 
 
 def resolve_fields(
-    model: ResolvableModel,
+    model: BaseModel,
     kwargs_cls: ResolvedType,
     context: "ResolutionContext",
 ) -> Mapping[str, Any]:
@@ -464,97 +372,65 @@ def resolve_fields(
     return {
         field_name: resolver.execute(context=context, model=model, field_name=field_name)
         for field_name, resolver in get_annotation_field_resolvers(kwargs_cls).items()
+        # filter out _Unset to trigger defaults
+        if getattr(model, resolver.model_field_name or field_name) is not _Unset
     }
 
 
-TResolved = TypeVar("TResolved", bound=Union[ResolvedFrom, "Resolved"])
+TResolved = TypeVar("TResolved", bound=Union[BaseModel, "Resolved"])
 
 
-def resolve_model(
-    model: ResolvableModel,
-    resolvable_type: type[TResolved],
-    context: "ResolutionContext",
-) -> TResolved:
-    return resolve_model_using_kwargs_cls(
-        model=model,
-        kwargs_cls=resolvable_type,
-        context=context,
-        target_type=resolvable_type,
-    )
+class Resolved:
+    @classmethod
+    def model(cls) -> type[BaseModel]:
+        return derive_model_type(cls)
 
-
-def resolve_model_using_kwargs_cls(
-    model: ResolvableModel,
-    kwargs_cls: ResolvedType,
-    context: "ResolutionContext",
-    target_type: type[T],
-) -> T:
-    # In the future we will do an explicit validation of alignment, but for now raise a marginally better error.
-    check.inst_param(
-        model,
-        "model",
-        ResolvableModel,
-        "Ensure ResolveFrom field type annotations align with the corresponding ResolvableModel.",
-    )
-    return target_type(**resolve_fields(model, kwargs_cls, context))
-
-
-class Resolved: ...
+    @classmethod
+    def resolve(cls, context: "ResolutionContext", model):
+        return cls(**resolve_fields(model, cls, context))
 
 
 _DERIVED_MODEL_REGISTRY = {}
 
 
+class _Unset: ...
+
+
 def derive_model_type(
     target_type: type[Resolved],
-) -> type[ResolvableModel]:
+) -> type[Model]:
     if target_type not in _DERIVED_MODEL_REGISTRY:
-        name = f"{target_type.__name__}ResolvableModel"
+        model_name = f"{target_type.__name__}Model"
 
         model_fields: dict[
             str, Any
         ] = {}  # use Any to appease type checker when **-ing in to create_model
 
-        for name, annotation in get_annotations(target_type).items():
-            if _is_implicitly_resolved_type(annotation):
-                field_type = annotation
-            elif res := _get_model_resolution(annotation):
-                ttype = res[0].target_type
-                if _safe_is_subclass(ttype, ResolvedFrom):
-                    model_type = get_model_type(ttype)
-                elif _safe_is_subclass(ttype, Resolved):
-                    model_type = derive_model_type(ttype)
-                else:
-                    check.failed(f"unexpected target type {ttype}")
+        for name, (annotation, has_default) in get_annotations(target_type).items():
+            field_resolver = derive_field_resolver(annotation, name)
+            field_name = field_resolver.model_field_name or name
+            field_type = field_resolver.model_field_type or annotation
 
-                # wrap the model type in appropriate containers
-                field_type = model_type
-                for container in reversed(res[1]):
-                    if container is _TypeContainer.OPTIONAL:
-                        field_type = Optional[field_type]
-                    elif container is _TypeContainer.SEQUENCE:
-                        # use tuple instead of Sequence for perf
-                        field_type = tuple[field_type]
-                    else:
-                        check.assert_never(f"missing _TypeContainer enum handling {container}")
-            else:
-                raise ResolutionException(
-                    f"Unable to derive ResolvableModel for {target_type}\n"
-                    f"{_field_error_msg(name, annotation)}"
-                )
+            if field_resolver.can_inject:  # derive and serve via model_field_type
+                field_type = Union[field_type, str]
 
-            model_fields[name] = (
+            field_infos = []
+            if field_resolver.model_field_info:
+                field_infos.append(field_resolver.model_field_info)
+            if has_default:
+                field_infos.append(Field(default=_Unset))
+            model_fields[field_name] = (
                 field_type,
-                Field(),
+                FieldInfo.merge_field_infos(*field_infos),
             )
 
         try:
             _DERIVED_MODEL_REGISTRY[target_type] = create_model(
-                name,
-                __base__=ResolvableModel,
+                model_name,
+                __base__=Model,
                 **model_fields,
             )
         except PydanticSchemaGenerationError as e:
-            raise ResolutionException(f"Unable to derive ResolvableModel for {target_type}") from e
+            raise ResolutionException(f"Unable to derive Model for {target_type}") from e
 
     return _DERIVED_MODEL_REGISTRY[target_type]

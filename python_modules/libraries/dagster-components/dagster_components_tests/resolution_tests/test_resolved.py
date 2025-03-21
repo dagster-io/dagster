@@ -1,15 +1,15 @@
 from dataclasses import dataclass
-from typing import Annotated, Optional
+from typing import Optional
 
 import pytest
 from dagster_components.core.component import Component
 from dagster_components.resolved.errors import ResolutionException
-from dagster_components.resolved.model import Resolved, Resolver
+from dagster_components.resolved.model import Resolved
 from dagster_components.test.utils import load_direct
 
 
 class BlankComponent(Component):
-    def build_defs(self): ...
+    def build_defs(self): ...  # type: ignore
 
 
 def test_basic():
@@ -35,7 +35,7 @@ def test_error():
 
         def build_defs(self): ...
 
-    with pytest.raises(ResolutionException, match="Unable to derive ResolvableModel"):
+    with pytest.raises(ResolutionException, match="Could not derive resolver for annotation foo:"):
         load_direct(MyNewThing, "")
 
 
@@ -47,8 +47,8 @@ def test_nested():
     @dataclass
     class MyThing(BlankComponent, Resolved):
         name: str
-        other_thing: Annotated[OtherThing, Resolver.from_annotation()]
-        other_things: Annotated[Optional[list[OtherThing]], Resolver.from_annotation()]
+        other_thing: OtherThing
+        other_things: Optional[list[OtherThing]]
 
         def build_defs(self): ...
 

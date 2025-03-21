@@ -32,30 +32,15 @@ from dagster_components.components.dbt_project.scaffolder import DbtProjectCompo
 from dagster_components.resolved.core_models import (
     AssetAttributesModel,
     AssetPostProcessor,
-    AssetPostProcessorModel,
     OpSpec,
-    OpSpecModel,
     ResolutionContext,
 )
-from dagster_components.resolved.metadata import ResolvableFieldInfo
-from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
+from dagster_components.resolved.model import Resolved, Resolver
 from dagster_components.scaffold import scaffold_with
 from dagster_components.utils import TranslatorResolvingInfo
 
 
-class DbtProjectModel(ResolvableModel):
-    dbt: DbtCliResource
-    op: Optional[OpSpecModel] = None
-    asset_attributes: Annotated[
-        Optional[Union[str, AssetAttributesModel]],
-        ResolvableFieldInfo(required_scope={"node"}),
-    ] = None
-    asset_post_processors: Optional[Sequence[AssetPostProcessorModel]] = None
-    select: str = "fqn:*"
-    exclude: Optional[str] = None
-
-
-def resolve_translator(context: ResolutionContext, model: DbtProjectModel) -> DagsterDbtTranslator:
+def resolve_translator(context: ResolutionContext, model) -> DagsterDbtTranslator:
     class DagsterDbtTranslatorWithSpecs(DagsterDbtTranslator):
         def __init__(self, *, resolving_info: TranslatorResolvingInfo):
             super().__init__()
@@ -132,13 +117,16 @@ def resolve_translator(context: ResolutionContext, model: DbtProjectModel) -> Da
     if (
         model.asset_attributes
         and isinstance(model.asset_attributes, AssetAttributesModel)
-        and model.asset_attributes.deps
+        and "deps" in model.asset_attributes.model_dump(exclude_unset=True)
     ):
         # TODO: Consider supporting alerting deps in the future
         raise ValueError("deps are not supported for dbt_project component")
+
     return DagsterDbtTranslatorWithSpecs(
         resolving_info=TranslatorResolvingInfo(
-            "node", model.asset_attributes or AssetAttributesModel(), context
+            "node",
+            model.asset_attributes or AssetAttributesModel(),
+            context,
         )
     )
 
@@ -149,7 +137,7 @@ def resolve_dbt(context: ResolutionContext, dbt: DbtCliResource) -> DbtCliResour
 
 @scaffold_with(DbtProjectComponentScaffolder)
 @dataclass
-class DbtProjectComponent(Component, ResolvedFrom[DbtProjectModel]):
+class DbtProjectComponent(Component, Resolved):
     """Expose a DBT project to Dagster as a set of assets.
 
     This component assumes that you have already set up a dbt project. [Jaffle shop](https://github.com/dbt-labs/jaffle-shop) is their pre-existing
@@ -169,14 +157,16 @@ class DbtProjectComponent(Component, ResolvedFrom[DbtProjectModel]):
     """
 
     dbt: Annotated[DbtCliResource, Resolver(resolve_dbt)]
-    op: Annotated[Optional[OpSpec], Resolver.from_annotation()] = None
-    # This requires from_parent because it access asset_attributes in the model
-    translator: Annotated[DagsterDbtTranslator, Resolver.from_model(resolve_translator)] = field(
-        default_factory=DagsterDbtTranslator
-    )
-    asset_post_processors: Annotated[
-        Optional[Sequence[AssetPostProcessor]], Resolver.from_annotation()
-    ] = None
+    op: Optional[OpSpec] = None
+    translator: Annotated[
+        DagsterDbtTranslator,
+        Resolver.from_model(
+            resolve_translator,
+            model_field_name="asset_attributes",
+            model_field_type=Optional[Union[str, AssetAttributesModel]],
+        ),
+    ] = field(default_factory=DagsterDbtTranslator)
+    asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
     select: str = "fqn:*"
     exclude: Optional[str] = None
 
@@ -212,7 +202,7 @@ class DbtProjectComponent(Component, ResolvedFrom[DbtProjectModel]):
 
         defs = Definitions(assets=[_fn])
         for post_processor in self.asset_post_processors or []:
-            defs = post_processor.fn(defs)
+            defs = post_processor(defs)
         return defs
 
     def execute(self, context: AssetExecutionContext, dbt: DbtCliResource) -> Iterator:
