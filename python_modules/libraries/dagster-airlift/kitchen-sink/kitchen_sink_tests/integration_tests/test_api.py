@@ -1,3 +1,4 @@
+import time
 from typing import cast
 
 import requests
@@ -95,6 +96,16 @@ def test_disable_source_code_retrieval_at_scale(airflow_instance: None) -> None:
     for assets_def in defs.assets:
         metadata = next(iter(cast(AssetsDefinition, assets_def).specs)).metadata
         assert SOURCE_CODE_METADATA_KEY in metadata
+
+
+def test_run_logs(airflow_instance: None) -> None:
+    af_instance = local_airflow_instance()
+    # Dag ID + execution date provide a unique ID. This can be used to disambiguate logs between concurrent dag runs.
+
+    run_id = af_instance.trigger_dag("simple_unproxied_dag")
+    time.sleep(5)
+    logs = af_instance.get_event_logs(offset=0)
+    logs
 
 
 def test_sensor_iteration_multiple_batches(airflow_instance: None, mocker: MockFixture) -> None:
