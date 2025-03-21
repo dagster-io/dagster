@@ -152,7 +152,9 @@ class SqlRunStorage(RunStorage):
 
         return dagster_run
 
-    def handle_run_event(self, run_id: str, event: DagsterEvent) -> None:
+    def handle_run_event(
+        self, run_id: str, event: DagsterEvent, timestamp: Optional[float] = None
+    ) -> None:
         from dagster._core.events import JobFailureData
 
         check.str_param(run_id, "run_id")
@@ -177,14 +179,14 @@ class SqlRunStorage(RunStorage):
         now = get_current_datetime()
 
         if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
-            kwargs["start_time"] = now.timestamp()
+            kwargs["start_time"] = now.timestamp() if not timestamp else timestamp
 
         if run_stats_cols_in_index and event.event_type in {
             DagsterEventType.PIPELINE_CANCELED,
             DagsterEventType.PIPELINE_FAILURE,
             DagsterEventType.PIPELINE_SUCCESS,
         }:
-            kwargs["end_time"] = now.timestamp()
+            kwargs["end_time"] = now.timestamp() if not timestamp else timestamp
 
         with self.connect() as conn:
             conn.execute(

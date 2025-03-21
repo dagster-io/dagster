@@ -102,12 +102,21 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
   const [groupRunsBy, setGroupRunsBy] = useGroupTimelineRunsBy();
 
   const runsForTimelineRet = useRunsForTimeline({rangeMs});
+  if (runsForTimelineRet.jobs.length > 0) {
+    console.log("RUNS FOR TIMELINE", runsForTimelineRet.jobs.length);
+  }
 
   // Use deferred value to allow paginating quickly with the UI feeling more responsive.
   const {jobs, loading, refreshState} = useDeferredValue(runsForTimelineRet);
 
   const rows = useMemo(() => {
-    return groupRunsBy === 'automation' ? groupRunsByAutomation(jobs) : jobs;
+    if (jobs.length > 0) {
+      console.log("RUNS", jobs.length);
+    }
+    console.log('JOBS IN OVERVIEW ROOT:', jobs.length, jobs);
+    const result = groupRunsBy === 'automation' ? groupRunsByAutomation(jobs) : jobs;
+    console.log('TIMELINE ROWS AFTER GROUPING:', result.length, result);
+    return result;
   }, [groupRunsBy, jobs]);
 
   const visibleRepoKeys = useMemo(() => {
@@ -124,15 +133,41 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
 
   const visibleObjectKeys = React.useMemo(() => {
     const searchLower = searchValue.toLocaleLowerCase().trim();
-    const keys = rows
-      .filter(({repoAddress}) => visibleRepoKeys.has(repoAddressAsHumanString(repoAddress)))
+    console.log('FILTERING - SEARCH VALUE:', searchLower);
+    console.log('FILTERING - VISIBLE REPO KEYS:', visibleRepoKeys);
+    console.log('FILTERING - ROWS BEFORE FILTER:', rows.length, rows);
+    
+    const filteredByRepo = rows.filter(({repoAddress}) => {
+      const repoKey = repoAddressAsHumanString(repoAddress);
+      const isVisible = visibleRepoKeys.has(repoKey);
+      console.log('REPO CHECK:', repoKey, isVisible);
+      return isVisible;
+    });
+    console.log('FILTERING - AFTER REPO FILTER:', filteredByRepo.length);
+    
+    const keys = filteredByRepo
       .map(({key}) => key)
-      .filter((key) => key.toLocaleLowerCase().includes(searchLower));
-    return new Set(keys);
+      .filter((key) => {
+        const matches = key.toLocaleLowerCase().includes(searchLower);
+        console.log('SEARCH CHECK:', key, matches);
+        return matches;
+      });
+    console.log('FILTERING - AFTER SEARCH FILTER:', keys.length);
+    
+    const result = new Set(keys);
+    return result;
   }, [searchValue, rows, visibleRepoKeys]);
 
   const visibleRows = React.useMemo(
-    () => rows.filter(({key}) => visibleObjectKeys.has(key)),
+    () => {
+      const result = rows.filter(({key}) => {
+        const isVisible = visibleObjectKeys.has(key);
+        console.log('FINAL VISIBILITY CHECK:', key, isVisible);
+        return isVisible;
+      });
+      console.log('FINAL VISIBLE ROWS:', result.length, result);
+      return result;
+    },
     [rows, visibleObjectKeys],
   );
 
@@ -176,6 +211,7 @@ export const OverviewTimelineRoot = ({Header}: Props) => {
         </Box>
       </Box>
       <ErrorBoundary region="timeline">
+        {console.log('PASSING TO TIMELINE:', visibleRows.length, visibleRows)}
         <RunTimeline loading={loading} rangeMs={rangeMs} rows={visibleRows} />
       </ErrorBoundary>
     </>

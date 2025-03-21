@@ -31,6 +31,9 @@ run_airflow:
 run_dagster_mapped:
 	dagster dev -m kitchen_sink.dagster_defs.mapped_defs -p 3333
 
+run_dagster_jobs:
+	dagster dev -m kitchen_sink.dagster_defs.jobs -p 3333
+
 run_dagster_automapped:
 	dagster dev -m kitchen_sink.dagster_defs.automapped_defs -p 3333
 

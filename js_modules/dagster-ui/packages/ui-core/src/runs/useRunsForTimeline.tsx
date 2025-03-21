@@ -211,6 +211,10 @@ export const useRunsForTimeline = ({
           // once all of the runs for this bucket have been fetched.
           accumulatedData.push({updatedAfter, updatedBefore, runs});
         } else {
+          console.log("ENTERED NO MORE DATA");
+          if(runs.length > 0) {
+            console.log("RUNS", runs.length);
+          }
           // If there is no more data lets commit all of the accumulated data to the cache
           completedRunsCache.addData(updatedAfter, updatedBefore, runs);
           accumulatedData.forEach(({updatedAfter, updatedBefore, runs}) => {
@@ -341,6 +345,10 @@ export const useRunsForTimeline = ({
       // re-rendering 24+ times while we populate the cache asynchronously via our batching/chunking.
       return previousRunsByJobKey.current;
     }
+    console.log('DATA SOURCES:');
+    console.log('COMPLETED RUNS:', completedRuns.length, completedRuns);
+    console.log('ONGOING RUNS:', ongoingRunsData?.length, ongoingRunsData);
+    
     const jobInfo: Record<
       string,
       {repoAddress: RepoAddress; pipelineName: string; isAdHoc: boolean}
@@ -353,7 +361,9 @@ export const useRunsForTimeline = ({
     const now = Date.now();
 
     function saveRunInfo(run: (typeof completedRuns)[0]) {
+      console.log("Saving run info", run);
       if (run.startTime === null) {
+        console.log("Run has no start time, discarding");
         return;
       }
 
@@ -361,9 +371,11 @@ export const useRunsForTimeline = ({
       // because we are using "updated" time for filtering our runs, which is a value
       // independent of start/end timestamps.
       if (run.endTime && run.endTime * 1000 < start) {
+        console.log("Run has ended prior to the start of the range, discarding");
         return;
       }
       if (!run.repositoryOrigin) {
+        console.log("Run has no repository origin, discarding");
         return;
       }
 

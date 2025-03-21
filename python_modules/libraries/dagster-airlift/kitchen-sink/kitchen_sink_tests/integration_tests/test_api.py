@@ -9,6 +9,7 @@ from dagster_airlift.constants import SOURCE_CODE_METADATA_KEY
 from dagster_airlift.core import build_defs_from_airflow_instance
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
+from dagster_airlift.core.job_builder import build_job_from_airflow_dag
 from kitchen_sink.airflow_instance import (
     AIRFLOW_BASE_URL,
     AIRFLOW_INSTANCE_NAME,
@@ -17,6 +18,13 @@ from kitchen_sink.airflow_instance import (
     local_airflow_instance,
 )
 from pytest_mock import MockFixture
+
+
+def test_job_builder(airflow_instance: None) -> None:
+    job_def = build_job_from_airflow_dag(
+        airflow_instance=local_airflow_instance(),
+        dag_id="diamond_structure_dag",
+    )
 
 
 def test_configure_dag_list_limit(airflow_instance: None, mocker: MockFixture) -> None:

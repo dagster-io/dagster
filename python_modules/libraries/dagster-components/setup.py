@@ -47,6 +47,7 @@ setup(
             "dagster-components-dagster = dagster_components.dagster",
             "dagster-components-dbt = dagster_components.dagster_dbt",
             "dagster-components-sling = dagster_components.dagster_sling",
+            "dagster-components-airlift = dagster_components.dagster_airlift",
         ],
     },
     extras_require={
@@ -61,5 +62,6 @@ setup(
             "pandas",
             "duckdb",
         ],
+        "airlift": ["dagster-airlift"],
     },
 )

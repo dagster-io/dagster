@@ -1161,6 +1161,8 @@ def _validate_out_mappings(
                     f"'{mapping.maps_from.node_name}' which it does not contain."
                 )
             if not target_node.has_output(mapping.maps_from.output_name):
+                print(target_node.name)
+                print(target_node.output_dict)
                 raise DagsterInvalidDefinitionError(
                     f"In {class_name} {name}, output mapping from {target_node.describe_node()} "
                     f"references output '{mapping.maps_from.output_name}', which the node does not "
