@@ -89,7 +89,7 @@ def resolve_translator(
 @dataclass
 class SlingReplicationSpecModel(ResolvedFrom["SlingReplicationModel"]):
     path: str
-    op: Annotated[Optional[OpSpec], Resolver.from_annotation()]
+    op: Optional[OpSpec]
     translator: Annotated[Optional[DagsterSlingTranslator], Resolver.from_model(resolve_translator)]
     include_metadata: list[SlingMetadataAddons]
 
@@ -147,10 +147,8 @@ class SlingReplicationCollectionComponent(Component, ResolvedFrom[SlingReplicati
     """
 
     resource: Annotated[SlingResource, Resolver.from_model(resolve_resource)] = ...
-    replications: Annotated[Sequence[SlingReplicationSpecModel], Resolver.from_annotation()] = ...
-    asset_post_processors: Annotated[
-        Optional[Sequence[AssetPostProcessor]], Resolver.from_annotation()
-    ] = None
+    replications: Sequence[SlingReplicationSpecModel] = ...
+    asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
 
     def build_asset(
         self, context: ComponentLoadContext, replication_spec_model: SlingReplicationSpecModel

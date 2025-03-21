@@ -169,14 +169,12 @@ class DbtProjectComponent(Component, ResolvedFrom[DbtProjectModel]):
     """
 
     dbt: Annotated[DbtCliResource, Resolver(resolve_dbt)]
-    op: Annotated[Optional[OpSpec], Resolver.from_annotation()] = None
-    # This requires from_parent because it access asset_attributes in the model
+    op: Optional[OpSpec] = None
+    # This requires from_model because it access asset_attributes in the model
     translator: Annotated[DagsterDbtTranslator, Resolver.from_model(resolve_translator)] = field(
         default_factory=DagsterDbtTranslator
     )
-    asset_post_processors: Annotated[
-        Optional[Sequence[AssetPostProcessor]], Resolver.from_annotation()
-    ] = None
+    asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
     select: str = "fqn:*"
     exclude: Optional[str] = None
 

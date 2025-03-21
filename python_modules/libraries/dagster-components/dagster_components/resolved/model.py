@@ -68,7 +68,7 @@ def get_model_type(
     raise ValueError("No generic type arguments found in ResolvedFrom subclass")
 
 
-def get_resolved_kwargs_target_type(resolved_kwargs_type: type["ResolvedKwargs"]):
+def get_resolved_kwargs_types(resolved_kwargs_type: type["ResolvedKwargs"]):
     """Returns the generic type arguments (TModel, TObject) of a ResolvedKwargs subclass at runtime."""
     check.param_invariant(
         issubclass(resolved_kwargs_type, ResolvedKwargs),
@@ -89,7 +89,7 @@ def get_resolved_kwargs_target_type(resolved_kwargs_type: type["ResolvedKwargs"]
                 raise ValueError(
                     f"ResolvedKwargs base found but has incorrect number of type arguments, expected 2 got {len(type_args)}"
                 )
-            return type_args[1]
+            return type_args
 
     raise ValueError("No generic type arguments found in ResolvedKwargs subclass")
 
@@ -226,27 +226,24 @@ def _get_resolver(
     top_level_auto_resolve: Optional[_AutoResolve],
 ) -> Optional[_ModelResolver]:
     if top_level_auto_resolve:
-        if top_level_auto_resolve.via and annotation is get_resolved_kwargs_target_type(
+        if (
             top_level_auto_resolve.via
+            and annotation is get_resolved_kwargs_types(top_level_auto_resolve.via)[1]
         ):
             return _KwargsResolver(
                 kwargs_type=top_level_auto_resolve.via,
                 target_type=annotation,
             )
-        if _safe_is_subclass(annotation, ResolvedFrom) or _safe_is_subclass(annotation, Resolved):
-            return _DirectResolver(annotation)
 
     origin = get_origin(annotation)
-    if origin is not Annotated:
-        return None
-
     args = get_args(annotation)
-    auto_resolve = next((arg for arg in args if isinstance(arg, _AutoResolve)), None)
-    if not auto_resolve:
-        return None
+    if origin is Annotated:
+        auto_resolve = next((arg for arg in args if isinstance(arg, _AutoResolve)), None)
+        if auto_resolve and auto_resolve.via:
+            return _KwargsResolver(kwargs_type=auto_resolve.via, target_type=args[0])
 
-    if auto_resolve.via:
-        return _KwargsResolver(kwargs_type=auto_resolve.via, target_type=args[0])
+    if _safe_is_subclass(annotation, ResolvedFrom) or _safe_is_subclass(annotation, Resolved):
+        return _DirectResolver(annotation)
 
     resolved_from_cls = args[0]
     if not _safe_is_subclass(resolved_from_cls, ResolvedFrom):
@@ -520,7 +517,9 @@ def derive_model_type(
                 field_type = annotation
             elif res := _get_model_resolution(annotation):
                 ttype = res[0].target_type
-                if _safe_is_subclass(ttype, ResolvedFrom):
+                if isinstance(res[0], _KwargsResolver):
+                    model_type = get_resolved_kwargs_types(res[0].kwargs_type)[0]
+                elif _safe_is_subclass(ttype, ResolvedFrom):
                     model_type = get_model_type(ttype)
                 elif _safe_is_subclass(ttype, Resolved):
                     model_type = derive_model_type(ttype)
@@ -534,7 +533,7 @@ def derive_model_type(
                         field_type = Optional[field_type]
                     elif container is _TypeContainer.SEQUENCE:
                         # use tuple instead of Sequence for perf
-                        field_type = tuple[field_type]
+                        field_type = tuple[field_type, ...]
                     else:
                         check.assert_never(f"missing _TypeContainer enum handling {container}")
             else:
