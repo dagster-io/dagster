@@ -8,8 +8,9 @@ import {RunlessEventTag} from './RunlessEventTag';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {isRunlessEvent} from './isRunlessEvent';
 import {
-  AssetMaterializationFragment,
+  AssetFailedToMaterializeFragment,
   AssetObservationFragment,
+  AssetSuccessfulMaterializationFragment,
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -27,7 +28,10 @@ export const AssetEventDetail = ({
   hidePartitionLinks = false,
 }: {
   assetKey: AssetKeyInput;
-  event: AssetMaterializationFragment | AssetObservationFragment;
+  event:
+    | AssetSuccessfulMaterializationFragment
+    | AssetFailedToMaterializeFragment
+    | AssetObservationFragment;
   hidePartitionLinks?: boolean;
 }) => {
   const run = event.runOrError?.__typename === 'Run' ? event.runOrError : null;

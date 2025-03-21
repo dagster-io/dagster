@@ -8,10 +8,9 @@ import {AssetKey, AssetViewParams} from './types';
 import {
   AssetEventsQuery,
   AssetEventsQueryVariables,
-  AssetMaterializationFragment,
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
-import {ASSET_EVENTS_QUERY} from './useRecentAssetEvents';
+import {ASSET_EVENTS_QUERY, AssetMaterializationFragment} from './useRecentAssetEvents';
 import {useApolloClient} from '../apollo-client';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 
@@ -65,7 +64,7 @@ export function usePaginatedAssetEvents(
       const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
 
       const {materializations, observations} = clipEventsToSharedMinimumTime(
-        asset?.assetMaterializations || [],
+        asset?.assetMaterializationHistory || [],
         asset?.assetObservations || [],
         100,
       );

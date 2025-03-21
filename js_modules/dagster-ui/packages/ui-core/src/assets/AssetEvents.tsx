@@ -110,7 +110,9 @@ export const AssetEvents = ({
   //
   const assetHasUndefinedPartitions =
     !assetNode?.partitionDefinition && grouped.some((g) => g.partition);
-  const assetHasLineage = materializations.some((m) => m.assetLineage.length > 0);
+  const assetHasLineage = materializations.some(
+    (m) => 'assetLineage' in m && m.assetLineage.length > 0,
+  );
 
   const onKeyDown = (e: React.KeyboardEvent<any>) => {
     const shift = {ArrowDown: 1, ArrowUp: -1}[e.key];
