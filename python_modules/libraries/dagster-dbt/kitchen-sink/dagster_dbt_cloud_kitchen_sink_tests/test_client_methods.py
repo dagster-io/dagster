@@ -1,5 +1,11 @@
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace, get_dagster_adhoc_job_name
-from dagster_dbt.cloud_v2.types import DbtCloudJob, DbtCloudJobRunStatusType, DbtCloudRun
+from dagster_dbt.cloud_v2.types import (
+    DbtCloudEnvironment,
+    DbtCloudJob,
+    DbtCloudJobRunStatusType,
+    DbtCloudProject,
+    DbtCloudRun,
+)
 
 
 def test_cloud_job_apis(
@@ -9,11 +15,17 @@ def test_cloud_job_apis(
 ) -> None:
     """Tests that we can create / destroy a dagster job."""
     client = workspace.get_client()
+    project = DbtCloudProject.from_project_details(
+        project_details=client.get_project_details(project_id=project_id)
+    )
+    environment = DbtCloudEnvironment.from_environment_details(
+        environment_details=client.get_environment_details(environment_id=environment_id)
+    )
     job_name = get_dagster_adhoc_job_name(
-        project_id=project_id,
-        project_name=None,
-        environment_id=environment_id,
-        environment_name=None,
+        project_id=project.id,
+        project_name=project.name,
+        environment_id=environment.id,
+        environment_name=environment.name,
     )
     created_job = DbtCloudJob.from_job_details(
         job_details=client.create_job(
