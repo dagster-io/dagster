@@ -595,6 +595,7 @@ class DynamicPartitionsDefinition(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Connection[str]:
+        # TODO (prha): override this by making the dynamic partitions store handle pagination
         partition_keys = self.get_partition_keys(
             current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )

@@ -674,9 +674,9 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         else:
             raise NotImplementedError()
 
-    def get_partition_key_connection(self, cursor=None, limit=None):
+    def get_partition_key_connection(self, limit: int, cursor: Optional[str] = None):
         partition_keys = self.get_partition_keys()
-        return Connection.create_from_offset_list(list(partition_keys), cursor=cursor, limit=limit)
+        return Connection.create_from_sequence(list(partition_keys), limit=limit, cursor=cursor)
 
     def get_partition_key_ranges(
         self,
