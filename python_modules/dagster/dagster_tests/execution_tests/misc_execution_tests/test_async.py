@@ -61,7 +61,7 @@ def test_aio_resource():
             return self._loop
 
         @asynccontextmanager
-        async def yield_for_execution(self, context):
+        async def yield_for_execution(self, context):  # pyright: ignore[reportIncompatibleMethodOverride]
             await asyncio.sleep(0)
             self._loop = asyncio.get_running_loop()
             yield self

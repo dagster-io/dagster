@@ -712,7 +712,7 @@ class InvalidRunLauncher(RunLauncher, ConfigurableClass):
     def launch_run(self, context: LaunchRunContext) -> None:
         pass
 
-    def terminate(self, run_id):
+    def terminate(self, run_id):  # pyright: ignore[reportIncompatibleMethodOverride]
         pass
 
 

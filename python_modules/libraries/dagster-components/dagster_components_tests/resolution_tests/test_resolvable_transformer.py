@@ -76,7 +76,7 @@ def test_with_resolution_spec_on_component():
             Resolver.from_resolved_kwargs(ExistingBusinessObjectKwargs),
         ]
 
-        def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...
+        def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
     comp_instance = ComponentWithExistingBusinessObject.load(
         attributes=ComponentWithExistingBusinessObjectModel(
@@ -105,7 +105,7 @@ def test_reuse_across_components():
     ):
         business_object: ExistingBusinessObjectField
 
-        def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...
+        def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
     class ComponentWithExistingBusinessObjectSchemaTwo(ResolvableModel):
         business_object: ExistingBusinessObjectModel
@@ -116,7 +116,7 @@ def test_reuse_across_components():
     ):
         business_object: ExistingBusinessObjectField
 
-        def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...
+        def build_defs(self, load_context: ComponentLoadContext) -> Definitions: ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
     comp_instance_one = ComponentWithExistingBusinessObjectOne.load(
         attributes=ComponentWithExistingBusinessObjectSchemaTwo(

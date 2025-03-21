@@ -265,7 +265,7 @@ def opt_dict_param(
 
 
 @overload
-def opt_nullable_dict_param(
+def opt_nullable_dict_param(  # pyright: ignore[reportOverlappingOverload]
     obj: None,
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = ...,

@@ -64,7 +64,7 @@ class MissingAutomationCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "missing"
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
         return await context.asset_graph_view.compute_missing_subset(
             key=context.key, from_subset=context.candidate_subset
         )
@@ -77,7 +77,7 @@ class RunInProgressAutomationCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "run_in_progress"
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
         return await context.asset_graph_view.compute_run_in_progress_subset(key=context.key)
 
 
@@ -88,7 +88,7 @@ class BackfillInProgressAutomationCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "backfill_in_progress"
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
         return await context.asset_graph_view.compute_backfill_in_progress_subset(key=context.key)
 
 
@@ -99,7 +99,7 @@ class ExecutionFailedAutomationCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "execution_failed"
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
         return await context.asset_graph_view.compute_execution_failed_subset(key=context.key)
 
 
@@ -151,7 +151,7 @@ class LatestRunExecutedWithRootTargetCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "executed_with_root_target"
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
         def _filter_fn(run_record: "RunRecord") -> bool:
             asset_selection = run_record.dagster_run.asset_selection or set()
             check_selection = run_record.dagster_run.asset_check_selection or set()
@@ -172,7 +172,7 @@ class LatestRunExecutedWithTagsCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "executed_with_tags"
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
         def _filter_fn(run_record: "RunRecord") -> bool:
             if self.tag_keys and run_record.dagster_run.tags.keys() < self.tag_keys:
                 return False
@@ -195,7 +195,7 @@ class NewlyUpdatedCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "newly_updated"
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
         # if it's the first time evaluating, just return the empty subset
         if context.previous_temporal_context is None:
             return context.get_empty_subset()
@@ -211,7 +211,7 @@ class DataVersionChangedCondition(SubsetAutomationCondition):
     def name(self) -> str:
         return "data_version_changed"
 
-    async def compute_subset(self, context: AutomationContext) -> EntitySubset:
+    async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
         # if it's the first time evaluating, just return the empty subset
         if context.previous_temporal_context is None:
             return context.get_empty_subset()
@@ -304,7 +304,7 @@ class CheckResultCondition(SubsetAutomationCondition[AssetCheckKey]):
     def name(self) -> str:
         return "check_passed" if self.passed else "check_failed"
 
-    async def compute_subset(
+    async def compute_subset(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[AssetCheckKey]
     ) -> EntitySubset[AssetCheckKey]:
         from dagster._core.storage.asset_check_execution_record import (

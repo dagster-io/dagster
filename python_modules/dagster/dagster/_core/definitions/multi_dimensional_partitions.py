@@ -81,7 +81,7 @@ class MultiPartitionKey(str):
 
         return str_key
 
-    def __getnewargs__(self):
+    def __getnewargs__(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         # When this instance is pickled, replace the argument to __new__ with the
         # dimension key mapping instead of the string representation.
         return ({dim_key.dimension_name: dim_key.partition_key for dim_key in self.dimension_keys},)
@@ -210,7 +210,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
     def partitions_subset_class(self) -> type["PartitionsSubset"]:
         return DefaultPartitionsSubset
 
-    def get_partition_keys_in_range(
+    def get_partition_keys_in_range(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         partition_key_range: PartitionKeyRange,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,

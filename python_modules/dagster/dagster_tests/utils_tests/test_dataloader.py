@@ -142,7 +142,7 @@ def test_bad_load_fn():
 
 class LoadableThing(NamedTuple("_LoadableThing", [("key", str), ("val", int)]), LoadableBy[str]):
     @classmethod
-    def _blocking_batch_load(
+    def _blocking_batch_load(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, keys: Iterable[str], context: mock.MagicMock
     ) -> list["LoadableThing"]:
         context.query(keys)

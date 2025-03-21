@@ -114,7 +114,7 @@ def test_io_manager_with_required_resource_keys():
             assert context.resources.foo_resource == "foo"
             return self._prefix + "bar"
 
-        def handle_output(self, _context, obj):
+        def handle_output(self, _context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
     @io_manager(required_resource_keys={"foo_resource"})
@@ -423,7 +423,7 @@ def test_multi_materialization():
         def __init__(self):
             self.values = {}
 
-        def handle_output(self, context, obj):
+        def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             keys = tuple(context.get_identifier())
             self.values[keys] = obj
 
@@ -671,7 +671,7 @@ def test_error_boundary_with_gen():
         def load_input(self, context):
             pass
 
-        def handle_output(self, context, obj):
+        def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             yield AssetMaterialization(asset_key="a")
             raise ValueError("handle output error")
 
@@ -770,7 +770,7 @@ def test_partition_key():
             assert context.has_partition_key
             assert context.partition_key == "2020-01-01"
 
-        def handle_output(self, context, _obj):
+        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             assert context.has_partition_key
             assert context.partition_key == "2020-01-01"
 
@@ -849,7 +849,7 @@ def test_context_logging_metadata():
             def __init__(self):
                 self.values = {}
 
-            def handle_output(self, context, obj):
+            def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
                 keys = tuple(context.get_identifier())
                 self.values[keys] = obj
 
@@ -935,7 +935,7 @@ def test_metadata_dynamic_outputs():
         def __init__(self):
             self.values = {}
 
-        def handle_output(self, context, obj):
+        def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             keys = tuple(context.get_identifier())
             self.values[keys] = obj
 
@@ -1045,7 +1045,7 @@ def test_instance_set_on_input_context():
             assert context.instance
             executed["yes"] = True
 
-        def handle_output(self, _context, _obj):
+        def handle_output(self, _context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
     @op
@@ -1081,7 +1081,7 @@ def test_instance_set_on_asset_loader():
             executed["yes"] = True
             return 1
 
-        def handle_output(self, _context, _obj):
+        def handle_output(self, _context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
     @asset
@@ -1110,7 +1110,7 @@ def test_instance_set_on_asset_loader():
 
 def test_telemetry_custom_io_manager():
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):
+        def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             return {}
 
         def load_input(self, context):
@@ -1125,7 +1125,7 @@ def test_telemetry_custom_io_manager():
 
 def test_telemetry_dagster_io_manager():
     class MyIOManager(IOManager):
-        def handle_output(self, context, obj):
+        def handle_output(self, context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             return {}
 
         def load_input(self, context):

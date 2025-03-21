@@ -283,7 +283,7 @@ class SensorLaunchContext(AbstractContextManager):
     def __enter__(self) -> Self:
         return self
 
-    def __exit__(
+    def __exit__(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         exception_type: type[BaseException],
         exception_value: Exception,

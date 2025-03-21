@@ -51,16 +51,16 @@ class TestDagsterOperator(unittest.TestCase):
         )
         if airflow_version >= "2.0.0":
             dagrun = dag.create_dagrun(
-                state=DagRunState.RUNNING,
+                state=DagRunState.RUNNING,  # pyright: ignore[reportPossiblyUnboundVariable]
                 execution_date=datetime.now(),
                 data_interval=(DATA_INTERVAL_START, DATA_INTERVAL_END),
                 start_date=DATA_INTERVAL_END,
-                run_type=DagRunType.MANUAL,
+                run_type=DagRunType.MANUAL,  # pyright: ignore[reportPossiblyUnboundVariable]
             )
             ti = dagrun.get_task_instance(task_id="anytask")
             ti.task = dag.get_task(task_id="anytask")  # pyright: ignore[reportOptionalMemberAccess]
             ti.run(ignore_ti_state=True)  # pyright: ignore[reportOptionalMemberAccess]
-            assert ti.state == TaskInstanceState.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
+            assert ti.state == TaskInstanceState.SUCCESS  # pyright: ignore[reportPossiblyUnboundVariable,reportOptionalMemberAccess]
         else:
             ti = TaskInstance(task=task, execution_date=datetime.now())
             ctx = ti.get_template_context()
@@ -80,15 +80,15 @@ class TestDagsterOperator(unittest.TestCase):
         run_config = {"foo": "bar"}
         DagsterCloudOperator(dag=dag, task_id="anytask", job_name="anyjob", run_config=run_config)
         dagrun = dag.create_dagrun(
-            state=DagRunState.RUNNING,
+            state=DagRunState.RUNNING,  # pyright: ignore[reportPossiblyUnboundVariable]
             execution_date=datetime.now(),
             data_interval=(DATA_INTERVAL_START, DATA_INTERVAL_END),
             start_date=DATA_INTERVAL_END,
-            run_type=DagRunType.MANUAL,
+            run_type=DagRunType.MANUAL,  # pyright: ignore[reportPossiblyUnboundVariable]
         )
         ti = dagrun.get_task_instance(task_id="anytask")
         ti.task = dag.get_task(task_id="anytask")  # pyright: ignore[reportOptionalMemberAccess]
         ti.run(ignore_ti_state=True)  # pyright: ignore[reportOptionalMemberAccess]
-        assert ti.state == TaskInstanceState.SUCCESS  # pyright: ignore[reportOptionalMemberAccess]
+        assert ti.state == TaskInstanceState.SUCCESS  # pyright: ignore[reportPossiblyUnboundVariable,reportOptionalMemberAccess]
         launch_run.assert_called_once()
         wait_for_run.assert_called_once()

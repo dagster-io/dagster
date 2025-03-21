@@ -92,4 +92,4 @@ def serve_docs_command(
                             time.sleep(0.5)
 
         finally:
-            yarn_dev.terminate()
+            yarn_dev.terminate()  # pyright: ignore[reportPossiblyUnboundVariable]

@@ -108,7 +108,7 @@ class AssetNode(BaseAssetNode):
         return self.assets_def.specs_by_key[self.key].partitions_def
 
     @property
-    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._spec.partition_mappings
 
     @property
@@ -287,7 +287,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             assets_defs_by_check_key=assets_defs_by_check_key,
         )
 
-    def get_execution_set_asset_and_check_keys(
+    def get_execution_set_asset_and_check_keys(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, entity_key: EntityKey
     ) -> AbstractSet[EntityKey]:
         if isinstance(entity_key, AssetKey):
@@ -343,7 +343,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             return self._assets_defs_by_check_key[key]
 
     @cached_property
-    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return {key for ad in self.assets_defs for key in ad.check_keys}
 
     @cached_property

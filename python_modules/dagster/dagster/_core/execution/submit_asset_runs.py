@@ -215,7 +215,7 @@ def _create_asset_run(
                 asset_check_selection=frozenset(run_request.asset_check_keys)
                 if run_request.asset_check_keys
                 else None,
-                asset_graph=asset_graph,
+                asset_graph=asset_graph,  # pyright: ignore[reportPossiblyUnboundVariable]
             )
 
             return run

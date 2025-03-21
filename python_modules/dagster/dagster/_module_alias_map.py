@@ -69,7 +69,7 @@ class AliasedModuleLoader(Loader):
         self.alias = alias
         self.base_spec = base_spec
 
-    def exec_module(self, _module: ModuleType) -> None:
+    def exec_module(self, _module: ModuleType) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         base_module = importlib.import_module(self.base_spec.name)
         sys.modules[self.alias] = base_module
 

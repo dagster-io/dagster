@@ -72,7 +72,7 @@ def execute_job_backfill_iteration(
         ):
             yield None
 
-        if not isinstance(all_runs_canceled, bool):
+        if not isinstance(all_runs_canceled, bool):  # pyright: ignore[reportPossiblyUnboundVariable]
             check.failed(
                 "Expected cancel_backfill_runs_and_cancellation_complete to return a boolean"
             )

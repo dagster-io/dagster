@@ -83,7 +83,7 @@ class FieldResolver(FieldInfo):
         super().__init__()
 
     @staticmethod
-    def from_annotation(annotation: Any, field_name: str) -> "FieldResolver":
+    def from_annotation(annotation: Any, field_name: str) -> "FieldResolver":  # pyright: ignore[reportIncompatibleMethodOverride]
         if get_origin(annotation) is Annotated:
             args = get_args(annotation)
             resolver = next((arg for arg in args if isinstance(arg, FieldResolver)), None)

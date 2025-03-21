@@ -27,7 +27,7 @@ default_args = {
 # Normally this isn't needed, but we're trying to get away with not using a multi-process-safe run storage
 # to test behavior here.
 class SetDagsterRetryInfoOperator(DefaultProxyTaskToDagsterOperator):
-    def default_dagster_run_tags(self, context) -> Mapping[str, Any]:
+    def default_dagster_run_tags(self, context) -> Mapping[str, Any]:  # pyright: ignore[reportIncompatibleMethodOverride]
         tags = {**super().default_dagster_run_tags(context), MAX_RETRIES_TAG: "3"}
         if self.get_airflow_dag_id(context).endswith("not_step_failure"):
             tags[RETRY_ON_ASSET_OR_OP_FAILURE_TAG] = "false"

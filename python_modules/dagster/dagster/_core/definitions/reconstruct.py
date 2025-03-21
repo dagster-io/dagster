@@ -167,7 +167,7 @@ class ReconstructableRepository(
 
 
 class ReconstructableJobSerializer(NamedTupleSerializer):
-    def before_unpack(self, _, unpacked_dict: dict[str, Any]) -> dict[str, Any]:
+    def before_unpack(self, _, unpacked_dict: dict[str, Any]) -> dict[str, Any]:  # pyright: ignore[reportIncompatibleMethodOverride]
         solid_selection_str = unpacked_dict.get("solid_selection_str")
         solids_to_execute = unpacked_dict.get("solids_to_execute")
         if solid_selection_str:
@@ -192,7 +192,7 @@ class ReconstructableJobSerializer(NamedTupleSerializer):
         "job_name": "pipeline_name",
     },
 )
-class ReconstructableJob(
+class ReconstructableJob(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_ReconstructableJob",
         [
@@ -246,13 +246,13 @@ class ReconstructableJob(
         return self._replace(repository=self.repository.with_repository_load_data(metadata))
 
     @lru_cache(maxsize=1)
-    def get_repository_definition(self) -> Optional["RepositoryDefinition"]:
+    def get_repository_definition(self) -> Optional["RepositoryDefinition"]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.repository.get_definition()
 
     # Keep the most recent 1 definition (globally since this is a NamedTuple method)
     # This allows repeated calls to get_definition in execution paths to not reload the job
     @lru_cache(maxsize=1)
-    def get_definition(self) -> "JobDefinition":
+    def get_definition(self) -> "JobDefinition":  # pyright: ignore[reportIncompatibleMethodOverride]
         return check.not_none(self.get_repository_definition()).get_maybe_subset_job_def(
             self.job_name,
             self.op_selection,

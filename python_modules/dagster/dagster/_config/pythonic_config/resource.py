@@ -77,7 +77,7 @@ class NestedResourcesResourceDefinition(ResourceDefinition, ABC):
     @abstractmethod
     def configurable_resource_cls(self) -> type: ...
 
-    def get_resource_requirements(self, source_key: str) -> Iterator["ResourceRequirement"]:
+    def get_resource_requirements(self, source_key: str) -> Iterator["ResourceRequirement"]:  # pyright: ignore[reportIncompatibleMethodOverride]
         for attr_name, partial_resource in self.nested_partial_resources.items():
             yield PartialResourceDependencyRequirement(
                 class_name=self.configurable_resource_cls.__name__,

@@ -48,7 +48,7 @@ class SimplePipesScriptComponent(Component):
     """
 
     @classmethod
-    def get_schema(cls):
+    def get_schema(cls):  # pyright: ignore[reportIncompatibleMethodOverride]
         return SimplePipesScriptScaffoldParams
 
     def __init__(self, asset_key: AssetKey, script_path: Path):

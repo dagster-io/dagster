@@ -120,7 +120,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         return cast(str, row[0])
 
     @classmethod
-    def from_config_value(
+    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, inst_data: Optional[ConfigurableClassData], config_value: MySqlStorageConfig
     ) -> "MySQLRunStorage":
         return MySQLRunStorage(inst_data=inst_data, mysql_url=mysql_url_from_config(config_value))
@@ -148,7 +148,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         with self.connect() as conn:
             run_alembic_upgrade(alembic_config, conn)
 
-    def has_built_index(self, migration_name: str) -> None:
+    def has_built_index(self, migration_name: str) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         if migration_name not in self._index_migration_cache:
             self._index_migration_cache[migration_name] = super().has_built_index(migration_name)
         return self._index_migration_cache[migration_name]

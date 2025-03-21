@@ -81,7 +81,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         return {"base_dir": StringSource}
 
     @classmethod
-    def from_config_value(
+    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, inst_data: Optional[ConfigurableClassData], config_value: "SqliteStorageConfig"
     ) -> "SqliteRunStorage":
         return SqliteRunStorage.from_local(inst_data=inst_data, **config_value)

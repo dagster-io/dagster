@@ -198,7 +198,7 @@ def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_loca
             cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
             assert not cursor.evaluation_id
 
-    test_time = test_time + datetime.timedelta(seconds=45)
+    test_time = test_time + datetime.timedelta(seconds=45)  # pyright: ignore[reportPossiblyUnboundVariable]
     with freeze_time(test_time):  # pyright: ignore[reportArgumentType]
         # Next successful tick recovers
         error_asset_scenario.do_daemon_scenario(

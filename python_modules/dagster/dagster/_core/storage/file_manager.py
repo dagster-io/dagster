@@ -263,7 +263,7 @@ class LocalFileManager(FileManager):
             return temp_name
 
     @contextmanager
-    def read(self, file_handle: LocalFileHandle, mode: str = "rb") -> Iterator[IOStream]:
+    def read(self, file_handle: LocalFileHandle, mode: str = "rb") -> Iterator[IOStream]:  # pyright: ignore[reportIncompatibleMethodOverride]
         check.inst_param(file_handle, "file_handle", LocalFileHandle)
         check.str_param(mode, "mode")
         check.param_invariant(mode in {"r", "rb"}, "mode")
@@ -272,7 +272,7 @@ class LocalFileManager(FileManager):
         with open(file_handle.path, mode, encoding=encoding) as file_obj:
             yield file_obj  # type: ignore  # (??)
 
-    def read_data(self, file_handle: LocalFileHandle) -> bytes:
+    def read_data(self, file_handle: LocalFileHandle) -> bytes:  # pyright: ignore[reportIncompatibleMethodOverride]
         with self.read(file_handle, mode="rb") as file_obj:
             return file_obj.read()  # type: ignore  # (??)
 

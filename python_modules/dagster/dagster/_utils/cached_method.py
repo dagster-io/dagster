@@ -153,7 +153,7 @@ class _HashedSeq(list):
         self[:] = tup
         self.hashvalue = hash(tup)
 
-    def __hash__(self) -> int:
+    def __hash__(self) -> int:  # pyright: ignore[reportIncompatibleVariableOverride]
         return self.hashvalue
 
 
