@@ -41,8 +41,33 @@ def test_dg_cli_config_file(monkeypatch):
         yield config_path
 
 
+@pytest.fixture()
+def test_dg_cli_config_file_additional_config(monkeypatch):
+    with (
+        tempfile.TemporaryDirectory() as tmp_dg_dir,
+        tempfile.TemporaryDirectory() as tmp_cloud_dir,
+    ):
+        config_path = Path(tmp_dg_dir) / "config.toml"
+        config_path.write_text(
+            """
+            [cli]
+            existing_key = "existing_value"
+            """
+        )
+        monkeypatch.setenv("DG_CLI_CONFIG", config_path)
+        monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(tmp_cloud_dir) / "config"))
+        yield config_path
+
+
 # Test setup command, using the web auth option
-@pytest.mark.parametrize("fixture_name", ["test_cloud_cli_config_file", "test_dg_cli_config_file"])
+@pytest.mark.parametrize(
+    "fixture_name",
+    [
+        "test_cloud_cli_config_file",
+        "test_dg_cli_config_file",
+        "test_dg_cli_config_file_additional_config",
+    ],
+)
 def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
     filepath = request.getfixturevalue(fixture_name)
     runner = CliRunner()
@@ -87,6 +112,13 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
             assert yaml.safe_load(filepath.read_text()) == {
                 "organization": "hooli",
                 "user_token": "abc123",
+            }
+        elif fixture_name == "test_dg_cli_config_file_additional_config":
+            assert tomlkit.parse(filepath.read_text()) == {
+                "cli": {
+                    "existing_key": "existing_value",
+                    "plus": {"organization": "hooli", "user_token": "abc123"},
+                },
             }
         else:
             assert tomlkit.parse(filepath.read_text()) == {

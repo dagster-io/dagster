@@ -14,6 +14,7 @@ DEFAULT_CLOUD_CLI_CONFIG = os.path.join(DEFAULT_CLOUD_CLI_FOLDER, "config")
 class DagsterPlusConfigInfo(NamedTuple):
     path: Path
     raw_config: Mapping[str, Any]
+    plus_config: Mapping[str, Any]
     is_dg_config: bool
 
 
@@ -21,22 +22,21 @@ def _get_dagster_plus_config_path_and_raw_config() -> Optional[DagsterPlusConfig
     cloud_config_path = get_dagster_cloud_cli_config_path()
     dg_config_path = get_dg_config_path()
 
-    dg_config = (
-        load_config(dg_config_path).get("cli", {}).get("plus", {})
-        if dg_config_path.exists()
-        else None
-    )
+    dg_config = load_config(dg_config_path) if dg_config_path.exists() else None
+    dg_plus_config = dg_config.get("cli", {}).get("plus", {}) if dg_config else None
     cloud_config = load_config(cloud_config_path) if cloud_config_path.exists() else None
 
-    if dg_config and cloud_config:
+    if dg_plus_config and cloud_config:
         raise Exception(
             f"Found Dagster Plus config in both {dg_config_path} and {cloud_config_path}. Please consolidate your config files."
         )
 
     if cloud_config is not None:
-        return DagsterPlusConfigInfo(cloud_config_path, cloud_config, is_dg_config=False)
-    elif dg_config is not None:
-        return DagsterPlusConfigInfo(dg_config_path, dg_config, is_dg_config=True)
+        return DagsterPlusConfigInfo(
+            cloud_config_path, cloud_config, cloud_config, is_dg_config=False
+        )
+    elif dg_config is not None and dg_plus_config is not None:
+        return DagsterPlusConfigInfo(dg_config_path, dg_config, dg_plus_config, is_dg_config=True)
 
     return None
 
@@ -56,8 +56,8 @@ class DagsterPlusCliConfig:
         result = _get_dagster_plus_config_path_and_raw_config()
         if result is None:
             raise Exception("No Dagster Plus config found")
-        _, raw_config, _ = result
-        return cls(**raw_config)
+        _, _, raw_plus_config, _ = result
+        return cls(**raw_plus_config)
 
     def write(self):
         existing_config = _get_dagster_plus_config_path_and_raw_config()
@@ -66,7 +66,7 @@ class DagsterPlusCliConfig:
             raw_config = {}
             is_dg_config = True
         else:
-            config_path, raw_config, is_dg_config = existing_config
+            config_path, raw_config, _, is_dg_config = existing_config
 
         config_to_apply = {k: v for k, v in self.__dict__.items() if v is not None}
         if is_dg_config:
