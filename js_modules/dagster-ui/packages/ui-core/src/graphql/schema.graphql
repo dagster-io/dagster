@@ -622,7 +622,7 @@ type Asset {
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
-    eventTypeSelector: MaterializationHistoryEventTypeSelector!
+    eventTypeSelector: MaterializationHistoryEventTypeSelector
   ): [AssetMaterializationEventType!]!
   definition: AssetNode
 }
@@ -645,7 +645,7 @@ type FailedToMaterializeEvent implements MessageEvent & StepEvent & DisplayableE
   stepStats: RunStepStats!
   partition: String
   tags: [EventTag!]!
-  failedToMaterializeReason: AssetMaterializationFailureReason!
+  materializationFailureReason: AssetMaterializationFailureReason!
 }
 
 enum AssetMaterializationFailureReason {
