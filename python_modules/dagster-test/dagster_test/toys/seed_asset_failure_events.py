@@ -70,5 +70,5 @@ def seed_events(context):
 
 
 @job
-def seed():
+def seed_asset_failure_events():
     seed_events()
