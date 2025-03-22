@@ -254,6 +254,7 @@ def scaffold_component_instance(
     component_type: str,
     scaffold_params: Optional[Mapping[str, Any]],
     dg_context: "DgContext",
+    decl_format: str,
 ) -> None:
     click.echo(f"Creating a Dagster component instance folder at {path}.")
     os.makedirs(path, exist_ok=True)
@@ -263,5 +264,6 @@ def scaffold_component_instance(
         component_type,
         str(path),
         *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),
+        *(["--format", decl_format] if decl_format else []),
     ]
     dg_context.external_components_command(scaffold_command)

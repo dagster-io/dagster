@@ -6,7 +6,7 @@ import dagster._check as check
 from dbt.cli.main import dbtRunner
 from pydantic import BaseModel, Field
 
-from dagster_components.component_scaffolding import scaffold_component_yaml
+from dagster_components.component_scaffolding import scaffold_component_decl
 from dagster_components.core.component_scaffolder import Scaffolder, ScaffoldRequest
 
 
@@ -39,4 +39,4 @@ class DbtProjectComponentScaffolder(Scaffolder):
         else:
             relative_path = None
 
-        scaffold_component_yaml(request, {"dbt": {"project_dir": relative_path}})
+        scaffold_component_decl(request, {"dbt": {"project_dir": relative_path}})

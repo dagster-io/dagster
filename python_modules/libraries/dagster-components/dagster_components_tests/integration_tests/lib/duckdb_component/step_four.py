@@ -14,7 +14,7 @@ from dagster_components import (
     ResolvedFrom,
     Scaffolder,
     ScaffoldRequest,
-    scaffold_component_yaml,
+    scaffold_component_decl,
 )
 from dagster_components.resolved.core_models import ResolvedAssetSpec
 from dagster_components.scaffold import scaffold_with
@@ -34,7 +34,7 @@ class DuckDbComponentScaffolder(Scaffolder):
 
         Path(sql_file).touch()
 
-        scaffold_component_yaml(
+        scaffold_component_decl(
             request=request,
             attributes={"sql_file": sql_file, "assets": [{"key": asset_key}]},
         )
