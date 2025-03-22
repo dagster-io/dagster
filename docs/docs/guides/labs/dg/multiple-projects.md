@@ -26,11 +26,11 @@ A workspace does not define a Python environment by default. Instead, Python env
 
 ## Scaffold a new workspace and first project
 
-To scaffold a new workspace with an initial project called `project-1`, run `dg init`:
+To scaffold a new workspace with an initial project called `project-1`, run `dg init` with the `--workspace-name` option:
 
 <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/workspace/1-dg-init.txt" />
 
-This will create a new directory called `workspace` with a `projects` subdirectory that contains `project-1`. It will also set up a new `uv`-managed Python environment for this project. 
+This will create a new directory called `dagster-workspace` with a `projects` subdirectory that contains `project-1`. It will also set up a new `uv`-managed Python environment for this project.
 
 ### Review workspace structure
 
