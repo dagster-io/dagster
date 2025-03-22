@@ -1,0 +1,9 @@
+type: dagster_components.dagster.PipesSubprocessScriptCollectionComponent
+
+attributes:
+  scripts:
+    - path: script_one.py
+      assets:
+        - key: script_depends_on_my_python_defs
+          automation_condition: "{{ automation_condition.eager() }}"
+          deps: "{{ defs('my_python_defs').get_all_asset_specs() }}"
