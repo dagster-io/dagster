@@ -4,10 +4,8 @@ from abc import ABC
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Annotated, Any, Callable, Optional, Union
+from typing import Any, Optional, Union
 
-from dagster._config.field import Field
-from dagster._config.pythonic_config.conversion_utils import infer_schema_from_config_annotation
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -29,9 +27,12 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster_dbt.asset_utils import AssetSelection
 from dagster_shared import check
-from typing_extensions import TypeAlias, TypeVar
 
-from dagster_components.core.component import Component, ComponentLoadContext, component
+from dagster_components.components.step.config_param import (
+    config_schema_from_config_cls,
+    has_config_param_annotation,
+)
+from dagster_components.core.component import Component, ComponentLoadContext
 
 
 class AssetCheckRecord(AssetCheckResult): ...
@@ -123,31 +124,6 @@ def build_autoname(assets: Sequence[AssetSpec], checks: Sequence[AssetCheckSpec]
                 + [check.key.to_python_identifier() for check in checks or []]
             ),
         ]
-    )
-
-
-CONFIG_PARAM_METADATA = "config_param"
-
-T = TypeVar("T")
-ConfigParam = Annotated[T, CONFIG_PARAM_METADATA]
-
-
-def has_config_param_annotation(annotation: Optional[type[Any]]) -> bool:
-    return bool(
-        annotation
-        and hasattr(annotation, "__metadata__")
-        and getattr(annotation, "__metadata__") == (CONFIG_PARAM_METADATA,)
-    )
-
-
-def config_schema_from_config_cls(config_cls: Optional[type]) -> Optional[Field]:
-    return (
-        infer_schema_from_config_annotation(
-            model_cls=config_cls,
-            config_arg_default=inspect.Parameter.empty,
-        )
-        if config_cls
-        else None
     )
 
 
@@ -368,54 +344,3 @@ def mark_spec_observable(spec: AssetSpec) -> AssetSpec:
 
 def is_spec_observable(spec: AssetSpec) -> bool:
     return spec.metadata.get(OBSERVABLE_METADATA_KEY, False) is True
-
-
-ExecutionFn: TypeAlias = Callable[[ExecutionContext], ExecutionRecord]
-
-
-# TODO: need to get typehinting to work better with less gross __init__ method
-# TODO: support config and resources
-@dataclass(frozen=True, init=False)
-class StepComponentForDecorator(StepComponent):
-    def __init__(self, fn: ExecutionFn, **kwargs):
-        super().__init__(**kwargs)
-        object.__setattr__(self, "fn", fn)
-
-    fn: ExecutionFn
-
-    def execute(self, context, **kwargs):
-        return self.fn(context, **kwargs)
-
-
-ComponentLoader = Callable[[ComponentLoadContext], StepComponentForDecorator]
-
-
-def step(
-    *,
-    name: Optional[str] = None,
-    assets: Optional[Sequence[AssetSpec]] = None,
-    checks: Optional[Sequence[AssetCheckSpec]] = None,
-    description: Optional[str] = None,
-    tags: Optional[Mapping[str, Any]] = None,
-    retry_policy: Optional[RetryPolicy] = None,
-    pool: Optional[str] = None,
-    can_subset: bool = False,
-) -> Callable[[ExecutionFn], ComponentLoader]:
-    def inner(fn: ExecutionFn) -> ComponentLoader:
-        @component
-        def load_me(context: ComponentLoadContext) -> StepComponentForDecorator:
-            return StepComponentForDecorator(
-                name=name,
-                assets=assets,
-                checks=checks,
-                description=description,
-                tags=tags,
-                retry_policy=retry_policy,
-                pool=pool,
-                can_subset=can_subset,
-                fn=fn,
-            )
-
-        return load_me
-
-    return inner

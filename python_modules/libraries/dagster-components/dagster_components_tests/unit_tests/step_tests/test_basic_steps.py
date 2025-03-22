@@ -19,10 +19,10 @@ from dagster._core.events import AssetObservationData, StepMaterializationData
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster_components import ComponentLoadContext
+from dagster_components.components.step.config_param import ConfigParam
 from dagster_components.components.step.step import (
     AssetCheckRecord,
     AssetRecord,
-    ConfigParam,
     ExecutionContext,
     ExecutionRecord,
     StepComponent,
@@ -146,7 +146,7 @@ def test_hello_world() -> None:
 
 def test_hello_world_decorator() -> None:
     # avoiding name collision at module scope
-    from dagster_components.components.step.step import step
+    from dagster_components.components.step.decorator import step
 
     @step(assets=[AssetSpec("the_key")])
     def hello_world(context: ExecutionContext) -> ExecutionRecord:
