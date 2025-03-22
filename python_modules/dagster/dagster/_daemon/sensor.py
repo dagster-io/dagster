@@ -10,10 +10,10 @@ from contextlib import AbstractContextManager
 from types import TracebackType
 from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
 
+import dagster_shared.seven as seven
 from typing_extensions import Self
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (

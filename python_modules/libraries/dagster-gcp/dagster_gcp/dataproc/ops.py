@@ -8,7 +8,7 @@ from dagster import (
     op,
 )
 from dagster._annotations import beta
-from dagster._seven import json
+from dagster_shared.seven import json
 from pydantic import Field
 
 from dagster_gcp.dataproc.configs import define_dataproc_submit_job_config

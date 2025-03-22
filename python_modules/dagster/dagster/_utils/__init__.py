@@ -41,13 +41,13 @@ from typing import (  # noqa: UP035
     overload,
 )
 
+import dagster_shared.seven as seven
 import packaging.version
 from filelock import FileLock
 from pydantic import BaseModel
 from typing_extensions import Literal, TypeAlias, TypeGuard
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._utils.internal_init import IHasInternalInit as IHasInternalInit
 
 if TYPE_CHECKING:

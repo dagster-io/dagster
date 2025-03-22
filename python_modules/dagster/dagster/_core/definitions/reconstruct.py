@@ -16,10 +16,10 @@ from typing import (  # noqa: UP035
     overload,
 )
 
+import dagster_shared.seven as seven
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._core.code_pointer import (
     CodePointer,
     CustomPointer,

@@ -7,7 +7,6 @@ from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG, RUN_FAILURE_REASON_TAG
 from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._seven.temp_dir import get_system_temp_directory
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
@@ -20,6 +19,7 @@ from dagster_graphql.test.utils import (
     infer_job_selector,
     main_repo_location_name,
 )
+from dagster_shared.seven.temp_dir import get_system_temp_directory
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

@@ -6,6 +6,7 @@ from contextlib import ExitStack
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union, cast, overload
 
+from dagster_shared.seven import JSONDecodeError
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -45,7 +46,6 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, Runs
 from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
-from dagster._seven import JSONDecodeError
 from dagster._time import datetime_from_timestamp, parse_time_string
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.warnings import normalize_renamed_param

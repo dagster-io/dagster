@@ -6,7 +6,6 @@ import sys
 import time
 
 import pytest
-from dagster import _seven
 from dagster._api.list_repositories import sync_list_repositories_grpc
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.remote_representation.origin import (
@@ -42,6 +41,7 @@ from dagster._serdes.serdes import deserialize_value
 from dagster._utils import file_relative_path, find_free_port, safe_tempfile_path_unmanaged
 from dagster._utils.error import SerializableErrorInfo
 from dagster.version import __version__ as dagster_version
+from dagster_shared import seven
 
 
 def entrypoints():
@@ -124,7 +124,7 @@ def test_python_environment_args():
                 process.wait()
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Windows requires ports")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Windows requires ports")
 def test_env_var_port_collision():
     port = find_free_port()
     socket = safe_tempfile_path_unmanaged()
@@ -425,7 +425,7 @@ def test_load_with_non_existant_file(capfd):
 
     _, err = capfd.readouterr()
 
-    if _seven.IS_WINDOWS:
+    if seven.IS_WINDOWS:
         assert "The system cannot find the file specified" in err
     else:
         assert "No such file or directory" in err
@@ -492,7 +492,7 @@ def test_load_with_empty_working_directory(capfd):
                 process.wait()
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Crashes in subprocesses crash test runs on Windows")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Crashes in subprocesses crash test runs on Windows")
 def test_crash_during_load():
     port = find_free_port()
     python_file = file_relative_path(__file__, "crashy_grpc_repo.py")

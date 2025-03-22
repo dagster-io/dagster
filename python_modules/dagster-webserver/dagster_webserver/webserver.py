@@ -14,10 +14,10 @@ from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
-from dagster._seven import json
 from dagster._utils import Counter, traced_counter
 from dagster_graphql import __version__ as dagster_graphql_version
 from dagster_graphql.schema import create_schema
+from dagster_shared.seven import json
 from graphene import Schema
 from starlette.datastructures import MutableHeaders
 from starlette.exceptions import HTTPException

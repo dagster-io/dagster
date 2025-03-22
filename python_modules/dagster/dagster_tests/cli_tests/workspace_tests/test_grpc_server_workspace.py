@@ -2,7 +2,6 @@ from contextlib import ExitStack
 
 import pytest
 import yaml
-from dagster import _seven
 from dagster._check import CheckError
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.remote_representation import GrpcServerCodeLocationOrigin
@@ -10,6 +9,7 @@ from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.load import location_origins_from_config
 from dagster._grpc.server import GrpcServerProcess
 from dagster._utils import file_relative_path
+from dagster_shared import seven
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def instance():
         yield instance
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="no named sockets on Windows")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="no named sockets on Windows")
 def test_grpc_socket_workspace(instance):
     with GrpcServerProcess(
         instance_ref=instance.get_ref(), wait_on_exit=True

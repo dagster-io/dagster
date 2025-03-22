@@ -3,9 +3,8 @@ from collections.abc import Hashable, Mapping
 from functools import wraps
 from typing import Any, Callable, TypeVar, cast
 
+from dagster_shared.seven import get_arg_names
 from typing_extensions import Concatenate, ParamSpec
-
-from dagster._seven import get_arg_names
 
 S = TypeVar("S")
 T = TypeVar("T")
