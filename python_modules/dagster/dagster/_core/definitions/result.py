@@ -3,7 +3,7 @@ from typing import NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.asset_check_result import AssetCheckRecord, AssetCheckResult
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.metadata import RawMetadataMapping
@@ -89,33 +89,3 @@ class ObserveResult(AssetResult):
         tags (Optional[Mapping[str, str]]): Tags to record with the corresponding AssetObservation
             event.
     """
-
-
-class AssetRecord(AssetResult):
-    def __new__(
-        cls,
-        *,  # enforce kwargs
-        asset_key: Optional[CoercibleToAssetKey] = None,
-        metadata: Optional[RawMetadataMapping] = None,
-        asset_check_records: Optional[Sequence[AssetCheckRecord]] = None,
-        data_version: Optional[DataVersion] = None,
-        tags: Optional[Mapping[str, str]] = None,
-    ):
-        return super().__new__(
-            cls,
-            asset_key=asset_key,
-            metadata=metadata,
-            check_results=[
-                AssetCheckResult(
-                    passed=check_record.passed,
-                    asset_key=asset_key,
-                    check_name=check_record.check_name,
-                    metadata=check_record.metadata,
-                    severity=check_record.severity,
-                    description=check_record.description,
-                )
-                for check_record in asset_check_records or []
-            ],
-            data_version=data_version,
-            tags=tags,
-        )

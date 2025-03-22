@@ -684,6 +684,7 @@ def multi_asset(
         code_version=code_version,
         op_tags=op_tags,
         config_schema=config_schema,
+        # I believe this is an artifical constraint and this should take `Field`
         # config_schema=check.opt_mapping_param(
         #     config_schema,  # type: ignore
         #     "config_schema",

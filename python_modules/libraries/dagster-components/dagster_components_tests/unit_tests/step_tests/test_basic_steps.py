@@ -14,13 +14,14 @@ from dagster._core.definitions.metadata.metadata_value import TextMetadataValue
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_annotation import ResourceParam
-from dagster._core.definitions.result import AssetRecord, ObserveResult
+from dagster._core.definitions.result import ObserveResult
 from dagster._core.events import AssetObservationData, StepMaterializationData
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster_components import ComponentLoadContext
 from dagster_components.components.step.step import (
     AssetCheckRecord,
+    AssetRecord,
     ConfigParam,
     ExecutionContext,
     ExecutionRecord,

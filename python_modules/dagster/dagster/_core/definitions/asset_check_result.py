@@ -181,6 +181,3 @@ class AssetCheckResult(
             severity=self.severity,
             description=self.description,
         )
-
-
-class AssetCheckRecord(AssetCheckResult): ...

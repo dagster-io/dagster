@@ -233,7 +233,7 @@ class AssetCheckKey(NamedTuple):
         )
 
     def to_python_identifier(self) -> str:
-        # todo actually make work
+        # TODO make more robust and submit independently
         return f"{self.asset_key.to_python_identifier()}_{self.name}".replace("-", "_")
 
     def to_user_string(self) -> str:

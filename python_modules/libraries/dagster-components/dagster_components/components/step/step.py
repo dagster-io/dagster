@@ -8,7 +8,7 @@ from typing import Annotated, Any, Callable, Optional, Union
 
 from dagster._config.field import Field
 from dagster._config.pythonic_config.conversion_utils import infer_schema_from_config_annotation
-from dagster._core.definitions.asset_check_result import AssetCheckRecord, AssetCheckResult
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.data_version import DataVersion
@@ -24,7 +24,7 @@ from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_annotation import has_resource_param_annotation
-from dagster._core.definitions.result import AssetRecord, MaterializeResult, ObserveResult
+from dagster._core.definitions.result import AssetResult, MaterializeResult, ObserveResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster_dbt.asset_utils import AssetSelection
@@ -32,6 +32,39 @@ from dagster_shared import check
 from typing_extensions import TypeAlias, TypeVar
 
 from dagster_components.core.component import Component, ComponentLoadContext, component
+
+
+class AssetCheckRecord(AssetCheckResult): ...
+
+
+class AssetRecord(AssetResult):
+    def __new__(
+        cls,
+        *,  # enforce kwargs
+        asset_key: Optional[CoercibleToAssetKey] = None,
+        metadata: Optional[RawMetadataMapping] = None,
+        asset_check_records: Optional[Sequence[AssetCheckRecord]] = None,
+        data_version: Optional[DataVersion] = None,
+        tags: Optional[Mapping[str, str]] = None,
+    ):
+        return super().__new__(
+            cls,
+            asset_key=asset_key,
+            metadata=metadata,
+            check_results=[
+                AssetCheckResult(
+                    passed=check_record.passed,
+                    asset_key=asset_key,
+                    check_name=check_record.check_name,
+                    metadata=check_record.metadata,
+                    severity=check_record.severity,
+                    description=check_record.description,
+                )
+                for check_record in asset_check_records or []
+            ],
+            data_version=data_version,
+            tags=tags,
+        )
 
 
 class ExecutionContext:
