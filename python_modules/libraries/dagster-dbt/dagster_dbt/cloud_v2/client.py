@@ -297,6 +297,11 @@ class DbtCloudWorkspaceClient(DagsterModel):
         raise Exception(f"Run {run.id} did not complete within {poll_timeout} seconds.")
 
     def get_run_artifact(self, run_id: int, path: str) -> Mapping[str, Any]:
+        """Retrieves an artifact at the given path for a given dbt Cloud Run.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
         return self._make_request(
             method="get",
             endpoint=f"runs/{run_id}/artifacts/{path}",
@@ -305,9 +310,19 @@ class DbtCloudWorkspaceClient(DagsterModel):
         )
 
     def get_run_results_json(self, run_id: int) -> Mapping[str, Any]:
+        """Retrieves the run_results.json artifact of a given dbt Cloud Run.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
         return self.get_run_artifact(run_id=run_id, path="run_results.json")
 
     def get_run_manifest_json(self, run_id: int) -> Mapping[str, Any]:
+        """Retrieves the manifest.json artifact of a given dbt Cloud Run.
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the API response.
+        """
         return self.get_run_artifact(run_id=run_id, path="manifest.json")
 
     def get_project_details(self, project_id: int) -> Mapping[str, Any]:
