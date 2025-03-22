@@ -6,16 +6,11 @@ If you make changes to this file, run "python -m dagster._grpc.compile" after.""
 import builtins
 import google.protobuf.descriptor
 import google.protobuf.message
-import sys
-
-if sys.version_info >= (3, 8):
-    import typing as typing_extensions
-else:
-    import typing_extensions
+import typing
 
 DESCRIPTOR: google.protobuf.descriptor.FileDescriptor
 
-@typing_extensions.final
+@typing.final
 class Empty(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -25,7 +20,7 @@ class Empty(google.protobuf.message.Message):
 
 global___Empty = Empty
 
-@typing_extensions.final
+@typing.final
 class PingRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -36,11 +31,11 @@ class PingRequest(google.protobuf.message.Message):
         *,
         echo: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["echo", b"echo"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["echo", b"echo"]) -> None: ...
 
 global___PingRequest = PingRequest
 
-@typing_extensions.final
+@typing.final
 class PingReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -56,7 +51,7 @@ class PingReply(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "echo",
             b"echo",
             "serialized_server_utilization_metrics",
@@ -66,7 +61,7 @@ class PingReply(google.protobuf.message.Message):
 
 global___PingReply = PingReply
 
-@typing_extensions.final
+@typing.final
 class StreamingPingRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -81,15 +76,12 @@ class StreamingPingRequest(google.protobuf.message.Message):
         echo: builtins.str = ...,
     ) -> None: ...
     def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "echo", b"echo", "sequence_length", b"sequence_length"
-        ],
+        self, field_name: typing.Literal["echo", b"echo", "sequence_length", b"sequence_length"]
     ) -> None: ...
 
 global___StreamingPingRequest = StreamingPingRequest
 
-@typing_extensions.final
+@typing.final
 class StreamingPingEvent(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -104,15 +96,12 @@ class StreamingPingEvent(google.protobuf.message.Message):
         echo: builtins.str = ...,
     ) -> None: ...
     def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "echo", b"echo", "sequence_number", b"sequence_number"
-        ],
+        self, field_name: typing.Literal["echo", b"echo", "sequence_number", b"sequence_number"]
     ) -> None: ...
 
 global___StreamingPingEvent = StreamingPingEvent
 
-@typing_extensions.final
+@typing.final
 class GetServerIdReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -123,13 +112,11 @@ class GetServerIdReply(google.protobuf.message.Message):
         *,
         server_id: builtins.str = ...,
     ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["server_id", b"server_id"]
-    ) -> None: ...
+    def ClearField(self, field_name: typing.Literal["server_id", b"server_id"]) -> None: ...
 
 global___GetServerIdReply = GetServerIdReply
 
-@typing_extensions.final
+@typing.final
 class ExecutionPlanSnapshotRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -142,14 +129,14 @@ class ExecutionPlanSnapshotRequest(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_execution_plan_snapshot_args", b"serialized_execution_plan_snapshot_args"
         ],
     ) -> None: ...
 
 global___ExecutionPlanSnapshotRequest = ExecutionPlanSnapshotRequest
 
-@typing_extensions.final
+@typing.final
 class ExecutionPlanSnapshotReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -162,14 +149,14 @@ class ExecutionPlanSnapshotReply(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_execution_plan_snapshot", b"serialized_execution_plan_snapshot"
         ],
     ) -> None: ...
 
 global___ExecutionPlanSnapshotReply = ExecutionPlanSnapshotReply
 
-@typing_extensions.final
+@typing.final
 class ExternalPartitionNamesRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -182,14 +169,14 @@ class ExternalPartitionNamesRequest(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_partition_names_args", b"serialized_partition_names_args"
         ],
     ) -> None: ...
 
 global___ExternalPartitionNamesRequest = ExternalPartitionNamesRequest
 
-@typing_extensions.final
+@typing.final
 class ExternalPartitionNamesReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -204,7 +191,7 @@ class ExternalPartitionNamesReply(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_external_partition_names_or_external_partition_execution_error",
             b"serialized_external_partition_names_or_external_partition_execution_error",
         ],
@@ -212,7 +199,7 @@ class ExternalPartitionNamesReply(google.protobuf.message.Message):
 
 global___ExternalPartitionNamesReply = ExternalPartitionNamesReply
 
-@typing_extensions.final
+@typing.final
 class ExternalNotebookDataRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -223,13 +210,11 @@ class ExternalNotebookDataRequest(google.protobuf.message.Message):
         *,
         notebook_path: builtins.str = ...,
     ) -> None: ...
-    def ClearField(
-        self, field_name: typing_extensions.Literal["notebook_path", b"notebook_path"]
-    ) -> None: ...
+    def ClearField(self, field_name: typing.Literal["notebook_path", b"notebook_path"]) -> None: ...
 
 global___ExternalNotebookDataRequest = ExternalNotebookDataRequest
 
-@typing_extensions.final
+@typing.final
 class ExternalNotebookDataReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -240,11 +225,11 @@ class ExternalNotebookDataReply(google.protobuf.message.Message):
         *,
         content: builtins.bytes = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing_extensions.Literal["content", b"content"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["content", b"content"]) -> None: ...
 
 global___ExternalNotebookDataReply = ExternalNotebookDataReply
 
-@typing_extensions.final
+@typing.final
 class ExternalPartitionConfigRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -256,15 +241,12 @@ class ExternalPartitionConfigRequest(google.protobuf.message.Message):
         serialized_partition_args: builtins.str = ...,
     ) -> None: ...
     def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "serialized_partition_args", b"serialized_partition_args"
-        ],
+        self, field_name: typing.Literal["serialized_partition_args", b"serialized_partition_args"]
     ) -> None: ...
 
 global___ExternalPartitionConfigRequest = ExternalPartitionConfigRequest
 
-@typing_extensions.final
+@typing.final
 class ExternalPartitionConfigReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -279,7 +261,7 @@ class ExternalPartitionConfigReply(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_external_partition_config_or_external_partition_execution_error",
             b"serialized_external_partition_config_or_external_partition_execution_error",
         ],
@@ -287,7 +269,7 @@ class ExternalPartitionConfigReply(google.protobuf.message.Message):
 
 global___ExternalPartitionConfigReply = ExternalPartitionConfigReply
 
-@typing_extensions.final
+@typing.final
 class ExternalPartitionTagsRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -299,15 +281,12 @@ class ExternalPartitionTagsRequest(google.protobuf.message.Message):
         serialized_partition_args: builtins.str = ...,
     ) -> None: ...
     def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "serialized_partition_args", b"serialized_partition_args"
-        ],
+        self, field_name: typing.Literal["serialized_partition_args", b"serialized_partition_args"]
     ) -> None: ...
 
 global___ExternalPartitionTagsRequest = ExternalPartitionTagsRequest
 
-@typing_extensions.final
+@typing.final
 class ExternalPartitionTagsReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -322,7 +301,7 @@ class ExternalPartitionTagsReply(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_external_partition_tags_or_external_partition_execution_error",
             b"serialized_external_partition_tags_or_external_partition_execution_error",
         ],
@@ -330,7 +309,7 @@ class ExternalPartitionTagsReply(google.protobuf.message.Message):
 
 global___ExternalPartitionTagsReply = ExternalPartitionTagsReply
 
-@typing_extensions.final
+@typing.final
 class ExternalPartitionSetExecutionParamsRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -343,7 +322,7 @@ class ExternalPartitionSetExecutionParamsRequest(google.protobuf.message.Message
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_partition_set_execution_param_args",
             b"serialized_partition_set_execution_param_args",
         ],
@@ -351,7 +330,7 @@ class ExternalPartitionSetExecutionParamsRequest(google.protobuf.message.Message
 
 global___ExternalPartitionSetExecutionParamsRequest = ExternalPartitionSetExecutionParamsRequest
 
-@typing_extensions.final
+@typing.final
 class ListRepositoriesRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -361,7 +340,7 @@ class ListRepositoriesRequest(google.protobuf.message.Message):
 
 global___ListRepositoriesRequest = ListRepositoriesRequest
 
-@typing_extensions.final
+@typing.final
 class ListRepositoriesReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -374,7 +353,7 @@ class ListRepositoriesReply(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_list_repositories_response_or_error",
             b"serialized_list_repositories_response_or_error",
         ],
@@ -382,7 +361,7 @@ class ListRepositoriesReply(google.protobuf.message.Message):
 
 global___ListRepositoriesReply = ListRepositoriesReply
 
-@typing_extensions.final
+@typing.final
 class ExternalPipelineSubsetSnapshotRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -395,14 +374,14 @@ class ExternalPipelineSubsetSnapshotRequest(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_pipeline_subset_snapshot_args", b"serialized_pipeline_subset_snapshot_args"
         ],
     ) -> None: ...
 
 global___ExternalPipelineSubsetSnapshotRequest = ExternalPipelineSubsetSnapshotRequest
 
-@typing_extensions.final
+@typing.final
 class ExternalPipelineSubsetSnapshotReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -415,7 +394,7 @@ class ExternalPipelineSubsetSnapshotReply(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_external_pipeline_subset_result",
             b"serialized_external_pipeline_subset_result",
         ],
@@ -423,7 +402,7 @@ class ExternalPipelineSubsetSnapshotReply(google.protobuf.message.Message):
 
 global___ExternalPipelineSubsetSnapshotReply = ExternalPipelineSubsetSnapshotReply
 
-@typing_extensions.final
+@typing.final
 class ExternalRepositoryRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -439,7 +418,7 @@ class ExternalRepositoryRequest(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "defer_snapshots",
             b"defer_snapshots",
             "serialized_repository_python_origin",
@@ -449,7 +428,7 @@ class ExternalRepositoryRequest(google.protobuf.message.Message):
 
 global___ExternalRepositoryRequest = ExternalRepositoryRequest
 
-@typing_extensions.final
+@typing.final
 class ExternalRepositoryReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -462,14 +441,14 @@ class ExternalRepositoryReply(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_external_repository_data", b"serialized_external_repository_data"
         ],
     ) -> None: ...
 
 global___ExternalRepositoryReply = ExternalRepositoryReply
 
-@typing_extensions.final
+@typing.final
 class StreamingExternalRepositoryEvent(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -485,7 +464,7 @@ class StreamingExternalRepositoryEvent(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "sequence_number",
             b"sequence_number",
             "serialized_external_repository_chunk",
@@ -495,7 +474,7 @@ class StreamingExternalRepositoryEvent(google.protobuf.message.Message):
 
 global___StreamingExternalRepositoryEvent = StreamingExternalRepositoryEvent
 
-@typing_extensions.final
+@typing.final
 class ExternalScheduleExecutionRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -508,7 +487,7 @@ class ExternalScheduleExecutionRequest(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_external_schedule_execution_args",
             b"serialized_external_schedule_execution_args",
         ],
@@ -516,7 +495,7 @@ class ExternalScheduleExecutionRequest(google.protobuf.message.Message):
 
 global___ExternalScheduleExecutionRequest = ExternalScheduleExecutionRequest
 
-@typing_extensions.final
+@typing.final
 class ExternalSensorExecutionRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -529,7 +508,7 @@ class ExternalSensorExecutionRequest(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_external_sensor_execution_args",
             b"serialized_external_sensor_execution_args",
         ],
@@ -537,7 +516,7 @@ class ExternalSensorExecutionRequest(google.protobuf.message.Message):
 
 global___ExternalSensorExecutionRequest = ExternalSensorExecutionRequest
 
-@typing_extensions.final
+@typing.final
 class StreamingChunkEvent(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -553,14 +532,14 @@ class StreamingChunkEvent(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "sequence_number", b"sequence_number", "serialized_chunk", b"serialized_chunk"
         ],
     ) -> None: ...
 
 global___StreamingChunkEvent = StreamingChunkEvent
 
-@typing_extensions.final
+@typing.final
 class ShutdownServerReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -573,14 +552,14 @@ class ShutdownServerReply(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_shutdown_server_result", b"serialized_shutdown_server_result"
         ],
     ) -> None: ...
 
 global___ShutdownServerReply = ShutdownServerReply
 
-@typing_extensions.final
+@typing.final
 class CancelExecutionRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -593,14 +572,14 @@ class CancelExecutionRequest(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_cancel_execution_request", b"serialized_cancel_execution_request"
         ],
     ) -> None: ...
 
 global___CancelExecutionRequest = CancelExecutionRequest
 
-@typing_extensions.final
+@typing.final
 class CancelExecutionReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -613,14 +592,14 @@ class CancelExecutionReply(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_cancel_execution_result", b"serialized_cancel_execution_result"
         ],
     ) -> None: ...
 
 global___CancelExecutionReply = CancelExecutionReply
 
-@typing_extensions.final
+@typing.final
 class CanCancelExecutionRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -633,14 +612,14 @@ class CanCancelExecutionRequest(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_can_cancel_execution_request", b"serialized_can_cancel_execution_request"
         ],
     ) -> None: ...
 
 global___CanCancelExecutionRequest = CanCancelExecutionRequest
 
-@typing_extensions.final
+@typing.final
 class CanCancelExecutionReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -653,14 +632,14 @@ class CanCancelExecutionReply(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_can_cancel_execution_result", b"serialized_can_cancel_execution_result"
         ],
     ) -> None: ...
 
 global___CanCancelExecutionReply = CanCancelExecutionReply
 
-@typing_extensions.final
+@typing.final
 class StartRunRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -673,14 +652,12 @@ class StartRunRequest(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
-            "serialized_execute_run_args", b"serialized_execute_run_args"
-        ],
+        field_name: typing.Literal["serialized_execute_run_args", b"serialized_execute_run_args"],
     ) -> None: ...
 
 global___StartRunRequest = StartRunRequest
 
-@typing_extensions.final
+@typing.final
 class StartRunReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -693,14 +670,12 @@ class StartRunReply(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
-            "serialized_start_run_result", b"serialized_start_run_result"
-        ],
+        field_name: typing.Literal["serialized_start_run_result", b"serialized_start_run_result"],
     ) -> None: ...
 
 global___StartRunReply = StartRunReply
 
-@typing_extensions.final
+@typing.final
 class GetCurrentImageReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -712,15 +687,12 @@ class GetCurrentImageReply(google.protobuf.message.Message):
         serialized_current_image: builtins.str = ...,
     ) -> None: ...
     def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "serialized_current_image", b"serialized_current_image"
-        ],
+        self, field_name: typing.Literal["serialized_current_image", b"serialized_current_image"]
     ) -> None: ...
 
 global___GetCurrentImageReply = GetCurrentImageReply
 
-@typing_extensions.final
+@typing.final
 class GetCurrentRunsReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -732,15 +704,12 @@ class GetCurrentRunsReply(google.protobuf.message.Message):
         serialized_current_runs: builtins.str = ...,
     ) -> None: ...
     def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "serialized_current_runs", b"serialized_current_runs"
-        ],
+        self, field_name: typing.Literal["serialized_current_runs", b"serialized_current_runs"]
     ) -> None: ...
 
 global___GetCurrentRunsReply = GetCurrentRunsReply
 
-@typing_extensions.final
+@typing.final
 class ExternalJobRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -756,14 +725,14 @@ class ExternalJobRequest(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "job_name", b"job_name", "serialized_repository_origin", b"serialized_repository_origin"
         ],
     ) -> None: ...
 
 global___ExternalJobRequest = ExternalJobRequest
 
-@typing_extensions.final
+@typing.final
 class ExternalJobReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -779,14 +748,14 @@ class ExternalJobReply(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
+        field_name: typing.Literal[
             "serialized_error", b"serialized_error", "serialized_job_data", b"serialized_job_data"
         ],
     ) -> None: ...
 
 global___ExternalJobReply = ExternalJobReply
 
-@typing_extensions.final
+@typing.final
 class ExternalScheduleExecutionReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -799,14 +768,12 @@ class ExternalScheduleExecutionReply(google.protobuf.message.Message):
     ) -> None: ...
     def ClearField(
         self,
-        field_name: typing_extensions.Literal[
-            "serialized_schedule_result", b"serialized_schedule_result"
-        ],
+        field_name: typing.Literal["serialized_schedule_result", b"serialized_schedule_result"],
     ) -> None: ...
 
 global___ExternalScheduleExecutionReply = ExternalScheduleExecutionReply
 
-@typing_extensions.final
+@typing.final
 class ExternalSensorExecutionReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -818,15 +785,12 @@ class ExternalSensorExecutionReply(google.protobuf.message.Message):
         serialized_sensor_result: builtins.str = ...,
     ) -> None: ...
     def ClearField(
-        self,
-        field_name: typing_extensions.Literal[
-            "serialized_sensor_result", b"serialized_sensor_result"
-        ],
+        self, field_name: typing.Literal["serialized_sensor_result", b"serialized_sensor_result"]
     ) -> None: ...
 
 global___ExternalSensorExecutionReply = ExternalSensorExecutionReply
 
-@typing_extensions.final
+@typing.final
 class ReloadCodeRequest(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -836,7 +800,7 @@ class ReloadCodeRequest(google.protobuf.message.Message):
 
 global___ReloadCodeRequest = ReloadCodeRequest
 
-@typing_extensions.final
+@typing.final
 class ReloadCodeReply(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
@@ -848,7 +812,34 @@ class ReloadCodeReply(google.protobuf.message.Message):
         serialized_error: builtins.str = ...,
     ) -> None: ...
     def ClearField(
-        self, field_name: typing_extensions.Literal["serialized_error", b"serialized_error"]
+        self, field_name: typing.Literal["serialized_error", b"serialized_error"]
     ) -> None: ...
 
 global___ReloadCodeReply = ReloadCodeReply
+
+@typing.final
+class RefreshDefinitionsRequest(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    def __init__(
+        self,
+    ) -> None: ...
+
+global___RefreshDefinitionsRequest = RefreshDefinitionsRequest
+
+@typing.final
+class RefreshDefinitionsReply(google.protobuf.message.Message):
+    DESCRIPTOR: google.protobuf.descriptor.Descriptor
+
+    SERIALIZED_ERROR_FIELD_NUMBER: builtins.int
+    serialized_error: builtins.str
+    def __init__(
+        self,
+        *,
+        serialized_error: builtins.str = ...,
+    ) -> None: ...
+    def ClearField(
+        self, field_name: typing.Literal["serialized_error", b"serialized_error"]
+    ) -> None: ...
+
+global___RefreshDefinitionsReply = RefreshDefinitionsReply

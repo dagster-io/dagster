@@ -236,11 +236,14 @@ class LoadedRepositories:
         container_context: Optional[Mapping[str, Any]],
     ):
         self._loadable_target_origin = loadable_target_origin
+        self._container_image = container_image
+        self._entry_point = entry_point
 
         self._code_pointers_by_repo_name: dict[str, CodePointer] = {}
         self._recon_repos_by_name: dict[str, ReconstructableRepository] = {}
         self._repo_defs_by_name: dict[str, RepositoryDefinition] = {}
         self._loadable_repository_symbols: list[LoadableRepositorySymbol] = []
+        self._loadable_targets: list[LoadableTarget] = []
 
         self._container_context = container_context
 
@@ -266,20 +269,32 @@ class LoadedRepositories:
                     ]
                 ),
             ):
-                loadable_targets = get_loadable_targets(
+                self._loadable_targets = get_loadable_targets(
                     loadable_target_origin.python_file,
                     loadable_target_origin.module_name,
                     loadable_target_origin.package_name,
                     loadable_target_origin.working_directory,
                     loadable_target_origin.attribute,
                 )
-            for loadable_target in loadable_targets:
+
+            self.reload_repos()
+
+    def reload_repos(self):
+        loadable_target_origin = self._loadable_target_origin
+        with user_code_error_boundary(
+            DagsterUserCodeLoadError,
+            lambda: "Error occurred during the loading of Dagster definitions in\n"
+            + ", ".join(
+                [f"{k}={v}" for k, v in loadable_target_origin._asdict().items() if v is not None]
+            ),
+        ):
+            for loadable_target in self._loadable_targets:
                 pointer = _get_code_pointer(loadable_target_origin, loadable_target)
                 recon_repo = ReconstructableRepository(
                     pointer,
-                    container_image,
+                    self._container_image,
                     executable_path=loadable_target_origin.executable_path or sys.executable,
-                    entry_point=entry_point,
+                    entry_point=self._entry_point,
                     container_context=self._container_context,
                 )
                 with user_code_error_boundary(
@@ -387,6 +402,7 @@ class DagsterApiServer(DagsterApiServicer):
         # Each server is initialized with a unique UUID. This UUID is used by clients to track when
         # servers are replaced and is used for cache invalidation and reloading.
         self._server_id = check.opt_str_param(fixed_server_id, "fixed_server_id", str(uuid.uuid4()))
+        self._location_name = location_name
 
         # Client tells the server to shutdown by calling ShutdownServer (or by failing to send a
         # hearbeat, at which point this event is set. The cleanup thread will then set the server
@@ -565,6 +581,14 @@ class DagsterApiServer(DagsterApiServicer):
                 f'Could not find a repository called "{remote_repo_origin.repository_name}"'
             )
         return loaded_repos.reconstructables_by_name[remote_repo_origin.repository_name]
+
+    def RefreshDefinitions(self, request, context):
+        self._instance.inject_env_vars(self._location_name)
+
+        self._loaded_repositories.reload_repos()
+        self._server_id = str(uuid.uuid4())
+
+        return dagster_api_pb2.RefreshDefinitionsReply()
 
     def ReloadCode(
         self, _request: dagster_api_pb2.ReloadCodeRequest, _context: grpc.ServicerContext
