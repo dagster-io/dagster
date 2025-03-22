@@ -234,7 +234,7 @@ def test_step_with_resource() -> None:
     step = SingleAssetWithResource(assets=[AssetSpec("the_key")])
     record = step.execute(ExecutionContext(build_asset_context()), a_resource=AResource())
     assert isinstance(record, ExecutionRecord)
-    assert next(iter(record.asset_records or [])).metadata == {"resource": "a_value"}
+    assert next(iter(record.asset_records)).metadata == {"resource": "a_value"}
 
     defs = step.build_defs(ComponentLoadContext.for_test(resources={"a_resource": AResource()}))
     Definitions.validate_loadable(defs)

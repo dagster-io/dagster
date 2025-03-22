@@ -27,6 +27,7 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster_dbt.asset_utils import AssetSelection
 from dagster_shared import check
+from dagster_shared.record import IHaveNew, record_custom
 
 from dagster_components.components.step.config_param import (
     config_schema_from_config_cls,
@@ -73,10 +74,19 @@ class ExecutionContext:
         self._inner = inner
 
 
-@dataclass
-class ExecutionRecord:
-    asset_records: Optional[Sequence[AssetRecord]] = None
-    asset_check_records: Optional[Sequence[AssetCheckRecord]] = None
+@record_custom
+class ExecutionRecord(IHaveNew):
+    def __new__(
+        cls,
+        asset_records: Optional[Sequence[AssetRecord]] = None,
+        asset_check_records: Optional[Sequence[AssetCheckRecord]] = None,
+    ):
+        return super().__new__(
+            cls, asset_records=asset_records or [], asset_check_records=asset_check_records or []
+        )
+
+    asset_records: Sequence[AssetRecord]
+    asset_check_records: Sequence[AssetCheckRecord]
 
     @classmethod
     def for_asset(
@@ -218,7 +228,7 @@ class StepComponent(Component, ABC):
 
         execution_result = self.execute(context=ExecutionContext(context), **kwargs)
 
-        for asset_record in execution_result.asset_records or []:
+        for asset_record in execution_result.asset_records:
             if self.is_observable:
                 yield ObserveResult(
                     asset_key=asset_record.asset_key,
@@ -236,7 +246,7 @@ class StepComponent(Component, ABC):
                     check_results=asset_record.check_results,
                 )
 
-        for asset_check_result in execution_result.asset_check_records or []:
+        for asset_check_result in execution_result.asset_check_records:
             yield AssetCheckResult(
                 asset_key=asset_check_result.asset_key,
                 check_name=asset_check_result.check_name,
