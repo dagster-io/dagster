@@ -25,7 +25,7 @@ def load_test_component_defs(
     ) as (_, project_name):
         module = importlib.import_module(f"{project_name}.defs.{Path(src_path).stem}")
 
-        yield DefinitionsModuleCache(resources={}).load_defs(module=module)
+        yield DefinitionsModuleCache(resources={}, defs_cache={}).load_defs(module=module)
 
 
 def sync_load_test_component_defs(

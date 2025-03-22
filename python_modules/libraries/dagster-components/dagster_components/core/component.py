@@ -9,6 +9,7 @@ import textwrap
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, TypeVar, Union
@@ -17,7 +18,6 @@ from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import pushd
-from dagster._utils.cached_method import cached_method
 from typing_extensions import Self
 
 from dagster_components.core.component_key import ComponentKey
@@ -214,13 +214,18 @@ def get_component_types_in_module(
 T = TypeVar("T")
 
 
-@dataclass
+@dataclass(frozen=True)
 class DefinitionsModuleCache:
     """Cache used when loading a code location's component hierarchy.
     Stores resources and a cache to ensure we don't load the same component multiple times.
     """
 
+    defs_cache: dict[ModuleType, Definitions]
     resources: Mapping[str, object]
+
+    def with_resources(self, resources: Mapping[str, object]) -> "DefinitionsModuleCache":
+        """Returns a new DefinitionsModuleCache with the given resources."""
+        return dataclasses.replace(self, resources={**self.resources, **resources})
 
     def load_defs(self, module: ModuleType) -> Definitions:
         """Loads a set of Dagster definitions from a components Python module.
@@ -231,9 +236,11 @@ class DefinitionsModuleCache:
         Returns:
             Definitions: The set of Dagster definitions loaded from the module.
         """
-        return self._load_defs_inner(module)
+        if module not in self.defs_cache:
+            self.defs_cache[module] = self._load_defs_inner(module)
 
-    @cached_method
+        return self.defs_cache[module]
+
     def _load_defs_inner(self, module: ModuleType) -> Definitions:
         from dagster_components.core.defs_module import DefsModuleDecl
 
@@ -255,7 +262,7 @@ class DefinitionsModuleCache:
             return defs_module.build_defs()
 
 
-@dataclass
+@dataclass(frozen=True)
 class ComponentLoadContext:
     """Context for loading a single component."""
 
@@ -285,12 +292,20 @@ class ComponentLoadContext:
             defs_module_name="test",
             decl_node=decl_node,
             resolution_context=ResolutionContext.default(),
-            module_cache=DefinitionsModuleCache(resources=resources or {}),
+            module_cache=DefinitionsModuleCache(resources=resources or {}, defs_cache={}),
         )
+
+    @property
+    def resources(self) -> Mapping[str, object]:
+        """Returns the resources available to this component."""
+        return self.module_cache.resources
 
     @property
     def path(self) -> Path:
         return check.not_none(self.decl_node).path
+
+    def with_resources(self, resources: Mapping[str, object]) -> "ComponentLoadContext":
+        return dataclasses.replace(self, module_cache=self.module_cache.with_resources(resources))
 
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
         return dataclasses.replace(
@@ -301,10 +316,13 @@ class ComponentLoadContext:
     def for_decl(self, decl: "DefsModuleDecl") -> "ComponentLoadContext":
         return dataclasses.replace(self, decl_node=decl)
 
+    @cached_property
+    def container_path(self) -> Path:
+        return self.path.parent if self.path.is_file() else self.path
+
     def defs_relative_module_name(self, path: Path) -> str:
         """Returns the name of the python module at the given path, relative to the project root."""
-        container_path = self.path.parent if self.path.is_file() else self.path
-        with pushd(str(container_path)):
+        with pushd(str(self.container_path)):
             relative_path = path.resolve().relative_to(self.defs_root.resolve())
             if path.name == "__init__.py":
                 # e.g. "a_project/defs/something/__init__.py" -> "a_project.defs.something"

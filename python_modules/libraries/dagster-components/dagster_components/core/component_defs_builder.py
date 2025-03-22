@@ -68,5 +68,5 @@ def load_defs(
         resources (Optional[Mapping[str, object]]): A mapping of resource keys to resources
             to apply to the definitions.
     """
-    module_cache = DefinitionsModuleCache(resources=resources or {})
+    module_cache = DefinitionsModuleCache(resources=resources or {}, defs_cache={})
     return module_cache.load_defs(defs_root)

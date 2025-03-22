@@ -8,7 +8,7 @@ def test_custom_scope() -> None:
     module = importlib.import_module(
         "dagster_components_tests.resolution_tests.custom_scope_component"
     )
-    defs = DefinitionsModuleCache(resources={}).load_defs(
+    defs = DefinitionsModuleCache(resources={}, defs_cache={}).load_defs(
         module=module,
     )
 
