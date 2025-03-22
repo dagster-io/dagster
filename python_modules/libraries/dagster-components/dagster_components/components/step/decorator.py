@@ -16,7 +16,7 @@ ExecutionFn: TypeAlias = Callable[[ExecutionContext], ExecutionRecord]
 # TODO: need to get typehinting to work better with less gross __init__ method
 # TODO: support config and resources
 @dataclass(frozen=True, init=False)
-class StepComponentForDecorator(StepComponent):
+class DecoratedBasedStepComponent(StepComponent):
     def __init__(self, fn: ExecutionFn, **kwargs):
         super().__init__(**kwargs)
         object.__setattr__(self, "fn", fn)
@@ -27,7 +27,7 @@ class StepComponentForDecorator(StepComponent):
         return self.fn(context, **kwargs)
 
 
-ComponentLoader = Callable[[ComponentLoadContext], StepComponentForDecorator]
+ComponentLoader = Callable[[ComponentLoadContext], DecoratedBasedStepComponent]
 
 
 def step(
@@ -43,8 +43,8 @@ def step(
 ) -> Callable[[ExecutionFn], ComponentLoader]:
     def inner(fn: ExecutionFn) -> ComponentLoader:
         @component
-        def load_me(context: ComponentLoadContext) -> StepComponentForDecorator:
-            return StepComponentForDecorator(
+        def load_me(context: ComponentLoadContext) -> DecoratedBasedStepComponent:
+            return DecoratedBasedStepComponent(
                 name=name,
                 assets=assets,
                 checks=checks,

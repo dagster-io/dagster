@@ -1,10 +1,10 @@
 import hashlib
 import inspect
-from abc import ABC
-from collections.abc import Iterator, Mapping, Sequence
+from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
@@ -23,7 +23,6 @@ from dagster._core.definitions.observe import observe
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_annotation import has_resource_param_annotation
 from dagster._core.definitions.result import AssetResult, MaterializeResult, ObserveResult
-from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster_dbt.asset_utils import AssetSelection
 from dagster_shared import check
@@ -36,9 +35,11 @@ from dagster_components.components.step.config_param import (
 from dagster_components.core.component import Component, ComponentLoadContext
 
 
+# inheriting for now for convenience
 class AssetCheckRecord(AssetCheckResult): ...
 
 
+# inheriting for now for convenience
 class AssetRecord(AssetResult):
     def __new__(
         cls,
@@ -70,8 +71,9 @@ class AssetRecord(AssetResult):
 
 
 class ExecutionContext:
-    def __init__(self, inner: AssetExecutionContext):
-        self._inner = inner
+    # leaving this untyped but would be a wrapper around the existing contexts
+    def __init__(self, inner_context):
+        self._inner = inner_context
 
 
 @record_custom
@@ -138,6 +140,8 @@ def build_autoname(assets: Sequence[AssetSpec], checks: Sequence[AssetCheckSpec]
 
 
 # When to use record versus dataclass versus BaseModel
+# Making this a dataclass for now as I'm not sure we want to make this inherit from @record_custom
+# for a public API but oh boy is it painful
 @dataclass(frozen=True, init=False)
 class StepComponent(Component, ABC):
     def __init__(
@@ -313,36 +317,36 @@ class StepComponent(Component, ABC):
                 resources=context.module_cache.resources,
             )
 
-        raise Exception("Unreachable")
+        check.failed("Should never be reached")
 
+    @abstractmethod
     def execute(self, context: ExecutionContext, **kwargs) -> ExecutionRecord: ...
 
-    def stream(
-        self, context, ExecutionContext, **kwargs
-    ) -> Iterator[Union[AssetRecord, AssetCheckRecord]]: ...
 
-
-def execute_step(
+def execute_step_component(
     step: StepComponent, run_config: Any = None, resources: Optional[Mapping[str, object]] = None
 ) -> ExecuteInProcessResult:
     defs = step.build_defs(ComponentLoadContext.for_test(resources=resources))
     # this returns both assets_def and asset_checks_defs
     assets_defs = defs.get_asset_graph().assets_defs
-    check.invariant(len(assets_defs) <= 1)
+    check.invariant(len(assets_defs) == 1)
+    assets_def = next(iter(assets_defs))
     # we have to use different vebs for observe and materialize blegh
     if step.is_observable:
         return observe(
-            assets=[next(iter(assets_defs))],
+            assets=[assets_def],
             run_config=run_config,
         )
     else:
         return materialize(
-            assets=[next(iter(assets_defs))],
+            assets=[assets_def],
             run_config=run_config,
             selection=AssetSelection.all() | AssetSelection.all_asset_checks(),
         )
 
 
+# Here and below only exist to provide backwards compatibility with the old
+# observable_source_asset behavior, which I am not sure we want to keep
 OBSERVABLE_METADATA_KEY = "dagster/emit_as_observation"
 
 

@@ -26,7 +26,7 @@ from dagster_components.components.step.step import (
     ExecutionContext,
     ExecutionRecord,
     StepComponent,
-    execute_step,
+    execute_step_component,
     mark_spec_observable,
 )
 from dagster_shared import check
@@ -140,7 +140,7 @@ def test_hello_world() -> None:
     step = SingleAssetStep(name="hello_world", assets=[AssetSpec("the_key")])
     assert isinstance(get_assets_def(step), AssetsDefinition)
 
-    materialization = single_asset_mat(execute_step(step))
+    materialization = single_asset_mat(execute_step_component(step))
     assert materialization.metadata == {"whatami": TextMetadataValue("singleasset")}
 
 
@@ -159,7 +159,7 @@ def test_hello_world_decorator() -> None:
 
     assert isinstance(get_assets_def(step_inst), AssetsDefinition)
 
-    materialization = single_asset_mat(execute_step(step_inst))
+    materialization = single_asset_mat(execute_step_component(step_inst))
     assert materialization.metadata == {"whatami": TextMetadataValue("singleasset")}
 
 
@@ -176,7 +176,7 @@ def test_hello_many_asset() -> None:
     assets_def = get_assets_def(step)
     assert assets_def.keys == {AssetKey("the_key"), AssetKey("the_key2")}
 
-    mats = asset_mats(execute_step(step))
+    mats = asset_mats(execute_step_component(step))
     assert len(mats) == 2
     assert mats[0].asset_key == AssetKey("the_key")
     assert mats[1].asset_key == AssetKey("the_key2")
@@ -215,7 +215,7 @@ def test_step_with_config() -> None:
 
     assert get_assets_def(step).op.name == "execute__the_key"
     assert get_assets_def(step).op.config_schema
-    assert execute_step(
+    assert execute_step_component(
         step, run_config={"ops": {"execute__the_key": {"config": {"a_value": "foo"}}}}
     ).success
 
@@ -225,7 +225,7 @@ def test_step_with_config_alt_name() -> None:
 
     assert get_assets_def(step).op.name == "execute__the_key"
     assert get_assets_def(step).op.config_schema
-    assert execute_step(
+    assert execute_step_component(
         step, run_config={"ops": {"execute__the_key": {"config": {"a_value": "foo"}}}}
     ).success
 
@@ -245,7 +245,7 @@ def test_step_with_resource() -> None:
     result = materialize([assets_def])
     assert result.success
 
-    mat = single_asset_mat(execute_step(step, resources={"a_resource": AResource()}))
+    mat = single_asset_mat(execute_step_component(step, resources={"a_resource": AResource()}))
     assert mat.metadata == {"resource": TextMetadataValue("a_value")}
 
 
@@ -262,7 +262,7 @@ def test_single_asset_single_check() -> None:
         assets=[AssetSpec("the_key")],
         checks=[AssetCheckSpec("check_name", asset="the_key")],
     )
-    result = execute_step(step)
+    result = execute_step_component(step)
     assert result.success
     assert single_asset_mat(result).asset_key == AssetKey("the_key")
     assert single_asset_check_eval(result).passed
@@ -281,7 +281,7 @@ def test_single_standalone_check() -> None:
     step = SingleCheckStep(
         checks=[AssetCheckSpec("check_name", asset="somekey_elsewhere")],
     )
-    result = execute_step(step)
+    result = execute_step_component(step)
     assert result.success
     assert single_asset_check_eval(result).asset_check_key == AssetCheckKey(
         asset_key=AssetKey("somekey_elsewhere"), name="check_name"
@@ -306,7 +306,7 @@ def test_multi_check() -> None:
         ],
     )
 
-    result = execute_step(step)
+    result = execute_step_component(step)
     assert result.success
     eval_list = result.get_asset_check_evaluations()
 
@@ -369,7 +369,9 @@ def test_osa_in_step() -> None:
                 data_version=DataVersion("my_data"),
             )
 
-    result = execute_step(SingleObserve(assets=[mark_spec_observable(AssetSpec("my_asset"))]))
+    result = execute_step_component(
+        SingleObserve(assets=[mark_spec_observable(AssetSpec("my_asset"))])
+    )
 
     assert result.success
     obs = single_asset_obs(result)
