@@ -13,6 +13,8 @@ from jinja2 import Undefined
 from jinja2.exceptions import UndefinedError
 from jinja2.nativetypes import NativeTemplate
 
+from dagster_components.resolved.errors import ResolutionException
+
 if TYPE_CHECKING:
     from dagster_components.resolved.model import ResolvableModel
 
@@ -31,9 +33,6 @@ def automation_condition_scope() -> Mapping[str, Any]:
 
 
 T = TypeVar("T")
-
-
-class ResolutionException(Exception): ...
 
 
 @record

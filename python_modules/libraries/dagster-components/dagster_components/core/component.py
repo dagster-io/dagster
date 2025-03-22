@@ -23,7 +23,13 @@ from typing_extensions import Self
 from dagster_components.core.component_key import ComponentKey
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
 from dagster_components.resolved.context import ResolutionContext
-from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, resolve_model
+from dagster_components.resolved.model import (
+    ResolvableModel,
+    Resolved,
+    ResolvedFrom,
+    derive_model_type,
+    resolve_model,
+)
 from dagster_components.scaffold import ScaffolderUnavailableReason, get_scaffolder, scaffold_with
 from dagster_components.utils import format_error_message, get_path_from_module
 
@@ -46,6 +52,10 @@ class Component(ABC):
 
         if issubclass(cls, ResolvedFrom):
             return get_model_type(cls)
+
+        if issubclass(cls, Resolved):
+            return derive_model_type(cls)
+
         return None
 
     @classmethod
@@ -62,7 +72,7 @@ class Component(ABC):
             assert isinstance(attributes, cls)
             return attributes
 
-        elif issubclass(cls, ResolvedFrom):
+        elif issubclass(cls, ResolvedFrom) or issubclass(cls, Resolved):
             return (
                 resolve_model(attributes, cls, context.resolution_context.at_path("attributes"))
                 if attributes
