@@ -1,7 +1,7 @@
 import os
 from collections import OrderedDict
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from dagster_shared.yaml_utils import load_yaml_from_path
 
@@ -12,6 +12,7 @@ from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
+    ReadOnlyPlusRemoteCodeLocationOrigin,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.config_schema import ensure_workspace_config
@@ -59,13 +60,13 @@ def location_origins_from_config(
     location_configs = check.list_elem(workspace_config, "load_from", of_type=dict)
     location_origins: dict[str, CodeLocationOrigin] = OrderedDict()
     for location_config in location_configs:
-        origin = _location_origin_from_location_config(location_config, yaml_path)
-        check.invariant(
-            location_origins.get(origin.location_name) is None,
-            f'Cannot have multiple locations with the same name, got multiple "{origin.location_name}"',
-        )
+        for origin in _location_origins_from_location_config(location_config, yaml_path):
+            check.invariant(
+                location_origins.get(origin.location_name) is None,
+                f'Cannot have multiple locations with the same name, got multiple "{origin.location_name}"',
+            )
 
-        location_origins[origin.location_name] = origin
+            location_origins[origin.location_name] = origin
 
     return location_origins
 
@@ -257,6 +258,81 @@ def location_origin_from_python_file(
     )
 
 
+WORKSPACE_ENTRIES_QUERY = """
+query CliWorkspaceEntries {
+    workspace {
+        workspaceEntries {
+            locationName
+        }
+    }
+}
+"""
+
+
+def _fetch_from_plus_gql(url: str, deployment: str, token: str, query: str) -> dict[str, Any]:
+    """Fetches data from the Plus API using a GraphQL client."""
+    from gql import Client, gql
+    from gql.transport.requests import RequestsHTTPTransport
+
+    client = Client(
+        transport=RequestsHTTPTransport(
+            url=f"{url}/graphql",
+            use_json=True,
+            headers={
+                "Dagster-Cloud-Version": "1.0",
+                "Authorization": f"Bearer {check.str_param(token, 'token')}",
+                "Dagster-Cloud-Deployment": check.str_param(deployment, "deployment"),
+            },
+        )
+    )
+
+    return client.execute(gql(query))
+
+
+def _location_origins_from_plus_config(
+    plus_config: Mapping, yaml_path: str
+) -> Sequence[ReadOnlyPlusRemoteCodeLocationOrigin]:
+    """Takes a plus code location config and fetches the list of code locations from the Plus API to
+    represent, returning a ReadOnlyPlusRemoteCodeLocationOrigin for each.
+    """
+    check.mapping_param(plus_config, "plus_config")
+    check.str_param(yaml_path, "yaml_path")
+
+    url, organization, deployment, token = (
+        plus_config.get("url"),
+        plus_config.get("organization"),
+        plus_config.get("deployment"),
+        plus_config.get("token"),
+    )
+
+    check.invariant(
+        (url or organization) and not (url and organization),
+        "Must supply either a url or an organization",
+    )
+    if organization:
+        url = f"https://agent.{organization}.dagster.cloud"
+
+    code_location_names = [
+        entry["locationName"]
+        for entry in _fetch_from_plus_gql(
+            check.str_param(url, "url"),
+            check.str_param(deployment, "deployment"),
+            check.str_param(token, "token"),
+            WORKSPACE_ENTRIES_QUERY,
+        )["workspace"]["workspaceEntries"]
+    ]
+
+    return [
+        ReadOnlyPlusRemoteCodeLocationOrigin(
+            location_name=location_name,
+            url=check.str_param(url, "url"),
+            deployment=check.str_param(deployment, "deployment"),
+            token=check.str_param(token, "token"),
+        )
+        for location_name in code_location_names
+    ]
+
+
 def _location_origin_from_grpc_server_config(
     grpc_server_config: Mapping, yaml_path: str
 ) -> GrpcServerCodeLocationOrigin:
@@ -294,17 +370,20 @@ def _get_executable_path(executable_path: Optional[str]) -> Optional[str]:
     return os.path.expanduser(executable_path) if executable_path else None
 
 
-def _location_origin_from_location_config(
+def _location_origins_from_location_config(
     location_config: Mapping, yaml_path: str
-) -> CodeLocationOrigin:
+) -> Sequence[CodeLocationOrigin]:
     check.mapping_param(location_config, "location_config")
     check.str_param(yaml_path, "yaml_path")
 
     if is_target_config(location_config):
-        return _location_origin_from_target_config(location_config, yaml_path)
+        return [_location_origin_from_target_config(location_config, yaml_path)]
 
     elif "grpc_server" in location_config:
-        return _location_origin_from_grpc_server_config(location_config["grpc_server"], yaml_path)
+        return [_location_origin_from_grpc_server_config(location_config["grpc_server"], yaml_path)]
+
+    elif "plus" in location_config:
+        return _location_origins_from_plus_config(location_config["plus"], yaml_path)
 
     else:
         check.not_implemented(f"Unsupported location config: {location_config}")

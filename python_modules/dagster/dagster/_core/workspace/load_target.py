@@ -10,6 +10,7 @@ from dagster._core.remote_representation.origin import (
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
+    ReadOnlyPlusRemoteCodeLocationOrigin,
 )
 from dagster._core.workspace.load import (
     location_origin_from_module_name,
@@ -55,6 +56,24 @@ class InProcessWorkspaceLoadTarget(WorkspaceLoadTarget):
         )
 
     def create_origins(self) -> Sequence[InProcessCodeLocationOrigin]:
+        return self._origins
+
+
+class ReadOnlyCloudMirrorWorkspaceLoadTarget(WorkspaceLoadTarget):
+    """A workspace load target that is in-process and does not spin up a gRPC server."""
+
+    def __init__(
+        self,
+        origin: Union[
+            ReadOnlyPlusRemoteCodeLocationOrigin, Sequence[ReadOnlyPlusRemoteCodeLocationOrigin]
+        ],
+    ):
+        self._origins = cast(
+            Sequence[ReadOnlyPlusRemoteCodeLocationOrigin],
+            origin if isinstance(origin, list) else [origin],
+        )
+
+    def create_origins(self) -> Sequence[ReadOnlyPlusRemoteCodeLocationOrigin]:
         return self._origins
 
 

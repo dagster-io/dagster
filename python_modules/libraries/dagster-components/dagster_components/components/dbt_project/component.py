@@ -91,7 +91,10 @@ def resolve_translator(context: ResolutionContext, model: DbtProjectModel) -> Da
                 )
                 self._specs_map[id(stream_definition)] = self.resolving_info.get_asset_spec(
                     base_spec,
-                    {self.resolving_info.obj_name: stream_definition, "spec": base_spec},
+                    {
+                        self.resolving_info.obj_name: stream_definition,
+                        "spec": base_spec,
+                    },
                 )
             return self._specs_map[id(stream_definition)]
 
