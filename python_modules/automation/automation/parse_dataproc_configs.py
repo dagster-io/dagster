@@ -27,9 +27,10 @@ class Enum:
         self.enum_descriptions = enum_descriptions
 
     def write(self, printer):
-        printer.line(self.name.title() + " = Enum(")
+        capitalized_name = self.name[0].upper() + self.name[1:]
+        printer.line(capitalized_name + " = Enum(")
         with printer.with_indent():
-            printer.line(f"name='{self.name.title()}',")
+            printer.line(f"name='{capitalized_name}',")
             printer.line("enum_values=[")
             with printer.with_indent():
                 if self.enum_descriptions:
@@ -148,9 +149,8 @@ class ConfigParser:
 
             # Optionally write enum includes
             if self.all_enums:
-                printer.line(
-                    "from .types_{} import {}".format(suffix, ", ".join(self.all_enums.keys()))
-                )
+                enums = ", ".join(self.all_enums.keys())
+                printer.line(f"from dagster_gcp.dataproc.types_{suffix} import {enums}")
                 printer.blank_line()
 
             printer.line(f"def define_{suffix}_config():")
@@ -192,6 +192,8 @@ class ConfigParser:
             # than they should be for type "Component" and the name isn't there
             if name is None:
                 name = "Component"
+            else:
+                name = name[0].upper() + name[1:]
 
             enum = Enum(name, obj["enum"], enum_descriptions or obj.get("enumDescriptions"))
             self.all_enums[name] = enum
@@ -223,7 +225,9 @@ class ConfigParser:
         else:
             raise Exception("unknown type: ", obj)
 
-        return Field(fields, is_required=None, description=obj.get("description"))
+        description = obj.get("description")
+        is_required = description is not None and description.startswith("Required.")
+        return Field(fields, is_required=is_required, description=description)
 
     def extract_schema_for_object(self, object_name, name):
         # Reset enums for this object

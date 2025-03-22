@@ -75,5 +75,5 @@ def test_serialize():
 
     serialized = serialize(result)
     assert b"def spark_config():" in serialized
-    assert b"'''NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT\n\n" in serialized
+    assert b'"""NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT.\n\n' in serialized
     assert b"Application Properties: The name of your application." in serialized

@@ -35,13 +35,13 @@ class IndentingBufferPrinter(IndentingPrinter):
 
     def write_header(self) -> None:
         args = [os.path.basename(sys.argv[0])] + sys.argv[1:]
-        self.line("'''NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT")
+        self.line('"""NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT.')
         self.blank_line()
         self.line("@generated")
         self.blank_line()
         self.line("Produced via:")
         self.line("\n\t".join(f"{s} \\" for s in args if s != "--snapshot-update"))
         self.blank_line()
-        self.line("'''")
+        self.line('"""')
         self.blank_line()
         self.blank_line()
