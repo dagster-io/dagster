@@ -12,7 +12,7 @@ from dagster import AssetKey, AssetsDefinition, AssetSpec, BackfillPolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster_components.components.dbt_project.component import DbtProjectComponent, DbtProjectModel
 from dagster_components.core.component_defs_builder import build_component_defs
-from dagster_components.core.defs_module import ComponentFileModel, YamlComponentDecl
+from dagster_components.core.defs_module import ComponentConfig, YamlComponentDecl
 from dagster_components.resolved.core_models import AssetAttributesModel
 from dagster_dbt import DbtProject
 
@@ -62,7 +62,7 @@ def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
 
     decl_node = YamlComponentDecl(
         path=dbt_path / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
+        component_config=ComponentConfig(
             type="dbt_project",
             attributes={
                 "dbt": {"project_dir": "jaffle_shop"},
@@ -113,7 +113,7 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
 
     decl_node = YamlComponentDecl(
         path=dbt_path / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
+        component_config=ComponentConfig(
             type="debug_dbt_project",
             attributes={
                 "dbt": {"project_dir": "jaffle_shop"},
@@ -205,7 +205,7 @@ def test_asset_attributes(
     with wrapper:
         decl_node = YamlComponentDecl(
             path=dbt_path / COMPONENT_RELPATH,
-            component_file_model=ComponentFileModel(
+            component_config=ComponentConfig(
                 type="dbt_project",
                 attributes={
                     "dbt": {"project_dir": "jaffle_shop"},
@@ -242,7 +242,7 @@ def test_asset_attributes_is_comprehensive():
 def test_subselection(dbt_path: Path) -> None:
     decl_node = YamlComponentDecl(
         path=dbt_path / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
+        component_config=ComponentConfig(
             type="dbt_project",
             attributes={
                 "dbt": {"project_dir": "jaffle_shop"},
@@ -260,7 +260,7 @@ def test_subselection(dbt_path: Path) -> None:
 def test_exclude(dbt_path: Path) -> None:
     decl_node = YamlComponentDecl(
         path=dbt_path / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
+        component_config=ComponentConfig(
             type="dbt_project",
             attributes={
                 "dbt": {"project_dir": "jaffle_shop"},
@@ -300,7 +300,7 @@ def test_dependency_on_dbt_project():
 def test_spec_is_available_in_scope(dbt_path: Path) -> None:
     decl_node = YamlComponentDecl(
         path=dbt_path / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
+        component_config=ComponentConfig(
             type="  ",
             attributes={
                 "dbt": {"project_dir": "jaffle_shop"},
@@ -342,7 +342,7 @@ def test_udf_map_spec(dbt_path: Path, map_fn: Callable[[AssetSpec], Any]) -> Non
 
     decl_node = YamlComponentDecl(
         path=dbt_path / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
+        component_config=ComponentConfig(
             type="debug_dbt_project",
             attributes={
                 "dbt": {"project_dir": "jaffle_shop"},
