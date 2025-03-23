@@ -8,4 +8,4 @@ from dagster_components_tests.integration_tests.some_resource import SomeResourc
 @resource_injector
 def resources(context: ComponentLoadContext) -> Mapping[str, object]:
     """This component loads a Definitions object with no assets."""
-    return {"some_resource": SomeResource()}
+    return {"some_resource": SomeResource("some_value")}

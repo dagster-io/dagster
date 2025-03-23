@@ -18,13 +18,12 @@ class NestedComponent(Component):
         return Definitions(assets=[an_asset_calls_execute])
 
     def execute(self) -> str:
-        return self.some_resource.get_value()
+        return self.some_resource.value
 
 
 @component
 def load(context: ComponentLoadContext) -> NestedComponent:
     """This component loads a Definitions object with no assets."""
     assert "some_resource" in context.resources
-    assert type(context.resources["some_resource"]).__name__ == "SomeResource"
     assert isinstance(context.resources["some_resource"], SomeResource)
     return NestedComponent(some_resource=context.resources["some_resource"])

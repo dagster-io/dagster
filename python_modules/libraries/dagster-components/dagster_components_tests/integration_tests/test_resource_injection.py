@@ -24,3 +24,8 @@ def test_nested_component(defs: Definitions) -> None:
     assert result.success
     # gets the value of the resource that was paassed at load time
     assert result.output_for_node("an_asset_calls_execute") == "some_value"
+
+
+@pytest.mark.parametrize("defs", ["resource_injection/peer_pythonic_component"], indirect=True)
+def test_peer_component(defs: Definitions) -> None:
+    assert "some_resource" in (defs.resources or {})

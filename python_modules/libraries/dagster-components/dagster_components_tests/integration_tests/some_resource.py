@@ -1,4 +1,7 @@
 # Random resource available to the integration tests at a stable path
+from dataclasses import dataclass
+
+
+@dataclass
 class SomeResource:
-    def get_value(self) -> str:
-        return "some_value"
+    value: str

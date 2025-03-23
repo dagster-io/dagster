@@ -214,7 +214,7 @@ def get_component_types_in_module(
 T = TypeVar("T")
 
 
-@dataclass(frozen=True)
+@dataclass
 class DefinitionsModuleCache:
     """Cache used when loading a code location's component hierarchy.
     Stores resources and a cache to ensure we don't load the same component multiple times.
@@ -271,7 +271,7 @@ class DefinitionsModuleCache:
             return defs_module.build_defs()
 
 
-@dataclass(frozen=True)
+@dataclass
 class ComponentLoadContext:
     """Context for loading a single component."""
 

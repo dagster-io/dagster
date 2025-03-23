@@ -14,7 +14,7 @@ class NestedComponentThatMakesDecorator(Component):
 
         @asset
         def an_asset():
-            return some_resource.get_value()
+            return some_resource.value
 
         return Definitions(assets=[an_asset])
 

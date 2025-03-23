@@ -50,9 +50,13 @@ class ComponentFileModel(BaseModel):
 @record
 class DefsModule(ABC):
     path: Path
+    injected_resources: Mapping[str, Any]
+
+    def build_defs(self) -> Definitions:
+        return Definitions.merge(self._build_defs(), Definitions(resources=self.injected_resources))
 
     @abstractmethod
-    def build_defs(self) -> Definitions: ...
+    def _build_defs(self) -> Definitions: ...
 
 
 @record
@@ -61,7 +65,7 @@ class SubpackageDefsModule(DefsModule):
 
     submodules: Sequence[DefsModule]
 
-    def build_defs(self) -> Definitions:
+    def _build_defs(self) -> Definitions:
         return Definitions.merge(*(submodule.build_defs() for submodule in self.submodules))
 
 
@@ -70,9 +74,8 @@ class PythonDefsModule(DefsModule):
     """A module containing python dagster definitions."""
 
     module: Any  # ModuleType
-    injected_resources: Mapping[str, Any]
 
-    def build_defs(self) -> Definitions:
+    def _build_defs(self) -> Definitions:
         return Definitions.merge(
             self.get_definitions(), Definitions(resources=self.injected_resources)
         )
@@ -97,7 +100,7 @@ class ComponentDefsModule(DefsModule):
     context: ComponentLoadContext
     component: Component
 
-    def build_defs(self) -> Definitions:
+    def _build_defs(self) -> Definitions:
         return self.component.build_defs(self.context)
 
 
@@ -191,17 +194,19 @@ class SubpackageDefsModuleDecl(DefsModuleDecl):
         return SubpackageDefsModule(
             path=self.path,
             submodules=[
-                decl.load(self.inject_resources(context).for_decl(decl)) for decl in self.subdecls
+                decl.load(self._inject_resources(context).for_decl(decl)) for decl in self.subdecls
             ],
+            injected_resources={},
         )
 
-    def inject_resources(self, context: ComponentLoadContext) -> ComponentLoadContext:
+    # I believe we'll be able to eliminate this?
+    def _inject_resources(self, context: ComponentLoadContext) -> ComponentLoadContext:
         """Injects resources into the context for each subdecl."""
-        for decl in self.subdecls:
-            resources = decl.resources_to_inject(context)
-            if resources:
-                context = context.with_resources(resources)
-        return context
+        merged_resources = {
+            k: v for decl in self.subdecls for k, v in decl.resources_to_inject(context).items()
+        }
+
+        return context.with_resources(merged_resources) if merged_resources else context
 
 
 @record
@@ -218,6 +223,8 @@ class PythonModuleDecl(DefsModuleDecl):
             return None
 
     def load(self, context: ComponentLoadContext) -> PythonDefsModule:
+        context = context.with_resources(self.resources_to_inject(context))
+
         if self.path.is_dir():
             module = context.load_defs_relative_python_module(self.path / "definitions.py")
         else:
@@ -227,17 +234,27 @@ class PythonModuleDecl(DefsModuleDecl):
         )
 
     def resources_to_inject(self, context: ComponentLoadContext) -> Mapping[str, object]:
-        if self.path.is_dir():
-            resources_py_path = self.path / "resources.py"
-        else:
-            resources_py_path = self.path
+        # handle case where we are loading a file directly or where resources.py is a peer to definitions.py
+        return (
+            injected_resources_from_defs_folder(context, self.path)
+            if self.path.is_dir()
+            else injected_resources_from_py_file(context, self.path)
+        )
 
-        if not resources_py_path.exists():
-            return {}
 
-        resource_injector = get_resource_injector_from_path(context, resources_py_path)
-        resources = resource_injector(context) if resource_injector else {}
-        return check.inst({**resources}, dict, "Resource injector must return a mapping")
+def injected_resources_from_py_file(context: ComponentLoadContext, path: Path) -> dict[str, Any]:
+    if not path.exists() or path.suffix != ".py":
+        return {}
+    resource_injector = get_resource_injector_from_path(context, path)
+    resources = resource_injector(context) if resource_injector else {}
+    return check.inst({**resources}, dict, "Resource injector must return a mapping")
+
+
+def injected_resources_from_defs_folder(
+    context: ComponentLoadContext, path: Path
+) -> dict[str, Any]:
+    check.invariant(path.exists() and path.is_dir(), f"Path {path} must exist and be a directory")
+    return injected_resources_from_py_file(context, path / "resources.py")
 
 
 @record
@@ -276,6 +293,7 @@ class YamlComponentDecl(DefsModuleDecl):
                 return TypeAdapter(schema).validate_python(self.component_file_model.attributes)
 
     def load(self, context: ComponentLoadContext) -> ComponentDefsModule:
+        context = context.with_resources(self.resources_to_inject(context))
         type_str = context.normalize_component_type_str(self.component_file_model.type)
         key = ComponentKey.from_typename(type_str)
         component_type = load_component_type(key)
@@ -284,7 +302,16 @@ class YamlComponentDecl(DefsModuleDecl):
 
         attributes = self.get_attributes(component_schema) if component_schema else None
         component = component_type.load(attributes, context)
-        return ComponentDefsModule(path=self.path, context=context, component=component)
+        return ComponentDefsModule(
+            path=self.path,
+            context=context,
+            component=component,
+            injected_resources=self.resources_to_inject(context),
+        )
+
+    def resources_to_inject(self, context: ComponentLoadContext) -> Mapping[str, object]:
+        # pick up resources.py next to component.yaml
+        return injected_resources_from_defs_folder(context, self.path)
 
 
 @record
@@ -299,6 +326,7 @@ class PythonComponentDecl(DefsModuleDecl):
             return
 
     def load(self, context: ComponentLoadContext) -> ComponentDefsModule:
+        context = context.with_resources(self.resources_to_inject(context))
         module = context.load_defs_relative_python_module(self.path / "component.py")
         component_loaders = list(inspect.getmembers(module, is_component_loader))
         if len(component_loaders) < 1:
@@ -315,7 +343,12 @@ class PythonComponentDecl(DefsModuleDecl):
                 path=self.path,
                 context=context,
                 component=component_loader(context),
+                injected_resources=self.resources_to_inject(context),
             )
+
+    def resources_to_inject(self, context):
+        # pick up resources.py next to component.py
+        return injected_resources_from_defs_folder(context, self.path)
 
 
 def get_resource_injector_from_path(context: ComponentLoadContext, path: Path) -> Any:
