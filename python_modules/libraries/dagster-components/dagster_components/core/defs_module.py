@@ -30,7 +30,6 @@ from dagster_components.core.component import (
     load_component_type,
 )
 from dagster_components.core.component_key import ComponentKey
-from dagster_components.utils import load_module_from_path
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -261,7 +260,7 @@ class PythonComponentDecl(DefsModuleDecl):
             return
 
     def load(self, context: ComponentLoadContext) -> ComponentDefsModule:
-        module = load_module_from_path(self.path.stem, self.path / "component.py")
+        module = context.load_defs_relative_python_module(self.path / "component.py")
         component_loaders = list(inspect.getmembers(module, is_component_loader))
         if len(component_loaders) < 1:
             raise DagsterInvalidDefinitionError("No component loaders found in module")
