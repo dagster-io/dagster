@@ -223,6 +223,15 @@ class DefinitionsModuleCache:
     defs_cache: dict[ModuleType, Definitions]
     resources: Mapping[str, object]
 
+    @staticmethod
+    def for_test(
+        *,
+        resources: Optional[Mapping[str, object]] = None,
+        defs_cache: Optional[dict[ModuleType, Definitions]] = None,
+    ) -> "DefinitionsModuleCache":
+        """Creates a DefinitionsModuleCache for testing purposes."""
+        return DefinitionsModuleCache(resources=resources or {}, defs_cache=defs_cache or {})
+
     def with_resources(self, resources: Mapping[str, object]) -> "DefinitionsModuleCache":
         """Returns a new DefinitionsModuleCache with the given resources."""
         return dataclasses.replace(self, resources={**self.resources, **resources})
@@ -292,7 +301,7 @@ class ComponentLoadContext:
             defs_module_name="test",
             decl_node=decl_node,
             resolution_context=ResolutionContext.default(),
-            module_cache=DefinitionsModuleCache(resources=resources or {}, defs_cache={}),
+            module_cache=DefinitionsModuleCache.for_test(resources=resources),
         )
 
     @property

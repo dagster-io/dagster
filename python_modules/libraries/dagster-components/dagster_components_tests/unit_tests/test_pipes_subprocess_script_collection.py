@@ -29,7 +29,7 @@ def test_load_from_location_path() -> None:
     module = importlib.import_module(
         "dagster_components_tests.code_locations.python_script_location.defs.scripts"
     )
-    defs = DefinitionsModuleCache(resources={}, defs_cache={}).load_defs(module)
+    defs = DefinitionsModuleCache.for_test().load_defs(module)
 
     assert defs.get_asset_graph().get_all_asset_keys() == {
         AssetKey("a"),
