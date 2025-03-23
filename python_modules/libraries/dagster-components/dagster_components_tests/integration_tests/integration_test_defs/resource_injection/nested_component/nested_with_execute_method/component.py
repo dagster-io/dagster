@@ -6,8 +6,7 @@ from dagster_components_tests.integration_tests.some_resource import SomeResourc
 from dagster_shared.record import record
 
 
-# Has to be False because of "scary" bug
-@record(checked=False)
+@record
 class NestedComponent(Component):
     some_resource: SomeResource
 
