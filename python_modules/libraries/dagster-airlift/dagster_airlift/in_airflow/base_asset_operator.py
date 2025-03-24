@@ -8,7 +8,6 @@ from typing import Any
 
 import requests
 from airflow.models import BaseOperator
-from dagster._annotations import beta
 from requests import Response
 
 from dagster_airlift.constants import DAG_ID_TAG_KEY, DAG_RUN_ID_TAG_KEY, TASK_ID_TAG_KEY
@@ -39,7 +38,6 @@ IMPLICIT_ASSET_JOB_PREFIX = "__ASSET_JOB"
 DEFAULT_DAGSTER_RUN_STATUS_POLL_INTERVAL = 1
 
 
-@beta
 class BaseDagsterAssetsOperator(BaseOperator, ABC):
     """Interface for an operator which materializes dagster assets.
 
