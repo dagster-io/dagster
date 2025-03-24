@@ -15,7 +15,7 @@ from dagster_components import (
 )
 from dagster_components.resolved.core_models import ResolvedAssetSpec
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
-from dagster_components.scaffold import scaffold_with
+from dagster_components.scaffold.scaffold import scaffold_with
 
 import dagster as dg
 

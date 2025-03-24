@@ -1,6 +1,6 @@
 from typing import Any
 
-from dagster_components.scaffold import Scaffolder, ScaffoldRequest
+from dagster_components.scaffold.scaffold import Scaffolder, ScaffoldRequest
 
 
 class DefaultComponentScaffolder(Scaffolder):

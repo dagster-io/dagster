@@ -16,8 +16,9 @@ from dagster_sling.resources import AssetExecutionContext
 from pydantic import Field
 from typing_extensions import TypeAlias
 
-from dagster_components import Component, ComponentLoadContext
-from dagster_components.components.sling_replication_collection.scaffolder import (
+from dagster_components.component.component import Component
+from dagster_components.core.context import ComponentLoadContext
+from dagster_components.lib.sling_replication_collection.scaffolder import (
     SlingReplicationComponentScaffolder,
 )
 from dagster_components.resolved.context import ResolutionContext
@@ -30,7 +31,7 @@ from dagster_components.resolved.core_models import (
 )
 from dagster_components.resolved.metadata import ResolvableFieldInfo
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
-from dagster_components.scaffold import scaffold_with
+from dagster_components.scaffold.scaffold import scaffold_with
 from dagster_components.utils import TranslatorResolvingInfo
 
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from dagster import AssetKey
 from dagster_components import load_defs
-from dagster_components.core.component import DefinitionsModuleCache
+from dagster_components.core.load_defs import DefinitionsModuleCache
 
 LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "python_script_location"
 

@@ -27,8 +27,9 @@ from dagster_dbt.dbt_manifest import validate_manifest
 from dagster_dbt.utils import get_dbt_resource_props_by_dbt_unique_id_from_manifest
 from typing_extensions import override
 
-from dagster_components import Component, ComponentLoadContext
-from dagster_components.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
+from dagster_components.component.component import Component
+from dagster_components.core.context import ComponentLoadContext
+from dagster_components.lib.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_components.resolved.core_models import (
     AssetAttributesModel,
     AssetPostProcessor,
@@ -39,7 +40,7 @@ from dagster_components.resolved.core_models import (
 )
 from dagster_components.resolved.metadata import ResolvableFieldInfo
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
-from dagster_components.scaffold import scaffold_with
+from dagster_components.scaffold.scaffold import scaffold_with
 from dagster_components.utils import TranslatorResolvingInfo
 
 
@@ -237,7 +238,7 @@ def get_asset_key_for_model_from_module(
 
             from dagster import asset
             from dagster_components.components.dbt_project import get_asset_key_for_model_from_module
-            from dagster_components.core.component import ComponentLoadContext
+            from dagster_components.core.context import ComponentLoadContext
             from my_project.defs import dbt_component
 
             ctx = ComponentLoadContext.get()

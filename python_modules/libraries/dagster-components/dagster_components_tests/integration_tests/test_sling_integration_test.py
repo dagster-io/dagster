@@ -20,15 +20,15 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster_components.cli import cli
-from dagster_components.components.sling_replication_collection.component import (
-    SlingReplicationCollectionComponent,
-    SlingReplicationCollectionModel,
-)
-from dagster_components.core.component_defs_builder import load_defs
 from dagster_components.core.defs_module import (
     ComponentFileModel,
     DefsModuleDecl,
     YamlComponentDecl,
+)
+from dagster_components.core.load_defs import load_defs
+from dagster_components.lib.sling_replication_collection.component import (
+    SlingReplicationCollectionComponent,
+    SlingReplicationCollectionModel,
 )
 from dagster_components.resolved.context import ResolutionException
 from dagster_components.resolved.core_models import AssetAttributesModel
@@ -320,7 +320,7 @@ def test_scaffold_sling():
             cli,
             [
                 "scaffold",
-                "component",
+                "object",
                 "dagster_components.dagster_sling.SlingReplicationCollectionComponent",
                 "bar/components/qux",
             ],

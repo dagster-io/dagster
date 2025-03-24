@@ -1,10 +1,10 @@
-from dagster_components import ComponentLoadContext
-from dagster_components.components.pipes_subprocess_script_collection import (
+from dagster_components.component.component_loader import component
+from dagster_components.core.context import ComponentLoadContext
+from dagster_components.lib.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollectionComponent,
     PipesSubprocessScriptCollectionModel,
     PipesSubprocessScriptModel,
 )
-from dagster_components.core.component import component
 from dagster_components.resolved.core_models import AssetSpecModel
 
 

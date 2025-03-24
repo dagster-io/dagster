@@ -17,7 +17,7 @@ from dagster_components import (
     scaffold_component_yaml,
 )
 from dagster_components.resolved.core_models import ResolvedAssetSpec
-from dagster_components.scaffold import scaffold_with
+from dagster_components.scaffold.scaffold import scaffold_with
 from pydantic import BaseModel
 
 

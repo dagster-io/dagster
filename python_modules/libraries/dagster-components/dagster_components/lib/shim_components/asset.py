@@ -1,7 +1,7 @@
 from dagster import asset
 
-from dagster_components.components.shim_components.base import ShimScaffolder
-from dagster_components.scaffold import scaffold_with
+from dagster_components.lib.shim_components.base import ShimScaffolder
+from dagster_components.scaffold.scaffold import scaffold_with
 
 
 class AssetScaffolder(ShimScaffolder):

@@ -6,8 +6,8 @@ from dagster_shared.serdes.objects import LibraryObjectKey
 from pydantic import TypeAdapter
 
 from dagster_components.component_scaffolding import scaffold_object
-from dagster_components.core.component import load_library_object
-from dagster_components.scaffold import ScaffolderUnavailableReason, get_scaffolder
+from dagster_components.core.library_object import load_library_object
+from dagster_components.scaffold.scaffold import ScaffolderUnavailableReason, get_scaffolder
 
 
 @click.group(name="scaffold")

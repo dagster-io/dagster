@@ -5,7 +5,11 @@ from typing import Any, Optional
 import click
 import yaml
 
-from dagster_components.scaffold import ScaffolderUnavailableReason, ScaffoldRequest, get_scaffolder
+from dagster_components.scaffold.scaffold import (
+    ScaffolderUnavailableReason,
+    ScaffoldRequest,
+    get_scaffolder,
+)
 
 
 class ComponentDumper(yaml.Dumper):
@@ -30,7 +34,7 @@ def scaffold_component_yaml(
 def scaffold_object(
     path: Path, obj: object, typename: str, scaffold_params: Mapping[str, Any]
 ) -> None:
-    from dagster_components.core.component import Component
+    from dagster_components.component.component import Component
 
     click.echo(f"Creating a folder at {path}.")
     if not path.exists():

@@ -1,5 +1,7 @@
 import dagster as dg
-from dagster_components import Component, ComponentLoadContext, ResolvableModel
+from dagster_components import ResolvableModel
+from dagster_components.component.component import Component
+from dagster_components.core.context import ComponentLoadContext
 
 
 class MyBaseAssetsComponent(Component, ResolvableModel):

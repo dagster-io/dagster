@@ -8,7 +8,7 @@ from typing import Optional, Union
 import pytest
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
-from dagster_components.core.component_defs_builder import DefinitionsModuleCache
+from dagster_components.core.load_defs import DefinitionsModuleCache
 
 from dagster_components_tests.utils import create_project_from_components
 

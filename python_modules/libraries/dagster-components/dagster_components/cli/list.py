@@ -14,12 +14,7 @@ from dagster_shared.serdes.objects import LibraryObjectKey
 from dagster_shared.serdes.serdes import serialize_value
 from pydantic import ConfigDict, TypeAdapter, create_model
 
-from dagster_components.core.component import (
-    Component,
-    discover_entry_point_library_objects,
-    discover_library_objects,
-    get_library_object_snap,
-)
+from dagster_components.component.component import Component
 from dagster_components.core.defs import (
     DgAssetMetadata,
     DgDefinitionMetadata,
@@ -27,6 +22,11 @@ from dagster_components.core.defs import (
     DgScheduleMetadata,
     DgSensorMetadata,
 )
+from dagster_components.core.library_object import (
+    discover_entry_point_library_objects,
+    discover_library_objects,
+)
+from dagster_components.core.snapshot import get_library_object_snap
 
 
 @click.group(name="list")

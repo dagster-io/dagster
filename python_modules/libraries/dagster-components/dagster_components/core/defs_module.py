@@ -24,12 +24,10 @@ from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
-from dagster_components.core.component import (
-    Component,
-    ComponentLoadContext,
-    is_component_loader,
-    load_component_type,
-)
+from dagster_components.component.component import Component
+from dagster_components.component.component_loader import is_component_loader
+from dagster_components.core.context import ComponentLoadContext
+from dagster_components.core.library_object import load_library_object
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -239,12 +237,16 @@ class YamlComponentDecl(DefsModuleDecl):
     def load(self, context: ComponentLoadContext) -> ComponentDefsModule:
         type_str = context.normalize_component_type_str(self.component_file_model.type)
         key = LibraryObjectKey.from_typename(type_str)
-        component_type = load_component_type(key)
-        component_schema = component_type.get_schema()
-        context = context.with_rendering_scope(component_type.get_additional_scope())
+        obj = load_library_object(key)
+        if not isinstance(obj, type) or not issubclass(obj, Component):
+            raise DagsterInvalidDefinitionError(
+                f"Component type {type_str} is of type {type(obj)}, but must be a subclass of dagster_components.Component"
+            )
+        component_schema = obj.get_schema()
+        context = context.with_rendering_scope(obj.get_additional_scope())
 
         attributes = self.get_attributes(component_schema) if component_schema else None
-        component = component_type.load(attributes, context)
+        component = obj.load(attributes, context)
         return ComponentDefsModule(path=self.path, context=context, component=component)
 
 
