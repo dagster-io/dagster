@@ -1,4 +1,6 @@
-from dagster_components.components.shim_components.base import ShimComponent, ShimScaffolder
+from dagster import sensor
+
+from dagster_components.components.shim_components.base import ShimScaffolder
 from dagster_components.scaffold import scaffold_with
 
 
@@ -13,6 +15,4 @@ class SensorScaffolder(ShimScaffolder):
 """
 
 
-@scaffold_with(SensorScaffolder)
-class RawSensorComponent(ShimComponent):
-    """Sensor component."""
+scaffold_with(SensorScaffolder)(sensor)

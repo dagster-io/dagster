@@ -244,23 +244,18 @@ def scaffold_component_type(dg_context: DgContext, class_name: str, module_name:
     click.echo(f"Scaffolded files for Dagster component type at {root_path}/{module_name}.py.")
 
 
-# ########################
-# ##### COMPONENT INSTANCE
-# ########################
+# ####################
+# ##### LIBRARY OBJECT
+# ####################
 
 
-def scaffold_component_instance(
-    path: Path,
-    component_type: str,
-    scaffold_params: Optional[Mapping[str, Any]],
-    dg_context: "DgContext",
+def scaffold_library_object(
+    path: Path, typename: str, scaffold_params: Optional[Mapping[str, Any]], dg_context: "DgContext"
 ) -> None:
-    click.echo(f"Creating a Dagster component instance folder at {path}.")
-    os.makedirs(path, exist_ok=True)
     scaffold_command = [
         "scaffold",
-        "component",
-        component_type,
+        "object",
+        typename,
         str(path),
         *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),
     ]

@@ -5,7 +5,6 @@ from typing import Any, Optional
 import click
 import yaml
 
-from dagster_components.core.component import Component
 from dagster_components.scaffold import ScaffolderUnavailableReason, ScaffoldRequest, get_scaffolder
 
 
@@ -28,33 +27,23 @@ def scaffold_component_yaml(
         f.writelines([""])
 
 
-def scaffold_component_instance(
-    path: Path,
-    component_type: type[Component],
-    component_type_name: str,
-    scaffold_params: Mapping[str, Any],
+def scaffold_object(
+    path: Path, obj: object, typename: str, scaffold_params: Mapping[str, Any]
 ) -> None:
-    from dagster_components.components.shim_components.base import ShimComponent
+    from dagster_components.core.component import Component
 
-    click.echo(f"Creating a Dagster component instance folder at {path}.")
+    click.echo(f"Creating a folder at {path}.")
     if not path.exists():
-        path.mkdir()
-    scaffolder = get_scaffolder(component_type)
-
+        path.mkdir(parents=True)
+    scaffolder = get_scaffolder(obj)
     if isinstance(scaffolder, ScaffolderUnavailableReason):
         raise Exception(
-            f"Component type {component_type_name} does not have a scaffolder. Reason: {scaffolder.message}."
+            f"Object type {typename} does not have a scaffolder. Reason: {scaffolder.message}."
         )
 
-    scaffolder.scaffold(
-        ScaffoldRequest(
-            type_name=component_type_name,
-            target_path=path,
-        ),
-        scaffold_params,
-    )
+    scaffolder.scaffold(ScaffoldRequest(type_name=typename, target_path=path), scaffold_params)
 
-    if not issubclass(component_type, ShimComponent):
+    if isinstance(obj, type) and issubclass(obj, Component):
         component_yaml_path = path / "component.yaml"
         if not component_yaml_path.exists():
             raise Exception(

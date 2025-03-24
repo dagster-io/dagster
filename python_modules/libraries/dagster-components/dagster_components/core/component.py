@@ -108,22 +108,27 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
 DG_LIBRARY_ENTRY_POINT_GROUP = "dagster_dg.library"
 
 
-def load_component_type(object_key: LibraryObjectKey) -> type[Component]:
-    module_name, attr = object_key.namespace, object_key.name
+def load_library_object(key: LibraryObjectKey) -> object:
+    module_name, attr = key.namespace, key.name
     try:
         module = importlib.import_module(module_name)
         if not hasattr(module, attr):
             raise DagsterError(f"Module `{module_name}` has no attribute `{attr}`.")
-        component_type = getattr(module, attr)
-        if not issubclass(component_type, Component):
-            raise DagsterError(
-                f"Attribute `{attr}` in module `{module_name}` is not a subclass of `dagster_components.Component`."
-            )
-        return component_type
+        return getattr(module, attr)
     except ModuleNotFoundError as e:
         raise DagsterError(f"Module `{module_name}` not found.") from e
     except ImportError as e:
         raise DagsterError(f"Error loading module `{module_name}`.") from e
+
+
+def load_component_type(key: LibraryObjectKey) -> type[Component]:
+    module_name, attr = key.namespace, key.name
+    obj = load_library_object(key)
+    if not isinstance(obj, type) or not issubclass(obj, Component):
+        raise DagsterError(
+            f"Attribute `{attr}` in module `{module_name}` is not a subclass of `dagster_components.Component`."
+        )
+    return obj
 
 
 def discover_entry_point_library_objects() -> dict[LibraryObjectKey, object]:
