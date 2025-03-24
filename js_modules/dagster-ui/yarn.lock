@@ -3588,6 +3588,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@dagster-io/dg-docs-components@link:../../../dg-docs/components::locator=%40dagster-io%2Fui-core%40workspace%3Apackages%2Fui-core":
+  version: 0.0.0-use.local
+  resolution: "@dagster-io/dg-docs-components@link:../../../dg-docs/components::locator=%40dagster-io%2Fui-core%40workspace%3Apackages%2Fui-core"
+  languageName: node
+  linkType: soft
+
 "@dagster-io/eslint-config@npm:1.0.18":
   version: 1.0.18
   resolution: "@dagster-io/eslint-config@npm:1.0.18"
@@ -3739,6 +3745,7 @@ __metadata:
     "@blueprintjs/popover2": "npm:^2"
     "@blueprintjs/select": "npm:^5"
     "@chromatic-com/storybook": "npm:^3.2.5"
+    "@dagster-io/dg-docs-components": "link:../../../dg-docs/components"
     "@dagster-io/eslint-config": "workspace:*"
     "@dagster-io/ui-components": "workspace:*"
     "@graphql-codegen/add": "npm:^5.0.2"
