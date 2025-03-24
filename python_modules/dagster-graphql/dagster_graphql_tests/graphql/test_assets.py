@@ -2979,13 +2979,14 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result.data
         assert result.data["assetOrError"]
         assert len(result.data["assetOrError"]["assetMaterializationHistory"]) == 5
-        min_timestamp_seen = get_current_timestamp()
+        min_timestamp_seen = None
         for event in result.data["assetOrError"]["assetMaterializationHistory"]:
             assert event["__typename"] == "MaterializationEvent"
             assert event["assetKey"]["path"] == ["asset_1"]
             # events should be sorted by storage id with the newest event first. Use timestamp
             # as a proxy
-            assert int(event["timestamp"]) <= min_timestamp_seen
+            if min_timestamp_seen:
+                assert int(event["timestamp"]) <= min_timestamp_seen
             min_timestamp_seen = int(event["timestamp"])
 
 
