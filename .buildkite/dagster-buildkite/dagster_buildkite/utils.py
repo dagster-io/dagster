@@ -355,7 +355,12 @@ def skip_if_not_dagster_dbt_cloud_commit() -> Optional[str]:
     """If no dagster-dbt cloud v2 files are touched, then do NOT run. Even if on master."""
     return (
         None
-        if any("dagster_dbt/cloud_v2" in str(path) for path in ChangedFiles.all)
+        if (
+            any("dagster_dbt/cloud_v2" in str(path) for path in ChangedFiles.all)
+            # The kitchen sink in dagster-dbt in only testing the dbt Cloud integration v2.
+            # Do not skip tests if changes are made to this test suite.
+            or any("dagster_dbt/kitchen_sink" in str(path) for path in ChangedFiles.all)
+        )
         else "Not a dagster-dbt Cloud commit"
     )
 
