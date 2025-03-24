@@ -25,7 +25,7 @@ def get_env_var_dict(base_dir: str) -> dict[str, str]:
 class PerProjectEnvFileLoader(SecretsLoader, ConfigurableClass):
     """Default secrets loader which loads additional env vars from a per-project .env file.
 
-    Can be manually configured in the dagster.yaml file or implcitly set via the
+    Can be manually configured in the dagster.yaml file or implicitly set via the
     DAGSTER_PROJECT_ENV_FILE_PATHS environment variable.
     """
 
