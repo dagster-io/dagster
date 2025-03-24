@@ -81,12 +81,26 @@ def isolated_example_workspace(
         clear_module_from_cache(project_name) if project_name else nullcontext(),
     ):
         result = runner.invoke(
-            "init",
+            "scaffold",
+            "workspace",
+            "dagster-workspace",
             *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
-            input=f"\n{project_name or ''}\n",
         )
         assert_runner_result(result)
         with pushd("dagster-workspace"):
+            if project_name:
+                result = runner.invoke(
+                    "scaffold",
+                    "project",
+                    "projects/" + project_name,
+                    *(
+                        ["--use-editable-dagster", dagster_git_repo_dir]
+                        if use_editable_dagster
+                        else []
+                    ),
+                )
+                assert_runner_result(result)
+
             # Create a venv capable of running dagster dev
             if create_venv:
                 subprocess.run(["uv", "venv", ".venv"], check=True)

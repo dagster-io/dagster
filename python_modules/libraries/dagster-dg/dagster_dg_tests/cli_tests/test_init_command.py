@@ -19,7 +19,21 @@ from dagster_dg_tests.utils import ProxyRunner, assert_runner_result
 
 def test_init_command_success(monkeypatch) -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("init", input="\nhelloworld\n")
+        result = runner.invoke("init", input="helloworld\n")
+        assert_runner_result(result)
+        assert not Path("dagster-workspace").exists()
+
+        assert Path("helloworld").exists()
+        assert Path("helloworld/helloworld").exists()
+        assert Path("helloworld/pyproject.toml").exists()
+        assert Path("helloworld/helloworld_tests").exists()
+
+
+def test_init_command_success_with_workspace_name(monkeypatch) -> None:
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke(
+            "init", "--workspace-name", "dagster-workspace", input="helloworld\n"
+        )
         assert_runner_result(result)
         assert Path("dagster-workspace").exists()
         assert Path("dagster-workspace/pyproject.toml").exists()
@@ -38,19 +52,11 @@ def test_init_command_success(monkeypatch) -> None:
         )
 
 
-def test_init_command_no_project(monkeypatch) -> None:
+def test_init_override_project_name_prompt_with_workspace(monkeypatch) -> None:
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("init", input="\n\n")
-        assert_runner_result(result)
-        assert Path("dagster-workspace").exists()
-        assert Path("dagster-workspace/pyproject.toml").exists()
-        assert Path("dagster-workspace/projects").exists()
-        assert Path("dagster-workspace/libraries").exists()
-
-
-def test_init_override_workspace_name(monkeypatch) -> None:
-    with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("init", input="my-workspace\ngoodbyeworld\n")
+        result = runner.invoke(
+            "init", "--project-name", "goodbyeworld", "--workspace-name", "my-workspace"
+        )
         assert_runner_result(result)
         assert Path("my-workspace").exists()
         assert Path("my-workspace/pyproject.toml").exists()
@@ -62,13 +68,40 @@ def test_init_override_workspace_name(monkeypatch) -> None:
         assert Path("my-workspace/projects/goodbyeworld/goodbyeworld_tests").exists()
 
 
+def test_init_override_project_name_prompt_without_workspace(monkeypatch) -> None:
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        result = runner.invoke("init", "--project-name", "goodbyeworld")
+        assert_runner_result(result)
+        assert Path("goodbyeworld").exists()
+        assert Path("goodbyeworld/goodbyeworld").exists()
+        assert Path("goodbyeworld/pyproject.toml").exists()
+        assert Path("goodbyeworld/goodbyeworld_tests").exists()
+
+
 def test_init_workspace_already_exists_failure(monkeypatch) -> None:
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
 
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         os.mkdir("dagster-workspace")
-        result = runner.invoke("init", "--use-editable-dagster", input="\nhelloworld\n")
+        result = runner.invoke(
+            "init",
+            "--use-editable-dagster",
+            "--workspace-name",
+            "dagster-workspace",
+            input="\nhelloworld\n",
+        )
+        assert_runner_result(result, exit_0=False)
+        assert "already exists" in result.output
+
+
+def test_init_project_already_exists_failure(monkeypatch) -> None:
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
+
+    with ProxyRunner.test() as runner, runner.isolated_filesystem():
+        os.mkdir("foo")
+        result = runner.invoke("init", "--use-editable-dagster", input="foo\n")
         assert_runner_result(result, exit_0=False)
         assert "already exists" in result.output
 
@@ -84,7 +117,13 @@ def test_init_use_editable_dagster(option: EditableOption, value_source: str, mo
         editable_args = [option, str(dagster_git_repo_dir)]
 
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("init", *editable_args, input="\nhelloworld\n")
+        result = runner.invoke(
+            "init",
+            "--workspace-name",
+            "dagster-workspace",
+            *editable_args,
+            input="helloworld\n",
+        )
         assert_runner_result(result)
 
         assert Path("dagster-workspace").exists()
@@ -116,6 +155,6 @@ def test_init_project_editable_dagster_no_env_var_no_value_fails(
 ) -> None:
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", "")
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
-        result = runner.invoke("init", option, input="\nhelloworld\n")
+        result = runner.invoke("init", option, input="helloworld\n")
         assert_runner_result(result, exit_0=False)
         assert "requires the `DAGSTER_GIT_REPO_DIR`" in result.output
