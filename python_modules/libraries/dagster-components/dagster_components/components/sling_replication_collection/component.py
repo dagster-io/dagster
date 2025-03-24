@@ -4,21 +4,25 @@ from pathlib import Path
 from typing import Annotated, Any, Literal, Optional, Union
 
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import AssetMaterialization
-from dagster._core.definitions.result import MaterializeResult
-from dagster_sling import DagsterSlingTranslator, SlingResource, sling_assets
-from dagster_sling.resources import AssetExecutionContext
+from dagster_sling import DagsterSlingTranslator, SlingResource
+from dagster_sling.asset_decorator import build_sling_multi_asset_args
 from pydantic import Field
 from typing_extensions import TypeAlias
 
-from dagster_components import Component, ComponentLoadContext
+from dagster_components import ComponentLoadContext
 from dagster_components.components.sling_replication_collection.scaffolder import (
     SlingReplicationComponentScaffolder,
+)
+from dagster_components.components.step.step import (
+    CompositeStepComponent,
+    ExecutionContext,
+    ExecutionRecord,
+    StepComponent,
+    from_multi_asset_args,
+    to_asset_records,
 )
 from dagster_components.resolved.context import ResolutionContext
 from dagster_components.resolved.core_models import (
@@ -134,7 +138,9 @@ def resolve_resource(
 
 @scaffold_with(SlingReplicationComponentScaffolder)
 @dataclass
-class SlingReplicationCollectionComponent(Component, ResolvedFrom[SlingReplicationCollectionModel]):
+class SlingReplicationCollectionComponent(
+    CompositeStepComponent, ResolvedFrom[SlingReplicationCollectionModel]
+):
     """Expose one or more Sling replications to Dagster as assets.
 
     [Sling](https://slingdata.io/) is a Powerful Data Integration tool enabling seamless ELT
@@ -152,42 +158,46 @@ class SlingReplicationCollectionComponent(Component, ResolvedFrom[SlingReplicati
         Optional[Sequence[AssetPostProcessor]], Resolver.from_annotation()
     ] = None
 
-    def build_asset(
-        self, context: ComponentLoadContext, replication_spec_model: SlingReplicationSpecModel
-    ) -> AssetsDefinition:
-        op_spec = replication_spec_model.op or OpSpec()
+    def get_asset_post_processors(self) -> Sequence[AssetPostProcessor]:
+        return self.asset_post_processors or []
 
-        @sling_assets(
-            name=op_spec.name or Path(replication_spec_model.path).stem,
-            op_tags=op_spec.tags,
-            replication_config=context.path / replication_spec_model.path,
-            dagster_sling_translator=replication_spec_model.translator,
-            backfill_policy=op_spec.backfill_policy,
-        )
-        def _asset(context: AssetExecutionContext):
-            yield from self.execute(
-                context=context, sling=self.resource, replication_spec_model=replication_spec_model
+    def build_steps(self, context: ComponentLoadContext) -> Iterator[StepComponent]:
+        for replication in self.replications:
+            op_spec = replication.op or OpSpec()
+            yield SlingReplicationStepComponent(
+                sling_resource=self.resource,
+                replication=replication,
+                **from_multi_asset_args(
+                    build_sling_multi_asset_args(
+                        name=op_spec.name or Path(replication.path).stem,
+                        op_tags=op_spec.tags,
+                        replication_config=context.path / replication.path,
+                        dagster_sling_translator=replication.translator,
+                        backfill_policy=op_spec.backfill_policy,
+                        pool=None,
+                        partitions_def=None,
+                    )
+                ),
             )
 
-        return _asset
 
-    def execute(
-        self,
-        context: AssetExecutionContext,
-        sling: SlingResource,
-        replication_spec_model: SlingReplicationSpecModel,
-    ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
-        iterator = sling.replicate(context=context)
-        if "column_metadata" in replication_spec_model.include_metadata:
-            iterator = iterator.fetch_column_metadata()
-        if "row_count" in replication_spec_model.include_metadata:
-            iterator = iterator.fetch_row_count()
-        yield from iterator
+class SlingReplicationStepComponent(StepComponent):
+    def __init__(
+        self, sling_resource: SlingResource, replication: SlingReplicationSpecModel, **kwargs: Any
+    ):
+        self.sling_resource = sling_resource
+        self.replication = replication
+        super().__init__(**kwargs)
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        defs = Definitions(
-            assets=[self.build_asset(context, replication) for replication in self.replications],
+    def execute(self, context: ExecutionContext) -> ExecutionRecord:
+        iterator = self.sling_resource.replicate(
+            context=context.get_legacy_asset_execution_context()
         )
-        for post_processor in self.asset_post_processors or []:
-            defs = post_processor.fn(defs)
-        return defs
+        if "column_metadata" in self.replication.include_metadata:
+            iterator = iterator.fetch_column_metadata()
+        if "row_count" in self.replication.include_metadata:
+            iterator = iterator.fetch_row_count()
+
+        return ExecutionRecord(
+            asset_records=list(to_asset_records(iterator)),
+        )
