@@ -225,3 +225,19 @@ def _resolve_definition(item: dict[str, Any]) -> DgDefinitionMetadata:
         return DgSensorMetadata(**item)
     else:
         raise DgError(f"Unexpected item type: {item['type']}")
+
+
+# ########################
+# ##### ENVIRONMENT
+# ########################
+
+
+@list_group.command(name="env", cls=DgClickCommand)
+@dg_global_options
+def list_environment_command(**global_options: object) -> None:
+    """List environment variables in the current project or workspace."""
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+
+    for project in dg_context.project_specs:
+        click.echo(project.path)
