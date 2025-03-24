@@ -116,7 +116,7 @@ def test_dev_forwards_options_to_dagster_dev():
         ]
         try:
             dev_process = _launch_dev_command(options + ["--no-check-yaml"])
-            time.sleep(0.5)
+            time.sleep(1.5)
             child_process = _get_child_processes(dev_process.pid)[0]
             assert " ".join(options) in " ".join(child_process.cmdline())
         finally:

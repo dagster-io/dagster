@@ -1,5 +1,8 @@
 import textwrap
-from dataclasses import dataclass
+from typing import Any, Optional
+
+from dagster_shared.record import record
+from dagster_shared.serdes.serdes import whitelist_for_serdes
 
 
 def _generate_invalid_component_typename_error_message(typename: str) -> str:
@@ -9,7 +12,8 @@ def _generate_invalid_component_typename_error_message(typename: str) -> str:
     """)
 
 
-@dataclass(frozen=True)
+@whitelist_for_serdes
+@record(kw_only=False)
 class LibraryObjectKey:
     namespace: str
     name: str
@@ -27,3 +31,28 @@ class LibraryObjectKey:
             raise ValueError(_generate_invalid_component_typename_error_message(typename))
         namespace, _, name = typename.rpartition(".")
         return LibraryObjectKey(name=name, namespace=namespace)
+
+
+@whitelist_for_serdes
+@record
+class ScaffolderSnap:
+    schema: Optional[dict[str, Any]]
+
+
+@whitelist_for_serdes
+@record
+class LibraryObjectSnap:
+    key: LibraryObjectKey
+    summary: Optional[str]
+    description: Optional[str]
+    scaffolder: Optional["ScaffolderSnap"]
+
+    @property
+    def scaffolder_schema(self) -> Optional[dict[str, Any]]:
+        return self.scaffolder.schema if self.scaffolder else None
+
+
+@whitelist_for_serdes
+@record
+class ComponentTypeSnap(LibraryObjectSnap):
+    schema: Optional[dict[str, Any]]

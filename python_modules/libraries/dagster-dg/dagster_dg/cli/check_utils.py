@@ -4,10 +4,9 @@ from typing import Optional, Union
 
 import click
 import typer
+from dagster_shared.serdes.objects import LibraryObjectKey
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from jsonschema import ValidationError
-
-from dagster_dg.library_object_key import LibraryObjectKey
 
 
 @click.group(name="check")
