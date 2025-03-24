@@ -244,6 +244,7 @@ class GrapheneAsset(graphene.ObjectType):
         afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
         eventTypeSelector=graphene.Argument(GrapheneMaterializationHistoryEventTypeSelector),
+        cursor=graphene.String(),
     )
     definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 

@@ -623,8 +623,14 @@ type Asset {
     afterTimestampMillis: String
     limit: Int
     eventTypeSelector: MaterializationHistoryEventTypeSelector
-  ): [AssetMaterializationEventType!]!
+    cursor: String
+  ): MaterializationHistoryConnection!
   definition: AssetNode
+}
+
+type MaterializationHistoryConnection {
+  results: [AssetMaterializationEventType!]!
+  cursor: String!
 }
 
 union AssetMaterializationEventType = FailedToMaterializeEvent | MaterializationEvent
