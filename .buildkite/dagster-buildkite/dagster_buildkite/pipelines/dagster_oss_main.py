@@ -8,6 +8,7 @@ from dagster_buildkite.steps.dagster_ui import (
     build_dagster_ui_core_steps,
     skip_if_no_dagster_ui_changes,
 )
+from dagster_buildkite.steps.docs import build_docs_steps
 from dagster_buildkite.steps.trigger import build_trigger_step
 from dagster_buildkite.utils import (
     BuildkiteStep,
@@ -64,6 +65,7 @@ def build_dagster_oss_main_steps() -> List[BuildkiteStep]:
 
     # Full pipeline.
     steps += build_repo_wide_steps()
+    steps += build_docs_steps()
     steps += build_dagster_ui_components_steps()
     steps += build_dagster_ui_core_steps()
     steps += build_dagster_steps()
