@@ -106,6 +106,20 @@ def dev_command(
         *(["--verbose"] if dg_context.config.cli.verbose else []),
     ]
 
+    import json
+
+    if dg_context.is_workspace:
+        os.environ["DAGSTER_PROJECT_ENV_FILE_PATHS"] = json.dumps(
+            {
+                dg_context.with_root_path(project.path).code_location_name: str(project.path)
+                for project in dg_context.project_specs
+            }
+        )
+    else:
+        os.environ["DAGSTER_PROJECT_ENV_FILE_PATHS"] = json.dumps(
+            {dg_context.code_location_name: str(dg_context.root_path)}
+        )
+
     # In a project context, we can just run `dagster dev` directly, using `dagster` from the
     # code location's environment.
     # In a workspace context, dg dev will construct a temporary

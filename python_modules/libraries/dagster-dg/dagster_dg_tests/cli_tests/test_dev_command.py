@@ -11,6 +11,7 @@ from dagster_graphql.client import DagsterGraphQLClient
 
 ensure_dagster_dg_tests_import()
 
+
 from dagster_components.test.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
 from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd
 
@@ -48,6 +49,49 @@ def test_dev_workspace_context_success(monkeypatch):
             "project-2",
         )
         assert_runner_result(result)
+
+        (Path("project-2") / "project_2" / "defs" / "my_asset.py").write_text(
+            "import dagster as dg\n\n@dg.asset\ndef my_asset(): pass"
+        )
+        port = find_free_port()
+        dev_process = _launch_dev_command(["--port", str(port)])
+        projects = {"project-1", "project-2"}
+        _assert_projects_loaded_and_exit(projects, port, dev_process)
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_dev_workspace_load_env_files(monkeypatch):
+    """Test that the dg dev command properly loads env files from the workspace and projects."""
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    with ProxyRunner.test() as runner, isolated_example_workspace(runner, create_venv=True):
+        Path(".env").write_text("WORKSPACE_ENV_VAR=1\nOVERWRITTEN_ENV_VAR=3")
+        result = runner.invoke(
+            "scaffold",
+            "project",
+            "--use-editable-dagster",
+            dagster_git_repo_dir,
+            "project-1",
+        )
+        assert_runner_result(result)
+        result = runner.invoke(
+            "scaffold",
+            "project",
+            "--use-editable-dagster",
+            dagster_git_repo_dir,
+            "project-2",
+        )
+        assert_runner_result(result)
+
+        (Path("project-2") / ".env").write_text("PROJECT_ENV_VAR=2\nOVERWRITTEN_ENV_VAR=4")
+
+        (Path("project-2") / "project_2" / "defs" / "my_def.py").write_text(
+            """import os
+
+assert os.environ["PROJECT_ENV_VAR"] == "2"
+assert os.environ["WORKSPACE_ENV_VAR"] == "1"
+assert os.environ["OVERWRITTEN_ENV_VAR"] == "4"
+"""
+        )
         port = find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
         projects = {"project-1", "project-2"}
