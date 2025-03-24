@@ -14,19 +14,12 @@ def build_docs_steps() -> List[BuildkiteStep]:
     steps: List[BuildkiteStep] = []
 
     docs_steps: List[BuildkiteLeafStep] = [
-        CommandStepBuilder("build api docs")
-        .run(
-            "cd docs",
-            "yarn install",
-            "yarn build-api-docs",
-        )
-        .on_test_image(AvailablePythonVersion.get_default())
-        .build(),
         CommandStepBuilder("build docs")
         .run(
             "cd docs",
             "yarn install",
             "yarn test",
+            "yarn build-api-docs",
             "yarn build",
         )
         .with_skip(skip_if_no_docs_changes())
