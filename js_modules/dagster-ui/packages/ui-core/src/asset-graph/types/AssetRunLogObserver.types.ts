@@ -37,6 +37,7 @@ export type AssetLiveRunLogsSubscription = {
           | {__typename: 'ExecutionStepStartEvent'; stepKey: string | null}
           | {__typename: 'ExecutionStepSuccessEvent'}
           | {__typename: 'ExecutionStepUpForRetryEvent'}
+          | {__typename: 'FailedToMaterializeEvent'}
           | {__typename: 'HandledOutputEvent'}
           | {__typename: 'HookCompletedEvent'}
           | {__typename: 'HookErroredEvent'}
