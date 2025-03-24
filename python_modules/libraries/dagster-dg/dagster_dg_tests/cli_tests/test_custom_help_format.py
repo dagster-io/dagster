@@ -181,10 +181,7 @@ def test_dynamic_subcommand_help_message():
     ):
         with fixed_panel_width(width=120):
             result = runner.invoke(
-                "scaffold",
-                "component",
-                "dagster_test.components.SimplePipesScriptComponent",
-                "--help",
+                "scaffold", "dagster_test.components.SimplePipesScriptComponent", "--help"
             )
             assert_runner_result(result)
             # Strip interpreter logging line
@@ -192,12 +189,10 @@ def test_dynamic_subcommand_help_message():
         assert match_terminal_box_output(
             output.strip(),
             textwrap.dedent("""
-                 Usage: dg scaffold component [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS]             
-                                                                                                      COMPONENT_INSTANCE_NA 
-                 ME
+                 Usage: dg scaffold [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS] INSTANCE_NAME 
 
                 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-                │ *    component_instance_name      TEXT  [required]                                                                   │
+                │ *    instance_name      TEXT  [required]                                                                             │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
                 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
                 │ --json-params          TEXT  JSON string of component parameters.                                                    │
