@@ -327,6 +327,7 @@ class GrapheneAsset(graphene.ObjectType):
                     before_timestamp=before_timestamp,
                     after_timestamp=after_timestamp,
                     limit=limit,
+                    cursor=cursor,
                 )
             ]
         if (
@@ -342,6 +343,7 @@ class GrapheneAsset(graphene.ObjectType):
                     before_timestamp=before_timestamp,
                     after_timestamp=after_timestamp,
                     limit=limit,
+                    cursor=cursor,
                 )
             ]
 

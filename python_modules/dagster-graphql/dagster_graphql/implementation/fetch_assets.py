@@ -259,6 +259,7 @@ def get_asset_materialization_event_records(
     before_timestamp: Optional[float] = None,
     after_timestamp: Optional[float] = None,
     storage_ids: Optional[Sequence[int]] = None,
+    cursor: Optional[str] = None,
 ) -> Sequence[EventLogRecord]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
@@ -274,7 +275,6 @@ def get_asset_materialization_event_records(
     )
     if limit is None:
         event_records = []
-        cursor = None
         while True:
             event_records_result = instance.fetch_materializations(
                 records_filter=records_filter,
@@ -287,7 +287,7 @@ def get_asset_materialization_event_records(
                 break
     else:
         event_records = instance.fetch_materializations(
-            records_filter=records_filter, limit=limit
+            records_filter=records_filter, limit=limit, cursor=cursor
         ).records
 
     return event_records
@@ -324,6 +324,7 @@ def get_asset_failed_to_materialize_event_records(
     before_timestamp: Optional[float] = None,
     after_timestamp: Optional[float] = None,
     storage_ids: Optional[Sequence[int]] = None,
+    cursor: Optional[str] = None,
 ) -> Sequence[EventLogRecord]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
@@ -339,12 +340,9 @@ def get_asset_failed_to_materialize_event_records(
     )
     if limit is None:
         event_records = []
-        cursor = None
         while True:
             event_records_result = instance.fetch_failed_materializations(
-                records_filter=records_filter,
-                cursor=cursor,
-                limit=get_max_event_records_limit(),
+                records_filter=records_filter, limit=get_max_event_records_limit(), cursor=cursor
             )
             cursor = event_records_result.cursor
             event_records.extend(event_records_result.records)
@@ -352,7 +350,7 @@ def get_asset_failed_to_materialize_event_records(
                 break
     else:
         event_records = instance.fetch_failed_materializations(
-            records_filter=records_filter, limit=limit
+            records_filter=records_filter, limit=limit, cursor=cursor
         ).records
 
     return event_records
