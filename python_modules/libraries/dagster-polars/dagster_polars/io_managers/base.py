@@ -103,10 +103,10 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
     def type_router_is_eager(self, type_router: TypeRouter) -> bool:
         if type_router.is_base_type:
             if type_router.typing_type in [Any, type(None), None] or issubclass(
-                type_router.typing_type, pl.DataFrame
+                pl.DataFrame, type_router.typing_type
             ):
                 return True
-            elif issubclass(type_router.typing_type, pl.LazyFrame):
+            elif issubclass(pl.LazyFrame, type_router.typing_type):
                 return False
             else:
                 raise NotImplementedError(

@@ -143,7 +143,51 @@ class PolarsTypeRouter(BaseTypeRouter, Generic[T]):
         return True
 
 
-TYPE_ROUTERS = [TypeRouter, OptionalTypeRouter, DictTypeRouter, PolarsTypeRouter]
+class PatitoTypeRouter(BaseTypeRouter, Generic[T]):
+    """Handles Patito DataFrames. Performs validation on load and dump."""
+
+    @staticmethod
+    def match(context: Union[InputContext, OutputContext], typing_type: Any) -> bool:
+        import patito as pt
+
+        return issubclass(typing_type, pt.DataFrame) or issubclass(typing_type, pt.LazyFrame)
+
+    @property
+    def is_base_type(self) -> bool:
+        return False
+
+    def dump(self, obj: T, path: "UPath", dump_fn: F_D[T]) -> None:
+        if isinstance(obj, pl.DataFrame):  # lazy frames are not supported yet
+            obj = obj.validate()  # type: ignore
+        dump_fn(cast(OutputContext, self.context), obj, path)  # type: ignore
+
+    def load(self, path: "UPath", load_fn: F_L[T]) -> T:
+        import patito as pt
+
+        df = load_fn(path, cast(InputContext, self.context))
+        if isinstance(df, pl.DataFrame):
+            return pt.DataFrame(df).set_model(self.model).validate()
+        elif isinstance(df, pl.LazyFrame):
+            # _from_pyldf found in https://github.com/JakobGM/patito/pull/135
+            return self.model.LazyFrame._from_pyldf(df._ldf)  # noqa
+        else:
+            raise ValueError(f"Unexpected DataFrame type {type(df)}")
+
+    @property
+    def inner_type(self) -> Any:
+        if issubclass(self.typing_type, pl.DataFrame):
+            return pl.DataFrame
+        elif issubclass(self.typing_type, pl.LazyFrame):
+            return pl.LazyFrame
+        else:
+            raise ValueError(f"Unexpected Patito type {self.typing_type}")
+
+    @property
+    def model(self):
+        return self.typing_type.model
+
+
+TYPE_ROUTERS = [TypeRouter, OptionalTypeRouter, DictTypeRouter, PatitoTypeRouter, PolarsTypeRouter]
 
 
 def resolve_type_router(

@@ -52,6 +52,7 @@ setup(
             "pytest-cases>=3.6.14",
             "pytest_mock",
         ],
+        "patito": ["patito"],
     },
     zip_safe=False,
 )

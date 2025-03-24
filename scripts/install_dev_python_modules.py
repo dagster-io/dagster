@@ -94,7 +94,7 @@ def main(
         "python_modules/libraries/dagster-pagerduty",
         "python_modules/libraries/dagster-pandas",
         "python_modules/libraries/dagster-pandera",
-        "python_modules/libraries/dagster-polars[deltalake,gcp,test]",
+        "python_modules/libraries/dagster-polars[deltalake,gcp,test,patito]",
         "python_modules/libraries/dagster-papertrail",
         "python_modules/libraries/dagster-postgres",
         "python_modules/libraries/dagster-prometheus",
