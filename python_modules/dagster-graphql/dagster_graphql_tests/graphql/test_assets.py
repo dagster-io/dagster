@@ -2981,7 +2981,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(result.data["assetOrError"]["assetMaterializationHistory"]) == 5
         max_timestamp_seen = 0
         for event in result.data["assetOrError"]["assetMaterializationHistory"]:
-            assert event["__typename"] == "AssetMaterialization"
+            assert event["__typename"] == "MaterializationEvent"
             assert event["assetKey"]["path"] == ["asset_1"]
             assert int(event["timestamp"]) >= max_timestamp_seen
             max_timestamp_seen = int(event["timestamp"])
