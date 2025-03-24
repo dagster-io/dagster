@@ -6,6 +6,7 @@ import graphene
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.time_window_partitions import PartitionRangeStatus
 from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.event_api import EventLogCursor
 from dagster._core.events import DagsterEventType
 from dagster._core.remote_representation.external import RemoteExecutionPlan, RemoteJob
 from dagster._core.remote_representation.external_data import (
@@ -208,6 +209,15 @@ class GrapheneMaterializationHistoryEventTypeSelector(graphene.Enum):
         name = "MaterializationHistoryEventTypeSelector"
 
 
+class GrapheneMaterializationHistoryConnection(graphene.ObjectType):
+    class Meta:
+        name = "MaterializationHistoryConnection"
+
+    results = non_null_list(GrapheneAssetMaterializationEventType)
+    cursor = graphene.NonNull(graphene.String)
+    hasMore = graphene.NonNull(graphene.Boolean)
+
+
 class GrapheneAsset(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     key = graphene.NonNull(GrapheneAssetKey)
@@ -228,7 +238,7 @@ class GrapheneAsset(graphene.ObjectType):
         limit=graphene.Int(),
     )
     assetMaterializationHistory = graphene.Field(
-        non_null_list(GrapheneAssetMaterializationEventType),
+        graphene.NonNull(GrapheneMaterializationHistoryConnection),
         partitions=graphene.List(graphene.NonNull(graphene.String)),
         partitionInLast=graphene.Int(),
         beforeTimestampMillis=graphene.String(),
@@ -287,7 +297,8 @@ class GrapheneAsset(graphene.ObjectType):
         beforeTimestampMillis: Optional[str] = None,
         afterTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Sequence[GrapheneAssetMaterializationEventType]:
+        cursor: Optional[str] = None,
+    ) -> Sequence[GrapheneMaterializationHistoryConnection]:
         from dagster_graphql.implementation.fetch_assets import (
             get_asset_failed_to_materialize_event_records,
             get_asset_materialization_event_records,
@@ -338,7 +349,15 @@ class GrapheneAsset(graphene.ObjectType):
         sorted_combined = sorted(combined, key=lambda event_tuple: event_tuple[0], reverse=True)[
             :limit
         ]
-        return [event_tuple[1] for event_tuple in sorted_combined]
+        new_cursor = (
+            EventLogCursor.from_storage_id(sorted_combined[-1][0]).to_string()
+            if sorted_combined
+            else None
+        )
+        return GrapheneMaterializationHistoryConnection(
+            results=[event_tuple[1] for event_tuple in sorted_combined],
+            cursor=new_cursor,
+        )
 
     def resolve_assetObservations(
         self,
