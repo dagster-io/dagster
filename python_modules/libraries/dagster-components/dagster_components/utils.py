@@ -141,19 +141,6 @@ class TranslatorResolvingInfo:
         )
 
 
-def load_module_from_path(module_name: str, path: Path) -> ModuleType:
-    # Create a spec from the file path
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    if spec is None:
-        raise ImportError(f"Cannot create a module spec from path: {path}")
-
-    # Create and load the module
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader, "Must have a loader"
-    spec.loader.exec_module(module)
-    return module
-
-
 # ########################
 # ##### PLATFORM
 # ########################
