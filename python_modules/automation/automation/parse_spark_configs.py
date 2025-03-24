@@ -14,7 +14,7 @@ import requests
 
 from automation.printer import IndentingBufferPrinter
 
-SPARK_VERSION = "v2.4.0"
+SPARK_VERSION = "v3.5.5"
 TABLE_REGEX = r"### (.{,30}?)\n\n(<table.*?>.*?<\/table>)"
 WHITESPACE_REGEX = r"\s+"
 
