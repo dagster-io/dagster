@@ -15,10 +15,9 @@ from pydantic import ConfigDict, TypeAdapter, create_model
 from dagster_components.core.component import (
     Component,
     ComponentTypeMetadata,
-    discover_component_types,
-    discover_entry_point_component_types,
+    discover_entry_point_library_objects,
+    discover_library_objects,
 )
-from dagster_components.core.component_key import ComponentKey
 from dagster_components.core.defs import (
     DgAssetMetadata,
     DgDefinitionMetadata,
@@ -26,6 +25,7 @@ from dagster_components.core.defs import (
     DgScheduleMetadata,
     DgSensorMetadata,
 )
+from dagster_components.core.library_object_key import LibraryObjectKey
 
 
 @click.group(name="list")
@@ -84,7 +84,7 @@ def list_all_components_schema_command(entry_points: bool, extra_modules: tuple[
 @python_pointer_options
 @click.pass_context
 def list_definitions_command(ctx: click.Context, **other_opts: object) -> None:
-    """List registered Dagster components."""
+    """List Dagster definitions."""
     python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
     assert_no_remaining_opts(other_opts)
 
@@ -139,10 +139,10 @@ def list_definitions_command(ctx: click.Context, **other_opts: object) -> None:
 
 def _load_component_types(
     entry_points: bool, extra_modules: tuple[str, ...]
-) -> dict[ComponentKey, type[Component]]:
+) -> dict[LibraryObjectKey, type[Component]]:
     component_types = {}
     if entry_points:
-        component_types.update(discover_entry_point_component_types())
+        component_types.update(discover_entry_point_library_objects())
     if extra_modules:
-        component_types.update(discover_component_types(extra_modules))
+        component_types.update(discover_library_objects(extra_modules))
     return component_types

@@ -10,7 +10,7 @@ def _generate_invalid_component_typename_error_message(typename: str) -> str:
 
 
 @dataclass(frozen=True)
-class ComponentKey:
+class LibraryObjectKey:
     namespace: str
     name: str
 
@@ -18,7 +18,7 @@ class ComponentKey:
         return f"{self.namespace}.{self.name}"
 
     @staticmethod
-    def from_typename(typename: str) -> "ComponentKey":
+    def from_typename(typename: str) -> "LibraryObjectKey":
         parts = typename.split(".")
         for part in parts:
             if not part.isidentifier():
@@ -26,4 +26,4 @@ class ComponentKey:
         if len(parts) < 2:
             raise ValueError(_generate_invalid_component_typename_error_message(typename))
         namespace, _, name = typename.rpartition(".")
-        return ComponentKey(name=name, namespace=namespace)
+        return LibraryObjectKey(name=name, namespace=namespace)
