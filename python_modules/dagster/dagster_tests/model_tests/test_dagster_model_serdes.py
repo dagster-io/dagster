@@ -3,7 +3,6 @@ Pydantic 1 and 2, while the general_tests do not.
 """
 
 import pytest
-from dagster._model import DagsterModel
 from dagster._serdes.errors import SerializationError
 from dagster._serdes.serdes import (
     WhitelistMap,
@@ -13,6 +12,7 @@ from dagster._serdes.serdes import (
     serialize_value,
     unpack_value,
 )
+from dagster_shared.dagster_model import DagsterModel
 from pydantic import Field
 
 
