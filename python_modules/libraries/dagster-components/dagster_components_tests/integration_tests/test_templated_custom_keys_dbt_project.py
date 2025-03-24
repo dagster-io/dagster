@@ -9,7 +9,7 @@ import pytest
 from dagster import AssetKey
 from dagster._utils.env import environ
 from dagster_components.components.dbt_project.component import DbtProjectComponent, DbtProjectModel
-from dagster_components.core.defs_module import ComponentFileModel, YamlComponentDecl
+from dagster_components.core.defs_module import ComponentConfig, YamlComponentDecl
 from dagster_dbt import DbtProject
 
 from dagster_components_tests.integration_tests.component_loader import load_test_component_defs
@@ -60,7 +60,7 @@ def dbt_path() -> Iterator[Path]:
 def test_python_attributes_node_rename(dbt_path: Path) -> None:
     decl_node = YamlComponentDecl(
         path=dbt_path / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
+        component_config=ComponentConfig(
             type="dbt_project",
             attributes={
                 "dbt": {"project_dir": "jaffle_shop"},
@@ -79,7 +79,7 @@ def test_python_attributes_node_rename(dbt_path: Path) -> None:
 def test_python_attributes_group(dbt_path: Path) -> None:
     decl_node = YamlComponentDecl(
         path=dbt_path / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
+        component_config=ComponentConfig(
             type="dbt_project",
             attributes={
                 "dbt": {"project_dir": "jaffle_shop"},
@@ -107,7 +107,7 @@ def test_render_vars_root(dbt_path: Path) -> None:
     with environ({"GROUP_AS_ENV": "group_in_env"}):
         decl_node = YamlComponentDecl(
             path=dbt_path / COMPONENT_RELPATH,
-            component_file_model=ComponentFileModel(
+            component_config=ComponentConfig(
                 type="dbt_project",
                 attributes={
                     "dbt": {"project_dir": "jaffle_shop"},
@@ -130,7 +130,7 @@ def test_render_vars_asset_key(dbt_path: Path) -> None:
     with environ({"ASSET_KEY_PREFIX": "some_prefix"}):
         decl_node = YamlComponentDecl(
             path=dbt_path / COMPONENT_RELPATH,
-            component_file_model=ComponentFileModel(
+            component_config=ComponentConfig(
                 type="dbt_project",
                 attributes={
                     "dbt": {"project_dir": "jaffle_shop"},
