@@ -1,14 +1,15 @@
 import hashlib
 import inspect
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Optional
+from typing import Any, Optional, TypedDict, Union
 
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.asset_check_decorator import multi_asset_check
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
@@ -16,13 +17,15 @@ from dagster._core.definitions.decorators.source_asset_decorator import (
     multi_observable_source_asset,
 )
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.definitions.events import AssetMaterialization, CoercibleToAssetKey
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.observe import observe
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_annotation import has_resource_param_annotation
 from dagster._core.definitions.result import AssetResult, MaterializeResult, ObserveResult
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster_dbt.asset_utils import AssetSelection
 from dagster_shared import check
@@ -33,6 +36,7 @@ from dagster_components.components.step.config_param import (
     has_config_param_annotation,
 )
 from dagster_components.core.component import Component, ComponentLoadContext
+from dagster_components.resolved.core_models import AssetPostProcessor
 
 
 # inheriting for now for convenience
@@ -75,6 +79,11 @@ class ExecutionContext:
     def __init__(self, inner_context):
         self._inner = inner_context
 
+    def get_legacy_asset_execution_context(self) -> AssetExecutionContext:
+        assert isinstance(self._inner, AssetExecutionContext)
+        return self._inner
+        # this is a hack to get the legacy context for now
+
 
 @record_custom
 class ExecutionRecord(IHaveNew):
@@ -84,7 +93,9 @@ class ExecutionRecord(IHaveNew):
         asset_check_records: Optional[Sequence[AssetCheckRecord]] = None,
     ):
         return super().__new__(
-            cls, asset_records=asset_records or [], asset_check_records=asset_check_records or []
+            cls,
+            asset_records=asset_records or [],
+            asset_check_records=asset_check_records or [],
         )
 
     asset_records: Sequence[AssetRecord]
@@ -156,9 +167,9 @@ class StepComponent(Component, ABC):
         pool: Optional[str] = None,
         can_subset: bool = False,
     ):
-        check.invariant(assets or checks, "Must pass at least one asset or check")
-
         assets = assets or []
+
+        # This check merely exists to support the existing semantics of observable source assets
         check.invariant(
             all(is_spec_observable(asset) for asset in assets)
             or all(not is_spec_observable(asset) for asset in assets),
@@ -230,9 +241,9 @@ class StepComponent(Component, ABC):
         else:
             kwargs = {}
 
-        execution_result = self.execute(context=ExecutionContext(context), **kwargs)
+        execution_record = self.execute(context=ExecutionContext(context), **kwargs)
 
-        for asset_record in execution_result.asset_records:
+        for asset_record in execution_record.asset_records or []:
             if self.is_observable:
                 yield ObserveResult(
                     asset_key=asset_record.asset_key,
@@ -250,7 +261,7 @@ class StepComponent(Component, ABC):
                     check_results=asset_record.check_results,
                 )
 
-        for asset_check_result in execution_result.asset_check_records:
+        for asset_check_result in execution_record.asset_check_records or []:
             yield AssetCheckResult(
                 asset_key=asset_check_result.asset_key,
                 check_name=asset_check_result.check_name,
@@ -324,7 +335,9 @@ class StepComponent(Component, ABC):
 
 
 def execute_step_component(
-    step: StepComponent, run_config: Any = None, resources: Optional[Mapping[str, object]] = None
+    step: StepComponent,
+    run_config: Any = None,
+    resources: Optional[Mapping[str, object]] = None,
 ) -> ExecuteInProcessResult:
     defs = step.build_defs(ComponentLoadContext.for_test(resources=resources))
     # this returns both assets_def and asset_checks_defs
@@ -358,3 +371,81 @@ def mark_spec_observable(spec: AssetSpec) -> AssetSpec:
 
 def is_spec_observable(spec: AssetSpec) -> bool:
     return spec.metadata.get(OBSERVABLE_METADATA_KEY, False) is True
+
+
+class MultiAssetArgs(TypedDict):
+    specs: Sequence[AssetSpec]
+    name: Optional[str]
+    check_specs: Optional[Sequence[AssetCheckSpec]]
+    description: Optional[str]
+    partitions_def: Optional[PartitionsDefinition]
+    can_subset: bool
+    op_tags: Optional[Mapping[str, Any]]
+    backfill_policy: Optional[BackfillPolicy]
+    pool: Optional[str]
+    retry_policy: Optional[RetryPolicy]
+
+
+class StepComponentArgs(TypedDict):
+    name: Optional[str]
+    assets: Optional[Sequence[AssetSpec]]
+    checks: Optional[Sequence[AssetCheckSpec]]
+    description: Optional[str]
+    tags: Optional[Mapping[str, Any]]
+    retry_policy: Optional[RetryPolicy]
+    pool: Optional[str]
+    can_subset: bool
+
+
+def from_multi_asset_args(
+    args: MultiAssetArgs,
+) -> StepComponentArgs:
+    assert not args.get("partitions_def"), "Partitions are not supported yet"
+
+    return StepComponentArgs(
+        name=args["name"],
+        assets=args["specs"],
+        checks=args.get("check_specs"),
+        description=args.get("description"),
+        tags=args.get("op_tags"),
+        retry_policy=args.get("retry_policy"),
+        pool=args.get("pool"),
+        can_subset=args["can_subset"],
+    )
+
+
+def to_asset_records(
+    events: Iterator[Union[AssetMaterialization, MaterializeResult]],
+) -> Iterator[AssetRecord]:
+    """Convert AssetMaterialization or MaterializeResult events to AssetRecord."""
+    for event in events:
+        if isinstance(event, AssetMaterialization):
+            yield AssetRecord(
+                asset_key=event.asset_key,
+                metadata=event.metadata,
+                data_version=None,  # not supported yet
+                tags=event.tags,
+            )
+        elif isinstance(event, MaterializeResult):
+            yield AssetRecord(
+                asset_key=event.asset_key,
+                metadata=event.metadata,
+                data_version=event.data_version,
+                tags=event.tags,
+            )
+
+
+@dataclass
+class CompositeStepComponent(Component):
+    @abstractmethod
+    def build_steps(self, context: ComponentLoadContext) -> Sequence[StepComponent]: ...
+
+    @abstractmethod
+    def get_asset_post_processors(self) -> Sequence[AssetPostProcessor]: ...
+
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        # Build the definitions for each step
+        defs = Definitions.merge(*[s.build_defs(context) for s in self.build_steps(context)])
+        for post_processor in self.get_asset_post_processors():
+            defs = post_processor.fn(defs)
+        return defs
