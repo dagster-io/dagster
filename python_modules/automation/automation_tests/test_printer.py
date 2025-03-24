@@ -7,11 +7,11 @@ def test_header():
         result = printer.read()
 
     assert result.startswith(
-        """'''NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT
+        '''"""NOTE: THIS FILE IS AUTO-GENERATED. DO NOT EDIT.
 
 @generated
 
-Produced via:"""
+Produced via:'''
     )
 
 
