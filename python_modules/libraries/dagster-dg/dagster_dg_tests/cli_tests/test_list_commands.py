@@ -56,10 +56,7 @@ def test_list_components_success():
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         result = runner.invoke(
-            "scaffold",
-            "component",
-            "dagster_test.components.AllMetadataEmptyComponent",
-            "qux",
+            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result)
         result = runner.invoke("list", "component")
@@ -240,10 +237,7 @@ def test_list_defs_succeeds(use_json: bool):
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         result = runner.invoke(
-            "scaffold",
-            "component",
-            "dagster_components.dagster.DefinitionsComponent",
-            "mydefs",
+            "scaffold", "dagster_components.dagster.DefinitionsComponent", "mydefs"
         )
         assert_runner_result(result)
 
@@ -302,10 +296,7 @@ def test_list_defs_complex_assets_succeeds():
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         result = runner.invoke(
-            "scaffold",
-            "component",
-            "dagster_components.dagster.DefinitionsComponent",
-            "mydefs",
+            "scaffold", "dagster_components.dagster.DefinitionsComponent", "mydefs"
         )
         assert_runner_result(result)
 

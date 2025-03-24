@@ -132,7 +132,7 @@ def test_components_docs_index(
             contents=(COMPONENTS_SNIPPETS_DIR / "with-scaffolder.py").read_text(),
         )
         run_command_and_snippet_output(
-            cmd="dg scaffold component 'my_component_library.lib.ShellCommand' my_shell_command",
+            cmd="dg scaffold 'my_component_library.lib.ShellCommand' my_shell_command",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffold-instance-of-component.txt",
             update_snippets=update_snippets,

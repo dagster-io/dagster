@@ -37,7 +37,7 @@ STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
 
 def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
     """Note that this does not pick up:
-    - all `component scaffold` subcommands, because these are dynamically generated and vary across
+    - all `scaffold` subcommands, because these are dynamically generated and vary across
       environment.
     - special --ACTION options with callbacks (e.g. `--rebuild-component-registry`).
     """
@@ -46,7 +46,7 @@ def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
     def _crawl(command: click.Command, path: tuple[str, ...]):
         assert command.name
         new_path = (*path, command.name)
-        if isinstance(command, click.Group) and not new_path == ("dg", "scaffold", "component"):
+        if isinstance(command, click.Group) and not new_path == ("dg", "scaffold"):
             for subcommand in command.commands.values():
                 assert subcommand.name
                 _crawl(subcommand, new_path)
@@ -435,11 +435,11 @@ class ProxyRunner:
             yield cls(CliRunner(), append_args=append_opts, console_width=console_width)
 
     def invoke(self, *args: str, **invoke_kwargs: Any) -> Result:
-        # We need to find the right spot to inject global options. For the `dg scaffold component`
+        # We need to find the right spot to inject global options. For the `dg scaffold`
         # command, we need to inject the global options before the final subcommand. For everything
         # else they can be appended at the end of the options.
-        if args[:2] == ("scaffold", "component"):
-            index = 2
+        if args[0] == "scaffold":
+            index = 1
         elif "--help" in args:
             index = args.index("--help")
         elif "--" in args:
