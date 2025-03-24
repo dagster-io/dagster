@@ -3,6 +3,7 @@ from typing import Any, Optional
 
 import dlt
 import duckdb
+import pytest
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -10,8 +11,12 @@ from dagster import (
     AutoMaterializePolicy,
     AutoMaterializeRule,
     AutomationCondition,
+    BackfillPolicy,
+    DailyPartitionsDefinition,
     Definitions,
     MonthlyPartitionsDefinition,
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
 )
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import (
@@ -776,3 +781,51 @@ def test_pool(dlt_pipeline: Pipeline) -> None:
     def my_dlt_assets(): ...
 
     assert my_dlt_assets.op.pool == pool
+
+
+@pytest.mark.parametrize(
+    ["partitions_def", "backfill_policy", "expected_backfill_policy"],
+    [
+        (
+            DailyPartitionsDefinition(start_date="2023-01-01"),
+            BackfillPolicy.multi_run(),
+            BackfillPolicy.multi_run(),
+        ),
+        (
+            DailyPartitionsDefinition(start_date="2023-01-01"),
+            None,
+            BackfillPolicy.single_run(),
+        ),
+        (
+            StaticPartitionsDefinition(partition_keys=["A", "B"]),
+            None,
+            None,
+        ),
+        (
+            StaticPartitionsDefinition(partition_keys=["A", "B"]),
+            BackfillPolicy.single_run(),
+            BackfillPolicy.single_run(),
+        ),
+    ],
+    ids=[
+        "use explicit backfill policy for time window",
+        "time window defaults to single run",
+        "non time window has no default backfill policy",
+        "non time window backfill policy is respected",
+    ],
+)
+def test_backfill_policy(
+    dlt_pipeline: Pipeline,
+    partitions_def: PartitionsDefinition,
+    backfill_policy: BackfillPolicy,
+    expected_backfill_policy: BackfillPolicy,
+) -> None:
+    @dlt_assets(
+        dlt_source=pipeline(),
+        dlt_pipeline=dlt_pipeline,
+        partitions_def=partitions_def,
+        backfill_policy=backfill_policy,
+    )
+    def my_dlt_assets(): ...
+
+    assert my_dlt_assets.backfill_policy == expected_backfill_policy
