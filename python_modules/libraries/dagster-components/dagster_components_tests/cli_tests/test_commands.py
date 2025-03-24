@@ -224,7 +224,7 @@ def test_scaffold_component_command():
             cli,
             [
                 "scaffold",
-                "component",
+                "object",
                 "dagster_test.components.SimplePipesScriptComponent",
                 "bar/components/qux",
                 "--json-params",

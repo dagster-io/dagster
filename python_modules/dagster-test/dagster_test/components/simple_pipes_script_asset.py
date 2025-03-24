@@ -8,7 +8,7 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster_components import Component, ComponentLoadContext
 from dagster_components.component_scaffolding import scaffold_component_yaml
-from dagster_components.scaffold import Scaffolder, ScaffoldRequest, scaffold_with
+from dagster_components.scaffold.scaffold import Scaffolder, ScaffoldRequest, scaffold_with
 from pydantic import BaseModel
 
 

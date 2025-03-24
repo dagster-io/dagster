@@ -46,7 +46,7 @@ def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
     def _crawl(command: click.Command, path: tuple[str, ...]):
         assert command.name
         new_path = (*path, command.name)
-        if isinstance(command, click.Group) and not new_path == ("dg", "scaffold"):
+        if isinstance(command, click.Group):
             for subcommand in command.commands.values():
                 assert subcommand.name
                 _crawl(subcommand, new_path)

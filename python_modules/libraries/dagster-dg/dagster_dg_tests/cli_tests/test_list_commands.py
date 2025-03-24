@@ -356,7 +356,6 @@ def test_list_defs_with_env_file_succeeds():
     ):
         result = runner.invoke(
             "scaffold",
-            "component",
             "dagster_components.dagster.DefinitionsComponent",
             "mydefs",
         )
