@@ -9,6 +9,7 @@ from typing import Final, Optional, Union
 
 import tomlkit
 import tomlkit.items
+from dagster_shared.utils.config import does_dg_config_file_exist
 from typing_extensions import Self
 
 from dagster_dg.cache import CachableDataType, DgCache
@@ -19,6 +20,7 @@ from dagster_dg.config import (
     DgWorkspaceProjectSpec,
     discover_config_file,
     load_dg_root_file_config,
+    load_dg_user_file_config,
     load_dg_workspace_file_config,
 )
 from dagster_dg.error import DgError
@@ -173,10 +175,12 @@ class DgContext:
             root_file_config = None
             container_workspace_file_config = None
 
+        user_config = load_dg_user_file_config() if does_dg_config_file_exist() else None
         config = DgConfig.from_partial_configs(
             root_file_config=root_file_config,
             container_workspace_file_config=container_workspace_file_config,
             command_line_config=command_line_config,
+            user_config=user_config,
         )
 
         return cls(

@@ -41,8 +41,10 @@ def _get_dagster_plus_config_path_and_raw_config() -> Optional[DagsterPlusConfig
     return None
 
 
-@dataclass
+@dataclass()
 class DagsterPlusCliConfig:
+    """Partial config of ~/.dg/config.yaml or ~/.dagster_cloud_cli/config, including only Plus-specific config."""
+
     organization: Optional[str] = None
     default_deployment: Optional[str] = None
     user_token: Optional[str] = None
