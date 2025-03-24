@@ -25,6 +25,7 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_annotation import has_resource_param_annotation
 from dagster._core.definitions.result import AssetResult, MaterializeResult, ObserveResult
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster_dbt.asset_utils import AssetSelection
 from dagster_shared import check
@@ -78,6 +79,11 @@ class ExecutionContext:
     def __init__(self, inner_context):
         self._inner = inner_context
 
+    def get_legacy_asset_execution_context(self) -> AssetExecutionContext:
+        assert isinstance(self._inner, AssetExecutionContext)
+        return self._inner
+        # this is a hack to get the legacy context for now
+
 
 @record_custom
 class ExecutionRecord(IHaveNew):
@@ -87,7 +93,9 @@ class ExecutionRecord(IHaveNew):
         asset_check_records: Optional[Sequence[AssetCheckRecord]] = None,
     ):
         return super().__new__(
-            cls, asset_records=asset_records or [], asset_check_records=asset_check_records or []
+            cls,
+            asset_records=asset_records or [],
+            asset_check_records=asset_check_records or [],
         )
 
     asset_records: Sequence[AssetRecord]
@@ -159,9 +167,9 @@ class StepComponent(Component, ABC):
         pool: Optional[str] = None,
         can_subset: bool = False,
     ):
-        check.invariant(assets or checks, "Must pass at least one asset or check")
-
         assets = assets or []
+
+        # This check merely exists to support the existing semantics of observable source assets
         check.invariant(
             all(is_spec_observable(asset) for asset in assets)
             or all(not is_spec_observable(asset) for asset in assets),
@@ -233,9 +241,9 @@ class StepComponent(Component, ABC):
         else:
             kwargs = {}
 
-        execution_result = self.execute(context=ExecutionContext(context), **kwargs)
+        execution_record = self.execute(context=ExecutionContext(context), **kwargs)
 
-        for asset_record in execution_result.asset_records:
+        for asset_record in execution_record.asset_records or []:
             if self.is_observable:
                 yield ObserveResult(
                     asset_key=asset_record.asset_key,
@@ -253,7 +261,7 @@ class StepComponent(Component, ABC):
                     check_results=asset_record.check_results,
                 )
 
-        for asset_check_result in execution_result.asset_check_records:
+        for asset_check_result in execution_record.asset_check_records or []:
             yield AssetCheckResult(
                 asset_key=asset_check_result.asset_key,
                 check_name=asset_check_result.check_name,
@@ -327,7 +335,9 @@ class StepComponent(Component, ABC):
 
 
 def execute_step_component(
-    step: StepComponent, run_config: Any = None, resources: Optional[Mapping[str, object]] = None
+    step: StepComponent,
+    run_config: Any = None,
+    resources: Optional[Mapping[str, object]] = None,
 ) -> ExecuteInProcessResult:
     defs = step.build_defs(ComponentLoadContext.for_test(resources=resources))
     # this returns both assets_def and asset_checks_defs
