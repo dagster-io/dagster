@@ -8,11 +8,11 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, Union
 
 import coloredlogs
+import dagster_shared.seven as seven
 import structlog
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._annotations import deprecated
 from dagster._core.definitions.logger_definition import LoggerDefinition, logger
 from dagster._core.utils import coerce_valid_log_level

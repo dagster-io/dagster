@@ -4,10 +4,10 @@ from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any, Callable, Generic, NamedTuple, Optional, Union
 
+import dagster_shared.seven as seven
 from typing_extensions import Self, TypeVar
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.metadata.table import (

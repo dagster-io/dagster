@@ -2,7 +2,7 @@ import os
 import subprocess
 import sys
 
-import dagster._seven as seven
+import dagster_shared.seven as seven
 import pytest
 from dagster._utils.env import environ
 

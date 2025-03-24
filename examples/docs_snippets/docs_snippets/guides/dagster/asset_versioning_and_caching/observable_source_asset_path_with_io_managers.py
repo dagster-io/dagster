@@ -2,8 +2,9 @@ import os
 from hashlib import sha256
 from typing import Any
 
+from dagster_shared.seven.temp_dir import get_system_temp_directory
+
 import dagster as dg
-from dagster._seven.temp_dir import get_system_temp_directory
 from dagster._utils import mkdir_p
 
 

@@ -11,13 +11,13 @@ from typing import Any, Callable, List, Type  # noqa: F401, UP035
 
 from typing_extensions import TypeGuard
 
-import dagster._seven.json as json  # noqa: F401
-from dagster._seven.json import (
+import dagster_shared.seven.json as json  # noqa: F401
+from dagster_shared.seven.json import (
     JSONDecodeError as JSONDecodeError,
     dump as dump,
     dumps as dumps,
 )
-from dagster._seven.temp_dir import get_system_temp_directory as get_system_temp_directory
+from dagster_shared.seven.temp_dir import get_system_temp_directory as get_system_temp_directory
 
 IS_WINDOWS = os.name == "nt"
 IS_PYTHON_3_12 = (sys.version_info[0], sys.version_info[1]) == (3, 12)

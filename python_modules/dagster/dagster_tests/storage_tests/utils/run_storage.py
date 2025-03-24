@@ -8,7 +8,7 @@ from typing import Optional
 from uuid import uuid4
 
 import pytest
-from dagster import _seven, job, op
+from dagster import job, op
 from dagster._core.definitions import GraphDefinition
 from dagster._core.errors import (
     DagsterRunAlreadyExists,
@@ -48,9 +48,10 @@ from dagster._daemon.daemon import SensorDaemon
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import serialize_pp
 from dagster._time import create_datetime, datetime_from_timestamp
+from dagster_shared import seven
 from dagster_test.utils.data_factory import dagster_run as create_dagster_run
 
-win_py36 = _seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
+win_py36 = seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
 
 def _get_run_by_id(storage, run_id) -> Optional[DagsterRun]:

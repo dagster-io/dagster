@@ -5,7 +5,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from typing import Any, Optional
 
-import dagster._seven as seven
+import dagster_shared.seven as seven
 from dagster import (
     Field,
     StringSource,
@@ -49,7 +49,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
     Args:
         bucket (str): The name of the GCS bucket to which to log.
         local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
-            ``dagster._seven.get_system_temp_directory()``.
+            ``dagster_shared.seven.get_system_temp_directory()``.
         prefix (Optional[str]): Prefix for the log file keys.
         json_credentials_envvar (Optional[str]): Environment variable that contains the JSON with a private key
             and other credentials information. If this is set, ``GOOGLE_APPLICATION_CREDENTIALS`` will be ignored.

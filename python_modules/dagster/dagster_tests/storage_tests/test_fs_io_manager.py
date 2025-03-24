@@ -22,7 +22,6 @@ from dagster import (
     PartitionsDefinition,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
-    _seven as seven,
     define_asset_job,
     graph,
     job,
@@ -41,6 +40,7 @@ from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
+from dagster_shared import seven
 
 
 def define_job(io_manager: IOManagerDefinition):

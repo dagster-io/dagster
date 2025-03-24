@@ -8,7 +8,7 @@ import time
 from unittest import mock
 
 import dagster._check as check
-import dagster._seven as seven
+import dagster_shared.seven as seven
 import pytest
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.test_utils import instance_for_test

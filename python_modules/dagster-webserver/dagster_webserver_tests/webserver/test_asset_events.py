@@ -8,8 +8,8 @@ from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
 )
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
-from dagster._seven import json
 from dagster_pipes import PipesContext
+from dagster_shared.seven import json
 from dagster_webserver.external_assets import (
     ReportAssetCheckEvalParam,
     ReportAssetMatParam,
