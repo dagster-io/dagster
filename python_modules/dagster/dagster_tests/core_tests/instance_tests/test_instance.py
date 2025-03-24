@@ -1,7 +1,9 @@
+import json
 import os
 import re
 import tempfile
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any, Optional
 from unittest.mock import MagicMock, patch
 
@@ -37,6 +39,7 @@ from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
+from dagster._core.secrets.env_file import PerProjectEnvFileLoader
 from dagster._core.snap import create_execution_plan_snapshot_id, snapshot_from_execution_plan
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.partition_status_cache import AssetPartitionStatus, AssetStatusCacheValue
@@ -143,10 +146,44 @@ def test_unified_storage_env_var(tmpdir):
             )
 
 
-def test_custom_secrets_manager():
-    with instance_for_test() as instance:
-        assert instance._secrets_loader is None  # noqa: SLF001
+def test_implicit_secrets_manager():
+    with (
+        instance_for_test() as instance,
+        tempfile.TemporaryDirectory() as temp_dir,
+        environ({"DAGSTER_PROJECT_ENV_FILE_PATHS": json.dumps({"test_location": temp_dir})}),
+    ):
+        assert isinstance(instance._secrets_loader, PerProjectEnvFileLoader)  # noqa: SLF001
+        (Path(temp_dir) / ".env").write_text("FOO=BAR")
+        assert instance._secrets_loader.get_secrets_for_environment("test_location") == {  # noqa: SLF001
+            "FOO": "BAR"
+        }
+        assert instance._secrets_loader.get_secrets_for_environment("other_location") == {}  # noqa: SLF001
 
+
+def test_custom_per_project_secrets_manager():
+    with (
+        tempfile.TemporaryDirectory() as temp_dir,
+        instance_for_test(
+            overrides={
+                "secrets": {
+                    "custom": {
+                        "module": "dagster._core.secrets.env_file",
+                        "class": "PerProjectEnvFileLoader",
+                        "config": {"location_paths": {"test_location": str(temp_dir)}},
+                    }
+                }
+            }
+        ) as instance,
+    ):
+        assert isinstance(instance._secrets_loader, PerProjectEnvFileLoader)  # noqa: SLF001
+        (Path(temp_dir) / ".env").write_text("FOO=BAR")
+        assert instance._secrets_loader.get_secrets_for_environment("test_location") == {  # noqa: SLF001
+            "FOO": "BAR"
+        }
+        assert instance._secrets_loader.get_secrets_for_environment("other_location") == {}  # noqa: SLF001
+
+
+def test_custom_secrets_manager():
     with instance_for_test(
         overrides={
             "secrets": {
