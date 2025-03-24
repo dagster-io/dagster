@@ -10,8 +10,11 @@ import dagster._check as check
 import pydantic
 import pytest
 from dagster._record import IHaveNew, record, record_custom
-from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
-from dagster._serdes.serdes import (
+from dagster._utils.cached_method import cached_method
+from dagster_shared.check import CheckError
+from dagster_shared.dagster_model import DagsterModel
+from dagster_shared.serdes.errors import DeserializationError, SerdesUsageError, SerializationError
+from dagster_shared.serdes.serdes import (
     EnumSerializer,
     FieldSerializer,
     NamedTupleSerializer,
@@ -27,10 +30,7 @@ from dagster._serdes.serdes import (
     serialize_value,
     unpack_value,
 )
-from dagster._serdes.utils import hash_str
-from dagster._utils.cached_method import cached_method
-from dagster_shared.check import CheckError
-from dagster_shared.dagster_model import DagsterModel
+from dagster_shared.serdes.utils import hash_str
 
 
 def test_deserialize_value_ok():

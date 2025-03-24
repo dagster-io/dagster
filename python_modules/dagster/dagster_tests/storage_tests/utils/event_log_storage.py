@@ -123,10 +123,10 @@ from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._loggers import colored_console_logger
-from dagster._serdes.serdes import deserialize_value
 from dagster._time import get_current_datetime
 from dagster._utils.concurrency import ConcurrencySlotStatus
 from dagster_shared import seven
+from dagster_shared.serdes import deserialize_value
 
 # py36 & 37 list.append not hashable
 

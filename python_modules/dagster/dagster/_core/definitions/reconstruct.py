@@ -17,6 +17,7 @@ from typing import (  # noqa: UP035
 )
 
 import dagster_shared.seven as seven
+from dagster_shared.serdes import NamedTupleSerializer
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -37,7 +38,6 @@ from dagster._core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._utils import hash_collection
 
 if TYPE_CHECKING:

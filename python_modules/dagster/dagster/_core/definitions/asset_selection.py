@@ -6,6 +6,7 @@ from collections.abc import Iterable, Sequence
 from functools import reduce
 from typing import AbstractSet, Optional, Union, cast  # noqa: UP035
 
+from dagster_shared.serdes import whitelist_for_serdes
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
@@ -31,7 +32,6 @@ from dagster._core.selector.subset_selector import (
     parse_clause,
 )
 from dagster._record import copy, record
-from dagster._serdes.serdes import whitelist_for_serdes
 
 CoercibleToAssetSelection: TypeAlias = Union[
     str,

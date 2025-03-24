@@ -1,7 +1,7 @@
 import hashlib
 from typing import Optional
 
-from dagster._serdes.serdes import PackableValue, WhitelistMap, serialize_value
+from dagster_shared.serdes.serdes import PackableValue, WhitelistMap, serialize_value
 
 
 def create_snapshot_id(

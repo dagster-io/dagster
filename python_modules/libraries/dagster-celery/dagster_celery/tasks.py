@@ -12,7 +12,7 @@ from dagster._core.events import EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
 from dagster._serdes import serialize_value, unpack_value
-from dagster._serdes.serdes import JsonSerializableValue
+from dagster_shared.serdes.serdes import JsonSerializableValue
 
 from dagster_celery.config import (
     TASK_EXECUTE_JOB_NAME,

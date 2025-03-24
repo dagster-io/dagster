@@ -13,6 +13,7 @@ from typing import (  # noqa: UP035
     cast,
 )
 
+from dagster_shared.serdes import whitelist_for_serdes
 from typing_extensions import TypeAlias, TypeVar
 
 import dagster._check as check
@@ -29,7 +30,6 @@ from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.utils import DEFAULT_OUTPUT, struct_to_string
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
 from dagster._utils.tags import normalize_tags
 

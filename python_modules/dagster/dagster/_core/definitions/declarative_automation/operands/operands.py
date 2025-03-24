@@ -2,6 +2,8 @@ import datetime
 from collections.abc import Mapping, Set
 from typing import TYPE_CHECKING, Optional
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -14,7 +16,6 @@ from dagster._core.definitions.declarative_automation.operands.subset_automation
 )
 from dagster._core.definitions.declarative_automation.utils import SerializableTimeDelta
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import reverse_cron_string_iterator
 
 if TYPE_CHECKING:

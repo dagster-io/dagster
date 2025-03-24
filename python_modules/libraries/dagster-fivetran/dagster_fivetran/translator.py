@@ -8,9 +8,9 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSet
 from dagster._record import as_dict, record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
+from dagster_shared.serdes import whitelist_for_serdes
 
 from dagster_fivetran.utils import get_fivetran_connector_table_name, metadata_for_table
 

@@ -72,6 +72,11 @@ sys.meta_path.insert(
 # ##### DYNAMIC IMPORTS
 # ########################
 
+from dagster_shared.serdes import (
+    deserialize_value as deserialize_value,
+    serialize_value as serialize_value,
+)
+
 from dagster._builtins import (
     Any as Any,
     Bool as Bool,
@@ -618,10 +623,6 @@ from dagster._loggers import (
     default_loggers as default_loggers,
     default_system_loggers as default_system_loggers,
     json_console_logger as json_console_logger,
-)
-from dagster._serdes.serdes import (
-    deserialize_value as deserialize_value,
-    serialize_value as serialize_value,
 )
 from dagster._utils import file_relative_path as file_relative_path
 from dagster._utils.alert import (

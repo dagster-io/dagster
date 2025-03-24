@@ -1,6 +1,8 @@
 from collections.abc import Mapping, Sequence
 from typing import AbstractSet  # noqa: UP035
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -9,7 +11,6 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @record

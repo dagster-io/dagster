@@ -4,6 +4,7 @@ from collections.abc import Mapping, Sequence, Set
 from functools import cached_property
 from typing import TYPE_CHECKING, Generic, Optional, Union
 
+from dagster_shared.serdes.serdes import is_whitelisted_for_serdes_object
 from typing_extensions import Self
 
 import dagster._check as check
@@ -28,7 +29,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
 from dagster._record import copy, record
-from dagster._serdes.serdes import is_whitelisted_for_serdes_object
 from dagster._time import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import disable_dagster_warnings

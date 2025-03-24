@@ -2,6 +2,14 @@ from abc import ABC, abstractproperty
 from enum import Enum
 from typing import NamedTuple, Optional
 
+from dagster_shared.serdes.serdes import (
+    NamedTupleSerializer,
+    UnpackContext,
+    UnpackedValue,
+    WhitelistMap,
+    whitelist_for_serdes,
+)
+
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionEvaluation,
@@ -11,13 +19,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
-from dagster._serdes.serdes import (
-    NamedTupleSerializer,
-    UnpackContext,
-    UnpackedValue,
-    WhitelistMap,
-    whitelist_for_serdes,
-)
 
 
 @whitelist_for_serdes

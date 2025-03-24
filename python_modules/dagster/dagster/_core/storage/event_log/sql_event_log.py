@@ -20,6 +20,8 @@ from typing import (  # noqa: UP035
 import dagster_shared.seven as seven
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
+from dagster_shared.serdes import deserialize_values
+from dagster_shared.serdes.errors import DeserializationError
 from sqlalchemy.engine import Connection
 from typing_extensions import TypeAlias
 
@@ -98,8 +100,6 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_subquery,
 )
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._serdes.errors import DeserializationError
-from dagster._serdes.serdes import deserialize_values
 from dagster._time import datetime_from_timestamp, get_current_timestamp, utc_datetime_from_naive
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import (

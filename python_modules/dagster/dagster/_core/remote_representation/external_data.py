@@ -13,6 +13,11 @@ from collections.abc import Iterable, Mapping, Sequence
 from enum import Enum
 from typing import Any, Final, NamedTuple, Optional, Union, cast
 
+from dagster_shared.serdes.serdes import (
+    FieldSerializer,
+    get_prefix_for_a_serialized,
+    is_whitelisted_for_serdes_object,
+)
 from typing_extensions import Self, TypeAlias
 
 from dagster import (
@@ -91,11 +96,6 @@ from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.utils import is_valid_email
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    get_prefix_for_a_serialized,
-    is_whitelisted_for_serdes_object,
-)
 from dagster._time import datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.warnings import suppress_dagster_warnings

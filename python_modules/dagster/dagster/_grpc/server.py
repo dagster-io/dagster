@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, cast
 
 import dagster_shared.seven as seven
 import grpc
+from dagster_shared.serdes.ipc import IPCErrorMessage, open_ipc_subprocess
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 import dagster._check as check
@@ -101,7 +102,6 @@ from dagster._grpc.utils import (
     max_send_bytes,
 )
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._serdes.ipc import IPCErrorMessage, open_ipc_subprocess
 from dagster._utils import find_free_port, get_run_crash_explanation, safe_tempfile_path_unmanaged
 from dagster._utils.container import (
     ContainerUtilizationMetrics,

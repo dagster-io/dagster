@@ -2,6 +2,8 @@ import asyncio
 from collections.abc import Sequence
 from typing import Union
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -10,7 +12,6 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._record import copy, record
-from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
