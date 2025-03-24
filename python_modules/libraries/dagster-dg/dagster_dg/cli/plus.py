@@ -32,7 +32,11 @@ def login_command() -> None:
     new_org = server.get_organization()
     new_api_token = server.get_token()
 
-    config = DagsterPlusCliConfig(organization=new_org, user_token=new_api_token)
+    config = DagsterPlusCliConfig(
+        organization=new_org,
+        user_token=new_api_token,
+        url=DagsterPlusCliConfig.get().url if DagsterPlusCliConfig.exists() else None,
+    )
     config.write()
     click.echo(f"Authorized for organization {new_org}\n")
 
@@ -54,5 +58,6 @@ def login_command() -> None:
         organization=config.organization,
         user_token=config.user_token,
         default_deployment=selected_deployment,
+        url=config.url,
     )
-    config.write_to_file(get_active_config_path())
+    config.write()

@@ -55,6 +55,10 @@ class DagsterPlusCliConfig:
     def has_any_configuration(self) -> bool:
         return any(self.__dict__.values())
 
+    @staticmethod
+    def exists() -> bool:
+        return _get_dagster_plus_config_path_and_raw_config() is not None
+
     @classmethod
     def get(cls) -> "DagsterPlusCliConfig":
         result = _get_dagster_plus_config_path_and_raw_config()

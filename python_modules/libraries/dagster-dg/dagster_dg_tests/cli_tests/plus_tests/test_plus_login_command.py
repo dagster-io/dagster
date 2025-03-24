@@ -60,6 +60,26 @@ def setup_dg_cli_config_additional_config(monkeypatch):
         yield config_path
 
 
+@pytest.fixture()
+def setup_dg_cli_config_custom_url(monkeypatch):
+    with (
+        tempfile.TemporaryDirectory() as tmp_dg_dir,
+        tempfile.TemporaryDirectory() as tmp_cloud_dir,
+    ):
+        config_path = Path(tmp_dg_dir) / "dg.toml"
+        config_path.write_text(
+            """
+            [cli]
+            existing_key = "existing_value"
+            [cli.plus]
+            url = "https://custom_subdomain.dagster.cloud"
+            """
+        )
+        monkeypatch.setenv("DG_CLI_CONFIG", config_path)
+        monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(tmp_cloud_dir) / "config"))
+        yield config_path
+
+
 # Test setup command, using the web auth option
 @pytest.mark.parametrize(
     "fixture_name",
@@ -67,6 +87,7 @@ def setup_dg_cli_config_additional_config(monkeypatch):
         "setup_cloud_cli_config",
         "setup_dg_cli_config",
         "setup_dg_cli_config_additional_config",
+        "setup_dg_cli_config_custom_url",
     ],
 )
 @responses.activate
@@ -74,7 +95,9 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
     """Test the dg plus login command with web auth."""
     responses.add(
         responses.POST,
-        "https://dagster.cloud/hooli/graphql",
+        "https://custom_subdomain.dagster.cloud/hooli/graphql"
+        if fixture_name == "setup_dg_cli_config_custom_url"
+        else "https://dagster.cloud/hooli/graphql",
         json={
             "data": {
                 "fullDeployments": [
@@ -134,15 +157,38 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
             assert yaml.safe_load(filepath.read_text()) == {
                 "organization": "hooli",
                 "user_token": "abc123",
+                "default_deployment": "hooli-dev",
             }
         elif fixture_name == "setup_dg_cli_config_additional_config":
             assert tomlkit.parse(filepath.read_text()) == {
                 "cli": {
                     "existing_key": "existing_value",
-                    "plus": {"organization": "hooli", "user_token": "abc123"},
+                    "plus": {
+                        "organization": "hooli",
+                        "user_token": "abc123",
+                        "default_deployment": "hooli-dev",
+                    },
                 },
+            }
+        elif fixture_name == "setup_dg_cli_config":
+            assert tomlkit.parse(filepath.read_text()) == {
+                "cli": {
+                    "plus": {
+                        "organization": "hooli",
+                        "user_token": "abc123",
+                        "default_deployment": "hooli-dev",
+                    }
+                }
             }
         else:
             assert tomlkit.parse(filepath.read_text()) == {
-                "cli": {"plus": {"organization": "hooli", "user_token": "abc123"}}
+                "cli": {
+                    "existing_key": "existing_value",
+                    "plus": {
+                        "url": "https://custom_subdomain.dagster.cloud",
+                        "organization": "hooli",
+                        "user_token": "abc123",
+                        "default_deployment": "hooli-dev",
+                    },
+                }
             }
