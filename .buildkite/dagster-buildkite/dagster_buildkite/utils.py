@@ -390,6 +390,9 @@ def skip_if_no_docs_changes():
     if message_contains("NO_SKIP"):
         return None
 
+    if message_contains("BUILDKITE_DOCS"):
+        return None
+
     if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):  # pyright: ignore[reportArgumentType]
         return None
 
