@@ -1,14 +1,15 @@
 import hashlib
 import inspect
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any, Optional
+from typing import Any, Optional, TypedDict, Union
 
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.asset_check_decorator import multi_asset_check
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
@@ -16,10 +17,11 @@ from dagster._core.definitions.decorators.source_asset_decorator import (
     multi_observable_source_asset,
 )
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.definitions.events import AssetMaterialization, CoercibleToAssetKey
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.observe import observe
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_annotation import has_resource_param_annotation
 from dagster._core.definitions.result import AssetResult, MaterializeResult, ObserveResult
@@ -33,6 +35,7 @@ from dagster_components.components.step.config_param import (
     has_config_param_annotation,
 )
 from dagster_components.core.component import Component, ComponentLoadContext
+from dagster_components.resolved.core_models import AssetPostProcessor
 
 
 # inheriting for now for convenience
@@ -358,3 +361,81 @@ def mark_spec_observable(spec: AssetSpec) -> AssetSpec:
 
 def is_spec_observable(spec: AssetSpec) -> bool:
     return spec.metadata.get(OBSERVABLE_METADATA_KEY, False) is True
+
+
+class MultiAssetArgs(TypedDict):
+    specs: Sequence[AssetSpec]
+    name: Optional[str]
+    check_specs: Optional[Sequence[AssetCheckSpec]]
+    description: Optional[str]
+    partitions_def: Optional[PartitionsDefinition]
+    can_subset: bool
+    op_tags: Optional[Mapping[str, Any]]
+    backfill_policy: Optional[BackfillPolicy]
+    pool: Optional[str]
+    retry_policy: Optional[RetryPolicy]
+
+
+class StepComponentArgs(TypedDict):
+    name: Optional[str]
+    assets: Optional[Sequence[AssetSpec]]
+    checks: Optional[Sequence[AssetCheckSpec]]
+    description: Optional[str]
+    tags: Optional[Mapping[str, Any]]
+    retry_policy: Optional[RetryPolicy]
+    pool: Optional[str]
+    can_subset: bool
+
+
+def from_multi_asset_args(
+    args: MultiAssetArgs,
+) -> StepComponentArgs:
+    assert not args.get("partitions_def"), "Partitions are not supported yet"
+
+    return StepComponentArgs(
+        name=args["name"],
+        assets=args["specs"],
+        checks=args.get("check_specs"),
+        description=args.get("description"),
+        tags=args.get("op_tags"),
+        retry_policy=args.get("retry_policy"),
+        pool=args.get("pool"),
+        can_subset=args["can_subset"],
+    )
+
+
+def to_asset_records(
+    events: Iterator[Union[AssetMaterialization, MaterializeResult]],
+) -> Iterator[AssetRecord]:
+    """Convert AssetMaterialization or MaterializeResult events to AssetRecord."""
+    for event in events:
+        if isinstance(event, AssetMaterialization):
+            yield AssetRecord(
+                asset_key=event.asset_key,
+                metadata=event.metadata,
+                data_version=None,  # not supported yet
+                tags=event.tags,
+            )
+        elif isinstance(event, MaterializeResult):
+            yield AssetRecord(
+                asset_key=event.asset_key,
+                metadata=event.metadata,
+                data_version=event.data_version,
+                tags=event.tags,
+            )
+
+
+@dataclass
+class CompositeStepComponent(Component):
+    @abstractmethod
+    def build_steps(self, context: ComponentLoadContext) -> Sequence[StepComponent]: ...
+
+    @abstractmethod
+    def get_asset_post_processors(self) -> Sequence[AssetPostProcessor]: ...
+
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+        # Build the definitions for each step
+        defs = Definitions.merge(*[s.build_defs(context) for s in self.build_steps(context)])
+        for post_processor in self.get_asset_post_processors():
+            defs = post_processor.fn(defs)
+        return defs
