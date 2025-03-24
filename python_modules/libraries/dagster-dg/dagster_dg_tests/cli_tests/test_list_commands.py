@@ -387,3 +387,37 @@ def _sample_env_var_assets():
     @asset(kinds={"sling"}, group_name=os.getenv("GROUP_NAME", "MISSING"))
     def alpha():
         pass
+
+
+# ########################
+# ##### COMPONENT
+# ########################
+
+
+def test_list_env_succeeds():
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        result = runner.invoke("list", "env")
+        assert_runner_result(result)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+            No environment variables are defined for this project.
+        """).strip()
+        )
+
+        Path(".env").write_text("FOO=bar")
+        result = runner.invoke("list", "env")
+        assert_runner_result(result)
+        assert (
+            result.output.strip()
+            == textwrap.dedent("""
+               ┏━━━━━━━━━┳━━━━━━━┓
+               ┃ Env Var ┃ Value ┃
+               ┡━━━━━━━━━╇━━━━━━━┩
+               │ FOO     │ bar   │
+               └─────────┴───────┘
+        """).strip()
+        )
