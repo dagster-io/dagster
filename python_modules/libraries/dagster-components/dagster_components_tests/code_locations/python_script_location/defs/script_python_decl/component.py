@@ -4,11 +4,11 @@ from dagster_components.components.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollectionModel,
     PipesSubprocessScriptModel,
 )
-from dagster_components.core.component import component
+from dagster_components.core.component import defs_module
 from dagster_components.resolved.core_models import AssetSpecModel
 
 
-@component
+@defs_module()
 def load(context: ComponentLoadContext) -> PipesSubprocessScriptCollectionComponent:
     attributes = PipesSubprocessScriptCollectionModel(
         scripts=[

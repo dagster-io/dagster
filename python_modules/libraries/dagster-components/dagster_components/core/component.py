@@ -18,7 +18,8 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import pushd
 from dagster._utils.cached_method import cached_method
-from typing_extensions import Self
+from dagster_shared.record import record
+from typing_extensions import Self, TypeAlias
 
 from dagster_components.core.component_key import ComponentKey
 from dagster_components.core.component_scaffolder import DefaultComponentScaffolder
@@ -38,6 +39,18 @@ class ComponentsEntryPointLoadError(DagsterError):
 class DefsLoader(ABC):
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
+
+    @staticmethod
+    def for_eager_definitions(definitions: Definitions) -> "DefsLoader":
+        return NoopDefsLoader(definitions=definitions)
+
+
+@record
+class NoopDefsLoader(DefsLoader):
+    definitions: Definitions
+
+    def build_defs(self, context: "ComponentLoadContext") -> Definitions:
+        return self.definitions
 
 
 @scaffold_with(DefaultComponentScaffolder)
@@ -373,18 +386,43 @@ def use_component_load_context(component_load_context: ComponentLoadContext):
         active_component_load_context.reset(token)
 
 
-COMPONENT_LOADER_FN_ATTR = "__dagster_component_loader_fn"
+class DefsModule:
+    def __init__(
+        self,
+        fn: Callable[[ComponentLoadContext], DefsLoader],
+        tags: Mapping[str, str],
+        attributes: Optional[Mapping[str, Any]],
+    ):
+        self.fn = fn
+        self.tags = tags
+        self.attributes = attributes
+
+    # __call__ enables direct user invocation
+    def __call__(self, context: ComponentLoadContext) -> DefsLoader:
+        return self.create_defs_loader(context)
+
+    def create_defs_loader(self, context: ComponentLoadContext) -> DefsLoader:
+        return self.fn(context)
+
+    def load_definitions(self, context: ComponentLoadContext) -> Definitions:
+        return self.create_defs_loader(context).build_defs(context)
 
 
-T_Component = TypeVar("T_Component", bound=Component)
+T_DefsLoader = TypeVar("T_DefsLoader", bound=DefsLoader)
 
 
-def component(
-    fn: Callable[[ComponentLoadContext], T_Component],
-) -> Callable[[ComponentLoadContext], T_Component]:
-    setattr(fn, COMPONENT_LOADER_FN_ATTR, True)
-    return fn
+UserLoaderFn: TypeAlias = Callable[[ComponentLoadContext], T_DefsLoader]
 
 
-def is_component_loader(obj: Any) -> bool:
-    return getattr(obj, COMPONENT_LOADER_FN_ATTR, False)
+def defs_module(
+    tags: Optional[Mapping[str, str]] = None,
+    attributes: Optional[Mapping[str, Any]] = None,
+) -> Callable[[UserLoaderFn], DefsModule]:
+    def decorator(inner_fn: UserLoaderFn) -> DefsModule:
+        return DefsModule(fn=inner_fn, tags=tags or {}, attributes=attributes)
+
+    return decorator
+
+
+def is_defs_module(obj: Any) -> bool:
+    return isinstance(obj, DefsModule)

@@ -4,7 +4,7 @@ from dagster_components.component_scaffolding import (
 from dagster_components.core.component import (
     Component as Component,
     ComponentLoadContext as ComponentLoadContext,
-    component as component,
+    defs_module as defs_module,
 )
 from dagster_components.core.component_defs_builder import (
     build_component_defs as build_component_defs,

@@ -27,7 +27,8 @@ from dagster_components.core.component import (
     Component,
     ComponentLoadContext,
     DefsLoader,
-    is_component_loader,
+    DefsModule,
+    is_defs_module,
     load_component_type,
 )
 from dagster_components.core.component_key import ComponentKey
@@ -263,21 +264,23 @@ class PythonComponentDeclNode(DefsModuleDeclNode):
 
     def load(self, context: ComponentLoadContext) -> DefsFactoryModuleResolver:
         module = load_module_from_path(self.path.stem, self.path / "component.py")
-        component_loaders = list(inspect.getmembers(module, is_component_loader))
-        if len(component_loaders) < 1:
-            raise DagsterInvalidDefinitionError("No component loaders found in module")
-        elif len(component_loaders) > 1:
-            # note: we could support multiple component loaders in the same file, just
+        defs_modules_in_module = inspect.getmembers(module, is_defs_module)
+
+        if len(defs_modules_in_module) < 1:
+            raise DagsterInvalidDefinitionError("No defs modules found in python module")
+        elif len(defs_modules_in_module) > 1:
+            # note: we could support defs modules in the same file, just
             # being more restrictive to start
             raise DagsterInvalidDefinitionError(
-                f"Multiple component loaders found in module: {component_loaders}"
+                f"Multiple defs modules found in python module: {defs_modules_in_module}"
             )
         else:
-            _, component_loader = component_loaders[0]
+            defs_module = check.inst(defs_modules_in_module[0][1], DefsModule)
+
             return DefsFactoryModuleResolver(
                 path=self.path,
                 context=context,
-                defs_factory=component_loader(context),
+                defs_factory=defs_module.create_defs_loader(context),
             )
 
 
