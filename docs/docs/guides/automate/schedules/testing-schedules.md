@@ -62,13 +62,11 @@ For schedules that utilize [resources](/guides/build/external-resources), you ca
 
 Let's say we want to test the `process_data_schedule` in this example:
 
-{/* TODO add dedent=4 prop to CodeExample below when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_on_schedule" endBefore="end_new_resource_on_schedule" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_on_schedule" endBefore="end_new_resource_on_schedule" dedent="4"/>
 
 In the test for this schedule, we provided the `date_formatter` resource to the schedule when we invoked its function:
 
-{/* TODO add dedent=4 prop to CodeExample below when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_test_resource_on_schedule" endBefore="end_test_resource_on_schedule" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_test_resource_on_schedule" endBefore="end_test_resource_on_schedule" dedent="4"/>
 
 ## APIs in this guide
 

@@ -18,3 +18,10 @@ export function filterComments(lines: string[]): string[] {
   });
 }
 
+/**
+ * Reduce indentation of text given number of characters.
+ */
+export function dedentLines(lines: string[], dedentAmount: number): string[] {
+  const regex = new RegExp(`^ {0,${dedentAmount}}`);
+  return lines.map((line) => line.replace(regex, ''));
+}
