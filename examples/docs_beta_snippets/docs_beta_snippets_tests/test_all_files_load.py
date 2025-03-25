@@ -8,6 +8,12 @@ import dagster as dg
 snippets_folder = dg.file_relative_path(__file__, "../docs_beta_snippets/")
 
 EXCLUDED_FILES = {
+    # TEMPORARY: dagster-cloud environment is weird and confusing
+    f"{snippets_folder}/guides/data-assets/quality-testing/freshness-checks/anomaly-detection.py",
+    f"{snippets_folder}/guides/data-modeling/metadata/plus-references.py",
+    f"{snippets_folder}/dagster-plus/insights/snowflake/snowflake-dbt-asset-insights.py",
+    f"{snippets_folder}/dagster-plus/insights/snowflake/snowflake-resource-insights.py",
+    f"{snippets_folder}/dagster-plus/insights/google-bigquery/bigquery-resource-insights.py",
     # see DOC-375
     f"{snippets_folder}/guides/data-modeling/asset-factories/python-asset-factory.py",
     f"{snippets_folder}/guides/data-modeling/asset-factories/simple-yaml-asset-factory.py",
