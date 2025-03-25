@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import pytest
 from dagster import AssetKey
 from dagster._utils.env import environ
-from dagster_components.core.defs_module import ComponentFileModel, YamlComponentDecl
+from dagster_components.core.defs_module.defs_module import ComponentFileModel, YamlComponentDecl
 from dagster_components.lib.dbt_project.component import DbtProjectComponent, DbtProjectModel
 from dagster_dbt import DbtProject
 

@@ -16,7 +16,7 @@ from dagster._utils import pushd
 from dagster_components.resolved.context import ResolutionContext
 
 if TYPE_CHECKING:
-    from dagster_components.core.defs_module import DefsModuleDecl
+    from dagster_components.core.defs_module.defs_module_loader import DefsModuleLoader
     from dagster_components.core.load_defs import DefinitionsModuleCache
 
 
@@ -26,7 +26,7 @@ class ComponentLoadContext:
 
     defs_root: Path
     defs_module_name: str
-    decl_node: Optional["DefsModuleDecl"]
+    decl_node: Optional["DefsModuleLoader"]
     resolution_context: ResolutionContext
     module_cache: "DefinitionsModuleCache"
 
@@ -43,7 +43,7 @@ class ComponentLoadContext:
     def for_test(
         *,
         resources: Optional[Mapping[str, object]] = None,
-        decl_node: Optional["DefsModuleDecl"] = None,
+        decl_node: Optional["DefsModuleLoader"] = None,
     ) -> "ComponentLoadContext":
         from dagster_components.core.load_defs import DefinitionsModuleCache
 
@@ -65,7 +65,7 @@ class ComponentLoadContext:
             resolution_context=self.resolution_context.with_scope(**rendering_scope),
         )
 
-    def for_decl(self, decl: "DefsModuleDecl") -> "ComponentLoadContext":
+    def for_decl(self, decl: "DefsModuleLoader") -> "ComponentLoadContext":
         return dataclasses.replace(self, decl_node=decl)
 
     def defs_relative_module_name(self, path: Path) -> str:

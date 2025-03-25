@@ -3,7 +3,7 @@ from pathlib import Path
 from typing_extensions import TypeVar
 
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.defs_module import DirectForTestComponentDecl
+from dagster_components.core.defs_module.defs_module import DirectForTestComponentDecl
 
 TComponent = TypeVar("TComponent", bound=Component)
 

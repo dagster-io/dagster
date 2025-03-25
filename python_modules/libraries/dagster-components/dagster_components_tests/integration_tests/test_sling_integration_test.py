@@ -20,9 +20,9 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster_components.cli import cli
-from dagster_components.core.defs_module import (
+from dagster_components.core.defs_module.defs_module_loader import (
     ComponentFileModel,
-    DefsModuleDecl,
+    DefsModuleLoader,
     YamlComponentDecl,
 )
 from dagster_components.core.load_defs import load_defs
@@ -84,7 +84,7 @@ def temp_sling_component_instance(
                 # update the defs yaml to add a duckdb instance
                 data["attributes"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
 
-            decl_node = DefsModuleDecl.from_path(Path(temp_dir) / COMPONENT_RELPATH)
+            decl_node = DefsModuleLoader.from_path(Path(temp_dir) / COMPONENT_RELPATH)
             assert isinstance(decl_node, YamlComponentDecl)
             yield decl_node
 
@@ -179,9 +179,9 @@ def test_load_from_path() -> None:
     with temp_sling_component_instance() as decl_node:
         context = script_load_context(decl_node)
         defs_module = decl_node.load(context)
-        assert isinstance(defs_module.component, SlingReplicationCollectionComponent)
+        assert isinstance(defs_module.inner, SlingReplicationCollectionComponent)
 
-        resource = getattr(defs_module.component, "resource")
+        resource = getattr(defs_module.inner, "resource")
         assert isinstance(resource, SlingResource)
         assert len(resource.connections) == 1
         assert resource.connections[0].name == "DUCKDB"

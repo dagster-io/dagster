@@ -36,9 +36,9 @@ class DefinitionsModuleCache:
 
     @cached_method
     def _load_defs_inner(self, module: ModuleType) -> Definitions:
-        from dagster_components.core.defs_module import DefsModuleDecl
+        from dagster_components.core.defs_module.defs_module_loader import DefsModuleLoader
 
-        decl_node = DefsModuleDecl.from_module(module)
+        decl_node = DefsModuleLoader.from_module(module)
         if not decl_node:
             raise Exception(f"No component found at module {module}")
 
@@ -53,7 +53,7 @@ class DefinitionsModuleCache:
         )
         defs_module = decl_node.load(context)
         with use_component_load_context(context):
-            return defs_module.build_defs()
+            return defs_module.build_defs(context)
 
 
 @deprecated(breaking_version="0.2.0")

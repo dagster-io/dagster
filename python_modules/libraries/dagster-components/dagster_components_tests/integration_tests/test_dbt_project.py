@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 import pytest
 from dagster import AssetKey, AssetsDefinition, AssetSpec, BackfillPolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
-from dagster_components.core.defs_module import ComponentFileModel, YamlComponentDecl
+from dagster_components.core.defs_module.defs_module import ComponentFileModel, YamlComponentDecl
 from dagster_components.core.load_defs import build_component_defs
 from dagster_components.lib.dbt_project.component import DbtProjectComponent, DbtProjectModel
 from dagster_components.resolved.core_models import AssetAttributesModel

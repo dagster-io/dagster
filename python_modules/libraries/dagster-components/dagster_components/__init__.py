@@ -1,7 +1,6 @@
 from dagster_shared.serdes.objects import LibraryObjectKey as LibraryObjectKey
 
 from dagster_components.component.component import Component as Component
-from dagster_components.component.component_loader import component as component
 from dagster_components.component.component_scaffolder import (
     DefaultComponentScaffolder as DefaultComponentScaffolder,
 )
@@ -9,6 +8,7 @@ from dagster_components.component_scaffolding import (
     scaffold_component_yaml as scaffold_component_yaml,
 )
 from dagster_components.core.context import ComponentLoadContext as ComponentLoadContext
+from dagster_components.core.defs_module.decorator import defs_loader as defs_loader
 from dagster_components.core.load_defs import (
     build_component_defs as build_component_defs,
     load_defs as load_defs,

@@ -8,8 +8,8 @@ from typing_extensions import Self
 from dagster_components import AssetPostProcessorModel
 from dagster_components.component.component import Component
 from dagster_components.core.context import ComponentLoadContext
-from dagster_components.core.defs_module import (
-    DefsModule,
+from dagster_components.core.defs_module.defs_module import DefsModule
+from dagster_components.core.defs_module.defs_module_loader import (
     PythonModuleDecl,
     SubpackageDefsModuleDecl,
 )
@@ -50,7 +50,7 @@ class DefsModuleComponent(Component):
         return cls(post_processors=resolved_args.asset_post_processors, defs_module=defs_module)
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        defs = self.defs_module.build_defs() if self.defs_module else Definitions()
+        defs = self.defs_module.build_defs(context) if self.defs_module else Definitions()
         for post_processor in self.post_processors:
             defs = post_processor.fn(defs)
         return defs

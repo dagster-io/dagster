@@ -7,6 +7,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from typing_extensions import Self
 
 from dagster_components.component.component_scaffolder import DefaultComponentScaffolder
+from dagster_components.core.defs_module.defs_builder import DefsBuilder
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, resolve_model
 from dagster_components.scaffold.scaffold import scaffold_with
 
@@ -15,7 +16,7 @@ if TYPE_CHECKING:
 
 
 @scaffold_with(DefaultComponentScaffolder)
-class Component(ABC):
+class Component(DefsBuilder, ABC):
     @classmethod
     def __dg_library_object__(cls) -> None: ...
 

@@ -7,11 +7,6 @@ from types import ModuleType
 from typing import Any, Optional, TypeVar
 
 import dagster._check as check
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.module_loaders.load_defs_from_module import (
-    load_definitions_from_module,
-)
-from dagster._core.definitions.module_loaders.utils import find_objects_in_module_of_types
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._record import record
 from dagster._utils import pushd
@@ -23,10 +18,17 @@ from dagster_shared.serdes.objects import LibraryObjectKey
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from pydantic import BaseModel, ConfigDict, TypeAdapter
+from typing_extensions import Self
 
 from dagster_components.component.component import Component
-from dagster_components.component.component_loader import is_component_loader
 from dagster_components.core.context import ComponentLoadContext
+from dagster_components.core.defs_module.defs_loader import DefsLoader
+from dagster_components.core.defs_module.defs_module import (
+    BuilderDefsModule,
+    DefsModule,
+    PythonDefsModule,
+    SubpackageDefsModule,
+)
 from dagster_components.core.library_object import load_library_object
 
 T = TypeVar("T", bound=BaseModel)
@@ -37,64 +39,6 @@ class ComponentFileModel(BaseModel):
 
     type: str
     attributes: Optional[Mapping[str, Any]] = None
-
-
-#########
-# MODULES
-#########
-
-
-@record
-class DefsModule(ABC):
-    path: Path
-
-    @abstractmethod
-    def build_defs(self) -> Definitions: ...
-
-
-@record
-class SubpackageDefsModule(DefsModule):
-    """A folder containing multiple submodules."""
-
-    submodules: Sequence[DefsModule]
-
-    def build_defs(self) -> Definitions:
-        return Definitions.merge(*(submodule.build_defs() for submodule in self.submodules))
-
-
-@record
-class PythonDefsModule(DefsModule):
-    """A module containing python dagster definitions."""
-
-    module: Any  # ModuleType
-
-    def build_defs(self) -> Definitions:
-        definitions_objects = list(find_objects_in_module_of_types(self.module, Definitions))
-        if len(definitions_objects) == 0:
-            return load_definitions_from_module(self.module)
-        elif len(definitions_objects) == 1:
-            return next(iter(definitions_objects))
-        else:
-            raise DagsterInvalidDefinitionError(
-                f"Found multiple Definitions objects in {self.path}. At most one Definitions object "
-                "may be specified per module."
-            )
-
-
-@record
-class ComponentDefsModule(DefsModule):
-    """A module containing a component definition."""
-
-    context: ComponentLoadContext
-    component: Component
-
-    def build_defs(self) -> Definitions:
-        return self.component.build_defs(self.context)
-
-
-#######
-# DECLS
-#######
 
 
 def _parse_component_yaml(path: Path) -> tuple[SourcePositionTree, ComponentFileModel]:
@@ -111,14 +55,14 @@ def _parse_component_yaml(path: Path) -> tuple[SourcePositionTree, ComponentFile
 
 
 @record
-class DefsModuleDecl(ABC):
+class DefsModuleLoader(ABC):
     path: Path
 
     def get_source_position_tree(self) -> Optional[SourcePositionTree]:
         return None
 
-    @staticmethod
-    def from_path(path: Path) -> Optional["DefsModuleDecl"]:
+    @classmethod
+    def from_path(cls, path: Path) -> Optional["DefsModuleLoader"]:
         # this defines the priority of the decl types, we return the first one that matches
         decltypes = (
             YamlComponentDecl,
@@ -126,11 +70,11 @@ class DefsModuleDecl(ABC):
             PythonModuleDecl,
             SubpackageDefsModuleDecl,
         )
-        decl_filter = filter(None, (cls.from_path(path) for cls in decltypes))
+        decl_filter = filter(None, (t.from_path(path) for t in decltypes))
         return next(decl_filter, None)
 
     @staticmethod
-    def from_module(module: ModuleType) -> Optional["DefsModuleDecl"]:
+    def from_module(module: ModuleType) -> Optional["DefsModuleLoader"]:
         """Given a Python module, returns a corresponding defs declaration.
 
         Args:
@@ -146,7 +90,7 @@ class DefsModuleDecl(ABC):
             if module.__path__
             else None
         )
-        return DefsModuleDecl.from_path(
+        return DefsModuleLoader.from_path(
             check.not_none(module_path, f"Module {module.__name__} has no filepath")
         )
 
@@ -155,19 +99,16 @@ class DefsModuleDecl(ABC):
 
 
 @record
-class SubpackageDefsModuleDecl(DefsModuleDecl):
+class SubpackageDefsModuleDecl(DefsModuleLoader):
     """A folder containing multiple submodules."""
 
-    subdecls: Sequence[DefsModuleDecl]
+    subdecls: Sequence[DefsModuleLoader]
 
-    @staticmethod
-    def from_path(path: Path) -> Optional["SubpackageDefsModuleDecl"]:
+    @classmethod
+    def from_path(cls, path: Path) -> Optional["SubpackageDefsModuleDecl"]:
         if path.is_dir():
-            subdecls = (DefsModuleDecl.from_path(subpath) for subpath in path.iterdir())
-            return SubpackageDefsModuleDecl(
-                path=path,
-                subdecls=list(filter(None, subdecls)),
-            )
+            subdecls = (DefsModuleLoader.from_path(subpath) for subpath in path.iterdir())
+            return cls(path=path, subdecls=list(filter(None, subdecls)))
         else:
             return None
 
@@ -179,15 +120,15 @@ class SubpackageDefsModuleDecl(DefsModuleDecl):
 
 
 @record
-class PythonModuleDecl(DefsModuleDecl):
+class PythonModuleDecl(DefsModuleLoader):
     """A python module containing a `definitions.py` file."""
 
     path: Path
 
-    @staticmethod
-    def from_path(path: Path) -> Optional["PythonModuleDecl"]:
+    @classmethod
+    def from_path(cls, path: Path) -> Optional["PythonModuleDecl"]:
         if (path / "definitions.py").exists() or path.suffix == ".py":
-            return PythonModuleDecl(path=path)
+            return cls(path=path)
         else:
             return None
 
@@ -200,17 +141,17 @@ class PythonModuleDecl(DefsModuleDecl):
 
 
 @record
-class YamlComponentDecl(DefsModuleDecl):
+class YamlComponentDecl(DefsModuleLoader):
     """A component configured with a `component.yaml` file."""
 
     component_file_model: ComponentFileModel
     source_position_tree: Optional[SourcePositionTree] = None
 
-    @staticmethod
-    def from_path(path: Path) -> Optional["YamlComponentDecl"]:
+    @classmethod
+    def from_path(cls, path: Path) -> Optional["YamlComponentDecl"]:
         if (path / "component.yaml").exists():
             position_tree, component_file_model = _parse_component_yaml(path)
-            return YamlComponentDecl(
+            return cls(
                 path=path,
                 component_file_model=component_file_model,
                 source_position_tree=position_tree,
@@ -234,7 +175,7 @@ class YamlComponentDecl(DefsModuleDecl):
             else:
                 return TypeAdapter(schema).validate_python(self.component_file_model.attributes)
 
-    def load(self, context: ComponentLoadContext) -> ComponentDefsModule:
+    def load(self, context: ComponentLoadContext) -> BuilderDefsModule:
         type_str = context.normalize_component_type_str(self.component_file_model.type)
         key = LibraryObjectKey.from_typename(type_str)
         obj = load_library_object(key)
@@ -247,42 +188,49 @@ class YamlComponentDecl(DefsModuleDecl):
 
         attributes = self.get_attributes(component_schema) if component_schema else None
         component = obj.load(attributes, context)
-        return ComponentDefsModule(path=self.path, context=context, component=component)
+        return BuilderDefsModule(path=self.path, inner=component)
 
 
 @record
-class PythonComponentDecl(DefsModuleDecl):
+class PythonBuilderDecl(DefsModuleLoader):
+    """A DefsBuilder configured with a `defs.py` file."""
+
+    @classmethod
+    def _path(cls, path: Path) -> Path:
+        return path / "defs.py"
+
+    @classmethod
+    def from_path(cls, path: Path) -> Optional[Self]:
+        if cls._path(path).exists():
+            return cls(path=path)
+        else:
+            return None
+
+    def load(self, context: ComponentLoadContext) -> BuilderDefsModule:
+        module = context.load_defs_relative_python_module(self._path(self.path))
+        defs_loaders = list(inspect.getmembers(module, lambda x: isinstance(x, DefsLoader)))
+        if len(defs_loaders) < 1:
+            raise DagsterInvalidDefinitionError("No defs modules found in module")
+        elif len(defs_loaders) > 1:
+            raise DagsterInvalidDefinitionError(
+                f"Multiple defs loaders found in module {module.__name__}: {[name for name, _ in defs_loaders]}"
+            )
+        else:
+            _, defs_loader = defs_loaders[0]
+            return BuilderDefsModule(path=self.path, inner=defs_loader(context))
+
+
+@record
+class PythonComponentDecl(PythonBuilderDecl):
     """A component configured with a `component.py` file."""
 
-    @staticmethod
-    def from_path(path: Path) -> Optional["PythonComponentDecl"]:
-        if (path / "component.py").exists():
-            return PythonComponentDecl(path=path)
-        else:
-            return
-
-    def load(self, context: ComponentLoadContext) -> ComponentDefsModule:
-        module = context.load_defs_relative_python_module(self.path / "component.py")
-        component_loaders = list(inspect.getmembers(module, is_component_loader))
-        if len(component_loaders) < 1:
-            raise DagsterInvalidDefinitionError("No component loaders found in module")
-        elif len(component_loaders) > 1:
-            # note: we could support multiple component loaders in the same file, just
-            # being more restrictive to start
-            raise DagsterInvalidDefinitionError(
-                f"Multiple component loaders found in module: {component_loaders}"
-            )
-        else:
-            _, component_loader = component_loaders[0]
-            return ComponentDefsModule(
-                path=self.path,
-                context=context,
-                component=component_loader(context),
-            )
+    @classmethod
+    def _path(cls, path: Path) -> Path:
+        return path / "component.py"
 
 
 @record
-class DirectForTestComponentDecl(DefsModuleDecl):
+class DirectForTestComponentDecl(DefsModuleLoader):
     component_type: type[Component]
     attributes_yaml: str
 
