@@ -2,6 +2,7 @@ import pytest
 from dagster import AssetKey, Definitions
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.env import environ
+from dagster.components.component.component import ComponentRequirements
 from pydantic import ValidationError
 
 from dagster_tests.components_tests.integration_tests.component_loader import (
@@ -71,11 +72,17 @@ def test_autoload_empty(defs: Definitions) -> None:
 
 
 @pytest.mark.parametrize("defs", ["definitions/definitions_object_relative_imports"], indirect=True)
-def test_autoload_definitions_object(defs: Definitions) -> None:
+@pytest.mark.parametrize(
+    "requirements", ["definitions/definitions_object_relative_imports"], indirect=True
+)
+def test_autoload_definitions_object(
+    defs: Definitions, requirements: ComponentRequirements
+) -> None:
     assert {spec.key for spec in defs.get_all_asset_specs()} == {
         AssetKey("asset_in_some_file"),
         AssetKey("asset_in_other_file"),
     }
+    assert set(requirements.env.keys()) == {"DEFS_OBJECT_ENV"}
 
 
 @pytest.mark.parametrize("defs", ["definitions/definitions_at_levels"], indirect=True)
@@ -137,3 +144,25 @@ def test_autoload_definitions_nested_with_config() -> None:
         assert tags_by_spec.keys() == specs_by_key.keys()
         for key, tags in tags_by_spec.items():
             assert specs_by_key[key].tags == tags
+
+
+@pytest.mark.parametrize(
+    "requirements", ["definitions/definitions_at_levels_with_config"], indirect=True
+)
+def test_autoload_definitions_nested_requirements(requirements: ComponentRequirements) -> None:
+    # 3 env vars explicitly declared at each leve, one implicit (from UDF)
+    assert set(requirements.env.keys()) == {
+        "TOP_LEVEL_ENV",
+        "DEFS_OBJECT_ENV",
+        "LOOSE_DEFS_ENV",
+        "MY_ENV_VAR",
+    }
+
+
+@pytest.mark.parametrize("requirements", ["definitions/many_env_vars_sample"], indirect=True)
+def test_requirements_with_many_env_vars(requirements: ComponentRequirements) -> None:
+    assert set(requirements.env.keys()) == {
+        "MY_ENV_VAR",
+        "MY_INT_ENV_VAR",
+        "MY_UNLISTED_ENV_VAR",
+    }

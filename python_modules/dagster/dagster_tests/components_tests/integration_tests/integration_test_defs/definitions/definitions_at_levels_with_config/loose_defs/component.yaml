@@ -6,3 +6,7 @@ attributes:
       attributes:
         tags:
           loose_defs_tag: "true"
+
+requirements:
+  env:
+    - "LOOSE_DEFS_ENV"

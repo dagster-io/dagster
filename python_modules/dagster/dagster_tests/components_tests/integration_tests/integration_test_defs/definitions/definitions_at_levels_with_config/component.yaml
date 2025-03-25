@@ -10,3 +10,7 @@ attributes:
       attributes:
         tags:
           added_to_defs_tag: "true"
+
+requirements:
+  env:
+    - "TOP_LEVEL_ENV"

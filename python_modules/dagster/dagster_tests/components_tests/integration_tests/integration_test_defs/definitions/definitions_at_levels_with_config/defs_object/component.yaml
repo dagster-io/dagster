@@ -6,3 +6,7 @@ attributes:
       attributes:
         tags:
           defs_object_tag: "true"
+
+requirements:
+  env:
+    - "DEFS_OBJECT_ENV"

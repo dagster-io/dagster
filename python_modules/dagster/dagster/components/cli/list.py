@@ -22,6 +22,7 @@ from dagster.components.core.defs import (
     DgScheduleMetadata,
     DgSensorMetadata,
 )
+from dagster.components.core.defs_module import ComponentRequirementsModel
 from dagster.components.core.library_object import (
     discover_entry_point_library_objects,
     discover_library_objects,
@@ -70,6 +71,7 @@ def list_all_components_schema_command(entry_points: bool, extra_modules: tuple[
                     key.name,
                     type=(Literal[key_string], key_string),
                     attributes=(model_cls, None),
+                    requirements=(Optional[ComponentRequirementsModel], None),
                     __config__=ConfigDict(extra="forbid"),
                 )
             )

@@ -1,9 +1,11 @@
+import functools
 import inspect
+import re
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, TypeVar, Union
 
 from dagster_shared.serdes.objects import LibraryObjectKey
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
@@ -21,7 +23,7 @@ from dagster._utils.pydantic_yaml import (
     _parse_and_populate_model_with_annotated_errors,
     enrich_validation_errors_with_source_position,
 )
-from dagster.components.component.component import Component
+from dagster.components.component.component import Component, ComponentRequirements
 from dagster.components.component.component_loader import is_component_loader
 from dagster.components.core.context import ComponentLoadContext
 from dagster.components.core.library_object import load_library_object
@@ -31,11 +33,16 @@ from dagster.components.resolved.core_models import AssetPostProcessor
 T = TypeVar("T", bound=BaseModel)
 
 
+class ComponentRequirementsModel(BaseModel):
+    env: Optional[list[str]] = None
+
+
 class ComponentFileModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     type: str
     attributes: Optional[Mapping[str, Any]] = None
+    requirements: Optional[ComponentRequirementsModel] = None
 
 
 #########
@@ -94,6 +101,14 @@ class DefsFolderComponent(DefsModuleComponent):
             path=context.path,
             submodules=submodules,
             asset_post_processors=resolved_attributes.asset_post_processors,
+        )
+
+    def get_requirements(self, context: "ComponentLoadContext") -> ComponentRequirements:
+        return functools.reduce(
+            lambda acc, submodule: acc
+            | submodule.get_requirements(context.for_path(submodule.path)),
+            self.submodules,
+            ComponentRequirements(env={}),
         )
 
     @classmethod
@@ -200,11 +215,44 @@ class WrappedPythonicComponent(WrappedDefsModuleComponent):
             )
 
 
-@dataclass
+ENV_VAR_REGEX = re.compile(r"\{\{\s*env\(\s*['\"]([^'\"]+)['\"]\)\s*\}\}")
+
+
+def get_used_env_vars(data_structure: Union[Mapping[str, Any], Sequence[Any], Any]) -> set[str]:
+    if isinstance(data_structure, Mapping):
+        return set.union(set(), *(get_used_env_vars(value) for value in data_structure.values()))
+    elif isinstance(data_structure, str):
+        return set(ENV_VAR_REGEX.findall(data_structure))
+    elif isinstance(data_structure, Sequence):
+        return set.union(set(), *(get_used_env_vars(item) for item in data_structure))
+    return set()
+
+
 class WrappedYamlComponent(WrappedDefsModuleComponent):
     @staticmethod
     def get_component_def_path(path: Path) -> Path:
         return path / "component.yaml"
+
+    def get_requirements(self, context: "ComponentLoadContext") -> ComponentRequirements:
+        component_def_path = self.get_component_def_path(context.path)
+        source_tree = parse_yaml_with_source_positions(
+            component_def_path.read_text(), str(component_def_path)
+        )
+        component_file_model = _parse_and_populate_model_with_annotated_errors(
+            cls=ComponentFileModel, obj_parse_root=source_tree, obj_key_path_prefix=[]
+        )
+        attributes_used_env_vars = get_used_env_vars(component_file_model.attributes)
+        model_env_vars: set[str] = (
+            set(component_file_model.requirements.env)
+            if component_file_model.requirements and component_file_model.requirements.env
+            else set()
+        )
+
+        return self.wrapped.get_requirements(context) | (
+            ComponentRequirements(
+                {key: set([self.path]) for key in model_env_vars | attributes_used_env_vars}
+            )
+        )
 
     @classmethod
     def get_component(cls, context: ComponentLoadContext) -> Component:

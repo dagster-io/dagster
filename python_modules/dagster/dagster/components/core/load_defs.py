@@ -6,6 +6,7 @@ from dagster._annotations import deprecated
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import suppress_dagster_warnings
+from dagster.components.component.component import ComponentRequirements
 from dagster.components.core.context import ComponentLoadContext, use_component_load_context
 
 
@@ -45,3 +46,15 @@ def load_defs(defs_root: ModuleType) -> Definitions:
 
     with use_component_load_context(context):
         return root_component.build_defs(context)
+
+
+def load_component_requirements(defs_root: ModuleType) -> ComponentRequirements:
+    """Loads the requirements for components in the given module."""
+    from dagster.components.core.defs_module import DefsModuleComponent
+
+    context = ComponentLoadContext.for_module(defs_root)
+    root_component = DefsModuleComponent.from_context(context)
+    if root_component is None:
+        raise DagsterInvalidDefinitionError("Could not resolve root module to a component.")
+
+    return root_component.get_requirements(context)
