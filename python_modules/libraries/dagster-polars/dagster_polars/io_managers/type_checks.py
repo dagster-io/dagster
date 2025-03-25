@@ -19,7 +19,6 @@ VALID_DATAFRAME_CLASSES = (pl.DataFrame,)
 # TODO: look into a better way to get the asset name and pass it to this function
 def patito_model_to_dagster_type(
     model: pt.Model | Any,
-    dagster_type_suffix: str | None = None,
     description: str | None = None,
 ) -> DagsterType:  # noqa: ANN401
     """Convert patito model to dagster type checking.
@@ -71,7 +70,7 @@ def patito_model_to_dagster_type(
     type_check_fn = _patito_model_to_type_check_fn(model)
     return DagsterType(
         type_check_fn=type_check_fn,
-        name=f"{model.__class__.__name__}-{dagster_type_suffix}",
+        name=model.__class__.__name__,
         metadata={
             "schema": MetadataValue.table_schema(table_schema),
         },

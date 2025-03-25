@@ -139,17 +139,18 @@ def test_patito_type_check_happy_flow(
     io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, _ = io_manager_and_df
+    dagster_type = patito_model_to_dagster_type(TestingRecord)
 
     @dg.asset(
         io_manager_def=manager,
-        dagster_type=patito_model_to_dagster_type(TestingRecord, "upstream"),
+        dagster_type=dagster_type,
     )
     def upstream() -> pl.DataFrame:
         return good_df
 
     @dg.asset(
         io_manager_def=manager,
-        dagster_type=patito_model_to_dagster_type(TestingRecord, "downstream"),
+        dagster_type=dagster_type,
     )
     def downstream(upstream: pl.DataFrame) -> pl.DataFrame:
         return upstream
@@ -163,10 +164,11 @@ def test_patito_type_check_bad_input(
     io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, _ = io_manager_and_df
+    dagster_type = patito_model_to_dagster_type(TestingRecord)
 
     @dg.asset(
         io_manager_def=manager,
-        dagster_type=patito_model_to_dagster_type(TestingRecord, "bad_upstream"),
+        dagster_type=dagster_type,
     )
     def bad() -> pl.DataFrame:
         return bad_df
@@ -180,10 +182,11 @@ def test_patito_type_check_bad_output(
     io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, _ = io_manager_and_df
+    dagster_type = patito_model_to_dagster_type(TestingRecord)
 
     @dg.asset(
         io_manager_def=manager,
-        dagster_type=patito_model_to_dagster_type(TestingRecord, "upstream"),
+        dagster_type=dagster_type,
     )
     def upstream() -> pl.DataFrame:
         return good_df
@@ -191,7 +194,7 @@ def test_patito_type_check_bad_output(
     @dg.asset(
         name="bad_downstream",
         io_manager_def=manager,
-        dagster_type=patito_model_to_dagster_type(TestingRecord, "bad_downstream"),
+        dagster_type=dagster_type,
     )
     def bad_downstream() -> pl.DataFrame:
         return bad_df
@@ -208,17 +211,18 @@ def test_patito_type_check_lazy_happy_path(
     io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, _ = io_manager_and_df
+    dagster_type = patito_model_to_dagster_type(TestingRecord)
 
     @dg.asset(
         io_manager_def=manager,
-        dagster_type=patito_model_to_dagster_type(TestingRecord, "upstream"),
+        dagster_type=dagster_type,
     )
     def upstream() -> pl.LazyFrame:
         return good_df.lazy()
 
     @dg.asset(
         io_manager_def=manager,
-        dagster_type=patito_model_to_dagster_type(TestingRecord, "downstream"),
+        dagster_type=dagster_type,
     )
     def downstream(upstream: pl.LazyFrame) -> pl.LazyFrame:
         return upstream
@@ -233,10 +237,11 @@ def test_patito_type_check_lazy_bad_input(
     io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, _ = io_manager_and_df
+    dagster_type = patito_model_to_dagster_type(TestingRecord)
 
     @dg.asset(
         io_manager_def=manager,
-        dagster_type=patito_model_to_dagster_type(TestingRecord, "bad_upstream"),
+        dagster_type=dagster_type,
     )
     def bad() -> pl.LazyFrame:
         return bad_df.lazy()
@@ -251,17 +256,18 @@ def test_patito_type_check_lazy_bad_output(
     io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
     manager, _ = io_manager_and_df
+    dagster_type = patito_model_to_dagster_type(TestingRecord)
 
     @dg.asset(
         io_manager_def=manager,
-        dagster_type=patito_model_to_dagster_type(TestingRecord, "upstream"),
+        dagster_type=dagster_type,
     )
     def upstream() -> pl.LazyFrame:
         return good_df.lazy()
 
     @dg.asset(
         io_manager_def=manager,
-        dagster_type=patito_model_to_dagster_type(TestingRecord, "bad_downstream"),
+        dagster_type=dagster_type,
     )
     def bad_downstream() -> pl.LazyFrame:
         return bad_df.lazy()
