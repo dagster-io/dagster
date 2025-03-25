@@ -13,8 +13,7 @@ All Dagster definitions, including schedules and resources, must be attached to 
 
 :::
 
-{/* TODO add dedent=4 prop to CodeExample below when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_on_schedule" endBefore="end_new_resource_on_schedule" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_on_schedule" endBefore="end_new_resource_on_schedule" dedent="4" />
 
 ## APIs in this guide
 

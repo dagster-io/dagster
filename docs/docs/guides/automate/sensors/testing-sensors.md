@@ -69,8 +69,7 @@ For sensors which utilize [resources](/guides/build/external-resources/), you ca
 
 Below is a test for the `process_new_users_sensor` that we defined in "[Using resources in sensors](using-resources-in-sensors)", which uses the `users_api` resource.
 
-{/* TODO add dedent=4 prop to CodeExample below when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_test_resource_on_sensor" endBefore="end_test_resource_on_sensor" />
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_test_resource_on_sensor" endBefore="end_test_resource_on_sensor" dedent="4" />
 
 </TabItem>
 </Tabs>
