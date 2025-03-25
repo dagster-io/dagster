@@ -1,0 +1,5 @@
+type: .MyComponent
+
+attributes:
+  a_string: "{{ env('A_STRING') }}"
+  an_int: 5

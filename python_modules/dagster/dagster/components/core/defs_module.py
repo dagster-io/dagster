@@ -31,11 +31,18 @@ from dagster.components.resolved.core_models import AssetPostProcessor
 T = TypeVar("T", bound=BaseModel)
 
 
+class ComponentRequirementsModel(BaseModel):
+    """Describes dependencies for a component to load."""
+
+    env: Optional[list[str]] = None
+
+
 class ComponentFileModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     type: str
     attributes: Optional[Mapping[str, Any]] = None
+    requirements: Optional[ComponentRequirementsModel] = None
 
 
 #########
