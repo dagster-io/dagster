@@ -52,30 +52,37 @@ def patito_model_to_dagster_type(
 ) -> DagsterType:
     """Convert patito model to dagster type checking.
 
-    Logs Dagster metadata associated with the Patito model, such as `dagster/column_schema`.
+    Compatible with any IOManager. Logs Dagster metadata associated with
+    the Patito model, such as `dagster/column_schema`.
 
     Args:
-        model (type[pt.Model]): the Patito model
-        name (str): Dagster Type name. Defaults to the model class name.
-        description (str): Dagster Type description. By default it references the model class name.
+        model (type[pt.Model]): the Patito model.
+        name (Optional[str]): Dagster Type name. Defaults to the model class name.
+        description (Optional[str]): Dagster Type description. By default it references the model class name.
 
     Returns:
-        DagsterType: Dagster type with patito validation fn
+        DagsterType: Dagster type with patito validation function.
 
-    Example:
-    ```python
-    class MyTable(pt.Model):
-        col_1: str | None
-        col_2: int = pt.Field(unique=True)
+    Examples:
+        .. code-block:: python
 
-    @asset(dagster_type=patito_model_to_dagster_type(MyTable, "my_asset"),
-        io_manager_key="my_io_manager")
-    def my_asset() -> pl.DataFrame:
-        return pl.DataFrame({
-            "col_1": ['a'],
-            "col_2": [2],
-        })
-    ```
+            import dagster as dg
+            import patito as pt
+
+            class MyTable(pt.Model):
+                col_1: str | None
+                col_2: int = pt.Field(unique=True)
+
+            @asset(
+                dagster_type=patito_model_to_dagster_type(MyTable),
+                io_manager_key="my_io_manager",
+            )
+            def my_asset() -> pl.DataFrame:
+                return pl.DataFrame({
+                    "col_1": ['a'],
+                    "col_2": [2],
+                })
+
     """
     type_check_fn = _patito_model_to_type_check_fn(model)
     return DagsterType(
@@ -89,7 +96,7 @@ def patito_model_to_dagster_type(
 
 
 def _patito_model_to_type_check_fn(
-    model: "pt.Model",
+    model: type["pt.Model"],
 ) -> Callable[[TypeCheckContext, object], TypeCheck]:
     import patito as pt
 
