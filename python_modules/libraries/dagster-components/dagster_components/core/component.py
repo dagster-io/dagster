@@ -19,6 +19,7 @@ from dagster._core.errors import DagsterError
 from dagster._utils import pushd
 from dagster._utils.cached_method import cached_method
 from dagster_shared.record import record
+from pydantic import TypeAdapter
 from typing_extensions import Self, TypeAlias
 
 from dagster_components.core.component_key import ComponentKey
@@ -393,6 +394,16 @@ def use_component_load_context(component_load_context: ComponentLoadContext):
         active_component_load_context.reset(token)
 
 
+def from_defs_module(context: ComponentLoadContext, as_type: type[T]) -> T:
+    check.param_invariant(context.defs_module, "context", "context must have a defs_module")
+    assert context.defs_module
+    check.param_invariant(
+        context.defs_module.attributes, "context", "Must have defs_module.attributes"
+    )
+    assert context.defs_module.attributes is not None
+    return TypeAdapter(as_type).validate_python(context.defs_module.attributes)
+
+
 class DefsModule:
     def __init__(
         self,
@@ -402,6 +413,10 @@ class DefsModule:
     ):
         self.fn = fn
         self.tags = tags
+        if attributes is not None:
+            self.return_type = inspect.signature(fn).return_annotation
+            assert self.return_type
+
         self.attributes = attributes
 
     # __call__ enables direct user invocation
@@ -409,7 +424,11 @@ class DefsModule:
         return self.create_defs_loader(context)
 
     def create_defs_loader(self, context: ComponentLoadContext) -> DefsLoader:
-        return self.fn(context.with_defs_module(self))
+        context = context.with_defs_module(self)
+        if self.attributes:
+            return from_defs_module(context, as_type=self.return_type)
+        else:
+            return self.fn(context)
 
     def load_definitions(self, context: ComponentLoadContext) -> Definitions:
         return self.create_defs_loader(context).build_defs(context)

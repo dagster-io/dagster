@@ -10,7 +10,6 @@ from dagster_components.core.component import (
     DefsLoader,
     defs_module,
 )
-from pydantic import TypeAdapter
 
 
 def test_simple_component_defs():
@@ -55,21 +54,7 @@ def test_tags():
     assert loader.tags == {"tag1": "value1"}
 
 
-# T_Resolvable
-
-from dagster_shared import check
-
 T = TypeVar("T")
-
-
-def from_defs_module(context: ComponentLoadContext, as_type: type[T]) -> T:
-    check.param_invariant(context.defs_module, "context", "context must have a defs_module")
-    assert context.defs_module
-    check.param_invariant(
-        context.defs_module.attributes, "context", "Must have defs_module.attributes"
-    )
-    assert context.defs_module.attributes is not None
-    return TypeAdapter(as_type).validate_python(context.defs_module.attributes)
 
 
 def test_attibutes():
@@ -83,8 +68,7 @@ def test_attibutes():
             return Definitions(assets=[my_asset])
 
     @defs_module(attributes={"value": "value1"})
-    def loader(context: ComponentLoadContext) -> SimpleModelComponent:
-        return from_defs_module(context, SimpleModelComponent)
+    def loader(context: ComponentLoadContext) -> SimpleModelComponent: ...
 
     context = ComponentLoadContext.for_test()
     definitions = loader.load_definitions(context)
