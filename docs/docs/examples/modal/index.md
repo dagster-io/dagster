@@ -72,4 +72,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this example with [modal application](modal-application)
+- Continue this example with [modal application](/examples/modal/modal-application)
