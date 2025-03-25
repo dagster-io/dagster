@@ -285,7 +285,7 @@ class DbtCliEventMessage:
                 dbt artifacts while generating events.
 
         Returns:
-            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]:
                 A set of corresponding Dagster events.
 
                 In a Dagster asset definition, the following are yielded:

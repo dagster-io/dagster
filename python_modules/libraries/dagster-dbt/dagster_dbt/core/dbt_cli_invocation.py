@@ -288,7 +288,7 @@ class DbtCliInvocation:
         """Stream the events from the dbt CLI process and convert them to Dagster events.
 
         Returns:
-            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]:
                 A set of corresponding Dagster events.
 
                 In a Dagster asset definition, the following are yielded:
