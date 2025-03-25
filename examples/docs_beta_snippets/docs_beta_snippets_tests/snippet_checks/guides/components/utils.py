@@ -79,7 +79,6 @@ def isolated_snippet_generation_environment() -> Iterator[Callable[[], int]]:
     with (
         _get_snippet_working_dir() as tempdir,
         pushd(tempdir),
-        environ(SNIPPET_ENV),
         TemporaryDirectory() as dg_cli_config_folder,
         TemporaryDirectory() as dagster_cloud_config_folder,
         environ(
