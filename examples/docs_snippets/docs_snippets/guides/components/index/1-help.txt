@@ -25,6 +25,7 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
 │ check      Commands for checking the integrity of your Dagster code.                   │
 │ dev        Start a local instance of Dagster.                                          │
 │ docs       Commands for generating docs from your Dagster code.                        │
+│ env        Commands for managing environment variables.                                │
 │ init       Initialize a new Dagster workspace and a first project within that          │
 │            workspace.                                                                  │
 │ launch     Launch a Dagster run.                                                       │

@@ -19,7 +19,6 @@ from dagster_dg.defs import (
     DgScheduleMetadata,
     DgSensorMetadata,
 )
-from dagster_dg.env import Env
 from dagster_dg.error import DgError
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
@@ -226,29 +225,3 @@ def _resolve_definition(item: dict[str, Any]) -> DgDefinitionMetadata:
         return DgSensorMetadata(**item)
     else:
         raise DgError(f"Unexpected item type: {item['type']}")
-
-
-# ########################
-# ##### ENVIRONMENT
-# ########################
-
-
-@list_group.command(name="env", cls=DgClickCommand)
-@dg_global_options
-def list_env_command(**global_options: object) -> None:
-    """List Dagster component instances defined in the current project."""
-    cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
-
-    env = Env.from_ctx(dg_context)
-    if not env.values:
-        click.echo("No environment variables are defined for this project.")
-        return
-
-    table = Table(border_style="dim")
-    table.add_column("Env Var")
-    table.add_column("Value")
-    for key, value in env.values.items():
-        table.add_row(key, value)
-    console = Console()
-    console.print(table)
