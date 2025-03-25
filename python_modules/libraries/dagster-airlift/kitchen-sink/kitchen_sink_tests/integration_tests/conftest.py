@@ -48,10 +48,20 @@ def dagster_home_fixture(local_env: None) -> str:
     return os.environ["DAGSTER_HOME"]
 
 
+@pytest.fixture(name="expected_num_dags")
+def expected_num_dags_fixture() -> int:
+    return 1
+
+
 @pytest.fixture(name="airflow_instance")
-def airflow_instance_fixture(local_env: None) -> Generator[subprocess.Popen, None, None]:
+def airflow_instance_fixture(
+    local_env: None, expected_num_dags: int
+) -> Generator[subprocess.Popen, None, None]:
     with stand_up_airflow(
-        airflow_cmd=["make", "run_airflow"], env=os.environ, cwd=makefile_dir()
+        airflow_cmd=["make", "run_airflow"],
+        env=os.environ,
+        cwd=makefile_dir(),
+        expected_num_dags=expected_num_dags,
     ) as process:
         yield process
 
