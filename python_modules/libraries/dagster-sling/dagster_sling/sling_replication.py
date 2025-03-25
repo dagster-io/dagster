@@ -1,5 +1,4 @@
 from collections.abc import Mapping
-from functools import cache
 from pathlib import Path
 from typing import Any, Optional, Union, cast
 
@@ -9,7 +8,7 @@ import yaml
 SlingReplicationParam = Union[Mapping[str, Any], str, Path]
 
 
-@cache
+# @cache
 def read_replication_path(replication_path: Path) -> Mapping[str, Any]:
     """Reads a Sling replication config from a path and returns a dict.
 
