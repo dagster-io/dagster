@@ -12,6 +12,7 @@ from dagster._annotations import public
 from dagster._core.definitions.partition import (
     DefaultPartitionsSubset,
     DynamicPartitionsDefinition,
+    PartitionLoadingContext,
     PartitionsDefinition,
     PartitionsSubset,
     StaticPartitionsDefinition,
@@ -339,10 +340,10 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
 
     def get_partition_key_connection(
         self,
+        context: PartitionLoadingContext,
         limit: int,
+        ascending: bool,
         cursor: Optional[str] = None,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Connection[str]:
         """Returns a connection object that contains a list of partition keys and all the necessary
         information to paginate through them.
@@ -354,6 +355,8 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         Returns:
             Connection[MultiPartitionKey]
         """
+        current_time = context.temporal_context.effective_dt
+        dynamic_partitions_store = context.dynamic_partitions_store
         multi_cursor = MultiPartitionCursor.from_cursor(cursor)
         last_seen_key = multi_cursor.last_seen_key
 
@@ -377,25 +380,38 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
                 except ValueError:
                     # Key no longer exists, start from beginning for this dimension
                     dimension_start_indices[dim_name] = 0
-            else:
+            elif ascending:
                 dimension_start_indices[dim_name] = 0
+            else:
+                dimension_start_indices[dim_name] = len(results) - 1
 
+        dim_names = [dim.name for dim in self._partitions_defs]
         current_indices = {
-            dim_name: dimension_start_indices.get(dim_name, 0) for dim_name in dimension_keys.keys()
+            dim_name: dimension_start_indices.get(dim_name, 0) for dim_name in dim_names
         }
 
         def _invalid(indices):
-            return any(indices[dim_name] >= len(dimension_keys[dim_name]) for dim_name in indices)
+            return any(
+                indices[dim_name] >= len(dimension_keys[dim_name]) for dim_name in indices
+            ) or any(indices[dim_name] < 0 for dim_name in indices)
 
-        def _advance_indices():
-            sorted_dim_names = sorted(current_indices.keys())
-            for i in range(len(sorted_dim_names) - 1, -1, -1):
-                dim_name = sorted_dim_names[i]
+        def _increment_indices():
+            for i in range(len(dim_names) - 1, -1, -1):
+                dim_name = dim_names[i]
                 current_indices[dim_name] += 1
                 if current_indices[dim_name] < len(dimension_keys[dim_name]):
                     break
                 if i > 0:
                     current_indices[dim_name] = 0
+
+        def _decrement_indices():
+            for i in range(len(dim_names) - 1, -1, -1):
+                dim_name = dim_names[i]
+                current_indices[dim_name] -= 1
+                if current_indices[dim_name] >= 0:
+                    break
+                if i > 0:
+                    current_indices[dim_name] = len(dimension_keys[dim_name]) - 1
 
         def _partition_key_from_indices(indices) -> Optional[MultiPartitionKey]:
             if _invalid(indices):
@@ -408,7 +424,10 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             return MultiPartitionKey(partition_tuple)
 
         def get_next_key() -> Optional[MultiPartitionKey]:
-            _advance_indices()
+            if ascending:
+                _increment_indices()
+            else:
+                _decrement_indices()
             return _partition_key_from_indices(current_indices)
 
         # Generate up to limit partition keys
@@ -419,8 +438,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             if new_last_seen_key is None:
                 partition_key = _partition_key_from_indices(current_indices)
             else:
-                _advance_indices()
-                partition_key = _partition_key_from_indices(current_indices)
+                partition_key = get_next_key()
 
             if not partition_key:
                 break

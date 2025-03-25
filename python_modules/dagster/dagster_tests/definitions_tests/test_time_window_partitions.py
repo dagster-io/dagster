@@ -2,7 +2,7 @@ import pickle
 import random
 from collections.abc import Sequence
 from datetime import datetime, timedelta
-from typing import Optional, Union, cast
+from typing import Optional, cast
 
 import pytest
 from dagster import (
@@ -20,7 +20,7 @@ from dagster import (
     weekly_partitioned_config,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.partition import PartitionLoadingContext, TemporalContext
 from dagster._core.definitions.time_window_partitions import (
     PersistedTimeWindow,
     ScheduleType,
@@ -36,6 +36,7 @@ from dagster._time import create_datetime, parse_time_string
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"
+MAX_PAGES = 10000
 
 
 def time_window(start: str, end: str) -> TimeWindow:
@@ -53,28 +54,33 @@ def persisted_time_window(start: str, end: str) -> PersistedTimeWindow:
 
 
 def get_paginated_partition_keys(
-    partitions_def: Union[PartitionsDefinition, PartitionsSubset],
+    partitions_def: PartitionsDefinition,
     current_time=None,
+    ascending: bool = True,
     batch_size: int = 1,
 ) -> list[str]:
     all_results = []
     cursor = None
     has_more = True
-
+    partitions_context = PartitionLoadingContext(
+        TemporalContext(effective_dt=current_time or datetime.now(), last_event_id=None),
+        dynamic_partitions_store=None,
+    )
     counter = 0
     while has_more:
-        if isinstance(partitions_def, PartitionsSubset):
-            connection = partitions_def.get_partition_key_connection(
-                cursor=cursor, limit=batch_size
-            )
-        else:
-            connection = partitions_def.get_partition_key_connection(
-                current_time=current_time, cursor=cursor, limit=batch_size
-            )
+        connection = partitions_def.get_partition_key_connection(
+            context=partitions_context,
+            limit=batch_size,
+            ascending=ascending,
+            cursor=cursor,
+        )
         counter += 1
         all_results.extend(connection.results)
         cursor = connection.cursor
         has_more = connection.has_more
+
+        if counter > MAX_PAGES:
+            raise Exception("Too many pages")
 
     return all_results
 
@@ -112,11 +118,10 @@ def test_daily_partitions():
         time_window("2021-05-05", "2021-05-06"),
         time_window("2021-05-06", "2021-05-07"),
     ]
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def, current_time
-    )
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def.subset_with_all_partitions(current_time)
+    all_keys = partitions_def.get_partition_keys(current_time)
+    assert get_paginated_partition_keys(partitions_def, current_time) == all_keys
+    assert get_paginated_partition_keys(partitions_def, current_time, ascending=False) == list(
+        reversed(all_keys)
     )
 
     assert partitions_def.time_window_for_partition_key("2021-05-08") == time_window(
@@ -140,11 +145,10 @@ def test_daily_partitions_with_end_offset():
         time_window("2021-05-07", "2021-05-08"),
         time_window("2021-05-08", "2021-05-09"),
     ]
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def, current_time
-    )
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def.subset_with_all_partitions(current_time)
+    all_keys = partitions_def.get_partition_keys(current_time)
+    assert get_paginated_partition_keys(partitions_def, current_time) == all_keys
+    assert get_paginated_partition_keys(partitions_def, current_time, ascending=False) == list(
+        reversed(all_keys)
     )
 
 
@@ -164,11 +168,10 @@ def test_daily_partitions_with_negative_end_offset():
         time_window("2021-05-03", "2021-05-04"),
         time_window("2021-05-04", "2021-05-05"),
     ]
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def, current_time
-    )
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def.subset_with_all_partitions(current_time)
+    all_keys = partitions_def.get_partition_keys(current_time)
+    assert get_paginated_partition_keys(partitions_def, current_time) == all_keys
+    assert get_paginated_partition_keys(partitions_def, current_time, ascending=False) == list(
+        reversed(all_keys)
     )
 
 
@@ -183,8 +186,8 @@ def test_daily_partitions_with_time_offset():
     partition_keys = partitions_def.get_partition_keys(current_time)
     assert partition_keys == ["2021-05-05"]
     assert get_paginated_partition_keys(partitions_def, current_time) == partition_keys
-    assert partition_keys == get_paginated_partition_keys(
-        partitions_def.subset_with_all_partitions(current_time)
+    assert get_paginated_partition_keys(partitions_def, current_time, ascending=False) == list(
+        reversed(partition_keys)
     )
 
     assert [partitions_def.time_window_for_partition_key(key) for key in partition_keys] == [
@@ -213,11 +216,10 @@ def test_monthly_partitions():
         time_window("2021-05-01", "2021-06-01"),
         time_window("2021-06-01", "2021-07-01"),
     ]
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def, current_time
-    )
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def.subset_with_all_partitions(current_time)
+    all_keys = partitions_def.get_partition_keys(current_time)
+    assert get_paginated_partition_keys(partitions_def, current_time) == all_keys
+    assert get_paginated_partition_keys(partitions_def, current_time, ascending=False) == list(
+        reversed(all_keys)
     )
 
     assert partitions_def.time_window_for_partition_key("2021-05-01") == time_window(
@@ -241,11 +243,10 @@ def test_monthly_partitions_with_end_offset():
         time_window("2021-07-01", "2021-08-01"),
         time_window("2021-08-01", "2021-09-01"),
     ]
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def, current_time
-    )
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def.subset_with_all_partitions(current_time)
+    all_keys = partitions_def.get_partition_keys(current_time)
+    assert get_paginated_partition_keys(partitions_def, current_time) == all_keys
+    assert get_paginated_partition_keys(partitions_def, current_time, ascending=False) == list(
+        reversed(all_keys)
     )
 
 
@@ -269,9 +270,9 @@ def test_monthly_partitions_with_time_offset():
         "2021-05-12",
         "2021-06-12",
     ]
-    assert partition_keys == get_paginated_partition_keys(partitions_def, current_time)
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def.subset_with_all_partitions(current_time)
+    assert get_paginated_partition_keys(partitions_def, current_time) == partition_keys
+    assert get_paginated_partition_keys(partitions_def, current_time, ascending=False) == list(
+        reversed(partition_keys)
     )
 
     assert [partitions_def.time_window_for_partition_key(key) for key in partition_keys] == [
@@ -299,9 +300,9 @@ def test_hourly_partitions():
         "2021-05-05-01:00",
         "2021-05-05-02:00",
     ]
-    assert partition_keys == get_paginated_partition_keys(partitions_def, current_time)
-    assert partition_keys == get_paginated_partition_keys(
-        partitions_def.subset_with_all_partitions(current_time)
+    assert get_paginated_partition_keys(partitions_def, current_time) == partition_keys
+    assert get_paginated_partition_keys(partitions_def, current_time, ascending=False) == list(
+        reversed(partition_keys)
     )
 
     assert [partitions_def.time_window_for_partition_key(key) for key in partition_keys] == [
@@ -330,9 +331,9 @@ def test_hourly_partitions_with_time_offset():
         "2021-05-05-01:15",
         "2021-05-05-02:15",
     ]
-    assert partition_keys == get_paginated_partition_keys(partitions_def, current_time)
-    assert partition_keys == get_paginated_partition_keys(
-        partitions_def.subset_with_all_partitions(current_time)
+    assert get_paginated_partition_keys(partitions_def, current_time) == partition_keys
+    assert get_paginated_partition_keys(partitions_def, current_time, ascending=False) == list(
+        reversed(partition_keys)
     )
 
     assert [partitions_def.time_window_for_partition_key(key) for key in partition_keys] == [
@@ -363,11 +364,10 @@ def test_weekly_partitions():
         time_window("2021-05-02", "2021-05-09"),
         time_window("2021-05-09", "2021-05-16"),
     ]
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def, current_time
-    )
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def.subset_with_all_partitions(current_time)
+    all_keys = partitions_def.get_partition_keys(current_time)
+    assert get_paginated_partition_keys(partitions_def, current_time) == all_keys
+    assert get_paginated_partition_keys(partitions_def, current_time, ascending=False) == list(
+        reversed(all_keys)
     )
 
     assert partitions_def.time_window_for_partition_key("2021-05-01") == time_window(
@@ -392,9 +392,9 @@ def test_weekly_partitions_with_time_offset():
         "2021-05-05",
         "2021-05-12",
     ]
-    assert partition_keys == get_paginated_partition_keys(partitions_def, current_time)
-    assert partition_keys == get_paginated_partition_keys(
-        partitions_def.subset_with_all_partitions(current_time)
+    assert get_paginated_partition_keys(partitions_def, current_time) == partition_keys
+    assert get_paginated_partition_keys(partitions_def, current_time, ascending=False) == list(
+        reversed(partition_keys)
     )
 
     assert [partitions_def.time_window_for_partition_key(key) for key in partition_keys] == [
@@ -540,8 +540,8 @@ def test_time_partitions_daily_partitions(
         expected_partition_keys,
     )
     assert_expected_partition_keys(
-        get_paginated_partition_keys(partitions_def.subset_with_all_partitions(current_time)),
-        expected_partition_keys,
+        get_paginated_partition_keys(partitions_def, current_time, ascending=False),
+        list(reversed(expected_partition_keys)),
     )
 
 
@@ -611,8 +611,8 @@ def test_time_partitions_monthly_partitions(
         expected_partition_keys,
     )
     assert_expected_partition_keys(
-        get_paginated_partition_keys(partitions_def.subset_with_all_partitions(current_time)),
-        expected_partition_keys,
+        get_paginated_partition_keys(partitions_def, current_time, ascending=False),
+        list(reversed(expected_partition_keys)),
     )
 
 
@@ -687,8 +687,8 @@ def test_time_partitions_weekly_partitions(
         expected_partition_keys,
     )
     assert_expected_partition_keys(
-        get_paginated_partition_keys(partitions_def.subset_with_all_partitions(current_time)),
-        expected_partition_keys,
+        get_paginated_partition_keys(partitions_def, current_time, ascending=False),
+        list(reversed(expected_partition_keys)),
     )
 
 
@@ -830,8 +830,8 @@ def test_time_partitions_hourly_partitions(
         expected_partition_keys,
     )
     assert_expected_partition_keys(
-        get_paginated_partition_keys(partitions_def.subset_with_all_partitions(current_time)),
-        expected_partition_keys,
+        get_paginated_partition_keys(partitions_def, current_time, ascending=False),
+        list(reversed(expected_partition_keys)),
     )
 
 
@@ -889,11 +889,10 @@ def test_twice_daily_partitions():
         time_window("2021-05-06T00:00:00", "2021-05-06T11:00:00"),
         time_window("2021-05-06T11:00:00", "2021-05-07T00:00:00"),
     ]
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def, current_time
-    )
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def.subset_with_all_partitions(current_time)
+    all_keys = partitions_def.get_partition_keys(current_time)
+    assert get_paginated_partition_keys(partitions_def, current_time) == all_keys
+    assert get_paginated_partition_keys(partitions_def, current_time, ascending=False) == list(
+        reversed(all_keys)
     )
 
     assert partitions_def.time_window_for_partition_key("2021-05-08-00:00") == time_window(
@@ -919,11 +918,10 @@ def test_start_not_aligned():
         time_window("2021-05-05T07:00:00", "2021-05-06T07:00:00"),
         time_window("2021-05-06T07:00:00", "2021-05-07T07:00:00"),
     ]
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def, current_time
-    )
-    assert partitions_def.get_partition_keys(current_time) == get_paginated_partition_keys(
-        partitions_def.subset_with_all_partitions(current_time)
+    all_keys = partitions_def.get_partition_keys(current_time)
+    assert get_paginated_partition_keys(partitions_def, current_time) == all_keys
+    assert get_paginated_partition_keys(partitions_def, current_time, ascending=False) == list(
+        reversed(all_keys)
     )
 
 
@@ -1970,7 +1968,17 @@ def test_persisted_time_window_serdes():
 
 def test_daily_pagination():
     partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
-    connection = partitions_def.get_partition_key_connection(cursor=None, limit=3)
+    current_time = datetime.strptime("2021-06-05", DATE_FORMAT)
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(
+            effective_dt=current_time,
+            last_event_id=None,
+        ),
+        dynamic_partitions_store=None,
+    )
+    connection = partitions_def.get_partition_key_connection(
+        context=partition_context, limit=3, ascending=True, cursor=None
+    )
 
     assert len(connection.results) == 3
     assert connection.has_more
@@ -1980,7 +1988,9 @@ def test_daily_pagination():
         time_window("2021-05-07", "2021-05-08"),
     ]
 
-    connection = partitions_def.get_partition_key_connection(cursor=connection.cursor, limit=3)
+    connection = partitions_def.get_partition_key_connection(
+        context=partition_context, limit=3, ascending=True, cursor=connection.cursor
+    )
     assert len(connection.results) == 3
     assert connection.has_more
     assert [partitions_def.time_window_for_partition_key(key) for key in connection.results] == [
@@ -1989,14 +1999,22 @@ def test_daily_pagination():
         time_window("2021-05-10", "2021-05-11"),
     ]
 
-    assert get_paginated_partition_keys(partitions_def) == partitions_def.get_partition_keys()
+    assert get_paginated_partition_keys(
+        partitions_def, current_time=current_time
+    ) == partitions_def.get_partition_keys(current_time)
 
 
 def test_empty_pagination():
     partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
-    current_time = datetime.strptime("2021-05-01", DATE_FORMAT)
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(
+            effective_dt=datetime.strptime("2021-05-01", DATE_FORMAT),
+            last_event_id=None,
+        ),
+        dynamic_partitions_store=None,
+    )
     connection = partitions_def.get_partition_key_connection(
-        current_time=current_time, cursor=None, limit=10
+        context=partition_context, limit=10, ascending=True, cursor=None
     )
     assert len(connection.results) == 0
     assert not connection.has_more
@@ -2005,11 +2023,98 @@ def test_empty_pagination():
 def test_pagination_limit():
     partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
     current_time = datetime.strptime("2021-06-05", DATE_FORMAT)
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(
+            effective_dt=current_time,
+            last_event_id=None,
+        ),
+        dynamic_partitions_store=None,
+    )
     all_keys = partitions_def.get_partition_keys(current_time)
+
     for limit in [1, 3, 5, 7, 11, 50]:
         connection = partitions_def.get_partition_key_connection(
-            current_time=current_time, cursor=None, limit=limit
+            context=partition_context, limit=limit, ascending=True, cursor=None
         )
         assert len(connection.results) == min(limit, len(all_keys))
         assert connection.has_more == (len(all_keys) > limit)
         assert connection.results == all_keys[:limit]
+
+
+def test_reverse_pagination():
+    partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
+    current_time = datetime.strptime("2021-06-05", DATE_FORMAT)
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(
+            effective_dt=current_time,
+            last_event_id=None,
+        ),
+        dynamic_partitions_store=None,
+    )
+    all_keys = partitions_def.get_partition_keys(current_time)
+
+    for limit in [1, 3, 5, 7, 11, 50]:
+        connection = partitions_def.get_partition_key_connection(
+            context=partition_context, limit=limit, ascending=False, cursor=None
+        )
+        assert len(connection.results) == min(limit, len(all_keys))
+        assert connection.has_more == (len(all_keys) > limit)
+        assert connection.results == list(reversed(all_keys[-1 * limit :]))
+
+
+def test_reverse_pagination_end_offset():
+    partitions_def = DailyPartitionsDefinition(start_date="2021-05-05", end_offset=2)
+    current_time = datetime.strptime("2021-06-05", DATE_FORMAT)
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(
+            effective_dt=current_time,
+            last_event_id=None,
+        ),
+        dynamic_partitions_store=None,
+    )
+    all_keys = partitions_def.get_partition_keys(current_time)
+
+    connection = partitions_def.get_partition_key_connection(
+        context=partition_context, limit=5, ascending=False, cursor=None
+    )
+
+    assert connection.results == [
+        "2021-06-06",
+        "2021-06-05",
+        "2021-06-04",
+        "2021-06-03",
+        "2021-06-02",
+    ]
+
+    assert get_paginated_partition_keys(
+        partitions_def, current_time=current_time, ascending=False
+    ) == list(reversed(all_keys))
+
+
+def test_reverse_pagination_negative_end_offset():
+    partitions_def = DailyPartitionsDefinition(start_date="2021-05-05", end_offset=-2)
+    current_time = datetime.strptime("2021-06-05", DATE_FORMAT)
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(
+            effective_dt=current_time,
+            last_event_id=None,
+        ),
+        dynamic_partitions_store=None,
+    )
+    all_keys = partitions_def.get_partition_keys(current_time)
+
+    connection = partitions_def.get_partition_key_connection(
+        context=partition_context, limit=5, ascending=False, cursor=None
+    )
+
+    assert connection.results == [
+        "2021-06-02",
+        "2021-06-01",
+        "2021-05-31",
+        "2021-05-30",
+        "2021-05-29",
+    ]
+
+    assert get_paginated_partition_keys(
+        partitions_def, current_time=current_time, ascending=False
+    ) == list(reversed(all_keys))

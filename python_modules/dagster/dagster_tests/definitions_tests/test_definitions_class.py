@@ -47,7 +47,11 @@ from dagster._core.definitions.external_asset import create_external_asset_from_
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
-from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
+from dagster._core.definitions.partition import (
+    PartitionLoadingContext,
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.time_window_partitions import (
@@ -969,12 +973,19 @@ def test_invalid_partitions_subclass():
             return ["a", "b", "c"]
 
         def get_partition_key_connection(
-            self, limit, cursor=None, current_time=None, dynamic_partitions_store=None
-        ):
+            self,
+            context: PartitionLoadingContext,
+            limit: int,
+            ascending: bool,
+            cursor: Optional[str] = None,
+        ) -> Connection[str]:
             partition_keys = self.get_partition_keys(
-                current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+                current_time=context.temporal_context.effective_dt,
+                dynamic_partitions_store=context.dynamic_partitions_store,
             )
-            return Connection.create_from_sequence(partition_keys, limit=limit, cursor=cursor)
+            return Connection.create_from_sequence(
+                partition_keys, limit=limit, ascending=ascending, cursor=cursor
+            )
 
     @asset(partitions_def=CustomPartitionsDefinition())
     def asset1():

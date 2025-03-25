@@ -61,6 +61,44 @@ INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v",
 PartitionConfigFn: TypeAlias = Callable[[str], Union[RunConfig, Mapping[str, Any]]]
 
 
+class TemporalContext(NamedTuple):
+    """TemporalContext represents an effective time, used for business logic, and last_event_id
+    which is used to identify that state of the event log at some point in time. Put another way,
+    the value of a TemporalContext represents a point in time and a snapshot of the event log.
+
+    Effective time: This is the effective time of the computation in terms of business logic,
+    and it impacts the behavior of partitioning and partition mapping. For example,
+    the "last" partition window of a given partitions definition, it is with
+    respect to the effective time.
+
+    Last event id: Our event log has a monotonically increasing event id. This is used to
+    cursor the event log. This event_id is also propogated to derived tables to indicate
+    when that record is valid.  This allows us to query the state of the event log
+    at a given point in time.
+
+    Note that insertion time of the last_event_id is not the same as the effective time.
+
+    A last_event_id of None indicates that the reads will be volatile will immediately
+    reflect any subsequent writes.
+    """
+
+    effective_dt: datetime
+    last_event_id: Optional[int]
+
+
+class PartitionLoadingContext(NamedTuple):
+    """PartitionLoadingContext is a context object that is passed the partition keys functions of a
+    PartitionedJobDefinition. It contains information about where partitions are being loaded from
+    and the effective time for the partition loading.
+
+    temporal_context (TemporalContext): The TemporalContext for partition loading.
+    dynamic_partitions_store: The DynamicPartitionsStore backing the partition loading.  Used for dynamic partitions definitions.
+    """
+
+    temporal_context: TemporalContext
+    dynamic_partitions_store: Optional[DynamicPartitionsStore]
+
+
 @deprecated(breaking_version="2.0", additional_warn_text="Use string partition keys instead.")
 class Partition(Generic[T_cov]):
     """A Partition represents a single slice of the entire set of a job's possible work. It consists
@@ -150,27 +188,22 @@ class PartitionsDefinition(ABC, Generic[T_str]):
     @abstractmethod
     def get_partition_key_connection(
         self,
+        context: PartitionLoadingContext,
         limit: int,
+        ascending: bool,
         cursor: Optional[str] = None,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Connection[str]:
         """Returns a connection object that contains a list of partition keys and all the necessary
         information to paginate through them.
 
         Args:
-            limit: (int): The maximum number of partition keys to return.
-            cursor: (Optional[str]): A cursor to track the progress paginating through the returned partition key results.
-            current_time (Optional[datetime]): A datetime object representing the current time, only
-                applicable to time-based partitions definitions.
-            dynamic_partitions_store (Optional[DynamicPartitionsStore]): The DynamicPartitionsStore
-                object that is responsible for fetching dynamic partitions. Required when the
-                partitions definition is a DynamicPartitionsDefinition with a name defined. Users
-                can pass the DagsterInstance fetched via `context.instance` to this argument.
-
+            context (PartitionLoadingContext): The context for loading partition keys.
+            limit (int): The maximum number of partition keys to return.
+            ascending (bool): Whether to return the partition keys in ascending order.  The order is determined by the partitions definition.
+            cursor (Optional[str]): A cursor to track the progress paginating through the returned partition key results.
 
         Returns:
-            Sequence[str]
+            Connection[str]
         """
         ...
 
@@ -395,15 +428,21 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
 
     def get_partition_key_connection(
         self,
+        context: PartitionLoadingContext,
         limit: int,
+        ascending: bool,
         cursor: Optional[str] = None,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Connection[str]:
+        current_time = context.temporal_context.effective_dt
+        dynamic_partitions_store = context.dynamic_partitions_store
         partition_keys = self.get_partition_keys(
             current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
-        return Connection.create_from_sequence(partition_keys, limit=limit, cursor=cursor)
+        if not ascending:
+            partition_keys = list(reversed(partition_keys))
+        return Connection.create_from_sequence(
+            partition_keys, limit=limit, ascending=ascending, cursor=cursor
+        )
 
     def __hash__(self):
         return hash(self.__repr__())
@@ -590,16 +629,21 @@ class DynamicPartitionsDefinition(
 
     def get_partition_key_connection(
         self,
+        context: PartitionLoadingContext,
         limit: int,
+        ascending: bool,
         cursor: Optional[str] = None,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Connection[str]:
-        # TODO (prha): override this by making the dynamic partitions store handle pagination
+        current_time = context.temporal_context.effective_dt
+        dynamic_partitions_store = context.dynamic_partitions_store
         partition_keys = self.get_partition_keys(
             current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
-        return Connection.create_from_sequence(partition_keys, cursor=cursor, limit=limit)
+        if not ascending:
+            partition_keys = list(reversed(partition_keys))
+        return Connection.create_from_sequence(
+            partition_keys, limit=limit, ascending=ascending, cursor=cursor
+        )
 
     def has_partition_key(
         self,
@@ -1025,13 +1069,6 @@ class PartitionsSubset(ABC, Generic[T_str]):
     def get_partition_keys(self) -> Iterable[T_str]: ...
 
     @abstractmethod
-    def get_partition_key_connection(
-        self,
-        limit: int,
-        cursor: Optional[str] = None,
-    ) -> Connection[T_str]: ...
-
-    @abstractmethod
     def get_partition_key_ranges(
         self,
         partitions_def: PartitionsDefinition,
@@ -1192,14 +1229,6 @@ class DefaultPartitionsSubset(
 
     def get_partition_keys(self) -> Iterable[str]:
         return self.subset
-
-    def get_partition_key_connection(
-        self,
-        limit: int,
-        cursor: Optional[str] = None,
-    ) -> Connection[str]:
-        # todo (prha): this is a bit weird since we're using offsets to index
-        return Connection.create_from_sequence(list(self.subset), limit=limit, cursor=cursor)
 
     def get_ranges_for_keys(self, partition_keys: Sequence[str]) -> Sequence[PartitionKeyRange]:
         cur_range_start = None
@@ -1388,18 +1417,6 @@ class AllPartitionsSubset(
         check.param_invariant(current_time is None, "current_time")
         return self.partitions_def.get_partition_keys(
             self.current_time, self.dynamic_partitions_store
-        )
-
-    def get_partition_key_connection(
-        self,
-        limit: int,
-        cursor: Optional[str] = None,
-    ) -> Connection[str]:
-        return self.partitions_def.get_partition_key_connection(
-            limit=limit,
-            cursor=cursor,
-            current_time=self.current_time,
-            dynamic_partitions_store=self.dynamic_partitions_store,
         )
 
     def get_partition_keys_not_in_subset(

@@ -28,7 +28,7 @@ class Connection(Generic[T]):
 
     @classmethod
     def create_from_sequence(
-        cls, seq: Sequence[T], limit: int, cursor: Optional[str] = None
+        cls, seq: Sequence[T], limit: int, ascending: bool, cursor: Optional[str] = None
     ) -> "Connection[T]":
         """
         Create a Connection from a sequence of objects.
@@ -39,6 +39,7 @@ class Connection(Generic[T]):
         Returns:
             Connection[T]: A Connection object with the given sequence
         """
+        seq = seq if ascending else list(reversed(seq))
         if cursor:
             value = ValueIndexCursor.from_cursor(cursor).value
             if value is None or value not in seq:
