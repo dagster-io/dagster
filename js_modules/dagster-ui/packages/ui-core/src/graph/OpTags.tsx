@@ -6,6 +6,7 @@ import csv from './kindtag-images/csv.svg';
 import dag from './kindtag-images/dag.svg';
 import dashboard from './kindtag-images/dashboard.svg';
 import file from './kindtag-images/file.svg';
+import json from './kindtag-images/json.svg';
 import medallion_bronze from './kindtag-images/medallion-bronze-color.svg';
 import medallion_gold from './kindtag-images/medallion-gold-color.svg';
 import medallion_silver from './kindtag-images/medallion-silver-color.svg';
@@ -16,6 +17,7 @@ import sigma from './kindtag-images/sigma.svg';
 import source from './kindtag-images/source.svg';
 import table from './kindtag-images/table.svg';
 import task from './kindtag-images/task.svg';
+import toml from './kindtag-images/toml.svg';
 import airbyte from './kindtag-images/tool-airbyte-color.svg';
 import airflow from './kindtag-images/tool-airflow-color.svg';
 import airtable from './kindtag-images/tool-airtable-color.svg';
@@ -43,12 +45,16 @@ import datadog from './kindtag-images/tool-datadog-color.svg';
 import datahub from './kindtag-images/tool-datahub-color.svg';
 import db2 from './kindtag-images/tool-db2-color.svg';
 import dbt from './kindtag-images/tool-dbt-color.svg';
+import deepseek from './kindtag-images/tool-deepseek-color.svg';
 import delta_lake from './kindtag-images/tool-deltalake-color.svg';
 import denodo from './kindtag-images/tool-denodo-color.svg';
+import dify from './kindtag-images/tool-dify-color.svg';
+import dingtalk from './kindtag-images/tool-dingtalk-color.svg';
 import discord from './kindtag-images/tool-discord-color.svg';
 import dlthub from './kindtag-images/tool-dlthub-color.svg';
 import docker from './kindtag-images/tool-docker-color.svg';
 import doris from './kindtag-images/tool-doris-color.svg';
+import doubao from './kindtag-images/tool-doubao-color.svg';
 import druid from './kindtag-images/tool-druid-color.svg';
 import duckdb from './kindtag-images/tool-duckdb-color.svg';
 import elasticsearch from './kindtag-images/tool-elasticsearch-color.svg';
@@ -65,6 +71,7 @@ import google from './kindtag-images/tool-google-color.svg';
 import googlecloud from './kindtag-images/tool-googlecloud-color.svg';
 import googledrive from './kindtag-images/tool-googledrive-color.svg';
 import googlesheets from './kindtag-images/tool-googlesheets-color.svg';
+import grafana from './kindtag-images/tool-grafana-color.svg';
 import graphql from './kindtag-images/tool-graphql-color.svg';
 import greatexpectations from './kindtag-images/tool-greatexpectations-color.svg';
 import hackernews from './kindtag-images/tool-hackernews-color.svg';
@@ -126,9 +133,11 @@ import powerbi from './kindtag-images/tool-powerbi-color.svg';
 import prefect from './kindtag-images/tool-prefect-color.svg';
 import presto from './kindtag-images/tool-presto-color.svg';
 import pulsar from './kindtag-images/tool-pulsar-color.svg';
+import pydantic from './kindtag-images/tool-pydantic-color.svg';
 import python from './kindtag-images/tool-python-color.svg';
 import pytorch from './kindtag-images/tool-pytorch-color.svg';
 import pytorchlightning from './kindtag-images/tool-pytorchlightning-color.svg';
+import qwen from './kindtag-images/tool-qwen-color.svg';
 import r from './kindtag-images/tool-r-color.svg';
 import r2 from './kindtag-images/tool-r2-color.svg';
 import rabbitmq from './kindtag-images/tool-rabbitmq-color.svg';
@@ -169,17 +178,21 @@ import stitch from './kindtag-images/tool-stitch-color.svg';
 import stripe from './kindtag-images/tool-stripe-color.svg';
 import superset from './kindtag-images/tool-superset-color.svg';
 import tableau from './kindtag-images/tool-tableau-color.svg';
+import talend from './kindtag-images/tool-talend-color.svg';
 import teams from './kindtag-images/tool-teams-color.svg';
 import tecton from './kindtag-images/tool-tecton-color.svg';
 import tensorflow from './kindtag-images/tool-tensorflow-color.svg';
 import teradata from './kindtag-images/tool-teradata-color.svg';
 import thoughtspot from './kindtag-images/tool-thoughtspot-color.svg';
+import tiktok from './kindtag-images/tool-tiktok-color.svg';
 import trino from './kindtag-images/tool-trino-color.svg';
 import twilio from './kindtag-images/tool-twilio-color.svg';
 import typescript from './kindtag-images/tool-typescript-color.svg';
 import vercel from './kindtag-images/tool-vercel-color.svg';
+import volcengine from './kindtag-images/tool-volcengine-color.svg';
 import wandb from './kindtag-images/tool-w&b-color.svg';
 import weaviate from './kindtag-images/tool-weaviate-color.svg';
+import wechat from './kindtag-images/tool-wechat-color.svg';
 import x from './kindtag-images/tool-x-color.svg';
 import xgboost from './kindtag-images/tool-xgboost-color.svg';
 import youtube from './kindtag-images/tool-youtube-color.svg';
@@ -207,6 +220,8 @@ type KnownTag = {
 };
 
 export type KnownTagType =
+  | 'json'
+  | 'toml'
   | 'jupyter'
   | 'ipynb'
   | 'noteable'
@@ -218,6 +233,7 @@ export type KnownTagType =
   | 'fivetran'
   | 'db2'
   | 'dbt'
+  | 'dbtcloud'
   | 'slack'
   | 'pytorch'
   | 'pyspark'
@@ -313,12 +329,17 @@ export type KnownTagType =
   | 'claude'
   | 'collibra'
   | 'datahub'
+  | 'deepseek'
+  | 'dify'
+  | 'dingtalk'
   | 'discord'
   | 'docker'
+  | 'doubao'
   | 'facebook'
   | 'gcs'
   | 'gemini'
   | 'google'
+  | 'grafana'
   | 'graphql'
   | 'hashicorp'
   | 'hudi'
@@ -340,6 +361,8 @@ export type KnownTagType =
   | 'papertrail'
   | 'plural'
   | 'prefect'
+  | 'pydantic'
+  | 'qwen'
   | 'r2'
   | 'react'
   | 'reddit'
@@ -357,9 +380,13 @@ export type KnownTagType =
   | 'awsstepfunction'
   | 'stepfunction'
   | 'thoughtspot'
+  | 'talend'
+  | 'tiktok'
   | 'trino'
   | 'twilio'
   | 'twitter'
+  | 'volcengine'
+  | 'wechat'
   | 'x'
   | 'youtube'
   | 'typescript'
@@ -414,6 +441,14 @@ export type KnownTagType =
   | 'spanner';
 
 export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
+  json: {
+    icon: json,
+    content: 'json',
+  },
+  toml: {
+    icon: toml,
+    content: 'toml',
+  },
   jupyter: {
     icon: jupyter,
     content: 'jupyter',
@@ -457,6 +492,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   dbt: {
     icon: dbt,
     content: 'dbt',
+  },
+  dbtcloud: {
+    icon: dbt,
+    content: 'dbt Cloud',
   },
   slack: {
     icon: slack,
@@ -579,6 +618,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   teams: {
     icon: teams,
     content: 'Teams',
+  },
+  talend: {
+    icon: talend,
+    content: 'Talend',
   },
   mlflow: {
     icon: mlflow,
@@ -839,6 +882,18 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: datahub,
     content: 'Datahub',
   },
+  deepseek: {
+    icon: deepseek,
+    content: 'Deepseek',
+  },
+  dify: {
+    icon: dify,
+    content: 'Dify',
+  },
+  dingtalk: {
+    icon: dingtalk,
+    content: 'DingTalk',
+  },
   discord: {
     icon: discord,
     content: 'Discord',
@@ -846,6 +901,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   docker: {
     icon: docker,
     content: 'Docker',
+  },
+  doubao: {
+    icon: doubao,
+    content: 'Doubao',
   },
   facebook: {
     icon: facebook,
@@ -862,6 +921,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
   google: {
     icon: google,
     content: 'Google',
+  },
+  grafana: {
+    icon: grafana,
+    content: 'Grafana',
   },
   graphql: {
     icon: graphql,
@@ -948,6 +1011,14 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: prefect,
     content: 'Prefect',
   },
+  pydantic: {
+    icon: pydantic,
+    content: 'Pydantic',
+  },
+  qwen: {
+    icon: qwen,
+    content: 'Qwen',
+  },
   react: {
     icon: react,
     content: 'React',
@@ -1014,6 +1085,10 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     content: 'Thoughtspot',
     blackAndWhite: true,
   },
+  tiktok: {
+    icon: tiktok,
+    content: 'TikTok',
+  },
   trino: {
     icon: trino,
     content: 'Trino',
@@ -1026,6 +1101,14 @@ export const KNOWN_TAGS: Record<KnownTagType, KnownTag> = {
     icon: x,
     content: 'Twitter',
     blackAndWhite: true,
+  },
+  volcengine: {
+    icon: volcengine,
+    content: 'VolcEngine',
+  },
+  wechat: {
+    icon: wechat,
+    content: 'WeChat',
   },
   x: {
     icon: x,

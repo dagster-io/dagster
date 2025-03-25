@@ -3,17 +3,15 @@ title: 'Adding components to your project with Python'
 sidebar_position: 300
 ---
 
-:::info
+import Preview from '../../../../partials/\_Preview.md';
 
-This feature is still in development and might change in patch releases. It’s not production ready, and the documentation may also evolve. Stay tuned for updates.
-
-:::
+<Preview />
 
 In some cases, you may want to add a component to your project with Python rather than a `component.yaml` file.
 
 :::note Prerequisites
 
-Before adding a component with Python, you must either [create a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-code-location-with-components) or [migrate an existing code location to components](/guides/labs/components/incrementally-adopting-components/existing-code-location).
+Before adding a component with Python, you must either [create a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components) or [migrate an existing project to `dg`](/guides/labs/dg/incrementally-adopting-dg/migrating-project).
 
 :::
 

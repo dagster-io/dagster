@@ -15,6 +15,10 @@ There are two ways to set environment variables:
 - **On a per-code location basis**, which involves modifying the `dagster_cloud.yaml` file. **Note**: This approach is functionally the same as [setting environment variables using the Dagster+ UI](/dagster-plus/deployment/management/environment-variables/dagster-ui). Values will pass through Dagster+.
 - **For a full deployment and all the code locations it contains**. This approach makes variables available for all code locations in a full Dagster+ deployment. As values are pulled from the user cluster, values will bypass Dagster+ entirely.
 
+:::note
+Environment variables that have been set in the Dagster+ UI will take precedence over duplicates set in the agent's configuration.
+:::
+
 ## Prerequisites
 
 To complete the steps in this guide, you'll need:

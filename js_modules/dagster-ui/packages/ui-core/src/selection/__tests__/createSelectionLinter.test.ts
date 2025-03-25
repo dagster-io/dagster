@@ -1,5 +1,3 @@
-import CodeMirror from 'codemirror';
-
 import {AssetSelectionLexer} from '../../asset-selection/generated/AssetSelectionLexer';
 import {AssetSelectionParser} from '../../asset-selection/generated/AssetSelectionParser';
 import {createSelectionLinter} from '../createSelectionLinter';
@@ -39,21 +37,18 @@ describe('createSelectionLinter', () => {
     expect(errors).toEqual([
       {
         message: 'tag filtering is not supported in this test',
-        severity: 'error',
-        from: CodeMirror.Pos(0, 0),
-        to: CodeMirror.Pos(0, 'tag'.length),
+        from: 0,
+        to: 'tag'.length,
       },
       {
         message: 'column filtering is not supported in this test',
-        severity: 'error',
-        from: CodeMirror.Pos(0, 'tag:value or '.length),
-        to: CodeMirror.Pos(0, 'tag:value or column'.length),
+        from: 'tag:value or '.length,
+        to: 'tag:value or column'.length,
       },
       {
-        message: 'Unsupported attribute: table_name', // default message
-        severity: 'error',
-        from: CodeMirror.Pos(0, 'tag:value or column:value or '.length),
-        to: CodeMirror.Pos(0, 'tag:value or column:value or table_name'.length),
+        message: 'Unsupported attribute: "table_name"', // default message
+        from: 'tag:value or column:value or '.length,
+        to: 'tag:value or column:value or table_name'.length,
       },
     ]);
   });
@@ -71,10 +66,9 @@ describe('createSelectionLinter', () => {
     // Only expect syntax errors, not attribute errors
     expect(errors).toEqual([
       expect.objectContaining({
-        from: CodeMirror.Pos(0, 0),
-        message: expect.stringContaining("mismatched input 'fake'"),
-        severity: 'error',
-        to: CodeMirror.Pos(0, 10),
+        from: 0,
+        offendingSymbol: 'fake',
+        to: Infinity,
       }),
     ]);
   });

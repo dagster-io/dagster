@@ -1,55 +1,46 @@
 import importlib
 import sys
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
+import pytest
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_components.core.component import (
-    ComponentTypeRegistry,
-    get_component_type_name,
-    get_registered_component_types_in_module,
-)
-from dagster_components.core.component_defs_builder import build_defs_from_component_path
-from dagster_components.core.component_key import GlobalComponentKey
+from dagster._utils import pushd
+from dagster_components.core.component_defs_builder import DefinitionsModuleCache
 
-from dagster_components_tests.utils import create_code_location_from_components
+from dagster_components_tests.utils import create_project_from_components
 
 
+@contextmanager
 def load_test_component_defs(
-    src_path: str, local_component_defn_to_inject: Optional[Path] = None
-) -> Definitions:
+    src_path: Union[str, Path], local_component_defn_to_inject: Optional[Path] = None
+) -> Iterator[Definitions]:
     """Loads a component from a test component project, making the provided local component defn
     available in that component's __init__.py.
     """
-    with create_code_location_from_components(
-        src_path, local_component_defn_to_inject=local_component_defn_to_inject
-    ) as code_location_dir:
-        registry = load_test_component_project_registry(include_test=True)
+    with create_project_from_components(
+        str(src_path), local_component_defn_to_inject=local_component_defn_to_inject
+    ) as (_, project_name):
+        module = importlib.import_module(f"{project_name}.defs.{Path(src_path).stem}")
 
-        sys.path.append(str(code_location_dir))
-
-        return build_defs_from_component_path(
-            components_root=Path(code_location_dir) / "my_location" / "components",
-            path=Path(code_location_dir) / "my_location" / "components" / Path(src_path).stem,
-            registry=registry,
-            resources={},
-        )
+        yield DefinitionsModuleCache(resources={}).load_defs(module=module)
 
 
-def load_test_component_project_registry(include_test: bool = False) -> ComponentTypeRegistry:
-    components = {}
-    package_name = "dagster_components.lib"
+def sync_load_test_component_defs(
+    src_path: str, local_component_defn_to_inject: Optional[Path] = None
+) -> Definitions:
+    with load_test_component_defs(src_path, local_component_defn_to_inject) as defs:
+        return defs
 
-    packages = ["dagster_components.lib"] + (
-        ["dagster_components.lib.test"] if include_test else []
-    )
-    for package_name in packages:
-        dc_module = importlib.import_module(package_name)
 
-        for component in get_registered_component_types_in_module(dc_module):
-            key = GlobalComponentKey(
-                name=get_component_type_name(component),
-                namespace=f"dagster_components{'.test' if package_name.endswith('test') else ''}",
-            )
-            components[key] = component
-    return ComponentTypeRegistry(components)
+@pytest.fixture(autouse=True)
+def chdir():
+    with pushd(str(Path(__file__).parent.parent)):
+        path = str(Path(__file__).parent)
+        try:
+            sys.path.append(str(Path(__file__).parent))
+            yield
+        finally:
+            sys.path.remove(path)

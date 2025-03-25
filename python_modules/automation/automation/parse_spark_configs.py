@@ -14,7 +14,7 @@ import requests
 
 from automation.printer import IndentingBufferPrinter
 
-SPARK_VERSION = "v2.4.0"
+SPARK_VERSION = "v3.5.5"
 TABLE_REGEX = r"### (.{,30}?)\n\n(<table.*?>.*?<\/table>)"
 WHITESPACE_REGEX = r"\s+"
 
@@ -279,8 +279,8 @@ def run() -> None:
     serialized = serialize(result)
 
     output_files = [
-        "python_modules/libraries/dagster-spark/dagster_spark/configs_spark.py",
-        "python_modules/libraries/dagster-aws/dagster_aws/emr/configs_spark.py",
+        "../libraries/dagster-spark/dagster_spark/configs_spark.py",
+        "../libraries/dagster-aws/dagster_aws/emr/configs_spark.py",
     ]
     for output_file in output_files:
         with open(output_file, "wb") as f:

@@ -1,6 +1,8 @@
 import {createGlobalStyle} from 'styled-components';
 
+import {darkNoRedGreenThemeColors} from './darkNoRedGreenThemeColors';
 import {darkThemeColors} from './darkThemeColors';
+import {lightNoRedGreenThemeColors} from './lightNoRedGreenThemeColors';
 import {lightThemeColors} from './lightThemeColors';
 import {CoreColorStyles} from '../palettes/CoreColorStyles';
 import {DataVizColorStyles} from '../palettes/DataVizColorStyles';
@@ -11,11 +13,19 @@ const ThemeRoot = createGlobalStyle`
     :root, .themeSystem {
       ${lightThemeColors}
     }
+
+    .themeSystemNoRedGreen {
+      ${lightNoRedGreenThemeColors}
+    }
   }
 
   @media (prefers-color-scheme: dark) {
     :root, .themeSystem {
       ${darkThemeColors}
+    }
+
+    .themeSystemNoRedGreen {
+      ${darkNoRedGreenThemeColors}
     }
   }
 
@@ -23,8 +33,16 @@ const ThemeRoot = createGlobalStyle`
     ${lightThemeColors}
   }
 
+  .themeLightNoRedGreen {
+    ${lightNoRedGreenThemeColors}
+  }
+
   .themeDark {
     ${darkThemeColors}
+  }
+
+  .themeDarkNoRedGreen {
+    ${darkNoRedGreenThemeColors}
   }
 `;
 

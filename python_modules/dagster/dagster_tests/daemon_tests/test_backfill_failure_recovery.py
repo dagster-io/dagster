@@ -14,8 +14,8 @@ from dagster._core.test_utils import (
 )
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._seven import IS_WINDOWS
 from dagster._time import create_datetime
+from dagster_shared.seven import IS_WINDOWS
 
 from dagster_tests.daemon_tests.conftest import workspace_load_target
 

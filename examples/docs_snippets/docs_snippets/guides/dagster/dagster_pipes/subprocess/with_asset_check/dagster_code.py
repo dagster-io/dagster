@@ -16,9 +16,15 @@ def no_empty_order_check(
         shutil.which("python"),
         dg.file_relative_path(__file__, "external_code.py"),
     ]
-    return pipes_subprocess_client.run(
+
+    results = pipes_subprocess_client.run(
         command=cmd, context=context.op_execution_context
-    ).get_asset_check_result()
+    ).get_results()
+
+    if not results:
+        return dg.AssetCheckResult(passed=True)
+
+    return dg.AssetCheckResult(passed=False)
 
 
 defs = dg.Definitions(

@@ -1,4 +1,3 @@
-import asyncio
 import inspect
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from typing import Any, TypeVar, Union
@@ -119,18 +118,15 @@ def _validate_event(event: Any, step_context: StepExecutionContext) -> OpOutputU
     return event
 
 
-def gen_from_async_gen(async_gen: AsyncIterator[T]) -> Iterator[T]:
-    # prime use for asyncio.Runner, but new in 3.11 and did not find appealing backport
-    loop = asyncio.new_event_loop()
-    try:
-        while True:
-            try:
-                yield loop.run_until_complete(async_gen.__anext__())
-            except StopAsyncIteration:
-                return
-    finally:
-        loop.run_until_complete(loop.shutdown_asyncgens())
-        loop.close()
+def gen_from_async_gen(
+    context: StepExecutionContext,
+    async_gen: AsyncIterator[T],
+) -> Iterator[T]:
+    while True:
+        try:
+            yield context.event_loop.run_until_complete(async_gen.__anext__())
+        except StopAsyncIteration:
+            return
 
 
 def _yield_compute_results(
@@ -152,7 +148,7 @@ def _yield_compute_results(
         return
 
     if inspect.isasyncgen(user_event_generator):
-        user_event_generator = gen_from_async_gen(user_event_generator)
+        user_event_generator = gen_from_async_gen(step_context, user_event_generator)
 
     op_label = step_context.describe_op()
 
@@ -208,11 +204,6 @@ def execute_core_compute(
                     handle
                 )
                 emitted_result_names.add(output_name)
-        elif isinstance(step_output, AssetCheckEvaluation):
-            output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
-                step_output.asset_check_key
-            )
-            emitted_result_names.add(output_name)
         elif isinstance(step_output, AssetCheckResult):
             if step_output.asset_key and step_output.check_name:
                 handle = AssetCheckKey(step_output.asset_key, step_output.check_name)

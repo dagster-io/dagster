@@ -99,11 +99,21 @@ export type ArrayConfigType = ConfigType &
 
 export type Asset = {
   __typename: 'Asset';
+  assetMaterializationHistory: Array<AssetMaterializationEventType>;
   assetMaterializations: Array<MaterializationEvent>;
   assetObservations: Array<ObservationEvent>;
   definition: Maybe<AssetNode>;
   id: Scalars['String']['output'];
   key: AssetKey;
+};
+
+export type AssetAssetMaterializationHistoryArgs = {
+  afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
+  beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
+  eventTypeSelector?: InputMaybe<MaterializationHistoryEventTypeSelector>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  partitionInLast?: InputMaybe<Scalars['Int']['input']>;
+  partitions?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 export type AssetAssetMaterializationsArgs = {
@@ -178,6 +188,7 @@ export type AssetCheckEvaluation = {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -391,6 +402,18 @@ export type AssetLineageInfo = {
   partitions: Array<Scalars['String']['output']>;
 };
 
+export type AssetMaterializationEventType = FailedToMaterializeEvent | MaterializationEvent;
+
+export enum AssetMaterializationFailureReason {
+  COMPUTE_FAILED = 'COMPUTE_FAILED',
+  SKIPPED_OPTIONAL = 'SKIPPED_OPTIONAL',
+  UNEXPECTED_TERMINATION = 'UNEXPECTED_TERMINATION',
+  UNKNOWN = 'UNKNOWN',
+  UPSTREAM_COMPUTE_FAILED = 'UPSTREAM_COMPUTE_FAILED',
+  UPSTREAM_SKIPPED = 'UPSTREAM_SKIPPED',
+  USER_TERMINATION = 'USER_TERMINATION',
+}
+
 export type AssetMaterializationPlannedEvent = MessageEvent &
   RunEvent & {
     __typename: 'AssetMaterializationPlannedEvent';
@@ -465,6 +488,7 @@ export type AssetNode = {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -947,6 +971,7 @@ export enum DagsterEventType {
   ALERT_SUCCESS = 'ALERT_SUCCESS',
   ASSET_CHECK_EVALUATION = 'ASSET_CHECK_EVALUATION',
   ASSET_CHECK_EVALUATION_PLANNED = 'ASSET_CHECK_EVALUATION_PLANNED',
+  ASSET_FAILED_TO_MATERIALIZE = 'ASSET_FAILED_TO_MATERIALIZE',
   ASSET_MATERIALIZATION = 'ASSET_MATERIALIZATION',
   ASSET_MATERIALIZATION_PLANNED = 'ASSET_MATERIALIZATION_PLANNED',
   ASSET_OBSERVATION = 'ASSET_OBSERVATION',
@@ -1013,6 +1038,7 @@ export type DagsterRunEvent =
   | ExecutionStepStartEvent
   | ExecutionStepSuccessEvent
   | ExecutionStepUpForRetryEvent
+  | FailedToMaterializeEvent
   | HandledOutputEvent
   | HookCompletedEvent
   | HookErroredEvent
@@ -1069,6 +1095,7 @@ export type DagsterType = {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -1173,6 +1200,7 @@ export type DisplayableEvent = {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -1249,6 +1277,7 @@ export type EngineEvent = DisplayableEvent &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -1491,6 +1520,7 @@ export type ExecutionStepOutputEvent = DisplayableEvent &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -1592,6 +1622,7 @@ export type ExpectationResult = DisplayableEvent & {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -1602,6 +1633,49 @@ export type ExpectationResult = DisplayableEvent & {
   >;
   success: Scalars['Boolean']['output'];
 };
+
+export type FailedToMaterializeEvent = DisplayableEvent &
+  MessageEvent &
+  StepEvent & {
+    __typename: 'FailedToMaterializeEvent';
+    assetKey: Maybe<AssetKey>;
+    description: Maybe<Scalars['String']['output']>;
+    eventType: Maybe<DagsterEventType>;
+    label: Maybe<Scalars['String']['output']>;
+    level: LogLevel;
+    materializationFailureReason: AssetMaterializationFailureReason;
+    message: Scalars['String']['output'];
+    metadataEntries: Array<
+      | AssetMetadataEntry
+      | BoolMetadataEntry
+      | CodeReferencesMetadataEntry
+      | FloatMetadataEntry
+      | IntMetadataEntry
+      | JobMetadataEntry
+      | JsonMetadataEntry
+      | MarkdownMetadataEntry
+      | NotebookMetadataEntry
+      | NullMetadataEntry
+      | PathMetadataEntry
+      | PipelineRunMetadataEntry
+      | PoolMetadataEntry
+      | PythonArtifactMetadataEntry
+      | TableColumnLineageMetadataEntry
+      | TableMetadataEntry
+      | TableSchemaMetadataEntry
+      | TextMetadataEntry
+      | TimestampMetadataEntry
+      | UrlMetadataEntry
+    >;
+    partition: Maybe<Scalars['String']['output']>;
+    runId: Scalars['String']['output'];
+    runOrError: RunOrError;
+    solidHandleID: Maybe<Scalars['String']['output']>;
+    stepKey: Maybe<Scalars['String']['output']>;
+    stepStats: RunStepStats;
+    tags: Array<EventTag>;
+    timestamp: Scalars['String']['output'];
+  };
 
 export type FailureMetadata = DisplayableEvent & {
   __typename: 'FailureMetadata';
@@ -1620,6 +1694,7 @@ export type FailureMetadata = DisplayableEvent & {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -1727,6 +1802,7 @@ export type HandledOutputEvent = DisplayableEvent &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -1798,6 +1874,7 @@ export type IPipelineSnapshot = {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -1870,6 +1947,7 @@ export type InputDefinition = {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -2088,6 +2166,7 @@ export type Job = IPipelineSnapshot &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -2308,6 +2387,7 @@ export type ListDagsterType = DagsterType &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -2353,6 +2433,7 @@ export type LoadedInputEvent = DisplayableEvent &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -2534,6 +2615,7 @@ export type MaterializationEvent = DisplayableEvent &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -2551,6 +2633,12 @@ export type MaterializationEvent = DisplayableEvent &
     tags: Array<EventTag>;
     timestamp: Scalars['String']['output'];
   };
+
+export enum MaterializationHistoryEventTypeSelector {
+  ALL = 'ALL',
+  FAILED_TO_MATERIALIZE = 'FAILED_TO_MATERIALIZE',
+  MATERIALIZATION = 'MATERIALIZATION',
+}
 
 export type MaterializationUpstreamDataVersion = {
   __typename: 'MaterializationUpstreamDataVersion';
@@ -2931,6 +3019,7 @@ export type NullableDagsterType = DagsterType &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -2982,6 +3071,7 @@ export type ObjectStoreOperationResult = DisplayableEvent & {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -3023,6 +3113,7 @@ export type ObservationEvent = DisplayableEvent &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -3065,6 +3156,7 @@ export type OutputDefinition = {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -3423,6 +3515,7 @@ export type Pipeline = IPipelineSnapshot &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -3661,6 +3754,7 @@ export type PipelineSnapshot = IPipelineSnapshot &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -3730,6 +3824,13 @@ export type PoolConfig = {
   defaultPoolLimit: Maybe<Scalars['Int']['output']>;
   opGranularityRunBuffer: Maybe<Scalars['Int']['output']>;
   poolGranularity: Maybe<Scalars['String']['output']>;
+};
+
+export type PoolMetadataEntry = MetadataEntry & {
+  __typename: 'PoolMetadataEntry';
+  description: Maybe<Scalars['String']['output']>;
+  label: Scalars['String']['output'];
+  pool: Scalars['String']['output'];
 };
 
 export type PresetNotFoundError = Error & {
@@ -4138,6 +4239,7 @@ export type RegularDagsterType = DagsterType & {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -4368,6 +4470,7 @@ export type ResourceInitFailureEvent = DisplayableEvent &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -4407,6 +4510,7 @@ export type ResourceInitStartedEvent = DisplayableEvent &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -4446,6 +4550,7 @@ export type ResourceInitSuccessEvent = DisplayableEvent &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -4951,6 +5056,7 @@ export type Schedule = {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -5094,6 +5200,7 @@ export type Sensor = {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -5262,6 +5369,7 @@ export type SpecificPartitionAssetConditionEvaluationNode = {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -5368,6 +5476,7 @@ export type StepWorkerStartedEvent = DisplayableEvent &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -5407,6 +5516,7 @@ export type StepWorkerStartingEvent = DisplayableEvent &
       | NullMetadataEntry
       | PathMetadataEntry
       | PipelineRunMetadataEntry
+      | PoolMetadataEntry
       | PythonArtifactMetadataEntry
       | TableColumnLineageMetadataEntry
       | TableMetadataEntry
@@ -5650,6 +5760,7 @@ export type TypeCheck = DisplayableEvent & {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -5690,6 +5801,7 @@ export type UnpartitionedAssetConditionEvaluationNode = {
     | NullMetadataEntry
     | PathMetadataEntry
     | PipelineRunMetadataEntry
+    | PoolMetadataEntry
     | PythonArtifactMetadataEntry
     | TableColumnLineageMetadataEntry
     | TableMetadataEntry
@@ -5944,6 +6056,10 @@ export const buildAsset = (
   relationshipsToOmit.add('Asset');
   return {
     __typename: 'Asset',
+    assetMaterializationHistory:
+      overrides && overrides.hasOwnProperty('assetMaterializationHistory')
+        ? overrides.assetMaterializationHistory!
+        : [],
     assetMaterializations:
       overrides && overrides.hasOwnProperty('assetMaterializations')
         ? overrides.assetMaterializations!
@@ -8500,6 +8616,61 @@ export const buildExpectationResult = (
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
     success: overrides && overrides.hasOwnProperty('success') ? overrides.success! : false,
+  };
+};
+
+export const buildFailedToMaterializeEvent = (
+  overrides?: Partial<FailedToMaterializeEvent>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'FailedToMaterializeEvent'} & FailedToMaterializeEvent => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('FailedToMaterializeEvent');
+  return {
+    __typename: 'FailedToMaterializeEvent',
+    assetKey:
+      overrides && overrides.hasOwnProperty('assetKey')
+        ? overrides.assetKey!
+        : relationshipsToOmit.has('AssetKey')
+          ? ({} as AssetKey)
+          : buildAssetKey({}, relationshipsToOmit),
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'et',
+    eventType:
+      overrides && overrides.hasOwnProperty('eventType')
+        ? overrides.eventType!
+        : DagsterEventType.ALERT_FAILURE,
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'aliquam',
+    level: overrides && overrides.hasOwnProperty('level') ? overrides.level! : LogLevel.CRITICAL,
+    materializationFailureReason:
+      overrides && overrides.hasOwnProperty('materializationFailureReason')
+        ? overrides.materializationFailureReason!
+        : AssetMaterializationFailureReason.COMPUTE_FAILED,
+    message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'libero',
+    metadataEntries:
+      overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
+    partition:
+      overrides && overrides.hasOwnProperty('partition') ? overrides.partition! : 'voluptatibus',
+    runId: overrides && overrides.hasOwnProperty('runId') ? overrides.runId! : 'et',
+    runOrError:
+      overrides && overrides.hasOwnProperty('runOrError')
+        ? overrides.runOrError!
+        : relationshipsToOmit.has('PythonError')
+          ? ({} as PythonError)
+          : buildPythonError({}, relationshipsToOmit),
+    solidHandleID:
+      overrides && overrides.hasOwnProperty('solidHandleID')
+        ? overrides.solidHandleID!
+        : 'voluptatem',
+    stepKey:
+      overrides && overrides.hasOwnProperty('stepKey') ? overrides.stepKey! : 'reprehenderit',
+    stepStats:
+      overrides && overrides.hasOwnProperty('stepStats')
+        ? overrides.stepStats!
+        : relationshipsToOmit.has('RunStepStats')
+          ? ({} as RunStepStats)
+          : buildRunStepStats({}, relationshipsToOmit),
+    tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
+    timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'enim',
   };
 };
 
@@ -12119,6 +12290,21 @@ export const buildPoolConfig = (
       overrides && overrides.hasOwnProperty('poolGranularity')
         ? overrides.poolGranularity!
         : 'enim',
+  };
+};
+
+export const buildPoolMetadataEntry = (
+  overrides?: Partial<PoolMetadataEntry>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'PoolMetadataEntry'} & PoolMetadataEntry => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('PoolMetadataEntry');
+  return {
+    __typename: 'PoolMetadataEntry',
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'enim',
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'vel',
+    pool: overrides && overrides.hasOwnProperty('pool') ? overrides.pool! : 'exercitationem',
   };
 };
 

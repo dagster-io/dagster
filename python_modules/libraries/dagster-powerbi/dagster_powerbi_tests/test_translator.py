@@ -1,3 +1,4 @@
+import pytest
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
@@ -193,3 +194,28 @@ def test_translator_report_spec_no_dataset(workspace_data: PowerBIWorkspaceData)
     assert asset_spec.key.path == ["report", "Sales_Returns_Sample_v201912"]
     deps = list(asset_spec.deps)
     assert len(deps) == 0
+
+
+@pytest.mark.parametrize(
+    "workspace_data_attribute, owner_property",
+    [
+        ("reports_by_id", "createdBy"),
+        ("semantic_models_by_id", "configuredBy"),
+    ],
+    ids=["report", "semantic_model"],
+)
+def test_translator_invalid_asset_owners(
+    workspace_data_attribute: str, owner_property: str, workspace_data: PowerBIWorkspaceData
+) -> None:
+    content_data = next(iter(getattr(workspace_data, workspace_data_attribute).values()))
+    content_data.properties[owner_property] = "some_invalid_owner"
+
+    translator = DagsterPowerBITranslator()
+    asset_spec = translator.get_asset_spec(
+        PowerBITranslatorData(
+            content_data=content_data,
+            workspace_data=workspace_data,
+        )
+    )
+
+    assert asset_spec.owners == []

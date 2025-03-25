@@ -3,7 +3,7 @@ from typing import Optional
 from celery import Celery
 from celery.utils.collections import force_mapping
 from dagster import Any
-from dagster._seven import is_module_available
+from dagster_shared.seven import is_module_available
 from kombu import Queue
 
 from dagster_celery.config import (

@@ -155,6 +155,13 @@ export type RunMetadataProviderMessageFragment_ExecutionStepUpForRetryEvent = {
   stepKey: string | null;
 };
 
+export type RunMetadataProviderMessageFragment_FailedToMaterializeEvent = {
+  __typename: 'FailedToMaterializeEvent';
+  message: string;
+  timestamp: string;
+  stepKey: string | null;
+};
+
 export type RunMetadataProviderMessageFragment_HandledOutputEvent = {
   __typename: 'HandledOutputEvent';
   message: string;
@@ -303,6 +310,7 @@ export type RunMetadataProviderMessageFragment_ObjectStoreOperationEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -515,6 +523,7 @@ export type RunMetadataProviderMessageFragment =
   | RunMetadataProviderMessageFragment_ExecutionStepStartEvent
   | RunMetadataProviderMessageFragment_ExecutionStepSuccessEvent
   | RunMetadataProviderMessageFragment_ExecutionStepUpForRetryEvent
+  | RunMetadataProviderMessageFragment_FailedToMaterializeEvent
   | RunMetadataProviderMessageFragment_HandledOutputEvent
   | RunMetadataProviderMessageFragment_HookCompletedEvent
   | RunMetadataProviderMessageFragment_HookErroredEvent

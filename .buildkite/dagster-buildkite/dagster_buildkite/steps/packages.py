@@ -20,7 +20,7 @@ from dagster_buildkite.utils import (
     has_storage_test_fixture_changes,
     network_buildkite_container,
     skip_if_not_airlift_or_dlift_commit,
-    skip_if_not_dlift_commit,
+    skip_if_not_dagster_dbt_cloud_commit,
 )
 
 
@@ -404,20 +404,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "examples/experimental/dagster-dlift",
         name="dlift",
     ),
-    # Runs against live dbt cloud instance, we only want to run on commits and on the
-    # nightly build
-    PackageSpec(
-        "examples/experimental/dagster-dlift/kitchen-sink",
-        skip_if=skip_if_not_dlift_commit,
-        name="dlift-live",
-        env_vars=[
-            "KS_DBT_CLOUD_ACCOUNT_ID",
-            "KS_DBT_CLOUD_PROJECT_ID",
-            "KS_DBT_CLOUD_TOKEN",
-            "KS_DBT_CLOUD_ACCESS_URL",
-            "KS_DBT_CLOUD_DISCOVERY_API_URL",
-        ],
-    ),
 ]
 
 
@@ -753,6 +739,20 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-airlift/kitchen-sink",
         always_run_if=has_dagster_airlift_changes,
+    ),
+    # Runs against live dbt cloud instance, we only want to run on commits and on the
+    # nightly build
+    PackageSpec(
+        "python_modules/libraries/dagster-dbt/kitchen-sink",
+        skip_if=skip_if_not_dagster_dbt_cloud_commit,
+        name="dagster-dbt-cloud-live",
+        env_vars=[
+            "KS_DBT_CLOUD_ACCOUNT_ID",
+            "KS_DBT_CLOUD_ACCESS_URL",
+            "KS_DBT_CLOUD_TOKEN",
+            "KS_DBT_CLOUD_PROJECT_ID",
+            "KS_DBT_CLOUD_ENVIRONMENT_ID",
+        ],
     ),
     PackageSpec(
         ".buildkite/dagster-buildkite",

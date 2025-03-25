@@ -419,7 +419,7 @@ def test_execute_using_repository_data():
                 call_counts = instance.run_storage.get_cursor_values(
                     {"compute_cacheable_data_called", "get_definitions_called"}
                 )
-                assert call_counts.get("compute_cacheable_data_called") == "2"
+                assert call_counts.get("compute_cacheable_data_called") == "1"
 
                 assert call_counts.get("get_definitions_called") == "9"
 
@@ -550,7 +550,7 @@ def test_blocked_concurrency_limits():
                 assert result.success
                 assert any(
                     [
-                        "blocked by concurrency limit for key foo" in (event.message or "")
+                        "blocked by limit for pool foo" in (event.message or "")
                         for event in result.all_events
                     ]
                 )
@@ -591,7 +591,7 @@ def test_blocked_concurrency_limits_legacy_keys():
                 assert result.success
                 assert any(
                     [
-                        "blocked by concurrency limit for key foo" in (event.message or "")
+                        "blocked by limit for pool foo" in (event.message or "")
                         for event in result.all_events
                     ]
                 )

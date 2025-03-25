@@ -2,6 +2,7 @@ import React, {Suspense} from 'react';
 import CodeBlock from '@theme/CodeBlock';
 
 import {CODE_EXAMPLE_PATH_MAPPINGS} from '../code-examples-content';
+import {trimMainBlock, filterComments} from '../utils/codeExampleUtils';
 
 interface CodeExampleProps {
   path: string;
@@ -11,23 +12,6 @@ interface CodeExampleProps {
   lineEnd?: number;
   startAfter?: string; // marker that indicates beginning of code snippet
   endBefore?: string; // marker that indicates ending of code snippet
-}
-
-/**
- * Removes content below the `if __name__` block for the given `lines`.
- */
-function trimMainBlock(lines: string[]): string[] {
-  const mainIndex = lines.findIndex((line) => line.trim().startsWith('if __name__ == '));
-  return mainIndex !== -1 ? lines.slice(0, mainIndex) : lines;
-}
-
-/**
- * Filters `noqa` comments from lines.
- */
-function filterNoqaComments(lines: string[]): string[] {
-  return lines.map((line: string) => {
-    return line.replaceAll(/#.*?noqa.*?$/g, '');
-  });
 }
 
 const contentCache: Record<string, {content?: string; error?: string | null}> = {};
@@ -67,7 +51,7 @@ function processModule({
 
   lines = lines.slice(ix1, ix2);
 
-  lines = filterNoqaComments(lines);
+  lines = filterComments(lines);
   lines = trimMainBlock(lines);
   contentCache[cacheKey] = {content: lines.join('\n')};
 }

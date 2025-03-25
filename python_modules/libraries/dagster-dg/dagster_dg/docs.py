@@ -1,15 +1,15 @@
 import copy
-import tempfile
-import webbrowser
+import json
 from collections.abc import Iterator, Mapping, Sequence, Set
-from typing import Any, Union
+from itertools import groupby
+from typing import Any, Optional, TypedDict, Union
 
-import markdown
 import yaml
+from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
-from dagster_dg.component import RemoteComponentType
-from dagster_dg.yaml_utils import parse_yaml_with_source_positions
-from dagster_dg.yaml_utils.source_position import SourcePositionTree
+from dagster_dg.component import ComponentTypeSnap, RemoteLibraryObjectRegistry
 
 REF_BASE = "#/$defs/"
 JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY = "dagster_required_scope"
@@ -135,7 +135,10 @@ def _get_source_position_comments(
 
 def generate_sample_yaml(component_type: str, json_schema: Mapping[str, Any]) -> str:
     raw = yaml.dump(
-        {"type": component_type, "params": _sample_value_for_subschema(json_schema, json_schema)},
+        {
+            "type": component_type,
+            "attributes": _sample_value_for_subschema(json_schema, json_schema),
+        },
         Dumper=ComponentDumper,
         sort_keys=False,
     )
@@ -150,52 +153,52 @@ def generate_sample_yaml(component_type: str, json_schema: Mapping[str, Any]) ->
     return "\n".join(commented_lines)
 
 
-def html_from_markdown(markdown_content: str) -> str:
-    # Convert the markdown string to HTML
-    html_content = markdown.markdown(markdown_content)
+class ComponentTypeJson(TypedDict):
+    """Component type JSON, used to back dg docs webapp."""
 
-    # Add basic HTML structure
-    full_html = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Markdown Preview</title>
-    </head>
-    <body>
-        {html_content}
-    </body>
-    </html>
-    """
-    return full_html
+    name: str
+    author: str
+    tags: list[str]
+    example: str
+    schema: str
+    description: Optional[str]
 
 
-def open_html_in_browser(html_content: str) -> None:
-    # Create a temporary file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as temp_file:
-        temp_file.write(html_content.encode("utf-8"))
-        temp_file_path = temp_file.name
+class ComponentTypeNamespaceJson(TypedDict):
+    """Component type namespace JSON, used to back dg docs webapp."""
 
-    # Open the temporary file in the default web browser
-    webbrowser.open(f"file://{temp_file_path}")
+    name: str
+    componentTypes: list[ComponentTypeJson]
 
 
-def markdown_for_component_type(remote_component_type: RemoteComponentType) -> str:
-    component_type_name = f"{remote_component_type.namespace}.{remote_component_type.name}"
-    sample_yaml = generate_sample_yaml(
-        component_type_name, remote_component_type.component_params_schema or {}
+def json_for_all_components(
+    registry: RemoteLibraryObjectRegistry,
+) -> list[ComponentTypeNamespaceJson]:
+    """Returns a list of JSON representations of all component types in the registry."""
+    component_json = [
+        (key.namespace.split(".")[0], json_for_component_type(key, library_obj))
+        for key, library_obj in registry.items()
+        if isinstance(library_obj, ComponentTypeSnap) and library_obj.schema is not None
+    ]
+    return [
+        ComponentTypeNamespaceJson(
+            name=namespace,
+            componentTypes=[namespace_and_component[1] for namespace_and_component in components],
+        )
+        for namespace, components in groupby(component_json, key=lambda x: x[0])
+    ]
+
+
+def json_for_component_type(
+    key: LibraryObjectKey, remote_component_type: ComponentTypeSnap
+) -> ComponentTypeJson:
+    typename = key.to_typename()
+    sample_yaml = generate_sample_yaml(typename, remote_component_type.schema or {})
+    return ComponentTypeJson(
+        name=typename,
+        author="",
+        tags=[],
+        example=sample_yaml,
+        schema=json.dumps(remote_component_type.schema),
+        description=remote_component_type.description,
     )
-    rows = len(sample_yaml.split("\n")) + 1
-    return f"""
-## Component: `{component_type_name}`
-
-### Description:
-{remote_component_type.description}
-
-### Sample Component Params:
-
-<textarea rows={rows} cols=100>
-{sample_yaml}
-</textarea>
-"""

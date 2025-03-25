@@ -3,6 +3,7 @@ from typing import Any, Optional, cast
 
 import pytest
 from dagster import (
+    AssetCheckEvaluation,
     AssetCheckKey,
     AssetCheckResult,
     AssetCheckSeverity,
@@ -12,8 +13,12 @@ from dagster import (
     AssetsDefinition,
     AssetSelection,
     ExecuteInProcessResult,
+    OpExecutionContext,
+    Output,
     asset_check,
+    job,
     materialize,
+    op,
 )
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resource import DAGSTER_DBT_UNIQUE_ID_METADATA_KEY, DbtCliResource
@@ -571,6 +576,127 @@ def test_asset_checks_results(
     result = materialize(
         [my_dbt_assets],
         resources={"dbt": DbtCliResource(project_dir=os.fspath(test_asset_checks_path))},
+    )
+    assert result.success
+
+
+def test_asset_checks_evaluations(
+    test_asset_checks_manifest: dict[str, Any], dbt_commands: list[list[str]]
+):
+    @op
+    def my_dbt_op(context: OpExecutionContext, dbt: DbtCliResource):
+        events = []
+        invocation_id = ""
+        for dbt_command in dbt_commands:
+            dbt_invocation = dbt.cli(
+                dbt_command,
+                context=context,
+                raise_on_error=False,
+                manifest=test_asset_checks_manifest,
+                dagster_dbt_translator=dagster_dbt_translator_with_checks,
+            )
+            events += list(dbt_invocation.stream())
+            invocation_id = dbt_invocation.get_artifact("run_results.json")["metadata"][
+                "invocation_id"
+            ]
+
+        for event in events:
+            if isinstance(event, AssetCheckEvaluation):
+                assert cast(int, event.metadata["Execution Duration"].value) > 0
+
+        # Sanity check that we don't have AssetCheckResult events when using an op
+        assert not any([event for event in events if isinstance(event, AssetCheckResult)])
+
+        expected_results = [
+            AssetCheckEvaluation(
+                passed=True,
+                asset_key=AssetKey(["customers"]),
+                check_name="unique_customers_customer_id",
+                metadata={
+                    "unique_id": (
+                        "test.test_dagster_asset_checks.unique_customers_customer_id.c5af1ff4b1"
+                    ),
+                    "invocation_id": invocation_id,
+                    "status": "pass",
+                    "dagster_dbt/failed_row_count": 0,
+                },
+            ),
+            AssetCheckEvaluation(
+                passed=True,
+                asset_key=AssetKey(["customers"]),
+                check_name="not_null_customers_customer_id",
+                metadata={
+                    "unique_id": (
+                        "test.test_dagster_asset_checks.not_null_customers_customer_id.5c9bf9911d"
+                    ),
+                    "invocation_id": invocation_id,
+                    "status": "pass",
+                    "dagster_dbt/failed_row_count": 0,
+                },
+            ),
+            AssetCheckEvaluation(
+                passed=False,
+                asset_key=AssetKey(["fail_tests_model"]),
+                check_name="unique_fail_tests_model_id",
+                severity=AssetCheckSeverity.WARN,
+                metadata={
+                    "unique_id": (
+                        "test.test_dagster_asset_checks.unique_fail_tests_model_id.1619308eb1"
+                    ),
+                    "invocation_id": invocation_id,
+                    "status": "warn",
+                    "dagster_dbt/failed_row_count": 1,
+                },
+            ),
+            AssetCheckEvaluation(
+                passed=False,
+                asset_key=AssetKey(["fail_tests_model"]),
+                check_name="accepted_values_fail_tests_model_first_name__foo__bar__baz",
+                severity=AssetCheckSeverity.ERROR,
+                metadata={
+                    "unique_id": (
+                        "test.test_dagster_asset_checks.accepted_values_fail_tests_model_first_name__foo__bar__baz.5f958cf018"
+                    ),
+                    "invocation_id": invocation_id,
+                    "status": "fail",
+                    "dagster_dbt/failed_row_count": 4,
+                },
+            ),
+        ]
+
+        # filter these out for comparison
+        non_deterministic_metadata_keys = ["Execution Duration"]
+        check_events_without_non_deterministic_metadata = {}
+        for event in events:
+            if isinstance(event, AssetCheckEvaluation):
+                check_events_without_non_deterministic_metadata[
+                    event.asset_key, event.check_name
+                ] = event._replace(
+                    metadata={
+                        k: v
+                        for k, v in event.metadata.items()
+                        if k not in non_deterministic_metadata_keys
+                    }
+                )
+
+        for expected_asset_check_evaluation in expected_results:
+            assert (
+                check_events_without_non_deterministic_metadata[
+                    expected_asset_check_evaluation.asset_key,
+                    expected_asset_check_evaluation.check_name,
+                ]
+                == expected_asset_check_evaluation
+            )
+
+        yield from events
+        yield Output(None)
+
+    @job
+    def my_dbt_job():
+        my_dbt_op()
+
+    result = my_dbt_job.execute_in_process(
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_asset_checks_path))}
     )
     assert result.success
 

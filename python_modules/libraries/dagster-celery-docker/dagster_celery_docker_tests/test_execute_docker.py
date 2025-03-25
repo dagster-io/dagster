@@ -8,7 +8,7 @@ import pytest
 from dagster._core.execution.api import execute_job
 from dagster._utils.merger import merge_dicts
 from dagster._utils.test.postgres_instance import postgres_instance_for_test
-from dagster._utils.yaml_utils import merge_yamls
+from dagster_shared.yaml_utils import merge_yamls
 from dagster_test.test_project import (
     find_local_test_image,
     get_buildkite_registry_config,

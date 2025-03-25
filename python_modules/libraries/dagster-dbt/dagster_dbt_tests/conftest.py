@@ -33,7 +33,7 @@ from dagster_dbt_tests.dbt_projects import (
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> Iterator[None]:
     """Mark tests in the `cloud` directories. Mark other tests as `core`."""
     for item in items:
-        if "cloud" in item.path.parts:
+        if "cloud" in item.path.parts or "cloud_v2" in item.path.parts:
             item.add_marker(pytest.mark.cloud)
         else:
             item.add_marker(pytest.mark.core)

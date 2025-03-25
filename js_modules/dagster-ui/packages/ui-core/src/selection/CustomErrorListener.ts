@@ -1,12 +1,11 @@
 import {ANTLRErrorListener, RecognitionException, Recognizer} from 'antlr4ts';
-import {Token} from 'antlr4ts/Token';
 
-export interface SyntaxError {
+export type SyntaxError = {
   message: string;
-  line: number;
-  column: number;
-  offendingSymbol: Token | null;
-}
+  from: number;
+  to: number;
+  offendingSymbol?: string | null | undefined;
+};
 
 export class CustomErrorListener implements ANTLRErrorListener<any> {
   private errors: SyntaxError[];
@@ -18,16 +17,21 @@ export class CustomErrorListener implements ANTLRErrorListener<any> {
   syntaxError(
     _recognizer: Recognizer<any, any>,
     offendingSymbol: any,
-    line: number,
+    _line: number,
     charPositionInLine: number,
     msg: string,
     _e: RecognitionException | undefined,
   ): void {
+    let from = charPositionInLine;
+    if (offendingSymbol?.text === '<EOF>') {
+      // If the error is at the very end of the input, set the from to the start of the input
+      from = 0;
+    }
     this.errors.push({
       message: msg,
-      line,
-      column: charPositionInLine,
-      offendingSymbol,
+      offendingSymbol: offendingSymbol?.text,
+      from,
+      to: Infinity, //  Make the error span the rest of the input to make sure its pronounced
     });
   }
 

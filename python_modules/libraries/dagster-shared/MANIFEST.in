@@ -1,0 +1,4 @@
+include README.md
+include LICENSE
+include dagster_shared/py.typed
+recursive-include dagster_shared *.md

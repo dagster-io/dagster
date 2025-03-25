@@ -18,12 +18,17 @@ from threading import Event as ThreadingEventType
 from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, cast
 
+import dagster_shared.seven as seven
 import grpc
+from dagster_shared.serdes.ipc import IPCErrorMessage, open_ipc_subprocess
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.definitions_load_context import (
+    DefinitionsLoadContext,
+    DefinitionsLoadType,
+)
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.errors import (
@@ -97,13 +102,17 @@ from dagster._grpc.utils import (
     max_send_bytes,
 )
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._serdes.ipc import IPCErrorMessage, open_ipc_subprocess
 from dagster._utils import find_free_port, get_run_crash_explanation, safe_tempfile_path_unmanaged
 from dagster._utils.container import (
     ContainerUtilizationMetrics,
     retrieve_containerized_utilization_metrics,
 )
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.env import use_verbose, using_dagster_dev
+from dagster._utils.error import (
+    remove_system_frames_from_error,
+    serializable_error_info_from_exc_info,
+    unwrap_user_code_error,
+)
 from dagster._utils.typed_dict import init_optional_typeddict
 
 if TYPE_CHECKING:
@@ -234,6 +243,13 @@ class LoadedRepositories:
         self._loadable_repository_symbols: list[LoadableRepositorySymbol] = []
 
         self._container_context = container_context
+
+        # Make sure we have a persistent load context before loading any repositories.
+        DefinitionsLoadContext.set(
+            DefinitionsLoadContext(
+                DefinitionsLoadType.INITIALIZATION,
+            )
+        )
 
         if not loadable_target_origin:
             # empty workspace
@@ -428,7 +444,22 @@ class DagsterApiServer(DagsterApiServicer):
                 raise
             self._loaded_repositories = None
             self._serializable_load_error = serializable_error_info_from_exc_info(sys.exc_info())
-            self._logger.exception("Error while importing code")
+            if using_dagster_dev() and not use_verbose():
+                removed_system_frame_hint = (
+                    lambda is_first_hidden_frame,
+                    i: f"  [{i} dagster system frames hidden, run with --verbose to see the full stack trace]\n"
+                    if is_first_hidden_frame
+                    else f"  [{i} dagster system frames hidden]\n"
+                )
+
+                logger.error(
+                    remove_system_frames_from_error(
+                        unwrap_user_code_error(self._serializable_load_error),
+                        build_system_frame_removed_hint=removed_system_frame_hint,
+                    )
+                )
+            else:
+                self._logger.exception("Error while importing code")
 
         self.__last_heartbeat_time = time.time()
         if heartbeat:

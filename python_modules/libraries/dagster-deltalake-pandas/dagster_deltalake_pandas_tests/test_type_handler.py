@@ -475,8 +475,8 @@ def test_self_dependent_asset(tmp_path, io_manager):
     ) -> pd.DataFrame:
         key = datetime.strptime(context.partition_key, DELTA_DATE_FORMAT).date()
 
-        if self_dependent_asset.num_rows > 0:
-            assert self_dependent_asset.num_rows == 3
+        if self_dependent_asset.num_rows > 0:  # type: ignore
+            assert self_dependent_asset.num_rows == 3  # type: ignore
             # assert (self_dependent_asset["key"] == context.op_execution_context.op_config["last_partition_key"]).all()
         else:
             assert context.op_execution_context.op_config["last_partition_key"] == "NA"

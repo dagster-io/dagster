@@ -7,6 +7,8 @@ from typing import Any, Callable, Optional, TypeVar, cast
 
 import click
 from click import UsageError
+from dagster_shared.seven import JSONDecodeError, json
+from dagster_shared.yaml_utils import load_yaml_from_glob_list
 from typing_extensions import Never, Self, TypeAlias
 
 import dagster._check as check
@@ -38,9 +40,7 @@ from dagster._core.workspace.load_target import (
 )
 from dagster._grpc.utils import get_loadable_targets
 from dagster._record import record
-from dagster._seven import JSONDecodeError, json
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.yaml_utils import load_yaml_from_glob_list
 
 logger = logging.getLogger("dagster")
 WORKSPACE_TARGET_WARNING = (
@@ -234,6 +234,7 @@ def get_workspace_from_cli_opts(
     version: str,
     workspace_opts: "WorkspaceOpts",
     allow_in_process: bool = False,
+    log_level: str = "INFO",
 ) -> Iterator[WorkspaceRequestContext]:
     load_target = workspace_opts.to_load_target(allow_in_process)
     if isinstance(load_target, InProcessWorkspaceLoadTarget):
@@ -246,6 +247,7 @@ def get_workspace_from_cli_opts(
         version=version,
         read_only=False,
         workspace_load_target=load_target,
+        code_server_log_level=log_level,
     ) as workspace_process_context:
         yield workspace_process_context.create_request_context()
 

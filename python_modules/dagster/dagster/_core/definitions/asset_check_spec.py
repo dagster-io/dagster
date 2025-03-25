@@ -2,10 +2,11 @@ from collections.abc import Iterable, Mapping
 from enum import Enum
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey
-from dagster._serdes.serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep

@@ -21,6 +21,7 @@ export type QueryPersistedStateConfig<T extends QueryPersistedDataType> = {
   defaults?: {[key: string]: any};
   decode?: (raw: {[key: string]: any}) => T;
   encode?: (raw: T) => {[key: string]: any};
+  behavior?: 'push' | 'replace';
 };
 
 const defaultEncode = memoize(<T,>(queryKey: string) => (raw: T) => ({[queryKey]: raw}));
@@ -63,7 +64,7 @@ const defaultDecode = memoize(
 export function useQueryPersistedState<T extends QueryPersistedDataType>(
   options: QueryPersistedStateConfig<T>,
 ): [T, React.Dispatch<React.SetStateAction<T>>] {
-  const {queryKey, defaults} = options;
+  const {queryKey, defaults, behavior = 'replace'} = options;
   let {encode, decode} = options;
 
   if (queryKey) {
@@ -113,12 +114,15 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
       // the `replace` so that we surface any unwanted loops during development.
       if (process.env.NODE_ENV !== 'production' || !areQueriesEqual(currentQueryString, next)) {
         currentQueryString = next;
-        history.replace(
-          `${history.location.pathname}?${qs.stringify(next, {arrayFormat: 'brackets'})}`,
-        );
+        const nextPath = `${history.location.pathname}?${qs.stringify(next, {arrayFormat: 'indices'})}`;
+        if (behavior === 'replace') {
+          history.replace(nextPath);
+        } else {
+          history.push(nextPath);
+        }
       }
     },
-    [history, encode, options],
+    [encode, options.defaults, behavior, history],
   );
 
   if (!isEqual(valueRef.current, qsDecoded)) {

@@ -95,21 +95,22 @@ run_retries:
   max_retries: 0
 ```
 
-| Property | Descripton |
+| Property | Description |
 | --- | --- |
 | run_retries.max_retries | The maximum number of times Dagster+ should attempt to retry a failed run. Dagster+ will use the default if this setting is undefined. <ul><li>**Default** - `0`</li></ul> |
 | run_retries.retry_on_asset_or_op_failure | Whether to retry runs that failed due to assets or ops in the run failing. Set this to false if you only want to retry failures that occur due to the run worker crashing or unexpectedly terminating, and instead rely on op or asset-level retry policies to retry assert or op failures. Setting this field to false will only change retry behavior for runs on dagster version 1.6.7 or greater. <ul><li>**Default** - `0`</li></ul> |
 
 ### SSO default role
 
-{/* dagster-plus/account/managing-users/managing-user-roles-permissions#user-permissions-reference */}
-The `sso_default_role` setting lets you configure the default role on the deployment which is granted to new users that log in via SSO. For more information on available roles, see the [Dagster+ permissions reference](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions).
+The `sso_default_role` setting lets you configure the default role in the deployment which is granted to new users that log in using [Single sign-on (SSO)](/dagster-plus/features/authentication-and-access-control/sso/). For more information on available roles, see the [Dagster+ permissions reference](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions).
+
+The setting can also be configured to `NO_ACCESS` to prevent new user accounts being created automatically upon log in.
 
 ```yaml
 sso_default_role: EDITOR
 ```
 
-| Property | Descripton |
+| Property | Description |
 | --- | --- |
 | sso_default_role | If SAML SSO is enabled, this is the default role that will be assigned to Dagster+ users for this deployment. If SAML SSO is not enabled, this setting is ignored. <ul><li>**Default** - `Viewer`</li></ul> |
 
@@ -123,7 +124,7 @@ non_isolated_runs:
   max_concurrent_non_isolated_runs: 1
 ```
 
-| Property | Descripton |
+| Property | Description |
 | --- | --- |
 | enabled | If enabled, the `Isolate run environment` checkbox will appear in the Launchpad. <ul><li>**Default** - `true`</li></ul> |
 | max_concurrent_non_isolated_runs | A limit for how many non-isolated runs to launch at once. Once this limit is reached, the checkbox will be greyed out and all runs will be isolated. This helps to avoid running out of RAM on the code location server. <ul><li>**Default** - `1`</li></ul> |

@@ -16,7 +16,7 @@ from dagster._core.storage.tags import (
     TagType,
     get_tag_type,
 )
-from dagster._utils.yaml_utils import dump_run_config_yaml
+from dagster_shared.yaml_utils import dump_run_config_yaml
 
 from dagster_graphql.implementation.utils import apply_cursor_limit_reverse
 from dagster_graphql.schema.util import ResolveInfo

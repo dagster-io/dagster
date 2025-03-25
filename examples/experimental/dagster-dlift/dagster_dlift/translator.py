@@ -12,7 +12,7 @@ from dagster import (
 from dagster._annotations import preview
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 from dagster._utils.names import clean_asset_name
 
 

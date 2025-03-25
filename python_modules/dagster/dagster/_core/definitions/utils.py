@@ -6,13 +6,13 @@ from glob import glob
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, cast
 
 import yaml
+from dagster_shared.yaml_utils import merge_yaml_strings, merge_yamls
 
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetCheckKey, EntityKey
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.utils import is_valid_email
 from dagster._utils.warnings import deprecation_warning, disable_dagster_warnings
-from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 DEFAULT_OUTPUT = "result"
 DEFAULT_GROUP_NAME = "default"  # asset group_name used when none is provided
@@ -150,11 +150,15 @@ def struct_to_string(name: str, **kwargs: object) -> str:
 
 
 def validate_asset_owner(owner: str, key: "AssetKey") -> None:
-    if not is_valid_email(owner) and not (owner.startswith("team:") and len(owner) > 5):
+    if not is_valid_asset_owner(owner):
         raise DagsterInvalidDefinitionError(
             f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team "
             "name prefixed with 'team:'."
         )
+
+
+def is_valid_asset_owner(owner: str) -> bool:
+    return is_valid_email(owner) or (owner.startswith("team:") and len(owner) > 5)
 
 
 def validate_group_name(group_name: Optional[str]) -> None:

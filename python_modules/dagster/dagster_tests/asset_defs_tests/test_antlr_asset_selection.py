@@ -116,8 +116,14 @@ def test_antlr_tree_invalid(selection_str):
     [
         ("key:a", KeyWildCardAssetSelection(selected_key_wildcard="a")),
         ('key:"*/a+"', KeyWildCardAssetSelection(selected_key_wildcard="*/a+")),
+        ("key:prefix/thing", KeyWildCardAssetSelection(selected_key_wildcard="prefix/thing")),
         (
             "not key:a",
+            AssetSelection.all(include_sources=True)
+            - KeyWildCardAssetSelection(selected_key_wildcard="a"),
+        ),
+        (
+            "NOT key:a",
             AssetSelection.all(include_sources=True)
             - KeyWildCardAssetSelection(selected_key_wildcard="a"),
         ),
@@ -127,7 +133,17 @@ def test_antlr_tree_invalid(selection_str):
             & KeyWildCardAssetSelection(selected_key_wildcard="b"),
         ),
         (
+            "key:a AND key:b",
+            KeyWildCardAssetSelection(selected_key_wildcard="a")
+            & KeyWildCardAssetSelection(selected_key_wildcard="b"),
+        ),
+        (
             "key:a or key:b",
+            KeyWildCardAssetSelection(selected_key_wildcard="a")
+            | KeyWildCardAssetSelection(selected_key_wildcard="b"),
+        ),
+        (
+            "key:a OR key:b",
             KeyWildCardAssetSelection(selected_key_wildcard="a")
             | KeyWildCardAssetSelection(selected_key_wildcard="b"),
         ),

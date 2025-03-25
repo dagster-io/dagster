@@ -4,13 +4,13 @@ import sys
 import pytest
 from click import UsageError
 from click.testing import CliRunner
-from dagster import _seven
 from dagster._cli.job import execute_list_command, job_list_command
 from dagster._cli.workspace.cli_target import WorkspaceOpts
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
 from dagster._utils import file_relative_path
+from dagster_shared import seven
 
 
 def no_print(_):
@@ -70,7 +70,7 @@ def assert_correct_extra_repository_output(result):
 # ########################
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="no named sockets on Windows")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="no named sockets on Windows")
 def test_list_command_grpc_socket():
     with instance_for_test() as instance:
         runner = CliRunner()

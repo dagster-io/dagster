@@ -1,8 +1,9 @@
 from collections.abc import Sequence
 from typing import NamedTuple
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 import dagster._check as check
-from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes

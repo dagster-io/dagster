@@ -8,6 +8,8 @@ from enum import Enum
 from functools import cached_property
 from typing import Any, Callable, NamedTuple, Optional, Union, cast
 
+from dagster_shared.serdes import NamedTupleSerializer
+
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition import (
@@ -28,7 +30,6 @@ from dagster._core.errors import (
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._time import (
     create_datetime,
     datetime_from_timestamp,
@@ -364,6 +365,8 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         return current_time.timestamp()
 
     def get_num_partitions_in_window(self, time_window: TimeWindow) -> int:
+        if time_window.start.timestamp() >= time_window.end.timestamp():
+            return 0
         if self.is_basic_daily:
             return (
                 date(
@@ -1705,6 +1708,14 @@ class TimeWindowPartitionsSubsetSerializer(NamedTupleSerializer):
                 num_partitions=value.num_partitions,
                 included_time_windows=value.included_time_windows,
             )
+        return value
+
+    def before_unpack(self, context, value: dict[str, Any]):
+        num_partitions = value.get("num_partitions")
+        # some objects were serialized with an invalid num_partitions, so fix that here
+        if num_partitions is not None and num_partitions < 0:
+            # set it to None so that it will be recalculated
+            value["num_partitions"] = None
         return value
 
 

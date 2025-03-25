@@ -1,3 +1,6 @@
+import textwrap
+from tempfile import NamedTemporaryFile
+
 from dagster._core.workspace.load_target import get_origins_from_toml, is_valid_modules_list
 from dagster._utils import file_relative_path
 from pytest import raises
@@ -15,6 +18,35 @@ def test_load_python_module_from_toml():
     assert len(origins) == 1
     assert origins[0].loadable_target_origin.module_name == "baaz"
     assert origins[0].location_name == "bar"
+
+
+def test_load_python_module_from_dg_toml():
+    with NamedTemporaryFile("w") as f:
+        f.write(
+            textwrap.dedent("""
+                [tool.dg.project]
+                root_module = "baaz"
+                code_location_name = "foo"
+            """).strip()
+        )
+        f.flush()
+        origins = get_origins_from_toml(f.name)
+        assert len(origins) == 1
+        assert origins[0].loadable_target_origin.module_name == "baaz.definitions"
+        assert origins[0].location_name == "foo"
+
+    with NamedTemporaryFile("w") as f:
+        f.write(
+            textwrap.dedent("""
+                [tool.dg.project]
+                root_module = "baaz"
+                code_location_target_module = "baaz.other_definitions"
+            """).strip()
+        )
+        f.flush()
+        origins = get_origins_from_toml(f.name)
+        assert len(origins) == 1
+        assert origins[0].loadable_target_origin.module_name == "baaz.other_definitions"
 
 
 def test_load_empty_toml():

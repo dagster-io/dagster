@@ -16,10 +16,11 @@ from typing import (  # noqa: UP035
     overload,
 )
 
+import dagster_shared.seven as seven
+from dagster_shared.serdes import NamedTupleSerializer
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._core.code_pointer import (
     CodePointer,
     CustomPointer,
@@ -37,7 +38,6 @@ from dagster._core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._utils import hash_collection
 
 if TYPE_CHECKING:
@@ -785,13 +785,38 @@ def reconstruct_repository_def_from_pointer(
         DefinitionsLoadContext,
         DefinitionsLoadType,
     )
-    from dagster._core.definitions.repository_definition import RepositoryDefinition
-
-    DefinitionsLoadContext.set(
-        DefinitionsLoadContext(
-            load_type=DefinitionsLoadType.RECONSTRUCTION, repository_load_data=repository_load_data
-        )
+    from dagster._core.definitions.repository_definition import (
+        RepositoryDefinition,
+        RepositoryLoadData,
     )
+
+    # This method is called when generating the RepositoryDefinition from a
+    # ReconstructableRepository. It is sometimes called in the initialization context, in which case
+    # we need to make sure that any data present on `pending_reconstruction_metadata` gets set as
+    # "plain" reconstruction metadata in the new context. The distinction between "pending" and
+    # "regular" reconstruction metadata on the same class is confusing and should be eliminated in a
+    # future refactor, but this is a working solution.
+    curr_context = DefinitionsLoadContext.get() if DefinitionsLoadContext.is_set() else None
+    if repository_load_data or not curr_context:
+        context = DefinitionsLoadContext(
+            load_type=DefinitionsLoadType.RECONSTRUCTION,
+            repository_load_data=repository_load_data,
+        )
+    elif curr_context.load_type == DefinitionsLoadType.INITIALIZATION:
+        curr_repo_load_data = curr_context._repository_load_data  # noqa: SLF001
+        context = DefinitionsLoadContext(
+            load_type=DefinitionsLoadType.RECONSTRUCTION,
+            repository_load_data=RepositoryLoadData(
+                cacheable_asset_data=curr_repo_load_data.cacheable_asset_data
+                if curr_repo_load_data
+                else {},
+                reconstruction_metadata=curr_context.get_pending_reconstruction_metadata(),
+            ),
+        )
+    else:
+        context = curr_context
+
+    DefinitionsLoadContext.set(context)
     target = def_from_pointer(pointer)
     repo_def = _repository_def_from_target_def_inner(
         target,

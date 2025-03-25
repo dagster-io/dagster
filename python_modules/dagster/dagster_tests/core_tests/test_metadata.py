@@ -16,11 +16,11 @@ from dagster import (
     UrlMetadataValue,
     op,
 )
-from dagster._check.functions import CheckError
 from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,
 )
-from dagster._serdes.serdes import deserialize_value, serialize_value
+from dagster_shared.check import CheckError
+from dagster_shared.serdes import deserialize_value, serialize_value
 
 
 def test_op_instance_tags():

@@ -1,20 +1,131 @@
 # Changelog
 
+## 1.10.6 (core) / 0.26.6 (libraries)
+
+### New
+
+- Added a new `AutomationCondition.executed_with_tags()` condition that makes it possible to filter for updates from runs with particular tags.
+- `AssetCheckEvaluation` can now be yielded from Dagster ops to log an evaluation of an asset check outside of an asset context.
+- Added the `kinds` argument to `dagster.AssetOut`, allowing kinds to be specified in `@multi_asset`.
+- [dagster-dbt] `AssetCheckEvaluations` are now yielded from `ops` leveraging `DbtCliResource.cli(...)` when asset checks are included in the dbt asset lineage.
+- [dagster-sling] The `SlingResource.replicate()` method now takes an option `stream` parameter, which allows events to be streamed as the command executes, instead of waiting until it completes (thanks, @natpatchara-w!).
+- [dagster-graphql] The `DagsterGraphQLClient` now supports an `auth` keyword argument, which is passed to the underlying `RequestsHTTPTransport` constructor.
+- [ui] The asset selection syntax input now allows slashes "/" in the freeform search.
+- [ui] The backfill pages now show summary information on all tabs for easier backfill monitoring.
+
+### Bugfixes
+
+- Fixed issue with `AutomationCondition.newly_requested()` which could cause it to fail when nested within `AutomationCondition.any_deps_match()` or `AutomationCondition.all_deps_match()`.
+- Fixed a bug with `AutomationCondition.replace()` that would cause it to not effect `AutomationCondition.since()` conditions.
+- Fixed a bug with several integrations that caused data fetched from external APIs not to be properly cached during code server initialization, leading to unnecessary API calls in run and step worker processes. This affected: `dagster-airbyte`, `dagster-dlift`, `dagster-dbt`, `dagster-fivetran`, `dagster-looker`, `dagster-powerbi`, `dagster-sigma`, and `dagster-tableau`.
+- Fixed a bug that could cause invalid circular dependency errors when using asset checks with additional dependencies.
+- [dagster-fivetran] Loading assets for a Fivetran workspace containing incomplete and broken connectors now no longer raises an exception.
+- [ui] Fixed the colorblind (no red/green) theme behavior when in dark mode.
+- [ui] The Asset > Partitions page no longer displays an error in some cases when creating dynamic partitions.
+- [ui] The Launch and Report Events buttons no longer error if you click it immediately after creating a new dynamic partition.
+
+### dg & Components (Preview)
+
+- `__pycache__` files are no longer included in the output of `dg list component` (thanks @stevenayers!)
+- When resolving the `deps` of an `AssetSpec` from yaml, multi-part asset keys are now correctly parsed (thanks @stevenayers!)
+- The entrypoint group for dg projects has been renamed from `dagster.components` to `dagster_dg.library`
+- `dg check yaml` is now run by default before `dg dev` and `dg check defs`
+
+## 1.10.5 (core) / 0.26.5 (libraries)
+
+### New
+
+- `async def yield_for_execution` is now supported on `ConfigurableResource`. An `event_loop` argument has been added to context builders to support direct execution.
+- `dagster dev` deduplicates stacktraces when code locations fail to load, and will by default truncate them to highlight only user code frames.
+- Improved error message experience for resources expecting an env var which was not provided.
+- [ui] An updated asset selection syntax is now available in the asset graph, insights, and alerts. The new syntax allows combining logical operators, lineage operators, and attribute filters.
+- [dagster-polars] The minimal compatible `deltalake` version has been bumped to `0.25.0`; the `PolarsDeltaIOManager` is now using the `rust` engine for writing DeltaLake tables by default.
+
+### Bugfixes
+
+- Fixed a bug with AutomationCondition.replace() that would cause it to not effect `AutomationCondition.since()` conditions.
+- Fixed a bug that could cause invalid circular dependency errors when using asset checks with additional dependencies.
+- Fixed an issue in Dagster OSS where failed runs of multiple partitions didn't update those partitions as failed in the Dagster UI or trigger failure automation conditions.
+- Fixed an issue where `dagster dev` would fail to load code that took more than 45 seconds to import unless the `--use-legacy-code-server-behavior` flag was used.
+- [dagster-airbyte] Fixed an issue that caused the group name of assets created using `build_airbyte_assets_definitions` function to error when attempting to modify the default group name.
+- [dagster-fivetran] Fixed an issue that caused the group name of assets created using `build_fivetran_assets_definitions` function to error when attempting to modify the default group name.
+
+## 1.10.4 (core) / 0.26.4 (libraries)
+
+### New
+
+- [ui] The asset overview tab for a partitioned asset now shows metadata and schema of the most recent materialization, not today's partition.
+- [ui] In run logs, asset materialization and observation events now show the output partition as well as the asset key.
+- [ui] The backfills view has moved to Runs > Backfills and is no longer available on the Overview tab.
+- [ui] Pool event information from a run now links to the pool configuration page.
+- Added support for passing `tags` to the created `RunRequest` when using `build_sensor_for_freshness_checks()`.
+- [dagster-gcp] The `PickledObjectGCSIOManager` now replaces the underlying blob when the same asset is materialized multiple times, instead of deleting and then re-uploading the blob.
+- [docs] Added docs covering run-scoped op concurrency.
+- [dagster-fivetran] Fivetran connectors fetched in Dagster can now be filtered and selected using the ConnectorSelectorFn.
+
+### Bugfixes
+
+- Fixed a bug where if a run was deleted while the re-execution system was determining whether the run should be retried an error was raised. Now, if a run is deleted while the re-execution system is determining whether the run should be retried, the run will not be retried.
+- [ui] Fixed an issue where assets with automation conditions wouldn't show the jobs/sensors/schedules targeting them.
+- [ui] Steps properly transition to failed in the Run gantt chart when resource initialization fails.
+
+## 1.10.3 (core) / 0.26.3 (libraries)
+
+### New
+
+- Added links from pool info in run event logs to the respective pool configuration pages.
+- Added queued run information on the pool info page, even if the pool granularity is set to `run`.
+- [ui] Added information about asset partitions that fail to materialize due to run cancellations to the asset partition detail page.
+- [ui] Added two new themes for users with reduced sensitivity to red and green light.
+- [ui] Added Not Diamond icon for asset `kinds` tag. (Thanks [@dragos-pop](https://github.com/dragos-pop)!)
+- [ui] Added Weaviate icon for asset `kinds` tag. (Thanks [@jjyeo](https://github.com/jjyeo)!)
+- [ui] Made Alerts page visible to users with Viewer roles.
+- [dagster-postgres] Removed the cap on `PostgresEventLogStorage` `QueuePool` by setting [`max_overflow`](https://docs.sqlalchemy.org/en/20/core/engines.html#sqlalchemy.create_engine.params.max_overflow) to `-1`. (Thanks [@axelwas](https://github.com/axelwas)!)
+
+### Bugfixes
+
+- Fixed a bug where a sensor emitting multiple `RunRequests` with the same run key within a single tick would cause two runs with the same key to be executed. Now, only the first run will be executed. (Thanks [@Gw1p](https://github.com/Gw1p)!)
+- Fixed a bug where run step selections were not affecting which pools limit a given run.
+- Fixed an issue where seeding the random number generator during code import or when initializing a resource could cause every step to write to the same stdout or stderr key.
+- [ui] Fixed an issue where certain jobs weren't showing the assets they targeted.
+- Asset backfills will now move into a `CANCELED` state instead of a `FAILURE` state when not every requested partition has been marked as materialized or failed by the backfill.
+- [dagster-dbt] Fixed a bug breaking `packaged_project_dir` since supporting `profiles_dir` in `DbtProject`.
+- Fixed an issue with `DbIOManagers` being unable to process subclasses of handled types.
+- [ui] Preserved asset selection filters when navigating folders in the asset catalog.
+- [ui] Corrected PostgreSQL SVG icon for asset `kinds` tag. (Thanks [@dragos-pop](https://github.com/dragos-pop)!)
+- [ui] Fixed an issue that caused Markdown with code blocks in languages not supported for syntax highlighting to crash the page.
+- Fixed an issue where asset backfills included failed partitions in the in-progress list in logging output.
+
+### Documentation
+
+- Fixed broken image links in quickstart examples. (Thanks [@stevenayers](https://github.com/stevenayers)!)
+- [dagster-dbt] Made several fixes to the "Using dbt with Dagster" page. (Thanks [@jjyeo](https://github.com/jjyeo)!)
+- Fixed broken link in defining-assets.md. (Thanks [@Exlll](https://github.com/Exlll)!)
+- Fixed link in CONTRIBUTING.md leading to a 404. (Thanks [@Exlll](https://github.com/Exlll)!)
+- Fixed typo in managing-code-locations-with-definitions.md. (Thanks [@kgeis](https://github.com/kgeis)!)
+- Fixed typo in asset-versioning-and-caching.md. (Thanks [@petrusek](https://github.com/petrusek)!)
+
+### Dagster Plus
+
+- [ui] Enabled setting long-running job alerts in minutes instead of hours.
+- [dagster-insights] Fix links to branch deployments in the deployment list UI.
+- [dagster-insights] Adjusted the way batching runs from the `create_snowflake_insights_asset_and_schedule` sensor using the `schedule_batch_size_hrs` parameter works to yield a single partition range run instead of individual runs per partition.
+
 ## 1.10.2 (core) / 0.26.2 (libraries)
 
 ### New
 
 - Turned on run-blocking for concurrency keys / pools by default. For op granularity, runs are dequeued if there exists at least one op that can execute once the run has started. For run granularity, runs are dequeued if all pools have available slots.
 - Performance improvements for backfills of large partition sets.
-- The prefix of temporary directories created when running a temporary Dagster instance (as with `dagster dev`) has been changed from `tmp` to `.tmp_dagster_home_`. Thanks [@chazmo03](https://github.com/chazmo03)!
+- The prefix of temporary directories created when running a temporary Dagster instance (as with `dagster dev`) has been changed from `tmp` to `.tmp_dagster_home_`. (Thanks [@chazmo03](https://github.com/chazmo03)!)
 - Added sanitation checks on valid pool names.
 - [dagster-aws] Added sample Terraform modules for Dagster deployment on AWS ECS.
 - [dagster-dbt] Added pool support for dbt integrations.
 - [dagster-dlt] Added pool support for dlt integrations.
 - [dagster-sling] Added pool support for sling integrations.
-- [dagster-aws] Added AWS RDSResource. Thanks [@shimon-cherrypick](https://github.com/shimon-cherrypick)!
-- [dagster-mysql] Added MySQLResource. Thanks [@shimon-cherrypick](https://github.com/shimon-cherrypick)!
-- [dagster-azure] Added Azure Blob Storage Resource. Thanks [@shimon-cherrypick](https://github.com/shimon-cherrypick)!
+- [dagster-aws] Added AWS RDSResource. (Thanks [@shimon-cherrypick](https://github.com/shimon-cherrypick)!)
+- [dagster-mysql] Added MySQLResource. (Thanks [@shimon-cherrypick](https://github.com/shimon-cherrypick)!)
+- [dagster-azure] Added Azure Blob Storage Resource. (Thanks [@shimon-cherrypick](https://github.com/shimon-cherrypick)!)
 - [ui] Expanding/collapsing groups in the Asset Graph will no longer reset your zoom.
 - [ui] Changed the queue criteria dialog to reference pools instead of concurrency keys.
 - [ui] The Instance Backfills page is being removed in the upcoming March 6 release in favor of the new Runs > Backfills view.

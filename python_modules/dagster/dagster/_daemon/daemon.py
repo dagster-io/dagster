@@ -19,6 +19,7 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
+from dagster._core.remote_representation.external import RemoteSensor
 from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
 from dagster._core.utils import InheritContextThreadPoolExecutor
@@ -271,6 +272,11 @@ class SchedulerDaemon(DagsterDaemon):
     def daemon_type(cls) -> str:
         return "SCHEDULER"
 
+    def scheduler_delay_instrumentation(
+        self, scheduler_id: str, next_iteration_timestamp: float, now_timestamp: float
+    ) -> None:
+        pass
+
     def core_loop(
         self,
         workspace_process_context: IWorkspaceProcessContext,
@@ -286,6 +292,7 @@ class SchedulerDaemon(DagsterDaemon):
             scheduler.max_catchup_runs,
             scheduler.max_tick_retries,
             shutdown_event,
+            self.scheduler_delay_instrumentation,
         )
 
 
@@ -312,6 +319,11 @@ class SensorDaemon(DagsterDaemon):
                     )
                 )
 
+    def instrument_elapsed(
+        self, sensor: RemoteSensor, elapsed: Optional[float], min_interval: int
+    ) -> None:
+        pass
+
     @classmethod
     def daemon_type(cls) -> str:
         return "SENSOR"
@@ -331,6 +343,7 @@ class SensorDaemon(DagsterDaemon):
             shutdown_event,
             threadpool_executor=self._threadpool_executor,
             submit_threadpool_executor=self._submit_threadpool_executor,
+            instrument_elapsed=self.instrument_elapsed,
         )
 
 

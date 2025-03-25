@@ -3,8 +3,9 @@ cd jaffle-platform && tree
 .
 ├── jaffle_platform
 │   ├── __init__.py
-│   ├── components
 │   ├── definitions.py
+│   ├── defs
+│   │   └── __init__.py
 │   └── lib
 │       └── __init__.py
 ├── jaffle_platform.egg-info
@@ -19,4 +20,4 @@ cd jaffle-platform && tree
 ├── pyproject.toml
 └── uv.lock
 
-6 directories, 12 files
+6 directories, 13 files

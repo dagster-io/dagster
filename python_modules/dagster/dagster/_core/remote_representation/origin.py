@@ -423,11 +423,12 @@ class RemoteRepositoryOrigin(
         return create_snapshot_id(self)
 
     def get_selector_id(self) -> str:
-        return create_snapshot_id(
-            RepositorySelector(
-                location_name=self.code_location_origin.location_name,
-                repository_name=self.repository_name,
-            )
+        return create_snapshot_id(self.get_selector())
+
+    def get_selector(self) -> RepositorySelector:
+        return RepositorySelector(
+            location_name=self.code_location_origin.location_name,
+            repository_name=self.repository_name,
         )
 
     def get_label(self) -> str:

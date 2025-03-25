@@ -39,6 +39,7 @@ export function useResumeBackfill(backfill: BackfillActionsBackfillFragment, ref
         icon: 'error',
         intent: 'danger',
         action: {
+          type: 'button',
           text: 'View error',
           onClick: () =>
             showCustomAlert({

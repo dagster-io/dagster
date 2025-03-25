@@ -3,11 +3,9 @@ title: 'Customizing components'
 sidebar_position: 400
 ---
 
-:::info
+import Preview from '../../../../partials/\_Preview.md';
 
-This feature is still in development and might change in patch releases. It’s not production ready, and the documentation may also evolve. Stay tuned for updates.
-
-:::
+<Preview />
 
 You can customize the behavior of a component beyond what is available in the `component.yaml` file.
 
@@ -20,7 +18,7 @@ You can then update the `type:` field in your `component.yaml` file to reference
 ```yaml
 type: .custom_subclass
 
-params:
+attributes:
     ...
 ```
 
@@ -28,7 +26,7 @@ params:
 
 By convention, most library components have an `execute()` method that defines the core runtime behavior of the component. This can be overridden by subclasses of the component to customize this behavior.
 
-For example, we can create a subclass of the `SlingReplicationCollectioncomponent` that adds a debug log message during execution:
+For example, we can create a subclass of the `SlingReplicationCollectionComponent` that adds a debug log message during execution:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/custom-subclass/debug-mode.py" language="python" />
 
@@ -50,7 +48,7 @@ This can then be used in your `component.yaml` file:
 ```yaml
 component_type: .custom_subclass
 
-params:
+attributes:
     ...
     transforms:
         - attributes:

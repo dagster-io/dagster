@@ -29,7 +29,7 @@ from dbt.config.utils import parse_cli_vars
 from dbt.flags import get_flags, set_from_args
 from dbt.version import __version__ as dbt_version
 from packaging import version
-from pydantic import Field, model_validator, validator
+from pydantic import Field, field_validator, model_validator
 
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
@@ -259,7 +259,7 @@ class DbtCliResource(ConfigurableResource):
         if not path.joinpath(file_name).exists():
             raise ValueError(error_message)
 
-    @validator("project_dir", "profiles_dir", "dbt_executable", pre=True)
+    @field_validator("project_dir", "profiles_dir", "dbt_executable", mode="before")
     def convert_path_to_str(cls, v: Any) -> Any:
         """Validate that the path is converted to a string."""
         if isinstance(v, Path):
@@ -274,7 +274,7 @@ class DbtCliResource(ConfigurableResource):
 
         return v
 
-    @validator("project_dir")
+    @field_validator("project_dir")
     def validate_project_dir(cls, project_dir: str) -> str:
         resolved_project_dir = cls._validate_absolute_path_exists(project_dir)
 
@@ -289,7 +289,7 @@ class DbtCliResource(ConfigurableResource):
 
         return os.fspath(resolved_project_dir)
 
-    @validator("profiles_dir")
+    @field_validator("profiles_dir")
     def validate_profiles_dir(cls, profiles_dir: Optional[str]) -> Optional[str]:
         if profiles_dir is None:
             return None
@@ -307,7 +307,7 @@ class DbtCliResource(ConfigurableResource):
 
         return os.fspath(resolved_profiles_dir)
 
-    @validator("dbt_executable")
+    @field_validator("dbt_executable")
     def validate_dbt_executable(cls, dbt_executable: str) -> str:
         resolved_dbt_executable = shutil.which(dbt_executable)
         if not resolved_dbt_executable:
@@ -330,7 +330,7 @@ class DbtCliResource(ConfigurableResource):
 
         return values
 
-    @validator("state_path")
+    @field_validator("state_path")
     def validate_state_path(cls, state_path: Optional[str]) -> Optional[str]:
         if state_path is None:
             return None

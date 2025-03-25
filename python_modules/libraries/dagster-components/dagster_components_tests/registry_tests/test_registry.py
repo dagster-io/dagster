@@ -1,4 +1,3 @@
-import json
 import os
 import subprocess
 import tempfile
@@ -9,8 +8,15 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from dagster._utils import pushd
+from dagster_components import Component
+from dagster_components.core.component import (
+    discover_entry_point_library_objects,
+    get_library_object_snap,
+)
 from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_dg.utils import get_venv_executable
+from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.serdes.serdes import deserialize_value
 
 ensure_dagster_components_tests_import()
 
@@ -36,21 +42,12 @@ def _temp_venv(install_args: Sequence[str]) -> Iterator[Path]:
         yield venv_dir
 
 
-COMPONENT_PRINT_SCRIPT = """
-from dagster_components import ComponentTypeRegistry
-
-registry = ComponentTypeRegistry.from_entry_point_discovery()
-for component_key in list(registry.keys()):
-    print(component_key.to_typename())
-"""
-
-
 def _get_component_print_script_result(venv_root: Path) -> subprocess.CompletedProcess:
     assert venv_root.exists()
     dagster_components_path = get_venv_executable(venv_root, "dagster-components")
     assert dagster_components_path.exists()
     result = subprocess.run(
-        [str(dagster_components_path), "list", "component-types"],
+        [str(dagster_components_path), "list", "library"],
         capture_output=True,
         text=True,
         check=False,
@@ -60,7 +57,7 @@ def _get_component_print_script_result(venv_root: Path) -> subprocess.CompletedP
 
 def _get_component_types_in_python_environment(venv_root: Path) -> Sequence[str]:
     result = _get_component_print_script_result(venv_root)
-    return list(json.loads(result.stdout).keys())
+    return [obj.key.to_typename() for obj in deserialize_value(result.stdout, list)]
 
 
 def _find_repo_root():
@@ -74,10 +71,11 @@ def _find_repo_root():
 
 def _generate_test_component_source(number: int) -> str:
     return textwrap.dedent(f"""
-    from dagster_components import Component, registered_component_type
-    @registered_component_type(name="test_component_{number}")
+    from dagster_components import Component
+
     class TestComponent{number}(Component):
-        pass
+        def build_defs(self, context):
+            pass
     """)
 
 
@@ -99,7 +97,7 @@ def _get_editable_package_root(pkg_name: str) -> str:
 
 def test_components_from_dagster():
     common_deps: list[str] = []
-    for pkg_name in ["dagster", "dagster-pipes"]:
+    for pkg_name in ["dagster", "dagster-pipes", "dagster-shared"]:
         common_deps.extend(["-e", _get_editable_package_root(pkg_name)])
 
     components_root = _get_editable_package_root("dagster-components")
@@ -109,35 +107,49 @@ def test_components_from_dagster():
     # No extras
     with _temp_venv([*common_deps, "-e", components_root]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "pipes_subprocess_script_collection@dagster_components" in component_types
-        assert "dbt_project@dagster_components" not in component_types
-        assert "sling_replication_collection@dagster_components" not in component_types
+        assert (
+            "dagster_components.dagster.PipesSubprocessScriptCollectionComponent" in component_types
+        )
+        assert "dagster_components.dagster_dbt.DbtProjectComponent" not in component_types
+        assert (
+            "dagster_components.dagster_sling.SlingReplicationCollectionComponent"
+            not in component_types
+        )
 
     with _temp_venv(
         [*common_deps, "-e", f"{components_root}[dbt]", "-e", dbt_root]
     ) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "pipes_subprocess_script_collection@dagster_components" in component_types
-        assert "dbt_project@dagster_components" in component_types
-        assert "sling_replication_collection@dagster_components" not in component_types
+        assert (
+            "dagster_components.dagster.PipesSubprocessScriptCollectionComponent" in component_types
+        )
+        assert "dagster_components.dagster_dbt.DbtProjectComponent" in component_types
+        assert (
+            "dagster_components.dagster_sling.SlingReplicationCollectionComponent"
+            not in component_types
+        )
 
     with _temp_venv(
         [*common_deps, "-e", f"{components_root}[sling]", "-e", sling_root]
     ) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "pipes_subprocess_script_collection@dagster_components" in component_types
-        assert "dbt_project@dagster_components" not in component_types
-        assert "sling_replication_collection@dagster_components" in component_types
+        assert (
+            "dagster_components.dagster.PipesSubprocessScriptCollectionComponent" in component_types
+        )
+        assert "dagster_components.dagster_dbt.DbtProjectComponent" not in component_types
+        assert (
+            "dagster_components.dagster_sling.SlingReplicationCollectionComponent"
+            in component_types
+        )
 
 
 def test_all_dagster_components_have_defined_summary():
-    from dagster_components import ComponentTypeRegistry
-
-    registry = ComponentTypeRegistry.from_entry_point_discovery()
+    registry = discover_entry_point_library_objects()
     for component_name, component_type in registry.items():
-        assert component_type.get_metadata()[
-            "summary"
-        ], f"Component {component_name} has no summary defined"
+        if isinstance(component_type, type) and issubclass(component_type, Component):
+            assert get_library_object_snap(
+                LibraryObjectKey("a", "a"), component_type
+            ).summary, f"Component {component_name} has no summary defined"
 
 
 # Our pyproject.toml installs local dagster components
@@ -158,7 +170,7 @@ dependencies = [
 ]
 
 [project.entry-points]
-"dagster.components" = { dagster_foo = "dagster_foo.lib"}
+"dagster_dg.library" = { dagster_foo = "dagster_foo.lib"}
 """
 
 DAGSTER_FOO_LIB_ROOT = f"""
@@ -199,6 +211,8 @@ def isolated_venv_with_component_lib_dagster_foo(
                 "-e",
                 _get_editable_package_root("dagster-pipes"),
                 "-e",
+                _get_editable_package_root("dagster-shared"),
+                "-e",
                 "dagster-foo",
             ]
 
@@ -209,8 +223,8 @@ def isolated_venv_with_component_lib_dagster_foo(
 def test_components_from_third_party_lib():
     with isolated_venv_with_component_lib_dagster_foo() as venv_root:
         component_types = _get_component_types_in_python_environment(venv_root)
-        assert "test_component_1@dagster_foo" in component_types
-        assert "test_component_2@dagster_foo" in component_types
+        assert "dagster_foo.lib.TestComponent1" in component_types
+        assert "dagster_foo.lib.TestComponent2" in component_types
 
 
 def test_bad_entry_point_error_message():
@@ -220,13 +234,13 @@ def test_bad_entry_point_error_message():
         with modify_toml(Path("dagster-foo/pyproject.toml")) as toml:
             set_toml_value(
                 toml,
-                ("project", "entry-points", "dagster.components", "dagster_foo"),
+                ("project", "entry-points", "dagster_dg.library", "dagster_foo"),
                 "fake.module",
             )
 
     with isolated_venv_with_component_lib_dagster_foo(pre_install_hook) as venv_root:
         result = _get_component_print_script_result(venv_root)
         assert (
-            "Error loading entry point `dagster_foo` in group `dagster.components`" in result.stderr
+            "Error loading entry point `dagster_foo` in group `dagster_dg.library`" in result.stderr
         )
         assert result.returncode != 0

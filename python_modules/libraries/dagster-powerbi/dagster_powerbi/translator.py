@@ -15,8 +15,9 @@ from dagster._core.definitions.metadata.metadata_set import NamespacedMetadataSe
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet
+from dagster._core.definitions.utils import is_valid_asset_owner
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
+from dagster_shared.serdes import whitelist_for_serdes
 
 
 def _get_last_filepath_component(path: str) -> str:
@@ -266,7 +267,7 @@ class DagsterPowerBITranslator:
             metadata={**PowerBIMetadataSet(web_url=MetadataValue.url(url) if url else None)},
             tags={**PowerBITagSet(asset_type="report")},
             kinds={"powerbi", "report"},
-            owners=[owner] if owner else None,
+            owners=[owner] if owner and is_valid_asset_owner(owner) else None,
         )
 
     @deprecated(
@@ -327,7 +328,7 @@ class DagsterPowerBITranslator:
             },
             tags={**PowerBITagSet(asset_type="semantic_model")},
             kinds={"powerbi", "semantic model"},
-            owners=[owner] if owner else None,
+            owners=[owner] if owner and is_valid_asset_owner(owner) else None,
         )
 
     @deprecated(

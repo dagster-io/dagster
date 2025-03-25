@@ -21,7 +21,8 @@ from dagster_gcp import BigQueryIOManager
 from dagster_gcp_pandas import BigQueryPandasTypeHandler
 from dagster_gcp_pyspark import BigQueryPySparkTypeHandler
 
-from dagster import DbTypeHandler, Definitions
+from dagster import Definitions
+from dagster._core.storage.db_io_manager import DbTypeHandler
 
 
 class MyBigQueryIOManager(BigQueryIOManager):

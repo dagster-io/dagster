@@ -72,6 +72,15 @@ export const AutomationDetailsSection = ({
         <SectionSkeleton />
       ),
     },
+    {
+      label: 'Automation condition',
+      children: assetNode?.automationCondition?.label ? (
+        <EvaluationUserLabel
+          userLabel={assetNode?.automationCondition.label}
+          expandedLabel={assetNode?.automationCondition.expandedLabel}
+        />
+      ) : null,
+    },
   ];
 
   if (
@@ -85,15 +94,6 @@ export const AutomationDetailsSection = ({
         learnMoreLink="https://docs.dagster.io/concepts/automation#automation"
       />
     );
-  } else {
-    if (assetNode?.automationCondition && assetNode?.automationCondition.label) {
-      return (
-        <EvaluationUserLabel
-          userLabel={assetNode?.automationCondition.label}
-          expandedLabel={assetNode?.automationCondition.expandedLabel}
-        />
-      );
-    }
   }
 
   return (

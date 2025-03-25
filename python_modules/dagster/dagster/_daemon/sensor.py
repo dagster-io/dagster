@@ -4,16 +4,16 @@ import logging
 import sys
 import threading
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager
 from types import TracebackType
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
 
+import dagster_shared.seven as seven
 from typing_extensions import Self
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -80,6 +80,16 @@ MAX_TIME_TO_RESUME_TICK_SECONDS = 60 * 60 * 24
 MAX_FAILURE_RESUBMISSION_RETRIES = 1
 
 FINISHED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILURE]
+
+
+# sensor, elapsed, min_interval
+ElapsedInstrumentation = Callable[[RemoteSensor, Optional[float], int], None]
+
+
+def default_elapsed_instrumentation(
+    sensor: RemoteSensor, elapsed: Optional[float], min_interval: int
+) -> None:
+    pass
 
 
 class DagsterSensorDaemonError(DagsterError):
@@ -338,6 +348,7 @@ def execute_sensor_iteration_loop(
     until: Optional[float] = None,
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    instrument_elapsed: ElapsedInstrumentation = default_elapsed_instrumentation,
 ) -> "DaemonIterator":
     """Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
@@ -362,6 +373,7 @@ def execute_sensor_iteration_loop(
                 threadpool_executor=threadpool_executor,
                 submit_threadpool_executor=submit_threadpool_executor,
                 sensor_tick_futures=sensor_tick_futures,
+                instrument_elapsed=instrument_elapsed,
             )
         except Exception:
             error_info = DaemonErrorCapture.process_exception(
@@ -389,6 +401,7 @@ def execute_sensor_iteration(
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
     sensor_tick_futures: Optional[dict[str, Future]] = None,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
+    instrument_elapsed: ElapsedInstrumentation = default_elapsed_instrumentation,
 ):
     instance = workspace_process_context.instance
 
@@ -444,6 +457,9 @@ def execute_sensor_iteration(
             instance.add_instigator_state(sensor_state)
         elif is_under_min_interval(sensor_state, sensor):
             continue
+
+        elapsed = get_elapsed(sensor_state)
+        instrument_elapsed(sensor, elapsed, sensor.min_interval_seconds)
 
         if threadpool_executor:
             if sensor_tick_futures is None:
@@ -1233,28 +1249,35 @@ def _submit_backfill_request(
 
 
 def is_under_min_interval(state: InstigatorState, remote_sensor: RemoteSensor) -> bool:
-    instigator_data = _sensor_instigator_data(state)
-    if not instigator_data:
-        return False
-
-    if not instigator_data.last_tick_start_timestamp and not instigator_data.last_tick_timestamp:
+    elapsed = get_elapsed(state)
+    if elapsed is None:
         return False
 
     if not remote_sensor.min_interval_seconds:
         return False
 
-    elapsed = get_current_timestamp() - max(
+    return elapsed < remote_sensor.min_interval_seconds
+
+
+def get_elapsed(state: InstigatorState) -> Optional[float]:
+    instigator_data = _sensor_instigator_data(state)
+    if not instigator_data:
+        return None
+
+    if not instigator_data.last_tick_start_timestamp and not instigator_data.last_tick_timestamp:
+        return None
+
+    return get_current_timestamp() - max(
         instigator_data.last_tick_timestamp or 0,
         instigator_data.last_tick_start_timestamp or 0,
     )
-    return elapsed < remote_sensor.min_interval_seconds
 
 
 def _fetch_existing_runs(
     instance: DagsterInstance,
     remote_sensor: RemoteSensor,
     run_requests: Sequence[RunRequest],
-):
+) -> dict[str, DagsterRun]:
     run_keys = [run_request.run_key for run_request in run_requests if run_request.run_key]
 
     if not run_keys:
@@ -1263,7 +1286,7 @@ def _fetch_existing_runs(
     # fetch runs from the DB with only the run key tag
     # note: while possible to filter more at DB level with tags - it is avoided here due to observed
     # perf problems
-    runs_with_run_keys = []
+    runs_with_run_keys: list[DagsterRun] = []
     for run_key in run_keys:
         # do serial fetching, which has better perf than a single query with an IN clause, due to
         # how the query planner does the runs/run_tags join
@@ -1280,16 +1303,18 @@ def _fetch_existing_runs(
         # otherwise prevent the same named sensor across repos from effecting each other
         elif (
             run.remote_job_origin is not None
-            and run.remote_job_origin.repository_origin.get_selector_id()
-            == remote_sensor.get_remote_origin().repository_origin.get_selector_id()
+            and run.remote_job_origin.repository_origin.get_selector()
+            == remote_sensor.get_remote_origin().repository_origin.get_selector()
             and run.tags.get(SENSOR_NAME_TAG) == remote_sensor.name
         ):
             valid_runs.append(run)
 
-    existing_runs = {}
+    existing_runs: dict[str, DagsterRun] = {}
     for run in valid_runs:
         tags = run.tags or {}
-        run_key = tags.get(RUN_KEY_TAG)
+        # Guaranteed to have non-null run key because the source set of runs is `runs_with_run_keys`
+        # above.
+        run_key = check.not_none(tags.get(RUN_KEY_TAG))
         existing_runs[run_key] = run
 
     return existing_runs
@@ -1304,9 +1329,10 @@ def _get_or_create_sensor_run(
     run_id: str,
     run_request: RunRequest,
     target_data: TargetSnap,
-    existing_runs_by_key: Mapping[Optional[str], DagsterRun],
+    existing_runs_by_key: dict[str, DagsterRun],
 ) -> Union[DagsterRun, SkippedSensorRun]:
-    run = existing_runs_by_key.get(run_request.run_key) or instance.get_run_by_id(run_id)
+    run_key = run_request.run_key
+    run = (run_key and existing_runs_by_key.get(run_key)) or instance.get_run_by_id(run_id)
 
     if run:
         if run.status != DagsterRunStatus.NOT_STARTED:
@@ -1316,15 +1342,20 @@ def _get_or_create_sensor_run(
         else:
             logger.info(
                 f"Run {run.run_id} already created with the run key "
-                f"`{run_request.run_key}` for {remote_sensor.name}"
+                f"`{run_key}` for {remote_sensor.name}"
             )
             return run
 
     logger.info(f"Creating new run for {remote_sensor.name}")
 
-    return _create_sensor_run(
+    run = _create_sensor_run(
         instance, code_location, remote_sensor, remote_job, run_id, run_request, target_data
     )
+
+    # Make sure that runs from the same tick are also unique by run key
+    if run_key:
+        existing_runs_by_key[run_key] = run
+    return run
 
 
 def _create_sensor_run(

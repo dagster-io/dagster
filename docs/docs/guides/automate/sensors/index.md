@@ -29,7 +29,7 @@ An alternative to polling with sensors is to push events to Dagster using the [D
 To follow the steps in this guide, you'll need:
 
 - Familiarity with [assets](/guides/build/assets/)
-- Familiarity with [jobs](/guides/build/assets/asset-jobs)
+- Familiarity with [jobs](/guides/build/jobs/)
 </details>
 
 ## Basic sensor

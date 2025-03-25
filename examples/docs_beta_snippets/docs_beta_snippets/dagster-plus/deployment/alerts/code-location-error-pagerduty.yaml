@@ -1,9 +1,10 @@
 # alert_policies.yaml
 
 alert_policies:
-  description: Sends a PagerDuty alert when a Hybrid agent becomes unavailable.
+  description: Sends a PagerDuty alert when a code location fails to load.
   event_types:
-  - AGENT_UNAVAILABLE
+  - CODE_LOCATION_ERROR
   name: code-location-error-pagerduty
   notification_service:
-    integration_key: <pagerduty_integration_key>
+    pagerduty:
+      integration_key: <pagerduty_integration_key>

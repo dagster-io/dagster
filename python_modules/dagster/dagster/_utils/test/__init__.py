@@ -1,6 +1,7 @@
 import os
 import shutil
 import tempfile
+from asyncio import new_event_loop
 from collections import defaultdict
 from collections.abc import Mapping
 from contextlib import contextmanager
@@ -93,6 +94,7 @@ def create_test_pipeline_execution_context(
         ),
         log_manager=log_manager,
         output_capture=None,
+        event_loop=new_event_loop(),
     )
 
 

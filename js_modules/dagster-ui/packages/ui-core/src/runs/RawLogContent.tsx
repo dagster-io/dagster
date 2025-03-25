@@ -94,7 +94,7 @@ export const RawLogContent = React.memo((props: Props) => {
           <RelativeContainer>
             <LogContent
               isSelected={true}
-              content={logData}
+              content={content}
               onScrollUp={onScrollUp}
               onScrollDown={hideWarning}
               ref={contentContainer}

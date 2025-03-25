@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from mypy_boto3_ecs.client import ECSClient
     from mypy_boto3_ecs.type_defs import (
         DescribeTasksResponseTypeDef,
-        RunTaskRequestRequestTypeDef,
+        RunTaskRequestTypeDef,
         RunTaskResponseTypeDef,
     )
 
@@ -63,7 +63,7 @@ class PipesECSClient(PipesClient, TreatAsResourceParam):
         self,
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
-        run_task_params: "RunTaskRequestRequestTypeDef",
+        run_task_params: "RunTaskRequestTypeDef",
         extras: Optional[dict[str, Any]] = None,
         pipes_container_name: Optional[str] = None,
         waiter_config: Optional[WaiterConfig] = None,

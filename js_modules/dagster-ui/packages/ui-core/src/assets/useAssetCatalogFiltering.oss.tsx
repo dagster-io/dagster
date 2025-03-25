@@ -33,12 +33,12 @@ export function useAssetCatalogFiltering<
   assets = EMPTY_ARRAY,
   includeRepos = true,
   loading = false,
-  isEnabled = true,
+  enabled = true,
 }: {
   assets: T[] | undefined;
   includeRepos?: boolean;
   loading?: boolean;
-  isEnabled?: boolean;
+  enabled?: boolean;
 }) {
   const {
     filters,
@@ -51,7 +51,7 @@ export function useAssetCatalogFiltering<
     setCodeLocations,
     setStaleStatuses,
     setSelectAllFilters,
-  } = useAssetDefinitionFilterState({isEnabled});
+  } = useAssetDefinitionFilterState({isEnabled: enabled});
 
   const allAssetGroupOptions = useAssetGroupSelectorsForAssets(assets);
   const allAssetOwners = useAssetOwnersForAssets(assets);
@@ -157,7 +157,7 @@ export function useAssetCatalogFiltering<
      * This effect handles syncing the `selectAllFilters` query param state with the actual filtering state.
      * eg: If all of the items are selected then we include that key, otherwise we remove it.
      */
-    if (loading || !isEnabled) {
+    if (loading || !enabled) {
       return;
     }
     if (!didWaitAfterLoading) {
@@ -207,7 +207,7 @@ export function useAssetCatalogFiltering<
     loading,
     tags,
     setSelectAllFilters,
-    isEnabled,
+    enabled,
   ]);
 
   const filteredAssets = React.useMemo(

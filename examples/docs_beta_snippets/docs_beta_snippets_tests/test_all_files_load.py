@@ -8,6 +8,12 @@ import dagster as dg
 snippets_folder = dg.file_relative_path(__file__, "../docs_beta_snippets/")
 
 EXCLUDED_FILES = {
+    # TEMPORARY: dagster-cloud environment is weird and confusing
+    f"{snippets_folder}/guides/data-assets/quality-testing/freshness-checks/anomaly-detection.py",
+    f"{snippets_folder}/guides/data-modeling/metadata/plus-references.py",
+    f"{snippets_folder}/dagster-plus/insights/snowflake/snowflake-dbt-asset-insights.py",
+    f"{snippets_folder}/dagster-plus/insights/snowflake/snowflake-resource-insights.py",
+    f"{snippets_folder}/dagster-plus/insights/google-bigquery/bigquery-resource-insights.py",
     # see DOC-375
     f"{snippets_folder}/guides/data-modeling/asset-factories/python-asset-factory.py",
     f"{snippets_folder}/guides/data-modeling/asset-factories/simple-yaml-asset-factory.py",
@@ -30,6 +36,12 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/components/migrating-definitions/5-elt-nested-definitions.py",
     f"{snippets_folder}/guides/components/migrating-definitions/7-definitions-after.py",
     f"{snippets_folder}/guides/components/migrating-definitions/10-definitions-after-all.py",
+    # there are no defs defined in the snippets and so it would fail to load
+    f"{snippets_folder}/guides/dg/migrating-definitions/2-definitions-before.py",
+    f"{snippets_folder}/guides/dg/migrating-definitions/4-definitions-after.py",
+    f"{snippets_folder}/guides/dg/migrating-definitions/7-definitions-after-all.py",
+    f"{snippets_folder}/guides/dg/migrating-project/6-initial-definitions.py",
+    f"{snippets_folder}/guides/dg/migrating-project/7-updated-definitions.py",
 }
 EXCLUDED_DIRS = {
     # integrations are excluded because they have external dependencies that are easier to manage in

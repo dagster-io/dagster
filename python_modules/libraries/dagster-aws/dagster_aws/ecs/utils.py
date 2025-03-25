@@ -149,4 +149,10 @@ def is_transient_task_stopped_reason(stopped_reason: str) -> bool:
     ):
         return True
 
+    if (
+        "Unexpected EC2 error while attempting to Create Network Interface" in stopped_reason
+        and "AuthFailure" in stopped_reason
+    ):
+        return True
+
     return False

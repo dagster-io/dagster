@@ -1,9 +1,9 @@
-import asyncio
 from collections.abc import Mapping, Sequence
 from typing import Any, Optional
 
 import dlt
 import duckdb
+import pytest
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -11,8 +11,12 @@ from dagster import (
     AutoMaterializePolicy,
     AutoMaterializeRule,
     AutomationCondition,
+    BackfillPolicy,
+    DailyPartitionsDefinition,
     Definitions,
     MonthlyPartitionsDefinition,
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
 )
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import (
@@ -525,21 +529,17 @@ def test_partitioned_materialization(dlt_pipeline: Pipeline) -> None:
         month = context.partition_key[:-3]
         yield from dlt_pipeline_resource.run(context=context, dlt_source=pipeline(month))
 
-    async def run_partition(year: str):
+    def run_partition(year: str):
         return materialize(
             [example_pipeline_assets],
             resources={"dlt_pipeline_resource": DagsterDltResource()},
             partition_key=year,
         )
 
-    async def main():
-        [res1, res2] = await asyncio.gather(
-            run_partition("2022-09-01"), run_partition("2022-10-01")
-        )
-        assert res1.success
-        assert res2.success
-
-    asyncio.run(main())
+    res1 = run_partition("2022-09-01")
+    res2 = run_partition("2022-10-01")
+    assert res1.success
+    assert res2.success
 
 
 def test_with_asset_key_replacements(dlt_pipeline: Pipeline) -> None:
@@ -781,3 +781,51 @@ def test_pool(dlt_pipeline: Pipeline) -> None:
     def my_dlt_assets(): ...
 
     assert my_dlt_assets.op.pool == pool
+
+
+@pytest.mark.parametrize(
+    ["partitions_def", "backfill_policy", "expected_backfill_policy"],
+    [
+        (
+            DailyPartitionsDefinition(start_date="2023-01-01"),
+            BackfillPolicy.multi_run(),
+            BackfillPolicy.multi_run(),
+        ),
+        (
+            DailyPartitionsDefinition(start_date="2023-01-01"),
+            None,
+            BackfillPolicy.single_run(),
+        ),
+        (
+            StaticPartitionsDefinition(partition_keys=["A", "B"]),
+            None,
+            None,
+        ),
+        (
+            StaticPartitionsDefinition(partition_keys=["A", "B"]),
+            BackfillPolicy.single_run(),
+            BackfillPolicy.single_run(),
+        ),
+    ],
+    ids=[
+        "use explicit backfill policy for time window",
+        "time window defaults to single run",
+        "non time window has no default backfill policy",
+        "non time window backfill policy is respected",
+    ],
+)
+def test_backfill_policy(
+    dlt_pipeline: Pipeline,
+    partitions_def: PartitionsDefinition,
+    backfill_policy: BackfillPolicy,
+    expected_backfill_policy: BackfillPolicy,
+) -> None:
+    @dlt_assets(
+        dlt_source=pipeline(),
+        dlt_pipeline=dlt_pipeline,
+        partitions_def=partitions_def,
+        backfill_policy=backfill_policy,
+    )
+    def my_dlt_assets(): ...
+
+    assert my_dlt_assets.backfill_policy == expected_backfill_policy

@@ -13,12 +13,11 @@ INCOMPLETE_RIGHT_QUOTED_STRING=12
 EQUAL=13
 IDENTIFIER=14
 WS=15
-'and'=1
-'or'=2
-'not'=3
+COMMA=16
 '*'=4
 '+'=5
 ':'=7
 '('=8
 ')'=9
 '='=13
+','=16

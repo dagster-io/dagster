@@ -10,6 +10,8 @@ from typing import (  # noqa: UP035
     Union,
 )
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 from dagster._core.asset_graph_view.asset_graph_view import TemporalContext
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import T_EntityKey
@@ -17,7 +19,6 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp
 
 if TYPE_CHECKING:

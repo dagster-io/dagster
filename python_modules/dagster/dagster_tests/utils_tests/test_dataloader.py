@@ -7,8 +7,8 @@ from unittest import mock
 
 import pytest
 from dagster._core.loader import LoadableBy, LoadingContext
-from dagster._model import DagsterModel
 from dagster._utils.aiodataloader import DataLoader
+from dagster_shared.dagster_model import DagsterModel
 
 
 class Context:

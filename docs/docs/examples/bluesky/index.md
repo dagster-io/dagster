@@ -8,20 +8,19 @@ sidebar_custom_props:
   logo: images/integrations/dbt/dbt.svg
 ---
 
+# Analyzing Bluesky data
+
 :::note
 
 To see [video of this example](https://www.youtube.com/watch?v=z3trqkKPbsI)
 
 :::
 
-# Analyzing Bluesky data
-
 In this example, you'll build a pipeline with Dagster that:
 
 - Ingestion of data-related Bluesky posts
-- Modelling data using dbt
-- Creates and validates the data files needed for an OpenAI fine-tuning job
-- Representing data in a dashboard
+- Modeling data using dbt
+- Representing data in a dashboard with PowerBI
 
 <details>
   <summary>Prerequisites</summary>

@@ -5,9 +5,9 @@ from dagster._core.pipes.utils import PipesSession
 from typing_extensions import NotRequired
 
 if TYPE_CHECKING:
-    from mypy_boto3_emr.type_defs import ConfigurationUnionTypeDef as EMRConfigurationUnionTypeDef
+    from mypy_boto3_emr.type_defs import ConfigurationTypeDef as EMRConfigurationUnionTypeDef
     from mypy_boto3_emr_containers.type_defs import (
-        ConfigurationUnionTypeDef as EMRContainersConfigurationUnionTypeDef,
+        ConfigurationTypeDef as EMRContainersConfigurationUnionTypeDef,
     )
 
 

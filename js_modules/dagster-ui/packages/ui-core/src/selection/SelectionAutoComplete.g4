@@ -16,11 +16,14 @@ expr:
 	| notToken postNotOperatorWhitespace expr					# NotExpression
 	| expr andToken postLogicalOperatorWhitespace expr			# AndExpression
 	| expr orToken postLogicalOperatorWhitespace expr			# OrExpression
+	| expr commaToken expr										# CommaExpressionWrapper1
 	| expr andToken postLogicalOperatorWhitespace				# IncompleteAndExpression
 	| expr orToken postLogicalOperatorWhitespace				# IncompleteOrExpression
+	| expr commaToken											# CommaExpressionWrapper2
 	| notToken postNotOperatorWhitespace						# IncompleteNotExpression
 	| STAR postExpressionWhitespace								# AllExpression
-	| value postExpressionWhitespace							# UnmatchedValue;
+	| value postExpressionWhitespace							# UnmatchedValue
+	| commaToken												# CommaExpressionWrapper3;
 
 // Allowed expressions within traversal contexts
 traversalAllowedExpr:
@@ -46,7 +49,9 @@ incompleteExpr:
 	| leftParenToken postLogicalOperatorWhitespace expr		# UnclosedParenthesizedExpression
 	| expressionLessParenthesizedExpr						# ExpressionlessParenthesizedExpressionWrapper
 	| leftParenToken postLogicalOperatorWhitespace			# UnclosedExpressionlessParenthesizedExpression
-	| PLUS postNeighborTraversalWhitespace					# IncompletePlusTraversalExpression
+	| DIGITS? PLUS postNeighborTraversalWhitespace			# IncompletePlusTraversalExpression
+	| DIGITS postDigitsWhitespace							# IncompleteUpTraversalExpression
+	| PLUS value postExpressionWhitespace					# IncompletePlusTraversalExpressionMissingValue
 	| colonToken attributeValue postExpressionWhitespace	# IncompleteAttributeExpressionMissingKey;
 
 expressionLessParenthesizedExpr:
@@ -68,6 +73,8 @@ attributeName: IDENTIFIER;
 attributeValue: value;
 
 functionName: IDENTIFIER;
+
+commaToken: COMMA postLogicalOperatorWhitespace;
 
 orToken: OR;
 
@@ -97,6 +104,8 @@ postUpwardTraversalWhitespace: WS*;
 
 postDownwardTraversalWhitespace: WS*;
 
+postDigitsWhitespace: WS*;
+
 // Value can be a quoted string, unquoted string, or identifier
 value:
 	QUOTED_STRING						# QuotedStringValue
@@ -105,9 +114,9 @@ value:
 	| IDENTIFIER						# UnquotedStringValue;
 
 // Tokens for operators and keywords
-AND: 'and';
-OR: 'or';
-NOT: 'not';
+AND: 'and' | 'AND';
+OR: 'or' | 'OR';
+NOT: 'not' | 'NOT';
 
 STAR: '*';
 PLUS: '+';
@@ -127,7 +136,9 @@ INCOMPLETE_RIGHT_QUOTED_STRING: (~["\\\r\n:()=])* '"';
 EQUAL: '=';
 
 // Identifiers (attributes and functions)
-IDENTIFIER: [a-zA-Z_*][a-zA-Z0-9_*]*;
+IDENTIFIER: [a-zA-Z_*][a-zA-Z0-9_*/]*;
 
 // Whitespace
 WS: [ \t\r\n]+;
+
+COMMA: ',';

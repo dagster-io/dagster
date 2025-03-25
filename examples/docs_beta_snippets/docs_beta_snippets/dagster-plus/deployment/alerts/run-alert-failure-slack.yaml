@@ -1,0 +1,13 @@
+# alert_policies.yaml
+
+alert_policies:
+  description: Sends a Slack message when a run fails.
+  event_types:
+  - JOB_FAILURE
+  name: run-alert-failure-slack
+  notification_service:
+    slack:
+      slack_channel_name: notifications
+      slack_workspace_name: hooli
+  tags:
+    important: 'true'

@@ -1,5 +1,4 @@
 import contextlib
-import importlib.util
 import json
 import os
 import posixpath
@@ -7,11 +6,10 @@ import re
 import subprocess
 import sys
 import textwrap
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from fnmatch import fnmatch
-from importlib.machinery import ModuleSpec
 from pathlib import Path
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Literal, Optional, TypeVar, Union, overload
 
 import click
 import jinja2
@@ -48,6 +46,13 @@ def resolve_local_venv(start_path: Path) -> Optional[Path]:
     return None
 
 
+def clear_screen():
+    if is_windows():
+        os.system("cls")
+    else:
+        os.system("clear")
+
+
 def get_venv_executable(venv_dir: Path, executable: str = "python") -> Path:
     if is_windows():
         return venv_dir / "Scripts" / f"{executable}.exe"
@@ -59,48 +64,6 @@ def install_to_venv(venv_dir: Path, install_args: list[str]) -> None:
     executable = get_venv_executable(venv_dir)
     command = ["uv", "pip", "install", "--python", str(executable), *install_args]
     subprocess.run(command, check=True)
-
-
-# Temporarily places a path at the front of sys.path, ensuring that any modules in that path are
-# importable.
-@contextlib.contextmanager
-def ensure_loadable_path(path: Path) -> Iterator[None]:
-    orig_path = sys.path.copy()
-    sys.path.insert(0, str(path))
-    try:
-        yield
-    finally:
-        sys.path = orig_path
-
-
-def is_package_installed(package_name: str) -> bool:
-    try:
-        return bool(importlib.util.find_spec(package_name))
-    except ModuleNotFoundError:
-        return False
-
-
-def _get_spec_for_module(module_name: str) -> ModuleSpec:
-    spec = importlib.util.find_spec(module_name)
-    if not spec:
-        raise DgError(f"Cannot find module: {module_name}")
-    return spec
-
-
-def get_path_for_module(module_name: str) -> str:
-    spec = _get_spec_for_module(module_name)
-    file_path = spec.origin
-    if not file_path:
-        raise DgError(f"Cannot find file path for module: {module_name}")
-    return file_path
-
-
-def get_path_for_package(package_name: str) -> str:
-    spec = _get_spec_for_module(package_name)
-    submodule_search_locations = spec.submodule_search_locations
-    if not submodule_search_locations:
-        raise DgError(f"Package does not have any locations for submodules: {package_name}")
-    return submodule_search_locations[0]
 
 
 def is_valid_json(value: str) -> bool:
@@ -208,7 +171,7 @@ def scaffold_subtree(
     normalized_path = os.path.normpath(path)
     project_name = project_name or os.path.basename(normalized_path).replace("-", "_")
     if not os.path.exists(normalized_path):
-        os.mkdir(normalized_path)
+        os.makedirs(normalized_path, exist_ok=True)
 
     project_template_path = os.path.join(os.path.dirname(__file__), "templates", templates_path)
     loader = jinja2.FileSystemLoader(searchpath=project_template_path)
@@ -263,8 +226,6 @@ def scaffold_subtree(
                 )
                 f.write("\n")
 
-    click.echo(f"Scaffolded files for Dagster project in {path}.")
-
 
 def _should_skip_file(path: str, excludes: list[str] = DEFAULT_FILE_EXCLUDE_PATTERNS):
     """Given a file path `path` in a source template, returns whether or not the file should be skipped
@@ -277,6 +238,28 @@ def _should_skip_file(path: str, excludes: list[str] = DEFAULT_FILE_EXCLUDE_PATT
             return True
 
     return False
+
+
+@contextlib.contextmanager
+def modify_toml(path: Path) -> Iterator[tomlkit.TOMLDocument]:
+    toml = tomlkit.parse(path.read_text())
+    yield toml
+    path.write_text(tomlkit.dumps(toml))
+
+
+@contextlib.contextmanager
+def modify_toml_as_dict(path: Path) -> Iterator[dict[str, Any]]:  # unwrap gets the dict
+    """Modify a TOML file as a plain python dict, destroying any comments or formatting.
+
+    This is a destructive means of modifying TOML. We convert the parsed TOML document into a plain
+    python object, modify it, and then write it back to the file. This will destroy comments and
+    styling. It is useful mostly in a testing context where we want to e.g. set arbitrary invalid
+    values in the file without worrying about the details of the TOML syntax (it has multiple kinds of
+    dict-like objects, for instance).
+    """
+    toml_dict = tomlkit.parse(path.read_text()).unwrap()
+    yield toml_dict
+    path.write_text(tomlkit.dumps(toml_dict))
 
 
 def ensure_dagster_dg_tests_import() -> None:
@@ -294,7 +277,18 @@ def hash_directory_metadata(
     path: Union[str, Path],
     includes: Optional[Sequence[str]],
     excludes: Sequence[str],
+    error_on_missing: bool,
 ) -> None:
+    """Hashes the metadata of all files in the given directory.
+
+    Args:
+        hasher: The hasher to use to hash the metadata.
+        path: The directory path to hash the metadata of.
+        includes: The glob patterns of files to include in the hash, or None to include all files.
+        excludes: The glob patterns of files to exclude from the hash.
+        error_on_missing: Whether to raise an error if a file is missing. Set to False for cases where
+            we expect the filesystem to be actively changing.
+    """
     for root, dirs, files in os.walk(path):
         for name in dirs + files:
             if any(fnmatch(name, pattern) for pattern in excludes):
@@ -302,14 +296,25 @@ def hash_directory_metadata(
             if includes and not any(fnmatch(name, pattern) for pattern in includes):
                 continue
             filepath = os.path.join(root, name)
-            hash_file_metadata(hasher, filepath)
+            hash_file_metadata(hasher, filepath, error_on_missing)
 
 
-def hash_file_metadata(hasher: Hash, path: Union[str, Path]) -> None:
-    stat = os.stat(path=path)
-    hasher.update(str(path).encode())
-    hasher.update(str(stat.st_mtime).encode())  # Last modified time
-    hasher.update(str(stat.st_size).encode())  # File size
+def hash_file_metadata(hasher: Hash, path: Union[str, Path], error_on_missing) -> None:
+    """Hashes the metadata of a file.
+
+    Args:
+        hasher: The hasher to use to hash the metadata.
+        path: The file path to hash the metadata of.
+        error_on_missing: Whether to raise an error if a file is missing.
+    """
+    try:
+        stat = os.stat(path=path)
+        hasher.update(str(path).encode())
+        hasher.update(str(stat.st_mtime).encode())  # Last modified time
+        hasher.update(str(stat.st_size).encode())  # File size
+    except FileNotFoundError:
+        if error_on_missing:
+            raise
 
 
 T = TypeVar("T")
@@ -322,7 +327,7 @@ def not_none(value: Optional[T]) -> T:
 
 
 def exit_with_error(error_message: str) -> Never:
-    formatted_error_message = _format_error_message(error_message)
+    formatted_error_message = format_multiline_str(error_message)
     click.echo(click.style(formatted_error_message, fg="red"))
     sys.exit(1)
 
@@ -332,7 +337,7 @@ def exit_with_error(error_message: str) -> Never:
 # ########################
 
 
-def _format_error_message(message: str) -> str:
+def format_multiline_str(message: str) -> str:
     # width=10000 unwraps any hardwrapping
     dedented = textwrap.dedent(message).strip()
     paragraphs = [textwrap.fill(p, width=10000) for p in dedented.split("\n\n")]
@@ -363,25 +368,27 @@ environment in an ancestor directory or use the `--no-require-local-venv` flag t
 `dagster-components` from the ambient Python environment.
 """
 
-NOT_DEPLOYMENT_ERROR_MESSAGE = """
-This command must be run inside a Dagster deployment directory. Ensure that there is a
-`pyproject.toml` file with `tool.dg.is_deployment = true` set in the root deployment directory.
+NOT_WORKSPACE_ERROR_MESSAGE = """
+This command must be run inside a Dagster workspace directory. Ensure that there is a
+`pyproject.toml` file with `tool.dg.directory_type = "workspace"` set in the root workspace
+directory.
 """
 
 
-NOT_CODE_LOCATION_ERROR_MESSAGE = """
-This command must be run inside a Dagster code location directory. Ensure that the nearest
-pyproject.toml has `tool.dg.is_code_location = true` set.
+NOT_PROJECT_ERROR_MESSAGE = """
+This command must be run inside a Dagster project directory. Ensure that the nearest
+pyproject.toml has `tool.dg.directory_type = "project"` set.
 """
 
-NOT_DEPLOYMENT_OR_CODE_LOCATION_ERROR_MESSAGE = """
-This command must be run inside a Dagster deployment or code location directory. Ensure that the
-nearest pyproject.toml has `tool.dg.is_code_location = true` or `tool.dg.is_deployment = true` set.
+NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE = """
+This command must be run inside a Dagster workspace or project directory. Ensure that the
+nearest pyproject.toml has `tool.dg.directory_type = "project"` or `tool.dg.directory_type =
+"workspace"` set.
 """
 
 NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = """
 This command must be run inside a Dagster component library directory. Ensure that the nearest
-pyproject.toml has `tool.dg.is_component_lib = true` set.
+pyproject.toml has an entry point defined under the `dagster_dg.library` group.
 """
 
 MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE = """
@@ -389,11 +396,26 @@ Could not find the `dagster-components` executable on the system path.
 
 The `dagster-components` executable is installed with the `dagster-components` PyPI package and is
 necessary for `dg` to interface with Python environments containing Dagster definitions.
-`dagster-components` is installed by default when a code location is scaffolded by `dg`. However, if
-you are using `dg` in a non-managed environment (either outside of a code location or using the
+`dagster-components` is installed by default when a project is scaffolded by `dg`. However, if
+you are using `dg` in a non-managed environment (either outside of a Dagster project or using the
 `--no-use-dg-managed-environment` flag), you need to independently ensure `dagster-components` is
 installed.
 """
+
+
+def generate_tool_dg_cli_in_project_in_workspace_error_message(
+    project_path: Path, workspace_path: Path
+) -> str:
+    return textwrap.dedent(f"""
+        `tool.dg.cli` section detected in project `pyproject.toml` file at:
+            {project_path}
+        This project is inside of a workspace at:
+            {workspace_path}
+        """).lstrip() + format_multiline_str("""
+        The `tool.dg.cli` section is ignored for project `pyproject.toml` files inside of a
+        workspace. Any `tool.dg.cli` settings should be placed in the workspace config file.
+        """)
+
 
 # ########################
 # ##### CUSTOM CLICK SUBCLASSES
@@ -469,31 +491,185 @@ def parse_json_option(context: click.Context, param: click.Option, value: str):
 # ##### TOML MANIPULATION
 # ########################
 
+TomlPath: TypeAlias = tuple[Union[str, int], ...]
+TomlDoc: TypeAlias = Union[tomlkit.TOMLDocument, dict[str, Any]]
 
-def get_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], expected_type: type[T]) -> T:
+
+def get_toml_node(
+    doc: TomlDoc,
+    path: TomlPath,
+    expected_type: Union[type[T], tuple[type[T], ...]],
+) -> T:
     """Given a tomlkit-parsed document/table (`doc`),retrieve the nested value at `path` and ensure
     it is of type `expected_type`. Returns the value if so, or raises a KeyError / TypeError if not.
     """
+    value = _gather_toml_nodes(doc, path)[-1]
+    if not isinstance(value, expected_type):
+        expected_types = expected_type if isinstance(expected_type, tuple) else (expected_type,)
+        type_str = " or ".join(t.__name__ for t in expected_types)
+        raise TypeError(
+            f"Expected '{toml_path_to_str(path)}' to be {type_str}, "
+            f"but got {type(value).__name__} instead."
+        )
+    return value
+
+
+def has_toml_node(doc: TomlDoc, path: TomlPath) -> bool:
+    """Given a tomlkit-parsed document/table (`doc`), return whether a value is defined at `path`."""
+    result = _gather_toml_nodes(doc, path, error_on_missing=False)
+    return False if result is None else True
+
+
+def delete_toml_node(doc: TomlDoc, path: TomlPath) -> None:
+    """Given a tomlkit-parsed document/table (`doc`), delete the nested value at `path`. Raises
+    an error if the leading keys do not already lead to a TOML container node.
+    """
+    nodes = _gather_toml_nodes(doc, path)
+    container = nodes[-2]
+    key_or_index = path[-1]
+    if isinstance(container, dict):
+        del container[path[-1]]
+    elif isinstance(container, list):
+        assert isinstance(key_or_index, int)  # We already know this from _traverse_toml_path
+        container.pop(key_or_index)
+    else:
+        raise Exception("Unreachable.")
+
+
+def set_toml_node(doc: TomlDoc, path: TomlPath, value: object) -> None:
+    """Given a tomlkit-parsed document/table (`doc`),set a nested value at `path` to `value`. Raises
+    an error if the leading keys do not already lead to a TOML container node.
+    """
+    container = _gather_toml_nodes(doc, path[:-1])[-1]
+    key_or_index = path[-1]
+    if isinstance(container, dict):
+        if not isinstance(key_or_index, str):
+            raise TypeError(f"Expected key to be a string, but got {type(key_or_index).__name__}")
+        container[key_or_index] = value
+    elif isinstance(container, list):
+        if not isinstance(key_or_index, int):
+            raise TypeError(f"Expected key to be an integer, but got {type(key_or_index).__name__}")
+        container[key_or_index] = value
+    else:
+        raise Exception("Unreachable.")
+
+
+@overload
+def _gather_toml_nodes(
+    doc: TomlDoc, path: TomlPath, error_on_missing: Literal[True] = ...
+) -> list[Any]: ...
+
+
+@overload
+def _gather_toml_nodes(
+    doc: TomlDoc, path: TomlPath, error_on_missing: Literal[False] = ...
+) -> Optional[list[Any]]: ...
+
+
+def _gather_toml_nodes(
+    doc: TomlDoc, path: TomlPath, error_on_missing: bool = True
+) -> Optional[list[Any]]:
+    nodes: list[Any] = []
     current: Any = doc
     for key in path:
-        # If current is not a table/dict or doesn't have the key, error out
-        if not isinstance(current, dict) or key not in current:
-            raise KeyError(f"Key '{key}' not found in path: {'.'.join(path)}")
-        current = current[key]
+        if isinstance(key, str):
+            if not isinstance(current, dict) or key not in current:
+                if error_on_missing:
+                    raise KeyError(f"Key '{key}' not found in path: {toml_path_to_str(path)}")
+                return None
+            current = current[key]
+        elif isinstance(key, int):
+            if not isinstance(current, list) or key < 0 or key >= len(current):
+                if error_on_missing:
+                    raise KeyError(f"Index '{key}' not found in path: {toml_path_to_str(path)}")
+                return None
+            current = current[key]
+        else:
+            raise TypeError(f"Expected key to be a string or integer, but got {type(key)}")
+        nodes.append(current)
 
-    # Finally, ensure the found value is of the expected type
-    if not isinstance(current, expected_type):
-        raise TypeError(
-            f"Expected '{'.'.join(path)}' to be {expected_type.__name__}, "
-            f"but got {type(current).__name__} instead."
-        )
-    return current
+    return nodes
 
 
-def set_toml_value(doc: tomlkit.TOMLDocument, path: Iterable[str], value: object) -> None:
-    """Given a tomlkit-parsed document/table (`doc`),set a nested value at `path` to `value`. Raises
-    an error if the leading keys do not already lead to a dictionary.
+def toml_path_to_str(path: TomlPath) -> str:
+    first, rest = path[0], path[1:]
+    if not isinstance(first, str):
+        raise TypeError(f"Expected first element of path to be a string, but got {type(first)}")
+    str_path = first
+    for item in rest:
+        if isinstance(item, int):
+            str_path += f"[{item}]"
+        elif isinstance(item, str):
+            str_path += f".{item}"
+        else:
+            raise TypeError(
+                f"Expected path elements to be strings or integers, but got {type(item)}"
+            )
+    return str_path
+
+
+def toml_path_from_str(path: str) -> TomlPath:
+    tokens = []
+    for segment in path.split("."):
+        # Split each segment by bracketed chunks, e.g. "key[1]" -> ["key", "[1]"]
+        parts = re.split(r"(\[\d+\])", segment)
+        for p in parts:
+            if not p:  # Skip empty strings
+                continue
+            if p.startswith("[") and p.endswith("]"):
+                tokens.append(int(p[1:-1]))  # Convert "[1]" to integer 1
+            else:
+                tokens.append(p)
+    return tuple(tokens)
+
+
+def create_toml_node(
+    doc: dict[str, Any],
+    path: tuple[Union[str, int], ...],
+    value: object,
+) -> None:
+    """Set a toml node at a path that consists of a sequence of keys and integer indices.
+    Intermediate containers that don't yet exist will be created along the way based on the types of
+    the keys. Note that this does not support TOMLDocument objects, only plain dictionaries. The
+    reason is that the correct type of container to insert at intermediate nodes is ambiguous for
+    TOMLDocmuent objects.
     """
-    path_list = list(path)
-    inner_dict = get_toml_value(doc, path_list[:-1], dict)
-    inner_dict[path_list[-1]] = value
+    if isinstance(doc, tomlkit.TOMLDocument):
+        raise TypeError(
+            "`create_toml_node` only works on the plain dictionary representation of a TOML document."
+        )
+    current: Any = doc
+    for i, key in enumerate(path):
+        is_final_key = i == len(path) - 1
+        if isinstance(key, str):
+            if not isinstance(current, dict):
+                raise KeyError(f"Key '{key}' not found in path: {toml_path_to_str(path)}")
+            elif is_final_key:
+                current[key] = value
+            elif key not in current:
+                current[key] = _get_new_container_node(path[i + 1])
+            current = current[key]
+        elif isinstance(key, int):
+            if not isinstance(current, list):
+                raise KeyError(f"Index '{key}' not found in path: {toml_path_to_str(path)}")
+            is_key_in_range = key >= 0 and key < len(current)
+            is_append_key = key == len(current)
+            if is_final_key and is_key_in_range:
+                current[key] = value
+            elif is_final_key and is_append_key:
+                current.append(value)
+            elif is_key_in_range:
+                current = current[key]
+            elif is_append_key:
+                current.append(_get_new_container_node(path[i + 1]))
+                current = current[key]
+            else:
+                raise KeyError(f"Key '{key}' not found in path: {toml_path_to_str(path)}")
+        else:
+            raise TypeError(f"Expected key to be a string or integer, but got {type(key)}")
+
+
+def _get_new_container_node(
+    representative_key: Union[int, str],
+) -> Union[dict[str, Any], list[Any]]:
+    return [] if isinstance(representative_key, int) else {}

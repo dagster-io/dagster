@@ -4,7 +4,7 @@ setup(
     name="dagster_university",
     packages=find_packages(exclude=["dagster_university_tests"]),
     install_requires=[
-        "dagster==1.9.*",
+        "dagster==1.10.*",
         "dagster-cloud",
         "dagster-duckdb",
         "dagster-dbt",

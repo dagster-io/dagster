@@ -2,15 +2,12 @@ from pathlib import Path
 from typing import Optional
 
 import click
+from dagster_shared.serdes.objects import LibraryObjectKey
 from pydantic import TypeAdapter
 
-from dagster_components import ComponentTypeRegistry
-from dagster_components.core.component_key import GlobalComponentKey
-from dagster_components.scaffold import (
-    ComponentScaffolderUnavailableReason,
-    scaffold_component_instance,
-)
-from dagster_components.utils import CLI_BUILTIN_COMPONENT_LIB_KEY, exit_with_error
+from dagster_components.component_scaffolding import scaffold_component_instance
+from dagster_components.core.component import load_component_type
+from dagster_components.scaffold import ScaffolderUnavailableReason, get_scaffolder
 
 
 @click.group(name="scaffold")
@@ -22,29 +19,21 @@ def scaffold_cli() -> None:
 @click.argument("component_type", type=str)
 @click.argument("component_path", type=Path)
 @click.option("--json-params", type=str, default=None)
-@click.pass_context
 def scaffold_component_command(
-    ctx: click.Context,
     component_type: str,
     component_path: Path,
     json_params: Optional[str],
 ) -> None:
-    builtin_component_lib = ctx.obj.get(CLI_BUILTIN_COMPONENT_LIB_KEY, False)
-    registry = ComponentTypeRegistry.from_entry_point_discovery(
-        builtin_component_lib=builtin_component_lib
-    )
-    component_key = GlobalComponentKey.from_typename(component_type)
-    if not registry.has(component_key):
-        exit_with_error(f"No component type `{component_type}` could be resolved.")
+    key = LibraryObjectKey.from_typename(component_type)
+    component_type_cls = load_component_type(key)
 
-    component_type_cls = registry.get(component_key)
     if json_params:
-        scaffolder = component_type_cls.get_scaffolder()
-        if isinstance(scaffolder, ComponentScaffolderUnavailableReason):
+        scaffolder = get_scaffolder(component_type_cls)
+        if isinstance(scaffolder, ScaffolderUnavailableReason):
             raise Exception(
                 f"Component type {component_type} does not have a scaffolder. Reason: {scaffolder.message}."
             )
-        scaffold_params = TypeAdapter(scaffolder.get_schema()).validate_json(json_params)
+        scaffold_params = TypeAdapter(scaffolder.get_scaffold_params()).validate_json(json_params)
     else:
         scaffold_params = {}
 

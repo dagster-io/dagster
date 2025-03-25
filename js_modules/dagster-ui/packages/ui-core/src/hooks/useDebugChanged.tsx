@@ -14,13 +14,13 @@ type Changes<T> = {
 };
 
 const getDifferences = <T extends Record<any, any>>(
-  obj1: T,
-  obj2: T,
+  obj1: T | undefined,
+  obj2: T | undefined,
 ): Partial<Record<keyof T, Difference<any>>> => {
   const diffs: Partial<Record<keyof T, Difference<any>>> = {};
-  Object.keys({...obj1, ...obj2}).forEach((key) => {
-    if (!isEqual(obj1[key], obj2[key])) {
-      diffs[key as keyof T] = {previous: obj1[key], current: obj2[key]};
+  Object.keys({...(obj1 || {}), ...(obj2 || {})}).forEach((key) => {
+    if (!isEqual(obj1?.[key], obj2?.[key])) {
+      diffs[key as keyof T] = {previous: obj1?.[key], current: obj2?.[key]};
     }
   });
   return diffs;

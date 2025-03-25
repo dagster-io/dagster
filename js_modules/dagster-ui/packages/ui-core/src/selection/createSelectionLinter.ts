@@ -1,9 +1,9 @@
 import {CharStreams, CommonTokenStream, Lexer, Parser, ParserRuleContext} from 'antlr4ts';
 import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
-import CodeMirror from 'codemirror';
 
-import {CustomErrorListener} from './CustomErrorListener';
+import {CustomErrorListener, SyntaxError} from './CustomErrorListener';
 import {parseInput} from './SelectionInputParser';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 import {AttributeNameContext} from './generated/SelectionAutoCompleteParser';
 import {SelectionAutoCompleteVisitor} from './generated/SelectionAutoCompleteVisitor';
 
@@ -23,20 +23,21 @@ export function createSelectionLinter({
   supportedAttributes: readonly string[];
   unsupportedAttributeMessages?: Record<string, string>;
 }) {
-  return (text: string) => {
+  const linter = (text: string) => {
     if (!text.length) {
       return [];
     }
-    const errorListener = new CustomErrorListener();
 
     const inputStream = CharStreams.fromString(text);
     const lexer = new LexerKlass(inputStream);
 
-    lexer.removeErrorListeners();
-    lexer.addErrorListener(errorListener);
-
     const tokens = new CommonTokenStream(lexer);
     const parser = new ParserKlass(tokens);
+
+    const errorListener = new CustomErrorListener();
+
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(errorListener);
 
     parser.removeErrorListeners(); // Remove default console error listener
     parser.addErrorListener(errorListener);
@@ -45,10 +46,8 @@ export function createSelectionLinter({
 
     // Map syntax errors to CodeMirror's lint format
     const lintErrors = errorListener.getErrors().map((error) => ({
+      ...error,
       message: error.message.replace('<EOF>, ', ''),
-      severity: 'error',
-      from: CodeMirror.Pos(0, error.column),
-      to: CodeMirror.Pos(0, text.length),
     }));
 
     const {parseTrees} = parseInput(text);
@@ -61,28 +60,24 @@ export function createSelectionLinter({
 
     return lintErrors.concat(attributeVisitor.getErrors());
   };
+  return weakMapMemoize(linter, {maxEntries: 20});
 }
 
 class InvalidAttributeVisitor
   extends AbstractParseTreeVisitor<void>
   implements SelectionAutoCompleteVisitor<void>
 {
-  private errors: {
-    message: string;
-    severity: 'error' | 'warning';
-    from: CodeMirror.Position;
-    to: CodeMirror.Position;
-  }[] = [];
-  private sortedLintErrors: {from: CodeMirror.Position; to: CodeMirror.Position}[];
+  private errors: SyntaxError[] = [];
+  private sortedLintErrors: SyntaxError[];
 
   constructor(
     private supportedAttributes: readonly string[],
     private unsupportedAttributeMessages: Record<string, string>,
-    lintErrors: {from: CodeMirror.Position; to: CodeMirror.Position}[],
+    lintErrors: SyntaxError[],
   ) {
     super();
     // Sort errors by start position for efficient searching
-    this.sortedLintErrors = [...lintErrors].sort((a, b) => a.from.ch - b.from.ch);
+    this.sortedLintErrors = [...lintErrors].sort((a, b) => a.from - b.from);
   }
 
   getErrors() {
@@ -93,7 +88,7 @@ class InvalidAttributeVisitor
     return undefined;
   }
 
-  private hasOverlap(from: CodeMirror.Position, to: CodeMirror.Position): boolean {
+  private hasOverlap(from: number, to: number): boolean {
     // Binary search to find the first error that could potentially overlap
     let low = 0;
     let high = this.sortedLintErrors.length - 1;
@@ -102,9 +97,9 @@ class InvalidAttributeVisitor
       const mid = Math.floor((low + high) / 2);
       const error = this.sortedLintErrors[mid]!;
 
-      if (error.to.ch < from.ch) {
+      if (error.to < from) {
         low = mid + 1;
-      } else if (error.from.ch > to.ch) {
+      } else if (error.from > to) {
         high = mid - 1;
       } else {
         // Found an overlapping error
@@ -117,15 +112,14 @@ class InvalidAttributeVisitor
   visitAttributeName(ctx: AttributeNameContext) {
     const attributeName = ctx.IDENTIFIER().text;
     if (!this.supportedAttributes.includes(attributeName)) {
-      const from = CodeMirror.Pos(0, ctx.start.startIndex);
-      const to = CodeMirror.Pos(0, ctx.stop!.stopIndex + 1);
+      const from = ctx.start.startIndex;
+      const to = ctx.stop!.stopIndex + 1;
 
       if (!this.hasOverlap(from, to)) {
         this.errors.push({
           message:
             this.unsupportedAttributeMessages[attributeName] ??
-            `Unsupported attribute: ${attributeName}`,
-          severity: 'error',
+            `Unsupported attribute: "${attributeName}"`,
           from,
           to,
         });

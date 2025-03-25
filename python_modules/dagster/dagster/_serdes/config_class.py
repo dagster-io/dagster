@@ -3,12 +3,12 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeVar, Union, cast, overload
 
+import dagster_shared.check as check
+from dagster_shared.serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
+from dagster_shared.yaml_utils import load_run_config_yaml
 from typing_extensions import Self
 
-import dagster._check as check
-from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 from dagster._utils import convert_dagster_submodule_name
-from dagster._utils.yaml_utils import load_run_config_yaml
 
 if TYPE_CHECKING:
     from dagster._config.config_schema import UserConfigSchema

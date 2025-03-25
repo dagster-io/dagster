@@ -4,10 +4,19 @@ from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any, Callable, Generic, NamedTuple, Optional, Union
 
+import dagster_shared.seven as seven
+from dagster_shared.serdes.serdes import (
+    FieldSerializer,
+    JsonSerializableValue,
+    PackableValue,
+    UnpackContext,
+    WhitelistMap,
+    pack_value,
+    whitelist_for_serdes,
+)
 from typing_extensions import Self, TypeVar
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.metadata.table import (
@@ -20,18 +29,8 @@ from dagster._core.definitions.metadata.table import (
     TableSchema as TableSchema,
 )
 from dagster._core.errors import DagsterInvalidMetadata
-from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import PackableValue
 
 T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, covariant=True)
-from dagster._serdes import pack_value
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    JsonSerializableValue,
-    PackableValue,
-    UnpackContext,
-    WhitelistMap,
-)
 
 # ########################
 # ##### METADATA VALUE
@@ -420,7 +419,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
                         metadata={
                             "errors": MetadataValue.table(
                                 records=[
-                                    TableRecord(code="invalid-data-type", row=2, col="name"),
+                                    TableRecord(data={"code": "invalid-data-type", "row": 2, "col": "name"})
                                 ],
                                 schema=TableSchema(
                                     columns=[
@@ -500,6 +499,16 @@ class MetadataValue(ABC, Generic[T_Packable]):
             data (str): The serialized code location state for a metadata entry.
         """
         return CodeLocationReconstructionMetadataValue(data)
+
+    @public
+    @staticmethod
+    def pool(pool: str) -> "PoolMetadataValue":
+        """Static constructor for a metadata value wrapping a reference to a concurrency pool.
+
+        Args:
+            pool (str): The identifier for the pool.
+        """
+        return PoolMetadataValue(pool=pool)
 
 
 # ########################
@@ -1037,3 +1046,18 @@ class CodeLocationReconstructionMetadataValue(
     def value(self) -> str:
         """str: The wrapped code location state data."""
         return self.data
+
+
+@whitelist_for_serdes
+class PoolMetadataValue(
+    NamedTuple("_PoolMetadataValue", [("pool", PublicAttr[str])]),
+    MetadataValue[str],
+):
+    def __new__(cls, pool: str):
+        return super().__new__(cls, check.str_param(pool, "pool"))
+
+    @public
+    @property
+    def value(self) -> str:
+        """str: The wrapped pool string."""
+        return self.pool

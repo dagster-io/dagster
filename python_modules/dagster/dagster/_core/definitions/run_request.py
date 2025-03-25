@@ -4,6 +4,8 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
@@ -27,7 +29,6 @@ from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
 )
 from dagster._record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.tags import normalize_tags

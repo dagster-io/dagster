@@ -25,9 +25,9 @@ from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes.serdes import deserialize_value, get_storage_fields
-from dagster._serdes.utils import hash_str
 from dagster._utils.env import environ
+from dagster_shared.serdes.serdes import deserialize_value, get_storage_fields
+from dagster_shared.serdes.utils import hash_str
 
 from dagster_tests.api_tests.utils import get_bar_repo_code_location
 
@@ -169,7 +169,7 @@ def test_defer_snapshots(instance: DagsterInstance, env):
         repo = RemoteRepository(
             repository_snap,
             RepositoryHandle.from_location(repository_name="bar_repo", code_location=code_location),
-            instance=instance,
+            auto_materialize_use_sensors=True,
             ref_to_data_fn=_ref_to_data,
         )
         jobs = repo.get_all_jobs()

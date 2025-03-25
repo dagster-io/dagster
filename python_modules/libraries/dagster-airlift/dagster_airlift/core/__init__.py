@@ -24,6 +24,4 @@ from dagster_airlift.core.serialization.serialized_data import DagInfo as DagInf
 from dagster_airlift.core.top_level_dag_def_api import (
     assets_with_dag_mappings as assets_with_dag_mappings,
     assets_with_task_mappings as assets_with_task_mappings,
-    dag_defs as dag_defs,
-    task_defs as task_defs,
 )

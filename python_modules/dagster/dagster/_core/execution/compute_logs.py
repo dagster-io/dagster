@@ -10,16 +10,21 @@ import uuid
 import warnings
 from contextlib import contextmanager
 
+from dagster_shared.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster_shared.seven import IS_WINDOWS
+
 from dagster._core.execution.scripts import poll_compute_logs, watch_orphans
-from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
-from dagster._seven import IS_WINDOWS
 from dagster._utils import ensure_file
 
 WIN_PY36_COMPUTE_LOG_DISABLED_MSG = """\u001b[33mWARNING: Compute log capture is disabled for the current environment. Set the environment variable `PYTHONLEGACYWINDOWSSTDIO` to enable.\n\u001b[0m"""
 
 
 def create_compute_log_file_key():
-    return "".join(random.choice(string.ascii_lowercase) for x in range(8))
+    # Ensure that if user code has seeded the random module that it
+    # doesn't cause the same file key for each step (but the random
+    # seed is still restored afterwards)
+    rng = random.Random(int.from_bytes(os.urandom(16), "big"))
+    return "".join(rng.choice(string.ascii_lowercase) for x in range(8))
 
 
 @contextmanager

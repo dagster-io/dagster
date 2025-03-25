@@ -1,7 +1,0 @@
-dg check component
-
-/.../jaffle-platform/jaffle_platform/components/jdbt/component.yaml:8 -  Unable to parse YAML: while scanning a quoted scalar, found unexpected end of stream
-     | 
-   7 |     key: "target/main/{{ node.name }}
-     | ^ Unable to parse YAML: while scanning a quoted scalar, found unexpected end of stream
-     |

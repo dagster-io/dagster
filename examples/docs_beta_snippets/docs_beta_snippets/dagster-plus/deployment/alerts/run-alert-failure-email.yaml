@@ -1,0 +1,14 @@
+# alert_policies.yaml
+
+alert_policies:
+  description: Sends an email when a run fails.
+  event_types:
+  - JOB_FAILURE
+  name: run-alert-failure-email
+  notification_service:
+    email:
+      email_addresses:
+      - richard.hendricks@hooli.com
+      - nelson.bighetti@hooli.com
+  tags:
+    important: 'true'

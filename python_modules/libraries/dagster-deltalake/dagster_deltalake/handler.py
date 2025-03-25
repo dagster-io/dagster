@@ -14,8 +14,13 @@ from deltalake.schema import (
     PrimitiveType,
     Schema,
 )
-from deltalake.table import FilterLiteralType, _filters_to_expression
+from deltalake.table import FilterLiteralType
 from typing_extensions import TypeAlias
+
+try:
+    from pyarrow.parquet import filters_to_expression  # pyarrow >= 10.0.0
+except ImportError:
+    from pyarrow.parquet import _filters_to_expression as filters_to_expression
 
 from dagster_deltalake.io_manager import DELTA_DATE_FORMAT, DELTA_DATETIME_FORMAT, TableConnection
 
@@ -77,7 +82,10 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             # TODO make robust and move to function
             partition_columns = [dim.partition_expr for dim in table_slice.partition_dimensions]
 
-        write_deltalake(  # type: ignore
+        # legacy parameter
+        overwrite_schema = metadata.get("overwrite_schema") or overwrite_schema
+
+        write_deltalake(
             table_or_uri=connection.table_uri,
             data=reader,
             storage_options=connection.storage_options,
@@ -85,7 +93,7 @@ class DeltalakeBaseArrowTypeHandler(DbTypeHandler[T], Generic[T]):
             partition_filters=partition_filters,
             partition_by=partition_columns,
             engine=engine,
-            overwrite_schema=metadata.get("overwrite_schema") or overwrite_schema,
+            schema_mode="overwrite" if overwrite_schema else None,
             custom_metadata=metadata.get("custom_metadata") or main_custom_metadata,
             writer_properties=WriterProperties(**writerprops)  # type: ignore
             if writerprops is not None
@@ -241,7 +249,7 @@ def _table_reader(table_slice: TableSlice, connection: TableConnection) -> ds.Da
             table_schema=table.schema(),
         )
         if partition_filters is not None:
-            partition_expr = _filters_to_expression([partition_filters])
+            partition_expr = filters_to_expression([partition_filters])
 
     dataset = table.to_pyarrow_dataset()
     if partition_expr is not None:

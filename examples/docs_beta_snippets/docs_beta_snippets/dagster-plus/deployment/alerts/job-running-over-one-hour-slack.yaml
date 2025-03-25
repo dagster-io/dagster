@@ -9,7 +9,8 @@ alert_policies:
   - JOB_LONG_RUNNING
   name: job-running-over-one-hour-slack
   notification_service:
-    slack_channel_name: notifications
-    slack_workspace_name: hooli
+    slack:
+      slack_channel_name: notifications
+      slack_workspace_name: hooli
   tags:
     important: 'true'

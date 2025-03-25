@@ -2,15 +2,18 @@ from pathlib import Path
 
 import click
 
+from dagster_dg.cache import DgCache
 from dagster_dg.cli.check import check_group
-from dagster_dg.cli.configure_editor import configure_editor_group
 from dagster_dg.cli.dev import dev_command
 from dagster_dg.cli.docs import docs_group
-from dagster_dg.cli.global_options import dg_global_options
-from dagster_dg.cli.info import info_group
+from dagster_dg.cli.init import init_command
+from dagster_dg.cli.launch import launch_command
 from dagster_dg.cli.list import list_group
+from dagster_dg.cli.plus import plus_group
 from dagster_dg.cli.scaffold import scaffold_group
-from dagster_dg.component import RemoteComponentRegistry
+from dagster_dg.cli.shared_options import dg_global_options
+from dagster_dg.cli.utils import utils_group
+from dagster_dg.component import RemoteLibraryObjectRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickGroup, exit_with_error
@@ -25,11 +28,13 @@ def create_dg_cli():
         commands={
             "check": check_group,
             "docs": docs_group,
-            "info": info_group,
-            "configure-editor": configure_editor_group,
+            "utils": utils_group,
+            "launch": launch_command,
             "list": list_group,
             "scaffold": scaffold_group,
             "dev": dev_command,
+            "init": init_command,
+            "plus": plus_group,
         },
         context_settings={
             "max_content_width": DG_CLI_MAX_OUTPUT_WIDTH,
@@ -61,15 +66,14 @@ def create_dg_cli():
         default=False,
     )
     @click.version_option(__version__, "--version", "-v")
-    @click.pass_context
     def group(
-        context: click.Context,
         install_completion: bool,
         clear_cache: bool,
         rebuild_component_registry: bool,
         **global_options: object,
     ):
-        """CLI for working with Dagster components."""
+        """CLI for managing Dagster projects."""
+        context = click.get_current_context()
         if install_completion:
             import dagster_dg.completion
 
@@ -79,8 +83,14 @@ def create_dg_cli():
             exit_with_error("Cannot specify both --clear-cache and --rebuild-component-registry.")
         elif clear_cache:
             cli_config = normalize_cli_config(global_options, context)
-            dg_context = DgContext.from_config_file_discovery_and_cli_config(Path.cwd(), cli_config)
-            dg_context.cache.clear_all()
+            dg_context = DgContext.from_file_discovery_and_command_line_config(
+                Path.cwd(), cli_config
+            )
+            # Normally we would access the cache through the DgContext, but cache is currently
+            # disabled outside of a project context. When that restriction is lifted, we will change
+            # this to access the cache through the DgContext.
+            cache = DgCache.from_config(dg_context.config)
+            cache.clear_all()
             if context.invoked_subcommand is None:
                 context.exit(0)
         elif rebuild_component_registry:
@@ -99,7 +109,7 @@ def create_dg_cli():
 def _rebuild_component_registry(dg_context: DgContext):
     if not dg_context.has_cache:
         exit_with_error("Cache is disabled. This command cannot be run without a cache.")
-    elif not dg_context.config.use_dg_managed_environment:
+    elif not dg_context.config.cli.use_dg_managed_environment:
         exit_with_error(
             "Cannot rebuild the component registry with environment management disabled."
         )
@@ -107,7 +117,7 @@ def _rebuild_component_registry(dg_context: DgContext):
     key = dg_context.get_cache_key("component_registry_data")
     dg_context.cache.clear_key(key)
     # This will trigger a rebuild of the component registry
-    RemoteComponentRegistry.from_dg_context(dg_context)
+    RemoteLibraryObjectRegistry.from_dg_context(dg_context)
 
 
 ENV_PREFIX = "DAGSTER_DG"

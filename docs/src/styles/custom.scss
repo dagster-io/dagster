@@ -507,7 +507,7 @@ dt {
   box-shadow: 0px 1px 0px var(--theme-color-keyline);
   font-weight: 600;
   font-size: 15px;
-  padding-bottom: 0px;
+  padding-bottom: 2px;
 }
 
 dd {
@@ -698,49 +698,60 @@ div[class^='announcementBar_'] {
 
 /* Markdown Card */
 
-  .card {
-    background-color: var(--theme-color-background-default);
-    border: 1px solid var(--theme-color-keyline) !important;
-    transition: all .3s ease;
+.card {
+  background-color: var(--theme-color-background-default);
+  border: 1px solid var(--theme-color-keyline) !important;
+  transition: all .3s ease;
 
-    h2: {
-      font-size: 1.5rem;
-      margin-top: 0;
-      margin-bottom: 0;
-      font-weight: 600;
-      display: none;
-    }
-
-    &:hover {
-      background-color: var(--theme-color-background-light);
-      border: 1px solid var(--theme-color-border-default) !important;
-      transform: translateY(0px);
-    }
+  h2: {
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 0;
+    font-weight: 600;
+    display: none;
   }
 
-  .cli-invocation-example-command{
-    code::before {
-      content: '$ ';
-      color: var(--theme-color-text-cyan);
-      font-weight: 600;
-    }
-    &.cli-invocation-example-command-with-result {
-      code {
-          border-bottom: 1px dashed var(--theme-color-border-default);
-      }
-      code, div, pre {
-        border-bottom-left-radius: 0 !important;
-        border-bottom-right-radius: 0 !important;
-      }
-    }
+  &:hover {
+    background-color: var(--theme-color-background-light);
+    border: 1px solid var(--theme-color-border-default) !important;
+    transform: translateY(0px);
   }
+}
 
-  .cli-invocation-example-result {
-    // Negate the margin from the above code block
-    margin-top: calc(-1 * var(--ifm-leading) + 1px);
-
+.cli-invocation-example-command{
+  code::before {
+    content: '$ ';
+    color: var(--theme-color-text-cyan);
+    font-weight: 600;
+  }
+  &.cli-invocation-example-command-with-result {
+    code {
+        border-bottom: 1px dashed var(--theme-color-border-default);
+    }
     code, div, pre {
-      border-top-left-radius: 0 !important;
-      border-top-right-radius: 0 !important;
+      border-bottom-left-radius: 0 !important;
+      border-bottom-right-radius: 0 !important;
     }
   }
+}
+
+.cli-invocation-example-result {
+  // Negate the margin from the above code block
+  margin-top: calc(-1 * var(--ifm-leading) + 1px);
+
+  code, div, pre {
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+  }
+}
+
+// Custom source link from API docs to GitHub
+.source-link {
+  float: right;
+}
+
+// Anchor tags on method signatures and class names in API docs
+dt > a > a.hash-link {
+  // Override the default padding of `hash-link`
+  padding-left: 0 !important; 
+}

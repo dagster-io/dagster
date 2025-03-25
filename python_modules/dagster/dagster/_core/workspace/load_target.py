@@ -130,6 +130,19 @@ def get_origins_from_toml(
                         ).create_origins()
                     )
             return origins
+
+        # This allows `dagster dev` to work with projects scaffolded by the new `dg` CLI
+        # without the need to include a `tool.dagster` section.
+        dg_block = data.get("tool", {}).get("dg", {}).get("project", {})
+        if dg_block:
+            default_module_name = f"{dg_block['root_module']}.definitions"
+            module_name = dg_block.get("code_location_target_module", default_module_name)
+            return ModuleTarget(
+                module_name=module_name,
+                attribute=None,
+                working_directory=os.getcwd(),
+                location_name=dg_block.get("code_location_name"),
+            ).create_origins()
         else:
             return []
 

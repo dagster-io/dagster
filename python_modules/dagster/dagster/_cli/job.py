@@ -6,10 +6,12 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import Any, Callable, Optional, TypeVar
 
 import click
+from dagster_shared.seven import IS_WINDOWS, JSONDecodeError, json
+from dagster_shared.yaml_utils import dump_run_config_yaml
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
-from dagster._check.decorator import checked
+from dagster._check import checked
 from dagster._cli.config_scaffolder import scaffold_job_config
 from dagster._cli.utils import (
     assert_no_remaining_opts,
@@ -62,7 +64,6 @@ from dagster._core.snap import JobSnap, NodeInvocationSnap
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.telemetry import log_remote_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
-from dagster._seven import IS_WINDOWS, JSONDecodeError, json
 from dagster._time import get_current_timestamp
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, PrintFn
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -71,7 +72,6 @@ from dagster._utils.indenting_printer import IndentingPrinter
 from dagster._utils.interrupts import capture_interrupts
 from dagster._utils.merger import merge_dicts
 from dagster._utils.tags import normalize_tags
-from dagster._utils.yaml_utils import dump_run_config_yaml
 
 T = TypeVar("T")
 

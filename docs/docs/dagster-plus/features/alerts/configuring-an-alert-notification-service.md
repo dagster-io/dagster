@@ -5,8 +5,6 @@ sidebar_position: 100
 
 Dagster+ allows you to configure alerts to fire in response to a range of events. These alerts can be sent to a variety of different services, depending on your organization's needs.
 
-{/* TODO this needs content on the value prop of alerts -- save money, etc */}
-
 :::note
 You must have **Organization**, **Admin**, or **Editor** permissions on Dagster+ to configure an alert notification service.
 :::
@@ -20,9 +18,9 @@ Before [creating alerts](creating-alerts), you'll need to configure a service to
 All alert emails will be sent by `"no-reply@dagster.cloud"` or `"no-reply@<subdomain>.dagster.cloud"`. Alerts can be configured to be sent to any number of emails.
   </TabItem>
   <TabItem value='microsoft_teams' label='Microsoft Teams'>
-    Create an incoming webhook by following the [Microsoft Teams documentation](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=newteams%2Cdotnet).
+    Follow the [Microsoft Teams documentation](https://support.microsoft.com/en-us/office/create-incoming-webhooks-with-workflows-for-microsoft-teams-8ae491c7-0394-4861-ba59-055e33f75498) to create an incoming webhook with a workflow using a template. Dagster requires the workflow to allow anyone to trigger it (the default authentication type).
 
-This will provide you with a **webhook URL** which will be required when configuring alerts in the UI (after selecting "Microsoft Teams" as your Notification Service) or using the CLI (in the `notification_service` configuration).
+This will provide you with a **workflow URL** which will be required when configuring alerts in the UI (after selecting "Microsoft Teams" as your Notification Service) or using the CLI (in the `notification_service` configuration).
 
   </TabItem>
   <TabItem value='pagerduty' label='PagerDuty'>

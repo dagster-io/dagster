@@ -1,5 +1,6 @@
 ---
 title: 'Version migration'
+sidebar_position: 20
 hide_title: true
 ---
 

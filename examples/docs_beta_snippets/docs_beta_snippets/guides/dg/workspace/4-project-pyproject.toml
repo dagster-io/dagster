@@ -1,0 +1,7 @@
+...
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "project_1"
+...

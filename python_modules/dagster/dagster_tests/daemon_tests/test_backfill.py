@@ -31,7 +31,6 @@ from dagster import (
     Output,
     StaticPartitionMapping,
     TimeWindowPartitionMapping,
-    _seven,
     asset,
     daily_partitioned_config,
     define_asset_job,
@@ -102,10 +101,11 @@ from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
     consume_new_runs_for_automatic_reexecution,
 )
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._seven import IS_WINDOWS, get_system_temp_directory
 from dagster._time import get_current_timestamp
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
+from dagster_shared import seven
+from dagster_shared.seven import IS_WINDOWS, get_system_temp_directory
 
 default_resource_defs = resource_defs = {"io_manager": fs_io_manager}
 logger = logging.getLogger("dagster.test_auto_run_reexecution")
@@ -2190,8 +2190,8 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_some_run
     assert updated_backfill.asset_backfill_data.requested_runs_for_target_roots
 
 
-def test_fail_backfill_when_runs_completed_but_partitions_marked_as_in_progress(
-    instance: DagsterInstance, workspace_context: WorkspaceProcessContext
+def test_backfill_warns_when_runs_completed_but_partitions_marked_as_in_progress(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext, caplog
 ):
     asset_selection = [AssetKey("daily_1"), AssetKey("daily_2")]
     asset_graph = workspace_context.create_request_context().asset_graph
@@ -2262,11 +2262,16 @@ def test_fail_backfill_when_runs_completed_but_partitions_marked_as_in_progress(
         )
     )
 
-    assert len(errors) == 1
-    error_msg = check.not_none(errors[0]).message
+    assert len(errors) == 0
+
+    updated_backfill = check.not_none(instance.get_backfill(backfill_id))
+    assert updated_backfill.status == BulkActionStatus.CANCELED
+
+    logs = caplog.text
+
     assert (
         "All runs have completed, but not all requested partitions have been marked as materialized or failed"
-    ) in error_msg
+    ) in logs
 
 
 # Job must have a partitions definition with a-b-c-d partitions
@@ -3137,7 +3142,7 @@ def test_asset_backfill_logs(
         if not log_line:
             continue
         try:
-            record_dict = _seven.json.loads(log_line)
+            record_dict = seven.json.loads(log_line)
         except json.JSONDecodeError:
             continue
         assert record_dict.get("msg")
@@ -3160,7 +3165,7 @@ def test_asset_backfill_logs(
         if not log_line:
             continue
         try:
-            record_dict = _seven.json.loads(log_line)
+            record_dict = seven.json.loads(log_line)
         except json.JSONDecodeError:
             continue
         assert record_dict.get("msg")

@@ -31,11 +31,11 @@ BASIC_INVALID_VALUE = ComponentValidationTestCase(
     component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
     should_error=True,
     validate_error_msg=msg_includes_all_of(
-        "component.yaml:5", "params.an_int", "Input should be a valid integer"
+        "component.yaml:5", "attributes.an_int", "Input should be a valid integer"
     ),
     check_error_msg=msg_includes_all_of(
         "component.yaml:5",
-        "params.an_int",
+        "attributes.an_int",
         "{} is not of type 'integer'",
     ),
 )
@@ -44,10 +44,10 @@ BASIC_MISSING_VALUE = ComponentValidationTestCase(
     component_path="validation/basic_component_missing_value",
     component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
     should_error=True,
-    validate_error_msg=msg_includes_all_of("component.yaml:3", "params.an_int", "required"),
+    validate_error_msg=msg_includes_all_of("component.yaml:3", "attributes.an_int", "required"),
     check_error_msg=msg_includes_all_of(
         "component.yaml:3",
-        "params",
+        "attributes",
         "'an_int' is a required property",
     ),
 )
@@ -63,24 +63,11 @@ COMPONENT_VALIDATION_TEST_CASES = [
     BASIC_INVALID_VALUE,
     BASIC_MISSING_VALUE,
     ComponentValidationTestCase(
-        component_path="validation/simple_asset_invalid_value",
-        component_type_filepath=None,
-        should_error=True,
-        validate_error_msg=msg_includes_all_of(
-            "component.yaml:5", "params.value", "Input should be a valid string"
-        ),
-        check_error_msg=msg_includes_all_of(
-            "component.yaml:5",
-            "params.value",
-            "{} is not of type 'string'",
-        ),
-    ),
-    ComponentValidationTestCase(
         component_path="validation/basic_component_extra_value",
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
-            "component.yaml:7", "params.a_bool", "Extra inputs are not permitted"
+            "component.yaml:7", "attributes.a_bool", "Extra inputs are not permitted"
         ),
         check_error_msg=msg_includes_all_of(
             "component.yaml:7",
@@ -93,18 +80,18 @@ COMPONENT_VALIDATION_TEST_CASES = [
         should_error=True,
         validate_error_msg=msg_includes_all_of(
             "component.yaml:7",
-            "params.nested.foo.an_int",
+            "attributes.nested.foo.an_int",
             "Input should be a valid integer",
             "component.yaml:12",
-            "params.nested.baz.a_string",
+            "attributes.nested.baz.a_string",
             "Input should be a valid string",
         ),
         check_error_msg=msg_includes_all_of(
             "component.yaml:7",
-            "params.nested.foo.an_int",
+            "attributes.nested.foo.an_int",
             "{} is not of type 'integer'",
             "component.yaml:12",
-            "params.nested.baz.a_string",
+            "attributes.nested.baz.a_string",
             "{} is not of type 'string'",
         ),
     ),
@@ -113,14 +100,14 @@ COMPONENT_VALIDATION_TEST_CASES = [
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         validate_error_msg=msg_includes_all_of(
-            "component.yaml:5", "params.nested.foo.an_int", "required"
+            "component.yaml:5", "attributes.nested.foo.an_int", "required"
         ),
         check_error_msg=msg_includes_all_of(
             "component.yaml:5",
-            "params.nested.foo",
+            "attributes.nested.foo",
             "'an_int' is a required property",
             "component.yaml:10",
-            "params.nested.baz",
+            "attributes.nested.baz",
             "'a_string' is a required property",
         ),
     ),
@@ -130,17 +117,17 @@ COMPONENT_VALIDATION_TEST_CASES = [
         should_error=True,
         validate_error_msg=msg_includes_all_of(
             "component.yaml:8",
-            "params.nested.foo.a_bool",
+            "attributes.nested.foo.a_bool",
             "Extra inputs are not permitted",
             "component.yaml:15",
-            "params.nested.baz.another_bool",
+            "attributes.nested.baz.another_bool",
         ),
         check_error_msg=msg_includes_all_of(
             "component.yaml:8",
-            "params.nested.foo",
+            "attributes.nested.foo",
             "'a_bool' was unexpected",
             "component.yaml:15",
-            "params.nested.baz",
+            "attributes.nested.baz",
             "'another_bool' was unexpected",
         ),
     ),
@@ -153,7 +140,7 @@ COMPONENT_VALIDATION_TEST_CASES = [
             "type",
             "Input should be a valid string",
             "component.yaml:3",
-            "params",
+            "attributes",
             "Input should be an object",
         ),
         check_error_msg=msg_includes_all_of(
@@ -161,8 +148,21 @@ COMPONENT_VALIDATION_TEST_CASES = [
             "type",
             "{} is not of type 'string'",
             "component.yaml:3",
-            "params",
+            "attributes",
             "'asdfasdf' is not of type 'object'",
+        ),
+    ),
+    ComponentValidationTestCase(
+        component_path="validation/other_invalid_component_file_model",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
+        should_error=True,
+        validate_error_msg=msg_includes_all_of(
+            "component.yaml:3",
+            "attributez",
+        ),
+        check_error_msg=msg_includes_all_of(
+            "component.yaml:3",
+            "attributez",
         ),
     ),
     ComponentValidationTestCase(

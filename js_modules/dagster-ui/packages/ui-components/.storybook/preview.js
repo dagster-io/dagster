@@ -4,11 +4,11 @@ import {
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
-  GlobalToasterStyle,
   GlobalTooltipStyle,
   GlobalThemeStyle,
   Colors,
   GlobalGeist,
+  Toaster,
 } from '../src';
 
 import {withThemeByClassName} from '@storybook/addon-themes';
@@ -73,11 +73,11 @@ export const decorators = [
       <GlobalThemeStyle />
       <GlobalGeist />
       <GlobalGeistMono />
-      <GlobalToasterStyle />
       <GlobalTooltipStyle />
       <GlobalPopoverStyle />
       <GlobalDialogStyle />
       <GlobalSuggestStyle />
+      <Toaster richColors />
       <Story />
     </MemoryRouter>
   ),
@@ -86,6 +86,9 @@ export const decorators = [
       light: 'themeLight',
       dark: 'themeDark',
       system: 'themeSystem',
+      lightNoRedGreen: 'themeLightNoRedGreen',
+      darkNoRedGreen: 'themeDarkNoRedGreen',
+      systemNoRedGreen: 'themeSystemNoRedGreen',
     },
     defaultTheme: 'system',
     parentSelector: 'body',

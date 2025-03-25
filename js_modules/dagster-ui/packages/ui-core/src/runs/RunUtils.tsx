@@ -22,6 +22,7 @@ import {Timestamp} from '../app/time/Timestamp';
 import {asAssetCheckHandleInput, asAssetKeyInput} from '../assets/asInput';
 import {AssetKey} from '../assets/types';
 import {ExecutionParams, RunStatus} from '../graphql/types';
+import {AnchorButton} from '../ui/AnchorButton';
 
 export function titleForRun(run: {id: string}) {
   return run.id.split('-').shift();
@@ -93,8 +94,8 @@ export async function handleLaunchResult(
           </div>
         ),
         action: {
-          text: 'View',
-          href: history.createHref({pathname, search}),
+          type: 'custom',
+          element: <AnchorButton to={history.createHref({pathname, search})}>View</AnchorButton>,
         },
       });
     }
@@ -193,8 +194,8 @@ export async function handleLaunchMultipleResult(
     intent: 'success',
     message: <div>Launched {successfulRunIds.length} runs</div>,
     action: {
-      text: 'View',
-      href: history.createHref({pathname: queryString}),
+      type: 'custom',
+      element: <AnchorButton to={history.createHref({pathname: queryString})}>View</AnchorButton>,
     },
   });
 

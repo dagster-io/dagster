@@ -1,10 +1,14 @@
-from dagster._check.builder import (
+# copy of dagster_shared/check/__init__.py to ease migration
+# should be removed once call-sites migrated
+
+from dagster_shared.check.builder import (
     EvalContext as EvalContext,
     ImportFrom as ImportFrom,
     NoneType as NoneType,
     build_check_call_str as build_check_call_str,
 )
-from dagster._check.functions import (
+from dagster_shared.check.decorator import checked as checked
+from dagster_shared.check.functions import (
     CheckError as CheckError,
     ElementCheckError as ElementCheckError,
     NotImplementedCheckError as NotImplementedCheckError,

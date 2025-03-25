@@ -14,6 +14,7 @@ from typing import (  # noqa: UP035
     cast,
 )
 
+from dagster_shared.serdes import NamedTupleSerializer
 from typing_extensions import Self
 
 import dagster._check as check
@@ -40,8 +41,8 @@ from dagster._core.definitions.metadata import (
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.utils import DEFAULT_OUTPUT, check_valid_name
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, REPORTING_USER_TAG
+from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.output import OutputContext
@@ -246,6 +247,119 @@ class DynamicOutput(Generic[T]):
             and self.output_name == other.output_name
             and self.mapping_key == other.mapping_key
             and self.metadata == other.metadata
+        )
+
+
+@whitelist_for_serdes
+class AssetMaterializationFailureReason(Enum):
+    COMPUTE_FAILED = "COMPUTE_FAILED"  # The step to compute the asset failed
+    UPSTREAM_COMPUTE_FAILED = (
+        "UPSTREAM_COMPUTE_FAILED"  # An upstream step failed, so the step for the asset was not run
+    )
+    SKIPPED_OPTIONAL = "SKIPPED_OPTIONAL"  # The asset is optional and was not materialized
+    UPSTREAM_SKIPPED = "UPSTREAM_SKIPPED"  # An upstream asset is optional and was not materialized, so the step for the asset was not run
+    USER_TERMINATION = "USER_TERMINATION"  # A user took an action to terminate the run
+    UNEXPECTED_TERMINATION = (
+        "UNEXPECTED_TERMINATION"  # An external event resulted in the run being terminated
+    )
+    UNKNOWN = "UNKNOWN"
+
+
+# The asset can fail to materialize in two ways, an unexpected/unintentional failure that should update
+# the global state of the asset to failed, and one that indicates that the asset not materializing
+# is expected (like an optional asset, user canceled the run)
+MATERIALIZATION_ATTEMPT_FAILED_TYPES = [
+    AssetMaterializationFailureReason.COMPUTE_FAILED,
+    AssetMaterializationFailureReason.UPSTREAM_COMPUTE_FAILED,
+    AssetMaterializationFailureReason.UNEXPECTED_TERMINATION,
+    AssetMaterializationFailureReason.UNKNOWN,
+]
+
+MATERIALIZATION_ATTEMPT_SKIPPED_TYPES = [
+    AssetMaterializationFailureReason.SKIPPED_OPTIONAL,
+    AssetMaterializationFailureReason.UPSTREAM_SKIPPED,
+    AssetMaterializationFailureReason.USER_TERMINATION,
+]
+
+
+@whitelist_for_serdes(
+    storage_field_names={"metadata": "metadata_entries"},
+    field_serializers={"metadata": MetadataFieldSerializer},
+)
+@record_custom
+class AssetMaterializationFailure(EventWithMetadata, IHaveNew):
+    asset_key: AssetKey
+    description: Optional[str]
+    metadata: Mapping[str, MetadataValue]
+    partition: Optional[str]
+    tags: Mapping[str, str]
+    reason: AssetMaterializationFailureReason
+
+    """Event that indicates that an asset failed to materialize.
+
+    Args:
+        asset_key (Union[str, List[str], AssetKey]): A key to identify the asset.
+        partition (Optional[str]): The name of a partition of the asset.
+        tags (Optional[Mapping[str, str]]): A mapping containing tags for the failure event.
+        metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
+            Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
+            one of the following: string, float, int, JSON-serializable dict, JSON-serializable
+            list, and one of the data classes returned by a MetadataValue static method.
+        reason: (AssetMaterializationFailureReason): An enum indicating why the asset failed to
+            materialize.
+    """
+
+    def __new__(
+        cls,
+        asset_key: CoercibleToAssetKey,
+        reason: AssetMaterializationFailureReason,
+        description: Optional[str] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        partition: Optional[str] = None,
+        tags: Optional[Mapping[str, str]] = None,
+    ):
+        if isinstance(asset_key, AssetKey):
+            check.inst_param(asset_key, "asset_key", AssetKey)
+        elif isinstance(asset_key, str):
+            asset_key = AssetKey(parse_asset_key_string(asset_key))
+        else:
+            check.sequence_param(asset_key, "asset_key", of_type=str)
+            asset_key = AssetKey(asset_key)
+
+        validate_asset_event_tags(tags)
+
+        normed_metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+        )
+
+        return super().__new__(
+            cls,
+            asset_key=asset_key,
+            description=description,
+            metadata=normed_metadata,
+            tags=tags or {},
+            partition=partition,
+            reason=reason,
+        )
+
+    @property
+    def label(self) -> str:
+        return " ".join(self.asset_key.path)
+
+    @property
+    def data_version(self) -> Optional[str]:
+        return self.tags.get(DATA_VERSION_TAG)
+
+    def with_metadata(
+        self, metadata: Optional[Mapping[str, RawMetadataValue]]
+    ) -> "AssetMaterializationFailure":
+        return AssetMaterializationFailure(
+            asset_key=self.asset_key,
+            description=self.description,
+            metadata=metadata,
+            partition=self.partition,
+            tags=self.tags,
+            reason=self.reason,
         )
 
 

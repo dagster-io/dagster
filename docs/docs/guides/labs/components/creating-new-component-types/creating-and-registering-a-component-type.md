@@ -3,11 +3,9 @@ title: 'Creating and registering a component type'
 sidebar_position: 100
 ---
 
-:::info
+import Preview from '../../../../partials/\_Preview.md';
 
-This feature is still in development and might change in patch releases. It’s not production ready, and the documentation may also evolve. Stay tuned for updates.
-
-:::
+<Preview />
 
 The `dagster-components` system makes it easy to create new component types that can be reused across your project.
 
@@ -33,7 +31,7 @@ This will add a new file to your project in the `lib` directory:
 
 This file contains the basic structure for the new component type. There are two methods that you'll need to implement:
 
-- `get_schema`: This method should return a Pydantic model that defines the schema for the component. This is the schema for the data that goes into `component.yaml`.
+- `get_schema`: This method should return a Pydantic-based `ResolvableModel` that defines the schema for the component. This is the schema for the data that goes into `component.yaml`.
 - `build_defs`: This method should return a `Definitions` object for this component.
 
 ## Defining a schema
@@ -45,7 +43,7 @@ In this case, we'll want to define a few things:
 - The path to the shell script that we'll want to run.
 - The assets that we expect this script to produce.
 
-To simplify common use cases, `dagster-components` provides schemas for common bits of configuration, such as `AssetSpecSchema`, which contains attributes that are common to all assets, such as the key, description, tags, and dependencies.
+To simplify common use cases, `dagster-components` provides schemas for common bits of configuration, such as `AssetSpecModel`, which contains attributes that are common to all assets, such as the key, description, tags, and dependencies.
 
 We can the schema for our component and add it to our class as follows:
 
@@ -54,11 +52,11 @@ We can the schema for our component and add it to our class as follows:
 
 ## Defining the Python class
 
-Next, we'll want to translate this schema into fully resolved Python objects. For example, our schema defines `asset_specs` as `Sequence[AssetSpecSchema]`, but at runtime we'll want to work with `Sequence[AssetSpec]`.
+Next, we'll want to translate this schema into fully resolved Python objects. For example, our schema defines `asset_specs` as `Sequence[AssetSpecModel]`, but at runtime we'll want to work with `Sequence[AssetSpec]`.
 
 By convention, we'll use the `@dataclass` decorator to simplify our class definition. We can define attributes for our class that line up with the properties in our schema, but this time we'll use the fully resolved types where appropriate.
 
-Our path will still just be a string, but our `asset_specs` will be a list of `AssetSpec` objects. `AssetSpecSchema` implements `ResolvableSchema[AssetSpec]`, which indicates that it can automatically resolve into an `AssetSpec` object, so we don't need to do any additional work to resolve this field for our component.
+Our path will still just be a string, but our `asset_specs` will be a list of `AssetSpec` objects. `dagster-components` provides a `ResolvedAssetSpec` type alias (which is shorthand for `Annotated[AssetSpec, ...]`). This type contains the necessary annotations to resolve an `AssetSpecModel` into an `AssetSpec`, so we don't need to do any additional work to resolve this field for our component.
 
 
 
@@ -89,10 +87,7 @@ and see your new component type in the list of available component types.
 
 You can also view automatically generated documentation describing your new component type by running:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/4-dg-component-type-docs.txt" />
-
-![](/images/guides/build/projects-and-components/components/component-type-docs.png)
-
+<CliInvocationExample contents="dg docs serve" />
 
 Now, you can use this component type to create new component instances.
 
@@ -100,9 +95,9 @@ Now, you can use this component type to create new component instances.
 
 Once your component type is registered, instances of the component type can be scaffolded using the `dg scaffold component` command:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/6-scaffold-instance-of-component.txt" />
+<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/4-scaffold-instance-of-component.txt" />
 
-By default, this will create a new directory alongside an unpopulated `component.yaml` file. However, you can customize this behavior by implementing a `get_scaffolder` method on your component type.
+By default, this will create a new directory alongside an unpopulated `component.yaml` file. However, you can customize this behavior by decorating your component_type with `scaffoldable`.
 
 In this case, we might want to scaffold a template shell script alongside a filled-out `component.yaml` file, which we accomplish with a custom scaffolder:
 
@@ -110,15 +105,15 @@ In this case, we might want to scaffold a template shell script alongside a fill
 
 Now, when we run `dg scaffold component`, we'll see that a template shell script is created alongside a filled-out `component.yaml` file:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/7-scaffolded-component.yaml" language="yaml" title="my_component_library/components/my_shell_command/component.yaml" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/5-scaffolded-component.yaml" language="yaml" title="my_component_library/components/my_shell_command/component.yaml" />
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/8-scaffolded-component-script.sh" language="bash" title="my_component_library/components/my_shell_command/script.sh" />
+<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/6-scaffolded-component-script.sh" language="bash" title="my_component_library/components/my_shell_command/script.sh" />
 
 ## [Advanced] Providing resolution logic for non-standard types
 
-In most cases, the types you use in your component schema and in the component class will be the same, or will have out-of-the-box resolution logic, as in the case of `AssetSpecSchema` and `AssetSpec`.
+In most cases, the types you use in your component schema and in the component class will be the same, or will have out-of-the-box resolution logic, as in the case of `AssetSpecModel` and `ResolvedAssetSpec`.
 
-However, in some cases you may want to use a type that doesn't have an existing schema equivalent.  In this case, you can provide a function that will resolve the value to the desired type by providing an annotation on the field with `Annotated[<type>, FieldResolver(...)]`.
+However, in some cases you may want to use a type that doesn't have an existing schema equivalent.  In this case, you can provide a function that will resolve the value to the desired type by providing an annotation on the field with `Annotated[<type>, Resolver(...)]`.
 
 For example, we might want to provide an API client to our component, which can be configured with an API key in YAML, or a mock client in tests:
 
@@ -137,7 +132,7 @@ When a user instantiates this component, they will be able to use this custom sc
 ```yaml
 component_type: my_component
 
-params:
+attributes:
   script_path: script.sh
   asset_specs:
     - key: a

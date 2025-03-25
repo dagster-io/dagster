@@ -15,6 +15,7 @@ import {
 import {
   IndexedDBCacheContext,
   KEY_PREFIX,
+  __resetForJest,
   createIndexedDBCacheContextValue,
 } from '../../../search/useIndexedDBCachedQuery';
 import {getMockResultFn} from '../../../testing/mocking';
@@ -55,6 +56,7 @@ afterEach(async () => {
   jest.resetModules();
   jest.clearAllMocks();
   jest.clearAllTimers();
+  __resetForJest();
 });
 const LOCAL_CACHE_ID_PREFIX = 'test';
 function renderWithMocks(mocks: MockedResponse[]) {

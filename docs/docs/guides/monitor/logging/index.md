@@ -79,10 +79,10 @@ Dagster's [built-in loggers](/api/python-api/loggers#built-in-loggers):
 - Can be configured to capture only specified levels, such as `ERROR`
 - Can include manually-defined messages produced inside certain Dagster definitions like assets, ops, and sensors
 
-For more information on customizing loggers, see "[Customizing Dagster's built-in loggers](custom-logging)".
+For more information on customizing loggers, see "[Customizing Dagster's built-in loggers](/guides/monitor/logging/custom-logging)".
 
 ## Integrating external loggers
 
 In addition to built-in loggers, you can also integrate external loggers to augment Dagster's default logs and configure them to display in the UI. Other options, such as custom handlers and formatters, can be configured in your project's `dagster.yaml`.
 
-Refer to the [Python logging guide](python-logging) for more information and examples.
+Refer to the [Python logging guide](/guides/monitor/logging/python-logging) for more information and examples.

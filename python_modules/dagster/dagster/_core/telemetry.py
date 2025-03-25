@@ -13,19 +13,22 @@ For local development:
 import datetime
 import hashlib
 import inspect
-import json
 import logging
 import os
-import platform
-import sys
 import uuid
 from collections.abc import Mapping, Sequence
 from functools import wraps
-from logging.handlers import RotatingFileHandler
-from typing import TYPE_CHECKING, Any, Callable, NamedTuple, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, overload
 
-import click
-import yaml
+from dagster_shared.telemetry import (
+    DAGSTER_HOME_FALLBACK,
+    TelemetryEntry,
+    TelemetrySettings,
+    dagster_home_if_set,
+    get_or_set_instance_id,
+    log_telemetry_action,
+    write_telemetry_log_line,
+)
 from typing_extensions import ParamSpec
 
 import dagster._check as check
@@ -43,7 +46,6 @@ from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.objects import StepSuccessData
 from dagster._core.instance import DagsterInstance
 from dagster._utils.merger import merge_dicts
-from dagster.version import __version__ as dagster_module_version
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.external import (
@@ -56,8 +58,6 @@ if TYPE_CHECKING:
 TELEMETRY_STR = ".telemetry"
 INSTANCE_ID_STR = "instance_id"
 ENABLED_STR = "enabled"
-DAGSTER_HOME_FALLBACK = "~/.dagster"
-MAX_BYTES = 10485760  # 10 MB = 10 * 1024 * 1024 bytes
 UPDATE_REPO_STATS = "update_repo_stats"
 # 'dagit' name is deprecated but we keep the same telemetry action name to avoid data disruption
 START_DAGSTER_WEBSERVER = "start_dagit_webserver"
@@ -68,8 +68,6 @@ BACKFILL_RUN_CREATED = "backfill_run_created"
 STEP_START_EVENT = "step_start_event"
 STEP_SUCCESS_EVENT = "step_success_event"
 STEP_FAILURE_EVENT = "step_failure_event"
-OS_DESC = platform.platform()
-OS_PLATFORM = platform.system()
 
 
 TELEMETRY_WHITELISTED_FUNCTIONS = {
@@ -80,16 +78,6 @@ TELEMETRY_WHITELISTED_FUNCTIONS = {
     "execute_materialize_command",
 }
 
-KNOWN_CI_ENV_VAR_KEYS = {
-    "GITLAB_CI",  # https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
-    "GITHUB_ACTION",  # https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
-    "BITBUCKET_BUILD_NUMBER",  # https://support.atlassian.com/bitbucket-cloud/docs/variables-and-secrets/
-    "JENKINS_URL",  # https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#using-environment-variables
-    "CODEBUILD_BUILD_ID"  # https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
-    "CIRCLECI",  # https://circleci.com/docs/variables/#built-in-environment-variables
-    "TRAVIS",  # https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
-    "BUILDKITE",  # https://buildkite.com/docs/pipelines/environment-variables
-}
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -173,135 +161,6 @@ def _telemetry_wrapper(
     return wrap
 
 
-def get_python_version() -> str:
-    version = sys.version_info
-    return f"{version.major}.{version.minor}.{version.micro}"
-
-
-def get_is_known_ci_env() -> bool:
-    # Many CI tools will use `CI` key which lets us know for sure it's a CI env
-    if os.environ.get("CI") is True:
-        return True
-
-    # Otherwise looking for predefined env var keys of known CI tools
-    for env_var_key in KNOWN_CI_ENV_VAR_KEYS:
-        if env_var_key in os.environ:
-            return True
-
-    return False
-
-
-class TelemetryEntry(
-    NamedTuple(
-        "_TelemetryEntry",
-        [
-            ("action", str),
-            ("client_time", str),
-            ("event_id", str),
-            ("elapsed_time", str),
-            ("instance_id", str),
-            ("metadata", Mapping[str, str]),
-            ("python_version", str),
-            ("dagster_version", str),
-            ("os_desc", str),
-            ("os_platform", str),
-            ("run_storage_id", str),
-            ("is_known_ci_env", bool),
-        ],
-    )
-):
-    """Schema for telemetry logs.
-
-    Currently, log entries are coerced to the same schema to enable storing all entries in one DB
-    table with unified schema.
-
-    action - Name of function called i.e. `execute_job_started` (see: fn telemetry_wrapper)
-    client_time - Client time
-    elapsed_time - Time elapsed between start of function and end of function call
-    event_id - Unique id for the event
-    instance_id - Unique id for dagster instance
-    python_version - Python version
-    metadata - More information i.e. pipeline success (boolean)
-    version - Schema version
-    dagster_version - Version of the project being used.
-    os_desc - String describing OS in use
-    os_platform - Terse string describing OS platform - linux, windows, darwin, etc.
-    run_storage_id - Unique identifier of run storage database
-
-    If $DAGSTER_HOME is set, then use $DAGSTER_HOME/logs/
-    Otherwise, use ~/.dagster/logs/
-    """
-
-    def __new__(
-        cls,
-        action: str,
-        client_time: str,
-        event_id: str,
-        instance_id: str,
-        metadata: Optional[Mapping[str, str]] = None,
-        elapsed_time: Optional[str] = None,
-        run_storage_id: Optional[str] = None,
-    ):
-        action = check.str_param(action, "action")
-        client_time = check.str_param(client_time, "action")
-        elapsed_time = check.opt_str_param(elapsed_time, "elapsed_time", "")
-        event_id = check.str_param(event_id, "event_id")
-        instance_id = check.str_param(instance_id, "instance_id")
-        metadata = check.opt_mapping_param(metadata, "metadata")
-        run_storage_id = check.opt_str_param(run_storage_id, "run_storage_id", default="")
-
-        return super().__new__(
-            cls,
-            action=action,
-            client_time=client_time,
-            elapsed_time=elapsed_time,
-            event_id=event_id,
-            instance_id=instance_id,
-            python_version=get_python_version(),
-            metadata=metadata,
-            dagster_version=dagster_module_version,
-            os_desc=OS_DESC,
-            os_platform=OS_PLATFORM,
-            run_storage_id=run_storage_id,
-            is_known_ci_env=get_is_known_ci_env(),
-        )
-
-
-def _dagster_home_if_set() -> Optional[str]:
-    dagster_home_path = os.getenv("DAGSTER_HOME")
-
-    if not dagster_home_path:
-        return None
-
-    return os.path.expanduser(dagster_home_path)
-
-
-def get_or_create_dir_from_dagster_home(target_dir: str) -> str:
-    """If $DAGSTER_HOME is set, return $DAGSTER_HOME/<target_dir>/
-    Otherwise, return ~/.dagster/<target_dir>/.
-
-    The 'logs' directory is used to cache logs before upload
-
-    The '.logs_queue' directory is used to temporarily store logs during upload. This is to prevent
-    dropping events or double-sending events that occur during the upload process.
-
-    The '.telemetry' directory is used to store the instance id.
-    """
-    dagster_home_path = _dagster_home_if_set()
-    if dagster_home_path is None:
-        dagster_home_path = os.path.expanduser(DAGSTER_HOME_FALLBACK)
-
-    dagster_home_logs_path = os.path.join(dagster_home_path, target_dir)
-    if not os.path.exists(dagster_home_logs_path):
-        try:
-            os.makedirs(dagster_home_logs_path)
-        except FileExistsError:
-            # let FileExistsError pass to avoid race condition when multiple places on the same
-            # machine try to create this dir
-            pass
-    return dagster_home_logs_path
-
-
 def get_log_queue_dir() -> str:
     """Get the directory where we store log queue files, creating the directory if needed.
 
@@ -311,7 +170,7 @@ def get_log_queue_dir() -> str:
     If $DAGSTER_HOME is set, return $DAGSTER_HOME/.logs_queue/
     Otherwise, return ~/.dagster/.logs_queue/
     """
-    dagster_home_path = _dagster_home_if_set()
+    dagster_home_path = dagster_home_if_set()
     if dagster_home_path is None:
         dagster_home_path = os.path.expanduser(DAGSTER_HOME_FALLBACK)
 
@@ -342,33 +201,6 @@ def _check_telemetry_instance_param(
         )
 
 
-def _get_telemetry_logger() -> logging.Logger:
-    # If a concurrently running process deleted the logging directory since the
-    # last action, we need to make sure to re-create the directory
-    # (the logger does not do this itself.)
-    dagster_home_path = get_or_create_dir_from_dagster_home("logs")
-
-    logging_file_path = os.path.join(dagster_home_path, "event.log")
-    logger = logging.getLogger("dagster_telemetry_logger")
-
-    # If the file we were writing to has been overwritten, dump the existing logger and re-open the stream.
-    if not os.path.exists(logging_file_path) and len(logger.handlers) > 0:
-        handler = next(iter(logger.handlers))
-        handler.close()
-        logger.removeHandler(handler)
-
-    if len(logger.handlers) == 0:
-        handler = RotatingFileHandler(
-            logging_file_path,
-            maxBytes=MAX_BYTES,
-            backupCount=10,
-        )
-        logger.setLevel(logging.INFO)
-        logger.addHandler(handler)
-
-    return logger
-
-
 # For use in test teardown
 def cleanup_telemetry_logger() -> None:
     logger = logging.getLogger("dagster_telemetry_logger")
@@ -381,14 +213,9 @@ def cleanup_telemetry_logger() -> None:
     logger.removeHandler(handler)
 
 
-def write_telemetry_log_line(log_line: object) -> None:
-    logger = _get_telemetry_logger()
-    logger.info(json.dumps(log_line))
-
-
 def _get_instance_telemetry_info(
     instance: DagsterInstance,
-) -> tuple[bool, Optional[str], Optional[str]]:
+) -> TelemetrySettings:
     from dagster._core.storage.runs import SqlRunStorage
 
     check.inst_param(instance, "instance", DagsterInstance)
@@ -400,51 +227,15 @@ def _get_instance_telemetry_info(
     run_storage_id = None
     if isinstance(instance.run_storage, SqlRunStorage):
         run_storage_id = instance.run_storage.get_run_storage_id()
-    return (dagster_telemetry_enabled, instance_id, run_storage_id)
+    return TelemetrySettings(
+        dagster_telemetry_enabled=dagster_telemetry_enabled,
+        instance_id=instance_id,
+        run_storage_id=run_storage_id,
+    )
 
 
 def _get_instance_telemetry_enabled(instance: DagsterInstance) -> bool:
     return instance.telemetry_enabled
-
-
-def get_or_set_instance_id() -> str:
-    instance_id = _get_telemetry_instance_id()
-    if instance_id is None:
-        instance_id = _set_telemetry_instance_id()
-    return instance_id
-
-
-# Gets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
-def _get_telemetry_instance_id() -> Optional[str]:
-    telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
-    if not os.path.exists(telemetry_id_path):
-        return
-
-    with open(telemetry_id_path, encoding="utf8") as telemetry_id_file:
-        telemetry_id_yaml = yaml.safe_load(telemetry_id_file)
-        if (
-            telemetry_id_yaml
-            and INSTANCE_ID_STR in telemetry_id_yaml
-            and isinstance(telemetry_id_yaml[INSTANCE_ID_STR], str)
-        ):
-            return telemetry_id_yaml[INSTANCE_ID_STR]
-    return None
-
-
-# Sets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
-def _set_telemetry_instance_id() -> str:
-    click.secho(TELEMETRY_TEXT)
-    click.secho(SLACK_PROMPT)
-
-    telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
-    instance_id = str(uuid.uuid4())
-
-    try:  # In case we encounter an error while writing to user's file system
-        with open(telemetry_id_path, "w", encoding="utf8") as telemetry_id_file:
-            yaml.dump({INSTANCE_ID_STR: instance_id}, telemetry_id_file, default_flow_style=False)
-        return instance_id
-    except Exception:
-        return "<<unable_to_write_instance_id>>"
 
 
 def hash_name(name: str) -> str:
@@ -715,27 +506,13 @@ def log_action(
     elapsed_time: Optional[datetime.timedelta] = None,
     metadata: Optional[Mapping[str, str]] = None,
 ) -> None:
-    check.inst_param(instance, "instance", DagsterInstance)
-    if client_time is None:
-        client_time = datetime.datetime.now()
-
-    (dagster_telemetry_enabled, instance_id, run_storage_id) = _get_instance_telemetry_info(
-        instance
+    log_telemetry_action(
+        lambda: _get_instance_telemetry_info(instance),
+        action,
+        client_time,
+        elapsed_time,
+        metadata,
     )
-
-    if dagster_telemetry_enabled:
-        # Log general statistics
-        write_telemetry_log_line(
-            TelemetryEntry(
-                action=action,
-                client_time=str(client_time),
-                elapsed_time=str(elapsed_time),
-                event_id=str(uuid.uuid4()),
-                instance_id=check.not_none(instance_id),
-                metadata=metadata,
-                run_storage_id=run_storage_id,
-            )._asdict()
-        )
 
 
 def log_dagster_event(event: DagsterEvent, job_context: PlanOrchestrationContext) -> None:
@@ -762,25 +539,3 @@ def log_dagster_event(event: DagsterEvent, job_context: PlanOrchestrationContext
         client_time=datetime.datetime.now(),
         metadata=metadata,
     )
-
-
-TELEMETRY_TEXT = """
-  {telemetry}
-
-  As an open-source project, we collect usage statistics to inform development priorities. For more
-  information, read https://docs.dagster.io/about/telemetry.
-
-  We will not see or store any data that is processed by your code.
-
-  To opt-out, add the following to $DAGSTER_HOME/dagster.yaml, creating that file if necessary:
-
-    telemetry:
-      enabled: false
-""".format(telemetry=click.style("Telemetry:", fg="blue", bold=True))
-
-SLACK_PROMPT = """
-  {welcome}
-
-  If you have any questions or would like to engage with the Dagster team, please join us on Slack
-  (https://bit.ly/39dvSsF).
-""".format(welcome=click.style("Welcome to Dagster!", bold=True))

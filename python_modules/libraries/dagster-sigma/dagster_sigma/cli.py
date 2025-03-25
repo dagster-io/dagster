@@ -11,10 +11,10 @@ from dagster._core.definitions.definitions_load_context import (
     DefinitionsLoadType,
 )
 from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
-from dagster._serdes.utils import serialize_value
 from dagster._utils.env import environ
 from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster._utils.warnings import beta_warning
+from dagster_shared.serdes.utils import serialize_value
 
 SNAPSHOT_ENV_VAR_NAME = "DAGSTER_SIGMA_IS_GENERATING_SNAPSHOT"
 SIGMA_RECON_DATA_PREFIX = "sigma_"

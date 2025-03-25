@@ -49,7 +49,7 @@ After materializing your asset, your OpenAI API usage metadata will be available
 
 ## Using the OpenAI resource with ops
 
-The OpenAI resource can also be used in [ops](/guides/build/ops).
+The OpenAI resource can also be used in [ops](/guides/build/ops/).
 
 :::note
 

@@ -27,10 +27,10 @@ from dagster._config.pythonic_config import infer_schema_from_config_class
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._model import DagsterModel
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import deep_merge_dicts
+from dagster_shared.dagster_model import DagsterModel
 from pydantic import Field, PrivateAttr
 from requests.exceptions import RequestException
 

@@ -1,0 +1,13 @@
+# alert_policies.yaml
+
+alert_policies:
+  description: Sends an email when a Hybrid agent hasn't sent a heartbeat in the last
+    5 minutes.
+  event_types:
+  - AGENT_UNAVAILABLE
+  name: agent-unavailable-alert-email
+  notification_service:
+    email:
+      email_addresses:
+      - richard.hendricks@hooli.com
+      - nelson.bighetti@hooli.com

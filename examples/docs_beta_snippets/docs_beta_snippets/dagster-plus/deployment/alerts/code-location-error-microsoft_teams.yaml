@@ -1,9 +1,10 @@
 # alert_policies.yaml
 
 alert_policies:
-  description: Sends a Microsoft Teams webhook when a Hybrid agent becomes unavailable.
+  description: Sends a Microsoft Teams webhook when a code location fails to load.
   event_types:
-  - AGENT_UNAVAILABLE
+  - CODE_LOCATION_ERROR
   name: code-location-error-microsoft_teams
   notification_service:
-    webhook_url: https://yourdomain.webhook.office.com/...
+    microsoft_teams:
+      webhook_url: https://yourdomain.webhook.office.com/...

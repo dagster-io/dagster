@@ -2,11 +2,13 @@ tree jaffle_platform
 
 jaffle_platform
 ├── __init__.py
-├── components
-│   └── ingest_files
-│       └── component.yaml
 ├── definitions.py
+├── defs
+│   ├── __init__.py
+│   └── ingest_files
+│       ├── component.yaml
+│       └── replication.yaml
 └── lib
     └── __init__.py
 
-4 directories, 4 files
+4 directories, 6 files

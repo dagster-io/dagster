@@ -14,11 +14,16 @@ from typing import (  # noqa: UP035
     Union,
 )
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_key import EntityKey
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
+    AssetExecutionType,
+)
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.base_asset_graph import (
@@ -39,7 +44,6 @@ from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.handle import InstigatorHandle, RepositoryHandle
 from dagster._core.workspace.workspace import CurrentWorkspace
 from dagster._record import ImportFrom, record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -325,7 +329,8 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     @cached_method
     def resolve_to_singular_repo_scoped_node(self) -> "RemoteRepositoryAssetNode":
         # Return a materialization node if it exists, otherwise return an observable node if it
-        # exists, otherwise return any node. This exists to preserve implicit behavior, where the
+        # exists, otherwise return any non-stub node, otherwise return any node.
+        # This exists to preserve implicit behavior, where the
         # materialization node was previously preferred over the observable node. This is a
         # temporary measure until we can appropriately scope the accessors that could apply to
         # either a materialization or observation node.
@@ -342,6 +347,11 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
                     info.asset_node
                     for info in self.repo_scoped_asset_infos
                     if info.asset_node.is_observable
+                ),
+                (
+                    info.asset_node
+                    for info in self.repo_scoped_asset_infos
+                    if not info.asset_node.metadata.get(SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET)
                 ),
                 (info.asset_node for info in self.repo_scoped_asset_infos),
             )

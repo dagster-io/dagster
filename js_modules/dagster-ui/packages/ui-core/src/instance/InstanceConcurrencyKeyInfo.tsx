@@ -27,15 +27,12 @@ import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 
 import {gql, useMutation, useQuery} from '../apollo-client';
+import {POOL_DETAILS_QUERY} from './PoolDetailsQuery';
 import {
   SetConcurrencyLimitMutation,
   SetConcurrencyLimitMutationVariables,
 } from './types/InstanceConcurrency.types';
 import {
-  ConcurrencyKeyDetailsQuery,
-  ConcurrencyKeyDetailsQueryVariables,
-  ConcurrencyLimitFragment,
-  ConcurrencyStepFragment,
   DeleteConcurrencyLimitMutation,
   DeleteConcurrencyLimitMutationVariables,
   FreeConcurrencySlotsMutation,
@@ -43,6 +40,12 @@ import {
   RunsForConcurrencyKeyQuery,
   RunsForConcurrencyKeyQueryVariables,
 } from './types/InstanceConcurrencyKeyInfo.types';
+import {
+  ConcurrencyLimitFragment,
+  ConcurrencyStepFragment,
+  PoolDetailsQuery,
+  PoolDetailsQueryVariables,
+} from './types/PoolDetailsQuery.types';
 import {showSharedToaster} from '../app/DomUtils';
 import {
   FIFTEEN_SECONDS,
@@ -68,12 +71,9 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
   useDocumentTitle(`Pool: ${concurrencyKey}`);
   const [showEdit, setShowEdit] = React.useState<boolean>();
   const [showDelete, setShowDelete] = React.useState<boolean>(false);
-  const queryResult = useQuery<ConcurrencyKeyDetailsQuery, ConcurrencyKeyDetailsQueryVariables>(
-    CONCURRENCY_KEY_DETAILS_QUERY,
-    {
-      variables: {concurrencyKey},
-    },
-  );
+  const queryResult = useQuery<PoolDetailsQuery, PoolDetailsQueryVariables>(POOL_DETAILS_QUERY, {
+    variables: {pool: concurrencyKey},
+  });
   const {data, refetch} = queryResult;
   const concurrencyLimit = data?.instance.concurrencyLimit;
   const hasRunQueue = data?.instance.runQueuingSupported;
@@ -193,11 +193,18 @@ export const InstanceConcurrencyKeyInfo = ({concurrencyKey}: {concurrencyKey: st
                   padding={{vertical: 16, horizontal: 24}}
                   flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
                 >
-                  <Subheading>In progress</Subheading>
+                  <Subheading>In progress steps</Subheading>
                 </Box>
                 <Box style={{marginLeft: -1}}>
                   <PendingStepsTable keyInfo={concurrencyLimit} refresh={refetch} />
                 </Box>
+                <Box
+                  padding={{vertical: 16, horizontal: 24}}
+                  flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+                >
+                  <Subheading>Queued runs</Subheading>
+                </Box>
+                <PoolRunsTable pool={concurrencyKey} runStatuses={queuedStatuses} />
               </>
             ) : (
               <>
@@ -430,7 +437,10 @@ const ConcurrencyActionMenu = ({
             icon="status"
             text="Free all concurrency slots for run"
             onClick={async () => {
-              await showSharedToaster({message: 'Freeing concurrency slots...'});
+              await showSharedToaster({
+                intent: 'primary',
+                message: 'Freeing concurrency slots...',
+              });
               const resp = await freeSlots({variables: {runId: pendingStep.runId}});
               if (resp.data?.freeConcurrencySlots) {
                 onUpdate();
@@ -654,32 +664,6 @@ const PendingStepRow = ({
   );
 };
 
-const CONCURRENCY_STEP_FRAGMENT = gql`
-  fragment ConcurrencyStepFragment on PendingConcurrencyStep {
-    runId
-    stepKey
-    enqueuedTimestamp
-    assignedTimestamp
-    priority
-  }
-`;
-const CONCURRENCY_LIMIT_FRAGMENT = gql`
-  fragment ConcurrencyLimitFragment on ConcurrencyKeyInfo {
-    concurrencyKey
-    limit
-    slotCount
-    claimedSlots {
-      runId
-      stepKey
-    }
-    pendingSteps {
-      ...ConcurrencyStepFragment
-    }
-    usingDefaultLimit
-  }
-  ${CONCURRENCY_STEP_FRAGMENT}
-`;
-
 const SET_CONCURRENCY_LIMIT_MUTATION = gql`
   mutation SetConcurrencyLimit($concurrencyKey: String!, $limit: Int!) {
     setConcurrencyLimit(concurrencyKey: $concurrencyKey, limit: $limit)
@@ -696,26 +680,6 @@ export const FREE_CONCURRENCY_SLOTS_MUTATION = gql`
   mutation FreeConcurrencySlots($runId: String!, $stepKey: String) {
     freeConcurrencySlots(runId: $runId, stepKey: $stepKey)
   }
-`;
-
-export const CONCURRENCY_KEY_DETAILS_QUERY = gql`
-  query ConcurrencyKeyDetailsQuery($concurrencyKey: String!) {
-    instance {
-      id
-      minConcurrencyLimitValue
-      maxConcurrencyLimitValue
-      poolConfig {
-        poolGranularity
-        defaultPoolLimit
-        opGranularityRunBuffer
-      }
-      runQueuingSupported
-      concurrencyLimit(concurrencyKey: $concurrencyKey) {
-        ...ConcurrencyLimitFragment
-      }
-    }
-  }
-  ${CONCURRENCY_LIMIT_FRAGMENT}
 `;
 
 const RUNS_FOR_CONCURRENCY_KEY_QUERY = gql`

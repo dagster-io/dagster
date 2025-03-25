@@ -4,11 +4,12 @@ from collections.abc import Iterator, Mapping
 from typing import Any
 
 import pytest
-from dagster import DagsterInstance, DagsterRunStatus, _seven, file_relative_path, instance_for_test
+from dagster import DagsterInstance, DagsterRunStatus, file_relative_path, instance_for_test
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._daemon import execute_run_monitoring_iteration
 from dagster_celery.defaults import broker_url
+from dagster_shared import seven
 
 from dagster_celery_tests.repo_runner import crashy_job, exity_job, noop_job, sleepy_job
 from dagster_celery_tests.utils import start_celery_worker
@@ -116,7 +117,7 @@ def test_successful_run(
     run_configs(),
 )
 @pytest.mark.skipif(
-    _seven.IS_WINDOWS,
+    seven.IS_WINDOWS,
     reason="Crashy jobs leave resources open on windows, causing filesystem contention",
 )
 def test_crashy_run(
@@ -165,7 +166,7 @@ def test_crashy_run(
 
 @pytest.mark.parametrize("run_config", run_configs())
 @pytest.mark.skipif(
-    _seven.IS_WINDOWS,
+    seven.IS_WINDOWS,
     reason="Crashy jobs leave resources open on windows, causing filesystem contention",
 )
 def test_exity_run(

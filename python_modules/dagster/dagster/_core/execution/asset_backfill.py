@@ -1199,13 +1199,16 @@ def execute_asset_backfill_iteration(
                 BulkActionStatus.CANCELED
             ).with_end_timestamp(get_current_timestamp())
 
-        instance.update_backfill(updated_backfill)
-
         if all_runs_canceled and not all_partitions_marked_completed:
-            check.failed(
+            logger.warning(
                 "All runs have completed, but not all requested partitions have been marked as materialized or failed. "
-                "This is likely a system error. Please report this issue to the Dagster team."
+                "This may indicate that some runs succeeded without materializing their expected partitions."
             )
+            updated_backfill = updated_backfill.with_status(
+                BulkActionStatus.CANCELED
+            ).with_end_timestamp(get_current_timestamp())
+
+        instance.update_backfill(updated_backfill)
 
         logger.info(
             f"Asset backfill {backfill.backfill_id} completed cancellation iteration with status {updated_backfill.status}."

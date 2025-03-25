@@ -192,7 +192,7 @@ export const BackfillActionsMenu = ({
       }
     >
       <Button
-        data-testId={testId('backfill_actions_dropdown_toggle')}
+        data-testid={testId('backfill_actions_dropdown_toggle')}
         icon={<Icon name="expand_more" />}
       />
     </Popover>

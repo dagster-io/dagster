@@ -1,13 +1,9 @@
-from dagster_airlift.core import (
-    AirflowBasicAuthBackend,
-    AirflowInstance,
-    build_defs_from_airflow_instance,
-)
+import dagster_airlift.core as dg_airlift_core
 
-defs = build_defs_from_airflow_instance(
-    airflow_instance=AirflowInstance(
+defs = dg_airlift_core.build_defs_from_airflow_instance(
+    airflow_instance=dg_airlift_core.AirflowInstance(
         # other backends available (e.g. MwaaSessionAuthBackend)
-        auth_backend=AirflowBasicAuthBackend(
+        auth_backend=dg_airlift_core.AirflowBasicAuthBackend(
             webserver_url="http://localhost:8080",
             username="admin",
             password="admin",

@@ -24,10 +24,10 @@ from dagster._core.definitions.definitions_load_context import StateBackedDefini
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.repository_definition.repository_definition import RepositoryLoadData
 from dagster._record import IHaveNew, record_custom
-from dagster._serdes.serdes import deserialize_value
 from dagster._utils.cached_method import cached_method
 from dagster._utils.log import get_dagster_logger
 from dagster._utils.warnings import deprecation_warning
+from dagster_shared.serdes import deserialize_value
 from pydantic import Field, PrivateAttr
 from sqlglot import exp, parse_one
 

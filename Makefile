@@ -13,7 +13,7 @@ install_prettier:
 	npm install -g prettier
 
 install_pyright:
-	uv pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes'
+	uv pip install -e 'python_modules/dagster[pyright]' -e 'python_modules/dagster-pipes' -e 'python_modules/libraries/dagster-shared'
 
 rebuild_pyright:
 	python scripts/run-pyright.py --all --rebuild
@@ -42,7 +42,7 @@ check_prettier:
 	prettier `git ls-files \
 	'python_modules/*.yml' 'python_modules/*.yaml' 'helm/*.yml' 'helm/*.yaml' \
 	':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml' '*.md' ':!:docs/*.md' \
-	':!:python_modules/libraries/dagster-components/dagster_components_tests/integration_tests/components/validation/**/*.yaml' \
+	':!:python_modules/libraries/dagster-components/dagster_components_tests/integration_tests/integration_test_defs/**/*.yaml' \
 	':!:README.md'` --check
 
 prettier:

@@ -1,8 +1,8 @@
 import subprocess
 
 import pytest
-from dagster._seven import IS_WINDOWS
 from dagster._utils import file_relative_path
+from dagster_shared.seven import IS_WINDOWS
 
 
 @pytest.mark.skipif(IS_WINDOWS, reason="fails on windows, unix coverage sufficient")

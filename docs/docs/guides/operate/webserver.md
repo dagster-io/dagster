@@ -1,5 +1,5 @@
 ---
-title: Dagster webserver
+title: Dagster webserver and UI
 description: "The Dagster UI is a web-based interface for Dagster. You can inspect Dagster objects (ex: assets, jobs, schedules), launch runs, view launched runs, and view assets produced by those runs."
 sidebar_position: 20
 ---
@@ -30,7 +30,9 @@ dagster-webserver
 
 Note that several Dagster features, like schedules and sensors, require the Dagster daemon to be running in order to function.
 
-## Overview page
+## Dagster UI reference
+
+### Overview page
 
 - **Description**: This page, also known as the "factory floor", provides a high-level look at the activity in your Dagster deployment, across all code locations. This includes information about runs, jobs, schedules, sensors, resources, and backfills, all of which can be accessed using the tabs on this page.
 
@@ -38,14 +40,14 @@ Note that several Dagster features, like schedules and sensors, require the Dags
 
 ![The Overview tab, also known as the Factory Floor, in the Dagster UI](/images/guides/operate/webserver/factory-floor.png)
 
-## Assets
+### Assets
 
 <Tabs>
 <TabItem value="Asset catalog">
 
 **Asset catalog (OSS)**
 
-- **Description**: The **Asset catalog** page lists all [assets](/guides/build/assets/) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [code location](/guides/deploy/code-locations/), and [tags]/guides/build/assets/metadata-and-tags/index.md#tags). Clicking an asset opens the **Asset details** page for that asset. You can also navigate to the **Global asset lineage** page, reload definitions, and materialize assets.
+- **Description**: The **Asset catalog** page lists all [assets](/guides/build/assets/) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [code location](/guides/deploy/code-locations/), and [tags](/guides/build/assets/metadata-and-tags/index.md#tags). Clicking an asset opens the **Asset details** page for that asset. You can also navigate to the **Global asset lineage** page, reload definitions, and materialize assets.
 
 - **Accessed by:** Clicking **Assets** in the top navigation bar
 
@@ -62,7 +64,7 @@ This feature is only available in Dagster+ Pro.
 
 :::
 
-- **Description**: This version of the **Asset catalog** page includes all the information and functionality of the original page, broken out by compute kind, asset group, [code location](/guides/deploy/code-locations/), [tags]/guides/build/assets/metadata-and-tags/index.md#tags), and [owners]/guides/build/assets/metadata-and-tags/index.md#owners), etc. On this page, you can:
+- **Description**: This version of the **Asset catalog** page includes all the information and functionality of the original page, broken out by compute kind, asset group, [code location](/guides/deploy/code-locations/), [tags](/guides/build/assets/metadata-and-tags/index.md#tags), and [owners](/guides/build/assets/metadata-and-tags/index.md#owners), etc. On this page, you can:
 
   - View all [assets](/guides/build/assets/) in your Dagster deployment
   - View details about a specific asset by clicking on it
@@ -133,7 +135,7 @@ This feature is only available in Dagster+ Pro.
 </TabItem>
 </Tabs>
 
-## Runs
+### Runs
 
 <Tabs>
 <TabItem value="All runs">
@@ -193,7 +195,7 @@ This feature is only available in Dagster+ Pro.
 </TabItem>
 </Tabs>
 
-## Schedules
+### Schedules
 
 <Tabs>
 <TabItem value="All schedules">
@@ -220,7 +222,7 @@ This feature is only available in Dagster+ Pro.
 </TabItem>
 </Tabs>
 
-## Sensors
+### Sensors
 
 <Tabs>
 <TabItem value="All sensors">
@@ -247,7 +249,7 @@ This feature is only available in Dagster+ Pro.
 </TabItem>
 </Tabs>
 
-## Resources
+### Resources
 
 <Tabs>
 <TabItem value="All resources">
@@ -285,7 +287,7 @@ This feature is only available in Dagster+ Pro.
 
 **Uses tab**
 
-- **Description**: The **Uses** tab contains information about the other Dagster definitions that use the resource, including [assets](/guides/build/assets/), [jobs](/guides/build/assets/asset-jobs), and [ops](/guides/build/ops). Clicking on any of these definitions will open the details page for that definition type.
+- **Description**: The **Uses** tab contains information about the other Dagster definitions that use the resource, including [assets](/guides/build/assets/), [jobs](/guides/build/jobs/), and [ops](/guides/build/ops/). Clicking on any of these definitions will open the details page for that definition type.
 
 - **Accessed by**: On the **Resource details* page, clicking the **Uses tab**
 
@@ -296,7 +298,7 @@ This feature is only available in Dagster+ Pro.
 </TabItem>
 </Tabs>
 
-## Backfills
+### Backfills
 
 - **Description**: The **Backfills** tab contains information about the backfills in your Dagster deployment, across all code locations. It includes information about when the partition was created, its target, status, run status, and more.
 
@@ -304,14 +306,14 @@ This feature is only available in Dagster+ Pro.
 
 ![UI Backfills tab](/images/guides/operate/webserver/backfills-tab.png)
 
-## Jobs
+### Jobs
 
 <Tabs>
 <TabItem value="All jobs">
 
 **All jobs**
 
-- **Description**: The **Jobs** page lists all [jobs](/guides/build/assets/asset-jobs) defined in your Dagster deployment across all code locations. It includes information about the job's schedule or sensor, its latest run time, and its history. Click a job to open the **Job details** page.
+- **Description**: The **Jobs** page lists all [jobs](/guides/build/jobs/) defined in your Dagster deployment across all code locations. It includes information about the job's schedule or sensor, its latest run time, and its history. Click a job to open the **Job details** page.
 
 - **Accessed by**: Clicking **Overview (top nav) > Jobs tab**
 
@@ -376,7 +378,7 @@ This feature is only available in Dagster+ Pro.
 </TabItem>
 </Tabs>
 
-## Deployment
+### Deployment
 
 The **Deployment** page includes information about the status of the code locations in your Dagster deployment, daemon (Open Source) or agent (Cloud) health, schedules, sensors, and configuration details.
 

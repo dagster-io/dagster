@@ -42,7 +42,7 @@ Clicking on the **Docs** tab on the right edge of the playground opens up intera
 
 ## Python client
 
-Dagster also provides a Python client to interface with Dagster's GraphQL API from Python. For more information, see "[Dagster Python GraphQL client](graphql-client)".
+Dagster also provides a Python client to interface with Dagster's GraphQL API from Python. For more information, see "[Dagster Python GraphQL client](/guides/operate/graphql/graphql-client)".
 
 ## Example queries
 

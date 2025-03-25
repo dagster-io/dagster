@@ -1,7 +1,9 @@
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGraphFilterBar} from 'shared/asset-graph/AssetGraphFilterBar.oss';
 import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
 
 import {AssetGraphViewType, GraphNode} from './Utils';
+import {featureEnabled} from '../app/Flags';
 
 export type Props = {
   nodes: GraphNode[];
@@ -22,6 +24,7 @@ export function useAssetGraphExplorerFilters({
     assets: nodes,
     includeRepos: viewType === AssetGraphViewType.GLOBAL,
     loading,
+    enabled: !featureEnabled(FeatureFlag.flagSelectionSyntax),
   });
 
   return {

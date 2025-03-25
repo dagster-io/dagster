@@ -11,6 +11,13 @@ from typing import Optional
 
 import click
 import yaml
+from dagster_shared.serdes import serialize_value
+from dagster_shared.serdes.ipc import (
+    get_ipc_shutdown_pipe,
+    interrupt_on_ipc_shutdown_message,
+    open_ipc_subprocess,
+    send_ipc_shutdown_message,
+)
 
 from dagster._annotations import deprecated
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
@@ -18,13 +25,6 @@ from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_options
 from dagster._core.instance import DagsterInstance
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._grpc.server import GrpcServerCommand
-from dagster._serdes import serialize_value
-from dagster._serdes.ipc import (
-    get_ipc_shutdown_pipe,
-    interrupt_on_ipc_shutdown_message,
-    open_ipc_subprocess,
-    send_ipc_shutdown_message,
-)
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
@@ -99,6 +99,13 @@ _CHECK_SUBPROCESS_INTERVAL = 5
     hidden=True,
     help="Internal use only. Pass a readable pipe file descriptor to the dev process that will be monitored for a shutdown signal.",
 )
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    default=False,
+    help="Show verbose stack traces for errors in the code server.",
+)
 @workspace_options
 @deprecated(
     breaking_version="2.0", subject="--dagit-port and --dagit-host args", emit_runtime_warning=False
@@ -112,6 +119,7 @@ def dev_command(
     live_data_poll_rate: Optional[str],
     use_legacy_code_server_behavior: bool,
     shutdown_pipe: Optional[int],
+    verbose: bool,
     **other_opts: object,
 ) -> None:
     workspace_opts = WorkspaceOpts.extract_from_cli_options(other_opts)
@@ -128,6 +136,7 @@ def dev_command(
         )
 
     os.environ["DAGSTER_IS_DEV_CLI"] = "1"
+    os.environ["DAGSTER_verbose"] = "1" if verbose else ""
 
     configure_loggers(formatter=log_format, log_level=log_level.upper())
     logger = logging.getLogger("dagster")
@@ -157,13 +166,14 @@ def dev_command(
             get_possibly_temporary_instance_for_cli("dagster dev", logger=logger)
         )
 
+        logger.info("Launching Dagster services...")
+
         with _optionally_create_temp_workspace(
             use_legacy_code_server_behavior=use_legacy_code_server_behavior,
             workspace_opts=workspace_opts,
             instance=instance,
+            code_server_log_level=code_server_log_level,
         ) as workspace_args:
-            logger.info("Launching Dagster services...")
-
             args = [
                 "--instance-ref",
                 serialize_value(instance.get_ref()),
@@ -260,6 +270,7 @@ def _optionally_create_temp_workspace(
     use_legacy_code_server_behavior: bool,
     workspace_opts: WorkspaceOpts,
     instance: DagsterInstance,
+    code_server_log_level: str,
 ) -> Iterator[Sequence[str]]:
     """If not in legacy mode, spin up grpc servers and write a workspace file pointing at them.
     If in legacy mode, do nothing and return the target args.
@@ -269,6 +280,7 @@ def _optionally_create_temp_workspace(
             instance=instance,
             workspace_load_target=workspace_opts.to_load_target(),
             server_command=GrpcServerCommand.CODE_SERVER_START,
+            code_server_log_level=code_server_log_level,
         ) as context:
             with _temp_grpc_socket_workspace_file(context) as workspace_file:
                 yield ["--workspace", str(workspace_file)]
