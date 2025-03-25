@@ -9,6 +9,7 @@ from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
 from packaging import version
 
+from dagster_dbt.asset_utils import build_dbt_specs
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun, DbtCloudWorkspaceData
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
@@ -102,8 +103,20 @@ class DbtCloudJobRunResults:
 
             is_ephemeral = materialization == "ephemeral"
             is_successful = result_status == NodeStatus.Success
+
+            # Build the specs for the given unique ID
+            asset_specs, check_specs = build_dbt_specs(
+                manifest=manifest,
+                translator=dagster_dbt_translator,
+                select=unique_id,
+                exclude="",
+                io_manager_key=None,
+                project=None,
+            )
+
             if resource_type in REFABLE_NODE_TYPES and is_successful and not is_ephemeral:
+                spec = asset_specs[0]
                 yield AssetMaterialization(
-                    asset_key=dagster_dbt_translator.get_asset_key(dbt_resource_props),
+                    asset_key=spec.key,
                     metadata=default_metadata,
                 )
