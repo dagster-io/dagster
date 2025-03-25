@@ -180,8 +180,24 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         if obj is None:
             return {"missing": MetadataValue.bool(True)}
         else:
-            return (
-                get_polars_metadata(context, obj)
-                if obj is not None
-                else {"missing": MetadataValue.bool(True)}
-            )
+            if obj is not None:
+                metadata = get_polars_metadata(context, obj)
+                metadata.update(self._get_patito_metadata(context))
+            else:
+                metadata: dict[str, MetadataValue] = {"missing": MetadataValue.bool(True)}
+
+            return metadata
+
+    def _get_patito_metadata(self, context: OutputContext) -> dict[str, MetadataValue]:
+        # this only returns a non-empty dict if Patito is installed and a Patito model is used as type annotation
+        try:
+            import patito as pt
+
+            from dagster_polars.patito import get_patito_metadata
+
+            if issubclass(context.dagster_type.typing_type, pt.DataFrame):
+                return get_patito_metadata(context.dagster_type.typing_type.model)
+        except ImportError:
+            return {}
+
+        return {}

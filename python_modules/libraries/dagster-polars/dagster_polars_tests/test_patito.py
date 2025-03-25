@@ -3,7 +3,7 @@ import patito as pt
 import polars as pl
 import pytest
 from dagster_polars import BasePolarsUPathIOManager
-from dagster_polars import patito_model_to_dagster_type
+from dagster_polars.patito import patito_model_to_dagster_type
 
 
 class TestingRecord(pt.Model):
@@ -72,9 +72,7 @@ def test_patito_eager_bad_input(
         return TestingRecord.DataFrame(bad_df)
 
     with dg.DagsterInstance.ephemeral() as instance:
-        res = dg.materialize(
-            [upstream, bad_downstream], instance=instance, raise_on_error=False
-        )
+        res = dg.materialize([upstream, bad_downstream], instance=instance, raise_on_error=False)
         assert not res.success
 
 
@@ -129,9 +127,7 @@ def test_patito_lazy_bad_input(
         return TestingRecord.DataFrame(bad_df).lazy()
 
     with dg.DagsterInstance.ephemeral() as instance:
-        res = dg.materialize(
-            [upstream, bad_downstream], instance=instance, raise_on_error=False
-        )
+        res = dg.materialize([upstream, bad_downstream], instance=instance, raise_on_error=False)
         assert not res.success
 
 
@@ -200,9 +196,7 @@ def test_patito_type_check_bad_output(
         return bad_df
 
     with dg.DagsterInstance.ephemeral() as instance:
-        res = dg.materialize(
-            [upstream, bad_downstream], instance=instance, raise_on_error=False
-        )
+        res = dg.materialize([upstream, bad_downstream], instance=instance, raise_on_error=False)
         assert not res.success
 
 
@@ -273,7 +267,5 @@ def test_patito_type_check_lazy_bad_output(
         return bad_df.lazy()
 
     with dg.DagsterInstance.ephemeral() as instance:
-        res = dg.materialize(
-            [upstream, bad_downstream], instance=instance, raise_on_error=False
-        )
+        res = dg.materialize([upstream, bad_downstream], instance=instance, raise_on_error=False)
         assert not res.success

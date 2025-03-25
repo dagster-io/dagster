@@ -2,7 +2,6 @@ from dagster._core.libraries import DagsterLibraryRegistry
 
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
 from dagster_polars.io_managers.parquet import PolarsParquetIOManager
-from dagster_polars.io_managers.type_checks import patito_model_to_dagster_type
 from dagster_polars.types import DataFramePartitions, LazyFramePartitions
 from dagster_polars.version import __version__
 
@@ -11,7 +10,6 @@ __all__ = [
     "DataFramePartitions",
     "LazyFramePartitions",
     "PolarsParquetIOManager",
-    "patito_model_to_dagster_type",
     "__version__",
 ]
 

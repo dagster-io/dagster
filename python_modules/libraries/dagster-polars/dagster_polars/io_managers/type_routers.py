@@ -157,7 +157,9 @@ class PatitoTypeRouter(BaseTypeRouter, Generic[T]):
         return False
 
     def dump(self, obj: T, path: "UPath", dump_fn: F_D[T]) -> None:
-        if isinstance(obj, pl.DataFrame):  # lazy frames are not supported yet
+        import patito as pt
+
+        if isinstance(obj, pt.DataFrame):  # lazy frames are not supported yet
             obj = obj.validate()  # type: ignore
         dump_fn(cast(OutputContext, self.context), obj, path)  # type: ignore
 
