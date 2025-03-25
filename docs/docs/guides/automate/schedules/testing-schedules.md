@@ -3,27 +3,37 @@ title: "Testing schedules"
 sidebar_position: 600
 ---
 
-In this article, we'll show you how to use the Dagster UI and Python to test your [schedules](index.md).
+In this article, we'll show you how to use the Dagster UI and Python to test your schedules.
 
 ## Testing schedules in the Dagster UI
 
-Using the UI, you can manually trigger test evaluations of a schedule and view the results. This can be helpful when [creating a schedule](defining-schedules) or for [troubleshooting unexpected scheduling behavior](troubleshooting-schedules).
+Using the UI, you can manually trigger test evaluations of a schedule and view the results. This can be helpful when [creating a schedule](/guides/automate/schedules/defining-schedules) or for [troubleshooting unexpected scheduling behavior](/guides/automate/schedules/troubleshooting-schedules).
 
 1. In the UI, click **Overview > Schedules tab**.
 
 2. Click the schedule you want to test.
 
-3. Click the **Test Schedule** button, located near the top right corner of the page.
+3. Click the **Preview tick result** button, located near the top right corner of the page.
 
 4. You'll be prompted to select a mock schedule evaluation time. As schedules are defined on a cadence, the evaluation times in the dropdown are past and future times along that cadence.
 
-   For example, let's say you're testing a schedule with a cadence of `"Every day at X time"`. In the dropdown, you'd see past and future evaluation times along that cadence:
+    For example, let's say you're testing a schedule with a cadence of `"Every day at X time"`. In the dropdown, you'd see past and future evaluation times along that cadence:
 
     ![Selecting a mock evaluation time for a schedule in the Dagster UI](/images/guides/automate/schedules/testing-select-timestamp-page.png)
 
-5. After selecting an evaluation time, click the **Evaluate** button.
+5. After selecting an evaluation time, click the **Continue** button.
 
-A window containing the evaluation result will display after the test completes. If the evaluation was successful, click **Open in Launchpad** to launch a run with the same config as the test evaluation.
+6. A window containing the evaluation result will display after the test completes:
+
+    ![Results page after evaluating the schedule in the Dagster UI](/images/concepts/partitions-schedules-sensors/schedules/testing-result-page.png)
+
+    If the preview was successful, then for each produced run request, you can view the run config and tags produced by that run request by clicking the **{}** button in the Actions column:
+
+    ![Actions page in the Dagster UI](/images/concepts/partitions-schedules-sensors/schedules/testing-actions-page.png)
+
+7. Click the **Launch all & commit tick result** on the bottom right to launch all the run requests. This will launch the runs and link to the /runs page filtered to the IDs of the runs that launched:
+
+    ![Runs page after launching all runs in the Dagster UI](/images/concepts/partitions-schedules-sensors/schedules/testing-launched-runs-page.png)
 
 ## Testing schedules in Python
 

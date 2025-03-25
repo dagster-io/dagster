@@ -12,4 +12,4 @@ Here, a resource is provided which provides access to an external API. The same 
 {/* TODO add dedent=4 prop to CodeExample below when implemented */}
 <CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_on_sensor" endBefore="end_new_resource_on_sensor" />
 
-For more information on resources, refer to the [Resources documentation](/guides/build/external-resources). To see how to test schedules with resources, refer to the section on testing sensors with resources in "[Testing sensors](testing-sensors)".
+For more information on resources, refer to the [Resources documentation](/guides/build/external-resources). To see how to test schedules with resources, refer to the section on testing sensors with resources in "[Testing sensors](/guides/automate/sensors/testing-sensors)".

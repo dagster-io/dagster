@@ -3,7 +3,7 @@ title: Customizing a schedule's execution timezone
 sidebar_position: 300
 ---
 
-[Schedules](index.md) that don't have a set timezone will, by default, execute in [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time). By the end of this guide, you'll know how to:
+Schedules that don't have a set timezone will, by default, execute in [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time). In this guide, you will learn to:
 
 - Set custom timezones on schedule definitions
 - Set custom timezones on partitioned jobs
@@ -13,7 +13,7 @@ sidebar_position: 300
 
 This guide assumes familiarity with:
 
-- [Schedules](index.md)
+- Schedules
 - Jobs, either [asset](/guides/build/jobs/asset-jobs) or op-based
 - [Partitions](/guides/build/partitions-and-backfills/partitioning-assets)
 

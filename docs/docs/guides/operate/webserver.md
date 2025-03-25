@@ -213,7 +213,7 @@ This feature is only available in Dagster+ Pro.
 
 **Schedule details**
 
-- **Description**: The **Schedule details** page contains details about a single schedule, including its next tick, tick history, and run history. Clicking the **Test schedule** button near the top right corner of the page allows you to test the schedule.
+- **Description**: The **Schedule details** page contains details about a single schedule, including its next tick, tick history, and run history. Clicking the **Preview tick result** button near the top right corner of the page allows you to test the schedule.
 
 - **Accessed by**: Clicking a schedule in the **Schedules** page.
 
@@ -240,7 +240,7 @@ This feature is only available in Dagster+ Pro.
 
 **Sensor details**
 
-- **Description**: The **Sensor details** page contains details about a single sensor, including its next tick, tick history, and run history. Clicking the **Test sensor** button near the top right corner of the page allows you to test the sensor.
+- **Description**: The **Sensor details** page contains details about a single sensor, including its next tick, tick history, and run history. Clicking the **Preview tick result** button near the top right corner of the page allows you to test the sensor.
 
 - **Accessed by**: Clicking a sensor in the **Sensors** page
 
