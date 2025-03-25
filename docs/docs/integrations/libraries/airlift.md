@@ -19,7 +19,7 @@ sidebar_custom_props:
   logo: images/integrations/airflow.svg
 ---
 
-import Beta from '../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
@@ -60,8 +60,8 @@ If you need to migrate at the DAG level, see "[Migrate from Airflow to Dagster a
 
 You can use Airlift to observe DAGs from multiple Airflow instances, and federate execution between them using Dagster as a centralized control plane.
 
-To get started, see "[Federate execution between Airflow instances with Dagster](/guides/migrate/airflow-to-dagster/federation/)".
+To get started, see "[Federate execution between Airflow instances with Dagster](/guides/migrate/airflow-to-dagster/federation)".
 
 ## Airflow operator migration
 
-You can easily migrate common Airflow operators to Dagster. For more information, see "[Airflow operator migration](/guides/migrate/airflow-to-dagster/airflow-operator-migration/)".
+You can easily migrate common Airflow operators to Dagster. For more information, see "[Airflow operator migration](/guides/migrate/airflow-to-dagster/airflow-operator-migration)".

@@ -4,7 +4,7 @@ description: Dagster can orchestrate dbt alongside other technologies.
 sidebar_position: 200
 ---
 
-At this point, you should have a [fully-configured dbt project](set-up-dbt-project) that's ready to work with Dagster.
+At this point, you should have a [fully-configured dbt project](/integrations/libraries/dbt/using-dbt-with-dagster/set-up-dbt-project) that's ready to work with Dagster.
 
 In this section, you'll finally begin integrating dbt with Dagster. To do so, you'll:
 
@@ -98,4 +98,4 @@ If you later want to customize how your dbt models are translated into Dagster a
 
 ## What's next?
 
-At this point, you've loaded your dbt models into Dagster as assets, viewed them in Dagster's asset graph UI, and materialized them. Next, you'll learn how to [add upstream Dagster assets](upstream-assets).
+At this point, you've loaded your dbt models into Dagster as assets, viewed them in Dagster's asset graph UI, and materialized them. Next, you'll learn how to [add upstream Dagster assets](/integrations/libraries/dbt/using-dbt-with-dagster/upstream-assets).

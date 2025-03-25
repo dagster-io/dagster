@@ -13,7 +13,7 @@ By the end of the tutorial, you will:
 - Load Snowflake tables in downstream assets
 - Add the assets and Snowflake resource to a `Definitions` object
 
-**Prefer to use an I/O manager?** Unlike resources, an [I/O manager](/guides/build/io-managers/) transfers the responsibility of storing and loading DataFrames as Snowflake tables to Dagster. Refer to the [Snowlake I/O manager guide](using-snowflake-with-dagster-io-managers) for more info.
+**Prefer to use an I/O manager?** Unlike resources, an [I/O manager](/guides/build/io-managers/) transfers the responsibility of storing and loading DataFrames as Snowflake tables to Dagster. Refer to the [Snowlake I/O manager guide](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers) for more info.
 
 ## Prerequisites
 
@@ -42,7 +42,7 @@ To complete this tutorial, you'll need:
 
     Refer to the [Using environment variables and secrets guide](/guides/deploy/using-environment-variables-and-secrets) for more info.
 
-    For more information on authenticating with a private key, see [Authenticating with a private key](reference#authenticating-using-a-private-key) in the Snowflake reference guide.
+    For more information on authenticating with a private key, see [Authenticating with a private key](/integrations/libraries/snowflake/reference#authenticating-using-a-private-key) in the Snowflake reference guide.
 
 
 ## Step 1: Configure the Snowflake resource

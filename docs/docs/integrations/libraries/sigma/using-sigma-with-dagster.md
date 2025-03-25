@@ -3,7 +3,7 @@ title: "Using Sigma with Dagster"
 description: Represent your Sigma assets in Dagster
 ---
 
-import Beta from '../../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 

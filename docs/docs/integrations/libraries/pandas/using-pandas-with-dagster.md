@@ -5,7 +5,7 @@ description: "The dagster-pandas library provides the ability to perform data va
 
 # Pandas & Dagster
 
-import Beta from '../../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 

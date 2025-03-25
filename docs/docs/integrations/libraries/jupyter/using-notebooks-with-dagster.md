@@ -328,4 +328,4 @@ To integrate the new notebook, follow the steps from [Step 5.3](#step-53-modify-
 
 ## Conclusion
 
-Now we have successfully created an asset from a Jupyter notebook and integrated it with our Dagster project! To learn about additional `dagstermill` features, refer to the [Dagstermill integration reference](reference).
+Now we have successfully created an asset from a Jupyter notebook and integrated it with our Dagster project! To learn about additional `dagstermill` features, refer to the [Dagstermill integration reference](/integrations/libraries/jupyter/reference).

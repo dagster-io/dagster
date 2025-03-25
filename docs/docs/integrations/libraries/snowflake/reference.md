@@ -4,7 +4,7 @@ description: Store your Dagster assets in Snowflak
 sidebar_position: 300
 ---
 
-This reference page provides information for working with [`dagster-snowflake`](/api/python-api/libraries/dagster-snowflake) features that are not covered as part of the Snowflake & Dagster tutorials ([resources](using-snowflake-with-dagster), [I/O managers](using-snowflake-with-dagster-io-managers)).
+This reference page provides information for working with [`dagster-snowflake`](/api/python-api/libraries/dagster-snowflake) features that are not covered as part of the Snowflake & Dagster tutorials ([resources](/integrations/libraries/snowflake/using-snowflake-with-dagster), [I/O managers](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers)).
 
 ## Authenticating using a private key
 
@@ -49,7 +49,7 @@ Let's review what's happening in this example:
 
 - Attached the `SnowflakeResource` to the `small_petals` asset
 - Used the `get_connection` context manager method of the Snowflake resource to get a [`snowflake.connector.Connection`](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-api#object-connection) object
-- Used the connection to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2](using-snowflake-with-dagster#step-2-create-tables-in-snowflake) of the [Snowflake resource tutorial](using-snowflake-with-dagster)
+- Used the connection to execute a custom SQL query against the `IRIS_DATASET` table created in [Step 2](/integrations/libraries/snowflake/using-snowflake-with-dagster#step-2-create-tables-in-snowflake) of the [Snowflake resource tutorial](/integrations/libraries/snowflake/using-snowflake-with-dagster)
 
 For more information on the Snowflake resource, including additional configuration settings, see the <PyObject section="libraries" object="SnowflakeResource" module="dagster_snowflake" /> API docs.
 
@@ -61,7 +61,7 @@ Sometimes you may not want to fetch an entire table as the input to a downstream
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/snowflake/downstream_columns.py" />
 
-In this example, we only use the columns containing sepal data from the `IRIS_DATASET` table created in [Step 2](using-snowflake-with-dagster-io-managers#store-a-dagster-asset-as-a-table-in-snowflake) of the [Snowflake I/O manager tutorial](using-snowflake-with-dagster-io-managers). Fetching the entire table would be unnecessarily costly, so to select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
+In this example, we only use the columns containing sepal data from the `IRIS_DATASET` table created in [Step 2](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers#store-a-dagster-asset-as-a-table-in-snowflake) of the [Snowflake I/O manager tutorial](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers). Fetching the entire table would be unnecessarily costly, so to select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
 
 When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using the Snowflake I/O manager, it will only fetch the `sepal_length_cm` and `sepal_width_cm` columns of the `FLOWERS.IRIS.IRIS_DATASET` table and pass them to `sepal_data` as a Pandas DataFrame.
 
@@ -144,7 +144,7 @@ SELECT *
 
 If you want to have different assets stored in different Snowflake schemas, the Snowflake I/O manager allows you to specify the schema in a few ways.
 
-You can specify the default schema where data will be stored as configuration to the I/O manager, like we did in [Step 1](using-snowflake-with-dagster-io-managers#step-1-configure-the-snowflake-io-manager) of the [Snowflake I/O manager tutorial](using-snowflake-with-dagster-io-managers).
+You can specify the default schema where data will be stored as configuration to the I/O manager, like we did in [Step 1](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers#step-1-configure-the-snowflake-io-manager) of the [Snowflake I/O manager tutorial](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers).
 
 To store assets in different schemas, specify the schema as metadata:
 
@@ -202,7 +202,7 @@ The Snowflake I/O manager also supports storing and loading PySpark DataFrames. 
 pip install dagster-snowflake-pyspark
 ```
 
-Then you can use the `SnowflakePySparkIOManager` in your `Definitions` as in [Step 1](using-snowflake-with-dagster-io-managers#step-1-configure-the-snowflake-io-manager) of the [Snowflake I/O manager tutorial](using-snowflake-with-dagster-io-managers).
+Then you can use the `SnowflakePySparkIOManager` in your `Definitions` as in [Step 1](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers#step-1-configure-the-snowflake-io-manager) of the [Snowflake I/O manager tutorial](/integrations/libraries/snowflake/using-snowflake-with-dagster-io-managers).
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/snowflake/pyspark_configuration.py" startAfter="start_configuration" endBefore="end_configuration" />
 

@@ -100,7 +100,7 @@ In the scenario where a single API call or configuration can result in multiple 
 
 ### Guide
 
-- [Writing a multi-asset decorator integration](multi-asset-integration)
+- [Writing a multi-asset decorator integration](/integrations/guides/multi-asset-integration)
 
 ## Pipes protocol
 

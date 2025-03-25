@@ -107,7 +107,7 @@ You may want to use an I/O manager to handle storing DataFrames as tables in Duc
 
 {/* Using an I/O manager is not required, and you can reference [When to use I/O managers](/guides/build/io-managers/#when-to-use-io-managers) to learn more. */}
 
-This section of the guide focuses on storing and loading Pandas DataFrames in DuckDB, but Dagster also supports using PySpark and Polars DataFrames with DuckDB. The concepts from this guide apply to working with PySpark and Polars DataFrames, and you can learn more about setting up and using the DuckDB I/O manager with PySpark and Polars DataFrames in the [reference guide](reference).
+This section of the guide focuses on storing and loading Pandas DataFrames in DuckDB, but Dagster also supports using PySpark and Polars DataFrames with DuckDB. The concepts from this guide apply to working with PySpark and Polars DataFrames, and you can learn more about setting up and using the DuckDB I/O manager with PySpark and Polars DataFrames in the [reference guide](/integrations/libraries/duckdb/reference).
 
 ### Step 1: Configure the DuckDB I/O manager
 
@@ -166,7 +166,7 @@ When finished, your code should look like the following:
 
 ## Related
 
-For more DuckDB features, refer to the [DuckDB reference](reference).
+For more DuckDB features, refer to the [DuckDB reference](/integrations/libraries/duckdb/reference).
 
 For more information on asset definitions, see the [Assets documentation](/guides/build/assets/).
 

@@ -13,9 +13,9 @@ By the end of the tutorial, you will:
 - Make a Snowflake table available in Dagster
 - Load Snowflake tables in downstream assets
 
-This guide focuses on storing and loading Pandas DataFrames in Snowflake, but Dagster also supports using PySpark DataFrames with Snowflake. The concepts from this guide apply to working with PySpark DataFrames, and you can learn more about setting up and using the Snowflake I/O manager with PySpark DataFrames in the [Snowflake reference](reference).
+This guide focuses on storing and loading Pandas DataFrames in Snowflake, but Dagster also supports using PySpark DataFrames with Snowflake. The concepts from this guide apply to working with PySpark DataFrames, and you can learn more about setting up and using the Snowflake I/O manager with PySpark DataFrames in the [Snowflake reference](/integrations/libraries/snowflake/reference).
 
-**Prefer to use resources instead?** Unlike an I/O manager, resources allow you to run SQL queries directly against tables within an asset's compute function. For details, see "[Using Snowlake with Dagster resources](using-snowflake-with-dagster)".
+**Prefer to use resources instead?** Unlike an I/O manager, resources allow you to run SQL queries directly against tables within an asset's compute function. For details, see "[Using Snowlake with Dagster resources](/integrations/libraries/snowflake/using-snowflake-with-dagster)".
 
 ## Prerequisites
 
@@ -44,7 +44,7 @@ To complete this tutorial, you'll need:
 
     Refer to the [Using environment variables and secrets guide](/guides/deploy/using-environment-variables-and-secrets) for more info.
 
-    For more information on authenticating with a private key, see [Authenticating with a private key](reference#authenticating-using-a-private-key) in the Snowflake reference guide.
+    For more information on authenticating with a private key, see [Authenticating with a private key](/integrations/libraries/snowflake/reference#authenticating-using-a-private-key) in the Snowflake reference guide.
 
 
 ## Step 1: Configure the Snowflake I/O manager

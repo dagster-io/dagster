@@ -6,7 +6,7 @@ sidebar_position: 200
 
 This reference provides a high-level look at working with Jupyter notebooks using the [`dagstermill` integration library](/api/python-api/libraries/dagstermill).
 
-For a step-by-step implementation walkthrough, refer to the [Using notebooks with Dagster tutorial](using-notebooks-with-dagster).
+For a step-by-step implementation walkthrough, refer to the [Using notebooks with Dagster tutorial](/integrations/libraries/jupyter/using-notebooks-with-dagster).
 
 ## Notebooks as assets
 
