@@ -11,7 +11,7 @@ from dagster_dbt.cloud_v2.resources import (
     DbtCloudWorkspace,
     get_dagster_adhoc_job_name,
 )
-from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType
+from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudWorkspaceData
 
 tests_path = Path(__file__).joinpath("..").resolve()
 manifest_path = tests_path.joinpath("manifest.json")
@@ -757,6 +757,16 @@ def workspace_fixture(credentials: DbtCloudCredentials) -> DbtCloudWorkspace:
         credentials=credentials,
         project_id=TEST_PROJECT_ID,
         environment_id=TEST_ENVIRONMENT_ID,
+    )
+
+
+@pytest.fixture(name="workspace_data")
+def workspace_data_fixture() -> DbtCloudWorkspaceData:
+    return DbtCloudWorkspaceData(
+        project_id=TEST_PROJECT_ID,
+        environment_id=TEST_ENVIRONMENT_ID,
+        job_id=TEST_JOB_ID,
+        manifest=get_sample_manifest_json(),
     )
 
 

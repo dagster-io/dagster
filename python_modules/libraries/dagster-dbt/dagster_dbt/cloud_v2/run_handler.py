@@ -62,7 +62,14 @@ class DbtCloudJobRunResults:
     """Represents the run results of a dbt Cloud job run."""
 
     run_id: int
-    run_results = Mapping[str, Any]
+    run_results: Mapping[str, Any]
+
+    @classmethod
+    def from_run_results_json(cls, run_results_json: Mapping[str, Any]) -> "DbtCloudJobRunResults":
+        return cls(
+            run_id=int(run_results_json["metadata"]["env"]["DBT_CLOUD_RUN_ID"]),
+            run_results=run_results_json,
+        )
 
     def to_default_asset_events(
         self,
@@ -89,7 +96,8 @@ class DbtCloudJobRunResults:
         invocation_id: str = self.run_results["metadata"]["invocation_id"]
         for result in self.run_results["results"]:
             unique_id: str = result["unique_id"]
-            dbt_resource_props = manifest["nodes"][unique_id]
+            dbt_resource_props: Mapping[str, Any] = manifest["nodes"][unique_id]
+            selector: str = ".".join(dbt_resource_props["fqn"])
 
             default_metadata = {
                 "unique_id": unique_id,
@@ -108,7 +116,7 @@ class DbtCloudJobRunResults:
             asset_specs, check_specs = build_dbt_specs(
                 manifest=manifest,
                 translator=dagster_dbt_translator,
-                select=unique_id,
+                select=selector,
                 exclude="",
                 io_manager_key=None,
                 project=None,
