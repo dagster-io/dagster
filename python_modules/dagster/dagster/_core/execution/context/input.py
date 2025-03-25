@@ -11,7 +11,6 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
-from dagster._core.types.connection import Connection
 from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
@@ -673,10 +672,6 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
             return self._key_range.start
         else:
             raise NotImplementedError()
-
-    def get_partition_key_connection(self, limit: int, cursor: Optional[str] = None):
-        partition_keys = self.get_partition_keys()
-        return Connection.create_from_sequence(list(partition_keys), limit=limit, cursor=cursor)
 
     def get_partition_key_ranges(
         self,

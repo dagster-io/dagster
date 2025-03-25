@@ -17,6 +17,7 @@ from dagster._core.definitions.partition import (
     DEFAULT_DATE_FORMAT,
     AllPartitionsSubset,
     PartitionedConfig,
+    PartitionLoadingContext,
     PartitionsDefinition,
     PartitionsSubset,
     ScheduleType,
@@ -144,12 +145,10 @@ class TimeWindow(NamedTuple):
 
 
 class TimeWindowCursor:
-    def __init__(
-        self, current_timestamp: int, cursor_timestamp: int, partitions_past_current_time: int = 0
-    ):
-        self.current_timestamp = current_timestamp
-        self.cursor_timestamp = cursor_timestamp
-        self.partitions_past_current_time = partitions_past_current_time
+    def __init__(self, start_timestamp: int, end_timestamp: int, offset_partition_count: int = 0):
+        self.start_timestamp = start_timestamp
+        self.end_timestamp = end_timestamp
+        self.offset_partition_count = offset_partition_count
 
     def __str__(self) -> str:
         return self.to_string()
@@ -157,9 +156,9 @@ class TimeWindowCursor:
     def to_string(self) -> str:
         raw = json.dumps(
             {
-                "cursor_timestamp": self.cursor_timestamp,
-                "current_timestamp": self.current_timestamp,
-                "partitions_past_current_time": self.partitions_past_current_time,
+                "start_timestamp": self.start_timestamp,
+                "end_timestamp": self.end_timestamp,
+                "offset_partition_count": self.offset_partition_count,
             }
         )
         return base64.b64encode(bytes(raw, encoding="utf-8")).decode("utf-8")
@@ -167,15 +166,15 @@ class TimeWindowCursor:
     @classmethod
     def from_cursor(cls, cursor: str):
         raw = json.loads(base64.b64decode(cursor).decode("utf-8"))
-        if "current_timestamp" not in raw or "cursor_timestamp" not in raw:
+        if "end_timestamp" not in raw or "start_timestamp" not in raw:
             raise ValueError(f"Invalid cursor: {cursor}")
         try:
-            cursor_timestamp = int(raw["cursor_timestamp"])
-            current_timestamp = int(raw["current_timestamp"])
-            partitions_past_current_time = int(raw.get("partitions_past_current_time", 0))
+            start_timestamp = int(raw["start_timestamp"])
+            end_timestamp = int(raw["end_timestamp"])
+            offset_partition_count = int(raw.get("offset_partition_count", 0))
         except ValueError:
             raise ValueError(f"Invalid cursor: {cursor}")
-        return TimeWindowCursor(current_timestamp, cursor_timestamp, partitions_past_current_time)
+        return TimeWindowCursor(start_timestamp, end_timestamp, offset_partition_count)
 
 
 @whitelist_for_serdes(
@@ -514,65 +513,125 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
     def get_partition_key_connection(
         self,
-        limit,
-        cursor=None,
-        current_time=None,
-        dynamic_partitions_store=None,
+        context: PartitionLoadingContext,
+        limit: int,
+        ascending: bool,
+        cursor: Optional[str] = None,
     ) -> Connection[str]:
+        current_timestamp = self._get_current_timestamp(context.temporal_context.effective_dt)
+
         if cursor:
             time_window_cursor = TimeWindowCursor.from_cursor(cursor)
-            start_ts = time_window_cursor.cursor_timestamp
-            current_timestamp = time_window_cursor.current_timestamp
-            partitions_past_current_time = time_window_cursor.partitions_past_current_time
+            start_timestamp = time_window_cursor.start_timestamp
+            end_timestamp = time_window_cursor.end_timestamp
+            offset_partitions_count = time_window_cursor.offset_partition_count
         else:
-            start_ts = self.start.timestamp()
-            current_timestamp = self._get_current_timestamp(current_time)
-            partitions_past_current_time = 0
+            start_timestamp = self.start.timestamp()
+            end_timestamp = current_timestamp
+            offset_partitions_count = 0
 
         partition_keys: list[str] = []
         has_more = False
 
-        for time_window in self._iterate_time_windows(start_ts):
-            if self.end and time_window.end.timestamp() > self.end.timestamp():
-                break
-            if (
-                time_window.end.timestamp() <= current_timestamp
-                or partitions_past_current_time < self.end_offset
-            ):
+        if not ascending:
+            offset_time_windows = []
+            if self.end_offset > 0 and self.end_offset > offset_partitions_count:
+                last_no_offset_time_window = next(
+                    iter(self._reverse_iterate_time_windows(end_timestamp))
+                )
+                lookforward_time = (
+                    last_no_offset_time_window.end.timestamp()
+                    if last_no_offset_time_window
+                    else end_timestamp
+                )
+                for time_window in self._iterate_time_windows(lookforward_time):
+                    if self.end and time_window.end.timestamp() > self.end.timestamp():
+                        break
+
+                    if len(offset_time_windows) >= self.end_offset - offset_partitions_count:
+                        break
+
+                    offset_time_windows.append(
+                        dst_safe_strftime(
+                            time_window.start, self.timezone, self.fmt, self.cron_schedule
+                        )
+                    )
+
+            partition_keys = list(reversed(offset_time_windows))[:limit]
+            offset_partitions_count += len(partition_keys)
+
+            for time_window in self._reverse_iterate_time_windows(end_timestamp):
+                if len(partition_keys) >= limit - min(0, self.end_offset):
+                    has_more = True
+                    break
+
+                if time_window.start.timestamp() < start_timestamp:
+                    break
+
                 partition_keys.append(
                     dst_safe_strftime(
                         time_window.start, self.timezone, self.fmt, self.cron_schedule
                     )
                 )
-                if time_window.end.timestamp() > current_timestamp:
-                    partitions_past_current_time += 1
-                if limit and len(partition_keys) >= limit - min(0, self.end_offset):
-                    has_more = True
+
+            if self.end_offset < 0 and not cursor:
+                # only subset if we did not have a cursor... if we did have a cursor, we've already
+                # applied the offset to the end, since we're moving backwards from the end
+                partition_keys = partition_keys[-1 * min(0, self.end_offset) :]
+
+        else:
+            for time_window in self._iterate_time_windows(start_timestamp):
+                if self.end and time_window.end.timestamp() > self.end.timestamp():
                     break
-            else:
-                break
+                if (
+                    time_window.end.timestamp() <= end_timestamp
+                    or offset_partitions_count < self.end_offset
+                ):
+                    partition_keys.append(
+                        dst_safe_strftime(
+                            time_window.start, self.timezone, self.fmt, self.cron_schedule
+                        )
+                    )
+                    if time_window.end.timestamp() > end_timestamp:
+                        offset_partitions_count += 1
+                    if len(partition_keys) >= limit - min(0, self.end_offset):
+                        has_more = True
+                        break
+                else:
+                    break
 
-        if has_more:
-            # exited due to limit; subset in case we overshot (if end_offset < 0)
-            partition_keys = partition_keys[:limit]
-        elif self.end_offset < 0:
-            # only subset if we did not eject early due to the limit
-            partition_keys = partition_keys[: self.end_offset]
+            if has_more:
+                # exited due to limit; subset in case we overshot (if end_offset < 0)
+                partition_keys = partition_keys[:limit]
+            elif self.end_offset < 0:
+                # only subset if we did not eject early due to the limit
+                partition_keys = partition_keys[: self.end_offset]
 
-        if partition_keys:
+        if not partition_keys:
+            next_cursor = TimeWindowCursor(
+                start_timestamp=int(start_timestamp),
+                end_timestamp=int(end_timestamp),
+                offset_partition_count=offset_partitions_count,
+            )
+        elif ascending:
             last_partition_key = partition_keys[-1]
             last_time_window = self.time_window_for_partition_key(last_partition_key)
             next_cursor = TimeWindowCursor(
-                current_timestamp=int(current_timestamp),
-                cursor_timestamp=int(last_time_window.end.timestamp()),
-                partitions_past_current_time=partitions_past_current_time,
+                start_timestamp=int(last_time_window.end.timestamp()),
+                end_timestamp=int(end_timestamp),
+                offset_partition_count=offset_partitions_count,
             )
         else:
+            last_partition_key = partition_keys[-1]
+            last_time_window = self.time_window_for_partition_key(last_partition_key)
             next_cursor = TimeWindowCursor(
-                current_timestamp=int(current_timestamp),
-                cursor_timestamp=int(start_ts),
-                partitions_past_current_time=partitions_past_current_time,
+                start_timestamp=int(start_timestamp),
+                end_timestamp=int(end_timestamp)
+                if self.end_offset > 0 and offset_partitions_count < self.end_offset
+                else int(last_time_window.start.timestamp()),
+                offset_partition_count=offset_partitions_count,
             )
+
         return Connection(
             results=partition_keys,
             cursor=str(next_cursor),
@@ -817,17 +876,18 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         self,
         time_window: TimeWindow,
         limit: Optional[int] = None,
+        ascending: bool = True,
         cursor: Optional[str] = None,
     ) -> Connection[str]:
         result: list[str] = []
         if cursor:
-            start_ts = TimeWindowCursor.from_cursor(cursor).cursor_timestamp
+            start_ts = TimeWindowCursor.from_cursor(cursor).start_timestamp
         else:
             start_ts = time_window.start.timestamp()
 
         has_more = False
         new_cursor = str(
-            TimeWindowCursor(current_timestamp=int(start_ts), cursor_timestamp=int(start_ts))
+            TimeWindowCursor(end_timestamp=int(start_ts), start_timestamp=int(start_ts))
         )
 
         time_window_end_timestamp = time_window.end.timestamp()
@@ -840,8 +900,8 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 )
                 new_cursor = str(
                     TimeWindowCursor(
-                        current_timestamp=int(time_window.start.timestamp()),
-                        cursor_timestamp=int(partition_time_window.end.timestamp()),
+                        end_timestamp=int(time_window.start.timestamp()),
+                        start_timestamp=int(partition_time_window.end.timestamp()),
                     )
                 )
                 if limit and len(result) >= limit:
@@ -2165,7 +2225,9 @@ class TimeWindowPartitionsSubset(
 
     def get_partition_key_connection(
         self,
+        # context: PartitionLoadingContext,
         limit: int,
+        ascending: bool,
         cursor: Optional[str] = None,
     ) -> Connection[str]:
         sorted_tw = sorted(self.included_time_windows, key=lambda tw: tw.start.timestamp())
@@ -2176,7 +2238,7 @@ class TimeWindowPartitionsSubset(
         for window in sorted_tw:
             remaining = limit - len(results)
             conn = self.partitions_def.get_partition_key_connection_in_time_window(
-                time_window=window, limit=remaining, cursor=cursor
+                time_window=window, limit=remaining, ascending=ascending, cursor=cursor
             )
             curr_cursor = conn.cursor
             results.extend(conn.results)
