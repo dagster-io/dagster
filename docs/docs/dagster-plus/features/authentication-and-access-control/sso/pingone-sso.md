@@ -108,7 +108,7 @@ Next, you'll assign users to the Dagster+ application in PingOne. This will allo
 
 3. Edit the policy as needed to grant users access to the application.
 
-import TestSSO from '../../../../partials/\_TestSSO.md';
+import TestSSO from '@site/docs/partials/\_TestSSO.md';
 
 <TestSSO />
 

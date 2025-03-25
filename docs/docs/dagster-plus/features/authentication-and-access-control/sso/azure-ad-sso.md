@@ -88,7 +88,7 @@ In this section, you'll create a test user in the Azure portal.
    - Select the **Show password** checkbox and write down the value displayed in the **Password** box.
 5. Click **Create**.
 
-import TestSSO from '../../../../partials/\_TestSSO.md';
+import TestSSO from '@site/docs/partials/\_TestSSO.md';
 
 <TestSSO />
 
