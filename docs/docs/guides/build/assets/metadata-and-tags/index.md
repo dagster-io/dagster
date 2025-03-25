@@ -118,7 +118,7 @@ Dagster+ provides rich visualization and navigation of column lineage in the Ass
 
 ## Linking assets with source code \{#source-code}
 
-import Beta from '../../../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 

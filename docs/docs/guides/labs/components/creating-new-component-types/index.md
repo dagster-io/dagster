@@ -3,7 +3,7 @@ title: 'Creating new component types'
 sidebar_position: 30
 ---
 
-import Preview from '../../../../partials/\_Preview.md';
+import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
