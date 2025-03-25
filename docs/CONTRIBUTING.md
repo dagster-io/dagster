@@ -2,6 +2,21 @@
 
 ## Content
 
+### Links
+
+Docusaurus doesn't always render relative links correctly, which can result in users seeing intermittent 404s when accessing those links. Use full paths instead of relative links, like this:
+
+```
+For more information, see "[Defining assets](/guides/build/assets/defining-assets)".
+```
+
+instead of this:
+
+```
+For more information, see "[Defining assets](defining-assets)".
+```
+
+
 ### Partials
 
 Docusaurus supports [markdown partials](https://docusaurus.io/docs/markdown-features/react#importing-markdown) for including content in multiple places.
@@ -21,7 +36,7 @@ _Superseded.md
 The partial can then be imported and included as an HTML tag:
 
 ```
-import Deprecated from '../../../partials/\_Deprecated.md';
+import Deprecated from '@site/docs/partials/\_Deprecated.md';
 
 <Deprecated />
 ```
@@ -30,7 +45,7 @@ import Deprecated from '../../../partials/\_Deprecated.md';
 
 ### PyObject references
 
-To create a link to the Python API docs, use the `PyObject` component. Previously, we were able to parse the Sphinx search index to determine the section that the module resides. As we no longer have this, a `section` prop was added to the component.
+To create a link to the Python API docs, use the `PyObject` component. Previously, we were able to parse the Sphinx search index to determine the section that the module resides. As we no longer have this, a `section` prop was added to the component:
 
 Before:
 
@@ -219,9 +234,9 @@ def iris_dataset(iris_db: SnowflakeResource) -> None:
     iris_df = pd.read_csv("https://docs.dagster.io/assets/iris.csv")
 ```
 
-### CLI Invocation Examples
+### CLI invocation examples
 
-Since CLI invocations often include both a command and its output, which are logically separate and which users might want to copy and paste separately, we have a special component for this.
+CLI invocations often include both a command and its output, which are logically separate and which users might want to copy and paste separately. We have a special component for this:
 
 ```
 <CliInvocationExample path="path/to/file.txt" />
