@@ -57,7 +57,7 @@ The step worker is responsible for executing a single step, writing the structur
 
 ## Walkthrough
 
-We assume that you've followed the initial steps in the [previous walkthrough](/guides/deploy/deployment-options.kubernetes/deploying-to-kubernetes) by building your Docker image for your user code, pushing it to a registry, adding the Dagster Helm chart repository, and configuring your Helm User Deployment values. Note that any job that you wish to run in an instance using the `CeleryK8sRunLauncher` must be using the `celery_k8s_job_executor` as its executor. The [example user code repository](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project) includes an example job that uses the `celery_k8s_job_executor`, called `pod_per_op_celery_job`.
+We assume that you've followed the initial steps in the [previous walkthrough](/guides/deploy/deployment-options/kubernetes/deploying-to-kubernetes) by building your Docker image for your user code, pushing it to a registry, adding the Dagster Helm chart repository, and configuring your Helm User Deployment values. Note that any job that you wish to run in an instance using the `CeleryK8sRunLauncher` must be using the `celery_k8s_job_executor` as its executor. The [example user code repository](https://github.com/dagster-io/dagster/tree/master/examples/deploy_k8s/example_project) includes an example job that uses the `celery_k8s_job_executor`, called `pod_per_op_celery_job`.
 
 ### Configure persistent object storage
 
