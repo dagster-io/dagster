@@ -2,6 +2,7 @@ import {ParserRuleContext} from 'antlr4ts';
 
 import {
   AttributeValueContext,
+  DigitsValueContext,
   IncompleteLeftQuotedStringValueContext,
   IncompleteRightQuotedStringValueContext,
   QuotedStringValueContext,
@@ -19,7 +20,7 @@ export const removeQuotesFromString = (value: string) => {
 };
 
 export function getValueNodeValue(ctx: ParserRuleContext | null) {
-  if (ctx instanceof UnquotedStringValueContext) {
+  if (ctx instanceof DigitsValueContext || ctx instanceof UnquotedStringValueContext) {
     return ctx.text;
   }
   if (ctx instanceof IncompleteLeftQuotedStringValueContext) {

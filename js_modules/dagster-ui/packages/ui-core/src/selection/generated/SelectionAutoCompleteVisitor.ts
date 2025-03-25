@@ -15,6 +15,7 @@ import {
   CommaExpressionWrapper2Context,
   CommaExpressionWrapper3Context,
   CommaTokenContext,
+  DigitsValueContext,
   DownTraversalContext,
   DownTraversalExprContext,
   DownTraversalExpressionContext,
@@ -38,7 +39,6 @@ import {
   IncompletePlusTraversalExpressionContext,
   IncompletePlusTraversalExpressionMissingValueContext,
   IncompleteRightQuotedStringValueContext,
-  IncompleteUpTraversalExpressionContext,
   LeftParenTokenContext,
   NotExpressionContext,
   NotTokenContext,
@@ -303,6 +303,14 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
   visitUnquotedStringValue?: (ctx: UnquotedStringValueContext) => Result;
 
   /**
+   * Visit a parse tree produced by the `DigitsValue`
+   * labeled alternative in `SelectionAutoCompleteParser.value`.
+   * @param ctx the parse tree
+   * @return the visitor result
+   */
+  visitDigitsValue?: (ctx: DigitsValueContext) => Result;
+
+  /**
    * Visit a parse tree produced by the `IncompleteAttributeExpressionMissingSecondValue`
    * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
    * @param ctx the parse tree
@@ -385,14 +393,6 @@ export interface SelectionAutoCompleteVisitor<Result> extends ParseTreeVisitor<R
   visitIncompletePlusTraversalExpression?: (
     ctx: IncompletePlusTraversalExpressionContext,
   ) => Result;
-
-  /**
-   * Visit a parse tree produced by the `IncompleteUpTraversalExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
-   * @param ctx the parse tree
-   * @return the visitor result
-   */
-  visitIncompleteUpTraversalExpression?: (ctx: IncompleteUpTraversalExpressionContext) => Result;
 
   /**
    * Visit a parse tree produced by the `IncompletePlusTraversalExpressionMissingValue`
