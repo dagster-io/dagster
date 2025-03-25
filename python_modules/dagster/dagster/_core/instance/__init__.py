@@ -338,7 +338,7 @@ class DynamicPartitionsStore(Protocol):
 
     @abstractmethod
     def get_dynamic_partitions_connection(
-        self, partitions_def_name: str, limit: int, cursor: Optional[str] = None
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
     ) -> Connection[str]: ...
 
     @abstractmethod
@@ -2404,20 +2404,22 @@ class DagsterInstance(DynamicPartitionsStore):
 
     @traced
     def get_dynamic_partitions_connection(
-        self, partitions_def_name: str, limit: int, cursor: Optional[str] = None
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
     ) -> Connection[str]:
         """Get a paginatable subset of partition keys for the specified :py:class:`DynamicPartitionsDefinition`.
 
         Args:
             partitions_def_name (str): The name of the `DynamicPartitionsDefinition`.
             limit (int): Maximum number of partition keys to return.
+            ascending (bool): The order of dynamic partitions to return.
             cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
         """
         check.str_param(partitions_def_name, "partitions_def_name")
         check.int_param(limit, "limit")
+        check.bool_param(ascending, "ascending")
         check.opt_str_param(cursor, "cursor")
         return self._event_storage.get_dynamic_partitions_connection(
-            partitions_def_name=partitions_def_name, limit=limit, cursor=cursor
+            partitions_def_name=partitions_def_name, limit=limit, ascending=ascending, cursor=cursor
         )
 
     @public

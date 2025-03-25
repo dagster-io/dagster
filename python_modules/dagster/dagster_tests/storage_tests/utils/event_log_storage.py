@@ -6716,15 +6716,23 @@ class TestEventLogStorage:
             )
 
     def test_dynamic_store_pagination(self, storage: EventLogStorage):
-        assert storage.get_dynamic_partitions_connection("foo", 1).results == []
+        assert (
+            storage.get_dynamic_partitions_connection(
+                partitions_def_name="foo", limit=1, ascending=True
+            ).results
+            == []
+        )
 
-        def get_paginated_partitions(partitions_def_name):
+        def get_paginated_partitions(partitions_def_name, ascending=True):
             all_results = []
             cursor = None
             has_more = True
             while has_more:
                 conn = storage.get_dynamic_partitions_connection(
-                    partitions_def_name, limit=1, cursor=cursor
+                    partitions_def_name=partitions_def_name,
+                    limit=1,
+                    ascending=ascending,
+                    cursor=cursor,
                 )
                 cursor = conn.cursor
                 has_more = conn.has_more
@@ -6746,17 +6754,31 @@ class TestEventLogStorage:
         storage.add_dynamic_partitions(partitions_def_name="foo", partition_keys=["foo", "qux"])
         assert get_paginated_partitions("foo") == ["foo", "bar", "baz", "qux"]
 
+        assert get_paginated_partitions("foo", ascending=False) == ["qux", "baz", "bar", "foo"]
+
         # partial paginated results
-        conn = storage.get_dynamic_partitions_connection("foo", 1)
+        conn = storage.get_dynamic_partitions_connection(
+            partitions_def_name="foo", limit=1, ascending=True
+        )
         assert conn.results == ["foo"]
         assert conn.cursor
         post_foo_cursor = conn.cursor
+        assert conn.has_more
+
+        # partial reverse paginated results
+        conn = storage.get_dynamic_partitions_connection(
+            partitions_def_name="foo", limit=1, ascending=False
+        )
+        assert conn.results == ["qux"]
+        assert conn.cursor
         assert conn.has_more
 
         # try cursored fetching when the keys before and after the cursor are removed
         storage.delete_dynamic_partition(partitions_def_name="foo", partition_key="foo")
         storage.delete_dynamic_partition(partitions_def_name="foo", partition_key="bar")
         assert storage.get_dynamic_partitions_connection(
-            "foo", 1, cursor=post_foo_cursor
+            partitions_def_name="foo", limit=1, ascending=True, cursor=post_foo_cursor
         ).results == ["baz"]
-        assert storage.get_dynamic_partitions_connection("foo", 1).results == ["baz"]
+        assert storage.get_dynamic_partitions_connection(
+            partitions_def_name="foo", limit=1, ascending=True
+        ).results == ["baz"]

@@ -2030,9 +2030,12 @@ class SqlEventLogStorage(EventLogStorage):
         return [cast(str, row[1]) for row in rows]
 
     def get_dynamic_partitions_connection(
-        self, partitions_def_name: str, limit: int, cursor: Optional[str] = None
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
     ) -> PaginatedConnection[str]:
         self._check_partitions_table()
+        order_by = (
+            DynamicPartitionsTable.c.id.asc() if ascending else DynamicPartitionsTable.c.id.desc()
+        )
         query = (
             db_select(
                 [
@@ -2041,12 +2044,15 @@ class SqlEventLogStorage(EventLogStorage):
                 ]
             )
             .where(DynamicPartitionsTable.c.partitions_def_name == partitions_def_name)
-            .order_by(DynamicPartitionsTable.c.id)
+            .order_by(order_by)
             .limit(limit)
         )
         if cursor:
             last_storage_id = StorageIdCursor.from_cursor(cursor).storage_id
-            query = query.where(DynamicPartitionsTable.c.id > last_storage_id)
+            if ascending:
+                query = query.where(DynamicPartitionsTable.c.id > last_storage_id)
+            else:
+                query = query.where(DynamicPartitionsTable.c.id < last_storage_id)
 
         with self.index_connection() as conn:
             rows = conn.execute(query).fetchall()
