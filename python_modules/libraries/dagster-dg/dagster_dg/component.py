@@ -1,7 +1,8 @@
 import copy
 import json
+import re
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dagster_shared.check as check
 from dagster_shared.serdes import deserialize_value, serialize_value
@@ -148,3 +149,23 @@ def _dump_raw_registry_data(
     registry_data: Mapping[LibraryObjectKey, LibraryObjectSnap],
 ) -> str:
     return serialize_value(list(registry_data.values()))
+
+
+def get_specified_env_var_deps(component_data: Mapping[str, Any]) -> set[str]:
+    if "requires" not in component_data or "env" not in component_data["requires"]:
+        return set()
+    return set(component_data["requires"]["env"])
+
+
+env_var_regex = re.compile(r"\{\{\s*env\(\s*['\"]([^'\"]+)['\"]\)\s*\}\}")
+
+
+def get_used_env_vars(data_structure: Union[Mapping[str, Any], Sequence[Any], Any]) -> set[str]:
+    if isinstance(data_structure, Mapping):
+        return set.union(*(get_used_env_vars(value) for value in data_structure.values()))
+    elif isinstance(data_structure, str):
+        return set(env_var_regex.findall(data_structure))
+    elif isinstance(data_structure, Sequence):
+        return set.union(*(get_used_env_vars(item) for item in data_structure))
+    else:
+        return set()

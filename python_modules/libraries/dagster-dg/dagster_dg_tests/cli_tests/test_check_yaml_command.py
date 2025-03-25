@@ -51,6 +51,24 @@ CLI_TEST_CASES = [
             "'an_extra_top_level_value' was unexpected",
         ),
     ),
+    ComponentValidationTestCase(
+        component_path="validation/basic_component_missing_declared_env",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
+        should_error=True,
+        check_error_msg=msg_includes_all_of(
+            "component.yaml:1",
+            "Component uses environment variables that are not specified in the component file: A_STRING",
+        ),
+    ),
+    ComponentValidationTestCase(
+        component_path="validation/basic_component_with_env",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
+        should_error=True,
+        check_error_msg=msg_includes_all_of(
+            "Error: The following environment variables are used in components but not specified in the .env file or the current shell environment:",
+            "UNDEFINED_ENV_STRING",
+        ),
+    ),
 ]
 
 

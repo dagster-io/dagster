@@ -1,3 +1,4 @@
+import os
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, NamedTuple, Optional
@@ -15,14 +16,24 @@ from jsonschema import Draft202012Validator, ValidationError
 from yaml.scanner import ScannerError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
-from dagster_dg.component import RemoteLibraryObjectRegistry
+from dagster_dg.component import (
+    RemoteLibraryObjectRegistry,
+    get_specified_env_var_deps,
+    get_used_env_vars,
+)
 from dagster_dg.context import DgContext
+from dagster_dg.env import ProjectEnvVars
 
 COMPONENT_FILE_SCHEMA = {
     "type": "object",
     "properties": {
         "type": {"type": "string"},
         "attributes": {"type": "object"},
+        "requires": {
+            "type": "object",
+            "properties": {"env": {"type": "array", "items": {"type": "string"}}},
+            "additionalProperties": False,
+        },
     },
     "additionalProperties": False,
 }
@@ -55,6 +66,7 @@ def check_yaml(
     top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
 
     validation_errors: list[ErrorInput] = []
+    all_specified_env_var_deps = set()
 
     component_contents_by_key: dict[LibraryObjectKey, Any] = {}
     modules_to_fetch = set()
@@ -85,6 +97,27 @@ def check_yaml(
                     )
                 )
                 continue
+
+            specified_env_var_deps = get_specified_env_var_deps(component_doc_tree.value)
+            used_env_vars = get_used_env_vars(component_doc_tree.value)
+            all_specified_env_var_deps.update(specified_env_var_deps)
+
+            if used_env_vars - specified_env_var_deps:
+                msg = (
+                    "Component uses environment variables that are not specified in the component file: "
+                    + ", ".join(used_env_vars - specified_env_var_deps)
+                )
+
+                validation_errors.append(
+                    ErrorInput(
+                        None,
+                        ValidationError(
+                            msg,
+                            path=["requires", "env"],
+                        ),
+                        component_doc_tree,
+                    )
+                )
 
             # First, validate the top-level structure of the component file
             # (type and params keys) before we try to validate the params themselves.
@@ -144,5 +177,16 @@ def check_yaml(
             )
         return False
     else:
+        missing_env_vars = (
+            all_specified_env_var_deps - ProjectEnvVars.from_ctx(dg_context).values.keys()
+        ) - os.environ.keys()
+        if missing_env_vars:
+            click.echo(
+                "The following environment variables are used in components but not specified in the .env file or the current shell environment:\n"
+                + "\n".join(missing_env_vars)
+            )
+            return False
+
         click.echo("All components validated successfully.")
+
         return True
