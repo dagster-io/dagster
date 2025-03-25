@@ -17,11 +17,17 @@ VALID_DATAFRAME_CLASSES = (pl.DataFrame,)
 
 
 # TODO: look into a better way to get the asset name and pass it to this function
-def patito_model_to_dagster_type(model: pt.Model | Any, asset_name: str) -> DagsterType:  # noqa: ANN401
+def patito_model_to_dagster_type(
+    model: pt.Model | Any,
+    dagster_type_suffix: str | None = None,
+    description: str | None = None,
+) -> DagsterType:  # noqa: ANN401
     """Convert patito model to dagster type checking.
 
     Args:
         model (pt.Model): validation model of frame
+        dagster_type_suffix (str): the dagster type name suffix, to avoid duplication of dagster type names in case of multiple assets sharing a patito model. Defaults to None
+        description (str): Dagster Type description
 
     Returns:
         DagsterType: Dagster type with patito validation fn
@@ -44,6 +50,7 @@ def patito_model_to_dagster_type(model: pt.Model | Any, asset_name: str) -> Dags
     table_columns = []
     schema_dtypes: dict = model.dtypes
     column_infos: dict = model.column_infos
+    description = f"Dagster Type constructor for Polars DataFrame conforming to Patito model {model.__class__.__name__}"
 
     for col, properties in model._schema_properties().items():
         table_columns.append(
@@ -64,11 +71,12 @@ def patito_model_to_dagster_type(model: pt.Model | Any, asset_name: str) -> Dags
     type_check_fn = _patito_model_to_type_check_fn(model)
     return DagsterType(
         type_check_fn=type_check_fn,
-        name=asset_name,
+        name=f"{model.__class__.__name__}-{dagster_type_suffix}",
         metadata={
             "schema": MetadataValue.table_schema(table_schema),
         },
         typing_type=pl.DataFrame,
+        description=description,
     )
 
 
@@ -79,15 +87,11 @@ def _patito_model_to_type_check_fn(
         if isinstance(value, VALID_DATAFRAME_CLASSES):
             try:
                 schema.validate(value)
+                return TypeCheck(success=True)
             except pt.DataFrameValidationError as e:
                 return TypeCheck(
                     success=False,
                     description=str(e),
-                )
-            except Exception as e:
-                return TypeCheck(
-                    success=False,
-                    description=f"Unexpected error during validation: {e}",
                 )
         else:
             return TypeCheck(
@@ -96,6 +100,5 @@ def _patito_model_to_type_check_fn(
                     f"Must be one of {VALID_DATAFRAME_CLASSES}, not {type(value).__name__}."
                 ),
             )
-        return TypeCheck(success=True)
 
     return type_check_fn
