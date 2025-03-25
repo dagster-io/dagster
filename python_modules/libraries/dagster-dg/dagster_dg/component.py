@@ -162,7 +162,7 @@ env_var_regex = re.compile(r"\{\{\s*env\(\s*['\"]([^'\"]+)['\"]\)\s*\}\}")
 
 def get_used_env_vars(data_structure: Union[Mapping[str, Any], Sequence[Any], Any]) -> set[str]:
     if isinstance(data_structure, Mapping):
-        return set.union(*(get_used_env_vars(value) for value in data_structure.values()))
+        return set.union(set(), *(get_used_env_vars(value) for value in data_structure.values()))
     elif isinstance(data_structure, str):
         return set(env_var_regex.findall(data_structure))
     elif isinstance(data_structure, Sequence):
