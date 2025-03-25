@@ -67,6 +67,7 @@ PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("list", "component")),
     CommandSpec(("list", "defs")),
     CommandSpec(("scaffold", DEFAULT_COMPONENT_TYPE, "foot")),
+    CommandSpec(("env", "list")),
 ]
 
 WORKSPACE_CONTEXT_COMMANDS = [
