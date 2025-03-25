@@ -16,18 +16,39 @@ from dagster_dg_tests.utils import (
     ProxyRunner,
     crawl_cli_commands,
     create_project_from_components,
+    isolated_example_component_library_foo_bar,
     modify_environment_variable,
 )
 
 TELEMETRY_TEST_COMMANDS = {
     ("check", "yaml"),
     ("check", "defs"),
+    ("dev",),
+    ("docs", "serve"),
+    ("init",),
+    ("list", "defs"),
+    ("list", "project"),
+    ("list", "component"),
+    ("list", "component-type"),
+    ("plus", "login"),
+    ("scaffold", "workspace"),
+    ("scaffold", "project"),
+    ("scaffold", "component-type"),
+    ("scaffold", "dagster.sensor"),
+    ("scaffold", "dagster.schedule"),
+    ("scaffold", "dagster.asset"),
+    ("launch",),
+    ("utils", "configure-editor"),
 }
 
-# Temporary, eventually we will have explicit list of all commands that should and should not be logged
 NO_TELEMETRY_COMMANDS = {
-    tuple(key[1:]) for key in crawl_cli_commands().keys()
-} - TELEMETRY_TEST_COMMANDS
+    ("utils", "inspect-component-type"),
+    (
+        "scaffold",
+        # Is actually instrumented, but since subcommands are dynamically generated we test manually
+        "component",
+    ),
+}
 
 
 def test_all_commands_represented_in_telemetry_test() -> None:
@@ -72,6 +93,7 @@ def test_basic_logging_success_failure(caplog: pytest.LogCaptureFixture, success
         TemporaryDirectory() as dagster_home,
         modify_environment_variable("DAGSTER_HOME", dagster_home),
     ):
+        caplog.clear()
         with pushd(tmpdir):
             result = runner.invoke("check", "yaml")
             assert result.exit_code == 0 if success else 1
@@ -79,7 +101,7 @@ def test_basic_logging_success_failure(caplog: pytest.LogCaptureFixture, success
         assert os.path.exists(
             os.path.join(get_or_create_dir_from_dagster_home("logs"), "event.log")
         )
-        assert len(caplog.records) == 2
+        assert len(caplog.records) == 2, caplog.records
 
         first_message = json.loads(caplog.records[0].getMessage())
         second_message = json.loads(caplog.records[1].getMessage())
@@ -102,6 +124,8 @@ def test_telemetry_disabled_dagster_yaml(caplog: pytest.LogCaptureFixture) -> No
         TemporaryDirectory() as dagster_home,
         modify_environment_variable("DAGSTER_HOME", dagster_home),
     ):
+        caplog.clear()
+
         dagster_yaml = Path(dagster_home) / "dagster.yaml"
         dagster_yaml.write_text(
             """
@@ -134,6 +158,7 @@ def test_telemetry_disabled_dg_config(caplog: pytest.LogCaptureFixture) -> None:
             "DAGSTER_CLOUD_CLI_CONFIG", str(Path(dagster_cloud_config_folder) / "config.yaml")
         ),
     ):
+        caplog.clear()
         dg_config_path = Path(dg_cli_config_folder) / "dg.toml"
         dg_config_path.write_text(
             """
@@ -147,3 +172,27 @@ def test_telemetry_disabled_dg_config(caplog: pytest.LogCaptureFixture) -> None:
             assert result.exit_code == 0, str(result.exception)
 
         assert len(caplog.records) == 0
+
+
+def test_telemetry_scaffold_component(caplog: pytest.LogCaptureFixture) -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_component_library_foo_bar(runner),
+        TemporaryDirectory() as dagster_home,
+        modify_environment_variable("DAGSTER_HOME", dagster_home),
+    ):
+        caplog.clear()
+        result = runner.invoke(
+            "scaffold",
+            "component",
+            "dagster_test.components.AllMetadataEmptyComponent",
+            "qux",
+        )
+        assert result.exit_code == 0
+        assert Path("foo_bar/defs/qux").exists()
+        assert len(caplog.records) == 2
+        first_message = json.loads(caplog.records[0].getMessage())
+        second_message = json.loads(caplog.records[1].getMessage())
+        assert first_message["action"] == "scaffold_component_command_started"
+        assert second_message["action"] == "scaffold_component_command_ended"
+        assert second_message["metadata"]["command_success"] == "True"

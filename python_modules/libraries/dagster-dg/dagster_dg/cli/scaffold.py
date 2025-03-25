@@ -40,6 +40,7 @@ from dagster_dg.utils import (
     parse_json_option,
     snakecase,
 )
+from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 DEFAULT_WORKSPACE_NAME = "dagster-workspace"
 
@@ -58,6 +59,7 @@ def scaffold_group():
 @click.argument("name", type=str, default=DEFAULT_WORKSPACE_NAME)
 @dg_editable_dagster_options
 @dg_global_options
+@cli_telemetry_wrapper
 def scaffold_workspace_command(
     name: str,
     use_editable_dagster: Optional[str],
@@ -106,6 +108,7 @@ def scaffold_workspace_command(
 )
 @dg_editable_dagster_options
 @dg_global_options
+@cli_telemetry_wrapper
 def scaffold_project_command(
     path: Path,
     skip_venv: bool,
@@ -313,6 +316,7 @@ def _create_component_shim_scaffold_subcommand(
     @click.argument("instance_name", type=str)
     @dg_global_options
     @click.pass_context
+    @cli_telemetry_wrapper
     def scaffold_component_shim_command(
         cli_context: click.Context,
         instance_name: str,
@@ -346,6 +350,7 @@ def _create_component_scaffold_subcommand(
         callback=parse_json_option,
     )
     @click.pass_context
+    @cli_telemetry_wrapper
     def scaffold_component_command(
         cli_context: click.Context,
         component_instance_name: str,
@@ -414,6 +419,7 @@ for key, command_name in SHIM_COMPONENTS.items():
 @click.argument("name", type=str)
 @dg_global_options
 @click.pass_context
+@cli_telemetry_wrapper
 def scaffold_component_type_command(
     context: click.Context, name: str, **global_options: object
 ) -> None:

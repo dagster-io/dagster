@@ -76,7 +76,28 @@ def isolated_snippet_generation_environment() -> Iterator[Callable[[], int]]:
         snip_number += 1
         return snip_number
 
-    with _get_snippet_working_dir() as tempdir, pushd(tempdir), environ(SNIPPET_ENV):
+    with (
+        _get_snippet_working_dir() as tempdir,
+        pushd(tempdir),
+        TemporaryDirectory() as dg_cli_config_folder,
+        TemporaryDirectory() as dagster_cloud_config_folder,
+        environ(
+            {
+                **SNIPPET_ENV,
+                "DG_CLI_CONFIG": str(Path(dg_cli_config_folder) / "dg.toml"),
+                "DAGSTER_CLOUD_CLI_CONFIG": str(
+                    Path(dagster_cloud_config_folder) / "config.yaml"
+                ),
+            }
+        ),
+    ):
+        dg_config_path = Path(dg_cli_config_folder) / "dg.toml"
+        dg_config_path.write_text(
+            """
+            [cli.telemetry]
+            enabled = false
+            """
+        )
         yield get_next_snip_number
 
 
