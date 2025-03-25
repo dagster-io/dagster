@@ -3706,7 +3706,7 @@ class TestAssetMaterializationHistory(ExecutingGraphQLContextTestMatrix):
                 assert int(event["timestamp"]) <= min_timestamp_seen
             min_timestamp_seen = int(event["timestamp"])
 
-         # test cursoring
+        # test cursoring
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_MATERIALIZATION_HISTORY,
