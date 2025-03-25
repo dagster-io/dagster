@@ -1,3 +1,4 @@
+import os
 import shlex
 import shutil
 import subprocess
@@ -402,15 +403,24 @@ class DgContext:
     # ##### HELPERS
     # ########################
 
-    def external_components_command(self, command: list[str], log: bool = True) -> str:
+    def external_components_command(
+        self,
+        command: list[str],
+        log: bool = True,
+        additional_env: Optional[Mapping[str, str]] = None,
+    ) -> str:
         executable_path = self.get_executable("dagster-components")
         if self.use_dg_managed_environment:
             # uv run will resolve to the same dagster-components as we resolve above
             command = ["uv", "run", "dagster-components", *command]
-            env = strip_activated_venv_from_env_vars()
+            env = strip_activated_venv_from_env_vars(os.environ)
         else:
             command = [str(executable_path), *command]
-            env = None
+            env = os.environ
+
+        if additional_env:
+            env = {**env, **additional_env}
+
         with pushd(self.root_path):
             if log:
                 print(f"Using {executable_path}")  # noqa: T201
@@ -431,7 +441,9 @@ class DgContext:
         path = path or self.root_path
         with pushd(path):
             if not (path / "uv.lock").exists():
-                subprocess.run(["uv", "sync"], check=True, env=strip_activated_venv_from_env_vars())
+                subprocess.run(
+                    ["uv", "sync"], check=True, env=strip_activated_venv_from_env_vars(os.environ)
+                )
 
     @property
     def use_dg_managed_environment(self) -> bool:

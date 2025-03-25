@@ -126,7 +126,16 @@ def list_defs_command(output_json: bool, **global_options: object) -> None:
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
     result = dg_context.external_components_command(
-        ["list", "definitions", "-m", dg_context.code_location_target_module_name]
+        [
+            "list",
+            "definitions",
+            "-m",
+            dg_context.code_location_target_module_name,
+        ],
+        # Sets the "--location" option for "dagster-components definitions list"
+        # using the click auto-envvar prefix for backwards compatibility on older versions
+        # before that option was added
+        additional_env={"DG_CLI_LIST_DEFINITIONS_LOCATION": dg_context.code_location_name},
     )
     definitions = [_resolve_definition(x) for x in json.loads(result)]
 
