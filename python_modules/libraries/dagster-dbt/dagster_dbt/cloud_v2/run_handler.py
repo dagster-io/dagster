@@ -9,7 +9,7 @@ from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
 from packaging import version
 
-from dagster_dbt.asset_utils import build_dbt_specs
+from dagster_dbt.asset_utils import build_dbt_specs, get_asset_check_key_for_test
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun, DbtCloudWorkspaceData
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
@@ -113,7 +113,7 @@ class DbtCloudJobRunResults:
             is_ephemeral = materialization == "ephemeral"
 
             # Build the specs for the given unique ID
-            asset_specs, check_specs = build_dbt_specs(
+            asset_specs, _ = build_dbt_specs(
                 manifest=manifest,
                 translator=dagster_dbt_translator,
                 select=selector,
@@ -140,12 +140,15 @@ class DbtCloudJobRunResults:
                 if result["failures"] is not None:
                     metadata["dagster_dbt/failed_row_count"] = result["failures"]
 
-                spec = check_specs[0]
-                if spec.asset_key is not None and spec.name is not None:
+                asset_check_key = get_asset_check_key_for_test(
+                    manifest, dagster_dbt_translator, test_unique_id=unique_id
+                )
+
+                if asset_check_key is not None:
                     yield AssetCheckEvaluation(
                         passed=result_status == TestStatus.Pass,
-                        asset_key=spec.asset_key,
-                        check_name=spec.name,
+                        asset_key=asset_check_key.asset_key,
+                        check_name=asset_check_key.name,
                         metadata=metadata,
                         severity=(
                             AssetCheckSeverity.WARN
