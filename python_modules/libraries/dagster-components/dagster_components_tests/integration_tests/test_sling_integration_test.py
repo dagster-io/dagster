@@ -27,8 +27,8 @@ from dagster_components.components.sling_replication_collection.component import
 from dagster_components.core.component_defs_builder import load_defs
 from dagster_components.core.defs_module import (
     ComponentFileModel,
-    DefsModuleDecl,
-    YamlComponentDecl,
+    DefsModuleDeclNode,
+    YamlComponentDeclNode,
 )
 from dagster_components.resolved.context import ResolutionException
 from dagster_components.resolved.core_models import AssetAttributesModel
@@ -60,7 +60,7 @@ def _modify_yaml(path: Path) -> Iterator[dict[str, Any]]:
 @contextmanager
 def temp_sling_component_instance(
     replication_specs: Optional[list[dict[str, Any]]] = None,
-) -> Iterator[YamlComponentDecl]:
+) -> Iterator[YamlComponentDeclNode]:
     """Sets up a temporary directory with a replication.yaml and component.yaml file that reference
     the proper temp path.
     """
@@ -84,8 +84,8 @@ def temp_sling_component_instance(
                 # update the defs yaml to add a duckdb instance
                 data["attributes"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
 
-            decl_node = DefsModuleDecl.from_path(Path(temp_dir) / COMPONENT_RELPATH)
-            assert isinstance(decl_node, YamlComponentDecl)
+            decl_node = DefsModuleDeclNode.from_path(Path(temp_dir) / COMPONENT_RELPATH)
+            assert isinstance(decl_node, YamlComponentDeclNode)
             yield decl_node
 
 
@@ -203,7 +203,7 @@ def test_sling_subclass() -> None:
         ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
             return sling.replicate(context=context, debug=True)
 
-    decl_node = YamlComponentDecl(
+    decl_node = YamlComponentDeclNode(
         path=STUB_LOCATION_PATH / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="debug_sling_replication",
@@ -369,7 +369,7 @@ def test_udf_map_spec(map_fn: Callable[[AssetSpec], Any]) -> None:
         def get_additional_scope(cls) -> Mapping[str, Any]:
             return {"map_spec": map_fn}
 
-    decl_node = YamlComponentDecl(
+    decl_node = YamlComponentDeclNode(
         path=STUB_LOCATION_PATH / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="debug_sling_replication",

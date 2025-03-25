@@ -28,7 +28,7 @@ from dagster_components.scaffold import ScaffolderUnavailableReason, get_scaffol
 from dagster_components.utils import format_error_message, get_path_from_module
 
 if TYPE_CHECKING:
-    from dagster_components.core.defs_module import DefsModuleDecl
+    from dagster_components.core.defs_module import DefsModuleDeclNode
 
 
 class ComponentsEntryPointLoadError(DagsterError):
@@ -235,9 +235,9 @@ class DefinitionsModuleCache:
 
     @cached_method
     def _load_defs_inner(self, module: ModuleType) -> Definitions:
-        from dagster_components.core.defs_module import DefsModuleDecl
+        from dagster_components.core.defs_module import DefsModuleDeclNode
 
-        decl_node = DefsModuleDecl.from_module(module)
+        decl_node = DefsModuleDeclNode.from_module(module)
         if not decl_node:
             raise Exception(f"No component found at module {module}")
 
@@ -261,7 +261,7 @@ class ComponentLoadContext:
 
     defs_root: Path
     defs_module_name: str
-    decl_node: Optional["DefsModuleDecl"]
+    decl_node: Optional["DefsModuleDeclNode"]
     resolution_context: ResolutionContext
     module_cache: DefinitionsModuleCache
 
@@ -278,7 +278,7 @@ class ComponentLoadContext:
     def for_test(
         *,
         resources: Optional[Mapping[str, object]] = None,
-        decl_node: Optional["DefsModuleDecl"] = None,
+        decl_node: Optional["DefsModuleDeclNode"] = None,
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
             defs_root=Path.cwd(),
@@ -298,7 +298,7 @@ class ComponentLoadContext:
             resolution_context=self.resolution_context.with_scope(**rendering_scope),
         )
 
-    def for_decl(self, decl: "DefsModuleDecl") -> "ComponentLoadContext":
+    def for_decl(self, decl: "DefsModuleDeclNode") -> "ComponentLoadContext":
         return dataclasses.replace(self, decl_node=decl)
 
     def defs_relative_module_name(self, path: Path) -> str:

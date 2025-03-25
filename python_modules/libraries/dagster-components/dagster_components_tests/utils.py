@@ -16,13 +16,13 @@ from click.testing import Result
 from dagster import AssetKey, DagsterInstance
 from dagster._utils import alter_sys_path, pushd
 from dagster_components.core.component import Component, ComponentLoadContext
-from dagster_components.core.defs_module import DefsModuleDecl
+from dagster_components.core.defs_module import DefsModuleDeclNode
 from dagster_components.utils import ensure_loadable_path
 
 T = TypeVar("T")
 
 
-def script_load_context(decl_node: Optional[DefsModuleDecl] = None) -> ComponentLoadContext:
+def script_load_context(decl_node: Optional[DefsModuleDeclNode] = None) -> ComponentLoadContext:
     return ComponentLoadContext.for_test(decl_node=decl_node)
 
 

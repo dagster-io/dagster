@@ -43,12 +43,12 @@ class ComponentFileModel(BaseModel):
 
 
 #########
-# MODULES
+# Module Resolver
 #########
 
 
 @record
-class DefsModule(ABC):
+class DefsModuleResolver(ABC):
     path: Path
 
     @abstractmethod
@@ -56,17 +56,17 @@ class DefsModule(ABC):
 
 
 @record
-class SubpackageDefsModule(DefsModule):
+class SubpackageDefsModule(DefsModuleResolver):
     """A folder containing multiple submodules."""
 
-    submodules: Sequence[DefsModule]
+    submodules: Sequence[DefsModuleResolver]
 
     def build_defs(self) -> Definitions:
         return Definitions.merge(*(submodule.build_defs() for submodule in self.submodules))
 
 
 @record
-class PythonDefsModule(DefsModule):
+class PythonDefsModule(DefsModuleResolver):
     """A module containing python dagster definitions."""
 
     module: Any  # ModuleType
@@ -85,7 +85,7 @@ class PythonDefsModule(DefsModule):
 
 
 @record
-class ComponentDefsModule(DefsModule):
+class ComponentDefsModule(DefsModuleResolver):
     """A module containing a component definition."""
 
     context: ComponentLoadContext
@@ -114,18 +114,18 @@ def _parse_component_yaml(path: Path) -> tuple[SourcePositionTree, ComponentFile
 
 
 @record
-class DefsModuleDecl(ABC):
+class DefsModuleDeclNode(ABC):
     path: Path
 
     def get_source_position_tree(self) -> Optional[SourcePositionTree]:
         return None
 
     @staticmethod
-    def from_path(path: Path) -> Optional["DefsModuleDecl"]:
+    def from_path(path: Path) -> Optional["DefsModuleDeclNode"]:
         # this defines the priority of the decl types, we return the first one that matches
         decltypes = (
-            YamlComponentDecl,
-            PythonComponentDecl,
+            YamlComponentDeclNode,
+            PythonComponentDeclNode,
             PythonModuleDecl,
             SubpackageDefsModuleDecl,
         )
@@ -133,7 +133,7 @@ class DefsModuleDecl(ABC):
         return next(decl_filter, None)
 
     @staticmethod
-    def from_module(module: ModuleType) -> Optional["DefsModuleDecl"]:
+    def from_module(module: ModuleType) -> Optional["DefsModuleDeclNode"]:
         """Given a Python module, returns a corresponding defs declaration.
 
         Args:
@@ -149,24 +149,24 @@ class DefsModuleDecl(ABC):
             if module.__path__
             else None
         )
-        return DefsModuleDecl.from_path(
+        return DefsModuleDeclNode.from_path(
             check.not_none(module_path, f"Module {module.__name__} has no filepath")
         )
 
     @abstractmethod
-    def load(self, context: ComponentLoadContext) -> DefsModule: ...
+    def load(self, context: ComponentLoadContext) -> DefsModuleResolver: ...
 
 
 @record
-class SubpackageDefsModuleDecl(DefsModuleDecl):
+class SubpackageDefsModuleDecl(DefsModuleDeclNode):
     """A folder containing multiple submodules."""
 
-    subdecls: Sequence[DefsModuleDecl]
+    subdecls: Sequence[DefsModuleDeclNode]
 
     @staticmethod
     def from_path(path: Path) -> Optional["SubpackageDefsModuleDecl"]:
         if path.is_dir():
-            subdecls = (DefsModuleDecl.from_path(subpath) for subpath in path.iterdir())
+            subdecls = (DefsModuleDeclNode.from_path(subpath) for subpath in path.iterdir())
             return SubpackageDefsModuleDecl(
                 path=path,
                 subdecls=list(filter(None, subdecls)),
@@ -182,7 +182,7 @@ class SubpackageDefsModuleDecl(DefsModuleDecl):
 
 
 @record
-class PythonModuleDecl(DefsModuleDecl):
+class PythonModuleDecl(DefsModuleDeclNode):
     """A python module containing a `definitions.py` file."""
 
     path: Path
@@ -203,17 +203,17 @@ class PythonModuleDecl(DefsModuleDecl):
 
 
 @record
-class YamlComponentDecl(DefsModuleDecl):
+class YamlComponentDeclNode(DefsModuleDeclNode):
     """A component configured with a `component.yaml` file."""
 
     component_file_model: ComponentFileModel
     source_position_tree: Optional[SourcePositionTree] = None
 
     @staticmethod
-    def from_path(path: Path) -> Optional["YamlComponentDecl"]:
+    def from_path(path: Path) -> Optional["YamlComponentDeclNode"]:
         if (path / "component.yaml").exists():
             position_tree, component_file_model = _parse_component_yaml(path)
-            return YamlComponentDecl(
+            return YamlComponentDeclNode(
                 path=path,
                 component_file_model=component_file_model,
                 source_position_tree=position_tree,
@@ -250,13 +250,13 @@ class YamlComponentDecl(DefsModuleDecl):
 
 
 @record
-class PythonComponentDecl(DefsModuleDecl):
+class PythonComponentDeclNode(DefsModuleDeclNode):
     """A component configured with a `component.py` file."""
 
     @staticmethod
-    def from_path(path: Path) -> Optional["PythonComponentDecl"]:
+    def from_path(path: Path) -> Optional["PythonComponentDeclNode"]:
         if (path / "component.py").exists():
-            return PythonComponentDecl(path=path)
+            return PythonComponentDeclNode(path=path)
         else:
             return
 
@@ -281,7 +281,7 @@ class PythonComponentDecl(DefsModuleDecl):
 
 
 @record
-class DirectForTestComponentDecl(DefsModuleDecl):
+class DirectForTestComponentDeclNode(DefsModuleDeclNode):
     component_type: type[Component]
     attributes_yaml: str
 

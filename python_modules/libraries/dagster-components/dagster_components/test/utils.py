@@ -3,7 +3,7 @@ from pathlib import Path
 from typing_extensions import TypeVar
 
 from dagster_components.core.component import Component, ComponentLoadContext
-from dagster_components.core.defs_module import DirectForTestComponentDecl
+from dagster_components.core.defs_module import DirectForTestComponentDeclNode
 
 TComponent = TypeVar("TComponent", bound=Component)
 
@@ -12,7 +12,7 @@ def load_direct(
     component_type: type[TComponent],
     attribute_yaml: str,
 ) -> TComponent:
-    decl_node = DirectForTestComponentDecl(
+    decl_node = DirectForTestComponentDeclNode(
         path=Path("/"),
         component_type=component_type,
         attributes_yaml=attribute_yaml,

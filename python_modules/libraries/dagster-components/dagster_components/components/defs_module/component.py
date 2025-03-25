@@ -7,7 +7,7 @@ from typing_extensions import Self
 
 from dagster_components import AssetPostProcessorModel, Component, ComponentLoadContext
 from dagster_components.core.defs_module import (
-    DefsModule,
+    DefsModuleResolver,
     PythonModuleDecl,
     SubpackageDefsModuleDecl,
 )
@@ -15,12 +15,12 @@ from dagster_components.resolved.core_models import AssetPostProcessor
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver, resolve_model
 
 
-class DefsModuleArgsModel(ResolvableModel):
+class DefsModuleResolverArgsModel(ResolvableModel):
     asset_post_processors: Optional[Sequence[AssetPostProcessorModel]] = None
 
 
 @dataclass
-class ResolvedDefsModuleArgs(ResolvedFrom[DefsModuleArgsModel]):
+class ResolvedDefsModuleArgs(ResolvedFrom[DefsModuleResolverArgsModel]):
     asset_post_processors: Annotated[Sequence[AssetPostProcessor], Resolver.from_annotation()]
 
 
@@ -28,17 +28,19 @@ class DefsModuleComponent(Component):
     """Wraps a DefsModule to allow the addition of arbitrary attributes."""
 
     def __init__(
-        self, post_processors: Sequence[AssetPostProcessor], defs_module: Optional[DefsModule]
+        self,
+        post_processors: Sequence[AssetPostProcessor],
+        defs_module: Optional[DefsModuleResolver],
     ):
         self.post_processors = post_processors
         self.defs_module = defs_module
 
     @classmethod
-    def get_schema(cls) -> type[DefsModuleArgsModel]:
-        return DefsModuleArgsModel
+    def get_schema(cls) -> type[DefsModuleResolverArgsModel]:
+        return DefsModuleResolverArgsModel
 
     @classmethod
-    def load(cls, attributes: DefsModuleArgsModel, context: ComponentLoadContext) -> Self:
+    def load(cls, attributes: DefsModuleResolverArgsModel, context: ComponentLoadContext) -> Self:
         path = context.path
         decl = PythonModuleDecl.from_path(path) or SubpackageDefsModuleDecl.from_path(path)
         defs_module = decl.load(context) if decl else None

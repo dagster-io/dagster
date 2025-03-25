@@ -12,7 +12,7 @@ from dagster import AssetKey, AssetsDefinition, AssetSpec, BackfillPolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
 from dagster_components.components.dbt_project.component import DbtProjectComponent, DbtProjectModel
 from dagster_components.core.component_defs_builder import build_component_defs
-from dagster_components.core.defs_module import ComponentFileModel, YamlComponentDecl
+from dagster_components.core.defs_module import ComponentFileModel, YamlComponentDeclNode
 from dagster_components.resolved.core_models import AssetAttributesModel
 from dagster_dbt import DbtProject
 
@@ -60,7 +60,7 @@ def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
     elif backfill_policy == "multi_run_with_max_partitions":
         backfill_policy_arg["backfill_policy"] = {"type": "multi_run", "max_partitions_per_run": 3}
 
-    decl_node = YamlComponentDecl(
+    decl_node = YamlComponentDeclNode(
         path=dbt_path / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="dbt_project",
@@ -111,7 +111,7 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
         def get_additional_scope(cls) -> Mapping[str, Any]:
             return {"get_tags_for_node": lambda node: {"model_id": node["name"].replace("_", "-")}}
 
-    decl_node = YamlComponentDecl(
+    decl_node = YamlComponentDeclNode(
         path=dbt_path / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="debug_dbt_project",
@@ -203,7 +203,7 @@ def test_asset_attributes(
 ) -> None:
     wrapper = pytest.raises(Exception) if should_error else nullcontext()
     with wrapper:
-        decl_node = YamlComponentDecl(
+        decl_node = YamlComponentDeclNode(
             path=dbt_path / COMPONENT_RELPATH,
             component_file_model=ComponentFileModel(
                 type="dbt_project",
@@ -240,7 +240,7 @@ def test_asset_attributes_is_comprehensive():
 
 
 def test_subselection(dbt_path: Path) -> None:
-    decl_node = YamlComponentDecl(
+    decl_node = YamlComponentDeclNode(
         path=dbt_path / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="dbt_project",
@@ -258,7 +258,7 @@ def test_subselection(dbt_path: Path) -> None:
 
 
 def test_exclude(dbt_path: Path) -> None:
-    decl_node = YamlComponentDecl(
+    decl_node = YamlComponentDeclNode(
         path=dbt_path / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="dbt_project",
@@ -298,7 +298,7 @@ def test_dependency_on_dbt_project():
 
 
 def test_spec_is_available_in_scope(dbt_path: Path) -> None:
-    decl_node = YamlComponentDecl(
+    decl_node = YamlComponentDeclNode(
         path=dbt_path / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="  ",
@@ -340,7 +340,7 @@ def test_udf_map_spec(dbt_path: Path, map_fn: Callable[[AssetSpec], Any]) -> Non
         def get_additional_scope(cls) -> Mapping[str, Any]:
             return {"map_spec": map_fn}
 
-    decl_node = YamlComponentDecl(
+    decl_node = YamlComponentDeclNode(
         path=dbt_path / COMPONENT_RELPATH,
         component_file_model=ComponentFileModel(
             type="debug_dbt_project",
