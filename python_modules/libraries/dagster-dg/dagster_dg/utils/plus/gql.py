@@ -7,3 +7,19 @@ query CliDeploymentsQuery {
     }
 }
 """
+
+LOCAL_SECRETS_FILE_QUERY = """
+{
+	secretsOrError {
+      __typename
+    ... on Secrets {
+      secrets {
+        localDeploymentScope
+        secretName
+        secretValue
+        locationNames
+      }
+    }
+  }
+}
+"""
