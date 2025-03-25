@@ -16,7 +16,7 @@ enabledBy:
 enables:
 tags: [dagster-supported, metadata]
 sidebar_custom_props:
-  logo: images/integrations/polars-logo-rust.svg
+  logo: images/integrations/polars-logo-python.svg
 ---
 
 Polars is a blazingly fast DataFrame library written in Rust with bindings for Python.
