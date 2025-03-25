@@ -1,5 +1,6 @@
 from typing import cast
 
+import pytest
 import requests
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.run_request import SensorResult
@@ -17,6 +18,11 @@ from kitchen_sink.airflow_instance import (
     local_airflow_instance,
 )
 from pytest_mock import MockFixture
+
+
+@pytest.fixture
+def expected_num_dags() -> int:
+    return 16
 
 
 def test_configure_dag_list_limit(airflow_instance: None, mocker: MockFixture) -> None:
