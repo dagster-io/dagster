@@ -60,6 +60,7 @@ from dagster_graphql.schema.asset_checks import (
     GrapheneAssetChecks,
     GrapheneAssetChecksOrError,
 )
+from dagster_graphql.schema.asset_health import GrapheneAssetHealth
 from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializePolicy
 from dagster_graphql.schema.automation_condition import GrapheneAutomationCondition
 from dagster_graphql.schema.backfill import GrapheneBackfillPolicy
@@ -219,6 +220,7 @@ class GrapheneMaterializationUpstreamDataVersion(graphene.ObjectType):
 
 class GrapheneAssetNode(graphene.ObjectType):
     # NOTE: properties/resolvers are listed alphabetically
+    assetHealth = graphene.NonNull(GrapheneAssetHealth)
     assetKey = graphene.NonNull(GrapheneAssetKey)
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneMaterializationEvent),
@@ -520,6 +522,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     @property
     def is_executable(self) -> bool:
         return self._asset_node_snap.is_executable
+
+    def resolve_assetHealth(self, graphene_info: ResolveInfo):
+        return GrapheneAssetHealth()
 
     def resolve_hasMaterializePermission(
         self,
