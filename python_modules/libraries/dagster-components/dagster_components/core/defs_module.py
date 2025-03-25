@@ -92,6 +92,7 @@ class DefsFactoryModuleResolver(DefsModuleResolver):
 
     context: ComponentLoadContext
     defs_factory: DefsLoader
+    defs_module: Optional[DefsModule]  # created for pythonic components
 
     def build_defs(self) -> Definitions:
         return self.defs_factory.build_defs(self.context)
@@ -248,7 +249,9 @@ class YamlComponentDeclNode(DefsModuleDeclNode):
 
         attributes = self.get_attributes(component_schema) if component_schema else None
         component = component_type.load(attributes, context)
-        return DefsFactoryModuleResolver(path=self.path, context=context, defs_factory=component)
+        return DefsFactoryModuleResolver(
+            path=self.path, context=context, defs_factory=component, defs_module=None
+        )
 
 
 @record
@@ -281,6 +284,7 @@ class PythonComponentDeclNode(DefsModuleDeclNode):
                 path=self.path,
                 context=context,
                 defs_factory=defs_module.create_defs_loader(context),
+                defs_module=defs_module,
             )
 
 

@@ -264,10 +264,11 @@ class DefinitionsModuleCache:
                 source_position_tree=decl_node.get_source_position_tree()
             ),
             module_cache=self,
+            defs_module=None,
         )
-        defs_module = decl_node.load(context)
+        defs_module_resolver = decl_node.load(context)
         with use_component_load_context(context):
-            return defs_module.build_defs()
+            return defs_module_resolver.build_defs()
 
 
 @dataclass
@@ -279,6 +280,7 @@ class ComponentLoadContext:
     decl_node: Optional["DefsModuleDeclNode"]
     resolution_context: ResolutionContext
     module_cache: DefinitionsModuleCache
+    defs_module: Optional["DefsModule"]
 
     @staticmethod
     def current() -> "ComponentLoadContext":
@@ -294,6 +296,7 @@ class ComponentLoadContext:
         *,
         resources: Optional[Mapping[str, object]] = None,
         decl_node: Optional["DefsModuleDeclNode"] = None,
+        defs_module: Optional["DefsModule"] = None,
     ) -> "ComponentLoadContext":
         return ComponentLoadContext(
             defs_root=Path.cwd(),
@@ -301,7 +304,11 @@ class ComponentLoadContext:
             decl_node=decl_node,
             resolution_context=ResolutionContext.default(),
             module_cache=DefinitionsModuleCache(resources=resources or {}),
+            defs_module=defs_module,
         )
+
+    def with_defs_module(self, defs_module: "DefsModule") -> "ComponentLoadContext":
+        return dataclasses.replace(self, defs_module=defs_module)
 
     @property
     def path(self) -> Path:
@@ -402,7 +409,7 @@ class DefsModule:
         return self.create_defs_loader(context)
 
     def create_defs_loader(self, context: ComponentLoadContext) -> DefsLoader:
-        return self.fn(context)
+        return self.fn(context.with_defs_module(self))
 
     def load_definitions(self, context: ComponentLoadContext) -> Definitions:
         return self.create_defs_loader(context).build_defs(context)
