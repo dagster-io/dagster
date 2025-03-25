@@ -106,6 +106,7 @@ def my_asset_sensor(context, asset_event):
             tags={"dagster/partition": partition_key},
         )
     return None
+```
 
 ## Next steps
 
