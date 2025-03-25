@@ -16,7 +16,8 @@ from dagster import (
 VALID_DATAFRAME_CLASSES = (pl.DataFrame,)
 
 
-def patito_model_to_dagster_type(model: pt.Model | Any) -> DagsterType:  # noqa: ANN401
+# TODO: look into a better way to get the asset name and pass it to this function
+def patito_model_to_dagster_type(model: pt.Model | Any, asset_name: str) -> DagsterType:  # noqa: ANN401
     """Convert patito model to dagster type checking.
 
     Args:
@@ -31,7 +32,7 @@ def patito_model_to_dagster_type(model: pt.Model | Any) -> DagsterType:  # noqa:
         col_1: str | None
         col_2: int = pt.Field(unique=True)
 
-    @asset(dagster_type=patito_model_to_dagster_type(MyTable),
+    @asset(dagster_type=patito_model_to_dagster_type(MyTable, "my_asset"),
         io_manager_key="my_io_manager")
     def my_asset() -> pl.DataFrame:
         return pl.DataFrame({
@@ -41,8 +42,8 @@ def patito_model_to_dagster_type(model: pt.Model | Any) -> DagsterType:  # noqa:
     ```
     """
     table_columns = []
-    schema_dtypes: dict = model.dtypes  # type: ignore
-    column_infos: dict = model.column_infos  # type: ignore
+    schema_dtypes: dict = model.dtypes
+    column_infos: dict = model.column_infos
 
     for col, properties in model._schema_properties().items():
         table_columns.append(
@@ -54,7 +55,7 @@ def patito_model_to_dagster_type(model: pt.Model | Any) -> DagsterType:  # noqa:
                     if column_infos[col].unique is not None
                     else False,
                     nullable="anyOf" in properties,
-                    # TODO(ion): Handle Other constraints, serialize the expressions
+                    # TODO: Handle Other constraints, serialize the expressions
                 ),
             ),
         )
@@ -63,7 +64,7 @@ def patito_model_to_dagster_type(model: pt.Model | Any) -> DagsterType:  # noqa:
     type_check_fn = _patito_model_to_type_check_fn(model)
     return DagsterType(
         type_check_fn=type_check_fn,
-        name="pl.DataFrame",
+        name=asset_name,
         metadata={
             "schema": MetadataValue.table_schema(table_schema),
         },
