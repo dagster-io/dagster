@@ -85,7 +85,7 @@ The preceding example uses both a `run_key` and a cursor, which means that if th
 If you want to be able to reset a sensor's cursor, don't set `run_key`s on `RunRequest`s.
 :::
 
-## Grabbing Tags Inside Sensors
+## Accessing tags from upstream job runs
 
 When working with sensors in Dagster, you might need to access tags from upstream job runs. For example, you can retrieve the partition key from an upstream job's tags. This can be useful for triggering downstream jobs with specific partition keys.
 
