@@ -646,16 +646,21 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         return self._dynamic_partitions_cache[partitions_def_name]
 
     def get_dynamic_partitions_connection(
-        self, partitions_def_name, limit, cursor=None
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
     ) -> Connection[str]:
         if partitions_def_name not in self._dynamic_partitions_cache:
             return self.instance.get_dynamic_partitions_connection(
-                partitions_def_name, limit, cursor=cursor
+                partitions_def_name=partitions_def_name,
+                limit=limit,
+                ascending=ascending,
+                cursor=cursor,
             )
-        partition_keys = self.instance.get_dynamic_partitions_connection(
-            partitions_def_name=partitions_def_name, limit=limit, cursor=cursor
-        ).results
-        return Connection.create_from_sequence(partition_keys, limit, cursor)
+
+        # the full set of partition keys are cached... create a sequence connection from the cached keys
+        partition_keys = self._dynamic_partitions_cache[partitions_def_name]
+        return Connection.create_from_sequence(
+            seq=partition_keys, limit=limit, ascending=ascending, cursor=cursor
+        )
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         return partition_key in self.get_dynamic_partitions(partitions_def_name)

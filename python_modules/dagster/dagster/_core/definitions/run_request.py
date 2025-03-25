@@ -297,10 +297,12 @@ class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
 
     @cached_method
     def get_dynamic_partitions_connection(
-        self, partitions_def_name: str, limit: int, cursor: Optional[str] = None
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
     ) -> Connection[str]:
         partition_keys = self.get_dynamic_partitions(partitions_def_name)
-        return Connection.create_from_sequence(partition_keys, limit, cursor)
+        return Connection.create_from_sequence(
+            seq=partition_keys, limit=limit, ascending=ascending, cursor=cursor
+        )
 
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool:
         return partition_key not in self.deleted_partition_keys_by_partitions_def_name.get(
