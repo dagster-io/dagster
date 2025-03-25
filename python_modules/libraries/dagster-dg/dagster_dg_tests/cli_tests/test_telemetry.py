@@ -16,6 +16,7 @@ from dagster_dg_tests.utils import (
     ProxyRunner,
     crawl_cli_commands,
     create_project_from_components,
+    isolated_example_component_library_foo_bar,
     modify_environment_variable,
 )
 
@@ -42,7 +43,11 @@ TELEMETRY_TEST_COMMANDS = {
 
 NO_TELEMETRY_COMMANDS = {
     ("utils", "inspect-component-type"),
-    ("scaffold", "component"),
+    (
+        "scaffold",
+        # Is actually instrumented, but since subcommands are dynamically generated we test manually
+        "component",
+    ),
 }
 
 
@@ -167,3 +172,27 @@ def test_telemetry_disabled_dg_config(caplog: pytest.LogCaptureFixture) -> None:
             assert result.exit_code == 0, str(result.exception)
 
         assert len(caplog.records) == 0
+
+
+def test_telemetry_scaffold_component(caplog: pytest.LogCaptureFixture) -> None:
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_component_library_foo_bar(runner),
+        TemporaryDirectory() as dagster_home,
+        modify_environment_variable("DAGSTER_HOME", dagster_home),
+    ):
+        caplog.clear()
+        result = runner.invoke(
+            "scaffold",
+            "component",
+            "dagster_test.components.AllMetadataEmptyComponent",
+            "qux",
+        )
+        assert result.exit_code == 0
+        assert Path("foo_bar/defs/qux").exists()
+        assert len(caplog.records) == 2
+        first_message = json.loads(caplog.records[0].getMessage())
+        second_message = json.loads(caplog.records[1].getMessage())
+        assert first_message["action"] == "scaffold_component_command_started"
+        assert second_message["action"] == "scaffold_component_command_ended"
+        assert second_message["metadata"]["command_success"] == "True"
