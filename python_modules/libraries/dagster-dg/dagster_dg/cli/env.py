@@ -76,6 +76,10 @@ def pull_env_command(**global_options: object) -> None:
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
     dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+    if not DagsterPlusCliConfig.exists():
+        raise click.UsageError(
+            "`dg env pull` requires authentication with Dagster Plus. Run `dg plus login` to authenticate."
+        )
     config = DagsterPlusCliConfig.get()
 
     project_ctxs = []
@@ -92,13 +96,20 @@ def pull_env_command(**global_options: object) -> None:
         gql_client, {project_ctx.project_name for project_ctx in project_ctxs}
     )
 
+    projects_without_secrets = {project_ctx.project_name for project_ctx in project_ctxs}
     for project_ctx in project_ctxs:
-        env = ProjectEnvVars.empty(project_ctx).with_values(
-            secrets_by_location[project_ctx.project_name]
-        )
-        env.write()
+        if secrets_by_location[project_ctx.project_name]:
+            env = ProjectEnvVars.empty(project_ctx).with_values(
+                secrets_by_location[project_ctx.project_name]
+            )
+            env.write()
+            projects_without_secrets.remove(project_ctx.project_name)
 
     if dg_context.is_project:
         click.echo("Environment variables saved to .env")
     else:
-        click.echo("Environment variables saved to .env for all projects in the workspace")
+        click.echo("Environment variables saved to .env for projects in workspace")
+        if projects_without_secrets:
+            click.echo(
+                f"Environment variables not found for projects: {', '.join(projects_without_secrets)}"
+            )
