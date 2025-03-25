@@ -105,4 +105,4 @@ To materialize your assets:
 
 ## Next steps
 
-- Continue this tutorial with your [asset dependencies](create-and-materialize-a-downstream-asset)
+- Continue this tutorial with your [asset dependencies](/etl-pipeline-tutorial/create-and-materialize-a-downstream-asset)

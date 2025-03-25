@@ -134,4 +134,4 @@ To make sure Dagster and its dependencies were installed correctly, navigate to 
 
 ## Next steps
 
-- Continue this tutorial by [creating and materializing assets](create-and-materialize-assets)
+- Continue this tutorial by [creating and materializing assets](/etl-pipeline-tutorial/create-and-materialize-assets)

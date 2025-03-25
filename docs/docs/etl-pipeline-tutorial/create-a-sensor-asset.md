@@ -66,4 +66,4 @@ Sensors include the following elements:
 
 Now that we have our complete project, the next step is to refactor the project into a more manageable structure so we can add to it as needed.
 
-Finish the tutorial by [refactoring your project](refactor-your-project).
+Finish the tutorial by [refactoring your project](/etl-pipeline-tutorial/refactor-your-project).
