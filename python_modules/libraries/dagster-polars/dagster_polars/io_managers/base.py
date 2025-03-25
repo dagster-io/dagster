@@ -195,9 +195,11 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
 
             from dagster_polars.patito import get_patito_metadata
 
-            if issubclass(context.dagster_type.typing_type, pt.DataFrame):
+            if context.dagster_type.typing_type is not None and issubclass(
+                context.dagster_type.typing_type, pt.DataFrame
+            ):
                 return get_patito_metadata(context.dagster_type.typing_type.model)
-        except ImportError:
+        except (ImportError, TypeError):
             return {}
 
         return {}
