@@ -100,7 +100,7 @@ def resolve_translator(context: ResolutionContext, model: DbtProjectModel) -> Da
             return self.get_asset_spec(dbt_resource_props).key
 
         @override
-        def get_description(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
+        def get_description(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return self.get_asset_spec(dbt_resource_props).description
 
         @override

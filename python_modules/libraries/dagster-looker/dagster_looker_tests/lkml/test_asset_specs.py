@@ -416,7 +416,7 @@ def test_with_deps_replacements() -> None:
 
 def test_with_deps_replacements_legacy() -> None:
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
-        def get_deps(self, _) -> Sequence[AssetKey]:
+        def get_deps(self, _) -> Sequence[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return []
 
     my_looker_assets = build_looker_asset_specs(
@@ -451,7 +451,7 @@ def test_with_description_replacements_legacy() -> None:
     expected_description = "customized description"
 
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
-        def get_description(self, _) -> Optional[str]:
+        def get_description(self, _) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_description
 
     my_looker_assets = build_looker_asset_specs(
@@ -487,7 +487,7 @@ def test_with_metadata_replacements_legacy() -> None:
     expected_metadata = {"customized": "metadata"}
 
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
-        def get_metadata(self, _) -> Optional[Mapping[str, Any]]:
+        def get_metadata(self, _) -> Optional[Mapping[str, Any]]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_metadata
 
     my_looker_assets = build_looker_asset_specs(
@@ -503,7 +503,7 @@ def test_with_group_replacements_legacy() -> None:
     expected_group = "customized_group"
 
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
-        def get_group_name(self, _) -> Optional[str]:
+        def get_group_name(self, _) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_group
 
     my_looker_assets = build_looker_asset_specs(
@@ -519,7 +519,7 @@ def test_with_owner_replacements_legacy() -> None:
     expected_owners = ["custom@custom.com"]
 
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
-        def get_owners(self, _) -> Optional[Sequence[str]]:
+        def get_owners(self, _) -> Optional[Sequence[str]]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_owners
 
     my_looker_assets = build_looker_asset_specs(
@@ -535,7 +535,7 @@ def test_with_tag_replacements_legacy() -> None:
     expected_tags = {"customized": "tag"}
 
     class CustomDagsterLookerTranslator(DagsterLookerLkmlTranslator):
-        def get_tags(self, _) -> Optional[Mapping[str, str]]:
+        def get_tags(self, _) -> Optional[Mapping[str, str]]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_tags
 
     my_looker_assets = build_looker_asset_specs(

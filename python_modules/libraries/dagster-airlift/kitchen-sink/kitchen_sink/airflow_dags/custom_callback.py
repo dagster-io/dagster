@@ -47,7 +47,7 @@ with DAG(
 
 class CustomProxyTaskToDagsterOperator(DefaultProxyTaskToDagsterOperator):
     @classmethod
-    def build_from_task(cls, original_task: BaseOperator) -> BaseProxyTaskToDagsterOperator:
+    def build_from_task(cls, original_task: BaseOperator) -> BaseProxyTaskToDagsterOperator:  # pyright: ignore[reportIncompatibleMethodOverride]
         """A custom callback to construct a new operator for the given task. In our case, we add retries to the affected_dag."""
         new_task = build_dagster_task(original_task, DefaultProxyTaskToDagsterOperator)
         if original_task.dag_id == "affected_dag":

@@ -263,7 +263,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output(
             aliases=[f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
         )
 
-        assert context.add_output_metadata.call_count == 1
+        assert context.add_output_metadata.call_count == 1  # pyright: ignore[reportFunctionMemberAccess]
         add_output_metadata_spy.assert_called_with(
             {
                 "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
@@ -370,7 +370,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
             aliases=[f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
         )
 
-        assert context.add_output_metadata.call_count == 1
+        assert context.add_output_metadata.call_count == 1  # pyright: ignore[reportFunctionMemberAccess]
         add_output_metadata_spy.assert_called_with(
             {
                 "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
@@ -477,7 +477,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
             aliases=[f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
         )
 
-        assert context.add_output_metadata.call_count == 1
+        assert context.add_output_metadata.call_count == 1  # pyright: ignore[reportFunctionMemberAccess]
         add_output_metadata_spy.assert_called_with(
             {
                 "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
@@ -584,7 +584,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
             aliases=[f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
         )
 
-        assert context.add_output_metadata.call_count == 1
+        assert context.add_output_metadata.call_count == 1  # pyright: ignore[reportFunctionMemberAccess]
         add_output_metadata_spy.assert_called_with(
             {
                 "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
@@ -695,7 +695,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
             aliases=[f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
         )
 
-        assert context.add_output_metadata.call_count == 1
+        assert context.add_output_metadata.call_count == 1  # pyright: ignore[reportFunctionMemberAccess]
         add_output_metadata_spy.assert_called_with(
             {
                 "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
@@ -802,7 +802,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
             aliases=[f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
         )
 
-        assert context.add_output_metadata.call_count == 1
+        assert context.add_output_metadata.call_count == 1  # pyright: ignore[reportFunctionMemberAccess]
         add_output_metadata_spy.assert_called_with(
             {
                 "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
@@ -913,7 +913,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_partitioned_op_with_simple
             aliases=[f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
         )
 
-        assert context.add_output_metadata.call_count == 1
+        assert context.add_output_metadata.call_count == 1  # pyright: ignore[reportFunctionMemberAccess]
         add_output_metadata_spy.assert_called_with(
             {
                 "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
@@ -990,7 +990,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_raises_when_no_name_is_
         assert pickle_artifact_content_mock.call_count == 0
         assert artifact_mock.return_value.wait.call_count == 0
         assert log_artifact_mock.call_count == 0
-        assert context.add_output_metadata.call_count == 0
+        assert context.add_output_metadata.call_count == 0  # pyright: ignore[reportFunctionMemberAccess]
         assert add_output_metadata_spy.return_value.call_count == 0
 
 
@@ -1059,7 +1059,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_raises_when_unsupported
         assert pickle_artifact_content_mock.call_count == 0
         assert artifact_mock.return_value.wait.call_count == 0
         assert log_artifact_mock.call_count == 0
-        assert context.add_output_metadata.call_count == 0
+        assert context.add_output_metadata.call_count == 0  # pyright: ignore[reportFunctionMemberAccess]
         assert add_output_metadata_spy.return_value.call_count == 0
 
 
@@ -1150,7 +1150,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_asset_with_simple_output(
             aliases=[f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
         )
 
-        assert context.add_output_metadata.call_count == 1
+        assert context.add_output_metadata.call_count == 1  # pyright: ignore[reportFunctionMemberAccess]
         add_output_metadata_spy.assert_called_with(
             {
                 "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
@@ -1235,7 +1235,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_asset_raise_when_double_na
         assert pickle_artifact_content_mock.call_count == 0
         assert artifact_mock.return_value.wait.call_count == 0
         assert log_artifact_mock.call_count == 0
-        assert context.add_output_metadata.call_count == 0
+        assert context.add_output_metadata.call_count == 0  # pyright: ignore[reportFunctionMemberAccess]
         assert add_output_metadata_spy.return_value.call_count == 0
 
 
@@ -1331,7 +1331,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_all_
             aliases=[EXTRA_ALIAS, f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
         )
 
-        assert context.add_output_metadata.call_count == 1
+        assert context.add_output_metadata.call_count == 1  # pyright: ignore[reportFunctionMemberAccess]
         add_output_metadata_spy.assert_called_with(
             {
                 "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
@@ -1435,7 +1435,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_object_outpu
             aliases=[f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
         )
 
-        assert context.add_output_metadata.call_count == 1
+        assert context.add_output_metadata.call_count == 1  # pyright: ignore[reportFunctionMemberAccess]
         add_output_metadata_spy.assert_called_with(
             {
                 "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
@@ -1543,7 +1543,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_object_outpu
             aliases=[EXTRA_ALIAS, f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
         )
 
-        assert context.add_output_metadata.call_count == 1
+        assert context.add_output_metadata.call_count == 1  # pyright: ignore[reportFunctionMemberAccess]
         add_output_metadata_spy.assert_called_with(
             {
                 "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
@@ -1639,7 +1639,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
             aliases=[f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
         )
 
-        assert context.add_output_metadata.call_count == 1
+        assert context.add_output_metadata.call_count == 1  # pyright: ignore[reportFunctionMemberAccess]
         add_output_metadata_spy.assert_called_with(
             {
                 "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
@@ -1741,7 +1741,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
 
         assert log_artifact_mock.call_count == 0
 
-        assert context.add_output_metadata.call_count == 0
+        assert context.add_output_metadata.call_count == 0  # pyright: ignore[reportFunctionMemberAccess]
         assert add_output_metadata_spy.return_value.call_count == 0
 
 
@@ -1828,7 +1828,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
 
         assert log_artifact_mock.call_count == 0
 
-        assert context.add_output_metadata.call_count == 0
+        assert context.add_output_metadata.call_count == 0  # pyright: ignore[reportFunctionMemberAccess]
         assert add_output_metadata_spy.return_value.call_count == 0
 
 
@@ -1909,7 +1909,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
 
         assert log_artifact_mock.call_count == 0
 
-        assert context.add_output_metadata.call_count == 0
+        assert context.add_output_metadata.call_count == 0  # pyright: ignore[reportFunctionMemberAccess]
         assert add_output_metadata_spy.return_value.call_count == 0
 
 
@@ -2006,7 +2006,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
             aliases=[EXTRA_ALIAS, f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
         )
 
-        assert context.add_output_metadata.call_count == 1
+        assert context.add_output_metadata.call_count == 1  # pyright: ignore[reportFunctionMemberAccess]
         add_output_metadata_spy.assert_called_with(
             {
                 "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
@@ -2121,7 +2121,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
             aliases=[EXTRA_ALIAS, f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
         )
 
-        assert context.add_output_metadata.call_count == 1
+        assert context.add_output_metadata.call_count == 1  # pyright: ignore[reportFunctionMemberAccess]
         add_output_metadata_spy.assert_called_with(
             {
                 "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),
@@ -2237,7 +2237,7 @@ def test_wandb_artifacts_io_manager_handle_partition_key_output_for_op_suffixes_
             aliases=[EXTRA_ALIAS, f"dagster-run-{DAGSTER_RUN_ID_SHORT}", "latest"],
         )
 
-        assert context.add_output_metadata.call_count == 1
+        assert context.add_output_metadata.call_count == 1  # pyright: ignore[reportFunctionMemberAccess]
         add_output_metadata_spy.assert_called_with(
             {
                 "dagster_run_id": DagsterRunMetadataValue(run_id=DAGSTER_RUN_ID),

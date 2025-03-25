@@ -90,7 +90,7 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             except Exception:
                 logging.exception("Exception in callback for event watch on run %s.", event.run_id)
 
-    def watch(self, run_id: str, cursor: str, callback: Callable[..., Any]):
+    def watch(self, run_id: str, cursor: str, callback: Callable[..., Any]):  # pyright: ignore[reportIncompatibleMethodOverride]
         self._handlers[run_id].add(callback)
 
     def end_watch(self, run_id: str, handler: Callable[..., Any]):
@@ -102,7 +102,7 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return False
 
     @property
-    def supports_global_concurrency_limits(self) -> bool:
+    def supports_global_concurrency_limits(self) -> bool:  # pyright: ignore[reportIncompatibleVariableOverride]
         return False
 
     def dispose(self):

@@ -134,7 +134,7 @@ def test_cached_load_spec_with_asset_factory(
 
 
 class MyCustomTranslator(DagsterAirbyteTranslator):
-    def get_asset_spec(self, data: AirbyteConnectionTableProps) -> AssetSpec:
+    def get_asset_spec(self, data: AirbyteConnectionTableProps) -> AssetSpec:  # pyright: ignore[reportIncompatibleMethodOverride]
         default_spec = super().get_asset_spec(data)
         return default_spec.replace_attributes(
             key=default_spec.key.with_prefix("test_connection"),
@@ -165,7 +165,7 @@ def test_translator_custom_metadata(
 
 
 class MyAssetFactoryCustomTranslator(DagsterAirbyteTranslator):
-    def get_asset_spec(self, data: AirbyteConnectionTableProps) -> AssetSpec:
+    def get_asset_spec(self, data: AirbyteConnectionTableProps) -> AssetSpec:  # pyright: ignore[reportIncompatibleMethodOverride]
         default_spec = super().get_asset_spec(data)
         return default_spec.replace_attributes(group_name="my_group_name")
 

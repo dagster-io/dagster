@@ -212,14 +212,14 @@ def _normalize_value(value: Any, key: str) -> str:
         serialized_value = seven.json.dumps(value)
     except TypeError:
         error = 'Could not JSON encode value "{value}"'
-    if not error and not seven.json.loads(serialized_value) == value:
-        error = f'JSON encoding "{serialized_value}" of value "{value}" is not equivalent to original value'
+    if not error and not seven.json.loads(serialized_value) == value:  # pyright: ignore[reportPossiblyUnboundVariable]
+        error = f'JSON encoding "{serialized_value}" of value "{value}" is not equivalent to original value'  # pyright: ignore[reportPossiblyUnboundVariable]
     if error:
         raise DagsterInvalidDefinitionError(
             f'Invalid value for tag "{key}", {error}. Tag values must be strings '
             "or meet the constraint that json.loads(json.dumps(value)) == value."
         )
-    return serialized_value
+    return serialized_value  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 def is_private_system_tag_key(tag) -> bool:

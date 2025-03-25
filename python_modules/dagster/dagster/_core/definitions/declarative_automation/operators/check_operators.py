@@ -99,7 +99,7 @@ class AnyChecksCondition(ChecksAutomationCondition):
     def base_name(self) -> str:
         return "ANY_CHECKS_MATCH"
 
-    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
+    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
         true_subset = context.get_empty_subset()
 
         coroutines = [
@@ -128,7 +128,7 @@ class AllChecksCondition(ChecksAutomationCondition):
     def base_name(self) -> str:
         return "ALL_CHECKS_MATCH"
 
-    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
+    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
         check_results = []
         true_subset = context.candidate_subset
 

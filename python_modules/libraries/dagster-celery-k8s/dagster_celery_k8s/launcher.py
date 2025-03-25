@@ -272,7 +272,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             labels=merge_dicts(self._labels, exc_config.get("labels", {})),
         )
 
-    def terminate(self, run_id):
+    def terminate(self, run_id):  # pyright: ignore[reportIncompatibleMethodOverride]
         check.str_param(run_id, "run_id")
 
         run = self._instance.get_run_by_id(run_id)

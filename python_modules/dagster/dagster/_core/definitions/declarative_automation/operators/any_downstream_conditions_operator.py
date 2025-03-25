@@ -35,7 +35,7 @@ class DownstreamConditionWrapperCondition(BuiltinAutomationCondition[AssetKey]):
     def requires_cursor(self) -> bool:
         return False
 
-    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
+    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
         child_result = await context.for_child_condition(
             child_condition=self.operand,
             child_index=0,
@@ -83,7 +83,7 @@ class AnyDownstreamConditionsCondition(BuiltinAutomationCondition[AssetKey]):
             if not condition.has_rule_condition
         }
 
-    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:
+    async def evaluate(self, context: AutomationContext[AssetKey]) -> AutomationResult[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
         ignored_conditions = self._get_ignored_conditions(context)
         downstream_conditions = self._get_validated_downstream_conditions(
             context.asset_graph.get_downstream_automation_conditions(asset_key=context.key)

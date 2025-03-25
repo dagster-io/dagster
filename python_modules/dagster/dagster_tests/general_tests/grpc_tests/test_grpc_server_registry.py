@@ -264,10 +264,10 @@ class TestMockProcessGrpcServerRegistry(GrpcServerRegistry):
             wait_for_processes_on_shutdown=True,
         )
 
-    def supports_origin(self, code_location_origin):
+    def supports_origin(self, code_location_origin):  # pyright: ignore[reportIncompatibleMethodOverride]
         return isinstance(code_location_origin, RegisteredCodeLocationOrigin)
 
-    def _get_loadable_target_origin(self, code_location_origin):
+    def _get_loadable_target_origin(self, code_location_origin):  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.mocked_loadable_target_origin
 
 

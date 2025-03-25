@@ -56,7 +56,7 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
             source_code_retrieval_enabled=self.source_code_retrieval_enabled,
         )
 
-    def defs_from_state(
+    def defs_from_state(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, serialized_airflow_data: SerializedAirflowDefinitionsData
     ) -> Definitions:
         return Definitions(

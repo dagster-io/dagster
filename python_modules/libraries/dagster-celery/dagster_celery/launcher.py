@@ -43,7 +43,7 @@ class CeleryRunLauncher(RunLauncher, ConfigurableClass):
     starts runs as Celery tasks.
     """
 
-    _instance: DagsterInstance
+    _instance: DagsterInstance  # pyright: ignore[reportIncompatibleMethodOverride]
     celery: Celery
 
     def __init__(

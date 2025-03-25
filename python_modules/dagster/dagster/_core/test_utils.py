@@ -379,7 +379,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
 
         super().__init__()
 
-    def launch_run(self, context):
+    def launch_run(self, context):  # pyright: ignore[reportIncompatibleMethodOverride]
         run = context.dagster_run
         check.inst_param(run, "run", DagsterRun)
         check.invariant(run.status == DagsterRunStatus.STARTING)
@@ -460,7 +460,7 @@ class TestSecretsLoader(SecretsLoader, ConfigurableClass):
         self._inst_data = inst_data
         self.env_vars = env_vars
 
-    def get_secrets_for_environment(self, location_name: str) -> dict[str, str]:
+    def get_secrets_for_environment(self, location_name: str) -> dict[str, str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.env_vars.copy()
 
     @property

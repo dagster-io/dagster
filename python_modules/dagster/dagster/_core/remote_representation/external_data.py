@@ -818,7 +818,7 @@ class TimeWindowPartitionsSnap(PartitionsSnap):
     day_offset: Optional[int] = None
 
     @classmethod
-    def from_def(cls, partitions_def: TimeWindowPartitionsDefinition) -> Self:
+    def from_def(cls, partitions_def: TimeWindowPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
         return cls(
             cron_schedule=partitions_def.cron_schedule,
@@ -886,7 +886,7 @@ class StaticPartitionsSnap(PartitionsSnap, IHaveNew):
         )
 
     @classmethod
-    def from_def(cls, partitions_def: StaticPartitionsDefinition) -> Self:
+    def from_def(cls, partitions_def: StaticPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         check.inst_param(partitions_def, "partitions_def", StaticPartitionsDefinition)
         return cls(partition_keys=partitions_def.get_partition_keys())
 
@@ -917,7 +917,7 @@ class MultiPartitionsSnap(PartitionsSnap):
     partition_dimensions: Sequence[PartitionDimensionSnap]
 
     @classmethod
-    def from_def(cls, partitions_def: MultiPartitionsDefinition) -> Self:
+    def from_def(cls, partitions_def: MultiPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         check.inst_param(partitions_def, "partitions_def", MultiPartitionsDefinition)
 
         return cls(
@@ -947,7 +947,7 @@ class DynamicPartitionsSnap(PartitionsSnap):
     name: str
 
     @classmethod
-    def from_def(cls, partitions_def: DynamicPartitionsDefinition) -> Self:
+    def from_def(cls, partitions_def: DynamicPartitionsDefinition) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         check.inst_param(partitions_def, "partitions_def", DynamicPartitionsDefinition)
         if partitions_def.name is None:
             raise DagsterInvalidDefinitionError(

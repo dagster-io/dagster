@@ -703,7 +703,7 @@ class NamedTupleSerializer(ObjectSerializer[T_NamedTuple]):
         return value._asdict()  # type: ignore
 
     @cached_property
-    def constructor_param_names(self) -> Sequence[str]:
+    def constructor_param_names(self) -> Sequence[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         if has_generated_new(self.klass):
             return list(get_record_annotations(self.klass).keys())
 
@@ -736,7 +736,7 @@ class DataclassSerializer(ObjectSerializer[T_Dataclass]):
         return value.__dict__
 
     @cached_property
-    def constructor_param_names(self) -> Sequence[str]:
+    def constructor_param_names(self) -> Sequence[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return list(f.name for f in dataclasses.fields(self.klass))
 
 
@@ -762,7 +762,7 @@ class PydanticModelSerializer(ObjectSerializer[T_PydanticModel]):
         return result
 
     @cached_property
-    def constructor_param_names(self) -> Sequence[str]:
+    def constructor_param_names(self) -> Sequence[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return [field.alias or key for key, field in self._model_fields.items()]
 
     @cached_property
@@ -800,7 +800,7 @@ class FieldSerializer(Serializer):
 
 
 class SetToSequenceFieldSerializer(FieldSerializer):
-    def unpack(
+    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, sequence_value: Optional[Sequence[Any]], **_kwargs
     ) -> Optional[AbstractSet[Any]]:
         return set(sequence_value) if sequence_value is not None else None
@@ -1071,7 +1071,7 @@ class _LazySerializationWrapper(dict):
         # https://github.com/python/cpython/blob/0fb18b02c8ad56299d6a2910be0bab8ad601ef24/Modules/_json.c#L1542
         super().__init__({"__serdes": "wrapper"})
 
-    def items(self) -> Iterator[tuple[str, JsonSerializableValue]]:
+    def items(self) -> Iterator[tuple[str, JsonSerializableValue]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         klass_name = self._obj.__class__.__name__
         serializer = self._whitelist_map.object_serializers[klass_name]
         yield from serializer.pack_items(

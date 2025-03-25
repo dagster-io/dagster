@@ -10,7 +10,7 @@ class TestPostgresDaemonCursorStorage(TestDaemonCursorStorage):
     __test__ = True
 
     @pytest.fixture(scope="function", name="storage")
-    def cursor_storage(self, conn_string):
+    def cursor_storage(self, conn_string):  # pyright: ignore[reportIncompatibleMethodOverride]
         storage = PostgresRunStorage.create_clean_storage(conn_string)
         assert storage
         return storage

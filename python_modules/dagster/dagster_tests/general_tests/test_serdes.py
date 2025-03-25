@@ -544,7 +544,7 @@ def test_named_tuple_field_serializers() -> None:
         ) -> Sequence[Sequence[str]]:
             return list(entries.items())
 
-        def unpack(
+        def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
             self,
             entries: Sequence[Sequence[str]],
             whitelist_map: WhitelistMap,
@@ -839,11 +839,11 @@ def test_enum_custom_serializer():
     test_env = WhitelistMap.create()
 
     class MyEnumSerializer(EnumSerializer["Foo"]):
-        def unpack(self, packed_val: str) -> "Foo":
+        def unpack(self, packed_val: str) -> "Foo":  # pyright: ignore[reportIncompatibleMethodOverride]
             packed_val = packed_val.replace("BLUE", "RED")
             return Foo[packed_val]
 
-        def pack(self, unpacked_val: "Foo", whitelist_map: WhitelistMap, descent_path: str) -> str:
+        def pack(self, unpacked_val: "Foo", whitelist_map: WhitelistMap, descent_path: str) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
             return f"Foo.{unpacked_val.name.replace('RED', 'BLUE')}"
 
     @_whitelist_for_serdes(test_env, serializer=MyEnumSerializer)

@@ -165,7 +165,7 @@ class PersistedTimeWindow(
         )
 
     @cached_property
-    def start(self) -> datetime:
+    def start(self) -> datetime:  # pyright: ignore[reportIncompatibleVariableOverride]
         start_timestamp_with_timezone = self._asdict()["start"]
         return datetime.fromtimestamp(
             start_timestamp_with_timezone.timestamp,
@@ -173,7 +173,7 @@ class PersistedTimeWindow(
         )
 
     @cached_property
-    def end(self) -> datetime:
+    def end(self) -> datetime:  # pyright: ignore[reportIncompatibleVariableOverride]
         end_timestamp_with_timezone = self._asdict()["end"]
         return datetime.fromtimestamp(
             end_timestamp_with_timezone.timestamp,
@@ -1698,7 +1698,7 @@ class TimeWindowPartitionsSubsetSerializer(NamedTupleSerializer):
     # TimeWindowPartitionsSubsets have custom logic to delay calculating num_partitions until it
     # is needed to improve performance. When serializing, we want to serialize the number of
     # partitions, so we force calculation.
-    def before_pack(self, value: "TimeWindowPartitionsSubset") -> "TimeWindowPartitionsSubset":
+    def before_pack(self, value: "TimeWindowPartitionsSubset") -> "TimeWindowPartitionsSubset":  # pyright: ignore[reportIncompatibleMethodOverride]
         # value.num_partitions will calculate the number of partitions if the field is None
         # We want to check if the field is None and replace the value with the calculated value
         # for serialization
@@ -1710,7 +1710,7 @@ class TimeWindowPartitionsSubsetSerializer(NamedTupleSerializer):
             )
         return value
 
-    def before_unpack(self, context, value: dict[str, Any]):
+    def before_unpack(self, context, value: dict[str, Any]):  # pyright: ignore[reportIncompatibleMethodOverride]
         num_partitions = value.get("num_partitions")
         # some objects were serialized with an invalid num_partitions, so fix that here
         if num_partitions is not None and num_partitions < 0:
@@ -1785,7 +1785,7 @@ class TimeWindowPartitionsSubset(
         )
 
     @cached_property
-    def included_time_windows(self) -> Sequence[PersistedTimeWindow]:
+    def included_time_windows(self) -> Sequence[PersistedTimeWindow]:  # pyright: ignore[reportIncompatibleVariableOverride]
         return self._asdict()["included_time_windows"]
 
     @property
@@ -1811,7 +1811,7 @@ class TimeWindowPartitionsSubset(
         return self.included_time_windows[-1].end.timestamp() <= dt.timestamp()
 
     @cached_property
-    def num_partitions(self) -> int:
+    def num_partitions(self) -> int:  # pyright: ignore[reportIncompatibleVariableOverride]
         num_partitions_ = self._asdict()["num_partitions"]
         if num_partitions_ is None:
             return sum(
@@ -1998,13 +1998,15 @@ class TimeWindowPartitionsSubset(
             else:
                 if result_windows and window_start_timestamp == result_windows[0].start.timestamp():
                     result_windows[0] = PersistedTimeWindow.from_public_time_window(
-                        TimeWindow(window.start, included_window.end), self.partitions_def.timezone
+                        TimeWindow(window.start, included_window.end),  # pyright: ignore[reportPossiblyUnboundVariable]
+                        self.partitions_def.timezone,
                     )
                 elif (
                     result_windows and window.end.timestamp() == result_windows[0].start.timestamp()
                 ):
                     result_windows[0] = PersistedTimeWindow.from_public_time_window(
-                        TimeWindow(window.start, included_window.end), self.partitions_def.timezone
+                        TimeWindow(window.start, included_window.end),  # pyright: ignore[reportPossiblyUnboundVariable]
+                        self.partitions_def.timezone,
                     )
                 else:
                     result_windows.insert(
@@ -2189,7 +2191,7 @@ class TimeWindowPartitionsSubset(
             included_time_windows=time_windows,
         )
 
-    def __contains__(self, partition_key: Optional[str]) -> bool:
+    def __contains__(self, partition_key: Optional[str]) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         if partition_key is None:
             return False
 

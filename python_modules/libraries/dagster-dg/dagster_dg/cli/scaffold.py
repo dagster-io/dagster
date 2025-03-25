@@ -172,7 +172,7 @@ class ComponentScaffoldGroup(DgClickGroup):
         super().__init__(*args, **kwargs)
         self._commands_defined = False
 
-    def get_command(self, cli_context: click.Context, cmd_name: str) -> Optional[click.Command]:
+    def get_command(self, cli_context: click.Context, cmd_name: str) -> Optional[click.Command]:  # pyright: ignore[reportIncompatibleMethodOverride]
         if not self._commands_defined:
             self._define_commands(cli_context)
         cmd = super().get_command(cli_context, cmd_name)
@@ -180,7 +180,7 @@ class ComponentScaffoldGroup(DgClickGroup):
             exit_with_error(generate_missing_component_type_error_message(cmd_name))
         return cmd
 
-    def list_commands(self, cli_context: click.Context) -> list[str]:
+    def list_commands(self, cli_context: click.Context) -> list[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         if not self._commands_defined:
             self._define_commands(cli_context)
         return super().list_commands(cli_context)
@@ -218,7 +218,7 @@ class ComponentScaffoldSubCommand(DgClickCommand):
         ]
         rich_format_help(obj=cmd_copy, ctx=context, markup_mode="rich")
 
-    def format_usage(self, context: click.Context, formatter: click.HelpFormatter) -> None:
+    def format_usage(self, context: click.Context, formatter: click.HelpFormatter) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         if not isinstance(self, click.Command):
             raise ValueError("This mixin is only intended for use with click.Command instances.")
         arg_pieces = self.collect_usage_pieces(context)

@@ -2018,10 +2018,10 @@ def test_asset_subset_io_managers(job_selection, expected_nodes):
     @io_manager(config_schema={"n": int})
     def return_n_io_manager(context):
         class ReturnNIOManager(IOManager):
-            def handle_output(self, _context, obj):
+            def handle_output(self, _context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
                 pass
 
-            def load_input(self, _context):
+            def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
                 return context.resource_config["n"]
 
         return ReturnNIOManager()
@@ -2582,9 +2582,9 @@ def test_subset_cycle_resolution_complex():
             d = y + 1
             yield Output(d, "d")
         if "e" in context.op_execution_context.selected_output_names:
-            yield Output(c + 1, "e")
+            yield Output(c + 1, "e")  # pyright: ignore[reportPossiblyUnboundVariable]
         if "f" in context.op_execution_context.selected_output_names:
-            yield Output(d + 1, "f")
+            yield Output(d + 1, "f")  # pyright: ignore[reportPossiblyUnboundVariable]
 
     @asset
     def x(a):

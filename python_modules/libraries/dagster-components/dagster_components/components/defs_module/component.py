@@ -38,7 +38,7 @@ class DefsModuleComponent(Component):
         return DefsModuleArgsModel
 
     @classmethod
-    def load(cls, attributes: DefsModuleArgsModel, context: ComponentLoadContext) -> Self:
+    def load(cls, attributes: DefsModuleArgsModel, context: ComponentLoadContext) -> Self:  # type: ignore
         path = context.path
         decl = PythonModuleDecl.from_path(path) or SubpackageDefsModuleDecl.from_path(path)
         defs_module = decl.load(context) if decl else None

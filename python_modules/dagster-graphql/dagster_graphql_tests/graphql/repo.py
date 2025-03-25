@@ -1822,7 +1822,7 @@ class MyAutomationCondition(AutomationCondition):
     def name(self) -> str:
         return "some_custom_name"
 
-    def evaluate(self): ...
+    def evaluate(self): ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
 
 @asset(automation_condition=MyAutomationCondition().since_last_handled())

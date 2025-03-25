@@ -47,7 +47,7 @@ class UrlCodeReference(DagsterModel):
 
 @beta
 @whitelist_for_serdes
-class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMetadataValue"]):
+class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMetadataValue"]):  # pyright: ignore[reportIncompatibleMethodOverride]
     """Metadata value type which represents source locations (locally or otherwise)
     of the asset in question. For example, the file path and line number where the
     asset is defined.

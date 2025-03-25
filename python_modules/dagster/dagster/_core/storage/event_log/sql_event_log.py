@@ -1361,7 +1361,7 @@ class SqlEventLogStorage(EventLogStorage):
             should_query = bool(has_more) and bool(limit) and len(result) < cast(int, limit)
 
         is_partial_query = asset_keys is not None or bool(prefix) or bool(limit) or bool(cursor)
-        if not is_partial_query and self._can_mark_assets_as_migrated(rows):
+        if not is_partial_query and self._can_mark_assets_as_migrated(rows):  # pyright: ignore[reportPossiblyUnboundVariable]
             self.enable_secondary_index(ASSET_KEY_INDEX_COLS)
 
         return result[:limit] if limit else result
@@ -2084,7 +2084,7 @@ class SqlEventLogStorage(EventLogStorage):
             )
 
     @cached_property
-    def supports_global_concurrency_limits(self) -> bool:
+    def supports_global_concurrency_limits(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.has_table(ConcurrencySlotsTable.name)
 
     @cached_property
@@ -3112,7 +3112,7 @@ class SqlEventLogStorage(EventLogStorage):
         return results
 
     @property
-    def supports_asset_checks(self):
+    def supports_asset_checks(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.has_table(AssetCheckExecutionsTable.name)
 
     def get_latest_planned_materialization_info(

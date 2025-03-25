@@ -328,7 +328,7 @@ class DagsterUserCodeExecutionError(DagsterError):
         self.original_exc_info = original_exc_info
 
     @property
-    def is_user_code_error(self) -> bool:
+    def is_user_code_error(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         return True
 
 

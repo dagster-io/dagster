@@ -13,8 +13,7 @@ def test_nested_resolvable():
     class ResolvableComponent(Component, ResolvableModel):
         thing: MyModel
 
-        def build_defs(self, _):
-            return []
+        def build_defs(self, _): ...  # type: ignore
 
     c = load_direct(
         ResolvableComponent,
@@ -34,8 +33,7 @@ thing:
         thing: MyModel
         num: Annotated[int, Resolver(lambda _, v: int(v))]
 
-        def build_defs(self, _):
-            return []
+        def build_defs(self, _): ...  # type: ignore
 
     c = load_direct(
         ResolveFromComponent,
@@ -56,8 +54,7 @@ thing:
         thing: Optional[list[MyModel]]
         num: Annotated[int, Resolver(lambda _, v: int(v))]
 
-        def build_defs(self, _):
-            return []
+        def build_defs(self, _): ...  # type: ignore
 
     c = load_direct(
         ResolveFromListComponent,

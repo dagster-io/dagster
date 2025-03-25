@@ -85,7 +85,7 @@ def _fetch_column_metadata(
         except Exception as e:
             logger.warning(
                 "An error occurred while building column schema metadata from data"
-                f" `{col_data}` for the dbt resource"
+                f" `{col_data}` for the dbt resource"  # pyright: ignore[reportPossiblyUnboundVariable]
                 f" `{dbt_resource_props['original_file_path']}`."
                 " Column schema metadata will not be included in the event.\n\n"
                 f"Exception: {e}",
@@ -114,7 +114,7 @@ def _fetch_column_metadata(
 
                 lineage_metadata = _build_column_lineage_metadata(
                     event_history_metadata=EventHistoryMetadata(
-                        columns=column_schema_data,
+                        columns=column_schema_data,  # pyright: ignore[reportPossiblyUnboundVariable]
                         parents=parents,
                     ),
                     dbt_resource_props=dbt_resource_props,

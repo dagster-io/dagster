@@ -633,7 +633,7 @@ class AllAssetCheckSelection(AssetSelection):
     ) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return asset_graph.asset_check_keys
@@ -652,7 +652,7 @@ class AssetChecksForAssetKeysSelection(AssetSelection):
     ) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return {
@@ -675,7 +675,7 @@ class AssetCheckKeysSelection(AssetSelection):
     ) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         specified_keys = set(self.selected_asset_check_keys)
@@ -736,7 +736,7 @@ class AndAssetSelection(OperandListAssetSelection):
             ),
         )
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return reduce(
@@ -764,7 +764,7 @@ class OrAssetSelection(OperandListAssetSelection):
             ),
         )
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return reduce(
@@ -792,7 +792,7 @@ class SubtractAssetSelection(AssetSelection):
             asset_graph, allow_missing=allow_missing
         ) - self.right.resolve_inner(asset_graph, allow_missing=allow_missing)
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return self.left.resolve_checks_inner(

@@ -32,7 +32,7 @@ class EntityMatchesCondition(
     def name(self) -> str:
         return self.key.to_user_string()
 
-    async def evaluate(
+    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         # if the key we're mapping to is a child of the key we're mapping from and is not
@@ -170,7 +170,7 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
     def base_name(self) -> str:
         return "ANY_DEPS_MATCH"
 
-    async def evaluate(
+    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         dep_results = []
@@ -195,7 +195,7 @@ class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
     def base_name(self) -> str:
         return "ALL_DEPS_MATCH"
 
-    async def evaluate(
+    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         dep_results = []

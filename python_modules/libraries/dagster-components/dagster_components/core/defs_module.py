@@ -299,7 +299,7 @@ class DirectForTestComponentDecl(DefsModuleDecl):
         _, tree = self._obj_and_tree
         return tree
 
-    def load(self, context: ComponentLoadContext):
+    def load(self, context: ComponentLoadContext):  # type: ignore
         context = context.with_rendering_scope(self.component_type.get_additional_scope())
         obj, tree = self._obj_and_tree
         attr_schema = check.not_none(
