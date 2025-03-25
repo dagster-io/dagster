@@ -8,7 +8,7 @@ from typing import Any
 from dagster_components import (
     AssetSpecModel,
     Component,
-    ComponentLoadContext,
+    DefsModuleLoadContext,
     Scaffolder,
     ScaffoldRequest,
     scaffold_component_yaml,
@@ -57,7 +57,7 @@ class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
     script_path: str
     asset_specs: Sequence[ResolvedAssetSpec]
 
-    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
+    def build_defs(self, load_context: DefsModuleLoadContext) -> dg.Definitions:
         resolved_script_path = Path(load_context.path, self.script_path).absolute()
 
         @dg.multi_asset(name=Path(self.script_path).stem, specs=self.asset_specs)

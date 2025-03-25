@@ -8,7 +8,7 @@ from dagster_components.component.component_scaffolder import (
 from dagster_components.component_scaffolding import (
     scaffold_component_yaml as scaffold_component_yaml,
 )
-from dagster_components.core.context import ComponentLoadContext as ComponentLoadContext
+from dagster_components.core.context import DefsModuleLoadContext as DefsModuleLoadContext
 from dagster_components.core.load_defs import (
     build_component_defs as build_component_defs,
     load_defs as load_defs,

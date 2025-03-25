@@ -7,7 +7,7 @@ from typing import Any
 from dagster_components import (
     AssetSpecModel,
     Component,
-    ComponentLoadContext,
+    DefsModuleLoadContext,
     ResolvableModel,
     ResolvedFrom,
 )
@@ -32,7 +32,7 @@ class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
             "daily_partitions": dg.DailyPartitionsDefinition(start_date="2024-01-01")
         }
 
-    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:
+    def build_defs(self, load_context: DefsModuleLoadContext) -> dg.Definitions:
         @dg.multi_asset(name=Path(self.script_path).stem, specs=self.asset_specs)
         def _asset(context: dg.AssetExecutionContext):
             self.execute(context)

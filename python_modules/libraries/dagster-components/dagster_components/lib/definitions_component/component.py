@@ -9,7 +9,7 @@ from dagster._core.definitions.module_loaders.utils import find_objects_in_modul
 from pydantic import Field
 
 from dagster_components.component.component import Component
-from dagster_components.core.context import ComponentLoadContext
+from dagster_components.core.context import DefsModuleLoadContext
 from dagster_components.lib.definitions_component.scaffolder import DefinitionsComponentScaffolder
 from dagster_components.resolved.model import ResolvableModel
 from dagster_components.scaffold.scaffold import scaffold_with
@@ -23,7 +23,7 @@ class DefinitionsComponent(Component, ResolvableModel):
         None, description="Relative path to a file containing Dagster definitions."
     )
 
-    def _build_defs_for_path(self, context: ComponentLoadContext, defs_path: Path) -> Definitions:
+    def _build_defs_for_path(self, context: DefsModuleLoadContext, defs_path: Path) -> Definitions:
         defs_module = context.load_defs_relative_python_module(defs_path)
         defs_attrs = list(find_objects_in_module_of_types(defs_module, Definitions))
 
@@ -42,7 +42,7 @@ class DefinitionsComponent(Component, ResolvableModel):
         else:
             return load_definitions_from_module(defs_module)
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+    def build_defs(self, context: DefsModuleLoadContext) -> Definitions:
         defs_paths = (
             [Path(self.definitions_path)]
             if self.definitions_path

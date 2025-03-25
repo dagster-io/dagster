@@ -1,21 +1,21 @@
 import inspect
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Optional
 
-from dagster._core.definitions.definitions_class import Definitions
 from typing_extensions import Self
 
 from dagster_components.component.component_scaffolder import DefaultComponentScaffolder
+from dagster_components.core.defs_loader import DefsLoader
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, resolve_model
 from dagster_components.scaffold.scaffold import scaffold_with
 
 if TYPE_CHECKING:
-    from dagster_components.core.context import ComponentLoadContext
+    from dagster_components.core.context import DefsModuleLoadContext
 
 
 @scaffold_with(DefaultComponentScaffolder)
-class Component(ABC):
+class Component(DefsLoader, ABC):
     @classmethod
     def __dg_library_object__(cls) -> None: ...
 
@@ -34,11 +34,10 @@ class Component(ABC):
     def get_additional_scope(cls) -> Mapping[str, Any]:
         return {}
 
-    @abstractmethod
-    def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
-
     @classmethod
-    def load(cls, attributes: Optional["ResolvableModel"], context: "ComponentLoadContext") -> Self:
+    def load(
+        cls, attributes: Optional["ResolvableModel"], context: "DefsModuleLoadContext"
+    ) -> Self:
         if issubclass(cls, ResolvableModel):
             # If the Component is a DSLSchema, the attributes in this case are an instance of itself
             assert isinstance(attributes, cls)

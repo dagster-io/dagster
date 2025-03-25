@@ -4,9 +4,9 @@ from typing import cast
 import dagster as dg
 from component_component_deps.defs import my_python_defs  # type:ignore
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster_components.core.context import ComponentLoadContext
+from dagster_components.core.context import DefsModuleLoadContext
 
-ctx = ComponentLoadContext.current()
+ctx = DefsModuleLoadContext.current()
 
 assets_from_my_python_defs = cast(
     Sequence[AssetsDefinition],

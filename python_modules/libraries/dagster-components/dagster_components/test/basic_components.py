@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict
 
 from dagster_components import (
     Component,
-    ComponentLoadContext,
+    DefsModuleLoadContext,
     ResolvableModel,
     ResolvedFrom,
     Resolver,
@@ -44,7 +44,7 @@ class MyComponent(Component, ResolvedFrom[MyComponentModel]):
     an_int: int
     throw: Annotated[bool, Resolver(_maybe_throw)]
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+    def build_defs(self, context: DefsModuleLoadContext) -> Definitions:
         return Definitions()
 
     @classmethod
@@ -72,5 +72,5 @@ class MyNestedComponent(Component):
     def get_schema(cls) -> type[MyNestedComponentSchema]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return MyNestedComponentSchema
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+    def build_defs(self, context: DefsModuleLoadContext) -> Definitions:
         return Definitions()

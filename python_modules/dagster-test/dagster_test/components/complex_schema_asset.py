@@ -5,7 +5,7 @@ from typing import Annotated, Optional
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster_components import Component, ComponentLoadContext
+from dagster_components import Component, DefsModuleLoadContext
 from dagster_components.resolved.core_models import (
     AssetAttributesModel,
     AssetPostProcessor,
@@ -43,7 +43,7 @@ class ComplexAssetComponent(Component, ResolvedFrom[ComplexAssetModel]):
         Optional[Sequence[AssetPostProcessor]], Resolver.from_annotation()
     ] = None
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+    def build_defs(self, context: DefsModuleLoadContext) -> Definitions:
         @asset(spec=self.asset_attributes)
         def dummy(context: AssetExecutionContext):
             return self.value

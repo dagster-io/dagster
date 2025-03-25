@@ -1,5 +1,5 @@
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_components import Component, ComponentLoadContext
+from dagster_components import Component, DefsModuleLoadContext
 from pydantic import BaseModel
 
 
@@ -15,5 +15,5 @@ class MyNewComponent(Component):
     def get_schema(cls):  # pyright: ignore[reportIncompatibleMethodOverride]
         return MyNewComponentSchema
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+    def build_defs(self, context: DefsModuleLoadContext) -> Definitions:
         return Definitions()

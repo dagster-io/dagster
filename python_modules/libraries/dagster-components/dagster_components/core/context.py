@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 
 from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
 from dagster._core.errors import DagsterError
 from dagster._utils import pushd
 
@@ -21,7 +22,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class ComponentLoadContext:
+class DefsModuleLoadContext(DefinitionsLoadContext):
     """Context for loading a single component."""
 
     defs_root: Path
@@ -31,7 +32,7 @@ class ComponentLoadContext:
     module_cache: "DefinitionsModuleCache"
 
     @staticmethod
-    def current() -> "ComponentLoadContext":
+    def current() -> "DefsModuleLoadContext":
         context = active_component_load_context.get()
         if context is None:
             raise DagsterError(
@@ -44,10 +45,10 @@ class ComponentLoadContext:
         *,
         resources: Optional[Mapping[str, object]] = None,
         decl_node: Optional["DefsModuleDecl"] = None,
-    ) -> "ComponentLoadContext":
+    ) -> "DefsModuleLoadContext":
         from dagster_components.core.load_defs import DefinitionsModuleCache
 
-        return ComponentLoadContext(
+        return DefsModuleLoadContext(
             defs_root=Path.cwd(),
             defs_module_name="test",
             decl_node=decl_node,
@@ -59,13 +60,13 @@ class ComponentLoadContext:
     def path(self) -> Path:
         return check.not_none(self.decl_node).path
 
-    def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
+    def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "DefsModuleLoadContext":
         return dataclasses.replace(
             self,
             resolution_context=self.resolution_context.with_scope(**rendering_scope),
         )
 
-    def for_decl(self, decl: "DefsModuleDecl") -> "ComponentLoadContext":
+    def for_decl(self, decl: "DefsModuleDecl") -> "DefsModuleLoadContext":
         return dataclasses.replace(self, decl_node=decl)
 
     def defs_relative_module_name(self, path: Path) -> str:
@@ -124,13 +125,13 @@ class ComponentLoadContext:
         return importlib.import_module(self.defs_relative_module_name(path))
 
 
-active_component_load_context: contextvars.ContextVar[Union[ComponentLoadContext, None]] = (
+active_component_load_context: contextvars.ContextVar[Union[DefsModuleLoadContext, None]] = (
     contextvars.ContextVar("active_component_load_context", default=None)
 )
 
 
 @contextlib.contextmanager
-def use_component_load_context(component_load_context: ComponentLoadContext):
+def use_component_load_context(component_load_context: DefsModuleLoadContext):
     token = active_component_load_context.set(component_load_context)
     try:
         yield

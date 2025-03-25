@@ -26,7 +26,8 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from dagster_components.component.component import Component
 from dagster_components.component.component_loader import is_component_loader
-from dagster_components.core.context import ComponentLoadContext
+from dagster_components.core.context import DefsModuleLoadContext
+from dagster_components.core.defs_loader import DefsLoader
 from dagster_components.core.library_object import load_library_object
 
 T = TypeVar("T", bound=BaseModel)
@@ -82,14 +83,14 @@ class PythonDefsModule(DefsModule):
 
 
 @record
-class ComponentDefsModule(DefsModule):
+class DefsLoaderModule(DefsModule):
     """A module containing a component definition."""
 
-    context: ComponentLoadContext
-    component: Component
+    context: DefsModuleLoadContext
+    defs_loader: DefsLoader
 
     def build_defs(self) -> Definitions:
-        return self.component.build_defs(self.context)
+        return self.defs_loader.build_defs(self.context)
 
 
 #######
@@ -151,7 +152,7 @@ class DefsModuleDecl(ABC):
         )
 
     @abstractmethod
-    def load(self, context: ComponentLoadContext) -> DefsModule: ...
+    def load(self, context: DefsModuleLoadContext) -> DefsModule: ...
 
 
 @record
@@ -171,7 +172,7 @@ class SubpackageDefsModuleDecl(DefsModuleDecl):
         else:
             return None
 
-    def load(self, context: ComponentLoadContext) -> SubpackageDefsModule:
+    def load(self, context: DefsModuleLoadContext) -> SubpackageDefsModule:
         return SubpackageDefsModule(
             path=self.path,
             submodules=[decl.load(context.for_decl(decl)) for decl in self.subdecls],
@@ -191,7 +192,7 @@ class PythonModuleDecl(DefsModuleDecl):
         else:
             return None
 
-    def load(self, context: ComponentLoadContext) -> PythonDefsModule:
+    def load(self, context: DefsModuleLoadContext) -> PythonDefsModule:
         if self.path.is_dir():
             module = context.load_defs_relative_python_module(self.path / "definitions.py")
         else:
@@ -234,7 +235,7 @@ class YamlComponentDecl(DefsModuleDecl):
             else:
                 return TypeAdapter(schema).validate_python(self.component_file_model.attributes)
 
-    def load(self, context: ComponentLoadContext) -> ComponentDefsModule:
+    def load(self, context: DefsModuleLoadContext) -> DefsLoaderModule:
         type_str = context.normalize_component_type_str(self.component_file_model.type)
         key = LibraryObjectKey.from_typename(type_str)
         obj = load_library_object(key)
@@ -247,7 +248,7 @@ class YamlComponentDecl(DefsModuleDecl):
 
         attributes = self.get_attributes(component_schema) if component_schema else None
         component = obj.load(attributes, context)
-        return ComponentDefsModule(path=self.path, context=context, component=component)
+        return DefsLoaderModule(path=self.path, context=context, defs_loader=component)
 
 
 @record
@@ -261,7 +262,7 @@ class PythonComponentDecl(DefsModuleDecl):
         else:
             return
 
-    def load(self, context: ComponentLoadContext) -> ComponentDefsModule:
+    def load(self, context: DefsModuleLoadContext) -> DefsLoaderModule:
         module = context.load_defs_relative_python_module(self.path / "component.py")
         component_loaders = list(inspect.getmembers(module, is_component_loader))
         if len(component_loaders) < 1:
@@ -274,10 +275,10 @@ class PythonComponentDecl(DefsModuleDecl):
             )
         else:
             _, component_loader = component_loaders[0]
-            return ComponentDefsModule(
+            return DefsLoaderModule(
                 path=self.path,
                 context=context,
-                component=component_loader(context),
+                defs_loader=component_loader(context),
             )
 
 
@@ -301,7 +302,7 @@ class DirectForTestComponentDecl(DefsModuleDecl):
         _, tree = self._obj_and_tree
         return tree
 
-    def load(self, context: ComponentLoadContext):  # type: ignore
+    def load(self, context: DefsModuleLoadContext):  # type: ignore
         context = context.with_rendering_scope(self.component_type.get_additional_scope())
         obj, tree = self._obj_and_tree
         attr_schema = check.not_none(

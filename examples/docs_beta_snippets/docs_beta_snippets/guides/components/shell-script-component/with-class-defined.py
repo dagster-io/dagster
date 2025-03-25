@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from dagster_components import (
     AssetSpecModel,
     Component,
-    ComponentLoadContext,
+    DefsModuleLoadContext,
     ResolvableModel,
     ResolvedFrom,
 )
@@ -23,4 +23,4 @@ class ShellCommand(Component, ResolvedFrom[ShellCommandModel]):
     script_path: str
     asset_specs: Sequence[ResolvedAssetSpec]
 
-    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions: ...
+    def build_defs(self, load_context: DefsModuleLoadContext) -> dg.Definitions: ...

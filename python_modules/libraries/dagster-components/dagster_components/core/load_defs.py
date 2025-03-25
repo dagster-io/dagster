@@ -10,7 +10,7 @@ from dagster._annotations import deprecated
 from dagster._utils.cached_method import cached_method
 from dagster._utils.warnings import suppress_dagster_warnings
 
-from dagster_components.core.context import ComponentLoadContext, use_component_load_context
+from dagster_components.core.context import DefsModuleLoadContext, use_component_load_context
 from dagster_components.resolved.context import ResolutionContext
 from dagster_components.utils import get_path_from_module
 
@@ -42,7 +42,7 @@ class DefinitionsModuleCache:
         if not decl_node:
             raise Exception(f"No component found at module {module}")
 
-        context = ComponentLoadContext(
+        context = DefsModuleLoadContext(
             defs_root=get_path_from_module(module),
             defs_module_name=module.__name__,
             decl_node=decl_node,
