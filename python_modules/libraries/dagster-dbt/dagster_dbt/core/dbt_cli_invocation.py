@@ -297,8 +297,9 @@ class DbtCliInvocation:
                 - AssetObservation for dbt test results that are not enabled as asset checks.
 
                 In a Dagster op definition, the following are yielded:
-                - AssetMaterialization for dbt test results that are not enabled as asset checks.
-                - AssetObservation for dbt test results.
+                - AssetMaterialization refables (e.g. models, seeds, snapshots.)
+                - AssetCheckEvaluation for dbt test results that are enabled as asset checks.
+                - AssetObservation for dbt test results that are not enabled as asset checks.
 
         Examples:
             .. code-block:: python
