@@ -3,6 +3,7 @@ import patito as pt
 import polars as pl
 import pytest
 from dagster_polars import BasePolarsUPathIOManager
+from dagster_polars import patito_model_to_dagster_type
 
 
 class TestingRecord(pt.Model):
@@ -25,7 +26,9 @@ bad_df = pl.DataFrame(
 )
 
 
-def test_patito_eager_happy_path(io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+def test_patito_eager_happy_path(
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
     manager, _ = io_manager_and_df
 
     @dg.asset(io_manager_def=manager)
@@ -41,7 +44,9 @@ def test_patito_eager_happy_path(io_manager_and_df: tuple[BasePolarsUPathIOManag
         assert res.success
 
 
-def test_patito_eager_bad_output(io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+def test_patito_eager_bad_output(
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
     manager, _ = io_manager_and_df
 
     @dg.asset(io_manager_def=manager)
@@ -53,7 +58,9 @@ def test_patito_eager_bad_output(io_manager_and_df: tuple[BasePolarsUPathIOManag
         assert not res.success
 
 
-def test_patito_eager_bad_input(io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+def test_patito_eager_bad_input(
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
     manager, _ = io_manager_and_df
 
     @dg.asset(io_manager_def=manager)
@@ -65,12 +72,16 @@ def test_patito_eager_bad_input(io_manager_and_df: tuple[BasePolarsUPathIOManage
         return TestingRecord.DataFrame(bad_df)
 
     with dg.DagsterInstance.ephemeral() as instance:
-        res = dg.materialize([upstream, bad_downstream], instance=instance, raise_on_error=False)
+        res = dg.materialize(
+            [upstream, bad_downstream], instance=instance, raise_on_error=False
+        )
         assert not res.success
 
 
 @pytest.mark.skip(reason="Lazy frame validation is not supported yet")
-def test_patito_lazy_happy_path(io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+def test_patito_lazy_happy_path(
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
     manager, _ = io_manager_and_df
 
     @dg.asset(io_manager_def=manager)
@@ -87,7 +98,9 @@ def test_patito_lazy_happy_path(io_manager_and_df: tuple[BasePolarsUPathIOManage
 
 
 @pytest.mark.skip(reason="Lazy frame validation is not supported yet")
-def test_patito_lazy_bad_output(io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+def test_patito_lazy_bad_output(
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
     manager, _ = io_manager_and_df
 
     @dg.asset(io_manager_def=manager)
@@ -100,7 +113,9 @@ def test_patito_lazy_bad_output(io_manager_and_df: tuple[BasePolarsUPathIOManage
 
 
 @pytest.mark.skip(reason="Lazy frame validation is not supported yet")
-def test_patito_lazy_bad_input(io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame]):
+def test_patito_lazy_bad_input(
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
     manager, _ = io_manager_and_df
 
     @dg.asset(io_manager_def=manager)
@@ -108,9 +123,157 @@ def test_patito_lazy_bad_input(io_manager_and_df: tuple[BasePolarsUPathIOManager
         return TestingRecord.DataFrame(good_df).lazy()
 
     @dg.asset(io_manager_def=manager)
-    def bad_downstream(good_upstream: TestingRecord.LazyFrame) -> TestingRecord.LazyFrame:
+    def bad_downstream(
+        good_upstream: TestingRecord.LazyFrame,
+    ) -> TestingRecord.LazyFrame:
         return TestingRecord.DataFrame(bad_df).lazy()
 
     with dg.DagsterInstance.ephemeral() as instance:
-        res = dg.materialize([upstream, bad_downstream], instance=instance, raise_on_error=False)
+        res = dg.materialize(
+            [upstream, bad_downstream], instance=instance, raise_on_error=False
+        )
+        assert not res.success
+
+
+def test_patito_type_check_happy_flow(
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
+    manager, _ = io_manager_and_df
+    dagster_type = patito_model_to_dagster_type(TestingRecord)
+
+    @dg.asset(
+        io_manager_def=manager,
+        dagster_type=dagster_type,
+    )
+    def upstream() -> pl.DataFrame:
+        return good_df
+
+    @dg.asset(
+        io_manager_def=manager,
+        dagster_type=dagster_type,
+    )
+    def downstream(upstream: pl.DataFrame) -> pl.DataFrame:
+        return upstream
+
+    with dg.DagsterInstance.ephemeral() as instance:
+        res = dg.materialize([upstream, downstream], instance=instance)
+        assert res.success
+
+
+def test_patito_type_check_bad_input(
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
+    manager, _ = io_manager_and_df
+    dagster_type = patito_model_to_dagster_type(TestingRecord)
+
+    @dg.asset(
+        io_manager_def=manager,
+        dagster_type=dagster_type,
+    )
+    def bad() -> pl.DataFrame:
+        return bad_df
+
+    with dg.DagsterInstance.ephemeral() as instance:
+        res = dg.materialize([bad], instance=instance, raise_on_error=False)
+        assert not res.success
+
+
+def test_patito_type_check_bad_output(
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
+    manager, _ = io_manager_and_df
+    dagster_type = patito_model_to_dagster_type(TestingRecord)
+
+    @dg.asset(
+        io_manager_def=manager,
+        dagster_type=dagster_type,
+    )
+    def upstream() -> pl.DataFrame:
+        return good_df
+
+    @dg.asset(
+        name="bad_downstream",
+        io_manager_def=manager,
+        dagster_type=dagster_type,
+    )
+    def bad_downstream() -> pl.DataFrame:
+        return bad_df
+
+    with dg.DagsterInstance.ephemeral() as instance:
+        res = dg.materialize(
+            [upstream, bad_downstream], instance=instance, raise_on_error=False
+        )
+        assert not res.success
+
+
+@pytest.mark.skip(reason="Lazy frame validation is not supported yet")
+def test_patito_type_check_lazy_happy_path(
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
+    manager, _ = io_manager_and_df
+    dagster_type = patito_model_to_dagster_type(TestingRecord)
+
+    @dg.asset(
+        io_manager_def=manager,
+        dagster_type=dagster_type,
+    )
+    def upstream() -> pl.LazyFrame:
+        return good_df.lazy()
+
+    @dg.asset(
+        io_manager_def=manager,
+        dagster_type=dagster_type,
+    )
+    def downstream(upstream: pl.LazyFrame) -> pl.LazyFrame:
+        return upstream
+
+    with dg.DagsterInstance.ephemeral() as instance:
+        res = dg.materialize([upstream, downstream], instance=instance)
+        assert res.success
+
+
+@pytest.mark.skip(reason="Lazy frame validation is not supported yet")
+def test_patito_type_check_lazy_bad_input(
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
+    manager, _ = io_manager_and_df
+    dagster_type = patito_model_to_dagster_type(TestingRecord)
+
+    @dg.asset(
+        io_manager_def=manager,
+        dagster_type=dagster_type,
+    )
+    def bad() -> pl.LazyFrame:
+        return bad_df.lazy()
+
+    with dg.DagsterInstance.ephemeral() as instance:
+        res = dg.materialize([bad], instance=instance, raise_on_error=False)
+        assert not res.success
+
+
+@pytest.mark.skip(reason="Lazy frame validation is not supported yet")
+def test_patito_type_check_lazy_bad_output(
+    io_manager_and_df: tuple[BasePolarsUPathIOManager, pl.DataFrame],
+):
+    manager, _ = io_manager_and_df
+    dagster_type = patito_model_to_dagster_type(TestingRecord)
+
+    @dg.asset(
+        io_manager_def=manager,
+        dagster_type=dagster_type,
+    )
+    def upstream() -> pl.LazyFrame:
+        return good_df.lazy()
+
+    @dg.asset(
+        io_manager_def=manager,
+        dagster_type=dagster_type,
+    )
+    def bad_downstream() -> pl.LazyFrame:
+        return bad_df.lazy()
+
+    with dg.DagsterInstance.ephemeral() as instance:
+        res = dg.materialize(
+            [upstream, bad_downstream], instance=instance, raise_on_error=False
+        )
         assert not res.success
