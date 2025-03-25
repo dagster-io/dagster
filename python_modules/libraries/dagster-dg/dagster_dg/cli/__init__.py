@@ -6,6 +6,7 @@ from dagster_dg.cache import DgCache
 from dagster_dg.cli.check import check_group
 from dagster_dg.cli.dev import dev_command
 from dagster_dg.cli.docs import docs_group
+from dagster_dg.cli.env import env_group
 from dagster_dg.cli.init import init_command
 from dagster_dg.cli.launch import launch_command
 from dagster_dg.cli.list import list_group
@@ -28,6 +29,7 @@ def create_dg_cli():
         commands={
             "check": check_group,
             "docs": docs_group,
+            "env": env_group,
             "utils": utils_group,
             "launch": launch_command,
             "list": list_group,
