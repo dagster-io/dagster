@@ -1,46 +1,6 @@
 {
   "redirects": [
     {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "docs-preview.dagster.io"
-        }
-      ],
-      "destination": "https://docs.dagster.io"
-    },
-    {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "new-docs.dagster.io"
-        }
-      ],
-      "destination": "https://docs.dagster.io"
-    },
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "docs-preview.dagster.io"
-        }
-      ],
-      "destination": "https://docs.dagster.io/:path*"
-    },
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "new-docs.dagster.io"
-        }
-      ],
-      "destination": "https://docs.dagster.io/:path*"
-    },
-    {
       "source": "/dagster-cloud/:path*",
       "destination": "/dagster-plus/:path*"
     },
