@@ -11,7 +11,7 @@ query CliDeploymentsQuery {
 LOCAL_SECRETS_FILE_QUERY = """
 {
 	secretsOrError {
-      __typename
+    __typename
     ... on Secrets {
       secrets {
         localDeploymentScope
