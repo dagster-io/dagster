@@ -7,7 +7,7 @@ sidebar_position: 200
 This guide is applicable to Dagster+.
 :::
 
-This reference describes the various configuration options Dagster+ currently supports for [Kubernetes agents](setup).
+This reference describes the various configuration options Dagster+ currently supports for [Kubernetes agents](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/setup).
 
 ## Viewing the Helm chart
 

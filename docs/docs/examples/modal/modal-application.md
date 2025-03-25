@@ -43,4 +43,4 @@ With the Modal functions in place, we can define the entry point `main`. This is
 
 ## Next steps
 
-- Continue this example with [rss assets](rss-assets)
+- Continue this example with [rss assets](/examples/modal/rss-assets)

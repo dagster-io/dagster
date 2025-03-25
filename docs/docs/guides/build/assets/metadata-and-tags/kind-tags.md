@@ -41,7 +41,7 @@ def my_asset():
     pass
 ```
 
-## Supported Icons
+## Supported icons
 
 Some kinds are given a branded icon in the UI. We currently support nearly 200 unique technology icons.
 

@@ -38,4 +38,4 @@ latitude=41.8796 longitude=-87.6237 fuel_type='ELEC'
 
 ## Next steps
 
-- Continue this example with [custom resource](custom-resource)
+- Continue this example with [custom resource](/examples/prompt-engineering/custom-resource)

@@ -67,7 +67,7 @@ The following table lists tags which Dagster may automatically add to assets.
 
 | Tag                   | Description                                                                                                                   |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `dagster/kind/{kind}` | A tag identifying that an asset has a specific kind. For more information, see [Kind tags](kind-tags) |
+| `dagster/kind/{kind}` | A tag identifying that an asset has a specific kind. For more information, see [Kind tags](/guides/build/assets/metadata-and-tags/kind-tags) |
 
 ### Run tags
 

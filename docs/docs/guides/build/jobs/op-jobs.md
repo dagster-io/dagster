@@ -5,7 +5,7 @@ sidebar_position: 200
 
 :::note
 
-Looking to materialize [asset definitions](/guides/build/assets/) instead of ops? Check out the [asset jobs](asset-jobs) documentation.
+Looking to materialize [asset definitions](/guides/build/assets/) instead of ops? Check out the [asset jobs](/guides/build/jobs/asset-jobs) documentation.
 
 :::
 

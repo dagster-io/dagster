@@ -6,7 +6,7 @@ sidebar_position: 100
 
 :::note
 
-This is part one of the [Using Dagster Pipes](index.md) tutorial. If you are looking for how to modify your existing code that is already being orchestrated by Dagster, you can jump to part 2, [Modify external code](modify-external-code).
+This is part one of the [Using Dagster Pipes](/guides/build/external-pipelines/using-dagster-pipes) tutorial. If you are looking for how to modify your existing code that is already being orchestrated by Dagster, you can jump to part 2, [Modify external code](/guides/build/external-pipelines/using-dagster-pipes/modify-external-code).
 
 :::note
 
@@ -16,13 +16,13 @@ In this part of the tutorial, you'll create a Dagster asset that, in its executi
 
 ## Step 1: Define the Dagster asset
 
-Before getting started, make sure you have fulfilled all the [prerequisites](index.md#prerequisites) for the tutorial. You should have a standalone Python script named `external_code.py` which looks like the following:
+Before getting started, make sure you have fulfilled all the [prerequisites](/guides/build/external-pipelines/using-dagster-pipes#prerequisites) for the tutorial. You should have a standalone Python script named `external_code.py` which looks like the following:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/part_1/external_code.py" lineStart="3" />
 
 ### Step 1.1: Define the asset
 
-First, create a new file named `dagster_code.py` in the same directory as the `external_code.py` file you created earlier in the [Prerequisites](index.md#prerequisites) step.
+First, create a new file named `dagster_code.py` in the same directory as the `external_code.py` file you created earlier in the [Prerequisites](/guides/build/external-pipelines/using-dagster-pipes#prerequisites) step.
 
 Next, you’ll define the asset. Copy and paste the following into the file:
 
@@ -92,4 +92,4 @@ In this step, you’ll execute the subprocess asset you created in earlier steps
 
 ## What's next?
 
-At this point, you've created a Dagster asset that invokes an external Python script, launched the code in a subprocess, and viewed the result in Dagster UI. Next, you'll learn how to [modify your external code to work with Dagster Pipes](modify-external-code) to send information back to Dagster.
+At this point, you've created a Dagster asset that invokes an external Python script, launched the code in a subprocess, and viewed the result in Dagster UI. Next, you'll learn how to [modify your external code to work with Dagster Pipes](/guides/build/external-pipelines/using-dagster-pipes/modify-external-code) to send information back to Dagster.

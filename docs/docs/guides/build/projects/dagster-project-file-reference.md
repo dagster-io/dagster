@@ -221,4 +221,4 @@ For a Dagster+ Hybrid deployment, a project might look like this:
 
 You learned about the default files in a Dagster project and where they should be located, but what about the files containing your Dagster code?
 
-To sustainably scale your project, check out our best practices and recommendations in the [Structuring your project guide](structuring-your-dagster-project).
+To sustainably scale your project, check out our best practices and recommendations in the [Structuring your project guide](/guides/build/projects/structuring-your-dagster-project).

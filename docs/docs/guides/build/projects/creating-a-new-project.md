@@ -19,7 +19,7 @@ The easiest way to start building a Dagster project is by using the `dagster pro
 
 You can scaffold a new project using the default project skeleton, or start with one of the official Dagster examples.
 
-To learn more about the default files in a Dagster project, refer to the [Dagster project file reference](dagster-project-file-reference).
+To learn more about the default files in a Dagster project, refer to the [Dagster project file reference](/guides/build/projects/dagster-project-file-reference).
 
 <Tabs>
 <TabItem value="Default project skeleton">

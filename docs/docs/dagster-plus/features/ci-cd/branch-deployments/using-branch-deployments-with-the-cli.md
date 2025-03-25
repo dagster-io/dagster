@@ -17,7 +17,7 @@ Using this approach to branch deployments may be a good fit if:
 - You use an alternate CI platform
 - You want full control over Branch Deployment configuration
 
-**If you use GitHub for version control or want Dagster to automate branch deployments**, see "[Setting up branch deployments](setting-up-branch-deployments)" and choose the GitHub tab.
+**If you use GitHub for version control or want Dagster to automate branch deployments**, see "[Setting up branch deployments](/dagster-plus/features/ci-cd/branch-deployments/setting-up-branch-deployments)" and choose the GitHub tab.
 
 ## Prerequisites
 

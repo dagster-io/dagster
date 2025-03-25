@@ -7,7 +7,7 @@ In this guide, we'll walk through how to store compute logs in Azure Blob Storag
 
 This guide focuses on using Azure Blob Storage, but the same steps should be applicable for Azure Data Lake Storage.
 
-If you have not yet set up an AKS agent, you can follow the [Deploy an Azure Kubernetes Service (AKS) agent guide](aks-agent). If you have not yet deployed user code in ACR, you can follow the [Deploy user code in Azure Container Registry (ACR) guide](acr-user-code).
+If you have not yet set up an AKS agent, you can follow the [Deploy an Azure Kubernetes Service (AKS) agent guide](/dagster-plus/deployment/deployment-types/hybrid/azure/aks-agent). If you have not yet deployed user code in ACR, you can follow the [Deploy user code in Azure Container Registry (ACR) guide](/dagster-plus/deployment/deployment-types/hybrid/azure/acr-user-code).
 
 ## Prerequisites
 

@@ -18,4 +18,4 @@ There is one problem with the `access_days_time` value: it is a free form string
 
 ## Next steps
 
-- Continue this example with [additional prompt](additional-prompt)
+- Continue this example with [additional prompt](/examples/prompt-engineering/additional-prompt)

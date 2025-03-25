@@ -47,4 +47,4 @@ There is one final layer to add to make a full end-to-end analytics pipeline. Ne
 
 ## Next steps
 
-- Continue this example with [dashboard](dashboard)
+- Continue this example with [dashboard](/examples/bluesky/dashboard)

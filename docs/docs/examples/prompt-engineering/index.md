@@ -69,4 +69,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this example with [prompts](prompts)
+- Continue this example with [prompts](/examples/prompt-engineering/prompts)

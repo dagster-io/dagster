@@ -18,4 +18,4 @@ We'll walk you through an example of using `dagster-airlift` to observe the `war
 
 ## Next steps
 
-To get started with this tutorial, follow the [setup steps](setup) to install the example code, set up a local environment, and run two instances of Airflow locally.
+To get started with this tutorial, follow the [setup steps](/guides/migrate/airflow-to-dagster/federation/setup) to install the example code, set up a local environment, and run two instances of Airflow locally.

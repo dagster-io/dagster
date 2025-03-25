@@ -38,4 +38,4 @@ We use this factory to reuse the components and apply them to multiple RSS feeds
 
 ## Next steps
 
-- Continue this example with [factory pipeline](factory-pipeline)
+- Continue this example with [factory pipeline](/examples/modal/factory-pipeline)

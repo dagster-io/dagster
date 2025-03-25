@@ -20,7 +20,7 @@ With the client defined, we can move to the strategy for pulling from Bluesky. T
 
 <CodeExample path="docs_projects/project_atproto_dashboard/project_atproto_dashboard/ingestion/utils/atproto.py" language="python" startAfter="start_starter_pack" endBefore="end_starter_pack"/>
 
-The `get_all_feed_items` function is similar in using the atproto client to get information about individual feeds. This retrieves a lot more data and is where we will be most concerned about rate limiting (which we will cover in the [next section](rate-limiting)). But now that we have everything we need to interact with Bluesky, we can create our assets.
+The `get_all_feed_items` function is similar in using the atproto client to get information about individual feeds. This retrieves a lot more data and is where we will be most concerned about rate limiting (which we will cover in the [next section](/examples/bluesky/rate-limiting)). But now that we have everything we need to interact with Bluesky, we can create our assets.
 
 ## Extracting data
 
@@ -58,4 +58,4 @@ This definition is just one part of our overall project but it can be helpful to
 
 ## Next steps
 
-- Continue this example with [rate limiting](rate-limiting)
+- Continue this example with [rate limiting](/examples/bluesky/rate-limiting)

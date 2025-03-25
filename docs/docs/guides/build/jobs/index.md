@@ -20,8 +20,8 @@ Using jobs provides the following benefits:
 
 Jobs are supported for both asset definitions and ops, but the usage for each concept is unique. Refer to the following documentation for more info:
 
-- [Asset jobs](asset-jobs)
-- [Op jobs](op-jobs)
+- [Asset jobs](/guides/build/jobs/asset-jobs)
+- [Op jobs](/guides/build/jobs/op-jobs)
 
 With jobs, you can:
 

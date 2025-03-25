@@ -3,7 +3,7 @@ title: 'Creating a project with components'
 sidebar_position: 100
 ---
 
-import Preview from '../../../../partials/\_Preview.md';
+import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
@@ -35,10 +35,10 @@ project root directory (`jaffle_platform`).
 
 :::note
 
-For more information about the sections and settings in pyproject.toml, see "[pyproject.toml settings](pyproject-toml)".
+For more information about the sections and settings in pyproject.toml, see "[pyproject.toml settings](/guides/labs/components/pyproject-toml)".
 
 :::
 
 ## Next steps
 
-After scaffolding your project with components, you can [add more components](adding-components) to complete your pipeline.
+After scaffolding your project with components, you can [add more components](/guides/labs/components/adding-components) to complete your pipeline.

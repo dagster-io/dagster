@@ -15,7 +15,7 @@ Before you begin implementing unit tests, note that:
 
 - Testing individual assets is generally recommended over unit testing entire jobs.
 - Unit testing isn't recommended in cases where most of the business logic is encoded in an external system, such as an asset which directly invokes an external Databricks job.
-- If you want to test your assets at runtime, you can use [asset checks](asset-checks) to verify the quality of data produced by your pipelines, communicate what the data is expected to do, and more.
+- If you want to test your assets at runtime, you can use [asset checks](/guides/test/asset-checks) to verify the quality of data produced by your pipelines, communicate what the data is expected to do, and more.
 
 :::
 

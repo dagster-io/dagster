@@ -3,13 +3,13 @@ title: "Running a subset of asset checks"
 sidebar_position: 200
 ---
 
-In some cases, you may only want to execute some of the [asset checks](asset-checks) defined in a <PyObject section="assets" module="dagster" object="multi_asset" decorator /> or <PyObject section="asset-checks" module="dagster" object="multi_asset_check" decorator />. For example, you may want to materialize a <PyObject section="assets" module="dagster" object="multi_asset" decorator /> without executing the checks or only execute a certain set of checks.
+In some cases, you may only want to execute some of the [asset checks](/guides/test/asset-checks) defined in a <PyObject section="assets" module="dagster" object="multi_asset" decorator /> or <PyObject section="asset-checks" module="dagster" object="multi_asset_check" decorator />. For example, you may want to materialize a <PyObject section="assets" module="dagster" object="multi_asset" decorator /> without executing the checks or only execute a certain set of checks.
 
 In this guide, we'll show you a few approaches to subsetting asset checks in <PyObject section="asset-checks" module="dagster" object="multi_asset_check" decorator pluralize /> and <PyObject section="assets" module="dagster" object="multi_asset" decorator pluralize />.
 
 :::note
 
-This article assumes familiarity with [asset checks](asset-checks) and [multi-assets](/guides/build/assets/defining-assets#multi-asset).
+This article assumes familiarity with [asset checks](/guides/test/asset-checks) and [multi-assets](/guides/build/assets/defining-assets#multi-asset).
 
 :::
 

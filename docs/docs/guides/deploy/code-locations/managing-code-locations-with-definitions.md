@@ -135,7 +135,7 @@ See the [Dagster+ code locations documentation](/dagster-plus/deployment/code-lo
 
 ### Open source deployment
 
-The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. For more information, see "[workspace.yaml reference](workspace-yaml.md)".
+The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. For more information, see "[workspace.yaml reference](/guides/deploy/code-locations/workspace-yaml)".
 
 ## Troubleshooting
 
