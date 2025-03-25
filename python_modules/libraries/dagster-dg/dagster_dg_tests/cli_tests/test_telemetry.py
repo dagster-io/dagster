@@ -33,10 +33,10 @@ TELEMETRY_TEST_COMMANDS = {
     ("scaffold", "workspace"),
     ("scaffold", "project"),
     ("scaffold", "component-type"),
-    ("scaffold", "sensor"),
-    ("scaffold", "schedule"),
+    ("scaffold", "dagster.sensor"),
+    ("scaffold", "dagster.schedule"),
+    ("scaffold", "dagster.asset"),
     ("launch",),
-    ("scaffold", "asset"),
     ("utils", "configure-editor"),
 }
 
@@ -88,6 +88,7 @@ def test_basic_logging_success_failure(caplog: pytest.LogCaptureFixture, success
         TemporaryDirectory() as dagster_home,
         modify_environment_variable("DAGSTER_HOME", dagster_home),
     ):
+        caplog.clear()
         with pushd(tmpdir):
             result = runner.invoke("check", "yaml")
             assert result.exit_code == 0 if success else 1
@@ -95,7 +96,7 @@ def test_basic_logging_success_failure(caplog: pytest.LogCaptureFixture, success
         assert os.path.exists(
             os.path.join(get_or_create_dir_from_dagster_home("logs"), "event.log")
         )
-        assert len(caplog.records) == 2
+        assert len(caplog.records) == 2, caplog.records
 
         first_message = json.loads(caplog.records[0].getMessage())
         second_message = json.loads(caplog.records[1].getMessage())
@@ -118,6 +119,8 @@ def test_telemetry_disabled_dagster_yaml(caplog: pytest.LogCaptureFixture) -> No
         TemporaryDirectory() as dagster_home,
         modify_environment_variable("DAGSTER_HOME", dagster_home),
     ):
+        caplog.clear()
+
         dagster_yaml = Path(dagster_home) / "dagster.yaml"
         dagster_yaml.write_text(
             """
@@ -150,6 +153,7 @@ def test_telemetry_disabled_dg_config(caplog: pytest.LogCaptureFixture) -> None:
             "DAGSTER_CLOUD_CLI_CONFIG", str(Path(dagster_cloud_config_folder) / "config.yaml")
         ),
     ):
+        caplog.clear()
         dg_config_path = Path(dg_cli_config_folder) / "dg.toml"
         dg_config_path.write_text(
             """
