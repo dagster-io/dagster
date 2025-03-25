@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {filterComments, trimMainBlock} from './codeExampleUtils';
+import {dedentLines, filterComments, trimMainBlock} from './codeExampleUtils';
 
 describe('filterComments', () => {
   it('should remove noqa comments from lines', () => {
@@ -47,11 +47,7 @@ describe('filterComments', () => {
       'from typing import Dict, Any  # isort:skip',
     ];
 
-    const expected = [
-      '',
-      'from typing import Dict, Any',
-      'from typing import Dict, Any',
-    ];
+    const expected = ['', 'from typing import Dict, Any', 'from typing import Dict, Any'];
 
     expect(filterComments(input)).toEqual(expected);
   });
@@ -126,13 +122,38 @@ describe('trimMainBlock', () => {
       '    main()',
     ];
 
-    const expected = [
-      'import os',
-      '',
-      'def main():',
-      '    pass',
-    ];
+    const expected = ['import os', '', 'def main():', '    pass'];
 
     expect(trimMainBlock(input)).toEqual(expected);
+  });
+});
+
+describe('dedent', () => {
+  it('should remove leading spaces based on dedentAmount', () => {
+    const input = ['    line one', '    line two', '      line three'];
+    const dedentAmount = 4;
+    const expected = ['line one', 'line two', '  line three'];
+    expect(dedentLines(input, dedentAmount)).toEqual(expected);
+  });
+
+  it('should return the same lines if no indentation matches', () => {
+    const input = ['line one', 'line two', 'line three'];
+    const dedentAmount = 4;
+    const expected = input;
+    expect(dedentLines(input, dedentAmount)).toEqual(expected);
+  });
+
+  it('should handle empty lines', () => {
+    const input = ['    line one', '', '    line two'];
+    const dedentAmount = 4;
+    const expected = ['line one', '', 'line two'];
+    expect(dedentLines(input, dedentAmount)).toEqual(expected);
+  });
+
+  it('should handle no lines', () => {
+    const input: string[] = [];
+    const dedentAmount = 4;
+    const expected: string[] = [];
+    expect(dedentLines(input, dedentAmount)).toEqual(expected);
   });
 });
