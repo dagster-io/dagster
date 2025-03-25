@@ -17,6 +17,7 @@ def test_default_asset_events_from_run_results(workspace_data: DbtCloudWorkspace
 
     # 8 asset materializations
     assert len(asset_materializations) == 8
+    # 20 asset check evaluations
     assert len(asset_check_evaluations) == 20
 
     # Sanity check
