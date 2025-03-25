@@ -24,7 +24,7 @@ Polars is a blazingly fast DataFrame library written in Rust with bindings for P
 
 The `dagster-polars` integration allows using Polars eager or lazy DataFrames as inputs and outputs with Dagster’s assets and ops. Type annotations are used to control whether to load an eager or lazy DataFrame. Lazy DataFrames can be sinked as output. Multiple serialization formats (Parquet, Delta Lake, BigQuery) and filesystems (local, S3, GCS, …) are supported.
 
-`dagster-polars` integrates with [Patito](https://github.com/JakobGM/patito) for data validation. Learn mode on the [Patito integration page](/integrations/patito).
+`dagster-polars` integrates with [Patito](https://github.com/JakobGM/patito) for data validation. Learn more on the [Patito integration page](/integrations/libraries/patito).
 
 ## Installation
 ```shell
@@ -59,6 +59,9 @@ def downstream(upstream: pl.LazyFrame) -> pl.LazyFrame:
     return upstream
 ```
 
-## API
+Find out more in the [API docs](/api/python-api/libraries/dagster-polars)
 
-To learn more about the API, see the [API documentation](/api/python-api/libraries/dagster-polars).
+## Supplimentary
+
+- [API docs](/api/python-api/libraries/dagster-polars)
+- [Patito integration](/integrations/libraries/patito)

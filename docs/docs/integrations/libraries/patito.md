@@ -22,7 +22,7 @@ sidebar_custom_props:
 
 Patito is a data validation framework for Polars, based on Pydantic.
 
-For more information on how to use Dagster with Polars, see [dagster-polars documentation](/integrations/polars).
+For more information on how to use Dagster with Polars, see [dagster-polars documentation](/integrations/libraries/polars).
 
 ## Installation
 
@@ -63,7 +63,7 @@ user_type = patito_model_to_dagster_type(User)
 @dg.asset(io_manager_key="polars_parquet_io_manager", dagster_type=user_type)
 def my_asset() -> pl.DataFrame:
     my_data = ...
-    return pl.DataFrame(my_data)  # <- you better be valid, mr. data!
+    return pl.DataFrame(my_data)  # <- you better behave, mr. data!
 ```
 
 The same dagster type can be used when loading data into downstream assets, ensuring that the data is always validated.

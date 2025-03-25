@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Builds and synchronizes mdx API docs, and objects.inv using Sphinx
 #
@@ -47,7 +47,7 @@ else
   echo "Running sphinx-mdx and copying files to \`docs/api/python-api\`"
   tox -e sphinx-mdx-local
   cp -rf sphinx/_build/mdx/sections/api/apidocs/* docs/api/python-api/
-  
+
   # Do not parallelize local sphinx-inv build -- see tox.ini
   echo "Running sphinx and copying \`object.inv\` to \`static/\`"
   tox -e sphinx-inv-local
