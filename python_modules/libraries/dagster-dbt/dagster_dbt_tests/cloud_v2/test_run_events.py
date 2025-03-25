@@ -5,7 +5,7 @@ from dagster_dbt.cloud_v2.types import DbtCloudWorkspaceData
 from dagster_dbt_tests.cloud_v2.conftest import get_sample_run_results_json
 
 
-def test_defaut_asset_events_from_run_results(workspace_data: DbtCloudWorkspaceData):
+def test_default_asset_events_from_run_results(workspace_data: DbtCloudWorkspaceData):
     run_results = DbtCloudJobRunResults.from_run_results_json(
         run_results_json=get_sample_run_results_json()
     )
