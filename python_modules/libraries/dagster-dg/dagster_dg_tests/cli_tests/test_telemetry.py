@@ -16,7 +16,7 @@ from dagster_dg_tests.utils import (
     ProxyRunner,
     crawl_cli_commands,
     create_project_from_components,
-    isolated_example_component_library_foo_bar,
+    isolated_example_project_foo_bar,
     modify_environment_variable,
 )
 
@@ -177,7 +177,7 @@ def test_telemetry_disabled_dg_config(caplog: pytest.LogCaptureFixture) -> None:
 def test_telemetry_scaffold_component(caplog: pytest.LogCaptureFixture) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
-        isolated_example_component_library_foo_bar(runner),
+        isolated_example_project_foo_bar(runner),
         TemporaryDirectory() as dagster_home,
         modify_environment_variable("DAGSTER_HOME", dagster_home),
     ):
@@ -188,7 +188,7 @@ def test_telemetry_scaffold_component(caplog: pytest.LogCaptureFixture) -> None:
             "dagster_test.components.AllMetadataEmptyComponent",
             "qux",
         )
-        assert result.exit_code == 0
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert Path("foo_bar/defs/qux").exists()
         assert len(caplog.records) == 2
         first_message = json.loads(caplog.records[0].getMessage())
