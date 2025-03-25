@@ -61,13 +61,13 @@ def test_cloud_job_apis(
     assert run.id == polled_run.id
     assert polled_run.status == DbtCloudJobRunStatusType.SUCCESS
 
-    runs = client.get_runs_batch(
+    batched_runs = client.get_runs_batch(
         project_id=project_id,
         environment_id=environment_id,
         finished_at_start=start_run_process,
         finished_at_end=end_run_process,
     )
-    assert any(run["id"] == run.id for run in runs)
+    assert any(batched_run["id"] == run.id for batched_run in batched_runs)
 
     run_results = client.get_run_results_json(run_id=polled_run.id)
     assert {result["unique_id"] for result in run_results["results"]} == {
