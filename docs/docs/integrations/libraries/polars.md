@@ -9,7 +9,6 @@ date: 2025-03-14
 apireflink:
 docslink: https://docs.dagster.io/integrations/libraries/polars
 partnerlink: https://pola.rs/
-logo: /integrations/polars.svg
 categories:
 - Compute
 - Metadata
@@ -17,7 +16,7 @@ enabledBy:
 enables:
 tags: [dagster-supported, metadata]
 sidebar_custom_props:
-  logo: images/integrations/polars.svg
+  logo: images/integrations/polars-logo-rust.svg
 ---
 
 Polars is a blazingly fast DataFrame library written in Rust with bindings for Python.

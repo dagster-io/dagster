@@ -9,7 +9,6 @@ date: 2025-03-14
 apireflink:
 docslink: https://docs.dagster.io/integrations/libraries/patito
 partnerlink: https://github.com/JakobGM/patito
-logo: /integrations/patito.svg
 categories:
 - Data Quality
 - Metadata
@@ -17,7 +16,7 @@ enabledBy:
 enables:
 tags: [dagster-supported, metadata]
 sidebar_custom_props:
-  logo: images/integrations/patito.svg
+  logo: images/integrations/patito.png
 ---
 
 Patito is a data validation framework for Polars, based on Pydantic.
