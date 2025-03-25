@@ -32,11 +32,18 @@ from dagster_components.core.library_object import load_library_object
 T = TypeVar("T", bound=BaseModel)
 
 
+class ComponentRequiresModel(BaseModel):
+    """Describes dependencies for a component to load."""
+
+    env: Optional[list[str]] = None
+
+
 class ComponentFileModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     type: str
     attributes: Optional[Mapping[str, Any]] = None
+    requires: Optional[ComponentRequiresModel] = None
 
 
 #########
