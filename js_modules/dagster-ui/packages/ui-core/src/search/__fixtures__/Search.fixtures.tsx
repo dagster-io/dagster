@@ -6,6 +6,7 @@ import {
   buildAssetConnection,
   buildAssetGroup,
   buildAssetKey,
+  buildMaterializationHistoryConnection,
   buildPipeline,
   buildRepository,
   buildRepositoryLocation,
@@ -171,7 +172,7 @@ export const buildSecondarySearch = (
               definition: null,
               assetMaterializations: [],
               assetObservations: [],
-              assetMaterializationHistory: [],
+              assetMaterializationHistory: buildMaterializationHistoryConnection({}),
               key: {
                 __typename: 'AssetKey',
                 path: path.split(' '),

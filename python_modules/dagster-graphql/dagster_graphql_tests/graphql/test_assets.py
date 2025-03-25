@@ -108,27 +108,30 @@ GET_ASSET_MATERIALIZATION_WITH_PARTITION = """
 """
 
 GET_ASSET_MATERIALIZATION_HISTORY = """
-    query AssetQuery($assetKey: AssetKeyInput!, $eventTypeSelector: MaterializationHistoryEventTypeSelector) {
+    query AssetQuery($assetKey: AssetKeyInput!, $eventTypeSelector: MaterializationHistoryEventTypeSelector, $limit: Int, $cursor: String) {
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
                 id
-                assetMaterializationHistory(eventTypeSelector: $eventTypeSelector) {
-                    __typename
-                    ... on FailedToMaterializeEvent {
-                        materializationFailureReason
-                        assetKey {
-                            path
+                assetMaterializationHistory(eventTypeSelector: $eventTypeSelector, limit: $limit, cursor: $cursor) {
+                    results {
+                        __typename
+                        ... on FailedToMaterializeEvent {
+                            materializationFailureReason
+                            assetKey {
+                                path
+                            }
+                            runId
+                            timestamp
                         }
-                        runId
-                        timestamp
-                    }
-                    ... on MaterializationEvent {
-                        assetKey {
-                            path
+                        ... on MaterializationEvent {
+                            assetKey {
+                                path
+                            }
+                            runId
+                            timestamp
                         }
-                        runId
-                        timestamp
                     }
+                    cursor
                 }
             }
             ... on AssetNotFoundError {
@@ -3692,9 +3695,9 @@ class TestAssetMaterializationHistory(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert result.data["assetOrError"]
-        assert len(result.data["assetOrError"]["assetMaterializationHistory"]) == 5
+        assert len(result.data["assetOrError"]["assetMaterializationHistory"]["results"]) == 5
         min_timestamp_seen = None
-        for event in result.data["assetOrError"]["assetMaterializationHistory"]:
+        for event in result.data["assetOrError"]["assetMaterializationHistory"]["results"]:
             assert event["__typename"] == "MaterializationEvent"
             assert event["assetKey"]["path"] == ["asset_1"]
             # events should be sorted by storage id with the newest event first. Use timestamp
@@ -3702,3 +3705,31 @@ class TestAssetMaterializationHistory(ExecutingGraphQLContextTestMatrix):
             if min_timestamp_seen:
                 assert int(event["timestamp"]) <= min_timestamp_seen
             min_timestamp_seen = int(event["timestamp"])
+
+        # test cursoring
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_MATERIALIZATION_HISTORY,
+            variables={"assetKey": {"path": ["asset_1"]}, "eventTypeSelector": "ALL", "limit": 2},
+        )
+
+        assert result.data
+        assert result.data["assetOrError"]
+        assert len(result.data["assetOrError"]["assetMaterializationHistory"]["results"]) == 2
+        assert result.data["assetOrError"]["assetMaterializationHistory"]["cursor"] is not None
+        cursor = result.data["assetOrError"]["assetMaterializationHistory"]["cursor"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_MATERIALIZATION_HISTORY,
+            variables={
+                "assetKey": {"path": ["asset_1"]},
+                "eventTypeSelector": "ALL",
+                "cursor": cursor,
+            },
+        )
+
+        assert result.data
+        assert result.data["assetOrError"]
+        assert len(result.data["assetOrError"]["assetMaterializationHistory"]["results"]) == 3
+        assert result.data["assetOrError"]["assetMaterializationHistory"]["cursor"] != cursor
