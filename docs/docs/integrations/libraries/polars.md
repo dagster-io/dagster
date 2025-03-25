@@ -60,7 +60,7 @@ def downstream(upstream: pl.LazyFrame) -> pl.LazyFrame:
 
 Find out more in the [API docs](/api/python-api/libraries/dagster-polars)
 
-## Supplimentary
+## Supplementary
 
 - [API docs](/api/python-api/libraries/dagster-polars)
 - [Patito integration](/integrations/libraries/patito)
