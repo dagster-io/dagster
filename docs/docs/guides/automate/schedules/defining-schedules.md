@@ -24,7 +24,7 @@ The `cron_schedule` argument accepts standard [cron expressions](https://en.wiki
 </TabItem>
 <TabItem value="Using @schedule">
 
-This example demonstrates how to define a schedule using <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />, which provides more flexibility than <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" />. For example, you can [configure job behavior based on its scheduled run time](configuring-job-behavior) or [emit log messages](#emitting-log-messages-from-schedule-evaluation).
+This example demonstrates how to define a schedule using <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />, which provides more flexibility than <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" />. For example, you can [configure job behavior based on its scheduled run time](/guides/automate/schedules/configuring-job-behavior) or [emit log messages](#emitting-log-messages-from-schedule-evaluation).
 
 ```python
 @schedule(job=my_job, cron_schedule="0 0 * * *")

@@ -15,7 +15,7 @@ In this guide, we'll walk you through how to construct schedules from partitione
 
 This article assumes familiarity with:
 
-- [Schedules](index.md)
+- Schedules
 - [Partitions](/guides/build/partitions-and-backfills/partitioning-assets)
 - [Asset definitions](/guides/build/assets/defining-assets)
 - [Asset jobs](/guides/build/jobs/asset-jobs) and [op jobs](/guides/build/jobs/op-jobs)

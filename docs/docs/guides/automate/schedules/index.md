@@ -33,7 +33,7 @@ daily_schedule = ScheduleDefinition(
 )
 ```
 
-For more information, see "[Customizing a schedule's execution timezone](customizing-execution-timezone)".
+For more information, see "[Customizing a schedule's execution timezone](/guides/automate/schedules/customizing-execution-timezone)".
 
 ## Create schedules from partitions
 
@@ -60,6 +60,6 @@ If you have a partitioned op job:
 
 By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints:
 
-- Learn more about schedules in [Understanding automation](/guides/automate/index.md)
+- Learn more about schedules in [Understanding automation](/guides/automate)
 - React to events with [sensors](/guides/automate/sensors)
 - Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to schedules
