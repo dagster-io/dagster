@@ -12,9 +12,7 @@ from dagster_dg.cli.launch import launch_command
 from dagster_dg.cli.list import list_group
 from dagster_dg.cli.plus import plus_group
 from dagster_dg.cli.scaffold import scaffold_group
-from dagster_dg.cli.set import set_group
 from dagster_dg.cli.shared_options import dg_global_options
-from dagster_dg.cli.unset import unset_group
 from dagster_dg.cli.utils import utils_group
 from dagster_dg.component import RemoteLibraryObjectRegistry
 from dagster_dg.config import normalize_cli_config
@@ -39,8 +37,6 @@ def create_dg_cli():
             "dev": dev_command,
             "init": init_command,
             "plus": plus_group,
-            "set": set_group,
-            "unset": unset_group,
         },
         context_settings={
             "max_content_width": DG_CLI_MAX_OUTPUT_WIDTH,
