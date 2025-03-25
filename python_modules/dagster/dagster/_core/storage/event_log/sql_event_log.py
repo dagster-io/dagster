@@ -372,8 +372,6 @@ class SqlEventLogStorage(EventLogStorage):
             event (EventLogEntry): The event to store.
         """
         check.inst_param(event, "event", EventLogEntry)
-        if event.dagster_event is not None and event.dagster_event.is_asset_failed_to_materialize:
-            return
         insert_event_statement = self.prepare_insert_event(event)
         run_id = event.run_id
 

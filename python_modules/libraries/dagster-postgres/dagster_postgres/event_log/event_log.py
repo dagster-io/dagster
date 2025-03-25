@@ -176,8 +176,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             event (EventLogEntry): The event to store.
         """
         check.inst_param(event, "event", EventLogEntry)
-        if event.dagster_event is not None and event.dagster_event.is_asset_failed_to_materialize:
-            return
         insert_event_statement = self.prepare_insert_event(event)  # from SqlEventLogStorage.py
         with self._connect() as conn:
             result = conn.execute(
