@@ -66,6 +66,8 @@ PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("list", "component")),
     CommandSpec(("list", "defs")),
     CommandSpec(("env", "list")),
+    CommandSpec(("env", "set"), "FOO=bar"),
+    CommandSpec(("env", "unset"), "FOO"),
     CommandSpec(("scaffold", "component"), DEFAULT_COMPONENT_TYPE, "foot"),
 ]
 
