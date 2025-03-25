@@ -962,6 +962,11 @@
       "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
     },
     {
+      "source": "/guides/build/external-pipelines/aws-emr-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
+    },
+
+    {
       "source": "/guides/build/external-pipelines/aws-emr-containers-pipeline",
       "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
     },
@@ -980,14 +985,6 @@
     {
       "source": "/guides/build/external-pipelines/aws-glue-pipeline",
       "destination": "/guides/build/external-pipelines/aws/aws-glue-pipeline"
-    },
-    {
-      "source": "/guides/build/external-pipelines/aws-emr-pipeline",
-      "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
-    },
-    {
-      "source": "/guides/build/external-pipelines/aws/aws-emr-containers-pipeline",
-      "destination": "/guides/build/external-pipelines/aws/aws-emr-containers-pipeline"
     },
     {
       "source": "/guides/build/external-pipelines/aws-emr-serverless-pipeline",
