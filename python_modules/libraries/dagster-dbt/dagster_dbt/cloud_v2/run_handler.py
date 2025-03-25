@@ -1,10 +1,10 @@
 from collections.abc import Iterator, Mapping, Sequence
 from typing import Any, Optional
 
-from dagster import AssetMaterialization
+from dagster import AssetCheckEvaluation, AssetCheckSeverity, AssetMaterialization
 from dagster._annotations import preview
 from dagster._record import record
-from dbt.contracts.results import NodeStatus
+from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
 from packaging import version
@@ -110,7 +110,6 @@ class DbtCloudJobRunResults:
             materialization: str = dbt_resource_props["config"]["materialized"]
 
             is_ephemeral = materialization == "ephemeral"
-            is_successful = result_status == NodeStatus.Success
 
             # Build the specs for the given unique ID
             asset_specs, check_specs = build_dbt_specs(
@@ -122,9 +121,34 @@ class DbtCloudJobRunResults:
                 project=None,
             )
 
-            if resource_type in REFABLE_NODE_TYPES and is_successful and not is_ephemeral:
+            if (
+                resource_type in REFABLE_NODE_TYPES
+                and result_status == NodeStatus.Success
+                and not is_ephemeral
+            ):
                 spec = asset_specs[0]
                 yield AssetMaterialization(
                     asset_key=spec.key,
                     metadata=default_metadata,
                 )
+            elif resource_type == NodeType.Test and result_status == NodeStatus.Pass:
+                metadata = {
+                    **default_metadata,
+                    "status": result_status,
+                }
+                if result["failures"] is not None:
+                    metadata["dagster_dbt/failed_row_count"] = result["failures"]
+
+                spec = check_specs[0]
+                if spec.asset_key is not None and spec.name is not None:
+                    yield AssetCheckEvaluation(
+                        passed=result_status == TestStatus.Pass,
+                        asset_key=spec.asset_key,
+                        check_name=spec.name,
+                        metadata=metadata,
+                        severity=(
+                            AssetCheckSeverity.WARN
+                            if result_status == TestStatus.Warn
+                            else AssetCheckSeverity.ERROR
+                        ),
+                    )
