@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from dagster import AssetCheckEvaluation, AssetCheckSeverity, AssetMaterialization
 from dagster._annotations import preview
@@ -75,7 +75,7 @@ class DbtCloudJobRunResults:
         self,
         workspace_data: DbtCloudWorkspaceData,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-    ) -> Iterator[AssetMaterialization]:
+    ) -> Iterator[Union[AssetMaterialization, AssetCheckEvaluation]]:
         """Convert the run results of a dbt Cloud job run to a set of corresponding Dagster events.
 
         Args:
@@ -84,11 +84,12 @@ class DbtCloudJobRunResults:
                 linking dbt nodes to Dagster assets.
 
         Returns:
-            Iterator[AssetMaterialization]:
+            Iterator[Union[AssetMaterialization, AssetCheckEvaluation]]:
                 A set of corresponding Dagster events.
 
                 The following are yielded:
                 - AssetMaterialization for refables (e.g. models, seeds, snapshots.)
+                - AssetCheckEvaluation for dbt tests.
         """
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
         manifest = workspace_data.manifest
