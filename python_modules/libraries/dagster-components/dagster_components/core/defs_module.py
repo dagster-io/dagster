@@ -26,6 +26,7 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter
 from dagster_components.core.component import (
     Component,
     ComponentLoadContext,
+    DefsLoader,
     is_component_loader,
     load_component_type,
 )
@@ -85,14 +86,14 @@ class PythonDefsModule(DefsModuleResolver):
 
 
 @record
-class ComponentDefsModule(DefsModuleResolver):
-    """A module containing a component definition."""
+class DefsFactoryModuleResolver(DefsModuleResolver):
+    """A module containing a defs factory."""
 
     context: ComponentLoadContext
-    component: Component
+    defs_factory: DefsLoader
 
     def build_defs(self) -> Definitions:
-        return self.component.build_defs(self.context)
+        return self.defs_factory.build_defs(self.context)
 
 
 #######
@@ -237,7 +238,7 @@ class YamlComponentDeclNode(DefsModuleDeclNode):
             else:
                 return TypeAdapter(schema).validate_python(self.component_file_model.attributes)
 
-    def load(self, context: ComponentLoadContext) -> ComponentDefsModule:
+    def load(self, context: ComponentLoadContext) -> DefsFactoryModuleResolver:
         type_str = context.normalize_component_type_str(self.component_file_model.type)
         key = ComponentKey.from_typename(type_str)
         component_type = load_component_type(key)
@@ -246,7 +247,7 @@ class YamlComponentDeclNode(DefsModuleDeclNode):
 
         attributes = self.get_attributes(component_schema) if component_schema else None
         component = component_type.load(attributes, context)
-        return ComponentDefsModule(path=self.path, context=context, component=component)
+        return DefsFactoryModuleResolver(path=self.path, context=context, defs_factory=component)
 
 
 @record
@@ -260,7 +261,7 @@ class PythonComponentDeclNode(DefsModuleDeclNode):
         else:
             return
 
-    def load(self, context: ComponentLoadContext) -> ComponentDefsModule:
+    def load(self, context: ComponentLoadContext) -> DefsFactoryModuleResolver:
         module = load_module_from_path(self.path.stem, self.path / "component.py")
         component_loaders = list(inspect.getmembers(module, is_component_loader))
         if len(component_loaders) < 1:
@@ -273,10 +274,10 @@ class PythonComponentDeclNode(DefsModuleDeclNode):
             )
         else:
             _, component_loader = component_loaders[0]
-            return ComponentDefsModule(
+            return DefsFactoryModuleResolver(
                 path=self.path,
                 context=context,
-                component=component_loader(context),
+                defs_factory=component_loader(context),
             )
 
 

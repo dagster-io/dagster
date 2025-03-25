@@ -179,9 +179,9 @@ def test_load_from_path() -> None:
     with temp_sling_component_instance() as decl_node:
         context = script_load_context(decl_node)
         defs_module = decl_node.load(context)
-        assert isinstance(defs_module.component, SlingReplicationCollectionComponent)
+        assert isinstance(defs_module.defs_factory, SlingReplicationCollectionComponent)
 
-        resource = getattr(defs_module.component, "resource")
+        resource = getattr(defs_module.defs_factory, "resource")
         assert isinstance(resource, SlingResource)
         assert len(resource.connections) == 1
         assert resource.connections[0].name == "DUCKDB"

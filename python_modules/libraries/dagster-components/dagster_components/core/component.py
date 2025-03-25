@@ -35,8 +35,13 @@ class ComponentsEntryPointLoadError(DagsterError):
     pass
 
 
+class DefsLoader(ABC):
+    @abstractmethod
+    def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
+
+
 @scaffold_with(DefaultComponentScaffolder)
-class Component(ABC):
+class Component(DefsLoader, ABC):
     @classmethod
     def get_schema(cls) -> Optional[type["ResolvableModel"]]:
         from dagster_components.resolved.model import ResolvedFrom, get_model_type
@@ -51,9 +56,6 @@ class Component(ABC):
     @classmethod
     def get_additional_scope(cls) -> Mapping[str, Any]:
         return {}
-
-    @abstractmethod
-    def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
     def load(cls, attributes: Optional["ResolvableModel"], context: "ComponentLoadContext") -> Self:
