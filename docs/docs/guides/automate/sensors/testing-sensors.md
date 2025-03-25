@@ -34,11 +34,11 @@ In the UI, you can manually trigger a test evaluation of a sensor and view the r
 
 6. If the preview was successful, then for each produced run request, you can view the run config and tags produced by that run request by clicking the **{}** button in the Actions column.
 
-    ![Actions page in the Dagster UI](/images/concepts/partitions-schedules-sensors/sensors/actions-page.png) -->
+    ![Actions page in the Dagster UI](/images/guides/automate/sensors/actions-page.png)
 
 7. Click the **Launch all & commit tick result** on the bottom right to launch all the run requests. It will launch the runs and link to the /runs page filtered to the IDs of the runs that launched.
 
-    ![Runs page after launching all runs in the Dagster UI](/images/concepts/partitions-schedules-sensors/sensors/launch-all-page.png) -->
+    ![Runs page after launching all runs in the Dagster UI](/images/guides/automate/sensors/launch-all-page.png)
 
 </TabItem>
 <TabItem value="Via the CLI">
