@@ -141,7 +141,9 @@ class DbtCloudJobRunResults:
                     metadata["dagster_dbt/failed_row_count"] = result["failures"]
 
                 asset_check_key = get_asset_check_key_for_test(
-                    manifest, dagster_dbt_translator, test_unique_id=unique_id
+                    manifest=manifest,
+                    dagster_dbt_translator=dagster_dbt_translator,
+                    test_unique_id=unique_id,
                 )
 
                 if asset_check_key is not None:
