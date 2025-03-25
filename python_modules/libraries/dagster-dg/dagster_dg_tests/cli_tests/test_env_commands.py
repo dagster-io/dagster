@@ -21,7 +21,7 @@ def test_list_env_succeeds():
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
-        result = runner.invoke("list", "env")
+        result = runner.invoke("env", "list")
         assert_runner_result(result)
         assert (
             result.output.strip()
@@ -31,7 +31,7 @@ def test_list_env_succeeds():
         )
 
         Path(".env").write_text("FOO=bar")
-        result = runner.invoke("list", "env")
+        result = runner.invoke("env", "list")
         assert_runner_result(result)
         assert (
             result.output.strip()
