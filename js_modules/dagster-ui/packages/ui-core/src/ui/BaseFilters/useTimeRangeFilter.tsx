@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import isEqual from 'lodash/isEqual';
-import {useContext, useEffect, useMemo, useState} from 'react';
+import {useContext, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
@@ -63,7 +63,7 @@ export function calculateTimeRanges(timezone: string) {
 }
 
 export type TimeRangeFilter = FilterObject & {
-  state: [number | null, number | null];
+  state: TimeRangeState | undefined;
   setState: (state: TimeRangeState) => void;
 };
 
@@ -73,12 +73,8 @@ type Args = {
   name: string;
   icon: IconName;
 
-  // This hook is NOT a "controlled component". Changing state only updates the component's current state.
-  // To make this fully controlled you need to implement `onStateChanged` and maintain your own copy of the state.
-  // The one tricky footgun is if you want to ignore (ie. cancel) a state change then you need to make a new reference
-  // to the old state and pass that in.
   state?: TimeRangeState;
-  onStateChanged?: (state: TimeRangeState) => void;
+  onStateChanged: (state: TimeRangeState) => void;
   activeFilterTerm?: string;
 };
 
@@ -93,16 +89,6 @@ export function useTimeRangeFilter({
     timezone: [_timezone],
   } = useContext(TimeContext);
   const timezone = _timezone === 'Automatic' ? browserTimezone() : _timezone;
-  const [innerState, setState] = useState<TimeRangeState>(state || [null, null]);
-
-  useEffect(() => {
-    onStateChanged?.(innerState);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [innerState[0], innerState[1]]);
-
-  useEffect(() => {
-    setState(state || [null, null]);
-  }, [state]);
 
   const {timeRanges, timeRangesArray} = useMemo(
     () => calculateTimeRanges(timezone),
@@ -115,16 +101,16 @@ export function useTimeRangeFilter({
   );
 
   const onReset = () => {
-    setState([null, null]);
+    onStateChanged?.([null, null]);
   };
 
   const filterObj = useMemo(
     () => ({
       name,
       icon,
-      state: innerState,
-      setState,
-      isActive: innerState[0] !== null || innerState[1] !== null,
+      state,
+      setState: onStateChanged,
+      isActive: !!state && (state[0] !== null || state[1] !== null),
       getResults: (
         query: string,
       ): {
@@ -160,7 +146,7 @@ export function useTimeRangeFilter({
           );
         } else {
           const nextState = timeRanges[value].range;
-          setState(nextState);
+          onStateChanged?.(nextState);
         }
         close();
       },
@@ -168,14 +154,14 @@ export function useTimeRangeFilter({
         <ActiveFilterState
           activeFilterTerm={activeFilterTerm}
           timeRanges={timeRanges}
-          state={innerState}
+          state={state}
           timezone={timezone}
           remove={onReset}
         />
       ),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [name, icon, innerState, timeRanges, timezone, timeRangesArray, activeFilterTerm],
+    [name, icon, state, timeRanges, timezone, timeRangesArray, activeFilterTerm],
   );
   const filterObjRef = useUpdatingRef(filterObj);
   return filterObj;
@@ -198,7 +184,7 @@ export function ActiveFilterState({
   timeRanges,
 }: {
   activeFilterTerm: string;
-  state: TimeRangeState;
+  state: TimeRangeState | undefined;
   remove: () => void;
   timezone: string;
   timeRanges: ReturnType<typeof calculateTimeRanges>['timeRanges'];
@@ -214,6 +200,10 @@ export function ActiveFilterState({
     [timezone],
   );
   const dateLabel = useMemo(() => {
+    if (!state) {
+      return null;
+    }
+
     if (isEqual(state, timeRanges.TODAY.range)) {
       return (
         <>
@@ -270,6 +260,10 @@ export function ActiveFilterState({
       );
     }
   }, [L_FORMAT, state, timeRanges]);
+
+  if (!state) {
+    return null;
+  }
 
   return (
     <FilterTag

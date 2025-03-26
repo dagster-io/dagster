@@ -4,6 +4,7 @@ import {renderHook} from '@testing-library/react-hooks';
 import userEvent from '@testing-library/user-event';
 // eslint-disable-next-line no-restricted-imports
 import moment from 'moment-timezone';
+import {useState} from 'react';
 
 import {
   ActiveFilterState,
@@ -26,21 +27,25 @@ const mockFilterProps = {
   name: 'Test Filter',
   activeFilterTerm: 'Timestamp',
   icon: 'date' as IconName,
-  state: [null, null] as TimeRangeState,
 };
+
+function useTimeRangeFilterWrapper({state: initialState}: {state: TimeRangeState}) {
+  const [state, setState] = useState<TimeRangeState>(initialState);
+  return useTimeRangeFilter({...mockFilterProps, state, onStateChanged: setState});
+}
 
 describe('useTimeRangeFilter', () => {
   it('should initialize filter state', () => {
-    const {result} = renderHook(() => useTimeRangeFilter(mockFilterProps));
+    const {result} = renderHook(() => useTimeRangeFilterWrapper({state: [2, 3]}));
     const filter = result.current;
 
     expect(filter.name).toBe(mockFilterProps.name);
     expect(filter.icon).toBe(mockFilterProps.icon);
-    expect(filter.state).toEqual(mockFilterProps.state);
+    expect(filter.state).toEqual([2, 3]);
   });
 
   it('should reset filter state', () => {
-    const {result} = renderHook(() => useTimeRangeFilter(mockFilterProps));
+    const {result} = renderHook(() => useTimeRangeFilterWrapper({state: [1, 2]}));
     let filter = result.current;
 
     act(() => {
@@ -48,18 +53,18 @@ describe('useTimeRangeFilter', () => {
     });
 
     filter = result.current;
-    expect(filter.state).not.toEqual(mockFilterProps.state);
+    expect(filter.state).not.toEqual([1, 2]);
 
     act(() => {
       filter.setState([null, null]);
     });
     filter = result.current;
 
-    expect(filter.state).toEqual(mockFilterProps.state);
+    expect(filter.state).toEqual([null, null]);
   });
 
   it('should handle pre-defined time ranges', () => {
-    const {result} = renderHook(() => useTimeRangeFilter(mockFilterProps));
+    const {result} = renderHook(() => useTimeRangeFilterWrapper({state: [null, null]}));
     let filter = result.current;
 
     act(() => {
@@ -79,7 +84,7 @@ describe('useTimeRangeFilter', () => {
 
 describe('CustomTimeRangeFilterDialog', () => {
   it('should render', () => {
-    const {result} = renderHook(() => useTimeRangeFilter(mockFilterProps));
+    const {result} = renderHook(() => useTimeRangeFilterWrapper({state: [null, null]}));
     const filter = result.current;
 
     const {getByText} = render(<CustomTimeRangeFilterDialog filter={filter} close={() => {}} />);
@@ -88,7 +93,7 @@ describe('CustomTimeRangeFilterDialog', () => {
   });
 
   it('should apply custom date range', async () => {
-    const {result} = renderHook(() => useTimeRangeFilter(mockFilterProps));
+    const {result} = renderHook(() => useTimeRangeFilterWrapper({state: [null, null]}));
     let filter = result.current;
 
     const {getByText} = await act(async () =>
@@ -117,7 +122,9 @@ describe('CustomTimeRangeFilterDialog', () => {
 
   it('should close dialog on cancel', async () => {
     const closeMock = jest.fn();
-    const {result} = await act(async () => renderHook(() => useTimeRangeFilter(mockFilterProps)));
+    const {result} = await act(async () =>
+      renderHook(() => useTimeRangeFilterWrapper({state: [null, null]})),
+    );
     let filter = result.current;
 
     const {getByText} = render(<CustomTimeRangeFilterDialog filter={filter} close={closeMock} />);
