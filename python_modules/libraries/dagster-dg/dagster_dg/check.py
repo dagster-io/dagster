@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, NamedTuple, Optional
 
 import click
+import yaml
 from dagster_shared.serdes.objects import LibraryObjectKey
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from dagster_shared.yaml_utils.source_position import (
@@ -62,12 +63,13 @@ class ErrorInput(NamedTuple):
 def check_yaml(
     dg_context: DgContext,
     resolved_paths: Sequence[Path],
+    fix_env_requirements: bool,
 ) -> bool:
     top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
 
     validation_errors: list[ErrorInput] = []
     all_specified_env_var_deps = set()
-
+    updated_files = set()
     component_contents_by_key: dict[LibraryObjectKey, Any] = {}
     modules_to_fetch = set()
     for component_dir in dg_context.defs_path.iterdir():
@@ -103,21 +105,38 @@ def check_yaml(
             all_specified_env_var_deps.update(specified_env_var_deps)
 
             if used_env_vars - specified_env_var_deps:
-                msg = (
-                    "Component uses environment variables that are not specified in the component file: "
-                    + ", ".join(used_env_vars - specified_env_var_deps)
-                )
+                if fix_env_requirements:
+                    component_doc_updated = component_doc_tree.value
+                    if "requires" not in component_doc_updated:
+                        component_doc_updated["requires"] = {}
+                    if "env" not in component_doc_updated["requires"]:
+                        component_doc_updated["requires"]["env"] = []
 
-                validation_errors.append(
-                    ErrorInput(
-                        None,
-                        ValidationError(
-                            msg,
-                            path=["requires", "env"],
-                        ),
-                        component_doc_tree,
+                    component_doc_updated["requires"]["env"].extend(
+                        used_env_vars - specified_env_var_deps
                     )
-                )
+
+                    component_path.write_text(yaml.dump(component_doc_updated, sort_keys=False))
+                    click.echo(f"Updated {component_path}")
+                    updated_files.add(component_path)
+                    all_specified_env_var_deps.update(used_env_vars)
+                else:
+                    msg = (
+                        "Component uses environment variables that are not specified in the component file: "
+                        + ", ".join(used_env_vars - specified_env_var_deps)
+                        + "\nTo automatically add these environment variables to the component file, run `dg check yaml --fix-env-requirements`"
+                    )
+
+                    validation_errors.append(
+                        ErrorInput(
+                            None,
+                            ValidationError(
+                                msg,
+                                path=["requires", "env"],
+                            ),
+                            component_doc_tree,
+                        )
+                    )
 
             # First, validate the top-level structure of the component file
             # (type and params keys) before we try to validate the params themselves.
@@ -175,11 +194,22 @@ def check_yaml(
                     prefix=["attributes"] if key else [],
                 )
             )
+        if updated_files:
+            click.echo(
+                "The following component files were updated to fix environment variable requirements:\n"
+                + "\n".join(updated_files)
+            )
         return False
     else:
         missing_env_vars = (
             all_specified_env_var_deps - ProjectEnvVars.from_ctx(dg_context).values.keys()
         ) - os.environ.keys()
+        if updated_files:
+            click.echo(
+                "The following component files were updated to fix environment variable requirements:\n"
+                + "\n".join(str(file) for file in updated_files)
+            )
+
         if missing_env_vars:
             click.echo(
                 "The following environment variables are used in components but not specified in the .env file or the current shell environment:\n"

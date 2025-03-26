@@ -166,6 +166,6 @@ def get_used_env_vars(data_structure: Union[Mapping[str, Any], Sequence[Any], An
     elif isinstance(data_structure, str):
         return set(env_var_regex.findall(data_structure))
     elif isinstance(data_structure, Sequence):
-        return set.union(*(get_used_env_vars(item) for item in data_structure))
+        return set.union(set(), *(get_used_env_vars(item) for item in data_structure))
     else:
         return set()

@@ -32,11 +32,17 @@ def check_group():
 @click.option(
     "--watch", is_flag=True, help="Watch for changes to the component files and re-validate them."
 )
+@click.option(
+    "--fix-env-requirements",
+    is_flag=True,
+    help="Automatically add environment variable requirements to component yaml files.",
+)
 @dg_global_options
 @cli_telemetry_wrapper
 def check_yaml_command(
     paths: Sequence[str],
     watch: bool,
+    fix_env_requirements: bool,
     **global_options: object,
 ) -> None:
     """Check component.yaml files against their schemas, showing validation errors."""
@@ -45,7 +51,7 @@ def check_yaml_command(
     resolved_paths = [Path(path).absolute() for path in paths]
 
     def run_check(_: Any = None) -> bool:
-        return check_yaml_fn(dg_context, resolved_paths)
+        return check_yaml_fn(dg_context, resolved_paths, fix_env_requirements=fix_env_requirements)
 
     if watch:
         watched_paths = (
@@ -145,6 +151,7 @@ def check_definitions_command(
                 check_result = check_yaml_fn(
                     dg_context.for_project_environment(project_dir, cli_config),
                     [],
+                    fix_env_requirements=False,
                 )
                 overall_check_result = overall_check_result and check_result
             if not overall_check_result:
