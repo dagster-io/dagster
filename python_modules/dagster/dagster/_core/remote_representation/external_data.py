@@ -61,6 +61,7 @@ from dagster._core.definitions.dependency import (
     OpNode,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.freshness_condition import FreshnessCondition
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -1423,6 +1424,7 @@ class AssetNodeSnap(IHaveNew):
     backfill_policy: Optional[BackfillPolicy]
     auto_observe_interval_minutes: Optional[Union[float, int]]
     owners: Optional[Sequence[str]]
+    freshness_condition: Optional[FreshnessCondition]
 
     def __new__(
         cls,
@@ -1454,6 +1456,7 @@ class AssetNodeSnap(IHaveNew):
         backfill_policy: Optional[BackfillPolicy] = None,
         auto_observe_interval_minutes: Optional[Union[float, int]] = None,
         owners: Optional[Sequence[str]] = None,
+        freshness_condition: Optional[FreshnessCondition] = None,
     ):
         metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str), allow_invalid=True
@@ -1532,6 +1535,7 @@ class AssetNodeSnap(IHaveNew):
             auto_observe_interval_minutes=auto_observe_interval_minutes,
             owners=owners or [],
             execution_type=execution_type,
+            freshness_condition=freshness_condition,
         )
 
     @property
@@ -1758,6 +1762,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                 backfill_policy=asset_node.backfill_policy,
                 auto_observe_interval_minutes=asset_node.auto_observe_interval_minutes,
                 owners=asset_node.owners,
+                freshness_condition=asset_node._spec.freshness_condition,
             )
         )
 

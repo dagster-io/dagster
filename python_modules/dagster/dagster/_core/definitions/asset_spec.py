@@ -25,6 +25,7 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
+from dagster._core.definitions.freshness_condition import FreshnessCondition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -154,6 +155,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     owners: PublicAttr[Sequence[str]]
     tags: PublicAttr[Mapping[str, str]]
     partitions_def: PublicAttr[Optional[PartitionsDefinition]]
+    freshness_condition: Optional[FreshnessCondition]
 
     def __new__(
         cls,
@@ -170,6 +172,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         tags: Optional[Mapping[str, str]] = None,
         kinds: Optional[set[str]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+        freshness_condition: Optional[FreshnessCondition] = None,
         **kwargs,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
@@ -221,6 +224,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
+            freshness_condition=freshness_condition,
         )
 
     @staticmethod

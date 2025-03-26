@@ -1,6 +1,8 @@
 from collections.abc import Sequence
 from datetime import datetime
 
+from dagster._core.definitions.freshness_condition import FreshnessCondition
+from dagster._record import record
 import pytest
 from dagster import (
     AssetKey,
@@ -40,7 +42,7 @@ from dagster._core.remote_representation.external_data import (
     TimeWindowPartitionsSnap,
     asset_node_snaps_from_repo,
 )
-from dagster._serdes import deserialize_value, serialize_value, unpack_value
+from dagster._serdes import deserialize_value, serialize_value, unpack_value, whitelist_for_serdes
 from dagster._time import create_datetime, get_timezone
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
@@ -49,6 +51,20 @@ def _get_asset_node_snaps_from_definitions(defs: Definitions) -> Sequence[AssetN
     repo = defs.get_repository_def()
     return sorted(asset_node_snaps_from_repo(repo), key=lambda n: n.asset_key)
 
+@whitelist_for_serdes
+@record
+class DummyFreshnessCondition(FreshnessCondition):
+    pass
+
+def test_freshness_condition() -> None:
+    spec = AssetSpec("asset1", freshness_condition=DummyFreshnessCondition())
+    asset_node_snaps = _get_asset_node_snaps_from_definitions(
+        Definitions(
+            assets=[spec],
+        )
+    )
+    assert len(asset_node_snaps) == 1
+    assert asset_node_snaps[0].freshness_condition == DummyFreshnessCondition()
 
 def test_single_asset_job():
     @asset(description="hullo")
