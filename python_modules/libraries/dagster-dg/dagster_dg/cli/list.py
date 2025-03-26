@@ -21,6 +21,7 @@ from dagster_dg.defs import (
 )
 from dagster_dg.error import DgError
 from dagster_dg.utils import DgClickCommand, DgClickGroup
+from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 
 @click.group(name="list", cls=DgClickGroup)
@@ -35,6 +36,7 @@ def list_group():
 
 @list_group.command(name="project", cls=DgClickCommand)
 @dg_global_options
+@cli_telemetry_wrapper
 def list_project_command(**global_options: object) -> None:
     """List projects in the current workspace."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
@@ -51,6 +53,7 @@ def list_project_command(**global_options: object) -> None:
 
 @list_group.command(name="component", cls=DgClickCommand)
 @dg_global_options
+@cli_telemetry_wrapper
 def list_component_command(**global_options: object) -> None:
     """List Dagster component instances defined in the current project."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
@@ -74,6 +77,7 @@ def list_component_command(**global_options: object) -> None:
     help="Output as JSON instead of a table.",
 )
 @dg_global_options
+@cli_telemetry_wrapper
 def list_component_type_command(output_json: bool, **global_options: object) -> None:
     """List registered Dagster components in the current project environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
@@ -120,13 +124,23 @@ def list_component_type_command(output_json: bool, **global_options: object) -> 
     help="Output as JSON instead of a table.",
 )
 @dg_global_options
+@cli_telemetry_wrapper
 def list_defs_command(output_json: bool, **global_options: object) -> None:
     """List registered Dagster definitions in the current project environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
     result = dg_context.external_components_command(
-        ["list", "definitions", "-m", dg_context.code_location_target_module_name]
+        [
+            "list",
+            "definitions",
+            "-m",
+            dg_context.code_location_target_module_name,
+        ],
+        # Sets the "--location" option for "dagster-components definitions list"
+        # using the click auto-envvar prefix for backwards compatibility on older versions
+        # before that option was added
+        additional_env={"DG_CLI_LIST_DEFINITIONS_LOCATION": dg_context.code_location_name},
     )
     definitions = [_resolve_definition(x) for x in json.loads(result)]
 

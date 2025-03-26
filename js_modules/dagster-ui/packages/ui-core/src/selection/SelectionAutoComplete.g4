@@ -50,7 +50,6 @@ incompleteExpr:
 	| expressionLessParenthesizedExpr						# ExpressionlessParenthesizedExpressionWrapper
 	| leftParenToken postLogicalOperatorWhitespace			# UnclosedExpressionlessParenthesizedExpression
 	| DIGITS? PLUS postNeighborTraversalWhitespace			# IncompletePlusTraversalExpression
-	| DIGITS postDigitsWhitespace							# IncompleteUpTraversalExpression
 	| PLUS value postExpressionWhitespace					# IncompletePlusTraversalExpressionMissingValue
 	| colonToken attributeValue postExpressionWhitespace	# IncompleteAttributeExpressionMissingKey;
 
@@ -111,7 +110,8 @@ value:
 	QUOTED_STRING						# QuotedStringValue
 	| INCOMPLETE_LEFT_QUOTED_STRING		# IncompleteLeftQuotedStringValue
 	| INCOMPLETE_RIGHT_QUOTED_STRING	# IncompleteRightQuotedStringValue
-	| IDENTIFIER						# UnquotedStringValue;
+	| IDENTIFIER						# UnquotedStringValue
+	| DIGITS							# DigitsValue;
 
 // Tokens for operators and keywords
 AND: 'and' | 'AND';
@@ -136,7 +136,7 @@ INCOMPLETE_RIGHT_QUOTED_STRING: (~["\\\r\n:()=])* '"';
 EQUAL: '=';
 
 // Identifiers (attributes and functions)
-IDENTIFIER: [a-zA-Z_*][a-zA-Z0-9_*/]*;
+IDENTIFIER: [a-zA-Z0-9_*][a-zA-Z0-9_*/]*;
 
 // Whitespace
 WS: [ \t\r\n]+;

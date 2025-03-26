@@ -72,7 +72,6 @@ def fivetran_assets(
             )
 
             import dagster as dg
-            from dagster._core.definitions.asset_spec import replace_attributes
 
             class CustomDagsterFivetranTranslator(DagsterFivetranTranslator):
                 def get_asset_spec(self, props: FivetranConnectorTableProps) -> dg.AssetSpec:

@@ -346,3 +346,54 @@ def _sample_complex_asset_defs():
     @asset(kinds={"dbt"}, group_name="group_2", description="This is epsilon.")
     def epsilon(delta):
         pass
+
+
+_EXPECTED_ENV_VAR_ASSET_DEFS = textwrap.dedent("""
+    Assets
+    ┌───────┬───────┬──────┬───────┬─────────────┐
+    │ Key   │ Group │ Deps │ Kinds │ Description │
+    ├───────┼───────┼──────┼───────┼─────────────┤
+    │ alpha │ bar   │      │ sling │             │
+    └───────┴───────┴──────┴───────┴─────────────┘
+""").strip()
+
+
+def test_list_defs_with_env_file_succeeds():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        result = runner.invoke(
+            "scaffold",
+            "component",
+            "dagster_components.dagster.DefinitionsComponent",
+            "mydefs",
+        )
+        assert_runner_result(result)
+
+        with Path("foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            defs_source = textwrap.dedent(
+                inspect.getsource(_sample_env_var_assets).split("\n", 1)[1]
+            )
+            f.write(defs_source)
+            env_file_contents = """
+GROUP_NAME=bar
+"""
+
+        with Path(".env").open("w") as f:
+            f.write(env_file_contents)
+
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
+        output = "\n".join(result.output.split("\n")[1:])
+        match_terminal_box_output(output.strip(), _EXPECTED_ENV_VAR_ASSET_DEFS)
+
+
+def _sample_env_var_assets():
+    import os
+
+    from dagster import asset
+
+    @asset(kinds={"sling"}, group_name=os.getenv("GROUP_NAME", "MISSING"))
+    def alpha():
+        pass

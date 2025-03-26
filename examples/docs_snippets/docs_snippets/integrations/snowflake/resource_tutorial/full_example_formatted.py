@@ -1,6 +1,4 @@
 import pandas as pd
-
-# start_config
 from dagster_snowflake import SnowflakeResource
 from snowflake.connector.pandas_tools import write_pandas
 
@@ -14,15 +12,6 @@ snowflake = SnowflakeResource(
     schema="IRIS",
     role="WRITER",
 )
-
-# end_config
-
-# start_asset
-import pandas as pd
-from dagster_snowflake import SnowflakeResource
-from snowflake.connector.pandas_tools import write_pandas
-
-from dagster import MaterializeResult, asset
 
 
 @asset
@@ -55,19 +44,11 @@ def iris_dataset(snowflake: SnowflakeResource):
     )
 
 
-# end_asset
-
-# start_downstream
-from dagster_snowflake import SnowflakeResource
-
-from dagster import asset
-
-
 @asset(deps=["iris_dataset"])
 def iris_setosa(snowflake: SnowflakeResource) -> None:
     query = """
         create or replace table iris.iris_setosa as (
-            SELECT * 
+            SELECT *
             FROM iris.iris_dataset
             WHERE species = 'Iris-setosa'
         );
@@ -77,12 +58,6 @@ def iris_setosa(snowflake: SnowflakeResource) -> None:
         conn.cursor.execute(query)  # pyright: ignore[reportFunctionMemberAccess]
 
 
-# end_downstream
-
-# start_definitions
-from dagster import Definitions
-
 defs = Definitions(
     assets=[iris_dataset, iris_setosa], resources={"snowflake": snowflake}
 )
-# end_definitions

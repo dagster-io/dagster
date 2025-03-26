@@ -95,7 +95,7 @@ export async function handleLaunchResult(
         ),
         action: {
           type: 'custom',
-          element: <AnchorButton to={history.createHref({pathname, search})}>View</AnchorButton>,
+          element: <AnchorButton to={`${pathname}${search}`}>View</AnchorButton>,
         },
       });
     }

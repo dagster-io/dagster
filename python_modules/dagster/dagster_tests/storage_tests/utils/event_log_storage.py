@@ -3047,17 +3047,19 @@ class TestEventLogStorage:
         failure_records = instance.get_records_for_run(
             run_id=test_run_id, of_type=DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
         ).records
+        if not storage.can_store_asset_failure_events:
+            assert len(failure_records) == 0
+        else:
+            assert len(failure_records) == 15
 
-        assert len(failure_records) == 15
+            failed_partitions_by_step_key = defaultdict(set)
+            for record in failure_records:
+                assert record.event_log_entry.dagster_event.is_asset_failed_to_materialize
+                failed_partitions_by_step_key[record.event_log_entry.step_key].add(
+                    record.event_log_entry.dagster_event.asset_failed_to_materialize_data.partition
+                )
 
-        failed_partitions_by_step_key = defaultdict(set)
-        for record in failure_records:
-            assert record.event_log_entry.dagster_event.is_asset_failed_to_materialize
-            failed_partitions_by_step_key[record.event_log_entry.step_key].add(
-                record.event_log_entry.dagster_event.asset_failed_to_materialize_data.partition
-            )
-
-        assert failed_partitions_by_step_key == failed_partitions
+            assert failed_partitions_by_step_key == failed_partitions
 
     def test_get_latest_storage_ids_by_partition(self, storage, instance):
         a = AssetKey(["a"])
@@ -6604,35 +6606,28 @@ class TestEventLogStorage:
         assert limit.limit == 1
         assert limit.from_default
 
-    def test_fetch_failed_materializations(self, test_run_id, storage: EventLogStorage):
+    def test_fetch_failed_materializations(self, test_run_id, storage: EventLogStorage, instance):
         assert len(storage.get_logs_for_run(test_run_id)) == 0
         asset_key_1 = AssetKey("asset_1")
         asset_key_2 = AssetKey("asset_2")
         asset_keys = [asset_key_1, asset_key_2]
         for i in range(5):
             for asset_key in asset_keys:
-                event_to_store = EventLogEntry(
-                    error_info=None,
-                    level="debug",
-                    user_message="",
-                    run_id=test_run_id,
-                    timestamp=time.time(),
-                    dagster_event=DagsterEvent.build_asset_failed_to_materialize_event(
-                        job_name="the_job",
-                        step_key="the_step",
-                        asset_materialization_failure=AssetMaterializationFailure(
-                            asset_key=asset_key,
-                            partition=str(i),
-                            reason=AssetMaterializationFailureReason.COMPUTE_FAILED,
-                        ),
+                event_to_store = DagsterEvent.build_asset_failed_to_materialize_event(
+                    job_name="the_job",
+                    step_key="the_step",
+                    asset_materialization_failure=AssetMaterializationFailure(
+                        asset_key=asset_key,
+                        partition=str(i),
+                        reason=AssetMaterializationFailureReason.COMPUTE_FAILED,
                     ),
                 )
-                storage.store_event(event_to_store)
+                instance.report_dagster_event(event_to_store, test_run_id)
 
         all_failed_records_result = storage.fetch_failed_materializations(
             records_filter=asset_key_1, limit=10
         )
-        if not storage.asset_records_have_last_planned_and_failed_materializations:
+        if not storage.can_store_asset_failure_events:
             assert len(all_failed_records_result.records) == 0
         else:
             assert len(all_failed_records_result.records) == 5

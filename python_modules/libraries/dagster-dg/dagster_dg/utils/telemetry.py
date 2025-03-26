@@ -33,10 +33,10 @@ def get_telemetry_enabled_for_cli() -> bool:
 
 
 def get_telemetry_settings_for_cli() -> TelemetrySettings:
+    enabled = get_telemetry_enabled_for_cli() and get_telemetry_enabled_from_dagster_yaml()
     return TelemetrySettings(
-        dagster_telemetry_enabled=get_telemetry_enabled_for_cli()
-        and get_telemetry_enabled_from_dagster_yaml(),
-        instance_id=get_or_set_instance_id(),
+        dagster_telemetry_enabled=enabled,
+        instance_id=get_or_set_instance_id() if enabled else None,
         run_storage_id=None,
     )
 

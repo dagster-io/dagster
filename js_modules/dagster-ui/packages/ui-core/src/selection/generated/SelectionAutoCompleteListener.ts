@@ -15,6 +15,7 @@ import {
   CommaExpressionWrapper2Context,
   CommaExpressionWrapper3Context,
   CommaTokenContext,
+  DigitsValueContext,
   DownTraversalContext,
   DownTraversalExprContext,
   DownTraversalExpressionContext,
@@ -38,7 +39,6 @@ import {
   IncompletePlusTraversalExpressionContext,
   IncompletePlusTraversalExpressionMissingValueContext,
   IncompleteRightQuotedStringValueContext,
-  IncompleteUpTraversalExpressionContext,
   LeftParenTokenContext,
   NotExpressionContext,
   NotTokenContext,
@@ -439,6 +439,19 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
   exitUnquotedStringValue?: (ctx: UnquotedStringValueContext) => void;
 
   /**
+   * Enter a parse tree produced by the `DigitsValue`
+   * labeled alternative in `SelectionAutoCompleteParser.value`.
+   * @param ctx the parse tree
+   */
+  enterDigitsValue?: (ctx: DigitsValueContext) => void;
+  /**
+   * Exit a parse tree produced by the `DigitsValue`
+   * labeled alternative in `SelectionAutoCompleteParser.value`.
+   * @param ctx the parse tree
+   */
+  exitDigitsValue?: (ctx: DigitsValueContext) => void;
+
+  /**
    * Enter a parse tree produced by the `IncompleteAttributeExpressionMissingSecondValue`
    * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
    * @param ctx the parse tree
@@ -574,19 +587,6 @@ export interface SelectionAutoCompleteListener extends ParseTreeListener {
    * @param ctx the parse tree
    */
   exitIncompletePlusTraversalExpression?: (ctx: IncompletePlusTraversalExpressionContext) => void;
-
-  /**
-   * Enter a parse tree produced by the `IncompleteUpTraversalExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
-   * @param ctx the parse tree
-   */
-  enterIncompleteUpTraversalExpression?: (ctx: IncompleteUpTraversalExpressionContext) => void;
-  /**
-   * Exit a parse tree produced by the `IncompleteUpTraversalExpression`
-   * labeled alternative in `SelectionAutoCompleteParser.incompleteExpr`.
-   * @param ctx the parse tree
-   */
-  exitIncompleteUpTraversalExpression?: (ctx: IncompleteUpTraversalExpressionContext) => void;
 
   /**
    * Enter a parse tree produced by the `IncompletePlusTraversalExpressionMissingValue`

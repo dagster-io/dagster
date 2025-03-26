@@ -398,6 +398,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def asset_records_have_last_planned_and_failed_materializations(self) -> bool:
         return False
 
+    @property
+    def can_store_asset_failure_events(self) -> bool:
+        return False
+
     @abstractmethod
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         pass

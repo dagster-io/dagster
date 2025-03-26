@@ -43,15 +43,30 @@ class CodeVersionChangedCondition(BuiltinAutomationCondition[AssetKey]):
 @record
 @whitelist_for_serdes
 class InitialEvaluationCondition(BuiltinAutomationCondition):
-    """Condition to determine if this is the initial evaluation of a given AutomationCondition."""
+    """Condition to determine if this is the initial evaluation of a given AutomationCondition with a particular PartitionsDefinition."""
 
     @property
     def name(self) -> str:
         return "initial_evaluation"
 
+    def _is_initial_evaluation(self, context: AutomationContext) -> bool:
+        root_key = context.root_context.key
+        previous_requested_subset = context.get_previous_requested_subset(root_key)
+        if previous_requested_subset is None:
+            return True
+
+        previous_subset_value_type = type(previous_requested_subset.get_internal_value())
+
+        current_subset = context.asset_graph_view.get_empty_subset(key=context.root_context.key)
+        current_subset_value_type = type(current_subset.get_internal_value())
+        return previous_subset_value_type != current_subset_value_type
+
     def evaluate(self, context: AutomationContext) -> AutomationResult:
+        # we retain the condition_tree_id as a cursor despite it being unused as
+        # earlier iterations of this condition used it and we want to retain the
+        # option value of reverting this in the future
         condition_tree_id = context.root_context.condition.get_unique_id()
-        if context.previous_true_subset is None or condition_tree_id != context.cursor:
+        if self._is_initial_evaluation(context):
             subset = context.candidate_subset
         else:
             subset = context.get_empty_subset()

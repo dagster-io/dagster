@@ -12,6 +12,8 @@ from dagster_dbt_tests.cloud_v2.conftest import (
     TEST_CUSTOM_ADHOC_JOB_NAME,
     TEST_DEFAULT_ADHOC_JOB_NAME,
     TEST_ENVIRONMENT_ID,
+    TEST_FINISHED_AT_END,
+    TEST_FINISHED_AT_START,
     TEST_JOB_ID,
     TEST_PROJECT_ID,
     TEST_REST_API_BASE_URL,
@@ -52,8 +54,15 @@ def test_basic_resource_request(
     client.get_run_results_json(run_id=TEST_RUN_ID)
     client.get_project_details(project_id=TEST_PROJECT_ID)
     client.get_environment_details(environment_id=TEST_ENVIRONMENT_ID)
+    client.get_runs_batch(
+        project_id=TEST_PROJECT_ID,
+        environment_id=TEST_ENVIRONMENT_ID,
+        finished_at_start=TEST_FINISHED_AT_START,
+        finished_at_end=TEST_FINISHED_AT_END,
+    )
+    client.list_run_artifacts(run_id=TEST_RUN_ID)
 
-    assert len(all_api_mocks.calls) == 8
+    assert len(all_api_mocks.calls) == 10
     assert_rest_api_call(call=all_api_mocks.calls[0], endpoint="jobs", method="GET")
     assert_rest_api_call(call=all_api_mocks.calls[1], endpoint="jobs", method="POST")
     assert_rest_api_call(
@@ -75,6 +84,10 @@ def test_basic_resource_request(
     )
     assert_rest_api_call(
         call=all_api_mocks.calls[7], endpoint=f"environments/{TEST_ENVIRONMENT_ID}", method="GET"
+    )
+    assert_rest_api_call(call=all_api_mocks.calls[8], endpoint="runs", method="GET")
+    assert_rest_api_call(
+        call=all_api_mocks.calls[9], endpoint=f"runs/{TEST_RUN_ID}/artifacts", method="GET"
     )
 
 
