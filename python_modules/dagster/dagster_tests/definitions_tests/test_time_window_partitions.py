@@ -11,7 +11,6 @@ from dagster import (
     HourlyPartitionsDefinition,
     MonthlyPartitionsDefinition,
     PartitionKeyRange,
-    PartitionsDefinition,
     TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
     daily_partitioned_config,
@@ -29,14 +28,13 @@ from dagster._core.definitions.time_window_partitions import (
     dst_safe_strptime,
 )
 from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.test_utils import freeze_time
+from dagster._core.test_utils import freeze_time, get_paginated_partition_keys
 from dagster._record import copy
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import create_datetime, parse_time_string
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"
-MAX_PAGES = 10000
 
 
 def time_window(start: str, end: str) -> TimeWindow:
@@ -51,38 +49,6 @@ def persisted_time_window(start: str, end: str) -> PersistedTimeWindow:
         TimestampWithTimezone(parse_time_string(start).timestamp(), "UTC"),
         TimestampWithTimezone(parse_time_string(end).timestamp(), "UTC"),
     )
-
-
-def get_paginated_partition_keys(
-    partitions_def: PartitionsDefinition,
-    current_time=None,
-    ascending: bool = True,
-    batch_size: int = 1,
-) -> list[str]:
-    all_results = []
-    cursor = None
-    has_more = True
-    partitions_context = PartitionLoadingContext(
-        TemporalContext(effective_dt=current_time or datetime.now(), last_event_id=None),
-        dynamic_partitions_store=None,
-    )
-    counter = 0
-    while has_more:
-        connection = partitions_def.get_partition_key_connection(
-            context=partitions_context,
-            limit=batch_size,
-            ascending=ascending,
-            cursor=cursor,
-        )
-        counter += 1
-        all_results.extend(connection.results)
-        cursor = connection.cursor
-        has_more = connection.has_more
-
-        if counter > MAX_PAGES:
-            raise Exception("Too many pages")
-
-    return all_results
 
 
 def test_daily_partitions():

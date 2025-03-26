@@ -28,6 +28,7 @@ from typing import (  # noqa: UP035
 from typing_extensions import Self
 
 from dagster import (
+    PartitionsDefinition,
     Permissive,
     Shape,
     __file__ as dagster_init_py,
@@ -43,6 +44,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.partition import PartitionLoadingContext, TemporalContext
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
@@ -755,3 +757,37 @@ def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> CurrentW
     mock_location.get_repositories.return_value = remote_repos
     type(mock_entry).code_location = unittest.mock.PropertyMock(return_value=mock_location)
     return CurrentWorkspace(code_location_entries={"test": mock_entry})
+
+
+def get_paginated_partition_keys(
+    partitions_def: PartitionsDefinition,
+    current_time=None,
+    ascending: bool = True,
+    batch_size: int = 1,
+) -> list[str]:
+    MAX_PAGES = 10000
+
+    all_results = []
+    cursor = None
+    has_more = True
+    partitions_context = PartitionLoadingContext(
+        TemporalContext(effective_dt=current_time or datetime.datetime.now(), last_event_id=None),
+        dynamic_partitions_store=None,
+    )
+    counter = 0
+    while has_more:
+        connection = partitions_def.get_partition_key_connection(
+            context=partitions_context,
+            limit=batch_size,
+            ascending=ascending,
+            cursor=cursor,
+        )
+        counter += 1
+        all_results.extend(connection.results)
+        cursor = connection.cursor
+        has_more = connection.has_more
+
+        if counter > MAX_PAGES:
+            raise Exception("Too many pages")
+
+    return all_results
