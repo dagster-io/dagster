@@ -20,7 +20,6 @@ import {
   IncompleteAttributeExpressionMissingValueContext,
   IncompletePlusTraversalExpressionContext,
   IncompletePlusTraversalExpressionMissingValueContext,
-  IncompleteUpTraversalExpressionContext,
   LeftParenTokenContext,
   OrTokenContext,
   PostDigitsWhitespaceContext,
@@ -272,12 +271,6 @@ export class SelectionAutoCompleteVisitor extends BaseSelectionVisitor {
       this.stopReplacementIndex = ctx.stop!.stopIndex + 1;
       this.addUnmatchedValueResults(ctx.text);
     }
-  }
-
-  public visitIncompleteUpTraversalExpression(_ctx: IncompleteUpTraversalExpressionContext) {
-    this.list.push(
-      this.createOperatorSuggestion({text: '+', type: 'up-traversal', displayText: '+'}),
-    );
   }
 
   public visitIncompletePlusTraversalExpressionMissingValue(
