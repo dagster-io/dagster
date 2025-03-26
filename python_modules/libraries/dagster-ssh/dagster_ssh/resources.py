@@ -71,8 +71,8 @@ class SSHResource(ConfigurableResource):
         .. code-block:: python
 
             ssh_resource = SSHResource(
-                remote_host='example.com',
-                username='myuser', key_file='/path/to/private/key'
+                remote_host="example.com",
+                username="myuser", key_file="/path/to/private/key"
             )
 
         Creating an SSH resource with password authentication:
@@ -80,16 +80,16 @@ class SSHResource(ConfigurableResource):
         .. code-block:: python
 
             ssh_resource = SSHResource(
-                remote_host='example.com',
-                username='myuser',
-                password='my_secure_password'
+                remote_host="example.com",
+                username="myuser",
+                password="my_secure_password"
             )
 
         Using the resource to transfer a file:
 
         .. code-block:: python
 
-            local_file = ssh_resource.sftp_get('/remote/path/file.txt', '/local/path/file.txt')
+            local_file = ssh_resource.sftp_get("/remote/path/file.txt", "/local/path/file.txt")
     """
 
     remote_host: str = Field(description="Remote host to connect to")
@@ -364,14 +364,14 @@ def ssh_resource(init_context):
 
             @op
             def transfer_files(ssh):
-                ssh.sftp_get('/remote/file', '/local/file')
+                ssh.sftp_get("/remote/file", "/local/file")
 
             @job
             def my_ssh_job():
                 transfer_files(ssh=ssh_resource.configured({
-                    'remote_host': 'example.com',
-                    'username': 'myuser',
-                    'key_file': '/path/to/private/key'
+                    "remote_host": "example.com",
+                    "username": "myuser",
+                    "key_file": "/path/to/private/key"
                 }))
 
             defs = Definitions(jobs=[my_ssh_job])
