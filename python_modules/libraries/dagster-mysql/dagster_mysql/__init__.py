@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_mysql.event_log import MySQLEventLogStorage
 from dagster_mysql.run_storage import MySQLRunStorage

@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_powerbi.assets import (
     build_semantic_model_refresh_asset_definition as build_semantic_model_refresh_asset_definition,

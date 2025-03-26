@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_pagerduty.hooks import pagerduty_on_failure as pagerduty_on_failure
 from dagster_pagerduty.resources import (

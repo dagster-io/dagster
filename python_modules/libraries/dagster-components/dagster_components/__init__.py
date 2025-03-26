@@ -1,3 +1,4 @@
+from dagster_shared.libraries import DagsterLibraryRegistry
 from dagster_shared.serdes.objects import LibraryObjectKey as LibraryObjectKey
 
 from dagster_components.component.component import Component as Component
@@ -33,3 +34,5 @@ from dagster_components.scaffold.scaffold import (
     ScaffoldRequest as ScaffoldRequest,
 )
 from dagster_components.version import __version__ as __version__
+
+DagsterLibraryRegistry.register("dagster-components", __version__)

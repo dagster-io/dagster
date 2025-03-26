@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_fivetran.asset_decorator import fivetran_assets as fivetran_assets
 from dagster_fivetran.asset_defs import (

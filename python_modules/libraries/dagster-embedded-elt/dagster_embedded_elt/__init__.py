@@ -1,5 +1,5 @@
-from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._utils.warnings import deprecation_warning
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_embedded_elt.version import __version__
 

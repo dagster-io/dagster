@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_gcp_pandas.bigquery.bigquery_pandas_type_handler import (
     BigQueryPandasIOManager as BigQueryPandasIOManager,
