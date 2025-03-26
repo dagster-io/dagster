@@ -1,3 +1,5 @@
+import datetime
+
 from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace, get_dagster_adhoc_job_name
 from dagster_dbt.cloud_v2.types import (
     DbtCloudEnvironment,
@@ -45,6 +47,7 @@ def test_cloud_job_apis(
     ]
     assert created_job.id in set([job.id for job in jobs])
 
+    start_run_process = datetime.datetime.utcnow()
     run = DbtCloudRun.from_run_details(
         run_details=client.trigger_job_run(
             job_id=created_job.id, steps_override=["dbt run --select tag:test"]
@@ -53,8 +56,22 @@ def test_cloud_job_apis(
     polled_run = DbtCloudRun.from_run_details(
         run_details=client.poll_run(run_id=run.id, poll_timeout=600)
     )
+    end_run_process = datetime.datetime.utcnow()
+
     assert run.id == polled_run.id
     assert polled_run.status == DbtCloudJobRunStatusType.SUCCESS
+
+    batched_runs = client.get_runs_batch(
+        project_id=project_id,
+        environment_id=environment_id,
+        finished_at_start=start_run_process,
+        finished_at_end=end_run_process,
+    )
+    assert len(batched_runs) == 1
+
+    batched_run = DbtCloudRun.from_run_details(run_details=next(iter(batched_runs)))
+    assert batched_run.id == run.id
+
     run_results = client.get_run_results_json(run_id=polled_run.id)
     assert {result["unique_id"] for result in run_results["results"]} == {
         "model.test_environment.customers",
