@@ -9,6 +9,7 @@ from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.env import ProjectEnvVars
 from dagster_dg.utils import DgClickCommand, DgClickGroup
+from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 
 @click.group(name="env", cls=DgClickGroup)
@@ -23,6 +24,7 @@ def env_group():
 
 @env_group.command(name="list", cls=DgClickCommand)
 @dg_global_options
+@cli_telemetry_wrapper
 def list_env_command(**global_options: object) -> None:
     """List environment variables from the .env file of the current project."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
