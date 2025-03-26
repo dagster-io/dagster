@@ -24,6 +24,7 @@ from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
+    ReadOnlyPlusRemoteCodeLocationOrigin,
 )
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import (
@@ -387,7 +388,9 @@ class WorkspaceOpts:
 
 def _origin_executable_matches_current_process(origin: CodeLocationOrigin) -> bool:
     # loadable_target_origin is unknown for GrpcServerCodeLocationOrigin
-    return not isinstance(origin, GrpcServerCodeLocationOrigin) and (
+    return not isinstance(
+        origin, (GrpcServerCodeLocationOrigin, ReadOnlyPlusRemoteCodeLocationOrigin)
+    ) and (
         origin.loadable_target_origin.executable_path is None
         or origin.loadable_target_origin.executable_path == sys.executable
     )

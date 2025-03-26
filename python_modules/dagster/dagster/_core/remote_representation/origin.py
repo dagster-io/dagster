@@ -24,6 +24,7 @@ if TYPE_CHECKING:
         CodeLocation,
         GrpcServerCodeLocation,
         InProcessCodeLocation,
+        ReadOnlyPlusRemoteCodeLocation,
     )
     from dagster._grpc.client import DagsterGrpcClient
 
@@ -204,6 +205,75 @@ class InProcessCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariable
 
     def reload_location(self, instance: "DagsterInstance") -> "InProcessCodeLocation":
         raise NotImplementedError
+
+
+@whitelist_for_serdes
+class ReadOnlyPlusRemoteCodeLocationOrigin(
+    NamedTuple(
+        "_ReadOnlyPlusRemoteCodeLocationOrigin",
+        [
+            ("location_name", str),
+            ("url", str),
+            ("deployment", str),
+            ("token", str),
+        ],
+    ),
+    CodeLocationOrigin,
+):
+    """Identifies a non-interactable code location which is sourced from a Dagster Plus
+    deployment. Used for a local development context in order to be able to view assets
+    and other definitions from a Plus Deployment while working on local code locations.
+    """
+
+    def __new__(
+        cls,
+        location_name: str,
+        url: str,
+        deployment: str,
+        token: str,
+    ):
+        return super().__new__(
+            cls,
+            location_name=check.str_param(location_name, "location_name"),
+            url=check.str_param(url, "url"),
+            deployment=check.str_param(deployment, "deployment"),
+            token=check.str_param(token, "token"),
+        )
+
+    @property
+    def is_reload_supported(self) -> bool:
+        return False
+
+    def get_display_metadata(self) -> Mapping[str, Any]:
+        return {}
+
+    def create_location(self, instance: "DagsterInstance") -> "ReadOnlyPlusRemoteCodeLocation":
+        from dagster._core.remote_representation.code_location import ReadOnlyPlusRemoteCodeLocation
+
+        return ReadOnlyPlusRemoteCodeLocation(
+            code_location_origin=self,
+            instance=instance,
+            url=self.url,
+            deployment=self.deployment,
+            token=self.token,
+        )
+
+    def reload_location(self, instance: "DagsterInstance") -> "ReadOnlyPlusRemoteCodeLocation":
+        from dagster._core.remote_representation.code_location import ReadOnlyPlusRemoteCodeLocation
+
+        return ReadOnlyPlusRemoteCodeLocation(
+            code_location_origin=self,
+            instance=instance,
+            url=self.url,
+            deployment=self.deployment,
+            token=self.token,
+        )
+
+    @property
+    def loadable_target_origin(self) -> LoadableTargetOrigin:
+        raise DagsterInvariantViolationError(
+            "A ReadOnlyCloudMirrorCodeLocationOrigin does not directly know its loadable target."
+        )
 
 
 # Different storage name for backcompat
