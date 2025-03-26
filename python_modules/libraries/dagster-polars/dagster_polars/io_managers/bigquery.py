@@ -11,7 +11,9 @@ try:
     from dagster_gcp.bigquery.io_manager import BigQueryClient, BigQueryIOManager
     from google.cloud import bigquery as bigquery
 except ImportError as e:
-    raise ImportError("Install 'dagster-polars[gcp]' to use BigQuery functionality") from e
+    raise ImportError(
+        "Install 'dagster-polars[gcp]' to use BigQuery functionality"
+    ) from e
 
 
 class PolarsBigQueryTypeHandler(DbTypeHandler[pl.DataFrame]):
@@ -57,7 +59,9 @@ class PolarsBigQueryTypeHandler(DbTypeHandler[pl.DataFrame]):
             context.log.warning("Skipping BigQuery output as the output is None")
             skip_upload = True
         elif len(obj) == 0:
-            context.log.warning("Skipping BigQuery output as the output DataFrame is empty")
+            context.log.warning(
+                "Skipping BigQuery output as the output DataFrame is empty"
+            )
             skip_upload = True
 
         if skip_upload:
@@ -79,8 +83,12 @@ class PolarsBigQueryTypeHandler(DbTypeHandler[pl.DataFrame]):
             dataframe=obj.to_pandas(),
             destination=f"{table_slice.schema}.{table_slice.table}",
             project=table_slice.database,
-            location=context.resource_config.get("location") if context.resource_config else None,  # type: ignore
-            timeout=context.resource_config.get("timeout") if context.resource_config else None,  # type: ignore
+            location=context.resource_config.get("location")
+            if context.resource_config
+            else None,  # type: ignore
+            timeout=context.resource_config.get("timeout")
+            if context.resource_config
+            else None,  # type: ignore
             job_config=job_config,
         )
         job.result()
@@ -98,8 +106,12 @@ class PolarsBigQueryTypeHandler(DbTypeHandler[pl.DataFrame]):
         result = connection.query(
             query=BigQueryClient.get_select_statement(table_slice),
             project=table_slice.database,
-            location=context.resource_config.get("location") if context.resource_config else None,
-            timeout=context.resource_config.get("timeout") if context.resource_config else None,
+            location=context.resource_config.get("location")
+            if context.resource_config
+            else None,
+            timeout=context.resource_config.get("timeout")
+            if context.resource_config
+            else None,
         ).to_arrow()
 
         return pl.DataFrame(result)

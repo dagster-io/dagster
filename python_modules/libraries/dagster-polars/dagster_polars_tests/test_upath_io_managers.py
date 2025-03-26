@@ -58,16 +58,26 @@ def test_polars_upath_io_manager_type_annotations(
         return df.with_columns(pl.lit(context.partition_key).alias("partition"))
 
     @asset(io_manager_def=manager)
-    def downstream_multi_partitioned_eager(upstream_partitioned: dict[str, pl.DataFrame]) -> None:
+    def downstream_multi_partitioned_eager(
+        upstream_partitioned: dict[str, pl.DataFrame],
+    ) -> None:
         for _df in upstream_partitioned.values():
             assert isinstance(_df, pl.DataFrame), type(_df)
-        assert set(upstream_partitioned.keys()) == {"a", "b"}, upstream_partitioned.keys()
+        assert set(upstream_partitioned.keys()) == {
+            "a",
+            "b",
+        }, upstream_partitioned.keys()
 
     @asset(io_manager_def=manager)
-    def downstream_multi_partitioned_lazy(upstream_partitioned: dict[str, pl.LazyFrame]) -> None:
+    def downstream_multi_partitioned_lazy(
+        upstream_partitioned: dict[str, pl.LazyFrame],
+    ) -> None:
         for _df in upstream_partitioned.values():
             assert isinstance(_df, pl.LazyFrame), type(_df)
-        assert set(upstream_partitioned.keys()) == {"a", "b"}, upstream_partitioned.keys()
+        assert set(upstream_partitioned.keys()) == {
+            "a",
+            "b",
+        }, upstream_partitioned.keys()
 
     for partition_key in ["a", "b"]:
         materialize(
@@ -158,7 +168,9 @@ def test_polars_upath_io_manager_input_dict_eager(
 ):
     manager, df = io_manager_and_df
 
-    @asset(io_manager_def=manager, partitions_def=StaticPartitionsDefinition(["a", "b"]))
+    @asset(
+        io_manager_def=manager, partitions_def=StaticPartitionsDefinition(["a", "b"])
+    )
     def upstream(context: AssetExecutionContext) -> pl.DataFrame:
         return df.with_columns(pl.lit(context.partition_key).alias("partition"))
 
@@ -186,7 +198,10 @@ def test_polars_upath_io_manager_input_dict_eager_missing(
 ):
     manager, df = io_manager_and_df
 
-    @asset(io_manager_def=manager, partitions_def=StaticPartitionsDefinition(["a", "missing"]))
+    @asset(
+        io_manager_def=manager,
+        partitions_def=StaticPartitionsDefinition(["a", "missing"]),
+    )
     def upstream(context: AssetExecutionContext) -> Optional[pl.DataFrame]:
         return (
             df.with_columns(pl.lit(context.partition_key).alias("partition"))
@@ -215,7 +230,9 @@ def test_polars_upath_io_manager_input_dict_lazy(
 ):
     manager, df = io_manager_and_df
 
-    @asset(io_manager_def=manager, partitions_def=StaticPartitionsDefinition(["a", "b"]))
+    @asset(
+        io_manager_def=manager, partitions_def=StaticPartitionsDefinition(["a", "b"])
+    )
     def upstream(context: AssetExecutionContext) -> pl.DataFrame:
         return df.with_columns(pl.lit(context.partition_key).alias("partition"))
 
@@ -243,7 +260,9 @@ def test_polars_upath_io_manager_input_data_frame_partitions(
 ):
     manager, df = io_manager_and_df
 
-    @asset(io_manager_def=manager, partitions_def=StaticPartitionsDefinition(["a", "b"]))
+    @asset(
+        io_manager_def=manager, partitions_def=StaticPartitionsDefinition(["a", "b"])
+    )
     def upstream(context: AssetExecutionContext) -> pl.DataFrame:
         return df.with_columns(pl.lit(context.partition_key).alias("partition"))
 
@@ -271,7 +290,9 @@ def test_polars_upath_io_manager_input_lazy_frame_partitions_lazy(
 ):
     manager, df = io_manager_and_df
 
-    @asset(io_manager_def=manager, partitions_def=StaticPartitionsDefinition(["a", "b"]))
+    @asset(
+        io_manager_def=manager, partitions_def=StaticPartitionsDefinition(["a", "b"])
+    )
     def upstream(context: AssetExecutionContext) -> pl.DataFrame:
         return df.with_columns(pl.lit(context.partition_key).alias("partition"))
 
@@ -358,7 +379,9 @@ IO_MANAGERS_SUPPORTING_STORAGE_METADATA = (
 
 def check_skip_storage_metadata_test(io_manager_def: BasePolarsUPathIOManager):
     if not isinstance(io_manager_def, IO_MANAGERS_SUPPORTING_STORAGE_METADATA):
-        pytest.skip(f"Only {IO_MANAGERS_SUPPORTING_STORAGE_METADATA} support storage metadata")
+        pytest.skip(
+            f"Only {IO_MANAGERS_SUPPORTING_STORAGE_METADATA} support storage metadata"
+        )
 
 
 def test_upath_io_manager_multi_partitions_definition_load_multiple_partitions(
@@ -370,7 +393,9 @@ def test_upath_io_manager_multi_partitions_definition_load_multiple_partitions(
 
     partitions_def = MultiPartitionsDefinition(
         {
-            "time": DailyPartitionsDefinition(start_date=str(today - timedelta(days=3))),
+            "time": DailyPartitionsDefinition(
+                start_date=str(today - timedelta(days=3))
+            ),
             "static": StaticPartitionsDefinition(["a"]),
         }
     )
@@ -390,26 +415,36 @@ def test_upath_io_manager_multi_partitions_definition_load_multiple_partitions(
                         "time": DimensionPartitionMapping(
                             "time", TimeWindowPartitionMapping(start_offset=-1)
                         ),
-                        "static": DimensionPartitionMapping("static", IdentityPartitionMapping()),
+                        "static": DimensionPartitionMapping(
+                            "static", IdentityPartitionMapping()
+                        ),
                     }
                 )
             )
         },
     )
-    def downstream(context: AssetExecutionContext, upstream: DataFramePartitions) -> None:
+    def downstream(
+        context: AssetExecutionContext, upstream: DataFramePartitions
+    ) -> None:
         assert len(upstream.values()) == 2
 
     materialize(
         [upstream],
-        partition_key=MultiPartitionKey({"time": str(today - timedelta(days=3)), "static": "a"}),
+        partition_key=MultiPartitionKey(
+            {"time": str(today - timedelta(days=3)), "static": "a"}
+        ),
     )
     materialize(
         [upstream],
-        partition_key=MultiPartitionKey({"time": str(today - timedelta(days=2)), "static": "a"}),
+        partition_key=MultiPartitionKey(
+            {"time": str(today - timedelta(days=2)), "static": "a"}
+        ),
     )
     # materialize([upstream], partition_key=MultiPartitionKey({"time": str(today - timedelta(days=1)), "static": "a"}))
 
     materialize(
         [upstream.to_source_asset(), downstream],
-        partition_key=MultiPartitionKey({"time": str(today - timedelta(days=2)), "static": "a"}),
+        partition_key=MultiPartitionKey(
+            {"time": str(today - timedelta(days=2)), "static": "a"}
+        ),
     )

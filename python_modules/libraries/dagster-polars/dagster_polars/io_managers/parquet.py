@@ -30,7 +30,8 @@ def get_pyarrow_dataset(path: "UPath", context: InputContext) -> ds.Dataset:
         str(path),
         filesystem=fs,
         format=context_metadata.get("format", "parquet"),
-        partitioning=context_metadata.get("partitioning") or context_metadata.get("partition_by"),
+        partitioning=context_metadata.get("partitioning")
+        or context_metadata.get("partition_by"),
         partition_base_dir=context_metadata.get("partition_base_dir"),
         exclude_invalid_files=context_metadata.get("exclude_invalid_files", True),
         ignore_prefixes=context_metadata.get("ignore_prefixes", [".", "_"]),

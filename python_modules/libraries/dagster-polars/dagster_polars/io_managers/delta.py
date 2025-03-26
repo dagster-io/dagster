@@ -192,7 +192,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                     context.partition_key, MultiPartitionKey
                 ):
                     delta_write_options["partition_by"] = list(partition_by.values())
-                elif isinstance(partition_by, str) and isinstance(context.partition_key, str):
+                elif isinstance(partition_by, str) and isinstance(
+                    context.partition_key, str
+                ):
                     delta_write_options["partition_by"] = partition_by
                 else:
                     raise ValueError(
@@ -207,13 +209,17 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                     delta_write_options["predicate"] = self.get_predicate(context)
 
                 elif engine == "pyarrow":
-                    delta_write_options["partition_filters"] = self.get_partition_filters(context)
+                    delta_write_options["partition_filters"] = (
+                        self.get_partition_filters(context)
+                    )
 
                 else:
                     raise NotImplementedError(f"Invalid engine: {engine}")
 
         if delta_write_options is not None:
-            context.log.debug(f"Writing with delta_write_options: {pformat(delta_write_options)}")
+            context.log.debug(
+                f"Writing with delta_write_options: {pformat(delta_write_options)}"
+            )
 
         storage_options = self.storage_options
         try:
@@ -224,7 +230,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         df.write_delta(
             dt,
             mode=context_metadata.get("mode") or self.mode.value,
-            overwrite_schema=context_metadata.get("overwrite_schema") or self.overwrite_schema,
+            overwrite_schema=context_metadata.get("overwrite_schema")
+            or self.overwrite_schema,
             storage_options=storage_options,
             delta_write_options=delta_write_options,
         )
@@ -286,7 +293,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         delta_table_options = context_metadata.get("delta_table_options")
 
         if delta_table_options:
-            context.log.debug(f"Reading with delta_table_options: {delta_table_options}")
+            context.log.debug(
+                f"Reading with delta_table_options: {delta_table_options}"
+            )
 
         return pl.scan_delta(
             str(path),
@@ -304,9 +313,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         context.log.debug(
             f"Loading {len(context.asset_partition_keys)} partitions from {path} using {self.__class__.__name__}..."
         )
-        if context.upstream_output.definition_metadata.get("partition_by") and not is_dict_type(
-            context.dagster_type.typing_type
-        ):
+        if context.upstream_output.definition_metadata.get(
+            "partition_by"
+        ) and not is_dict_type(context.dagster_type.typing_type):
             # user enabled native partitioning and wants a `pl.DataFrame` or
             # `pl.LazyFrame`
             return self.load_from_path(context, self._with_extension(path))
@@ -321,7 +330,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             if (
                 context.upstream_output is not None
                 and context.upstream_output.definition_metadata is not None
-                and context.upstream_output.definition_metadata.get("partition_by") is not None
+                and context.upstream_output.definition_metadata.get("partition_by")
+                is not None
             ):
                 # upstream asset has "partition_by" metadata set, so
                 # partitioning for it is handled by DeltaLake itself
@@ -349,9 +359,13 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         if isinstance(context, OutputContext):
             partition_by = context.definition_metadata.get("partition_by")
         elif isinstance(context, InputContext) and context.upstream_output is not None:
-            partition_by = context.upstream_output.definition_metadata.get("partition_by")
+            partition_by = context.upstream_output.definition_metadata.get(
+                "partition_by"
+            )
         else:
-            raise DagsterInvariantViolationError(f"Invalid context type: {type(context)}")
+            raise DagsterInvariantViolationError(
+                f"Invalid context type: {type(context)}"
+            )
 
         if partition_by is None or not context.has_asset_partitions:
             filters = []
@@ -365,7 +379,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 for dim, key in partition_key.keys_by_dimension.items():
                     all_keys_by_dim[dim].append(key)
 
-            filters = [(partition_by[dim], "in", keys) for dim, keys in all_keys_by_dim.items()]
+            filters = [
+                (partition_by[dim], "in", keys) for dim, keys in all_keys_by_dim.items()
+            ]
 
         elif isinstance(partition_by, str):
             assert not isinstance(context.asset_partition_keys[0], MultiPartitionKey), (
@@ -375,7 +391,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
             filters = [(partition_by, "in", context.asset_partition_keys)]
 
         else:
-            raise NotImplementedError(f"Unsupported `partition_by` metadata value: {partition_by}")
+            raise NotImplementedError(
+                f"Unsupported `partition_by` metadata value: {partition_by}"
+            )
 
         return filters
 
@@ -393,9 +411,13 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         if isinstance(context, OutputContext):
             partition_by = context.definition_metadata.get("partition_by")
         elif isinstance(context, InputContext) and context.upstream_output is not None:
-            partition_by = context.upstream_output.definition_metadata.get("partition_by")
+            partition_by = context.upstream_output.definition_metadata.get(
+                "partition_by"
+            )
         else:
-            raise DagsterInvariantViolationError(f"Invalid context type: {type(context)}")
+            raise DagsterInvariantViolationError(
+                f"Invalid context type: {type(context)}"
+            )
 
         def key_to_predicate(key):
             return f"'{key}'"
@@ -432,7 +454,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 predicate = f"{partition_by} in ({', '.join(map(key_to_predicate, context.asset_partition_keys))})"
 
         else:
-            raise NotImplementedError(f"Unsupported `partition_by` metadata value: {partition_by}")
+            raise NotImplementedError(
+                f"Unsupported `partition_by` metadata value: {partition_by}"
+            )
 
         return predicate
 
@@ -504,7 +528,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
 
 # polars>=1.14.0 requires use_pyarrow=True when setting pyarrow_options
-def _get_pyarrow_options_kwargs(pyarrow_options: Mapping[str, object]) -> Mapping[str, Any]:
+def _get_pyarrow_options_kwargs(
+    pyarrow_options: Mapping[str, object],
+) -> Mapping[str, Any]:
     kwargs: dict[str, object] = {"pyarrow_options": pyarrow_options}
     if packaging.version.parse(pl.__version__) >= packaging.version.parse("1.14.0"):
         kwargs["use_pyarrow"] = True

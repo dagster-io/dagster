@@ -29,7 +29,7 @@ For more information on how to use Dagster with Polars, see [dagster-polars docu
 
 ## Usage
 
-`dagster-polars` automatically recognizes Patito type annotations and performs data validation using the specified model:
+`dagster-polars` automatically recognizes Patito type annotations, performs data validation using the specified model, and infers table metadata such as column constraints, data types descriptions.
 
 ```python
 import dagster as dg
@@ -37,8 +37,8 @@ import patito as pt
 import polars as pl
 
 class User(pt.Model):
-    uid: str = pt.Field(unique=True)
-    age: int | None = pt.Field(gt=18)
+    uid: str = pt.Field(unique=True, description="User ID")
+    age: int | None = pt.Field(gt=18, description="User age")
 
 
 @dg.asset(io_manager_key="polars_parquet_io_manager")

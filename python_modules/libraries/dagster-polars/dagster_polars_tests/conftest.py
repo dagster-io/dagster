@@ -8,7 +8,11 @@ import pytest
 import pytest_cases
 from _pytest.tmpdir import TempPathFactory
 from dagster import BetaWarning, DagsterInstance, PreviewWarning
-from dagster_polars import BasePolarsUPathIOManager, PolarsDeltaIOManager, PolarsParquetIOManager
+from dagster_polars import (
+    BasePolarsUPathIOManager,
+    PolarsDeltaIOManager,
+    PolarsParquetIOManager,
+)
 
 logging.getLogger("alembic.runtime.migration").setLevel(logging.WARNING)
 warnings.simplefilter("ignore", category=PreviewWarning)
@@ -17,11 +21,15 @@ warnings.simplefilter("ignore", category=BetaWarning)
 
 @pytest.fixture
 def dagster_instance(tmp_path_factory: TempPathFactory) -> DagsterInstance:
-    return DagsterInstance.ephemeral(tempdir=str(tmp_path_factory.mktemp("dagster_home")))
+    return DagsterInstance.ephemeral(
+        tempdir=str(tmp_path_factory.mktemp("dagster_home"))
+    )
 
 
 @pytest.fixture
-def polars_parquet_io_manager(dagster_instance: DagsterInstance) -> PolarsParquetIOManager:
+def polars_parquet_io_manager(
+    dagster_instance: DagsterInstance,
+) -> PolarsParquetIOManager:
     return PolarsParquetIOManager(base_dir=dagster_instance.storage_directory())
 
 
@@ -31,8 +39,12 @@ def polars_delta_io_manager(dagster_instance: DagsterInstance) -> PolarsDeltaIOM
 
 
 @pytest.fixture(scope="session")
-def session_scoped_dagster_instance(tmp_path_factory: TempPathFactory) -> DagsterInstance:
-    return DagsterInstance.ephemeral(tempdir=str(tmp_path_factory.mktemp("dagster_home_session")))
+def session_scoped_dagster_instance(
+    tmp_path_factory: TempPathFactory,
+) -> DagsterInstance:
+    return DagsterInstance.ephemeral(
+        tempdir=str(tmp_path_factory.mktemp("dagster_home_session"))
+    )
 
 
 @pytest.fixture(scope="session")
@@ -122,7 +134,10 @@ def io_manager_and_df(  # to use without hypothesis
 @pytest_cases.fixture  # type: ignore  # (bad stubs)
 @pytest_cases.parametrize(
     "io_manager,frame",
-    [(PolarsParquetIOManager, _lazy_df_for_parquet), (PolarsDeltaIOManager, _lazy_df_for_delta)],
+    [
+        (PolarsParquetIOManager, _lazy_df_for_parquet),
+        (PolarsDeltaIOManager, _lazy_df_for_delta),
+    ],
 )
 def io_manager_and_lazy_df(  # to use without hypothesis
     io_manager: type[BasePolarsUPathIOManager],

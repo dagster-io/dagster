@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import polars as pl
 from dagster import (
@@ -14,21 +14,23 @@ from dagster import (
 
 if TYPE_CHECKING:
     import patito as pt
+    from patito._pydantic.column_info import ColumnInfo
 
 VALID_DATAFRAME_CLASSES = (pl.DataFrame,)
 
 
 def get_patito_metadata(model: type["pt.Model"]) -> dict[str, MetadataValue]:
     """Extracts Dagster metadata from a Patito model."""
-    table_columns = []
-    schema_dtypes: dict = model.dtypes
-    column_infos: dict = model.column_infos
+    table_columns: list[TableColumn] = []
+    schema_dtypes: dict[str, Any] = model.dtypes
+    column_infos: dict[str, ColumnInfo] = model.column_infos
 
     for col, properties in model._schema_properties().items():  # noqa: SLF001
         table_columns.append(
             TableColumn(
                 name=col,
                 type=str(schema_dtypes[col]),
+                description=properties.get("description"),
                 constraints=TableColumnConstraints(
                     unique=column_infos[col].unique
                     if column_infos[col].unique is not None
@@ -43,6 +45,9 @@ def get_patito_metadata(model: type["pt.Model"]) -> dict[str, MetadataValue]:
     return {
         "dagster/column_schema": MetadataValue.table_schema(table_schema),
     }
+
+
+HANDLES_DATA_VALIDATION_ATTRIBUTE = "_handles_data_validation"
 
 
 def patito_model_to_dagster_type(
@@ -85,7 +90,8 @@ def patito_model_to_dagster_type(
 
     """
     type_check_fn = _patito_model_to_type_check_fn(model)
-    return DagsterType(
+
+    dagster_type = DagsterType(
         type_check_fn=type_check_fn,
         name=model.__class__.__name__,
         metadata=get_patito_metadata(model),
@@ -93,6 +99,13 @@ def patito_model_to_dagster_type(
         description=description
         or f"Polars frame conforming to Patito model {model.__class__.__name__}",
     )
+
+    # this is a dirty hack --- this configures dagster-polars IOManager to skip data validation
+    # as it is already performed by the DagsterType. We should work on bringing this functionality
+    # into DagsterType itself
+    setattr(dagster_type, HANDLES_DATA_VALIDATION_ATTRIBUTE, True)
+
+    return dagster_type
 
 
 def _patito_model_to_type_check_fn(
