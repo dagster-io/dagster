@@ -5,6 +5,7 @@ import re
 import string
 import sys
 import time
+from collections import defaultdict
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack, contextmanager
@@ -3046,8 +3047,19 @@ class TestEventLogStorage:
         failure_records = instance.get_records_for_run(
             run_id=test_run_id, of_type=DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
         ).records
+        if not storage.can_store_asset_failure_events:
+            assert len(failure_records) == 0
+        else:
+            assert len(failure_records) == 15
 
-        assert len(failure_records) == 0
+            failed_partitions_by_step_key = defaultdict(set)
+            for record in failure_records:
+                assert record.event_log_entry.dagster_event.is_asset_failed_to_materialize
+                failed_partitions_by_step_key[record.event_log_entry.step_key].add(
+                    record.event_log_entry.dagster_event.asset_failed_to_materialize_data.partition
+                )
+
+            assert failed_partitions_by_step_key == failed_partitions
 
     def test_get_latest_storage_ids_by_partition(self, storage, instance):
         a = AssetKey(["a"])
@@ -6594,7 +6606,7 @@ class TestEventLogStorage:
         assert limit.limit == 1
         assert limit.from_default
 
-    def test_fetch_failed_materializations(self, test_run_id, storage: EventLogStorage):
+    def test_fetch_failed_materializations(self, test_run_id, storage: EventLogStorage, instance):
         assert len(storage.get_logs_for_run(test_run_id)) == 0
         asset_key_1 = AssetKey("asset_1")
         asset_key_2 = AssetKey("asset_2")
@@ -6622,4 +6634,51 @@ class TestEventLogStorage:
         all_failed_records_result = storage.fetch_failed_materializations(
             records_filter=asset_key_1, limit=10
         )
-        assert len(all_failed_records_result.records) == 0
+        if not storage.can_store_asset_failure_events:
+            assert len(all_failed_records_result.records) == 0
+        else:
+            assert len(all_failed_records_result.records) == 5
+            assert all(
+                failed_record.asset_key == asset_key_1
+                for failed_record in all_failed_records_result.records
+            )
+            assert not all_failed_records_result.has_more
+
+            first_two_failed_records_result = storage.fetch_failed_materializations(
+                records_filter=asset_key_1, limit=2
+            )
+            assert len(first_two_failed_records_result.records) == 2
+            assert all(
+                failed_record.asset_key == asset_key_1
+                for failed_record in first_two_failed_records_result.records
+            )
+            assert first_two_failed_records_result.has_more
+            assert first_two_failed_records_result.cursor
+
+            remaining_failed_records_result = storage.fetch_failed_materializations(
+                records_filter=asset_key_1, limit=5, cursor=first_two_failed_records_result.cursor
+            )
+            assert len(remaining_failed_records_result.records) == 3
+            assert all(
+                failed_record.asset_key == asset_key_1
+                for failed_record in remaining_failed_records_result.records
+            )
+            assert not remaining_failed_records_result.has_more
+
+            assert set(
+                record.storage_id for record in first_two_failed_records_result.records
+            ) | set(record.storage_id for record in remaining_failed_records_result.records) == set(
+                record.storage_id for record in all_failed_records_result.records
+            )
+
+            failed_records_for_partitions = storage.fetch_failed_materializations(
+                records_filter=AssetRecordsFilter(
+                    asset_key=asset_key_1, asset_partitions=["1", "2"]
+                ),
+                limit=5,
+            )
+            assert len(failed_records_for_partitions.records) == 2
+            assert all(
+                failed_record.asset_key == asset_key_1
+                for failed_record in failed_records_for_partitions.records
+            )
