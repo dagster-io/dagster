@@ -5,6 +5,7 @@ from contextvars import ContextVar
 import pytest
 from dagster._core.test_utils import environ
 from dagster._core.utils import InheritContextThreadPoolExecutor, parse_env_var
+from dagster._utils.merger import merge_dicts
 
 
 def test_parse_env_var_no_equals():
@@ -75,3 +76,16 @@ def test_inherit_context_threadpool_properties() -> None:
         f = None
         # now they dont
         assert executor.weak_tracked_futures_count == 0
+
+
+def test_merge():
+    # two element merge
+    assert merge_dicts({}, {}) == {}
+    assert merge_dicts({1: 2}, {}) == {1: 2}
+    assert merge_dicts({}, {1: 2}) == {1: 2}
+    assert merge_dicts({1: 1}, {1: 2}) == {1: 2}
+
+    # three element merge
+    assert merge_dicts({}, {}, {}) == {}
+    assert merge_dicts({1: 2}, {2: 3}, {3: 4}) == {1: 2, 2: 3, 3: 4}
+    assert merge_dicts({1: 2}, {1: 3}, {1: 4}) == {1: 4}

@@ -739,9 +739,6 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
         yield
 
 
-class TestType: ...
-
-
 def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> CurrentWorkspace:
     remote_repos = {}
     for repo in repos:

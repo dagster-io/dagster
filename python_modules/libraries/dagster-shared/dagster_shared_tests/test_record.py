@@ -6,7 +6,6 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Annotated, Any, Generic, NamedTuple, Optional, TypeVar, Union
 
 import pytest
-from dagster._utils.cached_method import cached_method
 from dagster_shared.check.builder import INJECTED_DEFAULT_VALS_LOCAL_VAR
 from dagster_shared.check.functions import CheckError
 from dagster_shared.record import (
@@ -21,11 +20,12 @@ from dagster_shared.record import (
     replace,
 )
 from dagster_shared.serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
+from dagster_shared.utils.cached_method import cached_method
 from dagster_shared.utils.hash import hash_collection
 from pydantic import BaseModel, TypeAdapter
 
 if TYPE_CHECKING:
-    from dagster._core.test_utils import TestType
+    from dagster_shared.utils.test import TestType
 
 
 def test_kwargs_only() -> None:
@@ -459,17 +459,17 @@ def test_lazy_import():
 
     @record
     class AnnotatedModel:
-        foos: list[Annotated["TestType", ImportFrom("dagster._core.test_utils")]]
+        foos: list[Annotated["TestType", ImportFrom("dagster_shared.utils.test")]]
 
     assert AnnotatedModel(foos=[])
 
     with pytest.raises(
-        check.CheckError, match="Expected <class 'dagster._core.test_utils.TestType'>"
+        check.CheckError, match="Expected <class 'dagster_shared.utils.test.TestType'>"
     ):
         AnnotatedModel(foos=[1, 2, 3])  # pyright: ignore[reportArgumentType]
 
     def _out_of_scope():
-        from dagster._core.test_utils import TestType
+        from dagster_shared.utils.test import TestType
 
         return AnnotatedModel(foos=[TestType()])
 
