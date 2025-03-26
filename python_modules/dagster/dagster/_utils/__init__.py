@@ -42,7 +42,10 @@ from typing import (  # noqa: UP035
 )
 
 import dagster_shared.seven as seven
-import packaging.version
+from dagster_shared.libraries import (
+    library_version_from_core_version as library_version_from_core_version,
+    parse_package_version as parse_package_version,
+)
 from filelock import FileLock
 from pydantic import BaseModel
 from typing_extensions import Literal, TypeAlias, TypeGuard
@@ -92,34 +95,6 @@ def check_for_debug_crash(
     os.kill(os.getpid(), kill_signal_or_exception)
     time.sleep(10)
     raise Exception("Process didn't terminate after sending crash signal")
-
-
-# Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
-# version). 16 is from the 0.16.0 that library versions stayed on when core went to 1.0.0.
-def library_version_from_core_version(core_version: str) -> str:
-    parsed_version = parse_package_version(core_version)
-
-    release = parsed_version.release
-    if release[0] >= 1:
-        library_version = ".".join(["0", str(16 + release[1]), str(release[2])])
-
-        if parsed_version.is_prerelease:
-            library_version = library_version + "".join(
-                [str(pre) for pre in check.not_none(parsed_version.pre)]
-            )
-
-        if parsed_version.is_postrelease:
-            library_version = library_version + "post" + str(parsed_version.post)
-
-        return library_version
-    else:
-        return core_version
-
-
-def parse_package_version(version_str: str) -> packaging.version.Version:
-    parsed_version = packaging.version.parse(version_str)
-    assert isinstance(parsed_version, packaging.version.Version)
-    return parsed_version
 
 
 def convert_dagster_submodule_name(name: str, mode: Literal["private", "public"]) -> str:

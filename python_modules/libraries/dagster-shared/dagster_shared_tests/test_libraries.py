@@ -1,18 +1,24 @@
 import os
 import subprocess
+import warnings
 from pathlib import Path
 
-import dagster
 import dagster_shared
 import pytest
-from dagster_shared.libraries import DagsterLibraryRegistry
+from dagster import __version__ as dagster_version
+from dagster_shared.libraries import (
+    DagsterLibraryRegistry,
+    check_dagster_package_version,
+    core_version_from_library_version,
+    library_version_from_core_version,
+)
 
 EXCLUDE_LIBRARIES = []
 
 
 def test_library_registry():
     assert DagsterLibraryRegistry.get() == {
-        "dagster": dagster.__version__,
+        "dagster": dagster_version,
         "dagster-shared": dagster_shared.__version__,
     }
 
@@ -21,8 +27,8 @@ def test_non_dagster_library_registry(library_registry_fixture):
     DagsterLibraryRegistry.register("not-dagster", "0.0.1", is_dagster_package=False)
 
     assert DagsterLibraryRegistry.get() == {
-        "dagster": dagster.version.__version__,
         "dagster-shared": dagster_shared.__version__,
+        "dagster": dagster_version,
         "not-dagster": "0.0.1",
     }
 
@@ -58,3 +64,45 @@ def library_registry_fixture():
     yield
 
     DagsterLibraryRegistry._libraries = previous_libraries  # noqa: SLF001  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_check_dagster_package_version(monkeypatch):
+    monkeypatch.setattr(dagster_shared.version, "__version__", "0.17.0")  # type: ignore
+
+    # Ensure no warning emitted
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        check_dagster_package_version("foo", "1.1.0")
+
+    # Lib version matching 1.1.0-- see dagster._utils.library_version_from_core_version
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        check_dagster_package_version("foo", "0.17.0")
+
+    with pytest.warns(Warning):  # minor version
+        check_dagster_package_version("foo", "1.2.0")
+
+    with pytest.warns(Warning):  # patch version
+        check_dagster_package_version("foo", "1.1.1")
+
+    with pytest.warns(Warning):  # minor version
+        check_dagster_package_version("foo", "0.18.0")
+
+    with pytest.warns(Warning):  # patch version
+        check_dagster_package_version("foo", "0.17.1")
+
+
+def test_library_version_from_core_version():
+    assert library_version_from_core_version("1.1.16") == "0.17.16"
+    assert library_version_from_core_version("0.17.16") == "0.17.16"
+    assert library_version_from_core_version("1.1.16pre0") == "0.17.16rc0"
+    assert library_version_from_core_version("1.1.16rc0") == "0.17.16rc0"
+    assert library_version_from_core_version("1.1.16post0") == "0.17.16post0"
+
+
+def test_core_version_from_library_version():
+    assert core_version_from_library_version("0.17.16") == "1.1.16"
+    assert core_version_from_library_version("1.1.16") == "1.1.16"
+    assert core_version_from_library_version("0.17.16pre0") == "1.1.16rc0"
+    assert core_version_from_library_version("0.17.16rc0") == "1.1.16rc0"
+    assert core_version_from_library_version("0.17.16post0") == "1.1.16post0"

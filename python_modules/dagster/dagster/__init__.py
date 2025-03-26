@@ -72,6 +72,7 @@ sys.meta_path.insert(
 # ##### DYNAMIC IMPORTS
 # ########################
 
+from dagster_shared.libraries import DagsterLibraryRegistry
 from dagster_shared.serdes import (
     deserialize_value as deserialize_value,
     serialize_value as serialize_value,
@@ -637,6 +638,8 @@ from dagster._utils.warnings import (
     SupersessionWarning as SupersessionWarning,
 )
 from dagster.version import __version__ as __version__
+
+DagsterLibraryRegistry.register("dagster", __version__)
 
 # ruff: isort: split
 
