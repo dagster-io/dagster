@@ -4,7 +4,7 @@ from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple, Optional, cast
 
 import click
 import yaml
@@ -137,6 +137,24 @@ def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, s
     return {"python_module": entry}
 
 
+def _semver(version: str) -> Optional[tuple[int, int, int]]:
+    try:
+        return cast(tuple[int, int, int], tuple(map(int, version.split("."))))
+    except ValueError:
+        return None
+
+
+def _semver_less_than(version: str, other: str) -> bool:
+    version_semver = _semver(version)
+    other_semver = _semver(other)
+    if version_semver is None or other_semver is None:
+        return False
+    return version_semver < other_semver
+
+
+MIN_ENV_VAR_INJECTION_VERSION = "1.10.7"
+
+
 @contextmanager
 def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
     with NamedTemporaryFile(mode="w+", delete=True) as temp_workspace_file:
@@ -147,6 +165,18 @@ def create_temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
             for spec in dg_context.project_specs:
                 project_root = dg_context.root_path / spec.path
                 project_context: DgContext = dg_context.with_root_path(project_root)
+
+                if (
+                    project_context.use_dg_managed_environment
+                    and (project_context.root_path / ".env").exists()
+                    and _semver_less_than(
+                        project_context.get_module_version("dagster"), MIN_ENV_VAR_INJECTION_VERSION
+                    )
+                ):
+                    click.echo(
+                        f"Warning: Dagster version {project_context.get_module_version('dagster')} is less than the minimum required version for .env file environment "
+                        f"variable injection ({MIN_ENV_VAR_INJECTION_VERSION}). Environment variables will not be injected for location {project_context.code_location_name}."
+                    )
                 entries.append(_workspace_entry_for_project(project_context))
         yaml.dump({"load_from": entries}, temp_workspace_file)
         temp_workspace_file.flush()
