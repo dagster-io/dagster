@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import requests
 from dagster import Failure, MetadataValue, get_dagster_logger
@@ -248,7 +248,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
         finished_at_start: datetime.datetime,
         finished_at_end: datetime.datetime,
         offset: int = 0,
-    ):
+    ) -> Sequence[Mapping[str, Any]]:
         """Retrieves a batch of dbt cloud runs from a dbt Cloud workspace for a given project and environment.
 
         Args:
@@ -265,19 +265,22 @@ class DbtCloudWorkspaceClient(DagsterModel):
         Returns:
             List[Dict[str, Any]]: A List of parsed json data from the response to this request
         """
-        return self._make_request(
-            method="get",
-            endpoint="runs",
-            base_url=self.api_v2_url,
-            params={
-                "account_id": self.account_id,
-                "environment_id": environment_id,
-                "project_id": project_id,
-                "limit": DAGSTER_DBT_CLOUD_BATCH_RUNS_REQUEST_LIMIT,
-                "offset": offset,
-                "finished_at__range": f"""["{finished_at_start.isoformat()}", "{finished_at_end.isoformat()}"]""",
-                "order_by": "finished_at",
-            },
+        return cast(
+            Sequence[Mapping[str, Any]],
+            self._make_request(
+                method="get",
+                endpoint="runs",
+                base_url=self.api_v2_url,
+                params={
+                    "account_id": self.account_id,
+                    "environment_id": environment_id,
+                    "project_id": project_id,
+                    "limit": DAGSTER_DBT_CLOUD_BATCH_RUNS_REQUEST_LIMIT,
+                    "offset": offset,
+                    "finished_at__range": f"""["{finished_at_start.isoformat()}", "{finished_at_end.isoformat()}"]""",
+                    "order_by": "finished_at",
+                },
+            ),
         )
 
     def get_run_details(self, run_id: int) -> Mapping[str, Any]:
