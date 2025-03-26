@@ -1,6 +1,6 @@
 import asyncio
 from abc import abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Any, Optional  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Sequence  # noqa: UP035
 
 from dagster_shared.serdes import whitelist_for_serdes
 
@@ -17,6 +17,7 @@ from dagster._core.definitions.declarative_automation.operators.dep_operators im
     EntityMatchesCondition,
 )
 from dagster._record import copy, record
+from dagster._utils.security import non_secure_md5_hash_str
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AssetSelection
@@ -53,6 +54,17 @@ class ChecksAutomationCondition(BuiltinAutomationCondition[AssetKey]):
     @property
     def requires_cursor(self) -> bool:
         return False
+
+    def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
+        """Ignore allow_selection / ignore_selection for the cursor hash."""
+        parts = [str(parent_unique_id), str(index), self.base_name]
+        return non_secure_md5_hash_str("".join(parts).encode())
+
+    def get_backcompat_node_unique_ids(
+        self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
+    ) -> Sequence[str]:
+        # backcompat for previous cursors where the allow/ignore selection influenced the hash
+        return [super().get_node_unique_id(parent_unique_id=parent_unique_id, index=index)]
 
     def allow(self, selection: "AssetSelection") -> "ChecksAutomationCondition":
         """Returns a copy of this condition that will only consider dependencies within the provided

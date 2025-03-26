@@ -131,6 +131,27 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         parts = [str(parent_unique_id), str(index), self.name]
         return non_secure_md5_hash_str("".join(parts).encode())
 
+    def get_backcompat_node_unique_ids(
+        self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
+    ) -> Sequence[str]:
+        """Used for backwards compatibility when condition unique id logic changes."""
+        return []
+
+    def get_node_unique_ids(
+        self, *, parent_unique_ids: Sequence[Optional[str]], index: Optional[int]
+    ) -> Sequence[str]:
+        unique_ids = []
+        for parent_unique_id in parent_unique_ids:
+            unique_ids.extend(
+                [
+                    self.get_node_unique_id(parent_unique_id=parent_unique_id, index=index),
+                    *self.get_backcompat_node_unique_ids(
+                        parent_unique_id=parent_unique_id, index=index
+                    ),
+                ]
+            )
+        return unique_ids
+
     def get_unique_id(
         self, *, parent_node_unique_id: Optional[str] = None, index: Optional[int] = None
     ) -> str:
@@ -783,7 +804,7 @@ class AutomationResult(Generic[T_EntityKey]):
 
     @property
     def condition_unique_id(self) -> str:
-        return self._context.condition_unique_id
+        return self._context.condition_unique_ids[0]
 
     @cached_property
     def value_hash(self) -> str:
