@@ -285,7 +285,7 @@ class DbtCliEventMessage:
                 dbt artifacts while generating events.
 
         Returns:
-            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]:
                 A set of corresponding Dagster events.
 
                 In a Dagster asset definition, the following are yielded:
@@ -293,9 +293,10 @@ class DbtCliEventMessage:
                 - AssetCheckResult for dbt test results that are enabled as asset checks.
                 - AssetObservation for dbt test results that are not enabled as asset checks.
 
-                In a Dagster op definition, the following are yielded:
-                - AssetMaterialization for dbt test results that are not enabled as asset checks.
-                - AssetObservation for dbt test results.
+               In a Dagster op definition, the following are yielded:
+                - AssetMaterialization refables (e.g. models, seeds, snapshots.)
+                - AssetCheckEvaluation for dbt test results that are enabled as asset checks.
+                - AssetObservation for dbt test results that are not enabled as asset checks.
         """
         if not self.is_result_event(self.raw_event):
             return
