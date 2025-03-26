@@ -4,7 +4,7 @@ from typing import (
     Optional,
     Sequence,
 )
-from dagster._seven import json
+from dagster_shared.seven import json
 
 from typing_extensions import TypeVar
 
