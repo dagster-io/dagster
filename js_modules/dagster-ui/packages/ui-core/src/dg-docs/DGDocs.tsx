@@ -1,4 +1,4 @@
-import {ComponentTags} from '@dagster-io/dg-docs-components';
+import ComponentTags from '@dagster-io/dg-docs-components/ComponentTags';
 
 export const DGDocs = () => {
   const tags = ['component', 'documentation'];

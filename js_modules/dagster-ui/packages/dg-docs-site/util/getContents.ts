@@ -1,4 +1,4 @@
-import {ComponentType, Contents, Package} from '@/util/types';
+import {ComponentType, Contents, Package} from '@dagster-io/dg-docs-components/types';
 import {promises as fs} from 'fs';
 import path from 'path';
 import process from 'process';

@@ -1,7 +1,8 @@
 import getContents, {getComponent} from '@/util/getContents';
+import ComponentDetails from '@dagster-io/dg-docs-components/ComponentDetails';
 
 import styles from './css/ComponentPage.module.css';
-import ComponentPageClient from './ComponentPage.client';
+
 interface Props {
   params: Promise<{pkg: string; component: string}>;
 }
@@ -22,7 +23,7 @@ export default async function ComponentPage({params}: Props) {
     <div className={styles.outer}>
       <div className={styles.container}>
         <div className={styles.main}>
-          <ComponentPageClient config={componentConfig} />
+          <ComponentDetails config={componentConfig} />
         </div>
       </div>
       <div className={styles.tableOfContents}>

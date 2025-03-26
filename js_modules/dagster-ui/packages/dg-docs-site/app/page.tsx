@@ -1,6 +1,6 @@
 import getContents from '../util/getContents';
 import styles from './css/page.module.css';
-import ComponentHeader from './ComponentHeader.client';
+import ComponentHeader from '@dagster-io/dg-docs-components/ComponentHeader';
 import Link from 'next/link';
 
 export default async function Home() {

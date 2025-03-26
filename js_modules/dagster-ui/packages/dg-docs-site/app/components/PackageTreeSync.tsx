@@ -1,6 +1,8 @@
 'use client';
 
-import {Contents, PackageTree} from '@dagster-io/dg-docs-components';
+import PackageTree from '@dagster-io/dg-docs-components/PackageTree';
+import {Contents} from '@dagster-io/dg-docs-components/types';
+
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {HTMLProps} from 'react';

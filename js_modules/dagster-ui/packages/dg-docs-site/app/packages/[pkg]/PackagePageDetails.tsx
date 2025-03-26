@@ -1,7 +1,7 @@
 'use client';
 
-import {DocsLinkProps, PackageDetails, Package} from '@dagster-io/dg-docs-components';
-
+import {DocsLinkProps, Package} from '@dagster-io/dg-docs-components/types';
+import PackageDetails from '@dagster-io/dg-docs-components/PackageDetails';
 import styles from './css/PackagePageDetails.module.css';
 import Link from 'next/link';
 

@@ -1,3 +1,5 @@
+'use client';
+
 import clsx from 'clsx';
 import {JSONSchema7, JSONSchema7Definition, JSONSchema7TypeName} from 'json-schema';
 import {useState} from 'react';
