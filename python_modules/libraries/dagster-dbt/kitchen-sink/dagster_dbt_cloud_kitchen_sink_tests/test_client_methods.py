@@ -72,6 +72,9 @@ def test_cloud_job_apis(
     batched_run = DbtCloudRun.from_run_details(run_details=next(iter(batched_runs)))
     assert batched_run.id == run.id
 
+    run_artifacts = client.list_run_artifacts(run_id=run.id)
+    assert "run_results.json" in run_artifacts
+
     run_results = client.get_run_results_json(run_id=polled_run.id)
     assert {result["unique_id"] for result in run_results["results"]} == {
         "model.test_environment.customers",

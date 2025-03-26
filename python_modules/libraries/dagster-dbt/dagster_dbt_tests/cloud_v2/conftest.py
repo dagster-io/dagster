@@ -726,6 +726,21 @@ SAMPLE_LIST_RUNS_RESPONSE = {
     },
 }
 
+# Taken from dbt Cloud REST API documentation
+# https://docs.getdbt.com/dbt-cloud/api-v2#/operations/List%20Run%20Artifacts
+SAMPLE_LIST_RUN_ARTIFACTS = {
+    "data": [
+        "manifest.json",
+        "run_results.json",
+    ],
+    "status": {
+        "code": 200,
+        "is_success": True,
+        "user_message": "string",
+        "developer_message": "string",
+    },
+}
+
 
 @pytest.fixture(name="credentials")
 def credentials_fixture() -> DbtCloudCredentials:
@@ -820,6 +835,12 @@ def all_api_mocks_fixture(
         method=responses.GET,
         url=f"{TEST_REST_API_BASE_URL}/runs",
         json=SAMPLE_LIST_RUNS_RESPONSE,
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/runs/{TEST_RUN_ID}/artifacts",
+        json=SAMPLE_LIST_RUN_ARTIFACTS,
         status=200,
     )
     yield fetch_workspace_data_api_mocks

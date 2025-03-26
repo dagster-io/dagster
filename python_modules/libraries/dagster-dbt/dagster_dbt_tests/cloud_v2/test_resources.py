@@ -60,8 +60,9 @@ def test_basic_resource_request(
         finished_at_start=TEST_FINISHED_AT_START,
         finished_at_end=TEST_FINISHED_AT_END,
     )
+    client.list_run_artifacts(run_id=TEST_RUN_ID)
 
-    assert len(all_api_mocks.calls) == 9
+    assert len(all_api_mocks.calls) == 10
     assert_rest_api_call(call=all_api_mocks.calls[0], endpoint="jobs", method="GET")
     assert_rest_api_call(call=all_api_mocks.calls[1], endpoint="jobs", method="POST")
     assert_rest_api_call(
@@ -85,6 +86,9 @@ def test_basic_resource_request(
         call=all_api_mocks.calls[7], endpoint=f"environments/{TEST_ENVIRONMENT_ID}", method="GET"
     )
     assert_rest_api_call(call=all_api_mocks.calls[8], endpoint="runs", method="GET")
+    assert_rest_api_call(
+        call=all_api_mocks.calls[9], endpoint=f"runs/{TEST_RUN_ID}/artifacts", method="GET"
+    )
 
 
 def test_get_or_create_dagster_adhoc_job(
