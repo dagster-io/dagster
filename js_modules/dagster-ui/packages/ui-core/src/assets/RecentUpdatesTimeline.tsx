@@ -39,7 +39,7 @@ type Props = {
 };
 
 export const RecentUpdatesTimelineForAssetKey = memo((props: {assetKey: AssetKey}) => {
-  const data = useRecentAssetEvents(props.assetKey, {}, {assetHasDefinedPartitions: false});
+  const data = useRecentAssetEvents(props.assetKey, 100);
   return <RecentUpdatesTimeline assetKey={props.assetKey} {...data} />;
 });
 
