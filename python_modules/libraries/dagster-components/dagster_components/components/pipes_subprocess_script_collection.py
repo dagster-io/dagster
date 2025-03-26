@@ -3,7 +3,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING
 
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
@@ -12,35 +12,24 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 from dagster_components.core.component import Component, ComponentLoadContext
-from dagster_components.resolved.core_models import AssetSpecModel, ResolvedAssetSpec
-from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
+from dagster_components.resolved.core_models import ResolvedAssetSpec
+from dagster_components.resolved.model import Resolved
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 
-class PipesSubprocessScriptModel(ResolvableModel):
-    path: str
-    assets: Sequence[AssetSpecModel]
-
-
 @dataclass
-class PipesSubprocessScript(ResolvedFrom[PipesSubprocessScriptModel]):
+class PipesSubprocessScript(Resolved):
     path: str
     assets: Sequence[ResolvedAssetSpec]
 
 
-class PipesSubprocessScriptCollectionModel(ResolvableModel):
-    scripts: Sequence[PipesSubprocessScriptModel]
-
-
 @dataclass
-class PipesSubprocessScriptCollectionComponent(
-    Component, ResolvedFrom[PipesSubprocessScriptCollectionModel]
-):
+class PipesSubprocessScriptCollectionComponent(Component, Resolved):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
 
-    scripts: Annotated[Sequence[PipesSubprocessScript], Resolver.from_annotation()]
+    scripts: Sequence[PipesSubprocessScript]
 
     @cached_property
     def specs_by_path(self) -> Mapping[str, Sequence[AssetSpec]]:

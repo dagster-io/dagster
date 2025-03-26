@@ -12,10 +12,10 @@ from dagster_components import Component, ComponentLoadContext
 class DuckDbComponent(Component):
     """A component that allows you to write SQL without learning dbt or Dagster's concepts."""
 
-    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         name = "op_name"
         asset_specs = [dg.AssetSpec(key="the_key")]
-        path = (load_context.path / Path("raw_customers.csv")).absolute()
+        path = (context.path / Path("raw_customers.csv")).absolute()
         assert path.exists(), f"Path {path} does not exist."
 
         @dg.multi_asset(name=name, specs=asset_specs)

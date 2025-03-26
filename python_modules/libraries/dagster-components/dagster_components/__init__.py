@@ -19,14 +19,11 @@ from dagster_components.resolved.context import ResolutionContext as ResolutionC
 from dagster_components.resolved.core_models import (
     AssetAttributesModel as AssetAttributesModel,
     AssetPostProcessorModel as AssetPostProcessorModel,
-    AssetSpecModel as AssetSpecModel,
-    OpSpecModel as OpSpecModel,
 )
 from dagster_components.resolved.metadata import ResolvableFieldInfo as ResolvableFieldInfo
 from dagster_components.resolved.model import (
-    ResolvableModel as ResolvableModel,
-    ResolvedFrom as ResolvedFrom,
-    ResolvedKwargs as ResolvedKwargs,
+    Model as Model,
+    Resolved as Resolved,
     Resolver as Resolver,
 )
 from dagster_components.scaffold import (

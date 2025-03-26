@@ -12,12 +12,12 @@ from dagster_components import Component, ComponentLoadContext
 from dagster_components.components.definitions_component.scaffolder import (
     DefinitionsComponentScaffolder,
 )
-from dagster_components.resolved.model import ResolvableModel
+from dagster_components.resolved.model import Model, Resolved
 from dagster_components.scaffold import scaffold_with
 
 
 @scaffold_with(DefinitionsComponentScaffolder)
-class DefinitionsComponent(Component, ResolvableModel):
+class DefinitionsComponent(Component, Resolved, Model):
     """Wraps an arbitrary set of Dagster definitions."""
 
     definitions_path: Optional[str] = Field(
