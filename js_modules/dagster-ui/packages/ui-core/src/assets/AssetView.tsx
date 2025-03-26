@@ -16,23 +16,19 @@ import {ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {AssetPartitions} from './AssetPartitions';
 import {AssetTabs} from './AssetTabs';
-import {useAllAssets} from './AssetsCatalogTable';
 import {AssetAutomationRoot} from './AutoMaterializePolicyPage/AssetAutomationRoot';
 import {ChangedReasonsTag} from './ChangedReasons';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
 import {AssetChecks} from './asset-checks/AssetChecks';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {gql, useQuery} from '../apollo-client';
+import {gql} from '../apollo-client';
 import {featureEnabled} from '../app/Flags';
 import {AssetNodeOverview, AssetNodeOverviewNonSDA} from './overview/AssetNodeOverview';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
-import {
-  AssetViewDefinitionNodeFragment,
-  AssetViewDefinitionQuery,
-  AssetViewDefinitionQueryVariables,
-} from './types/AssetView.types';
+import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
+import {useAssetDefinition} from './useAssetDefinition';
 import {useAssetViewParams} from './useAssetViewParams';
 import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
@@ -67,7 +63,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
 
   // Load the asset definition
   const {cachedDefinition, definition, definitionQueryResult, lastMaterialization} =
-    useAssetViewAssetDefinition(assetKey);
+    useAssetDefinition(assetKey);
 
   const cachedOrLiveDefinition = definition ?? cachedDefinition;
 
@@ -260,7 +256,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
   const dynamicPartitionsDelete = useDeleteDynamicPartitionsDialog(
     definition && repoAddress ? {assetKey: definition.assetKey, definition, repoAddress} : null,
     () => {
-      definitionQueryResult.refetch();
+      definitionQueryResult.fetch();
       refresh();
     },
   );
@@ -429,41 +425,6 @@ function useNeighborsFromGraph(graphData: GraphData | null, assetKey: AssetKey) 
     };
   }, [graphData, graphId]);
 }
-
-const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
-  const {assets} = useAllAssets();
-  const cachedDefinition = useMemo(
-    () =>
-      assets?.find((asset) => tokenForAssetKey(asset.key) === tokenForAssetKey(assetKey))
-        ?.definition,
-    [assetKey, assets],
-  );
-  const result = useQuery<AssetViewDefinitionQuery, AssetViewDefinitionQueryVariables>(
-    ASSET_VIEW_DEFINITION_QUERY,
-    {
-      variables: {assetKey: {path: assetKey.path}},
-      notifyOnNetworkStatusChange: true,
-    },
-  );
-
-  const {assetOrError} = result.data || result.previousData || {};
-  const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
-  if (!asset) {
-    return {
-      definitionQueryResult: result,
-      definition: null,
-      lastMaterialization: null,
-      cachedDefinition,
-    };
-  }
-
-  return {
-    definitionQueryResult: result,
-    definition: asset.definition,
-    lastMaterialization: asset.assetMaterializations ? asset.assetMaterializations[0] : null,
-    cachedDefinition,
-  };
-};
 
 export const ASSET_VIEW_DEFINITION_QUERY = gql`
   query AssetViewDefinitionQuery($assetKey: AssetKeyInput!) {

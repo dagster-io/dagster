@@ -8,8 +8,9 @@ import {StaleReasonsTag} from './Stale';
 import {isRunlessEvent} from './isRunlessEvent';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {
-  AssetMaterializationFragment,
+  AssetFailedToMaterializeFragment,
   AssetObservationFragment,
+  AssetSuccessfulMaterializationFragment,
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {LiveDataForNodeWithStaleData, isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -30,7 +31,11 @@ export const LatestMaterializationMetadata = ({
   definition,
 }: {
   assetKey: AssetKeyInput;
-  latest: AssetObservationFragment | AssetMaterializationFragment | undefined;
+  latest:
+    | AssetObservationFragment
+    | AssetFailedToMaterializeFragment
+    | AssetSuccessfulMaterializationFragment
+    | undefined;
   liveData: LiveDataForNodeWithStaleData | undefined;
   definition: Pick<AssetViewDefinitionNodeFragment, 'changedReasons'>;
 }) => {

@@ -19,8 +19,9 @@ import styled from 'styled-components';
 import {AssetEventMetadataPlots} from './AssetEventMetadataPlots';
 import {AssetKey} from './types';
 import {
-  AssetMaterializationFragment,
+  AssetFailedToMaterializeFragment,
   AssetObservationFragment,
+  AssetSuccessfulMaterializationFragment,
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {
@@ -42,7 +43,9 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 
 type TableEvent = Pick<
-  AssetObservationFragment | AssetMaterializationFragment,
+  | AssetObservationFragment
+  | AssetSuccessfulMaterializationFragment
+  | AssetFailedToMaterializeFragment,
   'metadataEntries'
 > & {
   timestamp?: string | number;
