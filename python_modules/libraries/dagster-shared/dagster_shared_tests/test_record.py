@@ -6,7 +6,6 @@ from functools import cached_property
 from typing import TYPE_CHECKING, Annotated, Any, Generic, NamedTuple, Optional, TypeVar, Union
 
 import pytest
-from dagster._utils import hash_collection
 from dagster._utils.cached_method import cached_method
 from dagster_shared.check.builder import INJECTED_DEFAULT_VALS_LOCAL_VAR
 from dagster_shared.check.functions import CheckError
@@ -22,6 +21,7 @@ from dagster_shared.record import (
     replace,
 )
 from dagster_shared.serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
+from dagster_shared.utils.hash import hash_collection
 from pydantic import BaseModel, TypeAdapter
 
 if TYPE_CHECKING:
