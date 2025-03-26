@@ -1092,14 +1092,6 @@ describe('createAssetSelectionHint', () => {
     });
   });
 
-  it('suggests + after digits', () => {
-    expect(testAutocomplete('1234|')).toEqual({
-      from: 4,
-      list: [expect.objectContaining({text: '+'})],
-      to: 4,
-    });
-  });
-
   it('suggests things for the value after an upstream traversal', () => {
     expect(testAutocomplete('+ass|')).toEqual({
       from: 1,
@@ -1172,6 +1164,23 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({text: 'key:"prefix/thing2"'}),
       ],
       to: 12,
+    });
+  });
+
+  it('Allows numbers in identifiers', () => {
+    expect(testAutocomplete('1|')).toEqual({
+      from: 0,
+      list: [
+        expect.objectContaining({text: 'key:"*1*"'}),
+        expect.objectContaining({text: 'key:"asset1"'}),
+        expect.objectContaining({text: 'key:"prefix/thing1"'}),
+        expect.objectContaining({text: 'tag:"tag1"'}),
+        expect.objectContaining({text: 'tag:"key=value1"'}),
+        expect.objectContaining({text: 'group:"group1"'}),
+        expect.objectContaining({text: 'kind:"kind1"'}),
+        expect.objectContaining({text: 'code_location:"repo1@location1"'}),
+      ],
+      to: 1,
     });
   });
 });
