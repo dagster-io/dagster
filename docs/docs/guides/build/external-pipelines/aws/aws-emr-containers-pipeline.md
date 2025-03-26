@@ -4,7 +4,7 @@ description: "Learn to integrate Dagster Pipes with AWS EMR Containers to launch
 sidebar_position: 200
 ---
 
-import Preview from '../../../../partials/\_Preview.md';
+import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 

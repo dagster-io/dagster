@@ -42,7 +42,7 @@ Environment variables will be read-only for branch deployments viewed in Dagster
 
 ### Reserved variables
 
-[Built-in (system) Dagster+ environment variables](built-in) are reserved and therefore unavailable for use. You will see an error in Dagster+ if you use a built-in variable name.
+[Built-in (system) Dagster+ environment variables](/dagster-plus/deployment/management/environment-variables/built-in) are reserved and therefore unavailable for use. You will see an error in Dagster+ if you use a built-in variable name.
 
 ## Adding environment variables \{#add}
 
@@ -112,4 +112,4 @@ For example, if you wanted to provide different Snowflake passwords for your pro
 ## Next steps
 
 - Learn how to [access environment variables in Dagster code](/guides/deploy/using-environment-variables-and-secrets#accessing-environment-variables)
-- Learn about the [built-in environment variables](built-in) provided by Dagster+
+- Learn about the [built-in environment variables](/dagster-plus/deployment/management/environment-variables/built-in) provided by Dagster+

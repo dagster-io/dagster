@@ -13,7 +13,7 @@ By the end of the tutorial, you will:
 - Make a Delta Lake table available in Dagster
 - Load Delta tables in downstream assets
 
-While this guide focuses on storing and loading Pandas DataFrames in Delta Lakes, Dagster also supports using PyArrow Tables and Polars DataFrames. Learn more about setting up and using the Delta Lake I/O manager with PyArrow Tables and Polars DataFrames in the [Delta Lake reference](reference).
+While this guide focuses on storing and loading Pandas DataFrames in Delta Lakes, Dagster also supports using PyArrow Tables and Polars DataFrames. Learn more about setting up and using the Delta Lake I/O manager with PyArrow Tables and Polars DataFrames in the [Delta Lake reference](/integrations/libraries/deltalake/reference).
 
 ## Prerequisites
 
@@ -88,7 +88,7 @@ When finished, your code should look like the following:
 
 ## Related
 
-For more Delta Lake features, refer to the [Delta Lake reference](reference).
+For more Delta Lake features, refer to the [Delta Lake reference](/integrations/libraries/deltalake/reference).
 
 For more information on asset definitions, see the [Assets documentation](/guides/build/assets/defining-assets).
 

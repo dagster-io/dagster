@@ -3,7 +3,7 @@ title: 'dg'
 sidebar_position: 10
 ---
 
-import Preview from '../../../partials/\_Preview.md';
+import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
@@ -13,18 +13,18 @@ import Preview from '../../../partials/\_Preview.md';
 
 ### Install `uv`
 
-import InstallUv from '../../../partials/\_InstallUv.md';
+import InstallUv from '@site/docs/partials/\_InstallUv.md';
 
 <InstallUv />
 
 ### Install `dg`
 
-import InstallDg from '../../../partials/\_InstallDg.md';
+import InstallDg from '@site/docs/partials/\_InstallDg.md';
 
 <InstallDg />
 
 ## `dg` API reference
 
-import DgReference from '../../../partials/\_DgReference.md';
+import DgReference from '@site/docs/partials/\_DgReference.md';
 
 <DgReference />

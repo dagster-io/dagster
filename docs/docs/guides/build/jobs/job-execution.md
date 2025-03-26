@@ -10,7 +10,7 @@ This guide is applicable to both [ops](/guides/build/ops/) and [jobs](/guides/bu
 
 :::
 
-Dagster provides several methods to execute [op](op-jobs) and [asset jobs](asset-jobs). This guide explains different ways to do one-off execution of jobs using the Dagster UI, command line, or Python APIs.
+Dagster provides several methods to execute [op](/guides/build/jobs/op-jobs) and [asset jobs](/guides/build/jobs/asset-jobs). This guide explains different ways to do one-off execution of jobs using the Dagster UI, command line, or Python APIs.
 
 You can also launch jobs in other ways:
 

@@ -4,7 +4,7 @@ description: Store your Dagster assets in BigQuery
 sidebar_position: 100
 ---
 
-import Beta from '../../../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
@@ -121,7 +121,7 @@ While using an I/O manager is not required, you may want to use an I/O manager t
 
 {/* TODO fix link: Using an I/O manager is not required, and you can reference [When to use I/O managers](/guides/build/io-managers/#when-to-use-io-managers) to learn more. */}
 
-This section of the guide focuses on storing and loading Pandas DataFrames in BigQuery, but Dagster also supports using PySpark DataFrames with BigQuery. The concepts from this guide apply to working with PySpark DataFrames, and you can learn more about setting up and using the BigQuery I/O manager with PySpark DataFrames in the [reference guide](reference).
+This section of the guide focuses on storing and loading Pandas DataFrames in BigQuery, but Dagster also supports using PySpark DataFrames with BigQuery. The concepts from this guide apply to working with PySpark DataFrames, and you can learn more about setting up and using the BigQuery I/O manager with PySpark DataFrames in the [reference guide](/integrations/libraries/gcp/bigquery/reference).
 
 ### Step 1: Configure the BigQuery I/O manager
 
@@ -193,7 +193,7 @@ When finished, your code should look like the following:
 
 ## Related
 
-For more BigQuery features, refer to the [BigQuery reference](reference).
+For more BigQuery features, refer to the [BigQuery reference](/integrations/libraries/gcp/bigquery/reference).
 
 For more information on asset definitions, see the [Assets documentation](/guides/build/assets/).
 

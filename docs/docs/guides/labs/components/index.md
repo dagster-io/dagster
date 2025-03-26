@@ -3,7 +3,7 @@ title: "Components"
 sidebar_position: 20
 ---
 
-import Preview from '../../../partials/\_Preview.md';
+import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
@@ -24,23 +24,23 @@ To use Dagster Components, install `uv`, then install the `dg` command line tool
 
 ### Install `uv`
 
-import InstallUv from '../../../partials/\_InstallUv.md';
+import InstallUv from '@site/docs/partials/\_InstallUv.md';
 
 <InstallUv />
 
 ### Install the `dg` command line tool
 
-import InstallDg from '../../../partials/\_InstallDg.md';
+import InstallDg from '@site/docs/partials/\_InstallDg.md';
 
 <InstallDg />
 
 ## `dg` API reference
 
-import DgReference from '../../../partials/\_DgReference.md';
+import DgReference from '@site/docs/partials/\_DgReference.md';
 
 <DgReference />
 
 ## Next steps
 
-* [Check out the components ETL pipeline tutorial](components-etl-pipeline-tutorial)
-* [Build your own pipeline with components](building-pipelines-with-components)
+* [Check out the components ETL pipeline tutorial](/guides/labs/components/components-etl-pipeline-tutorial)
+* [Build your own pipeline with components](/guides/labs/components/building-pipelines-with-components)

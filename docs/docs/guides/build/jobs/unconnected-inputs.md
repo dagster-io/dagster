@@ -4,7 +4,7 @@ description: "Learn to work with unconnected inputs in op jobs."
 sidebar_position: 400
 ---
 
-import OpsNote from '../../../partials/\_OpsNote.md';
+import OpsNote from '@site/docs/partials/\_OpsNote.md';
 
 <OpsNote />
 

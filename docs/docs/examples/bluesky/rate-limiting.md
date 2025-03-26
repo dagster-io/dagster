@@ -24,4 +24,4 @@ Now that we know how to extract data and store all this data, we can talk about 
 
 ## Next steps
 
-- Continue this example with [modeling](modeling)
+- Continue this example with [modeling](/examples/bluesky/modeling)

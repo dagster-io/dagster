@@ -3,7 +3,7 @@ title: "Migrate Airflow tasks"
 sidebar_position: 400
 ---
 
-Previously, we completed the ["observe" stage](observe) of the Airflow migration process by encoding the assets that are produced by each task. We also introduced partitioning to those assets.
+Previously, we completed the ["observe" stage](/guides/migrate/airflow-to-dagster/task-level-migration/observe) of the Airflow migration process by encoding the assets that are produced by each task. We also introduced partitioning to those assets.
 
 So far, we have left the Airflow code alone, but in this step, we will begin the actual migration process, which will require modifying Airflow code.
 
@@ -74,4 +74,4 @@ We can then toggle the proxied state of the remaining tasks in the `proxied_stat
 
 ## Next steps
 
-In the next step, "[Decommission the Airflow DAG](decommission)", we will remove the DAG from the Airflow directory and update the Dagster code to remove task associations and attach the assets to a schedule.
+In the next step, "[Decommission the Airflow DAG](/guides/migrate/airflow-to-dagster/task-level-migration/decommission)", we will remove the DAG from the Airflow directory and update the Dagster code to remove task associations and attach the assets to a schedule.

@@ -5,13 +5,13 @@ description: Dagster can orchestrate dbt alongside other technologies.
 
 :::note
 
-Using dbt Cloud? Check out the [dbt Cloud with Dagster guide](dbt-cloud).
+Using dbt Cloud? Check out the [dbt Cloud with Dagster guide](/integrations/libraries/dbt/dbt-cloud).
 
 :::
 
 This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/guides/build/assets/) framework using the [`dagster-dbt` integration library](/api/python-api/libraries/dagster-dbt).
 
-For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](using-dbt-with-dagster).
+For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt/using-dbt-with-dagster).
 
 ## Relevant APIs
 
@@ -56,7 +56,7 @@ Here's what's happening in this example:
 
 :::note
 
-Check out [part two of the dbt & Dagster tutorial](using-dbt-with-dagster/load-dbt-models) to see this concept in context.
+Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models) to see this concept in context.
 
 :::
 
@@ -72,7 +72,7 @@ This creates a directory called `project_dagster/` inside the current directory.
 
 :::note
 
-Check out [part two of the dbt & Dagster tutorial](using-dbt-with-dagster/load-dbt-models) to see this concept in context.
+Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models) to see this concept in context.
 
 :::
 
@@ -179,8 +179,6 @@ Also, update the dbt command in your `@dbt_assets` definition to pass the defer 
 <CodeExample startAfter="start_use_dbt_defer_with_dbt_project" endBefore="end_use_dbt_defer_with_dbt_project" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
 
 ## Using config with `@dbt_assets`
-
-{/* Similar to Dagster software-defined assets, `@dbt_assets` can use a config system to enable [run configuration](/concepts/configuration/config-schema). This allows to provide parameters to jobs at the time they're executed. */}
 
 Similar to Dagster software-defined assets, `@dbt_assets` can use a config system to enable [run configuration](/guides/operate/configuration/run-configuration). This allows to provide parameters to jobs at the time they're executed.
 
@@ -346,7 +344,6 @@ Dagster also supports fetching additional metadata at dbt execution time to atta
 
 #### Attaching code reference metadata
 
-{/* Dagster's dbt integration can automatically attach [code reference](/guides/dagster/code-references) metadata to the SQL files backing your dbt assets. */}
 Dagster's dbt integration can automatically attach [code reference](/guides/build/assets/metadata-and-tags/index.md#source-code) metadata to the SQL files backing your dbt assets. To enable this feature, set the `enable_code_references` parameter to `True` in the <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> passed to your <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" />:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/code_references/with_dbt_code_references.py" />

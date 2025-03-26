@@ -6,7 +6,7 @@ last_update:
 sidebar_position: 40
 ---
 
-Using the data we prepared in the [previous step](feature-engineering), we will create two files: a training file and a validation file. A training file provides the model with labeled data to learn patterns, while a validation file evaluates the model's performance on unseen data to prevent overfitting. These will be used in our OpenAI fine-tuning job to create our model. The columnar data from our DuckDB assets needs to be fit into messages that resemble the conversation a user would have with a chatbot. Here we can inject the values of those fields into conversations:
+Using the data we prepared in the [previous step](/examples/llm-fine-tuning/feature-engineering), we will create two files: a training file and a validation file. A training file provides the model with labeled data to learn patterns, while a validation file evaluates the model's performance on unseen data to prevent overfitting. These will be used in our OpenAI fine-tuning job to create our model. The columnar data from our DuckDB assets needs to be fit into messages that resemble the conversation a user would have with a chatbot. Here we can inject the values of those fields into conversations:
 
 <CodeExample path="docs_projects/project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" startAfter="start_prompt_record" endBefore="end_prompt_record"/>
 
@@ -38,4 +38,4 @@ This looks like any other Python function, except it returns an `AssetCheckResul
 
 ## Next steps
 
-- Continue this example with [OpenAI job](open-ai-job)
+- Continue this example with [OpenAI job](/examples/llm-fine-tuning/open-ai-job)

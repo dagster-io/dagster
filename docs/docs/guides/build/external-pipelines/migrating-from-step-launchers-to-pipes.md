@@ -4,7 +4,7 @@ description: "Learn how to migrate from Spark step launchers to Dagster Pipes."
 sidebar_position: 80
 ---
 
-In this guide, we’ll show you how to migrate from using step launchers to using [Dagster Pipes](index.md) in Dagster.
+In this guide, we’ll show you how to migrate from using step launchers to using [Dagster Pipes](/guides/build/external-pipelines) in Dagster.
 
 While step launchers were intended to support various runtime environments, in practice, they have only been implemented for Spark. Therefore, we will focus on Spark-related examples.
 
@@ -78,7 +78,7 @@ In this guide, we have demonstrated how to migrate from using step launchers to 
 
 # Supplementary
 
-- [Dagster Pipes](index.md)
+- [Dagster Pipes](/guides/build/external-pipelines)
 - [GitHub discussion](https://github.com/dagster-io/dagster/discussions/25685) on the topic
 - [Dagster + Spark](/integrations/libraries/spark) - an up to date list of Pipes Clients for various Spark providers can be found here
 - [AWS EMR Pipes tutorial](/guides/build/external-pipelines/aws/aws-emr-pipeline)

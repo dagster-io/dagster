@@ -3,7 +3,7 @@ title: "Data freshness checks"
 sidebar_position: 300
 ---
 
-import Beta from '../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 

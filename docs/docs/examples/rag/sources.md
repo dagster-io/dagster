@@ -42,4 +42,4 @@ Finally, we can initialize the resource:
 
 ## Next steps
 
-- Continue this example with [vector-database](vector-database)
+- Continue this example with [vector-database](/examples/rag/vector-database)

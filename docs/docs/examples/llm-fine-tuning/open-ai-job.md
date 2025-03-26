@@ -24,4 +24,4 @@ Now that we have a model, we should test if it is an improvement over our initia
 
 ## Next steps
 
-- Continue this example with [model validation](model-validation)
+- Continue this example with [model validation](/examples/llm-fine-tuning/model-validation)

@@ -3,7 +3,7 @@ title: 'Converting an existing project to use dg'
 sidebar_position: 200
 ---
 
-import Preview from '../../../../partials/\_Preview.md';
+import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 

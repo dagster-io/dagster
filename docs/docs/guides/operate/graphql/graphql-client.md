@@ -3,7 +3,7 @@ title: "Dagster GraphQL Python client"
 description: Dagster provides a Python client to interact with its GraphQL API
 ---
 
-Dagster provides a GraphQL Python Client to interface with [Dagster's GraphQL API](index.md) from Python.
+Dagster provides a GraphQL Python Client to interface with [Dagster's GraphQL API](/guides/operate/graphql/graphql-client) from Python.
 
 ## Relevant APIs
 

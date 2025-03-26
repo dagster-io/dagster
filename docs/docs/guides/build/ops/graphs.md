@@ -4,7 +4,7 @@ description: Op graphs are sets of interconnected ops or sub-graphs and form the
 sidebar_position: 400
 ---
 
-import OpsNote from '../../../partials/\_OpsNote.md';
+import OpsNote from '@site/docs/partials/\_OpsNote.md';
 
 <OpsNote />
 

@@ -74,4 +74,4 @@ Additionally, if you navigate to the Runs tab, you should see that materializati
 
 ## Next steps
 
-- Continue this tutorial with adding a [sensor based asset](create-a-sensor-asset)
+- Continue this tutorial with adding a [sensor based asset](/etl-pipeline-tutorial/create-a-sensor-asset)

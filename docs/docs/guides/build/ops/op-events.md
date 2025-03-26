@@ -4,7 +4,7 @@ description: Within the body of an op, it is possible to communicate with the Da
 sidebar_position: 100
 ---
 
-import OpsNote from '../../../partials/\_OpsNote.md';
+import OpsNote from '@site/docs/partials/\_OpsNote.md';
 
 <OpsNote />
 

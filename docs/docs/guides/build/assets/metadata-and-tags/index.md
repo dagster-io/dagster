@@ -30,7 +30,7 @@ With Dagster+ Pro, you can create asset-based alerts that automatically notify a
 
 ## Organizing assets with tags \{#tags}
 
-[**Tags**](tags) are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the Asset catalog. They're structured as key-value pairs of strings.
+[**Tags**](/guides/build/assets/metadata-and-tags/tags) are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the Asset catalog. They're structured as key-value pairs of strings.
 
 Here's an example of some tags you might apply to an asset:
 
@@ -96,7 +96,7 @@ Two of the most powerful metadata types are <PyObject section="metadata" module=
 
 ### Table schema metadata \{#table-schema}
 
-The following example attaches [table and column schema metadata](table-metadata) at both definition time and runtime:
+The following example attaches [table and column schema metadata](/guides/build/assets/metadata-and-tags/table-metadata) at both definition time and runtime:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/table-schema-metadata.py" language="python" />
 
@@ -108,7 +108,7 @@ There are several data types and constraints available on <PyObject section="met
 Many integrations such as [dbt](/integrations/libraries/dbt/) automatically attach column lineage metadata out-of-the-box.
 :::
 
-[Column lineage metadata](column-level-lineage) is a powerful way to track how columns in a table are derived from other columns:
+[Column lineage metadata](/guides/build/assets/metadata-and-tags/column-level-lineage) is a powerful way to track how columns in a table are derived from other columns:
 
 <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/table-column-lineage-metadata.py" language="python" title="Table column lineage metadata" />
 
@@ -118,7 +118,7 @@ Dagster+ provides rich visualization and navigation of column lineage in the Ass
 
 ## Linking assets with source code \{#source-code}
 
-import Beta from '../../../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 

@@ -4,7 +4,7 @@ description: Dagster's config system supports a variety of more advanced config 
 sidebar_position: 200
 ---
 
-In some cases, you may want to define a more complex [config schema](run-configuration) for your assets and ops. For example, you may want to define a config schema that takes in a list of files or complex data. In this guide, we'll walk through some common patterns for defining more complex config schemas.
+In some cases, you may want to define a more complex [config schema](/guides/operate/configuration/run-configuration) for your assets and ops. For example, you may want to define a config schema that takes in a list of files or complex data. In this guide, we'll walk through some common patterns for defining more complex config schemas.
 
 ## Attaching metadata to config fields
 

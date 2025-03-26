@@ -35,10 +35,10 @@ pip install dagster-embedded-elt
 
 Sling provides an easy-to-use YAML configuration layer for loading data from files, replicating data between databases, exporting custom SQL queries to cloud storage, and much more. The Dagster integration allows you to derive Dagster assets from a replication configuration file.
 
-For more information, see the [Sling integration docs](sling).
+For more information, see the [Sling integration docs](/integrations/libraries/sling).
 
 ## dlt
 
 With the ability to leverage pre-made [verified sources](https://dlthub.com/docs/dlt-ecosystem/verified-sources/) like [Hubspot](https://dlthub.com/docs/dlt-ecosystem/verified-sources/hubspot) and [Notion](https://dlthub.com/docs/dlt-ecosystem/verified-sources/notion), and [destinations](https://dlthub.com/docs/dlt-ecosystem/destinations/) like [Databricks](https://dlthub.com/docs/dlt-ecosystem/destinations/databricks) and [Snowflake](https://dlthub.com/docs/dlt-ecosystem/destinations/snowflake), integrating dlt into your Dagster project enables you to load a data in an easy and structured way.
 
-For more information, see the [dlt integration docs](dlt).
+For more information, see the [dlt integration docs](/integrations/libraries/dlt).

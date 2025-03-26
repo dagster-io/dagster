@@ -3,7 +3,7 @@ title: 'pyproject.toml settings'
 sidebar_position: 500
 ---
 
-import Preview from '../../../../partials/\_Preview.md';
+import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 

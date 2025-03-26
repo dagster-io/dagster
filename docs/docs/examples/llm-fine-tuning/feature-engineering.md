@@ -78,4 +78,4 @@ With our `book_category` asset created, we can combine that with the `author` an
 
 ## Next steps
 
-- Continue this example with [file creation](file-creation)
+- Continue this example with [file creation](/examples/llm-fine-tuning/file-creation)

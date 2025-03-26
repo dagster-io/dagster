@@ -88,4 +88,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this example with [ingestion](ingestion)
+- Continue this example with [ingestion](/examples/bluesky/ingestion)

@@ -14,7 +14,7 @@ Machine learning models are highly dependent on data at a point in time and must
 
 :::note
 
-Before proceeding, we recommend reviewing "[Building machine learning pipelines with Dagster](ml-pipeline)", which provides background on using Dagster's assets for machine learning.
+Before proceeding, we recommend reviewing "[Building machine learning pipelines with Dagster](/guides/build/ml-pipelines/ml-pipeline)", which provides background on using Dagster's assets for machine learning.
 
 :::
 

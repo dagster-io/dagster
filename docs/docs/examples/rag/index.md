@@ -75,4 +75,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this example with [sources](sources)
+- Continue this example with [sources](/examples/rag/sources)

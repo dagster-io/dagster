@@ -4,7 +4,7 @@ description: Dagster APIs for runtime determined graph structures.
 sidebar_position: 600
 ---
 
-import OpsNote from '../../../partials/\_OpsNote.md';
+import OpsNote from '@site/docs/partials/\_OpsNote.md';
 
 <OpsNote />
 

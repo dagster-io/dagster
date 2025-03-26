@@ -4,7 +4,7 @@ description: Dagster can orchestrate dbt alongside other technologies.
 sidebar_position: 400
 ---
 
-By this point, you've [set up a dbt project](set-up-dbt-project), [loaded dbt models into Dagster as assets](load-dbt-models), and [defined assets upstream of your dbt models](upstream-assets).
+By this point, you've [set up a dbt project](/integrations/libraries/dbt/using-dbt-with-dagster/set-up-dbt-project), [loaded dbt models into Dagster as assets](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models), and [defined assets upstream of your dbt models](/integrations/libraries/dbt/using-dbt-with-dagster/upstream-assets).
 
 In this step, you'll:
 
@@ -22,7 +22,7 @@ pip install plotly
 
 You've added upstream assets to your data pipeline, but nothing downstream - until now. In this step, you'll define a Dagster asset called `order_count_chart` that uses the data in the `customers` dbt model to computes a plotly chart of the number of orders per customer.
 
-Like the `raw_customers` asset that we added in the [previous section](upstream-assets#step-2-define-an-upstream-dagster-asset), we'll put this asset in our `assets.py` file, inside the `jaffle_dagster` directory.
+Like the `raw_customers` asset that we added in the [previous section](/integrations/libraries/dbt/using-dbt-with-dagster/upstream-assets#step-2-define-an-upstream-dagster-asset), we'll put this asset in our `assets.py` file, inside the `jaffle_dagster` directory.
 
 To add the `order_count_chart` asset:
 

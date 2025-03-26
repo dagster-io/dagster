@@ -37,7 +37,7 @@ You can also build config into jobs.
 </TabItem>
 </Tabs>
 
-These examples showcase the most basic config types that can be used. For more information on the set of config types Dagster supports, see [the advanced config types documentation](advanced-config-types).
+These examples showcase the most basic config types that can be used. For more information on the set of config types Dagster supports, see [the advanced config types documentation](/guides/operate/configuration/advanced-config-types).
 
 ## Defining and accessing Pythonic configuration for a resource
 
@@ -106,4 +106,4 @@ Refer to the [Environment variables and secrets guide](/guides/deploy/using-envi
 
 ## Next steps
 
-Config is a powerful tool for making Dagster pipelines more flexible and observable. For a deeper dive into the supported config types, see [the advanced config types documentation](advanced-config-types). For more information on using resources, which are a powerful way to encapsulate reusable logic, see [the Resources guide](/guides/build/external-resources).
+Config is a powerful tool for making Dagster pipelines more flexible and observable. For a deeper dive into the supported config types, see [the advanced config types documentation](/guides/operate/configuration/advanced-config-types). For more information on using resources, which are a powerful way to encapsulate reusable logic, see [the Resources guide](/guides/build/external-resources).

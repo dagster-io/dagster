@@ -80,4 +80,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this example with [ingestion](ingestion)
+- Continue this example with [ingestion](/examples/llm-fine-tuning/ingestion)
