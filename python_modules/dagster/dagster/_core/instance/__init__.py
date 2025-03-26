@@ -2486,7 +2486,18 @@ class DagsterInstance(DynamicPartitionsStore):
         handlers.extend(self._get_yaml_python_handlers())
         return handlers
 
+    def should_store_event(self, event: "EventLogEntry") -> bool:
+        if (
+            event.dagster_event is not None
+            and event.dagster_event.is_asset_failed_to_materialize
+            and not self._event_storage.can_store_asset_failure_events
+        ):
+            return False
+        return True
+
     def store_event(self, event: "EventLogEntry") -> None:
+        if not self.should_store_event(event):
+            return
         self._event_storage.store_event(event)
 
     def handle_new_event(
@@ -2510,6 +2521,9 @@ class DagsterInstance(DynamicPartitionsStore):
             batch_metadata (Optional[DagsterEventBatchMetadata]): Metadata for batch writing.
         """
         from dagster._core.events import RunFailureReason
+
+        if not self.should_store_event(event):
+            return
 
         if batch_metadata is None or not _is_batch_writing_enabled():
             events = [event]
