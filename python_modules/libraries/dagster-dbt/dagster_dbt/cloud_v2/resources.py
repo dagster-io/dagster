@@ -156,7 +156,7 @@ class DbtCloudWorkspace(ConfigurableResource):
             )
         )
 
-    def fetch_workspace_data(self) -> DbtCloudWorkspaceData:
+    def _fetch_workspace_data(self) -> DbtCloudWorkspaceData:
         job = self._get_or_create_dagster_adhoc_job()
         run_handler = DbtCloudJobRunHandler.run(
             job_id=job.id,
@@ -170,6 +170,11 @@ class DbtCloudWorkspace(ConfigurableResource):
             job_id=job.id,
             manifest=run_handler.get_manifest(),
         )
+
+    def fetch_workspace_data(self) -> DbtCloudWorkspaceData:
+        return DbtCloudWorkspaceDefsLoader(
+            workspace=self, translator=DagsterDbtTranslator()
+        ).get_or_fetch_state()
 
     # Cache spec retrieval for a specific translator class.
     @lru_cache(maxsize=1)
@@ -241,7 +246,7 @@ class DbtCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[DbtCloudWorkspace
         return f"{DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX}.{self.workspace.unique_id}"
 
     def fetch_state(self) -> DbtCloudWorkspaceData:
-        return self.workspace.fetch_workspace_data()
+        return self.workspace._fetch_workspace_data()  # noqa
 
     def defs_from_state(self, state: DbtCloudWorkspaceData) -> Definitions:
         all_asset_specs, all_check_specs = build_dbt_specs(
