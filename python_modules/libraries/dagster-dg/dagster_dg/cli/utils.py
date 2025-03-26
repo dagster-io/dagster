@@ -152,7 +152,7 @@ def _semver_less_than(version: str, other: str) -> bool:
     return version_semver < other_semver
 
 
-MIN_ENV_VAR_INJECTION_VERSION = "1.10.7"
+MIN_ENV_VAR_INJECTION_VERSION = "1.10.8"
 
 
 @contextmanager

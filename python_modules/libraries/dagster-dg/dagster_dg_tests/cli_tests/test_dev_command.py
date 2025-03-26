@@ -168,7 +168,7 @@ defs = dg.Definitions()
 
             assert (
                 "Warning: Dagster version 1.10.6 is less than the minimum required version for .env file environment variable injection "
-                "(1.10.7). Environment variables will not be injected for location project-2."
+                "(1.10.8). Environment variables will not be injected for location project-2."
             ) in Path(stdout_file.name).read_text()
 
 
