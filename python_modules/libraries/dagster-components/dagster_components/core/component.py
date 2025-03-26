@@ -217,8 +217,8 @@ class DefinitionsModuleCache:
             ),
             module_cache=self,
         )
-        defs_module = decl_node.load(context)
         with use_component_load_context(context):
+            defs_module = decl_node.load(context)
             return defs_module.build_defs()
 
 
