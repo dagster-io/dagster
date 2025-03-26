@@ -364,7 +364,8 @@ def get_asset_observations(
     limit: Optional[int] = None,
     before_timestamp: Optional[float] = None,
     after_timestamp: Optional[float] = None,
-) -> Sequence[EventLogEntry]:
+    cursor: Optional[str] = None,
+) -> tuple[Sequence[EventLogEntry], str]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
@@ -379,7 +380,6 @@ def get_asset_observations(
     )
     if limit is None:
         event_records = []
-        cursor = None
         while True:
             event_records_result = instance.fetch_observations(
                 records_filter=records_filter,
@@ -391,11 +391,13 @@ def get_asset_observations(
             if not event_records_result.has_more:
                 break
     else:
-        event_records = instance.fetch_observations(
-            records_filter=records_filter, limit=limit
-        ).records
+        event_records_result = instance.fetch_observations(
+            records_filter=records_filter, limit=limit, cursor=cursor
+        )
+        cursor = event_records_result.cursor
+        event_records = event_records_result.records
 
-    return [event_record.event_log_entry for event_record in event_records]
+    return [event_record.event_log_entry for event_record in event_records], cursor
 
 
 def get_assets_for_run(graphene_info: "ResolveInfo", run: DagsterRun) -> Sequence["GrapheneAsset"]:
