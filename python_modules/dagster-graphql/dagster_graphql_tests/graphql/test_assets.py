@@ -337,6 +337,19 @@ GET_ASSET_PARTITIONS = """
     }
 """
 
+GET_ASSET_PARTITIONS_CONNECTION = """
+    query AssetNodeQuery($assetKeys: [AssetKeyInput!], $limit: Int!, $ascending: Boolean!, $cursor: String) {
+        assetNodes(assetKeys: $assetKeys) {
+            id
+            partitionKeyConnection(limit: $limit, ascending: $ascending, cursor: $cursor) {
+                results
+                cursor
+                hasMore
+            }
+        }
+    }
+"""
+
 GET_PARTITIONS_BY_DIMENSION = """
     query AssetNodeQuery($assetKeys: [AssetKeyInput!], $startIdx: Int, $endIdx: Int) {
         assetNodes(assetKeys: $assetKeys) {
@@ -1417,6 +1430,70 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert asset_node["partitionKeys"] and len(asset_node["partitionKeys"]) > 100
         assert asset_node["partitionKeys"][0] == "2021-05-05-01:00"
         assert asset_node["partitionKeys"][1] == "2021-05-05-02:00"
+
+    def test_asset_partition_key_connection(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_PARTITIONS_CONNECTION,
+            variables={
+                "assetKeys": [
+                    {"path": ["not_included_asset"]},
+                    {"path": ["upstream_static_partitioned_asset"]},
+                ],
+                "limit": 2,
+                "ascending": True,
+            },
+        )
+
+        assert result.data and result.data["assetNodes"]
+        assert len(result.data["assetNodes"]) == 2
+        unpartitioned_asset_node = result.data["assetNodes"][0]
+        assert unpartitioned_asset_node["partitionKeyConnection"] is None
+        partitioned_asset_node = result.data["assetNodes"][1]
+        partition_key_conn = partitioned_asset_node["partitionKeyConnection"]
+        assert partition_key_conn["hasMore"]
+        assert len(partition_key_conn["results"]) == 2
+        assert partition_key_conn["results"] == ["a", "b"]
+        cursor = partition_key_conn["cursor"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_PARTITIONS_CONNECTION,
+            variables={
+                "assetKeys": [
+                    {"path": ["upstream_static_partitioned_asset"]},
+                ],
+                "limit": 10,
+                "ascending": True,
+                "cursor": cursor,
+            },
+        )
+        assert result.data and result.data["assetNodes"]
+        assert len(result.data["assetNodes"]) == 1
+        partitioned_asset_node = result.data["assetNodes"][0]
+        partition_key_conn = partitioned_asset_node["partitionKeyConnection"]
+        assert not partition_key_conn["hasMore"]
+        assert len(partition_key_conn["results"]) == 4
+        assert partition_key_conn["results"] == ["c", "d", "e", "f"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_PARTITIONS_CONNECTION,
+            variables={
+                "assetKeys": [
+                    {"path": ["upstream_static_partitioned_asset"]},
+                ],
+                "limit": 10,
+                "ascending": False,
+            },
+        )
+        assert result.data and result.data["assetNodes"]
+        assert len(result.data["assetNodes"]) == 1
+        partitioned_asset_node = result.data["assetNodes"][0]
+        partition_key_conn = partitioned_asset_node["partitionKeyConnection"]
+        assert not partition_key_conn["hasMore"]
+        assert len(partition_key_conn["results"]) == 6
+        assert partition_key_conn["results"] == ["f", "e", "d", "c", "b", "a"]
 
     def test_latest_materialization_per_partition(self, graphql_context: WorkspaceRequestContext):
         _create_partitioned_run(graphql_context, "partition_materialization_job", partition_key="c")

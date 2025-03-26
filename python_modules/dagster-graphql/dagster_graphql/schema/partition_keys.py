@@ -4,6 +4,15 @@ from dagster_graphql.schema.errors import GrapheneError
 from dagster_graphql.schema.util import non_null_list
 
 
+class GraphenePartitionKeyConnection(graphene.ObjectType):
+    results = non_null_list(graphene.String)
+    cursor = graphene.NonNull(graphene.String)
+    hasMore = graphene.NonNull(graphene.Boolean)
+
+    class Meta:
+        name = "PartitionKeyConnection"
+
+
 class GraphenePartitionKeys(graphene.ObjectType):
     partitionKeys = non_null_list(graphene.String)
 
