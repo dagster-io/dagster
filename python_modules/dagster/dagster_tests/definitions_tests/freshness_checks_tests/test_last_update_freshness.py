@@ -56,6 +56,13 @@ def test_params() -> None:
             }
         )
     }
+    assert not next(iter(check_specs)).blocking
+
+    blocking_check = build_last_update_freshness_checks(
+        assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10), blocking=True
+    )[0]
+
+    assert next(iter(blocking_check.check_specs)).blocking
 
     @asset
     def other_asset():
