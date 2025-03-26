@@ -16,27 +16,29 @@ setup(
     install_requires=[],
     extras_require={
         "full": [
-            "click",
-            "matplotlib",
             # matplotlib-inline 0.1.5 is causing mysterious
             # "'NoneType' object has no attribute 'canvas'" errors in the tests that involve
             # Jupyter notebooks
             "matplotlib-inline<=0.1.3",
+            "click",
+            "dagster-webserver[test]",
+            "dbt-duckdb",
+            "duckdb",
+            "flaky",
+            "matplotlib",
             "moto[s3]<5.0",
             "numpy",
             "pandas",
             "pandera",
+            "pexpect",
             "plotly",
             "pytest",
             "requests",
-            "seaborn",
             "scikit-learn",
+            "seaborn",
             "slack_sdk",
             "syrupy",
-            "dbt-duckdb",
             "xgboost",
-            "dagster-webserver[test]",
-            "flaky",
         ],
     },
 )
