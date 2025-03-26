@@ -6613,20 +6613,13 @@ class TestEventLogStorage:
         asset_keys = [asset_key_1, asset_key_2]
         for i in range(5):
             for asset_key in asset_keys:
-                event_to_store = EventLogEntry(
-                    error_info=None,
-                    level="debug",
-                    user_message="",
-                    run_id=test_run_id,
-                    timestamp=time.time(),
-                    dagster_event=DagsterEvent.build_asset_failed_to_materialize_event(
-                        job_name="the_job",
-                        step_key="the_step",
-                        asset_materialization_failure=AssetMaterializationFailure(
-                            asset_key=asset_key,
-                            partition=str(i),
-                            reason=AssetMaterializationFailureReason.COMPUTE_FAILED,
-                        ),
+                event_to_store = DagsterEvent.build_asset_failed_to_materialize_event(
+                    job_name="the_job",
+                    step_key="the_step",
+                    asset_materialization_failure=AssetMaterializationFailure(
+                        asset_key=asset_key,
+                        partition=str(i),
+                        reason=AssetMaterializationFailureReason.COMPUTE_FAILED,
                     ),
                 )
                 instance.report_dagster_event(event_to_store, test_run_id)
