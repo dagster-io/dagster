@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -20,10 +24,22 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@dagster-io/dg-docs-components": ["../components/lib"]
+      "@/*": [
+        "./*"
+      ],
+      "@dagster-io/dg-docs-components": [
+        "../dg-docs-components/src"
+      ]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "next-env.d.ts", "out/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "next-env.d.ts",
+    "out/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

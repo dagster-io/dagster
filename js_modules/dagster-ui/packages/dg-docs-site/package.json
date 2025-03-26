@@ -1,5 +1,5 @@
 {
-  "name": "docs",
+  "name": "@dagster-io/dg-docs-site",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,15 +8,15 @@
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
-    "ts": "tsc"
+    "ts": "tsc -p ."
   },
   "dependencies": {
     "@dagster-io/dg-docs-components": "workspace:*",
     "clsx": "^2.1.1",
     "highlight.js": "^11.11.1",
     "next": "^15.2.3",
-    "react": "^19",
-    "react-dom": "^19",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1"
   },
@@ -24,14 +24,13 @@
     "@eslint/eslintrc": "^3",
     "@types/json-schema": "^7.0.15",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^18.3.9",
+    "@types/react-dom": "^18.3.0",
     "eslint": "^9",
     "eslint-config-next": "15.2.1",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.3",
     "prettier": "^3.5.3",
     "typescript": "^5"
-  },
-  "packageManager": "yarn@4.7.0"
+  }
 }
