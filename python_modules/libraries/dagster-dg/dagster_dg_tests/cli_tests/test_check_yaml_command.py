@@ -65,7 +65,7 @@ CLI_TEST_CASES = [
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,
         check_error_msg=msg_includes_all_of(
-            "Error: The following environment variables are used in components but not specified in the .env file or the current shell environment:",
+            "The following environment variables are used in components but not specified in the .env file or the current shell environment:",
             "UNDEFINED_ENV_STRING",
         ),
     ),
