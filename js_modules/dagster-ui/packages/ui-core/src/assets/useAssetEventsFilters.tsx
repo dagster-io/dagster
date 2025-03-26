@@ -166,9 +166,19 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
     if (assetNode?.partitionDefinition) {
       filters.push(partitionsFilter);
     }
-    filters.push(typeFilter);
+    if (!assetNode?.isMaterializable) {
+      // No need to show the type filter for assets without materializations
+      filters.push(typeFilter);
+    }
     return filters;
-  }, [assetNode?.partitionDefinition, partitionsFilter, statusFilter, typeFilter, dateRangeFilter]);
+  }, [
+    statusFilter,
+    dateRangeFilter,
+    assetNode?.partitionDefinition,
+    assetNode?.isMaterializable,
+    partitionsFilter,
+    typeFilter,
+  ]);
 
   const {button: filterButton, activeFiltersJsx} = useFilters({filters});
 
