@@ -18,7 +18,7 @@ sidebar_custom_props:
   logo: images/integrations/github.svg
 ---
 
-import Deprecated from '../../partials/\_Deprecated.md';
+import Deprecated from '@site/docs/partials/\_Deprecated.md';
 
 <Deprecated />
 

@@ -24,7 +24,7 @@ To observe the progress of an asset backfill, navigate to the **Runs details** p
 
 ## Launching single-run backfills using backfill policies
 
-import Beta from '../../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
