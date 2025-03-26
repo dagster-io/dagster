@@ -6629,7 +6629,7 @@ class TestEventLogStorage:
                         ),
                     ),
                 )
-                storage.store_event(event_to_store)
+                instance.report_dagster_event(event_to_store, test_run_id)
 
         all_failed_records_result = storage.fetch_failed_materializations(
             records_filter=asset_key_1, limit=10
