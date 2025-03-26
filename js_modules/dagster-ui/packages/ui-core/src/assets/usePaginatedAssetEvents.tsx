@@ -66,7 +66,7 @@ export function usePaginatedAssetEvents(
 
       const {materializations, observations} = clipEventsToSharedMinimumTime(
         asset?.assetMaterializations || [],
-        asset?.assetObservations || [],
+        asset?.assetObservations.results || [],
         100,
       );
 

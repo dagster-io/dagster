@@ -444,23 +444,26 @@ GET_ASSET_OBSERVATIONS = """
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
                 assetObservations {
-                    label
-                    description
-                    runOrError {
-                        ... on Run {
-                            jobName
-                        }
-                    }
-                    assetKey {
-                        path
-                    }
-                    metadataEntries {
+                    results {
                         label
                         description
-                        ... on TextMetadataEntry {
-                            text
+                        runOrError {
+                            ... on Run {
+                                jobName
+                            }
+                        }
+                        assetKey {
+                            path
+                        }
+                        metadataEntries {
+                            label
+                            description
+                            ... on TextMetadataEntry {
+                                text
+                            }
                         }
                     }
+
                 }
             }
         }
@@ -473,21 +476,23 @@ GET_LAST_ASSET_OBSERVATIONS = """
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
                 assetObservations(limit: 1) {
-                    label
-                    description
-                    runOrError {
-                        ... on Run {
-                            jobName
-                        }
-                    }
-                    assetKey {
-                        path
-                    }
-                    metadataEntries {
+                    results {
                         label
                         description
-                        ... on TextMetadataEntry {
-                            text
+                        runOrError {
+                            ... on Run {
+                                jobName
+                            }
+                        }
+                        assetKey {
+                            path
+                        }
+                        metadataEntries {
+                            label
+                            description
+                            ... on TextMetadataEntry {
+                                text
+                            }
                         }
                     }
                 }
@@ -1931,7 +1936,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert result.data["assetOrError"]
-        observations = result.data["assetOrError"]["assetObservations"]
+        observations = result.data["assetOrError"]["assetObservations"]["results"]
 
         assert observations
         assert len(observations) == 2
@@ -1957,7 +1962,7 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
 
         assert result.data
         assert result.data["assetOrError"]
-        observations = result.data["assetOrError"]["assetObservations"]
+        observations = result.data["assetOrError"]["assetObservations"]["results"]
 
         assert observations
         assert len(observations) == 1

@@ -56,7 +56,9 @@ export function useLatestEvents(
       ? data.assetOrError.assetMaterializations[0]
       : undefined;
   const observation =
-    data?.assetOrError.__typename === 'Asset' ? data.assetOrError.assetObservations[0] : undefined;
+    data?.assetOrError.__typename === 'Asset'
+      ? data.assetOrError.assetObservations.results[0]
+      : undefined;
 
   return {materialization, observation, loading: !data};
 }
@@ -75,11 +77,13 @@ export const ASSET_OVERVIEW_METADATA_EVENTS_QUERY = gql`
           }
         }
         assetObservations(limit: 1) {
-          timestamp
-          runId
-          partition
-          metadataEntries {
-            ...MetadataEntryFragment
+          results {
+            timestamp
+            runId
+            partition
+            metadataEntries {
+              ...MetadataEntryFragment
+            }
           }
         }
       }
