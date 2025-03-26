@@ -250,8 +250,8 @@ class DbtCloudWorkspaceClient(DagsterModel):
         self,
         project_id: int,
         environment_id: int,
-        finished_at_start: datetime.datetime,
-        finished_at_end: datetime.datetime,
+        finished_at_lower_bound: datetime.datetime,
+        finished_at_upper_bound: datetime.datetime,
         offset: int = 0,
     ) -> tuple[Sequence[Mapping[str, Any]], int]:
         """Retrieves a batch of dbt Cloud runs from a dbt Cloud workspace for a given project and environment.
@@ -261,9 +261,9 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 URL of the "Explore" tab in the dbt Cloud UI.
             environment_id (str): The dbt Cloud Environment ID. You can retrieve this value from the
                 URL of the given environment page the dbt Cloud UI.
-            finished_at_start (datetime.datetime): The first run in this batch will have finished
+            finished_at_lower_bound (datetime.datetime): The first run in this batch will have finished
                 at a time that is equal to or after this value.
-            finished_at_end (datetime.datetime): The last run in this batch will have finished
+            finished_at_upper_bound (datetime.datetime): The last run in this batch will have finished
                 at a time that is equal to or before this value.
             offset (str): The pagination offset for this request.
 
@@ -282,7 +282,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 "project_id": project_id,
                 "limit": DAGSTER_DBT_CLOUD_BATCH_RUNS_REQUEST_LIMIT,
                 "offset": offset,
-                "finished_at__range": f"""["{finished_at_start.isoformat()}", "{finished_at_end.isoformat()}"]""",
+                "finished_at__range": f"""["{finished_at_lower_bound.isoformat()}", "{finished_at_upper_bound.isoformat()}"]""",
                 "order_by": "finished_at",
             },
             include_full_response=True,

@@ -64,8 +64,8 @@ def test_cloud_job_apis(
     batched_runs, total_count = client.get_runs_batch(
         project_id=project_id,
         environment_id=environment_id,
-        finished_at_start=start_run_process,
-        finished_at_end=end_run_process,
+        finished_at_lower_bound=start_run_process,
+        finished_at_upper_bound=end_run_process,
     )
     assert total_count == 1
     assert len(batched_runs) == 1
