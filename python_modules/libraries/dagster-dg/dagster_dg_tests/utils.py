@@ -36,10 +36,8 @@ STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
 
 
 def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
-    """Note that this does not pick up:
-    - all `scaffold` subcommands, because these are dynamically generated and vary across
-      environment.
-    - special --ACTION options with callbacks (e.g. `--rebuild-component-registry`).
+    """Note that this does not pick up special --ACTION options with callbacks
+    (e.g. `--rebuild-component-registry`).
     """
     commands: dict[tuple[str, ...], click.Command] = {}
 

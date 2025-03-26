@@ -83,7 +83,6 @@ WORKSPACE_OR_PROJECT_CONTEXT_COMMANDS = [
 # ########################
 
 
-@pytest.mark.skip("temp")
 def test_all_commands_represented_in_env_check_tests() -> None:
     commands = crawl_cli_commands()
 
