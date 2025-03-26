@@ -15,7 +15,12 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionSnapshot,
 )
-from dagster._core.definitions.partition import CachingDynamicPartitionsLoader, PartitionsDefinition
+from dagster._core.definitions.partition import (
+    CachingDynamicPartitionsLoader,
+    PartitionLoadingContext,
+    PartitionsDefinition,
+    TemporalContext,
+)
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.remote_asset_graph import RemoteAssetNode, RemoteWorkspaceAssetNode
 from dagster._core.definitions.selector import JobSelector
@@ -38,6 +43,7 @@ from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.utils import is_valid_email
 from dagster._core.workspace.permissions import Permissions
+from dagster._time import get_current_datetime
 from packaging import version
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -84,6 +90,7 @@ from dagster_graphql.schema.logs.events import (
     GrapheneObservationEvent,
 )
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.partition_keys import GraphenePartitionKeyConnection
 from dagster_graphql.schema.partition_mappings import GraphenePartitionMapping
 from dagster_graphql.schema.partition_sets import (
     GrapheneDimensionPartitionKeys,
@@ -280,6 +287,12 @@ class GrapheneAssetNode(graphene.ObjectType):
     opVersion = graphene.String()
     partitionDefinition = graphene.Field(GraphenePartitionDefinition)
     partitionKeys = non_null_list(graphene.String)
+    partitionKeyConnection = graphene.Field(
+        GraphenePartitionKeyConnection,
+        limit=graphene.Argument(graphene.NonNull(graphene.Int)),
+        ascending=graphene.Argument(graphene.NonNull(graphene.Boolean)),
+        cursor=graphene.Argument(graphene.String),
+    )
     partitionKeysByDimension = graphene.Field(
         non_null_list(GrapheneDimensionPartitionKeys),
         startIdx=graphene.Int(),
@@ -1187,6 +1200,39 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_partitionKeys(self, _graphene_info: ResolveInfo) -> Sequence[str]:
         return self.get_partition_keys()
+
+    def resolve_partitionKeyConnection(
+        self,
+        graphene_info: ResolveInfo,
+        limit: int,
+        ascending: bool,
+        cursor: Optional[str] = None,
+    ) -> Optional[GraphenePartitionKeyConnection]:
+        if not self._dynamic_partitions_loader:
+            check.failed("dynamic_partitions_loader must be provided to get partition keys")
+
+        if not self._remote_node.is_partitioned:
+            return None
+
+        partitions_def = self._get_partitions_def()
+        context = PartitionLoadingContext(
+            TemporalContext(
+                effective_dt=get_current_datetime(),
+                last_event_id=graphene_info.context.instance.event_log_storage.get_maximum_record_id(),
+            ),
+            dynamic_partitions_store=self._dynamic_partitions_loader,
+        )
+        conn = partitions_def.get_partition_key_connection(
+            context=context,
+            limit=limit,
+            ascending=ascending,
+            cursor=cursor,
+        )
+        return GraphenePartitionKeyConnection(
+            results=conn.results,
+            cursor=conn.cursor,
+            hasMore=conn.has_more,
+        )
 
     def resolve_partitionDefinition(
         self, _graphene_info: ResolveInfo
