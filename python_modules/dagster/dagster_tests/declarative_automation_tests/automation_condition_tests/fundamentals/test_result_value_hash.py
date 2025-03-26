@@ -5,6 +5,7 @@ from dagster import (
     AutomationCondition as SC,
     DailyPartitionsDefinition,
 )
+from dagster._core.definitions.asset_selection import AssetSelection
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -38,6 +39,13 @@ two_parents_daily = two_parents.with_asset_properties(partitions_def=daily_parti
         ("f8237121a2848d3bef57376d2c3908a1", SC.eager(), one_parent, False),
         ("814fbbf023768be85417e19dfc3ed446", SC.eager(), one_parent, True),
         ("771796e08a6d705df7cb25f86debb109", SC.eager(), one_parent_daily, False),
+        (
+            # note: identical hash to the above
+            "771796e08a6d705df7cb25f86debb109",
+            SC.eager().allow(AssetSelection.all()),
+            one_parent_daily,
+            False,
+        ),
         ("60461372601abf65f9a290f8287d20c2", SC.eager(), two_parents, False),
         ("c955823e087245ecc3a4dd1e42344984", SC.eager(), two_parents_daily, False),
         # missing condition is invariant to changes other than partitions def changes
@@ -61,3 +69,18 @@ async def test_value_hash(
 
     state, result = await state.evaluate("downstream")
     assert result.value_hash == expected_value_hash
+
+
+def test_node_unique_id() -> None:
+    condition = (
+        SC.any_deps_match(SC.missing())
+        .allow(AssetSelection.keys("a"))
+        .ignore(AssetSelection.keys("b"))
+    )
+    assert (
+        condition.get_node_unique_id(parent_unique_id=None, index=None)
+        == "80f87fb32baaf7ce3f65f68c12d3eb11"
+    )
+    assert condition.get_backcompat_node_unique_ids(parent_unique_id=None, index=None) == [
+        "35b152923d1d99348e85c3cbe426bcb7"
+    ]
