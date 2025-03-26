@@ -303,14 +303,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         # snippets in all python versions since we are testing the core code exercised by the
         # snippets against all supported python versions.
         unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
-    ),
-    PackageSpec(
-        "examples/docs_beta_snippets",
-        # The docs_snippets test suite also installs a ton of packages in the same environment,
-        # which is liable to cause dependency collisions. It's not necessary to test all these
-        # snippets in all python versions since we are testing the core code exercised by the
-        # snippets against all supported python versions.
-        unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
         pytest_tox_factors=["all", "integrations", "docs_snapshot_test"],
         always_run_if=has_dg_or_components_changes,
     ),
