@@ -8,7 +8,7 @@ from dagster_dg.utils.plus import gql
 
 ensure_dagster_dg_tests_import()
 
-from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_mutation, mock_gql_response
+from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response
 from dagster_dg_tests.utils import (
     ProxyRunner,
     isolated_example_project_foo_bar,
@@ -33,7 +33,7 @@ def test_pull_env_command_no_auth(monkeypatch):
         result = runner.invoke("plus", "env", "pull")
         assert result.exit_code != 0, result.output + " " + str(result.exception)
         assert (
-            "`dg plus env pull` requires authentication with Dagster Plus. Run `dg plus login` to authenticate."
+            "`dg plus env` commands require authentication with Dagster Plus. Run `dg plus login` to authenticate."
             in str(result.output)
         )
 
@@ -45,15 +45,16 @@ def test_pull_env_command_auth_err(dg_plus_cli_config):
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         mock_gql_response(
-            query=gql.LOCAL_SECRETS_FILE_QUERY,
+            query=gql.SECRETS_QUERY,
             json_data={
                 "data": {
-                    "viewableLocalSecretsOrError": {
+                    "secretsOrError": {
                         "__typename": "UnauthorizedError",
                         "message": "Not authorized",
                     }
                 }
             },
+            expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
         )
         result = runner.invoke("plus", "env", "pull")
         assert result.exit_code != 0, result.output + " " + str(result.exception)
@@ -67,16 +68,17 @@ def test_pull_env_command_python_err(dg_plus_cli_config):
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         mock_gql_response(
-            query=gql.LOCAL_SECRETS_FILE_QUERY,
+            query=gql.SECRETS_QUERY,
             json_data={
                 "data": {
-                    "viewableLocalSecretsOrError": {
+                    "secretsOrError": {
                         "__typename": "PythonError",
                         "message": "An error has occurred",
                         "stack": "Stack trace",
                     }
                 }
             },
+            expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
         )
         result = runner.invoke("plus", "env", "pull")
         assert result.exit_code != 0, result.output + " " + str(result.exception)
@@ -90,10 +92,10 @@ def test_pull_env_command_project(dg_plus_cli_config):
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         mock_gql_response(
-            query=gql.LOCAL_SECRETS_FILE_QUERY,
+            query=gql.SECRETS_QUERY,
             json_data={
                 "data": {
-                    "viewableLocalSecretsOrError": {
+                    "secretsOrError": {
                         "secrets": [
                             {
                                 "secretName": "FOO",
@@ -123,6 +125,7 @@ def test_pull_env_command_project(dg_plus_cli_config):
                     }
                 }
             },
+            expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
         )
         result = runner.invoke("plus", "env", "pull")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
@@ -142,10 +145,10 @@ def test_pull_env_command_workspace(dg_plus_cli_config):
         runner.invoke("scaffold", "project", "baz")
 
         mock_gql_response(
-            query=gql.LOCAL_SECRETS_FILE_QUERY,
+            query=gql.SECRETS_QUERY,
             json_data={
                 "data": {
-                    "viewableLocalSecretsOrError": {
+                    "secretsOrError": {
                         "secrets": [
                             {
                                 "secretName": "FOO",
@@ -175,6 +178,7 @@ def test_pull_env_command_workspace(dg_plus_cli_config):
                     }
                 }
             },
+            expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
         )
         result = runner.invoke("plus", "env", "pull")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
@@ -217,8 +221,8 @@ def test_add_env_command_basic_success(dg_plus_cli_config, input_type: str):
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
             json_data={"data": {"secretsForScopes": {"secrets": []}}},
         )
-        mock_gql_mutation(
-            mutation=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
+        mock_gql_response(
+            query=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
             json_data={
                 "data": {
                     "createOrUpdateSecretForScopes": {
@@ -282,8 +286,8 @@ def test_add_env_command_scopes(dg_plus_cli_config, scopes: list[str]):
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
             json_data={"data": {"secretsForScopes": {"secrets": []}}},
         )
-        mock_gql_mutation(
-            mutation=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
+        mock_gql_response(
+            query=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
             json_data={
                 "data": {
                     "createOrUpdateSecretForScopes": {
@@ -330,8 +334,8 @@ def test_add_env_command_basic_success_global(dg_plus_cli_config):
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
             json_data={"data": {"secretsForScopes": {"secrets": []}}},
         )
-        mock_gql_mutation(
-            mutation=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
+        mock_gql_response(
+            query=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
             json_data={
                 "data": {
                     "createOrUpdateSecretForScopes": {
@@ -389,8 +393,8 @@ def test_add_env_command_warn_if_global(dg_plus_cli_config, accept: bool):
                 }
             },
         )
-        mock_gql_mutation(
-            mutation=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
+        mock_gql_response(
+            query=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
             json_data={
                 "data": {
                     "createOrUpdateSecretForScopes": {
@@ -441,8 +445,8 @@ def test_add_env_command_exception_if_multiple_locations(dg_plus_cli_config):
                 }
             },
         )
-        mock_gql_mutation(
-            mutation=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
+        mock_gql_response(
+            query=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
             json_data={
                 "data": {
                     "createOrUpdateSecretForScopes": {
@@ -490,8 +494,8 @@ def test_add_env_command_warn_if_existing(dg_plus_cli_config, accept: bool):
                 }
             },
         )
-        mock_gql_mutation(
-            mutation=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
+        mock_gql_response(
+            query=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
             json_data={
                 "data": {
                     "createOrUpdateSecretForScopes": {
