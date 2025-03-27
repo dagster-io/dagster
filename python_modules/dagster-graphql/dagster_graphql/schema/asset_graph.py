@@ -33,7 +33,11 @@ from dagster._core.remote_representation.external_data import (
     TimeWindowPartitionsSnap,
 )
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
-from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
+from dagster._core.storage.asset_check_execution_record import (
+    AssetCheckExecutionRecord,
+    AssetCheckExecutionResolvedStatus,
+    AssetCheckInstanceSupport,
+)
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.utils import is_valid_email
@@ -546,11 +550,51 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         return GrapheneAssetHealthStatus.UNKNOWN
 
-    def get_asset_check_status_for_asset_health(self, graphene_info: ResolveInfo):
-        # all asset checks passed, health
-        # any asset check warning, warning
-        # any asset check failed, degraded
-        return GrapheneAssetHealthStatus.UNKNOWN
+    async def get_asset_check_status_for_asset_health(self, graphene_info: ResolveInfo):
+        remote_check_nodes = graphene_info.context.asset_graph.get_checks_for_asset(
+            self._asset_node_snap.asset_key
+        )
+        if not remote_check_nodes:
+            return GrapheneAssetHealthStatus.UNKNOWN
+        else:
+            check_statuses = []
+            all_checks_executed = True
+            for remote_check_node in remote_check_nodes:
+                record = await AssetCheckExecutionRecord.gen(
+                    graphene_info.context, remote_check_node.asset_check.key
+                )
+                if record and await record.targets_latest_materialization(
+                    graphene_info.context
+                ):  # requires loading the run in some cases...
+                    # resolve_status is called by targets_latest_materialization. maybe there's some caching we can do
+                    check_statuses.append(
+                        await record.resolve_status(graphene_info.context)
+                    )  # requires loading the run in some cases
+                else:
+                    # check wasn't executed against the latest materialization or has never been executed
+                    all_checks_executed = False
+            if len(check_statuses) == 0:
+                return (
+                    GrapheneAssetHealthStatus.WARNING
+                    if not all_checks_executed
+                    else GrapheneAssetHealthStatus.UNKNOWN
+                )
+
+            if all(
+                status == AssetCheckExecutionResolvedStatus.SUCCEEDED for status in check_statuses
+            ):
+                if all_checks_executed:
+                    return GrapheneAssetHealthStatus.HEALTHY
+                else:
+                    return GrapheneAssetHealthStatus.WARNING
+            elif any(
+                status == AssetCheckExecutionResolvedStatus.FAILED
+                or status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
+                for status in check_statuses
+            ):
+                return GrapheneAssetHealthStatus.DEGRADED
+            # some asset checks may have IN_PROGRESS or SKIPPED status
+            return GrapheneAssetHealthStatus.UNKNOWN
 
     def get_freshness_status_for_asset_health(self, graphene_info: ResolveInfo):
         # if SLA is met, healthy
@@ -561,8 +605,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_assetHealth(self, graphene_info: ResolveInfo):
         if not graphene_info.context.instance.dagster_observe_supported():
             return None
+        check_status = await self.get_asset_check_status_for_asset_health(graphene_info)
         return GrapheneAssetHealth(
-            assetChecksStatus=self.get_asset_check_status_for_asset_health(graphene_info),
+            asset_check_status=check_status,
             materializationStatus=self.get_materialization_status_for_asset_health(graphene_info),
             freshnessStatus=self.get_freshness_status_for_asset_health(graphene_info),
         )
