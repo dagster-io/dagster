@@ -88,14 +88,14 @@ class DbtCloudWorkspaceClient(DagsterModel):
     def _make_request(
         self,
         method: str,
-        endpoint: str,
+        endpoint: Optional[str],
         base_url: str,
         data: Optional[Mapping[str, Any]] = None,
         params: Optional[Mapping[str, Any]] = None,
         session_attr: str = "_get_session",
         include_full_response: bool = False,
     ) -> Mapping[str, Any]:
-        url = f"{base_url}/{endpoint}"
+        url = f"{base_url}/{endpoint}" if endpoint else base_url
 
         num_retries = 0
         while True:
@@ -103,7 +103,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 session = getattr(self, session_attr)()
                 response = session.request(
                     method=method,
-                    url=f"{self.api_v2_url}/{endpoint}",
+                    url=url,
                     json=data,
                     params=params,
                     timeout=self.request_timeout,
@@ -435,7 +435,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
         """
         return self._make_request(
             method="get",
-            endpoint="",
+            endpoint=None,
             base_url=self.api_v2_url,
         )
 

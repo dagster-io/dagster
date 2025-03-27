@@ -19,6 +19,7 @@ run_results_path = tests_path.joinpath("run_results.json")
 
 
 TEST_ACCOUNT_ID = 1111
+TEST_ACCOUNT_NAME = "test_account_name"
 TEST_ACCESS_URL = "https://cloud.getdbt.com"
 TEST_TOKEN = "test_token"
 
@@ -153,6 +154,52 @@ SAMPLE_CUSTOM_CREATE_JOB_RESPONSE = {
     "data": get_sample_job_data(job_name=TEST_CUSTOM_ADHOC_JOB_NAME),
     "status": {
         "code": 201,
+        "is_success": True,
+        "user_message": "string",
+        "developer_message": "string",
+    },
+}
+
+# Taken from dbt Cloud REST API documentation
+# https://docs.getdbt.com/dbt-cloud/api-v2#/operations/Retrieve%20Account
+SAMPLE_ACCOUNT_RESPONSE = {
+    "data": {
+        "id": TEST_ACCOUNT_ID,
+        "name": TEST_ACCOUNT_NAME,
+        "plan": "cancelled",
+        "run_slots": 1,
+        "developer_seats": 0,
+        "it_seats": 0,
+        "explorer_seats": 0,
+        "read_only_seats": 0,
+        "locked": False,
+        "lock_reason": "string",
+        "lock_cause": "trial_expired",
+        "unlocked_at": "2019-08-24T14:15:22Z",
+        "pending_cancel": False,
+        "billing_email_address": "string",
+        "pod_memory_request_mebibytes": 600,
+        "develop_pod_memory_request_mebibytes": 0,
+        "run_duration_limit_seconds": 86400,
+        "queue_limit": 50,
+        "enterprise_login_slug": "string",
+        "business_critical": False,
+        "starter_repo_url": "string",
+        "git_auth_level": "string",
+        "identifier": "string",
+        "trial_end_date": "2019-08-24T14:15:22Z",
+        "static_subdomain": "string",
+        "run_locked_until": "2019-08-24T14:15:22Z",
+        "state": 1,
+        "docs_job_id": 0,
+        "freshness_job_id": 0,
+        "account_migration_events": [None],
+        "groups": [],
+        "created_at": "2019-08-24T14:15:22Z",
+        "updated_at": "2019-08-24T14:15:22Z",
+    },
+    "status": {
+        "code": 200,
         "is_success": True,
         "user_message": "string",
         "developer_message": "string",
@@ -849,6 +896,12 @@ def all_api_mocks_fixture(
         method=responses.GET,
         url=f"{TEST_REST_API_BASE_URL}/runs/{TEST_RUN_ID}/artifacts",
         json=SAMPLE_LIST_RUN_ARTIFACTS,
+        status=200,
+    )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}",
+        json=SAMPLE_ACCOUNT_RESPONSE,
         status=200,
     )
     yield fetch_workspace_data_api_mocks

@@ -9,6 +9,22 @@ from dagster._serdes import whitelist_for_serdes
 
 @preview
 @record
+class DbtCloudAccount:
+    """Represents a dbt Cloud Account, based on data as returned from the API."""
+
+    id: int
+    name: Optional[str]
+
+    @classmethod
+    def from_account_details(cls, account_details: Mapping[str, Any]) -> "DbtCloudAccount":
+        return cls(
+            id=account_details["id"],
+            name=account_details.get("name"),
+        )
+
+
+@preview
+@record
 class DbtCloudProject:
     """Represents a dbt Cloud Project, based on data as returned from the API."""
 
