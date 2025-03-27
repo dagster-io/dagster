@@ -24,12 +24,57 @@ def test_pull_env_command_no_auth(monkeypatch):
     ):
         monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
         monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
-        result = runner.invoke("env", "pull")
+        result = runner.invoke("plus", "env", "pull")
         assert result.exit_code != 0, result.output + " " + str(result.exception)
         assert (
-            "`dg env pull` requires authentication with Dagster Plus. Run `dg plus login` to authenticate."
+            "`dg plus env pull` requires authentication with Dagster Plus. Run `dg plus login` to authenticate."
             in str(result.output)
         )
+
+
+@responses.activate
+def test_pull_env_command_auth_err(dg_plus_cli_config):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        mock_gql_response(
+            query=gql.LOCAL_SECRETS_FILE_QUERY,
+            json_data={
+                "data": {
+                    "viewableLocalSecretsOrError": {
+                        "__typename": "UnauthorizedError",
+                        "message": "Not authorized",
+                    }
+                }
+            },
+        )
+        result = runner.invoke("plus", "env", "pull")
+        assert result.exit_code != 0, result.output + " " + str(result.exception)
+        assert "Unauthorized: Not authorized" in str(result.output)
+
+
+@responses.activate
+def test_pull_env_command_python_err(dg_plus_cli_config):
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        mock_gql_response(
+            query=gql.LOCAL_SECRETS_FILE_QUERY,
+            json_data={
+                "data": {
+                    "viewableLocalSecretsOrError": {
+                        "__typename": "PythonError",
+                        "message": "An error has occurred",
+                        "stack": "Stack trace",
+                    }
+                }
+            },
+        )
+        result = runner.invoke("plus", "env", "pull")
+        assert result.exit_code != 0, result.output + " " + str(result.exception)
+        assert "Error: An error has occurred" in str(result.output)
 
 
 @responses.activate
@@ -42,7 +87,7 @@ def test_pull_env_command_project(dg_plus_cli_config):
             query=gql.LOCAL_SECRETS_FILE_QUERY,
             json_data={
                 "data": {
-                    "secretsOrError": {
+                    "viewableLocalSecretsOrError": {
                         "secrets": [
                             {
                                 "secretName": "FOO",
@@ -73,7 +118,7 @@ def test_pull_env_command_project(dg_plus_cli_config):
                 }
             },
         )
-        result = runner.invoke("env", "pull")
+        result = runner.invoke("plus", "env", "pull")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert result.output.strip() == "Environment variables saved to .env"
 
@@ -94,7 +139,7 @@ def test_pull_env_command_workspace(dg_plus_cli_config):
             query=gql.LOCAL_SECRETS_FILE_QUERY,
             json_data={
                 "data": {
-                    "secretsOrError": {
+                    "viewableLocalSecretsOrError": {
                         "secrets": [
                             {
                                 "secretName": "FOO",
@@ -125,7 +170,7 @@ def test_pull_env_command_workspace(dg_plus_cli_config):
                 }
             },
         )
-        result = runner.invoke("env", "pull")
+        result = runner.invoke("plus", "env", "pull")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert (
             result.output.strip()
