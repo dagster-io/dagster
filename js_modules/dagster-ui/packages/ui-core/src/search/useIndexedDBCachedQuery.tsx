@@ -272,14 +272,17 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
     });
   }, [dataRef, skip, cacheRef]);
 
+  // JSON stringify variables to avoid refetching if the caller hasn't memoized it
+  const stringifiedVariables = useMemo(() => JSON.stringify(variables ?? {}), [variables]);
+
   React.useEffect(() => {
     if (skip) {
       return;
     }
-    cacheRef.updateVariables(variables || ({} as TVariables));
+    cacheRef.updateVariables(JSON.parse(stringifiedVariables));
     cacheRef.updateVersion(version);
     fetch(true);
-  }, [fetch, skip, variables, version, cacheRef]);
+  }, [fetch, skip, version, cacheRef, stringifiedVariables]);
 
   const dep = useBlockTraceUntilTrue(`useIndexedDBCachedQuery-${key}`, !!data, {
     skip,
