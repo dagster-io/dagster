@@ -238,7 +238,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
       variables,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [key, query, client]);
 
   const fetch = useCallback(
     async (bypassCache = false) => {
