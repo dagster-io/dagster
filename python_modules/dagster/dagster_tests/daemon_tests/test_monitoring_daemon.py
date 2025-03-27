@@ -180,6 +180,51 @@ def report_canceling_event(instance, run, timestamp):
     instance.handle_new_event(event_record)
 
 
+def test_monitor_not_started(instance: DagsterInstance, logger: Logger):
+    now = time.time()
+
+    run = create_run_for_test(
+        instance,
+        job_name="foo",
+    )
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.status == DagsterRunStatus.NOT_STARTED
+
+    monitor_starting_run(
+        instance,
+        instance.get_run_record_by_id(run.run_id),  # type: ignore  # (possible none)
+        logger,
+    )
+
+    run = instance.get_run_by_id(run.run_id)
+    assert run
+    assert run.status == DagsterRunStatus.NOT_STARTED
+
+    with freeze_time(now + 60):
+        monitor_starting_run(
+            instance,
+            instance.get_run_record_by_id(run.run_id),  # type: ignore  # (possible none)
+            logger,
+        )
+
+        run = instance.get_run_by_id(run.run_id)
+        assert run
+        assert run.status == DagsterRunStatus.NOT_STARTED
+
+    with freeze_time(now + 1000):
+        monitor_starting_run(
+            instance,
+            instance.get_run_record_by_id(run.run_id),  # type: ignore  # (possible none)
+            logger,
+        )
+
+        run = instance.get_run_by_id(run.run_id)
+        assert run
+        assert run.status == DagsterRunStatus.FAILURE
+        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.START_TIMEOUT.value
+
+
 def test_monitor_starting(instance: DagsterInstance, logger: Logger):
     run = create_run_for_test(
         instance,
