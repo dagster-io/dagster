@@ -23,6 +23,9 @@ class GrapheneAssetHealth(graphene.ObjectType):
     class Meta:
         name = "AssetHealth"
 
+    def __init__(self, asset_check_status: GrapheneAssetHealthStatus):
+        self.assetChecksStatus = asset_check_status
+
     def resolve_assetHealth(self, graphene_info: ResolveInfo):
         if not graphene_info.context.instance.dagster_observe_supported():
             return GrapheneAssetHealthStatus.UNKNOWN
