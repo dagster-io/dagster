@@ -764,6 +764,7 @@ def get_paginated_partition_keys(
     current_time=None,
     ascending: bool = True,
     batch_size: int = 1,
+    dynamic_partitions_store=None,
 ) -> list[str]:
     MAX_PAGES = 10000
 
@@ -772,7 +773,7 @@ def get_paginated_partition_keys(
     has_more = True
     partitions_context = PartitionLoadingContext(
         TemporalContext(effective_dt=current_time or datetime.datetime.now(), last_event_id=None),
-        dynamic_partitions_store=None,
+        dynamic_partitions_store=dynamic_partitions_store,
     )
     counter = 0
     while has_more:

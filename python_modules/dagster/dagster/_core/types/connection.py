@@ -1,17 +1,24 @@
 import base64
 from typing import (
+    Any,
     Generic,
     Optional,
     Sequence,
 )
 from dagster_shared.seven import json
+from dagster._record import record
 
 from typing_extensions import TypeVar
 
 T = TypeVar("T")
 
 
+@record
 class Connection(Generic[T]):
+    results: Sequence[T]
+    cursor: str
+    has_more: bool
+
     """
     A wrapper for paginated results of type T.
 
@@ -20,11 +27,6 @@ class Connection(Generic[T]):
         cursor (Optional[str]): Pagination cursor for fetching next page
         has_more (bool): Whether more results are available
     """
-
-    def __init__(self, results: Sequence[T], cursor: str, has_more: bool = False):
-        self.results = results
-        self.cursor = cursor
-        self.has_more = has_more
 
     @classmethod
     def create_from_sequence(
@@ -55,18 +57,18 @@ class Connection(Generic[T]):
         seq = seq[:limit]
 
         last_seen_value = seq[-1] if seq else value
-        new_cursor = ValueIndexCursor(last_seen_value).to_string()
+        new_cursor = ValueIndexCursor(value=last_seen_value).to_string()
 
         return Connection(results=seq, cursor=new_cursor, has_more=has_more)
 
 
+@record
 class ValueIndexCursor:
     """
     Cursor class useful for paginating results based on a last seen value.
     """
 
-    def __init__(self, value):
-        self.value = value
+    value: Any
 
     def __str__(self) -> str:
         return self.to_string()
@@ -80,4 +82,4 @@ class ValueIndexCursor:
         raw = json.loads(base64.b64decode(cursor).decode("utf-8"))
         if "value" not in raw:
             raise ValueError(f"Invalid cursor: {cursor}")
-        return ValueIndexCursor(raw["value"])
+        return ValueIndexCursor(value=raw["value"])
