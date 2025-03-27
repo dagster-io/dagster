@@ -110,7 +110,11 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 )
                 response.raise_for_status()
                 resp_dict = response.json()
-                return resp_dict["data"] if "data" in resp_dict and not include_full_response else resp_dict
+                return (
+                    resp_dict["data"]
+                    if "data" in resp_dict and not include_full_response
+                    else resp_dict
+                )
             except RequestException as e:
                 self._log.error(
                     f"Request to dbt Cloud API failed for url {url} with method {method} : {e}"
@@ -279,12 +283,9 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 "finished_at__range": f"""["{finished_at_start.isoformat()}", "{finished_at_end.isoformat()}"]""",
                 "order_by": "finished_at",
             },
-            include_full_response=True
+            include_full_response=True,
         )
-        data = cast(
-            Sequence[Mapping[str, Any]],
-            resp["data"]
-        )
+        data = cast(Sequence[Mapping[str, Any]], resp["data"])
         total_count = resp["extra"]["pagination"]["total_count"]
         return data, total_count
 
