@@ -81,7 +81,7 @@ describe('useIndexedDBCachedQuery', () => {
     jest.clearAllMocks();
   });
 
-  [true].forEach((shouldThrowError) => {
+  [true, false].forEach((shouldThrowError) => {
     const throwingError = shouldThrowError;
     describe(
       // eslint-disable-next-line jest/valid-title
