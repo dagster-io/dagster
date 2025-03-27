@@ -36,6 +36,7 @@ setup(
         "tomlkit",
         "click>=8",
         "typing_extensions>=4.4.0,<5",
+        "gql[requests]",
         "markdown",
         "jsonschema",
         "PyYAML>=5.1",
