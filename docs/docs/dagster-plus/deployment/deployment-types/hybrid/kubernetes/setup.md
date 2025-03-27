@@ -86,7 +86,7 @@ There are three places to customize how Dagster interacts with Kubernetes:
 
 Changes apply in a hierarchy, for example, a customization for an asset will override a default set globally in the agent configuration. Attributes that are not customized will use the global defaults.
 
-An exhaustive list of settings is available [here](/dagster-plus/deployment/management/settings/hybrid-agent-settings), but common options are presented below.
+An exhaustive list of settings is available on the [Kubernetes agent configuration page](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/configuration), but common options are presented below.
 
 
 ### Configure your agents to serve branch deployments
