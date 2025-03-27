@@ -1,15 +1,15 @@
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
-from dagster import AssetMaterialization
+from dagster import AssetCheckEvaluation, AssetCheckSeverity, AssetMaterialization
 from dagster._annotations import preview
 from dagster._record import record
-from dbt.contracts.results import NodeStatus
+from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
 from packaging import version
 
-from dagster_dbt.asset_utils import build_dbt_specs
+from dagster_dbt.asset_utils import build_dbt_specs, get_asset_check_key_for_test
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun, DbtCloudWorkspaceData
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
@@ -75,7 +75,7 @@ class DbtCloudJobRunResults:
         self,
         workspace_data: DbtCloudWorkspaceData,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-    ) -> Iterator[AssetMaterialization]:
+    ) -> Iterator[Union[AssetMaterialization, AssetCheckEvaluation]]:
         """Convert the run results of a dbt Cloud job run to a set of corresponding Dagster events.
 
         Args:
@@ -84,11 +84,12 @@ class DbtCloudJobRunResults:
                 linking dbt nodes to Dagster assets.
 
         Returns:
-            Iterator[AssetMaterialization]:
+            Iterator[Union[AssetMaterialization, AssetCheckEvaluation]]:
                 A set of corresponding Dagster events.
 
                 The following are yielded:
                 - AssetMaterialization for refables (e.g. models, seeds, snapshots.)
+                - AssetCheckEvaluation for dbt tests.
         """
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
         manifest = workspace_data.manifest
@@ -110,10 +111,9 @@ class DbtCloudJobRunResults:
             materialization: str = dbt_resource_props["config"]["materialized"]
 
             is_ephemeral = materialization == "ephemeral"
-            is_successful = result_status == NodeStatus.Success
 
             # Build the specs for the given unique ID
-            asset_specs, check_specs = build_dbt_specs(
+            asset_specs, _ = build_dbt_specs(
                 manifest=manifest,
                 translator=dagster_dbt_translator,
                 select=selector,
@@ -122,9 +122,39 @@ class DbtCloudJobRunResults:
                 project=None,
             )
 
-            if resource_type in REFABLE_NODE_TYPES and is_successful and not is_ephemeral:
+            if (
+                resource_type in REFABLE_NODE_TYPES
+                and result_status == NodeStatus.Success
+                and not is_ephemeral
+            ):
                 spec = asset_specs[0]
                 yield AssetMaterialization(
                     asset_key=spec.key,
                     metadata=default_metadata,
                 )
+            elif resource_type == NodeType.Test and result_status == NodeStatus.Pass:
+                metadata = {
+                    **default_metadata,
+                    "status": result_status,
+                }
+                if result["failures"] is not None:
+                    metadata["dagster_dbt/failed_row_count"] = result["failures"]
+
+                asset_check_key = get_asset_check_key_for_test(
+                    manifest=manifest,
+                    dagster_dbt_translator=dagster_dbt_translator,
+                    test_unique_id=unique_id,
+                )
+
+                if asset_check_key is not None:
+                    yield AssetCheckEvaluation(
+                        passed=result_status == TestStatus.Pass,
+                        asset_key=asset_check_key.asset_key,
+                        check_name=asset_check_key.name,
+                        metadata=metadata,
+                        severity=(
+                            AssetCheckSeverity.WARN
+                            if result_status == TestStatus.Warn
+                            else AssetCheckSeverity.ERROR
+                        ),
+                    )
