@@ -35,7 +35,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_components_tests*", "examples*"]),
     install_requires=[
-        f"dagster{pin}",
+        "dagster==1.10.7rc0",
         "typer",
     ],
     zip_safe=False,
