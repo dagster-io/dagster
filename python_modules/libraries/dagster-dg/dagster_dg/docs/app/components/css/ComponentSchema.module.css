@@ -20,7 +20,7 @@
   width: 100%;
   overflow: hidden;
   border-radius: 8px;
-  box-shadow: 0 0 0 2px var(--color-keyline);
+  box-shadow: 0 0 0 2px var(--color-keyline-default);
 }
 
 .chevronContainer {
@@ -48,7 +48,7 @@
 }
 
 .expandButton:not(:disabled):hover {
-  background-color: var(--color-background-lighter);
+  background-color: var(--color-background-light);
 }
 
 .expandButton .chevron {

@@ -86,7 +86,7 @@ function Property({
             {$ref ? <PropertyRef ref={$ref} defs={defs} /> : null}
             {type ? <PropertyType property={property} defs={defs} /> : null}
             {anyOf ? <PropertyAnyOf anyOf={anyOf} defs={defs} /> : null}
-            {required || true ? <div className={styles.required}>required</div> : null}
+            {required ? <div className={styles.required}>required</div> : null}
           </div>
           {expandable ? (
             <div className={styles.chevronContainer}>
