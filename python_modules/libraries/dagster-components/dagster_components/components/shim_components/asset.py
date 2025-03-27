@@ -1,4 +1,6 @@
-from dagster_components.components.shim_components.base import ShimComponent, ShimScaffolder
+from dagster import asset
+
+from dagster_components.components.shim_components.base import ShimScaffolder
 from dagster_components.scaffold import scaffold_with
 
 
@@ -13,6 +15,4 @@ class AssetScaffolder(ShimScaffolder):
 """
 
 
-@scaffold_with(AssetScaffolder)
-class RawAssetComponent(ShimComponent):
-    """Asset definition component."""
+scaffold_with(AssetScaffolder)(asset)

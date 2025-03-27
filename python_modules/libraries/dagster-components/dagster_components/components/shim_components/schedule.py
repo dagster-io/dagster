@@ -1,4 +1,6 @@
-from dagster_components.components.shim_components.base import ShimComponent, ShimScaffolder
+from dagster import schedule
+
+from dagster_components.components.shim_components.base import ShimScaffolder
 from dagster_components.scaffold import scaffold_with
 
 
@@ -13,6 +15,4 @@ class ScheduleScaffolder(ShimScaffolder):
 """
 
 
-@scaffold_with(ScheduleScaffolder)
-class RawScheduleComponent(ShimComponent):
-    """Schedule component."""
+scaffold_with(ScheduleScaffolder)(schedule)

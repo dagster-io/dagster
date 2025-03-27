@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Any
 
 import click
+from dagster_shared.serdes.objects import ComponentTypeSnap
 from rich.console import Console
 from rich.table import Table
 
-from dagster_dg.cli.scaffold import SHIM_COMPONENTS
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import RemoteLibraryObjectRegistry
 from dagster_dg.config import normalize_cli_config
@@ -84,17 +84,20 @@ def list_component_type_command(output_json: bool, **global_options: object) -> 
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
 
-    sorted_keys = sorted(registry.keys() - SHIM_COMPONENTS.keys(), key=lambda k: k.to_typename())
+    sorted_keys = sorted(
+        (k for k in registry.keys() if isinstance(registry.get(k), ComponentTypeSnap)),
+        key=lambda k: k.to_typename(),
+    )
 
     # JSON
     if output_json:
         output: list[dict[str, object]] = []
         for key in sorted_keys:
-            component_type_metadata = registry.get(key)
+            obj = registry.get(key)
             output.append(
                 {
                     "key": key.to_typename(),
-                    "summary": component_type_metadata.summary,
+                    "summary": obj.summary,
                 }
             )
         click.echo(json.dumps(output, indent=4))
