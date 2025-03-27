@@ -11,7 +11,7 @@ from dagster_dbt.cloud_v2.resources import (
     DbtCloudWorkspace,
     get_dagster_adhoc_job_name,
 )
-from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudWorkspaceData
+from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType
 
 tests_path = Path(__file__).joinpath("..").resolve()
 manifest_path = tests_path.joinpath("manifest.json")
@@ -38,6 +38,9 @@ TEST_DEFAULT_ADHOC_JOB_NAME = get_dagster_adhoc_job_name(
 TEST_CUSTOM_ADHOC_JOB_NAME = "test_custom_adhoc_job_name"
 TEST_ANOTHER_JOB_NAME = "test_another_job_name"
 
+TEST_RUN_URL = (
+    f"{TEST_ACCESS_URL}/deploy/{TEST_ACCOUNT_ID}/projects/{TEST_PROJECT_ID}/runs/{TEST_RUN_ID}/"
+)
 TEST_FINISHED_AT_START = datetime.datetime(2019, 1, 1)
 TEST_FINISHED_AT_END = datetime.datetime(2019, 12, 31)
 
@@ -561,7 +564,7 @@ def get_sample_run_response(run_status: int) -> Mapping[str, Any]:
             "retry_not_supported_reason": "RETRY_UNSUPPORTED_CMD",
             "job_id": 0,
             "is_running": True,
-            "href": "string",
+            "href": TEST_RUN_URL,
             "used_repo_cache": True,
         },
         "status": {
@@ -709,7 +712,7 @@ SAMPLE_LIST_RUNS_RESPONSE = {
             "retry_not_supported_reason": "RETRY_UNSUPPORTED_CMD",
             "job_id": 0,
             "is_running": True,
-            "href": "string",
+            "href": TEST_RUN_URL,
             "used_repo_cache": True,
         }
     ],
@@ -757,16 +760,6 @@ def workspace_fixture(credentials: DbtCloudCredentials) -> DbtCloudWorkspace:
         credentials=credentials,
         project_id=TEST_PROJECT_ID,
         environment_id=TEST_ENVIRONMENT_ID,
-    )
-
-
-@pytest.fixture(name="workspace_data")
-def workspace_data_fixture() -> DbtCloudWorkspaceData:
-    return DbtCloudWorkspaceData(
-        project_id=TEST_PROJECT_ID,
-        environment_id=TEST_ENVIRONMENT_ID,
-        job_id=TEST_JOB_ID,
-        manifest=get_sample_manifest_json(),
     )
 
 

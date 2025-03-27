@@ -86,6 +86,7 @@ class DbtCloudRun:
     environment_id: Optional[int]
     job_definition_id: Optional[int]
     status: Optional[DbtCloudJobRunStatusType]
+    url: Optional[str]
 
     @classmethod
     def from_run_details(cls, run_details: Mapping[str, Any]) -> "DbtCloudRun":
@@ -99,6 +100,7 @@ class DbtCloudRun:
             status=DbtCloudJobRunStatusType(run_details.get("status"))
             if run_details.get("status")
             else None,
+            url=run_details.get("href"),
         )
 
 
