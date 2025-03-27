@@ -25,6 +25,8 @@ from dagster_components.component.component import Component
 from dagster_components.component.component_loader import is_component_loader
 from dagster_components.core.context import ComponentLoadContext
 from dagster_components.core.library_object import load_library_object
+from dagster_components.resolved.base import Resolvable
+from dagster_components.resolved.core_models import AssetPostProcessor
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -42,60 +44,101 @@ class ComponentFileModel(BaseModel):
 
 
 @dataclass
-class DefsModule(Component):
+class DefsModuleComponent(Component):
     path: Path
 
     @classmethod
-    def from_context(cls, context: ComponentLoadContext) -> Optional["DefsModule"]:
+    def from_context(cls, context: ComponentLoadContext) -> Optional["DefsModuleComponent"]:
         # this defines the priority of the module types
         module_types = (
-            YamlComponentDefsModule,
-            PythonicComponentDefsModule,
-            DagsterDefsModule,
-            FolderDefsModule,
+            WrappedYamlComponent,
+            WrappedPythonicComponent,
+            DagsterDefsComponent,
+            DefsFolderComponent,
         )
         module_filter = filter(None, (cls.from_context(context) for cls in module_types))
         return next(module_filter, None)
 
     @classmethod
-    def load(cls, attributes: Any, context: ComponentLoadContext) -> "DefsModule":
+    def load(cls, attributes: Any, context: ComponentLoadContext) -> "DefsModuleComponent":
         return check.not_none(cls.from_context(context))
 
 
 @dataclass
-class FolderDefsModule(DefsModule):
+class DefsFolderComponentYamlSchema(Resolvable):
+    asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
+
+
+@dataclass
+class DefsFolderComponent(DefsModuleComponent):
     """A folder containing multiple submodules."""
 
-    submodules: Sequence[DefsModule]
+    submodules: Sequence[DefsModuleComponent]
+    asset_post_processors: Optional[Sequence[AssetPostProcessor]]
 
     @classmethod
-    def from_context(cls, context: ComponentLoadContext) -> Optional["FolderDefsModule"]:
+    def get_schema(cls):
+        return DefsFolderComponentYamlSchema.model()
+
+    @classmethod
+    def load(cls, attributes: Any, context: ComponentLoadContext) -> "DefsFolderComponent":
+        # doing this funky thing because some of our attributes are resolved from the context,
+        # so we split up resolving the yaml-defined attributes and the context-defined attributes,
+        # meaning we manually invoke the resolution system here
+        resolved_attributes = DefsFolderComponentYamlSchema.resolve_from_model(
+            context.resolution_context.at_path("attributes"),
+            attributes,
+        )
+        submodules = check.not_none(cls.submodules_from_context(context))
+        return DefsFolderComponent(
+            path=context.path,
+            submodules=submodules,
+            asset_post_processors=resolved_attributes.asset_post_processors,
+        )
+
+    @classmethod
+    def submodules_from_context(
+        cls, context: ComponentLoadContext
+    ) -> Optional[Sequence[DefsModuleComponent]]:
         if not context.path.is_dir():
             return None
         submodules = (
-            DefsModule.from_context(context.for_path(subpath)) for subpath in context.path.iterdir()
+            DefsModuleComponent.from_context(context.for_path(subpath))
+            for subpath in context.path.iterdir()
         )
-        return FolderDefsModule(path=context.path, submodules=list(filter(None, submodules)))
+        return list(filter(None, submodules))
+
+    @classmethod
+    def from_context(cls, context: ComponentLoadContext) -> Optional["DefsFolderComponent"]:
+        submodules = cls.submodules_from_context(context)
+        if submodules is None:
+            return None
+        return DefsFolderComponent(
+            path=context.path, submodules=submodules, asset_post_processors=None
+        )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions.merge(
+        defs = Definitions.merge(
             *(
                 submodule.build_defs(context.for_path(submodule.path))
                 for submodule in self.submodules
             )
         )
+        for post_processor in self.asset_post_processors or []:
+            defs = post_processor(defs)
+        return defs
 
 
 @dataclass
-class DagsterDefsModule(DefsModule):
+class DagsterDefsComponent(DefsModuleComponent):
     """A module containing python dagster definitions."""
 
     @classmethod
-    def from_context(cls, context: ComponentLoadContext) -> Optional["DagsterDefsModule"]:
+    def from_context(cls, context: ComponentLoadContext) -> Optional["DagsterDefsComponent"]:
         if (context.path / "definitions.py").exists():
-            return DagsterDefsModule(path=context.path / "definitions.py")
+            return DagsterDefsComponent(path=context.path / "definitions.py")
         elif context.path.suffix == ".py":
-            return DagsterDefsModule(path=context.path)
+            return DagsterDefsComponent(path=context.path)
         return None
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
@@ -113,7 +156,7 @@ class DagsterDefsModule(DefsModule):
 
 
 @dataclass
-class WrappedDefsModule(DefsModule):
+class WrappedDefsModuleComponent(DefsModuleComponent):
     """A module containing a component definition."""
 
     wrapped: Component
@@ -127,7 +170,7 @@ class WrappedDefsModule(DefsModule):
     def get_component(cls, context: ComponentLoadContext) -> Component: ...
 
     @classmethod
-    def from_context(cls, context: ComponentLoadContext) -> Optional["WrappedDefsModule"]:
+    def from_context(cls, context: ComponentLoadContext) -> Optional["WrappedDefsModuleComponent"]:
         if cls.get_component_def_path(context.path).exists():
             return cls(path=context.path, wrapped=cls.get_component(context))
         return None
@@ -137,7 +180,7 @@ class WrappedDefsModule(DefsModule):
 
 
 @dataclass
-class PythonicComponentDefsModule(WrappedDefsModule):
+class WrappedPythonicComponent(WrappedDefsModuleComponent):
     @staticmethod
     def get_component_def_path(path: Path) -> Path:
         return path / "component.py"
@@ -150,7 +193,7 @@ class PythonicComponentDefsModule(WrappedDefsModule):
             raise DagsterInvalidDefinitionError("No component loaders found in module")
         elif len(component_loaders) == 1:
             _, component_loader = component_loaders[0]
-            return PythonicComponentDefsModule(path=context.path, wrapped=component_loader(context))
+            return WrappedPythonicComponent(path=context.path, wrapped=component_loader(context))
         else:
             raise DagsterInvalidDefinitionError(
                 f"Multiple component loaders found in module: {component_loaders}"
@@ -158,7 +201,7 @@ class PythonicComponentDefsModule(WrappedDefsModule):
 
 
 @dataclass
-class YamlComponentDefsModule(WrappedDefsModule):
+class WrappedYamlComponent(WrappedDefsModuleComponent):
     @staticmethod
     def get_component_def_path(path: Path) -> Path:
         return path / "component.yaml"

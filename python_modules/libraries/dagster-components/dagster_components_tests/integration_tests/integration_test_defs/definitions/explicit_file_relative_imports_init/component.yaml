@@ -1,4 +1,0 @@
-type: dagster_components.dagster.DefinitionsComponent
-
-attributes:
-  definitions_path: __init__.py
