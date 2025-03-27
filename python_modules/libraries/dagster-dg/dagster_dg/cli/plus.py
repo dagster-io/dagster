@@ -4,7 +4,7 @@ import webbrowser
 from collections.abc import Mapping
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
@@ -159,34 +159,8 @@ class Scope(str, Enum):
     FULL = "full"
 
 
-def _secret_applies_to_location(secret: Mapping[str, Any], location_name: str) -> bool:
-    return location_name in secret["locationNames"] or not secret["locationNames"]
-
-
 def _secret_is_global(secret: Mapping[str, Any]) -> bool:
     return not secret["locationNames"]
-
-
-def _secret_applies_to_multiple_locations(secret: Mapping[str, Any]) -> bool:
-    return _secret_is_global(secret) or len(secret["locationNames"]) > 1
-
-
-def _get_matching_secrets(
-    gql_client: DagsterCloudGraphQLClient,
-    env_name: str,
-    scopes: set[Scope],
-    project_name: Optional[str] = None,
-) -> list[Mapping[str, Any]]:
-    result = gql_client.execute(
-        gql.SECRETS_QUERY,
-    )
-    matching_secrets = []
-    for secret in result["secretsOrError"]["secrets"]:
-        if secret["secretName"] == env_name and (
-            project_name is None or _secret_applies_to_location(secret, project_name)
-        ):
-            matching_secrets.append(secret)
-    return matching_secrets
 
 
 def _get_secret_scopes(secret: Mapping[str, Any]) -> set[Scope]:
@@ -265,7 +239,7 @@ def add_env_command(
     gql_client = DagsterCloudGraphQLClient.from_config(config)
 
     location_suffix = "" if global_ else f" for location {dg_context.project_name}"
-    scope_text = f" in {', '.join(active_scopes)} scope"
+    scope_text = f" in {', '.join(sorted(active_scopes))} scope"
 
     existing_secrets = gql_client.execute(
         gql.GET_SECRETS_FOR_SCOPES_QUERY,
@@ -282,7 +256,7 @@ def add_env_command(
 
     for existing_secret in existing_secrets:
         if len(existing_secret["locationNames"]) > 1:
-            raise click.UsageError(
+            raise click.ClickException(
                 f"Environment variable {env_name} is configured for multiple locations {', '.join(existing_secret['locationNames'])}, and cannot be modified via the CLI."
             )
 
