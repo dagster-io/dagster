@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_msteams.card import Card as Card
 from dagster_msteams.hooks import (

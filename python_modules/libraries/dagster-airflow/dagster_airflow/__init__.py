@@ -1,5 +1,5 @@
 from airflow.plugins_manager import AirflowPlugin
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_airflow.dagster_asset_factory import (
     load_assets_from_airflow_dag as load_assets_from_airflow_dag,

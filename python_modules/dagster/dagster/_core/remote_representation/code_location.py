@@ -6,6 +6,8 @@ from contextlib import AbstractContextManager
 from functools import cached_property
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union, cast  # noqa: UP035
 
+from dagster_shared.libraries import DagsterLibraryRegistry
+
 import dagster._check as check
 from dagster._api.get_server_id import sync_get_server_id
 from dagster._api.list_repositories import sync_list_repositories_grpc
@@ -35,7 +37,6 @@ from dagster._core.errors import (
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
-from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import RepositoryPythonOrigin
 from dagster._core.remote_representation import RemoteJobSubsetResult
 from dagster._core.remote_representation.external import (

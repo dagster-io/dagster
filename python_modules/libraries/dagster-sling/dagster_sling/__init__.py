@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_sling.asset_decorator import sling_assets
 from dagster_sling.dagster_sling_translator import DagsterSlingTranslator

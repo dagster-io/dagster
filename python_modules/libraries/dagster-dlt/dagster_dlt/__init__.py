@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_dlt.asset_decorator import build_dlt_asset_specs, dlt_assets
 from dagster_dlt.resource import DagsterDltResource

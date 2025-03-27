@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_papertrail.loggers import papertrail_logger
 from dagster_papertrail.version import __version__

@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_sigma.assets import (
     build_materialize_workbook_assets_definition as build_materialize_workbook_assets_definition,

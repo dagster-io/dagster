@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_gcp_pyspark.bigquery.bigquery_pyspark_type_handler import (
     BigQueryPySparkIOManager as BigQueryPySparkIOManager,
