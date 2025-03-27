@@ -31,8 +31,9 @@ class DagsterCloudGraphQLClient:
     def execute(self, query: str, variables: Optional[Mapping[str, Any]] = None):
         result = self.client.execute(gql(query), variable_values=dict(variables or {}))
         value = next(iter(result.values()))
-        if value.get("__typename") == "UnauthorizedError":
-            raise click.ClickException("Unauthorized: " + value["message"])
-        elif value.get("__typename") == "PythonError":
-            raise click.ClickException("Error: " + value["message"])
+        if isinstance(value, Mapping):
+            if value.get("__typename") == "UnauthorizedError":
+                raise click.ClickException("Unauthorized: " + value["message"])
+            elif value.get("__typename", "").endswith("Error"):
+                raise click.ClickException("Error: " + value["message"])
         return result
