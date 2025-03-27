@@ -1,12 +1,12 @@
 import pytest
 from dagster._core.errors import DagsterInvalidConfigError
-from dagster._utils import hash_collection
 from dagster_k8s.container_context import K8sConfigMergeBehavior, K8sContainerContext
 from dagster_k8s.job import (
     DagsterK8sJobConfig,
     UserDefinedDagsterK8sConfig,
     construct_dagster_k8s_job,
 )
+from dagster_shared.utils.hash import hash_collection
 
 
 @pytest.fixture
