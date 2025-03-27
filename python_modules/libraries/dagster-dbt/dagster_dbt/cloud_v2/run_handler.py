@@ -1,7 +1,7 @@
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
-from dagster import AssetCheckEvaluation, AssetCheckSeverity, AssetMaterialization
+from dagster import AssetCheckEvaluation, AssetCheckSeverity, AssetMaterialization, MetadataValue
 from dagster._annotations import preview
 from dagster._record import record
 from dbt.contracts.results import NodeStatus, TestStatus
@@ -11,7 +11,7 @@ from packaging import version
 
 from dagster_dbt.asset_utils import build_dbt_specs, get_asset_check_key_for_test
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
-from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun, DbtCloudWorkspaceData
+from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
 IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
@@ -19,6 +19,9 @@ if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
     REFABLE_NODE_TYPES = NodeType.refable()  # type: ignore
 else:
     from dbt.node_types import REFABLE_NODE_TYPES as REFABLE_NODE_TYPES
+
+if TYPE_CHECKING:
+    from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 
 
 @preview
@@ -73,13 +76,13 @@ class DbtCloudJobRunResults:
 
     def to_default_asset_events(
         self,
-        workspace_data: DbtCloudWorkspaceData,
+        workspace: "DbtCloudWorkspace",
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
     ) -> Iterator[Union[AssetMaterialization, AssetCheckEvaluation]]:
         """Convert the run results of a dbt Cloud job run to a set of corresponding Dagster events.
 
         Args:
-            workspace_data (DbtCloudWorkspaceData): The data of the dbt Cloud workspace.
+            workspace (DbtCloudWorkspace): The dbt Cloud workspace.
             dagster_dbt_translator (DagsterDbtTranslator): Optionally, a custom translator for
                 linking dbt nodes to Dagster assets.
 
@@ -92,7 +95,11 @@ class DbtCloudJobRunResults:
                 - AssetCheckEvaluation for dbt tests.
         """
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
+        workspace_data = workspace.fetch_workspace_data()
+        client = workspace.get_client()
+
         manifest = workspace_data.manifest
+        run = DbtCloudRun.from_run_details(run_details=client.get_run_details(run_id=self.run_id))
 
         invocation_id: str = self.run_results["metadata"]["invocation_id"]
         for result in self.run_results["results"]:
@@ -105,6 +112,9 @@ class DbtCloudJobRunResults:
                 "invocation_id": invocation_id,
                 "Execution Duration": result["execution_time"],
             }
+
+            if run.url:
+                default_metadata["run_url"] = MetadataValue.url(run.url)
 
             resource_type: str = dbt_resource_props["resource_type"]
             result_status: str = result["status"]
