@@ -25,7 +25,6 @@ from typing import (
 
 import dagster_shared.check as check
 import pytest
-from dagster._annotations import PublicAttr
 from dagster_shared.check import (
     CheckError,
     ElementCheckError,
@@ -38,7 +37,7 @@ from dagster_shared.check import (
 from dagster_shared.record import record
 
 if TYPE_CHECKING:
-    from dagster._core.test_utils import TestType  # used in lazy import ForwardRef test case
+    from dagster_shared.utils.test import TestType
 
 
 @contextmanager
@@ -1689,13 +1688,11 @@ BUILD_CASES = [
     (Optional[Set[str]], [{"a", "b"}], [{1, 2}]),
     (Optional[Dict[str, int]], [{"a": 1}], [{1: "a"}]),
     (Optional[Mapping[str, int]], [{"a": 1}], [{1: "a"}]),
-    (PublicAttr[Optional[Mapping[str, int]]], [{"a": 1}], [{1: "a"}]),  # type: ignore  # ignored for update, fix me!
-    (PublicAttr[Bar], [Bar()], [Foo()]),  # type: ignore  # ignored for update, fix me!
     (Annotated[Bar, None], [Bar()], [Foo()]),
     (Annotated["Bar", None], [Bar()], [Foo()]),
     (List[Annotated[Bar, None]], [[Bar()], []], [[Foo()]]),
     (
-        List[Annotated["TestType", ImportFrom("dagster._core.test_utils")]],
+        List[Annotated["TestType", ImportFrom("dagster_shared.utils.test")]],
         [[]],  # avoid importing TestType
         [[Foo()]],
     ),
@@ -1719,7 +1716,6 @@ BUILD_CASES = [
     # fwd refs
     ("Foo", [Foo()], [Bar()]),
     (Optional["Foo"], [Foo()], [Bar()]),
-    (PublicAttr[Optional["Foo"]], [None], [Bar()]),  # type: ignore  # ignored for update, fix me!
     (Mapping[str, Optional["Foo"]], [{"foo": Foo()}], [{"bar": Bar()}]),
     (Mapping[str, Optional["Foo"]], [{"foo": Foo()}], [{"bar": Bar()}]),
     (Gen, [Gen()], [Bar()]),

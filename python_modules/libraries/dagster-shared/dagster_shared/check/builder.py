@@ -282,7 +282,7 @@ def build_check_call_str(
     name: str,
     eval_ctx: EvalContext,
 ) -> str:
-    from dagster._record import is_record
+    from dagster_shared.record import is_record
 
     # assumes this module is in global/local scope as check
     origin = get_origin(ttype)
