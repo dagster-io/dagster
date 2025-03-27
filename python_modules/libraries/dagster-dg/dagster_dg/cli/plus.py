@@ -3,7 +3,6 @@ import sys
 import tempfile
 import webbrowser
 from collections.abc import Mapping
-from pathlib import Path
 from contextlib import ExitStack
 from pathlib import Path
 from typing import Optional
@@ -14,12 +13,10 @@ from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.plus.login_server import start_login_server
 
 from dagster_dg.cli.shared_options import dg_global_options
-from dagster_dg.config import normalize_cli_config
-from dagster_dg.context import DgContext
-from dagster_dg.env import ProjectEnvVars
 from dagster_dg.cli.utils import create_temp_dagster_cloud_yaml_file
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
+from dagster_dg.env import ProjectEnvVars
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 from dagster_dg.utils.plus.gql import FULL_DEPLOYMENTS_QUERY, SECRETS_QUERY
 from dagster_dg.utils.plus.gql_client import DagsterCloudGraphQLClient
@@ -154,7 +151,8 @@ def pull_env_command(**global_options: object) -> None:
             click.echo(
                 f"Environment variables not found for projects: {', '.join(projects_without_secrets)}"
             )
-=======
+
+
 def _create_temp_deploy_dockerfile(dst_path, python_version):
     dockerfile_template_path = os.path.join(
         os.path.dirname(__file__), "..", "templates", "deploy_uv_Dockerfile.jinja"
@@ -226,8 +224,8 @@ def deploy_command(
     # TODO Confirm that dagster-cloud is packaged in the project
 
     with ExitStack() as stack:
-        # TODO Statedir needs to be automatically persisted across commands despite being
-        # a temporary file
+        # TODO Once this is split out into multiple commands, we need a default statedir
+        # that can be persisted across commands.
         statedir = stack.enter_context(tempfile.TemporaryDirectory())
 
         # Construct a dagster_cloud.yaml file based on info in the pyproject.toml
@@ -256,7 +254,10 @@ def deploy_command(
         if not os.path.exists(dockerfile_path):
             click.echo(f"No Dockerfile found - scaffolding a default one at {dockerfile_path}.")
             _create_temp_deploy_dockerfile(dockerfile_path, python_version)
+        else:
+            click.echo(f"Building using Dockerfile at {dockerfile_path}.")
 
+        # TODO This command is serverless-specific, support hybrid as well
         dg_context.external_dagster_cloud_cli_command(
             [
                 "ci",
