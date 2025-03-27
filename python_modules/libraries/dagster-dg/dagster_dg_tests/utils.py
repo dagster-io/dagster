@@ -153,6 +153,7 @@ def isolated_example_project_foo_bar(
     skip_venv: bool = False,
     populate_cache: bool = False,
     component_dirs: Sequence[Path] = [],
+    use_editable_dagster: bool = True,
 ) -> Iterator[None]:
     """Scaffold a project named foo_bar in an isolated filesystem.
 
@@ -166,15 +167,14 @@ def isolated_example_project_foo_bar(
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
     project_path = Path("foo-bar")
     if in_workspace:
-        fs_context = isolated_example_workspace(runner)
+        fs_context = isolated_example_workspace(runner, use_editable_dagster=use_editable_dagster)
     else:
         fs_context = runner.isolated_filesystem()
     with fs_context:
         args = [
             "scaffold",
             "project",
-            "--use-editable-dagster",
-            dagster_git_repo_dir,
+            *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
             *(["--no-use-dg-managed-environment"] if skip_venv else []),
             *(["--no-populate-cache"] if not populate_cache else []),
             "foo-bar",

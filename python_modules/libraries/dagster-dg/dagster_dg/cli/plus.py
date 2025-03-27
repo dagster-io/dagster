@@ -147,8 +147,8 @@ def deploy_command(
     # TODO Confirm that dagster-cloud is packaged in the project
 
     with ExitStack() as stack:
-        # TODO Statedir needs to be automatically persisted across commands despite being
-        # a temporary file
+        # TODO Once this is split out into multiple commands, we need a default statedir
+        # that can be persisted across commands.
         statedir = stack.enter_context(tempfile.TemporaryDirectory())
 
         # Construct a dagster_cloud.yaml file based on info in the pyproject.toml
@@ -177,6 +177,8 @@ def deploy_command(
         if not os.path.exists(dockerfile_path):
             click.echo(f"No Dockerfile found - scaffolding a default one at {dockerfile_path}.")
             _create_temp_deploy_dockerfile(dockerfile_path, python_version)
+        else:
+            click.echo(f"Building using Dockerfile at {dockerfile_path}.")
 
         dg_context.external_dagster_cloud_cli_command(
             [
