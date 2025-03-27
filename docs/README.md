@@ -8,7 +8,7 @@ This is the home of the Dagster documentation. The documentation site is built u
 
 - `./src` contains custom components, styles, themes, and layouts.
 - `./docs/` contains documentation Markdown files.
-- `/examples/docs_snippets/docs_snippets/` contains code examples for the documentation. Some code examples also live in `/examples/` and `/examples/docs_beta_snippets/docs_beta_snippets/`.
+- `/examples/docs_snippets/docs_snippets/` contains code examples for the documentation. Some code examples also live in `/examples/` and `/examples/docs_snippets/docs_snippets/`.
 
 The docs are organized into the following sections:
 

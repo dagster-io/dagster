@@ -60,19 +60,19 @@ Additionally, this asset contains metadata in the <PyObject section="assets" mod
 
 To create this asset, open the `definitions.py` file and copy the following code into it:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="8" lineEnd="33"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="8" lineEnd="33"/>
 
 ### Sales reps asset
 
 The code for the sales reps asset is similar to the product asset code. In the `definitions.py` file, copy the following code below the product asset code:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="35" lineEnd="61"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="35" lineEnd="61"/>
 
 ### Sales data asset
 
 To add the sales data asset, copy the following code into your `definitions.py` file below the sales reps asset:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="62" lineEnd="87"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="62" lineEnd="87"/>
 
 ## 4. Add assets to the definitions object
 

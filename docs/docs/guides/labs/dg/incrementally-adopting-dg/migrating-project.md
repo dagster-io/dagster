@@ -15,7 +15,7 @@ This guide is only relevant if you are starting from an _existing_ Dagster proje
 
 Let's begin with a Dagster project that has some assets:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/migrating-project/1-tree.txt"  />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/1-tree.txt"  />
 
 ## Install dependencies
 
@@ -33,10 +33,10 @@ Though this is optional, we generally recommend using a separate virtual environ
 
 <Tabs>
     <TabItem value='before' label='Using uv virtual environment'>
-        <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/migrating-project/3-uv-venv.txt" />
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/3-uv-venv.txt" />
 
         Then, we can use `uv sync` to install the dependencies from our `pyproject.toml`, and then install the `dagster-components` package:
-        <CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/migrating-project/4-uv-freeze.txt" />
+        <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/4-uv-freeze.txt" />
     </TabItem>
     <TabItem value='after' label='Using pip'>
         <CliInvocationExample contents="pip install dagster-components" />
@@ -49,14 +49,14 @@ Though this is optional, we generally recommend using a separate virtual environ
 
 Add a `tool.dg` section to your `pyproject.toml` file. This will tell the `dg` command line tool that this project is a valid Dagster project.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/migrating-project/2-pyproject.toml" language="toml" title="pyproject.toml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-pyproject.toml" language="toml" title="pyproject.toml" />
 
 
 ### Create a `defs` directory
 
 Next, you'll want to create a directory to contain any new definitions you add to your project. By convention, this directory is named `defs`, and exists at the top level of your project's Python module.
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/migrating-project/5-mkdir-defs.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/5-mkdir-defs.txt" />
 
 ## Modify top-level definitions
 
@@ -68,10 +68,10 @@ You can manually construct a set of definitions using `load_defs`, then merge th
 
 <Tabs>
     <TabItem value='before' label='Before'>
-        <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/migrating-project/6-initial-definitions.py" language="python" />
+        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/6-initial-definitions.py" language="python" />
     </TabItem>
     <TabItem value='after' label='After'>
-        <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/migrating-project/7-updated-definitions.py" language="python" />
+        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/7-updated-definitions.py" language="python" />
     </TabItem>
 </Tabs>
 

@@ -267,4 +267,4 @@ Defining integrations with this approach aligns nicely with the overall developm
 
 The code in its entirety can be seen below:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/multi-asset-integration/integration.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/tutorials/multi-asset-integration/integration.py" language="python" />

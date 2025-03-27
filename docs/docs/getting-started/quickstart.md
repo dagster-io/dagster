@@ -101,7 +101,7 @@ dagster-quickstart/
 
 Now, create the assets for the ETL pipeline. Open `quickstart/assets.py` and add the following code:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/getting-started/quickstart.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/getting-started/quickstart.py" language="python" />
 
 This may seem unusual if you're used to task-based orchestration. In that case, you'd have three separate steps for extracting, transforming, and loading.
 

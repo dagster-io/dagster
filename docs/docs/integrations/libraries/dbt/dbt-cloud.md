@@ -32,7 +32,7 @@ pip install dagster-dbt
 
 ### Example
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/dbt_cloud.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/dbt_cloud.py" language="python" />
 
 ### About dbt Cloud
 

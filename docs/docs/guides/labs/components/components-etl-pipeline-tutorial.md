@@ -52,7 +52,7 @@ See the [`duckdb`](https://duckdb.org/docs/installation/?version=stable&environm
 
 After installing dependencies, scaffold a components-ready project:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/2-scaffold.txt"  />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-scaffold.txt"  />
 
 The `dg scaffold project` command builds a project at `jaffle-platform` and initializes a new Python
 virtual environment inside it. When you use `dg`'s default environment management behavior, you won't need to worry about activating this virtual environment yourself.
@@ -65,7 +65,7 @@ To learn more about the files, directories, and default settings in a project sc
 
 To ingest data, you must set up [Sling](https://slingdata.io/). However, if you list the available component types in your environment at this point, the Sling component won't appear, since the basic `dagster-components` package that was installed when you scaffolded your project doesn't include components for specific integrations (like Sling):
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/7-dg-list-component-types.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/7-dg-list-component-types.txt" />
 
 To make the Sling component available in your environment, install the `sling` extra of `dagster-components`:
 
@@ -83,21 +83,21 @@ When you run commands like `dg list component-type` , `dg` obtains the results b
 
 To confirm that the `dagster_components.sling_replication` component type is now available, run the `dg list component-type` command again:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/8-dg-list-component-types.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/8-dg-list-component-types.txt" />
 
 ### 3. Create a new instance of the Sling component
 
 Next, create a new instance of this component type:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/9-dg-scaffold-sling-replication.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/9-dg-scaffold-sling-replication.txt" />
 
 This adds a component instance to the project at `jaffle_platform/defs/ingest_files`:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/10-tree-jaffle-platform.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/10-tree-jaffle-platform.txt" />
 
 A single file, `component.yaml`, was created in the component folder. The `component.yaml` file is common to all Dagster components, and specifies the component type and any parameters used to scaffold definitions from the component at runtime.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/11-component.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/ingest_files/component.yaml"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/components/index/11-component.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/ingest_files/component.yaml"/>
 
 Right now the parameters define a single "replication"-- this is a Sling concept that specifies how data should be replicated from a source to a target. The details are specified in a `replication.yaml` file that is read by Sling. This file does not yet exist-- we are going to create it shortly.
 
@@ -109,19 +109,19 @@ The `path` parameter for a replication is relative to the same folder containing
 
 Set up and test DuckDB:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/12-sling-setup-duckdb.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/12-sling-setup-duckdb.txt" />
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/13-sling-test-duckdb.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/13-sling-test-duckdb.txt" />
 
 ### 5. Download files for Sling source
 
 Next, you will need to download some files locally to use your Sling source, since Sling doesn't support reading from the public internet:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/14-curl.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/14-curl.txt" />
 
 Finally, create a `replication.yaml` file that references the downloaded files:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/15-replication.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/ingest_files/replication.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/index/15-replication.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/ingest_files/replication.yaml" />
 
 ### 6. View and materialize assets in the Dagster UI
 
@@ -133,7 +133,7 @@ Load your project in the Dagster UI to see what you've built so far. To material
 
 Verify the DuckDB tables on the command line:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/16-duckdb-select.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/16-duckdb-select.txt" />
 
 ## Transform data
 
@@ -143,7 +143,7 @@ To transform the data, you will need to download a sample dbt project from GitHu
 
 First, clone the project and delete the embedded git repo:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/17-jaffle-clone.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/17-jaffle-clone.txt" />
 
 ### 2. Install the dbt project component type
 
@@ -153,18 +153,18 @@ To interface with the dbt project, you will need to instantiate a Dagster dbt pr
 
 To confirm that the `dagster_components.dbt_project` component type is now available, run `dg list component-type`:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/18-dg-list-component-types.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/18-dg-list-component-types.txt" />
 
 
 ### 3. Scaffold a new instance of the dbt project component
 
 Next, scaffold a new instance of the `dagster_components.dbt_project` component, providing the path to the dbt project you cloned earlier as the `project_path` scaffold parameter:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/19-dg-scaffold-jdbt.txt"/>
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/19-dg-scaffold-jdbt.txt"/>
 
 This creates a new component instance in the project at `jaffle_platform/defs/jdbt`. To see the component configuration, open `component.yaml` in that directory:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/20-component-jdbt.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/jdbt/component.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/index/20-component-jdbt.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/jdbt/component.yaml" />
 
 ### 4. Update the dbt project component configuration
 
@@ -178,19 +178,19 @@ You can see that there appear to be two copies of the `raw_customers`, `raw_orde
 
 We need to update the configuration of the `dagster_components.dbt_project` component to match the keys generated by the Sling component. Update `components/jdbt/component.yaml` with the configuration below:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/21-project-jdbt-incorrect.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/jdbt/component.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/index/21-project-jdbt-incorrect.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/jdbt/component.yaml" />
 
 You might notice the typo in the above file--after updating a component file, it's useful to validate that the changes match the component's schema. You can do this by running `dg check yaml`:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/22-dg-component-check-error.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/22-dg-component-check-error.txt" />
 
 You can see that the error message includes the filename, line number, and a code snippet showing the exact nature of the error. Let's fix the typo:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/23-project-jdbt.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/jdbt/component.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/index/23-project-jdbt.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/jdbt/component.yaml" />
 
 Finally, run `dg check yaml` again to validate the fix:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/24-dg-component-check.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/24-dg-component-check.txt" />
 
 Reload the project in Dagster UI to verify that the keys load properly:
 
@@ -200,7 +200,7 @@ Now the keys generated by the Sling and dbt project components match, and the as
 
 To verify the fix, you can view a sample of the newly materialized assets in DuckDB from the command line:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/25-duckdb-select-orders.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/25-duckdb-select-orders.txt" />
 
 ## Automate the pipeline
 
@@ -210,13 +210,13 @@ Now that you've defined some assets, you can automate them to keep them up to da
 
 Navigate to `defs/ingest_files/component.yaml` and add the `automation_condition` below to automatically pull in data with Sling every day:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/26-component-ingest-automation.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/ingest_files/component.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/index/26-component-ingest-automation.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/ingest_files/component.yaml" />
 
 ### 2. Automate dbt transformation
 
 Next, update the dbt project so it executes after the Sling replication runs. Navigate to `components/jdbt/component.yaml` and add the `automation_condition` below:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/index/27-component-jdbt-automation.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/jdbt/component.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/index/27-component-jdbt-automation.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/jdbt/component.yaml" />
 
 ## Next steps
 

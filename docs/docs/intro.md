@@ -13,7 +13,7 @@ import ThemedImage from '@theme/ThemedImage';
 
 Dagster is a data orchestrator built for data engineers, with integrated lineage, observability, a declarative programming model, and best-in-class testability.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/getting-started/hello-world.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/getting-started/hello-world.py" language="python" />
 <ThemedImage
   alt="Docusaurus themed image"
   style={{width:'100%', height: 'auto'}}

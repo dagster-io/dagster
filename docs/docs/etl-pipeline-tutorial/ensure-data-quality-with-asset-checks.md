@@ -19,7 +19,7 @@ In this case we want to create a check to identify if there are any rows in `joi
 
 Copy the following code beneath the `joined_data` asset.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="134" lineEnd="150"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="134" lineEnd="150"/>
 
 ## 2. Run the asset check
 

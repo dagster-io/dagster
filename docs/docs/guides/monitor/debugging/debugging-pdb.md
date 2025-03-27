@@ -12,7 +12,7 @@ This can be useful when debugging assets with complex transformations or assets 
 
 First, add the `context` parameter to your asset definition, and add `context.pdb.set_trace()` to the asset code where you want to add a breakpoint. You should insert your breakpoint after the variables you are interested in have been initialized but before any mutations. With `pdb` you will be able to proceed to the next statement of the asset but will not be able to reverse the state of a variable so it is better to set the break point early.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/monitor-alert/debugging/pdb.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/monitor-alert/debugging/pdb.py" language="python" />
 
 ## 2. Launch the webserver and materialize your asset
 

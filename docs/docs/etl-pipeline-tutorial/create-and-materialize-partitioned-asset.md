@@ -23,7 +23,7 @@ In this step, you will:
 
 Dagster natively supports partitioning assets by datetime groups. We want to create an asset that calculates the monthly performance for each sales rep. To create the monthly partition copy the following code below the `missing_dimension_check` asset check.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="152" lineEnd="153"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="152" lineEnd="153"/>
 
 Partition data are accessed within an asset by context. We want to create an asset that does this calculation for a given month from the partition
  and deletes any previous value for that month. Copy the following asset under the `monthly_partition` we just created.
@@ -89,7 +89,7 @@ Using known defined partitions is a simple way to break up your dataset when you
 
 1. To create the statically-defined partition for the product category, copy this code beneath the `monthly_sales_performance` asset:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="211" lineEnd="214"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="211" lineEnd="214"/>
 
 2. Now that the partition has been defined, we can use that in an asset that calculates the product category performance:
 
