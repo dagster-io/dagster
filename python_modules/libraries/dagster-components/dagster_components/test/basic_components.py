@@ -9,8 +9,13 @@ from typing import Annotated, Any
 from dagster._core.definitions.definitions_class import Definitions
 from pydantic import BaseModel, ConfigDict
 
-from dagster_components import Component, ResolvableModel, ResolvedFrom, Resolver
-from dagster_components.core.component import ComponentLoadContext
+from dagster_components import (
+    Component,
+    ComponentLoadContext,
+    ResolvableModel,
+    ResolvedFrom,
+    Resolver,
+)
 
 
 def _inner_error():

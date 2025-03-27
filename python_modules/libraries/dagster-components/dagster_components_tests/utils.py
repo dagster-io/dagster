@@ -15,7 +15,7 @@ import tomlkit
 from click.testing import Result
 from dagster import AssetKey, DagsterInstance
 from dagster._utils import alter_sys_path, pushd
-from dagster_components.core.component import Component, ComponentLoadContext
+from dagster_components import Component, ComponentLoadContext
 from dagster_components.core.defs_module import DefsModuleDecl
 from dagster_components.utils import ensure_loadable_path
 

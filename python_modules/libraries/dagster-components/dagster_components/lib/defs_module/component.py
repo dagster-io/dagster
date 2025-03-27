@@ -5,7 +5,9 @@ from typing import Annotated, Optional
 from dagster._core.definitions.definitions_class import Definitions
 from typing_extensions import Self
 
-from dagster_components import AssetPostProcessorModel, Component, ComponentLoadContext
+from dagster_components import AssetPostProcessorModel
+from dagster_components.component.component import Component
+from dagster_components.core.context import ComponentLoadContext
 from dagster_components.core.defs_module import (
     DefsModule,
     PythonModuleDecl,

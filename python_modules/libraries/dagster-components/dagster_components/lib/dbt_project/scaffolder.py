@@ -6,8 +6,8 @@ import dagster._check as check
 from dbt.cli.main import dbtRunner
 from pydantic import BaseModel, Field
 
+from dagster_components.component.component_scaffolder import Scaffolder, ScaffoldRequest
 from dagster_components.component_scaffolding import scaffold_component_yaml
-from dagster_components.core.component_scaffolder import Scaffolder, ScaffoldRequest
 
 
 class DbtScaffoldParams(BaseModel):

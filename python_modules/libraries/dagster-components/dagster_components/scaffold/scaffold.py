@@ -25,7 +25,7 @@ def scaffold_with(
     Returns:
         Decorator function that enhances the target class
     """
-    from dagster_components.core.component import LIBRARY_OBJECT_ATTR
+    from dagster_components.core.library_object import LIBRARY_OBJECT_ATTR
 
     def decorator(obj: T) -> T:
         # Store the scaffolder class as an attribute using the constant
