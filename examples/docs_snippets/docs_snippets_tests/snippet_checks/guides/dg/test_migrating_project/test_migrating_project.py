@@ -29,6 +29,7 @@ COMPONENTS_SNIPPETS_DIR = (
 MY_EXISTING_PROJECT = Path(__file__).parent / "my-existing-project"
 MASK_MY_EXISTING_PROJECT = (r"\/.*?\/my-existing-project", "/.../my-existing-project")
 MASK_ISORT = (r"#isort:skip-file", "# definitions.py")
+MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
 
 
 def test_components_docs_index(update_snippets: bool) -> None:
@@ -43,25 +44,20 @@ def test_components_docs_index(update_snippets: bool) -> None:
             custom_comparison_fn=compare_tree_output,
         )
 
-        # Add components section to pyproject.toml
-        pyproject_contents = Path("pyproject.toml").read_text()
-        tool_dg_section = format_multiline("""
-            [tool.dg]
-            directory_type = "project"
-
-            [tool.dg.project]
-            root_module = "my_existing_project"
-            defs_module = "my_existing_project.defs"
-        """)
-        pyproject_contents = pyproject_contents.replace(
-            "[tool.dagster]", f"{tool_dg_section}\n\n[tool.dagster]"
+        # Inject dagster-components as a dependency
+        setup_py_content = Path("setup.py").read_text()
+        setup_py_content = setup_py_content.replace(
+            '"dagster",\n', '"dagster",\n        "dagster-components",\n'
         )
-        Path("pyproject.toml").write_text(pyproject_contents)
+        Path("setup.py").write_text(setup_py_content)
+
+        # In the tests we use `uv` to avoid need to activate a virtual env, in the
+        _run_command("uv venv .venv")
+        _run_command("uv pip install -e .")
 
         check_file(
-            "pyproject.toml",
-            snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-pyproject.toml",
+            "setup.py",
+            snippet_path=COMPONENTS_SNIPPETS_DIR / f"{get_next_snip_number()}-setup.py",
             snippet_replace_regex=[
                 re_ignore_before("[tool.dg]"),
                 re_ignore_after('code_location_name = "my_existing_project"'),
@@ -69,32 +65,42 @@ def test_components_docs_index(update_snippets: bool) -> None:
             update_snippets=update_snippets,
         )
 
-        run_command_and_snippet_output(
-            cmd="uv venv",
+        _run_command(
+            f"uv pip install --editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-components'!s}' "
+            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster'!s}' "
+            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-shared'!s}' "
+            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}' "
+            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-pipes'!s}' "
+            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-graphql'!s}'"
+        )
+        _run_command(
+            ".venv/bin/dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
+        )
+
+        # Add components section to pyproject.toml
+        pyproject_toml_content = format_multiline("""
+            [tool.dg]
+            directory_type = "project"
+
+            [tool.dg.project]
+            root_module = "my_existing_project"
+            code_location_target_module = "my_existing_project.definitions"
+        """)
+        Path("pyproject.toml").write_text(pyproject_toml_content)
+
+        check_file(
+            "pyproject.toml",
             snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-uv-venv.txt",
+            / f"{get_next_snip_number()}-pyproject.toml",
             update_snippets=update_snippets,
-            ignore_output=True,
         )
 
         run_command_and_snippet_output(
-            cmd="uv sync && uv add dagster-components",
+            cmd="dg list defs",
             snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-uv-freeze.txt",
+            / f"{get_next_snip_number()}-list-defs.txt",
             update_snippets=update_snippets,
-            ignore_output=True,
-        )
-
-        _run_command(
-            f"uv add --editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-components'!s}' "
-            f"'{DAGSTER_ROOT / 'python_modules' / 'dagster'!s}' "
-            f"'{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-shared'!s}' "
-            f"'{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}' "
-            f"'{DAGSTER_ROOT / 'python_modules' / 'dagster-pipes'!s}' "
-            f"'{DAGSTER_ROOT / 'python_modules' / 'dagster-graphql'!s}'"
-        )
-        _run_command(
-            "uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
+            snippet_replace_regex=[MASK_USING_LOG_MESSAGE],
         )
 
         run_command_and_snippet_output(
@@ -118,14 +124,12 @@ def test_components_docs_index(update_snippets: bool) -> None:
             contents=format_multiline("""
                 import dagster_components as dg_components
                 import my_existing_project.defs
-                from my_existing_project import assets
+                from my_existing_project.assets import my_asset
 
                 import dagster as dg
 
-                all_assets = dg.load_assets_from_modules([assets])
-
                 defs = dg.Definitions.merge(
-                    dg.Definitions(assets=all_assets),
+                    dg.Definitions(assets=[my_asset]),
                     dg_components.load_defs(my_existing_project.defs),
                 )
             """),
@@ -133,14 +137,23 @@ def test_components_docs_index(update_snippets: bool) -> None:
             / f"{get_next_snip_number()}-updated-definitions.py",
         )
 
-        _run_command(
-            "uv run dagster asset materialize --select '*' -m 'my_existing_project.definitions'"
+        create_file(
+            Path("my_existing_project") / "defs" / "autoloaded_asset.py",
+            contents=format_multiline("""
+                import dagster as dg
+
+
+                @dg.asset
+                def autoloaded_asset(): ...
+            """),
+            snippet_path=COMPONENTS_SNIPPETS_DIR
+            / f"{get_next_snip_number()}-autoloaded-asset.py",
         )
 
         run_command_and_snippet_output(
-            cmd="dg list component-type",
+            cmd="dg list defs",
             snippet_path=COMPONENTS_SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-list-component-types.txt",
+            / f"{get_next_snip_number()}-list-defs.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_MY_EXISTING_PROJECT],
+            snippet_replace_regex=[MASK_USING_LOG_MESSAGE],
         )
