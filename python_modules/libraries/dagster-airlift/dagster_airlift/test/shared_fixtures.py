@@ -25,7 +25,7 @@ from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
 # Sets up the airflow environment for testing. Running at localhost:8080.
 # Callsites are expected to provide implementations for dags_dir fixture.
 ####################################################################################################
-def _airflow_is_ready(port) -> bool:
+def _airflow_is_ready(*, port: int, expected_num_dags: int) -> bool:
     try:
         af_instance = AirflowInstance(
             auth_backend=AirflowBasicAuthBackend(
@@ -35,7 +35,7 @@ def _airflow_is_ready(port) -> bool:
             ),
             name="test",
         )
-        return len(af_instance.list_dags()) > 0
+        return len(af_instance.list_dags()) >= expected_num_dags
     except:
         return False
 
@@ -79,6 +79,7 @@ def stand_up_airflow(
     cwd: Optional[Path] = None,
     stdout_channel: Optional[int] = None,
     port: int = 8080,
+    expected_num_dags: int = 1,
 ) -> Generator[subprocess.Popen, None, None]:
     process = subprocess.Popen(
         airflow_cmd,
@@ -95,12 +96,12 @@ def stand_up_airflow(
 
         airflow_ready = False
         while get_current_timestamp() - initial_time < 60:
-            if _airflow_is_ready(port):
+            if _airflow_is_ready(port=port, expected_num_dags=expected_num_dags):
                 airflow_ready = True
                 break
             time.sleep(1)
 
-        assert airflow_ready, "Airflow did not start within 30 seconds..."
+        assert airflow_ready, "Airflow did not start within 60 seconds..."
         yield process
     finally:
         if process_is_alive(process.pid):
