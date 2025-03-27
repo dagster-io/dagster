@@ -12,6 +12,9 @@ from typing import Callable, NamedTuple, Optional
 import click
 import yaml
 
+from dagster_shared.libraries import core_version_from_library_version
+from dagster_shared.version import __version__
+
 OS_DESC = platform.platform()
 OS_PLATFORM = platform.system()
 
@@ -35,12 +38,7 @@ KNOWN_CI_ENV_VAR_KEYS = {
 
 
 def _get_dagster_module_version() -> Optional[str]:
-    try:
-        from dagster.version import __version__ as dagster_module_version
-
-        return dagster_module_version
-    except ImportError:
-        return None
+    return core_version_from_library_version(__version__)
 
 
 def get_python_version() -> str:
