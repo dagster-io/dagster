@@ -58,7 +58,7 @@ class NamespacedKVSet(ABC, DagsterModel):
     def keys(self) -> Iterable[str]:
         return [
             self._namespaced_key(key)
-            for key in model_fields(self).keys()
+            for key in model_fields(self.__class__).keys()
             # getattr returns the pydantic property on the subclass
             if getattr(self, key) is not None
         ]
@@ -130,7 +130,7 @@ class NamespacedMetadataSet(NamespacedKVSet):
     """
 
     def __init__(self, *args, **kwargs) -> None:
-        for field_name in model_fields(self).keys():
+        for field_name in model_fields(self.__class__).keys():
             annotation_types = self._get_accepted_types_for_field(field_name)
             invalid_annotation_types = {
                 annotation_type

@@ -61,7 +61,7 @@ class ModelFieldCompat:
             return self.field.discriminator if hasattr(self.field, "discriminator") else None
 
 
-def model_fields(model) -> dict[str, ModelFieldCompat]:
+def model_fields(model: type[BaseModel]) -> dict[str, ModelFieldCompat]:
     """Returns a dictionary of fields for a given pydantic model, wrapped
     in a compat class to provide a consistent interface between Pydantic 1 and 2.
     """
