@@ -99,6 +99,7 @@ def _get_local_secrets_for_locations(
 
 @plus_env_group.command(name="pull", cls=DgClickCommand)
 @dg_global_options
+@cli_telemetry_wrapper
 def pull_env_command(**global_options: object) -> None:
     """Pull environment variables from Dagster Plus and save to a .env file for local use."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
