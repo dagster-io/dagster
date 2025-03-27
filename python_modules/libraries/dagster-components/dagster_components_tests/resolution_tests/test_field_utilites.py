@@ -68,12 +68,14 @@ def test_override_dataclass() -> None:
 
     class CustomResolver(Resolver): ...
 
+    @dataclass
     class Derived(Base):
         value: Annotated[str, CustomResolver(lambda context, val: str(val))]  # pyright: ignore[reportIncompatibleVariableOverride]
 
     resolvers = get_annotation_field_resolvers(Derived)
     assert "value" in resolvers
     assert isinstance(resolvers["value"], CustomResolver)
+    Derived(value="hi")
 
 
 def test_override_pydantic() -> None:
