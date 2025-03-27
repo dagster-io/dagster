@@ -1098,3 +1098,43 @@ def test_assets_def_with_only_checks():
     check_key = AssetCheckKey(AssetKey("asset1"), "check1")
     assert defs.get_asset_graph().asset_check_keys == {check_key}
     assert check_key in defs.get_repository_def().asset_checks_defs_by_key
+
+
+def test_map_asset_specs() -> None:
+    specs = [AssetSpec("asset1"), AssetSpec("asset2")]
+    defs = Definitions(assets=specs)
+    spec_lambda = lambda spec: spec.merge_attributes(tags={"foo": "bar"})
+    mapped_defs = defs.map_asset_specs(func=spec_lambda)
+    assert mapped_defs.assets == [
+        AssetSpec("asset1", tags={"foo": "bar"}),
+        AssetSpec("asset2", tags={"foo": "bar"}),
+    ]
+
+    # Select only asset 1
+    mapped_defs = defs.map_asset_specs(func=spec_lambda, selection="asset1")
+    assert mapped_defs.assets == [
+        AssetSpec("asset1", tags={"foo": "bar"}),
+        AssetSpec("asset2"),
+    ]
+
+    # Select no assets accidentally
+    with pytest.raises(DagsterInvalidSubsetError):
+        mapped_defs = defs.map_asset_specs(func=spec_lambda, selection="asset3")
+
+    # attempt to map with source asset
+    source_asset = SourceAsset("source_asset")
+    defs = Definitions(assets=[source_asset])
+    with pytest.raises(DagsterInvariantViolationError):
+        defs.map_asset_specs(func=spec_lambda)
+
+    class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
+        def compute_cacheable_data(self):
+            return []
+
+        def build_definitions(self, data):
+            return []
+
+    cacheable_asset = MyCacheableAssetsDefinition("cacheable_asset")
+    defs = Definitions(assets=[cacheable_asset])
+    with pytest.raises(DagsterInvariantViolationError):
+        defs.map_asset_specs(func=spec_lambda)
