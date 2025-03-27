@@ -1963,6 +1963,28 @@ def my_check(asset_1):
     )
 
 
+@asset_check(asset=asset_3, description="asset_3 check", blocking=True)
+def asset_3_check(asset_3):
+    return AssetCheckResult(
+        passed=True,
+        metadata={
+            "foo": "baz",
+            "baz": "bar",
+        },
+    )
+
+
+@asset_check(asset=asset_3, description="asset_3 second check", blocking=True)
+def asset_3_other_check(asset_3):
+    return AssetCheckResult(
+        passed=True,
+        metadata={
+            "foo": "baz",
+            "baz": "bar",
+        },
+    )
+
+
 @asset(check_specs=[AssetCheckSpec(asset="check_in_op_asset", name="my_check")])
 def check_in_op_asset():
     yield Output(1)
@@ -2193,9 +2215,7 @@ def define_resources():
 
 
 def define_asset_checks():
-    return [
-        my_check,
-    ]
+    return [my_check, asset_3_check, asset_3_other_check]
 
 
 asset_jobs = define_asset_jobs()
