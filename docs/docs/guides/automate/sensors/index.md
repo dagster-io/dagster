@@ -43,7 +43,7 @@ If the sensor finds new files, it starts a run of `my_job`. If not, it skips the
 :::tip
 Unless a sensor has a `default_status` of `DefaultSensorStatus.RUNNING`, it won't be enabled when first deployed to a Dagster instance. To find and enable the sensor, click **Automation > Sensors** in the Dagster UI.
 
-To explicitly set a sensor to be disabled, you can use `DefaultSensorStatus.STOPPED`. 
+To explicitly disable a sensor, you can use `DefaultSensorStatus.STOPPED`. 
 :::
 
 ## Customizing intervals between evaluations
