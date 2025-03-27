@@ -6,7 +6,7 @@ from dagster_shared.check.builder import ImportFrom
 from dagster_shared.check.decorator import checked
 
 if TYPE_CHECKING:
-    from dagster._core.test_utils import TestType
+    from dagster_shared.utils.test import TestType
 
 
 def test_basic():
@@ -43,7 +43,7 @@ def test_many():
         o_n: Optional[int],
         o_f: Optional[float],
         o_b: Optional[bool],
-        foos: list[Annotated["TestType", ImportFrom("dagster._core.test_utils")]],
+        foos: list[Annotated["TestType", ImportFrom("dagster_shared.utils.test")]],
     ):
         return True
 

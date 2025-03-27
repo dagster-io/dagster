@@ -5,7 +5,6 @@ from pathlib import Path
 
 import dagster_shared
 import pytest
-from dagster import __version__ as dagster_version
 from dagster_shared.libraries import (
     DagsterLibraryRegistry,
     check_dagster_package_version,
@@ -18,7 +17,6 @@ EXCLUDE_LIBRARIES = []
 
 def test_library_registry():
     assert DagsterLibraryRegistry.get() == {
-        "dagster": dagster_version,
         "dagster-shared": dagster_shared.__version__,
     }
 
@@ -28,7 +26,6 @@ def test_non_dagster_library_registry(library_registry_fixture):
 
     assert DagsterLibraryRegistry.get() == {
         "dagster-shared": dagster_shared.__version__,
-        "dagster": dagster_version,
         "not-dagster": "0.0.1",
     }
 
@@ -51,10 +48,6 @@ def test_all_libraries_register() -> None:
         assert (
             result.returncode == 0
         ), f"Dagster library {library} is missing call to {register_call}."
-
-
-def test_legacy_import_still_works():
-    from dagster._core.libraries import DagsterLibraryRegistry  # noqa
 
 
 @pytest.fixture
