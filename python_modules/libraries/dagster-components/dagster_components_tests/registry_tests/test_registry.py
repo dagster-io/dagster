@@ -9,10 +9,8 @@ from typing import Callable, Optional
 
 from dagster._utils import pushd
 from dagster_components import Component
-from dagster_components.core.component import (
-    discover_entry_point_library_objects,
-    get_library_object_snap,
-)
+from dagster_components.core.library_object import discover_entry_point_library_objects
+from dagster_components.core.snapshot import get_library_object_snap
 from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_dg.utils import get_venv_executable
 from dagster_shared.serdes.objects import LibraryObjectKey

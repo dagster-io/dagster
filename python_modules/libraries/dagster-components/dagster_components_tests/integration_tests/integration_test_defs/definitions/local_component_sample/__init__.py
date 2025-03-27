@@ -1,6 +1,5 @@
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_components import Component, ResolvableModel
-from dagster_components.core.component import ComponentLoadContext
+from dagster_components import Component, ComponentLoadContext, ResolvableModel
 
 
 class MyComponentModel(ResolvableModel):

@@ -11,7 +11,8 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
-from dagster_components.core.component import Component, ComponentLoadContext
+from dagster_components.component.component import Component
+from dagster_components.core.context import ComponentLoadContext
 from dagster_components.resolved.core_models import AssetSpecModel, ResolvedAssetSpec
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
 
@@ -55,7 +56,7 @@ class PipesSubprocessScriptCollectionComponent(
             ]
         )
 
-    def build_defs(self, context: "ComponentLoadContext") -> "Definitions":
+    def build_defs(self, context: ComponentLoadContext) -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions
 
         return Definitions(
