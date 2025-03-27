@@ -96,7 +96,7 @@ def _generate_nonce():
     )
 
 
-def start_login_server() -> tuple[TokenServer, str]:
+def start_login_server(base_url: Optional[str] = None) -> tuple[TokenServer, str]:
     """Starts a login server on a free port and returns
     the server and the URL to open in the browser.
     """
@@ -105,7 +105,7 @@ def start_login_server() -> tuple[TokenServer, str]:
     port = find_free_port()
     nonce = _generate_nonce()
     escaped = parse.quote(f"/cli-auth/{nonce}?port={port}")
-    auth_url = f"https://dagster.cloud?next={escaped}"
+    auth_url = f"{base_url or 'https://dagster.cloud'}?next={escaped}"
 
     server = TokenServer(("localhost", port), nonce)
     return server, auth_url
