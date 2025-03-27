@@ -52,6 +52,11 @@ class ResolutionContext:
     def with_scope(self, **additional_scope) -> "ResolutionContext":
         return copy(self, scope={**self.scope, **additional_scope})
 
+    def with_source_position_tree(
+        self, source_position_tree: SourcePositionTree
+    ) -> "ResolutionContext":
+        return copy(self, source_position_tree=source_position_tree)
+
     def _location_parts(self, inline_err: str) -> list[str]:
         if not self.source_position_tree:
             return []

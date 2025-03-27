@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 from typing import Annotated, Optional
 
-from dagster_components import Component, Model, Resolvable, Resolver
-from dagster_components.test.utils import load_direct
+from dagster_components import Component
+from dagster_components.resolved.base import Model, Resolvable
+from dagster_components.resolved.model import Resolver
+
+from dagster_components_tests.utils import load_component_for_test
 
 
 class MyModel(Model):
@@ -15,7 +18,7 @@ def test_nested_resolvable():
 
         def build_defs(self, _): ...  # type: ignore
 
-    c = load_direct(
+    c = load_component_for_test(
         ResolvableComponent,
         """
 thing:
@@ -37,7 +40,7 @@ thing:
 
         def build_defs(self, _): ...  # type: ignore
 
-    c = load_direct(
+    c = load_component_for_test(
         ResolveFromComponent,
         """
 num: '123'
@@ -60,7 +63,7 @@ thing:
 
         def build_defs(self, _): ...  # type: ignore
 
-    c = load_direct(
+    c = load_component_for_test(
         ResolveFromListComponent,
         """
 num: '123'
@@ -86,7 +89,7 @@ def test_class():
         def build_defs(self, _):  # type: ignore
             return []
 
-    c = load_direct(
+    c = load_component_for_test(
         ResolveFromComponent,
         """
 num: '123'
