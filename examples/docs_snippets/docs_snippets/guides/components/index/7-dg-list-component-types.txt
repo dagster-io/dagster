@@ -7,7 +7,7 @@ dg list component-type
 │                                                                     │ arbitrary set of │
 │                                                                     │ Dagster          │
 │                                                                     │ definitions.     │
-│ dagster_components.dagster.DefsModuleComponent                      │ Wraps a          │
+│ dagster_components.dagster.DefsFolderComponent                      │ Wraps a          │
 │                                                                     │ DefsModule to    │
 │                                                                     │ allow the        │
 │                                                                     │ addition of      │
