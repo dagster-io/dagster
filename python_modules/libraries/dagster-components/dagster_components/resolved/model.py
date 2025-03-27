@@ -22,6 +22,8 @@ from dagster import _check as check
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import TypeAlias
 
+from dagster_components.resolved.errors import ResolutionException
+
 try:
     # this type only exists in python 3.10+
     from types import UnionType  # type: ignore
@@ -63,7 +65,7 @@ def get_model_type(
     raise ValueError("No generic type arguments found in ResolvedFrom subclass")
 
 
-def get_resolved_kwargs_target_type(resolved_kwargs_type: type["ResolvedKwargs"]):
+def get_resolved_kwargs_types(resolved_kwargs_type: type["ResolvedKwargs"]):
     """Returns the generic type arguments (TModel, TObject) of a ResolvedKwargs subclass at runtime."""
     check.param_invariant(
         issubclass(resolved_kwargs_type, ResolvedKwargs),
@@ -84,7 +86,7 @@ def get_resolved_kwargs_target_type(resolved_kwargs_type: type["ResolvedKwargs"]
                 raise ValueError(
                     f"ResolvedKwargs base found but has incorrect number of type arguments, expected 2 got {len(type_args)}"
                 )
-            return type_args[1]
+            return type_args
 
     raise ValueError("No generic type arguments found in ResolvedKwargs subclass")
 
@@ -120,6 +122,9 @@ class _ModelResolver(Generic[T], ABC):
     ) -> Optional[Sequence[T]]:
         return self.from_seq(context, model) if model else None
 
+    @abstractmethod
+    def get_model_type(self) -> type[ResolvableModel]: ...
+
 
 @dataclass(frozen=True)
 class _KwargsResolver(_ModelResolver[T]):
@@ -134,6 +139,9 @@ class _KwargsResolver(_ModelResolver[T]):
             target_type=self.target_type,
         )
 
+    def get_model_type(self):
+        return get_resolved_kwargs_types(self.kwargs_type)[0]
+
 
 @dataclass(frozen=True)
 class _DirectResolver(_ModelResolver[ResolvedFrom]):
@@ -147,6 +155,9 @@ class _DirectResolver(_ModelResolver[ResolvedFrom]):
             resolvable_type=self.target_type,
             context=context,
         )
+
+    def get_model_type(self):
+        return get_model_type(self.target_type)
 
 
 @dataclass
@@ -204,8 +215,9 @@ def _get_resolver(
     top_level_auto_resolve: Optional[_AutoResolve],
 ) -> Optional[_ModelResolver]:
     if top_level_auto_resolve:
-        if top_level_auto_resolve.via and annotation is get_resolved_kwargs_target_type(
+        if (
             top_level_auto_resolve.via
+            and annotation is get_resolved_kwargs_types(top_level_auto_resolve.via)[1]
         ):
             return _KwargsResolver(
                 kwargs_type=top_level_auto_resolve.via,
@@ -232,10 +244,6 @@ def _get_resolver(
     return _DirectResolver(resolved_from_cls)
 
 
-def _recurse(context: "ResolutionContext", field_value):
-    return context.resolve_value(field_value)
-
-
 def derive_field_resolver(annotation: Any, field_name: str) -> "Resolver":
     if _is_implicitly_resolved_type(annotation):
         return Resolver(_recurse)
@@ -252,7 +260,10 @@ def derive_field_resolver(annotation: Any, field_name: str) -> "Resolver":
         top_level_auto_resolve = next((arg for arg in args if isinstance(arg, _AutoResolve)), None)
         resolver = _get_resolver(args[0], top_level_auto_resolve)
         if resolver:
-            return Resolver(resolver.resolve_from_model)
+            return Resolver(
+                resolver.resolve_from_model,
+                model_field_type=resolver.get_model_type(),
+            )
 
         origin = get_origin(args[0])
         args = get_args(args[0])
@@ -262,20 +273,29 @@ def derive_field_resolver(annotation: Any, field_name: str) -> "Resolver":
         if right_t is type(None):
             resolver = _get_resolver(left_t, top_level_auto_resolve)
             if resolver:
-                return Resolver(resolver.from_optional)
+                return Resolver(
+                    resolver.from_optional,
+                    model_field_type=Optional[resolver.get_model_type()],
+                )
 
             elif get_origin(left_t) in (Sequence, tuple, list):
                 resolver = _get_resolver(get_args(left_t)[0], top_level_auto_resolve)
                 if resolver:
-                    return Resolver(resolver.from_optional_seq)
+                    return Resolver(
+                        resolver.from_optional_seq,
+                        model_field_type=Optional[list[resolver.get_model_type()]],
+                    )
 
     elif origin in (Sequence, tuple, list):
         resolver = _get_resolver(args[0], top_level_auto_resolve)
 
         if resolver:
-            return Resolver(resolver.from_seq)
+            return Resolver(
+                resolver.from_seq,
+                model_field_type=list[resolver.get_model_type()],
+            )
 
-    check.failed(
+    raise ResolutionException(
         f"Could not derive resolver for annotation {field_name}: {annotation}.\n"
         "Field types are expected to be:\n"
         "* serializable types such as str, float, int, bool, list, etc\n"
@@ -284,14 +304,22 @@ def derive_field_resolver(annotation: Any, field_name: str) -> "Resolver":
     )
 
 
+def _recurse(context: "ResolutionContext", field_value):
+    return context.resolve_value(field_value)
+
+
 class Resolver:
     """Contains information on how to resolve a field from a ResolvableModel."""
 
     def __init__(
         self,
         fn: Union[ParentFn, AttrWithContextFn, Callable[["ResolutionContext", Any], Any]],
+        model_field_name: Optional[str] = None,
+        model_field_type: Optional[type] = None,
     ):
-        """Resolve this field by invoking the function which will receive the corresponding field value from the parent ResolvableModel."""
+        """Resolve this field by invoking the function which will receive the corresponding field value
+        from the model.
+        """
         if not isinstance(fn, (ParentFn, AttrWithContextFn)):
             if not callable(fn):
                 check.param_invariant(
@@ -302,6 +330,10 @@ class Resolver:
             self.fn = AttrWithContextFn(fn)
         else:
             self.fn = fn
+
+        self.model_field_name = model_field_name
+        self.model_field_type = model_field_type
+
         super().__init__()
 
     @staticmethod
@@ -320,9 +352,14 @@ class Resolver:
         return _ExpectedInjection()
 
     @staticmethod
-    def from_model(fn: Callable[["ResolutionContext", Any], Any]):
+    def from_model(fn: Callable[["ResolutionContext", Any], Any], **kwargs):
         """Resolve this field by invoking the function which will receive the entire parent ResolvableModel."""
-        return Resolver(ParentFn(fn))
+        return Resolver(ParentFn(fn), **kwargs)
+
+    @staticmethod
+    def default(**kwargs):
+        """Default recursive resolution."""
+        return Resolver(_recurse, **kwargs)
 
     def execute(
         self,
@@ -336,6 +373,7 @@ class Resolver:
             if isinstance(self.fn, ParentFn):
                 return self.fn.callable(context, model)
             elif isinstance(self.fn, AttrWithContextFn):
+                field_name = self.model_field_name or field_name
                 attr = getattr(model, field_name)
                 context = context.at_path(field_name)
                 return self.fn.callable(context, attr)
