@@ -33,6 +33,7 @@ from dagster._core.storage.tags import (
     get_multidimensional_partition_tag,
 )
 from dagster._core.types.connection import Connection
+from dagster._record import record
 from dagster._time import get_current_datetime
 
 INVALID_STATIC_PARTITIONS_KEY_CHARACTERS = set(["|", ",", "[", "]"])
@@ -355,106 +356,28 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         Returns:
             Connection[MultiPartitionKey]
         """
-        current_time = context.temporal_context.effective_dt
-        dynamic_partitions_store = context.dynamic_partitions_store
-        multi_cursor = MultiPartitionCursor.from_cursor(cursor)
-        last_seen_key = multi_cursor.last_seen_key
-
-        dimension_keys = {}
-        for dimension in self._partitions_defs:
-            dimension_keys[dimension.name] = dimension.partitions_def.get_partition_keys(
-                current_time=current_time,
-                dynamic_partitions_store=dynamic_partitions_store,
-            )
-
-        if any(not results for results in dimension_keys.values()):
-            return Connection(results=[], cursor=multi_cursor.to_string(), has_more=False)
-
-        # Find the starting indices based on last_seen_key
-        dimension_start_indices = {}
-        for dim_name, results in dimension_keys.items():
-            if last_seen_key and dim_name in last_seen_key.keys_by_dimension:
-                try:
-                    idx = results.index(last_seen_key.keys_by_dimension[dim_name])
-                    dimension_start_indices[dim_name] = idx
-                except ValueError:
-                    # Key no longer exists, start from beginning for this dimension
-                    dimension_start_indices[dim_name] = 0
-            elif ascending:
-                dimension_start_indices[dim_name] = 0
-            else:
-                dimension_start_indices[dim_name] = len(results) - 1
-
-        dim_names = [dim.name for dim in self._partitions_defs]
-        current_indices = {
-            dim_name: dimension_start_indices.get(dim_name, 0) for dim_name in dim_names
-        }
-
-        def _invalid(indices):
-            return any(
-                indices[dim_name] >= len(dimension_keys[dim_name]) for dim_name in indices
-            ) or any(indices[dim_name] < 0 for dim_name in indices)
-
-        def _increment_indices():
-            for i in range(len(dim_names) - 1, -1, -1):
-                dim_name = dim_names[i]
-                current_indices[dim_name] += 1
-                if current_indices[dim_name] < len(dimension_keys[dim_name]):
-                    break
-                if i > 0:
-                    current_indices[dim_name] = 0
-
-        def _decrement_indices():
-            for i in range(len(dim_names) - 1, -1, -1):
-                dim_name = dim_names[i]
-                current_indices[dim_name] -= 1
-                if current_indices[dim_name] >= 0:
-                    break
-                if i > 0:
-                    current_indices[dim_name] = len(dimension_keys[dim_name]) - 1
-
-        def _partition_key_from_indices(indices) -> Optional[MultiPartitionKey]:
-            if _invalid(indices):
-                return None
-
-            partition_tuple = {}
-            for dim_name, idx in indices.items():
-                partition_tuple[dim_name] = dimension_keys[dim_name][idx]
-
-            return MultiPartitionKey(partition_tuple)
-
-        def get_next_key() -> Optional[MultiPartitionKey]:
-            if ascending:
-                _increment_indices()
-            else:
-                _decrement_indices()
-            return _partition_key_from_indices(current_indices)
-
-        # Generate up to limit partition keys
         partition_keys = []
-        new_last_seen_key = last_seen_key
-
-        while True:
-            if new_last_seen_key is None:
-                partition_key = _partition_key_from_indices(current_indices)
-            else:
-                partition_key = get_next_key()
-
+        iterator = MultiDimensionalPartitionKeyIterator(
+            context=context,
+            partition_defs=self._partitions_defs,
+            cursor=MultiPartitionCursor.from_cursor(cursor),
+            ascending=ascending,
+        )
+        next_cursor = cursor
+        while iterator.has_next():
+            partition_key = next(iterator)
             if not partition_key:
                 break
 
             partition_keys.append(partition_key)
-            new_last_seen_key = partition_key
-
+            next_cursor = iterator.cursor().to_string()
             if len(partition_keys) >= limit:
                 break
 
-        # Check if we have more results
-        has_more = get_next_key() is not None
+        if not next_cursor:
+            next_cursor = MultiPartitionCursor(last_seen_key=None).to_string()
 
-        next_cursor = MultiPartitionCursor(new_last_seen_key)
-
-        return Connection(results=partition_keys, cursor=next_cursor.to_string(), has_more=has_more)
+        return Connection(results=partition_keys, cursor=next_cursor, has_more=iterator.has_next())
 
     def filter_valid_partition_keys(
         self, partition_keys: set[str], dynamic_partitions_store: DynamicPartitionsStore
@@ -679,20 +602,11 @@ def get_multipartition_key_from_tags(tags: Mapping[str, str]) -> str:
     return MultiPartitionKey(partitions_by_dimension)
 
 
+@record
 class MultiPartitionCursor:
     """A cursor for MultiPartitionsDefinition that tracks last seen keys for each dimension."""
 
-    def __init__(
-        self,
-        last_seen_key: Optional[MultiPartitionKey] = None,
-    ):
-        """Cursor object representing the pagination state for a MultiPartitionsDefinition.
-
-        Args:
-            dimension_cursors: A mapping of dimension name to that dimension's cursor.
-            last_seen_keys: The last processed partition key for each dimension (for resuming).
-        """
-        self.last_seen_key = last_seen_key
+    last_seen_key: Optional[MultiPartitionKey]
 
     def __str__(self) -> str:
         return self.to_string()
@@ -708,9 +622,132 @@ class MultiPartitionCursor:
     @classmethod
     def from_cursor(cls, cursor: Optional[str]):
         if cursor is None:
-            return MultiPartitionCursor()
+            return MultiPartitionCursor(last_seen_key=None)
 
         raw = json.loads(base64.b64decode(cursor).decode("utf-8"))
         if "last_seen_key" not in raw:
             raise ValueError(f"Invalid cursor: {cursor}")
         return MultiPartitionCursor(last_seen_key=MultiPartitionKey(raw["last_seen_key"]))
+
+
+class MultiDimensionalPartitionKeyIterator:
+    """Helper class to iterate throuh all the partition keys in a MultiPartitionsDefinition."""
+
+    def __init__(
+        self,
+        context: PartitionLoadingContext,
+        partition_defs: list[PartitionDimensionDefinition],
+        cursor: MultiPartitionCursor,
+        ascending: bool,
+    ):
+        self._ascending = ascending
+        self._dimension_names = [dim.name for dim in partition_defs]
+        self._dimension_keys = self._initialize_dimension_keys(context, partition_defs)
+        if cursor and cursor.last_seen_key:
+            self._last_seen_state = self._initialize_state_to_last_seen_key(
+                self._dimension_keys, ascending, cursor.last_seen_key
+            )
+        else:
+            self._last_seen_state = None
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        current_state = self.next_state()
+        if self._is_state_invalid(current_state, self._dimension_keys):
+            raise StopIteration
+        self._last_seen_state = current_state
+        return self._partition_key_from_state(current_state, self._dimension_keys)
+
+    def next_state(self):
+        if self._last_seen_state is None:
+            return self._get_initial_state(self._dimension_keys, self._ascending)
+
+        advanced = False
+        next_state = {}
+        # Iterate through dimensions in reverse order to advance the state by dimension, from the
+        # least significant to the most significant dimension.  State is represented by the indices
+        # of the cross-product of the keys for each dimension.
+        for idx, dim_name in enumerate(reversed(self._dimension_names)):
+            if advanced:
+                # we've already advanced in the lower dimension, so copy the current dimension index as is
+                next_state[dim_name] = self._last_seen_state[dim_name]
+                continue
+            is_most_significant_dim = idx == len(self._dimension_names) - 1
+            delta = 1 if self._ascending else -1
+            next_state[dim_name] = self._last_seen_state[dim_name] + delta
+            if (self._ascending and next_state[dim_name] < len(self._dimension_keys[dim_name])) or (
+                not self._ascending and next_state[dim_name] >= 0
+            ):
+                advanced = True
+            elif not is_most_significant_dim:
+                next_state[dim_name] = (
+                    0 if self._ascending else len(self._dimension_keys[dim_name]) - 1
+                )
+
+        return next_state
+
+    def has_next(self):
+        next_state = self.next_state()
+        return not self._is_state_invalid(next_state, self._dimension_keys)
+
+    def cursor(self):
+        last_partition_key = self._partition_key_from_state(
+            self._last_seen_state, self._dimension_keys
+        )
+        return MultiPartitionCursor(last_seen_key=last_partition_key)
+
+    def _initialize_dimension_keys(self, context, partition_defs):
+        dimension_keys = {}
+        for dimension in partition_defs:
+            dimension_keys[dimension.name] = dimension.partitions_def.get_partition_keys(
+                current_time=context.temporal_context.effective_dt,
+                dynamic_partitions_store=context.dynamic_partitions_store,
+            )
+
+        return dimension_keys
+
+    def _get_initial_state(self, dimension_keys, ascending: bool):
+        state = {}
+        for dim_name, results in dimension_keys.items():
+            if ascending:
+                state[dim_name] = 0
+            else:
+                state[dim_name] = len(results) - 1
+        return state
+
+    def _initialize_state_to_last_seen_key(
+        self, dimension_keys, ascending: bool, last_seen_key: MultiPartitionKey
+    ):
+        state = {}
+        for dim_name, results in dimension_keys.items():
+            if dim_name in last_seen_key.keys_by_dimension:
+                dimension_value = last_seen_key.keys_by_dimension[dim_name]
+                if dimension_value in results:
+                    # the cursor dimension value is in the set of valid values for that dimension
+                    state[dim_name] = results.index(dimension_value)
+                elif ascending:
+                    state[dim_name] = 0
+                else:
+                    state[dim_name] = len(results) - 1
+            elif ascending:
+                state[dim_name] = 0
+            else:
+                state[dim_name] = len(results) - 1
+        return state
+
+    def _is_state_invalid(self, state, dimension_keys):
+        return any(state[dim_name] >= len(dimension_keys[dim_name]) for dim_name in state) or any(
+            state[dim_name] < 0 for dim_name in state
+        )
+
+    def _partition_key_from_state(self, state, dimension_keys) -> Optional[MultiPartitionKey]:
+        if self._is_state_invalid(state, dimension_keys):
+            return None
+
+        partition_tuple = {}
+        for dim_name, idx in state.items():
+            partition_tuple[dim_name] = dimension_keys[dim_name][idx]
+
+        return MultiPartitionKey(partition_tuple)

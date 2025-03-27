@@ -637,8 +637,6 @@ class DynamicPartitionsDefinition(
         partition_keys = self.get_partition_keys(
             current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
-        if not ascending:
-            partition_keys = list(reversed(partition_keys))
         return Connection.create_from_sequence(
             partition_keys, limit=limit, ascending=ascending, cursor=cursor
         )

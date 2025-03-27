@@ -31,7 +31,7 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.types.connection import Connection
-from dagster._record import IHaveNew, record_custom
+from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
 from dagster._time import (
     create_datetime,
@@ -144,11 +144,11 @@ class TimeWindow(NamedTuple):
     end: PublicAttr[datetime]
 
 
+@record
 class TimeWindowCursor:
-    def __init__(self, start_timestamp: int, end_timestamp: int, offset_partition_count: int = 0):
-        self.start_timestamp = start_timestamp
-        self.end_timestamp = end_timestamp
-        self.offset_partition_count = offset_partition_count
+    start_timestamp: int
+    end_timestamp: int
+    offset_partition_count: int
 
     def __str__(self) -> str:
         return self.to_string()
@@ -174,7 +174,11 @@ class TimeWindowCursor:
             offset_partition_count = int(raw.get("offset_partition_count", 0))
         except ValueError:
             raise ValueError(f"Invalid cursor: {cursor}")
-        return TimeWindowCursor(start_timestamp, end_timestamp, offset_partition_count)
+        return TimeWindowCursor(
+            start_timestamp=start_timestamp,
+            end_timestamp=end_timestamp,
+            offset_partition_count=offset_partition_count,
+        )
 
 
 @whitelist_for_serdes(
@@ -887,7 +891,11 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
         has_more = False
         new_cursor = str(
-            TimeWindowCursor(end_timestamp=int(start_ts), start_timestamp=int(start_ts))
+            TimeWindowCursor(
+                start_timestamp=int(start_ts),
+                end_timestamp=int(start_ts),
+                offset_partition_count=0,
+            )
         )
 
         time_window_end_timestamp = time_window.end.timestamp()
@@ -900,8 +908,9 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 )
                 new_cursor = str(
                     TimeWindowCursor(
-                        end_timestamp=int(time_window.start.timestamp()),
                         start_timestamp=int(partition_time_window.end.timestamp()),
+                        end_timestamp=int(time_window.start.timestamp()),
+                        offset_partition_count=0,
                     )
                 )
                 if limit and len(result) >= limit:
