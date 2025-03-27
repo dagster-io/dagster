@@ -19,6 +19,7 @@ from dagster_components.resolved.core_models import (
     AssetPostProcessorModel as AssetPostProcessorModel,
     AssetSpecModel as AssetSpecModel,
     OpSpecModel as OpSpecModel,
+    ResolvedAssetSpec as ResolvedAssetSpec,
 )
 from dagster_components.resolved.metadata import ResolvableFieldInfo as ResolvableFieldInfo
 from dagster_components.resolved.model import (
