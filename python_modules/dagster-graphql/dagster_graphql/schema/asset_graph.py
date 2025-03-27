@@ -38,6 +38,7 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionResolvedStatus,
     AssetCheckInstanceSupport,
 )
+from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord
 from dagster._core.storage.event_log.base import AssetCheckSummaryRecord, AssetRecord
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.utils import is_valid_email
@@ -527,27 +528,79 @@ class GrapheneAssetNode(graphene.ObjectType):
     def is_executable(self) -> bool:
         return self._asset_node_snap.is_executable
 
-    def get_materialization_status_for_asset_health(self, graphene_info: ResolveInfo):
-        # if non-partitioned:
-        # if latest materialization succeed, healthy
-        # if latest materialization failed, degraded
-        # no materialization, unknown
-        # if partitioned:
-        # if all partitions successfully materialized, healthy
-        # if any partitions missing, warning
-        # if any partitions failed, degraded
-        if (
-            not graphene_info.context.instance.dagster_observe_supported()
-            or not graphene_info.context.instance.can_read_failure_events_for_asset(
-                self._asset_node_snap.asset_key
-            )
-        ):
-            # compute materialization status how we do today by checking the latest run the asset was materialized in (or using asset status cache for partitioned)
-            pass
+    async def get_materialization_status_for_asset_health(self, graphene_info: ResolveInfo):
+        if self._asset_node_snap.partitions is not None:  # isPartitioned
+            # TODO - maybe can do this from the asset record? that might not re-gen the cache though
+            partition_stats = self.resolve_partitionStats(graphene_info)
+            if partition_stats is None:
+                return GrapheneAssetHealthStatus.UNKNOWN
+            if partition_stats.numFailed > 0:
+                return GrapheneAssetHealthStatus.DEGRADED
+            if (
+                partition_stats.numPartitions
+                > partition_stats.numFailed
+                + partition_stats.numMaterialized
+                + partition_stats.numMaterializing
+            ):
+                # some partitions have never been materialized
+                return GrapheneAssetHealthStatus.WARNING
+            return GrapheneAssetHealthStatus.HEALTHY
+
+        asset_record = await AssetRecord.gen(graphene_info.context, self._asset_node_snap.asset_key)
+
+        if graphene_info.context.instance.can_read_failure_events():
+            # compute the status based on the asset key table (or using asset status cache for partitioned)
+            # TODO - need to handle the case when writing failed events has been enabled, but no new events have been written for this
+            # asset yet. In that case, we need to compute the status the old way
+            if asset_record.asset_entry.last_planned_materialization_storage_id > max(
+                asset_record.asset_entry.last_materialization_storage_id,
+                asset_record.asset_entry.last_failed_to_materialize_storage_id,
+            ):
+                # need to check if the run was canceled or deleted
+                run_record = await RunRecord.gen(
+                    graphene_info.context,
+                    asset_record.asset_entry.last_planned_materialization_run_id,
+                )
+                if run_record is None:
+                    # run was deleted TODO - should we fall back onto the previous materialization status?
+                    return GrapheneAssetHealthStatus.UNKNOWN
+                if run_record.dagster_run.status == DagsterRunStatus.CANCELED:
+                    # TODO - should we fall back onto the previous materialization status?
+                    return GrapheneAssetHealthStatus.UNKNOWN
+
+            if (
+                asset_record.asset_entry.last_materialization_storage_id
+                > asset_record.asset_entry.last_failed_to_materialize_storage_id
+            ):
+                # latest materialization succeeded
+                return GrapheneAssetHealthStatus.HEALTHY
+            # latest materialization failed
+            return GrapheneAssetHealthStatus.DEGRADED
+
         else:
-            # commpute the status based on the asset key table (or using asset status cache for partitioned)
+            # compute materialization status how we do today by checking the latest run the asset was materialized in (or using asset status cache for partitioned)
+            if (
+                asset_record.asset_entry.last_run_id
+                == asset_record.asset_entry.last_materialization.run_id
+            ):
+                # latest materialization succeeded
+                return GrapheneAssetHealthStatus.HEALTHY
+            run_record = await RunRecord.gen(
+                graphene_info.context, asset_record.asset_entry.last_run_id
+            )
+            if asset_record.asset_entry.last_materialization.timestamp > run_record.end_time:
+                # latest materialization succeeded, reported manually
+                return GrapheneAssetHealthStatus.HEALTHY
+            if run_record.dagster_run.is_failure:
+                return GrapheneAssetHealthStatus.DEGRADED
+            # run has a non-failure status. since we aren't storing asset failures, there is no way to know if the second-to-last run
+            # was a successful or failed materialization. Current behavior is to just show the most recent successful materialization in
+            # the UI. So we duplicate that behavior here
+            return GrapheneAssetHealthStatus.HEALTHY
+
             pass
 
+        # placehodler
         return GrapheneAssetHealthStatus.UNKNOWN
 
     async def get_asset_check_status_for_asset_health(self, graphene_info: ResolveInfo):
@@ -664,7 +717,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             return None
         return GrapheneAssetHealth(
             assetChecksStatus=await self.get_asset_check_status_for_asset_health(graphene_info),
-            materializationStatus=self.get_materialization_status_for_asset_health(graphene_info),
+            materializationStatus=await self.get_materialization_status_for_asset_health(graphene_info),
             freshnessStatus=self.get_freshness_status_for_asset_health(graphene_info),
         )
 
