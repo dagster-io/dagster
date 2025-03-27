@@ -102,8 +102,8 @@ export const darkNoRedGreenThemeColors = css`
   --color-data-viz-cyan-alt: var(--color-dataviz-cyan100);
   --color-data-viz-gray: var(--color-dataviz-gray200);
   --color-data-viz-gray-alt: var(--color-dataviz-gray100);
-  --color-data-viz-green: var(--color-dataviz-cobalt200);
-  --color-data-viz-green-alt: var(--color-dataviz-cobalt100);
+  --color-data-viz-green: var(--color-core-cobalt200);
+  --color-data-viz-green-alt: var(--color-core-cobalt100);
   --color-data-viz-lime: var(--color-dataviz-lime200);
   --color-data-viz-lime-alt: var(--color-dataviz-lime100);
   --color-data-viz-orange: var(--color-dataviz-orange200);
@@ -120,6 +120,7 @@ export const darkNoRedGreenThemeColors = css`
   --color-data-viz-yellow-alt: var(--color-dataviz-yellow100);
   --color-checkbox-unchecked: var(--color-core-gray500);
   --color-checkbox-checked: var(--color-core-cobalt500);
+  --color-checkbox-disabled: var(--color-core-gray700);
   --color-blue-gradient: linear-gradient(
     var(--color-core-gray950),
     var(--color-translucent-blue15) 100%

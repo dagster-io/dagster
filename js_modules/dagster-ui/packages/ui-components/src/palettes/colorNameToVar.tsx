@@ -75,9 +75,7 @@ export const colorNameToVar = {
   [ColorName.PopoverBackgroundHover]: 'var(--color-popover-background-hover)',
   [ColorName.ShadowDefault]: 'var(--color-shadow-default)',
   [ColorName.CheckboxUnchecked]: 'var(--color-checkbox-unchecked)',
-  [ColorName.CheckboxUncheckedHover]: 'var(--color-checkbox-unchecked-hover)',
   [ColorName.CheckboxChecked]: 'var(--color-checkbox-checked)',
-  [ColorName.CheckboxCheckedHover]: 'var(--color-checkbox-checked-hover)',
   [ColorName.CheckboxDisabled]: 'var(--color-checkbox-disabled)',
 
   // Header
