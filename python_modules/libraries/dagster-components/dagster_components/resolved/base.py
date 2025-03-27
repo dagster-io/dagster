@@ -1,3 +1,4 @@
+import inspect
 from collections.abc import Mapping, Sequence
 from dataclasses import MISSING, fields, is_dataclass
 from enum import Enum, auto
@@ -125,8 +126,9 @@ def _get_annotations(resolved_type: type[Resolvable]):
             has_default = not field_info.is_required()
             annotations[name] = (field_info.rebuild_annotation(), has_default)
         return annotations
+    elif init_kwargs := _get_init_kwargs(resolved_type):
+        return init_kwargs
     # can update to support:
-    # * classes w/ __init__
     # * @record
     else:
         raise ResolutionException(
@@ -135,6 +137,34 @@ def _get_annotations(resolved_type: type[Resolvable]):
             "* @record\n"
             "* class with non empty __init__\n"
         )
+
+
+def _get_init_kwargs(target_type: type[Resolvable]):
+    if target_type.__init__ is object.__init__:
+        return None
+
+    sig = inspect.signature(target_type.__init__)
+    fields = {}
+
+    skipped_self = False
+    for name, param in sig.parameters.items():
+        if not skipped_self:
+            skipped_self = True
+            continue
+
+        if param.kind == param.POSITIONAL_ONLY:
+            raise ResolutionException(
+                f"Invalid Resolved type {target_type}: __init__ contains positional only parameter."
+            )
+        if param.kind in (param.VAR_POSITIONAL, param.VAR_KEYWORD):
+            continue
+        if param.annotation == param.empty:
+            raise ResolutionException(
+                f"Invalid Resolved type {target_type}: __init__ parameter {name} has no type hint."
+            )
+
+        fields[name] = (param.annotation, param.default is not param.empty)
+    return fields
 
 
 def _resolve_fields(

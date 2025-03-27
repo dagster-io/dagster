@@ -128,3 +128,61 @@ asset_specs:
 """)
 
     assert ex.asset_specs[0].key == AssetKey("foo")
+
+
+def test_class():
+    class Person(Resolvable):
+        random: str  # ensure random annotations ignored
+
+        def __init__(
+            self,
+            name: str,
+            age: int,
+        ): ...
+
+    Person.resolve_from_yaml(
+        """
+name: Rei
+age: 7
+""",
+    )
+
+    class Flexible(Resolvable):
+        def __init__(
+            self,
+            *args,
+            name: str,
+            **kwargs,
+        ): ...
+
+    Flexible.resolve_from_yaml(
+        """
+name: flex
+    """,
+    )
+
+
+def test_bad_class():
+    class Empty(Resolvable): ...
+
+    with pytest.raises(ResolutionException, match="class with non empty __init__"):
+        Empty.resolve_from_yaml("")
+
+    class JustSelf(Resolvable):
+        def __init__(
+            self,
+        ): ...
+
+    with pytest.raises(ResolutionException, match="class with non empty __init__"):
+        JustSelf.resolve_from_yaml("")
+
+    class PosOnly(Resolvable):
+        def __init__(
+            self,
+            a: int,
+            /,
+            b: int,
+        ): ...
+
+    with pytest.raises(ResolutionException, match="positional only parameter"):
+        PosOnly.resolve_from_yaml("")
