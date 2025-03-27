@@ -11,7 +11,7 @@ from dagster._core.container_context import process_shared_container_context_con
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.utils import parse_env_var
-from dagster._utils import hash_collection
+from dagster_shared.utils.hash import hash_collection
 
 if TYPE_CHECKING:
     from dagster_k8s import K8sRunLauncher

@@ -528,23 +528,6 @@ def load_remote_repo(
     return code_location_entry.code_location.get_repository(repo_name)
 
 
-def remove_none_recursively(obj: T) -> T:
-    """Remove none values from a dict. This can be used to support comparing provided config vs.
-    config we retrive from kubernetes, which returns all fields, even those which have no value
-    configured.
-    """
-    if isinstance(obj, (list, tuple, set)):
-        return type(obj)(remove_none_recursively(x) for x in obj if x is not None)
-    elif isinstance(obj, dict):
-        return type(obj)(
-            (remove_none_recursively(k), remove_none_recursively(v))
-            for k, v in obj.items()
-            if k is not None and v is not None
-        )
-    else:
-        return obj
-
-
 default_resources_for_test = {"io_manager": fs_io_manager}
 
 

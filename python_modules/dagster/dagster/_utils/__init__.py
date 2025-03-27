@@ -16,14 +16,13 @@ import tempfile
 import threading
 import time
 import uuid
-from collections.abc import Generator, Hashable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
 from datetime import timezone
 from enum import Enum
 from pathlib import Path
 from signal import Signals
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
-    AbstractSet,
     Any,
     Callable,
     ContextManager,
@@ -46,8 +45,11 @@ from dagster_shared.libraries import (
     library_version_from_core_version as library_version_from_core_version,
     parse_package_version as parse_package_version,
 )
+from dagster_shared.utils.hash import (
+    hash_collection as hash_collection,
+    make_hashable as make_hashable,
+)
 from filelock import FileLock
-from pydantic import BaseModel
 from typing_extensions import Literal, TypeAlias, TypeGuard
 
 import dagster._check as check
@@ -214,62 +216,6 @@ def mkdir_p(path: str) -> str:
             return path
         else:
             raise
-
-
-def hash_collection(
-    collection: Union[
-        Mapping[Hashable, Any], Sequence[Any], AbstractSet[Any], tuple[Any, ...], NamedTuple
-    ],
-) -> int:
-    """Hash a mutable collection or immutable collection containing mutable elements.
-
-    This is useful for hashing Dagster-specific NamedTuples that contain mutable lists or dicts.
-    The default NamedTuple __hash__ function assumes the contents of the NamedTuple are themselves
-    hashable, and will throw an error if they are not. This can occur when trying to e.g. compute a
-    cache key for the tuple for use with `lru_cache`.
-
-    This alternative implementation will recursively process collection elements to convert basic
-    lists and dicts to tuples prior to hashing. It is recommended to cache the result:
-
-    Example:
-        .. code-block:: python
-
-            def __hash__(self):
-                if not hasattr(self, '_hash'):
-                    self._hash = hash_named_tuple(self)
-                return self._hash
-    """
-    assert isinstance(
-        collection, (list, dict, set, tuple)
-    ), f"Cannot hash collection of type {type(collection)}"
-    return hash(make_hashable(collection))
-
-
-@overload
-def make_hashable(value: Union[list[Any], set[Any]]) -> tuple[Any, ...]: ...
-
-
-@overload
-def make_hashable(value: dict[Any, Any]) -> tuple[tuple[Any, Any]]: ...
-
-
-@overload
-def make_hashable(value: Any) -> Any: ...
-
-
-def make_hashable(value: Any) -> Any:
-    from dagster._record import as_dict, is_record
-
-    if isinstance(value, dict):
-        return tuple(sorted((key, make_hashable(value)) for key, value in value.items()))
-    elif is_record(value):
-        return tuple(make_hashable(value) for value in as_dict(value).values())
-    elif isinstance(value, (list, tuple, set)):
-        return tuple([make_hashable(x) for x in value])
-    elif isinstance(value, BaseModel):
-        return make_hashable(value.dict())
-    else:
-        return value
 
 
 def get_prop_or_key(elem: object, key: str) -> object:
