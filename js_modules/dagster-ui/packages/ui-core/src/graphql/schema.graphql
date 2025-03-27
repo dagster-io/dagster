@@ -674,6 +674,7 @@ enum MaterializationHistoryEventTypeSelector {
 }
 
 type AssetNode {
+  assetHealth: AssetHealth!
   assetKey: AssetKey!
   assetMaterializations(
     partitions: [String!]
@@ -739,6 +740,20 @@ type AssetNode {
   assetChecksOrError(limit: Int, pipeline: PipelineSelector): AssetChecksOrError!
   currentAutoMaterializeEvaluationId: ID
   targetingInstigators: [Instigator!]!
+}
+
+type AssetHealth {
+  assetHealth: AssetHealthStatus!
+  materializationStatus: AssetHealthStatus
+  assetChecksStatus: AssetHealthStatus
+  freshnessStatus: AssetHealthStatus
+}
+
+enum AssetHealthStatus {
+  HEALTHY
+  WARNING
+  DEGRADED
+  UNKNOWN
 }
 
 type MaterializationUpstreamDataVersion {
