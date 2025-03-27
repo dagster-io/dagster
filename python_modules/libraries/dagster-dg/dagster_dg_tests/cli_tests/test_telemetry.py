@@ -20,24 +20,6 @@ from dagster_dg_tests.utils import (
     modify_environment_variable,
 )
 
-TELEMETRY_TEST_COMMANDS = {
-    ("check", "yaml"),
-    ("check", "defs"),
-    ("dev",),
-    ("docs", "serve"),
-    ("init",),
-    ("list", "defs"),
-    ("list", "project"),
-    ("list", "component"),
-    ("list", "component-type"),
-    ("plus", "login"),
-    ("scaffold", "workspace"),
-    ("scaffold", "project"),
-    ("scaffold", "component-type"),
-    ("launch",),
-    ("utils", "configure-editor"),
-}
-
 NO_TELEMETRY_COMMANDS = {
     ("utils", "inspect-component-type"),
     # Is actually instrumented, but since subcommands are dynamically generated we test manually
@@ -45,24 +27,11 @@ NO_TELEMETRY_COMMANDS = {
 }
 
 
-@pytest.mark.skip("temp")
-def test_all_commands_represented_in_telemetry_test() -> None:
-    commands = crawl_cli_commands()
-
-    all_listed_commands = [*TELEMETRY_TEST_COMMANDS, *NO_TELEMETRY_COMMANDS]
-    crawled_commands = [tuple(key[1:]) for key in commands.keys() if len(key) > 1]
-    unlisted_commands = set(crawled_commands) - set(all_listed_commands)
-    commands_which_do_not_exist = set(all_listed_commands) - set(crawled_commands)
-    assert not unlisted_commands, f"Unlisted commands have no telemetry tests: {unlisted_commands}"
-    assert (
-        not commands_which_do_not_exist
-    ), f"Commands which do not exist have telemetry tests: {commands_which_do_not_exist}"
-
-
 def test_telemetry_commands_properly_wrapped():
     commands = crawl_cli_commands()
-    for command in TELEMETRY_TEST_COMMANDS:
-        command_defn = commands[("dg", *command)]
+    for command, command_defn in commands.items():
+        if tuple(command[1:]) in NO_TELEMETRY_COMMANDS:
+            continue
 
         fn = command_defn.callback
         while hasattr(fn, "__wrapped__"):
@@ -70,9 +39,10 @@ def test_telemetry_commands_properly_wrapped():
                 break
             fn = getattr(fn, "__wrapped__")
 
-        assert (
-            hasattr(fn, "__has_cli_telemetry_wrapper") is True
-        ), f"Command {command} is not properly wrapped"
+        assert hasattr(fn, "__has_cli_telemetry_wrapper") is True, (
+            f"Command {command} is not properly wrapped. Please wrap in the @cli_telemetry_wrapper decorator "
+            "or add it to the NO_TELEMETRY_COMMANDS set."
+        )
 
 
 @pytest.mark.parametrize("success", [True, False])
