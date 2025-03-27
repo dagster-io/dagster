@@ -1,6 +1,6 @@
 ---
-title: User roles & permissions in Dagster+
-sidebar_label: 'User roles & permissions'
+title: User roles and permissions in Dagster+
+sidebar_label: 'User roles and permissions'
 sidebar_position: 300
 ---
 
@@ -27,15 +27,47 @@ Dagster+ uses a hierarchical model for RBAC, meaning that the most permissive ro
 - Launcher (Pro plans only)
 - Viewer
 
-For example, the **Admin** user role includes permissions specific to this role and all permissions in the **Editor**, **Launcher**, and **Viewer** user roles. Refer to the [User permissions reference](#user-permissions-reference) for the full list of user permissions in Dagster+.
+For example, the **Admin** user role includes permissions specific to this role and all permissions in the **Editor**, **Launcher**, and **Viewer** user roles. Refer to the [User permissions reference](#user-permissions-reference) for the full list of user permissions in Dagster+. All user roles are enforced both in Dagster+ and the [GraphQL API](/guides/operate/graphql).
 
-### User role enforcement
+:::tip Teams in Dagster+ Pro
 
-All user roles are enforced both in Dagster+ and the GraphQL API.
+Dagster+ Pro users can create teams of users and assign default permission sets. For more information, see "[Managing teams in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/teams)".
 
-### Teams
+:::
 
-Dagster+ Pro users can create teams of users and assign default permission sets. Refer to the [Managing teams in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/teams) guide for more info.
+## Custom roles
+
+### Creating custom roles
+
+1. Navigate to the **Organization Settings** page.
+2. Click the **Roles** tab.
+3. Click the **Create new role** button.
+4. Select a name and icon.
+5. Provide a brief description.
+6. Choose deployment or organization type depending on where you want your role applied.
+7. Select the permissions you want to apply to the role. Note that you can base your role off of an existing role for ease of creation.
+
+### Editing custom roles
+
+1. Navigate to the **Organization Settings** page.
+2. Click the **Roles** tab.
+3. Click the **edit** button next to the role you want to edit.
+4. Make your changes and save them. You should see a confirmation dialog including the changes that have been made.
+
+### Deleting custom roles
+
+:::warning
+
+Deleting a role is a permanent action and cannot be undone.
+
+:::
+
+If you no longer need a custom role, you can delete it. If the role is currently assigned to any users, you will need to reassign them to a different role before deleting the role.
+
+1. Navigate to the **Organization Settings** page.
+2. Click the Roles tab.
+3. Click the edit button next to the role you want to delete.
+4. At the bottom of the edit dialog, click **Delete role**..
 
 ## Assigning user and team roles
 
