@@ -1,4 +1,3 @@
-import importlib
 import shutil
 import tempfile
 from collections.abc import Iterator, Mapping
@@ -12,6 +11,7 @@ from click.testing import CliRunner
 from dagster import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.result import MaterializeResult
@@ -19,13 +19,9 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
-from dagster_components import load_defs
+from dagster_components import ComponentLoadContext
 from dagster_components.cli import cli
-from dagster_components.core.defs_module import (
-    ComponentFileModel,
-    DefsModuleDecl,
-    YamlComponentDecl,
-)
+from dagster_components.core.defs_module import DefsModule, YamlComponentDefsModule
 from dagster_components.lib.sling_replication_collection.component import (
     SlingReplicationCollectionComponent,
 )
@@ -34,17 +30,16 @@ from dagster_components.resolved.core_models import AssetAttributesModel
 from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_sling import SlingResource
 
-from dagster_components_tests.utils import script_load_context
-
 ensure_dagster_components_tests_import()
 
-from dagster_components_tests.utils import temp_code_location_bar
+from dagster_components_tests.utils import build_component_defs_for_test, temp_code_location_bar
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
 
 STUB_LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "sling_location"
 COMPONENT_RELPATH = "defs/ingest"
+REPLICATION_PATH = STUB_LOCATION_PATH / COMPONENT_RELPATH / "replication.yaml"
 
 
 @contextmanager
@@ -59,7 +54,7 @@ def _modify_yaml(path: Path) -> Iterator[dict[str, Any]]:
 @contextmanager
 def temp_sling_component_instance(
     replication_specs: Optional[list[dict[str, Any]]] = None,
-) -> Iterator[YamlComponentDecl]:
+) -> Iterator[tuple[SlingReplicationCollectionComponent, Definitions]]:
     """Sets up a temporary directory with a replication.yaml and component.yaml file that reference
     the proper temp path.
     """
@@ -69,13 +64,14 @@ def temp_sling_component_instance(
     ):
         with environ({"HOME": temp_dir, "SOME_PASSWORD": "password"}):
             shutil.copytree(STUB_LOCATION_PATH, temp_dir, dirs_exist_ok=True)
+            component_path = Path(temp_dir) / COMPONENT_RELPATH
 
             # update the replication yaml to reference a CSV file in the tempdir
-            with _modify_yaml(Path(temp_dir) / COMPONENT_RELPATH / "replication.yaml") as data:
+            with _modify_yaml(component_path / "replication.yaml") as data:
                 placeholder_data = data["streams"].pop("<PLACEHOLDER>")
                 data["streams"][f"file://{temp_dir}/input.csv"] = placeholder_data
 
-            with _modify_yaml(Path(temp_dir) / COMPONENT_RELPATH / "component.yaml") as data:
+            with _modify_yaml(component_path / "component.yaml") as data:
                 # If replication specs were provided, overwrite the default one in the component.yaml
                 if replication_specs:
                     data["attributes"]["replications"] = replication_specs
@@ -83,23 +79,20 @@ def temp_sling_component_instance(
                 # update the defs yaml to add a duckdb instance
                 data["attributes"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
 
-            decl_node = DefsModuleDecl.from_path(Path(temp_dir) / COMPONENT_RELPATH)
-            assert isinstance(decl_node, YamlComponentDecl)
-            yield decl_node
+            context = ComponentLoadContext.for_test().for_path(component_path)
+            defs_module = DefsModule.from_context(context)
+            assert isinstance(defs_module, YamlComponentDefsModule)
+            assert isinstance(defs_module.wrapped, SlingReplicationCollectionComponent)
+            yield defs_module.wrapped, defs_module.build_defs(context)
 
 
 def test_python_attributes() -> None:
-    with temp_sling_component_instance([{"path": "./replication.yaml"}]) as decl_node:
-        context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
-        component = SlingReplicationCollectionComponent.load(attributes, context)
-
+    with temp_sling_component_instance([{"path": "./replication.yaml"}]) as (component, defs):
         replications = component.replications
         assert len(replications) == 1
         op = replications[0].op
         assert op is None
 
-        defs = component.build_defs(context)
         assert defs.get_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),
             AssetKey("input_duckdb"),
@@ -110,19 +103,13 @@ def test_python_attributes() -> None:
 
 def test_python_attributes_op_name() -> None:
     with temp_sling_component_instance(
-        [
-            {"path": "./replication.yaml", "op": {"name": "my_op"}},
-        ]
-    ) as decl_node:
-        context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
-        component = SlingReplicationCollectionComponent.load(attributes, context=context)
+        [{"path": "./replication.yaml", "op": {"name": "my_op"}}]
+    ) as (component, defs):
         replications = component.replications
         assert len(replications) == 1
         op = replications[0].op
         assert op
         assert op.name == "my_op"
-        defs = component.build_defs(context)
         assert defs.get_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),
             AssetKey("input_duckdb"),
@@ -132,37 +119,25 @@ def test_python_attributes_op_name() -> None:
 
 def test_python_attributes_op_tags() -> None:
     with temp_sling_component_instance(
-        [
-            {"path": "./replication.yaml", "op": {"tags": {"tag1": "value1"}}},
-        ]
-    ) as decl_node:
-        context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
-        component = SlingReplicationCollectionComponent.load(attributes=attributes, context=context)
+        [{"path": "./replication.yaml", "op": {"tags": {"tag1": "value1"}}}]
+    ) as (component, defs):
         replications = component.replications
         assert len(replications) == 1
         op = replications[0].op
         assert op
         assert op.tags == {"tag1": "value1"}
-        defs = component.build_defs(context)
         assert defs.get_assets_def("input_duckdb").op.tags == {"tag1": "value1"}
 
 
 def test_python_params_include_metadata() -> None:
     with temp_sling_component_instance(
-        [
-            {"path": "./replication.yaml", "include_metadata": ["column_metadata", "row_count"]},
-        ]
-    ) as decl_node:
-        context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
-        component = SlingReplicationCollectionComponent.load(attributes=attributes, context=context)
+        [{"path": "./replication.yaml", "include_metadata": ["column_metadata", "row_count"]}]
+    ) as (component, defs):
         replications = component.replications
         assert len(replications) == 1
         include_metadata = replications[0].include_metadata
         assert include_metadata == ["column_metadata", "row_count"]
 
-        defs = component.build_defs(context)
         input_duckdb = defs.get_assets_def("input_duckdb")
 
         with instance_for_test() as instance:
@@ -175,20 +150,14 @@ def test_python_params_include_metadata() -> None:
 
 
 def test_load_from_path() -> None:
-    with temp_sling_component_instance() as decl_node:
-        context = script_load_context(decl_node)
-        defs_module = decl_node.load(context)
-        assert isinstance(defs_module.component, SlingReplicationCollectionComponent)
-
-        resource = getattr(defs_module.component, "resource")
+    with temp_sling_component_instance() as (component, defs):
+        resource = getattr(component, "resource")
         assert isinstance(resource, SlingResource)
         assert len(resource.connections) == 1
         assert resource.connections[0].name == "DUCKDB"
         assert resource.connections[0].type == "duckdb"
         assert resource.connections[0].password == "password"
 
-        module = importlib.import_module("defs")
-        defs = load_defs(module)
         assert defs.get_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),
             AssetKey(["foo", "input_duckdb"]),
@@ -202,17 +171,11 @@ def test_sling_subclass() -> None:
         ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
             return sling.replicate(context=context, debug=True)
 
-    decl_node = YamlComponentDecl(
-        path=STUB_LOCATION_PATH / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
-            type="debug_sling_replication",
-            attributes={"sling": {}, "replications": [{"path": "./replication.yaml"}]},
-        ),
+    defs = build_component_defs_for_test(
+        DebugSlingReplicationComponent,
+        {"sling": {}, "replications": [{"path": str(REPLICATION_PATH)}]},
     )
-    context = script_load_context(decl_node)
-    attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
-    component_inst = DebugSlingReplicationComponent.load(attributes=attributes, context=context)
-    assert component_inst.build_defs(context).get_asset_graph().get_all_asset_keys() == {
+    assert defs.get_asset_graph().get_all_asset_keys() == {
         AssetKey("input_csv"),
         AssetKey("input_duckdb"),
     }
@@ -283,13 +246,8 @@ def test_asset_attributes(
         wrapper,
         temp_sling_component_instance(
             [{"path": "./replication.yaml", "asset_attributes": attributes}]
-        ) as decl_node,
+        ) as (component, defs),
     ):
-        context = script_load_context(decl_node)
-        attrs = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
-        component = SlingReplicationCollectionComponent.load(attributes=attrs, context=context)
-        defs = component.build_defs(context)
-
         key = attributes.get("key", "input_duckdb")
         assets_def: AssetsDefinition = defs.get_assets_def(key)
     if assertion:
@@ -339,12 +297,7 @@ def test_spec_is_available_in_scope() -> None:
                 "asset_attributes": {"metadata": {"asset_key": "{{ spec.key.path }}"}},
             }
         ]
-    ) as decl_node:
-        context = script_load_context(decl_node)
-        attrs = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
-        component = SlingReplicationCollectionComponent.load(attributes=attrs, context=context)
-        defs = component.build_defs(context)
-
+    ) as (_, defs):
         assets_def: AssetsDefinition = defs.get_assets_def("input_duckdb")
         assert assets_def.get_asset_spec(AssetKey("input_duckdb")).metadata["asset_key"] == [
             "input_duckdb"
@@ -370,24 +323,15 @@ def test_udf_map_spec(map_fn: Callable[[AssetSpec], Any]) -> None:
         def get_additional_scope(cls) -> Mapping[str, Any]:
             return {"map_spec": map_fn}
 
-    decl_node = YamlComponentDecl(
-        path=STUB_LOCATION_PATH / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
-            type="debug_sling_replication",
-            attributes={
-                "sling": {},
-                "replications": [
-                    {"path": "./replication.yaml", "asset_attributes": "{{ map_spec(spec) }}"}
-                ],
-            },
-        ),
+    defs = build_component_defs_for_test(
+        DebugSlingReplicationComponent,
+        {
+            "sling": {},
+            "replications": [
+                {"path": str(REPLICATION_PATH), "asset_attributes": "{{ map_spec(spec) }}"}
+            ],
+        },
     )
-    context = script_load_context(decl_node).with_rendering_scope(
-        DebugSlingReplicationComponent.get_additional_scope()
-    )
-    attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
-    component_inst = DebugSlingReplicationComponent.load(attributes=attributes, context=context)
 
-    defs = component_inst.build_defs(context)
     assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("input_duckdb"))
     assert assets_def.get_asset_spec(AssetKey("input_duckdb")).tags["is_custom_spec"] == "yes"
