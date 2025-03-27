@@ -1,0 +1,40 @@
+plugins {
+    id 'scala'
+    id 'java'
+    id 'application'
+    id 'com.gradleup.shadow' version '8.3.6'
+
+}
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+tasks.withType(ScalaCompile).configureEach {
+    scalaCompileOptions.additionalParameters = ['-target:jvm-17']
+}
+
+dependencies {
+    // compileOnly - because Spark already provides the Scala and Spark libraries.
+    //               everything else should be included in the "FatJar" created by shadow.
+    compileOnly 'org.scala-lang:scala-library:2.12.18'
+    compileOnly 'org.apache.spark:spark-sql_2.12:3.5.5'
+
+    implementation 'io.dagster:pipes:1.1.0'
+}
+
+application {
+    mainClass = 'org.examples.Example'
+}
+
+shadowJar {
+    mergeServiceFiles()
+    archiveClassifier.set('all')
+    zip64 true
+}
