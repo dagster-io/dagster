@@ -45,9 +45,11 @@
 
 ### dg & Components (Preview)
 
+- Virtual environment detection settings for projects have changed. Previously, the global settings `use_dg_managed_environment` and `require_local_venv` controlled the environment used when launching project subprocesses. This is now configured at the project level. The `tool.dg.project.python_environment` setting takes a value of either `persistent_uv` or `active`. `persistent_uv` will be used by default in new scaffolded projects and uses a uv-managed `.venv` in the project root. `active` is the default if no `tool.dg.project.python_environment` is set, and  just uses the active python environment and opts out of `dg` management of the environment.
+- A new base class, `Resolvable`, has been added. This can be used to simplify the process of defining a yaml schema for your components. Instead of manually defining a manual `ResolvedFrom[...]` and `ResolvableModel`, the framework will automatically derive the model schema for you based off of the annotations of your class.
 - Python files with Pythonic Components (i.e. defined with `@component`) can now contain relative imports.
 - The `dg init` command now accepts optional `--workspace-name` and `--project-name` options to allow scaffolding an initial workspace and project via CLI options instead of prompts.
-- Added a new `dagster_components.dagster.DefsModuleComponent` that can be used at any level of your `defs/` folder to apply asset attributes to the definitions at or below that level.
+- Added a new `dagster_components.dagster.DefsFolderComponent` that can be used at any level of your `defs/` folder to apply asset attributes to the definitions at or below that level. This was previously named `dagster_components.dagster.DefsModuleComponent`.
 
 ## 1.10.6 (core) / 0.26.6 (libraries)
 
