@@ -19,4 +19,4 @@ allowlist_externals =
   uv
 commands =
   !windows: /bin/bash -c '! pip list --exclude-editable | grep -e dagster -e dagit'
-  pytest -c ../../../pyproject.toml -vv ./{{ underscore_name }}_tests {posargs}
+  pytest -c ../../../pyproject.toml -vv ./{{ underscore_name }}_tests --durations 10 {posargs}
