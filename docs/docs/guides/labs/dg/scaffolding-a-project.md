@@ -11,13 +11,13 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 To scaffold a new project, use the `dg scaffold project` command:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/scaffolding-project/1-scaffolding-project.txt"  />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/scaffolding-project/1-scaffolding-project.txt"  />
 
 ## Project structure
 
 The `dg scaffold project` command creates a directory with a standard Python package structure with some additions:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/dg/scaffolding-project/2-tree.txt"  />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/scaffolding-project/2-tree.txt"  />
 
 - The top-level package `my_project` contains the deployable code that defines
   your Dagster pipelines.

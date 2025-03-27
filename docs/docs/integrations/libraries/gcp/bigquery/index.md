@@ -32,7 +32,7 @@ pip install dagster-gcp
 
 ### Examples
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/gcp-bigquery.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/gcp-bigquery.py" language="python" />
 
 ### About Google Cloud Platform BigQuery
 

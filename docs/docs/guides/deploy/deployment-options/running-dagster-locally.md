@@ -20,7 +20,7 @@ For a refresher on how to set up a Dagster project, follow our [Recommended Dags
 <Tabs>
   <TabItem value="module" label="From a module">
     Dagster can load Python modules as code locations.
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/definitions.py" language="python" title="my_module/__init__.py" />
+    <CodeExample path="docs_snippets/docs_snippets/guides/tbd/definitions.py" language="python" title="my_module/__init__.py" />
     We can use the `-m` argument to supply the name of the module to start a Dagster instance loaded with our definitions:
     ```shell
     dagster dev -m my_module
@@ -29,13 +29,13 @@ For a refresher on how to set up a Dagster project, follow our [Recommended Dags
   </TabItem>
   <TabItem value="without-args" label="Without command line arguments">
     To load definitions from a module without supplying the `-m` command line argument, you can use a `pyproject.toml` file. This file, included in all Dagster example projects, contains a `tool.dagster` section where you can supply the `module_name`:
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/pyproject.toml" language="toml" title="pyproject.toml" />
+    <CodeExample path="docs_snippets/docs_snippets/guides/tbd/pyproject.toml" language="toml" title="pyproject.toml" />
 
 
   </TabItem>
   <TabItem value="file" label="From a file">
     Dagster can load a file directly as a code location.
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/definitions.py" language="python" title="definitions.py" />
+    <CodeExample path="docs_snippets/docs_snippets/guides/tbd/definitions.py" language="python" title="definitions.py" />
     Given the preceding file, we can use the `-f` argument to supply the name of the file to start a Dagster instance loaded with our definitions:
     ```shell
     dagster dev -f defs.py
@@ -69,7 +69,7 @@ dagster dev
 To configure your Dagster instance, you can create a `dagster.yaml` file in your `$DAGSTER_HOME` folder.
 
 For example, to have your local instance limit the number of concurrent runs, you could configure the following `dagster.yaml`:
-    <CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tbd/dagster.yaml" language="yaml" title="~/.dagster_home/dagster.yaml" />
+    <CodeExample path="docs_snippets/docs_snippets/guides/tbd/dagster.yaml" language="yaml" title="~/.dagster_home/dagster.yaml" />
 
 
 For the full list of options that can be set in the `dagster.yaml` file, refer to the [Dagster instance documentation](/guides/deploy/dagster-instance-configuration).

@@ -16,7 +16,7 @@ Using metadata in Dagster, you can:
 
 In a large organization, it's important to know which individuals and teams are responsible for a given data asset.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/owners.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/owners.py" language="python" />
 
 :::note
 
@@ -40,7 +40,7 @@ Here's an example of some tags you might apply to an asset:
 
 As with `owners`, you can pass a dictionary of tags to the `tags` argument when defining an asset:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/tags.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/tags.py" language="python" />
 
 Keep in mind that tags must contain only strings as keys and values. Additionally, the Dagster UI will render tags with the empty string as a "label" rather than a key-value pair.
 
@@ -54,7 +54,7 @@ Metadata can be attached to an asset at definition time, when the code is first 
 
 Using definition metadata to describe assets can make it easy to provide context for you and your team. This metadata could be descriptions of the assets, the types of assets, or links to relevant documentation.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/definition-metadata.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/definition-metadata.py" language="python" />
 
 To learn more about the different types of metadata you can attach, see the <PyObject section="metadata" module="dagster" object="MetadataValue" /> API docs.
 
@@ -68,7 +68,7 @@ To attach materialization metadata to an asset, returning a <PyObject section="a
 
 When specifying values, use the <PyObject section="metadata" module="dagster" object="MetadataValue" /> utility class to wrap the data to ensure it displays correctly in the UI. Values can also be primitive Python types, which Dagster will convert to the appropriate `MetadataValue`.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/runtime-metadata.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/runtime-metadata.py" language="python" />
 
 :::note
 
@@ -98,7 +98,7 @@ Two of the most powerful metadata types are <PyObject section="metadata" module=
 
 The following example attaches [table and column schema metadata](/guides/build/assets/metadata-and-tags/table-metadata) at both definition time and runtime:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/table-schema-metadata.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/table-schema-metadata.py" language="python" />
 
 There are several data types and constraints available on <PyObject section="metadata" module="dagster" object="TableColumn" /> objects. For more information, see the API documentation.
 
@@ -110,7 +110,7 @@ Many integrations such as [dbt](/integrations/libraries/dbt/) automatically atta
 
 [Column lineage metadata](/guides/build/assets/metadata-and-tags/column-level-lineage) is a powerful way to track how columns in a table are derived from other columns:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/table-column-lineage-metadata.py" language="python" title="Table column lineage metadata" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/table-column-lineage-metadata.py" language="python" title="Table column lineage metadata" />
 
 :::tip
 Dagster+ provides rich visualization and navigation of column lineage in the Asset catalog. Refer to the [Dagster+ documentation](/dagster-plus/features/asset-catalog/) for more information.
@@ -135,13 +135,13 @@ Many integrations, such as [dbt](/integrations/libraries/dbt/reference#attaching
 
 Dagster can automatically attach code references to assets during local development:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/python-local-references.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/python-local-references.py" language="python" />
 
 ### Customizing code references \{#custom-references}
 
 If you want to customize how code references are attached - such as when you are building [domain-specific languages with asset factories](/guides/build/assets/creating-asset-factories) - you can manually add the `dagster/code_references` metadata to asset definitions:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/custom-local-references.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/custom-local-references.py" language="python" />
 
 ### Attaching code references in production \{#production-references}
 
@@ -150,14 +150,14 @@ If you want to customize how code references are attached - such as when you are
 
 Dagster+ can automatically annotate assets with code references to source control, such as GitHub or GitLab.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/plus-references.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/plus-references.py" language="python" />
 
 </TabItem>
 <TabItem value="dagster-open-source" label="OSS">
 
 If you aren't using Dagster+, you can annotate your assets with code references to source control, but it requires manual mapping:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/oss-references.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/oss-references.py" language="python" />
 
 `link_code_references_to_git` currently supports GitHub and GitLab repositories. It also supports customization of how file paths are mapped; see the `AnchorBasedFilePathMapping` API docs for more information.
 

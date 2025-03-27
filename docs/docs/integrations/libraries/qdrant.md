@@ -26,7 +26,7 @@ pip install dagster dagster-qdrant
 
 ### Example
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/qdrant.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/qdrant.py" language="python" />
 
 ### About Qdrant
 

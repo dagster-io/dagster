@@ -26,7 +26,7 @@ pip install dagster dagster-chroma
 
 ### Example
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/chroma.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/chroma.py" language="python" />
 
 ### About Chroma
 

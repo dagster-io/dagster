@@ -18,6 +18,6 @@ Before adding a component with Python, you must either [create a project with co
 1. First, create a new subdirectory in your `components/` directory to contain the component definition.
 2. In the subdirectory, create a `component.py` file to define your component instance. In this file, you will define a single `@component`-decorated function that instantiates the component type that you're interested in:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/python-components/component.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/components/python-components/component.py" language="python" />
 
 This function needs to return an instance of your desired component type. In the example above, we've used this functionality to customize the `translator` argument of the `DbtProjectcomponent` class.

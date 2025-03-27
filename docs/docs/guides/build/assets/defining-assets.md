@@ -33,7 +33,7 @@ Dagster has four types of asset decorators:
 
 The simplest way to define a data asset in Dagster is by using the <PyObject section="assets" module="dagster" object="asset" decorator />  decorator. This decorator marks a Python function as an asset.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/data-assets/asset_decorator.py" language="python" title="Using @dg.asset decorator" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/data-assets/asset_decorator.py" language="python" title="Using @dg.asset decorator" />
 
 In this example, `weekly_sales_report` is an asset that logs its output. Dagster automatically tracks its dependencies and handles its execution within the pipeline.
 
@@ -46,7 +46,7 @@ When you need to generate multiple assets from a single operation, you can use t
 
 In this example, `my_multi_asset` produces two assets: `asset_one` and `asset_two`. Each is derived from the same function, which makes it easier to handle related data transformations together:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/data-assets/multi_asset_decorator.py" language="python" title="Using @dg.multi_asset decorator" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/data-assets/multi_asset_decorator.py" language="python" title="Using @dg.multi_asset decorator" />
 
 This example could be expressed as:
 
@@ -74,7 +74,7 @@ flowchart LR
 
 For cases where you need to perform multiple operations to produce a single asset, you can use the <PyObject section="assets" module="dagster" object="graph_asset" decorator /> decorator. This approach encapsulates a series of operations and exposes them as a single asset, allowing you to model complex pipelines while only exposing the final output.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/data-assets/graph_asset_decorator.py" language="python" title="Using @dg.graph_asset decorator" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/data-assets/graph_asset_decorator.py" language="python" title="Using @dg.graph_asset decorator" />
 
 In this example, `complex_asset` is an asset that's the result of two operations: `step_one` and `step_two`. These steps are combined into a single asset, abstracting away the intermediate representations.
 

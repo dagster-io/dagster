@@ -30,7 +30,7 @@ pip install dagster-census
 
 ### Example
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/census.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/census.py" language="python" />
 
 ### About Census
 

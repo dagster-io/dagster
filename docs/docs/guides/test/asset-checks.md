@@ -38,7 +38,7 @@ A asset check is defined using the `@asset_check` decorator.
 
 The following example defines an asset check on an asset that fails if the `order_id` column of the asset contains a null value. The asset check will run after the asset has been materialized.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/quality-testing/asset-checks/single-asset-check.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/single-asset-check.py" language="python" />
 
 ## Defining multiple asset checks \{#multiple-checks}
 
@@ -51,13 +51,13 @@ The following example defines two asset checks using the `@multi_asset_check` de
 
 In this example, both asset checks will run in a single operation after the asset has been materialized.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/quality-testing/asset-checks/multiple-asset-checks.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/multiple-asset-checks.py" language="python" />
 
 ## Programmatically generating asset checks \{#factory-pattern}
 
 Defining multiple checks can also be done using a factory pattern. The example below defines the same two asset checks as in the previous example, but this time using a factory pattern and the `@multi_asset_check` decorator.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/quality-testing/asset-checks/asset-checks-factory.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/asset-checks-factory.py" language="python" />
 
 ## Blocking downstream materialization
 
@@ -65,7 +65,7 @@ By default, if a parent's asset check fails during a run, the run will continue 
 
 In the example bellow, if the `orders_id_has_no_nulls` check fails, the downstream `augmented_orders` asset won't be materialized.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/quality-testing/asset-checks/block-downstream-with-asset-checks.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/block-downstream-with-asset-checks.py" language="python" />
 
 ## Scheduling and monitoring asset checks
 
@@ -73,7 +73,7 @@ In some cases, running asset checks separately from the job materializing the as
 
 In the example below, two jobs are defined: one for the asset and another for the asset check. Schedules are defined to materialize the asset and execute the asset check independently. A sensor is defined to send an email alert when the asset check job fails.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/quality-testing/asset-checks/asset-checks-with-schedule-and-sensor.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/quality-testing/asset-checks/asset-checks-with-schedule-and-sensor.py" language="python" />
 
 ## Next steps
 
