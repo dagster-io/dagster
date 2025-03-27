@@ -33,7 +33,7 @@ def test_pull_env_command_no_auth(monkeypatch):
         result = runner.invoke("plus", "env", "pull")
         assert result.exit_code != 0, result.output + " " + str(result.exception)
         assert (
-            "`dg plus env pull` requires authentication with Dagster Plus. Run `dg plus login` to authenticate."
+            "`dg plus env` commands require authentication with Dagster Plus. Run `dg plus login` to authenticate."
             in str(result.output)
         )
 

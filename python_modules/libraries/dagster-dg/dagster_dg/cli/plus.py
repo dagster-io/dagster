@@ -89,7 +89,7 @@ def plus_env_group():
 def _get_config_or_error() -> DagsterPlusCliConfig:
     if not DagsterPlusCliConfig.exists():
         raise click.UsageError(
-            "`dg plus env pull` requires authentication with Dagster Plus. Run `dg plus login` to authenticate."
+            "`dg plus env` commands require authentication with Dagster Plus. Run `dg plus login` to authenticate."
         )
     return DagsterPlusCliConfig.get()
 
