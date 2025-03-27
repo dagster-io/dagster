@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_wandb.io_manager import WandbArtifactsIOManagerError, wandb_artifacts_io_manager
 from dagster_wandb.launch.ops import run_launch_agent, run_launch_job

@@ -13,6 +13,7 @@ from dagster._core.workspace.load import location_origins_from_yaml_paths
 from dagster.version import __version__ as dagster_version
 from dagster_graphql.test.utils import execute_dagster_graphql, main_repo_location_name
 from dagster_graphql.version import __version__ as dagster_graphql_version
+from dagster_shared.version import __version__ as dagster_shared_version
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     GraphQLContextVariant,
@@ -184,6 +185,7 @@ class TestLoadWorkspace(BaseTestSuite):
             assert success_nodes[0]["dagsterLibraryVersions"] == [
                 {"name": "dagster", "version": dagster_version},
                 {"name": "dagster-graphql", "version": dagster_graphql_version},
+                {"name": "dagster-shared", "version": dagster_shared_version},
             ]
 
             failures = [
@@ -310,6 +312,7 @@ class TestLoadWorkspace(BaseTestSuite):
             assert success_nodes[0]["dagsterLibraryVersions"] == [
                 {"name": "dagster", "version": dagster_version},
                 {"name": "dagster-graphql", "version": dagster_graphql_version},
+                {"name": "dagster-shared", "version": dagster_shared_version},
             ]
 
             failures = [

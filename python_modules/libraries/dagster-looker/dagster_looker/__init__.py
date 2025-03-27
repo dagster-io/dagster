@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_looker.api.assets import (
     build_looker_pdt_assets_definitions as build_looker_pdt_assets_definitions,

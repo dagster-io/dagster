@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_github.resources import GithubResource, github_resource
 from dagster_github.version import __version__

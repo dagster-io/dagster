@@ -388,6 +388,10 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         timeout_in_minutes=30,
         queue=BuildkiteQueue.DOCKER,
     ),
+    PackageSpec(
+        "examples/use_case_repository",
+        pytest_tox_factors=["source"],
+    ),
     # Federation tutorial spins up multiple airflow instances, slow to run - use docker queue to ensure
     # beefier instance
     PackageSpec(

@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_duckdb_pandas.duckdb_pandas_type_handler import (
     DuckDBPandasIOManager as DuckDBPandasIOManager,

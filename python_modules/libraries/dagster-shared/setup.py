@@ -35,7 +35,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_shared_tests*"]),
     include_package_data=True,
-    install_requires=[],
+    install_requires=["PyYAML>=5.1"],
     extras_require={
         "test": ["pytest"],
     },

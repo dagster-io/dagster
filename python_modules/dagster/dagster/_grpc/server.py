@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, cast
 
 import dagster_shared.seven as seven
 import grpc
+from dagster_shared.libraries import DagsterLibraryRegistry
 from dagster_shared.serdes.ipc import IPCErrorMessage, open_ipc_subprocess
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
@@ -37,7 +38,6 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.remote_representation.external_data import (
     JobDataSnap,
