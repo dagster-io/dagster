@@ -166,20 +166,12 @@ class DgCliConfig:
             Any components retrieved from the remote environment will be filtered to only include those
             from these modules. This is useful primarily for testing, as it allows targeting of a stable
             set of test components.
-        use_dg_managed_environment (bool): If True, `dg` will build and manage a virtual environment
-            using `uv`. Note that disabling the managed enviroment will also disable caching.
-        require_local_venv (bool): If True, commands that access an environment with
-            dagster-components will only use a `.venv` directory discovered in the ancestor tree. If no
-            `.venv` directory is discovered, an error will be raised. Note that this disallows the use
-            of both the system python environment and non-local but activated virtual environments.
     """
 
     disable_cache: bool = False
     cache_dir: Path = DEFAULT_CACHE_DIR
     verbose: bool = False
     use_component_modules: list[str] = field(default_factory=list)
-    use_dg_managed_environment: bool = True
-    require_local_venv: bool = True
     telemetry_enabled: bool = True
 
     @classmethod
@@ -197,10 +189,6 @@ class DgCliConfig:
                 "use_component_modules",
                 cls.__dataclass_fields__["use_component_modules"].default_factory(),
             ),
-            use_dg_managed_environment=merged.get(
-                "use_dg_managed_environment", DgCliConfig.use_dg_managed_environment
-            ),
-            require_local_venv=merged.get("require_local_venv", DgCliConfig.require_local_venv),
             telemetry_enabled=merged.get("telemetry", {}).get(
                 "enabled", DgCliConfig.telemetry_enabled
             ),
@@ -217,14 +205,14 @@ class DgRawCliConfig(TypedDict, total=False):
     cache_dir: str
     verbose: bool
     use_component_modules: Sequence[str]
-    use_dg_managed_environment: bool
-    require_local_venv: bool
     telemetry: RawDgTelemetryConfig
 
 
 # ########################
 # ##### PROJECT
 # ########################
+
+DgProjectPythonEnvironment: TypeAlias = Literal["active", "persistent_uv"]
 
 
 @dataclass
@@ -233,6 +221,7 @@ class DgProjectConfig:
     defs_module: Optional[str] = None
     code_location_target_module: Optional[str] = None
     code_location_name: Optional[str] = None
+    python_environment: DgProjectPythonEnvironment = "active"
 
     @classmethod
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
@@ -244,6 +233,7 @@ class DgProjectConfig:
                 "code_location_target_module",
                 DgProjectConfig.code_location_target_module,
             ),
+            python_environment=raw.get("python_environment", DgProjectConfig.python_environment),
         )
 
 
@@ -252,6 +242,7 @@ class DgRawProjectConfig(TypedDict):
     defs_module: NotRequired[str]
     code_location_target_module: NotRequired[str]
     code_location_name: NotRequired[str]
+    python_environment: NotRequired[DgProjectPythonEnvironment]
 
 
 # ########################

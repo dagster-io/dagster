@@ -81,18 +81,6 @@ GLOBAL_OPTIONS = {
                 components.
             """).strip(),
         ),
-        click.Option(
-            ["--use-dg-managed-environment/--no-use-dg-managed-environment"],
-            is_flag=True,
-            default=DgCliConfig.use_dg_managed_environment,
-            help="Enable management of the virtual environment with uv.",
-        ),
-        click.Option(
-            ["--require-local-venv/--no-require-local-venv"],
-            is_flag=True,
-            default=DgCliConfig.require_local_venv,
-            help="Require use of a local virtual environment (`.venv` found in ancestors of the working directory).",
-        ),
     ]
 }
 

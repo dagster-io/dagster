@@ -362,10 +362,10 @@ def generate_missing_dagster_components_in_local_venv_error_message(venv_path: s
 
 
 NO_LOCAL_VENV_ERROR_MESSAGE = """
-This command resolves the `dagster-components` executable from a virtual environment in an ancestor
+This command resolves the `dagster-components` executable from a virtual environment in the project root
 directory, but no virtual environment (`.venv` dir) could be found. Please create a virtual
-environment in an ancestor directory or use the `--no-require-local-venv` flag to allow use of
-`dagster-components` from the ambient Python environment.
+environment in the project root directory or set tool.dg.project.python_environment = "active"
+in pyproject.toml to allow use of `dagster-components` from the active Python environment.
 """
 
 NOT_WORKSPACE_ERROR_MESSAGE = """

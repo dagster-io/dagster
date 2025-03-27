@@ -16,6 +16,7 @@ from dagster_dg.cache import CachableDataType, DgCache
 from dagster_dg.component import RemoteLibraryObjectRegistry
 from dagster_dg.config import (
     DgConfig,
+    DgProjectPythonEnvironment,
     DgRawCliConfig,
     DgWorkspaceProjectSpec,
     discover_config_file,
@@ -356,6 +357,12 @@ class DgContext:
             raise DgError("`code_location_name` is only available in a Dagster project context")
         return self.config.project.code_location_name or self.project_name
 
+    @property
+    def python_environment(self) -> DgProjectPythonEnvironment:
+        if not self.config.project:
+            raise DgError("`python_environment` is only available in a Dagster project context")
+        return self.config.project.python_environment
+
     # ########################
     # ##### COMPONENT LIBRARY METHODS
     # ########################
@@ -435,11 +442,13 @@ class DgContext:
 
     @property
     def use_dg_managed_environment(self) -> bool:
-        return self.config.cli.use_dg_managed_environment and self.is_project
+        return bool(
+            self.config.project and self.config.project.python_environment == "persistent_uv"
+        )
 
     @property
     def has_venv(self) -> bool:
-        return resolve_local_venv(self.root_path) is not None
+        return self.use_dg_managed_environment and (resolve_local_venv(self.root_path) is not None)
 
     @cached_property
     def venv_path(self) -> Path:
@@ -473,7 +482,7 @@ class DgContext:
         if self.has_venv:
             return f"Python environment at {self.venv_path}"
         else:
-            return "ambient Python environment"
+            return "active Python environment"
 
     @property
     def pyproject_toml_path(self) -> Path:
@@ -501,7 +510,7 @@ class DgContext:
 
 
 def _validate_dagster_components_availability(context: DgContext) -> None:
-    if context.config.cli.require_local_venv:
+    if context.use_dg_managed_environment:
         if not context.has_venv:
             exit_with_error(NO_LOCAL_VENV_ERROR_MESSAGE)
         elif not get_venv_executable(context.venv_path, "dagster-components").exists():

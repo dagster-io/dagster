@@ -323,14 +323,15 @@ def test_scaffold_project_no_populate_cache_success(monkeypatch) -> None:
             assert "CACHE [miss]" in result.output
 
 
-def test_scaffold_project_no_use_dg_managed_environment_success(monkeypatch) -> None:
+def test_scaffold_project_active_venv_success(monkeypatch) -> None:
     dagster_git_repo_dir = discover_git_root(Path(__file__))
     monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke(
             "scaffold",
             "project",
-            "--no-use-dg-managed-environment",
+            "--python-environment",
+            "active",
             "foo-bar",
             "--use-editable-dagster",
         )

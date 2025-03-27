@@ -5,6 +5,7 @@ import click
 
 from dagster_dg.cli.shared_options import dg_editable_dagster_options, dg_global_options
 from dagster_dg.config import (
+    DgProjectPythonEnvironment,
     DgRawWorkspaceConfig,
     DgWorkspaceScaffoldProjectOptions,
     normalize_cli_config,
@@ -31,11 +32,18 @@ _DEFAULT_INIT_PROJECTS_DIR: Final = "projects"
     type=str,
     help="Name of an initial project folder to create. Setting to an empty string will skip project scaffolding.",
 )
+@click.option(
+    "--project-python-environment",
+    default="persistent_uv",
+    type=click.Choice(["persistent_uv", "active"]),
+    help="Type of Python environment in which to launch subprocesses for the project.",
+)
 @cli_telemetry_wrapper
 def init_command(
     use_editable_dagster: Optional[str],
     workspace_name: Optional[str],
     project_name: Optional[str],
+    project_python_environment: DgProjectPythonEnvironment,
     **global_options: object,
 ):
     """Initialize a new Dagster workspace and a first project within that workspace.
@@ -94,6 +102,7 @@ def init_command(
         use_editable_dagster=use_editable_dagster,
         skip_venv=False,
         populate_cache=True,
+        python_environment=project_python_environment,
     )
 
     click.echo("You can create additional projects later by running `dg scaffold project`.")

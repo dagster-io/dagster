@@ -10,6 +10,7 @@ import tomlkit.items
 
 from dagster_dg.component import RemoteLibraryObjectRegistry
 from dagster_dg.config import (
+    DgProjectPythonEnvironment,
     DgRawWorkspaceConfig,
     DgWorkspaceScaffoldProjectOptions,
     discover_workspace_root,
@@ -74,6 +75,7 @@ def scaffold_project(
     use_editable_dagster: Optional[str],
     skip_venv: bool = False,
     populate_cache: bool = True,
+    python_environment: Optional[DgProjectPythonEnvironment] = None,
 ) -> None:
     click.echo(f"Creating a Dagster project at {path}.")
 
@@ -119,6 +121,10 @@ def scaffold_project(
         uv_sources=uv_sources_str,
     )
     click.echo(f"Scaffolded files for Dagster project at {path}.")
+
+    if python_environment:
+        with modify_toml(dg_context.with_root_path(path).pyproject_toml_path) as toml:
+            set_toml_node(toml, ("tool", "dg", "project", "python_environment"), python_environment)
 
     # Build the venv
     cl_dg_context = dg_context.with_root_path(path)

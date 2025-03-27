@@ -1,6 +1,6 @@
 dg list defs
 
-
+Using /workdir/examples/docs_snippets/.tox/py311-docs_snapshot_test/bin/dagster-components
 Assets
 ┏━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━┓
 ┃ Key                ┃ Group   ┃ Deps ┃ Kinds ┃ Description ┃

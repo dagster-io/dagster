@@ -15,6 +15,7 @@ from dagster_dg.cli.shared_options import (
 )
 from dagster_dg.component import RemoteLibraryObjectRegistry
 from dagster_dg.config import (
+    DgProjectPythonEnvironment,
     DgRawCliConfig,
     DgRawWorkspaceConfig,
     DgWorkspaceScaffoldProjectOptions,
@@ -208,6 +209,12 @@ def scaffold_workspace_command(
     help="Whether to automatically populate the component type cache for the project.",
     hidden=True,
 )
+@click.option(
+    "--python-environment",
+    default="persistent_uv",
+    type=click.Choice(["persistent_uv", "active"]),
+    help="Type of Python environment in which to launch subprocesses for this project.",
+)
 @dg_editable_dagster_options
 @dg_global_options
 @cli_telemetry_wrapper
@@ -216,6 +223,7 @@ def scaffold_project_command(
     skip_venv: bool,
     populate_cache: bool,
     use_editable_dagster: Optional[str],
+    python_environment: DgProjectPythonEnvironment,
     **global_options: object,
 ) -> None:
     """Scaffold a Dagster project file structure and a uv-managed virtual environment scoped
@@ -256,6 +264,7 @@ def scaffold_project_command(
         use_editable_dagster=use_editable_dagster,
         skip_venv=skip_venv,
         populate_cache=populate_cache,
+        python_environment=python_environment,
     )
 
 
