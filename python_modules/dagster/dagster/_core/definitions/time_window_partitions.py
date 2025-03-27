@@ -2223,33 +2223,6 @@ class TimeWindowPartitionsSubset(
             for pk in self.partitions_def.get_partition_keys_in_time_window(time_window)
         ]
 
-    def get_partition_key_connection(
-        self,
-        # context: PartitionLoadingContext,
-        limit: int,
-        ascending: bool,
-        cursor: Optional[str] = None,
-    ) -> Connection[str]:
-        sorted_tw = sorted(self.included_time_windows, key=lambda tw: tw.start.timestamp())
-        results = []
-        remaining = limit
-        curr_cursor = cursor
-        has_more = False
-        for window in sorted_tw:
-            remaining = limit - len(results)
-            conn = self.partitions_def.get_partition_key_connection_in_time_window(
-                time_window=window, limit=remaining, ascending=ascending, cursor=cursor
-            )
-            curr_cursor = conn.cursor
-            results.extend(conn.results)
-            if len(results) >= limit:
-                has_more = True
-                break
-        if not curr_cursor:
-            # would happen if there were no included time windows
-            curr_cursor = str(TimeWindowCursor(0, 0))
-        return Connection(results=results, cursor=curr_cursor, has_more=has_more)
-
     def with_partition_keys(
         self, partition_keys: Iterable[str], validate: bool = True
     ) -> "TimeWindowPartitionsSubset":
