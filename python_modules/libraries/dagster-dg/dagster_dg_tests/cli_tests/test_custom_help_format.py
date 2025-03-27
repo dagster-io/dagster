@@ -201,14 +201,9 @@ def test_dynamic_subcommand_help_message():
                 │ --help         -h            Show this message and exit.                                                             │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
                 ╭─ Global options ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
-                │ --cache-dir                                                        TEXT  Specify a directory to use for the cache.   │
-                │ --disable-cache                                                          Disable the cache..                         │
-                │ --verbose                                                                Enable verbose output for debugging.        │
-                │ --use-dg-managed-environment    --no-use-dg-managed-environment          Enable management of the virtual            │
-                │                                                                          environment with uv.                        │
-                │ --require-local-venv            --no-require-local-venv                  Require use of a local virtual environment  │
-                │                                                                          (`.venv` found in ancestors of the working  │
-                │                                                                          directory).                                 │
+                │ --cache-dir            TEXT  Specify a directory to use for the cache.                                               │
+                │ --disable-cache              Disable the cache..                                                                     │
+                │ --verbose                    Enable verbose output for debugging.                                                    │
                 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
         """).strip(),
         )

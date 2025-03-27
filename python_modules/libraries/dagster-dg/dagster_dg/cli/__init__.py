@@ -109,7 +109,7 @@ def create_dg_cli():
 def _rebuild_component_registry(dg_context: DgContext):
     if not dg_context.has_cache:
         exit_with_error("Cache is disabled. This command cannot be run without a cache.")
-    elif not dg_context.config.cli.use_dg_managed_environment:
+    elif not dg_context.use_dg_managed_environment:
         exit_with_error(
             "Cannot rebuild the component registry with environment management disabled."
         )
