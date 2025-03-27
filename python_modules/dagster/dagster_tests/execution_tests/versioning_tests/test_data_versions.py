@@ -535,6 +535,52 @@ def test_stale_status_partitions_enabled() -> None:
         assert status_resolver.get_status(asset3.key) == StaleStatus.STALE
 
 
+def test_stale_status_partitioned_asset_no_partition():
+    """Tests the stale status behavior for partitioned assets when no partition is specified."""
+    partitions_def = StaticPartitionsDefinition(["p1", "p2", "p3"])
+
+    @asset(config_schema={"value": Field(int, default_value=1)})
+    def asset1(context):
+        value = context.op_execution_context.op_config["value"]
+        return Output(value, data_version=DataVersion(str(value)))
+
+    @asset(config_schema={"value": Field(int, default_value=1)}, partitions_def=partitions_def)
+    def partitioned_asset(context, asset1):
+        value = context.op_execution_context.op_config["value"] + asset1
+        return Output(value, data_version=DataVersion(str(value)))
+
+    all_assets = [asset1, partitioned_asset]
+
+    with instance_for_test() as instance:
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+
+        # Test 1: No materializations yet - should return MISSING
+        assert status_resolver.get_status(partitioned_asset.key) == StaleStatus.MISSING
+
+        # Test 2: Materialize some but not all partitions
+        materialize_asset(all_assets, asset1, instance)
+        materialize_asset(all_assets, partitioned_asset, instance, partition_key="p1")
+        materialize_asset(all_assets, partitioned_asset, instance, partition_key="p2")
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        assert status_resolver.get_status(partitioned_asset.key) == StaleStatus.MISSING
+
+        # Test 3: Materialize all partitions
+        materialize_asset(all_assets, partitioned_asset, instance, partition_key="p3")
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        # Should check status of last partition ("p3")
+        assert status_resolver.get_status(partitioned_asset.key) == StaleStatus.FRESH
+
+        # Test 4: Stale by dependency version change, checking on last partition ("p3")
+        materialize_asset(
+            all_assets,
+            asset1,
+            instance=instance,
+            run_config={"ops": {"asset1": {"config": {"value": 2}}}},
+        )
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        assert status_resolver.get_status(partitioned_asset.key) == StaleStatus.STALE
+
+
 def test_stale_status_downstream_of_all_partitions_mapping():
     start_date = datetime(2020, 1, 1)
     end_date = start_date + timedelta(days=2)

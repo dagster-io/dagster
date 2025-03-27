@@ -7,6 +7,7 @@ import {
 
 import {
   ChangeReason,
+  StaleStatus,
   buildAssetGroupSelector,
   buildDefinitionTag,
   buildRepository,
@@ -216,6 +217,36 @@ describe('filterAssetDefinition', () => {
       tags: [tag],
     };
 
+    expect(filterAssetDefinition(filters, definition)).toBe(true);
+  });
+
+  it('returns false when staleStatus filter does not match definition status', () => {
+    const filters = {
+      staleStatuses: [StaleStatus.FRESH],
+    };
+    const definition = {
+      staleStatus: StaleStatus.STALE,
+    };
+    expect(filterAssetDefinition(filters, definition)).toBe(false);
+  });
+
+  it('returns true when staleStatus filter matches definition status', () => {
+    const filters = {
+      staleStatuses: [StaleStatus.STALE, StaleStatus.FRESH],
+    };
+    const definition = {
+      staleStatus: StaleStatus.STALE,
+    };
+    expect(filterAssetDefinition(filters, definition)).toBe(true);
+  });
+
+  it('filters using selectAllFilter: staleStatuses', () => {
+    const filters: Partial<AssetFilterType> = {
+      selectAllFilters: ['staleStatuses'],
+    };
+    const definition = {
+      staleStatus: StaleStatus.FRESH,
+    };
     expect(filterAssetDefinition(filters, definition)).toBe(true);
   });
 
