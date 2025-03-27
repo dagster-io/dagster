@@ -315,7 +315,7 @@ def raise_error_on_duplicate_partition_keys(partition_keys: Sequence[str]) -> No
 class StaticPartitionsDefinition(PartitionsDefinition[str]):
     """A statically-defined set of partitions.
 
-    We recommended limiting partition counts for each asset to 25,000 partitions or fewer.
+    We recommended limiting partition counts for each asset to 100,000 partitions or fewer.
 
     Example:
         .. code-block:: python
@@ -435,7 +435,7 @@ class DynamicPartitionsDefinition(
     Partitions can be added and removed using `instance.add_dynamic_partitions` and
     `instance.delete_dynamic_partition` methods.
 
-    We recommended limiting partition counts for each asset to 25,000 partitions or fewer.
+    We recommended limiting partition counts for each asset to 100,000 partitions or fewer.
 
     Args:
         name (Optional[str]): The name of the partitions definition.
