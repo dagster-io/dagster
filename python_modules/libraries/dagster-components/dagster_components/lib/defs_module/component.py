@@ -26,7 +26,7 @@ class ResolvedDefsModuleArgs(ResolvedFrom[DefsModuleArgsModel]):
     asset_post_processors: Annotated[Sequence[AssetPostProcessor], Resolver.from_annotation()]
 
 
-class DefsModuleComponent(Component):
+class DefsFolderComponent(Component):
     """Wraps a DefsModule to allow the addition of arbitrary attributes."""
 
     def __init__(
