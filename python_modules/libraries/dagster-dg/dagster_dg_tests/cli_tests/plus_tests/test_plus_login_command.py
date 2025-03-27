@@ -13,7 +13,10 @@ import tomlkit
 import yaml
 from click.testing import CliRunner
 from dagster_dg.cli.plus import plus_group
+from dagster_dg.utils import ensure_dagster_dg_tests_import
 from dagster_dg.utils.plus import gql
+
+ensure_dagster_dg_tests_import()
 from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
