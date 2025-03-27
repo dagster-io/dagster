@@ -137,27 +137,26 @@ export class IndexedDBQueryCache<TQuery, TVariables extends OperationVariables> 
     const state = {onFetched: [] as ((value: {data: TQuery | undefined; error: any}) => void)[]};
     globalFetchStates[globalKey] = state;
 
-    try {
-      const result = await this.queryFn(this.variables);
+    const result = await this.queryFn(this.variables);
 
-      if (result.data && !result.error) {
-        await this.cacheManager.set(result.data, this.version);
-      }
-
-      const onFetchedHandlers = state.onFetched;
-      if (globalFetchStates[globalKey] === state) {
-        delete globalFetchStates[globalKey]; // Clean up fetch state after handling
-      }
-
-      onFetchedHandlers.forEach((handler) => handler(result)); // Notify all waiting fetches
-
-      return result;
-    } catch (error) {
-      if (globalFetchStates[globalKey] === state) {
-        delete globalFetchStates[globalKey];
-      }
-      return {data: undefined, error};
+    if (result.data && !result.error) {
+      await this.cacheManager.set(result.data, this.version);
     }
+
+    const onFetchedHandlers = state.onFetched;
+    if (globalFetchStates[globalKey] === state) {
+      delete globalFetchStates[globalKey]; // Clean up fetch state after handling
+    }
+
+    onFetchedHandlers.forEach((handler) => {
+      try {
+        handler(result);
+      } catch (e) {
+        console.error('Error in onFetched handler', e);
+      }
+    }); // Notify all waiting fetches
+
+    return result;
   }
 
   async clearCache(): Promise<void> {
