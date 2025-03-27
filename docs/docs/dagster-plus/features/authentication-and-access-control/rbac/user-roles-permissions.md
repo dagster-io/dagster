@@ -67,7 +67,7 @@ If you no longer need a custom role, you can delete it. If the role is currently
 1. Navigate to the **Organization Settings** page.
 2. Click the Roles tab.
 3. Click the edit button next to the role you want to delete.
-4. At the bottom of the edit dialog, click **Delete role**..
+4. At the bottom of the edit dialog, click **Delete role**.
 
 ## Assigning user and team roles
 
