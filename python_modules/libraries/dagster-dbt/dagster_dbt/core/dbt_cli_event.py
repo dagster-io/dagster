@@ -3,6 +3,7 @@ from dataclasses import InitVar, dataclass
 from pathlib import Path
 from typing import AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
 
+import dagster._check as check
 import dateutil.parser
 from dagster import (
     AssetCheckResult,
@@ -19,6 +20,7 @@ from dagster import (
 from dagster._annotations import public
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.metadata import TableMetadataSet
+from dagster._core.definitions.metadata.metadata_value import MarkdownMetadataValue
 from dagster._utils.warnings import disable_dagster_warnings
 from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
@@ -50,6 +52,20 @@ class EventHistoryMetadata(NamedTuple):
     parents: dict[str, dict[str, Any]]
 
 
+def _get_compiled_sql_path(
+    target_path: Optional[Path], dbt_resource_props: dict[str, Any]
+) -> Optional[Path]:
+    return (
+        target_path.joinpath(
+            "compiled",
+            dbt_resource_props["package_name"],
+            dbt_resource_props["original_file_path"].replace("\\", "/"),
+        )
+        if target_path
+        else None
+    )
+
+
 def _build_column_lineage_metadata(
     event_history_metadata: EventHistoryMetadata,
     dbt_resource_props: dict[str, Any],
@@ -74,6 +90,9 @@ def _build_column_lineage_metadata(
         # Column lineage can only be built if initial metadata is provided.
         not target_path
     ):
+        logger.warning(
+            "The target path is not provided. Column lineage metadata will not be included in the event."
+        )
         return {}
 
     event_node_info: dict[str, Any] = dbt_resource_props
@@ -110,12 +129,7 @@ def _build_column_lineage_metadata(
             dialect=sql_dialect,
         )
 
-    package_name = dbt_resource_props["package_name"]
-    node_sql_path = target_path.joinpath(
-        "compiled",
-        package_name,
-        dbt_resource_props["original_file_path"].replace("\\", "/"),
-    )
+    node_sql_path = check.not_none(_get_compiled_sql_path(target_path, dbt_resource_props))
     optimized_node_ast = cast(
         exp.Query,
         optimize(
@@ -269,6 +283,7 @@ class DbtCliEventMessage:
         dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
         target_path: Optional[Path] = None,
+        include_compiled_sql: bool = False,
     ) -> Iterator[
         Union[
             Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation
@@ -336,6 +351,22 @@ class DbtCliEventMessage:
             "unique_id": unique_id,
             "invocation_id": invocation_id,
         }
+        if include_compiled_sql and unique_id.startswith("model"):
+            compiled_sql_path = _get_compiled_sql_path(target_path, dbt_resource_props)
+            if compiled_sql_path:
+                default_metadata["compiled_sql"] = MarkdownMetadataValue(
+                    md_str=f""" 
+```sql
+{compiled_sql_path.read_text()}
+```
+"""
+                )
+            else:
+                logger.warning(
+                    "include_compiled_sql flag set to True, but compiled SQL path not found for dbt resource"
+                    f" `{dbt_resource_props['original_file_path']}`."
+                    " Compiled SQL path metadata will not be included in the event."
+                )
 
         if event_node_info.get("node_started_at") in ["", "None", None] and event_node_info.get(
             "node_finished_at"

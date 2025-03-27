@@ -269,9 +269,7 @@ class DbtCliInvocation:
             ),
         )
 
-    def _stream_asset_events(
-        self,
-    ) -> Iterator[DbtDagsterEventType]:
+    def _stream_asset_events(self, include_compiled_sql: bool) -> Iterator[DbtDagsterEventType]:
         """Stream the dbt CLI events and convert them to Dagster events."""
         for event in self.stream_raw_events():
             yield from event.to_default_asset_events(
@@ -279,11 +277,13 @@ class DbtCliInvocation:
                 dagster_dbt_translator=self.dagster_dbt_translator,
                 context=self.context,
                 target_path=self.target_path,
+                include_compiled_sql=include_compiled_sql,
             )
 
     @public
     def stream(
         self,
+        include_compiled_sql: bool = False,
     ) -> "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]":
         """Stream the events from the dbt CLI process and convert them to Dagster events.
 
@@ -311,7 +311,7 @@ class DbtCliInvocation:
                     yield from dbt.cli(["run"], context=context).stream()
         """
         return DbtEventIterator(
-            self._stream_asset_events(),
+            self._stream_asset_events(include_compiled_sql),
             self,
         )
 
