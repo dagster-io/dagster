@@ -25,8 +25,8 @@ from dagster_dg.config import (
 )
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import (
-    scaffold_component_instance,
     scaffold_component_type,
+    scaffold_library_object,
     scaffold_project,
     scaffold_workspace,
 )
@@ -43,6 +43,15 @@ from dagster_dg.utils import (
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 DEFAULT_WORKSPACE_NAME = "dagster-workspace"
+
+# These commands are not dynamically generated, but perhaps should be.
+HARDCODED_COMMANDS = {"workspace", "project", "component-type"}
+# Temporary remapping of some core commands
+REMAPPED_COMMANDS = {
+    "dagster_components.dagster.asset": "dagster.asset",
+    "dagster_components.dagster.sensor": "dagster.sensor",
+    "dagster_components.dagster.schedule": "dagster.schedule",
+}
 
 
 # The `dg scaffold` command is special because its subcommands are dynamically generated
@@ -285,7 +294,7 @@ def _core_scaffold(
     else:
         scaffold_params = None
 
-    scaffold_component_instance(
+    scaffold_library_object(
         Path(dg_context.defs_path) / instance_name,
         object_key.to_typename(),
         scaffold_params,
@@ -293,39 +302,11 @@ def _core_scaffold(
     )
 
 
-def _create_component_shim_scaffold_subcommand(
-    component_key: LibraryObjectKey, command_name: str
-) -> DgClickCommand:
-    # We need to "reset" the help option names to the default ones because we inherit the parent
-    # value of context settings from the parent group, which has been customized.
-    @click.command(
-        name=command_name,
-        cls=ScaffoldSubCommand,
-        context_settings={"help_option_names": ["-h", "--help"]},
-    )
-    @click.argument("instance_name", type=str)
-    @dg_global_options
-    @click.pass_context
-    @cli_telemetry_wrapper
-    def scaffold_component_shim_command(
-        cli_context: click.Context,
-        instance_name: str,
-        **global_options: object,
-    ) -> None:
-        """Scaffold of a definition."""
-        if not instance_name.endswith(".py"):
-            raise click.ClickException("Definition instance names must end with '.py'. ")
-        cli_config = normalize_cli_config(global_options, cli_context)
-        _core_scaffold(cli_context, cli_config, component_key, instance_name, {}, {})
-
-    return scaffold_component_shim_command
-
-
 def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -> DgClickCommand:
     # We need to "reset" the help option names to the default ones because we inherit the parent
     # value of context settings from the parent group, which has been customized.
     @click.command(
-        name=key.to_typename(),
+        name=REMAPPED_COMMANDS.get(key.to_typename(), key.to_typename()),
         cls=ScaffoldSubCommand,
         context_settings={"help_option_names": ["-h", "--help"]},
     )
@@ -375,27 +356,6 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
 
     return scaffold_command
 
-
-# ########################
-# ##### COMPONENT SHIMS
-# ########################
-
-SHIM_COMPONENTS = {
-    LibraryObjectKey("dagster_components.dagster", "RawAssetComponent"): "dagster.asset",
-    LibraryObjectKey("dagster_components.dagster", "RawSensorComponent"): "dagster.sensor",
-    LibraryObjectKey("dagster_components.dagster", "RawScheduleComponent"): "dagster.schedule",
-}
-HARDCODED_COMMANDS = {
-    *SHIM_COMPONENTS.values(),
-    "workspace",
-    "project",
-    "component-type",
-}
-
-for key, command_name in SHIM_COMPONENTS.items():
-    scaffold_group.add_command(
-        _create_component_shim_scaffold_subcommand(key, command_name),
-    )
 
 # ########################
 # ##### COMPONENT TYPE

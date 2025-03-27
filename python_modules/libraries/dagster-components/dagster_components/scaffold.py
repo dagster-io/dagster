@@ -16,7 +16,7 @@ SCAFFOLDER_CLS_ATTRIBUTE = "__scaffolder_cls__"
 
 def scaffold_with(
     scaffolder_cls: Union[type["Scaffolder"], "ScaffolderUnavailableReason"],
-) -> Callable[[type[T]], type[T]]:
+) -> Callable[[T], T]:
     """A decorator that declares what scaffolder is used to scaffold the artifact.
 
     Args:
@@ -25,40 +25,45 @@ def scaffold_with(
     Returns:
         Decorator function that enhances the target class
     """
+    from dagster_components.core.component import LIBRARY_OBJECT_ATTR
 
-    def decorator(cls: type[T]) -> type[T]:
+    def decorator(obj: T) -> T:
         # Store the scaffolder class as an attribute using the constant
-        setattr(cls, SCAFFOLDER_CLS_ATTRIBUTE, scaffolder_cls)
-        return cls
+        setattr(obj, SCAFFOLDER_CLS_ATTRIBUTE, scaffolder_cls)
+        # All scaffoldable objects are library objects
+        setattr(obj, LIBRARY_OBJECT_ATTR, True)
+        return obj
 
     return decorator
 
 
-def has_scaffolder(cls: type) -> bool:
-    """Determines if a class has been decorated with `@scaffold_with`.
+def has_scaffolder(obj: object) -> bool:
+    """Determines if an object has been decorated with `@scaffold_with`.
 
     Args:
-        cls: The class to check
+        obj: The object to check
 
     Returns:
-        True if the class has a Scaffolder attached, False otherwise
+        True if the object has a Scaffolder attached, False otherwise
     """
-    return hasattr(cls, SCAFFOLDER_CLS_ATTRIBUTE)
+    return hasattr(obj, SCAFFOLDER_CLS_ATTRIBUTE)
 
 
 def get_scaffolder(
-    cls: type,
+    obj: object,
 ) -> Union["Scaffolder", "ScaffolderUnavailableReason"]:
-    """Retrieves the scaffolder class attached to the decorated class.
+    """Retrieves the scaffolder class attached to the decorated object.
 
     Args:
-        cls: The class to inspect
+        obj: The object to inspect
 
     Returns:
-        The scaffolder class attached to the decorated class. Raises CheckError if the class is not decorated with @scaffold_with.
+        The scaffolder class attached to the decorated object. Raises CheckError if the object is not decorated with @scaffold_with.
     """
-    check.param_invariant(has_scaffolder(cls), "cls", "Class must be decorated with @scaffold_with")
-    attr = getattr(cls, SCAFFOLDER_CLS_ATTRIBUTE)
+    check.param_invariant(
+        has_scaffolder(obj), "obj", "Object must be decorated with @scaffold_with"
+    )
+    attr = getattr(obj, SCAFFOLDER_CLS_ATTRIBUTE)
     return attr if isinstance(attr, ScaffolderUnavailableReason) else attr()
 
 
@@ -69,7 +74,7 @@ class ScaffolderUnavailableReason:
 
 @record
 class ScaffoldRequest:
-    # fully qualified class name of the decorated class
+    # fully qualified class name of the decorated object
     type_name: str
     # target path for the scaffold request. Typically used to construct absolute paths
     target_path: Path
