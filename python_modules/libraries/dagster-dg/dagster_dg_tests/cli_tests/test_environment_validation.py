@@ -65,7 +65,7 @@ PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("check", "yaml")),
     CommandSpec(("list", "component")),
     CommandSpec(("list", "defs")),
-    CommandSpec(("scaffold", "component"), DEFAULT_COMPONENT_TYPE, "foot"),
+    CommandSpec(("scaffold", DEFAULT_COMPONENT_TYPE, "foot")),
 ]
 
 WORKSPACE_CONTEXT_COMMANDS = [
@@ -213,11 +213,11 @@ def test_no_workspace_or_project_failure(spec: CommandSpec) -> None:
 # ########################
 
 
-# `dg scaffold component` is special because global options have to be inserted before the
+# `dg scaffold` is special because global options have to be inserted before the
 # subcommand name, instead of just at the end.
 def _add_global_cli_options(cli_args: tuple[str, ...], *global_opts: str) -> list[str]:
-    if cli_args[:2] == ("scaffold", "component"):
-        return [*cli_args[:2], *global_opts, *cli_args[2:]]
+    if cli_args[0] == "scaffold":
+        return [cli_args[0], *global_opts, *cli_args[1:]]
     else:
         return [*cli_args, *global_opts]
 
