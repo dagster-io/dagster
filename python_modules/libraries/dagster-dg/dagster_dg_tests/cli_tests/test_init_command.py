@@ -18,6 +18,8 @@ from dagster_dg_tests.utils import ProxyRunner, assert_runner_result
 
 
 def test_init_command_success(monkeypatch) -> None:
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("init", "--use-editable-dagster", input="helloworld\n")
         assert_runner_result(result)
@@ -30,6 +32,8 @@ def test_init_command_success(monkeypatch) -> None:
 
 
 def test_init_command_success_with_workspace_name(monkeypatch) -> None:
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke(
             "init",
@@ -79,6 +83,8 @@ def test_init_override_project_name_prompt_with_workspace(monkeypatch) -> None:
 
 
 def test_init_override_project_name_prompt_without_workspace(monkeypatch) -> None:
+    dagster_git_repo_dir = discover_git_root(Path(__file__))
+    monkeypatch.setenv("DAGSTER_GIT_REPO_DIR", str(dagster_git_repo_dir))
     with ProxyRunner.test() as runner, runner.isolated_filesystem():
         result = runner.invoke("init", "--project-name", "goodbyeworld", "--use-editable-dagster")
         assert_runner_result(result)

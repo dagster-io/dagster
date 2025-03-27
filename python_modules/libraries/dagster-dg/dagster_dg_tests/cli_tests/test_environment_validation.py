@@ -133,10 +133,6 @@ def test_no_local_dagster_components_failure(spec: CommandSpec) -> None:
         _uninstall_dagster_components_from_local_venv(Path.cwd())
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
-        # assert (
-        #     "Could not find the `dagster-components` executable in the virtual environment"
-        #     in result.output
-        # )
 
 
 @pytest.mark.parametrize(

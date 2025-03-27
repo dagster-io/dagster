@@ -150,7 +150,7 @@ def test_list_component_type_bad_entry_point_fails(capfd):
 
         expected_error_message = format_error_message("""
             An error occurred while executing a `dagster-components` command in the
-            Python environment
+            active Python environment
         """)
         assert expected_error_message in result.output
 

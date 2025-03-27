@@ -494,7 +494,7 @@ class DgContext:
         if self.has_venv:
             return f"Python environment at {self.venv_path}"
         else:
-            return "ambient Python environment"
+            return "active Python environment"
 
     @property
     def pyproject_toml_path(self) -> Path:
