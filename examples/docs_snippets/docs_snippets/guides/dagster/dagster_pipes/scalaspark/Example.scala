@@ -49,7 +49,7 @@ object Example {
         val pi = (4.0 * count / (n-1))
         spark.stop()
 
-        context.getLogger().info(s"Succesfully used Spark to calculate pi! pi is approximately ${pi}")
+        context.getLogger().info(s"Successfully used Spark to calculate pi! pi is approximately ${pi}")
 
         // Report whether the value of pi is between 3 and 4:
         context.reportAssetCheck(
