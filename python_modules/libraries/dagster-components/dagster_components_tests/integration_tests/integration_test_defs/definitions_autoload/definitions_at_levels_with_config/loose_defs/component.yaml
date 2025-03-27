@@ -1,4 +1,4 @@
-type: dagster_components.dagster.DefsModuleComponent
+type: dagster_components.dagster.DefsFolderComponent
 
 attributes:
   asset_post_processors:

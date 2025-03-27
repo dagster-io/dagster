@@ -1,7 +1,7 @@
 from dagster_components.lib.definitions_component.component import (
     DefinitionsComponent as DefinitionsComponent,
 )
-from dagster_components.lib.defs_module.component import DefsModuleComponent as DefsModuleComponent
+from dagster_components.lib.defs_module.component import DefsFolderComponent as DefsFolderComponent
 from dagster_components.lib.pipes_subprocess_script_collection import (
     PipesSubprocessScriptCollectionComponent as PipesSubprocessScriptCollectionComponent,
 )
