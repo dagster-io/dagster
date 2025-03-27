@@ -14,6 +14,7 @@ from dagster_components.core.load_defs import (
     build_component_defs as build_component_defs,
     load_defs as load_defs,
 )
+from dagster_components.resolved.base import Resolvable as Resolvable
 from dagster_components.resolved.context import ResolutionContext as ResolutionContext
 from dagster_components.resolved.core_models import (
     AssetAttributesModel as AssetAttributesModel,
