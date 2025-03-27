@@ -653,7 +653,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 partitions,
                 before_timestamp=before_timestamp,
                 limit=limit,
-            )
+            )[0]
         ]
 
     def resolve_configField(self, graphene_info: ResolveInfo) -> Optional[GrapheneConfigTypeField]:
