@@ -24,7 +24,7 @@ Then, you may have several months of metadata for this asset that you want to re
 
 Now, as you've moved to Dagster+, you may want to replicate this metadata in Dagster+ to keep track of it. You can do this by creating a a new job in the same OSS project. This job will read the metadata from the existing OSS storage and report it as new [external assets](https://docs.dagster.io/concepts/assets/external-assets) to Dagster+.
 
-### Step 1: Read the medata from the existing OSS storage
+### Step 1: Read the metadata from the existing OSS storage
 
 You can get this information via DagsterInstance's [fetch_materializations](https://docs.dagster.io/_apidocs/internals#dagster.DagsterInstance.fetch_materializations) method:
 

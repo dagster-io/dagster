@@ -9,7 +9,7 @@ First, you will need to create a Dagster+ organization, choose your deployment t
 
 ## Step 2: Update CI/CD pipeline
 
-Next, you will need to modify the CI/CD process that deploys your OSS code to follow the Dagster+ deployment pattern. For more information, see the [Dagster+ CI/CD documentation](https://github.com/dagster-io/dagster/tree/master/examples/oss-to-dagster-plus).
+Next, you will need to modify the CI/CD process that deploys your OSS code to follow the Dagster+ deployment pattern. For more information, see the [Dagster+ CI/CD documentation](https://github.com/dagster-io/dagster/tree/master/examples/oss-metadata-to-plus).
 
 ## Step 3: Populate metadata in Dagster+
 
