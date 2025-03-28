@@ -200,11 +200,15 @@ After setting up the project, you can now run your Dagster pipeline:
 1. **Start the Dagster Dev Server:** In your terminal, navigate to the root directory of your project and run:
    dagster dev
    After executing the command dagster dev, the Dagster logs will be displayed directly in the terminal. Any errors encountered during startup will also be logged here. Once you see a message similar to:
-   `bash
-  2025-02-04 09:15:46 +0530 - dagster-webserver - INFO - Serving dagster-webserver on http://127.0.0.1:3000 in process 32564,
-  `
+
+   ```bash
+   2025-02-04 09:15:46 +0530 - dagster-webserver - INFO - Serving dagster-webserver on http://127.0.0.1:3000 in process 32564,
+   ```
+
    It indicates that the Dagster webserver is running successfully. At this point, you can proceed to the next step.
+
    <br />
+
 2. **Access the Dagster UI:** Open a web browser and navigate to http://127.0.0.1:3000. This will open the Dagster UI where you can manage and monitor your pipelines.
    <br />
 3. **Run the Pipeline:**

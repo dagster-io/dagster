@@ -72,8 +72,8 @@ This can be accomplished by running the `make dev_install` command as outlined i
 To check the documentation for formatting issues, use the following:
 
 ```bash
-## Lints all content, applies lint autofixes and prettier changes
-yarn lint
+## Format files with `prettier`
+yarn format
 
 ## Lints documentation content using Vale Server
 ## Checks for style guide adherence, grammar, spelling, etc.
