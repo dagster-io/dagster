@@ -20,11 +20,12 @@ class ComponentDumper(yaml.Dumper):
         super().write_line_break()
 
 
-def scaffold_component_yaml(
-    request: ScaffoldRequest, attributes: Optional[Mapping[str, Any]]
+def scaffold_component(
+    request: ScaffoldRequest,
+    yaml_attributes: Optional[Mapping[str, Any]] = None,
 ) -> None:
     with open(request.target_path / "component.yaml", "w") as f:
-        component_data = {"type": request.type_name, "attributes": attributes or {}}
+        component_data = {"type": request.type_name, "attributes": yaml_attributes or {}}
         yaml.dump(
             component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
         )
