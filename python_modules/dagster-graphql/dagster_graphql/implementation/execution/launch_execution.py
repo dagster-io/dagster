@@ -74,7 +74,7 @@ def _launch_pipeline_execution(
 
 
 def launch_reexecution_from_parent_run(
-    graphene_info: "ResolveInfo", parent_run_id: str, strategy: str
+    graphene_info: "ResolveInfo", parent_run_id: str, strategy: str, extra_tags: Optional[Mapping[str, Any]] = None, run_config: Optional[Mapping[str, Any]] = None,
 ) -> "GrapheneLaunchRunSuccess":
     """Launch a re-execution by referencing the parent run id."""
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
@@ -110,6 +110,8 @@ def launch_reexecution_from_parent_run(
         code_location=repo_location,
         remote_job=external_pipeline,
         strategy=ReexecutionStrategy(strategy),
+        extra_tags=extra_tags,
+        run_config=run_config,
         use_parent_run_tags=True,  # inherit whatever tags were set on the parent run at launch time
     )
     graphene_info.context.instance.submit_run(

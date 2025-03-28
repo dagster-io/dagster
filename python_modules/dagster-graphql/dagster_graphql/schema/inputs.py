@@ -329,6 +329,12 @@ class GrapheneReexecutionStrategy(graphene.Enum):
 class GrapheneReexecutionParams(graphene.InputObjectType):
     parentRunId = graphene.NonNull(graphene.String)
     strategy = graphene.NonNull(GrapheneReexecutionStrategy)
+    runConfigData = graphene.InputField(GrapheneRunConfigData, 
+        description="""When re-executing a single run, pass new config YAML to override the previous YAML."""
+    )
+    extraTags = graphene.List(graphene.NonNull(GrapheneExecutionTag),
+        description="""When re-executing a single run, pass new tags which will upsert over tags on the parent run."""
+    )
 
     class Meta:
         name = "ReexecutionParams"
