@@ -11,7 +11,7 @@ from dagster_components import (
     ComponentLoadContext,
     Scaffolder,
     ScaffoldRequest,
-    scaffold_component_yaml,
+    scaffold_component,
 )
 from dagster_components.resolved.core_models import ResolvedAssetSpec
 from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
@@ -25,7 +25,7 @@ class ShellCommandScaffolder(Scaffolder):
     """Scaffolds a template shell script alongside a filled-out component YAML file."""
 
     def scaffold(self, request: ScaffoldRequest, params: Any) -> None:
-        scaffold_component_yaml(
+        scaffold_component(
             request,
             {
                 "script_path": "script.sh",
