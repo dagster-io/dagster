@@ -60,7 +60,7 @@ from dagster_graphql.schema.asset_checks import (
     GrapheneAssetChecks,
     GrapheneAssetChecksOrError,
 )
-from dagster_graphql.schema.asset_health import GrapheneAssetHealth
+from dagster_graphql.schema.asset_health import GrapheneAssetHealth, GrapheneAssetHealthStatus
 from dagster_graphql.schema.auto_materialize_policy import GrapheneAutoMaterializePolicy
 from dagster_graphql.schema.automation_condition import GrapheneAutomationCondition
 from dagster_graphql.schema.backfill import GrapheneBackfillPolicy
@@ -220,7 +220,7 @@ class GrapheneMaterializationUpstreamDataVersion(graphene.ObjectType):
 
 class GrapheneAssetNode(graphene.ObjectType):
     # NOTE: properties/resolvers are listed alphabetically
-    assetHealth = graphene.NonNull(GrapheneAssetHealth)
+    assetHealth = graphene.Field(GrapheneAssetHealth)
     assetKey = graphene.NonNull(GrapheneAssetKey)
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneMaterializationEvent),
@@ -523,8 +523,47 @@ class GrapheneAssetNode(graphene.ObjectType):
     def is_executable(self) -> bool:
         return self._asset_node_snap.is_executable
 
+    def get_materialization_status_for_asset_health(self, graphene_info: ResolveInfo):
+        # if non-partitioned:
+        # if latest materialization succeed, healthy
+        # if latest materialization failed, degraded
+        # no materialization, unknown
+        # if partitioned:
+        # if all partitions successfully materialized, healthy
+        # if any partitions missing, warning
+        # if any partitions failed, degraded
+        if (
+            not graphene_info.context.instance.asset_health_supported()
+            or not graphene_info.context.instance.can_read_failure_events()
+        ):
+            # compute materialization status how we do today by checking the latest run the asset was materialized in (or using asset status cache for partitioned)
+            pass
+        else:
+            # commpute the status based on the asset key table (or using asset status cache for partitioned)
+            pass
+
+        return GrapheneAssetHealthStatus.UNKNOWN
+
+    def get_asset_check_status_for_asset_health(self, graphene_info: ResolveInfo):
+        # all asset checks passed, health
+        # any asset check warning, warning
+        # any asset check failed, degraded
+        return GrapheneAssetHealthStatus.UNKNOWN
+
+    def get_freshness_status_for_asset_health(self, graphene_info: ResolveInfo):
+        # if SLA is met, healthy
+        # if SLA violated with warning, warning
+        # if SLA violated with error, degraded
+        return GrapheneAssetHealthStatus.UNKNOWN
+
     def resolve_assetHealth(self, graphene_info: ResolveInfo):
-        return GrapheneAssetHealth()
+        if not graphene_info.context.instance.asset_health_supported():
+            return None
+        return GrapheneAssetHealth(
+            assetChecksStatus=self.get_asset_check_status_for_asset_health(graphene_info),
+            materializationStatus=self.get_materialization_status_for_asset_health(graphene_info),
+            freshnessStatus=self.get_freshness_status_for_asset_health(graphene_info),
+        )
 
     def resolve_hasMaterializePermission(
         self,
