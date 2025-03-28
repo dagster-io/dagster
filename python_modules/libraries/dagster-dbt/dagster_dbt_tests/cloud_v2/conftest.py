@@ -745,22 +745,27 @@ SAMPLE_LIST_RUN_ARTIFACTS = {
 }
 
 
+TEST_CREDENTIALS = DbtCloudCredentials(
+    account_id=TEST_ACCOUNT_ID,
+    access_url=TEST_ACCESS_URL,
+    token=TEST_TOKEN,
+)
+
+TEST_WORKSPACE = DbtCloudWorkspace(
+    credentials=TEST_CREDENTIALS,
+    project_id=TEST_PROJECT_ID,
+    environment_id=TEST_ENVIRONMENT_ID,
+)
+
+
 @pytest.fixture(name="credentials")
 def credentials_fixture() -> DbtCloudCredentials:
-    return DbtCloudCredentials(
-        account_id=TEST_ACCOUNT_ID,
-        access_url=TEST_ACCESS_URL,
-        token=TEST_TOKEN,
-    )
+    return TEST_CREDENTIALS
 
 
 @pytest.fixture(name="workspace")
-def workspace_fixture(credentials: DbtCloudCredentials) -> DbtCloudWorkspace:
-    return DbtCloudWorkspace(
-        credentials=credentials,
-        project_id=TEST_PROJECT_ID,
-        environment_id=TEST_ENVIRONMENT_ID,
-    )
+def workspace_fixture() -> DbtCloudWorkspace:
+    return TEST_WORKSPACE
 
 
 @pytest.fixture(
