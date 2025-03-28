@@ -1,12 +1,10 @@
 import dagster_components as dg_components
 import my_existing_project.defs
-from my_existing_project import assets
+from my_existing_project.assets import my_asset
 
 import dagster as dg
 
-all_assets = dg.load_assets_from_modules([assets])
-
 defs = dg.Definitions.merge(
-    dg.Definitions(assets=all_assets),
+    dg.Definitions(assets=[my_asset]),
     dg_components.load_defs(my_existing_project.defs),
 )

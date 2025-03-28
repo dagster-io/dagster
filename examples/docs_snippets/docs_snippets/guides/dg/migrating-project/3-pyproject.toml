@@ -1,0 +1,6 @@
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "my_existing_project"
+code_location_target_module = "my_existing_project.definitions"
