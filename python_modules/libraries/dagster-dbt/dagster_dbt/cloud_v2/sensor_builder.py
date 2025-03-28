@@ -15,7 +15,6 @@ from dagster import (
     sensor,
 )
 from dagster._annotations import preview
-from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
