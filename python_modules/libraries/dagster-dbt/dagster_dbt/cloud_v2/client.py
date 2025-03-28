@@ -254,7 +254,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
         finished_at_end: datetime.datetime,
         offset: int = 0,
     ) -> tuple[Sequence[Mapping[str, Any]], int]:
-        """Retrieves a batch of dbt cloud runs from a dbt Cloud workspace for a given project and environment.
+        """Retrieves a batch of dbt Cloud runs from a dbt Cloud workspace for a given project and environment.
 
         Args:
             project_id (str): The dbt Cloud Project ID. You can retrieve this value from the
@@ -268,7 +268,9 @@ class DbtCloudWorkspaceClient(DagsterModel):
             offset (str): The pagination offset for this request.
 
         Returns:
-            List[Dict[str, Any]]: A List of parsed json data from the response to this request
+            tuple[List[Dict[str, Any]], int]: A tuple containing:
+                - a list of run details as parsed json data from the response to this request;
+                - the total number of runs for the given parameters.
         """
         resp = self._make_request(
             method="get",
