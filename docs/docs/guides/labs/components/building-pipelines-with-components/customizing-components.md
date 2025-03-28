@@ -9,23 +9,21 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 You can customize the behavior of a component beyond what is available in the `component.yaml` file.
 
-To do so, you can create a subclass of your desired component in a file named `component.py` in the same directory as your `component.yaml` file. This subclass should be annotated with the `@component_type` decorator, which will define a local name for this component:
+To do so, you can create a subclass of your desired component in a file named `component.py` in the same directory as your `component.yaml` file.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/custom-subclass/basic-subclass.py" language="python" />
 
-You can then update the `type:` field in your `component.yaml` file to reference this new component type. The new type name will be `.<component-name>`, where the leading `.` indicates that this is a local component type:
+You can then update the `type:` field in your `component.yaml` file to reference this new component type. It should be the fully qualified name of the type.
 
 ```yaml
-type: .custom_subclass
+type: my_project.defs.my_def.CustomSubclass
 
 attributes: ...
 ```
 
 ## Customizing execution
 
-By convention, most library components have an `execute()` method that defines the core runtime behavior of the component. This can be overridden by subclasses of the component to customize this behavior.
-
-For example, we can create a subclass of the `SlingReplicationCollectionComponent` that adds a debug log message during execution:
+For example, we can create a subclass of the `SlingReplicationCollectionComponent` that adds a debug log message during execution. `SlingReplicationCollectionComponent` has an `execute` method that can be overriden by subclasses.
 
 <CodeExample path="docs_snippets/docs_snippets/guides/components/custom-subclass/debug-mode.py" language="python" />
 
@@ -45,11 +43,11 @@ To do so, you can define a function that returns an `AutomationCondition` and de
 This can then be used in your `component.yaml` file:
 
 ```yaml
-component_type: .custom_subclass
+type: my_project.defs.my_def.CustomSubclass
 
 attributes:
     ...
-    transforms:
+    asset_post_processors:
         - attributes:
             automation_condition: "{{ custom_cron('@daily') }}"
 ```
