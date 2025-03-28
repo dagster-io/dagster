@@ -94,5 +94,5 @@ def scaffold_object(
         component_py_path = path / "component.py"
         if not (component_yaml_path.exists() or component_py_path.exists()):
             raise Exception(
-                f"Currently all components require a component.yaml or component.yaml file. Please ensure your implementation of scaffold writes this file at {component_yaml_path} or {component_py_path}."
+                f"Currently all components require a component.yaml or component.py file. Please ensure your implementation of scaffold writes this file at {component_yaml_path} or {component_py_path}."
             )
