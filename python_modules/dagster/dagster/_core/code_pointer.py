@@ -190,12 +190,17 @@ def _load_target_from_module(module: ModuleType, fn_name: str, error_suffix: str
     from dagster._core.definitions.module_loaders.load_assets_from_modules import (
         load_assets_from_modules,
     )
-    from dagster._core.workspace.autodiscovery import LOAD_ALL_ASSETS
+    from dagster._core.definitions.module_loaders.load_defs_from_module import (
+        load_definitions_from_package_module,
+    )
+    from dagster._core.workspace.autodiscovery import AUTOLOAD_DEFINITIONS, LOAD_ALL_ASSETS
 
     if fn_name == LOAD_ALL_ASSETS:
         # LOAD_ALL_ASSETS is a special symbol that's returned when, instead of loading a particular
         # attribute, we should load all the assets in the module.
         return load_assets_from_modules([module])
+    elif fn_name == AUTOLOAD_DEFINITIONS:
+        return load_definitions_from_package_module(module)
     else:
         if not hasattr(module, fn_name):
             raise DagsterInvariantViolationError(f"{fn_name} not found {error_suffix}")

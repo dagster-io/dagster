@@ -272,6 +272,7 @@ class LoadedRepositories:
                     loadable_target_origin.package_name,
                     loadable_target_origin.working_directory,
                     loadable_target_origin.attribute,
+                    loadable_target_origin.autoload_definitions,
                 )
             for loadable_target in loadable_targets:
                 pointer = _get_code_pointer(loadable_target_origin, loadable_target)

@@ -22,6 +22,7 @@ def get_loadable_targets(
     package_name: Optional[str],
     working_directory: Optional[str],
     attribute: Optional[str],
+    autoload_definitions: bool,
 ) -> Sequence["LoadableTarget"]:
     from dagster._core.workspace.autodiscovery import (
         LoadableTarget,
@@ -29,6 +30,8 @@ def get_loadable_targets(
         loadable_targets_from_python_module,
         loadable_targets_from_python_package,
     )
+
+    # validate that you can't set both attribute and autoload_definitions or python_file, etc.
 
     if python_file:
         return (
@@ -48,7 +51,9 @@ def get_loadable_targets(
                 )
             ]
             if attribute
-            else loadable_targets_from_python_module(module_name, working_directory)
+            else loadable_targets_from_python_module(
+                module_name, working_directory, autoload_definitions
+            )
         )
     elif package_name:
         return (

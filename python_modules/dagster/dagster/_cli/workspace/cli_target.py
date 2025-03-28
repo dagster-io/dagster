@@ -143,6 +143,7 @@ def _get_workspace_load_target_from_cli_opts(
                 attribute=workspace_opts.attribute,
                 working_directory=working_directory,
                 location_name=None,
+                autoload_definitions=bool(workspace_opts.autoload_definitions),
             )
         else:
             # multiple modules
@@ -160,6 +161,7 @@ def _get_workspace_load_target_from_cli_opts(
                         attribute=None,
                         working_directory=working_directory,
                         location_name=None,
+                        autoload_definitions=bool(workspace_opts.autoload_definitions),
                     )
                     for module_name in workspace_opts.module_name
                 ]
@@ -301,6 +303,7 @@ class PythonPointerOpts:
     package_name: Optional[str] = None
     working_directory: Optional[str] = None
     attribute: Optional[str] = None
+    autoload_definitions: Optional[bool] = None
 
     @classmethod
     def extract_from_cli_options(cls, cli_options: dict[str, Any]) -> Self:
@@ -312,6 +315,7 @@ class PythonPointerOpts:
             package_name=cli_options.pop("package_name"),
             working_directory=cli_options.pop("working_directory"),
             attribute=cli_options.pop("attribute"),
+            autoload_definitions=cli_options.pop("autoload_definitions"),
         )
 
     def to_workspace_opts(self) -> "WorkspaceOpts":
@@ -335,6 +339,7 @@ class WorkspaceOpts:
     package_name: Optional[Sequence[str]] = None
     working_directory: Optional[str] = None
     attribute: Optional[str] = None
+    autoload_definitions: Optional[bool] = None
 
     # For gRPC server
     grpc_port: Optional[int] = None
@@ -358,6 +363,7 @@ class WorkspaceOpts:
             grpc_socket=cli_options.pop("grpc_socket"),
             grpc_host=cli_options.pop("grpc_host"),
             use_ssl=cli_options.pop("use_ssl"),
+            autoload_definitions=cli_options.pop("autoload_definitions"),
         )
 
     def to_load_target(self, allow_in_process: bool = False) -> WorkspaceLoadTarget:
@@ -574,6 +580,11 @@ def _generate_python_pointer_options(allow_multiple: bool) -> Sequence[ClickOpti
                 "2) a function that returns a repository or job"
             ),
             envvar="DAGSTER_ATTRIBUTE",
+        ),
+        click.option(
+            "--autoload-definitions",
+            envvar="DAGSTER_AUTOLOAD_DEFINITIONS",
+            is_flag=True,
         ),
     ]
 

@@ -709,7 +709,9 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                     "socket": grpc_endpoint.socket,
                     "port": grpc_endpoint.port,
                     "host": grpc_endpoint.host,
-                    "additional_metadata": origin.loadable_target_origin.as_dict,
+                    "additional_metadata": {
+                        k: str(v) for k, v in origin.loadable_target_origin.as_dict.items()
+                    },
                 }
             elif isinstance(origin, GrpcServerCodeLocationOrigin):
                 server_spec = {

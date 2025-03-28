@@ -1,6 +1,7 @@
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Iterator, NamedTuple, Optional, Sequence
+from typing import NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvariantViolationError
@@ -18,6 +19,7 @@ class LoadableTargetOrigin(
             ("working_directory", Optional[str]),
             ("attribute", Optional[str]),
             ("package_name", Optional[str]),
+            ("autoload_definitions", bool),
         ],
     )
 ):
@@ -29,17 +31,19 @@ class LoadableTargetOrigin(
         working_directory: Optional[str] = None,
         attribute: Optional[str] = None,
         package_name: Optional[str] = None,
+        autoload_definitions: Optional[bool] = None,
     ):
         return super(LoadableTargetOrigin, cls).__new__(
             cls,
             executable_path=check.opt_str_param(executable_path, "executable_path"),
             python_file=check.opt_str_param(python_file, "python_file"),
             module_name=check.opt_str_param(module_name, "module_name"),
-            working_directory=check.opt_str_param(
-                working_directory, "working_directory"
-            ),
+            working_directory=check.opt_str_param(working_directory, "working_directory"),
             attribute=check.opt_str_param(attribute, "attribute"),
             package_name=check.opt_str_param(package_name, "package_name"),
+            autoload_definitions=check.opt_bool_param(
+                autoload_definitions, "autoload_definitions", False
+            ),
         )
 
     def get_cli_args(self) -> Sequence[str]:
@@ -49,6 +53,7 @@ class LoadableTargetOrigin(
             + (["-d", self.working_directory] if self.working_directory else [])
             + (["-a", self.attribute] if self.attribute else [])
             + (["--package-name", self.package_name] if self.package_name else [])
+            + (["--autoload-definitions"] if self.autoload_definitions else [])
         )
 
         return args
@@ -67,8 +72,8 @@ class LoadableTargetOrigin(
         return {k: v for k, v in self._asdict().items() if v is not None}
 
 
-_current_loadable_target_origin: ContextVar[Optional[LoadableTargetOrigin]] = (
-    ContextVar("_current_loadable_target_origin", default=None)
+_current_loadable_target_origin: ContextVar[Optional[LoadableTargetOrigin]] = ContextVar(
+    "_current_loadable_target_origin", default=None
 )
 
 

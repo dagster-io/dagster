@@ -113,6 +113,7 @@ def location_origin_from_module_name(
     working_directory: Optional[str],
     location_name: Optional[str] = None,
     executable_path: Optional[str] = None,
+    autoload_definitions: bool = False,
 ) -> ManagedGrpcPythonEnvCodeLocationOrigin:
     check.str_param(module_name, "module_name")
     check.opt_str_param(attribute, "attribute")
@@ -126,6 +127,7 @@ def location_origin_from_module_name(
         working_directory=working_directory,
         attribute=attribute,
         package_name=None,
+        autoload_definitions=autoload_definitions,
     )
 
     return _create_python_env_location_origin(loadable_target_origin, location_name)

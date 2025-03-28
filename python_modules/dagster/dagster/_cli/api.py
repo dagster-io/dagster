@@ -770,6 +770,7 @@ def grpc_command(
             module_name=python_pointer_opts.module_name,
             python_file=python_pointer_opts.python_file,
             package_name=python_pointer_opts.package_name,
+            autoload_definitions=python_pointer_opts.autoload_definitions,
         )
 
     code_desc = " "
