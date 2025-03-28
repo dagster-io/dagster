@@ -376,9 +376,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
             },
             {
                 "assetKey": {"path": ["asset_3"]},
-                "assetChecksOrError": {
-                    "checks": [{"name": "asset_3_check"}, {"name": "asset_3_other_check"}]
-                },
+                "assetChecksOrError": {"checks": [{"name": "asset_3_check"}]},
             },
             {
                 "assetKey": {"path": ["check_in_op_asset"]},
