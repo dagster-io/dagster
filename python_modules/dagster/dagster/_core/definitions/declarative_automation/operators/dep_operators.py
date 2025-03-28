@@ -51,7 +51,9 @@ class EntityMatchesCondition(
             self.key, direction=directions[0]
         )
         to_context = context.for_child_condition(
-            child_condition=self.operand, child_index=0, candidate_subset=to_candidate_subset
+            child_condition=self.operand,
+            child_indices=[0],
+            candidate_subset=to_candidate_subset,
         )
 
         to_result = await to_context.evaluate_async()
@@ -192,7 +194,10 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
         for i, dep_key in enumerate(sorted(self._get_dep_keys(context.key, context.asset_graph))):
             dep_result = await context.for_child_condition(
                 child_condition=EntityMatchesCondition(key=dep_key, operand=self.operand),
-                child_index=i,
+                child_indices=[  # Prefer a non-indexed ID in case asset keys move around, but fall back to the indexed one for back-compat
+                    None,
+                    i,
+                ],
                 candidate_subset=context.candidate_subset,
             ).evaluate_async()
             dep_results.append(dep_result)
@@ -217,7 +222,10 @@ class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
         for i, dep_key in enumerate(sorted(self._get_dep_keys(context.key, context.asset_graph))):
             dep_result = await context.for_child_condition(
                 child_condition=EntityMatchesCondition(key=dep_key, operand=self.operand),
-                child_index=i,
+                child_indices=[  # Prefer a non-indexed ID in case asset keys move around, but fall back to the indexed one for back-compat
+                    None,
+                    i,
+                ],
                 candidate_subset=context.candidate_subset,
             ).evaluate_async()
             dep_results.append(dep_result)

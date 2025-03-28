@@ -24,8 +24,8 @@ class RuleCondition(BuiltinAutomationCondition[AssetKey]):
 
     rule: AutoMaterializeRule
 
-    def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[str]) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
-        # preserves old (bad) behavior of not including the parent_unique_id to avoid inavlidating
+    def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
+        # preserves old (bad) behavior of not including the parent_unique_id to avoid invalidating
         # old serialized information
         parts = [self.rule.__class__.__name__, self.description]
         return non_secure_md5_hash_str("".join(parts).encode())
