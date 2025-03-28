@@ -20,7 +20,7 @@ from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import wait_for_grpc_server
 from dagster._utils import find_free_port, pushd
 from dagster_graphql import DagsterGraphQLClient
-from dagster_shared.serdes.ipc import (
+from dagster_shared.ipc import (
     get_ipc_shutdown_pipe,
     interrupt_then_kill_ipc_subprocess,
     open_ipc_subprocess,

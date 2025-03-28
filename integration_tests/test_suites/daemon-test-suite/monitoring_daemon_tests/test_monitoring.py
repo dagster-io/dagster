@@ -9,7 +9,7 @@ from dagster._daemon.controller import all_daemons_healthy
 from dagster._utils.merger import merge_dicts
 from dagster._utils.test.postgres_instance import postgres_instance_for_test
 from dagster_aws.utils import ensure_dagster_aws_tests_import
-from dagster_shared.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster_shared.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster_shared.yaml_utils import load_yaml_from_path
 from dagster_test.test_project import (
     ReOriginatedExternalJobForTest,

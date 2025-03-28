@@ -11,13 +11,13 @@ from typing import Optional
 
 import click
 import yaml
-from dagster_shared.serdes import serialize_value
-from dagster_shared.serdes.ipc import (
+from dagster_shared.ipc import (
     get_ipc_shutdown_pipe,
     interrupt_on_ipc_shutdown_message,
     open_ipc_subprocess,
     send_ipc_shutdown_message,
 )
+from dagster_shared.serdes import serialize_value
 
 from dagster._annotations import deprecated
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
