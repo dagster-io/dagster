@@ -820,28 +820,19 @@ SAMPLE_LIST_RUN_ARTIFACTS = {
 }
 
 
-TEST_CREDENTIALS = DbtCloudCredentials(
-    account_id=TEST_ACCOUNT_ID,
-    access_url=TEST_ACCESS_URL,
-    token=TEST_TOKEN,
-)
-
-TEST_WORKSPACE = DbtCloudWorkspace(
-    credentials=TEST_CREDENTIALS,
-    project_id=TEST_PROJECT_ID,
-    environment_id=TEST_ENVIRONMENT_ID,
-)
-
-
 @pytest.fixture(name="credentials")
 def credentials_fixture() -> DbtCloudCredentials:
-    return TEST_CREDENTIALS
+    return DbtCloudCredentials(
+        account_id=TEST_ACCOUNT_ID,
+        access_url=TEST_ACCESS_URL,
+        token=TEST_TOKEN,
+    )
 
 
 @pytest.fixture(name="workspace", scope="function")
-def workspace_fixture() -> DbtCloudWorkspace:
+def workspace_fixture(credentials: DbtCloudCredentials) -> DbtCloudWorkspace:
     return DbtCloudWorkspace(
-        credentials=TEST_CREDENTIALS,
+        credentials=credentials,
         project_id=TEST_PROJECT_ID,
         environment_id=TEST_ENVIRONMENT_ID,
     )
@@ -983,10 +974,24 @@ def load_context_fixture() -> Generator[None, None, None]:
 
 
 def load_dbt_cloud_definitions() -> Definitions:
-    return Definitions(
-        assets=TEST_WORKSPACE.load_asset_specs(),
-        sensors=[build_dbt_cloud_polling_sensor(workspace=TEST_WORKSPACE)],
-    )
+    try:
+        workspace = DbtCloudWorkspace(
+            credentials=DbtCloudCredentials(
+                account_id=TEST_ACCOUNT_ID,
+                access_url=TEST_ACCESS_URL,
+                token=TEST_TOKEN,
+            ),
+            project_id=TEST_PROJECT_ID,
+            environment_id=TEST_ENVIRONMENT_ID,
+        )
+
+        return Definitions(
+            assets=workspace.load_asset_specs(),
+            sensors=[build_dbt_cloud_polling_sensor(workspace=workspace)],
+        )
+    finally:
+        # Clearing cache for other tests
+        workspace.load_specs.cache_clear()
 
 
 def fully_loaded_repo_from_dbt_cloud_workspace() -> RepositoryDefinition:
