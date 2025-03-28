@@ -22,6 +22,7 @@ from dagster_components.resolved.core_models import (
 )
 from dagster_components.resolved.metadata import ResolvableFieldInfo as ResolvableFieldInfo
 from dagster_components.resolved.model import (
+    Model as Model,
     ResolvableModel as ResolvableModel,
     ResolvedFrom as ResolvedFrom,
     ResolvedKwargs as ResolvedKwargs,
