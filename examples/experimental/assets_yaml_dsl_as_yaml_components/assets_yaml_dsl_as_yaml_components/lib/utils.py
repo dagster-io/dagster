@@ -5,6 +5,7 @@ from typing import Optional
 
 from dagster import AssetExecutionContext, AssetSpec, Definitions, multi_asset
 from dagster._core.definitions.asset_dep import CoercibleToAssetDep
+from dagster._core.definitions.asset_key import CoercibleToAssetKey
 from dagster_components import Component, ComponentLoadContext
 from dagster_shared.record import record
 
@@ -29,6 +30,25 @@ class AssetsDefinitionComponent(Component, ABC):
 
     def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
         @multi_asset(name=self.op_spec.name, specs=self.specs)
+        def _the_asset(context: AssetExecutionContext):
+            return self.execute(context)
+
+        return Definitions(assets=[_the_asset], resources=self.resources)
+
+    @abstractmethod
+    def execute(self, context: AssetExecutionContext): ...
+
+
+@dataclass
+class AssetStepComponent(Component, ABC):
+    name: str
+    key: CoercibleToAssetKey
+    deps: Optional[Iterable[CoercibleToAssetDep]] = None
+    group_name: Optional[str] = None
+    resources: Optional[dict[str, object]] = None
+
+    def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
+        @multi_asset(name=self.name, specs=[AssetSpec(key=self.key, group_name=self.group_name)])
         def _the_asset(context: AssetExecutionContext):
             return self.execute(context)
 

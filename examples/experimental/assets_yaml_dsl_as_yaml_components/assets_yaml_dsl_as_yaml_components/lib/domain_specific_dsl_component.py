@@ -10,7 +10,7 @@ from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster_components import Component, ComponentLoadContext, ResolvableModel
 
-from .utils import AssetsDefinitionComponent, CoercibleToAssetDep, CompositeComponent, OpSpec
+from .utils import AssetsDefinitionComponent, AssetStepComponent, CompositeComponent, OpSpec
 
 
 class StockInfo(ResolvableModel):
@@ -63,8 +63,15 @@ class DomainSpecificDslComponent(CompositeComponent, ResolvableModel):
                 specs=ticker_specs,
                 tickers=tickers,
             ),
-            IndexStrategyAsset.build(tickers),
-            ForecastAsset.build(AssetDep.from_coercibles(ticker_specs)),
+            IndexStrategyAsset(
+                name="index_strategy", key="index_strategy", group_name="stocks", tickers=tickers
+            ),
+            ForecastAsset(
+                name="forecast",
+                key="forecast",
+                group_name="stocks",
+                deps=AssetDep.from_coercibles(tickers),
+            ),
         ]
 
 
@@ -88,16 +95,8 @@ class FetchTheTickers(AssetsDefinitionComponent):
 
 
 @dataclass
-class IndexStrategyAsset(AssetsDefinitionComponent):
+class IndexStrategyAsset(AssetStepComponent):
     tickers: list[str] = field(default_factory=list)
-
-    @classmethod
-    def build(cls, tickers: list[str]) -> "IndexStrategyAsset":
-        return IndexStrategyAsset(
-            op_spec=OpSpec(name="index_strategy"),
-            specs=[AssetSpec(key="index_strategy", group_name="stocks")],
-            tickers=tickers,
-        )
 
     def execute(self, context: AssetExecutionContext):
         stored_ticker_data = {}
@@ -105,14 +104,7 @@ class IndexStrategyAsset(AssetsDefinitionComponent):
             stored_ticker_data[ticker] = fetch_data_for_ticker(ticker)
 
 
-class ForecastAsset(AssetsDefinitionComponent):
-    @classmethod
-    def build(cls, deps: Iterable[CoercibleToAssetDep]) -> "ForecastAsset":
-        return ForecastAsset(
-            op_spec=OpSpec(name="forecast"),
-            specs=[AssetSpec(key="forecast", group_name="stocks", deps=deps)],
-        )
-
+class ForecastAsset(AssetStepComponent):
     def execute(self, context: AssetExecutionContext):
         # do some forecast thing
         pass
