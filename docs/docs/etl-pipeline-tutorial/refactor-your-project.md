@@ -1,6 +1,6 @@
 ---
 title: Refactor your project
-description: Refactor your completed project into a structure that is more organized and scalable. 
+description: Refactor your completed project into a structure that is more organized and scalable.
 last_update:
   author: Alex Noonan
 sidebar_position: 70
@@ -18,6 +18,7 @@ Currently, your project is contained in one definitions file. However, this file
 - Partitions
 
 The final project structure should look like this:
+
 ```
 dagster-etl-tutorial/
 ├── data/
@@ -39,27 +40,39 @@ dagster-etl-tutorial/
 
 ### Assets
 
-Assets make up a majority of our project and this will be our largest file. 
+Assets make up a majority of our project and this will be our largest file.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial_completed/etl_tutorial/assets.py" language="python"/>
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_completed/etl_tutorial/assets.py"
+  language="python"
+/>
 
 ### Partitions
 
 The partitions file will have `monthly_partition` and `product_category_partition`.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial_completed/etl_tutorial/partitions.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_completed/etl_tutorial/partitions.py"
+  language="python"
+/>
 
 ### Schedules
 
 The schedules file will only contain the `weekly_update_schedule`.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial_completed/etl_tutorial/schedules.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_completed/etl_tutorial/schedules.py"
+  language="python"
+/>
 
 ### Sensors
 
-The sensors file will have the job and sensor for the `adhoc_request` asset. 
+The sensors file will have the job and sensor for the `adhoc_request` asset.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial_completed/etl_tutorial/sensors.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_completed/etl_tutorial/sensors.py"
+  language="python"
+/>
 
 ## Refactoring the Definitions object
 
@@ -72,15 +85,18 @@ Additionally, Dagster has functions to load all assets and asset checks from a m
 
 To bring your project together, copy the following code into your `definitions.py` file:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial_completed/etl_tutorial/definitions.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial_completed/etl_tutorial/definitions.py"
+  language="python"
+/>
 
 ## Quick validation
 
-To validate that your definitions file loads and validates, you can run `dagster definitions validate` in the same directory that you would run `dagster dev`. This command is useful for CI/CD pipelines and allows you to check that your project loads correctly without starting the web server. 
+To validate that your definitions file loads and validates, you can run `dagster definitions validate` in the same directory that you would run `dagster dev`. This command is useful for CI/CD pipelines and allows you to check that your project loads correctly without starting the web server.
 
 ## Thats it!
 
-Congratulations! You have completed your first project with Dagster and have an example of how to use the building blocks to build your own data pipelines. 
+Congratulations! You have completed your first project with Dagster and have an example of how to use the building blocks to build your own data pipelines.
 
 ## Recommended next steps
 

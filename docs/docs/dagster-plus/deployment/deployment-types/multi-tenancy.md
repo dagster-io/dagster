@@ -19,10 +19,10 @@ If you want to manage complexity or divide your work into areas of responsibilit
 
 Refer to the following table for more information, including the pros and cons of each approach.
 
-| **Approach**  | **How it works** | **Pros** | **Cons** |
-|---------------|------------------|----------|----------|
-| **Multiple directories in a single repository** | You can use a single repository to manage multiple projects by placing each project in a separate directory. Depending on your VCS, you may be able to set [code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners) to restrict who can modify each project.  | <ul><li>Easy to implement</li><li>Facilitates code sharing between projects</li></ul> | <ul><li>All projects share the same CI/CD pipeline and cannot be deployed independently</li><li>Shared dependencies between projects may cause conflicts and require coordination between teams</li></ul> |
-| **Multiple repositories** | For stronger isolation, you can use multiple repositories to manage multiple projects. | <ul><li>Stronger isolation between projects and teams</li><li>Each project has its own CI/CD pipeline and be deployed independently</li><li>Dependencies between projects can be managed independently</li></ul>  |  Code sharing between projects requires additional coordination to publish and reuse packages between projects. |
+| **Approach**                                    | **How it works**                                                                                                                                                                                                                                                                                                                                         | **Pros**                                                                                                                                                                                                         | **Cons**                                                                                                                                                                                                  |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Multiple directories in a single repository** | You can use a single repository to manage multiple projects by placing each project in a separate directory. Depending on your VCS, you may be able to set [code owners](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners) to restrict who can modify each project. | <ul><li>Easy to implement</li><li>Facilitates code sharing between projects</li></ul>                                                                                                                            | <ul><li>All projects share the same CI/CD pipeline and cannot be deployed independently</li><li>Shared dependencies between projects may cause conflicts and require coordination between teams</li></ul> |
+| **Multiple repositories**                       | For stronger isolation, you can use multiple repositories to manage multiple projects.                                                                                                                                                                                                                                                                   | <ul><li>Stronger isolation between projects and teams</li><li>Each project has its own CI/CD pipeline and be deployed independently</li><li>Dependencies between projects can be managed independently</li></ul> | Code sharing between projects requires additional coordination to publish and reuse packages between projects.                                                                                            |
 
 ### Deployment configuration
 
@@ -65,14 +65,14 @@ Whether you use a single repository or multiple, you can use a [`dagster_cloud.y
            if: steps.prerun.outputs.result != 'skip'
            uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
            with:
-             command: "ci set-build-output --location-name=project_a --image-tag=$IMAGE_TAG"
+             command: 'ci set-build-output --location-name=project_a --image-tag=$IMAGE_TAG'
 
          - name: Update build session with image tag for "project_b" code location
            id: ci-set-build-output-project-b
            if: steps.prerun.outputs.result != 'skip'
            uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
            with:
-             command: "ci set-build-output --location-name=project_b --image-tag=$IMAGE_TAG"
+             command: 'ci set-build-output --location-name=project_b --image-tag=$IMAGE_TAG'
          # ...
    ```
 
@@ -98,8 +98,8 @@ If you have no specific requirements for isolation beyond the ability to deploy 
 
 ![Diagram of isolation at the code location level](/images/dagster-plus/deployment/management/managing-deployments/isolation-level-code-locations.png)
 
-| **Pros** | **Cons** |
-|----------|----------|
+| **Pros**                                                                                                                                                                   | **Cons**                                    |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | <ul><li>Simplest and most cost-effective solution</li><li>User access control can be set at the code location level</li><li>Single glass pane to view all assets</li></ul> | No isolation between execution environments |
 
 ### Agent isolation
@@ -117,8 +117,8 @@ Motivations for utilizing this approach could include:
 
 ![Diagram of isolation at the agent level](/images/dagster-plus/deployment/management/managing-deployments/isolation-level-agents.png)
 
-| **Pros** | **Cons** |
-|----------|----------|
+| **Pros**                                                                                                                                                                  | **Cons**                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | <ul><li>Isolation between execution environments</li><li>User access control can be set at the code location level</li><li>Single glass pane to view all assets</li></ul> | Extra work to set up additional agents and agent queues |
 
 ### Deployment isolation
@@ -131,6 +131,6 @@ Of the approaches outlined in this guide, multiple deployments are the most isol
 
 ![Diagram of isolation at the Dagster+ deployment level](/images/dagster-plus/deployment/management/managing-deployments/isolation-level-deployments.png)
 
-| **Pros** | **Cons** |
-|----------|----------|
+| **Pros**                                                                                                                                               | **Cons**                                                                                            |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
 | <ul><li>Isolation between assets and execution environments</li><li>User access control can be set at the code location and deployment level</li></ul> | No single glass pane to view all assets (requires switching between multiple deployments in the UI) |

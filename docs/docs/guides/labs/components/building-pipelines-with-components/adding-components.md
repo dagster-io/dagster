@@ -1,9 +1,9 @@
 ---
-title: "Adding components to your project"
+title: 'Adding components to your project'
 sidebar_position: 200
 ---
 
-import Preview from '../../../../partials/\_Preview.md';
+import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
@@ -70,6 +70,6 @@ A common use case for templating is to avoid exposing environment variables (par
 component_type: my_snowflake_component
 
 attributes:
-    account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
-    password: "{{ env('SNOWFLAKE_PASSWORD') }}"
+  account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
+  password: "{{ env('SNOWFLAKE_PASSWORD') }}"
 ```

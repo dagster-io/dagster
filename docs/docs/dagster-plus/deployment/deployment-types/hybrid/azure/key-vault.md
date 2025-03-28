@@ -1,5 +1,5 @@
 ---
-title: "Retrieve secrets and credentials from Azure Key Vault in AKS"
+title: 'Retrieve secrets and credentials from Azure Key Vault in AKS'
 sidebar_position: 400
 ---
 
@@ -7,9 +7,8 @@ sidebar_position: 400
 This guide is applicable to Dagster+ on AKS only and requires version 1.10.2 or later of the Helm chart.
 :::
 
-In this guide, we'll walk through how to retrieve secrets and credentials from Azure Key Vault in an Azure Kubernetes Service (AKS) cluster. 
-This guide assumes you completed the first step of [Deploying Dagster+ hybrid on Azure](.). 
-
+In this guide, we'll walk through how to retrieve secrets and credentials from Azure Key Vault in an Azure Kubernetes Service (AKS) cluster.
+This guide assumes you completed the first step of [Deploying Dagster+ hybrid on Azure](/dagster-plus/deployment/deployment-types/hybrid/azure/aks-agent).
 
 ## Prerequisites
 
@@ -18,8 +17,7 @@ To complete the steps in this guide, you'll need:
 - The Azure CLI installed on your machine. You can download it [here](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli).
 - `kubectl` installed on your machine. You can download it [here](https://kubernetes.io/docs/tasks/tools/install-kubectl/).
 - `helm` installed on your machine. You can download it [here](https://helm.sh/docs/intro/install/).
-- A functional AKS cluster and Dagster+ agent running on it. If you have not yet set up an AKS agent, you can look up [Deploy an Azure Kubernetes Service (AKS) agent guide](aks-agent).
-
+- A functional AKS cluster and Dagster+ agent running on it. If you have not yet set up an AKS agent, you can look up [Deploy an Azure Kubernetes Service (AKS) agent guide](/dagster-plus/deployment/deployment-types/hybrid/azure/aks-agent).
 
 ## Step 1: Enable the Azure Key Vault provider for the AKS cluster
 
@@ -62,7 +60,6 @@ az role assignment create --role "Key Vault Secrets User" --assignee $CLIENT_ID 
 ```
 
 See the [Azure built-in roles for Key Vault](https://learn.microsoft.com/en-us/azure/key-vault/general/rbac-guide?tabs=azure-cli#azure-built-in-roles-for-key-vault-data-plane-operations).
-
 
 ## Step 4: Create and access the Dagster Cloud Agent Token from your Key Vault
 
@@ -162,7 +159,7 @@ EOF
 kubectl apply -f pod-test-akv-secret-mount.yaml
 
 # Each of these commands should print value of the secret
-kubectl exec -it test-akv-secret-mount -- cat /mnt/secrets-store/dagsterAgentToken 
+kubectl exec -it test-akv-secret-mount -- cat /mnt/secrets-store/dagsterAgentToken
 kubectl exec -it test-akv-secret-mount -- echo $DAGSTER_CLOUD_AGENT_TOKEN
 kubectl exec -it test-akv-secret-mount -- echo $dagsterAgentToken
 
@@ -192,16 +189,16 @@ Required for the csi driver to mount the secret into the agent pod.
 ```yaml
 dagsterCloudAgent:
   volumeMounts:
-  - name: dagster-token
-    mountPath: /mnt/dagster-token
-    readOnly: true
-  volumes:
-  - name: dagster-token
-    csi:
-      driver: secrets-store.csi.k8s.io
+    - name: dagster-token
+      mountPath: /mnt/dagster-token
       readOnly: true
-      volumeAttributes:
-        secretProviderClass: "azure-kv-dagster-agent-token"
+  volumes:
+    - name: dagster-token
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: 'azure-kv-dagster-agent-token'
 ```
 
 c) add these entries to the `workspace`:
@@ -209,20 +206,20 @@ c) add these entries to the `workspace`:
 This ensures the secret is also made available to the pods the agent will create to run your code.
 
 ```yaml
-  envSecrets:
-    - name: dagster
-      optional: false
-  volumeMounts:
+envSecrets:
+  - name: dagster
+    optional: false
+volumeMounts:
   - name: dagster-token
     mountPath: /mnt/dagster-token
     readOnly: true
-  volumes:
+volumes:
   - name: dagster-token
     csi:
       driver: secrets-store.csi.k8s.io
       readOnly: true
       volumeAttributes:
-        secretProviderClass: "azure-kv-dagster-agent-token"
+        secretProviderClass: 'azure-kv-dagster-agent-token'
 ```
 
 d) optionally, you could manage the secret provider within your helm values file by providing it as an extra manifest, instead of provisioning it separately:
@@ -237,26 +234,25 @@ extraManifests:
     spec:
       provider: azure
       parameters:
-        usePodIdentity: "false"
-        clientID: "${CLIENT_ID}" # Setting this to use workload identity
-        keyvaultName: ${KEYVAULT_NAME}       # Set to the name of your key vault
-        cloudName: ""                         # [OPTIONAL for Azure] if not provided, the Azure environment defaults to AzurePublicCloud
-        objects:  |
+        usePodIdentity: 'false'
+        clientID: '${CLIENT_ID}' # Setting this to use workload identity
+        keyvaultName: ${KEYVAULT_NAME} # Set to the name of your key vault
+        cloudName: '' # [OPTIONAL for Azure] if not provided, the Azure environment defaults to AzurePublicCloud
+        objects: |
           array:
             - |
               objectName: dagsterAgentToken   # Set to the name of your secret
               objectType: secret              # object types: secret, key, or cert
               objectVersion: ""               # [OPTIONAL] object versions, default to latest if empty
-        tenantId: "${IDENTITY_TENANT}"        # The tenant ID of the key vault
+        tenantId: '${IDENTITY_TENANT}' # The tenant ID of the key vault
       # (optional) Allows mounting the secret as an environment variable in a pod
       secretObjects:
-      - data:
-        - key: dagsterAgentToken
-          objectName: dagsterAgentToken
-        secretName: dagster
-        type: Opaque
+        - data:
+            - key: dagsterAgentToken
+              objectName: dagsterAgentToken
+          secretName: dagster
+          type: Opaque
 ```
-
 
 Finally, update your deployment with the new values:
 
@@ -270,7 +266,7 @@ You can verify that the agent is running by looking at its status in the Dagster
 
 :::tip
 
-By re-using the same steps to create other secret provider, volume mounts, and optionally environment variables configuration, 
+By re-using the same steps to create other secret provider, volume mounts, and optionally environment variables configuration,
 you can also load other secrets and credentials from the Azure Key Vault to use in your Dagster+ code projects.
 
 :::

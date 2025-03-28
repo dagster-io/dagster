@@ -15,7 +15,7 @@ To use SCIM provisioning, you'll need:
 
 Dagster+ currently supports SCIM provisioning for the following Identity Providers (IdP):
 
-- [Okta](okta-scim)
+- [Okta](/dagster-plus/features/authentication-and-access-control/scim/okta-scim)
 - [Microsoft Azure AD](https://learn.microsoft.com/en-us/azure/active-directory/saas-apps/dagster-cloud-provisioning-tutorial)
 
 Use the setup guide for your IdP to get started.

@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import {filterComments, trimMainBlock} from './codeExampleUtils';
+import {dedentLines, filterComments, trimMainBlock} from './codeExampleUtils';
 
 describe('filterComments', () => {
   it('should remove noqa comments from lines', () => {
@@ -11,13 +11,7 @@ describe('filterComments', () => {
       '    # noqa: this is all comment',
     ];
 
-    const expected = [
-      'def example_function():',
-      '    x = 5',
-      '    y = 10  # regular comment',
-      '    print(x + y)',
-      '',
-    ];
+    const expected = ['def example_function():', '    x = 5', '    y = 10  # regular comment', '    print(x + y)', ''];
 
     expect(filterComments(input)).toEqual(expected);
   });
@@ -47,11 +41,7 @@ describe('filterComments', () => {
       'from typing import Dict, Any  # isort:skip',
     ];
 
-    const expected = [
-      '',
-      'from typing import Dict, Any',
-      'from typing import Dict, Any',
-    ];
+    const expected = ['', 'from typing import Dict, Any', 'from typing import Dict, Any'];
 
     expect(filterComments(input)).toEqual(expected);
   });
@@ -61,12 +51,7 @@ describe('filterComments', () => {
   });
 
   it('should handle lines without ignored comments', () => {
-    const input = [
-      'def example_function():',
-      '    x = 5  # some comment',
-      '    y = 10',
-      '    print(x + y)',
-    ];
+    const input = ['def example_function():', '    x = 5  # some comment', '    y = 10', '    print(x + y)'];
 
     expect(filterComments(input)).toEqual(input);
   });
@@ -86,28 +71,13 @@ describe('trimMainBlock', () => {
       '    print("This should be removed")',
     ];
 
-    const expected = [
-      'import os',
-      'import sys',
-      '',
-      'def main():',
-      '    print("Hello, world!")',
-      '',
-    ];
+    const expected = ['import os', 'import sys', '', 'def main():', '    print("Hello, world!")', ''];
 
     expect(trimMainBlock(input)).toEqual(expected);
   });
 
   it('should handle input without if __name__ block', () => {
-    const input = [
-      'import os',
-      'import sys',
-      '',
-      'def main():',
-      '    print("Hello, world!")',
-      '',
-      'main()',
-    ];
+    const input = ['import os', 'import sys', '', 'def main():', '    print("Hello, world!")', '', 'main()'];
 
     expect(trimMainBlock(input)).toEqual(input);
   });
@@ -117,22 +87,40 @@ describe('trimMainBlock', () => {
   });
 
   it('should handle if __name__ with different spacing', () => {
-    const input = [
-      'import os',
-      '',
-      'def main():',
-      '    pass',
-      'if    __name__    ==    "__main__":',
-      '    main()',
-    ];
+    const input = ['import os', '', 'def main():', '    pass', 'if    __name__    ==    "__main__":', '    main()'];
 
-    const expected = [
-      'import os',
-      '',
-      'def main():',
-      '    pass',
-    ];
+    const expected = ['import os', '', 'def main():', '    pass'];
 
     expect(trimMainBlock(input)).toEqual(expected);
+  });
+});
+
+describe('dedent', () => {
+  it('should remove leading spaces based on dedentAmount', () => {
+    const input = ['    line one', '    line two', '      line three'];
+    const dedentAmount = 4;
+    const expected = ['line one', 'line two', '  line three'];
+    expect(dedentLines(input, dedentAmount)).toEqual(expected);
+  });
+
+  it('should return the same lines if no indentation matches', () => {
+    const input = ['line one', 'line two', 'line three'];
+    const dedentAmount = 4;
+    const expected = input;
+    expect(dedentLines(input, dedentAmount)).toEqual(expected);
+  });
+
+  it('should handle empty lines', () => {
+    const input = ['    line one', '', '    line two'];
+    const dedentAmount = 4;
+    const expected = ['line one', '', 'line two'];
+    expect(dedentLines(input, dedentAmount)).toEqual(expected);
+  });
+
+  it('should handle no lines', () => {
+    const input: string[] = [];
+    const dedentAmount = 4;
+    const expected: string[] = [];
+    expect(dedentLines(input, dedentAmount)).toEqual(expected);
   });
 });

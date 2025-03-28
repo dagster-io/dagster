@@ -9,4 +9,4 @@ To view all sensors, navigate to **Overview > Sensors**. Here, you can start and
 
 ![Sensors overview](/images/guides/automate/sensors/all-sensors.png)
 
-Click on any sensor to [test the sensor](testing-sensors), monitor all sensor evaluations on a timeline, and view a table of runs launched by the sensor.
+Click on any sensor to [test the sensor](/guides/automate/sensors/testing-sensors), monitor all sensor evaluations on a timeline, and view a table of runs launched by the sensor.

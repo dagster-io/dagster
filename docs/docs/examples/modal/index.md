@@ -2,7 +2,7 @@
 title: Podcast transcription with Modal
 description: Learn how to build with Modal
 last_update:
-   author: Dennis Hume
+  author: Dennis Hume
 sidebar_position: 10
 sidebar_custom_props:
   logo: images/integrations/modal.svg
@@ -25,8 +25,8 @@ To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
 - Python 3.9+ installed on your system. For more information, see the [Installation guide](/getting-started/installation).
-</details>
 
+</details>
 
 ## Step 1: Set up your Dagster environment
 
@@ -41,18 +41,12 @@ First, set up a new Dagster project.
 2. Create and activate a virtual environment:
 
    <Tabs>
-   <TabItem value="macos" label="MacOS">
-   ```bash
-   uv venv dagster_example
-   source dagster_example/bin/activate
-   ```
-   </TabItem>
-   <TabItem value="windows" label="Windows">
-   ```bash
-   uv venv dagster_example
-   dagster_example\Scripts\activate
-   ```
-   </TabItem>
+     <TabItem value="macos" label="MacOS">
+       ```bash uv venv dagster_example source dagster_example/bin/activate ```
+     </TabItem>
+     <TabItem value="windows" label="Windows">
+       ```bash uv venv dagster_example dagster_example\Scripts\activate ```
+     </TabItem>
    </Tabs>
 
 3. Install Dagster and the required dependencies:
@@ -65,11 +59,10 @@ First, set up a new Dagster project.
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
 
-
 ```bash
 dagster dev
 ```
 
 ## Next steps
 
-- Continue this example with [modal application](modal-application)
+- Continue this example with [modal application](/examples/modal/modal-application)

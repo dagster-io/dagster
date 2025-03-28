@@ -15,7 +15,7 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, compute]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/docker.svg
 ---
 
@@ -29,7 +29,7 @@ pip install dagster-docker
 
 ### Example
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/docker.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/docker.py" language="python" />
 
 ### Deploying to Docker?
 

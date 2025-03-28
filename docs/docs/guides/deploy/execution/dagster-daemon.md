@@ -1,5 +1,5 @@
 ---
-title: "Dagster daemon"
+title: 'Dagster daemon'
 sidebar_position: 100
 ---
 
@@ -47,12 +47,12 @@ The `dagster-daemon` process reads from your [Dagster instance](/guides/deploy/d
 
 The following daemons are currently available:
 
-|  Name                      | Description         | Enabled by       |
-|----------------------------|---------------------|------------------|
-| Scheduler daemon           |  Creates runs from active schedules   |  Enabled / runs as long as the default         <PyObject section="schedules-sensors" module="dagster._core.scheduler" object="DagsterDaemonScheduler"/> isn't overriden as the scheduler on your instance. |
-| Run queue daemon           |  Launches queued runs, taking into account any limits and prioritization rules set on your instance |  Setting the [run coordinator](run-coordinators) on your instance <PyObject section="internals" module="dagster._core.run_coordinator" object="QueuedRunCoordinator" />.    |
-| Sensor daemon |  Creates runs from active [sensors](/guides/automate/sensors/) that are turned on | Always enabled. |
-| Run monitoring daemon      |  Handles [run worker](/guides/deploy/oss-deployment-architecture#job-execution-flow) failures |  Using the `run_monitoring` field in your instance. For more information, see "[Run monitoring](run-monitoring)".|
+| Name                  | Description                                                                                        | Enabled by                                                                                                                                                                                        |
+| --------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scheduler daemon      | Creates runs from active schedules                                                                 | Enabled / runs as long as the default <PyObject section="schedules-sensors" module="dagster._core.scheduler" object="DagsterDaemonScheduler"/> isn't overriden as the scheduler on your instance. |
+| Run queue daemon      | Launches queued runs, taking into account any limits and prioritization rules set on your instance | Setting the [run coordinator](/guides/deploy/execution/run-coordinators) on your instance <PyObject section="internals" module="dagster._core.run_coordinator" object="QueuedRunCoordinator" />.  |
+| Sensor daemon         | Creates runs from active [sensors](/guides/automate/sensors/) that are turned on                   | Always enabled.                                                                                                                                                                                   |
+| Run monitoring daemon | Handles [run worker](/guides/deploy/oss-deployment-architecture#job-execution-flow) failures       | Using the `run_monitoring` field in your instance. For more information, see "[Run monitoring](/guides/deploy/execution/run-monitoring)".                                                         |
 
 If the daemon is configured to use a [workspace file](/guides/deploy/code-locations/workspace-yaml) to load [code location(s)](/guides/deploy/code-locations/), note that they will periodically reload the file. This means that the `dagster-daemon` process doesn't need to be restarted when workspace files are changed.
 

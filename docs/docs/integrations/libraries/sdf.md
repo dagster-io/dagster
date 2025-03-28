@@ -31,7 +31,7 @@ pip install dagster-sdf
 
 ### Example
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/sdf.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/sdf.py" language="python" />
 
 ### About SDF
 

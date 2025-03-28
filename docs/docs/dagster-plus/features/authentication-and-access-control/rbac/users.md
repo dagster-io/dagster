@@ -1,22 +1,21 @@
 ---
-title: "Managing users in Dagster+"
-sidebar_label: "User management"
-sidebar_position: 400
+title: 'Managing users in Dagster+'
+sidebar_label: 'Managing users'
+sidebar_position: 100
 ---
 
 Dagster+ allows you to grant specific permissions to your organization's users, ensuring that Dagster users have access only to what they require.
 
 In this guide, you'll learn how to manage users and their permissions using the Dagster+ UI.
 
-<details>
-<summary>Prerequisites</summary>
+:::info Prerequisites
 
 - A Dagster+ account
 - The required [Dagster+ permissions](/dagster-plus/features/authentication-and-access-control/rbac/):
-   - **Organization Admins** can add, manage, and remove users
-   - **Admins** can add users
+  - **Organization Admins** can add, manage, and remove users
+  - **Admins** can add users
 
-</details>
+:::
 
 ## Before you start
 
@@ -42,23 +41,27 @@ After the user is created, they will be notified via email, and you can [add the
 ## Adding users to teams \{#teams}
 
 :::note
+
 Teams are a Dagster+ Pro feature.
+
 :::
 
-Teams are useful for centralizing permission sets for different types of users. Refer to [Managing teams](teams) for more information about creating and managing teams.
+Teams are useful for centralizing permission sets for different types of users. Refer to [Managing teams](/dagster-plus/features/authentication-and-access-control/rbac/teams) for more information about creating and managing teams.
 
 ![Screenshot of Managing teams page](/images/dagster-plus/features/authentication-and-access-control/mananging-teams.png)
 
 :::note
-When determining a user's level of access, Dagster+ will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants. Refer to [Managing user roles and permissions](user-roles-permissions) for more information.
+
+When determining a user's level of access, Dagster+ will use the **most permissive** role assigned to the user between all of their team memberships and any individual role grants. Refer to [Managing user roles and permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) for more information.
+
 :::
 
 ## Assigning user roles \{#user-roles}
 
-In the **Roles** section, you can assign a [user role](user-roles-permissions) for each deployment, granting them a set of permissions that controls their access to various features and functionalities within the platform.
+In the **Roles** section, you can assign a [user role](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) for each deployment, granting them a set of permissions that controls their access to various features and functionalities within the platform.
 
 1. Next to a deployment, click **Edit user role**.
-2. Select the user role for the deployment. This [user role](user-roles-permissions) will be used as the default for all code locations in the deployment.
+2. Select the user role for the deployment. This [user role](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) will be used as the default for all code locations in the deployment.
 3. Click **Save**.
 4. **Pro only**: To set permissions for individual [code locations](/dagster-plus/deployment/code-locations/) in a deployment:
    1. Click the toggle to the left of the deployment to open a list of code locations.

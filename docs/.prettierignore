@@ -1,4 +1,11 @@
-node_modules
+*.svg
 .docusaurus
+.svg
+.yarn
+
+.direnv/
+.tox/
 build/
-docs/
+dist/
+node_modules/
+sphinx/

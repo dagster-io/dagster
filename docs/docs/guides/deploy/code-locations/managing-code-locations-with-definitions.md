@@ -1,5 +1,5 @@
 ---
-title: "Managing code locations with Definitions"
+title: 'Managing code locations with Definitions'
 description: "A code location is a collection of Dagster definitions loadable and accessible by Dagster's tools. Learn to create, load, and deploy code locations."
 sidebar_position: 100
 ---
@@ -24,8 +24,8 @@ Code locations are loaded in a different process and communicate with Dagster sy
 
 ## Relevant APIs
 
-| Name                              | Description                                                                                                                                       |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Name                                                                     | Description                                                                                                                                       |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject section="definitions" module="dagster" object="Definitions" /> | The object that contains all the definitions defined within a code location. Definitions include assets, jobs, resources, schedules, and sensors. |
 
 ## Defining code locations
@@ -44,7 +44,6 @@ defs = Definitions(
 ```
 
 It is recommended to include definitions in a Python module named `definitions.py`.
-
 
 ## Deploying and loading code locations
 
@@ -135,10 +134,10 @@ See the [Dagster+ code locations documentation](/dagster-plus/deployment/code-lo
 
 ### Open source deployment
 
-The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. For more information, see "[workspace.yaml reference](workspace-yaml.md)".
+The `workspace.yaml` file is used to load code locations for open source (OSS) deployments. This file specifies how to load a collection of code locations and is typically used in advanced use cases. For more information, see "[workspace.yaml reference](/guides/deploy/code-locations/workspace-yaml)".
 
 ## Troubleshooting
 
-| Error | Description and resolution |
-|-------|----------------------------|
+| Error                                                                | Description and resolution                                                                                                                                                                                                                                    |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Cannot have more than one Definitions object defined at module scope | Dagster found multiple <PyObject section="definitions" module="dagster" object="Definitions" /> objects in a single Python module. Only one <PyObject section="definitions" module="dagster" object="Definitions" /> object may be in a single code location. |

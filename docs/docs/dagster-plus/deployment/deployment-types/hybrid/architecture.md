@@ -36,11 +36,13 @@ See the [setup page](index.md#dagster-hybrid-agents) for a list of agents that a
 Dagster+ Hybrid relies on a shared security model.
 
 The Dagster+ control plane is SOC 2 Type II certified and follows best practices such as:
+
 - encrypting data at rest (AES 256) and in transit (TLS 1.2+)
 - highly available, with disaster recovery and backup strategies
 - only manages metadata such as pipeline names, execution status, and run duration
 
 The execution environment is managed by the customer:
+
 - Dagster+ doesn't have access to user code—your code never leaves your environment. Metadata about the code is fetched over constrained APIs.
 - All connections to databases, file systems, and other resources are made from your environment.
 - The execution environment only requires egress access to Dagster+. No ingress is required from Dagster+ to user environments.

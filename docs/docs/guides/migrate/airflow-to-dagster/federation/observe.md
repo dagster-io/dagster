@@ -1,9 +1,9 @@
 ---
-title: "Observe multiple Airflow instances from Dagster"
+title: 'Observe multiple Airflow instances from Dagster'
 sidebar_position: 200
 ---
 
-In the [previous step](setup), we installed the tutorial example code and started two Airflow instances running locally. In this step, we'll create Dagster asset representations of Airflow DAGs in order to observe the Airflow instances from Dagster.
+In the [previous step](/guides/migrate/airflow-to-dagster/federation/setup), we installed the tutorial example code and started two Airflow instances running locally. In this step, we'll create Dagster asset representations of Airflow DAGs in order to observe the Airflow instances from Dagster.
 
 ## Install the `dagster-airlift` package in your Dagster environment
 
@@ -24,11 +24,19 @@ For a full list of `dagster-airlift` classes and methods, see the [API docs](htt
 
 Next, declare a reference to the `warehouse` Airflow instance, which is running at `http://localhost:8081`:
 
-<CodeExample path="airlift-federation-tutorial/snippets/observe.py" startAfter="start_warehouse_instance" endBefore="end_warehouse_instance" />
+<CodeExample
+  path="airlift-federation-tutorial/snippets/observe.py"
+  startAfter="start_warehouse_instance"
+  endBefore="end_warehouse_instance"
+/>
 
 Now you can use the `load_airflow_dag_asset_specs` function to create asset representations (<PyObject section="assets" module="dagster" object="AssetSpec" pluralize />) of the DAGs in the `warehouse` Airflow instance:
 
-<CodeExample path="airlift-federation-tutorial/snippets/observe.py" startAfter="start_load_all" endBefore="end_load_all" />
+<CodeExample
+  path="airlift-federation-tutorial/snippets/observe.py"
+  startAfter="start_load_all"
+  endBefore="end_load_all"
+/>
 
 Add these assets to a <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
@@ -53,7 +61,11 @@ There are a lot of DAGs in this instance, but we only want to focus on the `load
 
 Add this asset to the <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-<CodeExample path="airlift-federation-tutorial/snippets/observe.py" startAfter="start_customers_defs" endBefore="end_customers_defs" />
+<CodeExample
+  path="airlift-federation-tutorial/snippets/observe.py"
+  startAfter="start_customers_defs"
+  endBefore="end_customers_defs"
+/>
 
 Now, your Dagster environment only includes the `load_customers` DAG from the `warehouse` Airflow instance:
 
@@ -65,7 +77,11 @@ Finally, create a [sensor](/guides/automate/sensors/) to poll the `warehouse` Ai
 
 Next, add this sensor to our <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-<CodeExample path="airlift-federation-tutorial/snippets/observe.py" startAfter="start_sensor_defs" endBefore="end_sensor_defs" />
+<CodeExample
+  path="airlift-federation-tutorial/snippets/observe.py"
+  startAfter="start_sensor_defs"
+  endBefore="end_sensor_defs"
+/>
 
 You can test this by navigating to the Airflow UI at localhost:8081, and triggering a run of the `load_customers` DAG. When the run completes, you should see a materialization in the Dagster UI:
 
@@ -77,7 +93,7 @@ You can repeat the same process for the `customer_metrics` DAG in the `metrics` 
 
 :::note Complete code
 
-To see what the code should look like after you have completed all the steps above, check out the [example in GitHub](https://github.com/dagster-io/dagster/blob/master/examples/airlift-federation-tutorial/airlift_federation_tutorial/dagster_defs/stages/observe_complete.py). 
+To see what the code should look like after you have completed all the steps above, check out the [example in GitHub](https://github.com/dagster-io/dagster/blob/master/examples/airlift-federation-tutorial/airlift_federation_tutorial/dagster_defs/stages/observe_complete.py).
 
 :::
 
@@ -85,7 +101,11 @@ To see what the code should look like after you have completed all the steps abo
 
 Now that you have both DAGs loaded into Dagster, you can observe the cross-DAG lineage between them. To do this, use the `replace_attributes` function to add a dependency from the `load_customers` asset to the `customer_metrics` asset:
 
-<CodeExample path="airlift-federation-tutorial/snippets/observe.py" startAfter="start_lineage" endBefore="end_lineage" />
+<CodeExample
+  path="airlift-federation-tutorial/snippets/observe.py"
+  startAfter="start_lineage"
+  endBefore="end_lineage"
+/>
 
 Now, after adding the updated `customer_metrics_dag_asset` to our <PyObject section="definitions" module="dagster" object="Definitions" /> object, you should see the lineage between the two DAGs in the Dagster UI:
 
@@ -93,4 +113,4 @@ Now, after adding the updated `customer_metrics_dag_asset` to our <PyObject sect
 
 ## Next steps
 
-In the next step, "[Federate execution across Airflow instances](federate-execution)", we'll federate the execution of our DAGs across both Airflow instances.
+In the next step, "[Federate execution across Airflow instances](/guides/migrate/airflow-to-dagster/federation/federate-execution)", we'll federate the execution of our DAGs across both Airflow instances.

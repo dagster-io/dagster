@@ -2,7 +2,7 @@ import React, {Suspense} from 'react';
 import CodeBlock from '@theme/CodeBlock';
 
 import {CODE_EXAMPLE_PATH_MAPPINGS} from '../code-examples-content';
-import {trimMainBlock, filterComments} from '../utils/codeExampleUtils';
+import {dedentLines, trimMainBlock, filterComments} from '../utils/codeExampleUtils';
 
 interface CodeExampleProps {
   path: string;
@@ -12,6 +12,7 @@ interface CodeExampleProps {
   lineEnd?: number;
   startAfter?: string; // marker that indicates beginning of code snippet
   endBefore?: string; // marker that indicates ending of code snippet
+  dedent?: number;
 }
 
 const contentCache: Record<string, {content?: string; error?: string | null}> = {};
@@ -23,6 +24,7 @@ function processModule({
   lineEnd,
   startAfter,
   endBefore,
+  dedent,
 }: {
   cacheKey: string;
   module: any;
@@ -30,6 +32,7 @@ function processModule({
   lineEnd?: number;
   startAfter?: string;
   endBefore?: string;
+  dedent?: number;
 }) {
   var lines = module.default.split('\n');
 
@@ -38,13 +41,9 @@ function processModule({
   const lineEndIndex = lineEnd && lineEnd <= lines.length ? lineEnd : lines.length;
 
   // limit to range of `startAfter` and `endBefore`
-  let startAfterIndex = startAfter
-    ? lines.findIndex((line: string) => line.includes(startAfter)) + 1
-    : 0;
+  let startAfterIndex = startAfter ? lines.findIndex((line: string) => line.includes(startAfter)) + 1 : 0;
 
-  const endAfterIndex = endBefore
-    ? lines.findIndex((line: string) => line.includes(endBefore))
-    : lines.length;
+  const endAfterIndex = endBefore ? lines.findIndex((line: string) => line.includes(endBefore)) : lines.length;
 
   const ix1 = Math.max(lineStartIndex, startAfterIndex);
   const ix2 = Math.min(lineEndIndex, endAfterIndex);
@@ -52,7 +51,13 @@ function processModule({
   lines = lines.slice(ix1, ix2);
 
   lines = filterComments(lines);
+
   lines = trimMainBlock(lines);
+
+  if (dedent && dedent > 0) {
+    lines = dedentLines(lines, dedent);
+  }
+
   contentCache[cacheKey] = {content: lines.join('\n')};
 }
 
@@ -63,6 +68,7 @@ export function useLoadModule(
   lineEnd: number,
   startAfter: string,
   endBefore: string,
+  dedent: number,
 ) {
   //const isServer = typeof window === 'undefined';
   //if (isServer) {
@@ -77,7 +83,15 @@ export function useLoadModule(
      */
     throw CODE_EXAMPLE_PATH_MAPPINGS[path]()
       .then((module) => {
-        processModule({cacheKey, module, lineStart, lineEnd, startAfter, endBefore});
+        processModule({
+          cacheKey,
+          module,
+          lineStart,
+          lineEnd,
+          startAfter,
+          endBefore,
+          dedent,
+        });
       })
       .catch((e) => {
         contentCache[cacheKey] = {error: e.toString()};
@@ -104,11 +118,12 @@ const CodeExampleInner: React.FC<CodeExampleProps> = (props) => {
     startAfter,
     endBefore,
     language = 'python',
+    dedent = 0,
     ...extraProps
   } = props;
 
   const cacheKey = JSON.stringify(props);
-  const {content, error} = useLoadModule(cacheKey, path, lineStart, lineEnd, startAfter, endBefore);
+  const {content, error} = useLoadModule(cacheKey, path, lineStart, lineEnd, startAfter, endBefore, dedent);
 
   if (error) {
     return <div style={{color: 'red', padding: '1rem', border: '1px solid red'}}>{error}</div>;

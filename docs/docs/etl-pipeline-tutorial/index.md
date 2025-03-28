@@ -2,7 +2,7 @@
 title: Build an ETL Pipeline
 description: Learn how to build an ETL pipeline with Dagster
 last_update:
-   author: Alex Noonan
+  author: Alex Noonan
 sidebar_class_name: hidden
 ---
 
@@ -35,8 +35,8 @@ To follow the steps in this guide, you'll need:
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
 - Familiarity with SQL and Python data manipulation libraries, such as Pandas.
 - Understanding of data pipelines and the extract, transform, and load process.
-</details>
 
+</details>
 
 ## Step 1: Set up your Dagster environment
 
@@ -52,18 +52,12 @@ First, set up a new Dagster project.
 2. Create and activate a virtual environment:
 
    <Tabs>
-   <TabItem value="macos" label="MacOS">
-   ```bash
-   python -m venv dagster_tutorial
-   source dagster_tutorial/bin/activate
-   ```
-   </TabItem>
-   <TabItem value="windows" label="Windows">
-   ```bash
-   python -m venv dagster_tutorial
-   dagster_tutorial\Scripts\activate
-   ```
-   </TabItem>
+     <TabItem value="macos" label="MacOS">
+       ```bash python -m venv dagster_tutorial source dagster_tutorial/bin/activate ```
+     </TabItem>
+     <TabItem value="windows" label="Windows">
+       ```bash python -m venv dagster_tutorial dagster_tutorial\Scripts\activate ```
+     </TabItem>
    </Tabs>
 
 3. Install Dagster and the required dependencies:
@@ -76,12 +70,13 @@ First, set up a new Dagster project.
 
 Run the following command to create the project directories and files for this tutorial:
 
-   ```bash 
-      dagster project from-example --example getting_started_etl_tutorial
-   ```
+```bash
+dagster project from-example --example getting_started_etl_tutorial
+```
 
 Your project should have this structure:
 {/* vale off */}
+
 ```
 dagster-etl-tutorial/
 ├── data/
@@ -96,11 +91,12 @@ dagster-etl-tutorial/
 ├── setup.cfg
 ├── setup.py
 ```
+
 {/* vale on */}
 
 :::info
 Dagster has several example projects you can install depending on your use case. To see the full list, run `dagster project list-examples`. For more information on the `dagster project` command, see the [API documentation](https://docs-preview.dagster.io/api/cli#dagster-project).
-::: 
+:::
 
 ### Dagster project structure
 
@@ -128,10 +124,10 @@ The data directory contains the raw data files for the project. We will referenc
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:"
 
-   ```bash
-   dagster dev
-   ```
+```bash
+dagster dev
+```
 
 ## Next steps
 
-- Continue this tutorial by [creating and materializing assets](create-and-materialize-assets)
+- Continue this tutorial by [creating and materializing assets](/etl-pipeline-tutorial/create-and-materialize-assets)

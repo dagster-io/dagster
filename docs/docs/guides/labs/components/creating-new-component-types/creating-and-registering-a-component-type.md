@@ -3,7 +3,7 @@ title: 'Creating and registering a component type'
 sidebar_position: 100
 ---
 
-import Preview from '../../../../partials/\_Preview.md';
+import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
@@ -23,44 +23,36 @@ For this example, we'll write a lightweight component that executes a shell comm
 
 First, we use the `dg` command-line utility to scaffold a new component type:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/1-dg-scaffold-shell-command.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/1-dg-scaffold-shell-command.txt" />
 
 This will add a new file to your project in the `lib` directory:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/2-shell-command-empty.py" language="python" title="my_component_library/lib/shell_command.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/2-shell-command-empty.py"
+  language="python"
+  title="my_component_library/lib/shell_command.py"
+/>
 
-This file contains the basic structure for the new component type. There are two methods that you'll need to implement:
+This file contains the basic structure for the new component type. Our goal is to implement the `build_defs` method to return a `Definitions`. This will require some input input which we will define as what our component class is instantiated with.
 
-- `get_schema`: This method should return a Pydantic-based `ResolvableModel` that defines the schema for the component. This is the schema for the data that goes into `component.yaml`.
-- `build_defs`: This method should return a `Definitions` object for this component.
+## Defining the Python class
 
-## Defining a schema
-
-The first step is to define a schema for the component. This means determining what aspects of the component should be customizable.
+The first step is to define what information this component needs. This means determining what aspects of the component should be customizable.
 
 In this case, we'll want to define a few things:
 
 - The path to the shell script that we'll want to run.
 - The assets that we expect this script to produce.
 
-To simplify common use cases, `dagster-components` provides schemas for common bits of configuration, such as `AssetSpecModel`, which contains attributes that are common to all assets, such as the key, description, tags, and dependencies.
+Our class inherits from `Resolvable` in addition to `Component`. This will handle deriving a yaml schema for our class based on what the class is annotated with. To simplify common use cases, `dagster-components` provides annotations for common bits of configuration, such as `ResolvedAssetSpec`, which will handle exposing a schema for defining `AssetSpec`s from yaml and resolving them before instantiating our component.
 
 We can the schema for our component and add it to our class as follows:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-config-schema.py" language="python" title="my_component_library/lib/shell_command.py"/>
-
-
-## Defining the Python class
-
-Next, we'll want to translate this schema into fully resolved Python objects. For example, our schema defines `asset_specs` as `Sequence[AssetSpecModel]`, but at runtime we'll want to work with `Sequence[AssetSpec]`.
-
-By convention, we'll use the `@dataclass` decorator to simplify our class definition. We can define attributes for our class that line up with the properties in our schema, but this time we'll use the fully resolved types where appropriate.
-
-Our path will still just be a string, but our `asset_specs` will be a list of `AssetSpec` objects. `dagster-components` provides a `ResolvedAssetSpec` type alias (which is shorthand for `Annotated[AssetSpec, ...]`). This type contains the necessary annotations to resolve an `AssetSpecModel` into an `AssetSpec`, so we don't need to do any additional work to resolve this field for our component.
-
-
-
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-class-defined.py" language="python" title="my_component_library/lib/shell_command.py"/>
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py"
+  language="python"
+  title="my_component_library/lib/shell_command.py"
+  />
 
 :::tip
 
@@ -75,13 +67,17 @@ To do so, we'll want to override the `build_defs` method, which is responsible f
 
 Our `build_defs` method will create a single `@asset` that executes the provided shell script. By convention, we'll put the code to actually execute this asset inside of a function called `execute`. This makes it easier for future developers to create subclasses of this component.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-build-defs.py" language="python" title="my_component_library/lib/shell_command.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-build-defs.py"
+  language="python"
+  title="my_component_library/lib/shell_command.py"
+/>
 
 ## Component registration
 
 Following the steps above will automatically register your component type in your environment. You can now run:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/3-dg-list-component-types.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/3-dg-list-component-types.txt" />
 
 and see your new component type in the list of available component types.
 
@@ -95,37 +91,55 @@ Now, you can use this component type to create new component instances.
 
 Once your component type is registered, instances of the component type can be scaffolded using the `dg scaffold component` command:
 
-<CliInvocationExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/4-scaffold-instance-of-component.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/4-scaffold-instance-of-component.txt" />
 
 By default, this will create a new directory alongside an unpopulated `component.yaml` file. However, you can customize this behavior by decorating your component_type with `scaffoldable`.
 
 In this case, we might want to scaffold a template shell script alongside a filled-out `component.yaml` file, which we accomplish with a custom scaffolder:
 
-<CodeExample  path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-scaffolder.py" language="python" title="my_component_library/lib/shell_command.py"/>
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-scaffolder.py"
+  language="python"
+  title="my_component_library/lib/shell_command.py"
+/>
 
 Now, when we run `dg scaffold component`, we'll see that a template shell script is created alongside a filled-out `component.yaml` file:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/5-scaffolded-component.yaml" language="yaml" title="my_component_library/components/my_shell_command/component.yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/5-scaffolded-component.yaml"
+  language="yaml"
+  title="my_component_library/components/my_shell_command/component.yaml"
+/>
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/6-scaffolded-component-script.sh" language="bash" title="my_component_library/components/my_shell_command/script.sh" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/6-scaffolded-component-script.sh"
+  language="bash"
+  title="my_component_library/components/my_shell_command/script.sh"
+/>
 
 ## [Advanced] Providing resolution logic for non-standard types
 
-In most cases, the types you use in your component schema and in the component class will be the same, or will have out-of-the-box resolution logic, as in the case of `AssetSpecModel` and `ResolvedAssetSpec`.
+In most cases, the types you use in your component schema and in the component class will be the same, or will have out-of-the-box resolution logic, as in the case of `ResolvedAssetSpec`.
 
-However, in some cases you may want to use a type that doesn't have an existing schema equivalent.  In this case, you can provide a function that will resolve the value to the desired type by providing an annotation on the field with `Annotated[<type>, Resolver(...)]`.
+However, in some cases you may want to use a type that doesn't have an existing schema equivalent. In this case, you can provide a function that will resolve the value to the desired type by providing an annotation on the field with `Annotated[<type>, Resolver(...)]`.
 
 For example, we might want to provide an API client to our component, which can be configured with an API key in YAML, or a mock client in tests:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/custom-schema-resolution.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/custom-schema-resolution.py"
+  language="python"
+/>
 
 ## [Advanced] Customize rendering of YAML values
 
-The components system supports a rich templating syntax that allows you to load arbitrary Python values based off of your `component.yaml` file. All string values in a `ResolvableModel` can be templated using the Jinja2 templating engine, and may be resolved into arbitrary Python types. This allows you to expose complex object types, such as `PartitionsDefinition` or `AutomationCondition` to users of your component, even if they're working in pure YAML.
+The components system supports a rich templating syntax that allows you to load arbitrary Python values based off of your `component.yaml` file. All string values in a `Resolvable` can be templated using the Jinja2 templating engine, and may be resolved into arbitrary Python types. This allows you to expose complex object types, such as `PartitionsDefinition` or `AutomationCondition` to users of your component, even if they're working in pure YAML.
 
 You can define custom values that will be made available to the templating engine by defining a `get_additional_scope` classmethod on your component. In our case, we can define a `"daily_partitions"` function which returns a `DailyPartitionsDefinition` object with a pre-defined start date:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/components/shell-script-component/with-custom-scope.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-custom-scope.py"
+  language="python"
+/>
 
 When a user instantiates this component, they will be able to use this custom scope in their `component.yaml` file:
 
@@ -136,7 +150,7 @@ attributes:
   script_path: script.sh
   asset_specs:
     - key: a
-      partitions_def: "{{ daily_partitions }}"
+      partitions_def: '{{ daily_partitions }}'
 ```
 
 ## Next steps

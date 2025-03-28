@@ -1,5 +1,5 @@
 ---
-title: "Using environment variables and secrets in Dagster code"
+title: 'Using environment variables and secrets in Dagster code'
 sidebar_position: 400
 ---
 
@@ -29,7 +29,6 @@ DATABASE_PASSWORD=supersecretstagingpassword
 
 If Dagster detects a `.env` file in the same folder where `dagster-webserver` or `dagster-daemon` is launched, it will automatically load the environment variables in the file. This also applies to variables [exported from Dagster+](/dagster-plus/deployment/management/environment-variables/dagster-ui#export)
 
-
 When using a `.env` file, keep the following in mind:
 
 - The `.env` file must be in the same folder where `dagster-webserver` or `dagster-daemon` is launched
@@ -57,10 +56,10 @@ Refer to the [Dagster+ environment variables guide](/dagster-plus/deployment/man
 
 How environment variables are set for Dagster projects deployed on your infrastructure depends on **where** Dagster is deployed. Refer to the deployment guide for your platform for more info:
 
-* [Amazon Web Services EC2 / ECS](/guides/deploy/deployment-options/aws)
-* [GCP](/guides/deploy/deployment-options/gcp)
-* [Docker](/guides/deploy/deployment-options/docker)
-* [Kubernetes](/guides/deploy/deployment-options/kubernetes/deploying-to-kubernetes)
+- [Amazon Web Services EC2 / ECS](/guides/deploy/deployment-options/aws)
+- [GCP](/guides/deploy/deployment-options/gcp)
+- [Docker](/guides/deploy/deployment-options/docker)
+- [Kubernetes](/guides/deploy/deployment-options/kubernetes/deploying-to-kubernetes)
 
 </TabItem>
 </Tabs>
@@ -193,7 +192,11 @@ Let's review what's happening here:
 
 As storing secrets in configuration is bad practice, we'll opt for using an environment variable. In this code, we're configuring the resource supplying it to our assets:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/using_environment_variables_and_secrets/repository.py" startAfter="start" endBefore="end" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/using_environment_variables_and_secrets/repository.py"
+  startAfter="start"
+  endBefore="end"
+/>
 
 Let's review what's happening here:
 
@@ -212,7 +215,11 @@ In this example, we'll demonstrate how to use different I/O manager configuratio
 
 This example is adapted from the [Transitioning data pipelines from development to production guide](/guides/deploy/dev-to-prod):
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/using_environment_variables_and_secrets/repository_v2.py" startAfter="start_new" endBefore="end_new" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/using_environment_variables_and_secrets/repository_v2.py"
+  startAfter="start_new"
+  endBefore="end_new"
+/>
 
 Let's review what's happening here:
 
@@ -247,7 +254,7 @@ Using this info, we can write code that executes differently when in a branch de
 
 ## Troubleshooting
 
-| Error | Description | Solution     |
-|-------|-------------|--------------|
+| Error                                                                                                                                                              | Description                                                                                                                                                                                                               | Solution                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **You have attempted to fetch the environment variable "[variable]" which is not set. In order for this execution to succeed it must be set in this environment.** | Surfacing when a run is launched in the UI, this error means that an environment variable set using <PyObject section="config" module="dagster" object="StringSource" /> could not be found in the executing environment. | Verify that the environment variable is named correctly and accessible in the environment.<ul><li>**If developing locally and using a `.env` file**, try reloading the workspace in the UI. The workspace must be reloaded any time this file is modified for the UI to be aware of the changes.</li><li>**If using Dagster+**:</li><ul><li>Verify that the environment variable is [scoped to the environment and code location](/dagster-plus/deployment/management/environment-variables/dagster-ui#scope) if using the built-in secrets manager</li><li>Verify that the environment variable was correctly configured and added to your [agent's configuration](/dagster-plus/deployment/management/environment-variables/agent-config)</li></ul></ul> |
-| **No environment variables in `.env` file.** | Dagster located and attempted to load a local `.env` file while launching `dagster-webserver`, but couldn't find any environment variables in the file. | If this is unexpected, verify that your `.env` is correctly formatted and located in the same folder where you're running `dagster-webserver`. |
+| **No environment variables in `.env` file.**                                                                                                                       | Dagster located and attempted to load a local `.env` file while launching `dagster-webserver`, but couldn't find any environment variables in the file.                                                                   | If this is unexpected, verify that your `.env` is correctly formatted and located in the same folder where you're running `dagster-webserver`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |

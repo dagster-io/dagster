@@ -1,5 +1,5 @@
 ---
-title: "Describing conditions with labels"
+title: 'Describing conditions with labels'
 sidebar_position: 300
 ---
 

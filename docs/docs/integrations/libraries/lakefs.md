@@ -15,7 +15,7 @@ categories:
 enabledBy:
 enables:
 tags: [community-supported, storage]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/lakefs.svg
   community: true
 ---
@@ -34,7 +34,7 @@ pip install lakefs-client
 
 ### Example
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/lakefs.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/lakefs.py" language="python" />
 
 ### About lakeFS
 

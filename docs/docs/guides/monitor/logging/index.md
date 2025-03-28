@@ -1,5 +1,5 @@
 ---
-title: "Logging"
+title: 'Logging'
 sidebar_position: 10
 ---
 
@@ -65,7 +65,6 @@ Windows / Azure users may need to enable the environment variable `PYTHONLEGACYW
 ## Configuring loggers
 
 Loggers can be configured when you run a job. For example, to filter all messages below `ERROR` out of the colored console logger, add the following lines to your `config.yaml`:
-
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/logging/config.yaml" />
 

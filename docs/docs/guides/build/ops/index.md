@@ -4,7 +4,7 @@ description: Ops are the core unit of computation in Dagster and contain the log
 sidebar_position: 80
 ---
 
-import OpsNote from '../../../partials/\_OpsNote.md';
+import OpsNote from '@site/docs/partials/\_OpsNote.md';
 
 <OpsNote />
 

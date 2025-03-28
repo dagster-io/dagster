@@ -18,7 +18,7 @@ sidebar_custom_props:
   logo: images/integrations/gcp-bigquery.svg
 ---
 
-import Beta from '../../../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
@@ -32,7 +32,7 @@ pip install dagster-gcp
 
 ### Examples
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/gcp-bigquery.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/gcp-bigquery.py" language="python" />
 
 ### About Google Cloud Platform BigQuery
 

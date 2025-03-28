@@ -1,5 +1,5 @@
 ---
-title: "Deploy a Dagster+ agent on an Azure Kubernetes Service cluster"
+title: 'Deploy a Dagster+ agent on an Azure Kubernetes Service cluster'
 sidebar_position: 100
 ---
 
@@ -52,4 +52,4 @@ Next, we'll install the agent helm chart. You should be able to follow the guide
 
 ## Next steps
 
-Now that you have an agent running on your AKS cluster, you can start deploying Dagster code to it. You can follow the guide [here](acr-user-code) to deploy user code to your AKS cluster backed by Azure Container Registry (ACR).
+Now that you have an agent running on your AKS cluster, you can start deploying Dagster code to it. You can follow the guide [here](/dagster-plus/deployment/deployment-types/hybrid/azure/acr-user-code) to deploy user code to your AKS cluster backed by Azure Container Registry (ACR).

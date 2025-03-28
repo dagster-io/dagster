@@ -1,5 +1,5 @@
 ---
-title: "Using dbt with Hybrid deployments in Dagster+"
+title: 'Using dbt with Hybrid deployments in Dagster+'
 description: Deploy your dbt & Dagster project with Hybrid deployments in Dagster+.
 ---
 

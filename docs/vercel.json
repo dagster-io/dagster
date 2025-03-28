@@ -1,46 +1,6 @@
 {
   "redirects": [
     {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "docs-preview.dagster.io"
-        }
-      ],
-      "destination": "https://docs.dagster.io"
-    },
-    {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "new-docs.dagster.io"
-        }
-      ],
-      "destination": "https://docs.dagster.io"
-    },
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "docs-preview.dagster.io"
-        }
-      ],
-      "destination": "https://docs.dagster.io/:path*"
-    },
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "new-docs.dagster.io"
-        }
-      ],
-      "destination": "https://docs.dagster.io/:path*"
-    },
-    {
       "source": "/dagster-cloud/:path*",
       "destination": "/dagster-plus/:path*"
     },
@@ -962,6 +922,11 @@
       "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
     },
     {
+      "source": "/guides/build/external-pipelines/aws-emr-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
+    },
+
+    {
       "source": "/guides/build/external-pipelines/aws-emr-containers-pipeline",
       "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
     },
@@ -980,14 +945,6 @@
     {
       "source": "/guides/build/external-pipelines/aws-glue-pipeline",
       "destination": "/guides/build/external-pipelines/aws/aws-glue-pipeline"
-    },
-    {
-      "source": "/guides/build/external-pipelines/aws-emr-pipeline",
-      "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
-    },
-    {
-      "source": "/guides/build/external-pipelines/aws/aws-emr-containers-pipeline",
-      "destination": "/guides/build/external-pipelines/aws/aws-emr-containers-pipeline"
     },
     {
       "source": "/guides/build/external-pipelines/aws-emr-serverless-pipeline",

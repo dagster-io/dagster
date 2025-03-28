@@ -28,11 +28,11 @@ pip install dagster-sling
 
 ### Example
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/sling.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/sling.py" language="python" />
 
 ### About Sling
 
-Sling provides an easy-to-use YAML configuration layer for loading data from files, replicating data between databases, exporting custom SQL queries to cloud storage, and much more. 
+Sling provides an easy-to-use YAML configuration layer for loading data from files, replicating data between databases, exporting custom SQL queries to cloud storage, and much more.
 
 #### Key Features
 

@@ -1,15 +1,15 @@
 ---
-title: "Running a subset of asset checks"
+title: 'Running a subset of asset checks'
 sidebar_position: 200
 ---
 
-In some cases, you may only want to execute some of the [asset checks](asset-checks) defined in a <PyObject section="assets" module="dagster" object="multi_asset" decorator /> or <PyObject section="asset-checks" module="dagster" object="multi_asset_check" decorator />. For example, you may want to materialize a <PyObject section="assets" module="dagster" object="multi_asset" decorator /> without executing the checks or only execute a certain set of checks.
+In some cases, you may only want to execute some of the [asset checks](/guides/test/asset-checks) defined in a <PyObject section="assets" module="dagster" object="multi_asset" decorator /> or <PyObject section="asset-checks" module="dagster" object="multi_asset_check" decorator />. For example, you may want to materialize a <PyObject section="assets" module="dagster" object="multi_asset" decorator /> without executing the checks or only execute a certain set of checks.
 
 In this guide, we'll show you a few approaches to subsetting asset checks in <PyObject section="asset-checks" module="dagster" object="multi_asset_check" decorator pluralize /> and <PyObject section="assets" module="dagster" object="multi_asset" decorator pluralize />.
 
 :::note
 
-This article assumes familiarity with [asset checks](asset-checks) and [multi-assets](/guides/build/assets/defining-assets#multi-asset).
+This article assumes familiarity with [asset checks](/guides/test/asset-checks) and [multi-assets](/guides/build/assets/defining-assets#multi-asset).
 
 :::
 
@@ -43,11 +43,10 @@ Let's review what we did to accomplish this:
 
 ## APIs in this guide
 
-| Name                                              | Description                                                                                                                           |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Name                                                                                      | Description                                                                                          |
+| ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | <PyObject section="asset-checks" module="dagster" object="multi_asset_check" decorator /> | A decorator used to define a set of asset checks that execute together in the same op.               |
-| <PyObject section="asset-checks" module="dagster" object="AssetCheckResult" />            | The class returned by asset checks.                                                                                                   |
-| <PyObject section="asset-checks" module="dagster" object="AssetCheckSeverity" />          | Defines the severity of a given asset check result.                                                                                   |
+| <PyObject section="asset-checks" module="dagster" object="AssetCheckResult" />            | The class returned by asset checks.                                                                  |
+| <PyObject section="asset-checks" module="dagster" object="AssetCheckSeverity" />          | Defines the severity of a given asset check result.                                                  |
 | <PyObject section="asset-checks" module="dagster" object="AssetCheckSpec" />              | A class that's passed to asset decorators to define checks that execute in the same op as the asset. |
-| <PyObject section="assets" module="dagster" object="multi_asset" decorator />       | A decorator used to define [multi-assets](/guides/build/assets/defining-assets#multi-asset).                                                             |
-
+| <PyObject section="assets" module="dagster" object="multi_asset" decorator />             | A decorator used to define [multi-assets](/guides/build/assets/defining-assets#multi-asset).         |

@@ -1,5 +1,5 @@
 ---
-title: "CI/CD (branch deployments)"
+title: 'CI/CD (branch deployments)'
 sidebar_position: 50
 ---
 

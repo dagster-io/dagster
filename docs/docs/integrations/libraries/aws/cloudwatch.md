@@ -14,11 +14,11 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, monitoring]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/aws-cloudwatch.svg
 ---
 
-import Deprecated from '../../../partials/\_Deprecated.md';
+import Deprecated from '@site/docs/partials/\_Deprecated.md';
 
 <Deprecated />
 
@@ -34,7 +34,7 @@ pip install dagster-aws
 
 ### Examples
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/aws-cloudwatch.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/aws-cloudwatch.py" language="python" />
 
 ### About AWS CloudWatch
 

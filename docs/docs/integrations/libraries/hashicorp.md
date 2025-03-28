@@ -16,7 +16,7 @@ categories:
 enabledBy:
 enables:
 tags: [community-supported]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/hashicorp.svg
   community: true
 ---
@@ -31,7 +31,7 @@ pip install dagster-hashicorp
 
 ### Example
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/hashicorp.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/hashicorp.py" language="python" />
 
 ### About HashiCorp Vault
 

@@ -29,15 +29,21 @@ This step shows how to add an existing custom logger, the <PyObject section="log
 
 The following example shows how to add the custom logger to your code location definitions and configure an asset job to use it.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/monitor-alert/custom-logging/asset-job-example.py" language="python" title="Add custom logger to asset job" />
-
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/monitor-alert/custom-logging/asset-job-example.py"
+  language="python"
+  title="Add custom logger to asset job"
+/>
 
 ### Add the custom logger to your ops-based jobs
 
 Configuring a ops job to use the custom logger slightly differs from the asset job example. The following example shows how:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/monitor-alert/custom-logging/ops-job-example.py" language="python" title="Add custom logger to ops job" />
-
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/monitor-alert/custom-logging/ops-job-example.py"
+  language="python"
+  title="Add custom logger to ops job"
+/>
 
 ### Expected `json_console_logger` output
 
@@ -104,7 +110,11 @@ loggers:
 In this example, we'll create a logger implementation that produces comma separated values from selected fields in the
 log record. Other examples can be found in the codebase, in the built-in loggers such as `json_console_logger`.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/monitor-alert/custom-logging/customlogger.py" language="python" title="Example custom logger" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/monitor-alert/custom-logging/customlogger.py"
+  language="python"
+  title="Example custom logger"
+/>
 
 Sample output:
 

@@ -1,9 +1,9 @@
 ---
-title: "Decommission the Airflow DAG"
+title: 'Decommission the Airflow DAG'
 sidebar_position: 500
 ---
 
-Previously, we completed [migration](migrate) of our example Airflow DAG to Dagster assets. Once we are confident in our migrated versions of the tasks, we can decommission the Airflow DAG.
+Previously, we completed [migration](/guides/migrate/airflow-to-dagster/task-level-migration/migrate) of our example Airflow DAG to Dagster assets. Once we are confident in our migrated versions of the tasks, we can decommission the Airflow DAG.
 
 First, we can remove the DAG from our Airflow DAG directory.
 
@@ -13,4 +13,4 @@ Finally, we can attach our example assets to a <PyObject section="schedules-sens
 
 When you have finished the above steps, your code should look like the following:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/standalone.py" language="python"/>
+<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/standalone.py" language="python" />

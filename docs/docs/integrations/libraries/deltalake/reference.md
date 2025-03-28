@@ -1,10 +1,10 @@
 ---
-title: "dagster-deltalake integration reference"
+title: 'dagster-deltalake integration reference'
 description: Store your Dagster assets in Delta Lake
 sidebar_position: 200
 ---
 
-This reference page provides information for working with [`dagster-deltalake`](/api/python-api/libraries/dagster-deltalake) features that are not covered as part of the [Using Delta Lake with Dagster tutorial](using-deltalake-with-dagster).
+This reference page provides information for working with [`dagster-deltalake`](/api/python-api/libraries/dagster-deltalake) features that are not covered as part of the [Using Delta Lake with Dagster tutorial](/integrations/libraries/deltalake/using-deltalake-with-dagster).
 
 - [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
 - [Storing partitioned assets](#storing-partitioned-assets)
@@ -19,7 +19,7 @@ Sometimes you may not want to fetch an entire table as the input to a downstream
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/deltalake/downstream_columns.py" />
 
-In this example, we only use the columns containing sepal data from the `iris_dataset` table created in [Step 2](using-deltalake-with-dagster#step-2-create-delta-lake-tables) of the [Using Dagster with Delta Lake tutorial](using-deltalake-with-dagster). To select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
+In this example, we only use the columns containing sepal data from the `iris_dataset` table created in [Step 2](/integrations/libraries/deltalake/using-deltalake-with-dagster#step-2-create-delta-lake-tables) of the [Using Dagster with Delta Lake tutorial](/integrations/libraries/deltalake/using-deltalake-with-dagster). To select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_dataset` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
 
 When Dagster materializes `sepal_data` and loads the `iris_dataset` asset using the Delta Lake I/O manager, it will only fetch the `sepal_length_cm` and `sepal_width_cm` columns of the `iris/iris_dataset` table and pass them to `sepal_data` as a Pandas DataFrame.
 
@@ -42,7 +42,11 @@ For partitioning to work, the partition dimension needs to be one of the partiti
 
 To store static partitioned assets in your Delta Lake, specify `partition_expr` metadata on the asset to tell the Delta Lake I/O manager which column contains the partition data:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/deltalake/static_partition.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/deltalake/static_partition.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 Dagster uses the `partition_expr` metadata to generate appropriate function parameters when loading the partition in the downstream asset. When loading a static partition this roughly corresponds to the following SQL statement:
 
@@ -65,7 +69,11 @@ SELECT *
 
 Like static partitioned assets, you can specify `partition_expr` metadata on the asset to tell the Delta Lake I/O manager which column contains the partition data:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/deltalake/time_partition.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/deltalake/time_partition.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in the downstream asset. When loading a dynamic partition, the following statement is used:
 
@@ -88,7 +96,11 @@ SELECT *
 
 The Delta Lake I/O manager can also store data partitioned on multiple dimensions. To do this, specify the column for each partition as a dictionary of `partition_expr` metadata:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/deltalake/multi_partition.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/deltalake/multi_partition.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi-partitions, Dagster concatenates the `WHERE` statements described in the above sections to craft the correct `SELECT` statement.
 
@@ -109,11 +121,15 @@ SELECT *
 
 You may want to have different assets stored in different Delta Lake schemas. The Delta Lake I/O manager allows you to specify the schema in several ways.
 
-If you want all of your assets to be stored in the same schema, you can specify the schema as configuration to the I/O manager, as we did in [Step 1](using-deltalake-with-dagster#step-1-configure-the-delta-lake-io-manager) of the [Using Dagster with Delta Lake tutorial](using-deltalake-with-dagster).
+If you want all of your assets to be stored in the same schema, you can specify the schema as configuration to the I/O manager, as we did in [Step 1](/integrations/libraries/deltalake/using-deltalake-with-dagster#step-1-configure-the-delta-lake-io-manager) of the [Using Dagster with Delta Lake tutorial](/integrations/libraries/deltalake/using-deltalake-with-dagster).
 
 If you want to store assets in different schemas, you can specify the schema as part of the asset's key:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/deltalake/schema.py" startAfter="start_asset_key" endBefore="end_asset_key" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/deltalake/schema.py"
+  startAfter="start_asset_key"
+  endBefore="end_asset_key"
+/>
 
 In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, and the `daffodil_dataset` asset will be found in the `DAFFODIL` schema.
 
@@ -127,7 +143,11 @@ The two options for specifying schema are mutually exclusive. If you provide `sc
 
 You may have assets that you don't want to store in Delta Lake. You can provide an I/O manager to each asset using the `io_manager_key` parameter in the <PyObject section="assets" module="dagster" object="asset" decorator /> decorator:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/deltalake/multiple_io_managers.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/deltalake/multiple_io_managers.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 In this example:
 
@@ -146,9 +166,13 @@ The Delta Lake I/O manager also supports storing and loading PyArrow and Polars 
 
 The `deltalake` package relies heavily on Apache Arrow for efficient data transfer, so PyArrow is natively supported.
 
-You can use the `DeltaLakePyArrowIOManager` in a <PyObject section="definitions" module="dagster" object="Definitions" /> object as in [Step 1](using-deltalake-with-dagster#step-1-configure-the-delta-lake-io-manager) of the [Using Dagster with Delta Lake tutorial](using-deltalake-with-dagster).
+You can use the `DeltaLakePyArrowIOManager` in a <PyObject section="definitions" module="dagster" object="Definitions" /> object as in [Step 1](/integrations/libraries/deltalake/using-deltalake-with-dagster#step-1-configure-the-delta-lake-io-manager) of the [Using Dagster with Delta Lake tutorial](/integrations/libraries/deltalake/using-deltalake-with-dagster).
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/deltalake/pyarrow_configuration.py" startAfter="start_configuration" endBefore="end_configuration" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/deltalake/pyarrow_configuration.py"
+  startAfter="start_configuration"
+  endBefore="end_configuration"
+/>
 
 </TabItem>
 </Tabs>

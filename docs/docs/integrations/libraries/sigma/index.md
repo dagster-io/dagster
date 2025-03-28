@@ -5,7 +5,7 @@ name: Sigma
 title: Dagster & Sigma
 sidebar_label: Sigma
 excerpt: Represent your Sigma assets in Dagster.
-date: 
+date:
 apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-sigma
 docslink: https://docs.dagster.io/integrations/libraries/sigma/
 partnerlink: https://help.sigmacomputing.com/
@@ -17,7 +17,7 @@ sidebar_custom_props:
   logo: images/integrations/sigma.svg
 ---
 
-import Beta from '../../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 

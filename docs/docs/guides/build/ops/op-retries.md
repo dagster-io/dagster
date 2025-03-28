@@ -4,7 +4,7 @@ description: Retry ops on exception using RetryPolicy and RetryRequested
 sidebar_position: 300
 ---
 
-import OpsNote from '../../../partials/\_OpsNote.md';
+import OpsNote from '@site/docs/partials/\_OpsNote.md';
 
 <OpsNote />
 

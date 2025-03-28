@@ -1,5 +1,5 @@
 ---
-title: "Customizing your Kubernetes deployment"
+title: 'Customizing your Kubernetes deployment'
 description: This section covers common ways to customize your Dagster Kubernetes deployment.
 sidebar_position: 200
 ---
@@ -46,7 +46,11 @@ Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for mo
 
 The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_job.py" startAfter="start_k8s_config" endBefore="end_k8s_config" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_job.py"
+  startAfter="start_k8s_config"
+  endBefore="end_k8s_config"
+/>
 
 Other run launchers will ignore the `dagster-k8s/config` tag.
 
@@ -70,7 +74,11 @@ Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for mo
 
 The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/step_k8s_config.py" startAfter="start_step_k8s_config" endBefore="end_step_k8s_config" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/kubernetes/step_k8s_config.py"
+  startAfter="start_step_k8s_config"
+  endBefore="end_step_k8s_config"
+/>
 
 ### Kubernetes configuration on individual steps in a run
 
@@ -90,11 +98,19 @@ The value for each of these keys is a dictionary with the YAML configuration for
 
 For example, for an asset:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_asset.py" startAfter="start_k8s_config" endBefore="end_k8s_config" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_asset.py"
+  startAfter="start_k8s_config"
+  endBefore="end_k8s_config"
+/>
 
 or an op:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_op.py" startAfter="start_k8s_config" endBefore="end_k8s_config" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_op.py"
+  startAfter="start_k8s_config"
+  endBefore="end_k8s_config"
+/>
 
 Other executors will ignore the `dagster-k8s/config` tag when it is set on an op or asset.
 
@@ -115,9 +131,9 @@ Consider the following example:
 
   ```json
   {
-    "node_selector": { "disktype": "ssd" },
+    "node_selector": {"disktype": "ssd"},
     "dns_policy": "ClusterFirst",
-    "image_pull_secrets": [{ "name": "my-secret" }]
+    "image_pull_secrets": [{"name": "my-secret"}]
   }
   ```
 
@@ -126,9 +142,9 @@ Consider the following example:
   ```json
   {
     "pod_spec_config": {
-      "node_selector": { "region": "east" },
+      "node_selector": {"region": "east"},
       "dns_policy": "Default",
-      "image_pull_secrets": [{ "name": "another-secret" }]
+      "image_pull_secrets": [{"name": "another-secret"}]
     }
   }
   ```
@@ -137,9 +153,9 @@ The job will merge the two `node_selector` dictionaries, append the two `image_p
 
 ```json
 {
-  "node_selector": { "disktype": "ssd", "region": "east" },
+  "node_selector": {"disktype": "ssd", "region": "east"},
   "dns_policy": "Default",
-  "image_pull_secrets": [{ "name": "my-secret" }, { "name": "another-secret" }]
+  "image_pull_secrets": [{"name": "my-secret"}, {"name": "another-secret"}]
 }
 ```
 
@@ -151,9 +167,9 @@ To modify the previous example:
 
   ```json
   {
-    "node_selector": { "disktype": "ssd" },
+    "node_selector": {"disktype": "ssd"},
     "dns_policy": "ClusterFirst",
-    "image_pull_secrets": [{ "name": "my-secret" }]
+    "image_pull_secrets": [{"name": "my-secret"}]
   }
   ```
 
@@ -162,8 +178,8 @@ To modify the previous example:
   ```json
   {
     "pod_spec_config": {
-      "node_selector": { "region": "east" },
-      "image_pull_secrets": [{ "name": "another-secret" }]
+      "node_selector": {"region": "east"},
+      "image_pull_secrets": [{"name": "another-secret"}]
     },
     "merge_behavior": "SHALLOW"
   }
@@ -175,9 +191,9 @@ The resulting `pod_spec_config` will be:
 
 ```json
 {
-  "node_selector": { "region": "east" },
+  "node_selector": {"region": "east"},
   "dns_policy": "ClusterFirst",
-  "image_pull_secrets": [{ "name": "another-secret" }]
+  "image_pull_secrets": [{"name": "another-secret"}]
 }
 ```
 
@@ -194,10 +210,10 @@ In a real deployment, users will likely want to set up an external PostgreSQL da
 ```yaml
 postgresql:
   enabled: false
-  postgresqlHost: "postgresqlHost"
-  postgresqlUsername: "postgresqlUsername"
-  postgresqlPassword: "postgresqlPassword"
-  postgresqlDatabase: "postgresqlDatabase"
+  postgresqlHost: 'postgresqlHost'
+  postgresqlUsername: 'postgresqlUsername'
+  postgresqlPassword: 'postgresqlPassword'
+  postgresqlDatabase: 'postgresqlDatabase'
   service:
     port: 5432
 ```
@@ -208,7 +224,7 @@ If you use a secrets manager like [Vault](https://www.hashicorp.com/products/vau
 
 ```yaml
 global:
-  postgresqlSecretName: "dagster-postgresql-secret"
+  postgresqlSecretName: 'dagster-postgresql-secret'
 
 generatePostgresqlPasswordSecret: false
 ```
@@ -246,7 +262,7 @@ dagsterWebserver:
   workspace:
     enabled: true
     servers:
-      - host: "k8s-example-user-code-1"
+      - host: 'k8s-example-user-code-1'
         port: 3030
       - ...
 ```
@@ -261,7 +277,11 @@ helm upgrade --install user-code dagster/dagster-user-deployments -f /path/to/va
 
 If you use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then `Completed` and `Failed` [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) (and their associated [Pods](https://kubernetes.io/docs/concepts/workloads/pods/)) will be deleted after 1 day. The TTL value can be modified in your job tags:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/ttl_config_job.py" startAfter="start_ttl" endBefore="end_ttl" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/kubernetes/ttl_config_job.py"
+  startAfter="start_ttl"
+  endBefore="end_ttl"
+/>
 
 If you do not use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then you can run the following commands:
 
