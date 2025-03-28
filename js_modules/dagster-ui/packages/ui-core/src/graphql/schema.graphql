@@ -671,7 +671,7 @@ enum MaterializationHistoryEventTypeSelector {
 }
 
 type AssetNode {
-  assetHealth: AssetHealth!
+  assetHealth: AssetHealth
   assetKey: AssetKey!
   assetMaterializations(
     partitions: [String!]
@@ -741,9 +741,9 @@ type AssetNode {
 
 type AssetHealth {
   assetHealth: AssetHealthStatus!
-  materializationStatus: AssetHealthStatus
-  assetChecksStatus: AssetHealthStatus
-  freshnessStatus: AssetHealthStatus
+  materializationStatus: AssetHealthStatus!
+  assetChecksStatus: AssetHealthStatus!
+  freshnessStatus: AssetHealthStatus!
 }
 
 enum AssetHealthStatus {
