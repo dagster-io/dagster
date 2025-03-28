@@ -37,6 +37,7 @@ from dagster._core.definitions.events import (
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import GraphIn
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
+from dagster._core.definitions.new_freshness_thing import NewFreshnessThing
 from dagster._core.definitions.output import GraphOut
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.policy import RetryPolicy
@@ -90,6 +91,7 @@ def asset(
     owners: Optional[Sequence[str]] = ...,
     kinds: Optional[AbstractSet[str]] = ...,
     pool: Optional[str] = ...,
+    new_freshness_thing: Optional[NewFreshnessThing] = ...,
     **kwargs,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
@@ -167,6 +169,7 @@ def asset(
     owners: Optional[Sequence[str]] = None,
     kinds: Optional[AbstractSet[str]] = None,
     pool: Optional[str] = None,
+    new_freshness_thing: Optional[NewFreshnessThing] = None,
     **kwargs,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
@@ -250,6 +253,7 @@ def asset(
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
             Hidden parameter not exposed in the decorator signature, but passed in kwargs.
+        new_freshness_thing (Optional[NewFreshnessThing]): A condition that must be met for an asset to be considered fresh.
 
     Examples:
         .. code-block:: python
@@ -325,6 +329,7 @@ def asset(
         key=key,
         owners=owners,
         pool=pool,
+        new_freshness_thing=new_freshness_thing,
     )
 
     if compute_fn is not None:
@@ -398,6 +403,7 @@ class AssetDecoratorArgs(NamedTuple):
     check_specs: Optional[Sequence[AssetCheckSpec]]
     owners: Optional[Sequence[str]]
     pool: Optional[str]
+    new_freshness_thing: Optional[NewFreshnessThing]
 
 
 class ResourceRelatedState(NamedTuple):
@@ -523,6 +529,7 @@ def create_assets_def_from_fn_and_decorator_args(
             decorator_name="@asset",
             execution_type=AssetExecutionType.MATERIALIZATION,
             pool=args.pool,
+            new_freshness_thing=args.new_freshness_thing,
         )
 
         builder = DecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(
@@ -702,6 +709,7 @@ def multi_asset(
         decorator_name="@multi_asset",
         execution_type=AssetExecutionType.MATERIALIZATION,
         pool=pool,
+        new_freshness_thing=None,  # TODO enable new_freshness_thing for @multi_asset
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:

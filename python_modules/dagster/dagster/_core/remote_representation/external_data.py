@@ -70,6 +70,7 @@ from dagster._core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.new_freshness_thing import NewFreshnessThing
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import DynamicPartitionsDefinition, ScheduleType
 from dagster._core.definitions.partition_mapping import (
@@ -1423,6 +1424,7 @@ class AssetNodeSnap(IHaveNew):
     backfill_policy: Optional[BackfillPolicy]
     auto_observe_interval_minutes: Optional[Union[float, int]]
     owners: Optional[Sequence[str]]
+    new_freshness_thing: Optional[NewFreshnessThing]
 
     def __new__(
         cls,
@@ -1454,6 +1456,7 @@ class AssetNodeSnap(IHaveNew):
         backfill_policy: Optional[BackfillPolicy] = None,
         auto_observe_interval_minutes: Optional[Union[float, int]] = None,
         owners: Optional[Sequence[str]] = None,
+        new_freshness_thing: Optional[NewFreshnessThing] = None,
     ):
         metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str), allow_invalid=True
@@ -1532,6 +1535,7 @@ class AssetNodeSnap(IHaveNew):
             auto_observe_interval_minutes=auto_observe_interval_minutes,
             owners=owners or [],
             execution_type=execution_type,
+            new_freshness_thing=new_freshness_thing,
         )
 
     @property
@@ -1758,6 +1762,7 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                 backfill_policy=asset_node.backfill_policy,
                 auto_observe_interval_minutes=asset_node.auto_observe_interval_minutes,
                 owners=asset_node.owners,
+                new_freshness_thing=asset_node.new_freshness_thing,
             )
         )
 
