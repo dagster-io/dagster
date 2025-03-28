@@ -101,6 +101,10 @@ class AssetDep(
         # if arg is AssetDep, return the original object to retain partition_mapping
         return arg if isinstance(arg, AssetDep) else AssetDep(asset=arg)
 
+    @staticmethod
+    def from_coercibles(args: Iterable["CoercibleToAssetDep"]) -> Iterable["AssetDep"]:
+        return (AssetDep.from_coercible(arg) for arg in args)
+
 
 def _get_asset_key(arg: "CoercibleToAssetDep") -> AssetKey:
     from dagster._core.definitions.asset_spec import AssetSpec

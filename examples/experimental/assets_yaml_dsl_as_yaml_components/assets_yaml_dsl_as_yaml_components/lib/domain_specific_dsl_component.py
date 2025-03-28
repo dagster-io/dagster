@@ -1,12 +1,16 @@
 import shutil
+from collections.abc import Iterable
+from dataclasses import dataclass, field
+from typing import Any
 
-from dagster import Definitions
+from dagster import AssetKey, file_relative_path
+from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster_components import Component, ComponentLoadContext, ResolvableModel
 
-from dagster import AssetKey, AssetsDefinition, asset, file_relative_path, multi_asset
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.pipes.subprocess import PipesSubprocessClient
+from .utils import AssetsDefinitionComponent, CoercibleToAssetDep, CompositeComponent, OpSpec
 
 
 class StockInfo(ResolvableModel):
@@ -36,56 +40,79 @@ def fetch_data_for_ticker(ticker: str) -> str:
     return f"{ticker}-data-enriched"
 
 
-class DomainSpecificDslComponent(Component, ResolvableModel):
+class DomainSpecificDslComponent(CompositeComponent, ResolvableModel):
     stock_infos: list[StockInfo]
     index_strategy: IndexStrategy
     forecast: Forecast
 
-    def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
-        # Add definition construction logic here.
-        return Definitions(
-            assets=self.build_assets_defs(),
-            resources=dict(pipes_subprocess_client=PipesSubprocessClient()),
-        )
-
-    def build_assets_defs(self) -> list[AssetsDefinition]:
-        group_name = "stocks"
-
+    def build_components(self, load_context: ComponentLoadContext) -> Iterable[Component]:
         def spec_for_stock_info(stock_info: StockInfo) -> AssetSpec:
             ticker = stock_info.ticker
             return AssetSpec(
                 key=AssetKey(ticker),
-                group_name=group_name,
+                group_name="stocks",
                 description=f"Fetch {ticker} from internal service",
             )
 
         tickers = [stock_info.ticker for stock_info in self.stock_infos]
         ticker_specs = [spec_for_stock_info(stock_info) for stock_info in self.stock_infos]
 
-        @multi_asset(specs=ticker_specs)
-        def fetch_the_tickers(
-            context: AssetExecutionContext, pipes_subprocess_client: PipesSubprocessClient
-        ):
-            python_executable = shutil.which("python")
-            assert python_executable is not None
-            script_path = file_relative_path(__file__, "user_scripts/fetch_the_tickers.py")
-            return pipes_subprocess_client.run(
+        return [
+            FetchTheTickers(
+                op_spec=OpSpec(name="fetch_the_tickers"),
+                specs=ticker_specs,
+                tickers=tickers,
+            ),
+            IndexStrategyAsset.build(tickers),
+            ForecastAsset.build(AssetDep.from_coercibles(ticker_specs)),
+        ]
+
+
+@dataclass
+class FetchTheTickers(AssetsDefinitionComponent):
+    tickers: list[str] = field(default_factory=list)
+
+    def execute(self, context: AssetExecutionContext) -> Any:
+        python_executable = shutil.which("python")
+        assert python_executable is not None
+        script_path = file_relative_path(__file__, "user_scripts/fetch_the_tickers.py")
+        return (
+            PipesSubprocessClient()
+            .run(
                 command=[python_executable, script_path],
                 context=context,
-                extras={"tickers": tickers},
-            ).get_results()
+                extras={"tickers": self.tickers},
+            )
+            .get_results()
+        )
 
-        @asset(deps=fetch_the_tickers.keys, group_name=group_name)
-        def index_strategy() -> None:
-            stored_ticker_data = {}
-            for ticker in tickers:
-                stored_ticker_data[ticker] = fetch_data_for_ticker(ticker)
 
-            # do someting with stored_ticker_data
+@dataclass
+class IndexStrategyAsset(AssetsDefinitionComponent):
+    tickers: list[str] = field(default_factory=list)
 
-        @asset(deps=fetch_the_tickers.keys, group_name=group_name)
-        def forecast() -> None:
-            # do some forecast thing
-            pass
+    @classmethod
+    def build(cls, tickers: list[str]) -> "IndexStrategyAsset":
+        return IndexStrategyAsset(
+            op_spec=OpSpec(name="index_strategy"),
+            specs=[AssetSpec(key="index_strategy", group_name="stocks")],
+            tickers=tickers,
+        )
 
-        return [fetch_the_tickers, index_strategy, forecast]
+    def execute(self, context: AssetExecutionContext):
+        stored_ticker_data = {}
+        for ticker in self.tickers:
+            stored_ticker_data[ticker] = fetch_data_for_ticker(ticker)
+
+
+class ForecastAsset(AssetsDefinitionComponent):
+    @classmethod
+    def build(cls, deps: Iterable[CoercibleToAssetDep]) -> "ForecastAsset":
+        return ForecastAsset(
+            op_spec=OpSpec(name="forecast"),
+            specs=[AssetSpec(key="forecast", group_name="stocks", deps=deps)],
+        )
+
+    def execute(self, context: AssetExecutionContext):
+        # do some forecast thing
+        pass

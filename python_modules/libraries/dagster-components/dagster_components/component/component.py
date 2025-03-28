@@ -40,7 +40,7 @@ class Component(ABC):
         return {}
 
     @abstractmethod
-    def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
+    def build_defs(self, load_context: "ComponentLoadContext") -> Definitions: ...
 
     @classmethod
     def load(cls, attributes: Optional["ResolvableModel"], context: "ComponentLoadContext") -> Self:
