@@ -37,19 +37,21 @@ def scaffold_component(
     elif request.scaffold_format == "python":
         with open(request.target_path / "component.py", "w") as f:
             fqtn = request.type_name
+            check.invariant("." in fqtn, "Component must be a fully qualified type name")
             module_path, class_name = (
                 ".".join(fqtn.split(".")[:-1]),
-                fqtn.split(".")[-1] if "." in fqtn else ("", fqtn),
+                fqtn.split(".")[-1],
             )
             f.write(
                 textwrap.dedent(
-                    f"""from dagster_components import component, ComponentLoadContext
-from {module_path} import {class_name}
+                    f"""
+                        from dagster_components import component, ComponentLoadContext
+                        from {module_path} import {class_name}
 
-@component
-def load(context: ComponentLoadContext) -> {class_name}: ...
-            """
-                )
+                        @component
+                        def load(context: ComponentLoadContext) -> {class_name}: ...
+                """
+                ).lstrip()
             )
     else:
         check.assert_never(request.scaffold_format)
