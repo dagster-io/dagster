@@ -1,0 +1,23 @@
+.hljs-attr {
+  color: var(--color-text-blue);
+}
+
+.hljs-string {
+  color: var(--color-text-green);
+}
+
+.hljs-number {
+  color: var(--color-text-red);
+}
+
+.hljs-literal {
+  color: var(--color-text-yellow);
+}
+
+.hljs-boolean {
+  color: var(--color-text-red);
+}
+
+.hljs-null {
+  color: var(--color-text-red);
+}
