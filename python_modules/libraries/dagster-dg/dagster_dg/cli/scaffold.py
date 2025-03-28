@@ -158,7 +158,11 @@ def scaffold_group(context: click.Context, help_: bool, **global_options: object
 # ########################
 
 
-@scaffold_group.command(name="workspace", cls=DgClickCommand)
+@scaffold_group.command(
+    name="workspace",
+    cls=ScaffoldSubCommand,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
 @click.argument("name", type=str, default=DEFAULT_WORKSPACE_NAME)
 @dg_editable_dagster_options
 @dg_global_options
@@ -194,7 +198,11 @@ def scaffold_workspace_command(
 # ########################
 
 
-@scaffold_group.command(name="project", cls=DgClickCommand)
+@scaffold_group.command(
+    name="project",
+    cls=ScaffoldSubCommand,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
 @click.argument("path", type=Path)
 @click.option(
     "--skip-venv",
@@ -371,7 +379,11 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
 # ########################
 
 
-@scaffold_group.command(name="component-type", cls=DgClickCommand)
+@scaffold_group.command(
+    name="component-type",
+    cls=ScaffoldSubCommand,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
 @click.argument("name", type=str)
 @dg_global_options
 @click.pass_context
