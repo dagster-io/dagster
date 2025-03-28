@@ -38,6 +38,7 @@ from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionResolvedStatus,
     AssetCheckInstanceSupport,
 )
+from dagster._core.storage.dagster_run import RunRecord
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.utils import is_valid_email
@@ -527,26 +528,110 @@ class GrapheneAssetNode(graphene.ObjectType):
     def is_executable(self) -> bool:
         return self._asset_node_snap.is_executable
 
-    def get_materialization_status_for_asset_health(self, graphene_info: ResolveInfo):
-        # if non-partitioned:
-        # if latest materialization succeed, healthy
-        # if latest materialization failed, degraded
-        # no materialization, unknown
-        # if partitioned:
-        # if all partitions successfully materialized, healthy
-        # if any partitions missing, warning
-        # if any partitions failed, degraded
-        if (
-            not graphene_info.context.instance.dagster_observe_supported()
-            or not graphene_info.context.instance.can_read_failure_events()
-        ):
-            # compute materialization status how we do today by checking the latest run the asset was materialized in (or using asset status cache for partitioned)
-            pass
-        else:
-            # commpute the status based on the asset key table (or using asset status cache for partitioned)
-            pass
+    async def get_materialization_status_for_asset_health(self, graphene_info: ResolveInfo):
+        if self._asset_node_snap.partitions is not None:  # isPartitioned
+            # TODO - maybe can do this from the asset record? that might not re-gen the cache though
+            partition_stats = self.resolve_partitionStats(graphene_info)
+            if partition_stats is None:
+                return GrapheneAssetHealthStatus.UNKNOWN
+            if partition_stats.numFailed > 0:
+                return GrapheneAssetHealthStatus.DEGRADED
+            if (
+                partition_stats.numPartitions
+                > partition_stats.numFailed
+                + partition_stats.numMaterialized
+                + partition_stats.numMaterializing
+            ):
+                # some partitions have never been materialized
+                return GrapheneAssetHealthStatus.WARNING
+            return GrapheneAssetHealthStatus.HEALTHY
 
-        return GrapheneAssetHealthStatus.UNKNOWN
+        asset_record = await AssetRecord.gen(graphene_info.context, self._asset_node_snap.asset_key)
+        if asset_record is None:
+            return GrapheneAssetHealthStatus.UNKNOWN
+        asset_entry = asset_record.asset_entry
+
+        if graphene_info.context.instance.can_read_failure_events():
+            # compute the status based on the asset key table (or using asset status cache for partitioned)
+            # TODO - need to handle the case when writing failed events has been enabled, but no new events have been written for this
+            # asset yet. In that case, we need to compute the status the old way
+            if (
+                asset_entry.last_materialization_storage_id is None
+                and asset_entry.last_failed_to_materialize_storage_id is None
+            ):
+                # never materialized
+                return GrapheneAssetHealthStatus.UNKNOWN
+            if asset_entry.last_failed_to_materialize_storage_id is None:
+                # last_materialization_record must be non-null, therefore the asset successfully materialized
+                return GrapheneAssetHealthStatus.HEALTHY
+            elif asset_entry.last_materialization_storage_id is None:
+                # last_failed_to_materialize_record must be non-null, therefore the asset failed to materialize
+                return GrapheneAssetHealthStatus.DEGRADED
+
+            if (
+                asset_entry.last_materialization_storage_id
+                > asset_entry.last_failed_to_materialize_storage_id
+            ):
+                # latest materialization succeeded
+                return GrapheneAssetHealthStatus.HEALTHY
+            # latest materialization failed
+            return GrapheneAssetHealthStatus.DEGRADED
+
+            # if there is a success/failure event, there must have been a planned event, but assert
+            # this is the case to appease the type checker
+            # last_planned_materialization_storage_id = check.not_none(asset_entry.last_planned_materialization_storage_id)
+
+            # if last_planned_materialization_storage_id > max_terminal_event_storage_id:
+            #     # need to check if the run was canceled or deleted
+            #     run_record = await RunRecord.gen(
+            #         graphene_info.context,
+            #         check.not_none(asset_entry.last_planned_materialization_run_id),
+            #     )
+            #     if run_record is None:
+            #         # run was deleted TODO - should we fall back onto the previous materialization status?
+            #         return GrapheneAssetHealthStatus.UNKNOWN
+            #     if run_record.dagster_run.status == DagsterRunStatus.CANCELED:
+            #         # TODO - should we fall back onto the previous materialization status?
+            #         return GrapheneAssetHealthStatus.UNKNOWN
+
+        else:
+            # check what we can before fetching the run
+            fallback_status = (
+                GrapheneAssetHealthStatus.UNKNOWN
+                if asset_entry.last_materialization is None
+                else GrapheneAssetHealthStatus.HEALTHY
+            )
+            if asset_entry.last_run_id is None:
+                if asset_entry.last_materialization is None:
+                    # never materialized
+                    return GrapheneAssetHealthStatus.UNKNOWN
+                else:
+                    # last materialization was manually reported
+                    return GrapheneAssetHealthStatus.HEALTHY
+
+            assert asset_entry.last_run_id is not None
+            if (
+                asset_entry.last_materialization is not None
+                and asset_entry.last_run_id == asset_entry.last_materialization.run_id
+            ):
+                # latest materialization succeeded in the latest run
+                return GrapheneAssetHealthStatus.HEALTHY
+            run_record = await RunRecord.gen(graphene_info.context, asset_entry.last_run_id)
+            if run_record is None or not run_record.dagster_run.is_finished:
+                return fallback_status
+            if (
+                asset_entry.last_materialization
+                and asset_entry.last_materialization.timestamp > run_record.end_time
+            ):
+                # latest materialization was reported manually
+                return GrapheneAssetHealthStatus.HEALTHY
+            if run_record.dagster_run.is_failure:
+                return GrapheneAssetHealthStatus.DEGRADED
+
+            return fallback_status
+
+        # placehodler
+        raise Exception("Shouldn't get here")
 
     async def get_asset_check_status_for_asset_health(self, graphene_info: ResolveInfo):
         remote_check_nodes = graphene_info.context.asset_graph.get_checks_for_asset(
@@ -600,12 +685,14 @@ class GrapheneAssetNode(graphene.ObjectType):
         # if SLA violated with error, degraded
         return GrapheneAssetHealthStatus.UNKNOWN
 
-    def resolve_assetHealth(self, graphene_info: ResolveInfo):
+    async def resolve_assetHealth(self, graphene_info: ResolveInfo):
         if not graphene_info.context.instance.dagster_observe_supported():
             return None
         return GrapheneAssetHealth(
             assetChecksStatus=await self.get_asset_check_status_for_asset_health(graphene_info),
-            materializationStatus=self.get_materialization_status_for_asset_health(graphene_info),
+            materializationStatus=await self.get_materialization_status_for_asset_health(
+                graphene_info
+            ),
             freshnessStatus=self.get_freshness_status_for_asset_health(graphene_info),
         )
 
