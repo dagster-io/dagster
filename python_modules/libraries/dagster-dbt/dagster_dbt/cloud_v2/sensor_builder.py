@@ -169,8 +169,6 @@ def build_dbt_cloud_polling_sensor(
         name=f"{workspace.account_name}_{workspace.project_name}_{workspace.environment_name}__run_status_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
         default_status=default_sensor_status or DefaultSensorStatus.RUNNING,
-        # This sensor will only ever execute asset checks and not asset materializations.
-        asset_selection=AssetSelection.all_asset_checks(),
     )
     def dbt_cloud_run_sensor(context: SensorEvaluationContext) -> SensorResult:
         """Sensor to report materialization events for each asset as new runs come in."""
