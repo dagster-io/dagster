@@ -74,23 +74,25 @@ function Property({
   const firstExample = examples ? (Array.isArray(examples) ? examples[0] : examples) : null;
 
   return (
-    <div className={styles.propertyRoot}>
+    <div className={styles.propertyContainer}>
       <button
         disabled={!expandable}
         className={clsx(styles.expandButton, expanded && styles.expanded)}
         onClick={onToggleExpansion}
       >
-        <Chevron />
-      </button>
-      <div className={styles.propertyContainer}>
         <div className={styles.property}>
           <div className={styles.propertyNameAndTypes}>
             <div className={styles.propertyName}>{name}</div>
             {$ref ? <PropertyRef ref={$ref} defs={defs} /> : null}
             {type ? <PropertyType property={property} defs={defs} /> : null}
             {anyOf ? <PropertyAnyOf anyOf={anyOf} defs={defs} /> : null}
+            {required ? <div className={styles.required}>required</div> : null}
           </div>
-          {required ? <div className={styles.required}>required</div> : null}
+          {expandable ? (
+            <div className={styles.chevronContainer}>
+              <Chevron />
+            </div>
+          ) : null}
         </div>
         {description || defaultValue || examples ? (
           <div className={styles.propertyDescriptionContainer}>
@@ -109,8 +111,12 @@ function Property({
             ) : null}
           </div>
         ) : null}
-        {expanded ? <ExpandedRoot property={property} defs={defs} /> : null}
-      </div>
+      </button>
+      {expanded ? (
+        <div className={styles.expansionContainer}>
+          <ExpandedRoot property={property} defs={defs} />
+        </div>
+      ) : null}
     </div>
   );
 }

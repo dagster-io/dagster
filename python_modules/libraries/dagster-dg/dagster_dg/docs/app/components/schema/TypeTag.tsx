@@ -17,13 +17,13 @@ interface Props {
 
 export default function TypeTag({name}: Props) {
   return (
-    <button
+    <span
       className={clsx(
         styles.tag,
         !basicTypes.has(name as JSONSchema7TypeName) ? styles.objectType : null,
       )}
     >
       {name}
-    </button>
+    </span>
   );
 }

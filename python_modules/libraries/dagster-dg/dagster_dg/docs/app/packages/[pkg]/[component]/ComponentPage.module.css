@@ -34,3 +34,7 @@
   padding: 8px 16px;
   margin-left: 0;
 }
+
+.tableOfContents li:hover {
+  color: var(--color-link-default)
+}
