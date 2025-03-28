@@ -1,5 +1,5 @@
 ---
-title: "Monitoring & debugging pipelines"
+title: 'Monitoring & debugging pipelines'
 sidebar_class_name: hidden
 ---
 

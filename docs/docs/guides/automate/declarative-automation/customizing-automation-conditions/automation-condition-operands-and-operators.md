@@ -7,18 +7,18 @@ sidebar_position: 100
 
 Operands are base conditions which can be true or false about a given target. For partitioned assets, the target will be a given partition of the asset.
 
-| Operand                                     | Description                                                                                                          |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `AutomationCondition.missing`               | Target has not been executed                                                                                         |
-| `AutomationCondition.in_progress`           | Target is part of an in-progress run                                                                                 |
-| `AutomationCondition.execution_failed`      | Target failed to be executed in its latest run                                                                       |
-| `AutomationCondition.newly_updated`         | Target was updated since the previous evaluation                                                                     |
-| `AutomationCondition.newly_requested`       | Target was requested on the previous evaluation                                                                      |
-| `AutomationCondition.code_version_changed`  | Target has a new code version since the previous evaluation                                                          |
-| `AutomationCondition.cron_tick_passed`      | A new tick of the provided cron schedule occurred since the previous evaluation                                      |
+| Operand                                     | Description                                                                                                                                                |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AutomationCondition.missing`               | Target has not been executed                                                                                                                               |
+| `AutomationCondition.in_progress`           | Target is part of an in-progress run                                                                                                                       |
+| `AutomationCondition.execution_failed`      | Target failed to be executed in its latest run                                                                                                             |
+| `AutomationCondition.newly_updated`         | Target was updated since the previous evaluation                                                                                                           |
+| `AutomationCondition.newly_requested`       | Target was requested on the previous evaluation                                                                                                            |
+| `AutomationCondition.code_version_changed`  | Target has a new code version since the previous evaluation                                                                                                |
+| `AutomationCondition.cron_tick_passed`      | A new tick of the provided cron schedule occurred since the previous evaluation                                                                            |
 | `AutomationCondition.in_latest_time_window` | Target falls within the latest time window of the asset’s <PyObject section="partitions" module="dagster" object="PartitionsDefinition" />, if applicable. |
-| `AutomationCondition.will_be_requested`     | Target will be requested in this tick                                                                                |
-| `AutomationCondition.initial_evaluation`    | This is the first evaluation of this condition                                                                       |
+| `AutomationCondition.will_be_requested`     | Target will be requested in this tick                                                                                                                      |
+| `AutomationCondition.initial_evaluation`    | This is the first evaluation of this condition                                                                                                             |
 
 ## Operators
 
@@ -27,16 +27,14 @@ The [operands](#operands) can be built into more complex expressions using the f
 <table
   className="table"
   style={{
-    width: "100%",
-  }}
->
+    width: '100%',
+  }}>
   <thead>
     <tr>
       <th
         style={{
-          width: "40%",
-        }}
-      >
+          width: '40%',
+        }}>
         Operator
       </th>
       <th>Description</th>
@@ -84,7 +82,8 @@ The [operands](#operands) can be built into more complex expressions using the f
         <code>AutomationCondition.any_deps_match(A)</code>
       </td>
       <td>
-        Condition A is true for any upstream partition. Can be used with <code>.allow()</code> and <code>.ignore()</code> to target specific upstream assets.
+        Condition A is true for any upstream partition. Can be used with <code>.allow()</code> and{' '}
+        <code>.ignore()</code> to target specific upstream assets.
       </td>
     </tr>
     <tr>
@@ -92,9 +91,8 @@ The [operands](#operands) can be built into more complex expressions using the f
         <code>AutomationCondition.all_deps_match(A)</code>
       </td>
       <td>
-        Condition A is true for at least one partition of each upstream asset.
-        Can be used with <code>.allow()</code> and <code>.ignore()</code> to
-        target specific upstream assets.
+        Condition A is true for at least one partition of each upstream asset. Can be used with <code>.allow()</code>{' '}
+        and <code>.ignore()</code> to target specific upstream assets.
       </td>
     </tr>
     <tr>
@@ -102,13 +100,12 @@ The [operands](#operands) can be built into more complex expressions using the f
         <code>AutomationCondition.any_downstream_condition()</code>
       </td>
       <td>
-        Any <PyObject section="assets" module="dagster" object="AutomationCondition" /> on a downstream asset
-        evaluates to true.
+        Any <PyObject section="assets" module="dagster" object="AutomationCondition" /> on a downstream asset evaluates
+        to true.
       </td>
     </tr>
   </tbody>
 </table>
-
 
 ## Composite conditions
 

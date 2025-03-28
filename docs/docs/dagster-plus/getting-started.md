@@ -1,5 +1,5 @@
 ---
-title: "Getting started with Dagster+"
+title: 'Getting started with Dagster+'
 ---
 
 To get started with Dagster+, you will need to create a Dagster+ organization and choose your deployment type (Serverless or Hybrid).
@@ -7,6 +7,7 @@ To get started with Dagster+, you will need to create a Dagster+ organization an
 ## Create a Dagster+ organization
 
 First, [create a Dagster+ organization](https://dagster.plus/signup). You can sign up with:
+
 - a Google email address
 - a GitHub account
 - a one-time email link (ideal if you are using a corporate email). You can set up SSO after completing these steps.

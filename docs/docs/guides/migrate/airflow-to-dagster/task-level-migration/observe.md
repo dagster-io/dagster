@@ -1,5 +1,5 @@
 ---
-title: "Observe Airflow tasks"
+title: 'Observe Airflow tasks'
 sidebar_position: 300
 ---
 
@@ -31,16 +31,13 @@ uv pip install 'dagster-airlift[dbt]'
 
 Next, construct the assets:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe.py" language="python"/>
+<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe.py" language="python" />
 
 ## View observed assets
 
 Once you have created the three assets above, you should be able to navigate to the UI, reload your Dagster definitions, and see a full representation of the `dbt` project and other data assets in your code:
 
-<img
-  src="/images/integrations/airlift/observe.svg"
-  alt="Observed asset graph in Dagster"
-/>
+<img src="/images/integrations/airlift/observe.svg" alt="Observed asset graph in Dagster" />
 
 After you initiate a run of the DAG in Airflow, you should see the newly created assets materialize in Dagster as each task completes.
 
@@ -54,7 +51,12 @@ There will be a delay between when tasks complete in Airflow and assets material
 
 Now that we've introduced an asset explicitly for the `customers.csv` file output by the DAG, we should update the asset check constructed during the peering step to point to the `customers_csv` asset. To do this, change the `asset` targeted by the `@asset_check` decorator to `AssetKey(["customers_csv"])`. Updating this asset check ensures that even when the DAG is deleted, the asset check will live on:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_check_on_asset.py" language="python" startAfter="asset-check-update-start" endBefore="asset-check-update-end" />
+<CodeExample
+  path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_check_on_asset.py"
+  language="python"
+  startAfter="asset-check-update-start"
+  endBefore="asset-check-update-end"
+/>
 
 To see what the full code should look like after the asset check, see the [example code in GitHub](https://github.com/dagster-io/dagster/tree/master/examples/airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_check_on_asset.py).
 
@@ -62,7 +64,10 @@ To see what the full code should look like after the asset check, see the [examp
 
 If your Airflow tasks produce time-partitioned assets, Airlift can automatically associate your materializations to the relevant partitions. In this example, in the `rebuild_customers_list` asset, data is partitioned daily in each created table, and the Airflow DAG runs on a `@daily` cron schedule. We can likewise add a `DailyPartitionsDefinition` to each of our assets:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_with_partitions.py" language="python" />
+<CodeExample
+  path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_with_partitions.py"
+  language="python"
+/>
 
 Now, every time the sensor triggers a materialization for an asset, it will automatically have a partition associated with it.
 
@@ -87,7 +92,7 @@ airflow db clean
 In order for partitioned assets to work with `dagster-airlift`, the following things need to be true:
 
 - The asset can only be time-window partitioned. This means static, dynamic, and multi partitioned definitions will require custom functionality.
-- The partitioning scheme must match up with the [logical_date/execution_date](https://airflow.apache.org/docs/apache-airflow/stable/faq.html#what-does-execution-date-mean) of corresponding Airflow runs. That is, each logical_date should correspond _exactly_ to a partition in Dagster.
+- The partitioning scheme must match up with the [logical_date/execution_date](https://airflow.apache.org/docs/apache-airflow/stable/faq.html#what-does-execution-date-mean) of corresponding Airflow runs. That is, each logical*date should correspond \_exactly* to a partition in Dagster.
 
 :::
 

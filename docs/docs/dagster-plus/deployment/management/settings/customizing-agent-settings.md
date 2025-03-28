@@ -1,5 +1,5 @@
 ---
-title: "Customizing Dagster+ agent settings in dagster.yaml"
+title: 'Customizing Dagster+ agent settings in dagster.yaml'
 sidebar_position: 300
 ---
 
@@ -22,6 +22,7 @@ User code servers support a configurable time-to-live (TTL). The agent will spin
 TTL is disabled by default for full deployments, and can be configured separately for full and [branch deployments](/dagster-plus/features/ci-cd/branch-deployments/setting-up-branch-deployments). TTL defaults to 24 hours for both full and branch deployments.
 
 To configure TTL:
+
 ```yaml
 # dagster.yaml
 instance_class:
@@ -123,17 +124,17 @@ compute_logs:
   module: dagster_aws.s3.compute_log_manager
   class: S3ComputeLogManager
   config:
-    bucket: "mycorp-dagster-compute-logs"
-    local_dir: "/tmp/cool"
-    prefix: "dagster-test-"
+    bucket: 'mycorp-dagster-compute-logs'
+    local_dir: '/tmp/cool'
+    prefix: 'dagster-test-'
     use_ssl: true
     verify: true
-    verify_cert_path: "/path/to/cert/bundle.pem"
-    endpoint_url: "http://alternate-s3-host.io"
+    verify_cert_path: '/path/to/cert/bundle.pem'
+    endpoint_url: 'http://alternate-s3-host.io'
     skip_empty_files: true
     upload_interval: 30
     upload_extra_args:
-      ServerSideEncryption: "AES256"
+      ServerSideEncryption: 'AES256'
     show_url_only: true
-    region: "us-west-1"
+    region: 'us-west-1'
 ```

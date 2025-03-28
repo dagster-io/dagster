@@ -1,6 +1,6 @@
 ---
-title: "Using Snowflake with with Dagster I/O managers"
-description: "Learn to integrate Snowflake with Dagster using a Snowflake I/O manager."
+title: 'Using Snowflake with with Dagster I/O managers'
+description: 'Learn to integrate Snowflake with Dagster using a Snowflake I/O manager.'
 sidebar_position: 100
 ---
 
@@ -46,14 +46,17 @@ To complete this tutorial, you'll need:
 
     For more information on authenticating with a private key, see [Authenticating with a private key](/integrations/libraries/snowflake/reference#authenticating-using-a-private-key) in the Snowflake reference guide.
 
-
 ## Step 1: Configure the Snowflake I/O manager
 
 The Snowflake I/O manager requires some configuration to connect to your Snowflake instance. The `account`, `user` are required to connect with Snowflake. One method of authentication is required. You can use a password or a private key. Additionally, you need to specify a `database` to where all the tables should be stored.
 
 You can also provide some optional configuration to further customize the Snowflake I/O manager. You can specify a `warehouse` and `schema` where data should be stored, and a `role` for the I/O manager.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/snowflake/io_manager_tutorial/configuration.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/snowflake/io_manager_tutorial/configuration.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 With this configuration, if you materialized an asset called `iris_dataset`, the Snowflake I/O manager would be permissioned with the role `writer` and would store the data in the `FLOWERS.IRIS.IRIS_DATASET` table in the `PLANTS` warehouse.
 
@@ -98,7 +101,11 @@ Since we supply the database and the schema in the I/O manager configuration in 
 
 Once you have created an asset that represents a table in Snowflake, you will likely want to create additional assets that work with the data. Dagster and the Snowflake I/O manager allow you to load the data stored in Snowflake tables into downstream assets.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/snowflake/io_manager_tutorial/downstream.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/snowflake/io_manager_tutorial/downstream.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 In this example, we want to provide the `iris_dataset` asset from the [Store a Dagster asset as a table in Snowflake](#store-a-dagster-asset-as-a-table-in-snowflake) example to the `iris_cleaned` asset. In `iris_cleaned`, the `iris_dataset` parameter tells Dagster that the value for the `iris_dataset` asset should be provided as input to `iris_cleaned`.
 

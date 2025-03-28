@@ -1,5 +1,5 @@
 ---
-title: "Peer the Airflow instance with a Dagster code location"
+title: 'Peer the Airflow instance with a Dagster code location'
 sidebar_position: 200
 ---
 
@@ -20,7 +20,7 @@ uv pip install 'dagster-airlift[core]' dagster-webserver dagster
 
 Next, use the <PyObject section="libraries" module="dagster_airlift" object="core.build_defs_from_airflow_instance" displayText="build_defs_from_airflow_instance" /> function to create a `Definitions` object. Copy the following code into the empty `tutorial_example/dagster_defs/definitions.py` file:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/peer.py" language="python"/>
+<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/peer.py" language="python" />
 
 This function creates:
 
@@ -39,10 +39,7 @@ export AIRFLOW_HOME="$TUTORIAL_EXAMPLE_DIR/.airflow_home"
 dagster dev -f tutorial_example/dagster_defs/definitions.py
 ```
 
-<img
-  src="/images/integrations/airlift/peer.svg"
-  alt="Peered asset in Dagster UI"
-/>
+<img src="/images/integrations/airlift/peer.svg" alt="Peered asset in Dagster UI" />
 
 Initiate a run of the `reubild_customers_list` DAG in Airflow:
 
@@ -52,10 +49,7 @@ airflow dags backfill rebuild_customers_list --start-date $(shell date +"%Y-%m-%
 
 When this run has completed in Airflow, you should be able to navigate to the Dagster UI and see that Dagster has registered an asset materialization corresponding to that run:
 
-<img
-  src="/images/integrations/airlift/peer_materialize.svg"
-  alt="Materialized peer asset in Dagster UI"
-/>
+<img src="/images/integrations/airlift/peer_materialize.svg" alt="Materialized peer asset in Dagster UI" />
 
 ## Clean the Airflow and Dagster run history
 
@@ -79,7 +73,10 @@ Asset checks can act as user acceptance tests to ensure that any migration steps
 
 In this example, we're going to add an asset check to ensure that the final `customers` CSV output exists, and has a nonzero number of rows:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/peer_with_check.py" language="python"/>
+<CodeExample
+  path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/peer_with_check.py"
+  language="python"
+/>
 
 Once you reload the code location, you should see a `checks` tab indicating the presence of an asset check on the `rebuild_customers_list` asset:
 

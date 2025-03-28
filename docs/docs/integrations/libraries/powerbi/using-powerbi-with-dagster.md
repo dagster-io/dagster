@@ -1,5 +1,5 @@
 ---
-title: "Using Power BI with Dagster"
+title: 'Using Power BI with Dagster'
 description: Represent your Power BI assets in Dagster
 ---
 

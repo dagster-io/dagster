@@ -1,5 +1,5 @@
 ---
-title: "Deploying Dagster to Amazon Web Services"
+title: 'Deploying Dagster to Amazon Web Services'
 description: To deploy Dagster to AWS, EC2 or ECS can host the Dagster webserver, RDS can store runs and events, and S3 can act as an IO manager.
 sidebar_position: 50
 ---
@@ -54,11 +54,11 @@ Alternatively, you can define your own task definition in your `dagster.yaml`:
 
 ```yaml
 run_launcher:
-  module: "dagster_aws.ecs"
-  class: "EcsRunLauncher"
+  module: 'dagster_aws.ecs'
+  class: 'EcsRunLauncher'
   config:
-    task_definition: "arn:aws:ecs:us-east-1:1234567890:task-definition/my-task-definition:1"
-    container_name: "my_container_name"
+    task_definition: 'arn:aws:ecs:us-east-1:1234567890:task-definition/my-task-definition:1'
+    container_name: 'my_container_name'
 ```
 
 ### Customizing CPU, memory, and ephemeral storage in ECS
@@ -67,12 +67,12 @@ You can set the `run_launcher.config.run_resources` field to customize the defau
 
 ```yaml
 run_launcher:
-  module: "dagster_aws.ecs"
-  class: "EcsRunLauncher"
+  module: 'dagster_aws.ecs'
+  class: 'EcsRunLauncher'
   config:
     run_resources:
-      cpu: "256"
-      memory: "512" # In MiB
+      cpu: '256'
+      memory: '512' # In MiB
       ephemeral_storage: 128 # In GiB
 ```
 
@@ -112,23 +112,23 @@ To adjust the configuration of the launched run's task, set the `run_launcher.co
 
 ```yaml
 run_launcher:
-  module: "dagster_aws.ecs"
-  class: "EcsRunLauncher"
+  module: 'dagster_aws.ecs'
+  class: 'EcsRunLauncher'
   config:
     run_task_kwargs:
-      launchType: "EC2"
+      launchType: 'EC2'
 ```
 
 or to set the capacity provider strategy to run in Fargate Spot instances:
 
 ```yaml
 run_launcher:
-  module: "dagster_aws.ecs"
-  class: "EcsRunLauncher"
+  module: 'dagster_aws.ecs'
+  class: 'EcsRunLauncher'
   config:
     run_task_kwargs:
       capacityProviderStrategy:
-        - capacityProvider: "FARGATE_SPOT"
+        - capacityProvider: 'FARGATE_SPOT'
 ```
 
 You can also use the `ecs/run_task_kwargs` tag to customize the ECS task of every run for a particular job:
@@ -168,10 +168,10 @@ Alternatively, you can set your own tag name in your `dagster.yaml`:
 
 ```yaml
 run_launcher:
-  module: "dagster_aws.ecs"
-  class: "EcsRunLauncher"
+  module: 'dagster_aws.ecs'
+  class: 'EcsRunLauncher'
   config:
-    secrets_tag: "my-tag-name"
+    secrets_tag: 'my-tag-name'
 ```
 
 In this example, any secret tagged with a key `my-tag-name` will be included as an environment variable with the name and value as that secret. The value of the tag is ignored.
@@ -180,14 +180,14 @@ Additionally, you can pass specific secrets using the [same structure as the ECS
 
 ```yaml
 run_launcher:
-  module: "dagster_aws.ecs"
-  class: "EcsRunLauncher"
+  module: 'dagster_aws.ecs'
+  class: 'EcsRunLauncher'
   config:
     secrets:
-      - name: "MY_API_TOKEN"
-        valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::"
-      - name: "MY_PASSWORD"
-        valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::"
+      - name: 'MY_API_TOKEN'
+        valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::'
+      - name: 'MY_PASSWORD'
+        valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::'
 ```
 
 In this example, any secret tagged with `dagster` will be included in the environment. `MY_API_TOKEN` and `MY_PASSWORD` will also be included in the environment.
@@ -207,4 +207,3 @@ Then, add the following YAML block in your job's config:
 The resource uses `boto` under the hood. If you're accessing your private buckets, you'll need to provide the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables or follow [one of the other boto authentication methods](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#configuring-credentials).
 
 With this in place, your job runs will store data passed between ops on S3 in the location `s3://<bucket>/dagster/storage/<job run id>/<op name>.compute`.
-

@@ -1,5 +1,5 @@
 ---
-title: "Store compute logs in Azure Blob Storage/Azure Data Lake Storage"
+title: 'Store compute logs in Azure Blob Storage/Azure Data Lake Storage'
 sidebar_position: 300
 ---
 
@@ -71,21 +71,21 @@ You will need to add new annotations and labels in Kubernetes to enable the use 
 ```yaml
 serviceAccount:
   annotations:
-    azure.workload.identity/client-id: "<managed-identity-client-id>"
+    azure.workload.identity/client-id: '<managed-identity-client-id>'
 
 dagsterCloudAgent:
   labels:
-    azure.workload.identity/use: "true"
+    azure.workload.identity/use: 'true'
 
 workspace:
   labels:
-    azure.workload.identity/use: "true"
+    azure.workload.identity/use: 'true'
 ```
 
 :::tip
 
 If you need to retrieve the values used by your Helm deployment, you can run:
-  `helm get values user-cloud > values.yaml`.
+`helm get values user-cloud > values.yaml`.
 
 :::
 
@@ -120,7 +120,7 @@ computeLogs:
       default_azure_credential:
         exclude_environment_credential: false
       prefix: dagster-logs
-      local_dir: "/tmp/cool"
+      local_dir: '/tmp/cool'
       upload_interval: 30
 ```
 

@@ -1,11 +1,11 @@
 # This rule will flag "TODO" or "todo" unless they occur inside HTML comments.
 
 extends: existence
-message: "Remove or comment out TODOs."
-level: suggestion 
+message: 'Remove or comment out TODOs.'
+level: suggestion
 scope: text
 ignorecase: true
-tokens: 
+tokens:
   - '\b[Tt][Oo][Dd][Oo]\b'
-exceptions: 
+exceptions:
   - '<!--.*?\b[Tt][Oo][Dd][Oo]\b.*?-->'

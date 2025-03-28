@@ -1,5 +1,5 @@
 ---
-title: "Define assets upstream of your dbt models"
+title: 'Define assets upstream of your dbt models'
 description: Dagster can orchestrate dbt alongside other technologies.
 sidebar_position: 300
 ---
@@ -31,7 +31,11 @@ pip install pandas duckdb pyarrow
 
 To fetch the data the dbt models require, we'll write a Dagster asset for `raw_customers`. We'll put this asset in our `assets.py` file, inside the `jaffle_dagster` directory. This is the file that contains the code that defines our dbt models, which we reviewed at the end of the [last section](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models#step-4-understand-the-python-code-in-your-dagster-project). Copy and paste this code to overwrite the existing contents of that file:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/tutorial/upstream_assets/assets.py" startAfter="start_python_assets" endBefore="end_python_assets" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/tutorial/upstream_assets/assets.py"
+  startAfter="start_python_assets"
+  endBefore="end_python_assets"
+/>
 
 Let's review the changes we made:
 
@@ -43,7 +47,11 @@ Let's review the changes we made:
 
 Finally, let's update the `assets` argument of our `Definitions` object, in `definitions.py`, to include the new asset we just defined:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/tutorial/upstream_assets/definitions.py" startAfter="start_defs" endBefore="end_defs" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/tutorial/upstream_assets/definitions.py"
+  startAfter="start_defs"
+  endBefore="end_defs"
+/>
 
 ## Step 3: In the dbt project, replace a seed with a source
 
@@ -67,7 +75,7 @@ Finally, let's update the `assets` argument of our `Definitions` object, in `def
          - name: raw_customers
            meta:
              dagster:
-               asset_key: ["raw_customers"] # This metadata specifies the corresponding Dagster asset for this dbt source.
+               asset_key: ['raw_customers'] # This metadata specifies the corresponding Dagster asset for this dbt source.
    ```
 
 This is a standard dbt source definition, with one addition: it includes metadata, under the `meta` property, that specifies the Dagster asset that it corresponds to. When Dagster reads the contents of the dbt project, it reads this metadata and infers the correspondence. For any dbt model that depends on this dbt source, Dagster then knows that the Dagster asset corresponding to the dbt model should depend on the Dagster asset corresponding to the source.
@@ -118,7 +126,6 @@ Click the **Materialize all** button. This will launch a run with two steps:
 If you click to view the run, you can see a graphical representation of these steps, along with logs.
 
 ![Run page for run with dbt models and Python asset](/images/integrations/dbt/using-dbt-with-dagster/upstream-assets/run-page.png)
-
 
 ## What's next?
 

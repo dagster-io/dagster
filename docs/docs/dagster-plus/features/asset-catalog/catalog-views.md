@@ -1,5 +1,5 @@
 ---
-title: "Catalog views"
+title: 'Catalog views'
 sidebar_position: 100
 ---
 
@@ -26,6 +26,7 @@ On any Dagster+ Catalog page, you can access the current catalog view, or create
 ![Screenshot of the catalog view dropdown](/images/dagster-plus/features/asset-catalog/catalog-views.png)
 
 To create a new catalog view, you have two options:
+
 - [Create a new catalog view from scratch](#creating-a-new-catalog-view-from-scratch), from the catalog view menu.
 - [Create a new catalog view from your current asset selection](#creating-a-new-catalog-view-from-your-current-asset-selection).
 

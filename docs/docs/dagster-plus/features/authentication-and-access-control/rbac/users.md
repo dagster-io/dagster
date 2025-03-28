@@ -1,6 +1,6 @@
 ---
-title: "Managing users in Dagster+"
-sidebar_label: "Managing users"
+title: 'Managing users in Dagster+'
+sidebar_label: 'Managing users'
 sidebar_position: 100
 ---
 
@@ -12,8 +12,8 @@ In this guide, you'll learn how to manage users and their permissions using the 
 
 - A Dagster+ account
 - The required [Dagster+ permissions](/dagster-plus/features/authentication-and-access-control/rbac/):
-   - **Organization Admins** can add, manage, and remove users
-   - **Admins** can add users
+  - **Organization Admins** can add, manage, and remove users
+  - **Admins** can add users
 
 :::
 

@@ -9,7 +9,11 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 `pyproject.toml` contains `tool.dagster` and `tool.dg` sections:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/index/4-pyproject.toml" language="TOML" title="jaffle-platform/pyproject.toml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/index/4-pyproject.toml"
+  language="TOML"
+  title="jaffle-platform/pyproject.toml"
+/>
 
 ### `tool.dagster` section
 
@@ -25,7 +29,11 @@ The `tool.dg` section contains `is_project` and `is_component_lib` settings.
 
 To understand the structure, let's look at the content of `jaffle_platform/definitions.py`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/index/5-definitions.py" language="Python" title="jaffle-platform/jaffle_platform/definitions.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/index/5-definitions.py"
+  language="Python"
+  title="jaffle-platform/jaffle_platform/definitions.py"
+/>
 
 This call to `load_defs` will:
 
@@ -43,4 +51,8 @@ In a typical project, most components are likely to be instances of types define
 
 You can also see that this module is registered under the `dagster_dg.library` entry point in `pyproject.toml`. This is what makes the components discoverable to `dg`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/index/6-pyproject.toml" language="TOML" title="jaffle-platform/pyproject.toml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/index/6-pyproject.toml"
+  language="TOML"
+  title="jaffle-platform/pyproject.toml"
+/>

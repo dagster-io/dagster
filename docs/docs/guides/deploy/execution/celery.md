@@ -1,5 +1,5 @@
 ---
-title: "Executing Dagster on Celery"
+title: 'Executing Dagster on Celery'
 sidebar_position: 700
 ---
 
@@ -17,9 +17,9 @@ The dagster-celery executor compiles a job and its associated configuration into
 
 To complete the steps in this guide, you'll need to install `dagster` and `dagster-celery`:
 
-  ```shell
-  pip install dagster dagster-celery
-  ```
+```shell
+pip install dagster dagster-celery
+```
 
 - You will also need **a running broker**, which is required to run the Celery executor. Refer to the [Celery documentation](https://docs.celeryq.dev/en/stable/getting-started/first-steps-with-celery.html#choosing-a-broker) for more info about choosing a broker.
 

@@ -1,5 +1,5 @@
 ---
-title: "Approaches to writing a Dagster integration"
+title: 'Approaches to writing a Dagster integration'
 sidebar_position: 100
 unlisted: true
 ---
@@ -107,6 +107,7 @@ In the scenario where a single API call or configuration can result in multiple 
 The Pipes protocol is used to integrate with systems that have their own execution environments. It enables running code in these external environments while allowing Dagster to maintain control and visibility.
 
 Example implementations of this approach include:
+
 - [AWS Lambda](https://github.com/dagster-io/dagster/tree/master/python_modules/libraries/dagster-aws/dagster_aws/pipes)
 - [Databricks](https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-databricks/dagster_databricks/pipes.py)
 - [Kubernetes](https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-k8s/dagster_k8s/pipes.py).

@@ -1,5 +1,5 @@
 ---
-title: "Using Sigma with Dagster"
+title: 'Using Sigma with Dagster'
 description: Represent your Sigma assets in Dagster
 ---
 

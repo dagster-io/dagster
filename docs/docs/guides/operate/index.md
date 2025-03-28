@@ -1,5 +1,5 @@
 ---
-title: "Operating pipelines"
+title: 'Operating pipelines'
 sidebar_class_name: hidden
 ---
 

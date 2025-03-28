@@ -16,7 +16,7 @@ categories:
 enabledBy:
 enables:
 tags: [community-supported]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/hashicorp.svg
   community: true
 ---

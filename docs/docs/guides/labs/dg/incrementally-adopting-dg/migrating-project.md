@@ -15,7 +15,7 @@ This guide is only relevant if you are starting from an _existing_ Dagster proje
 
 Let's begin with a Dagster project that has some assets:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/1-tree.txt"  />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/1-tree.txt" />
 
 ## Install dependencies
 
@@ -41,6 +41,7 @@ Though this is optional, we generally recommend using a separate virtual environ
     <TabItem value='after' label='Using pip'>
         <CliInvocationExample contents="pip install dagster-components" />
     </TabItem>
+
 </Tabs>
 
 ## Update project structure
@@ -49,8 +50,11 @@ Though this is optional, we generally recommend using a separate virtual environ
 
 Add a `tool.dg` section to your `pyproject.toml` file. This will tell the `dg` command line tool that this project is a valid Dagster project.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-pyproject.toml" language="toml" title="pyproject.toml" />
-
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-pyproject.toml"
+  language="toml"
+  title="pyproject.toml"
+/>
 
 ### Create a `defs` directory
 
@@ -67,12 +71,18 @@ To do so, you'll need to modify your `definitions.py` file, or whichever file co
 You can manually construct a set of definitions using `load_defs`, then merge them with your existing definitions using `Definitions.merge`. You point `load_defs` at the module you just created.
 
 <Tabs>
-    <TabItem value='before' label='Before'>
-        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/6-initial-definitions.py" language="python" />
-    </TabItem>
-    <TabItem value='after' label='After'>
-        <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/7-updated-definitions.py" language="python" />
-    </TabItem>
+  <TabItem value="before" label="Before">
+    <CodeExample
+      path="docs_snippets/docs_snippets/guides/dg/migrating-project/6-initial-definitions.py"
+      language="python"
+    />
+  </TabItem>
+  <TabItem value="after" label="After">
+    <CodeExample
+      path="docs_snippets/docs_snippets/guides/dg/migrating-project/7-updated-definitions.py"
+      language="python"
+    />
+  </TabItem>
 </Tabs>
 
 Now, your project is fully compatible with `dg`! `dg` can be used to scaffold new definitions directly into the existing project.

@@ -1,5 +1,5 @@
 ---
-title: "Arbitrary Python automation conditions"
+title: 'Arbitrary Python automation conditions'
 sidebar_position: 400
 ---
 

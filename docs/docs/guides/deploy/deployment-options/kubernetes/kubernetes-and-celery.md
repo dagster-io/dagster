@@ -1,5 +1,5 @@
 ---
-title: "Using Celery with Kubernetes"
+title: 'Using Celery with Kubernetes'
 sidebar_position: 300
 ---
 
@@ -18,15 +18,15 @@ In addition to the [previous prerequisites](/guides/deploy/deployment-options/ku
 
 ### Components
 
-| Component name | Type | Image |
-|----------------|------|-------|
-| Celery | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) | [dagster/dagster-celery-k8s](https://hub.docker.com/r/dagster/dagster-celery-k8s) _(Released weekly)_ |
-| Daemon | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) | [dagster/dagster-celery-k8s](https://hub.docker.com/r/dagster/dagster-celery-k8s) _(Released weekly)_ |
-| Dagster webserver | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) behind a [Service](https://kubernetes.io/docs/concepts/services-networking/service/) | [dagster/dagster-celery-k8s](https://hub.docker.com/r/dagster/dagster-celery-k8s) _(Released weekly)_ |
-| Database | PostgreSQL | [postgres](https://hub.docker.com/_/postgres) _(Optional)_ |
-| Flower _(Optional)_ | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) behind a [Service](https://kubernetes.io/docs/concepts/services-networking/service/) | [mher/flower](https://hub.docker.com/r/mher/flower) |
-| Run worker | [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) | User-provided or [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) _(Released weekly)_ |
-| Step job | [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) | User-provided or [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) _(Released weekly)_ |
+| Component name       | Type                                                                                                                                                                     | Image                                                                                                                |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Celery               | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)                                                                                      | [dagster/dagster-celery-k8s](https://hub.docker.com/r/dagster/dagster-celery-k8s) _(Released weekly)_                |
+| Daemon               | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)                                                                                      | [dagster/dagster-celery-k8s](https://hub.docker.com/r/dagster/dagster-celery-k8s) _(Released weekly)_                |
+| Dagster webserver    | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) behind a [Service](https://kubernetes.io/docs/concepts/services-networking/service/) | [dagster/dagster-celery-k8s](https://hub.docker.com/r/dagster/dagster-celery-k8s) _(Released weekly)_                |
+| Database             | PostgreSQL                                                                                                                                                               | [postgres](https://hub.docker.com/_/postgres) _(Optional)_                                                           |
+| Flower _(Optional)_  | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) behind a [Service](https://kubernetes.io/docs/concepts/services-networking/service/) | [mher/flower](https://hub.docker.com/r/mher/flower)                                                                  |
+| Run worker           | [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job/)                                                                                                    | User-provided or [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) _(Released weekly)_ |
+| Step job             | [Job](https://kubernetes.io/docs/concepts/workloads/controllers/job/)                                                                                                    | User-provided or [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) _(Released weekly)_ |
 | User code deployment | [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) behind a [Service](https://kubernetes.io/docs/concepts/services-networking/service/) | User-provided or [dagster/user-code-example](https://hub.docker.com/r/dagster/user-code-example) _(Released weekly)_ |
 
 The Helm chart can be configured to use this architecture by configuring the `runLauncher.type` field in your `values.yaml` file to be `CeleryK8sRunLauncher` instead of the default `K8sRunLauncher`. The resulting architecture is similar to the architecture described in the [Helm deployment guide](/guides/deploy/deployment-options/kubernetes/deploying-to-kubernetes), with the following changes:
@@ -166,7 +166,7 @@ rabbitmq:
 redis:
   enabled: true
   internal: false
-  host: "redisHost"
+  host: 'redisHost'
   port: 6379
   brokerDbNumber: 0
   backendDbNumber: 0

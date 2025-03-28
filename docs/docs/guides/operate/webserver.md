@@ -1,6 +1,6 @@
 ---
 title: Dagster webserver and UI
-description: "The Dagster UI is a web-based interface for Dagster. You can inspect Dagster objects (ex: assets, jobs, schedules), launch runs, view launched runs, and view assets produced by those runs."
+description: 'The Dagster UI is a web-based interface for Dagster. You can inspect Dagster objects (ex: assets, jobs, schedules), launch runs, view launched runs, and view assets produced by those runs.'
 sidebar_position: 20
 ---
 
@@ -289,7 +289,7 @@ This feature is only available in Dagster+ Pro.
 
 - **Description**: The **Uses** tab contains information about the other Dagster definitions that use the resource, including [assets](/guides/build/assets/), [jobs](/guides/build/jobs/), and [ops](/guides/build/ops/). Clicking on any of these definitions will open the details page for that definition type.
 
-- **Accessed by**: On the **Resource details* page, clicking the **Uses tab**
+- **Accessed by**: On the **Resource details\* page, clicking the **Uses tab\*\*
 
 ![UI Resource details - Uses tab](/images/guides/operate/webserver/resource-details-uses-tab.png)
 

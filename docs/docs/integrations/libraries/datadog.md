@@ -15,7 +15,7 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, monitoring]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/datadog.svg
 ---
 

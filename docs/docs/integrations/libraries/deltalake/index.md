@@ -15,7 +15,7 @@ categories:
 enabledBy:
 enables:
 tags: [community-supported, storage]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/deltalake.svg
   community: true
 ---

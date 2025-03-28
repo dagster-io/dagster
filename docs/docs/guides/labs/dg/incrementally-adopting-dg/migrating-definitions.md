@@ -19,11 +19,15 @@ In projects that heavily use `dg`, you would typically keep all definitions in t
 
 Let's walk through an example of migrating your existing definitions, with a project that has the following structure:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-definitions/1-tree.txt"  />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-definitions/1-tree.txt" />
 
 At the top level, we load definitions from various modules:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-definitions/2-definitions-before.py" startAfter="start" title="my_existing_project/definitions.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/migrating-definitions/2-definitions-before.py"
+  startAfter="start"
+  title="my_existing_project/definitions.py"
+/>
 
 Each of these modules contains a variety of Dagster definitions, including assets, jobs, and schedules.
 
@@ -37,7 +41,10 @@ We'll start by moving the top-level `elt` module into `defs/elt`:
 
 Now that our definitions are in the `defs` directory, we can update the root `definitions.py` file to no longer explicitly load the `elt` module's `Definitions`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-definitions/4-definitions-after.py" title="my_existing_project/definitions.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/migrating-definitions/4-definitions-after.py"
+  title="my_existing_project/definitions.py"
+/>
 
 Our project structure now looks like this:
 
@@ -55,11 +62,17 @@ Once each of our definitions modules are migrated, our project is left with a st
 
 Our project root now only constructs definitions from the `defs` module:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-definitions/7-definitions-after-all.py" title="my_existing_project/definitions.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/migrating-definitions/7-definitions-after-all.py"
+  title="my_existing_project/definitions.py"
+/>
 
 We can run `dg list defs` to confirm that all of our definitions are being loaded correctly:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-definitions/8-list-defs-after-all.txt" title="my_existing_project/definitions.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/migrating-definitions/8-list-defs-after-all.txt"
+  title="my_existing_project/definitions.py"
+/>
 
 ## Next steps
 

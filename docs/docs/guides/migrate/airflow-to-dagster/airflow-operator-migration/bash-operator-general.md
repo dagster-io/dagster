@@ -1,5 +1,5 @@
 ---
-title: "Migrating an Airflow BashOperator to Dagster"
+title: 'Migrating an Airflow BashOperator to Dagster'
 sidebar_position: 100
 ---
 

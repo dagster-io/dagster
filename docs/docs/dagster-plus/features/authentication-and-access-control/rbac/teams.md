@@ -1,6 +1,6 @@
 ---
-title: "Managing teams in Dagster+"
-sidebar_label: "Managing teams"
+title: 'Managing teams in Dagster+'
+sidebar_label: 'Managing teams'
 sidebar_position: 200
 ---
 
@@ -53,10 +53,10 @@ Navigate to the **Organization Settings > Teams** tab and locate the team you wa
 3. In the window that displays, select the team role for the deployment. This [role](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) will be used as the default for this team for all code locations in the deployment.
 4. Click **Save**.
 5. To set permissions for individual [code locations](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) in a deployment:
-    1. Click the toggle to the left of the deployment to open a list of code locations.
-    2. Next to a code location, click **Edit team role**.
-    3. Select the team role for the code location.
-    4. Click **Save**.
+   1. Click the toggle to the left of the deployment to open a list of code locations.
+   2. Next to a code location, click **Edit team role**.
+   3. Select the team role for the code location.
+   4. Click **Save**.
 
 ## Removing teams
 

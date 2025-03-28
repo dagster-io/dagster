@@ -27,7 +27,11 @@ First, we use the `dg` command-line utility to scaffold a new component type:
 
 This will add a new file to your project in the `lib` directory:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/2-shell-command-empty.py" language="python" title="my_component_library/lib/shell_command.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/2-shell-command-empty.py"
+  language="python"
+  title="my_component_library/lib/shell_command.py"
+/>
 
 This file contains the basic structure for the new component type. There are two methods that you'll need to implement:
 
@@ -47,8 +51,11 @@ To simplify common use cases, `dagster-components` provides schemas for common b
 
 We can the schema for our component and add it to our class as follows:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py" language="python" title="my_component_library/lib/shell_command.py"/>
-
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py"
+  language="python"
+  title="my_component_library/lib/shell_command.py"
+/>
 
 ## Defining the Python class
 
@@ -58,9 +65,11 @@ By convention, we'll use the `@dataclass` decorator to simplify our class defini
 
 Our path will still just be a string, but our `asset_specs` will be a list of `AssetSpec` objects. `dagster-components` provides a `ResolvedAssetSpec` type alias (which is shorthand for `Annotated[AssetSpec, ...]`). This type contains the necessary annotations to resolve an `AssetSpecModel` into an `AssetSpec`, so we don't need to do any additional work to resolve this field for our component.
 
-
-
-<CodeExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-class-defined.py" language="python" title="my_component_library/lib/shell_command.py"/>
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-class-defined.py"
+  language="python"
+  title="my_component_library/lib/shell_command.py"
+/>
 
 :::tip
 
@@ -75,7 +84,11 @@ To do so, we'll want to override the `build_defs` method, which is responsible f
 
 Our `build_defs` method will create a single `@asset` that executes the provided shell script. By convention, we'll put the code to actually execute this asset inside of a function called `execute`. This makes it easier for future developers to create subclasses of this component.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-build-defs.py" language="python" title="my_component_library/lib/shell_command.py" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-build-defs.py"
+  language="python"
+  title="my_component_library/lib/shell_command.py"
+/>
 
 ## Component registration
 
@@ -101,23 +114,38 @@ By default, this will create a new directory alongside an unpopulated `component
 
 In this case, we might want to scaffold a template shell script alongside a filled-out `component.yaml` file, which we accomplish with a custom scaffolder:
 
-<CodeExample  path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-scaffolder.py" language="python" title="my_component_library/lib/shell_command.py"/>
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-scaffolder.py"
+  language="python"
+  title="my_component_library/lib/shell_command.py"
+/>
 
 Now, when we run `dg scaffold component`, we'll see that a template shell script is created alongside a filled-out `component.yaml` file:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/5-scaffolded-component.yaml" language="yaml" title="my_component_library/components/my_shell_command/component.yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/5-scaffolded-component.yaml"
+  language="yaml"
+  title="my_component_library/components/my_shell_command/component.yaml"
+/>
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/6-scaffolded-component-script.sh" language="bash" title="my_component_library/components/my_shell_command/script.sh" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/6-scaffolded-component-script.sh"
+  language="bash"
+  title="my_component_library/components/my_shell_command/script.sh"
+/>
 
 ## [Advanced] Providing resolution logic for non-standard types
 
 In most cases, the types you use in your component schema and in the component class will be the same, or will have out-of-the-box resolution logic, as in the case of `AssetSpecModel` and `ResolvedAssetSpec`.
 
-However, in some cases you may want to use a type that doesn't have an existing schema equivalent.  In this case, you can provide a function that will resolve the value to the desired type by providing an annotation on the field with `Annotated[<type>, Resolver(...)]`.
+However, in some cases you may want to use a type that doesn't have an existing schema equivalent. In this case, you can provide a function that will resolve the value to the desired type by providing an annotation on the field with `Annotated[<type>, Resolver(...)]`.
 
 For example, we might want to provide an API client to our component, which can be configured with an API key in YAML, or a mock client in tests:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/custom-schema-resolution.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/custom-schema-resolution.py"
+  language="python"
+/>
 
 ## [Advanced] Customize rendering of YAML values
 
@@ -125,7 +153,10 @@ The components system supports a rich templating syntax that allows you to load 
 
 You can define custom values that will be made available to the templating engine by defining a `get_additional_scope` classmethod on your component. In our case, we can define a `"daily_partitions"` function which returns a `DailyPartitionsDefinition` object with a pre-defined start date:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-custom-scope.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-custom-scope.py"
+  language="python"
+/>
 
 When a user instantiates this component, they will be able to use this custom scope in their `component.yaml` file:
 
@@ -136,7 +167,7 @@ attributes:
   script_path: script.sh
   asset_specs:
     - key: a
-      partitions_def: "{{ daily_partitions }}"
+      partitions_def: '{{ daily_partitions }}'
 ```
 
 ## Next steps

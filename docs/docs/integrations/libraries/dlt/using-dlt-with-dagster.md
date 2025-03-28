@@ -1,5 +1,5 @@
 ---
-title: "Using dlt with Dagster"
+title: 'Using dlt with Dagster'
 description: Ingest data with ease using Dagster and dlt
 ---
 
