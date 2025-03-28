@@ -29,6 +29,17 @@ from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     create_project_from_components,
+    set_env_var,
+)
+
+NON_SPECIFIED_ENV_VAR_TEST_CASE = ComponentValidationTestCase(
+    component_path="validation/basic_component_missing_declared_env",
+    component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
+    should_error=True,
+    check_error_msg=msg_includes_all_of(
+        "component.yaml:1",
+        "Component uses environment variables that are not specified in the component file: A_STRING",
+    ),
 )
 
 CLI_TEST_CASES = [
@@ -51,15 +62,7 @@ CLI_TEST_CASES = [
             "'an_extra_top_level_value' was unexpected",
         ),
     ),
-    ComponentValidationTestCase(
-        component_path="validation/basic_component_missing_declared_env",
-        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
-        should_error=True,
-        check_error_msg=msg_includes_all_of(
-            "component.yaml:1",
-            "Component uses environment variables that are not specified in the component file: A_STRING",
-        ),
-    ),
+    NON_SPECIFIED_ENV_VAR_TEST_CASE,
     ComponentValidationTestCase(
         component_path="validation/basic_component_with_env",
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
@@ -291,3 +294,40 @@ def test_check_yaml_local_component_cache() -> None:
                 r"CACHE \[write\].*basic_component_invalid_value.*local_component_registry",
                 result.stdout,
             )
+
+
+def test_check_yaml_fix_env_requirements() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            NON_SPECIFIED_ENV_VAR_TEST_CASE.component_path,
+            local_component_defn_to_inject=NON_SPECIFIED_ENV_VAR_TEST_CASE.component_type_filepath,
+        ) as tmpdir,
+    ):
+        with pushd(tmpdir):
+            result = runner.invoke(
+                "check",
+                "yaml",
+            )
+            assert result.exit_code != 0, str(result.stdout)
+            assert NON_SPECIFIED_ENV_VAR_TEST_CASE.check_error_msg
+            NON_SPECIFIED_ENV_VAR_TEST_CASE.check_error_msg(str(result.stdout))
+
+            result = runner.invoke(
+                "check",
+                "yaml",
+                "--fix-env-requirements",
+            )
+            assert result.exit_code == 1, str(result.stdout)
+            assert (
+                "The following component files were updated to fix environment variable requirements:"
+                in str(result.stdout)
+            )
+
+            with set_env_var("A_STRING", "foo"):
+                result = runner.invoke(
+                    "check",
+                    "yaml",
+                )
+                assert result.exit_code == 0, str(result.stdout)
