@@ -92,6 +92,27 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
 
 
 @contextmanager
+def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
+    with runner.isolated_filesystem():
+        subprocess.run(["uv", "venv", ".venv"], check=True)
+        venv_path = Path.cwd() / ".venv"
+        _install_libraries_to_venv(
+            venv_path,
+            [
+                "libraries/dagster-dg",
+                "libraries/dagster-shared",
+            ],
+        )
+
+        venv_exec_path = get_venv_executable(venv_path).parent
+        assert (venv_exec_path / "python").exists() or (venv_exec_path / "python.exe").exists()
+        with modify_environment_variable(
+            "PATH", os.pathsep.join([str(venv_exec_path), os.environ["PATH"]])
+        ):
+            yield venv_path
+
+
+@contextmanager
 def isolated_example_workspace(
     runner: Union[CliRunner, "ProxyRunner"],
     project_name: Optional[str] = None,
