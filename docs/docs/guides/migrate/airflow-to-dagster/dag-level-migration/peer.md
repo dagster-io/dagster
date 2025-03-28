@@ -73,7 +73,10 @@ Asset checks can act as user acceptance tests to ensure that any migration steps
 
 In this example, we're going to add an asset check to ensure that the final `customers` CSV output exists, and has a nonzero number of rows:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/peer_with_check.py" language="python" />
+<CodeExample
+  path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/peer_with_check.py"
+  language="python"
+/>
 
 Once you reload the code location, you should see a `checks` tab indicating the presence of an asset check on the `rebuild_customers_list` asset:
 

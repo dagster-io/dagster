@@ -19,7 +19,12 @@ To accomplish this in SQL, we will bring in our `sales_data` table and then left
 
 As you can see, the new `joined_data` asset looks a lot like our previous ones, with a few small changes. We put this asset into a different group. To make this asset dependent on the raw tables, we add the asset keys to the `deps` parameter in the asset definition.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="89" lineEnd="132" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py"
+  language="python"
+  lineStart="89"
+  lineEnd="132"
+/>
 
 ## 2. Materialize the asset
 

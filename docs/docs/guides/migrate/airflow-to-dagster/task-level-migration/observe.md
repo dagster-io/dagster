@@ -51,7 +51,12 @@ There will be a delay between when tasks complete in Airflow and assets material
 
 Now that we've introduced an asset explicitly for the `customers.csv` file output by the DAG, we should update the asset check constructed during the peering step to point to the `customers_csv` asset. To do this, change the `asset` targeted by the `@asset_check` decorator to `AssetKey(["customers_csv"])`. Updating this asset check ensures that even when the DAG is deleted, the asset check will live on:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_check_on_asset.py" language="python" startAfter="asset-check-update-start" endBefore="asset-check-update-end" />
+<CodeExample
+  path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_check_on_asset.py"
+  language="python"
+  startAfter="asset-check-update-start"
+  endBefore="asset-check-update-end"
+/>
 
 To see what the full code should look like after the asset check, see the [example code in GitHub](https://github.com/dagster-io/dagster/tree/master/examples/airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_check_on_asset.py).
 
@@ -59,7 +64,10 @@ To see what the full code should look like after the asset check, see the [examp
 
 If your Airflow tasks produce time-partitioned assets, Airlift can automatically associate your materializations to the relevant partitions. In this example, in the `rebuild_customers_list` asset, data is partitioned daily in each created table, and the Airflow DAG runs on a `@daily` cron schedule. We can likewise add a `DailyPartitionsDefinition` to each of our assets:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_with_partitions.py" language="python" />
+<CodeExample
+  path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe_with_partitions.py"
+  language="python"
+/>
 
 Now, every time the sensor triggers a materialization for an asset, it will automatically have a partition associated with it.
 

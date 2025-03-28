@@ -31,7 +31,11 @@ pip install pandas duckdb pyarrow
 
 To fetch the data the dbt models require, we'll write a Dagster asset for `raw_customers`. We'll put this asset in our `assets.py` file, inside the `jaffle_dagster` directory. This is the file that contains the code that defines our dbt models, which we reviewed at the end of the [last section](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models#step-4-understand-the-python-code-in-your-dagster-project). Copy and paste this code to overwrite the existing contents of that file:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/tutorial/upstream_assets/assets.py" startAfter="start_python_assets" endBefore="end_python_assets" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/tutorial/upstream_assets/assets.py"
+  startAfter="start_python_assets"
+  endBefore="end_python_assets"
+/>
 
 Let's review the changes we made:
 
@@ -43,7 +47,11 @@ Let's review the changes we made:
 
 Finally, let's update the `assets` argument of our `Definitions` object, in `definitions.py`, to include the new asset we just defined:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/tutorial/upstream_assets/definitions.py" startAfter="start_defs" endBefore="end_defs" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/tutorial/upstream_assets/definitions.py"
+  startAfter="start_defs"
+  endBefore="end_defs"
+/>
 
 ## Step 3: In the dbt project, replace a seed with a source
 

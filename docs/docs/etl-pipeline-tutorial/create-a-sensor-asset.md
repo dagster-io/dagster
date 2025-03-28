@@ -27,7 +27,12 @@ For this asset, we need to define the structure of the request that it is expect
 
 Other than that, defining this asset is the same as our previous assets. Copy the following code beneath `product_performance`.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="275" lineEnd="312" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py"
+  language="python"
+  lineStart="275"
+  lineEnd="312"
+/>
 
 ## 2. Build the sensor
 
@@ -38,13 +43,23 @@ Sensors include the following elements:
 - **Job**: The job that the sensor will trigger when the conditions are met.
 - **RunRequest**: An object that specifies the configuration for the job run. It includes a `run_key` to ensure idempotency and a `run_config` for job-specific settings.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="314" lineEnd="355" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py"
+  language="python"
+  lineStart="314"
+  lineEnd="355"
+/>
 
 ## 3. Materialize the sensor asset
 
 1. Update your Definitions object to the following:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="357" lineEnd="373" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py"
+  language="python"
+  lineStart="357"
+  lineEnd="373"
+/>
 
 2. Reload your Definitions.
 

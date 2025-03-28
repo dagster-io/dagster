@@ -49,7 +49,10 @@ Dagster is a data orchestrator built for data engineers, with integrated lineage
   <Card title="Youtube" href="https://www.youtube.com/@dagsterio" imagePath="./img/getting-started/icon-youtube.svg">
     Watch our latest videos on YouTube.
   </Card>
-  <Card title="Dagster University" href="https://courses.dagster.io" imagePath="./img/getting-started/icon-education.svg">
+  <Card
+    title="Dagster University"
+    href="https://courses.dagster.io"
+    imagePath="./img/getting-started/icon-education.svg">
     Learn Dagster through interactive courses and hands-on tutorials.
   </Card>
 </CardGroup>

@@ -3,6 +3,7 @@ module.exports = {
   bracketSameLine: true,
   singleQuote: true,
   trailingComma: 'all',
+  printWidth: 120,
   overrides: [
     {
       files: ['docs/**/*.md', 'docs/**/*.mdx'],
@@ -10,8 +11,6 @@ module.exports = {
         parser: 'mdx',
         proseWrap: 'preserve',
         htmlWhitespaceSensitivity: 'ignore',
-        printWidth: 1000, // needed to prevent wrapping of CodeExamples
-        singleAttributePerLine: false, // needed to prevent wrapping of CodeExamples
       },
     },
   ],

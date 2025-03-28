@@ -71,7 +71,11 @@ To configure your Dagster instance, you can create a `dagster.yaml` file in your
 
 For example, to have your local instance limit the number of concurrent runs, you could configure the following `dagster.yaml`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/tbd/dagster.yaml" language="yaml" title="~/.dagster_home/dagster.yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tbd/dagster.yaml"
+  language="yaml"
+  title="~/.dagster_home/dagster.yaml"
+/>
 
 For the full list of options that can be set in the `dagster.yaml` file, refer to the [Dagster instance documentation](/guides/deploy/dagster-instance-configuration).
 

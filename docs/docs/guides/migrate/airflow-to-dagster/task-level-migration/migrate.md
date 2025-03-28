@@ -17,7 +17,10 @@ For this tutorial, in the example Airflow DAG directory, create a `proxied_state
 
 Given our example `rebuild_customers_list` DAG with its three tasks, `load_raw_customers`, `run_dbt_model`, and `export_customers`, your `proxied_state/rebuild_customers_list.yaml` file should look like the following:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/airflow_dags/proxied_state/rebuild_customers_list.yaml" language="yaml" />
+<CodeExample
+  path="airlift-migration-tutorial/tutorial_example/airflow_dags/proxied_state/rebuild_customers_list.yaml"
+  language="yaml"
+/>
 
 Next, you will need to modify your Airflow DAG to make it aware of the proxied state. This is already done in the example DAG:
 

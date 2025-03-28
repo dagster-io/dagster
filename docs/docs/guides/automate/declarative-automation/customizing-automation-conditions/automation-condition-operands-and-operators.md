@@ -82,7 +82,8 @@ The [operands](#operands) can be built into more complex expressions using the f
         <code>AutomationCondition.any_deps_match(A)</code>
       </td>
       <td>
-        Condition A is true for any upstream partition. Can be used with <code>.allow()</code> and <code>.ignore()</code> to target specific upstream assets.
+        Condition A is true for any upstream partition. Can be used with <code>.allow()</code> and{' '}
+        <code>.ignore()</code> to target specific upstream assets.
       </td>
     </tr>
     <tr>
@@ -90,7 +91,8 @@ The [operands](#operands) can be built into more complex expressions using the f
         <code>AutomationCondition.all_deps_match(A)</code>
       </td>
       <td>
-        Condition A is true for at least one partition of each upstream asset. Can be used with <code>.allow()</code> and <code>.ignore()</code> to target specific upstream assets.
+        Condition A is true for at least one partition of each upstream asset. Can be used with <code>.allow()</code>{' '}
+        and <code>.ignore()</code> to target specific upstream assets.
       </td>
     </tr>
     <tr>
@@ -98,7 +100,8 @@ The [operands](#operands) can be built into more complex expressions using the f
         <code>AutomationCondition.any_downstream_condition()</code>
       </td>
       <td>
-        Any <PyObject section="assets" module="dagster" object="AutomationCondition" /> on a downstream asset evaluates to true.
+        Any <PyObject section="assets" module="dagster" object="AutomationCondition" /> on a downstream asset evaluates
+        to true.
       </td>
     </tr>
   </tbody>

@@ -298,7 +298,12 @@ A <PyObject section="config" module="dagster" object="RunConfig" /> is a set sch
     Definitions ==> CodeLocation
 ```
 
-<PyObject section="definitions" module="dagster" object="Definitions" /> is a top-level construct that contains references to all the objects of a Dagster project, such as <PyObject section="assets" module="dagster" object="asset" pluralize />, <PyObject section="jobs" module="dagster" object="job" pluralize /> and <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" pluralize />. Only objects included in the definitions will be deployed and visible within the Dagster UI.
+<PyObject section="definitions" module="dagster" object="Definitions" /> is a top-level construct that contains
+references to all the objects of a Dagster project, such as
+<PyObject section="assets" module="dagster" object="asset" pluralize />,
+<PyObject section="jobs" module="dagster" object="job" pluralize /> and
+<PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" pluralize />. Only objects included
+in the definitions will be deployed and visible within the Dagster UI.
 
 | Concept                                 | Relationship                                         |
 | --------------------------------------- | ---------------------------------------------------- |

@@ -2,11 +2,7 @@ import React, {Suspense} from 'react';
 import CodeBlock from '@theme/CodeBlock';
 
 import {CODE_EXAMPLE_PATH_MAPPINGS} from '../code-examples-content';
-import {
-  dedentLines,
-  trimMainBlock,
-  filterComments,
-} from '../utils/codeExampleUtils';
+import {dedentLines, trimMainBlock, filterComments} from '../utils/codeExampleUtils';
 
 interface CodeExampleProps {
   path: string;
@@ -19,8 +15,7 @@ interface CodeExampleProps {
   dedent?: number;
 }
 
-const contentCache: Record<string, {content?: string; error?: string | null}> =
-  {};
+const contentCache: Record<string, {content?: string; error?: string | null}> = {};
 
 function processModule({
   cacheKey,
@@ -43,17 +38,12 @@ function processModule({
 
   // limit to range of `lineStart` and `lineEnd`
   const lineStartIndex = lineStart && lineStart > 0 ? lineStart : 0;
-  const lineEndIndex =
-    lineEnd && lineEnd <= lines.length ? lineEnd : lines.length;
+  const lineEndIndex = lineEnd && lineEnd <= lines.length ? lineEnd : lines.length;
 
   // limit to range of `startAfter` and `endBefore`
-  let startAfterIndex = startAfter
-    ? lines.findIndex((line: string) => line.includes(startAfter)) + 1
-    : 0;
+  let startAfterIndex = startAfter ? lines.findIndex((line: string) => line.includes(startAfter)) + 1 : 0;
 
-  const endAfterIndex = endBefore
-    ? lines.findIndex((line: string) => line.includes(endBefore))
-    : lines.length;
+  const endAfterIndex = endBefore ? lines.findIndex((line: string) => line.includes(endBefore)) : lines.length;
 
   const ix1 = Math.max(lineStartIndex, startAfterIndex);
   const ix2 = Math.min(lineEndIndex, endAfterIndex);
@@ -133,22 +123,10 @@ const CodeExampleInner: React.FC<CodeExampleProps> = (props) => {
   } = props;
 
   const cacheKey = JSON.stringify(props);
-  const {content, error} = useLoadModule(
-    cacheKey,
-    path,
-    lineStart,
-    lineEnd,
-    startAfter,
-    endBefore,
-    dedent,
-  );
+  const {content, error} = useLoadModule(cacheKey, path, lineStart, lineEnd, startAfter, endBefore, dedent);
 
   if (error) {
-    return (
-      <div style={{color: 'red', padding: '1rem', border: '1px solid red'}}>
-        {error}
-      </div>
-    );
+    return <div style={{color: 'red', padding: '1rem', border: '1px solid red'}}>{error}</div>;
   }
 
   return (

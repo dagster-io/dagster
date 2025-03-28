@@ -13,7 +13,12 @@ All Dagster definitions, including schedules and resources, must be attached to 
 
 :::
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_on_schedule" endBefore="end_new_resource_on_schedule" dedent="4" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py"
+  startAfter="start_new_resource_on_schedule"
+  endBefore="end_new_resource_on_schedule"
+  dedent="4"
+/>
 
 ## APIs in this guide
 

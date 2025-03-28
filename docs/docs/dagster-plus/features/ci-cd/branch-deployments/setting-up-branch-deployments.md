@@ -112,7 +112,10 @@ Keep this around, as you'll need it in a later step.
 
    For example:
 
-<CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster.yaml"
+  language="yaml"
+/>
 
   </TabItem>
   <TabItem value="k8s" label="Kubernetes" default>
@@ -154,7 +157,10 @@ In the `dagster_cloud.yaml` file, replace `build.registry` with the registry use
 
 For example:
 
-<CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster_cloud.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster_cloud.yaml"
+  language="yaml"
+/>
 
 **Step 4.3: Configure GitHub Action secrets**
 
@@ -262,7 +268,10 @@ In the `dagster_cloud.yaml` file, replace `build.registry` with the registry use
 
 For example:
 
-<CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster_cloud.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster_cloud.yaml"
+  language="yaml"
+/>
 
 **Step 4.3: configure GitLab CI/CD variables**
 

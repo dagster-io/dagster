@@ -43,7 +43,11 @@ When defining a priority value, note that:
 
 In this example, the priority is set to `-1` with a `dagster/priority` tag value of `"-1"`:
 
-<CodeExample startAfter="start_marker_priority" endBefore="end_marker_priority" path="docs_snippets/docs_snippets/deploying/concurrency_limits/concurrency_limits.py" />
+<CodeExample
+  startAfter="start_marker_priority"
+  endBefore="end_marker_priority"
+  path="docs_snippets/docs_snippets/deploying/concurrency_limits/concurrency_limits.py"
+/>
 
 </TabItem>
 <TabItem value="In the Dagster UI" label="In the Dagster UI">

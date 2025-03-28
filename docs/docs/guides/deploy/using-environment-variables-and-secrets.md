@@ -192,7 +192,11 @@ Let's review what's happening here:
 
 As storing secrets in configuration is bad practice, we'll opt for using an environment variable. In this code, we're configuring the resource supplying it to our assets:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/using_environment_variables_and_secrets/repository.py" startAfter="start" endBefore="end" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/using_environment_variables_and_secrets/repository.py"
+  startAfter="start"
+  endBefore="end"
+/>
 
 Let's review what's happening here:
 
@@ -211,7 +215,11 @@ In this example, we'll demonstrate how to use different I/O manager configuratio
 
 This example is adapted from the [Transitioning data pipelines from development to production guide](/guides/deploy/dev-to-prod):
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/using_environment_variables_and_secrets/repository_v2.py" startAfter="start_new" endBefore="end_new" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/using_environment_variables_and_secrets/repository_v2.py"
+  startAfter="start_new"
+  endBefore="end_new"
+/>
 
 Let's review what's happening here:
 

@@ -58,15 +58,27 @@ dagster sensor preview my_sensor_name
 
 To unit test sensors, you can directly invoke the sensor's Python function. This will return all the run requests yielded by the sensor. The config obtained from the returned run requests can be validated using the <PyObject section="execution" module="dagster" object="validate_run_config" /> function:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py" startAfter="start_sensor_testing" endBefore="end_sensor_testing" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py"
+  startAfter="start_sensor_testing"
+  endBefore="end_sensor_testing"
+/>
 
 Notice that since the context argument wasn't used in the sensor, a context object doesn't have to be provided. However, if the context object **is** needed, it can be provided via <PyObject section="schedules-sensors" module="dagster" object="build_sensor_context" />. Consider again the `my_directory_sensor_cursor` example:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py" startAfter="start_cursor_sensors_marker" endBefore="end_cursor_sensors_marker" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py"
+  startAfter="start_cursor_sensors_marker"
+  endBefore="end_cursor_sensors_marker"
+/>
 
 This sensor uses the `context` argument. To invoke it, we need to provide one:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py" startAfter="start_sensor_testing_with_context" endBefore="end_sensor_testing_with_context" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py"
+  startAfter="start_sensor_testing_with_context"
+  endBefore="end_sensor_testing_with_context"
+/>
 
 **Testing sensors with resources**
 
@@ -74,7 +86,12 @@ For sensors which utilize [resources](/guides/build/external-resources/), you ca
 
 Below is a test for the `process_new_users_sensor` that we defined in "[Using resources in sensors](/guides/automate/sensors/using-resources-in-sensors)", which uses the `users_api` resource.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_test_resource_on_sensor" endBefore="end_test_resource_on_sensor" dedent="4" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py"
+  startAfter="start_test_resource_on_sensor"
+  endBefore="end_test_resource_on_sensor"
+  dedent="4"
+/>
 
 </TabItem>
 </Tabs>

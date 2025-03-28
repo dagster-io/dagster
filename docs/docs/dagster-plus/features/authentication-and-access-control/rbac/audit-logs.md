@@ -41,7 +41,11 @@ You can programmatically access audit logs with the Dagster+ [GraphQL API](/guid
 
 To access a visual GraphiQL interface, visit `https://<org>.dagster.cloud/<deployment>/graphql` in a browser. You can also query the API directly using the Python client:
 
-<CodeExample path="docs_snippets/docs_snippets/dagster-plus/access/rbac/audit-logs.graphql" language="graphql" title="Audit log GraphQL query" />
+<CodeExample
+  path="docs_snippets/docs_snippets/dagster-plus/access/rbac/audit-logs.graphql"
+  language="graphql"
+  title="Audit log GraphQL query"
+/>
 
 ## Audit log entry types
 

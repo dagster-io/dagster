@@ -9,7 +9,8 @@ This guide provides instructions for deploying Dagster using Docker Compose. Thi
 The [full example is available on GitHub](https://github.com/dagster-io/dagster/blob/master/examples/deploy_docker).
 
 <details>
-  <summary>Prerequisites</summary>- Familiarity with Docker and Docker Compose - Familiarity with `dagster.yaml` instance configuration - Familiarity with `workspace.yaml` code location configuration
+  <summary>Prerequisites</summary>- Familiarity with Docker and Docker Compose - Familiarity with `dagster.yaml`
+  instance configuration - Familiarity with `workspace.yaml` code location configuration
 </details>
 
 ## Define a Docker image for the Dagster webserver and daemon

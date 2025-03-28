@@ -433,11 +433,19 @@ The units for CPU and memory resources are described [in this document](https://
 
 The default behavior in Dagster+ is to create one pod for a run. Each asset targeted by that run is executed in subprocess within the pod. Use a job tag to request resources for this pod, which in turn makes those resources available to the targeted assets.
 
-<CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_job.py" language="python" title="Request resources for a job" />
+<CodeExample
+  path="docs_snippets/docs_snippets/dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_job.py"
+  language="python"
+  title="Request resources for a job"
+/>
 
 Another option is to launch a pod for each asset by telling Dagster to use the Kubernetes job executor. In this case, you can specify resources for each individual asset.
 
-<CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_asset.py" language="python" title="Request resources for an asset" />
+<CodeExample
+  path="docs_snippets/docs_snippets/dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_asset.py"
+  language="python"
+  title="Request resources for an asset"
+/>
 
 </TabItem>
 
@@ -445,7 +453,11 @@ Another option is to launch a pod for each asset by telling Dagster to use the K
 
 Dagster can launch and manage existing Docker images as Kubernetes jobs using the [Dagster kubernetes pipes integration](/integrations/libraries/kubernetes). To request resources for these jobs by supplying the appropriate Kubernetes pod spec.
 
-<CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_pipes.py" language="python" title="Request resources for a k8s pipes asset" />
+<CodeExample
+  path="docs_snippets/docs_snippets/dagster-plus/deployment/hybrid/agents/kubernetes/resource_request_pipes.py"
+  language="python"
+  title="Request resources for a k8s pipes asset"
+/>
 
 </TabItem>
 </Tabs>

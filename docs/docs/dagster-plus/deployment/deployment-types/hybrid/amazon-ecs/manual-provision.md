@@ -58,7 +58,35 @@ To successfully run your ECS agent, you'll need to have the following IAM roles 
       {
         "Sid": "",
         "Effect": "Allow",
-        "Action": ["ec2:DescribeNetworkInterfaces", "ec2:DescribeRouteTables", "ecs:CreateService", "ecs:DeleteService", "ecs:DescribeServices", "ecs:DescribeTaskDefinition", "ecs:DescribeTasks", "ecs:ListAccountSettings", "ecs:ListServices", "ecs:ListTagsForResource", "ecs:ListTasks", "ecs:RegisterTaskDefinition", "ecs:RunTask", "ecs:StopTask", "ecs:TagResource", "ecs:UpdateService", "iam:PassRole", "logs:GetLogEvents", "secretsmanager:DescribeSecret", "secretsmanager:GetSecretValue", "secretsmanager:ListSecrets", "servicediscovery:CreateService", "servicediscovery:DeleteService", "servicediscovery:ListServices", "servicediscovery:GetNamespace", "servicediscovery:ListTagsForResource", "servicediscovery:TagResource"],
+        "Action": [
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DescribeRouteTables",
+          "ecs:CreateService",
+          "ecs:DeleteService",
+          "ecs:DescribeServices",
+          "ecs:DescribeTaskDefinition",
+          "ecs:DescribeTasks",
+          "ecs:ListAccountSettings",
+          "ecs:ListServices",
+          "ecs:ListTagsForResource",
+          "ecs:ListTasks",
+          "ecs:RegisterTaskDefinition",
+          "ecs:RunTask",
+          "ecs:StopTask",
+          "ecs:TagResource",
+          "ecs:UpdateService",
+          "iam:PassRole",
+          "logs:GetLogEvents",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:ListSecrets",
+          "servicediscovery:CreateService",
+          "servicediscovery:DeleteService",
+          "servicediscovery:ListServices",
+          "servicediscovery:GetNamespace",
+          "servicediscovery:ListTagsForResource",
+          "servicediscovery:TagResource"
+        ],
         "Resource": "*"
       }
     ]

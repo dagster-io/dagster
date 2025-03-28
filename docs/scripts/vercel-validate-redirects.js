@@ -25,9 +25,7 @@ async function validateRedirect(url) {
     if (response.status === 200) {
       console.log(`URL ${url} did not redirect: Status ${response.status}`);
     } else {
-      console.log(
-        `Redirect to ${response.headers.get('Location')} works: Status ${response.status}`,
-      );
+      console.log(`Redirect to ${response.headers.get('Location')} works: Status ${response.status}`);
     }
   } catch (error) {
     console.error(`Error fetching ${url}: ${error.message}`);

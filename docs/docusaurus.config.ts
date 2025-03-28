@@ -3,15 +3,11 @@ import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 import DagsterVersions from './dagsterVersions.json';
 
-const DagsterVersionsDropdownItems = Object.entries(DagsterVersions).splice(
-  0,
-  5,
-);
+const DagsterVersionsDropdownItems = Object.entries(DagsterVersions).splice(0, 5);
 
 const config: Config = {
   title: 'Dagster Docs',
-  tagline:
-    'Dagster is a Python framework for building production-grade data platforms.',
+  tagline: 'Dagster is a Python framework for building production-grade data platforms.',
   url: 'https://docs.dagster.io',
   favicon: 'img/favicon.ico',
   baseUrl: '/',
@@ -118,12 +114,10 @@ const config: Config = {
               type: 'docsVersionDropdown',
               position: 'right',
               dropdownItemsAfter: [
-                ...DagsterVersionsDropdownItems.map(
-                  ([versionName, versionUrl]) => ({
-                    label: versionName,
-                    href: versionUrl,
-                  }),
-                ),
+                ...DagsterVersionsDropdownItems.map(([versionName, versionUrl]) => ({
+                  label: versionName,
+                  href: versionUrl,
+                })),
                 {
                   href: 'https://legacy-docs.dagster.io',
                   label: '1.9.9 and earlier',
@@ -202,9 +196,7 @@ const config: Config = {
         blog: false,
         theme: {
           customCss: [
-            require.resolve(
-              './node_modules/modern-normalize/modern-normalize.css',
-            ),
+            require.resolve('./node_modules/modern-normalize/modern-normalize.css'),
             require.resolve('./src/styles/custom.scss'),
           ],
         },

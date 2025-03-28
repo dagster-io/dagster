@@ -19,7 +19,12 @@ Cron-based schedules are common in data orchestration. For our pipeline, assume 
 
 Copy the following code underneath the `product performance` asset:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="268" lineEnd="273" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py"
+  language="python"
+  lineStart="268"
+  lineEnd="273"
+/>
 
 ## 2. Automate asset materialization
 
@@ -27,11 +32,21 @@ Now, `monthly_sales_performance` should be executed once a month, but setting up
 
 For `monthly_sales_performance`, we want it to update when all the dependencies are updated. To accomplish this, we will use the `eager` automation condition. Update the `monthly_sales_performance` asset to add the automation condition to the decorator:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="155" lineEnd="209" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py"
+  language="python"
+  lineStart="155"
+  lineEnd="209"
+/>
 
 Do the same thing for `product_performance`:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="216" lineEnd="267" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py"
+  language="python"
+  lineStart="216"
+  lineEnd="267"
+/>
 
 ## 3. Enable and test automations
 

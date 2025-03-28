@@ -46,7 +46,11 @@ Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for mo
 
 The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_job.py" startAfter="start_k8s_config" endBefore="end_k8s_config" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_job.py"
+  startAfter="start_k8s_config"
+  endBefore="end_k8s_config"
+/>
 
 Other run launchers will ignore the `dagster-k8s/config` tag.
 
@@ -70,7 +74,11 @@ Refer to the [Kubernetes documentation](https://kubernetes.io/docs/home/) for mo
 
 The value for each of these keys is a dictionary with the YAML configuration for the underlying Kubernetes object. The Kubernetes object fields can be configured using either snake case (for example, `volume_mounts`) or camel case (`volumeMounts`). For example:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/step_k8s_config.py" startAfter="start_step_k8s_config" endBefore="end_step_k8s_config" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/kubernetes/step_k8s_config.py"
+  startAfter="start_step_k8s_config"
+  endBefore="end_step_k8s_config"
+/>
 
 ### Kubernetes configuration on individual steps in a run
 
@@ -90,11 +98,19 @@ The value for each of these keys is a dictionary with the YAML configuration for
 
 For example, for an asset:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_asset.py" startAfter="start_k8s_config" endBefore="end_k8s_config" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_asset.py"
+  startAfter="start_k8s_config"
+  endBefore="end_k8s_config"
+/>
 
 or an op:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_op.py" startAfter="start_k8s_config" endBefore="end_k8s_config" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/kubernetes/k8s_config_tag_op.py"
+  startAfter="start_k8s_config"
+  endBefore="end_k8s_config"
+/>
 
 Other executors will ignore the `dagster-k8s/config` tag when it is set on an op or asset.
 
@@ -261,7 +277,11 @@ helm upgrade --install user-code dagster/dagster-user-deployments -f /path/to/va
 
 If you use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then `Completed` and `Failed` [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) (and their associated [Pods](https://kubernetes.io/docs/concepts/workloads/pods/)) will be deleted after 1 day. The TTL value can be modified in your job tags:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/kubernetes/ttl_config_job.py" startAfter="start_ttl" endBefore="end_ttl" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/kubernetes/ttl_config_job.py"
+  startAfter="start_ttl"
+  endBefore="end_ttl"
+/>
 
 If you do not use a Kubernetes distribution that supports the [TTL Controller](https://kubernetes.io/docs/concepts/workloads/controllers/ttlafterfinished/#ttl-controller), then you can run the following commands:
 

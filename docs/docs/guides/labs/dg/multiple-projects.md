@@ -39,7 +39,11 @@ The new workspace has the following structure:
 
 The `pyproject.toml` file for the `workspace` folder contains an `is_workspace` setting that marks this directory as a workspace:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/workspace/3-pyproject.toml" language="TOML" title="workspace/pyproject.toml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/workspace/3-pyproject.toml"
+  language="TOML"
+  title="workspace/pyproject.toml"
+/>
 
 :::note
 
@@ -50,7 +54,11 @@ The `pyproject.toml` file for the `workspace` folder contains an `is_workspace` 
 The `project-1` directory contains a `pyproject.toml` file that defines
 it as a Dagster project:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/workspace/4-project-pyproject.toml" language="TOML" title="workspace/projects/project-1/pyproject.toml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/workspace/4-project-pyproject.toml"
+  language="TOML"
+  title="workspace/projects/project-1/pyproject.toml"
+/>
 
 ## Add a second project to the workspace
 

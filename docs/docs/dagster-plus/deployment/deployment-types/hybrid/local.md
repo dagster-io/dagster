@@ -42,7 +42,11 @@ Your local agent will need a token to authenticate with your Dagster+ account. T
 
 1. Create a directory to act as your Dagster home. This guide uses `~/dagster_home`, but the directory can be located wherever you want.
 2. In the new directory, create a `dagster.yaml` file with the following:
-   <CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/hybrid/agents/local_dagster.yaml" language="yaml" title="dagster.yaml" />
+   <CodeExample
+     path="docs_snippets/docs_snippets/dagster-plus/deployment/hybrid/agents/local_dagster.yaml"
+     language="yaml"
+     title="dagster.yaml"
+   />
 3. In the file, fill in the following:
    - `agent_token.env` - The name of the environment variable storing the agent token you created in Step 1.
    - `deployment` - The name of the deployment associated with this instance of the agent. In the preceding example, `prod` was used as the deployment.

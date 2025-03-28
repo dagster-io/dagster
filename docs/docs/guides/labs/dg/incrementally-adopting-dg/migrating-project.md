@@ -50,7 +50,11 @@ Though this is optional, we generally recommend using a separate virtual environ
 
 Add a `tool.dg` section to your `pyproject.toml` file. This will tell the `dg` command line tool that this project is a valid Dagster project.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-pyproject.toml" language="toml" title="pyproject.toml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-pyproject.toml"
+  language="toml"
+  title="pyproject.toml"
+/>
 
 ### Create a `defs` directory
 
@@ -68,10 +72,16 @@ You can manually construct a set of definitions using `load_defs`, then merge th
 
 <Tabs>
   <TabItem value="before" label="Before">
-    <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/6-initial-definitions.py" language="python" />
+    <CodeExample
+      path="docs_snippets/docs_snippets/guides/dg/migrating-project/6-initial-definitions.py"
+      language="python"
+    />
   </TabItem>
   <TabItem value="after" label="After">
-    <CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/7-updated-definitions.py" language="python" />
+    <CodeExample
+      path="docs_snippets/docs_snippets/guides/dg/migrating-project/7-updated-definitions.py"
+      language="python"
+    />
   </TabItem>
 </Tabs>
 

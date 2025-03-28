@@ -11,9 +11,7 @@ interface CliInvocationExampleProps {
   endBefore?: string; // marker that indicates ending of code snippet
 }
 
-const CliInvocationExample: React.FC<CliInvocationExampleProps> = ({
-  ...props
-}) => {
+const CliInvocationExample: React.FC<CliInvocationExampleProps> = ({...props}) => {
   return (
     <Suspense>
       <CliInvocationExampleInner {...props} />
@@ -21,18 +19,8 @@ const CliInvocationExample: React.FC<CliInvocationExampleProps> = ({
   );
 };
 
-const CliInvocationExampleInner: React.FC<CliInvocationExampleProps> = (
-  props,
-) => {
-  const {
-    path,
-    contents,
-    lineStart,
-    lineEnd,
-    startAfter,
-    endBefore,
-    ...extraProps
-  } = props;
+const CliInvocationExampleInner: React.FC<CliInvocationExampleProps> = (props) => {
+  const {path, contents, lineStart, lineEnd, startAfter, endBefore, ...extraProps} = props;
   const language = 'shell';
 
   const cacheKey = JSON.stringify(props);
@@ -46,11 +34,7 @@ const CliInvocationExampleInner: React.FC<CliInvocationExampleProps> = (
   }, [content]);
 
   if (error) {
-    return (
-      <div style={{color: 'red', padding: '1rem', border: '1px solid red'}}>
-        {error}
-      </div>
-    );
+    return <div style={{color: 'red', padding: '1rem', border: '1px solid red'}}>{error}</div>;
   }
 
   return (

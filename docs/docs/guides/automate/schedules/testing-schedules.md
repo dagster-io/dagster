@@ -48,11 +48,19 @@ To test a function decorated by the <PyObject section="schedules-sensors" module
 
 Let's say we want to test the `configurable_job_schedule` in this example:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py" startAfter="start_run_config_schedule" endBefore="end_run_config_schedule" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedules.py"
+  startAfter="start_run_config_schedule"
+  endBefore="end_run_config_schedule"
+/>
 
 To test this schedule, we used <PyObject section="schedules-sensors" module="dagster" object="build_schedule_context" /> to construct a <PyObject section="schedules-sensors" module="dagster" object="ScheduleEvaluationContext" /> to provide to the `context` parameter:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedule_examples.py" startAfter="start_test_cron_schedule_context" endBefore="end_test_cron_schedule_context" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedules/schedule_examples.py"
+  startAfter="start_test_cron_schedule_context"
+  endBefore="end_test_cron_schedule_context"
+/>
 
 If your <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.
 
@@ -62,11 +70,21 @@ For schedules that utilize [resources](/guides/build/external-resources), you ca
 
 Let's say we want to test the `process_data_schedule` in this example:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_on_schedule" endBefore="end_new_resource_on_schedule" dedent="4" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py"
+  startAfter="start_new_resource_on_schedule"
+  endBefore="end_new_resource_on_schedule"
+  dedent="4"
+/>
 
 In the test for this schedule, we provided the `date_formatter` resource to the schedule when we invoked its function:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_test_resource_on_schedule" endBefore="end_test_resource_on_schedule" dedent="4" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py"
+  startAfter="start_test_resource_on_schedule"
+  endBefore="end_test_resource_on_schedule"
+  dedent="4"
+/>
 
 ## APIs in this guide
 
