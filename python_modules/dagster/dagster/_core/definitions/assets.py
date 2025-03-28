@@ -1759,6 +1759,13 @@ def _asset_specs_from_attr_key_params(
         value_type=AutomationCondition,
     )
 
+    validated_new_freshness_thing_by_key = check.opt_mapping_param(
+        new_freshness_thing_by_key,
+        "new_freshness_thing_by_key",
+        key_type=AssetKey,
+        value_type=NewFreshnessThing,
+    )
+
     validated_owners_by_key = check.opt_mapping_param(
         owners_by_key, "owners_by_key", key_type=AssetKey, value_type=list
     )
@@ -1800,7 +1807,7 @@ def _asset_specs_from_attr_key_params(
                     partitions_def=check.opt_inst_param(
                         partitions_def, "partitions_def", PartitionsDefinition
                     ),
-                    new_freshness_thing=new_freshness_thing_by_key.get(key),
+                    new_freshness_thing=validated_new_freshness_thing_by_key.get(key),
                 )
             )
 
