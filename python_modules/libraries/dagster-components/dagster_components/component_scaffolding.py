@@ -1,3 +1,4 @@
+import textwrap
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, Optional, cast
@@ -34,7 +35,24 @@ def scaffold_component(
             )
             f.writelines([""])
     elif request.scaffold_format == "python":
-        raise NotImplementedError("Python scaffolding not yet implemented.")
+        with open(request.target_path / "component.py", "w") as f:
+            fqtn = request.type_name
+            check.invariant("." in fqtn, "Component must be a fully qualified type name")
+            module_path, class_name = (
+                ".".join(fqtn.split(".")[:-1]),
+                fqtn.split(".")[-1],
+            )
+            f.write(
+                textwrap.dedent(
+                    f"""
+                        from dagster_components import component, ComponentLoadContext
+                        from {module_path} import {class_name}
+
+                        @component
+                        def load(context: ComponentLoadContext) -> {class_name}: ...
+                """
+                ).lstrip()
+            )
     else:
         check.assert_never(request.scaffold_format)
 
@@ -73,7 +91,8 @@ def scaffold_object(
 
     if isinstance(obj, type) and issubclass(obj, Component):
         component_yaml_path = path / "component.yaml"
-        if not component_yaml_path.exists():
+        component_py_path = path / "component.py"
+        if not (component_yaml_path.exists() or component_py_path.exists()):
             raise Exception(
-                f"Currently all components require a component.yaml file. Please ensure your implementation of scaffold writes this file at {component_yaml_path}."
+                f"Currently all components require a component.yaml or component.py file. Please ensure your implementation of scaffold writes this file at {component_yaml_path} or {component_py_path}."
             )
