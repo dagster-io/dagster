@@ -495,7 +495,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             backfill_policy (Optional[BackfillPolicy]): Defines this asset's BackfillPolicy
             owners_by_key (Optional[Mapping[AssetKey, Sequence[str]]]): Defines
                 owners to be associated with each of the asset keys for this node.
-
+            new_freshness_thing_by_output_name (Optional[Mapping[str, Optional[NewFreshnessThing]]]): Defines asset
+                freshness conditions to be associated with some or all of the output assets for this node.
         """
         return AssetsDefinition._from_node(
             node_def=graph_def,

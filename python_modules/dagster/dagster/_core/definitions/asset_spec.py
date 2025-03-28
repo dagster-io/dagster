@@ -141,6 +141,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             will be made visible in the Dagster UI.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
+        new_freshness_thing (Optional[NewFreshnessThing]): A condition that delineates when an asset is considered fresh.
     """
 
     key: PublicAttr[AssetKey]
