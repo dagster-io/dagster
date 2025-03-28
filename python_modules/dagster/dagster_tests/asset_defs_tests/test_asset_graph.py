@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import Callable, Optional
 from unittest.mock import MagicMock
 
+from dagster._core.definitions.freshness_condition import FreshnessCondition
+from dagster._record import record
 import pytest
 from dagster import (
     AssetIn,
@@ -45,7 +47,7 @@ from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.test_utils import freeze_time, instance_for_test, mock_workspace_from_repos
 from dagster._time import create_datetime, get_current_datetime
-from dagster_shared.serdes import deserialize_value, serialize_value
+from dagster_shared.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 
 
 def to_remote_asset_graph(assets, asset_checks=None) -> RemoteAssetGraph:
