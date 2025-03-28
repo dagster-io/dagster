@@ -23,7 +23,7 @@ class GrapheneAssetHealth(graphene.ObjectType):
         name = "AssetHealth"
 
     def resolve_assetHealth(self, graphene_info: ResolveInfo):
-        if not graphene_info.context.instance.asset_health_supported():
+        if not graphene_info.context.instance.dagster_observe_supported():
             return GrapheneAssetHealthStatus.UNKNOWN
         statuses = [
             self.materializationStatus(graphene_info),

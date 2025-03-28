@@ -533,7 +533,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         # if any partitions missing, warning
         # if any partitions failed, degraded
         if (
-            not graphene_info.context.instance.asset_health_supported()
+            not graphene_info.context.instance.dagster_observe_supported()
             or not graphene_info.context.instance.can_read_failure_events()
         ):
             # compute materialization status how we do today by checking the latest run the asset was materialized in (or using asset status cache for partitioned)
@@ -557,7 +557,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return GrapheneAssetHealthStatus.UNKNOWN
 
     def resolve_assetHealth(self, graphene_info: ResolveInfo):
-        if not graphene_info.context.instance.asset_health_supported():
+        if not graphene_info.context.instance.dagster_observe_supported():
             return None
         return GrapheneAssetHealth(
             assetChecksStatus=self.get_asset_check_status_for_asset_health(graphene_info),
