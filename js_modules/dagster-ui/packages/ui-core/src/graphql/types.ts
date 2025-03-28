@@ -380,10 +380,10 @@ export type AssetGroupSelector = {
 
 export type AssetHealth = {
   __typename: 'AssetHealth';
-  assetChecksStatus: Maybe<AssetHealthStatus>;
+  assetChecksStatus: AssetHealthStatus;
   assetHealth: AssetHealthStatus;
-  freshnessStatus: Maybe<AssetHealthStatus>;
-  materializationStatus: Maybe<AssetHealthStatus>;
+  freshnessStatus: AssetHealthStatus;
+  materializationStatus: AssetHealthStatus;
 };
 
 export enum AssetHealthStatus {
@@ -457,7 +457,7 @@ export type AssetMetadataEntry = MetadataEntry & {
 export type AssetNode = {
   __typename: 'AssetNode';
   assetChecksOrError: AssetChecksOrError;
-  assetHealth: AssetHealth;
+  assetHealth: Maybe<AssetHealth>;
   assetKey: AssetKey;
   assetMaterializationUsedData: Array<MaterializationUpstreamDataVersion>;
   assetMaterializations: Array<MaterializationEvent>;
