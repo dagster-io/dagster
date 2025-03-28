@@ -64,6 +64,8 @@ class AssetLayer(NamedTuple):
         assets_defs_by_op_handle: dict[NodeHandle, AssetsDefinition] = {}
 
         for node_handle, assets_def in assets_defs_by_outer_node_handle.items():
+            print("OUTPUT BY CHECK KEY")
+            print(assets_def.check_specs_by_output_name)
             computation = check.not_none(assets_def.computation)
             full_node_def = computation.full_node_def
             for input_name, input_asset_key in assets_def.node_keys_by_input_name.items():
@@ -122,6 +124,12 @@ class AssetLayer(NamedTuple):
                 for op_handle in computation.node_def.get_op_handles(parent=node_handle):
                     assets_defs_by_op_handle[op_handle] = assets_def
 
+        print("CHECK NAMES BY ASSET KEY BY NODE HANDLE")
+        print(check_names_by_asset_key_by_node_handle)
+        print("CHECK KEYS BY NODE OUTPUT HANDLE")
+        print(check_key_by_output)
+        print("NODE OUTPUT HANDLES BY ASSET CHECK KEY")
+        print(node_output_handles_by_asset_check_key)
         return AssetLayer(
             asset_graph=asset_graph,
             asset_keys_by_node_input_handle=asset_key_by_input,

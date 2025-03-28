@@ -148,6 +148,9 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         execution_type: Optional[AssetExecutionType] = None,
         # TODO: FOU-243
         auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]] = None,
+        # for dbt source tests; we want to auto select the checks which apply to
+        # any upstreams of the asset being selected if no check selection is provided.
+        # this is very overspecified; but there's not really another use case for it.
         # if adding new fields, make sure to handle them in the with_attributes, from_graph,
         # from_op, and get_attributes_dict methods
     ):

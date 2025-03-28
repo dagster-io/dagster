@@ -47,6 +47,7 @@ from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.execution.api import execute_run_iterator
+from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.snap import DependencyStructureIndex
 from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
@@ -2714,6 +2715,56 @@ def test_subset_cycle_resolution_with_checks():
 
     # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
     assert len(list(job.graph.iterate_op_defs())) == 4
+
+
+def test_subset_cycle_resolution_upstream_checks() -> None:
+    """Ops:
+        foo produces: b, d [check on a]
+        foo_prime produces: c
+    Assets:
+        a -> b -> c -> d.
+                  a -> d
+    """
+    import os
+
+    print(os.environ)
+
+    @multi_asset(
+        specs=[
+            AssetSpec("b", deps=["a"], skippable=True),
+            AssetSpec("d", deps=["a", "c"], skippable=True),
+        ],
+        check_specs=[
+            AssetCheckSpec("a_is_good", asset="a"),
+        ],
+        can_subset=True,
+        _disable_check_specs_target_relevant_asset_keys=True,
+    )
+    def foo(context: AssetExecutionContext):
+        yield AssetCheckResult(asset_key="a", check_name="a_is_good", passed=True)
+        for asset_key in context.op_execution_context.selected_asset_keys:
+            yield Output(None, asset_key.path[-1])
+
+    @multi_asset(
+        specs=[
+            AssetSpec("c", deps=["b"], skippable=True),
+        ],
+        can_subset=True,
+    )
+    def foo_prime(context):
+        yield Output(None, "c")
+
+    defs = Definitions(assets=[foo, foo_prime])
+
+    Definitions.validate_loadable(defs)
+
+    job = defs.get_implicit_global_asset_job_def()
+    # should produce a job with foo -> foo_prime -> foo_2
+    assert len(list(job.graph.iterate_op_defs())) == 3
+    # upon actually executing however, we'll still be running the check in both foo and
+    # foo_2. This should not error.
+    result = job.execute_in_process()
+    assert result.success
 
 
 @ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")
