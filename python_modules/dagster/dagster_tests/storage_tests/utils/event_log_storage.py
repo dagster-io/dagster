@@ -83,10 +83,12 @@ from dagster._core.events import (
     AssetMaterializationPlannedData,
     AssetObservationData,
     DagsterEvent,
+    DagsterEventBatchMetadata,
     DagsterEventType,
     EngineEventData,
     StepExpectationResultData,
     StepMaterializationData,
+    generate_event_batch_id,
 )
 from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._core.execution.api import execute_run
@@ -3014,6 +3016,40 @@ class TestEventLogStorage:
         # make sure adding an after_cursor doesn't mess with the wiped events
         assert storage.get_materialized_partitions(c, after_cursor=9999999999) == set()
         assert storage.get_materialized_partitions(d, after_cursor=9999999999) == set()
+
+    def test_batch_write_asset_materializations(self, storage, instance, test_run_id):
+        a = AssetKey(["a"])
+
+        partitions = list(string.ascii_uppercase)
+
+        materialize_partitions = {"step_a": set(partitions[:10]), "step_b": set(partitions[10:15])}
+
+        events_by_step: list[list[DagsterEvent]] = [
+            [
+                DagsterEvent(
+                    DagsterEventType.ASSET_MATERIALIZATION.value,
+                    "nonce",
+                    event_specific_data=StepMaterializationData(
+                        AssetMaterialization(asset_key=a, partition=partition)
+                    ),
+                )
+                for partition in partitions
+            ]
+            for step_key, partitions in materialize_partitions.items()
+        ]
+
+        events = [event for events in events_by_step for event in events]
+
+        batch_id = generate_event_batch_id()
+        last_index = len(events) - 1
+        for i, failure_event in enumerate(events):
+            batch_metadata = DagsterEventBatchMetadata(batch_id, i == last_index)
+            instance.report_dagster_event(failure_event, test_run_id, batch_metadata=batch_metadata)
+
+        materialize_records = instance.get_records_for_run(
+            run_id=test_run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
+        ).records
+        assert len(materialize_records) == 15
 
     def test_write_asset_materialization_failures(self, storage, instance, test_run_id):
         a = AssetKey(["a"])
