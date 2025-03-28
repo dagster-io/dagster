@@ -11,13 +11,14 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {DagsterTag, TagType} from './RunTag';
-import {RunTags} from './RunTags';
+import {RunTags, tagsAsYamlString} from './RunTags';
 import {getBackfillPath} from './RunsFeedUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useTagPinning} from './useTagPinning';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PipelineTag} from '../graphql/types';
+import {CopyButton} from '../ui/CopyButton';
 
 export const RunRowTags = ({
   run,
@@ -125,12 +126,8 @@ export const RunRowTags = ({
           <RunTags tags={allTagsWithPinned} onAddTag={onAddTag} onToggleTagPin={onToggleTagPin} />
         </DialogBody>
         <DialogFooter topBorder>
-          <Button
-            intent="primary"
-            onClick={() => {
-              setShowRunTags(false);
-            }}
-          >
+          <CopyButton value={() => tagsAsYamlString(run.tags)}>Copy tags</CopyButton>
+          <Button intent="primary" onClick={() => setShowRunTags(false)}>
             Close
           </Button>
         </DialogFooter>

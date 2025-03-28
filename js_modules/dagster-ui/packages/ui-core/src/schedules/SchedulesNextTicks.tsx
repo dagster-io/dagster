@@ -33,13 +33,12 @@ import {
   ScheduleTickConfigQuery,
   ScheduleTickConfigQueryVariables,
 } from './types/SchedulesNextTicks.types';
-import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {useCopyToClipboard} from '../app/browser';
 import {InstigationStatus} from '../graphql/types';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
+import {CopyButton} from '../ui/CopyButton';
 import {MenuLink} from '../ui/MenuLink';
 import {
   findRepositoryAmongOptions,
@@ -340,8 +339,6 @@ const NextTickDialog = ({
         : null,
     );
 
-  const copy = useCopyToClipboard();
-
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, schedule.pipelineName);
 
@@ -476,19 +473,7 @@ const NextTickDialog = ({
       {body}
       <DialogFooter topBorder>
         {selectedRunRequest ? (
-          <Button
-            autoFocus={false}
-            onClick={async () => {
-              copy(selectedRunRequest.runConfigYaml);
-              await showSharedToaster({
-                intent: 'success',
-                icon: 'copy_to_clipboard_done',
-                message: 'Copied!',
-              });
-            }}
-          >
-            Copy config
-          </Button>
+          <CopyButton value={selectedRunRequest.runConfigYaml}>Copy config</CopyButton>
         ) : null}
         <Button intent="primary" autoFocus={true} onClick={() => close()}>
           OK

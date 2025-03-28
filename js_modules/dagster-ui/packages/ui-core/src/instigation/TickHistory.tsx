@@ -5,11 +5,9 @@ import {
   Button,
   ButtonLink,
   Caption,
-  Colors,
   CursorHistoryControls,
   FontFamily,
   Icon,
-  IconWrapper,
   Menu,
   MenuItem,
   MiddleTruncate,
@@ -34,11 +32,9 @@ import {HistoryTickFragment} from './types/InstigationUtils.types';
 import {TickHistoryQuery, TickHistoryQueryVariables} from './types/TickHistory.types';
 import {countPartitionsAddedOrDeleted, isStuckStartedTick} from './util';
 import {gql, useQuery} from '../apollo-client';
-import {showSharedToaster} from '../app/DomUtils';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useCopyToClipboard} from '../app/browser';
 import {
   DynamicPartitionsRequestType,
   InstigationSelector,
@@ -51,6 +47,7 @@ import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {TickLogDialog} from '../ticks/TickLogDialog';
 import {TickResultType, TickStatusTag} from '../ticks/TickStatusTag';
+import {CopyIconButton} from '../ui/CopyButton';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -432,8 +429,6 @@ function TickRow({
   onShowDetails: (tick: HistoryTickFragment) => void;
   onShowLogs: (tick: HistoryTickFragment) => void;
 }) {
-  const copyToClipboard = useCopyToClipboard();
-
   const [addedPartitions, deletedPartitions] = React.useMemo(() => {
     const requests = tick.dynamicPartitionsRequestResults;
     const added = countPartitionsAddedOrDeleted(
@@ -488,17 +483,7 @@ function TickRow({
               >
                 <MiddleTruncate text={tick.cursor || ''} />
               </div>
-              <CopyButton
-                onClick={async () => {
-                  copyToClipboard(tick.cursor || '');
-                  await showSharedToaster({
-                    message: <div>Copied value</div>,
-                    intent: 'success',
-                  });
-                }}
-              >
-                <Icon name="assignment" />
-              </CopyButton>
+              <CopyIconButton value={tick.cursor || ''} />
             </Box>
           ) : (
             <>&mdash;</>
@@ -591,28 +576,6 @@ const TICK_HISTORY_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
   ${HISTORY_TICK_FRAGMENT}
-`;
-
-const CopyButton = styled.button`
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  padding: 8px;
-  margin: -6px;
-  outline: none;
-
-  ${IconWrapper} {
-    background-color: ${Colors.accentGray()};
-    transition: background-color 100ms;
-  }
-
-  :hover ${IconWrapper} {
-    background-color: ${Colors.accentGrayHover()};
-  }
-
-  :focus ${IconWrapper} {
-    background-color: ${Colors.linkDefault()};
-  }
 `;
 
 const TableWrapper = styled(Table)`

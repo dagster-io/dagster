@@ -24,7 +24,7 @@ import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
 import {RunConfigDialog} from './RunConfigDialog';
 import {doneStatuses, failedStatuses} from './RunStatuses';
-import {RunTags} from './RunTags';
+import {RunTags, tagsAsYamlString} from './RunTags';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {TerminationDialog} from './TerminationDialog';
@@ -38,12 +38,11 @@ import {useJobReexecution} from './useJobReExecution';
 import {gql, useLazyQuery} from '../apollo-client';
 import {DagsterTag} from './RunTag';
 import {AppContext} from '../app/AppContext';
-import {showSharedToaster} from '../app/DomUtils';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
-import {useCopyToClipboard} from '../app/browser';
 import {ReexecutionStrategy} from '../graphql/types';
 import {getPipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {AnchorButton} from '../ui/AnchorButton';
+import {CopyButton} from '../ui/CopyButton';
 import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext/util';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
@@ -62,16 +61,6 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
   >('none');
 
   const {rootServerURI} = React.useContext(AppContext);
-
-  const copyConfig = useCopyToClipboard();
-  const onCopy = async () => {
-    copyConfig(runConfigYaml || '');
-    await showSharedToaster({
-      intent: 'success',
-      icon: 'copy_to_clipboard_done',
-      message: 'Copied!',
-    });
-  };
 
   const reexecute = useJobReexecution({onCompleted: refetch});
 
@@ -289,6 +278,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
           />
         </DialogBody>
         <DialogFooter topBorder>
+          <CopyButton value={() => tagsAsYamlString(run.tags)}>Copy tags</CopyButton>
           <Button intent="primary" onClick={closeDialogs}>
             Close
           </Button>
@@ -297,7 +287,6 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
       <RunConfigDialog
         isOpen={visibleDialog === 'config'}
         onClose={closeDialogs}
-        copyConfig={onCopy}
         mode={run.mode}
         runConfigYaml={runConfigYaml || ''}
         isJob={isJob}

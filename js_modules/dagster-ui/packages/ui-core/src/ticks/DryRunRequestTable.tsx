@@ -3,8 +3,6 @@ import {useState} from 'react';
 
 import {RunConfigDialog} from '../runs/RunConfigDialog';
 import {RunRequestFragment} from './types/RunRequestFragment.types';
-import {showSharedToaster} from '../app/DomUtils';
-import {useCopyToClipboard} from '../app/browser';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {testId} from '../testing/testId';
 import {useRepository} from '../workspace/WorkspaceContext/util';
@@ -23,16 +21,6 @@ export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}
   const repo = useRepository(repoAddress);
   const [selectedRequest, setSelectedRequest] = useState<RunRequestFragment | null>(null);
   const [visibleDialog, setVisibleDialog] = useState<'config' | null>(null);
-  const copy = useCopyToClipboard();
-
-  const copyConfig = async () => {
-    copy(selectedRequest?.runConfigYaml || '');
-    await showSharedToaster({
-      intent: 'success',
-      icon: 'copy_to_clipboard_done',
-      message: 'Copied!',
-    });
-  };
 
   const body = (
     <tbody data-testid={testId('table-body')}>
@@ -66,7 +54,6 @@ export const RunRequestTable = ({runRequests, isJob, repoAddress, mode, jobName}
         <RunConfigDialog
           isOpen={visibleDialog === 'config'}
           onClose={() => setVisibleDialog(null)}
-          copyConfig={() => copyConfig()}
           mode={mode || null}
           runConfigYaml={selectedRequest.runConfigYaml}
           tags={selectedRequest.tags}
