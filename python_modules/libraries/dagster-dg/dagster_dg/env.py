@@ -18,6 +18,10 @@ class ProjectEnvVars:
         self._values = values
 
     @classmethod
+    def empty(cls, ctx: DgContext) -> "Self":
+        return cls(ctx, values={})
+
+    @classmethod
     def from_ctx(cls, ctx: DgContext) -> "Self":
         check.invariant(ctx.is_project, "ProjectEnvVars can only be created from a project context")
         env_path = ctx.root_path / ".env"
