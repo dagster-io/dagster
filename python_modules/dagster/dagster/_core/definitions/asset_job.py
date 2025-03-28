@@ -128,6 +128,8 @@ def build_asset_job(
     """
     from dagster._core.execution.build_resources import wrap_resources_for_execution
 
+    print("I AM BUILDING THE ASSET JOB")
+
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
     resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
     wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
@@ -223,6 +225,8 @@ def get_asset_graph_for_job(
         create_unexecutable_external_asset_from_assets_def,
     )
 
+    print("I HIT ASSET GRAPH WOAH")
+
     selected_keys = selection.resolve(parent_asset_graph)
     invalid_keys = selected_keys - parent_asset_graph.executable_asset_keys
     if invalid_keys:
@@ -287,6 +291,7 @@ def _subset_assets_defs(
 
     # Do not match any assets with no keys
     for asset in set(a for a in assets if a.has_keys or a.has_check_keys):
+        print(f"Asset: {asset.keys}")
         # intersection
         selected_subset = selected_asset_keys & asset.keys
 
@@ -295,8 +300,20 @@ def _subset_assets_defs(
             selected_check_subset = selected_asset_check_keys & asset.check_keys
         # if no checks were selected, filter to checks that target selected assets
         else:
+            print("I GOT HIT")
+            # In the very specific case of dbt sources; upstream stub assets may have checks defined in the assets definition.
+            # In this case, we want to include the checks that target the upstream assets.
+            upstreams = {
+                dep.asset_key
+                for spec in asset.specs
+                for dep in spec.deps
+                if spec.key in selected_asset_keys
+            }
+            asset_keys_that_checks_can_target = selected_asset_keys | upstreams
             selected_check_subset = {
-                key for key in asset.check_keys if key.asset_key in selected_asset_keys
+                key
+                for key in asset.check_keys
+                if key.asset_key in asset_keys_that_checks_can_target
             }
             # if the selected set of asset keys is the entire set of asset keys; and no checks were selected; should we just include all checks? That feels kinda confusing and subtle too.
 
@@ -592,14 +609,21 @@ def _attempt_resolve_node_cycles(asset_graph: AssetGraph) -> AssetGraph:
         color_mapping_by_assets_defs[node.assets_def][color].add(key)
 
     subsetted_assets_defs: list[AssetsDefinition] = []
+
+    remaining_check_keys = set(asset_graph.asset_check_keys)
     for assets_def, color_mapping in color_mapping_by_assets_defs.items():
         if assets_def.is_external or len(color_mapping) == 1 or not assets_def.can_subset:
             subsetted_assets_defs.append(assets_def)
         else:
             for asset_keys in color_mapping.values():
-                subsetted_assets_defs.append(
-                    assets_def.subset_for(asset_keys, selected_asset_check_keys=None)
+                subsetted_assets_def = assets_def.subset_for(
+                    asset_keys,
+                    selected_asset_check_keys={
+                        key for key in assets_def.check_keys if key in remaining_check_keys
+                    },
                 )
+                subsetted_assets_defs.append(subsetted_assets_def)
+                remaining_check_keys -= subsetted_assets_def.check_keys
 
     # We didn't color asset checks, so add any that are in their own node.
     assets_defs_with_only_checks = [

@@ -117,12 +117,6 @@ def _process_user_event(
             "If we were able to create an AssetCheckEvaluation from the AssetCheckResult, then"
             " there should be a spec for the check",
         )
-
-        output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
-            asset_check_evaluation.asset_check_key
-        )
-        output = Output(value=None, output_name=output_name)
-
         yield asset_check_evaluation
 
         if (
@@ -134,7 +128,18 @@ def _process_user_event(
                 f"Blocking check '{spec.name}' for asset '{spec.asset_key.to_user_string()}' failed with"
                 " ERROR severity."
             )
-        yield output
+
+        output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
+            asset_check_evaluation.asset_check_key
+        )
+        # We probably want to handle this more gracefully?
+        if output_name in step_context.selected_output_names:
+            output = Output(value=None, output_name=output_name)
+            yield output
+        else:
+            step_context.log.warning(
+                f"AssetCheckResult for check '{spec.name}' for asset '{spec.asset_key.to_user_string()}' was yielded which is not selected. Letting it through."
+            )
     else:
         yield user_event
 

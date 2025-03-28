@@ -861,9 +861,9 @@ def test_dbt_source_tests_checks_enabled(
         [my_dbt_assets],
         resources={"dbt": DbtCliResource(project_dir=os.fspath(test_asset_checks_path))},
         raise_on_error=False,
-        selection=AssetSelection.keys(*all_asset_keys).__or__(
-            AssetSelection.checks(*all_check_keys)
-        ),
+        # selection=AssetSelection.keys(*all_asset_keys).__or__(
+        #     AssetSelection.checks(*all_check_keys)
+        # ),
     )
     assert not result.success
     asset_check_results = [

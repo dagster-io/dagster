@@ -171,6 +171,7 @@ class RepositorySnap(IHaveNew):
         repository_def: RepositoryDefinition,
         defer_snapshots: bool = False,
     ) -> Self:
+        print("I AM IN THE REPOSITORY SNAP CLASS")
         check.inst_param(repository_def, "repository_def", RepositoryDefinition)
 
         jobs = repository_def.get_all_jobs()

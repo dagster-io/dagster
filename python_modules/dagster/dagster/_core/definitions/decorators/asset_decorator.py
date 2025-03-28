@@ -570,6 +570,8 @@ def multi_asset(
     specs: Optional[Sequence[AssetSpec]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     pool: Optional[str] = None,
+    # scope this down to only allow targeting upstreams
+    # and then it's reasonable default behavior?
     _disable_check_specs_target_relevant_asset_keys: bool = False,
     **kwargs: Any,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
