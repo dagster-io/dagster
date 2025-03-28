@@ -165,7 +165,7 @@ name: flex
 def test_bad_class():
     class Empty(Resolvable): ...
 
-    with pytest.raises(ResolutionException, match="class with non empty __init__"):
+    with pytest.raises(ResolutionException, match="class with __init__"):
         Empty.resolve_from_yaml("")
 
     class JustSelf(Resolvable):
@@ -173,8 +173,7 @@ def test_bad_class():
             self,
         ): ...
 
-    with pytest.raises(ResolutionException, match="class with non empty __init__"):
-        JustSelf.resolve_from_yaml("")
+    JustSelf.resolve_from_yaml("")
 
     class PosOnly(Resolvable):
         def __init__(
