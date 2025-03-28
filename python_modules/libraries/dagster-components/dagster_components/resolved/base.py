@@ -61,13 +61,19 @@ class Resolvable:
     @classmethod
     def resolve_from_yaml(cls, yaml: str):
         parsed_and_src_tree = parse_yaml_with_source_positions(yaml)
-        model = _parse_and_populate_model_with_annotated_errors(
-            cls=cls.model(),
-            obj_parse_root=parsed_and_src_tree,
-            obj_key_path_prefix=[],
-        )
+        model_cls = cls.model()
+        if parsed_and_src_tree:
+            model = _parse_and_populate_model_with_annotated_errors(
+                cls=model_cls,
+                obj_parse_root=parsed_and_src_tree,
+                obj_key_path_prefix=[],
+            )
+        else:  # yaml parsed as None
+            model = model_cls()
         # support adding scopes?
-        context = ResolutionContext.default(parsed_and_src_tree.source_position_tree)
+        context = ResolutionContext.default(
+            parsed_and_src_tree.source_position_tree if parsed_and_src_tree else None
+        )
         return cls.resolve_from_model(context, model)
 
 
@@ -116,6 +122,7 @@ def derive_model_type(
 
 def _get_annotations(resolved_type: type[Resolvable]):
     annotations: dict[str, tuple[Any, bool]] = {}
+    init_kwargs = _get_init_kwargs(resolved_type)
     if is_dataclass(resolved_type):
         for f in fields(resolved_type):
             has_default = f.default is not MISSING or f.default_factory is not MISSING
@@ -126,16 +133,16 @@ def _get_annotations(resolved_type: type[Resolvable]):
             has_default = not field_info.is_required()
             annotations[name] = (field_info.rebuild_annotation(), has_default)
         return annotations
-    elif init_kwargs := _get_init_kwargs(resolved_type):
+    elif init_kwargs is not None:
         return init_kwargs
     # can update to support:
     # * @record
     else:
         raise ResolutionException(
             f"Invalid Resolved type {resolved_type} could not determine fields, expected:\n"
+            "* class with __init__\n"
             "* @dataclass\n"
-            "* @record\n"
-            "* class with non empty __init__\n"
+            "* pydantic Model\n"
         )
 
 
