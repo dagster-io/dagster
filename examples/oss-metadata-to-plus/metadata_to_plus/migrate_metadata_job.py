@@ -50,9 +50,7 @@ class MetadataMigrationConfig(Config):
 
 
 @asset
-def migrate_metadata_asset(
-    context: AssetExecutionContext, config: MetadataMigrationConfig
-):
+def migrate_metadata_asset(context: AssetExecutionContext, config: MetadataMigrationConfig):
     new_organization = config.new_organization
     new_deployment = config.new_deployment
     new_dagster_cloud_api_token = config.new_dagster_cloud_api_token
@@ -71,9 +69,7 @@ def migrate_metadata_asset(
         if dagster_event is not None:
             data = dagster_event.event_specific_data.materialization
             partition_to_report = data.partition
-            metadata_to_report = {
-                key: value.value for key, value in data.metadata.items()
-            }
+            metadata_to_report = {key: value.value for key, value in data.metadata.items()}
         cursor = result.cursor
         _report_asset_materialization_to_dagster_plus(
             new_organization=new_organization,
