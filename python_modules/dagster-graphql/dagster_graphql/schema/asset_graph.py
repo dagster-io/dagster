@@ -1570,7 +1570,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         partitions_def = self._get_partitions_def()
         context = PartitionLoadingContext(
-            TemporalContext(
+            temporal_context=TemporalContext(
                 effective_dt=get_current_datetime(),
                 last_event_id=graphene_info.context.instance.event_log_storage.get_maximum_record_id(),
             ),
