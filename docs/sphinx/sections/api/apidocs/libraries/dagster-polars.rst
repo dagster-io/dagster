@@ -137,3 +137,5 @@ API Documentation
 
 .. autoconfigurable:: PolarsBigQueryIOManager
   :annotation: IOManagerDefinition
+
+.. autofunction:: dagster_polars.patito.patito_model_to_dagster_type

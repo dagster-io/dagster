@@ -1,0 +1,7 @@
+[lint]
+extend-select = ["TID253"]
+
+[lint.flake8-tidy-imports]
+# Ban certain modules from being imported at module level, instead requiring
+# that they're imported lazily (e.g., within a function definition).
+banned-module-level-imports = ["patito"]

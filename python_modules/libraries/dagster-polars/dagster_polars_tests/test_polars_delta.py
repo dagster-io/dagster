@@ -44,21 +44,37 @@ def test_polars_delta_io_manager_append(polars_delta_io_manager: PolarsDeltaIOMa
     )
 
     handled_output_events = list(
-        filter(lambda evt: evt.is_handled_output, result.events_for_node("append_asset"))
+        filter(
+            lambda evt: evt.is_handled_output, result.events_for_node("append_asset")
+        )
     )
     saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore
-    assert handled_output_events[0].event_specific_data.metadata["dagster/row_count"].value == 3  # type: ignore
-    assert handled_output_events[0].event_specific_data.metadata["append_row_count"].value == 3  # type: ignore
+    assert (
+        handled_output_events[0].event_specific_data.metadata["dagster/row_count"].value  # type: ignore
+        == 3
+    )
+    assert (
+        handled_output_events[0].event_specific_data.metadata["append_row_count"].value  # type: ignore
+        == 3
+    )
     assert isinstance(saved_path, str)
 
     result = materialize(
         [append_asset],
     )
     handled_output_events = list(
-        filter(lambda evt: evt.is_handled_output, result.events_for_node("append_asset"))
+        filter(
+            lambda evt: evt.is_handled_output, result.events_for_node("append_asset")
+        )
     )
-    assert handled_output_events[0].event_specific_data.metadata["dagster/row_count"].value == 6  # type: ignore
-    assert handled_output_events[0].event_specific_data.metadata["append_row_count"].value == 3  # type: ignore
+    assert (
+        handled_output_events[0].event_specific_data.metadata["dagster/row_count"].value  # type: ignore
+        == 6
+    )
+    assert (
+        handled_output_events[0].event_specific_data.metadata["append_row_count"].value  # type: ignore
+        == 3
+    )
 
     pl_testing.assert_frame_equal(pl.concat([df, df]), pl.read_delta(saved_path))
 
@@ -231,7 +247,9 @@ def test_polars_delta_io_manager_overwrite_schema_lazy(
 
 @pytest.mark.parametrize("engine", ["pyarrow", "rust"])
 def test_polars_delta_native_partitioning(
-    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame, engine: str
+    polars_delta_io_manager: PolarsDeltaIOManager,
+    df_for_delta: pl.DataFrame,
+    engine: str,
 ):
     manager = polars_delta_io_manager
     df = df_for_delta
@@ -276,7 +294,9 @@ def test_polars_delta_native_partitioning(
 
 @pytest.mark.parametrize("engine", ["pyarrow", "rust"])
 def test_polars_delta_native_multi_partitions(
-    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame, engine: str
+    polars_delta_io_manager: PolarsDeltaIOManager,
+    df_for_delta: pl.DataFrame,
+    engine: str,
 ):
     manager = polars_delta_io_manager
     df = df_for_delta
@@ -330,7 +350,9 @@ def test_polars_delta_native_multi_partitions(
 
 @pytest.mark.parametrize("engine", ["pyarrow", "rust"])
 def test_polars_delta_native_partitioning_loading_single_partition(
-    polars_delta_io_manager: PolarsDeltaIOManager, df_for_delta: pl.DataFrame, engine: str
+    polars_delta_io_manager: PolarsDeltaIOManager,
+    df_for_delta: pl.DataFrame,
+    engine: str,
 ):
     manager = polars_delta_io_manager
     df = df_for_delta
@@ -377,7 +399,9 @@ def test_polars_delta_time_travel(
         return df.with_columns(pl.lit(config.foo).alias("foo"))
 
     for foo in ["a", "b"]:
-        materialize([upstream], run_config=RunConfig(ops={"upstream": UpstreamConfig(foo=foo)}))
+        materialize(
+            [upstream], run_config=RunConfig(ops={"upstream": UpstreamConfig(foo=foo)})
+        )
 
     # get_saved_path(result, "upstream")
 
@@ -408,7 +432,12 @@ def test_polars_delta_time_travel(
     "partition_by, partition_keys, expected_filters, expected_predicate",
     [
         ("col_name", ["a"], [("col_name", "in", ["a"])], "col_name = 'a'"),
-        ("col_name", ["a", "b"], [("col_name", "in", ["a", "b"])], "col_name in ('a', 'b')"),
+        (
+            "col_name",
+            ["a", "b"],
+            [("col_name", "in", ["a", "b"])],
+            "col_name in ('a', 'b')",
+        ),
         (
             {"col_name": "mapped_col"},
             [{"col_name": "a"}],
@@ -440,7 +469,9 @@ def test_partition_filters_predicate(
         type(mock_upstream_output).definition_metadata = mocker.PropertyMock(
             return_value={"partition_by": partition_by}
         )
-        type(context).upstream_output = mocker.PropertyMock(return_value=mock_upstream_output)
+        type(context).upstream_output = mocker.PropertyMock(
+            return_value=mock_upstream_output
+        )
     else:
         context = mocker.MagicMock(OutputContext)
         type(context).definition_metadata = mocker.PropertyMock(
@@ -454,12 +485,16 @@ def test_partition_filters_predicate(
 
         for keys in partition_keys:
             mock_partition_keys = mocker.MagicMock(MultiPartitionKey)
-            type(mock_partition_keys).keys_by_dimension = mocker.PropertyMock(return_value=keys)
+            type(mock_partition_keys).keys_by_dimension = mocker.PropertyMock(
+                return_value=keys
+            )
             mock_keys.append(mock_partition_keys)
 
         type(context).asset_partition_keys = mocker.PropertyMock(return_value=mock_keys)
     else:
-        type(context).asset_partition_keys = mocker.PropertyMock(return_value=partition_keys)
+        type(context).asset_partition_keys = mocker.PropertyMock(
+            return_value=partition_keys
+        )
 
     assert PolarsDeltaIOManager.get_partition_filters(context) == expected_filters
     assert PolarsDeltaIOManager.get_predicate(context) == expected_predicate

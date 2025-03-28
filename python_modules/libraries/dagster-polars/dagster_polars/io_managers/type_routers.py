@@ -1,7 +1,18 @@
 import sys
 from abc import abstractmethod
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar, Union, cast, get_args, get_origin
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Generic,
+    TypeVar,
+    Union,
+    cast,
+    get_args,
+    get_origin,
+)
+from dagster._core.types.dagster_type import TypeHintInferredDagsterType
 
 if sys.version_info < (3, 10):
     from typing_extensions import TypeAlias
@@ -10,6 +21,9 @@ else:
 
 import polars as pl
 from dagster import InputContext, OutputContext
+from dagster._core.types.dagster_type import DagsterType
+
+from dagster_polars.patito import HANDLES_DATA_VALIDATION_ATTRIBUTE
 
 if TYPE_CHECKING:
     from upath import UPath
@@ -30,9 +44,12 @@ class BaseTypeRouter(Generic[T]):
     This base class trivially calls the dump/load functions if the type matches the most simple cases.
     """
 
-    def __init__(self, context: Union[InputContext, OutputContext], typing_type: Any):
+    def __init__(
+        self, context: Union[InputContext, OutputContext], dagster_type: DagsterType
+    ):
         self.context = context
-        self.typing_type = typing_type
+        self.dagster_type = dagster_type
+        self.typing_type = dagster_type.typing_type
 
     @staticmethod
     @abstractmethod
@@ -51,7 +68,9 @@ class BaseTypeRouter(Generic[T]):
 
     @property
     def parent_type_router(self) -> "TypeRouter":
-        return resolve_type_router(self.context, self.inner_type)
+        return resolve_type_router(
+            self.context, TypeHintInferredDagsterType(self.inner_type)
+        )
 
     def dump(self, obj: T, path: "UPath", dump_fn: F_D) -> None:
         if self.is_base_type:
@@ -99,14 +118,18 @@ class OptionalTypeRouter(BaseTypeRouter, Generic[T]):
 
     def dump(self, obj: T, path: "UPath", dump_fn: F_D) -> None:
         if obj is None:
-            self.context.log.warning(f"Skipping saving optional output at {path} as it is None")
+            self.context.log.warning(
+                f"Skipping saving optional output at {path} as it is None"
+            )
             return
         else:
             self.parent_type_router.dump(obj, path, dump_fn)
 
     def load(self, path: "UPath", load_fn: F_L) -> T:
         if not path.exists():
-            self.context.log.warning(f"Skipping loading optional input at {path} as it is missing")
+            self.context.log.warning(
+                f"Skipping loading optional input at {path} as it is missing"
+            )
             return None  # type: ignore
         else:
             return self.parent_type_router.load(path, load_fn)
@@ -143,16 +166,85 @@ class PolarsTypeRouter(BaseTypeRouter, Generic[T]):
         return True
 
 
-TYPE_ROUTERS = [TypeRouter, OptionalTypeRouter, DictTypeRouter, PolarsTypeRouter]
+class PatitoTypeRouter(BaseTypeRouter, Generic[T]):
+    """Handles Patito DataFrames. Performs validation on load and dump."""
+
+    @staticmethod
+    def match(context: Union[InputContext, OutputContext], typing_type: Any) -> bool:
+        import patito as pt
+
+        return isinstance(typing_type, type) and (
+            issubclass(typing_type, pt.DataFrame)
+            or issubclass(typing_type, pt.LazyFrame)
+        )
+
+    @property
+    def is_base_type(self) -> bool:
+        return False
+
+    @property
+    def requires_data_validation(self) -> bool:
+        return not (
+            hasattr(self.dagster_type, HANDLES_DATA_VALIDATION_ATTRIBUTE)
+            and getattr(self.dagster_type, HANDLES_DATA_VALIDATION_ATTRIBUTE)
+        ) or not getattr(self.dagster_type, HANDLES_DATA_VALIDATION_ATTRIBUTE)
+
+    def dump(self, obj: T, path: "UPath", dump_fn: F_D[T]) -> None:
+        import patito as pt
+
+        if isinstance(obj, pt.DataFrame):  # lazy frames are not supported yet
+            # check if the special attribute is set
+            # so that we don't perform potentially expensive data validation
+            # twice
+            if self.requires_data_validation:
+                obj = obj.validate()  # type: ignore
+        dump_fn(cast(OutputContext, self.context), obj, path)
+
+    def load(self, path: "UPath", load_fn: F_L[T]) -> T:
+        import patito as pt
+
+        df = load_fn(path, cast(InputContext, self.context))
+        if isinstance(df, pl.DataFrame):
+            df = pt.DataFrame(df).set_model(self.model)
+            if self.requires_data_validation:
+                df = df.validate()
+            return df
+        elif isinstance(df, pl.LazyFrame):
+            # _from_pyldf found in https://github.com/JakobGM/patito/pull/135
+            return self.model.LazyFrame._from_pyldf(df._ldf)  # noqa
+        else:
+            raise ValueError(f"Unexpected DataFrame type {type(df)}")
+
+    @property
+    def inner_type(self) -> Any:
+        if issubclass(self.typing_type, pl.DataFrame):
+            return pl.DataFrame
+        elif issubclass(self.typing_type, pl.LazyFrame):
+            return pl.LazyFrame
+        else:
+            raise ValueError(f"Unexpected Patito type {self.typing_type}")
+
+    @property
+    def model(self):
+        return self.typing_type.model
+
+
+TYPE_ROUTERS = [
+    TypeRouter,
+    OptionalTypeRouter,
+    DictTypeRouter,
+    PatitoTypeRouter,
+    PolarsTypeRouter,
+]
 
 
 def resolve_type_router(
-    context: Union[InputContext, OutputContext], type_to_resolve: Any
+    context: Union[InputContext, OutputContext], dagster_type_to_resolve: DagsterType
 ) -> TypeRouter:
     """Finds the first matching TypeRouter for the given type."""
     # try each router class in order of increasing complexity
     for router_class in TYPE_ROUTERS:
-        if router_class.match(context, type_to_resolve):
-            return router_class(context, type_to_resolve)
+        if router_class.match(context, dagster_type_to_resolve.typing_type):
+            return router_class(context, dagster_type_to_resolve)
 
-    raise RuntimeError(f"Could not resolve type router for {type_to_resolve}")
+    raise RuntimeError(f"Could not resolve type router for {dagster_type_to_resolve}")
