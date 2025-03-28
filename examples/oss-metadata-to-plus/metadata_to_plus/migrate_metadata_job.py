@@ -1,4 +1,4 @@
-# Docs: https://docs.dagster.io/apidocs/external-assets-rest
+# Docs: https://docs.dagster.io/api/python-api/external-assets-rest-api
 
 import os
 from typing import Optional
