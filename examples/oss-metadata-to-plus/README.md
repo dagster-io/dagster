@@ -22,11 +22,11 @@ Then, you may have several months of metadata for this asset that you want to re
 
 ## Replicate metadata in Dagster+
 
-Now, as you've moved to Dagster+, you may want to replicate this metadata in Dagster+ to keep track of it. You can do this by creating a a new job in the same OSS project. This job will read the metadata from the existing OSS storage and report it as new [external assets](https://docs.dagster.io/concepts/assets/external-assets) to Dagster+.
+Now, as you've moved to Dagster+, you may want to replicate this metadata in Dagster+ to keep track of it. You can do this by creating a a new job in the same OSS project. This job will read the metadata from the existing OSS storage and report it as new [external assets](https://docs.dagster.io/guides/build/assets/external-assets) to Dagster+.
 
 ### Step 1: Read the metadata from the existing OSS storage
 
-You can get this information via DagsterInstance's [fetch_materializations](https://docs.dagster.io/_apidocs/internals#dagster.DagsterInstance.fetch_materializations) method:
+You can get this information via DagsterInstance's [fetch_materializations](https://docs.dagster.io/api/python-api/internals#dagster.DagsterInstance.fetch_materializations) method:
 
 ```python
 result: EventRecordsResult = context.instance.fetch_materializations(
@@ -40,11 +40,11 @@ In this example, we are fetching the metadata for the asset with the key `asset_
 
 ### Step 2: Create a job to send the metadata as new external assets to Dagster+
 
-There are many ways to update external asset metadata. See the [documentation](https://docs.dagster.io/concepts/assets/external-assets#updating-external-asset-metadata) for more information.
+There are many ways to update external asset metadata. See the [documentation](https://docs.dagster.io/guides/build/assets/external-assets#recording-materializations-and-metadata) for more information.
 
-In this example, we are using the [REST API](https://docs.dagster.io/apidocs/external-assets-rest) to update the metadata and wrap it in a Dagster asset to maximize the observability of the process.
+In this example, we are using the [REST API](https://docs.dagster.io/api/python-api/external-assets-rest-api) to update the metadata and wrap it in a Dagster asset to maximize the observability of the process.
 
-Note: This requires agent token. Here's the instruction to get the agent token: https://docs.dagster.io/dagster-plus/account/managing-user-agent-tokens#creating-agent-tokens.
+Note: This requires an agent token. Here are the instruction to get the agent token: https://docs.dagster.io/dagster-plus/deployment/management/tokens/agent-tokens
 
 ```python
 url = "https://{organization}.dagster.cloud/{deployment_name}/report_asset_materialization/".format(
