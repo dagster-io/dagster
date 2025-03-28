@@ -210,6 +210,10 @@ class AssetOut:
     def kinds(self) -> Optional[set[str]]:
         return self._spec.kinds
 
+    @property
+    def new_freshness_thing(self) -> Optional[NewFreshnessThing]:
+        return self._spec.new_freshness_thing
+
     def to_out(self) -> Out:
         return Out(
             dagster_type=self.dagster_type,
