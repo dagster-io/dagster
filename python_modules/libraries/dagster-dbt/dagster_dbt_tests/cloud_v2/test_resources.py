@@ -2,7 +2,7 @@ from typing import Optional
 
 import pytest
 import responses
-from dagster import Failure
+from dagster import AssetCheckEvaluation, AssetMaterialization, Failure
 from dagster_dbt.cloud_v2.resources import DbtCloudCredentials, DbtCloudWorkspace
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType
 
@@ -18,6 +18,7 @@ from dagster_dbt_tests.cloud_v2.conftest import (
     TEST_PROJECT_ID,
     TEST_REST_API_BASE_URL,
     TEST_RUN_ID,
+    TEST_RUN_URL,
     TEST_TOKEN,
     get_sample_run_response,
 )
@@ -158,6 +159,31 @@ def test_custom_adhoc_job_name(
     assert job.account_id == TEST_ACCOUNT_ID
     assert job.project_id == TEST_PROJECT_ID
     assert job.environment_id == TEST_ENVIRONMENT_ID
+
+
+def test_cli_invocation(
+    workspace: DbtCloudWorkspace,
+    cli_invocation_api_mocks: responses.RequestsMock,
+) -> None:
+    invocation = workspace.cli(args=["run"])
+    events = list(invocation.wait())
+
+    asset_materializations = [event for event in events if isinstance(event, AssetMaterialization)]
+    asset_check_evaluations = [event for event in events if isinstance(event, AssetCheckEvaluation)]
+
+    # 8 asset materializations
+    assert len(asset_materializations) == 8
+    # 20 asset check evaluations
+    assert len(asset_check_evaluations) == 20
+
+    # Sanity check
+    first_mat = next(mat for mat in sorted(asset_materializations))
+    assert first_mat.asset_key.path == ["customers"]
+    assert first_mat.metadata["run_url"].value == TEST_RUN_URL
+
+    first_check_eval = next(check_eval for check_eval in sorted(asset_check_evaluations))
+    assert first_check_eval.check_name == "not_null_customers_customer_id"
+    assert first_check_eval.asset_key.path == ["customers"]
 
 
 @pytest.mark.parametrize(

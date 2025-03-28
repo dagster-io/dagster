@@ -19,6 +19,7 @@ from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
 from dagster_dbt.asset_utils import build_dbt_specs
+from dagster_dbt.cloud_v2.cli_invocation import DbtCloudCliInvocation
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.run_handler import DbtCloudJobRunHandler
 from dagster_dbt.cloud_v2.types import (
@@ -252,6 +253,15 @@ class DbtCloudWorkspace(ConfigurableResource):
             for spec in self.load_specs(dagster_dbt_translator=dagster_dbt_translator)
             if isinstance(spec, AssetCheckSpec)
         ]
+
+    def cli(
+        self, args: Sequence[str], dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+    ) -> DbtCloudCliInvocation:
+        """Creates a dbt cli invocation with the dbt Cloud client."""
+        dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
+        return DbtCloudCliInvocation.run(
+            args=args, workspace=self, dagster_dbt_translator=dagster_dbt_translator
+        )
 
 
 @preview

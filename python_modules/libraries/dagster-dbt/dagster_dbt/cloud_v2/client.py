@@ -346,18 +346,21 @@ class DbtCloudWorkspaceClient(DagsterModel):
     def list_run_artifacts(
         self,
         run_id: int,
-    ) -> Mapping[str, Any]:
+    ) -> Sequence[str]:
         """Retrieves a list of artifact names for a given dbt Cloud Run.
 
         Returns:
-            Dict[str, Any]: Parsed json data representing the API response.
+            List[str]: a list of artifact names taken from the response to this request.
         """
-        return self._make_request(
-            method="get",
-            endpoint=f"runs/{run_id}/artifacts",
-            base_url=self.api_v2_url,
-            session_attr="_get_artifact_session",
-        )["data"]
+        return cast(
+            Sequence[str],
+            self._make_request(
+                method="get",
+                endpoint=f"runs/{run_id}/artifacts",
+                base_url=self.api_v2_url,
+                session_attr="_get_artifact_session",
+            )["data"],
+        )
 
     def get_run_artifact(self, run_id: int, path: str) -> Mapping[str, Any]:
         """Retrieves an artifact at the given path for a given dbt Cloud Run.
