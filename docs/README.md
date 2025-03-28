@@ -29,10 +29,6 @@ For formatting guidelines, see the [CONTRIBUTING](CONTRIBUTING.md) guide.
 The site uses [yarn](https://yarnpkg.com/) for package management. We recommend using `nvm` to install the long-term-support version of Node.
 
 ```sh
-brew install nvm yarn vale
-```
-
-```sh
 nvm install --lts
 ```
 
@@ -72,17 +68,8 @@ This can be accomplished by running the `make dev_install` command as outlined i
 To check the documentation for formatting issues, use the following:
 
 ```bash
-## Format files with `prettier`
 yarn format
-
-## Lints documentation content using Vale Server
-## Checks for style guide adherence, grammar, spelling, etc.
-yarn vale
-yarn vale /path/to/file      ## check individual file
-yarn vale --no-wrap          ## remove wrapping from output
 ```
-
-For more information on Vale, see https://vale.sh/.
 
 ---
 
