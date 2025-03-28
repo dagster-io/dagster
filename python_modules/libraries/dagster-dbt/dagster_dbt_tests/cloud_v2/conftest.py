@@ -810,9 +810,13 @@ def credentials_fixture() -> DbtCloudCredentials:
     return TEST_CREDENTIALS
 
 
-@pytest.fixture(name="workspace")
+@pytest.fixture(name="workspace", scope="function")
 def workspace_fixture() -> DbtCloudWorkspace:
-    return TEST_WORKSPACE
+    return DbtCloudWorkspace(
+        credentials=TEST_CREDENTIALS,
+        project_id=TEST_PROJECT_ID,
+        environment_id=TEST_ENVIRONMENT_ID,
+    )
 
 
 @pytest.fixture(
