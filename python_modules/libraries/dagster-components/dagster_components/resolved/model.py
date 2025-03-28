@@ -34,6 +34,12 @@ if TYPE_CHECKING:
     from dagster_components.resolved.context import ResolutionContext
 
 
+class Model(BaseModel):
+    """pydantic BaseModel configured to disallow extra fields in order to help catch errors earlier."""
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class ResolvableModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

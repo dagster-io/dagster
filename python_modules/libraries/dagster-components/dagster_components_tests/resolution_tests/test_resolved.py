@@ -6,7 +6,7 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster_components.resolved.base import Resolvable
 from dagster_components.resolved.core_models import ResolvedAssetSpec
 from dagster_components.resolved.errors import ResolutionException
-from dagster_components.resolved.model import Resolver
+from dagster_components.resolved.model import Model, Resolver
 from pydantic import BaseModel, ConfigDict
 
 
@@ -186,3 +186,16 @@ def test_bad_class():
 
     with pytest.raises(ResolutionException, match="positional only parameter"):
         PosOnly.resolve_from_yaml("")
+
+
+def test_model():
+    class Example(Resolvable, Model):
+        asset_specs: list[ResolvedAssetSpec]
+
+    ex = Example.resolve_from_yaml("""
+asset_specs:
+    - key: foo
+    - key: bar
+""")
+
+    assert ex.asset_specs[0].key == AssetKey("foo")
