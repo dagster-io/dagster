@@ -77,6 +77,7 @@ class AssetOut:
             attached to runs of the asset.
         kinds (Optional[set[str]]): A set of strings representing the kinds of the asset. These
     will be made visible in the Dagster UI.
+        kinds_order (Optional[Sequence[str]]): An optional sequence specifying the order of kinds.
     """
 
     _spec: AssetSpec
@@ -102,6 +103,7 @@ class AssetOut:
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
         kinds: Optional[set[str]] = None,
+        kinds_order: Optional[Sequence[str]] = None,
         **kwargs,
     ):
         # Accept a hidden "spec" argument to allow for the AssetOut to be constructed from an AssetSpec
@@ -133,6 +135,7 @@ class AssetOut:
                 owners,
                 tags,
                 kinds,
+                kinds_order,
             ]
         )
         check.invariant(
@@ -162,6 +165,7 @@ class AssetOut:
                 owners=check.opt_sequence_param(owners, "owners", of_type=str),
                 tags=normalize_tags(tags or {}, strict=True),
                 kinds=check.opt_set_param(kinds, "kinds", of_type=str),
+                kinds_order=check.opt_sequence_param(kinds_order, "kinds_order", of_type=str),
             )
         self.key_prefix = key_prefix
         self.dagster_type = dagster_type
@@ -208,6 +212,10 @@ class AssetOut:
     @property
     def kinds(self) -> Optional[set[str]]:
         return self._spec.kinds
+
+    @property
+    def kinds_order(self) -> Optional[Sequence[str]]:
+        return self._spec.kinds_order
 
     def to_out(self) -> Out:
         return Out(
