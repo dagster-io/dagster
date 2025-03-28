@@ -24,7 +24,7 @@ def _report_asset_materialization_to_dagster_plus(
     partition: Optional[str],
     metadata: Optional[dict],
 ):
-    url = "https://{organization}.dagster.cloud/{deployment_name}/report_asset_materialization/".format( # noqa: UP032
+    url = "https://{organization}.dagster.cloud/{deployment_name}/report_asset_materialization/".format(  # noqa: UP032
         organization=new_organization, deployment_name=new_deployment
     )
 
@@ -79,7 +79,7 @@ def migrate_metadata_asset(context: AssetExecutionContext, config: MetadataMigra
             partition=partition_to_report,
             metadata=metadata_to_report,
         )
-        print(f"Migrated asset {asset_key} for partition {partition_to_report}") # noqa: T201
+        print(f"Migrated asset {asset_key} for partition {partition_to_report}")  # noqa: T201
 
 
 migrate_metadata_job = define_asset_job(
