@@ -18,27 +18,27 @@ An individual op should perform relatively simple tasks, such as:
 - Querying an API and storing the result in a data warehouse
 - Sending an email or Slack message
 
-The computational core of an [asset definition](/guides/build/assets/) is an op. Collections of ops can also be assembled to create a [graph](/guides/build/ops/graphs).
+The computational core of an [asset definition](https://docs.dagster.io/guides/build/assets/) is an op. Collections of ops can also be assembled to create a [graph](https://docs.dagster.io/guides/build/ops/graphs).
 
 ![Ops](/images/guides/build/ops/ops.png)
 
 Ops support a variety of useful features for data orchestration, such as:
 
-- **Flexible execution strategies**: Painlessly transition from development to production with ops, as they are sealed units of logic independent of execution strategy. Collections of ops - called [graphs](/guides/build/ops/graphs) - can be bound via [jobs](/guides/build/jobs/) to an appropriate [executor](/guides/operate/run-executors) for single-process execution or distribution across a cluster.
+- **Flexible execution strategies**: Painlessly transition from development to production with ops, as they are sealed units of logic independent of execution strategy. Collections of ops - called [graphs](https://docs.dagster.io/guides/build/ops/graphs) - can be bound via [jobs](https://docs.dagster.io/guides/build/jobs/) to an appropriate [executor](https://docs.dagster.io/guides/operate/run-executors) for single-process execution or distribution across a cluster.
 
-- **Pluggable external systems**: If your data pipeline interfaces with external systems, you may want to use local substitutes during development over a cloud-based production system. Dagster provides [resources](/guides/build/external-resources/) as an abstraction layer for this purpose.
+- **Pluggable external systems**: If your data pipeline interfaces with external systems, you may want to use local substitutes during development over a cloud-based production system. Dagster provides [resources](https://docs.dagster.io/guides/build/external-resources/) as an abstraction layer for this purpose.
 
-  Ops can be written against abstract resources (e.g. `database`), with resource definitions later bound at the [job](/guides/build/jobs/op-jobs) level. Op logic can thus remain uncoupled to any particular implementation of an external system.
+  Ops can be written against abstract resources (e.g. `database`), with resource definitions later bound at the [job](https://docs.dagster.io/guides/build/jobs/op-jobs) level. Op logic can thus remain uncoupled to any particular implementation of an external system.
 
-- **Input and output management**: Ops have defined [inputs and outputs](#inputs-and-outputs), analogous to the arguments and return value(s) of a Python function. An input or output can be annotated with a [Dagster type](/api/python-api/types) for arbitrarily complex runtime validation. Outputs can additionally be tagged with an [IO Manager](/guides/build/io-managers/) to manage storage of the associated data in between ops. This enables easy swapping of I/O strategy depending on the execution environment, as well as efficient caching of data intermediates.
+- **Input and output management**: Ops have defined [inputs and outputs](#inputs-and-outputs), analogous to the arguments and return value(s) of a Python function. An input or output can be annotated with a [Dagster type](https://docs.dagster.io/api/python-api/types) for arbitrarily complex runtime validation. Outputs can additionally be tagged with an [IO Manager](https://docs.dagster.io/guides/build/io-managers/) to manage storage of the associated data in between ops. This enables easy swapping of I/O strategy depending on the execution environment, as well as efficient caching of data intermediates.
 
-- **Configuration**: Operations in a data pipeline are often parameterized by both upstream data (e.g. a stream of database records) and configuration parameters independent of upstream data (e.g. a "chunk size" of incoming records to operate on). Define configuration parameters by providing an associated [config schema](/guides/operate/configuration/run-configuration) to the op.
+- **Configuration**: Operations in a data pipeline are often parameterized by both upstream data (e.g. a stream of database records) and configuration parameters independent of upstream data (e.g. a "chunk size" of incoming records to operate on). Define configuration parameters by providing an associated [config schema](https://docs.dagster.io/guides/operate/configuration/run-configuration) to the op.
 
-- **Event streams**: Ops emit a stream of [events](/guides/build/ops/op-events) during execution. Certain events are emitted by default - such as indicating the start of an op's execution - but op authors are additionally given access to an event API.
+- **Event streams**: Ops emit a stream of [events](https://docs.dagster.io/guides/build/ops/op-events) during execution. Certain events are emitted by default - such as indicating the start of an op's execution - but op authors are additionally given access to an event API.
 
-  This can be used to report data asset creation or modification (<PyObject section="ops" module="dagster" object="AssetMaterialization"/>), the result of a data quality check (<PyObject section="ops" module="dagster" object="ExpectationResult"/>), or other arbitrary information. Event streams can be visualized in [the Dagster UI](/guides/operate/webserver#dagster-ui-reference). This rich log of execution facilitates debugging, inspection, and real-time monitoring of running jobs.
+  This can be used to report data asset creation or modification (<PyObject section="ops" module="dagster" object="AssetMaterialization"/>), the result of a data quality check (<PyObject section="ops" module="dagster" object="ExpectationResult"/>), or other arbitrary information. Event streams can be visualized in [the Dagster UI](https://docs.dagster.io/guides/operate/webserver#dagster-ui-reference). This rich log of execution facilitates debugging, inspection, and real-time monitoring of running jobs.
 
-- **Testability**: The properties that enable flexible execution of ops also facilitate versatile testing. Ops can be [tested](/guides/test/) in isolation or as part of a pipeline. Further, the [resource](/guides/build/external-resources/) API allows external systems (e.g. databases) to be stubbed or substituted as needed.
+- **Testability**: The properties that enable flexible execution of ops also facilitate versatile testing. Ops can be [tested](https://docs.dagster.io/guides/test/) in isolation or as part of a pipeline. Further, the [resource](https://docs.dagster.io/guides/build/external-resources/) API allows external systems (e.g. databases) to be stubbed or substituted as needed.
 
 ## Relevant APIs
 
@@ -64,11 +64,11 @@ Both definitions have a few important properties:
 
 - They are named.
 - They are optionally typed. These types are validated at runtime.
-- (Advanced) They can be linked to an <PyObject section="io-managers" module="dagster" object="IOManager"/>, which defines how the output or input is stored and loaded. See the [IO manager concept page](/guides/build/io-managers/) for more info.
+- (Advanced) They can be linked to an <PyObject section="io-managers" module="dagster" object="IOManager"/>, which defines how the output or input is stored and loaded. See the [IO manager concept page](https://docs.dagster.io/guides/build/io-managers/) for more info.
 
 #### Inputs
 
-Inputs are passed as arguments to an op's `compute_fn`. The value of an input can be passed from the output of another op, or [stubbed (hardcoded) using config](/guides/build/jobs/unconnected-inputs#loading-a-built-in-dagster-type-from-config).
+Inputs are passed as arguments to an op's `compute_fn`. The value of an input can be passed from the output of another op, or [stubbed (hardcoded) using config](https://docs.dagster.io/guides/build/jobs/unconnected-inputs#loading-a-built-in-dagster-type-from-config).
 
 The most common way to define inputs is just to add arguments to the decorated function:
 
@@ -79,7 +79,7 @@ An op only starts to execute once all of its inputs have been resolved. Inputs c
 - The upstream output that the input depends on has been successfully emitted and stored.
 - The input was stubbed through config.
 
-You can use a [Dagster Type](/api/python-api/types) to provide a function that validates an op's input every time the op runs. In this case, you use a dictionary of <PyObject section="ops" module="dagster" object="In" pluralize /> corresponding to the decorated function arguments.
+You can use a [Dagster Type](https://docs.dagster.io/api/python-api/types) to provide a function that validates an op's input every time the op runs. In this case, you use a dictionary of <PyObject section="ops" module="dagster" object="In" pluralize /> corresponding to the decorated function arguments.
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_typed_input_op_marker" endBefore="end_typed_input_op_marker" />
 
@@ -109,13 +109,13 @@ Note that if you would like to specify a single tuple output and still utilize t
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/ops_jobs_graphs/ops.py" startAfter="start_single_output_tuple" endBefore="end_single_output_tuple" />
 
-Like inputs, outputs can also have [Dagster Types](/api/python-api/types).
+Like inputs, outputs can also have [Dagster Types](https://docs.dagster.io/api/python-api/types).
 
-While many use cases can be served using built-in python annotations, <PyObject section="ops" module="dagster" object="Output"/> and <PyObject section="dynamic" module="dagster" object="DynamicOutput"/> objects unlock additional functionality. Check out the docs on [Op Outputs](/guides/build/ops/op-events#output-objects) to learn more.
+While many use cases can be served using built-in python annotations, <PyObject section="ops" module="dagster" object="Output"/> and <PyObject section="dynamic" module="dagster" object="DynamicOutput"/> objects unlock additional functionality. Check out the docs on [Op Outputs](https://docs.dagster.io/guides/build/ops/op-events#output-objects) to learn more.
 
 ### Op configuration
 
-Ops in Dagster can specify a config schema which makes them configurable and parameterizable at execution time. The configuration system is explained in detail in the [Config schema documentation](/guides/operate/configuration/run-configuration).
+Ops in Dagster can specify a config schema which makes them configurable and parameterizable at execution time. The configuration system is explained in detail in the [Config schema documentation](https://docs.dagster.io/guides/operate/configuration/run-configuration).
 
 Op functions can specify an annotated `config` parameter for the op's configuration. The config class, which subclasses <PyObject section="config" module="dagster" object="Config"/> (which wraps [`pydantic.BaseModel`](https://docs.pydantic.dev/usage/models/#basic-model-usage)) specifies the configuration schema for the op. Op configuration can be used to specify op behavior at runtime, making ops more flexible and reusable.
 
@@ -133,7 +133,7 @@ For example, to access the logger and log a info message:
 
 ## Using an op
 
-Ops are used within a [job](/guides/build/jobs/op-jobs) or [graph](/guides/build/ops/graphs). You can also execute a single op, usually within a test context, by directly invoking it. More information can be found at [Testing ops](/guides/test/unit-testing-assets-and-ops).
+Ops are used within a [job](https://docs.dagster.io/guides/build/jobs/op-jobs) or [graph](https://docs.dagster.io/guides/build/ops/graphs). You can also execute a single op, usually within a test context, by directly invoking it. More information can be found at [Testing ops](https://docs.dagster.io/guides/test/unit-testing-assets-and-ops).
 
 ## Patterns
 

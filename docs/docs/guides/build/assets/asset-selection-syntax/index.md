@@ -9,7 +9,7 @@ With asset selection, you can:
 
 - Select a set of assets to view in the Dagster UI
 - Define a job in Python that targets a selection of assets
-- List or materialize a set of assets using the [Dagster CLI](/api/python-api/cli#dagster-asset)
+- List or materialize a set of assets using the [Dagster CLI](https://docs.dagster.io/api/python-api/cli#dagster-asset)
 
 ## Availability
 
@@ -28,5 +28,5 @@ In the **Dagster+ UI**, the asset selection syntax is available on:
 
 ## Next steps
 
-- See the [asset selection syntax reference](/guides/build/assets/asset-selection-syntax/reference) for a full list of the filters, layers, operands, and functions that you can use to construct your own queries.
-- Check out [example asset selection queries](/guides/build/assets/asset-selection-syntax/examples).
+- See the [asset selection syntax reference](https://docs.dagster.io/guides/build/assets/asset-selection-syntax/reference) for a full list of the filters, layers, operands, and functions that you can use to construct your own queries.
+- Check out [example asset selection queries](https://docs.dagster.io/guides/build/assets/asset-selection-syntax/examples).

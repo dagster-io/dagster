@@ -3,7 +3,7 @@ title: "Asset metadata and tags"
 sidebar_position: 800
 ---
 
-[Assets](/guides/build/assets/) feature prominently in the Dagster UI. Attaching information to assets allows you to understand where they're stored, what they contain, and how they should be organized.
+[Assets](https://docs.dagster.io/guides/build/assets/) feature prominently in the Dagster UI. Attaching information to assets allows you to understand where they're stored, what they contain, and how they should be organized.
 
 Using metadata in Dagster, you can:
 
@@ -25,12 +25,12 @@ In a large organization, it's important to know which individuals and teams are 
 :::
 
 :::tip
-With Dagster+ Pro, you can create asset-based alerts that automatically notify an asset's owners when triggered. Refer to the [Dagster+ alert documentation](/dagster-plus/features/alerts) for more information.
+With Dagster+ Pro, you can create asset-based alerts that automatically notify an asset's owners when triggered. Refer to the [Dagster+ alert documentation](https://docs.dagster.io/dagster-plus/features/alerts) for more information.
 :::
 
 ## Organizing assets with tags \{#tags}
 
-[**Tags**](/guides/build/assets/metadata-and-tags/tags) are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the Asset catalog. They're structured as key-value pairs of strings.
+[**Tags**](https://docs.dagster.io/guides/build/assets/metadata-and-tags/tags) are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the Asset catalog. They're structured as key-value pairs of strings.
 
 Here's an example of some tags you might apply to an asset:
 
@@ -92,11 +92,11 @@ The following metadata keys are given special treatment in the Dagster UI.
 
 ## Table and column metadata \{#table-column}
 
-Two of the most powerful metadata types are <PyObject section="metadata" module="dagster" object="TableSchema" /> and <PyObject section="metadata" module="dagster" object="TableColumnLineage" />. These metadata types allow stakeholders to view the schema of a table right within Dagster, and, in Dagster+, navigate to the [Asset catalog](/dagster-plus/features/asset-catalog/) with the column lineage.
+Two of the most powerful metadata types are <PyObject section="metadata" module="dagster" object="TableSchema" /> and <PyObject section="metadata" module="dagster" object="TableColumnLineage" />. These metadata types allow stakeholders to view the schema of a table right within Dagster, and, in Dagster+, navigate to the [Asset catalog](https://docs.dagster.io/dagster-plus/features/asset-catalog/) with the column lineage.
 
 ### Table schema metadata \{#table-schema}
 
-The following example attaches [table and column schema metadata](/guides/build/assets/metadata-and-tags/table-metadata) at both definition time and runtime:
+The following example attaches [table and column schema metadata](https://docs.dagster.io/guides/build/assets/metadata-and-tags/table-metadata) at both definition time and runtime:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/table-schema-metadata.py" language="python" />
 
@@ -105,15 +105,15 @@ There are several data types and constraints available on <PyObject section="met
 ### Column lineage metadata \{#column-lineage}
 
 :::tip
-Many integrations such as [dbt](/integrations/libraries/dbt/) automatically attach column lineage metadata out-of-the-box.
+Many integrations such as [dbt](https://docs.dagster.io/integrations/libraries/dbt/) automatically attach column lineage metadata out-of-the-box.
 :::
 
-[Column lineage metadata](/guides/build/assets/metadata-and-tags/column-level-lineage) is a powerful way to track how columns in a table are derived from other columns:
+[Column lineage metadata](https://docs.dagster.io/guides/build/assets/metadata-and-tags/column-level-lineage) is a powerful way to track how columns in a table are derived from other columns:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/table-column-lineage-metadata.py" language="python" title="Table column lineage metadata" />
 
 :::tip
-Dagster+ provides rich visualization and navigation of column lineage in the Asset catalog. Refer to the [Dagster+ documentation](/dagster-plus/features/asset-catalog/) for more information.
+Dagster+ provides rich visualization and navigation of column lineage in the Asset catalog. Refer to the [Dagster+ documentation](https://docs.dagster.io/dagster-plus/features/asset-catalog/) for more information.
 :::
 
 ## Linking assets with source code \{#source-code}
@@ -127,7 +127,7 @@ To link assets with their source code, you can attach a code reference. Code ref
 
 :::tip
 
-Many integrations, such as [dbt](/integrations/libraries/dbt/reference#attaching-code-reference-metadata), support this capability.
+Many integrations, such as [dbt](https://docs.dagster.io/integrations/libraries/dbt/reference#attaching-code-reference-metadata), support this capability.
 
 :::
 
@@ -139,7 +139,7 @@ Dagster can automatically attach code references to assets during local developm
 
 ### Customizing code references \{#custom-references}
 
-If you want to customize how code references are attached - such as when you are building [domain-specific languages with asset factories](/guides/build/assets/creating-asset-factories) - you can manually add the `dagster/code_references` metadata to asset definitions:
+If you want to customize how code references are attached - such as when you are building [domain-specific languages with asset factories](https://docs.dagster.io/guides/build/assets/creating-asset-factories) - you can manually add the `dagster/code_references` metadata to asset definitions:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/custom-local-references.py" language="python" />
 

@@ -21,7 +21,7 @@ Examples of actions include:
 
 :::tip
 
-An alternative to polling with sensors is to push events to Dagster using the [Dagster API](/guides/operate/graphql/).
+An alternative to polling with sensors is to push events to Dagster using the [Dagster API](https://docs.dagster.io/guides/operate/graphql/).
 
 :::
 
@@ -30,8 +30,8 @@ An alternative to polling with sensors is to push events to Dagster using the [D
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [assets](/guides/build/assets/)
-- Familiarity with [jobs](/guides/build/jobs/)
+- Familiarity with [assets](https://docs.dagster.io/guides/build/assets/)
+- Familiarity with [jobs](https://docs.dagster.io/guides/build/jobs/)
 
 </details>
 
@@ -94,6 +94,6 @@ If you want to be able to reset a sensor's cursor, don't set `run_key`s on `RunR
 
 By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints.
 
-- Run pipelines on a [schedule](/guides/automate/schedules)
-- Trigger cross-job dependencies with [asset sensors](/guides/automate/asset-sensors)
-- Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to sensors
+- Run pipelines on a [schedule](https://docs.dagster.io/guides/automate/schedules)
+- Trigger cross-job dependencies with [asset sensors](https://docs.dagster.io/guides/automate/asset-sensors)
+- Explore [Declarative Automation](https://docs.dagster.io/guides/automate/declarative-automation) as an alternative to sensors

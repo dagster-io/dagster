@@ -29,7 +29,7 @@ In this example, you'll build a pipeline with Dagster that:
 To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
-- Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
+- Python 3.9+ installed on your system. Refer to the [Installation guide](https://docs.dagster.io/getting-started/installation) for information.
 - Familiarity with SQL and Python data manipulation libraries, such as [Pandas](https://pandas.pydata.org/).
 - Understanding of data pipelines and the extract, transform, and load process (ETL).
 
@@ -74,4 +74,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this example with [ingestion](/examples/llm-fine-tuning/ingestion)
+- Continue this example with [ingestion](https://docs.dagster.io/examples/llm-fine-tuning/ingestion)

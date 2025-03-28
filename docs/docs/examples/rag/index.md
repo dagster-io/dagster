@@ -27,7 +27,7 @@ In this example, you'll build a pipeline with Dagster that:
 To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
-- Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
+- Python 3.9+ installed on your system. Refer to the [Installation guide](https://docs.dagster.io/getting-started/installation) for information.
 
 </details>
 
@@ -68,4 +68,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this example with [sources](/examples/rag/sources)
+- Continue this example with [sources](https://docs.dagster.io/examples/rag/sources)

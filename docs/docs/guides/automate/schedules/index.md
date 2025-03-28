@@ -10,8 +10,8 @@ Schedules enable automated execution of jobs at specified intervals. These inter
 
 To follow the steps in this guide, you'll need:
 
-- Familiarity with [assets](/guides/build/assets/)
-- Familiarity with [jobs](/guides/build/jobs/)
+- Familiarity with [assets](https://docs.dagster.io/guides/build/assets/)
+- Familiarity with [jobs](https://docs.dagster.io/guides/build/jobs/)
 
 </details>
 
@@ -34,7 +34,7 @@ daily_schedule = ScheduleDefinition(
 )
 ```
 
-For more information, see "[Customizing a schedule's execution timezone](/guides/automate/schedules/customizing-execution-timezone)".
+For more information, see "[Customizing a schedule's execution timezone](https://docs.dagster.io/guides/automate/schedules/customizing-execution-timezone)".
 
 ## Create schedules from partitions
 
@@ -43,7 +43,7 @@ If using partitions and jobs, you can create a schedule using the partition with
 <Tabs>
 <TabItem value="assets" label="Assets">
 
-If you have a [partitioned asset](/guides/build/partitions-and-backfills) and job:
+If you have a [partitioned asset](https://docs.dagster.io/guides/build/partitions-and-backfills) and job:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/automation/schedule-with-partition.py" language="python" />
 
@@ -61,6 +61,6 @@ If you have a partitioned op job:
 
 By understanding and effectively using these automation methods, you can build more efficient data pipelines that respond to your specific needs and constraints:
 
-- Learn more about schedules in [Understanding automation](/guides/automate)
-- React to events with [sensors](/guides/automate/sensors)
-- Explore [Declarative Automation](/guides/automate/declarative-automation) as an alternative to schedules
+- Learn more about schedules in [Understanding automation](https://docs.dagster.io/guides/automate)
+- React to events with [sensors](https://docs.dagster.io/guides/automate/sensors)
+- Explore [Declarative Automation](https://docs.dagster.io/guides/automate/declarative-automation) as an alternative to schedules
