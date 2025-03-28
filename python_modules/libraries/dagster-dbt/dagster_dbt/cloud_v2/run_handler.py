@@ -61,6 +61,9 @@ class DbtCloudJobRunHandler:
     def get_manifest(self) -> Mapping[str, Any]:
         return self.client.get_run_manifest_json(run_id=self.run_id)
 
+    def list_run_artifacts(self) -> Sequence[str]:
+        return self.client.list_run_artifacts(run_id=self.run_id)
+
 
 def get_completed_at_timestamp(result: Mapping[str, Any]) -> float:
     # result["timing"] is a list of events in run_results.json
