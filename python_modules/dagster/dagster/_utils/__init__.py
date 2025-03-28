@@ -1,4 +1,3 @@
-import _thread as thread
 import contextlib
 import contextvars
 import datetime
@@ -41,6 +40,7 @@ from typing import (  # noqa: UP035
 )
 
 import dagster_shared.seven as seven
+from dagster_shared.ipc import send_interrupt as send_interrupt
 from dagster_shared.libraries import (
     library_version_from_core_version as library_version_from_core_version,
     parse_package_version as parse_package_version,
@@ -355,16 +355,6 @@ def _termination_handler(
     if not is_done_event.is_set():
         # if we should stop but are not yet done, interrupt the MainThread
         send_interrupt()
-
-
-def send_interrupt() -> None:
-    if seven.IS_WINDOWS:
-        # This will raise a KeyboardInterrupt in python land - meaning this wont be able to
-        # interrupt things like sleep()
-        thread.interrupt_main()
-    else:
-        # If on unix send an os level signal to interrupt any situation we may be stuck in
-        os.kill(os.getpid(), signal.SIGINT)
 
 
 # Function to be invoked by daemon thread in processes which seek to be cancellable.

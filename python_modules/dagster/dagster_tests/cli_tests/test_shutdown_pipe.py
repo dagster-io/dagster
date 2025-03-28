@@ -6,7 +6,7 @@ from typing import Any
 
 import psutil
 from dagster._utils.interrupts import setup_interrupt_handlers
-from dagster_shared.serdes.ipc import (
+from dagster_shared.ipc import (
     get_ipc_shutdown_pipe,
     interrupt_on_ipc_shutdown_message,
     open_ipc_subprocess,

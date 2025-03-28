@@ -20,8 +20,8 @@ from typing import TYPE_CHECKING, Any, Callable, Optional, TypedDict, cast
 
 import dagster_shared.seven as seven
 import grpc
+from dagster_shared.ipc import open_ipc_subprocess
 from dagster_shared.libraries import DagsterLibraryRegistry
-from dagster_shared.serdes.ipc import IPCErrorMessage, open_ipc_subprocess
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 import dagster._check as check
@@ -62,6 +62,7 @@ from dagster._grpc.__generated__.dagster_api_pb2_grpc import (
     add_DagsterApiServicer_to_server,
 )
 from dagster._grpc.impl import (
+    IPCErrorMessage,
     RunInSubprocessComplete,
     StartRunInSubprocessSuccessful,
     get_external_execution_plan_snapshot,

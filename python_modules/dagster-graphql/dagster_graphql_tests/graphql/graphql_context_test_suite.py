@@ -31,7 +31,7 @@ from dagster._utils.test import FilesystemTestScheduler
 from dagster._utils.test.postgres_instance import TestPostgresInstance
 from dagster_graphql import DagsterGraphQLClient
 from dagster_graphql.test.utils import execute_dagster_graphql
-from dagster_shared.serdes.ipc import open_ipc_subprocess
+from dagster_shared.ipc import open_ipc_subprocess
 from graphql import DocumentNode, print_ast
 
 

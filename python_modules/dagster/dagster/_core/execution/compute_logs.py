@@ -10,7 +10,7 @@ import uuid
 import warnings
 from contextlib import contextmanager
 
-from dagster_shared.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster_shared.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster_shared.seven import IS_WINDOWS
 
 from dagster._core.execution.scripts import poll_compute_logs, watch_orphans

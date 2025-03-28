@@ -6,7 +6,7 @@ from contextlib import ExitStack
 
 import pytest
 from dagster._utils import file_relative_path, process_is_alive, safe_tempfile_path
-from dagster_shared.serdes.ipc import (
+from dagster_shared.ipc import (
     interrupt_ipc_subprocess,
     interrupt_ipc_subprocess_pid,
     open_ipc_subprocess,
