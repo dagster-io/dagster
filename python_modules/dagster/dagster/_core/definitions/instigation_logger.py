@@ -7,7 +7,8 @@ from collections.abc import Mapping, Sequence
 from contextlib import ExitStack
 from typing import IO, Any, Optional
 
-from dagster import _seven
+from dagster_shared import seven
+
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogManager
@@ -70,7 +71,7 @@ class CapturedLogHandler(logging.Handler):
             record_dict["exc_info"] = "".join(traceback.format_exception(*exc_info))
 
         try:
-            self._write_stream.write(_seven.json.dumps(record_dict) + "\n")
+            self._write_stream.write(seven.json.dumps(record_dict) + "\n")
         except Exception:
             sys.stderr.write(
                 f"Exception writing to logger event stream: {serializable_error_info_from_exc_info(sys.exc_info())}\n"
@@ -156,7 +157,7 @@ class InstigationLogger(logging.Logger):
             record.args = tuple()
         return record
 
-    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func, extra, sinfo):
+    def makeRecord(self, name, level, fn, lno, msg, args, exc_info, func, extra, sinfo):  # pyright: ignore[reportIncompatibleMethodOverride]
         record = super().makeRecord(name, level, fn, lno, msg, args, exc_info, func, extra, sinfo)
         return self._annotate_record(record)
 
@@ -176,7 +177,7 @@ def get_instigation_log_records(
             continue
 
         try:
-            records.append(_seven.json.loads(line))
+            records.append(seven.json.loads(line))
         except json.JSONDecodeError:
             continue
     return records

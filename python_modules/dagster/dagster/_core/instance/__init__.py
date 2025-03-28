@@ -966,7 +966,7 @@ class DagsterInstance(DynamicPartitionsStore):
         return self.get_settings("auto_materialize").get("max_tick_retries", 3)
 
     @property
-    def auto_materialize_use_sensors(self) -> int:
+    def auto_materialize_use_sensors(self) -> bool:
         return self.get_settings("auto_materialize").get("use_sensors", True)
 
     @property
@@ -1391,6 +1391,7 @@ class DagsterInstance(DynamicPartitionsStore):
             )
 
         partitions_subset = None
+        individual_partitions = None
         if partition_range_start or partition_range_end:
             if not partition_range_start or not partition_range_end:
                 raise DagsterInvariantViolationError(
@@ -1414,24 +1415,56 @@ class DagsterInstance(DynamicPartitionsStore):
                 )
 
             if partitions_def is not None:
-                partitions_subset = partitions_def.subset_with_partition_keys(
-                    partitions_def.get_partition_keys_in_range(
+                if self.event_log_storage.supports_partition_subset_in_asset_materialization_planned_events:
+                    partitions_subset = partitions_def.subset_with_partition_keys(
+                        partitions_def.get_partition_keys_in_range(
+                            PartitionKeyRange(partition_range_start, partition_range_end),
+                            dynamic_partitions_store=self,
+                        )
+                    ).to_serializable_subset()
+                    individual_partitions = []
+                else:
+                    individual_partitions = partitions_def.get_partition_keys_in_range(
                         PartitionKeyRange(partition_range_start, partition_range_end),
                         dynamic_partitions_store=self,
                     )
-                ).to_serializable_subset()
+        elif check.not_none(output.properties).is_asset_partitioned and partition_tag:
+            individual_partitions = [partition_tag]
 
-        partition = (
-            partition_tag if check.not_none(output.properties).is_asset_partitioned else None
-        )
-        materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
-            job_name,
-            step.key,
-            AssetMaterializationPlannedData(
-                asset_key, partition=partition, partitions_subset=partitions_subset
-            ),
-        )
-        self.report_dagster_event(materialization_planned, dagster_run.run_id, logging.DEBUG)
+        assert not (
+            individual_partitions and partitions_subset
+        ), "Should set either individual_partitions or partitions_subset, but not both"
+
+        if not individual_partitions and not partitions_subset:
+            materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
+                job_name,
+                step.key,
+                AssetMaterializationPlannedData(asset_key, partition=None, partitions_subset=None),
+            )
+            self.report_dagster_event(materialization_planned, dagster_run.run_id, logging.DEBUG)
+        elif individual_partitions:
+            for individual_partition in individual_partitions:
+                materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
+                    job_name,
+                    step.key,
+                    AssetMaterializationPlannedData(
+                        asset_key,
+                        partition=individual_partition,
+                        partitions_subset=partitions_subset,
+                    ),
+                )
+                self.report_dagster_event(
+                    materialization_planned, dagster_run.run_id, logging.DEBUG
+                )
+        else:
+            materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
+                job_name,
+                step.key,
+                AssetMaterializationPlannedData(
+                    asset_key, partition=None, partitions_subset=partitions_subset
+                ),
+            )
+            self.report_dagster_event(materialization_planned, dagster_run.run_id, logging.DEBUG)
 
     def _log_asset_planned_events(
         self,
@@ -2087,6 +2120,31 @@ class DagsterInstance(DynamicPartitionsStore):
         return self._event_storage.fetch_materializations(records_filter, limit, cursor, ascending)
 
     @traced
+    def fetch_failed_materializations(
+        self,
+        records_filter: Union[AssetKey, "AssetRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> "EventRecordsResult":
+        """Return a list of AssetFailedToMaterialization records stored in the event log storage.
+
+        Args:
+            records_filter (Union[AssetKey, AssetRecordsFilter]): the filter by which to
+                filter event records.
+            limit (int): Number of results to get.
+            cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
+            ascending (Optional[bool]): Sort the result in ascending order if True, descending
+                otherwise. Defaults to descending.
+
+        Returns:
+            EventRecordsResult: Object containing a list of event log records and a cursor string
+        """
+        return self._event_storage.fetch_failed_materializations(
+            records_filter, limit, cursor, ascending
+        )
+
+    @traced
     @deprecated(breaking_version="2.0")
     def fetch_planned_materializations(
         self,
@@ -2428,7 +2486,18 @@ class DagsterInstance(DynamicPartitionsStore):
         handlers.extend(self._get_yaml_python_handlers())
         return handlers
 
+    def should_store_event(self, event: "EventLogEntry") -> bool:
+        if (
+            event.dagster_event is not None
+            and event.dagster_event.is_asset_failed_to_materialize
+            and not self._event_storage.can_store_asset_failure_events
+        ):
+            return False
+        return True
+
     def store_event(self, event: "EventLogEntry") -> None:
+        if not self.should_store_event(event):
+            return
         self._event_storage.store_event(event)
 
     def handle_new_event(
@@ -2452,6 +2521,9 @@ class DagsterInstance(DynamicPartitionsStore):
             batch_metadata (Optional[DagsterEventBatchMetadata]): Metadata for batch writing.
         """
         from dagster._core.events import RunFailureReason
+
+        if not self.should_store_event(event):
+            return
 
         if batch_metadata is None or not _is_batch_writing_enabled():
             events = [event]
@@ -2569,6 +2641,7 @@ class DagsterInstance(DynamicPartitionsStore):
         dagster_event: "DagsterEvent",
         run_id: str,
         log_level: Union[str, int] = logging.INFO,
+        batch_metadata: Optional["DagsterEventBatchMetadata"] = None,
     ) -> None:
         """Takes a DagsterEvent and stores it in persistent storage for the corresponding DagsterRun."""
         from dagster._core.events.log import EventLogEntry
@@ -2583,7 +2656,7 @@ class DagsterInstance(DynamicPartitionsStore):
             step_key=dagster_event.step_key,
             dagster_event=dagster_event,
         )
-        self.handle_new_event(event_record)
+        self.handle_new_event(event_record, batch_metadata=batch_metadata)
 
     def report_run_canceling(self, run: DagsterRun, message: Optional[str] = None):
         from dagster._core.events import DagsterEvent, DagsterEventType

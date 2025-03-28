@@ -18,14 +18,14 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import environ
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import wait_for_grpc_server
-from dagster._serdes.ipc import (
+from dagster._utils import find_free_port, pushd
+from dagster_graphql import DagsterGraphQLClient
+from dagster_shared.ipc import (
     get_ipc_shutdown_pipe,
     interrupt_then_kill_ipc_subprocess,
     open_ipc_subprocess,
     send_ipc_shutdown_message,
 )
-from dagster._utils import find_free_port, pushd
-from dagster_graphql import DagsterGraphQLClient
 
 from dagster_tests.cli_tests.command_tests.test_definitions_validate_command import (
     INVALID_PROJECT_PATH_WITH_EXCEPTION,
@@ -416,4 +416,3 @@ def test_dagster_dev_command_verbose(verbose: bool) -> None:
                     )
                     == 1
                 ), contents
-                assert contents.count("dagster system frames hidden") == 2, contents

@@ -1,3 +1,4 @@
+import os
 import textwrap
 from collections.abc import Sequence
 from typing import Any, Callable, Optional, TypeVar, Union
@@ -80,18 +81,6 @@ GLOBAL_OPTIONS = {
                 components.
             """).strip(),
         ),
-        click.Option(
-            ["--use-dg-managed-environment/--no-use-dg-managed-environment"],
-            is_flag=True,
-            default=DgCliConfig.use_dg_managed_environment,
-            help="Enable management of the virtual environment with uv.",
-        ),
-        click.Option(
-            ["--require-local-venv/--no-require-local-venv"],
-            is_flag=True,
-            default=DgCliConfig.require_local_venv,
-            help="Require use of a local virtual environment (`.venv` found in ancestors of the working directory).",
-        ),
     ]
 }
 
@@ -105,6 +94,20 @@ dg_global_options = make_option_group(GLOBAL_OPTIONS)
 # ##### EDITABLE DAGSTER
 # ########################
 
+# When set, this will cause project scaffolding to default to --use-editable-dagster mode.
+# This is a private feature designed to prevent mistakes during development.
+DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR = "DG_USE_EDITABLE_DAGSTER"
+
+
+# Returns false if the environment variable is not set or is set to "false".
+def is_use_editable_env_var_true() -> bool:
+    env_var_value = os.getenv(DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR)
+    if not env_var_value:
+        return False
+
+    return env_var_value != "false"
+
+
 EDITABLE_DAGSTER_OPTIONS = {
     not_none(option.name): option
     for option in [
@@ -113,27 +116,11 @@ EDITABLE_DAGSTER_OPTIONS = {
             type=str,
             flag_value="TRUE",
             is_flag=False,
-            default=None,
+            default="TRUE" if is_use_editable_env_var_true() else None,
             help=(
                 "Install all Dagster package dependencies from a local Dagster clone. Accepts a path to local Dagster clone root or"
                 " may be set as a flag (no value is passed). If set as a flag,"
                 " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
-            ),
-        ),
-        click.Option(
-            ["--use-editable-components-package-only"],
-            type=str,
-            flag_value="TRUE",
-            is_flag=False,
-            default=None,
-            hidden=True,
-            help=(
-                "Install the `dagster-components` dependency from a local Dagster clone. Accepts a path to local Dagster clone root or"
-                " may be set as a flag (no value is passed). If set as a flag,"
-                " the location of the local Dagster clone will be read from the `DAGSTER_GIT_REPO_DIR` environment variable."
-                " The reason this flag exists is to mimic the environment into which `dagster-components` and `dagster-dg` are released."
-                " They are released on a separate cadence from the main Dagster package, so in the wild they will always use the latest published Dagster version."
-                " `dagster-dg` unit tests should use environments constructed with this option."
             ),
         ),
     ]

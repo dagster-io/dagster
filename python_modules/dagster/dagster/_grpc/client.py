@@ -5,13 +5,13 @@ from contextlib import asynccontextmanager, contextmanager
 from threading import Event
 from typing import Any, NoReturn, Optional, cast
 
+import dagster_shared.seven as seven
 import google.protobuf.message
 import grpc
 from grpc_health.v1 import health_pb2
 from grpc_health.v1.health_pb2_grpc import HealthStub
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import EngineEventData
 from dagster._core.instance import DagsterInstance

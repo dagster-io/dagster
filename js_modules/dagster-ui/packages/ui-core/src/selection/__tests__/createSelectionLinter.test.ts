@@ -68,7 +68,7 @@ describe('createSelectionLinter', () => {
       expect.objectContaining({
         from: 0,
         offendingSymbol: 'fake',
-        to: 4,
+        to: Infinity,
       }),
     ]);
   });

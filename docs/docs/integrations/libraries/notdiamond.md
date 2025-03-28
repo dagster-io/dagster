@@ -4,7 +4,7 @@ status: published
 name: Not Diamond
 title: Dagster & Not Diamond
 sidebar_label: Not Diamond
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/notdiamond.png
   community: true
 ---

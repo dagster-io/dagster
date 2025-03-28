@@ -18,6 +18,12 @@ from typing import (  # noqa: F401, UP035
     cast,
 )
 
+from dagster_shared.serdes.serdes import (
+    EnumSerializer,
+    UnpackContext,
+    is_whitelisted_for_serdes_object,
+)
+
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions import (
@@ -32,7 +38,12 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
 )
-from dagster._core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
+from dagster._core.definitions.events import (
+    AssetLineageInfo,
+    AssetMaterializationFailure,
+    AssetMaterializationFailureReason,
+    ObjectStoreOperationType,
+)
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataValue,
@@ -50,7 +61,6 @@ from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.compute_log_manager import CapturedLogContext, LogRetrievalShellCommand
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
-from dagster._serdes.serdes import EnumSerializer, UnpackContext, is_whitelisted_for_serdes_object
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
 
@@ -80,6 +90,7 @@ EventSpecificData = Union[
     "AssetMaterializationPlannedData",
     "AssetCheckEvaluation",
     "AssetCheckEvaluationPlanned",
+    "AssetFailedToMaterializeData",
 ]
 
 
@@ -109,6 +120,7 @@ class DagsterEventType(str, Enum):
 
     ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
     ASSET_MATERIALIZATION_PLANNED = "ASSET_MATERIALIZATION_PLANNED"
+    ASSET_FAILED_TO_MATERIALIZE = "ASSET_FAILED_TO_MATERIALIZE"
     ASSET_OBSERVATION = "ASSET_OBSERVATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
     ASSET_CHECK_EVALUATION_PLANNED = "ASSET_CHECK_EVALUATION_PLANNED"
@@ -240,12 +252,14 @@ PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN
 BATCH_WRITABLE_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
+    DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
 }
 
 ASSET_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
     DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+    DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
 }
 
 ASSET_CHECK_EVENTS = {
@@ -704,6 +718,11 @@ class DagsterEvent(
         """bool: If this event is of type ASSET_MATERIALIZATION_PLANNED."""
         return self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED
 
+    @property
+    def is_asset_failed_to_materialize(self) -> bool:
+        """bool: If this event is of type ASSET_FAILED_TO_MATERIALIZE."""
+        return self.event_type == DagsterEventType.ASSET_FAILED_TO_MATERIALIZE
+
     @public
     @property
     def asset_key(self) -> Optional[AssetKey]:
@@ -717,6 +736,8 @@ class DagsterEvent(
             return self.asset_observation_data.asset_observation.asset_key
         elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
             return self.asset_materialization_planned_data.asset_key
+        elif self.event_type == DagsterEventType.ASSET_FAILED_TO_MATERIALIZE:
+            return self.asset_failed_to_materialize_data.asset_key
         else:
             return None
 
@@ -733,6 +754,8 @@ class DagsterEvent(
             return self.asset_observation_data.asset_observation.partition
         elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
             return self.asset_materialization_planned_data.partition
+        elif self.event_type == DagsterEventType.ASSET_FAILED_TO_MATERIALIZE:
+            return self.asset_failed_to_materialize_data.partition
         else:
             return None
 
@@ -796,6 +819,17 @@ class DagsterEvent(
             self.event_type,
         )
         return cast(AssetCheckEvaluationPlanned, self.event_specific_data)
+
+    @property
+    def asset_failed_to_materialize_data(
+        self,
+    ) -> "AssetFailedToMaterializeData":
+        _assert_type(
+            "asset_failed_to_materialize_data",
+            DagsterEventType.ASSET_FAILED_TO_MATERIALIZE,
+            self.event_type,
+        )
+        return cast(AssetFailedToMaterializeData, self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -1519,6 +1553,23 @@ class DagsterEvent(
         )
         return event
 
+    @staticmethod
+    def build_asset_failed_to_materialize_event(
+        job_name: str,
+        step_key: Optional[str],
+        asset_materialization_failure: "AssetMaterializationFailure",
+        error: Optional[SerializableErrorInfo] = None,
+    ) -> "DagsterEvent":
+        return DagsterEvent(
+            event_type_value=DagsterEventType.ASSET_FAILED_TO_MATERIALIZE.value,
+            job_name=job_name,
+            message=f"Asset {asset_materialization_failure.asset_key.to_string()} failed to materialize",
+            event_specific_data=AssetFailedToMaterializeData(
+                asset_materialization_failure, error=error
+            ),
+            step_key=step_key,
+        )
+
 
 def get_step_output_event(
     events: Sequence[DagsterEvent], step_key: str, output_name: Optional[str] = "result"
@@ -1547,6 +1598,44 @@ class AssetObservationData(
                 asset_observation, "asset_observation", AssetObservation
             ),
         )
+
+
+@whitelist_for_serdes
+class AssetFailedToMaterializeData(
+    NamedTuple(
+        "AssetFailedToMaterializeData",
+        [
+            ("asset_materialization_failure", AssetMaterializationFailure),
+            ("error", Optional[SerializableErrorInfo]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        asset_materialization_failure: AssetMaterializationFailure,
+        error: Optional[SerializableErrorInfo] = None,
+    ):
+        return super().__new__(
+            cls,
+            asset_materialization_failure=check.inst_param(
+                asset_materialization_failure,
+                "asset_materialization_failure",
+                AssetMaterializationFailure,
+            ),
+            error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+        )
+
+    @property
+    def asset_key(self) -> AssetKey:
+        return self.asset_materialization_failure.asset_key
+
+    @property
+    def partition(self) -> Optional[str]:
+        return self.asset_materialization_failure.partition
+
+    @property
+    def reason(self) -> AssetMaterializationFailureReason:
+        return self.asset_materialization_failure.reason
 
 
 @whitelist_for_serdes

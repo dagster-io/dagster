@@ -1,7 +1,7 @@
 import os
 from contextlib import contextmanager
 
-from dagstermill_tests.test_ops import cleanup_result_notebook
+from dagstermill.test_utils import cleanup_result_notebook
 
 from dagster import execute_job
 from dagster._core.definitions.reconstruct import ReconstructableJob

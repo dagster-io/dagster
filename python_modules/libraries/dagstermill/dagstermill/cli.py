@@ -7,8 +7,8 @@ from typing import Optional
 import click
 import dagster._check as check
 import nbformat
-from dagster._seven.json import loads
 from dagster._utils import mkdir_p, safe_isfile
+from dagster_shared.seven.json import loads
 from papermill.iorw import load_notebook_node, write_ipynb
 
 

@@ -188,8 +188,8 @@ def run_suite_for_defs(
         )
 
     print("Running dag once...")
-    run_id = af_instance.trigger_dag("dag_0")
-    af_instance.wait_for_run_completion("dag_0", run_id, timeout=400)
+    run_id = af_instance.trigger_dag("dag_0")  # pyright: ignore[reportPossiblyUnboundVariable]
+    af_instance.wait_for_run_completion("dag_0", run_id, timeout=400)  # pyright: ignore[reportPossiblyUnboundVariable]
     print("Dag run completed.")
     print("Running sensor ticks with single run...")
     for module_name, (repo_def, af_instance) in module_name_to_repo_def_and_instance.items():
@@ -202,17 +202,17 @@ def run_suite_for_defs(
         )
     print("Deleting run...")
     # Delete that run. Then add a run to every dag.
-    af_instance.delete_run("dag_0", run_id)
+    af_instance.delete_run("dag_0", run_id)  # pyright: ignore[reportPossiblyUnboundVariable]
     print("Running every dag...")
     newly_added_runs = {}
     for i in range(num_dags):
-        newly_added_runs[f"dag_{i}"] = af_instance.trigger_dag(f"dag_{i}")
+        newly_added_runs[f"dag_{i}"] = af_instance.trigger_dag(f"dag_{i}")  # pyright: ignore[reportPossiblyUnboundVariable]
     completed_runs = []
     while len(completed_runs) < num_dags:
         for dag_id, run_id in newly_added_runs.items():
             if run_id in completed_runs:
                 continue
-            run_state = af_instance.get_run_state(dag_id, run_id)
+            run_state = af_instance.get_run_state(dag_id, run_id)  # pyright: ignore[reportPossiblyUnboundVariable]
             if run_state == "success":
                 completed_runs.append(run_id)
                 continue
@@ -230,7 +230,7 @@ def run_suite_for_defs(
         )
     # Delete all runs.
     for dag_id, run_id in newly_added_runs.items():
-        af_instance.delete_run(dag_id, run_id)
+        af_instance.delete_run(dag_id, run_id)  # pyright: ignore[reportPossiblyUnboundVariable]
     print("Deleted all runs.")
     return lines
 

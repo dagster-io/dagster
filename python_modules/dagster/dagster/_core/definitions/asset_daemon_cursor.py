@@ -5,10 +5,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import TYPE_CHECKING, NamedTuple, Optional
 
-from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.events import AssetKey
-from dagster._serdes.serdes import (
+from dagster_shared.serdes.serdes import (
     FieldSerializer,
     JsonSerializableValue,
     PackableValue,
@@ -19,6 +16,10 @@ from dagster._serdes.serdes import (
     unpack_value,
     whitelist_for_serdes,
 )
+
+from dagster._core.definitions.asset_key import EntityKey, T_EntityKey
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -47,7 +48,7 @@ class ObserveRequestTimestampSerializer(FieldSerializer):
     ) -> JsonSerializableValue:
         return pack_value(SerializableNonScalarKeyMapping(mapping), whitelist_map, descent_path)
 
-    def unpack(
+    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         unpacked_value: JsonSerializableValue,
         whitelist_map: WhitelistMap,

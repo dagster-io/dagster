@@ -27,7 +27,6 @@ def test_load_python_module_from_dg_toml():
                 [tool.dg.project]
                 root_module = "baaz"
                 code_location_name = "foo"
-                module_name = "baaz.definitions"
             """).strip()
         )
         f.flush()
@@ -36,12 +35,18 @@ def test_load_python_module_from_dg_toml():
         assert origins[0].loadable_target_origin.module_name == "baaz.definitions"
         assert origins[0].location_name == "foo"
 
-    origins = get_origins_from_toml(
-        file_relative_path(__file__, "single_module_with_code_location_name.toml")
-    )
-    assert len(origins) == 1
-    assert origins[0].loadable_target_origin.module_name == "baaz"
-    assert origins[0].location_name == "bar"
+    with NamedTemporaryFile("w") as f:
+        f.write(
+            textwrap.dedent("""
+                [tool.dg.project]
+                root_module = "baaz"
+                code_location_target_module = "baaz.other_definitions"
+            """).strip()
+        )
+        f.flush()
+        origins = get_origins_from_toml(f.name)
+        assert len(origins) == 1
+        assert origins[0].loadable_target_origin.module_name == "baaz.other_definitions"
 
 
 def test_load_empty_toml():

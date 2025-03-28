@@ -1,9 +1,10 @@
 import datetime
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping, Sequence, Set
 from functools import cached_property
 from typing import TYPE_CHECKING, Generic, Optional, Union
 
+from dagster_shared.serdes.serdes import is_whitelisted_for_serdes_object
 from typing_extensions import Self
 
 import dagster._check as check
@@ -28,7 +29,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
 from dagster._record import copy, record
-from dagster._serdes.serdes import is_whitelisted_for_serdes_object
 from dagster._time import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import disable_dagster_warnings
@@ -39,6 +39,9 @@ if TYPE_CHECKING:
         AutomationContext,
     )
     from dagster._core.definitions.declarative_automation.operators import AndAutomationCondition
+    from dagster._core.definitions.declarative_automation.operators.check_operators import (
+        ChecksAutomationCondition,
+    )
     from dagster._core.definitions.declarative_automation.operators.dep_operators import (
         DepsAutomationCondition,
     )
@@ -127,6 +130,27 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         """Returns a unique identifier for this condition within the broader condition tree."""
         parts = [str(parent_unique_id), str(index), self.name]
         return non_secure_md5_hash_str("".join(parts).encode())
+
+    def get_backcompat_node_unique_ids(
+        self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
+    ) -> Sequence[str]:
+        """Used for backwards compatibility when condition unique id logic changes."""
+        return []
+
+    def get_node_unique_ids(
+        self, *, parent_unique_ids: Sequence[Optional[str]], index: Optional[int]
+    ) -> Sequence[str]:
+        unique_ids = []
+        for parent_unique_id in parent_unique_ids:
+            unique_ids.extend(
+                [
+                    self.get_node_unique_id(parent_unique_id=parent_unique_id, index=index),
+                    *self.get_backcompat_node_unique_ids(
+                        parent_unique_id=parent_unique_id, index=index
+                    ),
+                ]
+            )
+        return unique_ids
 
     def get_unique_id(
         self, *, parent_node_unique_id: Optional[str] = None, index: Optional[int] = None
@@ -313,7 +337,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @staticmethod
     def any_checks_match(
         condition: "AutomationCondition[AssetCheckKey]", blocking_only: bool = False
-    ) -> "BuiltinAutomationCondition":
+    ) -> "ChecksAutomationCondition":
         """Returns an AutomationCondition that is true for if at least one of the target's
         checks evaluate to True for the given condition.
 
@@ -331,7 +355,7 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
     @staticmethod
     def all_checks_match(
         condition: "AutomationCondition[AssetCheckKey]", blocking_only: bool = False
-    ) -> "BuiltinAutomationCondition[AssetKey]":
+    ) -> "ChecksAutomationCondition":
         """Returns an AutomationCondition that is true for an asset partition if all of its checks
         evaluate to True for the given condition.
 
@@ -473,6 +497,28 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         )
 
         return LatestRunExecutedWithRootTargetCondition()
+
+    @staticmethod
+    def executed_with_tags(
+        *,
+        tag_keys: Optional[Set[str]] = None,
+        tag_values: Optional[Mapping[str, str]] = None,
+    ) -> "BuiltinAutomationCondition":
+        """Returns an AutomationCondition that is true if the latest run that updated the target was
+        launched from the declarative automation system.
+
+        Args:
+            tag_keys (Optional[AbstractSet[str]]): If provided, the condition will only be true if the
+                latest run that updated the target was launched with all of the provided tags.
+            tag_values (Optional[Mapping[str, str]]): If provided, the condition will only be true if the
+                latest run that updated the target was launched with all of the provided values for the
+                specified keys.
+        """
+        from dagster._core.definitions.declarative_automation.operands import (
+            LatestRunExecutedWithTagsCondition,
+        )
+
+        return LatestRunExecutedWithTagsCondition(tag_keys=tag_keys, tag_values=tag_values)
 
     @public
     @staticmethod
@@ -758,7 +804,7 @@ class AutomationResult(Generic[T_EntityKey]):
 
     @property
     def condition_unique_id(self) -> str:
-        return self._context.condition_unique_id
+        return self._context.condition_unique_ids[0]
 
     @cached_property
     def value_hash(self) -> str:

@@ -1,6 +1,6 @@
 ---
-title: "Constructing schedules from partitioned assets and jobs"
-description: "Learn to construct schedules for your partitioned jobs."
+title: 'Constructing schedules from partitioned assets and jobs'
+description: 'Learn to construct schedules for your partitioned jobs.'
 sidebar_position: 400
 ---
 
@@ -15,10 +15,10 @@ In this guide, we'll walk you through how to construct schedules from partitione
 
 This article assumes familiarity with:
 
-- [Schedules](index.md)
+- Schedules
 - [Partitions](/guides/build/partitions-and-backfills/partitioning-assets)
 - [Asset definitions](/guides/build/assets/defining-assets)
-- [Asset jobs](/guides/build/assets/asset-jobs) and op jobs
+- [Asset jobs](/guides/build/jobs/asset-jobs) and [op jobs](/guides/build/jobs/op-jobs)
 
 :::
 
@@ -35,7 +35,11 @@ Refer to the following tabs for examples of asset and op-based jobs using <PyObj
 
 Asset jobs are defined using <PyObject section="assets" module="dagster" object="define_asset_job" />. In this example, we created an asset job named `partitioned_job` and then constructed `asset_partitioned_schedule` by using <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job"/>:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py" startAfter="start_partitioned_asset_schedule" endBefore="end_partitioned_asset_schedule" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py"
+  startAfter="start_partitioned_asset_schedule"
+  endBefore="end_partitioned_asset_schedule"
+/>
 
 </TabItem>
 <TabItem value="Op jobs">
@@ -44,7 +48,11 @@ Asset jobs are defined using <PyObject section="assets" module="dagster" object=
 
 Op jobs are defined using the <PyObject section="jobs" module="dagster" object="job" decorator />. In this example, we created a partitioned job named `partitioned_op_job` and then constructed `partitioned_op_schedule` using <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job"/>:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py" startAfter="start_marker" endBefore="end_marker" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py"
+  startAfter="start_marker"
+  endBefore="end_marker"
+/>
 
 </TabItem>
 </Tabs>
@@ -55,7 +63,11 @@ The `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_month` parameter
 
 Consider the following job:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py" startAfter="start_partitioned_schedule_with_offset" endBefore="end_partitioned_schedule_with_offset" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py"
+  startAfter="start_partitioned_schedule_with_offset"
+  endBefore="end_partitioned_schedule_with_offset"
+/>
 
 On May 20, 2024, the schedule will evaluate at 1:30 AM UTC and then start a run for the partition key of the previous day, `2024-05-19`.
 
@@ -86,7 +98,11 @@ After `2024-05-20 23:59:59` passes, the time window is complete and Dagster will
 
 If you need to customize the ending, or most recent partition in a set, use the `end_offset` parameter in the partition's config:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py" startAfter="start_offset_partition" endBefore="end_offset_partition" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/schedule_from_partitions.py"
+  startAfter="start_offset_partition"
+  endBefore="end_offset_partition"
+/>
 
 Setting this parameter changes the partition that will be filled in at each schedule tick. Positive and negative integers are accepted, which will have the following effects:
 
@@ -113,22 +129,34 @@ Next, we'll demonstrate how to create a schedule for a job with a static partiti
 
 In this example, the job is partitioned by continent:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py" startAfter="start_job" endBefore="end_job" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py"
+  startAfter="start_job"
+  endBefore="end_job"
+/>
 
 Using the <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator /> decorator, we'll write a schedule that targets each partition, or `continent`:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py" startAfter="start_schedule_all_partitions" endBefore="end_schedule_all_partitions" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py"
+  startAfter="start_schedule_all_partitions"
+  endBefore="end_schedule_all_partitions"
+/>
 
 If we only want to target the `Antarctica` partition, we can create a schedule like the following:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py" startAfter="start_single_partition" endBefore="end_single_partition" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py"
+  startAfter="start_single_partition"
+  endBefore="end_single_partition"
+/>
 
 ## APIs in this guide
 
-| Name                                                      | Description                                                                                         |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />                  | Decorator that defines a schedule that executes according to a given cron schedule.                 |
-| <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job" /> | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
-| <PyObject section="schedules-sensors" module="dagster" object="RunRequest" />                          | A class that represents all the information required to launch a single run.                        |
-| <PyObject section="assets" module="dagster" object="define_asset_job" />                    | A function for defining a job from a selection of assets.                                           |
-| <PyObject section="jobs" module="dagster" object="job" decorator />                       | The decorator used to define a job.                                                                 |
+| Name                                                                                                   | Description                                                                                              |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />                  | Decorator that defines a schedule that executes according to a given cron schedule.                      |
+| <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job" /> | A function that constructs a schedule whose interval matches the partitioning of a partitioned job.      |
+| <PyObject section="schedules-sensors" module="dagster" object="RunRequest" />                          | A class that represents all the information required to launch a single run.                             |
+| <PyObject section="assets" module="dagster" object="define_asset_job" />                               | A function for defining a job from a [selection of assets](/guides/build/assets/asset-selection-syntax). |
+| <PyObject section="jobs" module="dagster" object="job" decorator />                                    | The decorator used to define a job.                                                                      |

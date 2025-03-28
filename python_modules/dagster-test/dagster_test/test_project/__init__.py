@@ -221,7 +221,7 @@ class ReOriginatedExternalScheduleForTest(RemoteSchedule):
         )
 
     @property
-    def selector_id(self):
+    def selector_id(self):  # pyright: ignore[reportIncompatibleVariableOverride]
         """Hack! Inject a selector that matches the one that the k8s helm chart will use."""
         return create_snapshot_id(
             InstigatorSelector(

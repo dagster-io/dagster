@@ -5,7 +5,6 @@ import {
   FontFamily,
   Group,
   Icon,
-  NonIdealState,
   Spinner,
   SpinnerWrapper,
   SplitPanelContainer,
@@ -14,7 +13,6 @@ import {
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {useMemo} from 'react';
-import {Link} from 'react-router-dom';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import styled from 'styled-components';
 
@@ -63,16 +61,13 @@ import {withMiddleTruncation} from '../app/Util';
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {useThrottledMemo} from '../hooks/useThrottledMemo';
 import {filterRunSelectionByQuery} from '../run-selection/AntlrRunSelection';
-import {CancelRunButton} from '../runs/RunActionButtons';
 import {
   EMPTY_RUN_METADATA,
   IRunMetadataDict,
   IStepMetadata,
   IStepState,
 } from '../runs/RunMetadataProvider';
-import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {StepSelection} from '../runs/StepSelection';
-import {RunFragment} from '../runs/types/RunFragments.types';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 
 export {GanttChartMode} from './Constants';
@@ -169,8 +164,13 @@ export const GanttChart = (props: GanttChartProps) => {
 
   const onDoubleClickStep = React.useCallback(
     (stepKey: string) => {
-      const query = `*${stepKey}*`;
-      onUpdateQuery(selection.query !== query ? query : '*');
+      if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+        const query = `+name:"${stepKey}"+`;
+        onUpdateQuery(selection.query !== query ? query : '*');
+      } else {
+        const query = `*${stepKey}*`;
+        onUpdateQuery(selection.query !== query ? query : '*');
+      }
     },
     [onUpdateQuery, selection.query],
   );
@@ -912,40 +912,6 @@ export const GanttChartLoadingState = ({runId}: {runId: string}) => (
           metadata={EMPTY_RUN_METADATA}
           selection={EMPTY_SELECTION}
           runId={runId}
-          nowMs={0}
-        />
-      }
-    />
-  </GanttChartContainer>
-);
-
-export const QueuedState = ({run}: {run: RunFragment}) => (
-  <GanttChartContainer>
-    <OptionsContainer style={{justifyContent: 'flex-end'}}>
-      <CancelRunButton run={run} />
-    </OptionsContainer>
-    <SplitPanelContainer
-      identifier="gantt-split"
-      axis="horizontal"
-      first={
-        <NonIdealState
-          icon="arrow_forward"
-          title="Run queued"
-          description="This run is queued for execution and will start soon."
-          action={
-            <Link to={runsPathWithFilters([{token: 'status', value: 'QUEUED'}])}>
-              View queued runs
-            </Link>
-          }
-        />
-      }
-      firstInitialPercent={70}
-      second={
-        <GanttStatusPanel
-          graph={EMPTY_GRAPH}
-          metadata={EMPTY_RUN_METADATA}
-          selection={EMPTY_SELECTION}
-          runId={run.id}
           nowMs={0}
         />
       }

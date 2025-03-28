@@ -1,6 +1,6 @@
 ---
-title: "OpenAI & Dagster"
-description: "The dagster-openai library provides the ability to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in Dagster Insights."
+title: 'OpenAI & Dagster'
+description: 'The dagster-openai library provides the ability to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in Dagster Insights.'
 ---
 
 The `dagster-openai` library allows you to build OpenAI pipelines with Dagster and log OpenAI API usage metadata in [Dagster Insights](/dagster-plus/features/insights).
@@ -37,19 +37,27 @@ OPENAI_API_KEY=...
 
 Then, we can instruct Dagster to authorize the OpenAI resource using the environment variables:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/openai/resource.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/openai/resource.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 ## Using the OpenAI resource with assets
 
 The OpenAI resource can be used in assets in order to interact with the OpenAI API. Note that in this example, we supply our credentials as environment variables directly when instantiating the <PyObject section="definitions" module="dagster" object="Definitions" /> object.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/openai/assets.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/openai/assets.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 After materializing your asset, your OpenAI API usage metadata will be available in the **Events** and **Plots** tabs of your asset in the Dagster UI. If you are using [Dagster+](/dagster-plus), your usage metadata will also be available in [Dagster Insights](/dagster-plus/features/insights). {/* Refer to the [Viewing and materializing assets in the UI guide](https://docs.dagster.io/guides/build/assets/defining-assets#viewing-and-materializing-assets-in-the-ui) for more information. */}
 
 ## Using the OpenAI resource with ops
 
-The OpenAI resource can also be used in [ops](/guides/build/ops).
+The OpenAI resource can also be used in [ops](/guides/build/ops/).
 
 :::note
 
@@ -57,4 +65,8 @@ Currently, the OpenAI resource doesn't (out-of-the-box) log OpenAI usage metadat
 
 :::
 
-<CodeExample startAfter="start_example" endBefore="end_example" path="docs_snippets/docs_snippets/integrations/openai/ops.py" />
+<CodeExample
+  startAfter="start_example"
+  endBefore="end_example"
+  path="docs_snippets/docs_snippets/integrations/openai/ops.py"
+/>

@@ -1413,7 +1413,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
 
 class TestQueuedRunCoordinatorDaemon(QueuedRunCoordinatorDaemonTests):
     @pytest.fixture
-    def instance(self, run_coordinator_config, concurrency_config):
+    def instance(self, run_coordinator_config, concurrency_config):  # pyright: ignore[reportIncompatibleMethodOverride]
         overrides = {
             "concurrency": concurrency_config,
             "run_coordinator": {

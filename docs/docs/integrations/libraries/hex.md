@@ -5,7 +5,7 @@ name: Hex
 title: Dagster & Hex
 sidebar_label: Hex
 excerpt: The community-supported `dagster-hex` package provides an integration with Hex.
-date: 
+date:
 apireflink:
 docslink:
 partnerlink:

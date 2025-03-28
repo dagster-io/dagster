@@ -3,8 +3,8 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Optional, Tuple  # noqa: F401, UP035
 
 import coloredlogs
+from dagster_shared import seven
 
-from dagster import _seven
 from dagster._config import Field
 from dagster._core.definitions.logger_definition import LoggerDefinition, logger
 from dagster._core.log_manager import (
@@ -68,7 +68,7 @@ class JsonLogFormatter(logging.Formatter):
             else:
                 dict_to_dump[k] = v
 
-        return _seven.json.dumps(dict_to_dump)
+        return seven.json.dumps(dict_to_dump)
 
 
 @logger(

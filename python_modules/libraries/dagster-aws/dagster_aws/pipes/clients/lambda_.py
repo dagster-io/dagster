@@ -48,7 +48,7 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(
+    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
         function_name: str,

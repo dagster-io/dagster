@@ -5,9 +5,8 @@ from dagster_airlift.core import (
     AirflowBasicAuthBackend,
     AirflowInstance,
     build_defs_from_airflow_instance,
-    dag_defs,
-    task_defs,
 )
+from dagster_airlift.core.top_level_dag_def_api import assets_with_task_mappings
 
 from perf_harness.dagster_defs.constants import (
     AIRFLOW_BASE_URL,
@@ -46,13 +45,21 @@ def get_dag_defs() -> Definitions:
     all_dag_defs = []
     prev_asset_specs: list[AssetSpec] = []
     for i in range(get_num_dags()):
-        task_defs_list = []
+        dag_id = f"dag_{i}"
+        task_mappings = {}
         for j in range(get_num_tasks()):
             task_name = f"task_{i}_{j}"
             asset = build_asset_for_task(task_name, prev_asset_specs)
-            task_defs_list.append(task_defs(task_name, Definitions(assets=[asset])))
+            task_mappings[task_name] = [asset]
             prev_asset_specs = asset.specs  # type: ignore
-        all_dag_defs.append(dag_defs(f"dag_{i}", *task_defs_list))
+        all_dag_defs.append(
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id=dag_id,
+                    task_mappings=task_mappings,
+                )
+            )
+        )
     return Definitions.merge(*all_dag_defs)
 
 

@@ -8,7 +8,7 @@ This is the home of the Dagster documentation. The documentation site is built u
 
 - `./src` contains custom components, styles, themes, and layouts.
 - `./docs/` contains documentation Markdown files.
-- `/examples/docs_snippets/docs_snippets/` contains code examples for the documentation. Some code examples also live in `/examples/` and `/examples/docs_beta_snippets/docs_beta_snippets/`.
+- `/examples/docs_snippets/docs_snippets/` contains code examples for the documentation. Some code examples also live in `/examples/` and `/examples/docs_snippets/docs_snippets/`.
 
 The docs are organized into the following sections:
 
@@ -27,10 +27,6 @@ For formatting guidelines, see the [CONTRIBUTING](CONTRIBUTING.md) guide.
 ## Installation
 
 The site uses [yarn](https://yarnpkg.com/) for package management. We recommend using `nvm` to install the long-term-support version of Node.
-
-```sh
-brew install nvm yarn vale
-```
 
 ```sh
 nvm install --lts
@@ -64,22 +60,16 @@ yarn build-api-docs
 yarn build
 ```
 
+Note that building API docs requires Python to be configured on your system.
+This can be accomplished by running the `make dev_install` command as outlined in the [contributing guide](https://docs.dagster.io/about/contributing).
+
 ### Linting
 
 To check the documentation for formatting issues, use the following:
 
 ```bash
-## Lints all content, applies lint autofixes and prettier changes
-yarn lint
-
-## Lints documentation content using Vale Server
-## Checks for style guide adherence, grammar, spelling, etc.
-yarn vale
-yarn vale /path/to/file      ## check individual file
-yarn vale --no-wrap          ## remove wrapping from output
+yarn format
 ```
-
-For more information on Vale, see https://vale.sh/. 
 
 ---
 
@@ -97,7 +87,7 @@ yarn rebuild-kinds-tags
 
 Previous versions of the docs site are made accessible through preview deployments in Vercel, for example:
 
-* https://release-1-9-13.archive.dagster-docs.io/
+- https://release-1-9-13.archive.dagster-docs.io/
 
 Which is hosted on the `archive` subdomain of dagster-docs.io where `release-1-9-13` is the release branch in version control.
 

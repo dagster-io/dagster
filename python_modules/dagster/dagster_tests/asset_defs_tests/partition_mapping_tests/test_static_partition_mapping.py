@@ -1,7 +1,7 @@
 import pytest
 from dagster import StaticPartitionMapping, StaticPartitionsDefinition
 from dagster._core.definitions.partition import DefaultPartitionsSubset
-from dagster._serdes.serdes import deserialize_value, serialize_value
+from dagster_shared.serdes import deserialize_value, serialize_value
 
 
 def test_single_valued_static_mapping():

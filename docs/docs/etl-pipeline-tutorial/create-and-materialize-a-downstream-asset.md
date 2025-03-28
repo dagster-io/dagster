@@ -19,25 +19,30 @@ To accomplish this in SQL, we will bring in our `sales_data` table and then left
 
 As you can see, the new `joined_data` asset looks a lot like our previous ones, with a few small changes. We put this asset into a different group. To make this asset dependent on the raw tables, we add the asset keys to the `deps` parameter in the asset definition.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="89" lineEnd="132"/>
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py"
+  language="python"
+  lineStart="89"
+  lineEnd="132"
+/>
 
 ## 2. Materialize the asset
 
 1. Add the joined_data asset to the Definitions object
 
-  ```python
-  defs = dg.Definitions(
-    assets=[products,
-        sales_reps,
-        sales_data,
-        joined_data,
-    ],
-    resources={"duckdb": DuckDBResource(database="data/mydb.duckdb")},
-  )
-  ```
+```python
+defs = dg.Definitions(
+  assets=[products,
+      sales_reps,
+      sales_data,
+      joined_data,
+  ],
+  resources={"duckdb": DuckDBResource(database="data/mydb.duckdb")},
+)
+```
 
 2. In the Dagster UI, reload definitions and materialize the `joined_data` asset.
 
 ## Next steps
 
-- Continue this tutorial with [ensuring data quality with asset checks](ensure-data-quality-with-asset-checks).
+- Continue this tutorial with [ensuring data quality with asset checks](/etl-pipeline-tutorial/ensure-data-quality-with-asset-checks).

@@ -25,6 +25,7 @@ RUN git clone --depth 1 https://github.com/dagster-io/dagster.git \
     && python -m uv pip install \
     -e python_modules/dagster \
     -e python_modules/dagster-pipes \
+    -e python_modules/libraries/dagster-shared \
     -e python_modules/dagster-graphql \
     -e python_modules/dagster-webserver \
     -e python_modules/libraries/dagster-celery[flower,redis,kubernetes] \

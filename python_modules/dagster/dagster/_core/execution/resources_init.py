@@ -1,4 +1,5 @@
 import inspect
+from asyncio import AbstractEventLoop
 from collections import deque
 from collections.abc import Generator, Mapping
 from contextlib import ContextDecorator
@@ -45,6 +46,7 @@ def resource_initialization_manager(
     resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
+    event_loop: Optional[AbstractEventLoop],
 ):
     generator = resource_initialization_event_generator(
         resource_defs=resource_defs,
@@ -55,6 +57,7 @@ def resource_initialization_manager(
         resource_keys_to_init=resource_keys_to_init,
         instance=instance,
         emit_persistent_events=emit_persistent_events,
+        event_loop=event_loop,
     )
     return EventGenerationManager(generator, ScopedResourcesBuilder)
 
@@ -121,6 +124,7 @@ def _core_resource_initialization_event_generator(
     resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
+    event_loop,
 ):
     job_name = ""  # Must be initialized to a string to satisfy typechecker
     contains_generator = False
@@ -166,6 +170,7 @@ def _core_resource_initialization_event_generator(
                     resources=resources,
                     instance=instance,
                     all_resource_defs=resource_defs,
+                    event_loop=event_loop,
                 )
                 manager = single_resource_generation_manager(
                     resource_context, resource_name, resource_def
@@ -217,6 +222,7 @@ def resource_initialization_event_generator(
     resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
+    event_loop: Optional[AbstractEventLoop],
 ):
     check.inst_param(log_manager, "log_manager", DagsterLogManager)
     resource_keys_to_init = check.opt_set_param(
@@ -251,6 +257,7 @@ def resource_initialization_event_generator(
             resource_keys_to_init=resource_keys_to_init,
             instance=instance,
             emit_persistent_events=emit_persistent_events,
+            event_loop=event_loop,
         )
     except GeneratorExit:
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed

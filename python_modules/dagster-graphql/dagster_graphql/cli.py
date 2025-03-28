@@ -6,7 +6,7 @@ from urllib.parse import urljoin, urlparse
 
 import click
 import dagster._check as check
-import dagster._seven as seven
+import dagster_shared.seven as seven
 import requests
 from dagster._cli.utils import (
     assert_no_remaining_opts,

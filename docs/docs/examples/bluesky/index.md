@@ -2,7 +2,7 @@
 title: Analyzing Bluesky data
 description: Learn how to build an end-to-end analytics pipeline
 last_update:
-   author: Dennis Hume
+  author: Dennis Hume
 sidebar_position: 10
 sidebar_custom_props:
   logo: images/integrations/dbt/dbt.svg
@@ -19,9 +19,8 @@ To see [video of this example](https://www.youtube.com/watch?v=z3trqkKPbsI)
 In this example, you'll build a pipeline with Dagster that:
 
 - Ingestion of data-related Bluesky posts
-- Modelling data using dbt
-- Creates and validates the data files needed for an OpenAI fine-tuning job
-- Representing data in a dashboard
+- Modeling data using dbt
+- Representing data in a dashboard with PowerBI
 
 <details>
   <summary>Prerequisites</summary>
@@ -33,8 +32,8 @@ To follow the steps in this guide, you'll need:
 - Understanding of data pipelines and the extract, transform, and load process (ETL).
 - Familiar with [dbt](https://www.getdbt.com/) and data transformation.
 - Usage of BI tools for dashboards.
-</details>
 
+</details>
 
 ## Step 1: Set up your Dagster environment
 
@@ -49,18 +48,12 @@ First, set up a new Dagster project.
 2. Create and activate a virtual environment:
 
    <Tabs>
-   <TabItem value="macos" label="MacOS">
-   ```bash
-   uv venv dagster_example
-   source dagster_example/bin/activate
-   ```
-   </TabItem>
-   <TabItem value="windows" label="Windows">
-   ```bash
-   uv venv dagster_example
-   dagster_example\Scripts\activate
-   ```
-   </TabItem>
+     <TabItem value="macos" label="MacOS">
+       ```bash uv venv dagster_example source dagster_example/bin/activate ```
+     </TabItem>
+     <TabItem value="windows" label="Windows">
+       ```bash uv venv dagster_example dagster_example\Scripts\activate ```
+     </TabItem>
    </Tabs>
 
 3. Install Dagster and the required dependencies:
@@ -81,7 +74,7 @@ First, set up a new Dagster project.
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
 
-followed by a bash code snippet for 
+followed by a bash code snippet for
 
 ```bash
 dagster dev
@@ -89,4 +82,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this example with [ingestion](ingestion)
+- Continue this example with [ingestion](/examples/bluesky/ingestion)

@@ -34,7 +34,7 @@ To run the code in this article, you'll need to create and activate a Python vir
 
 A common and recommended approach to passing data between assets is explicitly managing data using external storage. This example pipeline uses a SQLite database as external storage:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/passing-data-assets/passing-data-explicit.py" language="python" title="Using External Storage" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/passing-data-assets/passing-data-explicit.py" language="python" title="Using External Storage" />
 
 In this example, the first asset opens a connection to the SQLite database and writes data to it. The second asset opens a connection to the same database and reads data from it. The dependency between the first asset and the second asset is made explicit through the asset's `deps` argument.
 
@@ -59,7 +59,7 @@ I/O managers handle:
 
 For a deeper understanding of I/O managers, check out the [Understanding I/O managers](/guides/build/io-managers/) guide.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/passing-data-assets/passing-data-io-manager.py" language="python" title="Using I/O managers" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/passing-data-assets/passing-data-io-manager.py" language="python" title="Using I/O managers" />
 
 In this example, a `DuckDBPandasIOManager` is instantiated to run using a local file. The I/O manager handles both reading and writing to the database.
 
@@ -90,7 +90,7 @@ carefully considering how you have modeled your pipeline:
 
 Consider this example:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/passing-data-assets/passing-data-avoid.py" language="python" title="Avoid Passing Data Between Assets" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/passing-data-assets/passing-data-avoid.py" language="python" title="Avoid Passing Data Between Assets" />
 
 This example downloads a zip file from Google Drive, unzips it, and loads the data into a Pandas DataFrame. It relies on each asset running on the same file system to perform these operations.
 
@@ -98,7 +98,7 @@ The assets are modeled as tasks, rather than as data assets. For more informatio
 
 In this refactor, the `download_files`, `unzip_files`, and `load_data` assets are combined into a single asset, `my_dataset`. This asset downloads the files, unzips them, and loads the data into a data warehouse.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-assets/passing-data-assets/passing-data-rewrite-assets.py" language="python" title="Avoid Passing Data Between Assets" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-assets/passing-data-assets/passing-data-rewrite-assets.py" language="python" title="Avoid Passing Data Between Assets" />
 
 This approach still handles passing data explicitly, but no longer does it across assets,
 instead within a single asset. This pipeline still assumes enough disk and

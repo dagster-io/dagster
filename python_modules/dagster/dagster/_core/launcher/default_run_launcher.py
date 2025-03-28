@@ -2,9 +2,9 @@ import time
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Optional, cast
 
+import dagster_shared.seven as seven
 from typing_extensions import Self
 
-import dagster._seven as seven
 from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import (

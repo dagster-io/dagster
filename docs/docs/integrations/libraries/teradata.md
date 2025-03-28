@@ -20,14 +20,14 @@ To begin integrating Dagster with Teradata Vantage for building and managing ETL
 
 ## Prerequisites
 
-* Access to a Teradata Vantage instance.
+- Access to a Teradata Vantage instance.
 
-    :::note
-    If you need a test instance of Vantage, you can provision one for free at [https://clearscape.teradata.com](https://clearscape.teradata.com/sign-in?utm_source=dev_portal&utm_medium=quickstart_tutorial&utm_campaign=quickstarts)
-    :::
+  :::note
+  If you need a test instance of Vantage, you can provision one for free at [https://clearscape.teradata.com](https://clearscape.teradata.com/sign-in?utm_source=dev_portal&utm_medium=quickstart_tutorial&utm_campaign=quickstarts)
+  :::
 
-* Python **3.9** or higher, Python **3.12** is recommended.
-* pip
+- Python **3.9** or higher, Python **3.12** is recommended.
+- pip
 
 ## Install dagster-teradata
 
@@ -35,31 +35,33 @@ With your virtual environment active, the next step is to install dagster and th
 
 1. Install the Required Packages:
 
-    ```bash
-    pip install dagster dagster-webserver dagster-teradata
-    ```
+   ```bash
+   pip install dagster dagster-webserver dagster-teradata
+   ```
 
 2. Note about Optional Dependencies:
 
    a) `dagster-teradata` relies on dagster-aws for ingesting data from an S3 bucket into Teradata Vantage. Since `dagster-aws` is an optional dependency, users can install it by running:
 
-     ```bash
-    pip install dagster-teradata[aws]
-    ```
+   ```bash
+   pip install dagster-teradata[aws]
+   ```
+
    b) `dagster-teradata` also relies on `dagster-azure` for ingesting data from an Azure Blob Storage container into Teradata Vantage. To install this dependency, run:
 
-     ```bash
-    pip install dagster-teradata[azure]
-    ```
+   ```bash
+   pip install dagster-teradata[azure]
+   ```
 
 3. Verify the Installation:
 
    To confirm that Dagster is correctly installed, run:
-     ```bash
-    dagster –version
-    ```
-   If installed correctly, it should show the version of Dagster.
 
+   ```bash
+   dagster –version
+   ```
+
+   If installed correctly, it should show the version of Dagster.
 
 ## Initialize a Dagster Project
 
@@ -71,7 +73,8 @@ Run the following command:
 
 ```bash
 dagster project scaffold --name dagster-quickstart
- ```
+```
+
 This command will create a new project named dagster-quickstart. It will automatically generate the following directory structure:
 
 ```bash
@@ -89,7 +92,7 @@ dagster-quickstart
 └───dagster_quickstart_tests
         test_assets.py
         __init__.py
- ```
+```
 
 Refer [here](https://docs.dagster.io/guides/build/projects/dagster-project-file-reference) to know more above this directory structure
 
@@ -105,7 +108,8 @@ id,name,age,city
 2,Bob,35,San Francisco
 3,Charlie,42,Chicago
 4,Diana,31,Los Angeles
- ```
+```
+
 This file represents sample data that will be used as input for your ETL pipeline.
 
 ## Define Assets for the ETL Pipeline
@@ -184,31 +188,37 @@ defs = Definitions(
 
 This code sets up a Dagster project that interacts with Teradata by defining assets and resources
 
-1.	It imports necessary modules, including pandas, Dagster, and dagster-teradata.
-2.	It imports asset functions (read_csv_file, read_table, create_table, drop_table, insert_rows) from the assets.py module.
-3.	It registers these assets with Dagster using Definitions, allowing Dagster to track and execute them.
-4.	It defines a Teradata resource (TeradataResource) that reads database connection details from environment variables (TERADATA_HOST, TERADATA_USER, TERADATA_PASSWORD, TERADATA_DATABASE).
+1. It imports necessary modules, including pandas, Dagster, and dagster-teradata.
+2. It imports asset functions (read_csv_file, read_table, create_table, drop_table, insert_rows) from the assets.py module.
+3. It registers these assets with Dagster using Definitions, allowing Dagster to track and execute them.
+4. It defines a Teradata resource (TeradataResource) that reads database connection details from environment variables (TERADATA_HOST, TERADATA_USER, TERADATA_PASSWORD, TERADATA_DATABASE).
 
 ## Running the Pipeline
 
 After setting up the project, you can now run your Dagster pipeline:
 
-1.	**Start the Dagster Dev Server:** In your terminal, navigate to the root directory of your project and run:
-dagster dev
-After executing the command dagster dev, the Dagster logs will be displayed directly in the terminal. Any errors encountered during startup will also be logged here. Once you see a message similar to:
-        ```bash
-        2025-02-04 09:15:46 +0530 - dagster-webserver - INFO - Serving dagster-webserver on http://127.0.0.1:3000 in process 32564,
-        ```
-        It indicates that the Dagster webserver is running successfully. At this point, you can proceed to the next step.
-<br />
-2.	**Access the Dagster UI:** Open a web browser and navigate to http://127.0.0.1:3000. This will open the Dagster UI where you can manage and monitor your pipelines.
-<br />
-3.	**Run the Pipeline:**
-* In the top navigation of the Dagster UI, click Assets > View global asset lineage.
-* Click Materialize to execute the pipeline.
-* In the popup window, click View to see the details of the pipeline run.
-<br />
-4.	**Monitor the Run:** The Dagster UI allows you to visualize the pipeline's progress, view logs, and inspect the status of each step. You can switch between different views to see the execution logs and metadata for each asset.
+1. **Start the Dagster Dev Server:** In your terminal, navigate to the root directory of your project and run:
+   dagster dev
+   After executing the command dagster dev, the Dagster logs will be displayed directly in the terminal. Any errors encountered during startup will also be logged here. Once you see a message similar to:
+
+   ```bash
+   2025-02-04 09:15:46 +0530 - dagster-webserver - INFO - Serving dagster-webserver on http://127.0.0.1:3000 in process 32564,
+   ```
+
+   It indicates that the Dagster webserver is running successfully. At this point, you can proceed to the next step.
+
+   <br />
+
+2. **Access the Dagster UI:** Open a web browser and navigate to http://127.0.0.1:3000. This will open the Dagster UI where you can manage and monitor your pipelines.
+   <br />
+3. **Run the Pipeline:**
+
+- In the top navigation of the Dagster UI, click Assets > View global asset lineage.
+- Click Materialize to execute the pipeline.
+- In the popup window, click View to see the details of the pipeline run.
+  <br />
+
+4. **Monitor the Run:** The Dagster UI allows you to visualize the pipeline's progress, view logs, and inspect the status of each step. You can switch between different views to see the execution logs and metadata for each asset.
 
 ## Below are some of the operations provided by the TeradataResource:
 
@@ -217,6 +227,7 @@ After executing the command dagster dev, the Dagster logs will be displayed dire
 This operation executes a SQL query within Teradata Vantage.
 
 **Args:**
+
 - `sql` (str) – The query to be executed.
 - `fetch_results` (bool, optional) – If True, fetch the query results. Defaults to False.
 - `single_result_row` (bool, optional) – If True, return only the first row of the result set. Effective only if `fetch_results` is True. Defaults to False.
@@ -226,6 +237,7 @@ This operation executes a SQL query within Teradata Vantage.
 This operation executes a series of SQL queries within Teradata Vantage.
 
 **Args:**
+
 - `sql_queries` (Sequence[str]) – List of queries to be executed in series.
 - `fetch_results` (bool, optional) – If True, fetch the query results. Defaults to False.
 - `single_result_row` (bool, optional) – If True, return only the first row of the result set. Effective only if `fetch_results` is True. Defaults to False.
@@ -235,6 +247,7 @@ This operation executes a series of SQL queries within Teradata Vantage.
 This operation drops one or more databases from Teradata Vantage.
 
 **Args:**
+
 - `databases` (Union[str, Sequence[str]]) – Database name or list of database names to drop.
 
 ### 4. Drop a Table (`drop_table`)
@@ -242,12 +255,14 @@ This operation drops one or more databases from Teradata Vantage.
 This operation drops one or more tables from Teradata Vantage.
 
 **Args:**
+
 - `tables` (Union[str, Sequence[str]]) – Table name or list of table names to drop.
 
 ---
+
 ## Data Transfer from AWS S3 to Teradata Vantage Using dagster-teradata:
 
-``` python
+```python
 import os
 
 from dagster import job, op, Definitions, EnvVar, DagsterError
@@ -287,6 +302,7 @@ defs = Definitions(
     jobs=[example_job]
 )
 ```
+
 The `s3_to_teradata` method is used to load data from an S3 bucket into a Teradata table. It leverages Teradata Vantage Native Object Store (NOS), which allows direct querying and loading of external object store data (like AWS S3) into Teradata tables.
 
 ### Arguments Supported by `s3_blob_to_teradata`
@@ -313,9 +329,10 @@ The `s3_to_teradata` method is used to load data from an S3 bucket into a Terada
   [Teradata Vantage Native Object Store - Setting Up Access](https://docs.teradata.com/r/Enterprise_IntelliFlex_VMware/Teradata-VantageTM-Native-Object-Store-Getting-Started-Guide-17.20/Setting-Up-Access/Controlling-Foreign-Table-Access-with-an-AUTHORIZATION-Object)
 
 ---
+
 ## Data Transfer from Azure Blob to Teradata Vantage Using dagster-teradata:
 
-``` python
+```python
 import os
 
 from dagster import job, op, Definitions, EnvVar, DagsterError
@@ -382,24 +399,27 @@ The `azure_blob_to_teradata` method is used to load data from Azure Data Lake St
   [Teradata Vantage Native Object Store - Setting Up Access](https://docs.teradata.com/r/Enterprise_IntelliFlex_VMware/Teradata-VantageTM-Native-Object-Store-Getting-Started-Guide-17.20/Setting-Up-Access/Controlling-Foreign-Table-Access-with-an-AUTHORIZATION-Object)
 
 ### Transfer data from Private Blob Storage Container to Teradata instance
+
 To successfully transfer data from a Private Blob Storage Container to a Teradata instance, the following prerequisites are necessary.
 
-* An Azure account. You can start with a [free account](https://azure.microsoft.com/free/).
-* Create an [Azure storage account](https://docs.microsoft.com/en-us/azure/storage/common/storage-quickstart-create-account?tabs=azure-portal)
-* Create a [blob container](https://learn.microsoft.com/en-us/azure/storage/blobs/blob-containers-portal) under Azure storage account
-* [Upload](https://learn.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-portal) CSV/JSON/Parquest format files to blob container
-* Create a Teradata Authorization object with the Azure Blob Storage Account and the Account Secret Key
+- An Azure account. You can start with a [free account](https://azure.microsoft.com/free/).
+- Create an [Azure storage account](https://docs.microsoft.com/en-us/azure/storage/common/storage-quickstart-create-account?tabs=azure-portal)
+- Create a [blob container](https://learn.microsoft.com/en-us/azure/storage/blobs/blob-containers-portal) under Azure storage account
+- [Upload](https://learn.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-portal) CSV/JSON/Parquest format files to blob container
+- Create a Teradata Authorization object with the Azure Blob Storage Account and the Account Secret Key
 
-    ``` sql
-    CREATE AUTHORIZATION azure_authorization USER 'azuretestquickstart' PASSWORD 'AZURE_BLOB_ACCOUNT_SECRET_KEY'
-    ```
+  ```sql
+  CREATE AUTHORIZATION azure_authorization USER 'azuretestquickstart' PASSWORD 'AZURE_BLOB_ACCOUNT_SECRET_KEY'
+  ```
 
-    :::note
-    Replace `AZURE_BLOB_ACCOUNT_SECRET_KEY` with Azure storage account `azuretestquickstart`  [access key](https://learn.microsoft.com/en-us/azure/storage/common/storage-account-keys-manage?toc=%2Fazure%2Fstorage%2Fblobs%2Ftoc.json&bc=%2Fazure%2Fstorage%2Fblobs%2Fbreadcrumb%2Ftoc.json&tabs=azure-portal)
-    :::
+  :::note
+  Replace `AZURE_BLOB_ACCOUNT_SECRET_KEY` with Azure storage account `azuretestquickstart` [access key](https://learn.microsoft.com/en-us/azure/storage/common/storage-account-keys-manage?toc=%2Fazure%2Fstorage%2Fblobs%2Ftoc.json&bc=%2Fazure%2Fstorage%2Fblobs%2Fbreadcrumb%2Ftoc.json&tabs=azure-portal)
+  :::
 
 ---
+
 ## Manage VantageCloud Lake Compute Clusters with dagster-teradata:
+
 ```python
 from dagster import Definitions, DagsterError, op, materialize, job
 from dagster_dbt import DbtCliResource
@@ -462,6 +482,7 @@ Teradata VantageCloud Lake provides robust compute cluster management capabiliti
 This operation provisions a new compute cluster within Teradata VantageCloud Lake using `dagster-teradata`. It enables users to define the cluster's configuration, including compute profiles, resource allocation, and query execution strategies, directly within a Dagster job.
 
 **Args:**
+
 - `compute_profile_name` (str) – Specifies the name of the compute profile.
 - `compute_group_name` (str) – Identifies the compute group to which the profile belongs.
 - `query_strategy` (str, optional, default="STANDARD") – Defines the method used by the Teradata Optimizer to execute SQL queries efficiently. Acceptable values:
@@ -477,6 +498,7 @@ This operation provisions a new compute cluster within Teradata VantageCloud Lak
 This operation temporarily suspends a compute cluster within Teradata VantageCloud Lake using **`dagster-teradata`**, reducing resource consumption while retaining the compute profile for future use.
 
 **Args:**
+
 - `compute_profile_name` (str) – Specifies the name of the compute profile.
 - `compute_group_name` (str) – Identifies the compute group associated with the profile.
 - `timeout` (int, optional, default=constants.CC_OPR_TIME_OUT) – The maximum wait time for the suspension process to complete. Default: 20 minutes.
@@ -486,6 +508,7 @@ This operation temporarily suspends a compute cluster within Teradata VantageClo
 This operation restores a previously suspended compute cluster using **`dagster-teradata`**, allowing workloads to resume execution within a Dagster pipeline.
 
 **Args:**
+
 - `compute_profile_name` (str) – Specifies the name of the compute profile.
 - `compute_group_name` (str) – Identifies the compute group associated with the profile.
 - `timeout` (int, optional, default=constants.CC_OPR_TIME_OUT) – The maximum wait time for the resumption process to complete. Default: 20 minutes.
@@ -495,6 +518,7 @@ This operation restores a previously suspended compute cluster using **`dagster-
 This operation removes a compute cluster from Teradata VantageCloud Lake using **`dagster-teradata`**, with an option to delete the associated compute group. You can run this operation directly from your Dagster workflow.
 
 **Args:**
+
 - `compute_profile_name` (str) – Specifies the name of the compute profile.
 - `compute_group_name` (str) – Identifies the compute group associated with the profile.
 - `delete_compute_group` (bool, optional, default=False) – Determines whether the compute group should be deleted:
@@ -506,10 +530,10 @@ These operations are designed to be fully integrated into **`dagster-teradata`**
 ---
 
 ## Further reading
-* [dagster-teradata with Teradata Vantage](https://developers.teradata.com/quickstarts/manage-data/use-dagster-with-teradata-vantage/)
-* [Data Transfer from AWS S3 to Teradata Vantage Using dagster-teradata](https://developers.teradata.com/quickstarts/manage-data/dagster-teradata-s3-to-teradata-transfer/)
-* [Data Transfer from Azure Blob to Teradata Vantage Using dagster-teradata](https://developers.teradata.com/quickstarts/manage-data/dagster-teradata-azure-to-teradata-transfer/)
-* [Manage VantageCloud Lake Compute Clusters with dagster-teradata](https://developers.teradata.com/quickstarts/vantagecloud-lake/vantagecloud-lake-compute-cluster-dagster/)
-* [Teradata Authorization](https://docs.teradata.com/r/Enterprise_IntelliFlex_VMware/SQL-Data-Definition-Language-Syntax-and-Examples/Authorization-Statements-for-External-Routines/CREATE-AUTHORIZATION-and-REPLACE-AUTHORIZATION)
-* [Teradata VantageCloud Lake Compute Clusters](https://docs.teradata.com/r/Teradata-VantageCloud-Lake/Managing-Compute-Resources/Compute-Clusters)
 
+- [dagster-teradata with Teradata Vantage](https://developers.teradata.com/quickstarts/manage-data/use-dagster-with-teradata-vantage/)
+- [Data Transfer from AWS S3 to Teradata Vantage Using dagster-teradata](https://developers.teradata.com/quickstarts/manage-data/dagster-teradata-s3-to-teradata-transfer/)
+- [Data Transfer from Azure Blob to Teradata Vantage Using dagster-teradata](https://developers.teradata.com/quickstarts/manage-data/dagster-teradata-azure-to-teradata-transfer/)
+- [Manage VantageCloud Lake Compute Clusters with dagster-teradata](https://developers.teradata.com/quickstarts/vantagecloud-lake/vantagecloud-lake-compute-cluster-dagster/)
+- [Teradata Authorization](https://docs.teradata.com/r/Enterprise_IntelliFlex_VMware/SQL-Data-Definition-Language-Syntax-and-Examples/Authorization-Statements-for-External-Routines/CREATE-AUTHORIZATION-and-REPLACE-AUTHORIZATION)
+- [Teradata VantageCloud Lake Compute Clusters](https://docs.teradata.com/r/Teradata-VantageCloud-Lake/Managing-Compute-Resources/Compute-Clusters)

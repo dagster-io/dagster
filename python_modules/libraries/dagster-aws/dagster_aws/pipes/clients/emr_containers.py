@@ -83,7 +83,7 @@ class PipesEMRContainersClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(
+    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
@@ -206,9 +206,9 @@ class PipesEMRContainersClient(PipesClient, TreatAsResourceParam):
 
             time.sleep(self.waiter_config.get("Delay", 6))
 
-        if state in ["FAILED", "CANCELLED"]:
+        if state in ["FAILED", "CANCELLED"]:  # pyright: ignore[reportPossiblyUnboundVariable]
             raise RuntimeError(
-                f"EMR Containers job run {job_run_id} failed with state {state}. Reason: {response['jobRun'].get('failureReason')}, details: {response['jobRun'].get('stateDetails')}"
+                f"EMR Containers job run {job_run_id} failed with state {state}. Reason: {response['jobRun'].get('failureReason')}, details: {response['jobRun'].get('stateDetails')}"  # pyright: ignore[reportPossiblyUnboundVariable]
             )
 
         return self.client.describe_job_run(virtualClusterId=virtual_cluster_id, id=job_run_id)

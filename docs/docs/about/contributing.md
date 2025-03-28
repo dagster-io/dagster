@@ -83,9 +83,7 @@ During development, you might find these commands useful. Run them from `dagster
 
 To run all of them together, run `yarn test`.
 
-## Developing Docs
-
-The [docs style checklist](https://github.com/dagster-io/dagster/blob/master/docs/DOC_CHECKLIST.md) includes a set of style guidelines to adhere to when adding or modifying docs.
+## Developing documentation
 
 To run the Dagster documentation website locally, run the following commands:
 
@@ -93,32 +91,19 @@ To run the Dagster documentation website locally, run the following commands:
 cd docs
 ```
 
-```sh
-yarn start
+```bash
+yarn install && yarn start
 ```
 
-Troubleshooting tip: You may need to run `make next-dev-install` first to install dependencies. Also make sure that your Node version is >=12.13.0.
-
-The API documentation is generated from ReStructured Text files (`.rst`), which extracts Python docstrings from the library files. The `.rst` files can be found in the `docs/sphinx/sections/api/apidocs` directory.
-
-If you change any `.rst` files, be sure to run the following command in the `docs` directory:
+API documentation is built separately using Sphinx&mdash;if you change any `.rst` files, be sure to run the following command in the `docs` directory:
 
 ```bash
 yarn build-api-docs
 ```
 
-The majority of our code snippets are pulled from real Python files. This allows us to test our code snippets and ensure they remain up-to-date.
+The [docs style checklist](https://github.com/dagster-io/dagster/blob/master/docs/DOC_CHECKLIST.md) includes a set of style guidelines to adhere to when adding or modifying docs.
 
-This is done through the use of the `CodeExample` component, where `path` specifies a relative path to a file in the `examples/` directory.
-
-```
-<CodeExample
-  path="tutorial/tutorial/resources.py"
-  language="python"
-/>
-```
-
-You can find more information about developing documentation in `docs/README.md`.
+For the full guidelines for writing and debugging documentation, please refer to the [docs/README.md](https://github.com/dagster-io/dagster/blob/master/docs/README.md) and [docs/CONTRIBUTING.md](https://github.com/dagster-io/dagster/blob/master/docs/CONTRIBUTING.md) documents.
 
 ## Picking a GitHub Issue
 
@@ -135,4 +120,3 @@ In the PR template, please describe the change, including the motivation/context
 A Core reviewer will review your PR in around one business day and provide feedback on any changes it requires to be approved. Once approved and all the tests (including Buildkite!) pass, the reviewer will click the Squash and merge button in GitHub 🥳.
 
 Your PR is now merged into Dagster! We’ll shout out your contribution in the weekly release notes.
-

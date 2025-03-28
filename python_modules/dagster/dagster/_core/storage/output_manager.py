@@ -43,7 +43,7 @@ class OutputManagerDefinition(ResourceDefinition, IOutputManagerDefinition):
         )
 
     @property
-    def output_config_schema(self):
+    def output_config_schema(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._output_config_schema
 
     def copy_for_configured(self, description, config_schema):

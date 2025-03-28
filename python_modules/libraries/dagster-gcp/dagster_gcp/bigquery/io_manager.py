@@ -355,7 +355,7 @@ class BigQueryClient(DbClient):
 
     @staticmethod
     @contextmanager
-    def connect(context, _):
+    def connect(context, _):  # pyright: ignore[reportIncompatibleMethodOverride]
         conn = bigquery.Client(
             project=context.resource_config.get("project"),
             location=context.resource_config.get("location"),

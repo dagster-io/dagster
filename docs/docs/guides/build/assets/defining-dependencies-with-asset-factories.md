@@ -1,6 +1,6 @@
 ---
 title: 'Defining dependencies with asset factories'
-sidebar_position: 800
+sidebar_position: 600
 ---
 
 In data engineering, it's often helpful to reuse code to define similar assets. For example, you may want to represent every file in a directory as an asset.
@@ -11,7 +11,7 @@ Using an asset factory reduces complexity and creates a pluggable entry point to
 
 :::note
 
-This guide assumes familiarity with [asset factories](creating-asset-factories).
+This guide assumes familiarity with [asset factories](/guides/build/assets/creating-asset-factories).
 
 :::
 
@@ -22,14 +22,14 @@ This guide assumes familiarity with [asset factories](creating-asset-factories).
 Imagine a data analytics team that maintains a large number of tables. To support analytics needs, the team runs queries and constructs new tables from the results.
 
 Each table can be represented in YAML by a name, upstream asset dependencies, and a query:
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/asset-factories-with-deps/table_definitions.yaml" language="yaml" title="YAML Definition for ETL tables" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories-with-deps/table_definitions.yaml" language="yaml" title="YAML Definition for ETL tables" />
 
 Here's how you might add Python logic to define these assets in Dagster.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/asset-factories-with-deps/asset-factory-with-deps.py" language="python" title="Programmatically defining asset dependencies" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories-with-deps/asset-factory-with-deps.py" language="python" title="Programmatically defining asset dependencies" />
 
 ## Defining dependencies between factory assets and regular assets
 
 Here's how you might add Python logic to define a Dagster asset downstream of factory assets:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/asset-factories-with-deps/asset_downstream_of_factory_assets.py" language="python" title="Defining dependencies between factory assets and regular assets" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories-with-deps/asset_downstream_of_factory_assets.py" language="python" title="Defining dependencies between factory assets and regular assets" />

@@ -2,6 +2,13 @@ from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
 
+from dagster_shared.serdes.serdes import (
+    FieldSerializer,
+    UnknownSerdesValue,
+    UnpackContext,
+    WhitelistMap,
+    pack_value,
+)
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -18,13 +25,6 @@ from dagster._core.execution.retries import RetryState
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    UnknownSerdesValue,
-    UnpackContext,
-    WhitelistMap,
-    pack_value,
-)
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.plan import StepHandleUnion
@@ -82,7 +82,7 @@ class StepOutputVersionSerializer(FieldSerializer):
             for k, v in value.items()
         ]
 
-    def unpack(
+    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         value: Sequence[UnknownSerdesValue],
         whitelist_map: WhitelistMap,

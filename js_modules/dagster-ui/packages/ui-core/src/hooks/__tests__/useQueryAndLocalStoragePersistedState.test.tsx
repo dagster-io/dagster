@@ -90,7 +90,7 @@ describe('useQueryAndLocalStoragePersistedState', () => {
     expect(state).toEqual(new Set(['test', 'test2']));
 
     await waitFor(() => {
-      expect(querySearch).toEqual('?open-nodes%5B%5D=test&open-nodes%5B%5D=test2');
+      expect(querySearch).toEqual('?open-nodes%5B0%5D=test&open-nodes%5B1%5D=test2');
     });
   });
 

@@ -280,7 +280,7 @@ class DuckDbClient(DbClient):
 
     @staticmethod
     @contextmanager
-    def connect(context, _):
+    def connect(context, _):  # pyright: ignore[reportIncompatibleMethodOverride]
         config = context.resource_config["connection_config"]
 
         # support for `custom_user_agent` was added in v1.0.0

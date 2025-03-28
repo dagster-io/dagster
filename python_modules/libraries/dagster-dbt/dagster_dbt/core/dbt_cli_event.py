@@ -17,6 +17,7 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import public
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.warnings import disable_dagster_warnings
 from dbt.contracts.results import NodeStatus, TestStatus
@@ -268,7 +269,11 @@ class DbtCliEventMessage:
         dagster_dbt_translator: DagsterDbtTranslator = DagsterDbtTranslator(),
         context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None,
         target_path: Optional[Path] = None,
-    ) -> Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+    ) -> Iterator[
+        Union[
+            Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation
+        ]
+    ]:
         """Convert a dbt CLI event to a set of corresponding Dagster events.
 
         Args:
@@ -280,7 +285,7 @@ class DbtCliEventMessage:
                 dbt artifacts while generating events.
 
         Returns:
-            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]:
                 A set of corresponding Dagster events.
 
                 In a Dagster asset definition, the following are yielded:
@@ -288,9 +293,10 @@ class DbtCliEventMessage:
                 - AssetCheckResult for dbt test results that are enabled as asset checks.
                 - AssetObservation for dbt test results that are not enabled as asset checks.
 
-                In a Dagster op definition, the following are yielded:
-                - AssetMaterialization for dbt test results that are not enabled as asset checks.
-                - AssetObservation for dbt test results.
+               In a Dagster op definition, the following are yielded:
+                - AssetMaterialization refables (e.g. models, seeds, snapshots.)
+                - AssetCheckEvaluation for dbt test results that are enabled as asset checks.
+                - AssetObservation for dbt test results that are not enabled as asset checks.
         """
         if not self.is_result_event(self.raw_event):
             return
@@ -332,7 +338,13 @@ class DbtCliEventMessage:
             "invocation_id": invocation_id,
         }
 
-        if event_node_info.get("node_started_at") and event_node_info.get("node_finished_at"):
+        if event_node_info.get("node_started_at") in ["", "None", None] and event_node_info.get(
+            "node_finished_at"
+        ) in ["", "None", None]:
+            # if model materialization is incremental microbatch, node_started_at and node_finished_at are empty strings
+            # and require fallback to data.execution_time
+            default_metadata["Execution Duration"] = self.raw_event["data"]["execution_time"]
+        elif event_node_info.get("node_started_at") and event_node_info.get("node_finished_at"):
             started_at = dateutil.parser.isoparse(event_node_info["node_started_at"])
             finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
             default_metadata["Execution Duration"] = (finished_at - started_at).total_seconds()
@@ -340,7 +352,12 @@ class DbtCliEventMessage:
         has_asset_def: bool = bool(context and context.has_assets_def)
 
         node_resource_type: str = event_node_info["resource_type"]
-        node_status: str = event_node_info["node_status"]
+        # if model materialization is incremental microbatch, node_status property is "None", hence fall back to status
+        node_status: str = (
+            self.raw_event["data"]["status"].lower()
+            if event_node_info["node_status"] in ["", "None", None]
+            else event_node_info["node_status"]
+        )
         node_materialization: str = self.raw_event["data"]["node_info"]["materialized"]
 
         is_node_ephemeral = node_materialization == "ephemeral"
@@ -416,10 +433,39 @@ class DbtCliEventMessage:
                 manifest, dagster_dbt_translator, test_unique_id=unique_id
             )
 
-            # If the test was not selected as an asset check, yield an `AssetObservation`.
-            if not (
-                context and asset_check_key and asset_check_key in context.selected_asset_check_keys
+            if (
+                context
+                and has_asset_def
+                and asset_check_key is not None
+                and asset_check_key in context.selected_asset_check_keys
             ):
+                # The test is an asset check in an asset, so yield an `AssetCheckResult`.
+                yield AssetCheckResult(
+                    passed=node_status == TestStatus.Pass,
+                    asset_key=asset_check_key.asset_key,
+                    check_name=asset_check_key.name,
+                    metadata=metadata,
+                    severity=(
+                        AssetCheckSeverity.WARN
+                        if node_status == TestStatus.Warn
+                        else AssetCheckSeverity.ERROR
+                    ),
+                )
+            elif not has_asset_def and asset_check_key is not None:
+                # The test is an asset check in an op, so yield an `AssetCheckEvaluation`.
+                yield AssetCheckEvaluation(
+                    passed=node_status == TestStatus.Pass,
+                    asset_key=asset_check_key.asset_key,
+                    check_name=asset_check_key.name,
+                    metadata=metadata,
+                    severity=(
+                        AssetCheckSeverity.WARN
+                        if node_status == TestStatus.Warn
+                        else AssetCheckSeverity.ERROR
+                    ),
+                )
+            else:
+                # since there is no asset check key, we log observations instead
                 message = None
 
                 # dbt's default indirect selection (eager) will select relationship tests
@@ -458,17 +504,3 @@ class DbtCliEventMessage:
                     metadata=metadata,
                     description=message,
                 )
-                return
-
-            # The test is an asset check, so yield an `AssetCheckResult`.
-            yield AssetCheckResult(
-                passed=node_status == TestStatus.Pass,
-                asset_key=asset_check_key.asset_key,
-                check_name=asset_check_key.name,
-                metadata=metadata,
-                severity=(
-                    AssetCheckSeverity.WARN
-                    if node_status == TestStatus.Warn
-                    else AssetCheckSeverity.ERROR
-                ),
-            )

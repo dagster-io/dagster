@@ -3,8 +3,8 @@ import {createProvider} from '../SelectionAutoCompleteProvider';
 
 describe('createAssetSelectionHint', () => {
   const attributesMap = {
-    key: ['asset1', 'asset2', 'asset3'],
-    tag: ['tag1', 'tag2', 'tag3'],
+    key: ['asset1', 'asset2', 'asset3', 'prefix/thing1', 'prefix/thing2'],
+    tag: ['tag1', 'tag2', 'tag3', 'key=value1', 'key=value2'],
     owner: ['marco@dagsterlabs.com', 'team:frontend'],
     group: ['group1', 'group2'],
     kind: ['kind1', 'kind2'],
@@ -24,11 +24,11 @@ describe('createAssetSelectionHint', () => {
   });
   const selectionHint = createSelectionAutoComplete(provider);
 
-  function testAutocomplete(testString: string) {
+  function testAutocomplete(testString: string, hintFn = selectionHint) {
     const cursorIndex = testString.indexOf('|');
     const string = testString.replace('|', '');
 
-    const hints = selectionHint(string, cursorIndex);
+    const hints = hintFn(string, cursorIndex);
 
     return {
       list: hints?.list,
@@ -64,6 +64,12 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({
           text: '"tag3"',
         }),
+        expect.objectContaining({
+          text: '"key=value1"',
+        }),
+        expect.objectContaining({
+          text: '"key=value2"',
+        }),
       ],
       from: 4, // cursor location
       to: 4, // cursor location
@@ -79,6 +85,12 @@ describe('createAssetSelectionHint', () => {
         }),
         expect.objectContaining({
           text: '"tag3"',
+        }),
+        expect.objectContaining({
+          text: '"key=value1"',
+        }),
+        expect.objectContaining({
+          text: '"key=value2"',
         }),
       ],
       from: 4, // cursor location
@@ -546,6 +558,12 @@ describe('createAssetSelectionHint', () => {
         }),
         expect.objectContaining({
           text: '"asset3"',
+        }),
+        expect.objectContaining({
+          text: '"prefix/thing1"',
+        }),
+        expect.objectContaining({
+          text: '"prefix/thing2"',
         }),
       ],
       from: 56, // cursor location
@@ -1017,6 +1035,8 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({text: '"asset1"'}),
         expect.objectContaining({text: '"asset2"'}),
         expect.objectContaining({text: '"asset3"'}),
+        expect.objectContaining({text: '"prefix/thing1"'}),
+        expect.objectContaining({text: '"prefix/thing2"'}),
       ],
       to: 60,
     });
@@ -1072,14 +1092,6 @@ describe('createAssetSelectionHint', () => {
     });
   });
 
-  it('suggests + after digits', () => {
-    expect(testAutocomplete('1234|')).toEqual({
-      from: 4,
-      list: [expect.objectContaining({text: '+'})],
-      to: 4,
-    });
-  });
-
   it('suggests things for the value after an upstream traversal', () => {
     expect(testAutocomplete('+ass|')).toEqual({
       from: 1,
@@ -1090,6 +1102,114 @@ describe('createAssetSelectionHint', () => {
         expect.objectContaining({text: 'key:"asset3"'}),
         expect.objectContaining({text: 'code_location:"assumptions@location3"'}),
       ],
+      to: 4,
+    });
+  });
+
+  it('value suggestions should replace entire key=value segment in tag:key=value', () => {
+    expect(testAutocomplete('tag:k|ey=value or key:"test"')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({text: '"key=value1"'}),
+        expect.objectContaining({text: '"key=value2"'}),
+      ],
+      to: 13,
+    });
+
+    expect(testAutocomplete('tag:key|=value or key:"test"')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({text: '"key=value1"'}),
+        expect.objectContaining({text: '"key=value2"'}),
+      ],
+      to: 13,
+    });
+
+    expect(testAutocomplete('tag:key=|value or key:"test"')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({text: '"key=value1"'}),
+        expect.objectContaining({text: '"key=value2"'}),
+      ],
+      to: 13,
+    });
+    expect(testAutocomplete('tag:key=val|ue or key:"test"')).toEqual({
+      from: 4,
+      list: [
+        expect.objectContaining({text: '"key=value1"'}),
+        expect.objectContaining({text: '"key=value2"'}),
+      ],
+      to: 13,
+    });
+  });
+
+  it('should be case insensitive', () => {
+    expect(testAutocomplete('REPO|')).toEqual({
+      from: 0,
+      list: [
+        expect.objectContaining({text: 'key:"*REPO*"'}),
+        expect.objectContaining({text: 'code_location:"repo1@location1"'}),
+        expect.objectContaining({text: 'code_location:"repo2@location2"'}),
+      ],
+      to: 4,
+    });
+  });
+
+  it('Allows slashes in identifiers', () => {
+    expect(testAutocomplete('prefix/th|ing')).toEqual({
+      from: 0,
+      list: [
+        expect.objectContaining({text: 'key:"*prefix/thing*"'}),
+        expect.objectContaining({text: 'key:"prefix/thing1"'}),
+        expect.objectContaining({text: 'key:"prefix/thing2"'}),
+      ],
+      to: 12,
+    });
+  });
+
+  it('Allows numbers in identifiers', () => {
+    expect(testAutocomplete('1|')).toEqual({
+      from: 0,
+      list: [
+        expect.objectContaining({text: 'key:"*1*"'}),
+        expect.objectContaining({text: 'key:"asset1"'}),
+        expect.objectContaining({text: 'key:"prefix/thing1"'}),
+        expect.objectContaining({text: 'tag:"tag1"'}),
+        expect.objectContaining({text: 'tag:"key=value1"'}),
+        expect.objectContaining({text: 'group:"group1"'}),
+        expect.objectContaining({text: 'kind:"kind1"'}),
+        expect.objectContaining({text: 'code_location:"repo1@location1"'}),
+      ],
+      to: 1,
+    });
+  });
+
+  it('uses primary attribute key for substring suggestions', () => {
+    const attributesMap = {
+      key: [],
+      tag: [],
+      owner: [],
+      group: [],
+      kind: [],
+      code_location: [],
+    };
+    const provider = createProvider({
+      attributesMap,
+      primaryAttributeKey: 'tag',
+      attributeToIcon: {
+        key: 'magnify_glass',
+        tag: 'magnify_glass',
+        owner: 'magnify_glass',
+        group: 'magnify_glass',
+        kind: 'magnify_glass',
+        code_location: 'magnify_glass',
+      },
+    });
+    const selectionHint = createSelectionAutoComplete(provider);
+
+    expect(testAutocomplete('test|', selectionHint)).toEqual({
+      from: 0,
+      list: [expect.objectContaining({text: 'tag:"*test*"'})],
       to: 4,
     });
   });

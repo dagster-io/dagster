@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
-import dagster._seven as seven
+import dagster_shared.seven as seven
 from azure.identity import ClientSecretCredential, DefaultAzureCredential
 from azure.storage.blob import BlobSasPermissions, BlobServiceClient, UserDelegationKey
 from dagster import (
@@ -52,7 +52,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         default_azure_credential (Optional[dict]): Use and configure DefaultAzureCredential.
             Cannot be used with sas token or secret key config.
         local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
-            ``dagster._seven.get_system_temp_directory()``.
+            ``dagster_shared.seven.get_system_temp_directory()``.
         prefix (Optional[str]): Prefix for the log file keys.
         upload_interval (Optional[int]): Interval in seconds to upload partial log files blob storage. By default, will only upload when the capture is complete.
         show_url_only (bool): Only show the URL of the log file in the UI, instead of fetching and displaying the full content. Default False.
@@ -259,7 +259,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         if to_remove:
             self._container_client.delete_blobs(*to_remove)
 
-    def download_url_for_type(
+    def download_url_for_type(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, log_key: Sequence[str], io_type: ComputeIOType
     ) -> Optional[str]:
         if not self.is_capture_complete(log_key):

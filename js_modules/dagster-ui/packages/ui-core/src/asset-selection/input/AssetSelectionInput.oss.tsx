@@ -13,6 +13,7 @@ export interface AssetSelectionInputProps {
   assets: AssetGraphQueryItem[];
   value: string;
   onChange: (value: string) => void;
+  onErrorStateChange?: (errors: SyntaxError[]) => void;
   linter?: (content: string) => SyntaxError[];
   useAssetSelectionAutoComplete?: (
     assets: AssetGraphQueryItem[],
@@ -34,11 +35,13 @@ export const AssetSelectionInput = ({
   linter = defaultLinter,
   useAssetSelectionAutoComplete = defaultUseAssetSelectionAutoCompleteProvider,
   saveOnBlur = false,
+  onErrorStateChange,
 }: AssetSelectionInputProps) => {
   const {useAutoComplete} = useAssetSelectionAutoComplete(assets);
 
   return (
     <SelectionAutoCompleteInput
+      wildcardAttributeName="key"
       id="asset-selection-input"
       useAutoComplete={useAutoComplete}
       placeholder="Search and filter assets"
@@ -46,6 +49,7 @@ export const AssetSelectionInput = ({
       value={value}
       onChange={onChange}
       saveOnBlur={saveOnBlur}
+      onErrorStateChange={onErrorStateChange}
     />
   );
 };

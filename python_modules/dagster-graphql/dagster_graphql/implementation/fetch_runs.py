@@ -156,7 +156,7 @@ IN_PROGRESS_STATUSES = [
 
 
 def _get_latest_planned_run_id(instance: DagsterInstance, asset_record: AssetRecord):
-    if instance.event_log_storage.asset_records_have_last_planned_materialization_storage_id:
+    if instance.event_log_storage.asset_records_have_last_planned_and_failed_materializations:
         return asset_record.asset_entry.last_planned_materialization_run_id
     else:
         planned_info = instance.get_latest_planned_materialization_info(

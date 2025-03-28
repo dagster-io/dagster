@@ -11,6 +11,13 @@ from typing import Optional
 
 import click
 import yaml
+from dagster_shared.ipc import (
+    get_ipc_shutdown_pipe,
+    interrupt_on_ipc_shutdown_message,
+    open_ipc_subprocess,
+    send_ipc_shutdown_message,
+)
+from dagster_shared.serdes import serialize_value
 
 from dagster._annotations import deprecated
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
@@ -18,13 +25,6 @@ from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_options
 from dagster._core.instance import DagsterInstance
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._grpc.server import GrpcServerCommand
-from dagster._serdes import serialize_value
-from dagster._serdes.ipc import (
-    get_ipc_shutdown_pipe,
-    interrupt_on_ipc_shutdown_message,
-    open_ipc_subprocess,
-    send_ipc_shutdown_message,
-)
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
@@ -166,13 +166,14 @@ def dev_command(
             get_possibly_temporary_instance_for_cli("dagster dev", logger=logger)
         )
 
+        logger.info("Launching Dagster services...")
+
         with _optionally_create_temp_workspace(
             use_legacy_code_server_behavior=use_legacy_code_server_behavior,
             workspace_opts=workspace_opts,
             instance=instance,
+            code_server_log_level=code_server_log_level,
         ) as workspace_args:
-            logger.info("Launching Dagster services...")
-
             args = [
                 "--instance-ref",
                 serialize_value(instance.get_ref()),
@@ -269,6 +270,7 @@ def _optionally_create_temp_workspace(
     use_legacy_code_server_behavior: bool,
     workspace_opts: WorkspaceOpts,
     instance: DagsterInstance,
+    code_server_log_level: str,
 ) -> Iterator[Sequence[str]]:
     """If not in legacy mode, spin up grpc servers and write a workspace file pointing at them.
     If in legacy mode, do nothing and return the target args.
@@ -278,6 +280,7 @@ def _optionally_create_temp_workspace(
             instance=instance,
             workspace_load_target=workspace_opts.to_load_target(),
             server_command=GrpcServerCommand.CODE_SERVER_START,
+            code_server_log_level=code_server_log_level,
         ) as context:
             with _temp_grpc_socket_workspace_file(context) as workspace_file:
                 yield ["--workspace", str(workspace_file)]

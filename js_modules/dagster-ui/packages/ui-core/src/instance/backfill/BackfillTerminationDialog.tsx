@@ -8,7 +8,6 @@ import {
 } from './types/BackfillTerminationDialog.types';
 import {gql, useMutation} from '../../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
-import {BulkActionStatus} from '../../graphql/types';
 
 interface Props {
   backfill?: BackfillTerminationDialogBackfillFragment;
@@ -25,7 +24,6 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     return null;
   }
 
-  const numUnscheduled = backfill.numCancelable;
   const cancel = async () => {
     setIsSubmitting(true);
     await cancelBackfill({variables: {backfillId: backfill.id}});
@@ -36,25 +34,11 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
 
   return (
     <>
-      <Dialog
-        isOpen={
-          !!backfill &&
-          backfill.status !== BulkActionStatus.CANCELED &&
-          (backfill.isAssetBackfill || !!numUnscheduled)
-        }
-        title="Cancel backfill"
-        onClose={onClose}
-      >
-        {backfill.isAssetBackfill ? (
-          <DialogBody>
-            Confirm cancellation of asset backfill? This will mark unfinished runs as canceled.
-          </DialogBody>
-        ) : (
-          <DialogBody>
-            There {numUnscheduled === 1 ? 'is 1 partition ' : `are ${numUnscheduled} partitions `}
-            yet to be queued or launched.
-          </DialogBody>
-        )}
+      <Dialog isOpen={!!backfill} title="Cancel backfill" onClose={onClose}>
+        <DialogBody>
+          In progress runs associated with this backfill will be canceled and additional runs will
+          not be queued or launched.
+        </DialogBody>
         <DialogFooter>
           <Button intent="none" onClick={onClose}>
             Close

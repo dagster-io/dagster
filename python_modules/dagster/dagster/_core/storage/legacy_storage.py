@@ -168,7 +168,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
         return self._inst_data
 
     @property
-    def _instance(self) -> Optional["DagsterInstance"]:
+    def _instance(self) -> Optional["DagsterInstance"]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._storage._instance  # noqa: SLF001
 
     def register_instance(self, instance: "DagsterInstance") -> None:
@@ -200,7 +200,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def handle_run_event(self, run_id: str, event: "DagsterEvent") -> None:
         return self._storage.run_storage.handle_run_event(run_id, event)
 
-    def get_runs(
+    def get_runs(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         filters: Optional["RunsFilter"] = None,
         cursor: Optional[str] = None,
@@ -210,7 +210,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     ) -> Iterable["DagsterRun"]:
         return self._storage.run_storage.get_runs(filters, cursor, limit, bucket_by, ascending)
 
-    def get_run_ids(
+    def get_run_ids(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         filters: Optional["RunsFilter"] = None,
         cursor: Optional[str] = None,
@@ -221,7 +221,7 @@ class LegacyRunStorage(RunStorage, ConfigurableClass):
     def get_runs_count(self, filters: Optional["RunsFilter"] = None) -> int:
         return self._storage.run_storage.get_runs_count(filters)
 
-    def get_run_group(self, run_id: str) -> Optional[tuple[str, Iterable["DagsterRun"]]]:
+    def get_run_group(self, run_id: str) -> Optional[tuple[str, Iterable["DagsterRun"]]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._storage.run_storage.get_run_group(run_id)
 
     def get_run_records(
@@ -385,7 +385,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         return LegacyEventLogStorage(storage, inst_data=inst_data)
 
     @property
-    def _instance(self) -> Optional["DagsterInstance"]:
+    def _instance(self) -> Optional["DagsterInstance"]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._storage._instance  # noqa: SLF001
 
     def index_connection(self):
@@ -395,7 +395,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         if not self._storage.has_instance:
             self._storage.register_instance(instance)
 
-    def get_logs_for_run(
+    def get_logs_for_run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         run_id: str,
         cursor: Optional[Union[str, int]] = None,
@@ -446,7 +446,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def wipe(self) -> None:
         return self._storage.event_log_storage.wipe()
 
-    def watch(self, run_id: str, cursor: str, callback: EventHandlerFn) -> None:
+    def watch(self, run_id: str, cursor: str, callback: EventHandlerFn) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._storage.event_log_storage.watch(run_id, cursor, callback)
 
     def end_watch(self, run_id: str, handler: EventHandlerFn) -> None:
@@ -468,7 +468,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             max_overflow,
         )
 
-    def get_event_records(
+    def get_event_records(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         event_records_filter: Optional[EventRecordsFilter] = None,
         limit: Optional[int] = None,
@@ -482,7 +482,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             ascending,
         )
 
-    def fetch_materializations(
+    def fetch_materializations(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         filters: Union[AssetKey, "AssetRecordsFilter"],
         limit: int,
@@ -493,7 +493,18 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             filters, limit, cursor, ascending
         )
 
-    def fetch_observations(
+    def fetch_failed_materializations(
+        self,
+        records_filter: Union[AssetKey, "AssetRecordsFilter"],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        return self._storage.event_log_storage.fetch_failed_materializations(
+            records_filter, limit, cursor, ascending
+        )
+
+    def fetch_observations(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         filters: Union[AssetKey, "AssetRecordsFilter"],
         limit: int,
@@ -502,7 +513,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     ) -> EventRecordsResult:
         return self._storage.event_log_storage.fetch_observations(filters, limit, cursor, ascending)
 
-    def fetch_run_status_changes(
+    def fetch_run_status_changes(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         filters: Union["DagsterEventType", "RunStatusChangeRecordsFilter"],
         limit: int,
@@ -529,7 +540,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_key, partitions, since_storage_id
         )
 
-    def get_asset_records(
+    def get_asset_records(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_keys: Optional[Sequence["AssetKey"]] = None
     ) -> Iterable[AssetRecord]:
         return self._storage.event_log_storage.get_asset_records(asset_keys)
@@ -542,10 +553,10 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def has_asset_key(self, asset_key: "AssetKey") -> bool:
         return self._storage.event_log_storage.has_asset_key(asset_key)
 
-    def all_asset_keys(self) -> Iterable["AssetKey"]:
+    def all_asset_keys(self) -> Iterable["AssetKey"]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._storage.event_log_storage.all_asset_keys()
 
-    def get_asset_keys(
+    def get_asset_keys(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         prefix: Optional[Sequence[str]] = None,
         limit: Optional[int] = None,
@@ -720,7 +731,7 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             status=status,
         )
 
-    def get_latest_asset_check_execution_by_key(
+    def get_latest_asset_check_execution_by_key(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         check_keys: Sequence["AssetCheckKey"],
     ) -> Mapping["AssetCheckKey", Optional[AssetCheckExecutionRecord]]:
@@ -757,7 +768,7 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
         return LegacyScheduleStorage(storage, inst_data=inst_data)
 
     @property
-    def _instance(self) -> Optional["DagsterInstance"]:
+    def _instance(self) -> Optional["DagsterInstance"]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._storage._instance  # noqa: SLF001
 
     def register_instance(self, instance: "DagsterInstance") -> None:
@@ -767,7 +778,7 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def wipe(self) -> None:
         return self._storage.schedule_storage.wipe()
 
-    def all_instigator_state(
+    def all_instigator_state(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         repository_origin_id: Optional[str] = None,
         repository_selector_id: Optional[str] = None,
@@ -794,7 +805,7 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def supports_batch_queries(self) -> bool:
         return self._storage.schedule_storage.supports_batch_queries
 
-    def get_batch_ticks(
+    def get_batch_ticks(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         selector_ids: Sequence[str],
         limit: Optional[int] = None,
@@ -805,7 +816,7 @@ class LegacyScheduleStorage(ScheduleStorage, ConfigurableClass):
     def get_tick(self, tick_id: int) -> "InstigatorTick":
         return self._storage.schedule_storage.get_tick(tick_id)
 
-    def get_ticks(
+    def get_ticks(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         origin_id: str,
         selector_id: str,

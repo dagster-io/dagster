@@ -16,7 +16,6 @@ from dagster import (
     Output,
     RetryPolicy,
     _check as check,
-    _seven,
     file_relative_path,
     repository,
 )
@@ -38,6 +37,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRe
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.types import CancelExecutionRequest
+from dagster_shared import seven
 
 
 @op
@@ -365,7 +365,7 @@ def test_invalid_instance_run():
     run_configs(),
 )
 @pytest.mark.skipif(
-    _seven.IS_WINDOWS,
+    seven.IS_WINDOWS,
     reason="Crashy jobs leave resources open on windows, causing filesystem contention",
 )
 def test_crashy_run(
@@ -445,7 +445,7 @@ def test_crashy_run(
 
 @pytest.mark.parametrize("run_config", run_configs())
 @pytest.mark.skipif(
-    _seven.IS_WINDOWS,
+    seven.IS_WINDOWS,
     reason="Crashy jobs leave resources open on windows, causing filesystem contention",
 )
 def test_exity_run(
@@ -502,7 +502,7 @@ def test_exity_run(
                 "ops": {"sleepy_op": {"config": {"crash_after_termination": True}}}
             },
             marks=pytest.mark.skipif(
-                _seven.IS_WINDOWS, reason="Crashes manifest differently on windows"
+                seven.IS_WINDOWS, reason="Crashes manifest differently on windows"
             ),
         ),
     ],
@@ -779,7 +779,7 @@ def test_multi_op_selection_execution(
 
 
 @pytest.mark.skipif(
-    _seven.IS_WINDOWS,
+    seven.IS_WINDOWS,
     reason="Failure sequence manifests differently on windows",
 )
 def test_job_that_fails_run_worker(

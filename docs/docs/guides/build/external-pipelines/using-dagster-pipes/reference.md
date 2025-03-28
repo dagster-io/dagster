@@ -3,7 +3,7 @@ title: "Dagster Pipes subprocess reference"
 description: "This page shows ways to execute external code with Dagster Pipes with different entities in the Dagster system."
 ---
 
-This reference shows usage of Dagster Pipes with other entities in the Dagster system. For a step-by-step walkthrough, refer to the [Dagster Pipes tutorial](index.md).
+This reference shows usage of Dagster Pipes with other entities in the Dagster system. For a step-by-step walkthrough, refer to the [Dagster Pipes tutorial](/guides/build/external-pipelines/using-dagster-pipes).
 
 ## Specifying environment variables and extras
 
@@ -14,7 +14,7 @@ When launching the subprocess, you may want to make environment variables or add
 
 In the external code, you can access extras via the `PipesContext` object:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_extras_env/external_code.py" lineStart="3" />
+<CodeExample path="docs_snippets/docs_snippets/guides/dagster/dagster_pipes/subprocess/with_extras_env/external_code.py" lineStart="2" />
 
 </TabItem>
 <TabItem value="Dagster code in dagster_code.py">

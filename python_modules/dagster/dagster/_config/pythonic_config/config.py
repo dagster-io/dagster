@@ -4,6 +4,13 @@ from enum import Enum
 from functools import cached_property
 from typing import Any, Optional, cast
 
+from dagster_shared.dagster_model.pydantic_compat_layer import (
+    ModelFieldCompat,
+    PydanticUndefined,
+    model_config,
+    model_fields,
+)
+from dagster_shared.utils.cached_method import CACHED_METHOD_CACHE_FIELD
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import TypeVar
 
@@ -29,13 +36,6 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
-from dagster._model.pydantic_compat_layer import (
-    ModelFieldCompat,
-    PydanticUndefined,
-    model_config,
-    model_fields,
-)
-from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD
 
 INTERNAL_MARKER = "__internal__"
 
@@ -193,7 +193,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         modified_data_by_config_key = {}
         field_info_by_config_key = {
             field.alias if field.alias else field_key: (field_key, field)
-            for field_key, field in model_fields(self).items()
+            for field_key, field in model_fields(self.__class__).items()
         }
         for config_key, value in config_dict.items():
             field_info = field_info_by_config_key.get(config_key)
@@ -241,7 +241,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
             else:
                 modified_data_by_config_key[config_key] = value
 
-        for field_key, field in model_fields(self).items():
+        for field_key, field in model_fields(self.__class__).items():
             config_key = field.alias if field.alias else field_key
             if field.is_required() and config_key not in modified_data_by_config_key:
                 modified_data_by_config_key[config_key] = (
@@ -267,7 +267,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
         """
         public_fields = self._get_non_default_public_field_values(keep_if_not_none=True)
         return {
-            k: _config_value_to_dict_representation(model_fields(self).get(k), v)
+            k: _config_value_to_dict_representation(model_fields(self.__class__).get(k), v)
             for k, v in public_fields.items()
         }
 

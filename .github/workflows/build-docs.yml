@@ -3,11 +3,9 @@ on:
   push:
     branches:
       - master
-      - docs-prod
       - 'release-*'
     paths:
       - docs/**
-      - examples/docs_beta_snippets/**
       - examples/docs_snippets/**
       - examples/docs_projects/**
       - examples/getting_started_etl_tutorial/**
@@ -16,10 +14,11 @@ on:
       - '!docs/README.md'
       - '!docs/CONTRIBUTING.md'
       - '!docs/content-templates/**'
+      # Required for `yarn rebuild-kinds-tags`
+      - js_modules/dagster-ui/packages/ui-core/src/graph/OpTags.tsx
   pull_request:
     paths:
       - docs/**
-      - examples/docs_beta_snippets/**
       - examples/docs_snippets/**
       - examples/docs_projects/**
       - examples/getting_started_etl_tutorial/**
@@ -28,6 +27,8 @@ on:
       - '!docs/README.md'
       - '!docs/CONTRIBUTING.md'
       - '!docs/content-templates/**'
+      # Required for `yarn rebuild-kinds-tags`
+      - js_modules/dagster-ui/packages/ui-core/src/graph/OpTags.tsx
     types:
       - opened
       - reopened
@@ -49,8 +50,11 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
           REF_NAME: ${{ github.ref_name }}
         if: |
-          github.event_name == 'pull_request' ||
-          (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/docs-prod')))
+          github.event_name == 'pull_request' || (
+            github.event_name == 'push' && (
+              github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-')
+            )
+          )
         run: |
           BRANCH_PREVIEW_SUBDOMAIN=$(echo "${HEAD_REF:-$REF_NAME}" | sed -e 's/[^a-zA-Z0-9-]/-/g; s/^-*//; s/-*$//' | cut -c1-63)
           BRANCH_PREVIEW_SUBDOMAIN=$(echo $BRANCH_PREVIEW_SUBDOMAIN | sed 's/--/-/g; s/-$//')
@@ -100,11 +104,11 @@ jobs:
         env:
           GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
+      # Commits to pull requests result in preview deployments
       - name: Publish Preview to Vercel
         uses: amondnet/vercel-action@v25
         if: |
-          github.event_name == 'pull_request' ||
-          (github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/release-') || startsWith(github.ref, 'refs/heads/docs-prod')))
+          github.event_name == 'pull_request'
         with:
           github-comment: ${{ github.event.pull_request && env.CHANGES_ENTRY || true }}
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
@@ -114,10 +118,30 @@ jobs:
           scope: ${{ secrets.VERCEL_ORG_ID }}
           alias-domains: ${{ env.BRANCH_PREVIEW_SUBDOMAIN }}.archive.dagster-docs.io
 
+      # Pushes to `master` result in a preview deployment with the `main.` domain alias
+      #
+      # NOTE: alias must match preview version defined in `docs/dagsterVersions.json`
+      #
+      # TODO(colton) - add alias on the `dagster.io` domain
+      # TODO(colton) - use `-e ENVIRONMENT=...` flag for preview-specific site configuration
+      - name: Publish Main Preview to Vercel
+        uses: amondnet/vercel-action@v25
+        if: |
+            github.event_name == 'push' && github.ref == 'refs/heads/master'
+        with:
+          github-comment: ${{ github.event.pull_request && env.CHANGES_ENTRY || true }}
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_DOCS_NEXT_PROJECT_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+          alias-domains: main.archive.dagster-docs.io
+
+      # Pushes to `release-` prefixed branches result in production deployments on the `docs.dagster.io` domain
       - name: Publish to Vercel Production
         uses: amondnet/vercel-action@v25
-        # only deploy to production on master (TODO: switch to docs-prod when beta goes live)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: |
+          github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release-')
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}

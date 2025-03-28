@@ -4,6 +4,7 @@ from contextlib import ExitStack
 from typing import Optional
 
 import click
+from dagster_shared.ipc import interrupt_on_ipc_shutdown_message
 
 from dagster import __version__ as dagster_version
 from dagster._cli.utils import assert_no_remaining_opts, get_instance_for_cli
@@ -20,7 +21,6 @@ from dagster._daemon.controller import (
 )
 from dagster._daemon.daemon import get_telemetry_daemon_session_id
 from dagster._serdes import deserialize_value
-from dagster._serdes.ipc import interrupt_on_ipc_shutdown_message
 from dagster._utils.interrupts import capture_interrupts, setup_interrupt_handlers
 
 

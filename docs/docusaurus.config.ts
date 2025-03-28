@@ -26,6 +26,7 @@ const config: Config = {
     require.resolve('docusaurus-plugin-image-zoom'),
     require.resolve('./src/plugins/scoutos'),
     require.resolve('./src/plugins/segment'),
+    require.resolve('./src/plugins/sidebar-scroll-into-view'),
   ],
   themeConfig: {
     ...(process.env.ALGOLIA_APP_ID &&
@@ -121,6 +122,10 @@ const config: Config = {
                   href: 'https://legacy-docs.dagster.io',
                   label: '1.9.9 and earlier',
                 },
+                {
+                  href: 'https://main.archive.dagster-docs.io/',
+                  label: 'Upcoming release (Preview)',
+                },
               ],
             }
           : {
@@ -173,11 +178,14 @@ const config: Config = {
     [
       '@docusaurus/preset-classic',
       {
+        // Releases to `docs.dagster.io` are triggered on pushes to branches prefixed with
+        // `release-*`, therefore the most recent release should be labeled as the version in that
+        // branch (eg. `release-1.10.5`). Ultimately we will automate this process.
         docs: {
           lastVersion: 'current',
           versions: {
             current: {
-              label: '1.10.4 (master)',
+              label: '1.10.7',
               path: '/',
             },
           },

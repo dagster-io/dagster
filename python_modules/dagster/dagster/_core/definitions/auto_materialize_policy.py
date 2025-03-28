@@ -2,14 +2,15 @@ from collections.abc import Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
 
-import dagster._check as check
-from dagster._annotations import deprecated, public
-from dagster._serdes.serdes import (
+from dagster_shared.serdes.serdes import (
     NamedTupleSerializer,
     UnpackContext,
     UnpackedValue,
     whitelist_for_serdes,
 )
+
+import dagster._check as check
+from dagster._annotations import deprecated, public
 
 if TYPE_CHECKING:
     from dagster._core.definitions.auto_materialize_rule import (

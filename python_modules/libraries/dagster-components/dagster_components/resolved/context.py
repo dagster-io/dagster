@@ -2,16 +2,21 @@ import os
 import sys
 import traceback
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, overload
 
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
 from dagster._record import copy, record
-from dagster._utils.source_position import SourcePositionTree
+from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from jinja2 import Undefined
 from jinja2.exceptions import UndefinedError
 from jinja2.nativetypes import NativeTemplate
+
+from dagster_components.resolved.errors import ResolutionException
+
+if TYPE_CHECKING:
+    from dagster_components.resolved.model import ResolvableModel
 
 T = TypeVar("T")
 
@@ -28,9 +33,6 @@ def automation_condition_scope() -> Mapping[str, Any]:
 
 
 T = TypeVar("T")
-
-
-class ResolutionException(Exception): ...
 
 
 @record
@@ -52,34 +54,35 @@ class ResolutionContext:
     def with_scope(self, **additional_scope) -> "ResolutionContext":
         return copy(self, scope={**self.scope, **additional_scope})
 
-    def _location(self) -> Optional[str]:
-        if self.source_position_tree:
-            source_pos, _ = self.source_position_tree.lookup_closest_and_path(self.path, trace=None)
-            return str(source_pos)
+    def _location_parts(self, inline_err: str) -> list[str]:
+        if not self.source_position_tree:
+            return []
+
+        source = self.source_position_tree.source_error(
+            yaml_path=self.path,
+            inline_error_message=inline_err,
+            value_error=True,
+        )
+        return [
+            f"{source.file_name}:{source.start_line_no} - {source.location}\n{source.snippet}\n",
+        ]
 
     def _invalid_scope_exc(self, undefined_message: str) -> ResolutionException:
-        msg_parts = []
-        loc = self._location()
-        if loc:
-            msg_parts.append(loc)
-
+        msg_parts = self._location_parts(undefined_message)
         idx = undefined_message.find(" is undefined")
         if idx > 0:
             missing_scope = undefined_message[:idx]
             msg_parts.append(
-                f"UndefinedError: {missing_scope} not found in scope, available scope is: {', '.join(self.scope.keys())}"
+                f"UndefinedError: {missing_scope} not found in scope, available scope is: {', '.join(self.scope.keys())}\n"
             )
         else:
-            msg_parts.append(f"UndefinedError: {undefined_message}")
+            msg_parts.append(f"UndefinedError: {undefined_message}\n")
 
-        return ResolutionException("\n".join(msg_parts))
+        return ResolutionException("".join(msg_parts))
 
     def _scope_threw_exc(self, fmt_exc: list[str]):
-        msg_parts = []
-        loc = self._location()
-        if loc:
-            msg_parts.append(loc + "\n")
-
+        msg_parts = self._location_parts(fmt_exc[-1] if fmt_exc else "ResolutionException")
+        msg_parts.append("Exception occurred while evaluating template.\n")
         # strip the system frames from the stack trace
         template_seen = False
         for line in fmt_exc:
@@ -88,6 +91,20 @@ class ResolutionContext:
             if line.strip().startswith("File") and not template_seen:
                 continue
             msg_parts.append(line)
+
+        return ResolutionException("".join(msg_parts))
+
+    def build_resolve_fn_exc(
+        self,
+        fmt_exc: list[str],
+        field_name: str,
+        model: "ResolvableModel",
+    ) -> ResolutionException:
+        msg_parts = self._location_parts(fmt_exc[-1] if fmt_exc else "ResolutionException")
+        msg_parts.append(
+            f"Exception occurred in Resolver for field '{field_name}' resolving from {model.__class__.__name__}.\n"
+        )
+        msg_parts.extend(fmt_exc)
 
         return ResolutionException("".join(msg_parts))
 

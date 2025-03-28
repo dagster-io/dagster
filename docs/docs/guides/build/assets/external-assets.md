@@ -1,6 +1,6 @@
 ---
 title: External assets
-sidebar_position: 500
+sidebar_position: 700
 ---
 
 One of Dagster's goals is to present a single unified lineage of all of the data assets in an organization, even if those assets are orchestrated by systems other than Dagster.
@@ -27,7 +27,7 @@ Let's say you have a partner who sends you raw transaction data by SFTP on an al
 
 Because the raw transaction data isn't materialized by Dagster, it makes sense to model it as an external asset. The following example accomplishes this by using `AssetSpec`:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/external-assets/creating-external-assets.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/external-assets/creating-external-assets.py" language="python" />
 
 Refer to the <PyObject section="assets" module="dagster" object="AssetSpec" /> for the parameters you can provide to an external asset.
 
@@ -46,7 +46,7 @@ You can use a Dagster [sensor](/guides/automate/sensors) to regularly poll the e
 
 For example, here's how you would poll an external system like an SFTP server to update an external asset whenever the file is changed.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/external-assets/pulling-with-sensors.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/external-assets/pulling-with-sensors.py" language="python" />
 
 Refer to the [Sensors guide](/guides/automate/sensors) for more information about sensors.
 
@@ -104,4 +104,4 @@ Refer to the [External assets REST API documentation](/api/python-api/external-a
 
 Like regular Dagster assets, external assets can have dependencies. This is useful when you want to model an entire data pipeline orchestrated by another system.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/external-assets/dag-of-external-assets.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/external-assets/dag-of-external-assets.py" language="python" />

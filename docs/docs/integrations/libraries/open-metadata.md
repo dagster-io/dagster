@@ -15,7 +15,7 @@ categories:
 enabledBy:
 enables:
 tags: [community-supported, metadata]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/openmetadata.svg
   community: true
 ---

@@ -7,7 +7,7 @@ sidebar_position: 200
 This guide is applicable to Dagster+.
 :::
 
-This reference describes the various configuration options Dagster+ currently supports for [Kubernetes agents](setup).
+This reference describes the various configuration options Dagster+ currently supports for [Kubernetes agents](/dagster-plus/deployment/deployment-types/hybrid/kubernetes/setup).
 
 ## Viewing the Helm chart
 
@@ -123,10 +123,10 @@ location:
           - database_password
 ```
 
- | Property      | Description                                                                                                                                                                                                                                                                                                                             |
- |---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
- | `env_vars`    | A list of environment variable names to inject into the job, formatted as `KEY` or `KEY=VALUE`. If only `KEY` is specified, the value will be pulled from the current process.                                                                                                                                                          |
- | `env_secrets` | A list of secret names, from which environment variables for a job are drawn using `envFrom`. Refer to the [Kubernetes documentation](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables) for more info. |
+| Property      | Description                                                                                                                                                                                                                                                                                                                |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `env_vars`    | A list of environment variable names to inject into the job, formatted as `KEY` or `KEY=VALUE`. If only `KEY` is specified, the value will be pulled from the current process.                                                                                                                                             |
+| `env_secrets` | A list of secret names, from which environment variables for a job are drawn using `envFrom`. Refer to the [Kubernetes documentation](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables) for more info. |
 
 Refer to the following guides for more info about environment variables:
 

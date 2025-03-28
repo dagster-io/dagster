@@ -36,8 +36,10 @@ from dagster import (
 from dagster._config import StringSource
 from dagster._core.definitions import AssetIn, SourceAsset, asset
 from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
@@ -2016,10 +2018,10 @@ def test_asset_subset_io_managers(job_selection, expected_nodes):
     @io_manager(config_schema={"n": int})
     def return_n_io_manager(context):
         class ReturnNIOManager(IOManager):
-            def handle_output(self, _context, obj):
+            def handle_output(self, _context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
                 pass
 
-            def load_input(self, _context):
+            def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
                 return context.resource_config["n"]
 
         return ReturnNIOManager()
@@ -2580,9 +2582,9 @@ def test_subset_cycle_resolution_complex():
             d = y + 1
             yield Output(d, "d")
         if "e" in context.op_execution_context.selected_output_names:
-            yield Output(c + 1, "e")
+            yield Output(c + 1, "e")  # pyright: ignore[reportPossiblyUnboundVariable]
         if "f" in context.op_execution_context.selected_output_names:
-            yield Output(d + 1, "f")
+            yield Output(d + 1, "f")  # pyright: ignore[reportPossiblyUnboundVariable]
 
     @asset
     def x(a):
@@ -2673,6 +2675,45 @@ def test_subset_cycle_resolution_basic():
         AssetKey("a_prime"),
         AssetKey("b_prime"),
     }
+
+
+def test_subset_cycle_resolution_with_checks():
+    """Ops:
+        foo produces: a, b
+        foo_prime produces: a', b'
+    Assets:
+        s -> a -> a' -> b -> b'.
+    """
+
+    @multi_asset(
+        specs=[
+            AssetSpec("a", deps=["s"], skippable=True),
+            AssetSpec("b", deps=["a_prime"], skippable=True),
+        ],
+        can_subset=True,
+    )
+    def foo(context): ...
+
+    @multi_asset(
+        specs=[
+            AssetSpec("a_prime", deps=["a"], skippable=True),
+            AssetSpec("b_prime", deps=["b"], skippable=True),
+        ],
+        check_specs=[
+            AssetCheckSpec("a_prime_is_good", asset="a_prime", additional_deps=["b"]),
+        ],
+        can_subset=True,
+    )
+    def foo_prime(context): ...
+
+    defs = Definitions(assets=[foo, foo_prime])
+
+    Definitions.validate_loadable(defs)
+
+    job = defs.get_implicit_global_asset_job_def()
+
+    # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
+    assert len(list(job.graph.iterate_op_defs())) == 4
 
 
 @ignore_warning("Class `SourceAsset` is deprecated and will be removed in 2.0.0.")

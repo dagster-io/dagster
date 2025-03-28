@@ -1,10 +1,12 @@
+import inspect
 import logging
+import os
 import re
 import textwrap
 from collections.abc import Sequence
 from datetime import datetime
 from itertools import groupby
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from docutils import nodes, writers
 from docutils.nodes import Element
@@ -155,6 +157,10 @@ class MdxTranslator(SphinxTranslator):
         self.desc_count = 0
 
         self.max_line_width = self.config.mdx_max_line_width or 120
+        self.github_url = (
+            self.config.mdx_github_url or "https://github.com/dagster-io/dagster/blob/master"
+        )
+        self.show_source_links = getattr(self.config, "mdx_show_source_links", True)
 
         self.special_characters = {
             ord("<"): "&lt;",
@@ -167,6 +173,55 @@ class MdxTranslator(SphinxTranslator):
     ############################################################
     def add_text(self, text: str) -> None:
         self.states[-1].append((-1, text))
+
+    def get_source_github_url(self, objname: str, modname: str, fullname: str) -> Optional[str]:
+        """Generate a GitHub URL for a Python object.
+
+        Args:
+            objname: Name of the object
+            modname: Module name
+            fullname: Full qualified name
+
+        Returns:
+            A URL to the GitHub source or None if not available
+        """
+        if not self.show_source_links or not modname:
+            return None
+
+        try:
+            module = __import__(modname, fromlist=[""])
+            obj = module
+            parts = fullname.split(".")
+
+            # Navigate to the actual object
+            for part in parts:
+                if hasattr(obj, part):
+                    obj = getattr(obj, part)
+
+            if not obj:
+                logger.warning(f"No object for {fullname}")
+                return None
+
+            # unwrap the root function if function is wrapped
+            while hasattr(obj, "__wrapped__"):
+                obj = obj.__wrapped__
+
+            try:
+                source_file = inspect.getsourcefile(obj)
+                if not source_file:
+                    logger.warning(f"No source file for {fullname}")
+                    return None
+
+                # get relative path, and trim `..`
+                repo_path = os.path.relpath(source_file).replace("../", "")
+                source_line = inspect.getsourcelines(obj)[1]
+
+                return f"{self.github_url}/{repo_path}#L{source_line}"
+            except (TypeError, OSError):
+                return None
+        except Exception as e:
+            logger.debug(f"Error generating source link for {fullname}: {e}")
+            return None
 
     def new_state(self, indent: int = STDINDENT) -> None:
         self.states.append([])
@@ -478,15 +533,30 @@ class MdxTranslator(SphinxTranslator):
         self.in_literal += 1
         self.new_state()
         ids = node.get("ids")
+
         if ids:
-            self.add_text(f"<dt><Link id='{ids[0]}'>")
+            self.add_text(f"<dt><Link class=\"anchor\" id='{ids[0]}'>")
         else:
             self.add_text("<dt>")
 
     def depart_desc_signature(self, node: Element) -> None:
         self.in_literal -= 1
         ids = node.get("ids")
+
+        # Add source link if available
+        module = node.get("module")
+        fullname = node.get("fullname")
+        objname = node.get("objname", "")
+
+        if self.show_source_links and module and fullname:
+            github_url = self.get_source_github_url(objname, module, fullname)
+            if github_url:
+                self.add_text(
+                    f" <a href='{github_url}' className='source-link' target='_blank' rel='noopener noreferrer'>[source]</a>"
+                )
+
         if ids:
+            self.add_text(f'<a href="#{ids[0]}" class="hash-link"></a>')
             self.add_text("</Link></dt>")
         else:
             self.add_text("</dt>")

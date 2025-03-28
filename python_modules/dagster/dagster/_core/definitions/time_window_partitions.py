@@ -8,6 +8,8 @@ from enum import Enum
 from functools import cached_property
 from typing import Any, Callable, NamedTuple, Optional, Union, cast
 
+from dagster_shared.serdes import NamedTupleSerializer
+
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.partition import (
@@ -28,7 +30,6 @@ from dagster._core.errors import (
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._time import (
     create_datetime,
     datetime_from_timestamp,
@@ -164,7 +165,7 @@ class PersistedTimeWindow(
         )
 
     @cached_property
-    def start(self) -> datetime:
+    def start(self) -> datetime:  # pyright: ignore[reportIncompatibleVariableOverride]
         start_timestamp_with_timezone = self._asdict()["start"]
         return datetime.fromtimestamp(
             start_timestamp_with_timezone.timestamp,
@@ -172,7 +173,7 @@ class PersistedTimeWindow(
         )
 
     @cached_property
-    def end(self) -> datetime:
+    def end(self) -> datetime:  # pyright: ignore[reportIncompatibleVariableOverride]
         end_timestamp_with_timezone = self._asdict()["end"]
         return datetime.fromtimestamp(
             end_timestamp_with_timezone.timestamp,
@@ -364,6 +365,8 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         return current_time.timestamp()
 
     def get_num_partitions_in_window(self, time_window: TimeWindow) -> int:
+        if time_window.start.timestamp() >= time_window.end.timestamp():
+            return 0
         if self.is_basic_daily:
             return (
                 date(
@@ -1695,7 +1698,7 @@ class TimeWindowPartitionsSubsetSerializer(NamedTupleSerializer):
     # TimeWindowPartitionsSubsets have custom logic to delay calculating num_partitions until it
     # is needed to improve performance. When serializing, we want to serialize the number of
     # partitions, so we force calculation.
-    def before_pack(self, value: "TimeWindowPartitionsSubset") -> "TimeWindowPartitionsSubset":
+    def before_pack(self, value: "TimeWindowPartitionsSubset") -> "TimeWindowPartitionsSubset":  # pyright: ignore[reportIncompatibleMethodOverride]
         # value.num_partitions will calculate the number of partitions if the field is None
         # We want to check if the field is None and replace the value with the calculated value
         # for serialization
@@ -1705,6 +1708,14 @@ class TimeWindowPartitionsSubsetSerializer(NamedTupleSerializer):
                 num_partitions=value.num_partitions,
                 included_time_windows=value.included_time_windows,
             )
+        return value
+
+    def before_unpack(self, context, value: dict[str, Any]):  # pyright: ignore[reportIncompatibleMethodOverride]
+        num_partitions = value.get("num_partitions")
+        # some objects were serialized with an invalid num_partitions, so fix that here
+        if num_partitions is not None and num_partitions < 0:
+            # set it to None so that it will be recalculated
+            value["num_partitions"] = None
         return value
 
 
@@ -1774,7 +1785,7 @@ class TimeWindowPartitionsSubset(
         )
 
     @cached_property
-    def included_time_windows(self) -> Sequence[PersistedTimeWindow]:
+    def included_time_windows(self) -> Sequence[PersistedTimeWindow]:  # pyright: ignore[reportIncompatibleVariableOverride]
         return self._asdict()["included_time_windows"]
 
     @property
@@ -1800,7 +1811,7 @@ class TimeWindowPartitionsSubset(
         return self.included_time_windows[-1].end.timestamp() <= dt.timestamp()
 
     @cached_property
-    def num_partitions(self) -> int:
+    def num_partitions(self) -> int:  # pyright: ignore[reportIncompatibleVariableOverride]
         num_partitions_ = self._asdict()["num_partitions"]
         if num_partitions_ is None:
             return sum(
@@ -1987,13 +1998,15 @@ class TimeWindowPartitionsSubset(
             else:
                 if result_windows and window_start_timestamp == result_windows[0].start.timestamp():
                     result_windows[0] = PersistedTimeWindow.from_public_time_window(
-                        TimeWindow(window.start, included_window.end), self.partitions_def.timezone
+                        TimeWindow(window.start, included_window.end),  # pyright: ignore[reportPossiblyUnboundVariable]
+                        self.partitions_def.timezone,
                     )
                 elif (
                     result_windows and window.end.timestamp() == result_windows[0].start.timestamp()
                 ):
                     result_windows[0] = PersistedTimeWindow.from_public_time_window(
-                        TimeWindow(window.start, included_window.end), self.partitions_def.timezone
+                        TimeWindow(window.start, included_window.end),  # pyright: ignore[reportPossiblyUnboundVariable]
+                        self.partitions_def.timezone,
                     )
                 else:
                     result_windows.insert(
@@ -2178,7 +2191,7 @@ class TimeWindowPartitionsSubset(
             included_time_windows=time_windows,
         )
 
-    def __contains__(self, partition_key: Optional[str]) -> bool:
+    def __contains__(self, partition_key: Optional[str]) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         if partition_key is None:
             return False
 

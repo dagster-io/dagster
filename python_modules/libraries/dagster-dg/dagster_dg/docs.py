@@ -1,17 +1,15 @@
 import copy
 import json
-import tempfile
-import textwrap
-import webbrowser
 from collections.abc import Iterator, Mapping, Sequence, Set
-from typing import Any, Optional, Union
+from itertools import groupby
+from typing import Any, Optional, TypedDict, Union
 
-import markdown
 import yaml
+from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
-from dagster_dg.component import RemoteComponentType
-from dagster_dg.yaml_utils import parse_yaml_with_source_positions
-from dagster_dg.yaml_utils.source_position import SourcePositionTree
+from dagster_dg.component import ComponentTypeSnap, RemoteLibraryObjectRegistry
 
 REF_BASE = "#/$defs/"
 JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY = "dagster_required_scope"
@@ -118,7 +116,7 @@ class ComponentDumper(yaml.SafeDumper):
         # makes the output somewhat prettier by forcing lists to be indented
         return super().increase_indent(flow=flow, indentless=False)
 
-    def write_line_break(self) -> None:
+    def write_line_break(self) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         # add an extra line break between top-level keys
         if self.indent == 0:
             super().write_line_break()
@@ -155,165 +153,52 @@ def generate_sample_yaml(component_type: str, json_schema: Mapping[str, Any]) ->
     return "\n".join(commented_lines)
 
 
-def html_from_markdown(markdown_content: str) -> str:
-    # Convert the markdown string to HTML
-    html_content = markdown.markdown(markdown_content)
+class ComponentTypeJson(TypedDict):
+    """Component type JSON, used to back dg docs webapp."""
 
-    # Add basic HTML structure
-    full_html = (
-        """
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Markdown Preview</title>
-        <style>
-            body {
-                font-weight: 400;
-                font-family: "Geist", "Inter", "Arial", sans-serif;
-                font-size: 16px;
-            }
-            textarea {
-                max-width: 100%;
-                font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
-                border: none;
-                background-color: rgb(246, 248, 250);
-                border-radius: 6px;
-                padding: 16px;
-            }
-        </style>
-    </head>
-    <body>
-        <div style="max-width: 75%; margin: 0 auto;">"""
-        + html_content
-        + """</div>
-    </body>
-    </html>
-    """
-    )
-    return full_html
+    name: str
+    author: str
+    tags: list[str]
+    example: str
+    schema: str
+    description: Optional[str]
 
 
-def open_html_in_browser(html_content: str) -> None:
-    # Create a temporary file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as temp_file:
-        temp_file.write(html_content.encode("utf-8"))
-        temp_file_path = temp_file.name
+class ComponentTypeNamespaceJson(TypedDict):
+    """Component type namespace JSON, used to back dg docs webapp."""
 
-    # Open the temporary file in the default web browser
-    webbrowser.open(f"file://{temp_file_path}")
+    name: str
+    componentTypes: list[ComponentTypeJson]
 
 
-def process_description(description: str) -> str:
-    return description.replace("\n", "<br>")
-
-
-def markdown_for_json_schema(
-    key: str,
-    json_schema: Mapping[str, Any],
-    subschema: Mapping[str, Any],
-    anyof_parent_subschema: Optional[Mapping[str, Any]] = None,
-    indent: int = 0,
-    is_list: bool = False,
-    is_nullable: bool = False,
-) -> str:
-    """Produces a nested markdown list of the subschema, including component-author-provided description and examples.
-    Uses <details> blocks to collapse nested fields by default.
-
-    Args:
-        key: The key of the current field in the schema.
-        json_schema: The complete schema.
-        subschema: The current field's schema.
-        anyof_parent_subschema: The parent schema, if the current field is part of an anyOf.
-        indent: The indentation level for the current field.
-        is_list: Whether the current field is a list.
-        is_nullable: Whether the current field is nullable.
-    """
-    subschema = _dereference_schema(json_schema, subschema)
-
-    if "anyOf" in subschema:
-        # TODO: handle anyOf fields more gracefully, for now just choose first option
-        is_nullable = any(nested.get("type") == "null" for nested in subschema["anyOf"])
-        return markdown_for_json_schema(
-            key,
-            json_schema,
-            subschema["anyOf"][0],
-            anyof_parent_subschema=subschema,
-            indent=indent,
-            is_nullable=is_nullable,
+def json_for_all_components(
+    registry: RemoteLibraryObjectRegistry,
+) -> list[ComponentTypeNamespaceJson]:
+    """Returns a list of JSON representations of all component types in the registry."""
+    component_json = [
+        (key.namespace.split(".")[0], json_for_component_type(key, library_obj))
+        for key, library_obj in registry.items()
+        if isinstance(library_obj, ComponentTypeSnap) and library_obj.schema is not None
+    ]
+    return [
+        ComponentTypeNamespaceJson(
+            name=namespace,
+            componentTypes=[namespace_and_component[1] for namespace_and_component in components],
         )
+        for namespace, components in groupby(component_json, key=lambda x: x[0])
+    ]
 
-    objtype = subschema["type"]
 
-    children = ""
-    if objtype == "object":
-        children = "\n".join(
-            [
-                markdown_for_json_schema(k, json_schema, v, indent=indent + 2)
-                for k, v in subschema.get("properties", {}).items()
-            ]
-        )
-    elif objtype == "array":
-        return markdown_for_json_schema(key, json_schema, subschema["items"], is_list=True)
-
-    description = process_description(
-        subschema.get("description", "") or (anyof_parent_subschema or {}).get("description", "")
+def json_for_component_type(
+    key: LibraryObjectKey, remote_component_type: ComponentTypeSnap
+) -> ComponentTypeJson:
+    typename = key.to_typename()
+    sample_yaml = generate_sample_yaml(typename, remote_component_type.schema or {})
+    return ComponentTypeJson(
+        name=typename,
+        author="",
+        tags=[],
+        example=sample_yaml,
+        schema=json.dumps(remote_component_type.schema),
+        description=remote_component_type.description,
     )
-    # use dedent to remove the leading newline
-    children_segment = (
-        textwrap.dedent(f"""
-            <details>
-            <summary>Subfields</summary>
-            \n\n
-            <ul>
-            {children}
-            </ul>
-            </details>
-        """).strip()
-        if children
-        else ""
-    )
-    examples = subschema.get("examples", []) or (anyof_parent_subschema or {}).get("examples", [])
-    examples_segment = (
-        f"Example: <code>{json.dumps(examples[0], indent=2)}</code>" if examples else ""
-    )
-
-    body = "<br/>".join(x for x in [description, examples_segment, children_segment] if x)
-    body = textwrap.indent("<br/>" + body + "", prefix="  ") if body else ""
-
-    type_str = f"[{subschema['type']}]" if is_list else subschema["type"]
-    if is_nullable:
-        type_str = f"{type_str} | null"
-    output = f"""<li><strong>{key}</strong> - <code>{type_str}</code>{body}</li>\n"""
-    # indent the output with textwrap
-    return textwrap.indent(output, " " * indent)
-
-
-def markdown_for_param_types(remote_component_type: RemoteComponentType) -> str:
-    schema = remote_component_type.component_schema or {}
-    return f"<ul>{markdown_for_json_schema('attributes', schema, schema)}</ul>"
-
-
-def markdown_for_component_type(remote_component_type: RemoteComponentType) -> str:
-    component_type_name = f"{remote_component_type.namespace}.{remote_component_type.name}"
-    sample_yaml = generate_sample_yaml(
-        component_type_name, remote_component_type.component_schema or {}
-    )
-    rows = len(sample_yaml.split("\n")) + 1
-    return f"""
-## Component: `{component_type_name}`
-
-### Description:
-{remote_component_type.description}
-
-### Component Schema:
-
-{markdown_for_param_types(remote_component_type)}
-
-### Sample Component YAML:
-
-<textarea rows={rows} cols=100>
-{sample_yaml}
-</textarea>
-"""

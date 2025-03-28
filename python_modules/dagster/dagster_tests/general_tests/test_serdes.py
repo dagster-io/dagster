@@ -9,11 +9,12 @@ from typing import AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
 import dagster._check as check
 import pydantic
 import pytest
-from dagster._check.functions import CheckError
-from dagster._model import DagsterModel
 from dagster._record import IHaveNew, record, record_custom
-from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
-from dagster._serdes.serdes import (
+from dagster._utils.cached_method import cached_method
+from dagster_shared.check import CheckError
+from dagster_shared.dagster_model import DagsterModel
+from dagster_shared.serdes.errors import DeserializationError, SerdesUsageError, SerializationError
+from dagster_shared.serdes.serdes import (
     EnumSerializer,
     FieldSerializer,
     NamedTupleSerializer,
@@ -29,8 +30,7 @@ from dagster._serdes.serdes import (
     serialize_value,
     unpack_value,
 )
-from dagster._serdes.utils import hash_str
-from dagster._utils.cached_method import cached_method
+from dagster_shared.serdes.utils import hash_str
 
 
 def test_deserialize_value_ok():
@@ -544,7 +544,7 @@ def test_named_tuple_field_serializers() -> None:
         ) -> Sequence[Sequence[str]]:
             return list(entries.items())
 
-        def unpack(
+        def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
             self,
             entries: Sequence[Sequence[str]],
             whitelist_map: WhitelistMap,
@@ -839,11 +839,11 @@ def test_enum_custom_serializer():
     test_env = WhitelistMap.create()
 
     class MyEnumSerializer(EnumSerializer["Foo"]):
-        def unpack(self, packed_val: str) -> "Foo":
+        def unpack(self, packed_val: str) -> "Foo":  # pyright: ignore[reportIncompatibleMethodOverride]
             packed_val = packed_val.replace("BLUE", "RED")
             return Foo[packed_val]
 
-        def pack(self, unpacked_val: "Foo", whitelist_map: WhitelistMap, descent_path: str) -> str:
+        def pack(self, unpacked_val: "Foo", whitelist_map: WhitelistMap, descent_path: str) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
             return f"Foo.{unpacked_val.name.replace('RED', 'BLUE')}"
 
     @_whitelist_for_serdes(test_env, serializer=MyEnumSerializer)

@@ -110,7 +110,7 @@ class CodeLocationOrigin(ABC):
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="RegisteredRepositoryLocationOrigin")
-class RegisteredCodeLocationOrigin(
+class RegisteredCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple("RegisteredCodeLocationOrigin", [("location_name", str)]),
     CodeLocationOrigin,
 ):
@@ -147,7 +147,7 @@ class RegisteredCodeLocationOrigin(
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="InProcessRepositoryLocationOrigin")
-class InProcessCodeLocationOrigin(
+class InProcessCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_InProcessCodeLocationOrigin",
         [
@@ -208,7 +208,7 @@ class InProcessCodeLocationOrigin(
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="ManagedGrpcPythonEnvRepositoryLocationOrigin")
-class ManagedGrpcPythonEnvCodeLocationOrigin(
+class ManagedGrpcPythonEnvCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_ManagedGrpcPythonEnvCodeLocationOrigin",
         [("loadable_target_origin", LoadableTargetOrigin), ("location_name", str)],
@@ -297,7 +297,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
     storage_name="GrpcServerRepositoryLocationOrigin",
     skip_when_empty_fields={"use_ssl", "additional_metadata"},
 )
-class GrpcServerCodeLocationOrigin(
+class GrpcServerCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_GrpcServerCodeLocationOrigin",
         [

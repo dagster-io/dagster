@@ -106,6 +106,7 @@ def stand_up_airflow(
         if process_is_alive(process.pid):
             # Kill process group, since process.kill and process.terminate do not work.
             os.killpg(process.pid, signal.SIGKILL)
+            process.wait(5)
 
 
 @pytest.fixture(name="airflow_instance")

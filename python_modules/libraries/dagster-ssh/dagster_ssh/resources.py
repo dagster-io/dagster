@@ -25,7 +25,17 @@ from sshtunnel import SSHTunnelForwarder
 
 
 def key_from_str(key_str):
-    """Creates a paramiko SSH key from a string."""
+    """Creates a paramiko SSH key from a string.
+
+    Args:
+        key_str (str): A string containing the private key data.
+
+    Returns:
+        paramiko.RSAKey: An RSA key object created from the provided string.
+
+    Raises:
+        ValueError: If the key string is invalid or cannot be parsed.
+    """
     check.str_param(key_str, "key_str")
 
     # py2 StringIO doesn't support with
@@ -37,9 +47,49 @@ def key_from_str(key_str):
 
 @beta
 class SSHResource(ConfigurableResource):
-    """Resource for ssh remote execution using Paramiko.
+    """A Dagster resource for establishing SSH connections and performing remote file operations.
 
-    ref: https://github.com/paramiko/paramiko
+    This resource leverages the Paramiko library to provide robust SSH connectivity,
+    including support for key-based and password authentication, tunneling, and SFTP transfers.
+
+    Args:
+        remote_host (str): The hostname or IP address of the remote server to connect to.
+        remote_port (Optional[int]): The SSH port on the remote host. Defaults to standard SSH port 22.
+        username (Optional[str]): The username for SSH authentication. If not provided, defaults to the current system user.
+        password (Optional[str]): The password for SSH authentication. Not recommended for production use; prefer key-based authentication.
+        key_file (Optional[str]): Path to the SSH private key file for authentication.
+        key_string (Optional[str]): SSH private key as a string for authentication.
+        timeout (int, optional): Connection timeout in seconds. Defaults to 10.
+        keepalive_interval (int, optional): Interval for sending SSH keepalive packets. (Defaults to 30 seconds.)
+        compress (bool, optional): Whether to compress the SSH transport stream. Defaults to True.
+        no_host_key_check (bool, optional): Disable host key verification.
+        allow_host_key_change (bool, optional): Allow connections to hosts with changed host keys. (Defaults to False.)
+
+    Example:
+        Creating an SSH resource with key-based authentication:
+
+        .. code-block:: python
+
+            ssh_resource = SSHResource(
+                remote_host="example.com",
+                username="myuser", key_file="/path/to/private/key"
+            )
+
+        Creating an SSH resource with password authentication:
+
+        .. code-block:: python
+
+            ssh_resource = SSHResource(
+                remote_host="example.com",
+                username="myuser",
+                password="my_secure_password"
+            )
+
+        Using the resource to transfer a file:
+
+        .. code-block:: python
+
+            local_file = ssh_resource.sftp_get("/remote/path/file.txt", "/local/path/file.txt")
     """
 
     remote_host: str = Field(description="Remote host to connect to")
@@ -293,4 +343,37 @@ class SSHResource(ConfigurableResource):
     }
 )
 def ssh_resource(init_context):
+    """A Dagster resource factory for creating SSHResource instances.
+
+    This function converts Dagster resource context configuration into an SSHResource
+    that can be used for remote SSH connections and file operations.
+
+    Args:
+        init_context (InitResourceContext): The Dagster resource initialization context containing configuration parameters.
+
+    Returns:
+        SSHResource: A configured SSH resource ready for use in Dagster pipelines.
+
+    Example:
+        Configuring the SSH resource in a Dagster pipeline:
+
+        .. code-block:: python
+
+            from dagster import Definitions, job, op
+            from dagster_ssh import ssh_resource
+
+            @op
+            def transfer_files(ssh):
+                ssh.sftp_get("/remote/file", "/local/file")
+
+            @job
+            def my_ssh_job():
+                transfer_files(ssh=ssh_resource.configured({
+                    "remote_host": "example.com",
+                    "username": "myuser",
+                    "key_file": "/path/to/private/key"
+                }))
+
+            defs = Definitions(jobs=[my_ssh_job])
+    """
     return SSHResource.from_resource_context(init_context)

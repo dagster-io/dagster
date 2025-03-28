@@ -19,9 +19,9 @@ With Dagster+'s Okta SCIM provisioning feature, you can:
 - **Create users**. Users that are assigned to the Dagster+ application in the IdP will be automatically added to your Dagster+ organization.
 - **Update user attributes.** Updating a user's name or email address in the IdP will automatically sync the change to your user list in Dagster+.
 - **Remove users.** Deactivating or unassigning a user from the Dagster+ application in the IdP will remove them from the Dagster+ organization
-{/* - **Push user groups.** Groups and their members in the IdP can be pushed to Dagster+ as [Teams](/dagster-plus/account/managing-users/managing-teams). */}
+  {/* - **Push user groups.** Groups and their members in the IdP can be pushed to Dagster+ as [Teams](/dagster-plus/account/managing-users/managing-teams). */}
 - **Push user groups.** Groups and their members in the IdP can be pushed to Dagster+ as
-    [Teams](/dagster-plus/features/authentication-and-access-control/rbac/teams).
+  [Teams](/dagster-plus/features/authentication-and-access-control/rbac/teams).
 
 Refer to [Okta's SCIM documentation](https://developer.okta.com/docs/concepts/scim/) for more information about Okta's SCIM offering.
 
@@ -45,6 +45,7 @@ Dagster+ currently supports the following attributes for SCIM syncing:
 To complete the steps in this guide, you'll need:
 
 {/* - **To have set up Okta SSO for Dagster+.** Refer to the [Okta SSO setup guide](/dagster-plus/account/authentication/okta/saml-sso) for more info. */}
+
 - **To have set up Okta SSO for Dagster+.** Refer to the [Okta SSO setup guide](//dagster-plus/features/authentication-and-access-control/sso/okta-sso) for more info.
 - **Permissions in Okta that allow you to configure applications.**
 - **The following in Dagster+:**
@@ -77,8 +78,7 @@ Keep the API token handy - you'll need it in the next step.
 
    3. In the **Credential Details** section, set the **Application username format** field to **Email**:
 
-
-    ![Configured Sign On tab of Dagster+ Okta application](/images/dagster-plus/features/authentication-and-access-control/okta/scim-sign-on-tab.png)
+   ![Configured Sign On tab of Dagster+ Okta application](/images/dagster-plus/features/authentication-and-access-control/okta/scim-sign-on-tab.png)
 
    4. Click **Save**.
 
@@ -90,7 +90,7 @@ Keep the API token handy - you'll need it in the next step.
 
    3. In the **API Token** field, paste the Dagster+ API token you generated in [Step 1](#step-1-enable-scim-provisioning-in-dagster):
 
-    ![Configured Provisioning tab of Dagster+ Okta application](/images/dagster-plus/features/authentication-and-access-control/okta/provisioning-tab.png)
+   ![Configured Provisioning tab of Dagster+ Okta application](/images/dagster-plus/features/authentication-and-access-control/okta/provisioning-tab.png)
 
    4. Click **Test API Credentials** to verify that your organization and API token work correctly.
 
@@ -108,7 +108,7 @@ After you confirm that your API credentials work in the Dagster+ Okta applicatio
 
 4. Next to **Create Users**, check the **Enable** checkbox:
 
-    ![Highlighted Create users setting and default username setting in Okta](/images/dagster-plus/features/authentication-and-access-control/okta/provisioning-to-app-create-users.png)
+   ![Highlighted Create users setting and default username setting in Okta](/images/dagster-plus/features/authentication-and-access-control/okta/provisioning-to-app-create-users.png)
 
    **Note**: The default username used to create accounts must be set to **Email** or user provisioning may not work correctly.
 
@@ -118,13 +118,11 @@ After you confirm that your API credentials work in the Dagster+ Okta applicatio
 
 ## Step 4: Enable group syncing in Okta
 
-{/*
+{/* :::note */}
+{/* This step is required only if you want to sync Okta user groups to Dagster+ as [Teams](/dagster-plus/account/managing-users/managing-teams). */}
+{/* ::: */}
 :::note
-  This step is required only if you want to sync Okta user groups to Dagster+ as [Teams](/dagster-plus/account/managing-users/managing-teams).
-:::
-*/}
-:::note
-  This step is required only if you want to sync Okta user groups to Dagster+ as [Teams](/dagster-plus/features/authentication-and-access-control/rbac/teams).
+This step is required only if you want to sync Okta user groups to Dagster+ as [Teams](/dagster-plus/features/authentication-and-access-control/rbac/teams).
 :::
 
 {/* When **Push groups** is enabled in Okta, you can sync user groups from Okta to Dagster+ as [Teams](/dagster-plus/account/managing-users/managing-teams). Refer to the [Okta documentation](https://help.okta.com/oie/en-us/Content/Topics/users-groups-profiles/usgp-enable-group-push.htm) for setup instructions. */}

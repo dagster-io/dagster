@@ -12,8 +12,11 @@ from contextlib import contextmanager
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, ContextManager, Optional, Union  # noqa: UP035
 
+import dagster_shared.seven as seven
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
+from dagster_shared.serdes import deserialize_value
+from dagster_shared.serdes.errors import DeserializationError
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.pool import NullPool
 from tqdm import tqdm
@@ -21,7 +24,6 @@ from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._config import StringSource
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.events import AssetKey
@@ -56,8 +58,6 @@ from dagster._core.storage.sqlite import (
     create_db_conn_string,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._serdes.errors import DeserializationError
-from dagster._serdes.serdes import deserialize_value
 from dagster._utils import mkdir_p
 
 if TYPE_CHECKING:
@@ -142,7 +142,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         return {"base_dir": StringSource}
 
     @classmethod
-    def from_config_value(
+    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, inst_data: Optional[ConfigurableClassData], config_value: "SqliteStorageConfig"
     ) -> "SqliteEventLogStorage":
         return SqliteEventLogStorage(inst_data=inst_data, **config_value)

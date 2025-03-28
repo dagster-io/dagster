@@ -6,17 +6,17 @@ displayed_sidebar: 'docs'
 hide_table_of_contents: true
 ---
 
-import { Card, CardGroup } from '@site/src/components/Cards';
+import {Card, CardGroup} from '@site/src/components/Cards';
 import ThemedImage from '@theme/ThemedImage';
 
 # Welcome to Dagster
 
 Dagster is a data orchestrator built for data engineers, with integrated lineage, observability, a declarative programming model, and best-in-class testability.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/getting-started/hello-world.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/getting-started/hello-world.py" language="python" />
 <ThemedImage
   alt="Docusaurus themed image"
-  style={{width:'100%', height: 'auto'}}
+  style={{width: '100%', height: 'auto'}}
   sources={{
     light: './img/getting-started/lineage-light.jpg',
     dark: './img/getting-started/lineage-dark.jpg',
@@ -27,9 +27,9 @@ Dagster is a data orchestrator built for data engineers, with integrated lineage
 
 <CardGroup cols={3}>
   <Card title="Quickstart" href="/getting-started/quickstart" imagePath="./img/getting-started/icon-start.svg">
-      Build your first Dagster pipeline in our Quickstart tutorial.
+    Build your first Dagster pipeline in our Quickstart tutorial.
   </Card>
-  <Card title="Thinking in Assets"  href="/guides/build/assets/" imagePath="./img/getting-started/icon-assets.svg">
+  <Card title="Thinking in Assets" href="/guides/build/assets/" imagePath="./img/getting-started/icon-assets.svg">
     New to Dagster? Learn about how thinking in assets can help you manage your data better.
   </Card>
   <Card title="Dagster Plus" href="/dagster-plus" imagePath="./img/getting-started/icon-plus.svg">
@@ -49,7 +49,10 @@ Dagster is a data orchestrator built for data engineers, with integrated lineage
   <Card title="Youtube" href="https://www.youtube.com/@dagsterio" imagePath="./img/getting-started/icon-youtube.svg">
     Watch our latest videos on YouTube.
   </Card>
-  <Card title="Dagster University" href="https://courses.dagster.io" imagePath="./img/getting-started/icon-education.svg">
+  <Card
+    title="Dagster University"
+    href="https://courses.dagster.io"
+    imagePath="./img/getting-started/icon-education.svg">
     Learn Dagster through interactive courses and hands-on tutorials.
   </Card>
 </CardGroup>

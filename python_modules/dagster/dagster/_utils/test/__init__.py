@@ -1,6 +1,7 @@
 import os
 import shutil
 import tempfile
+from asyncio import new_event_loop
 from collections import defaultdict
 from collections.abc import Mapping
 from contextlib import contextmanager
@@ -93,6 +94,7 @@ def create_test_pipeline_execution_context(
         ),
         log_manager=log_manager,
         output_capture=None,
+        event_loop=new_event_loop(),
     )
 
 
@@ -258,7 +260,7 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
         self._inst_data = inst_data
 
     @property
-    def inst_data(self) -> object:
+    def inst_data(self) -> object:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._inst_data
 
     @classmethod
@@ -275,7 +277,7 @@ class FilesystemTestScheduler(Scheduler, ConfigurableClass):
     def debug_info(self) -> str:
         return ""
 
-    def get_logs_path(self, _instance: DagsterInstance, schedule_origin_id: str) -> str:
+    def get_logs_path(self, _instance: DagsterInstance, schedule_origin_id: str) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
         check.str_param(schedule_origin_id, "schedule_origin_id")
         return os.path.join(self._artifacts_dir, "logs", schedule_origin_id, "scheduler.log")
 
@@ -312,13 +314,13 @@ class ConcurrencyEnabledSqliteTestEventLogStorage(SqliteEventLogStorage, Configu
         return {"base_dir": StringSource, "sleep_interval": Field(float, is_required=False)}
 
     @classmethod
-    def from_config_value(
+    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, inst_data: Optional[ConfigurableClassData], config_value: TestStorageConfig
     ) -> "ConcurrencyEnabledSqliteTestEventLogStorage":
         return ConcurrencyEnabledSqliteTestEventLogStorage(inst_data=inst_data, **config_value)
 
     @property
-    def supports_global_concurrency_limits(self) -> bool:
+    def supports_global_concurrency_limits(self) -> bool:  # pyright: ignore[reportIncompatibleVariableOverride]
         return True
 
     def get_records_for_run(

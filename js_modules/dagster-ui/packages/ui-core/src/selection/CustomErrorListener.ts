@@ -31,7 +31,7 @@ export class CustomErrorListener implements ANTLRErrorListener<any> {
       message: msg,
       offendingSymbol: offendingSymbol?.text,
       from,
-      to: charPositionInLine + (offendingSymbol?.text?.length ?? Infinity),
+      to: Infinity, //  Make the error span the rest of the input to make sure its pronounced
     });
   }
 

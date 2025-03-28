@@ -9,18 +9,19 @@ Dagster+ allows you to configure alerts to fire in response to a range of events
 You must have **Organization**, **Admin**, or **Editor** permissions on Dagster+ to configure an alert notification service.
 :::
 
-Before [creating alerts](creating-alerts), you'll need to configure a service to send alerts. Dagster+ currently supports sending alerts through email, Microsoft Teams, PagerDuty, and Slack.
+Before [creating alerts](/dagster-plus/features/alerts/creating-alerts), you'll need to configure a service to send alerts. Dagster+ currently supports sending alerts through email, Microsoft Teams, PagerDuty, and Slack.
 
 <Tabs groupId="notification_service">
   <TabItem value='email' label='Email'>
     No additional configuration is required to send emails from Dagster+.
 
 All alert emails will be sent by `"no-reply@dagster.cloud"` or `"no-reply@<subdomain>.dagster.cloud"`. Alerts can be configured to be sent to any number of emails.
+
   </TabItem>
   <TabItem value='microsoft_teams' label='Microsoft Teams'>
-    Create an incoming webhook by following the [Microsoft Teams documentation](https://learn.microsoft.com/en-us/microsoftteams/platform/webhooks-and-connectors/how-to/add-incoming-webhook?tabs=newteams%2Cdotnet).
+    Follow the [Microsoft Teams documentation](https://support.microsoft.com/en-us/office/create-incoming-webhooks-with-workflows-for-microsoft-teams-8ae491c7-0394-4861-ba59-055e33f75498) to create an incoming webhook with a workflow using a template. Dagster requires the workflow to allow anyone to trigger it (the default authentication type).
 
-This will provide you with a **webhook URL** which will be required when configuring alerts in the UI (after selecting "Microsoft Teams" as your Notification Service) or using the CLI (in the `notification_service` configuration).
+This will provide you with a **workflow URL** which will be required when configuring alerts in the UI (after selecting "Microsoft Teams" as your Notification Service) or using the CLI (in the `notification_service` configuration).
 
   </TabItem>
   <TabItem value='pagerduty' label='PagerDuty'>
@@ -46,7 +47,7 @@ Navigate to **Deployment > Alerts** in the Dagster+ UI and click **Connect to Sl
 
 When setting up an alert, you can choose a Slack channel to send those alerts to. Make sure to invite the `@Dagster Cloud` bot to any channel that you'd like to receive an alert in.
 
-To disconnect Dagster+ from Slack, remove the Dagster Cloud app from your Slack workspace. For more information, see the  [Slack documentation](https://slack.com/help/articles/360003125231-Remove-apps-and-custom-integrations-from-your-workspace#remove-an-app).
+To disconnect Dagster+ from Slack, remove the Dagster Cloud app from your Slack workspace. For more information, see the [Slack documentation](https://slack.com/help/articles/360003125231-Remove-apps-and-custom-integrations-from-your-workspace#remove-an-app).
 
   </TabItem>
 </Tabs>

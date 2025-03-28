@@ -1,14 +1,14 @@
 ---
-title: "Dagster GraphQL Python client"
+title: 'Dagster GraphQL Python client'
 description: Dagster provides a Python client to interact with its GraphQL API
 ---
 
-Dagster provides a GraphQL Python Client to interface with [Dagster's GraphQL API](index.md) from Python.
+Dagster provides a GraphQL Python Client to interface with [Dagster's GraphQL API](/guides/operate/graphql/graphql-client) from Python.
 
 ## Relevant APIs
 
-| Name                                                                    | Description                                                          |
-| ----------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Name                                                                                        | Description                                                          |
+| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | <PyObject section="libraries" module="dagster_graphql" object="DagsterGraphQLClient"/>      | The client class to interact with Dagster's GraphQL API from Python. |
 | <PyObject section="libraries" module="dagster_graphql" object="DagsterGraphQLClientError"/> | The exception that the client raises upon a response error.          |
 
@@ -22,40 +22,42 @@ When is this useful? Dagster exposes a powerful GraphQL API, but this level of f
 
 Note that all GraphQL methods on the API are not yet available in Python - the `DagsterGraphQLClient` currently only provides the following methods:
 
+- <PyObject section="libraries" module="dagster_graphql" object="DagsterGraphQLClient" method="submit_job_execution" />
+  [submit_job_execution](#submitting-a-job-run)
+- <PyObject section="libraries" module="dagster_graphql" object="DagsterGraphQLClient" method="get_run_status" />
+  [get_run_status](#getting-a-job-runs-status)
 - <PyObject
-  section="libraries"
-  module="dagster_graphql"
-  object="DagsterGraphQLClient"
-  method="submit_job_execution"
+    section="libraries"
+    module="dagster_graphql"
+    object="DagsterGraphQLClient"
+    method="reload_repository_location"
   />
+  [reload_repository_location](#reloading-all-repositories-in-a-repository-location)
 - <PyObject
-  section="libraries"
-  module="dagster_graphql"
-  object="DagsterGraphQLClient"
-  method="get_run_status"
+    section="libraries"
+    module="dagster_graphql"
+    object="DagsterGraphQLClient"
+    method="shutdown_repository_location"
   />
-- <PyObject
-  section="libraries"
-  module="dagster_graphql"
-  object="DagsterGraphQLClient"
-  method="reload_repository_location"
-  />
-- <PyObject
-  section="libraries"
-  module="dagster_graphql"
-  object="DagsterGraphQLClient"
-  method="shutdown_repository_location"
-  />
+  [shutdown_repository_location](#shutting-down-a-repository-location-server)
 
 ## Using the GraphQL Client
 
 The snippet below shows example instantiation of the client:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py" startAfter="start_setup_marker" endBefore="end_setup_marker" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py"
+  startAfter="start_setup_marker"
+  endBefore="end_setup_marker"
+/>
 
 If you are using Dagster+, you can configure your client against the Dagster+ API by passing your deployment-specific URL and a User Token to the client as follows:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py" startAfter="start_cloud_usage" endBefore="end_cloud_usage" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py"
+  startAfter="start_cloud_usage"
+  endBefore="end_cloud_usage"
+/>
 
 ## Examples
 
@@ -63,7 +65,11 @@ If you are using Dagster+, you can configure your client against the Dagster+ AP
 
 You can use the client to get the status of a job run as follows:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py" startAfter="start_run_status_marker" endBefore="end_run_status_marker" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py"
+  startAfter="start_run_status_marker"
+  endBefore="end_run_status_marker"
+/>
 
 ### Reloading all repositories in a repository location
 
@@ -71,13 +77,21 @@ You can also reload a repository location in a Dagster deployment.
 
 This reloads all repositories in that repository location. This is useful in a variety of contexts, including refreshing the Dagster UI without restarting the server. Example usage is as follows:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py" startAfter="start_reload_repo_location_marker" endBefore="end_reload_repo_location_marker" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py"
+  startAfter="start_reload_repo_location_marker"
+  endBefore="end_reload_repo_location_marker"
+/>
 
 ### Submitting a job run
 
 You can use the client to submit a job run as follows:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py" startAfter="start_submit_marker_default" endBefore="end_submit_marker_default" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py"
+  startAfter="start_submit_marker_default"
+  endBefore="end_submit_marker_default"
+/>
 
 ### Shutting down a repository location server
 
@@ -87,11 +101,18 @@ One way to cause your server to restart and your repositories to be reloaded is 
 
 Example usage:
 
-
-<CodeExample path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py" startAfter="start_shutdown_repo_location_marker" endBefore="end_shutdown_repo_location_marker" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py"
+  startAfter="start_shutdown_repo_location_marker"
+  endBefore="end_shutdown_repo_location_marker"
+/>
 
 #### Repository location and repository inference
 
 Note that specifying the repository location name and repository name are not always necessary; the GraphQL client will infer the repository name and repository location name if the job name is unique.
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py" startAfter="start_submit_marker_job_name_only" endBefore="end_submit_marker_job_name_only" />
+<CodeExample
+  path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py"
+  startAfter="start_submit_marker_job_name_only"
+  endBefore="end_submit_marker_job_name_only"
+/>

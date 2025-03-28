@@ -96,10 +96,16 @@ export interface SelectionAutoCompleteProvider {
   };
 }
 
-export type Suggestion = {
-  text: string;
-  jsx: React.ReactNode;
-};
+export type Suggestion =
+  | {
+      text: string;
+      jsx: React.ReactNode;
+    }
+  | {
+      text: string;
+      jsx: React.ReactNode;
+      type: 'no-match';
+    };
 
 type OperatorType = 'and' | 'or' | 'not' | 'parenthesis' | 'up-traversal' | 'down-traversal';
 
@@ -218,14 +224,15 @@ export const createProvider = <
     value: TAttributeMap[keyof TAttributeMap][0];
     query: string;
   }) {
+    const queryLower = query.toLowerCase();
     if (typeof value !== 'string') {
       return (
-        value.key.includes(query) ||
-        value.value?.includes(query) ||
-        `${value.key}=${value.value ?? ''}`.includes(query)
+        value.key.toLowerCase().includes(queryLower) ||
+        value.value?.toLowerCase().includes(queryLower) ||
+        `${value.key}=${value.value ?? ''}`.toLowerCase().includes(queryLower)
       );
     }
-    return value.includes(query);
+    return value.toLowerCase().includes(queryLower);
   }
 
   function createAttributeSuggestion({
@@ -307,7 +314,7 @@ export const createProvider = <
     textCallback?: (text: string) => string;
   }) {
     const attribute = primaryAttributeKey as string;
-    const text = `key:"*${query}*"`;
+    const text = `${attribute}:"*${query}*"`;
     let displayAttribute = attribute.replace(/_/g, ' ');
     displayAttribute = displayAttribute[0]!.toUpperCase() + displayAttribute.slice(1);
     const displayText = (
@@ -380,7 +387,7 @@ export const createProvider = <
     },
     getAttributeValueResultsMatchingQuery: ({attribute, query, textCallback}) => {
       const values = attributesMap[attribute as keyof typeof attributesMap];
-      return (
+      const results =
         values
           ?.filter((value) => doesValueIncludeQuery({value, query}))
           .map((value) =>
@@ -388,8 +395,24 @@ export const createProvider = <
               value,
               textCallback,
             }),
-          ) ?? []
-      );
+          ) ?? [];
+      if (results.length === 0) {
+        return [
+          {
+            text: '',
+            jsx: (
+              <BodySmall color={Colors.textLight()}>
+                No match found for{' '}
+                <MonoSmall color={Colors.textDefault()}>
+                  {attribute}:&quot;{query}&quot;
+                </MonoSmall>
+              </BodySmall>
+            ),
+            type: 'no-match',
+          },
+        ];
+      }
+      return results;
     },
     getFunctionResultsMatchingQuery: ({query, textCallback, options}) => {
       return functions

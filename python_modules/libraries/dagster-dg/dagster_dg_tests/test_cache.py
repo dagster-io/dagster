@@ -1,6 +1,10 @@
 import subprocess
+from contextlib import nullcontext
 from functools import partial
 from pathlib import Path
+
+import pytest
+from dagster_dg.utils import pushd
 
 from dagster_dg_tests.utils import (
     ProxyRunner,
@@ -68,18 +72,20 @@ def test_cache_no_invalidation_modified_pkg():
         assert "CACHE [hit]" in result.output
 
 
-def test_clear_cache():
+@pytest.mark.parametrize("clear_outside_project", [True, False])
+def test_clear_cache(clear_outside_project: bool):
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
         result = runner.invoke("list", "component-type")
         assert_runner_result(result)
         assert "CACHE [miss]" in result.output
         assert "CACHE [write]" in result.output
 
-        result = runner.invoke("--clear-cache")
-        assert_runner_result(result)
-        assert "CACHE [clear-all]" in result.output
-        result = runner.invoke("list", "component-type")
+        with pushd("..") if clear_outside_project else nullcontext():
+            result = runner.invoke("--clear-cache")
+            assert_runner_result(result)
+            assert "CACHE [clear-all]" in result.output
 
+        result = runner.invoke("list", "component-type")
         assert_runner_result(result)
         assert "CACHE [miss]" in result.output
 

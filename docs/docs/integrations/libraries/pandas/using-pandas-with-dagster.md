@@ -1,11 +1,11 @@
 ---
-title: "Pandas & Dagster"
-description: "The dagster-pandas library provides the ability to perform data validation, emit summary statistics, and enable reliable dataframe serialization/deserialization."
+title: 'Pandas & Dagster'
+description: 'The dagster-pandas library provides the ability to perform data validation, emit summary statistics, and enable reliable dataframe serialization/deserialization.'
 ---
 
 # Pandas & Dagster
 
-import Beta from '../../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
@@ -28,12 +28,19 @@ The `dagster_pandas` library provides the ability to perform data validation, em
 
 To create a custom `dagster_pandas` type, use `create_dagster_pandas_dataframe_type` and provide a list of `PandasColumn` objects which specify column-level schema and constraints. For example, we can construct a custom dataframe type to represent a set of e-bike trips in the following way:
 
-
-<CodeExample path="docs_snippets/docs_snippets/legacy/dagster_pandas_guide/core_trip.py" startAfter="start_core_trip_marker_0" endBefore="end_core_trip_marker_0" />
+<CodeExample
+  path="docs_snippets/docs_snippets/legacy/dagster_pandas_guide/core_trip.py"
+  startAfter="start_core_trip_marker_0"
+  endBefore="end_core_trip_marker_0"
+/>
 
 Once our custom data type is defined, we can use it as the type declaration for the inputs / outputs of our ops:
 
-<CodeExample path="docs_snippets/docs_snippets/legacy/dagster_pandas_guide/core_trip.py" startAfter="start_core_trip_marker_1" endBefore="end_core_trip_marker_1" />
+<CodeExample
+  path="docs_snippets/docs_snippets/legacy/dagster_pandas_guide/core_trip.py"
+  startAfter="start_core_trip_marker_1"
+  endBefore="end_core_trip_marker_1"
+/>
 
 By passing in these `PandasColumn` objects, we are expressing the schema and constraints we expect our dataframes to follow when Dagster performs type checks for our ops. Moreover, if we go to the op viewer, we can follow our schema documented in the UI:
 
@@ -47,7 +54,11 @@ To do this, we provide a list of dataframe constraints to `create_dagster_pandas
 
 This looks like:
 
-<CodeExample path="docs_snippets/docs_snippets/legacy/dagster_pandas_guide/shape_constrained_trip.py" startAfter="start_create_type" endBefore="end_create_type" />
+<CodeExample
+  path="docs_snippets/docs_snippets/legacy/dagster_pandas_guide/shape_constrained_trip.py"
+  startAfter="start_create_type"
+  endBefore="end_create_type"
+/>
 
 If we rerun the above example with this dataframe, nothing should change. However, if we pass in 100 to the row count constraint, we can watch our job fail that type check.
 
@@ -55,7 +66,11 @@ If we rerun the above example with this dataframe, nothing should change. Howeve
 
 Aside from constraint validation, `create_dagster_pandas_dataframe_type` also takes in a summary statistics function that emits metadata dictionaries which are surfaced during runs. Since data systems seldom control the quality of the data they receive, it becomes important to monitor data as it flows through your systems. In complex jobs, this can help debug and monitor data drift over time. Let's illustrate how this works in our example:
 
-<CodeExample path="docs_snippets/docs_snippets/legacy/dagster_pandas_guide/summary_stats.py" startAfter="start_summary" endBefore="end_summary" />
+<CodeExample
+  path="docs_snippets/docs_snippets/legacy/dagster_pandas_guide/summary_stats.py"
+  startAfter="start_summary"
+  endBefore="end_summary"
+/>
 
 Now if we run this job in the UI launchpad, we can see that the `SummaryStatsTripDataFrame` type is displayed in the logs along with the emitted metadata.
 
@@ -67,4 +82,8 @@ Now if we run this job in the UI launchpad, we can see that the `SummaryStatsTri
 
 To tie this back to our example, let's say that we want to validate that the amount paid for a e-bike must be in 5 dollar increments because that is the price per mile rounded up. As a result, let's implement a `DivisibleByFiveConstraint`. To do this, all it needs is a `markdown_description` for the UI which accepts and renders markdown syntax, an `error_description` for error logs, and a validation method which throws a `ColumnConstraintViolationException` if a row fails validation. This would look like the following:
 
-<CodeExample path="docs_snippets/docs_snippets/legacy/dagster_pandas_guide/custom_column_constraint.py" startAfter="start_custom_col" endBefore="end_custom_col" />
+<CodeExample
+  path="docs_snippets/docs_snippets/legacy/dagster_pandas_guide/custom_column_constraint.py"
+  startAfter="start_custom_col"
+  endBefore="end_custom_col"
+/>

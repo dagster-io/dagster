@@ -2,7 +2,7 @@ import sys
 import time
 
 import pytest
-from dagster import _seven, file_relative_path
+from dagster import file_relative_path
 from dagster._core.errors import DagsterLaunchFailedError
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
@@ -14,6 +14,7 @@ from dagster._core.workspace.load_target import GrpcServerTarget, PythonFileTarg
 from dagster._grpc.server import GrpcServerProcess
 from dagster._utils import find_free_port
 from dagster._utils.merger import merge_dicts
+from dagster_shared import seven
 
 from dagster_tests.launcher_tests.test_default_run_launcher import (
     math_diamond,
@@ -306,7 +307,7 @@ def test_server_down():
                 instance.add_run_tags(
                     dagster_run.run_id,
                     {
-                        GRPC_INFO_TAG: _seven.json.dumps(
+                        GRPC_INFO_TAG: seven.json.dumps(
                             merge_dicts({"host": "localhost"}, {"port": find_free_port()})
                         )
                     },

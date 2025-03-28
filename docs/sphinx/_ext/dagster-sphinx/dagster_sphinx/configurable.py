@@ -120,7 +120,7 @@ class ConfigurableDocumenter(DataDocumenter):
     directivetype = "data"
 
     @classmethod
-    def can_document_member(
+    def can_document_member(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, member: Any, _membername: str, _isattr: bool, _parent: Any
     ) -> bool:
         return isinstance(member, ConfigurableDefinition) or (

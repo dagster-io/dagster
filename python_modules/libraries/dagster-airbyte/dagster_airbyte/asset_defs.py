@@ -1128,7 +1128,6 @@ def build_airbyte_assets_definitions(
             connection_id=connection_id,
             workspace=workspace,
             name=clean_name(connection_name),
-            group_name=clean_name(connection_name),
             dagster_airbyte_translator=dagster_airbyte_translator,
         )
         def _asset_fn(context: AssetExecutionContext, airbyte: AirbyteCloudWorkspace):

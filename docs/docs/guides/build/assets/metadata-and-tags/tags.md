@@ -1,6 +1,6 @@
 ---
 title: "Tags"
-sidebar_position: 100
+sidebar_position: 1000
 ---
 
 **Tags** are the primary way to organize assets in Dagster. You can attach several tags to an asset when it's defined, and they will appear in the UI. You can also use tags to search and filter for assets in the [Asset catalog](/dagster-plus/features/asset-catalog/) in Dagster+. They're structured as key-value pairs of strings.
@@ -13,7 +13,7 @@ Here's an example of some tags you might apply to an asset:
 
 Like `owners`, just pass a dictionary of tags to the `tags` argument when defining an asset:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/metadata/tags.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/metadata/tags.py" language="python" />
 
 Keep in mind that tags must contain only strings as keys and values. Additionally, the Dagster UI will render tags with the empty string as a "label" rather than a key-value pair.
 
@@ -34,6 +34,22 @@ Tag values must:
 - Contain only alphanumeric characters, dashes (`-`), underscores (`_`), and dots (`.`)
 - Be a string or JSON that is serializable to a string
 
+### Labels
+
+A label is a tag that only contains a key. To create a label, set the tag value to an empty string:
+
+```python
+@dg.asset(
+    tags={"private":""}
+)
+def my_asset() -> None:
+    ...
+```
+
+A label will look like the following in the UI:
+
+![Label in UI](/images/guides/build/assets/metadata-tags/label-ui.png)
+
 ### Customizing run execution with tags
 
 While tags are primarily used for labeling and organization, some run execution features are controlled using run tags:
@@ -51,7 +67,7 @@ The following table lists tags which Dagster may automatically add to assets.
 
 | Tag                   | Description                                                                                                                   |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `dagster/kind/{kind}` | A tag identifying that an asset has a specific kind. For more information, see [Kind tags](kind-tags) |
+| `dagster/kind/{kind}` | A tag identifying that an asset has a specific kind. For more information, see [Kind tags](/guides/build/assets/metadata-and-tags/kind-tags) |
 
 ### Run tags
 

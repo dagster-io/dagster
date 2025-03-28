@@ -379,7 +379,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
 
         super().__init__()
 
-    def launch_run(self, context):
+    def launch_run(self, context):  # pyright: ignore[reportIncompatibleMethodOverride]
         run = context.dagster_run
         check.inst_param(run, "run", DagsterRun)
         check.invariant(run.status == DagsterRunStatus.STARTING)
@@ -460,7 +460,7 @@ class TestSecretsLoader(SecretsLoader, ConfigurableClass):
         self._inst_data = inst_data
         self.env_vars = env_vars
 
-    def get_secrets_for_environment(self, location_name: str) -> dict[str, str]:
+    def get_secrets_for_environment(self, location_name: str) -> dict[str, str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.env_vars.copy()
 
     @property
@@ -526,23 +526,6 @@ def load_remote_repo(
     )
     assert code_location_entry.code_location, code_location_entry.load_error
     return code_location_entry.code_location.get_repository(repo_name)
-
-
-def remove_none_recursively(obj: T) -> T:
-    """Remove none values from a dict. This can be used to support comparing provided config vs.
-    config we retrive from kubernetes, which returns all fields, even those which have no value
-    configured.
-    """
-    if isinstance(obj, (list, tuple, set)):
-        return type(obj)(remove_none_recursively(x) for x in obj if x is not None)
-    elif isinstance(obj, dict):
-        return type(obj)(
-            (remove_none_recursively(k), remove_none_recursively(v))
-            for k, v in obj.items()
-            if k is not None and v is not None
-        )
-    else:
-        return obj
 
 
 default_resources_for_test = {"io_manager": fs_io_manager}
@@ -756,9 +739,6 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
         yield
 
 
-class TestType: ...
-
-
 def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> CurrentWorkspace:
     remote_repos = {}
     for repo in repos:
@@ -768,7 +748,7 @@ def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> CurrentW
                 location_name="test",
                 repository_name=repo.name,
             ),
-            instance=DagsterInstance.ephemeral(),
+            auto_materialize_use_sensors=True,
         )
     mock_entry = unittest.mock.MagicMock(spec=CodeLocationEntry)
     mock_location = unittest.mock.MagicMock(spec=CodeLocation)

@@ -1,10 +1,10 @@
 ---
-title: "BigQuery integration reference"
+title: 'BigQuery integration reference'
 description: Store your Dagster assets in BigQuery
 sidebar_position: 200
 ---
 
-This reference page provides information for working with features that are not covered as part of the [Using Dagster with BigQuery tutorial](using-bigquery-with-dagster).
+This reference page provides information for working with features that are not covered as part of the [Using Dagster with BigQuery tutorial](/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster).
 
 - [Providing credentials as configuration](#providing-credentials-as-configuration)
 - [Selecting specific columns in a downstream asset](#selecting-specific-columns-in-a-downstream-asset)
@@ -29,7 +29,11 @@ cat ~/.gcp/key.json | base64
 
 Then you can [set an environment variable](/guides/deploy/using-environment-variables-and-secrets) in your Dagster deployment (for example `GCP_CREDS`) to the encoded key and provide it to the BigQuery I/O manager:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/config_auth.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/bigquery/reference/config_auth.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 ## Selecting specific columns in a downstream asset
 
@@ -37,7 +41,7 @@ Sometimes you may not want to fetch an entire table as the input to a downstream
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/downstream_columns.py" />
 
-In this example, we only use the columns containing sepal data from the `IRIS_DATA` table created in [Step 2: Create tables in BigQuery](using-bigquery-with-dagster#step-2-create-tables-in-bigquery) of the [Using Dagster with BigQuery tutorial](using-bigquery-with-dagster). Fetching the entire table would be unnecessarily costly, so to select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_data` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
+In this example, we only use the columns containing sepal data from the `IRIS_DATA` table created in [Step 2: Create tables in BigQuery](/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster#step-2-create-tables-in-bigquery) of the [Using Dagster with BigQuery tutorial](/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster). Fetching the entire table would be unnecessarily costly, so to select specific columns, we can add metadata to the input asset. We do this in the `metadata` parameter of the `AssetIn` that loads the `iris_data` asset in the `ins` parameter. We supply the key `columns` with a list of names of the columns we want to fetch.
 
 When Dagster materializes `sepal_data` and loads the `iris_data` asset using the BigQuery I/O manager, it will only fetch the `sepal_length_cm` and `sepal_width_cm` columns of the `IRIS.IRIS_DATA` table and pass them to `sepal_data` as a Pandas DataFrame.
 
@@ -52,7 +56,11 @@ The BigQuery I/O manager supports storing and loading partitioned data. In order
 
 In order to store static partitioned assets in BigQuery, you must specify `partition_expr` metadata on the asset to tell the BigQuery I/O manager which column contains the partition data:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/static_partition.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/bigquery/reference/static_partition.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the partition in the downstream asset. When loading a static partition, the following statement is used:
 
@@ -77,7 +85,11 @@ SELECT *
 
 Like static partitioned assets, you can specify `partition_expr` metadata on the asset to tell the BigQuery I/O manager which column contains the partition data:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/time_partition.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/bigquery/reference/time_partition.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in the downstream asset. When loading a dynamic partition, the following statement is used:
 
@@ -106,7 +118,11 @@ In this example, the data in the `TIME` column are integers, so the `partition_e
 
 The BigQuery I/O manager can also store data partitioned on multiple dimensions. To do this, you must specify the column for each partition as a dictionary of `partition_expr` metadata:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/multi_partition.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/bigquery/reference/multi_partition.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the correct partition in a downstream asset. For multi-partitions, Dagster concatenates the `WHERE` statements described in the static partition and time-window partition sections to craft the correct `SELECT` statement.
 
@@ -126,36 +142,42 @@ SELECT *
 
 You may want to have different assets stored in different BigQuery datasets. The BigQuery I/O manager allows you to specify the dataset in several ways.
 
-You can specify the default dataset where data will be stored as configuration to the I/O manager, like we did in [Step 1: Configure the BigQuery I/O manager](using-bigquery-with-dagster#step-1-configure-the-bigquery-io-manager) of the [Using Dagster with BigQuery tutorial](using-bigquery-with-dagster).
+You can specify the default dataset where data will be stored as configuration to the I/O manager, like we did in [Step 1: Configure the BigQuery I/O manager](/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster#step-1-configure-the-bigquery-io-manager) of the [Using Dagster with BigQuery tutorial](/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster).
 
 If you want to store assets in different datasets, you can specify the dataset as metadata:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/dataset.py" startAfter="start_metadata" endBefore="end_metadata" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/bigquery/reference/dataset.py"
+  startAfter="start_metadata"
+  endBefore="end_metadata"
+/>
 
 You can also specify the dataset as part of the asset's asset key:
 
 {/* TODO add dedent=4 to CodeExample below */}
-<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/dataset.py" startAfter="start_asset_key" endBefore="end_asset_key" />
+
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/bigquery/reference/dataset.py"
+  startAfter="start_asset_key"
+  endBefore="end_asset_key"
+/>
 
 The dataset will be the last prefix before the asset's name. In this example, the `iris_data` asset will be stored in the `IRIS` dataset, and the `daffodil_data` asset will be found in the `DAFFODIL` dataset.
 
 :::note
 
-  The dataset is determined in this order:
-  <ol>
-    <li>If the dataset is set via metadata, that dataset will be used</li>
-    <li>
-      Otherwise, the dataset set as configuration on the I/O manager will be
-      used
-    </li>
-    <li>
-      Otherwise, if there is a <code>key_prefix</code>, that dataset will be
-      used
-    </li>
-    <li>
-      If none of the above are provided, the default dataset will be <code>PUBLIC</code>
-    </li>
-  </ol>
+The dataset is determined in this order:
+
+<ol>
+  <li>If the dataset is set via metadata, that dataset will be used</li>
+  <li>Otherwise, the dataset set as configuration on the I/O manager will be used</li>
+  <li>
+    Otherwise, if there is a <code>key_prefix</code>, that dataset will be used
+  </li>
+  <li>
+    If none of the above are provided, the default dataset will be <code>PUBLIC</code>
+  </li>
+</ol>
 
 :::
 
@@ -163,7 +185,11 @@ The dataset will be the last prefix before the asset's name. In this example, th
 
 You may have assets that you don't want to store in BigQuery. You can provide an I/O manager to each asset using the `io_manager_key` parameter in the `asset` decorator:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/multiple_io_managers.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/bigquery/reference/multiple_io_managers.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 In this example, the `iris_data` asset uses the I/O manager bound to the key `warehouse_io_manager` and `iris_plots` will use the I/O manager bound to the key `blob_io_manager`. In the <PyObject section="definitions" module="dagster" object="Definitions" /> object, we supply the I/O managers for those keys. When the assets are materialized, the `iris_data` will be stored in BigQuery, and `iris_plots` will be saved in Amazon S3.
 
@@ -175,9 +201,13 @@ The BigQuery I/O manager also supports storing and loading PySpark DataFrames. T
 pip install dagster-gcp-pyspark
 ```
 
-Then you can use the `gcp_pyspark_io_manager` in your `Definitions` as in [Step 1: Configure the BigQuery I/O manager](using-bigquery-with-dagster#step-1-configure-the-bigquery-io-manager) of the [Using Dagster with BigQuery tutorial](using-bigquery-with-dagster).
+Then you can use the `gcp_pyspark_io_manager` in your `Definitions` as in [Step 1: Configure the BigQuery I/O manager](/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster#step-1-configure-the-bigquery-io-manager) of the [Using Dagster with BigQuery tutorial](/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster).
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/pyspark_configuration.py" startAfter="start_configuration" endBefore="end_configuration" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/bigquery/reference/pyspark_configuration.py"
+  startAfter="start_configuration"
+  endBefore="end_configuration"
+/>
 
 :::note
 
@@ -190,12 +220,10 @@ The `BigQueryPySparkIOManager` requires that a `SparkSession` be active and conf
 <Tabs>
 <TabItem value="With the spark_resource">
 
-
 <CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/pyspark_with_spark_resource.py" />
 
 </TabItem>
 <TabItem value="With your own SparkSession">
-
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/pyspark_with_spark_session.py" />
 
@@ -212,8 +240,11 @@ In order to load data from BigQuery as a PySpark DataFrame, the BigQuery PySpark
 
 If you work with both Pandas and PySpark DataFrames and want a single I/O manager to handle storing and loading these DataFrames in BigQuery, you can write a new I/O manager that handles both types. To do this, inherit from the <PyObject section="libraries" module="dagster_gcp" object="BigQueryIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `BigQueryIOManager`.
 
-
-<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/pandas_and_pyspark.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/bigquery/reference/pandas_and_pyspark.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 ## Executing custom SQL commands with the BigQuery resource
 
@@ -221,4 +252,4 @@ In addition to the BigQuery I/O manager, Dagster also provides a BigQuery [resou
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/resource.py" />
 
-In this example, we attach the BigQuery resource to the `small_petals` asset. In the body of the asset function, we use the `get_client` context manager method of the resource to get a [`bigquery.client.Client`](https://cloud.google.com/python/docs/reference/bigquery/latest/google.cloud.bigquery.client.Client). We can use the client to execute a custom SQL query against the `IRIS_DATA` table created in [Step 2: Create tables in BigQuery](using-bigquery-with-dagster#step-2-create-tables-in-bigquery) of the [Using Dagster with BigQuery tutorial](using-bigquery-with-dagster).
+In this example, we attach the BigQuery resource to the `small_petals` asset. In the body of the asset function, we use the `get_client` context manager method of the resource to get a [`bigquery.client.Client`](https://cloud.google.com/python/docs/reference/bigquery/latest/google.cloud.bigquery.client.Client). We can use the client to execute a custom SQL query against the `IRIS_DATA` table created in [Step 2: Create tables in BigQuery](/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster#step-2-create-tables-in-bigquery) of the [Using Dagster with BigQuery tutorial](/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster).

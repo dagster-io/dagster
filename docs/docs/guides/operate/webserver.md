@@ -1,6 +1,6 @@
 ---
 title: Dagster webserver and UI
-description: "The Dagster UI is a web-based interface for Dagster. You can inspect Dagster objects (ex: assets, jobs, schedules), launch runs, view launched runs, and view assets produced by those runs."
+description: 'The Dagster UI is a web-based interface for Dagster. You can inspect Dagster objects (ex: assets, jobs, schedules), launch runs, view launched runs, and view assets produced by those runs.'
 sidebar_position: 20
 ---
 
@@ -47,7 +47,7 @@ Note that several Dagster features, like schedules and sensors, require the Dags
 
 **Asset catalog (OSS)**
 
-- **Description**: The **Asset catalog** page lists all [assets](/guides/build/assets/) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [code location](/guides/deploy/code-locations/), and [tags]/guides/build/assets/metadata-and-tags/index.md#tags). Clicking an asset opens the **Asset details** page for that asset. You can also navigate to the **Global asset lineage** page, reload definitions, and materialize assets.
+- **Description**: The **Asset catalog** page lists all [assets](/guides/build/assets/) in your Dagster deployment, which can be filtered by asset key, compute kind, asset group, [code location](/guides/deploy/code-locations/), and [tags](/guides/build/assets/metadata-and-tags/index.md#tags). Clicking an asset opens the **Asset details** page for that asset. You can also navigate to the **Global asset lineage** page, reload definitions, and materialize assets.
 
 - **Accessed by:** Clicking **Assets** in the top navigation bar
 
@@ -64,7 +64,7 @@ This feature is only available in Dagster+ Pro.
 
 :::
 
-- **Description**: This version of the **Asset catalog** page includes all the information and functionality of the original page, broken out by compute kind, asset group, [code location](/guides/deploy/code-locations/), [tags]/guides/build/assets/metadata-and-tags/index.md#tags), and [owners]/guides/build/assets/metadata-and-tags/index.md#owners), etc. On this page, you can:
+- **Description**: This version of the **Asset catalog** page includes all the information and functionality of the original page, broken out by compute kind, asset group, [code location](/guides/deploy/code-locations/), [tags](/guides/build/assets/metadata-and-tags/index.md#tags), and [owners](/guides/build/assets/metadata-and-tags/index.md#owners), etc. On this page, you can:
 
   - View all [assets](/guides/build/assets/) in your Dagster deployment
   - View details about a specific asset by clicking on it
@@ -213,7 +213,7 @@ This feature is only available in Dagster+ Pro.
 
 **Schedule details**
 
-- **Description**: The **Schedule details** page contains details about a single schedule, including its next tick, tick history, and run history. Clicking the **Test schedule** button near the top right corner of the page allows you to test the schedule.
+- **Description**: The **Schedule details** page contains details about a single schedule, including its next tick, tick history, and run history. Clicking the **Preview tick result** button near the top right corner of the page allows you to test the schedule.
 
 - **Accessed by**: Clicking a schedule in the **Schedules** page.
 
@@ -240,7 +240,7 @@ This feature is only available in Dagster+ Pro.
 
 **Sensor details**
 
-- **Description**: The **Sensor details** page contains details about a single sensor, including its next tick, tick history, and run history. Clicking the **Test sensor** button near the top right corner of the page allows you to test the sensor.
+- **Description**: The **Sensor details** page contains details about a single sensor, including its next tick, tick history, and run history. Clicking the **Preview tick result** button near the top right corner of the page allows you to test the sensor.
 
 - **Accessed by**: Clicking a sensor in the **Sensors** page
 
@@ -287,9 +287,9 @@ This feature is only available in Dagster+ Pro.
 
 **Uses tab**
 
-- **Description**: The **Uses** tab contains information about the other Dagster definitions that use the resource, including [assets](/guides/build/assets/), [jobs](/guides/build/assets/asset-jobs), and [ops](/guides/build/ops). Clicking on any of these definitions will open the details page for that definition type.
+- **Description**: The **Uses** tab contains information about the other Dagster definitions that use the resource, including [assets](/guides/build/assets/), [jobs](/guides/build/jobs/), and [ops](/guides/build/ops/). Clicking on any of these definitions will open the details page for that definition type.
 
-- **Accessed by**: On the **Resource details* page, clicking the **Uses tab**
+- **Accessed by**: On the **Resource details\* page, clicking the **Uses tab\*\*
 
 ![UI Resource details - Uses tab](/images/guides/operate/webserver/resource-details-uses-tab.png)
 
@@ -313,7 +313,7 @@ This feature is only available in Dagster+ Pro.
 
 **All jobs**
 
-- **Description**: The **Jobs** page lists all [jobs](/guides/build/assets/asset-jobs) defined in your Dagster deployment across all code locations. It includes information about the job's schedule or sensor, its latest run time, and its history. Click a job to open the **Job details** page.
+- **Description**: The **Jobs** page lists all [jobs](/guides/build/jobs/) defined in your Dagster deployment across all code locations. It includes information about the job's schedule or sensor, its latest run time, and its history. Click a job to open the **Job details** page.
 
 - **Accessed by**: Clicking **Overview (top nav) > Jobs tab**
 

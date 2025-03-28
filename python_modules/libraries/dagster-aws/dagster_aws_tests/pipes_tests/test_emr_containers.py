@@ -62,29 +62,29 @@ def manual_asset(
 
         pipes_emr_containers_client._start(context, params)  # noqa: SLF001
 
-        pipes_emr_containers_client._client.start_job_run.assert_called_once()  # noqa: SLF001
+        pipes_emr_containers_client._client.start_job_run.assert_called_once()  # noqa: SLF001  # pyright: ignore[reportFunctionMemberAccess]
         assert (
-            pipes_emr_containers_client._client.start_job_run.call_args.kwargs["virtualClusterId"]  # noqa: SLF001
+            pipes_emr_containers_client._client.start_job_run.call_args.kwargs["virtualClusterId"]  # noqa: SLF001  # pyright: ignore[reportFunctionMemberAccess]
             == "test"
         )
 
         if pipes_emr_containers_client.pipes_params_bootstrap_method == "args":
             assert (
                 "--dagster-pipes-context"
-                in pipes_emr_containers_client._client.start_job_run.call_args.kwargs["jobDriver"][  # noqa: SLF001
+                in pipes_emr_containers_client._client.start_job_run.call_args.kwargs["jobDriver"][  # noqa: SLF001  # pyright: ignore[reportFunctionMemberAccess]
                     "sparkSubmitJobDriver"
                 ]["sparkSubmitParameters"]
             )
 
             assert (
                 "--dagster-pipes-messages"
-                in pipes_emr_containers_client._client.start_job_run.call_args.kwargs["jobDriver"][  # noqa: SLF001
+                in pipes_emr_containers_client._client.start_job_run.call_args.kwargs["jobDriver"][  # noqa: SLF001  # pyright: ignore[reportFunctionMemberAccess]
                     "sparkSubmitJobDriver"
                 ]["sparkSubmitParameters"]
             )
 
         elif pipes_emr_containers_client.pipes_params_bootstrap_method == "env":
-            configurations = pipes_emr_containers_client._client.start_job_run.call_args.kwargs[  # noqa: SLF001
+            configurations = pipes_emr_containers_client._client.start_job_run.call_args.kwargs[  # noqa: SLF001  # pyright: ignore[reportFunctionMemberAccess]
                 "configurationOverrides"
             ]["applicationConfiguration"]
 

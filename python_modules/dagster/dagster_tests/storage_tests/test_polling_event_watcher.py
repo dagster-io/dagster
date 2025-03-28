@@ -27,7 +27,7 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
         self._watcher: Optional[SqlPollingEventWatcher] = None
 
     @classmethod
-    def from_config_value(
+    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
         return cls(inst_data=inst_data, **config_value)

@@ -18,7 +18,7 @@ from dagster import (
 )
 from dagster._annotations import beta
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 from typing_extensions import TypeAlias
 
 from dagster_pandera.version import __version__

@@ -76,9 +76,9 @@ class AirflowDatabase:
         if not dagrun:
             if is_airflow_2_loaded_in_environment():
                 dagrun = dag.create_dagrun(
-                    state=DagRunState.RUNNING,
+                    state=DagRunState.RUNNING,  # pyright: ignore[reportPossiblyUnboundVariable]
                     execution_date=execution_date,
-                    run_type=DagRunType.MANUAL,
+                    run_type=DagRunType.MANUAL,  # pyright: ignore[reportPossiblyUnboundVariable]
                     conf=self.dag_run_config,
                 )
             else:

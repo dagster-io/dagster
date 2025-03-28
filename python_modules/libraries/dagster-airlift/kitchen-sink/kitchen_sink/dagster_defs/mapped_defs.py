@@ -10,9 +10,7 @@ from dagster_airlift.core import (
     assets_with_dag_mappings,
     assets_with_task_mappings,
     build_defs_from_airflow_instance,
-    dag_defs,
     load_airflow_dag_asset_specs,
-    task_defs,
 )
 from dagster_airlift.core.multiple_tasks import targeted_by_multiple_tasks
 
@@ -81,12 +79,13 @@ def build_mapped_defs() -> Definitions:
         dag_selector_fn=lambda dag: not dag.dag_id.startswith("unmapped"),
         sensor_minimum_interval_seconds=1,
         defs=Definitions.merge(
-            dag_defs(
-                "print_dag",
-                task_defs("print_task", Definitions(assets=[make_print_asset("print_asset")])),
-                task_defs(
-                    "downstream_print_task",
-                    Definitions(assets=[make_print_asset("another_print_asset")]),
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="print_dag",
+                    task_mappings={
+                        "print_task": [make_print_asset("print_asset")],
+                        "downstream_print_task": [make_print_asset("another_print_asset")],
+                    },
                 ),
             ),
             targeted_by_multiple_tasks(
@@ -97,26 +96,26 @@ def build_mapped_defs() -> Definitions:
                 ],
             ),
             Definitions(assets=assets_with_dag_mappings({"overridden_dag": [asset_two]})),
-            dag_defs(
-                "affected_dag",
-                task_defs(
-                    "print_task",
-                    Definitions(assets=[make_print_asset("affected_dag__print_asset")]),
-                ),
-                task_defs(
-                    "downstream_print_task",
-                    Definitions(assets=[make_print_asset("affected_dag__another_print_asset")]),
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="affected_dag",
+                    task_mappings={
+                        "print_task": [make_print_asset("affected_dag__print_asset")],
+                        "downstream_print_task": [
+                            make_print_asset("affected_dag__another_print_asset")
+                        ],
+                    },
                 ),
             ),
-            dag_defs(
-                "unaffected_dag",
-                task_defs(
-                    "print_task",
-                    Definitions(assets=[make_print_asset("unaffected_dag__print_asset")]),
-                ),
-                task_defs(
-                    "downstream_print_task",
-                    Definitions(assets=[make_print_asset("unaffected_dag__another_print_asset")]),
+            Definitions(
+                assets=assets_with_task_mappings(
+                    dag_id="unaffected_dag",
+                    task_mappings={
+                        "print_task": [make_print_asset("unaffected_dag__print_asset")],
+                        "downstream_print_task": [
+                            make_print_asset("unaffected_dag__another_print_asset")
+                        ],
+                    },
                 ),
             ),
             Definitions(
@@ -168,8 +167,13 @@ def build_mapped_defs() -> Definitions:
     )
 
 
+# We need to use a different name for this instance because the reconstruction metadata key is
+# derived from the instance name, and we don't want the reconstruction metadata from the mapped defs
+# instance to clobber the reconstruction metadata from this.
+UNMAPPED_SPECS_INSTANCE_NAME = "unmapped_specs_instance"
+
 unmapped_specs = load_airflow_dag_asset_specs(
-    airflow_instance=local_airflow_instance(),
+    airflow_instance=local_airflow_instance(UNMAPPED_SPECS_INSTANCE_NAME),
     dag_selector_fn=lambda dag: dag.dag_id.startswith("unmapped"),
 )
 

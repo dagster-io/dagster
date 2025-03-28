@@ -6,7 +6,7 @@ sidebar_position: 300
 
 Backfilling is the process of running partitions for assets that either don't exist or updating existing records. Dagster supports backfills for each partition or a subset of partitions.
 
-After defining a [partition](partitioning-assets), you can launch a backfill that will submit runs to fill in multiple partitions at the same time.
+After defining a [partition](/guides/build/partitions-and-backfills/partitioning-assets), you can launch a backfill that will submit runs to fill in multiple partitions at the same time.
 
 Backfills are common when setting up a pipeline for the first time. The assets you want to materialize might have historical data that needs to be materialized to get the assets up to date. Another common reason to run a backfill is when you've changed the logic for an asset and need to update historical data with the new logic.
 
@@ -24,7 +24,7 @@ To observe the progress of an asset backfill, navigate to the **Runs details** p
 
 ## Launching single-run backfills using backfill policies
 
-import Beta from '../../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 

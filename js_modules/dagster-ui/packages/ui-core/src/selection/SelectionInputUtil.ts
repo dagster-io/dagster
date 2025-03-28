@@ -2,6 +2,7 @@ import {ParserRuleContext} from 'antlr4ts';
 
 import {
   AttributeValueContext,
+  DigitsValueContext,
   IncompleteLeftQuotedStringValueContext,
   IncompleteRightQuotedStringValueContext,
   QuotedStringValueContext,
@@ -19,20 +20,22 @@ export const removeQuotesFromString = (value: string) => {
 };
 
 export function getValueNodeValue(ctx: ParserRuleContext | null) {
-  switch (ctx?.constructor.name) {
-    case UnquotedStringValueContext.name:
-      return ctx.text;
-    case IncompleteLeftQuotedStringValueContext.name:
-      return ctx.text.slice(1);
-    case IncompleteRightQuotedStringValueContext.name:
-      return ctx.text.slice(0, -1);
-    case QuotedStringValueContext.name:
-      return ctx.text.slice(1, -1);
-    case AttributeValueContext.name:
-      return getValueNodeValue((ctx as AttributeValueContext).value());
-    default:
-      return ctx?.text ?? '';
+  if (ctx instanceof DigitsValueContext || ctx instanceof UnquotedStringValueContext) {
+    return ctx.text;
   }
+  if (ctx instanceof IncompleteLeftQuotedStringValueContext) {
+    return ctx.text.slice(1);
+  }
+  if (ctx instanceof IncompleteRightQuotedStringValueContext) {
+    return ctx.text.slice(0, -1);
+  }
+  if (ctx instanceof QuotedStringValueContext) {
+    return ctx.text.slice(1, -1);
+  }
+  if (ctx instanceof AttributeValueContext) {
+    return getValueNodeValue(ctx.value());
+  }
+  return ctx?.text ?? '';
 }
 
 export function isInsideExpressionlessParenthesizedExpression(
@@ -40,15 +43,16 @@ export function isInsideExpressionlessParenthesizedExpression(
 ) {
   const parent = context?.parent;
   if (parent) {
-    const nodeType = parent.constructor.name;
-    switch (nodeType) {
-      case UnclosedParenthesizedExpressionContext.name:
-      case UnclosedFunctionExpressionContext.name:
-      case UnclosedExpressionlessFunctionExpressionContext.name:
-        return true;
-      default:
-        return isInsideExpressionlessParenthesizedExpression(parent);
+    if (parent instanceof UnclosedParenthesizedExpressionContext) {
+      return true;
     }
+    if (parent instanceof UnclosedFunctionExpressionContext) {
+      return true;
+    }
+    if (parent instanceof UnclosedExpressionlessFunctionExpressionContext) {
+      return true;
+    }
+    return isInsideExpressionlessParenthesizedExpression(parent);
   }
   return false;
 }

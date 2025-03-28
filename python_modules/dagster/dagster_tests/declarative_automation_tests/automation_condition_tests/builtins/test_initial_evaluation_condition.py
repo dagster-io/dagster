@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from typing import Optional
 
 import dagster as dg
+import pytest
 from dagster._core.definitions.declarative_automation.automation_condition_tester import (
     EvaluateAutomationConditionsResult,
 )
@@ -68,11 +69,14 @@ def _get_initial_evaluation_count(result: EvaluateAutomationConditionsResult) ->
     return initial_evaluation_result.true_subset.size
 
 
-def test_update_on_condition_change() -> None:
+@pytest.mark.parametrize("pd_change", [True, False])
+def test_update_on_condition_change(pd_change: bool) -> None:
     """We should update whenever the condition is changed in any way."""
 
-    def _get_defs(ac: dg.AutomationCondition) -> dg.Definitions:
-        @dg.asset(automation_condition=ac, deps=["up"])
+    def _get_defs(
+        ac: dg.AutomationCondition, pd: Optional[dg.PartitionsDefinition]
+    ) -> dg.Definitions:
+        @dg.asset(automation_condition=ac, deps=["up"], partitions_def=pd)
         def a() -> None: ...
 
         return dg.Definitions(assets=[a])
@@ -82,7 +86,7 @@ def test_update_on_condition_change() -> None:
 
     # initial evaluation
     base_result = dg.evaluate_automation_conditions(
-        defs=_get_defs(base_condition), instance=instance
+        defs=_get_defs(base_condition, None), instance=instance
     )
     assert _get_initial_evaluation_count(base_result) == 1
 
@@ -100,18 +104,19 @@ def test_update_on_condition_change() -> None:
         base_condition.since(base_condition),
         dg.AutomationCondition.any_deps_match(base_condition),
     ]:
+        new_pd = dg.StaticPartitionsDefinition(["some_partition"]) if pd_change else None
         # first tick, should recognize the change
         result = dg.evaluate_automation_conditions(
             # note: doing relative to the base result cursor
-            defs=_get_defs(condition),
+            defs=_get_defs(condition, new_pd),
             instance=instance,
             cursor=base_result.cursor,
         )
-        assert _get_initial_evaluation_count(result) == 1
+        assert _get_initial_evaluation_count(result) == (1 if pd_change else 0)
 
         # second tick, new normal
         result = dg.evaluate_automation_conditions(
-            defs=_get_defs(condition), instance=instance, cursor=result.cursor
+            defs=_get_defs(condition, new_pd), instance=instance, cursor=result.cursor
         )
         assert _get_initial_evaluation_count(result) == 0
 

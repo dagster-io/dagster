@@ -5,6 +5,7 @@ in the user_context module.
 """
 
 from abc import ABC, abstractmethod
+from asyncio import AbstractEventLoop
 from collections.abc import Iterable, Mapping
 from functools import cached_property
 from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
@@ -302,12 +303,14 @@ class PlanExecutionContext(IPlanContext):
         plan_data: PlanData,
         execution_data: ExecutionData,
         log_manager: DagsterLogManager,
-        output_capture: Optional[dict[StepOutputHandle, Any]] = None,
+        output_capture: Optional[dict[StepOutputHandle, Any]],
+        event_loop: AbstractEventLoop,
     ):
         self._plan_data = plan_data
         self._execution_data = execution_data
         self._log_manager = log_manager
         self._output_capture = output_capture
+        self._event_loop = event_loop
 
     @property
     def plan_data(self) -> PlanData:
@@ -316,6 +319,10 @@ class PlanExecutionContext(IPlanContext):
     @property
     def output_capture(self) -> Optional[dict[StepOutputHandle, Any]]:
         return self._output_capture
+
+    @property
+    def event_loop(self) -> AbstractEventLoop:
+        return self._event_loop
 
     def for_step(
         self,
@@ -333,6 +340,7 @@ class PlanExecutionContext(IPlanContext):
             step=step,
             output_capture=self.output_capture,
             known_state=known_state,
+            event_loop=self.event_loop,
         )
 
     @property
@@ -408,6 +416,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         step: ExecutionStep,
         output_capture: Optional[dict[StepOutputHandle, Any]],
         known_state: Optional["KnownExecutionState"],
+        event_loop,
     ):
         from dagster._core.execution.resources_init import get_required_resource_keys_for_step
 
@@ -416,6 +425,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             execution_data=execution_data,
             log_manager=log_manager,
             output_capture=output_capture,
+            event_loop=event_loop,
         )
         self._step = step
         self._required_resource_keys = get_required_resource_keys_for_step(
@@ -1263,6 +1273,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             step=self.step,
             output_capture=self._output_capture,
             known_state=self._known_state,
+            event_loop=None,
         )
 
     def output_observes_source_asset(self, output_name: str) -> bool:

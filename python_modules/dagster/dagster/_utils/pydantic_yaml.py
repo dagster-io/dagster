@@ -2,16 +2,16 @@ import contextlib
 from collections.abc import Generator, Sequence
 from typing import Optional, TypeVar
 
-from pydantic import BaseModel, ValidationError, parse_obj_as
-
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._utils.source_position import (
+from dagster_shared.yaml_utils import parse_yaml_with_source_positions
+from dagster_shared.yaml_utils.source_position import (
     KeyPath,
     SourcePositionTree,
     ValueAndSourcePositionTree,
     populate_source_position_and_key_paths,
 )
-from dagster._utils.yaml_utils import parse_yaml_with_source_positions
+from pydantic import BaseModel, ValidationError, parse_obj_as
+
+from dagster._core.errors import DagsterInvariantViolationError
 
 T = TypeVar("T", bound=BaseModel)
 

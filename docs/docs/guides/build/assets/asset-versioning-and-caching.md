@@ -1,8 +1,9 @@
 ---
 title: "Asset versioning and caching"
+sidebar_position: 1300
 ---
 
-import Beta from '../../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
@@ -44,7 +45,7 @@ dagster dev
 
 Navigate to the **Asset catalog** and click **Materialize** to materialize the asset.
 
-Next, look at the entry for the materialization. Take note of the two hashes in the **System tags** section of the materialization details - `code_version` and `data_version`:
+Next, look at the entry for the materialization under the "Events" tab in the Asset Catalog. Take note of the two hashes in the **Tags** section of the materialization details - `code_version` and `data_version`:
 
 ![Simple asset data version](/images/guides/build/assets/asset-versioning-and-caching/simple-asset-in-catalog.png)
 
@@ -70,9 +71,17 @@ Click **Reload definitions** to pick up the changes.
 
 ![Simple asset data version with code version](/images/guides/build/assets/asset-versioning-and-caching/simple-asset-with-code-version-in-asset-graph.png)
 
-The asset now has a label to indicate that its code version has changed since it was last materialized. We can see this in both the asset graph and the sidebar, where details about the last materialization of a selected node are visible. You can see the code version associated with the last materialization of `versioned_number` is `v1`, but its current code version is `v2`. This is also explained in the tooltip that appears if you hover over the `(i)` icon on the indicator tag.
+The asset now has an "Unsynced" label to indicate that its code version has changed since it was last materialized. We can see this in both the asset graph and the sidebar, where details about the last materialization of a selected node are visible. You can see the code version associated with the last materialization of `versioned_number` is `v1`, but its current code version is `v2`. This is also explained in the tooltip that appears if you hover over the `(i)` icon on the indicator tag.
 
-The `versioned_number` asset must be materialized again to become up-to-date. Click the toggle to the right side of the **Materialize** button to display the **Propagate changes** option. Clicking this will propagate the changed code version by materializing `versioned_number`. This will update the latest materialization `code_version` shown in the sidebar to `v2` and bring the asset up-to-date.
+:::note
+The "Unsynced" label can appear for three reasons:
+
+- The code version of the asset is changed.
+- The dependencies of the asset have changed (a dependency was added or removed).
+- The data version of a parent asset has changed due to a new materialization. Note that if you are not using code versions, all new materialization of a dependency will change the data version. The UI will in this case report a "new materialization" rather than a "new data version".
+:::
+
+The `versioned_number` asset must be materialized again to become up-to-date. Click the toggle to the right side of the **Materialize** button to display the **Materialize unsynced** option. Confirm the materialization of `versioned_number`. This will update the latest materialization `code_version` shown in the sidebar to `v2` and bring the asset up-to-date.
 
 ## Step two: data versions with dependencies
 
@@ -83,21 +92,19 @@ Tracking changes becomes more powerful when there are dependencies in play. Let'
 
 In the Dagster UI, click **Reload definitions**. The `multiplied_number` asset will be marked as **Never materialized**.
 
-Next, click the toggle to the right side of the **Materialize** button to display the **Propagate changes** option. As the **Materialize** button ignores versioning, we need this option to ensure the `multiplied_number` asset is properly materialized.
+Once again, click the toggle to the right side of the **Materialize** button to display the **Materialize unsynced** option. This will also provide the option to materialize "Never materialized" assets. This time, you will not see `versioned_number` as an option, because the system knows that `versioned_number` is up to date. Confirm the materialization of `multiplied_number`.
 
-In the created run, only the step associated with `multiplied_number` is run. The system knows that `versioned_number` is up to date and therefore can safely skip that computation. You can see this on the details page for the run:
-
-![Materialize stale event log](/images/guides/build/assets/asset-versioning-and-caching/materialize-stale-event-log.png)
+![Run event log](/images/guides/build/assets/asset-versioning-and-caching/materialize-stale-event-log.png)
 
 Now, let's update the `versioned_number` asset. Specifically, we'll change its return value and code version:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/dependencies_code_version_only_v2.py" />
 
-As before, this will cause `versioned_number` to get a label indicating that its code version has changed since its latest materialization. But since `multiplied_number` depends on `versioned_number`, it must be recomputed as well and so gets a label indicating that the code version of an upstream asset has changed. If you hover over the **Upstream code version** tag on `multiplied_number`, you will see the upstream asset whose code version has changed:
+As before, this will cause `versioned_number` to get an "Unsynced" label indicating that its code version has changed since its latest materialization. You might think that, since `multiplied_number` depends on `versioned_number`, it would also appear to be "Unsynced". However, "Unsynced" status is _not_ transitive in Dagster. `multiplied_number` will only appear to be "Unsynced" if its last materialization is against an outdated version of `versioned_number`. Materialize `versioned_number` and you will see that `multiplied_number` then becomes "Unsynced", with a reported reason of "Upstream data version change".
 
 ![Dependencies code version only](/images/guides/build/assets/asset-versioning-and-caching/dependencies-code-version-only.png)
 
-Click **Propagate changes** to get both assets up-to-date again.
+Materialize `multiplied_number` to get both assets up-to-date again.
 
 ## Step three: Computing your own data versions
 
@@ -109,7 +116,7 @@ Dagster accommodates these and similar scenarios by allowing user code to supply
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/manual_data_versions_1.py" />
 
-Both assets get labels to indicate that they're impacted by the new code version of `versioned_number`. Let's re-materialize them both to make them fresh. Notice the `DataVersion` of `versioned_number` is now `20`:
+If you reload definitions, as before, you will see `versioned_number` gets an "Unsynced" label to indicate the latest materialization is out of sync with its code version. We also know that if we materialize `versioned_number`, `multiplied_number` will become unsynced. Let's re-materialize them both in one run to avoid that intermediate state. Notice the `DataVersion` of `versioned_number` is now `20`:
 
 ![Manual data versions 1](/images/guides/build/assets/asset-versioning-and-caching/manual-data-versions-1.png)
 
@@ -117,13 +124,13 @@ Let's simulate a cosmetic refactor by updating `versioned_number` again, but wit
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/asset_versioning_and_caching/manual_data_versions_2.py" />
 
-Once again, both assets have labels to indicate the change in the code version. Dagster doesn't know that `v5` of the versioned number will return the same value as `v4`, as it only knows about code versions and data versions.
+Once again, `versioned_asset` will have an "Unsynced" label to indicate the change in the code version.
 
 Let's see what happens if only `versioned_number` is materialized. Select it in the asset graph and click **Materialize selected**. The sidebar shows the latest materialization now has a code_version of `v5`, and the data version is again `20`:
 
 ![Manual data versions 2](/images/guides/build/assets/asset-versioning-and-caching/manual-data-versions-2.png)
 
-Notice that `multiplied_number` no longer has a label, even though we didn't materialize it! Here's what happened: the new materialization of `versioned_number` with the explicitly supplied data version supersedes the code version of `versioned_number`. Dagster then compared the data version of `versioned_number` last used to materialize `multiplied_number` to the current data version of `versioned_number`. Since this comparison shows that the data version of `versioned_number` hasn't changed, Dagster knows that the change to the code version of `versioned_number` doesn't affect `multiplied_number`.
+Notice that, unlike the last time we materialized `versioned_number`, `multiplied_number` does not have an "Unsynced" label! Here's what happened: the new materialization of `versioned_number` with the explicitly supplied data version supersedes the code version of `versioned_number`. Dagster then compared the data version of `versioned_number` last used to materialize `multiplied_number` to the current data version of `versioned_number`. Since this comparison shows that the data version of `versioned_number` hasn't changed, Dagster knows that the change to the code version of `versioned_number` doesn't affect `multiplied_number`.
 
 If `versioned_number` had used a Dagster-generated data version, the data version of `versioned_number` would have changed due to its updated code version despite the fact that the returned value did not change. `multiplied_number` would have a label indicating that an upstream data version had changed.
 

@@ -3,25 +3,26 @@ import signal
 import subprocess
 import sys
 import time
-from collections.abc import Iterator, Mapping, Sequence
-from contextlib import contextmanager
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 from typing import Optional, TypeVar
 
 import click
-import psutil
-import yaml
 
+from dagster_dg.check import check_yaml as check_yaml_fn
 from dagster_dg.cli.shared_options import dg_global_options
+from dagster_dg.cli.utils import create_dagster_cli_cmd
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.error import DgError
-from dagster_dg.utils import DgClickCommand, exit_with_error, pushd
+from dagster_dg.utils import DgClickCommand, pushd
+from dagster_dg.utils.cli import format_forwarded_option
+from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 T = TypeVar("T")
 
 _CHECK_SUBPROCESS_INTERVAL = 5
+_SUBPROCESS_WAIT_TIMEOUT = 60
 
 
 @click.command(name="dev", cls=DgClickCommand)
@@ -70,13 +71,13 @@ _CHECK_SUBPROCESS_INTERVAL = 5
     required=False,
 )
 @click.option(
-    "--verbose",
-    "-v",
+    "--check-yaml/--no-check-yaml",
     flag_value=True,
-    default=False,
-    help="Show verbose stack traces, including system frames in stack traces.",
+    default=True,
+    help="Whether to schema-check component.yaml files for the project before starting the dev server.",
 )
 @dg_global_options
+@cli_telemetry_wrapper
 def dev_command(
     code_server_log_level: str,
     log_level: str,
@@ -84,7 +85,7 @@ def dev_command(
     port: Optional[int],
     host: Optional[str],
     live_data_poll_rate: int,
-    verbose: bool,
+    check_yaml: bool,
     **global_options: Mapping[str, object],
 ) -> None:
     """Start a local instance of Dagster.
@@ -102,44 +103,42 @@ def dev_command(
         *format_forwarded_option("--port", port),
         *format_forwarded_option("--host", host),
         *format_forwarded_option("--live-data-poll-rate", live_data_poll_rate),
-        *(["--verbose"] if verbose else []),
+        *(["--verbose"] if dg_context.config.cli.verbose else []),
     ]
 
     # In a project context, we can just run `dagster dev` directly, using `dagster` from the
-    # project's environment.
-    temp_workspace_file_cm = temp_workspace_file(dg_context)
-    if dg_context.is_project:
-        cmd_location = dg_context.get_executable("dagster")
-        if dg_context.use_dg_managed_environment:
-            cmd = ["uv", "run", "dagster", "dev", *forward_options]
-        else:
-            cmd = [cmd_location, "dev", *forward_options]
-
+    # code location's environment.
     # In a workspace context, dg dev will construct a temporary
-    # workspace file that points at all defined projects and invoke:
-    #
+    # workspace file that points at all defined code locations and invoke:
     #     uv tool run --with dagster-webserver dagster dev
-    #
-    # The `--with dagster-webserver` is necessary here to ensure that dagster-webserver is
-    # installed in the isolated environment that `uv` will install `dagster` in.
-    # `dagster-webserver` is not a dependency of `dagster` but is required to run the `dev`
-    # command.
-    elif dg_context.is_workspace:
-        cmd = [
-            "uv",
-            "tool",
-            "run",
-            "--with",
-            "dagster-webserver",
-            "dagster",
-            "dev",
-            *forward_options,
-        ]
-        cmd_location = "ephemeral dagster dev"
+    if dg_context.use_dg_managed_environment:
+        run_cmds = ["uv", "run", "dagster", "dev"]
+    elif dg_context.is_project:
+        run_cmds = ["dagster", "dev"]
     else:
-        exit_with_error("This command must be run inside a project or workspace directory.")
+        run_cmds = ["uv", "tool", "run", "--with", "dagster-webserver", "dagster", "dev"]
 
-    with pushd(dg_context.root_path), temp_workspace_file_cm as workspace_file:
+    with (
+        pushd(dg_context.root_path),
+        create_dagster_cli_cmd(dg_context, forward_options, run_cmds=run_cmds) as cmd_object,
+    ):
+        if check_yaml:
+            overall_check_result = True
+            project_dirs = (
+                [project.path for project in dg_context.project_specs]
+                if dg_context.is_workspace
+                else [dg_context.root_path]
+            )
+            for project_dir in project_dirs:
+                check_result = check_yaml_fn(
+                    dg_context.for_project_environment(project_dir, cli_config),
+                    [],
+                )
+                overall_check_result = overall_check_result and check_result
+            if not overall_check_result:
+                click.get_current_context().exit(1)
+
+        cmd_location, cmd, workspace_file = cmd_object
         print(f"Using {cmd_location}")  # noqa: T201
         if workspace_file:  # only non-None deployment context
             cmd.extend(["--workspace", workspace_file])
@@ -156,57 +155,13 @@ def dev_command(
                 "Received keyboard interrupt. Shutting down dagster-dev process.", fg="yellow"
             )
         finally:
-            # For reasons not fully understood, directly interrupting the `uv run` process does not
-            # work as intended. The interrupt signal is not correctly propagated to the `dagster
-            # dev` process, and so that process never shuts down. Therefore, we send the signal
-            # directly to the `dagster dev` process (the only child of the `uv run` process). This
-            # will cause `dagster dev` to terminate which in turn will cause `uv run` to terminate.
-            dagster_dev_pid = _get_child_process_pid(uv_run_dagster_dev_process)
-            _interrupt_subprocess(dagster_dev_pid)
+            _interrupt_subprocess(uv_run_dagster_dev_process.pid)
 
             try:
-                uv_run_dagster_dev_process.wait(timeout=10)
+                uv_run_dagster_dev_process.wait(timeout=_SUBPROCESS_WAIT_TIMEOUT)
             except subprocess.TimeoutExpired:
                 click.secho("`dagster dev` did not terminate in time. Killing it.")
                 uv_run_dagster_dev_process.kill()
-
-
-@contextmanager
-def temp_workspace_file(dg_context: DgContext) -> Iterator[str]:
-    with NamedTemporaryFile(mode="w+", delete=True) as temp_workspace_file:
-        entries = []
-        if dg_context.is_project:
-            entries.append(_workspace_entry_for_project(dg_context))
-        elif dg_context.is_workspace:
-            for project_name in dg_context.get_project_names():
-                project_root = dg_context.get_project_path(project_name)
-                project_context: DgContext = dg_context.with_root_path(project_root)
-                entries.append(_workspace_entry_for_project(project_context))
-        yaml.dump({"load_from": entries}, temp_workspace_file)
-        temp_workspace_file.flush()
-        yield temp_workspace_file.name
-
-
-def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, str]]:
-    entry = {
-        "working_directory": str(dg_context.root_path),
-        "module_name": str(dg_context.code_location_target_module_name),
-        "location_name": dg_context.code_location_name,
-    }
-    if dg_context.use_dg_managed_environment:
-        entry["executable_path"] = str(dg_context.project_python_executable)
-    return {"python_module": entry}
-
-
-def format_forwarded_option(option: str, value: object) -> list[str]:
-    return [] if value is None else [option, str(value)]
-
-
-def _get_child_process_pid(proc: "subprocess.Popen") -> int:
-    children = psutil.Process(proc.pid).children(recursive=False)
-    if len(children) != 1:
-        raise ValueError(f"Expected exactly one child process, but found {len(children)}")
-    return children[0].pid
 
 
 # Windows subprocess termination utilities. See here for why we send CTRL_BREAK_EVENT on Windows:
@@ -218,7 +173,8 @@ def _interrupt_subprocess(pid: int) -> None:
     if sys.platform == "win32":
         os.kill(pid, signal.CTRL_BREAK_EVENT)
     else:
-        os.kill(pid, signal.SIGINT)
+        # uv tool run appears to forward SIGTERM but not SIGINT - see https://github.com/astral-sh/uv/issues/12108
+        os.kill(pid, signal.SIGTERM)
 
 
 def _open_subprocess(command: Sequence[str]) -> "subprocess.Popen":

@@ -46,11 +46,11 @@ class TestInMemoryEventLogStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self, instance):
+    def event_log_storage(self, instance):  # pyright: ignore[reportIncompatibleMethodOverride]
         yield instance.event_log_storage
 
     @pytest.fixture(name="instance", scope="function")
-    def instance(self):
+    def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with DagsterInstance.ephemeral() as the_instance:
             yield the_instance
 
@@ -66,18 +66,18 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(name="instance", scope="function")
-    def instance(self):
+    def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
             with instance_for_test(temp_dir=tmpdir_path) as instance:
                 yield instance
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self, instance):
+    def event_log_storage(self, instance):  # pyright: ignore[reportIncompatibleMethodOverride]
         event_log_storage = instance.event_log_storage
         assert isinstance(event_log_storage, SqliteEventLogStorage)
         yield instance.event_log_storage
 
-    def supports_multiple_event_type_queries(self):
+    def supports_multiple_event_type_queries(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return False
 
     def test_filesystem_event_log_storage_run_corrupted(self, storage):
@@ -152,7 +152,7 @@ class TestConsolidatedSqliteEventLogStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(name="instance", scope="function")
-    def instance(self):
+    def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
             with instance_for_test(
                 temp_dir=tmpdir_path,
@@ -167,7 +167,7 @@ class TestConsolidatedSqliteEventLogStorage(TestEventLogStorage):
                 yield instance
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self, instance):
+    def event_log_storage(self, instance):  # pyright: ignore[reportIncompatibleMethodOverride]
         event_log_storage = instance.event_log_storage
         assert isinstance(event_log_storage, ConsolidatedSqliteEventLogStorage)
         yield event_log_storage
@@ -177,13 +177,13 @@ class TestLegacyStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(name="instance", scope="function")
-    def instance(self):
+    def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
             with instance_for_test(temp_dir=tmpdir_path) as instance:
                 yield instance
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self, instance):
+    def event_log_storage(self, instance):  # pyright: ignore[reportIncompatibleMethodOverride]
         storage = instance.get_ref().storage
         assert isinstance(storage, DagsterSqliteStorage)
         legacy_storage = LegacyEventLogStorage(storage)
@@ -196,7 +196,7 @@ class TestLegacyStorage(TestEventLogStorage):
     def is_sqlite(self, storage):
         return True
 
-    def supports_multiple_event_type_queries(self):
+    def supports_multiple_event_type_queries(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         return False
 
     @pytest.mark.parametrize("dagster_event_type", ["dummy"])

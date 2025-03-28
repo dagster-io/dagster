@@ -1,8 +1,7 @@
 import os
 
 import yaml
-
-from dagster._core.telemetry import get_or_create_dir_from_dagster_home
+from dagster_shared.telemetry import get_or_create_dir_from_dagster_home
 
 NUX_FILE_STR = "nux.yaml"
 

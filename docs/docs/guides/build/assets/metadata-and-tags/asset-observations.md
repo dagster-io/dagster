@@ -1,7 +1,7 @@
 ---
 title: "Asset observations"
 description: Dagster provides functionality to record metadata about assets.
-sidebar_position: 500
+sidebar_position: 5000
 ---
 
 An asset observation is an event that records metadata about a given asset. Unlike asset materializations, asset observations do not signify that an asset has been mutated.

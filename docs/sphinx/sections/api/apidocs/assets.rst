@@ -96,6 +96,8 @@ Refer to the `Declarative Automation <https://docs.dagster.io/guides/automate/de
 
 .. autoclass:: AutomationCondition
 
+.. autoclass:: AutomationResult
+
 .. autoclass:: AutomationConditionSensorDefinition
 
 Asset values

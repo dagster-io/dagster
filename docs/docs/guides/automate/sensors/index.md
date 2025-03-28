@@ -1,18 +1,20 @@
 ---
-title: "Sensors"
+title: 'Sensors'
 sidebar_position: 30
 ---
 
 Sensors enable you to take action in response to events that occur either internally within Dagster or in external systems. They check for events at regular intervals and either perform an action or provide an explanation for why the action was skipped.
 
 Examples of events include:
+
 - a run completes in Dagster
 - a run fails in Dagster
-- a job materializes a specific asset 
+- a job materializes a specific asset
 - a file appears in an s3 bucket
 - an external system is down
 
 Examples of actions include:
+
 - launching a run
 - sending a Slack message
 - inserting a row into a database
@@ -24,12 +26,13 @@ An alternative to polling with sensors is to push events to Dagster using the [D
 :::
 
 <details>
-<summary>Prerequisites</summary>
+  <summary>Prerequisites</summary>
 
 To follow the steps in this guide, you'll need:
 
 - Familiarity with [assets](/guides/build/assets/)
-- Familiarity with [jobs](/guides/build/assets/asset-jobs)
+- Familiarity with [jobs](/guides/build/jobs/)
+
 </details>
 
 ## Basic sensor
@@ -38,10 +41,12 @@ Sensors are defined with the `@sensor` decorator. The following example includes
 
 If the sensor finds new files, it starts a run of `my_job`. If not, it skips the run and logs `No new files found` in the Dagster UI.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/automation/simple-sensor-example.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/automation/simple-sensor-example.py" language="python" />
 
 :::tip
 Unless a sensor has a `default_status` of `DefaultSensorStatus.RUNNING`, it won't be enabled when first deployed to a Dagster instance. To find and enable the sensor, click **Automation > Sensors** in the Dagster UI.
+
+To explicitly disable a sensor, you can use `DefaultSensorStatus.STOPPED`.
 :::
 
 ## Customizing intervals between evaluations
@@ -75,7 +80,7 @@ When dealing with a large number of events, you may want to implement a cursor t
 
 The following example demonstrates how you might use a cursor to only create `RunRequests` for files in a directory that have been updated since the last time the sensor ran.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/automation/sensor-cursor.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/automation/sensor-cursor.py" language="python" />
 
 For sensors that consume multiple event streams, you may need to serialize and deserialize a more complex data structure in and out of the cursor string to keep track of the sensor's progress over the multiple streams.
 

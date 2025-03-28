@@ -1,5 +1,7 @@
+import contextlib
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import traceback
@@ -11,24 +13,49 @@ from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import Any, Optional, Union
 
-import tomlkit
+import click
 from click.testing import CliRunner, Result
 from dagster_dg.cli import (
     DG_CLI_MAX_OUTPUT_WIDTH,
+    cli,
     cli as dg_cli,
 )
 from dagster_dg.utils import (
-    delete_toml_value,
+    delete_toml_node,
     discover_git_root,
     get_venv_executable,
     install_to_venv,
     is_windows,
+    modify_toml,
     pushd,
-    set_toml_value,
+    set_toml_node,
 )
 from typing_extensions import Self
 
 STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
+
+
+def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
+    """Note that this does not pick up:
+    - all `scaffold` subcommands, because these are dynamically generated and vary across
+      environment.
+    - special --ACTION options with callbacks (e.g. `--rebuild-component-registry`).
+    """
+    commands: dict[tuple[str, ...], click.Command] = {}
+
+    def _crawl(command: click.Command, path: tuple[str, ...]):
+        assert command.name
+        new_path = (*path, command.name)
+        if isinstance(command, click.Group):
+            for subcommand in command.commands.values():
+                assert subcommand.name
+                _crawl(subcommand, new_path)
+        else:
+            commands[new_path] = command
+
+    _crawl(cli, tuple())
+
+    return commands
 
 
 def _install_libraries_to_venv(venv_path: Path, libraries_rel_paths: Sequence[str]) -> None:
@@ -46,7 +73,35 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
         subprocess.run(["uv", "venv", ".venv"], check=True)
         venv_path = Path.cwd() / ".venv"
         _install_libraries_to_venv(
-            venv_path, ["dagster", "libraries/dagster-components", "dagster-pipes", "dagster-test"]
+            venv_path,
+            [
+                "dagster",
+                "libraries/dagster-components",
+                "dagster-pipes",
+                "libraries/dagster-shared",
+                "dagster-test",
+            ],
+        )
+
+        venv_exec_path = get_venv_executable(venv_path).parent
+        assert (venv_exec_path / "python").exists() or (venv_exec_path / "python.exe").exists()
+        with modify_environment_variable(
+            "PATH", os.pathsep.join([str(venv_exec_path), os.environ["PATH"]])
+        ):
+            yield venv_path
+
+
+@contextmanager
+def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
+    with runner.isolated_filesystem():
+        subprocess.run(["uv", "venv", ".venv"], check=True)
+        venv_path = Path.cwd() / ".venv"
+        _install_libraries_to_venv(
+            venv_path,
+            [
+                "libraries/dagster-dg",
+                "libraries/dagster-shared",
+            ],
         )
 
         venv_exec_path = get_venv_executable(venv_path).parent
@@ -62,6 +117,7 @@ def isolated_example_workspace(
     runner: Union[CliRunner, "ProxyRunner"],
     project_name: Optional[str] = None,
     create_venv: bool = False,
+    use_editable_dagster: bool = True,
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
@@ -71,19 +127,40 @@ def isolated_example_workspace(
         clear_module_from_cache(project_name) if project_name else nullcontext(),
     ):
         result = runner.invoke(
-            "init",
-            "--use-editable-components-package-only",
-            dagster_git_repo_dir,
-            input=f"\n{project_name or ''}\n",
+            "scaffold",
+            "workspace",
+            "dagster-workspace",
+            *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
         )
         assert_runner_result(result)
         with pushd("dagster-workspace"):
+            if project_name:
+                result = runner.invoke(
+                    "scaffold",
+                    "project",
+                    "projects/" + project_name,
+                    *(
+                        ["--use-editable-dagster", dagster_git_repo_dir]
+                        if use_editable_dagster
+                        else []
+                    ),
+                )
+                assert_runner_result(result)
+
             # Create a venv capable of running dagster dev
             if create_venv:
                 subprocess.run(["uv", "venv", ".venv"], check=True)
                 venv_path = Path.cwd() / ".venv"
                 _install_libraries_to_venv(
-                    venv_path, ["dagster", "dagster-webserver", "dagster-graphql", "dagster-test"]
+                    venv_path,
+                    [
+                        "dagster",
+                        "dagster-webserver",
+                        "dagster-graphql",
+                        "dagster-test",
+                        "dagster-pipes",
+                        "libraries/dagster-shared",
+                    ],
                 )
             yield
 
@@ -108,22 +185,23 @@ def isolated_example_project_foo_bar(
     """
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    project_path = Path("foo-bar")
     if in_workspace:
         fs_context = isolated_example_workspace(runner)
-        project_path = Path("projects/foo-bar")
     else:
         fs_context = runner.isolated_filesystem()
-        project_path = Path("foo-bar")
     with fs_context:
-        result = runner.invoke(
+        args = [
             "scaffold",
             "project",
-            "--use-editable-components-package-only",
+            "--use-editable-dagster",
             dagster_git_repo_dir,
-            *(["--no-use-dg-managed-environment"] if skip_venv else []),
+            *(["--skip-venv"] if skip_venv else []),
             *(["--no-populate-cache"] if not populate_cache else []),
             "foo-bar",
-        )
+        ]
+        result = runner.invoke(*args)
+
         assert_runner_result(result)
         with clear_module_from_cache("foo_bar"), pushd(project_path):
             # _install_libraries_to_venv(Path(".venv"), ["dagster-test"])
@@ -154,7 +232,7 @@ def isolated_example_component_library_foo_bar(
         result = runner.invoke(
             "scaffold",
             "project",
-            "--use-editable-components-package-only",
+            "--use-editable-dagster",
             dagster_git_repo_dir,
             "--skip-venv",
             "foo-bar",
@@ -164,15 +242,15 @@ def isolated_example_component_library_foo_bar(
             shutil.rmtree(Path("foo_bar/defs"))
 
             # Make it not a project
-            with modify_pyproject_toml() as toml:
-                delete_toml_value(toml, ("tool", "dg"))
+            with modify_toml(Path("pyproject.toml")) as toml:
+                delete_toml_node(toml, ("tool", "dg"))
 
                 # We need to set any alternative lib package name _before_ we install into the
                 # environment, since it affects entry points which are set at install time.
                 if lib_module_name:
-                    set_toml_value(
+                    set_toml_node(
                         toml,
-                        ("project", "entry-points", "dagster.components", "foo_bar"),
+                        ("project", "entry-points", "dagster_dg.library", "foo_bar"),
                         lib_module_name,
                     )
                     Path(*lib_module_name.split(".")).mkdir(exist_ok=True)
@@ -357,7 +435,6 @@ class ProxyRunner:
         verbose: bool = False,
         disable_cache: bool = False,
         console_width: int = DG_CLI_MAX_OUTPUT_WIDTH,
-        require_local_venv: bool = True,
     ) -> Iterator[Self]:
         # We set the `COLUMNS` environment variable because this determines the width of output from
         # `rich`, which we use for generating tables etc.
@@ -372,17 +449,16 @@ class ProxyRunner:
                 "--cache-dir",
                 str(cache_dir),
                 *(["--verbose"] if verbose else []),
-                *(["--no-require-local-venv"] if not require_local_venv else []),
                 *(["--disable-cache"] if disable_cache else []),
             ]
             yield cls(CliRunner(), append_args=append_opts, console_width=console_width)
 
     def invoke(self, *args: str, **invoke_kwargs: Any) -> Result:
-        # We need to find the right spot to inject global options. For the `dg scaffold component`
+        # We need to find the right spot to inject global options. For the `dg scaffold`
         # command, we need to inject the global options before the final subcommand. For everything
         # else they can be appended at the end of the options.
-        if args[:2] == ("scaffold", "component"):
-            index = 2
+        if args[0] == "scaffold":
+            index = 1
         elif "--help" in args:
             index = args.index("--help")
         elif "--" in args:
@@ -431,10 +507,34 @@ def print_exception_info(
     print(f"{exc_type.__name__}: {exc_value}")  # noqa: T201
 
 
-@contextmanager
-def modify_pyproject_toml() -> Iterator[tomlkit.TOMLDocument]:
-    with open("pyproject.toml") as f:
-        toml = tomlkit.parse(f.read())
-    yield toml
-    with open("pyproject.toml", "w") as f:
-        f.write(tomlkit.dumps(toml))
+COMPONENT_INTEGRATION_TEST_DIR = (
+    Path(__file__).parent.parent.parent
+    / "dagster-components"
+    / "dagster_components_tests"
+    / "integration_tests"
+    / "integration_test_defs"
+)
+
+
+@contextlib.contextmanager
+def create_project_from_components(
+    runner: ProxyRunner, *src_paths: str, local_component_defn_to_inject: Optional[Path] = None
+) -> Iterator[Path]:
+    """Scaffolds a project with the given components in a temporary directory,
+    injecting the provided local component defn into each component's __init__.py.
+    """
+    origin_paths = [COMPONENT_INTEGRATION_TEST_DIR / src_path for src_path in src_paths]
+    with isolated_example_project_foo_bar(runner, component_dirs=origin_paths):
+        for src_path in src_paths:
+            components_dir = Path.cwd() / "foo_bar" / "defs" / src_path.split("/")[-1]
+            if local_component_defn_to_inject:
+                shutil.copy(local_component_defn_to_inject, components_dir / "__init__.py")
+
+        yield Path.cwd()
+
+
+def find_free_port() -> int:
+    with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+        s.bind(("", 0))
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return s.getsockname()[1]

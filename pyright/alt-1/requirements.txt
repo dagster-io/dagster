@@ -32,6 +32,7 @@
 -e examples/project_fully_featured[tests]
   -e python_modules/dagster[pyright,test]
   -e python_modules/dagster-pipes
+  -e python_modules/libraries/dagster-shared
   -e python_modules/dagster-webserver
   -e python_modules/dagster-graphql
   -e python_modules/libraries/dagster-aws[stubs]

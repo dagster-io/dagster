@@ -319,7 +319,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             return None
         return self._instance.count_resume_run_attempts(run.run_id)
 
-    def terminate(self, run_id):
+    def terminate(self, run_id):  # pyright: ignore[reportIncompatibleMethodOverride]
         check.str_param(run_id, "run_id")
         run = self._instance.get_run_by_id(run_id)
 

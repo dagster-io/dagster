@@ -182,6 +182,17 @@ PYRIGHT_ENV_ROOT: Final = "pyright"
 DEFAULT_REQUIREMENTS_FILE: Final = "requirements.txt"
 
 
+def get_pyspark_constraints_path():
+    return os.path.abspath(
+        os.path.join(
+            "python_modules",
+            "libraries",
+            "dagster-pyspark",
+            "build-constraints",
+        )
+    )
+
+
 def get_env_path(env: str, rel_path: Optional[str] = None) -> str:
     env_root = os.path.join(PYRIGHT_ENV_ROOT, env)
     return os.path.abspath(os.path.join(env_root, rel_path) if rel_path else env_root)
@@ -312,6 +323,8 @@ def normalize_env(
                         "uv",
                         "pip",
                         "install",
+                        "-b",
+                        get_pyspark_constraints_path(),
                         "--python",
                         python_path,
                         # editable-mode=compat ensures dagster-internal editable installs are done
@@ -425,6 +438,9 @@ def run_pyright(
         result = subprocess.run(shell_cmd, capture_output=True, shell=True, text=True, check=False)
         try:
             json_result = json.loads(result.stdout)
+            from pathlib import Path
+
+            Path(f"/tmp/{env}-pyright.json").write_text(result.stdout)
         except json.JSONDecodeError:
             output = (result.stdout == "" and result.stderr) or result.stdout
             raise Exception(f"Pyright output was not valid JSON. Output was:\n\n{output}")

@@ -1,7 +1,8 @@
 import pickle
 
+import dagster_shared.seven as seven
+
 import dagster._check as check
-import dagster._seven as seven
 from dagster._config import (
     ConfigAnyInstance,
     ConfigBoolInstance,

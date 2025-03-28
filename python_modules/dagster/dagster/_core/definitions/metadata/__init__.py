@@ -3,6 +3,13 @@ from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any, Dict, Generic, List, NamedTuple, Optional, Union, cast  # noqa: F401, UP035
 
+from dagster_shared.serdes.serdes import (
+    FieldSerializer,
+    PackableValue,
+    UnpackContext,
+    WhitelistMap,
+    pack_value,
+)
 from typing_extensions import TypeAlias, TypeVar
 
 import dagster._check as check
@@ -56,13 +63,6 @@ from dagster._core.definitions.metadata.table import (
 )
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    PackableValue,
-    UnpackContext,
-    WhitelistMap,
-    pack_value,
-)
 from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
 ArbitraryMetadataMapping: TypeAlias = Mapping[str, Any]
@@ -191,7 +191,7 @@ class MetadataFieldSerializer(FieldSerializer):
             for k, v in metadata_dict.items()
         ]
 
-    def unpack(
+    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         metadata_entries: list["MetadataEntry"],
         whitelist_map: WhitelistMap,

@@ -311,25 +311,25 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
         class CustomDagsterDbtTranslator(DagsterDbtTranslator):
             @classmethod
-            def get_asset_key(cls, dbt_resource_props):
+            def get_asset_key(cls, dbt_resource_props):  # pyright: ignore[reportIncompatibleMethodOverride]
                 return self._node_info_to_asset_key(dbt_resource_props)
 
             @classmethod
-            def get_description(cls, dbt_resource_props):
+            def get_description(cls, dbt_resource_props):  # pyright: ignore[reportIncompatibleMethodOverride]
                 # We shouldn't display the raw sql. Instead, inspect if dbt docs were generated,
                 # and attach metadata to link to the docs.
                 return default_description_fn(dbt_resource_props, display_raw_sql=False)
 
             @classmethod
-            def get_group_name(cls, dbt_resource_props):
+            def get_group_name(cls, dbt_resource_props):  # pyright: ignore[reportIncompatibleMethodOverride]
                 return self._node_info_to_group_fn(dbt_resource_props)
 
             @classmethod
-            def get_freshness_policy(cls, dbt_resource_props):
+            def get_freshness_policy(cls, dbt_resource_props):  # pyright: ignore[reportIncompatibleMethodOverride]
                 return self._node_info_to_freshness_policy_fn(dbt_resource_props)
 
             @classmethod
-            def get_auto_materialize_policy(cls, dbt_resource_props):
+            def get_auto_materialize_policy(cls, dbt_resource_props):  # pyright: ignore[reportIncompatibleMethodOverride]
                 return self._node_info_to_auto_materialize_policy_fn(dbt_resource_props)
 
         # generate specs for each executed node

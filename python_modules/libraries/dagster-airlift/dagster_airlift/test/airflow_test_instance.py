@@ -125,7 +125,7 @@ class AirflowInstanceFake(AirflowInstance):
             )
         )
 
-    def get_task_info(self, dag_id, task_id) -> TaskInfo:
+    def get_task_info(self, dag_id, task_id) -> TaskInfo:  # pyright: ignore[reportIncompatibleMethodOverride]
         if (dag_id, task_id) not in self._task_infos_by_dag_and_task_id:
             raise ValueError(f"Task info not found for dag_id {dag_id} and task_id {task_id}")
         return self._task_infos_by_dag_and_task_id[(dag_id, task_id)]

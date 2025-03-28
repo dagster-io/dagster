@@ -3,7 +3,7 @@ from math import isnan
 from typing import Any, cast, no_type_check
 
 import dagster._check as check
-import dagster._seven as seven
+import dagster_shared.seven as seven
 from dagster import (
     BoolMetadataValue,
     DagsterAssetMetadataValue,

@@ -5,12 +5,12 @@ import time
 from contextlib import ExitStack
 
 import pytest
-from dagster._serdes.ipc import (
+from dagster._utils import file_relative_path, process_is_alive, safe_tempfile_path
+from dagster_shared.ipc import (
     interrupt_ipc_subprocess,
     interrupt_ipc_subprocess_pid,
     open_ipc_subprocess,
 )
-from dagster._utils import file_relative_path, process_is_alive, safe_tempfile_path
 
 
 def wait_for_file(path, timeout=5):

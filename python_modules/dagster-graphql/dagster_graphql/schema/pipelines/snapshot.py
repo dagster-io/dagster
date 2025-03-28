@@ -16,7 +16,7 @@ from dagster_graphql.schema.solids import GrapheneSolidContainer
 
 
 class GraphenePipelineSnapshot(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
-    class Meta:
+    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot, GraphenePipelineReference)
         name = "PipelineSnapshot"
 

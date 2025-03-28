@@ -48,7 +48,7 @@ from dagster._daemon.asset_daemon import (
     get_current_evaluation_id,
     set_auto_materialize_paused,
 )
-from dagster._serdes.serdes import DeserializationError, deserialize_value, serialize_value
+from dagster_shared.serdes.serdes import DeserializationError, deserialize_value, serialize_value
 
 from dagster_tests.declarative_automation_tests.scenario_utils.base_scenario import run_request
 from dagster_tests.declarative_automation_tests.scenario_utils.scenario_state import (

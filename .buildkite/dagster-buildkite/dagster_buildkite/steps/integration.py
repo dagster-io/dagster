@@ -204,15 +204,6 @@ def build_azure_live_test_suite_steps() -> List[BuildkiteTopLevelStep]:
     ).build_steps()
 
 
-def build_gcp_live_test_suite_steps() -> List[BuildkiteTopLevelStep]:
-    return PackageSpec(
-        os.path.join("integration_tests", "test_suites", "dagster-gcp-live-tests"),
-        env_vars=[
-            "GCP_LIVE_TEST_CREDENTIALS",
-        ],
-    ).build_steps()
-
-
 def daemon_pytest_extra_cmds(version: AvailablePythonVersion, _):
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,

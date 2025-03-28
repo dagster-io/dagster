@@ -207,7 +207,6 @@ a.pyobject {
     margin-top: 8px;
   }
 
-
   // We want this to only apply to inline code
   :not(pre):not(h2):not(h3):not(h4):not(h5):not(h6) > code {
     background-color: var(--theme-color-background-blue);
@@ -507,7 +506,7 @@ dt {
   box-shadow: 0px 1px 0px var(--theme-color-keyline);
   font-weight: 600;
   font-size: 15px;
-  padding-bottom: 0px;
+  padding-bottom: 2px;
 }
 
 dd {
@@ -674,73 +673,86 @@ div[class^='announcementBar_'] {
   }
 }
 
-
 /* Feedback navigation item */
 .feedback-nav-link {
   color: var(--theme-color-text-light);
   display: block;
   font-weight: 500;
-  padding: 0.5rem .5rem;
+  padding: 0.5rem 0.5rem;
   text-align: center;
   text-decoration: none;
   border: 1px solid var(--theme-color-border-default);
   border-radius: 8px;
   text-decoration: none;
-    transition: all 0.3s ease;
+  transition: all 0.3s ease;
 
   &:hover {
     background-color: var(--theme-color-background-light);
-    color:  var(--theme-color-text-light);
+    color: var(--theme-color-text-light);
     border-color: var(--theme-color-border-hover);
   }
-
 }
 
 /* Markdown Card */
 
-  .card {
-    background-color: var(--theme-color-background-default);
-    border: 1px solid var(--theme-color-keyline) !important;
-    transition: all .3s ease;
+.card {
+  background-color: var(--theme-color-background-default);
+  border: 1px solid var(--theme-color-keyline) !important;
+  transition: all 0.3s ease;
 
-    h2: {
-      font-size: 1.5rem;
-      margin-top: 0;
-      margin-bottom: 0;
-      font-weight: 600;
-      display: none;
-    }
-
-    &:hover {
-      background-color: var(--theme-color-background-light);
-      border: 1px solid var(--theme-color-border-default) !important;
-      transform: translateY(0px);
-    }
+  h2: {
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 0;
+    font-weight: 600;
+    display: none;
   }
 
-  .cli-invocation-example-command{
-    code::before {
-      content: '$ ';
-      color: var(--theme-color-text-cyan);
-      font-weight: 600;
+  &:hover {
+    background-color: var(--theme-color-background-light);
+    border: 1px solid var(--theme-color-border-default) !important;
+    transform: translateY(0px);
+  }
+}
+
+.cli-invocation-example-command {
+  code::before {
+    content: '$ ';
+    color: var(--theme-color-text-cyan);
+    font-weight: 600;
+  }
+  &.cli-invocation-example-command-with-result {
+    code {
+      border-bottom: 1px dashed var(--theme-color-border-default);
     }
-    &.cli-invocation-example-command-with-result {
-      code {
-          border-bottom: 1px dashed var(--theme-color-border-default);
-      }
-      code, div, pre {
-        border-bottom-left-radius: 0 !important;
-        border-bottom-right-radius: 0 !important;
-      }
+    code,
+    div,
+    pre {
+      border-bottom-left-radius: 0 !important;
+      border-bottom-right-radius: 0 !important;
     }
   }
+}
 
-  .cli-invocation-example-result {
-    // Negate the margin from the above code block
-    margin-top: calc(-1 * var(--ifm-leading) + 1px);
+.cli-invocation-example-result {
+  // Negate the margin from the above code block
+  margin-top: calc(-1 * var(--ifm-leading) + 1px);
 
-    code, div, pre {
-      border-top-left-radius: 0 !important;
-      border-top-right-radius: 0 !important;
-    }
+  code,
+  div,
+  pre {
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
   }
+}
+
+// Custom source link from API docs to GitHub
+.source-link {
+  float: right;
+}
+
+// Anchor tags on method signatures and class names in API docs
+dt > a > a.hash-link {
+  // Override the default padding of `hash-link`
+  padding-left: 0 !important;
+}

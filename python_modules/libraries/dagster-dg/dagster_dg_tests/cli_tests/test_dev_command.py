@@ -1,6 +1,4 @@
-import contextlib
 import signal
-import socket
 import subprocess
 import time
 from pathlib import Path
@@ -12,16 +10,22 @@ from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import, 
 from dagster_graphql.client import DagsterGraphQLClient
 
 ensure_dagster_dg_tests_import()
+
+from dagster_components.test.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
+from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd
+
 from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
+    create_project_from_components,
+    find_free_port,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
 )
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_command_workspace_context_success(monkeypatch):
+def test_dev_workspace_context_success(monkeypatch):
     # The command will use `uv tool run dagster dev` to start the webserver if it
     # cannot find a venv with `dagster` and `dagster-webserver` installed. `uv tool run` will
     # pull the `dagster` package from PyPI. To avoid this, we ensure the workspace directory has a
@@ -31,7 +35,7 @@ def test_dev_command_workspace_context_success(monkeypatch):
         result = runner.invoke(
             "scaffold",
             "project",
-            "--use-editable-components-package-only",
+            "--use-editable-dagster",
             dagster_git_repo_dir,
             "project-1",
         )
@@ -39,21 +43,21 @@ def test_dev_command_workspace_context_success(monkeypatch):
         result = runner.invoke(
             "scaffold",
             "project",
-            "--use-editable-components-package-only",
+            "--use-editable-dagster",
             dagster_git_repo_dir,
             "project-2",
         )
         assert_runner_result(result)
-        port = _find_free_port()
+        port = find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
         projects = {"project-1", "project-2"}
         _assert_projects_loaded_and_exit(projects, port, dev_process)
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_command_project_context_success():
+def test_dev_project_context_success():
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
-        port = _find_free_port()
+        port = find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
         _assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)
 
@@ -61,7 +65,7 @@ def test_dev_command_project_context_success():
 @pytest.mark.skipif(
     is_windows() == "Windows", reason="Temporarily skipping (signal issues in CLI).."
 )
-def test_dev_command_has_options_of_dagster_dev():
+def test_dev_has_options_of_dagster_dev():
     from dagster._cli.dev import dev_command as dagster_dev_command
     from dagster_dg.cli import dev_command as dev_command
 
@@ -93,9 +97,9 @@ def test_dev_command_has_options_of_dagster_dev():
 
 # Modify this test with a new option whenever a new forwarded option is added to `dagster-dev`.
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
-def test_dev_command_forwards_options_to_dagster_dev():
+def test_dev_forwards_options_to_dagster_dev():
     with ProxyRunner.test() as runner, isolated_example_workspace(runner, "foo-bar"):
-        port = _find_free_port()
+        port = find_free_port()
         options = [
             "--code-server-log-level",
             "debug",
@@ -111,13 +115,49 @@ def test_dev_command_forwards_options_to_dagster_dev():
             "3000",
         ]
         try:
-            dev_process = _launch_dev_command(options)
-            time.sleep(0.5)
+            dev_process = _launch_dev_command(options + ["--no-check-yaml"])
+            time.sleep(1.5)
             child_process = _get_child_processes(dev_process.pid)[0]
             assert " ".join(options) in " ".join(child_process.cmdline())
         finally:
-            dev_process.terminate()
-            dev_process.communicate()
+            dev_process.terminate()  # pyright: ignore[reportPossiblyUnboundVariable]
+            dev_process.communicate()  # pyright: ignore[reportPossiblyUnboundVariable]
+
+
+def test_implicit_yaml_check_from_dg_dev() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_MISSING_VALUE.component_path,
+            BASIC_INVALID_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+        ) as tmpdir,
+    ):
+        with pushd(str(tmpdir)):
+            result = runner.invoke("dev")
+            assert result.exit_code != 0, str(result.stdout)
+
+            assert BASIC_INVALID_VALUE.check_error_msg and BASIC_MISSING_VALUE.check_error_msg
+            BASIC_INVALID_VALUE.check_error_msg(str(result.stdout))
+            BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
+
+
+def test_implicit_yaml_check_from_dg_dev_workspace() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            BASIC_MISSING_VALUE.component_path,
+            local_component_defn_to_inject=BASIC_MISSING_VALUE.component_type_filepath,
+        ) as tmpdir,
+    ):
+        with pushd(Path(tmpdir).parent):
+            result = runner.invoke("dev")
+            assert result.exit_code != 0, str(result.stdout)
+
+            assert BASIC_MISSING_VALUE.check_error_msg
+            BASIC_MISSING_VALUE.check_error_msg(str(result.stdout))
 
 
 # ########################
@@ -159,13 +199,6 @@ def _assert_no_child_processes_running(child_procs: list[psutil.Process]) -> Non
 def _get_child_processes(pid) -> list[psutil.Process]:
     parent = psutil.Process(pid)
     return parent.children(recursive=True)
-
-
-def _find_free_port() -> int:
-    with contextlib.closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(("", 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
 
 
 def _ping_webserver(port: int) -> None:

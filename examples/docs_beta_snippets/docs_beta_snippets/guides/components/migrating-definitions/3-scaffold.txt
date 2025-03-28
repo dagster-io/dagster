@@ -1,5 +1,0 @@
-dg scaffold component 'dagster_components.dagster.DefinitionsComponent' elt-definitions
-
-Using /.../my-existing-project/.venv/bin/dagster-components
-Creating a Dagster component instance folder at /.../my-existing-project/my_existing_project/defs/elt-definitions.
-Using /.../my-existing-project/.venv/bin/dagster-components

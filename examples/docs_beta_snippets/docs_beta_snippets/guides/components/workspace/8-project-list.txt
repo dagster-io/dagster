@@ -1,4 +1,0 @@
-dg list project
-
-project-1
-project-2

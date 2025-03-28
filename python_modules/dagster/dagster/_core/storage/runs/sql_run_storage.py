@@ -10,6 +10,8 @@ from typing import Any, Callable, ContextManager, NamedTuple, Optional, Union, c
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
+from dagster_shared.serdes import deserialize_values
+from dagster_shared.seven import JSONDecodeError
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
@@ -74,8 +76,6 @@ from dagster._core.storage.tags import (
 )
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._serdes.serdes import deserialize_values
-from dagster._seven import JSONDecodeError
 from dagster._time import datetime_from_timestamp, get_current_datetime, utc_datetime_from_naive
 from dagster._utils import PrintFn
 from dagster._utils.merger import merge_dicts

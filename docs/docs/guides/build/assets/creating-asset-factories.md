@@ -1,6 +1,6 @@
 ---
 title: Creating asset factories
-sidebar_position: 700
+sidebar_position: 500
 ---
 
 Often in data engineering, you'll find yourself needing to create a large number of similar assets. For example:
@@ -38,7 +38,7 @@ Let's imagine a team that often has to perform the same repetitive ETL task: dow
 
 To automate this process, you might define an asset factory in Python like the following:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/asset-factories/python-asset-factory.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/python-asset-factory.py" language="python" />
 
 The asset factory pattern is essentially a function that takes in some configuration and returns `dg.Definitions`.
 
@@ -46,11 +46,11 @@ The asset factory pattern is essentially a function that takes in some configura
 
 Now, the team wants to be able to configure the asset factory using YAML instead of Python, with a file like this:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/asset-factories/etl_jobs.yaml" language="yaml" title="etl_jobs.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/etl_jobs.yaml" language="yaml" title="etl_jobs.yaml" />
 
 To implement this, parse the YAML file and use it to create the S3 resource and ETL jobs:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/asset-factories/simple-yaml-asset-factory.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/simple-yaml-asset-factory.py" language="python" />
 
 ## Improving usability with Pydantic and Jinja
 
@@ -63,11 +63,11 @@ To solve these problems, you can use Pydantic to define a schema for the YAML fi
 
 Here's what the new YAML file might look like. Note how Jinja templating is used to reference environment variables:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/asset-factories/etl_jobs_with_jinja.yaml" language="yaml" title="etl_jobs.yaml" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/etl_jobs_with_jinja.yaml" language="yaml" title="etl_jobs.yaml" />
 
 And the Python implementation:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/asset-factories/advanced-yaml-asset-factory.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/asset-factories/advanced-yaml-asset-factory.py" language="python" />
 
 ## Next steps
 

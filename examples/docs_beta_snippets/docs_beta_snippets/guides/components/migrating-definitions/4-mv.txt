@@ -1,1 +1,0 @@
-mv my_existing_project/elt/* my_existing_project/defs/elt-definitions

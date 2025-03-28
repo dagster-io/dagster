@@ -1,22 +1,30 @@
+import time
+from collections.abc import Set
+
 import pytest
 from dagster import (
+    AssetCheckEvaluation,
     AssetCheckKey,
     AssetCheckResult,
     AssetCheckSpec,
     AssetKey,
     AssetMaterialization,
+    AssetSelection,
     AssetSpec,
     AutomationCondition,
+    AutomationContext,
+    AutomationResult,
     DagsterInstance,
     Definitions,
     MaterializeResult,
+    Output,
     asset,
     asset_check,
     evaluate_automation_conditions,
+    job,
+    materialize,
+    op,
 )
-from dagster._core.definitions import materialize
-from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
-from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -118,7 +126,8 @@ async def test_any_checks_match_basic() -> None:
     assert result.true_subset.size == 0
 
 
-def test_all_deps_blocking_checks_passed_condition() -> None:
+@pytest.mark.parametrize("real_check", [True, False])
+def test_all_deps_blocking_checks_passed_condition(real_check: bool) -> None:
     @asset
     def A() -> None: ...
 
@@ -145,6 +154,29 @@ def test_all_deps_blocking_checks_passed_condition() -> None:
         passed = "passed" in context.run.tags
         return AssetCheckResult(passed=passed)
 
+    def _emit_check(checks: Set[AssetCheckKey], passed: bool):
+        if real_check:
+            defs.get_implicit_global_asset_job_def().get_subset(
+                asset_check_selection=checks
+            ).execute_in_process(
+                tags={"passed": ""} if passed else None, instance=instance, raise_on_error=passed
+            )
+        else:
+
+            @op
+            def emit():
+                for check in checks:
+                    yield AssetCheckEvaluation(
+                        asset_key=check.asset_key, check_name=check.name, passed=passed
+                    )
+                yield Output(None)
+
+            @job
+            def emit_job():
+                emit()
+
+            emit_job.execute_in_process(instance=instance)
+
     defs = Definitions(assets=[A, B], asset_checks=[blocking1, blocking2, blocking3, nonblocking1])
     instance = DagsterInstance.ephemeral()
 
@@ -153,52 +185,42 @@ def test_all_deps_blocking_checks_passed_condition() -> None:
     assert result.total_requested == 0
 
     # blocking1 passes, still not all of them
-    defs.get_implicit_global_asset_job_def().get_subset(
-        asset_check_selection={blocking1.check_key}
-    ).execute_in_process(tags={"passed": ""}, instance=instance)
+    _emit_check({blocking1.check_key}, True)
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
     # blocking2 passes, now all have passed
-    defs.get_implicit_global_asset_job_def().get_subset(
-        asset_check_selection={blocking2.check_key}
-    ).execute_in_process(tags={"passed": ""}, instance=instance)
+    _emit_check({blocking2.check_key}, True)
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
     # blocking3 fails, no impact (as it's not on a dep)
-    defs.get_implicit_global_asset_job_def().get_subset(
-        asset_check_selection={blocking3.check_key}
-    ).execute_in_process(instance=instance, raise_on_error=False)
+    _emit_check({blocking3.check_key}, False)
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
     # nonblocking1 fails, no impact (as it's non-blocking)
-    defs.get_implicit_global_asset_job_def().get_subset(
-        asset_check_selection={nonblocking1.check_key}
-    ).execute_in_process(instance=instance, raise_on_error=False)
+    _emit_check({nonblocking1.check_key}, False)
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
     # now A gets rematerialized, blocking checks haven't been executed yet
     instance.report_runless_asset_event(AssetMaterialization("A"))
+
+    # in sqllite the check evaluation create_timestamp is only second-level precision
+    time.sleep(1)
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
     # blocking1 passes, but blocking2 fails
-    defs.get_implicit_global_asset_job_def().get_subset(
-        asset_check_selection={blocking1.check_key}
-    ).execute_in_process(tags={"passed": ""}, instance=instance)
-    defs.get_implicit_global_asset_job_def().get_subset(
-        asset_check_selection={blocking2.check_key}
-    ).execute_in_process(instance=instance, raise_on_error=False)
+    _emit_check({blocking1.check_key}, True)
+    _emit_check({blocking2.check_key}, False)
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0
 
     # now blocking2 passes
-    defs.get_implicit_global_asset_job_def().get_subset(
-        asset_check_selection={blocking2.check_key}
-    ).execute_in_process(tags={"passed": ""}, instance=instance)
+
+    _emit_check({blocking2.check_key}, True)
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 1
 
@@ -247,5 +269,66 @@ def test_blocking_checks_with_eager() -> None:
     assert result.total_requested == 1
 
     # don't launch again
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 0
+
+
+@pytest.mark.parametrize(
+    "condition",
+    [
+        AutomationCondition.any_deps_match(
+            AutomationCondition.any_checks_match(AutomationCondition.check_failed()).allow(
+                AssetSelection.checks(AssetCheckKey(AssetKey("A"), "allow_check"))
+            ),
+        ),
+        AutomationCondition.any_deps_match(
+            AutomationCondition.any_checks_match(AutomationCondition.check_failed()).ignore(
+                AssetSelection.checks(AssetCheckKey(AssetKey("A"), "ignore_check"))
+            ),
+        ),
+    ],
+)
+def test_check_selection(condition: AutomationCondition) -> None:
+    @asset
+    def A() -> None: ...
+
+    @asset_check(asset=A)
+    def ignore_check(context) -> AssetCheckResult:
+        passed = "passed" in context.run.tags
+        return AssetCheckResult(passed=passed)
+
+    @asset_check(asset=A)
+    def allow_check(context) -> AssetCheckResult:
+        passed = "passed" in context.run.tags
+        return AssetCheckResult(passed=passed)
+
+    @asset(deps=[A], automation_condition=condition)
+    def B() -> None: ...
+
+    defs = Definitions(assets=[A, B], asset_checks=[ignore_check, allow_check])
+    instance = DagsterInstance.ephemeral()
+
+    # no checks evaluated
+    result = evaluate_automation_conditions(defs=defs, instance=instance)
+    assert result.total_requested == 0
+
+    # ignore_check fails, but it's ignored
+    defs.get_implicit_global_asset_job_def().get_subset(
+        asset_check_selection={ignore_check.check_key}
+    ).execute_in_process(instance=instance)
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 0
+
+    # allow_check fails, not ignored
+    defs.get_implicit_global_asset_job_def().get_subset(
+        asset_check_selection={allow_check.check_key}
+    ).execute_in_process(instance=instance, raise_on_error=False)
+    result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
+    assert result.total_requested == 1
+
+    # allow_check passes, now back to normal
+    defs.get_implicit_global_asset_job_def().get_subset(
+        asset_check_selection={allow_check.check_key}
+    ).execute_in_process(tags={"passed": ""}, instance=instance)
     result = evaluate_automation_conditions(defs=defs, instance=instance, cursor=result.cursor)
     assert result.total_requested == 0

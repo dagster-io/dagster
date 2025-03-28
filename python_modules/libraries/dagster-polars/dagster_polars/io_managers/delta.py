@@ -146,7 +146,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
 
     """
 
-    extension: str = ".delta"
+    extension: str = ".delta"  # pyright: ignore[reportIncompatibleVariableOverride]
     mode: DeltaWriteMode = DeltaWriteMode.overwrite.value  # type: ignore
     overwrite_schema: bool = False
     version: Optional[int] = None
@@ -159,7 +159,12 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
     ):
         context_metadata = context.definition_metadata or {}
         streaming = context_metadata.get("streaming", False)
-        return self.write_df_to_path(context, df.collect(streaming=streaming), path)
+
+        # workaround for bug introduced in polars 1.25.2 where streaming=False stopped working
+        if streaming:
+            return self.write_df_to_path(context, df.collect(streaming=True), path)  # type: ignore
+        else:
+            return self.write_df_to_path(context, df.collect(), path)
 
     def write_df_to_path(
         self,
@@ -197,7 +202,8 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                         f"Found: `{partition_by}`"
                     )
 
-                if (engine := delta_write_options.get("engine", "pyarrow")) == "rust":
+                # rust is the default engine in newer versions of deltalake
+                if (engine := delta_write_options.get("engine", "rust")) == "rust":
                     delta_write_options["predicate"] = self.get_predicate(context)
 
                 elif engine == "pyarrow":

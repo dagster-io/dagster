@@ -10,7 +10,6 @@ import {OpSelectionParser} from '../op-selection/generated/OpSelectionParser';
 import {InputDiv, SelectionAutoCompleteInput} from '../selection/SelectionInput';
 import {createSelectionLinter} from '../selection/createSelectionLinter';
 import {weakMapMemoize} from '../util/weakMapMemoize';
-
 export const OpGraphSelectionInput = ({
   items,
   value,
@@ -23,6 +22,7 @@ export const OpGraphSelectionInput = ({
   return (
     <Wrapper>
       <SelectionAutoCompleteInput
+        wildcardAttributeName="name"
         id="op-graph"
         useAutoComplete={useOpGraphSelectionAutoCompleteProvider(items).useAutoComplete}
         placeholder="Search and filter ops"

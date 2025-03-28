@@ -132,7 +132,7 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
             log_readers=log_readers,
         )
 
-    def run(
+    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
@@ -217,7 +217,7 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
 
                     submit_task_dict[task_type]["parameters"] = existing_params
                     context.log.debug(
-                        f'Passing Pipes bootstrap parameters via Databricks parameters as "{key}.parameters". Make sure to use the PipesCliArgsParamsLoader in the task.'
+                        f'Passing Pipes bootstrap parameters via Databricks parameters as "{key}.parameters". Make sure to use the PipesCliArgsParamsLoader in the task.'  # pyright: ignore[reportPossiblyUnboundVariable]
                     )
                     break
 
@@ -331,7 +331,7 @@ class PipesDbfsContextInjector(PipesContextInjector):
         self.dbfs_client = files.DbfsAPI(client.api_client)
 
     @contextmanager
-    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:
+    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Inject context to external environment by writing it to an automatically-generated
         DBFS temporary file as JSON and exposing the path to the file.
 

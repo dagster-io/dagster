@@ -1,21 +1,19 @@
 ---
-title: "Adding components to your project"
+title: 'Adding components to your project'
 sidebar_position: 200
 ---
 
-:::info
+import Preview from '@site/docs/partials/\_Preview.md';
 
-This feature is still in development and might change in patch releases. It’s not production ready, and the documentation may also evolve. Stay tuned for updates.
-
-:::
+<Preview />
 
 To add components to your project, you can instantiate them from the command line, which will create a new directory inside your `components/` folder that contains a `component.yaml` file.
 
-If you want to use Python to add components to your project instead, see "[Adding components to your project with Python](adding-components-python)".
+If you want to use Python to add components to your project instead, see "[Adding components to your project with Python](/guides/labs/components/building-pipelines-with-components/adding-components-python)".
 
 :::note Prerequisites
 
-Before adding a component with Python, you must either [create a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components) or [migrate an existing project to components](/guides/labs/components/incrementally-adopting-components/existing-project).
+Before adding a component, you must either [create a project with components](/guides/labs/components/building-pipelines-with-components/creating-a-project-with-components) or [migrate an existing project to `dg`](/guides/labs/dg/incrementally-adopting-dg/migrating-project).
 
 :::
 
@@ -72,6 +70,6 @@ A common use case for templating is to avoid exposing environment variables (par
 component_type: my_snowflake_component
 
 attributes:
-    account: {{ env('SNOWFLAKE_ACCOUNT') }}
-    password: {{ env('SNOWFLAKE_PASSWORD') }}
+  account: "{{ env('SNOWFLAKE_ACCOUNT') }}"
+  password: "{{ env('SNOWFLAKE_PASSWORD') }}"
 ```

@@ -4,6 +4,8 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
@@ -27,7 +29,6 @@ from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
 )
 from dagster._record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.tags import normalize_tags
@@ -64,15 +65,6 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional
 @whitelist_for_serdes(kwargs_fields={"asset_graph_subset"})
 @record_custom
 class RunRequest(IHaveNew, LegacyNamedTupleMixin):
-    run_key: Optional[str]
-    run_config: Mapping[str, Any]
-    tags: Mapping[str, str]
-    job_name: Optional[str]
-    asset_selection: Optional[Sequence[AssetKey]]
-    stale_assets_only: bool
-    partition_key: Optional[str]
-    asset_check_keys: Optional[Sequence[AssetCheckKey]]
-    asset_graph_subset: Optional[AssetGraphSubset]
     """Represents all the information required to launch a single run.  Must be returned by a
     SensorDefinition or ScheduleDefinition's evaluation function for a run to be launched.
 
@@ -106,6 +98,16 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             job will be materialized. If the job does not materialize assets, this flag is ignored.
         partition_key (Optional[str]): The partition key for this run request.
     """
+
+    run_key: Optional[str]
+    run_config: Mapping[str, Any]
+    tags: Mapping[str, str]
+    job_name: Optional[str]
+    asset_selection: Optional[Sequence[AssetKey]]
+    stale_assets_only: bool
+    partition_key: Optional[str]
+    asset_check_keys: Optional[Sequence[AssetCheckKey]]
+    asset_graph_subset: Optional[AssetGraphSubset]
 
     def __new__(
         cls,

@@ -4,6 +4,8 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 from dagster._annotations import deprecated
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
@@ -30,7 +32,6 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
 from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
 
 if TYPE_CHECKING:

@@ -1,9 +1,9 @@
-import asyncio
 from collections.abc import Mapping, Sequence
 from typing import Any, Optional
 
 import dlt
 import duckdb
+import pytest
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -11,8 +11,12 @@ from dagster import (
     AutoMaterializePolicy,
     AutoMaterializeRule,
     AutomationCondition,
+    BackfillPolicy,
+    DailyPartitionsDefinition,
     Definitions,
     MonthlyPartitionsDefinition,
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
 )
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata.metadata_value import (
@@ -525,21 +529,17 @@ def test_partitioned_materialization(dlt_pipeline: Pipeline) -> None:
         month = context.partition_key[:-3]
         yield from dlt_pipeline_resource.run(context=context, dlt_source=pipeline(month))
 
-    async def run_partition(year: str):
+    def run_partition(year: str):
         return materialize(
             [example_pipeline_assets],
             resources={"dlt_pipeline_resource": DagsterDltResource()},
             partition_key=year,
         )
 
-    async def main():
-        [res1, res2] = await asyncio.gather(
-            run_partition("2022-09-01"), run_partition("2022-10-01")
-        )
-        assert res1.success
-        assert res2.success
-
-    asyncio.run(main())
+    res1 = run_partition("2022-09-01")
+    res2 = run_partition("2022-10-01")
+    assert res1.success
+    assert res2.success
 
 
 def test_with_asset_key_replacements(dlt_pipeline: Pipeline) -> None:
@@ -594,7 +594,7 @@ def test_with_deps_replacements(dlt_pipeline: Pipeline) -> None:
 
 def test_with_deps_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_deps_asset_keys(self, _) -> Sequence[AssetKey]:
+        def get_deps_asset_keys(self, _) -> Sequence[AssetKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return []
 
     @dlt_assets(
@@ -631,7 +631,7 @@ def test_with_description_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     expected_description = "customized description"
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_description(self, _) -> Optional[str]:
+        def get_description(self, _) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_description
 
     @dlt_assets(
@@ -668,7 +668,7 @@ def test_with_metadata_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     expected_metadata = {"customized": "metadata"}
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_metadata(self, _) -> Optional[Mapping[str, Any]]:
+        def get_metadata(self, _) -> Optional[Mapping[str, Any]]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_metadata
 
     @dlt_assets(
@@ -686,7 +686,7 @@ def test_with_group_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     expected_group = "customized_group"
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_group_name(self, _) -> Optional[str]:
+        def get_group_name(self, _) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_group
 
     @dlt_assets(
@@ -704,7 +704,7 @@ def test_with_owner_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     expected_owners = ["custom@custom.com"]
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_owners(self, _) -> Optional[Sequence[str]]:
+        def get_owners(self, _) -> Optional[Sequence[str]]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_owners
 
     @dlt_assets(
@@ -757,7 +757,7 @@ def test_with_tag_replacements_legacy(dlt_pipeline: Pipeline) -> None:
     }
 
     class CustomDagsterDltTranslator(DagsterDltTranslator):
-        def get_tags(self, _) -> Optional[Mapping[str, str]]:
+        def get_tags(self, _) -> Optional[Mapping[str, str]]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_tags
 
         def get_kinds(self, resource: DltResource, destination: Destination) -> set[str]:
@@ -781,3 +781,51 @@ def test_pool(dlt_pipeline: Pipeline) -> None:
     def my_dlt_assets(): ...
 
     assert my_dlt_assets.op.pool == pool
+
+
+@pytest.mark.parametrize(
+    ["partitions_def", "backfill_policy", "expected_backfill_policy"],
+    [
+        (
+            DailyPartitionsDefinition(start_date="2023-01-01"),
+            BackfillPolicy.multi_run(),
+            BackfillPolicy.multi_run(),
+        ),
+        (
+            DailyPartitionsDefinition(start_date="2023-01-01"),
+            None,
+            BackfillPolicy.single_run(),
+        ),
+        (
+            StaticPartitionsDefinition(partition_keys=["A", "B"]),
+            None,
+            None,
+        ),
+        (
+            StaticPartitionsDefinition(partition_keys=["A", "B"]),
+            BackfillPolicy.single_run(),
+            BackfillPolicy.single_run(),
+        ),
+    ],
+    ids=[
+        "use explicit backfill policy for time window",
+        "time window defaults to single run",
+        "non time window has no default backfill policy",
+        "non time window backfill policy is respected",
+    ],
+)
+def test_backfill_policy(
+    dlt_pipeline: Pipeline,
+    partitions_def: PartitionsDefinition,
+    backfill_policy: BackfillPolicy,
+    expected_backfill_policy: BackfillPolicy,
+) -> None:
+    @dlt_assets(
+        dlt_source=pipeline(),
+        dlt_pipeline=dlt_pipeline,
+        partitions_def=partitions_def,
+        backfill_policy=backfill_policy,
+    )
+    def my_dlt_assets(): ...
+
+    assert my_dlt_assets.backfill_policy == expected_backfill_policy

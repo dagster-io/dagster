@@ -11,7 +11,7 @@
 }
 
 .cardContainer h2 {
-    margin-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .cardContainer:hover {
@@ -30,7 +30,7 @@
 }
 
 .cardDescription {
-  font-size: 1.0rem;
+  font-size: 1rem;
   line-height: 1.5rem;
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -38,9 +38,8 @@
   overflow: hidden;
 }
 
-
 .cardSubtitle {
-  font-size: 1.0rem;
+  font-size: 1rem;
   line-height: 1.5rem;
   color: var(--theme-color-text-blue) !important;
 }

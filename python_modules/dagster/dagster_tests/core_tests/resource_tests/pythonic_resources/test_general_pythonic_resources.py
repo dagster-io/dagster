@@ -219,7 +219,7 @@ def test_yield_in_resource_function():
     class ResourceWithCleanup(ConfigurableResourceFactory[bool]):
         idx: int
 
-        def create_resource(self, context):
+        def create_resource(self, context):  # pyright: ignore[reportIncompatibleMethodOverride]
             called.append(f"creation_{self.idx}")
             yield True
             called.append(f"cleanup_{self.idx}")
@@ -291,10 +291,10 @@ class AnIOManagerImplementation(IOManager):
     def __init__(self, a_config_value: str):
         self.a_config_value = a_config_value
 
-    def load_input(self, _):
+    def load_input(self, _):  # pyright: ignore[reportIncompatibleMethodOverride]
         pass
 
-    def handle_output(self, _, obj):
+    def handle_output(self, _, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
         pass
 
 
@@ -331,7 +331,7 @@ def test_io_manager_factory_class():
     class AnIOManagerFactory(ConfigurableIOManagerFactory):
         a_config_value: str
 
-        def create_io_manager(self, _) -> IOManager:
+        def create_io_manager(self, _) -> IOManager:  # pyright: ignore[reportIncompatibleMethodOverride]
             """Implement as one would implement a @io_manager decorator function."""
             return AnIOManagerImplementation(self.a_config_value)
 

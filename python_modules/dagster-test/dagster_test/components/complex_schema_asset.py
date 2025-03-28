@@ -13,7 +13,7 @@ from dagster_components.resolved.core_models import (
     OpSpecModel,
 )
 from dagster_components.resolved.metadata import ResolvableFieldInfo
-from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
+from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
 from pydantic import Field
 
 
@@ -40,7 +40,7 @@ class ComplexAssetComponent(Component, ResolvedFrom[ComplexAssetModel]):
     op: Optional[OpSpecModel] = None
     asset_attributes: Optional[AssetAttributesModel] = None
     asset_post_processors: Annotated[
-        Optional[Sequence[AssetPostProcessor]], AssetPostProcessor.from_optional_seq
+        Optional[Sequence[AssetPostProcessor]], Resolver.from_annotation()
     ] = None
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:

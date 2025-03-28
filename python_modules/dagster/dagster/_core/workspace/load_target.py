@@ -136,7 +136,7 @@ def get_origins_from_toml(
         dg_block = data.get("tool", {}).get("dg", {}).get("project", {})
         if dg_block:
             default_module_name = f"{dg_block['root_module']}.definitions"
-            module_name = dg_block.get("code_location_load_target_module", default_module_name)
+            module_name = dg_block.get("code_location_target_module", default_module_name)
             return ModuleTarget(
                 module_name=module_name,
                 attribute=None,

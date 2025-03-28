@@ -81,6 +81,7 @@
 -e python_modules/libraries/dagster-powerbi
 -e python_modules/libraries/dagster-prometheus/
 -e python_modules/libraries/dagster-pyspark/
+-e python_modules/libraries/dagster-shared/
 -e python_modules/libraries/dagster-sigma[test]
 -e python_modules/libraries/dagster-slack/
 -e python_modules/libraries/dagster-sling/
@@ -99,6 +100,7 @@ dagster-anthropic
 dagster-chroma
 dagster-gemini
 dagster-weaviate
+dagster-qdrant
 
 ### OTHER
 pandas_gbq  # (quickstart_gcp)
@@ -142,6 +144,7 @@ fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 -e examples/experimental/dagster-dlift
 -e examples/starlift-demo
 -e python_modules/libraries/dagster-airlift/kitchen-sink
+-e python_modules/libraries/dagster-dbt/kitchen-sink
 -e examples/experimental/dagster-dlift/kitchen-sink
 -e python_modules/libraries/dagster-airlift/perf-harness
 -e examples/airlift-migration-tutorial

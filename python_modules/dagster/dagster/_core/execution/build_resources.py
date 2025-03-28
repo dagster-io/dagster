@@ -1,3 +1,4 @@
+from asyncio import AbstractEventLoop
 from collections.abc import Generator, Mapping
 from contextlib import contextmanager
 from typing import Any, Optional, cast
@@ -45,6 +46,7 @@ def build_resources(
     resource_config: Optional[Mapping[str, Any]] = None,
     dagster_run: Optional[DagsterRun] = None,
     log_manager: Optional[DagsterLogManager] = None,
+    event_loop: Optional[AbstractEventLoop] = None,
 ) -> Generator[Resources, None, None]:
     """Context manager that yields resources using provided resource definitions and run config.
 
@@ -67,6 +69,8 @@ def build_resources(
             teardown, this must be provided, or initialization will fail.
         log_manager (Optional[DagsterLogManager]): Log Manager to use during resource
             initialization. Defaults to system log manager.
+        event_loop (Optional[AbstractEventLoop]): An event loop for handling resources
+            with async context managers.
 
     Examples:
         .. code-block:: python
@@ -99,6 +103,7 @@ def build_resources(
             resource_keys_to_init=set(resource_defs.keys()),
             instance=dagster_instance,
             emit_persistent_events=False,
+            event_loop=event_loop,
         )
         try:
             list(resources_manager.generate_setup_events())

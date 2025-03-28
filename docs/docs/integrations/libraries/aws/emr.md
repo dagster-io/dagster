@@ -14,7 +14,7 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, compute]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/aws-emr.svg
 ---
 
@@ -35,7 +35,7 @@ pip install dagster-aws
 
 ### Examples
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/aws-emr.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/aws-emr.py" language="python" />
 
 ### About AWS EMR
 

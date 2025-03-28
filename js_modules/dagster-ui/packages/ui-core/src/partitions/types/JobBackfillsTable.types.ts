@@ -27,7 +27,6 @@ export type JobBackfillsQuery = {
           partitionSetName: string | null;
           hasCancelPermission: boolean;
           hasResumePermission: boolean;
-          numCancelable: number;
           partitionNames: Array<string> | null;
           partitionSet: {
             __typename: 'PartitionSet';
@@ -60,4 +59,4 @@ export type JobBackfillsQuery = {
     | {__typename: 'PythonError'};
 };
 
-export const JobBackfillsQueryVersion = '508c116ec0413d5c5785307e026413123a4e177d9855aa4506f597885359fcd8';
+export const JobBackfillsQueryVersion = '7c0183fc088aaf2caafbf72dfc0ed87fafc4da9669f65ae537237203dbad7e75';

@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from typing import Annotated
 
 from dagster_components.resolved.model import (
-    FieldResolver,
     ResolvedKwargs,
+    Resolver,
     get_annotation_field_resolvers,
 )
 from pydantic import BaseModel
@@ -51,10 +51,10 @@ def test_override_vanilla() -> None:
     class Base(ResolvedKwargs):
         value: int
 
-    class CustomResolver(FieldResolver): ...
+    class CustomResolver(Resolver): ...
 
     class Derived(Base):
-        value: Annotated[str, CustomResolver(lambda context, val: str(val))]
+        value: Annotated[str, CustomResolver(lambda context, val: str(val))]  # pyright: ignore[reportIncompatibleVariableOverride]
 
     resolvers = get_annotation_field_resolvers(Derived)
     assert "value" in resolvers
@@ -66,24 +66,26 @@ def test_override_dataclass() -> None:
     class Base(ResolvedKwargs):
         value: int
 
-    class CustomResolver(FieldResolver): ...
+    class CustomResolver(Resolver): ...
 
+    @dataclass
     class Derived(Base):
-        value: Annotated[str, CustomResolver(lambda context, val: str(val))]
+        value: Annotated[str, CustomResolver(lambda context, val: str(val))]  # pyright: ignore[reportIncompatibleVariableOverride]
 
     resolvers = get_annotation_field_resolvers(Derived)
     assert "value" in resolvers
     assert isinstance(resolvers["value"], CustomResolver)
+    Derived(value="hi")
 
 
 def test_override_pydantic() -> None:
     class Base(BaseModel, ResolvedKwargs):
         value: int
 
-    class CustomResolver(FieldResolver): ...
+    class CustomResolver(Resolver): ...
 
     class Derived(Base):
-        value: Annotated[str, CustomResolver(lambda context, val: str(val))]
+        value: Annotated[str, CustomResolver(lambda context, val: str(val))]  # pyright: ignore[reportIncompatibleVariableOverride]
 
     resolvers = get_annotation_field_resolvers(Derived)
     assert "value" in resolvers

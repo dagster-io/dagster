@@ -6,6 +6,7 @@ from typing import Any, Callable, ContextManager, NamedTuple, Optional, TypeVar 
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
+from dagster_shared.serdes import deserialize_value
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
@@ -40,7 +41,6 @@ from dagster._core.storage.schedules.schema import (
 from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
 from dagster._core.storage.sqlalchemy_compat import db_fetch_mappings, db_select, db_subquery
 from dagster._serdes import serialize_value
-from dagster._serdes.serdes import deserialize_value
 from dagster._time import datetime_from_timestamp, get_current_datetime
 from dagster._utils import PrintFn
 

@@ -11,6 +11,8 @@ from typing import (  # noqa: UP035
     overload,
 )
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 import dagster._check as check
 from dagster._annotations import (
     PublicAttr,
@@ -35,7 +37,6 @@ from dagster._core.definitions.utils import (
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._record import IHaveNew, LegacyNamedTupleMixin, record_custom
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.internal_init import IHasInternalInit
 from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
@@ -135,7 +136,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             e.g. `team:finops`.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
-        kinds: (Optional[Set[str]]): A list of strings representing the kinds of the asset. These
+        kinds: (Optional[Set[str]]): A set of strings representing the kinds of the asset. These
             will be made visible in the Dagster UI.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.

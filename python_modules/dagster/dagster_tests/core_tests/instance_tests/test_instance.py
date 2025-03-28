@@ -12,12 +12,12 @@ from dagster import (
     DailyPartitionsDefinition,
     StaticPartitionsDefinition,
     _check as check,
-    _seven,
     asset,
     execute_job,
     job,
     op,
     reconstructable,
+    seven,
 )
 from dagster._check import CheckError
 from dagster._cli.utils import get_instance_for_cli
@@ -122,7 +122,7 @@ def test_unified_storage(tmpdir):
         pass
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Windows paths formatted differently")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Windows paths formatted differently")
 def test_unified_storage_env_var(tmpdir):
     with environ({"SQLITE_STORAGE_BASE_DIR": str(tmpdir)}):
         with instance_for_test(
@@ -584,7 +584,7 @@ def test_dagster_home_not_dir():
             DagsterInstance.get()
 
 
-@pytest.mark.skipif(_seven.IS_WINDOWS, reason="Windows paths formatted differently")
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Windows paths formatted differently")
 def test_dagster_env_vars_from_dotenv_file():
     with (
         tempfile.TemporaryDirectory() as working_dir,
@@ -712,7 +712,7 @@ class InvalidRunLauncher(RunLauncher, ConfigurableClass):
     def launch_run(self, context: LaunchRunContext) -> None:
         pass
 
-    def terminate(self, run_id):
+    def terminate(self, run_id):  # pyright: ignore[reportIncompatibleMethodOverride]
         pass
 
 

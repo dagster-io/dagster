@@ -1,3 +1,4 @@
+import importlib
 import shutil
 import tempfile
 from collections.abc import Iterator, Mapping
@@ -10,25 +11,35 @@ import yaml
 from click.testing import CliRunner
 from dagster import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test
+from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster_components.cli import cli
-from dagster_components.components.sling_replication_collection.component import (
+from dagster_components.core.defs_module import (
+    ComponentFileModel,
+    DefsModuleDecl,
+    YamlComponentDecl,
+)
+from dagster_components.core.load_defs import load_defs
+from dagster_components.lib.sling_replication_collection.component import (
     SlingReplicationCollectionComponent,
     SlingReplicationCollectionModel,
 )
-from dagster_components.core.component_decl_builder import ComponentFileModel
-from dagster_components.core.component_defs_builder import YamlComponentDecl, build_component_defs
+from dagster_components.resolved.context import ResolutionException
+from dagster_components.resolved.core_models import AssetAttributesModel
 from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_sling import SlingResource
 
+from dagster_components_tests.utils import script_load_context
+
 ensure_dagster_components_tests_import()
 
-from dagster_components_tests.utils import script_load_context, temp_code_location_bar
+from dagster_components_tests.utils import temp_code_location_bar
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -53,7 +64,10 @@ def temp_sling_component_instance(
     """Sets up a temporary directory with a replication.yaml and component.yaml file that reference
     the proper temp path.
     """
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with (
+        tempfile.TemporaryDirectory() as temp_dir,
+        alter_sys_path(to_add=[str(temp_dir)], to_remove=[]),
+    ):
         with environ({"HOME": temp_dir, "SOME_PASSWORD": "password"}):
             shutil.copytree(STUB_LOCATION_PATH, temp_dir, dirs_exist_ok=True)
 
@@ -70,7 +84,9 @@ def temp_sling_component_instance(
                 # update the defs yaml to add a duckdb instance
                 data["attributes"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
 
-            yield YamlComponentDecl.from_path(Path(temp_dir) / COMPONENT_RELPATH)
+            decl_node = DefsModuleDecl.from_path(Path(temp_dir) / COMPONENT_RELPATH)
+            assert isinstance(decl_node, YamlComponentDecl)
+            yield decl_node
 
 
 def test_python_attributes() -> None:
@@ -162,19 +178,18 @@ def test_python_params_include_metadata() -> None:
 def test_load_from_path() -> None:
     with temp_sling_component_instance() as decl_node:
         context = script_load_context(decl_node)
-        components = decl_node.load(context)
-        assert len(components) == 1
-        component = components[0]
-        assert isinstance(component, SlingReplicationCollectionComponent)
+        defs_module = decl_node.load(context)
+        assert isinstance(defs_module.component, SlingReplicationCollectionComponent)
 
-        resource = getattr(component, "resource")
+        resource = getattr(defs_module.component, "resource")
         assert isinstance(resource, SlingResource)
         assert len(resource.connections) == 1
         assert resource.connections[0].name == "DUCKDB"
         assert resource.connections[0].type == "duckdb"
         assert resource.connections[0].password == "password"
 
-        defs = build_component_defs(components_root=decl_node.path.parent)
+        module = importlib.import_module("defs")
+        defs = load_defs(module)
         assert defs.get_asset_graph().get_all_asset_keys() == {
             AssetKey("input_csv"),
             AssetKey(["foo", "input_duckdb"]),
@@ -183,7 +198,7 @@ def test_load_from_path() -> None:
 
 def test_sling_subclass() -> None:
     class DebugSlingReplicationComponent(SlingReplicationCollectionComponent):
-        def execute(
+        def execute(  # pyright: ignore[reportIncompatibleMethodOverride]
             self, context: AssetExecutionContext, sling: SlingResource
         ) -> Iterator[Union[AssetMaterialization, MaterializeResult]]:
             return sling.replicate(context=context, debug=True)
@@ -234,6 +249,16 @@ def test_sling_subclass() -> None:
             == {AssetKey("customers")},
             False,
         ),
+        (
+            {"automation_condition": "{{ automation_condition.eager() }}"},
+            lambda asset_spec: asset_spec.automation_condition is not None,
+            False,
+        ),
+        (
+            {"key": "overridden_key"},
+            lambda asset_spec: asset_spec.key == AssetKey("overridden_key"),
+            False,
+        ),
     ],
     ids=[
         "group_name",
@@ -245,6 +270,8 @@ def test_sling_subclass() -> None:
         "description",
         "metadata",
         "deps",
+        "automation_condition",
+        "key",
     ],
 )
 def test_asset_attributes(
@@ -252,7 +279,7 @@ def test_asset_attributes(
     assertion: Optional[Callable[[AssetSpec], bool]],
     should_error: bool,
 ) -> None:
-    wrapper = pytest.raises(ValueError) if should_error else nullcontext()
+    wrapper = pytest.raises(ResolutionException) if should_error else nullcontext()
     with (
         wrapper,
         temp_sling_component_instance(
@@ -264,9 +291,25 @@ def test_asset_attributes(
         component = SlingReplicationCollectionComponent.load(attributes=attrs, context=context)
         defs = component.build_defs(context)
 
-        assets_def: AssetsDefinition = defs.get_assets_def("input_duckdb")
+        key = attributes.get("key", "input_duckdb")
+        assets_def: AssetsDefinition = defs.get_assets_def(key)
     if assertion:
-        assert assertion(assets_def.get_asset_spec(AssetKey("input_duckdb")))
+        assert assertion(assets_def.get_asset_spec(AssetKey(key)))
+
+
+IGNORED_KEYS = {"skippable"}
+
+
+def test_asset_attributes_is_comprehensive():
+    all_asset_attribute_keys = []
+    for test_arg in test_asset_attributes.pytestmark[0].args[1]:  # pyright: ignore[reportFunctionMemberAccess]
+        all_asset_attribute_keys.extend(test_arg[0].keys())
+    from dagster_components.resolved.core_models import AssetAttributesModel
+
+    assert (
+        set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS
+        == set(all_asset_attribute_keys)
+    ), f"The test_asset_attributes test does not cover all fields, missing: {set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS - set(all_asset_attribute_keys)}"
 
 
 def test_scaffold_sling():
@@ -277,7 +320,7 @@ def test_scaffold_sling():
             cli,
             [
                 "scaffold",
-                "component",
+                "object",
                 "dagster_components.dagster_sling.SlingReplicationCollectionComponent",
                 "bar/components/qux",
             ],
@@ -285,3 +328,65 @@ def test_scaffold_sling():
         assert result.exit_code == 0
         assert Path("bar/components/qux/replication.yaml").exists()
         assert Path("bar/components/qux/component.yaml").exists()
+
+
+def test_spec_is_available_in_scope() -> None:
+    with temp_sling_component_instance(
+        [
+            {
+                "path": "./replication.yaml",
+                "asset_attributes": {"metadata": {"asset_key": "{{ spec.key.path }}"}},
+            }
+        ]
+    ) as decl_node:
+        context = script_load_context(decl_node)
+        attrs = decl_node.get_attributes(SlingReplicationCollectionModel)
+        component = SlingReplicationCollectionComponent.load(attributes=attrs, context=context)
+        defs = component.build_defs(context)
+
+        assets_def: AssetsDefinition = defs.get_assets_def("input_duckdb")
+        assert assets_def.get_asset_spec(AssetKey("input_duckdb")).metadata["asset_key"] == [
+            "input_duckdb"
+        ]
+
+
+def map_spec(spec: AssetSpec) -> AssetSpec:
+    return spec.replace_attributes(tags={"is_custom_spec": "yes"})
+
+
+def map_spec_to_attributes(spec: AssetSpec) -> AssetAttributesModel:
+    return AssetAttributesModel(tags={"is_custom_spec": "yes"})
+
+
+def map_spec_to_attributes_dict(spec: AssetSpec) -> dict[str, Any]:
+    return {"tags": {"is_custom_spec": "yes"}}
+
+
+@pytest.mark.parametrize("map_fn", [map_spec, map_spec_to_attributes, map_spec_to_attributes_dict])
+def test_udf_map_spec(map_fn: Callable[[AssetSpec], Any]) -> None:
+    class DebugSlingReplicationComponent(SlingReplicationCollectionComponent):
+        @classmethod
+        def get_additional_scope(cls) -> Mapping[str, Any]:
+            return {"map_spec": map_fn}
+
+    decl_node = YamlComponentDecl(
+        path=STUB_LOCATION_PATH / COMPONENT_RELPATH,
+        component_file_model=ComponentFileModel(
+            type="debug_sling_replication",
+            attributes={
+                "sling": {},
+                "replications": [
+                    {"path": "./replication.yaml", "asset_attributes": "{{ map_spec(spec) }}"}
+                ],
+            },
+        ),
+    )
+    context = script_load_context(decl_node).with_rendering_scope(
+        DebugSlingReplicationComponent.get_additional_scope()
+    )
+    attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
+    component_inst = DebugSlingReplicationComponent.load(attributes=attributes, context=context)
+
+    defs = component_inst.build_defs(context)
+    assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("input_duckdb"))
+    assert assets_def.get_asset_spec(AssetKey("input_duckdb")).tags["is_custom_spec"] == "yes"

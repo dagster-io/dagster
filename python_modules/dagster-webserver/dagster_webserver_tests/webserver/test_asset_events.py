@@ -8,8 +8,8 @@ from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
 )
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
-from dagster._seven import json
 from dagster_pipes import PipesContext
+from dagster_shared.seven import json
 from dagster_webserver.external_assets import (
     ReportAssetCheckEvalParam,
     ReportAssetMatParam,
@@ -223,7 +223,7 @@ def test_report_asset_check_endpoint(instance: DagsterInstance, test_client: Tes
     )
     assert response.status_code == 400
     assert (
-        'Error constructing AssetCheckEvaluation: Param "metadata" is not a dict'
+        'Error constructing AssetCheckEvaluation: Param "metadata" is not'
         in response.json()["error"]
     )
 

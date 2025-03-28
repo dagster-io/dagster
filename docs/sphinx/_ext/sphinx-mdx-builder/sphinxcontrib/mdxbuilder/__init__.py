@@ -32,6 +32,12 @@ def setup(app: Sphinx):
 
     app.add_config_value("mdx_description_meta", "", "env")
 
+    app.add_config_value(
+        "mdx_github_url", "https://github.com/dagster-io/dagster/blob/master", "env"
+    )
+
+    app.add_config_value("mdx_show_source_links", True, "env")
+
     return {
         "version": __version__,
         "parallel_read_safe": True,

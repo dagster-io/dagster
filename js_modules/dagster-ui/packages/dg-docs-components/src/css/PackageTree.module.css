@@ -1,0 +1,144 @@
+.searchOuter {
+  padding: 12px;
+  box-shadow: inset 0 -1px 0 0 var(--color-keyline-default);
+}
+
+.searchContainer {
+  position: relative;
+}
+
+.searchContainer .icon {
+  color: var(--color-text-light);
+  position: absolute;
+  left: 10px;
+  top: 8px;
+}
+
+.search {
+  width: 100%;
+  border-radius: 8px;
+  background-color: var(--color-background-default);
+  border: none;
+  box-shadow: var(--color-border-default) inset 0px 0px 0px 1px;
+  outline: none;
+  font-size: 14px;
+  padding: 8px 8px 8px 32px;
+  transition: box-shadow 0.1s ease-in-out;
+}
+
+.search::placeholder {
+  color: var(--color-text-lighter);
+}
+
+.search:focus {
+  box-shadow:
+    var(--color-border-default) inset 0px 0px 0px 1px,
+    var(--color-keyline-default) inset 2px 2px 1.5px,
+    var(--color-focus-ring) 0 0 0 2px;
+}
+
+.treeContainer {
+  padding: 12px;
+  font-size: 14px;
+}
+
+.pkgItem {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  background-color: var(--color-background-default);
+  cursor: pointer;
+}
+
+.expandButton {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+}
+
+.expandButton .chevron {
+  transition: transform 0.1s ease-in-out;
+  transform: rotate(-90deg);
+}
+
+.expandButton.expanded .chevron {
+  transform: rotate(0deg);
+}
+
+.pkgLink {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  background-color: var(--color-background-default);
+  cursor: pointer;
+  padding: 8px 4px;
+  border-radius: 8px;
+  border: none;
+  color: var(--color-text-default);
+  font-size: 14px;
+  user-select: none;
+  overflow: hidden;
+  text-align: left;
+  transition: background-color 0.1s ease-in-out;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pkgLink:hover {
+  background-color: var(--color-background-light);
+}
+
+.pkgLink.selected,
+.pkgLink.selected:hover {
+  background-color: var(--color-background-blue);
+}
+
+.componentList {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+  gap: 4px;
+}
+
+.componentLink {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 4px;
+  margin-left: 20px;
+  padding: 8px 4px;
+  border-radius: 8px;
+  background-color: var(--color-background-default);
+  user-select: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.componentLink:hover {
+  background-color: var(--color-background-light);
+}
+
+.componentLink.selected,
+.componentLink.selected:hover {
+  background-color: var(--color-background-blue);
+}
+
+.componentLink .componentName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon {
+  color: var(--color-text-light);
+  display: block;
+  height: 16px;
+  width: 16px;
+}

@@ -3,6 +3,8 @@ from collections.abc import Iterable, Mapping
 from functools import cache
 from typing import AbstractSet, Any, Optional  # noqa: UP035
 
+from dagster_shared.dagster_model import DagsterModel
+from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
 from typing_extensions import TypeVar
 
 from dagster import _check as check
@@ -13,8 +15,6 @@ from dagster._core.definitions.metadata.metadata_value import (
     TableColumnLineage,
     TableSchema,
 )
-from dagster._model import DagsterModel
-from dagster._model.pydantic_compat_layer import model_fields
 from dagster._utils.typing_api import flatten_unions
 
 # Python types that have a MetadataValue types that directly wraps them
@@ -58,7 +58,7 @@ class NamespacedKVSet(ABC, DagsterModel):
     def keys(self) -> Iterable[str]:
         return [
             self._namespaced_key(key)
-            for key in model_fields(self).keys()
+            for key in model_fields(self.__class__).keys()
             # getattr returns the pydantic property on the subclass
             if getattr(self, key) is not None
         ]
@@ -130,7 +130,7 @@ class NamespacedMetadataSet(NamespacedKVSet):
     """
 
     def __init__(self, *args, **kwargs) -> None:
-        for field_name in model_fields(self).keys():
+        for field_name in model_fields(self.__class__).keys():
             annotation_types = self._get_accepted_types_for_field(field_name)
             invalid_annotation_types = {
                 annotation_type

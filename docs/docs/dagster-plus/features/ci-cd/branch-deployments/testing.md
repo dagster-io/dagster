@@ -1,5 +1,5 @@
 ---
-title: "Testing against production with branch deployments"
+title: 'Testing against production with branch deployments'
 sidebar_position: 400
 ---
 
@@ -17,9 +17,9 @@ With these tools, we can merge changes with confidence in the impact on our data
 Here's an overview of the main concepts we'll be using:
 
 - [Assets](/guides/build/assets/) - We'll define three assets that each persist a table to Snowflake.
-- [Ops](/guides/build/ops) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones.
-- [Graphs](/guides/build/graphs) - We'll build graphs that define the order our ops should run.
-- [Jobs](/guides/build/assets/asset-jobs) - We'll define jobs by binding our graphs to resources.
+- [Ops](/guides/build/ops/) - We'll define two ops that query Snowflake: the first will clone a database, and the second will drop database clones.
+- [Graphs](/guides/build/ops/graphs) - We'll build graphs that define the order our ops should run.
+- [Jobs](/guides/build/jobs/asset-jobs) - We'll define jobs by binding our graphs to resources.
 - [Resources](/guides/build/external-resources/) - We'll use the <PyObject section="libraries" module="dagster_snowflake" object="SnowflakeResource" /> to swap in different Snowflake connections to our jobs depending on environment.
 - [I/O managers](/guides/build/io-managers/) - We'll use a Snowflake I/O manager to persist asset outputs to Snowflake.
 
@@ -58,7 +58,11 @@ To set up a branch deployment workflow to construct and test these tables, we wi
 
 In production, we want to write three tables to Snowflake: `ITEMS`, `COMMENTS`, and `STORIES`. We can define these tables as assets as follows:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/assets.py" startAfter="start_assets" endBefore="end_assets" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/assets.py"
+  startAfter="start_assets"
+  endBefore="end_assets"
+/>
 
 As you can see, our assets use an [I/O manager](/guides/build/io-managers/) named `snowflake_io_manager`. Using I/O managers and other resources allow us to swap out implementations per environment without modifying our business logic.
 
@@ -72,7 +76,11 @@ Dagster automatically sets certain [environment variables](/dagster-plus/deploym
 
 Because we want to configure our assets to write to Snowflake using a different set of credentials and database in each environment, we'll configure a separate I/O manager for each environment:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/repository_v1.py" startAfter="start_repository" endBefore="end_repository" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/repository_v1.py"
+  startAfter="start_repository"
+  endBefore="end_repository"
+/>
 
 Refer to the [Dagster+ environment variables documentation](/dagster-plus/deployment/management/environment-variables/) for more info about available environment variables.
 
@@ -82,26 +90,36 @@ We'll first need to define a job that clones our `PRODUCTION` database for each 
 
 :::note
 
-<strong> Why use ops and jobs instead of assets? </strong> We'll be writing
-ops to clone the production database for each branch deployment and drop the
-clone once the branch is merged. In this case, we chose to use ops since we
-are primarily interested in the task that's being performed: cloning or
-dropping the database. Additionally, we don't need asset-specific features for
-these tasks, like viewing them in the Global Asset Graph.
+<strong> Why use ops and jobs instead of assets? </strong> We'll be writing ops to clone the production database for
+each branch deployment and drop the clone once the branch is merged. In this case, we chose to use ops since we are
+primarily interested in the task that's being performed: cloning or dropping the database. Additionally, we don't need
+asset-specific features for these tasks, like viewing them in the Global Asset Graph.
 
 :::
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/clone_and_drop_db.py" startAfter="start_clone_db" endBefore="end_clone_db" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/clone_and_drop_db.py"
+  startAfter="start_clone_db"
+  endBefore="end_clone_db"
+/>
 
 We've defined `drop_database_clone` and `clone_production_database` to utilize the <PyObject section="libraries" object="SnowflakeResource" module="dagster_snowflake" />. The Snowflake resource will use the same configuration as the Snowflake I/O manager to generate a connection to Snowflake. However, while our I/O manager writes outputs to Snowflake, the Snowflake resource executes queries against Snowflake.
 
 We now need to define resources that configure our jobs to the current environment. We can modify the resource mapping by environment as follows:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/repository_v2.py" startAfter="start_resources" endBefore="end_resources" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/repository_v2.py"
+  startAfter="start_resources"
+  endBefore="end_resources"
+/>
 
 Then, we can add the `clone_prod` and `drop_prod_clone` jobs that now use the appropriate resource to the environment and add them to our definitions:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/repository_v2.py" startAfter="start_repository" endBefore="end_repository" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/branch_deployments/repository_v2.py"
+  startAfter="start_repository"
+  endBefore="end_repository"
+/>
 
 ## Step 4: Create our database clone upon opening a branch
 

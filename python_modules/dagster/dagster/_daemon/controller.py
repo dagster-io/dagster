@@ -320,7 +320,7 @@ class DagsterDaemonController(AbstractContextManager):
                 self.check_daemon_heartbeats()
                 last_heartbeat_check_time = get_current_timestamp()
 
-    def __exit__(
+    def __exit__(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         exception_type: type[BaseException],
         exception_value: Exception,

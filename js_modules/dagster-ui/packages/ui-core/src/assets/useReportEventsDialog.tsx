@@ -185,6 +185,7 @@ const ReportEventDialogBody = ({
         intent: 'danger',
         action: data
           ? {
+              type: 'button',
               text: 'View error',
               onClick: () => showCustomAlert({body: <PythonErrorInfo error={data} />}),
             }

@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_postgres.event_log import PostgresEventLogStorage
 from dagster_postgres.run_storage import PostgresRunStorage

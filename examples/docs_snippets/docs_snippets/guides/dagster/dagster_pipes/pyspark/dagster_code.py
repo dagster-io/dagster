@@ -78,7 +78,7 @@ def pipes_spark_asset(context: dg.AssetExecutionContext):
             check=True,
         )
 
-        return session.get_results()
+    return session.get_results()
 
 
 # start_definitions_marker

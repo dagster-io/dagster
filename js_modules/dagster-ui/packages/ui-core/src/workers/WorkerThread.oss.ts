@@ -2,7 +2,7 @@ import {WEB_WORKER_FEATURE_FLAGS_KEY, setFeatureFlags} from '../app/Flags';
 
 export const createWorkerThread = (
   onMessage: (postMessage: (message: any) => void, data: any) => Promise<void>,
-  onError: (postMessage: (message: any) => void, error: Error) => void,
+  onError: (postMessage: (message: any) => void, error: Error, event: MessageEvent) => void,
 ) => {
   self.addEventListener('message', async (event) => {
     try {
@@ -17,7 +17,7 @@ export const createWorkerThread = (
       } else {
         self.postMessage({type: 'error', error: String(error), stack: undefined});
       }
-      onError(self.postMessage, error as Error);
+      onError(self.postMessage, error as Error, event);
     }
   });
 };

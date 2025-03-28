@@ -11,6 +11,7 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import public
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.metadata import TableMetadataSet, TextMetadataValue
 from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._core.utils import exhaust_iterator_and_yield_results_with_exception, imap
@@ -25,7 +26,9 @@ if TYPE_CHECKING:
 
 logger = get_dagster_logger()
 
-DbtDagsterEventType = Union[Output, AssetMaterialization, AssetCheckResult, AssetObservation]
+DbtDagsterEventType = Union[
+    Output, AssetMaterialization, AssetCheckResult, AssetObservation, AssetCheckEvaluation
+]
 
 # We define DbtEventIterator as a generic type for the sake of type hinting.
 # This is so that users who inspect the type of the return value of `DbtCliInvocation.stream()`
@@ -82,7 +85,7 @@ def _fetch_column_metadata(
         except Exception as e:
             logger.warning(
                 "An error occurred while building column schema metadata from data"
-                f" `{col_data}` for the dbt resource"
+                f" `{col_data}` for the dbt resource"  # pyright: ignore[reportPossiblyUnboundVariable]
                 f" `{dbt_resource_props['original_file_path']}`."
                 " Column schema metadata will not be included in the event.\n\n"
                 f"Exception: {e}",
@@ -111,7 +114,7 @@ def _fetch_column_metadata(
 
                 lineage_metadata = _build_column_lineage_metadata(
                     event_history_metadata=EventHistoryMetadata(
-                        columns=column_schema_data,
+                        columns=column_schema_data,  # pyright: ignore[reportPossiblyUnboundVariable]
                         parents=parents,
                     ),
                     dbt_resource_props=dbt_resource_props,
@@ -208,15 +211,13 @@ class DbtEventIterator(Iterator[T]):
     @public
     def fetch_row_counts(
         self,
-    ) -> (
-        "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
-    ):
+    ) -> "DbtEventIterator[Union[Output, AssetMaterialization, AssetCheckResult, AssetObservation, AssetCheckEvaluation]]":
         """Functionality which will fetch row counts for materialized dbt
         models in a dbt run once they are built. Note that row counts will not be fetched
         for views, since this requires running the view's SQL query which may be costly.
 
         Returns:
-            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]:
                 A set of corresponding Dagster events for dbt models, with row counts attached,
                 yielded in the order they are emitted by dbt.
         """
@@ -226,9 +227,7 @@ class DbtEventIterator(Iterator[T]):
     def fetch_column_metadata(
         self,
         with_column_lineage: bool = True,
-    ) -> (
-        "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
-    ):
+    ) -> "DbtEventIterator[Union[Output, AssetMaterialization, AssetCheckResult, AssetObservation, AssetCheckEvaluation]]":
         """Functionality which will fetch column schema metadata for dbt models in a run
         once they're built. It will also fetch schema information for upstream models and generate
         column lineage metadata using sqlglot, if enabled.
@@ -237,7 +236,7 @@ class DbtEventIterator(Iterator[T]):
             generate_column_lineage (bool): Whether to generate column lineage metadata using sqlglot.
 
         Returns:
-            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]:
                 A set of corresponding Dagster events for dbt models, with column metadata attached,
                 yielded in the order they are emitted by dbt.
         """
@@ -285,7 +284,15 @@ class DbtEventIterator(Iterator[T]):
                 event_stream = exhaust_iterator_and_yield_results_with_exception(self)
 
         def _threadpool_wrap_map_fn() -> (
-            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]
+            Iterator[
+                Union[
+                    Output,
+                    AssetMaterialization,
+                    AssetObservation,
+                    AssetCheckResult,
+                    AssetCheckEvaluation,
+                ]
+            ]
         ):
             with ThreadPoolExecutor(
                 max_workers=self._dbt_cli_invocation.postprocessing_threadpool_num_threads,
@@ -307,9 +314,7 @@ class DbtEventIterator(Iterator[T]):
         self,
         skip_config_check: bool = False,
         record_observation_usage: bool = True,
-    ) -> (
-        "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
-    ):
+    ) -> "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]":
         """Associate each warehouse query with the produced asset materializations for use in Dagster
         Plus Insights. Currently supports Snowflake and BigQuery.
 

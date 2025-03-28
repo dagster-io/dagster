@@ -1,4 +1,7 @@
+import logging
 from pathlib import Path
+
+logging.basicConfig(level=logging.INFO)
 
 # We want to group some kinds together in the docs
 SPECIAL_KIND_ORDERS = [
@@ -112,7 +115,7 @@ def main() -> None:
     missing_kinds = set()
     for kind in all_current_kinds:
         if kind not in kind_images or not kind_images[kind]:
-            print(f"Missing image for kind: {kind}")  # noqa: T201
+            logging.warning("Missing image for kind: %s", kind)
             missing_kinds.add(kind)
         else:
             kind_image_path: Path = OP_TAGS_FILE.parent / kind_images[kind]
@@ -153,7 +156,7 @@ def main() -> None:
 
     KIND_TAGS_DOCS_PARTIAL.write_text("\n".join(docs_file_new_contents))
 
-    print(f"Generated {len(output)} kinds")  # noqa: T201
+    logging.info(f"Generated {len(output)} kinds tags in {KIND_TAGS_DOCS_PARTIAL}")
 
 
 if __name__ == "__main__":

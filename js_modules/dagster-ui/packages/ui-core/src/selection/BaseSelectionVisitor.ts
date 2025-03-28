@@ -2,6 +2,7 @@ import {ParserRuleContext} from 'antlr4ts';
 import {AbstractParseTreeVisitor} from 'antlr4ts/tree/AbstractParseTreeVisitor';
 import {ParseTree} from 'antlr4ts/tree/ParseTree';
 import {RuleNode} from 'antlr4ts/tree/RuleNode';
+import {TerminalNode} from 'antlr4ts/tree/TerminalNode';
 
 import {
   ParenthesizedExpressionContext,
@@ -29,7 +30,7 @@ export class BaseSelectionVisitor
 {
   protected cursorIndex: number;
   protected line: string;
-  protected forceVisitCtx = new WeakSet<ParserRuleContext>();
+  protected forceVisitCtx = new WeakSet<ParseTree>();
 
   constructor({line, cursorIndex}: {line: string; cursorIndex: number}) {
     super();
@@ -49,13 +50,7 @@ export class BaseSelectionVisitor
    * Visit a node, but only if the node includes the cursor position OR we are forced to visit it.
    */
   public visit(tree: ParseTree) {
-    const ruleContext = tree as ParserRuleContext;
-    if (
-      ruleContext.start.startIndex !== undefined &&
-      ruleContext.stop?.stopIndex !== undefined &&
-      !this.nodeIncludesCursor(ruleContext) &&
-      !this.forceVisitCtx.has(ruleContext)
-    ) {
+    if (!this.nodeIncludesCursor(tree) && !this.forceVisitCtx.has(tree)) {
       // If not forced and the cursor is not inside, skip visiting children.
       // (Optionally handle top-level whitespace if needed)
       if (!tree.parent) {
@@ -120,12 +115,19 @@ export class BaseSelectionVisitor
   /**
    * Utility to see if the visitor's cursorIndex is within a given context's range.
    */
-  protected nodeIncludesCursor(
-    ctx: Pick<ParserRuleContext, 'start' | 'stop'>,
-    modifier: number = -1,
-  ): boolean {
-    const start = ctx.start.startIndex;
-    const stop = ctx.stop ? ctx.stop.stopIndex : ctx.start.startIndex;
+  protected nodeIncludesCursor(ctx: ParseTree, modifier: number = -1): boolean {
+    let start: number = -1;
+    let stop: number = -1;
+    if (ctx instanceof ParserRuleContext) {
+      start = ctx.start.startIndex;
+      stop = ctx.stop ? ctx.stop.stopIndex : ctx.start.startIndex;
+    } else if (ctx instanceof TerminalNode) {
+      start = ctx.payload.startIndex;
+      stop = ctx.payload.stopIndex;
+    } else {
+      start = 0;
+      stop = this.line.length;
+    }
     // If the parser did not produce a .stopIndex, fallback to just start
     const effCursor = Math.max(0, this.cursorIndex + modifier);
 
@@ -159,15 +161,15 @@ export class BaseSelectionVisitor
 }
 
 function isWhitespaceContext(ctx: ParserRuleContext) {
-  switch (ctx.constructor.name) {
-    case PostAttributeValueWhitespaceContext.name:
-    case PostExpressionWhitespaceContext.name:
-    case PostLogicalOperatorWhitespaceContext.name:
-    case PostNeighborTraversalWhitespaceContext.name:
-    case PostNotOperatorWhitespaceContext.name:
-    case PostUpwardTraversalWhitespaceContext.name:
-      return true;
-    default:
-      return false;
+  if (
+    ctx instanceof PostAttributeValueWhitespaceContext ||
+    ctx instanceof PostExpressionWhitespaceContext ||
+    ctx instanceof PostLogicalOperatorWhitespaceContext ||
+    ctx instanceof PostNeighborTraversalWhitespaceContext ||
+    ctx instanceof PostNotOperatorWhitespaceContext ||
+    ctx instanceof PostUpwardTraversalWhitespaceContext
+  ) {
+    return true;
   }
+  return false;
 }

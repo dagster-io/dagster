@@ -5,7 +5,7 @@ from unittest import mock
 
 import httplib2
 import pytest
-from dagster import RunConfig, _seven, job
+from dagster import RunConfig, job
 from dagster_gcp import (
     DataprocOpConfig,
     DataprocResource,
@@ -13,6 +13,7 @@ from dagster_gcp import (
     dataproc_op,
     dataproc_resource,
 )
+from dagster_shared import seven
 
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "default_project")
 CLUSTER_NAME = f"test-{uuid.uuid4().hex}"
@@ -59,7 +60,7 @@ class HttpSnooper(httplib2.Http):
             if re.match(expected_uri, uri) and method == expected_method:
                 return (
                     httplib2.Response({"status": "200"}),
-                    _seven.json.dumps(result).encode("utf-8"),
+                    seven.json.dumps(result).encode("utf-8"),
                 )
 
         # Pass this one through since its the entire JSON schema used for dynamic object creation

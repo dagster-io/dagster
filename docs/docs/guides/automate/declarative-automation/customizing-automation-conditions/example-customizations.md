@@ -1,5 +1,5 @@
 ---
-title: "Example customizations"
+title: 'Example customizations'
 sidebar_position: 200
 ---
 
@@ -39,12 +39,6 @@ Alternatively, you can pass in an <PyObject section="assets" module="dagster" ob
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/allow_dependencies_cron.py" />
 
-### Wait for all blocking asset checks to complete before executing
-
-The `AutomationCondition.all_deps_blocking_checks_passed()` condition becomes true after all upstream blocking checks have passed. This can be combined with built-in conditions such as `AutomationCondition.on_cron()` and `AutomationCondition.eager()` to ensure that your asset does not execute if upstream data is in a bad state:
-
-<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/blocking_checks_condition.py" />
-
 ## Waiting for all blocking asset checks to complete before executing
 
 The `AutomationCondition.all_deps_blocking_checks_passed()` condition becomes true after all upstream blocking checks have passed.
@@ -52,3 +46,11 @@ The `AutomationCondition.all_deps_blocking_checks_passed()` condition becomes tr
 This can be combined with built-in conditions such as `AutomationCondition.on_cron()` and `AutomationCondition.eager()` to ensure that your asset does not execute if upstream data is in a bad state:
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/blocking_checks_condition.py" />
+
+## Ignoring runs from non-automated runs when using AutomationCondition.eager()
+
+By default, `AutomationCondition.eager()` materializes a target whenever any upstream event occurs, regardless of the source of that event.
+
+It can be useful to ignore runs of certain types when determining if an upstream asset should be considered "updated". This can be done using `AutomationCondition.executed_with_tags()` to filter updates for runs with tags matching particular keys:
+
+<CodeExample path="docs_snippets/docs_snippets/concepts/declarative_automation/executed_with_tags_condition.py" />

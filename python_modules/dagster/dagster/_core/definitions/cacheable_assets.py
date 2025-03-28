@@ -5,6 +5,10 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from typing import AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
 
+from dagster_shared.serdes import serialize_value
+from dagster_shared.serdes.errors import SerializationError
+from dagster_shared.utils.hash import hash_collection
+
 import dagster._check as check
 from dagster._config.field_utils import compute_fields_hash
 from dagster._core.definitions.assets import AssetsDefinition
@@ -16,9 +20,6 @@ from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceAddable
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.errors import SerializationError
-from dagster._serdes.serdes import serialize_value
-from dagster._utils import hash_collection
 
 
 @whitelist_for_serdes

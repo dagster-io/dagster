@@ -128,5 +128,5 @@ def test_link_to_git_wrapper(test_jaffle_shop_manifest: dict[str, Any]) -> None:
 
         source_reference = references[1]
         assert isinstance(source_reference, UrlCodeReference)
-        line_no = inspect.getsourcelines(my_dbt_assets.op.compute_fn.decorated_fn)[1]
+        line_no = inspect.getsourcelines(my_dbt_assets.op.compute_fn.decorated_fn)[1]  # pyright: ignore[reportFunctionMemberAccess]
         assert source_reference.url.endswith(f"test_code_references.py#L{line_no}")

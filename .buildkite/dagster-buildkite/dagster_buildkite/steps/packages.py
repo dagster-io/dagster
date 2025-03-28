@@ -20,7 +20,7 @@ from dagster_buildkite.utils import (
     has_storage_test_fixture_changes,
     network_buildkite_container,
     skip_if_not_airlift_or_dlift_commit,
-    skip_if_not_dlift_commit,
+    skip_if_not_dagster_dbt_cloud_commit,
 )
 
 
@@ -303,14 +303,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         # snippets in all python versions since we are testing the core code exercised by the
         # snippets against all supported python versions.
         unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
-    ),
-    PackageSpec(
-        "examples/docs_beta_snippets",
-        # The docs_snippets test suite also installs a ton of packages in the same environment,
-        # which is liable to cause dependency collisions. It's not necessary to test all these
-        # snippets in all python versions since we are testing the core code exercised by the
-        # snippets against all supported python versions.
-        unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
         pytest_tox_factors=["all", "integrations", "docs_snapshot_test"],
         always_run_if=has_dg_or_components_changes,
     ),
@@ -388,6 +380,10 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         timeout_in_minutes=30,
         queue=BuildkiteQueue.DOCKER,
     ),
+    PackageSpec(
+        "examples/use_case_repository",
+        pytest_tox_factors=["source"],
+    ),
     # Federation tutorial spins up multiple airflow instances, slow to run - use docker queue to ensure
     # beefier instance
     PackageSpec(
@@ -403,20 +399,6 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "examples/experimental/dagster-dlift",
         name="dlift",
-    ),
-    # Runs against live dbt cloud instance, we only want to run on commits and on the
-    # nightly build
-    PackageSpec(
-        "examples/experimental/dagster-dlift/kitchen-sink",
-        skip_if=skip_if_not_dlift_commit,
-        name="dlift-live",
-        env_vars=[
-            "KS_DBT_CLOUD_ACCOUNT_ID",
-            "KS_DBT_CLOUD_PROJECT_ID",
-            "KS_DBT_CLOUD_TOKEN",
-            "KS_DBT_CLOUD_ACCESS_URL",
-            "KS_DBT_CLOUD_DISCOVERY_API_URL",
-        ],
     ),
 ]
 
@@ -753,6 +735,20 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     PackageSpec(
         "python_modules/libraries/dagster-airlift/kitchen-sink",
         always_run_if=has_dagster_airlift_changes,
+    ),
+    # Runs against live dbt cloud instance, we only want to run on commits and on the
+    # nightly build
+    PackageSpec(
+        "python_modules/libraries/dagster-dbt/kitchen-sink",
+        skip_if=skip_if_not_dagster_dbt_cloud_commit,
+        name="dagster-dbt-cloud-live",
+        env_vars=[
+            "KS_DBT_CLOUD_ACCOUNT_ID",
+            "KS_DBT_CLOUD_ACCESS_URL",
+            "KS_DBT_CLOUD_TOKEN",
+            "KS_DBT_CLOUD_PROJECT_ID",
+            "KS_DBT_CLOUD_ENVIRONMENT_ID",
+        ],
     ),
     PackageSpec(
         ".buildkite/dagster-buildkite",

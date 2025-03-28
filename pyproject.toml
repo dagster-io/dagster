@@ -46,9 +46,6 @@ venvPath = "pyright/master"
 # pyright.
 pythonVersion = "3.9"
 
-# Use "basic" ruleset. This differs from strict in several ways, but most
-# importantly it does not flag untyped code as an error.
-typeCheckingMode = "basic"
 
 # Disable reading type annotations from libraries that are not explicitly marked as typed (i.e. that
 # include a py.typed file). All imports from these libraries are given the `Unknown` type (i.e.
@@ -284,7 +281,7 @@ ban-relative-imports = "all"
 
 # Don't format docstrings in alembic migrations.
 "**/alembic/versions/*.py" = ["D"]
-"examples/docs_beta_snippets/docs_beta_snippets/guides/etl/transform-dbt/dbt_definitions*.py" = ["I001"]
+"examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_definitions*.py" = ["I001"]
 
 [tool.ruff.lint.pydocstyle]
 
@@ -294,7 +291,7 @@ ban-relative-imports = "all"
 convention = "google"
 
 [tool.ruff.format]
-exclude = ["examples/docs_beta_snippets/docs_beta_snippets/guides/etl/transform-dbt/dbt_definitions*.py"]
+exclude = ["examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_definitions*.py"]
 
 [tool.dagster]
 module_name = "dagster_test.toys.repo"

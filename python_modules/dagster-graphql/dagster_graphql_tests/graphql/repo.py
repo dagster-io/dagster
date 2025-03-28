@@ -116,7 +116,6 @@ from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
-from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, segfault
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
@@ -124,6 +123,7 @@ from dagster_graphql.test.utils import (
     main_repo_location_name,
     main_repo_name,
 )
+from dagster_shared.seven import get_system_temp_directory
 from typing_extensions import Literal, Never
 
 T = TypeVar("T")
@@ -1822,7 +1822,7 @@ class MyAutomationCondition(AutomationCondition):
     def name(self) -> str:
         return "some_custom_name"
 
-    def evaluate(self): ...
+    def evaluate(self): ...  # pyright: ignore[reportIncompatibleMethodOverride]
 
 
 @asset(automation_condition=MyAutomationCondition().since_last_handled())

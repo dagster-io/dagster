@@ -7,8 +7,8 @@ from unittest import mock
 
 import pytest
 from dagster._core.loader import LoadableBy, LoadingContext
-from dagster._model import DagsterModel
 from dagster._utils.aiodataloader import DataLoader
+from dagster_shared.dagster_model import DagsterModel
 
 
 class Context:
@@ -142,7 +142,7 @@ def test_bad_load_fn():
 
 class LoadableThing(NamedTuple("_LoadableThing", [("key", str), ("val", int)]), LoadableBy[str]):
     @classmethod
-    def _blocking_batch_load(
+    def _blocking_batch_load(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, keys: Iterable[str], context: mock.MagicMock
     ) -> list["LoadableThing"]:
         context.query(keys)

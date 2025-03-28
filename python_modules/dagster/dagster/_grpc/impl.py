@@ -7,6 +7,9 @@ from collections.abc import Generator, Iterator, Sequence
 from contextlib import contextmanager, nullcontext
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union  # noqa: UP035
 
+from dagster_shared.record import record
+from dagster_shared.serdes import whitelist_for_serdes
+
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -51,15 +54,26 @@ from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_p
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._grpc.types import ExecuteExternalJobArgs, ExecutionPlanSnapshotArgs
 from dagster._serdes import deserialize_value
-from dagster._serdes.ipc import IPCErrorMessage
 from dagster._time import datetime_from_timestamp
 from dagster._utils import start_termination_thread
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
 
 if TYPE_CHECKING:
     from dagster._core.definitions.schedule_definition import ScheduleExecutionData
     from dagster._core.definitions.sensor_definition import SensorExecutionData
+
+
+@whitelist_for_serdes
+@record
+class IPCErrorMessage:
+    """This represents a user error encountered during the IPC call. This indicates a business
+    logic error, rather than a protocol. Consider this a "task failed successfully"
+    use case.
+    """
+
+    serializable_error_info: SerializableErrorInfo
+    message: Optional[str]
 
 
 class RunInSubprocessComplete:

@@ -24,7 +24,7 @@ class SubsetAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         self, context: AutomationContext[T_EntityKey]
     ) -> EntitySubset[T_EntityKey]: ...
 
-    async def evaluate(
+    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         # don't compute anything if there are no candidates

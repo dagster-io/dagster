@@ -1,7 +1,7 @@
 ---
 title: "Table metadata"
 description: "Table metadata can be used to provide additional context about a tabular asset, such as its schema, row count, and more."
-sidebar_position: 300
+sidebar_position: 3000
 ---
 
 Table metadata provides additional context about a tabular asset, such as its schema, row count, and more. This metadata can be used to improve collaboration, debugging, and data quality in your data platform.
@@ -51,7 +51,7 @@ To attach row count metadata to an asset, you will need to attach a numerical va
 
 ## Attaching column-level lineage
 
-Column lineage enables data and analytics engineers alike to understand how a column is created and used in your data platform. For more information, see the [column-level lineage documentation](column-level-lineage).
+Column lineage enables data and analytics engineers alike to understand how a column is created and used in your data platform. For more information, see the [column-level lineage documentation](/guides/build/assets/metadata-and-tags/column-level-lineage).
 
 ## Ensuring table schema consistency
 

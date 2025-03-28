@@ -10,9 +10,10 @@ import uuid
 import warnings
 from contextlib import contextmanager
 
+from dagster_shared.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster_shared.seven import IS_WINDOWS
+
 from dagster._core.execution.scripts import poll_compute_logs, watch_orphans
-from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
-from dagster._seven import IS_WINDOWS
 from dagster._utils import ensure_file
 
 WIN_PY36_COMPUTE_LOG_DISABLED_MSG = """\u001b[33mWARNING: Compute log capture is disabled for the current environment. Set the environment variable `PYTHONLEGACYWINDOWSSTDIO` to enable.\n\u001b[0m"""
@@ -105,7 +106,7 @@ def execute_windows_tail(path, stream):
             )
             yield (tail_process.pid, None)
         finally:
-            if tail_process:
+            if tail_process:  # pyright: ignore[reportPossiblyUnboundVariable]
                 start_time = time.time()
                 while not os.path.isfile(ipc_output_file):
                     if time.time() - start_time > 15:
@@ -148,10 +149,10 @@ def execute_posix_tail(path, stream):
         # More here: https://github.com/dagster-io/dagster/issues/23336
         time.sleep(float(os.getenv("DAGSTER_COMPUTE_LOG_TAIL_WAIT_AFTER_FINISH", "0")))
 
-        if tail_process:
+        if tail_process:  # pyright: ignore[reportPossiblyUnboundVariable]
             _clean_up_subprocess(tail_process)
 
-        if watcher_process:
+        if watcher_process:  # pyright: ignore[reportPossiblyUnboundVariable]
             _clean_up_subprocess(watcher_process)
 
 

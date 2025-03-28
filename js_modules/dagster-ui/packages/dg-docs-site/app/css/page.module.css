@@ -1,0 +1,18 @@
+.container {
+  overflow-y: auto;
+  flex: 1;
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.componentItem {
+  background-color: var(--color-background-light);
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--color-keyline-default);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

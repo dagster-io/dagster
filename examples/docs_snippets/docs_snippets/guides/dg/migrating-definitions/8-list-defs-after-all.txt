@@ -1,0 +1,28 @@
+dg list defs
+
+Using /workdir/examples/docs_snippets/.tox/py311-docs_snapshot_test/bin/dagster-components
+Assets
+┏━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━┳━━━━━━━┳━━━━━━━━━━━━━┓
+┃ Key                ┃ Group   ┃ Deps ┃ Kinds ┃ Description ┃
+┡━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━╇━━━━━━━╇━━━━━━━━━━━━━┩
+│ customers_table    │ default │      │       │             │
+│ my_analytics_asset │ default │      │       │             │
+│ orders_table       │ default │      │       │             │
+│ products_table     │ default │      │       │             │
+└────────────────────┴─────────┴──────┴───────┴─────────────┘
+
+Jobs
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Name                              ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ regenerate_analytics_job_schedule │
+│ sync_tables_job_schedule          │
+└───────────────────────────────────┘
+
+Schedules
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓
+┃ Name                              ┃ Cron schedule ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
+│ regenerate_analytics_job_schedule │ 0 * * * *     │
+│ sync_tables_job_schedule          │ 0 0 * * *     │
+└───────────────────────────────────┴───────────────┘

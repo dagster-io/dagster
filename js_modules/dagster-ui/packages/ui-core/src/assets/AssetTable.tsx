@@ -22,6 +22,8 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {InvalidSelectionQueryNotice} from '../pipelines/GraphNotices';
+import {SyntaxError} from '../selection/CustomErrorListener';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
 
@@ -44,6 +46,7 @@ interface Props {
   kindFilter?: StaticSetFilter<string>;
   isLoading: boolean;
   onChangeAssetSelection: (selection: string) => void;
+  errorState?: SyntaxError[];
 }
 
 export const AssetTable = ({
@@ -59,6 +62,7 @@ export const AssetTable = ({
   kindFilter,
   isLoading,
   onChangeAssetSelection,
+  errorState,
 }: Props) => {
   const groupedByDisplayKey = useMemo(
     () => groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a))),
@@ -83,6 +87,13 @@ export const AssetTable = ({
 
   const content = () => {
     if (!assets.length && !isLoading) {
+      if (errorState?.length) {
+        return (
+          <Box padding={{top: 64}}>
+            <InvalidSelectionQueryNotice errors={errorState} />
+          </Box>
+        );
+      }
       if (assetSelection) {
         return (
           <Box padding={{top: 64}}>

@@ -7,9 +7,8 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster_components import Component, ComponentLoadContext
-from dagster_components.core.component_scaffolder import Scaffolder, ScaffoldRequest
-from dagster_components.scaffold import scaffold_component_yaml
-from dagster_components.scaffoldable.decorator import scaffoldable
+from dagster_components.component_scaffolding import scaffold_component
+from dagster_components.scaffold.scaffold import Scaffolder, ScaffoldRequest, scaffold_with
 from pydantic import BaseModel
 
 
@@ -21,11 +20,11 @@ class SimplePipesScriptScaffoldParams(BaseModel):
 
 class SimplePipesScriptScaffolder(Scaffolder):
     @classmethod
-    def get_params(cls):
+    def get_scaffold_params(cls):
         return SimplePipesScriptScaffoldParams
 
     def scaffold(self, request: ScaffoldRequest, params: SimplePipesScriptScaffoldParams) -> None:
-        scaffold_component_yaml(request, params.model_dump())
+        scaffold_component(request, params.model_dump())
         Path(request.target_path, params.filename).write_text(
             _SCRIPT_TEMPLATE.format(asset_key=params.asset_key)
         )
@@ -41,7 +40,7 @@ context.report_asset_materialization(asset_key="{asset_key}")
 """
 
 
-@scaffoldable(scaffolder=SimplePipesScriptScaffolder)
+@scaffold_with(SimplePipesScriptScaffolder)
 class SimplePipesScriptComponent(Component):
     """A simple asset that runs a Python script with the Pipes subprocess client.
 
@@ -49,7 +48,7 @@ class SimplePipesScriptComponent(Component):
     """
 
     @classmethod
-    def get_schema(cls):
+    def get_schema(cls):  # pyright: ignore[reportIncompatibleMethodOverride]
         return SimplePipesScriptScaffoldParams
 
     def __init__(self, asset_key: AssetKey, script_path: Path):

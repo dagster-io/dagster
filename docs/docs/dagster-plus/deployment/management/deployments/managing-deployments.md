@@ -1,5 +1,5 @@
 ---
-title: "Managing full deployments in Dagster+"
+title: 'Managing full deployments in Dagster+'
 ---
 
 Full deployments are standalone environments, allowing you to operate independent instances of Dagster with separately managed permissions.
@@ -81,16 +81,19 @@ Deployment settings can be configured in the Dagster+ interface or using the `da
   <TabItem value="Dagster+">
    To configure deployment settings in the Dagster+ UI:
 
-  1. Sign in to your Dagster+ account.
-  2. Access the **Deployments** page using one of the following:
-    - Click the **deployment switcher > View all deployments**.
-    - Click the **deployment switcher**, then the **gear icon** next to the deployment.
-    - Click **your user icon > Organization Settings > Deployments**.
-  3. Click the **Settings** button next to the deployment you want to configure.
-  4. In the window that displays, configure settings for the deployment.
-  5. When finished, click **Save deployment settings**.
+1. Sign in to your Dagster+ account.
+2. Access the **Deployments** page using one of the following:
+
+   - Click the **deployment switcher > View all deployments**.
+   - Click the **deployment switcher**, then the **gear icon** next to the deployment.
+   - Click **your user icon > Organization Settings > Deployments**.
+
+3. Click the **Settings** button next to the deployment you want to configure.
+4. In the window that displays, configure settings for the deployment.
+5. When finished, click **Save deployment settings**.
+
   </TabItem>
-  <TabItem value="dagster-cloud CLI">
+<TabItem value="dagster-cloud CLI">
 
 :::note
 
@@ -105,13 +108,13 @@ Create a file with the settings you'd like to configure. For example:
 
 concurrency:
   pools:
-    granularity: "run"
+    granularity: 'run'
     default_limit: 1
   runs:
     max_concurrent_runs: 10
     tag_concurrency_limits:
-      - key: "database"
-        value: "redshift"
+      - key: 'database'
+        value: 'redshift'
         limit: 5
 
 run_monitoring:

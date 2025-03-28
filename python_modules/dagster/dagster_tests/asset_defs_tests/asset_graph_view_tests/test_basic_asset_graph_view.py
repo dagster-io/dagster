@@ -10,7 +10,6 @@ from dagster import (
     TimeWindowPartitionsDefinition,
     asset,
 )
-from dagster._check.functions import CheckError
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -27,6 +26,7 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._time import create_datetime, get_current_datetime
+from dagster_shared.check import CheckError
 
 
 def test_basic_construction_and_identity() -> None:

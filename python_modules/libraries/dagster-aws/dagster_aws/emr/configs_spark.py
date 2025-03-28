@@ -48,22 +48,91 @@ def spark_config():
                                         ),
                                         "memoryOverhead": Field(
                                             StringSource,
-                                            description="""Application Properties: The amount of off-heap memory to be allocated per driver in cluster mode, in MiB unless otherwise specified. This is memory that accounts for things like VM overheads, interned strings, other native overheads, etc. This tends to grow with the container size (typically 6-10%). This option is currently supported on YARN and Kubernetes.""",
+                                            description="""Application Properties: Amount of non-heap memory to be allocated per driver process in cluster mode, in MiB unless otherwise specified. This is memory that accounts for things like VM overheads, interned strings, other native overheads, etc. This tends to grow with the container size (typically 6-10%). This option is currently supported on YARN, Mesos and Kubernetes. Note: Non-heap memory includes off-heap memory (when spark.memory.offHeap.enabled=true) and memory used by other driver processes (e.g. python process that goes with a PySpark driver) and memory used by other non-driver processes running in the same container. The maximum memory size of container to running driver is determined by the sum of spark.driver.memoryOverhead and spark.driver.memory.""",
                                             is_required=False,
+                                        ),
+                                        "memoryOverheadFactor": Field(
+                                            StringSource,
+                                            description="""Application Properties: Fraction of driver memory to be allocated as additional non-heap memory per driver process in cluster mode. This is memory that accounts for things like VM overheads, interned strings, other native overheads, etc. This tends to grow with the container size. This value defaults to 0.10 except for Kubernetes non-JVM jobs, which defaults to 0.40. This is done as non-JVM tasks need more non-JVM heap space and such tasks commonly fail with "Memory Overhead Exceeded" errors. This preempts this error with a higher default. This value is ignored if spark.driver.memoryOverhead is set directly.""",
+                                            is_required=False,
+                                        ),
+                                        "resource": Field(
+                                            Permissive(
+                                                fields={
+                                                    "{resourceName}": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "amount": Field(
+                                                                    StringSource,
+                                                                    description="""Application Properties: Amount of a particular resource type to use on the driver. If this is used, you must also specify the spark.driver.resource.{resourceName}.discoveryScript for the driver to find the resource on startup.""",
+                                                                    is_required=False,
+                                                                ),
+                                                                "discoveryScript": Field(
+                                                                    StringSource,
+                                                                    description="""Application Properties: A script for the driver to run to discover a particular resource type. This should write to STDOUT a JSON string in the format of the ResourceInformation class. This has a name and an array of addresses. For a client-submitted driver, discovery script must assign different resource addresses to this driver comparing to other drivers on the same host.""",
+                                                                    is_required=False,
+                                                                ),
+                                                                "vendor": Field(
+                                                                    StringSource,
+                                                                    description="""Application Properties: Vendor of the resources to use for the driver. This option is currently only supported on Kubernetes and is actually both the vendor and domain following the Kubernetes device plugin naming convention. (e.g. For GPUs on Kubernetes this config would be set to nvidia.com or amd.com)""",
+                                                                    is_required=False,
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                }
+                                            )
                                         ),
                                         "supervise": Field(
                                             Bool,
                                             description="""Application Properties: If true, restarts the driver automatically if it fails with a non-zero exit status. Only has effect in Spark standalone mode or Mesos cluster deploy mode.""",
                                             is_required=False,
                                         ),
+                                        "log": Field(
+                                            Permissive(
+                                                fields={
+                                                    "dfsDir": Field(
+                                                        StringSource,
+                                                        description="""Application Properties: Base directory in which Spark driver logs are synced, if spark.driver.log.persistToDfs.enabled is true. Within this base directory, each application logs the driver logs to an application specific file. Users may want to set this to a unified location like an HDFS directory so driver log files can be persisted for later usage. This directory should allow any Spark user to read/write files and the Spark History Server user to delete files. Additionally, older logs from this directory are cleaned by the Spark History Server if spark.history.fs.driverlog.cleaner.enabled is true and, if they are older than max age configured by setting spark.history.fs.driverlog.cleaner.maxAge.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "persistToDfs": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "enabled": Field(
+                                                                    StringSource,
+                                                                    description="""Application Properties: If true, spark application running in client mode will write driver logs to a persistent storage, configured in spark.driver.log.dfsDir. If spark.driver.log.dfsDir is not configured, driver logs will not be persisted. Additionally, enable the cleaner by setting spark.history.fs.driverlog.cleaner.enabled to true in Spark History Server.""",
+                                                                    is_required=False,
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                    "layout": Field(
+                                                        StringSource,
+                                                        description="""Application Properties: The layout for the driver logs that are synced to spark.driver.log.dfsDir. If this is not configured, it uses the layout for the first appender defined in log4j2.properties. If that is also not configured, driver logs use the default layout.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "allowErasureCoding": Field(
+                                                        StringSource,
+                                                        description="""Application Properties: Whether to allow driver logs to use erasure coding. On HDFS, erasure coded files will not update as quickly as regular replicated files, so they make take longer to reflect changes written by the application. Note that even if this is true, Spark will still not force the file to use erasure coding, it will simply use file system defaults.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
                                         "extraClassPath": Field(
                                             StringSource,
                                             description="""Runtime Environment: Extra classpath entries to prepend to the classpath of the driver. Note: In client mode, this config must not be set through the SparkConf directly in your application, because the driver JVM has already started at that point. Instead, please set this through the --driver-class-path command line option or in your default properties file.""",
                                             is_required=False,
                                         ),
+                                        "defaultJavaOptions": Field(
+                                            StringSource,
+                                            description="""Runtime Environment: A string of default JVM options to prepend to spark.driver.extraJavaOptions. This is intended to be set by administrators. For instance, GC settings or other logging. Note that it is illegal to set maximum heap size (-Xmx) settings with this option. Maximum heap size settings can be set with spark.driver.memory in the cluster mode and through the --driver-memory command line option in the client mode. Note: In client mode, this config must not be set through the SparkConf directly in your application, because the driver JVM has already started at that point. Instead, please set this through the --driver-java-options command line option or in your default properties file.""",
+                                            is_required=False,
+                                        ),
                                         "extraJavaOptions": Field(
                                             StringSource,
-                                            description="""Runtime Environment: A string of extra JVM options to pass to the driver. For instance, GC settings or other logging. Note that it is illegal to set maximum heap size (-Xmx) settings with this option. Maximum heap size settings can be set with spark.driver.memory in the cluster mode and through the --driver-memory command line option in the client mode. Note: In client mode, this config must not be set through the SparkConf directly in your application, because the driver JVM has already started at that point. Instead, please set this through the --driver-java-options command line option or in your default properties file.""",
+                                            description="""Runtime Environment: A string of extra JVM options to pass to the driver. This is intended to be set by users. For instance, GC settings or other logging. Note that it is illegal to set maximum heap size (-Xmx) settings with this option. Maximum heap size settings can be set with spark.driver.memory in the cluster mode and through the --driver-memory command line option in the client mode. Note: In client mode, this config must not be set through the SparkConf directly in your application, because the driver JVM has already started at that point. Instead, please set this through the --driver-java-options command line option or in your default properties file. spark.driver.defaultJavaOptions will be prepended to this configuration.""",
                                             is_required=False,
                                         ),
                                         "extraLibraryPath": Field(
@@ -105,6 +174,17 @@ def spark_config():
                                     }
                                 )
                             ),
+                            "resources": Field(
+                                Permissive(
+                                    fields={
+                                        "discoveryPlugin": Field(
+                                            StringSource,
+                                            description="""Application Properties: Comma-separated list of class names implementing org.apache.spark.api.resource.ResourceDiscoveryPlugin to load into the application. This is for advanced users to replace the resource discovery class with a custom implementation. Spark will try each class specified until one of them returns the resource information for that resource. It tries the discovery script last if none of the plugins return information for that resource.""",
+                                            is_required=False,
+                                        ),
+                                    }
+                                )
+                            ),
                             "executor": Field(
                                 Permissive(
                                     fields={
@@ -118,7 +198,7 @@ def spark_config():
                                                 fields={
                                                     "memory": Field(
                                                         StringSource,
-                                                        description="""Application Properties: The amount of memory to be allocated to PySpark in each executor, in MiB unless otherwise specified. If set, PySpark memory for an executor will be limited to this amount. If not set, Spark will not limit Python's memory use and it is up to the application to avoid exceeding the overhead memory space shared with other non-JVM processes. When PySpark is run in YARN or Kubernetes, this memory is added to executor resource requests.""",
+                                                        description="""Application Properties: The amount of memory to be allocated to PySpark in each executor, in MiB unless otherwise specified. If set, PySpark memory for an executor will be limited to this amount. If not set, Spark will not limit Python's memory use and it is up to the application to avoid exceeding the overhead memory space shared with other non-JVM processes. When PySpark is run in YARN or Kubernetes, this memory is added to executor resource requests. Note: This feature is dependent on Python's `resource` module; therefore, the behaviors and limitations are inherited. For instance, Windows does not support resource limiting and actual resource is not limited on MacOS.""",
                                                         is_required=False,
                                                     ),
                                                 }
@@ -126,7 +206,70 @@ def spark_config():
                                         ),
                                         "memoryOverhead": Field(
                                             StringSource,
-                                            description="""Application Properties: The amount of off-heap memory to be allocated per executor, in MiB unless otherwise specified. This is memory that accounts for things like VM overheads, interned strings, other native overheads, etc. This tends to grow with the executor size (typically 6-10%). This option is currently supported on YARN and Kubernetes.""",
+                                            description="""Application Properties: Amount of additional memory to be allocated per executor process, in MiB unless otherwise specified. This is memory that accounts for things like VM overheads, interned strings, other native overheads, etc. This tends to grow with the executor size (typically 6-10%). This option is currently supported on YARN and Kubernetes. Note: Additional memory includes PySpark executor memory (when spark.executor.pyspark.memory is not configured) and memory used by other non-executor processes running in the same container. The maximum memory size of container to running executor is determined by the sum of spark.executor.memoryOverhead, spark.executor.memory, spark.memory.offHeap.size and spark.executor.pyspark.memory.""",
+                                            is_required=False,
+                                        ),
+                                        "memoryOverheadFactor": Field(
+                                            StringSource,
+                                            description="""Application Properties: Fraction of executor memory to be allocated as additional non-heap memory per executor process. This is memory that accounts for things like VM overheads, interned strings, other native overheads, etc. This tends to grow with the container size. This value defaults to 0.10 except for Kubernetes non-JVM jobs, which defaults to 0.40. This is done as non-JVM tasks need more non-JVM heap space and such tasks commonly fail with "Memory Overhead Exceeded" errors. This preempts this error with a higher default. This value is ignored if spark.executor.memoryOverhead is set directly.""",
+                                            is_required=False,
+                                        ),
+                                        "resource": Field(
+                                            Permissive(
+                                                fields={
+                                                    "{resourceName}": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "amount": Field(
+                                                                    StringSource,
+                                                                    description="""Application Properties: Amount of a particular resource type to use per executor process. If this is used, you must also specify the spark.executor.resource.{resourceName}.discoveryScript for the executor to find the resource on startup.""",
+                                                                    is_required=False,
+                                                                ),
+                                                                "discoveryScript": Field(
+                                                                    StringSource,
+                                                                    description="""Application Properties: A script for the executor to run to discover a particular resource type. This should write to STDOUT a JSON string in the format of the ResourceInformation class. This has a name and an array of addresses.""",
+                                                                    is_required=False,
+                                                                ),
+                                                                "vendor": Field(
+                                                                    StringSource,
+                                                                    description="""Application Properties: Vendor of the resources to use for the executors. This option is currently only supported on Kubernetes and is actually both the vendor and domain following the Kubernetes device plugin naming convention. (e.g. For GPUs on Kubernetes this config would be set to nvidia.com or amd.com)""",
+                                                                    is_required=False,
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                        "decommission": Field(
+                                            Permissive(
+                                                fields={
+                                                    "killInterval": Field(
+                                                        StringSource,
+                                                        description="""Application Properties: Duration after which a decommissioned executor will be killed forcefully by an outside (e.g. non-spark) service.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "forceKillTimeout": Field(
+                                                        StringSource,
+                                                        description="""Application Properties: Duration after which a Spark will force a decommissioning executor to exit. This should be set to a high value in most situations as low values will prevent block migrations from having enough time to complete.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "signal": Field(
+                                                        StringSource,
+                                                        description="""Application Properties: The signal that used to trigger the executor to start decommission.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                        "maxNumFailures": Field(
+                                            StringSource,
+                                            description="""Application Properties: The maximum number of executor failures before failing the application. This configuration only takes effect on YARN, or Kubernetes when `spark.kubernetes.allocation.pods.allocator` is set to 'direct'.""",
+                                            is_required=False,
+                                        ),
+                                        "failuresValidityInterval": Field(
+                                            StringSource,
+                                            description="""Application Properties: Interval after which executor failures will be considered independent and not accumulate towards the attempt count. This configuration only takes effect on YARN, or Kubernetes when `spark.kubernetes.allocation.pods.allocator` is set to 'direct'.""",
                                             is_required=False,
                                         ),
                                         "extraClassPath": Field(
@@ -134,9 +277,14 @@ def spark_config():
                                             description="""Runtime Environment: Extra classpath entries to prepend to the classpath of executors. This exists primarily for backwards-compatibility with older versions of Spark. Users typically should not need to set this option.""",
                                             is_required=False,
                                         ),
+                                        "defaultJavaOptions": Field(
+                                            StringSource,
+                                            description="""Runtime Environment: A string of default JVM options to prepend to spark.executor.extraJavaOptions. This is intended to be set by administrators. For instance, GC settings or other logging. Note that it is illegal to set Spark properties or maximum heap size (-Xmx) settings with this option. Spark properties should be set using a SparkConf object or the spark-defaults.conf file used with the spark-submit script. Maximum heap size settings can be set with spark.executor.memory. The following symbols, if present will be interpolated: {{APP_ID}} will be replaced by application ID and {{EXECUTOR_ID}} will be replaced by executor ID. For example, to enable verbose gc logging to a file named for the executor ID of the app in /tmp, pass a 'value' of: -verbose:gc -Xloggc:/tmp/{{APP_ID}}-{{EXECUTOR_ID}}.gc""",
+                                            is_required=False,
+                                        ),
                                         "extraJavaOptions": Field(
                                             StringSource,
-                                            description="""Runtime Environment: A string of extra JVM options to pass to executors. For instance, GC settings or other logging. Note that it is illegal to set Spark properties or maximum heap size (-Xmx) settings with this option. Spark properties should be set using a SparkConf object or the spark-defaults.conf file used with the spark-submit script. Maximum heap size settings can be set with spark.executor.memory. The following symbols, if present will be interpolated: {{APP_ID}} will be replaced by application ID and {{EXECUTOR_ID}} will be replaced by executor ID. For example, to enable verbose gc logging to a file named for the executor ID of the app in /tmp, pass a 'value' of: -verbose:gc -Xloggc:/tmp/{{APP_ID}}-{{EXECUTOR_ID}}.gc""",
+                                            description="""Runtime Environment: A string of extra JVM options to pass to executors. This is intended to be set by users. For instance, GC settings or other logging. Note that it is illegal to set Spark properties or maximum heap size (-Xmx) settings with this option. Spark properties should be set using a SparkConf object or the spark-defaults.conf file used with the spark-submit script. Maximum heap size settings can be set with spark.executor.memory. The following symbols, if present will be interpolated: {{APP_ID}} will be replaced by application ID and {{EXECUTOR_ID}} will be replaced by executor ID. For example, to enable verbose gc logging to a file named for the executor ID of the app in /tmp, pass a 'value' of: -verbose:gc -Xloggc:/tmp/{{APP_ID}}-{{EXECUTOR_ID}}.gc spark.executor.defaultJavaOptions will be prepended to this configuration.""",
                                             is_required=False,
                                         ),
                                         "extraLibraryPath": Field(
@@ -202,6 +350,33 @@ def spark_config():
                                             description="""Execution Behavior: Interval between each executor's heartbeats to the driver. Heartbeats let the driver know that the executor is still alive and update it with metrics for in-progress tasks. spark.executor.heartbeatInterval should be significantly less than spark.network.timeout""",
                                             is_required=False,
                                         ),
+                                        "processTreeMetrics": Field(
+                                            Permissive(
+                                                fields={
+                                                    "enabled": Field(
+                                                        StringSource,
+                                                        description="""Executor Metrics: Whether to collect process tree metrics (from the /proc filesystem) when collecting executor metrics. Note: The process tree metrics are collected only if the /proc filesystem exists.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                        "metrics": Field(
+                                            Permissive(
+                                                fields={
+                                                    "pollingInterval": Field(
+                                                        StringSource,
+                                                        description="""Executor Metrics: How often to collect executor metrics (in milliseconds). If 0, the polling is done on executor heartbeats (thus at the heartbeat interval, specified by spark.executor.heartbeatInterval). If positive, the polling is done at this interval.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "fileSystemSchemes": Field(
+                                                        StringSource,
+                                                        description="""Executor Metrics: The file system schemes to report in executor metrics.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
                                     }
                                 )
                             ),
@@ -215,7 +390,7 @@ def spark_config():
                                     fields={
                                         "dir": Field(
                                             StringSource,
-                                            description="""Application Properties: Directory to use for "scratch" space in Spark, including map output files and RDDs that get stored on disk. This should be on a fast, local disk in your system. It can also be a comma-separated list of multiple directories on different disks. NOTE: In Spark 1.0 and later this will be overridden by SPARK_LOCAL_DIRS (Standalone), MESOS_SANDBOX (Mesos) or LOCAL_DIRS (YARN) environment variables set by the cluster manager.""",
+                                            description="""Application Properties: Directory to use for "scratch" space in Spark, including map output files and RDDs that get stored on disk. This should be on a fast, local disk in your system. It can also be a comma-separated list of multiple directories on different disks. Note: This will be overridden by SPARK_LOCAL_DIRS (Standalone), MESOS_SANDBOX (Mesos) or LOCAL_DIRS (YARN) environment variables set by the cluster manager.""",
                                             is_required=False,
                                         ),
                                     }
@@ -255,6 +430,22 @@ def spark_config():
                                             description="""Application Properties: Application information that will be written into Yarn RM log/HDFS audit log when running on Yarn/HDFS. Its length depends on the Hadoop configuration hadoop.caller.context.max.size. It should be concise, and typically can have up to 50 characters.""",
                                             is_required=False,
                                         ),
+                                        "level": Field(
+                                            StringSource,
+                                            description="""Application Properties: When set, overrides any user-defined log settings as if calling SparkContext.setLogLevel() at Spark startup. Valid log levels include: "ALL", "DEBUG", "ERROR", "FATAL", "INFO", "OFF", "TRACE", "WARN".""",
+                                            is_required=False,
+                                        ),
+                                    }
+                                )
+                            ),
+                            "decommission": Field(
+                                Permissive(
+                                    fields={
+                                        "enabled": Field(
+                                            StringSource,
+                                            description="""Application Properties: When decommission enabled, Spark will try its best to shut down the executor gracefully. Spark will try to migrate all the RDD blocks (controlled by spark.storage.decommission.rddBlocks.enabled) and shuffle blocks (controlled by spark.storage.decommission.shuffleBlocks.enabled) from the decommissioning executor to a remote executor when spark.storage.decommission.enabled is enabled. With decommission enabled, Spark will also decommission an executor instead of killing when spark.dynamicAllocation.enabled enabled.""",
+                                            is_required=False,
+                                        ),
                                     }
                                 )
                             ),
@@ -265,6 +456,17 @@ def spark_config():
                                             StringSource,
                                             description="""Runtime Environment: Regex to decide which Spark configuration properties and environment variables in driver and executor environments contain sensitive information. When this regex matches a property key or value, the value is redacted from the environment UI and various logs like YARN and event logs.""",
                                             is_required=False,
+                                        ),
+                                        "string": Field(
+                                            Permissive(
+                                                fields={
+                                                    "regex": Field(
+                                                        StringSource,
+                                                        description="""Runtime Environment: Regex to decide which parts of strings produced by Spark contain sensitive information. When this regex matches a string part, that string part is replaced by a dummy value. This is currently used to redact the output of SQL explain commands.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
                                         ),
                                     }
                                 )
@@ -282,7 +484,7 @@ def spark_config():
                                                     ),
                                                     "dump": Field(
                                                         StringSource,
-                                                        description="""Runtime Environment: The directory which is used to dump the profile result before driver exiting. The results will be dumped as separated file for each RDD. They can be loaded by ptats.Stats(). If this is specified, the profile result will not be displayed automatically.""",
+                                                        description="""Runtime Environment: The directory which is used to dump the profile result before driver exiting. The results will be dumped as separated file for each RDD. They can be loaded by pstats.Stats(). If this is specified, the profile result will not be displayed automatically.""",
                                                         is_required=False,
                                                     ),
                                                 }
@@ -298,7 +500,7 @@ def spark_config():
                                                     ),
                                                     "reuse": Field(
                                                         Bool,
-                                                        description="""Runtime Environment: Reuse Python worker or not. If yes, it will use a fixed number of Python workers, does not need to fork() a Python process for every task. It will be very useful if there is large broadcast, then the broadcast will not be needed to transferred from JVM to Python worker for every task.""",
+                                                        description="""Runtime Environment: Reuse Python worker or not. If yes, it will use a fixed number of Python workers, does not need to fork() a Python process for every task. It will be very useful if there is a large broadcast, then the broadcast will not need to be transferred from JVM to Python worker for every task.""",
                                                         is_required=False,
                                                     ),
                                                 }
@@ -315,6 +517,22 @@ def spark_config():
                                             description="""Runtime Environment: Comma-separated list of files to be placed in the working directory of each executor. Globs are allowed.""",
                                             is_required=False,
                                         ),
+                                        "io": Field(
+                                            Permissive(
+                                                fields={
+                                                    "connectionTimeout": Field(
+                                                        StringSource,
+                                                        description="""Shuffle Behavior: Timeout for the established connections for fetching files in Spark RPC environments to be marked as idled and closed if there are still outstanding files being downloaded but no traffic no the channel for at least `connectionTimeout`.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "connectionCreationTimeout": Field(
+                                                        StringSource,
+                                                        description="""Shuffle Behavior: Timeout for establishing a connection for fetching files in Spark RPC environments.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
                                         "fetchTimeout": Field(
                                             StringSource,
                                             description="""Execution Behavior: Communication timeout to use when fetching files added through SparkContext.addFile() from the driver.""",
@@ -327,7 +545,17 @@ def spark_config():
                                         ),
                                         "overwrite": Field(
                                             Bool,
-                                            description="""Execution Behavior: Whether to overwrite files added through SparkContext.addFile() when the target file exists and its contents do not match those of the source.""",
+                                            description="""Execution Behavior: Whether to overwrite any files which exist at the startup. Users can not overwrite the files added by SparkContext.addFile or SparkContext.addJar before even if this option is set true.""",
+                                            is_required=False,
+                                        ),
+                                        "ignoreCorruptFiles": Field(
+                                            StringSource,
+                                            description="""Execution Behavior: Whether to ignore corrupt files. If true, the Spark jobs will continue to run when encountering corrupted or non-existing files and contents that have been read will still be returned.""",
+                                            is_required=False,
+                                        ),
+                                        "ignoreMissingFiles": Field(
+                                            StringSource,
+                                            description="""Execution Behavior: Whether to ignore missing files. If true, the Spark jobs will continue to run when encountering missing files and the contents that have been read will still be returned.""",
                                             is_required=False,
                                         ),
                                         "maxPartitionBytes": Field(
@@ -368,7 +596,7 @@ def spark_config():
                                         ),
                                         "ivySettings": Field(
                                             StringSource,
-                                            description="""Runtime Environment: Path to an Ivy settings file to customize resolution of jars specified using spark.jars.packages instead of the built-in defaults, such as maven central. Additional repositories given by the command-line option --repositories or spark.jars.repositories will also be included. Useful for allowing Spark to resolve artifacts from behind a firewall e.g. via an in-house artifact server like Artifactory. Details on the settings file format can be found at http://ant.apache.org/ivy/history/latest-milestone/settings.html""",
+                                            description="""Runtime Environment: Path to an Ivy settings file to customize resolution of jars specified using spark.jars.packages instead of the built-in defaults, such as maven central. Additional repositories given by the command-line option --repositories or spark.jars.repositories will also be included. Useful for allowing Spark to resolve artifacts from behind a firewall e.g. via an in-house artifact server like Artifactory. Details on the settings file format can be found at Settings Files. Only paths with file:// scheme are supported. Paths without a scheme are assumed to have a file:// scheme. When running in YARN cluster mode, this file will also be localized to the remote driver for dependency resolution within SparkContext#addJar""",
                                             is_required=False,
                                         ),
                                         "repositories": Field(
@@ -378,6 +606,11 @@ def spark_config():
                                         ),
                                     }
                                 )
+                            ),
+                            "archives": Field(
+                                StringSource,
+                                description="""Runtime Environment: Comma-separated list of archives to be extracted into the working directory of each executor. .jar, .tar.gz, .tgz and .zip are supported. You can specify the directory name to unpack via adding # after the file name to unpack, for example, file.zip#directory. This configuration is experimental.""",
+                                is_required=False,
                             ),
                             "pyspark": Field(
                                 Permissive(
@@ -422,11 +655,6 @@ def spark_config():
                                     }
                                 )
                             ),
-                            "maxRemoteBlockSizeFetchToMem": Field(
-                                IntSource,
-                                description="""Shuffle Behavior: The remote block will be fetched to disk when size of the block is above this threshold in bytes. This is to avoid a giant request that takes too much memory. By default, this is only enabled for blocks > 2GB, as those cannot be fetched directly into memory, no matter what resources are available. But it can be turned down to a much lower value (eg. 200m) to avoid using too much memory on smaller blocks as well. Note this configuration will affect both shuffle fetch and block manager remote block fetch. For users who enabled external shuffle service, this feature can only be used when external shuffle service is newer than Spark 2.2.""",
-                                is_required=False,
-                            ),
                             "shuffle": Field(
                                 Permissive(
                                     fields={
@@ -441,6 +669,45 @@ def spark_config():
                                                     "buffer": Field(
                                                         StringSource,
                                                         description="""Shuffle Behavior: Size of the in-memory buffer for each shuffle file output stream, in KiB unless otherwise specified. These buffers reduce the number of disk seeks and system calls made in creating intermediate shuffle files.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                        "unsafe": Field(
+                                            Permissive(
+                                                fields={
+                                                    "file": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "output": Field(
+                                                                    Permissive(
+                                                                        fields={
+                                                                            "buffer": Field(
+                                                                                StringSource,
+                                                                                description="""Shuffle Behavior: The file system for this buffer size after each partition is written in unsafe shuffle writer. In KiB unless otherwise specified.""",
+                                                                                is_required=False,
+                                                                            ),
+                                                                        }
+                                                                    )
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                        "spill": Field(
+                                            Permissive(
+                                                fields={
+                                                    "diskWriteBufferSize": Field(
+                                                        StringSource,
+                                                        description="""Shuffle Behavior: The buffer size, in bytes, to use when writing the sorted records to an on-disk file.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "compress": Field(
+                                                        Bool,
+                                                        description="""Shuffle Behavior: Whether to compress data spilled during shuffles. Compression will use spark.io.compression.codec.""",
                                                         is_required=False,
                                                     ),
                                                 }
@@ -469,6 +736,21 @@ def spark_config():
                                                         description="""Shuffle Behavior: (Netty only) How long to wait between retries of fetches. The maximum delay caused by retrying is 15 seconds by default, calculated as maxRetries * retryWait.""",
                                                         is_required=False,
                                                     ),
+                                                    "backLog": Field(
+                                                        StringSource,
+                                                        description="""Shuffle Behavior: Length of the accept queue for the shuffle service. For large applications, this value may need to be increased, so that incoming connections are not dropped if the service cannot keep up with a large number of connections arriving in a short period of time. This needs to be configured wherever the shuffle service itself is running, which may be outside of the application (see spark.shuffle.service.enabled option below). If set below 1, will fallback to OS default defined by Netty's io.netty.util.NetUtil#SOMAXCONN.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "connectionTimeout": Field(
+                                                        StringSource,
+                                                        description="""Shuffle Behavior: Timeout for the established connections between shuffle servers and clients to be marked as idled and closed if there are still outstanding fetch requests but no traffic no the channel for at least `connectionTimeout`.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "connectionCreationTimeout": Field(
+                                                        StringSource,
+                                                        description="""Shuffle Behavior: Timeout for establishing a connection between the shuffle servers and clients.""",
+                                                        is_required=False,
+                                                    ),
                                                 }
                                             )
                                         ),
@@ -477,12 +759,17 @@ def spark_config():
                                                 fields={
                                                     "enabled": Field(
                                                         Bool,
-                                                        description="""Shuffle Behavior: Enables the external shuffle service. This service preserves the shuffle files written by executors so the executors can be safely removed. This must be enabled if spark.dynamicAllocation.enabled is "true". The external shuffle service must be set up in order to enable it. See dynamic allocation configuration and setup documentation for more information.""",
+                                                        description="""Shuffle Behavior: Enables the external shuffle service. This service preserves the shuffle files written by executors e.g. so that executors can be safely removed, or so that shuffle fetches can continue in the event of executor failure. The external shuffle service must be set up in order to enable it. See dynamic allocation configuration and setup documentation for more information.""",
                                                         is_required=False,
                                                     ),
                                                     "port": Field(
                                                         IntSource,
                                                         description="""Shuffle Behavior: Port on which the external shuffle service will run.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "name": Field(
+                                                        StringSource,
+                                                        description="""Shuffle Behavior: The configured name of the Spark shuffle service the client should communicate with. This must match the name used to configure the Shuffle within the YARN NodeManager configuration (yarn.nodemanager.aux-services). Only takes effect when spark.shuffle.service.enabled is set to true.""",
                                                         is_required=False,
                                                     ),
                                                     "index": Field(
@@ -493,11 +780,49 @@ def spark_config():
                                                                         fields={
                                                                             "size": Field(
                                                                                 StringSource,
-                                                                                description="""Shuffle Behavior: Cache entries limited to the specified memory footprint in bytes.""",
+                                                                                description="""Shuffle Behavior: Cache entries limited to the specified memory footprint, in bytes unless otherwise specified.""",
                                                                                 is_required=False,
                                                                             ),
                                                                         }
                                                                     )
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                    "removeShuffle": Field(
+                                                        StringSource,
+                                                        description="""Shuffle Behavior: Whether to use the ExternalShuffleService for deleting shuffle blocks for deallocated executors when the shuffle is no longer needed. Without this enabled, shuffle data on executors that are deallocated will remain on disk until the application ends.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "fetch": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "rdd": Field(
+                                                                    Permissive(
+                                                                        fields={
+                                                                            "enabled": Field(
+                                                                                StringSource,
+                                                                                description="""Shuffle Behavior: Whether to use the ExternalShuffleService for fetching disk persisted RDD blocks. In case of dynamic allocation if this feature is enabled executors having only disk persisted blocks are considered idle after spark.dynamicAllocation.executorIdleTimeout and will be released accordingly.""",
+                                                                                is_required=False,
+                                                                            ),
+                                                                        }
+                                                                    )
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                    "db": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "enabled": Field(
+                                                                    StringSource,
+                                                                    description="""Shuffle Behavior: Whether to use db in ExternalShuffleService. Note that this only affects standalone mode.""",
+                                                                    is_required=False,
+                                                                ),
+                                                                "backend": Field(
+                                                                    StringSource,
+                                                                    description="""Shuffle Behavior: Specifies a disk-based store used in shuffle service local db. Setting as LEVELDB or ROCKSDB.""",
+                                                                    is_required=False,
                                                                 ),
                                                             }
                                                         )
@@ -518,16 +843,22 @@ def spark_config():
                                                         description="""Shuffle Behavior: (Advanced) In the sort-based shuffle manager, avoid merge-sorting data if there is no map-side aggregation and there are at most this many reduce partitions.""",
                                                         is_required=False,
                                                     ),
-                                                }
-                                            )
-                                        ),
-                                        "spill": Field(
-                                            Permissive(
-                                                fields={
-                                                    "compress": Field(
-                                                        Bool,
-                                                        description="""Shuffle Behavior: Whether to compress data spilled during shuffles. Compression will use spark.io.compression.codec.""",
-                                                        is_required=False,
+                                                    "io": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "plugin": Field(
+                                                                    Permissive(
+                                                                        fields={
+                                                                            "class": Field(
+                                                                                StringSource,
+                                                                                description="""Shuffle Behavior: Name of the class to use for shuffle IO.""",
+                                                                                is_required=False,
+                                                                            ),
+                                                                        }
+                                                                    )
+                                                                ),
+                                                            }
+                                                        )
                                                     ),
                                                 }
                                             )
@@ -553,10 +884,69 @@ def spark_config():
                                                 }
                                             )
                                         ),
-                                        "memoryFraction": Field(
-                                            Float,
-                                            description="""Memory Management: (deprecated) This is read only if spark.memory.useLegacyMode is enabled. Fraction of Java heap to use for aggregation and cogroups during shuffles. At any given time, the collective size of all in-memory maps used for shuffles is bounded by this limit, beyond which the contents will begin to spill to disk. If spills are often, consider increasing this value at the expense of spark.storage.memoryFraction.""",
+                                        "reduceLocality": Field(
+                                            Permissive(
+                                                fields={
+                                                    "enabled": Field(
+                                                        StringSource,
+                                                        description="""Shuffle Behavior: Whether to compute locality preferences for reduce tasks.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                        "mapOutput": Field(
+                                            Permissive(
+                                                fields={
+                                                    "minSizeForBroadcast": Field(
+                                                        StringSource,
+                                                        description="""Shuffle Behavior: The size at which we use Broadcast to send the map output statuses to the executors.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                        "detectCorrupt": Field(
+                                            Permissive(
+                                                fields={
+                                                    "root": Field(
+                                                        StringSource,
+                                                        description="""Shuffle Behavior: Whether to detect any corruption in fetched blocks.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "useExtraMemory": Field(
+                                                        StringSource,
+                                                        description="""Shuffle Behavior: If enabled, part of a compressed/encrypted stream will be de-compressed/de-crypted by using extra memory to detect early corruption. Any IOException thrown will cause the task to be retried once and if it fails again with same exception, then FetchFailedException will be thrown to retry previous stage.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                        "useOldFetchProtocol": Field(
+                                            StringSource,
+                                            description="""Shuffle Behavior: Whether to use the old protocol while doing the shuffle block fetching. It is only enabled while we need the compatibility in the scenario of new Spark version job fetching shuffle blocks from old version external shuffle service.""",
                                             is_required=False,
+                                        ),
+                                        "readHostLocalDisk": Field(
+                                            StringSource,
+                                            description="""Shuffle Behavior: If enabled (and spark.shuffle.useOldFetchProtocol is disabled, shuffle blocks requested from those block managers which are running on the same host are read from the disk directly instead of being fetched as remote blocks over the network.""",
+                                            is_required=False,
+                                        ),
+                                        "checksum": Field(
+                                            Permissive(
+                                                fields={
+                                                    "enabled": Field(
+                                                        StringSource,
+                                                        description="""Shuffle Behavior: Whether to calculate the checksum of shuffle data. If enabled, Spark will calculate the checksum values for each partition data within the map output file and store the values in a checksum file on the disk. When there's shuffle data corruption detected, Spark will try to diagnose the cause (e.g., network issue, disk issue, etc.) of the corruption by using the checksum file.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "algorithm": Field(
+                                                        StringSource,
+                                                        description="""Shuffle Behavior: The algorithm is used to calculate the shuffle checksum. Currently, it only supports built-in algorithms of JDK, e.g., ADLER32, CRC32.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
                                         ),
                                     }
                                 )
@@ -588,8 +978,30 @@ def spark_config():
                                         ),
                                         "compress": Field(
                                             StringSource,
-                                            description="""Spark UI: Whether to compress logged events, if spark.eventLog.enabled is true. Compression will use spark.io.compression.codec.""",
+                                            description="""Spark UI: Whether to compress logged events, if spark.eventLog.enabled is true.""",
                                             is_required=False,
+                                        ),
+                                        "compression": Field(
+                                            Permissive(
+                                                fields={
+                                                    "codec": Field(
+                                                        StringSource,
+                                                        description="""Spark UI: The codec to compress logged events. By default, Spark provides four codecs: lz4, lzf, snappy, and zstd. You can also use fully qualified class names to specify the codec, e.g. org.apache.spark.io.LZ4CompressionCodec, org.apache.spark.io.LZFCompressionCodec, org.apache.spark.io.SnappyCompressionCodec, and org.apache.spark.io.ZStdCompressionCodec.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                        "erasureCoding": Field(
+                                            Permissive(
+                                                fields={
+                                                    "enabled": Field(
+                                                        StringSource,
+                                                        description="""Spark UI: Whether to allow event logs to use erasure coding, or turn erasure coding off, regardless of filesystem defaults. On HDFS, erasure coded files will not update as quickly as regular replicated files, so the application updates will take longer to appear in the History Server. Note that even if this is true, Spark will still not force the file to use erasure coding, it will simply use filesystem defaults.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
                                         ),
                                         "dir": Field(
                                             StringSource,
@@ -617,6 +1029,43 @@ def spark_config():
                                                 }
                                             )
                                         ),
+                                        "rolling": Field(
+                                            Permissive(
+                                                fields={
+                                                    "enabled": Field(
+                                                        StringSource,
+                                                        description="""Spark UI: Whether rolling over event log files is enabled. If set to true, it cuts down each event log file to the configured size.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "maxFileSize": Field(
+                                                        StringSource,
+                                                        description="""Spark UI: When spark.eventLog.rolling.enabled=true, specifies the max size of event log file before it's rolled over.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                        "logStageExecutorMetrics": Field(
+                                            StringSource,
+                                            description="""Executor Metrics: Whether to write per-stage peaks of executor metrics (for each executor) to the event log. Note: The metrics are polled (collected) and sent in the executor heartbeat, and this is always done; this configuration is only to determine if aggregated metric peaks are written to the event log.""",
+                                            is_required=False,
+                                        ),
+                                        "gcMetrics": Field(
+                                            Permissive(
+                                                fields={
+                                                    "youngGenerationGarbageCollectors": Field(
+                                                        StringSource,
+                                                        description="""Executor Metrics: Names of supported young generation garbage collector. A name usually is the return of GarbageCollectorMXBean.getName. The built-in young generation garbage collectors are Copy,PS Scavenge,ParNew,G1 Young Generation.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "oldGenerationGarbageCollectors": Field(
+                                                        StringSource,
+                                                        description="""Executor Metrics: Names of supported old generation garbage collector. A name usually is the return of GarbageCollectorMXBean.getName. The built-in old generation garbage collectors are MarkSweepCompact,PS MarkSweep,ConcurrentMarkSweep,G1 Old Generation.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
                                     }
                                 )
                             ),
@@ -639,6 +1088,17 @@ def spark_config():
                                             description="""Spark UI: Whether to run the web UI for the Spark application.""",
                                             is_required=False,
                                         ),
+                                        "store": Field(
+                                            Permissive(
+                                                fields={
+                                                    "path": Field(
+                                                        StringSource,
+                                                        description="""Spark UI: Local directory where to cache application information for live UI. By default this is not set, meaning all application information will be kept in memory.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
                                         "killEnabled": Field(
                                             StringSource,
                                             description="""Spark UI: Allows jobs and stages to be killed from the web UI.""",
@@ -650,6 +1110,11 @@ def spark_config():
                                                     "period": Field(
                                                         StringSource,
                                                         description="""Spark UI: How often to update live entities. -1 means "never update" when replaying applications, meaning only the last write will happen. For live applications, this avoids a few operations that we can live without when rapidly processing incoming task events.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "minFlushPeriod": Field(
+                                                        StringSource,
+                                                        description="""Spark UI: Minimum time elapsed before stale UI data is flushed. This avoids UI staleness when incoming task events are not fired frequently.""",
                                                         is_required=False,
                                                     ),
                                                 }
@@ -672,7 +1137,7 @@ def spark_config():
                                         ),
                                         "retainedTasks": Field(
                                             StringSource,
-                                            description="""Spark UI: How many tasks the Spark UI and status APIs remember before garbage collecting. This is a target maximum, and fewer elements may be retained in some circumstances.""",
+                                            description="""Spark UI: How many tasks in one stage the Spark UI and status APIs remember before garbage collecting. This is a target maximum, and fewer elements may be retained in some circumstances.""",
                                             is_required=False,
                                         ),
                                         "reverseProxy": Field(
@@ -682,13 +1147,41 @@ def spark_config():
                                         ),
                                         "reverseProxyUrl": Field(
                                             StringSource,
-                                            description="""Spark UI: This is the URL where your proxy is running. This URL is for proxy which is running in front of Spark Master. This is useful when running proxy for authentication e.g. OAuth proxy. Make sure this is a complete URL including scheme (http/https) and port to reach your proxy.""",
+                                            description="""Spark UI: If the Spark UI should be served through another front-end reverse proxy, this is the URL for accessing the Spark master UI through that reverse proxy. This is useful when running proxy for authentication e.g. an OAuth proxy. The URL may contain a path prefix, like http://mydomain.com/path/to/spark/, allowing you to serve the UI for multiple Spark clusters and other web applications through the same virtual host and port. Normally, this should be an absolute URL including scheme (http/https), host and port. It is possible to specify a relative URL starting with "/" here. In this case, all URLs generated by the Spark UI and Spark REST APIs will be server-relative links -- this will still work, as the entire Spark UI is served through the same host and port. The setting affects link generation in the Spark UI, but the front-end reverse proxy is responsible for stripping a path prefix before forwarding the request, rewriting redirects which point directly to the Spark master, redirecting access from http://mydomain.com/path/to/spark to http://mydomain.com/path/to/spark/ (trailing slash after path prefix); otherwise relative links on the master page do not work correctly. This setting affects all the workers and application UIs running in the cluster and must be set identically on all the workers, drivers and masters. In is only effective when spark.ui.reverseProxy is turned on. This setting is not needed when the Spark master web UI is directly reachable. Note that the value of the setting can't contain the keyword `proxy` or `history` after split by "/". Spark UI relies on both keywords for getting REST API endpoints from URIs.""",
+                                            is_required=False,
+                                        ),
+                                        "proxyRedirectUri": Field(
+                                            StringSource,
+                                            description="""Spark UI: Where to address redirects when Spark is running behind a proxy. This will make Spark modify redirect responses so they point to the proxy server, instead of the Spark UI's own address. This should be only the address of the server, without any prefix paths for the application; the prefix should be set either by the proxy server itself (by adding the X-Forwarded-Context request header), or by setting the proxy base in the Spark app's configuration.""",
                                             is_required=False,
                                         ),
                                         "showConsoleProgress": Field(
                                             StringSource,
-                                            description="""Spark UI: Show the progress bar in the console. The progress bar shows the progress of stages that run for longer than 500ms. If multiple stages run at the same time, multiple progress bars will be displayed on the same line.""",
+                                            description="""Spark UI: Show the progress bar in the console. The progress bar shows the progress of stages that run for longer than 500ms. If multiple stages run at the same time, multiple progress bars will be displayed on the same line. Note: In shell environment, the default value of spark.ui.showConsoleProgress is true.""",
                                             is_required=False,
+                                        ),
+                                        "custom": Field(
+                                            Permissive(
+                                                fields={
+                                                    "executor": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "log": Field(
+                                                                    Permissive(
+                                                                        fields={
+                                                                            "url": Field(
+                                                                                StringSource,
+                                                                                description="""Spark UI: Specifies custom spark executor log URL for supporting external log service instead of using cluster managers' application log URLs in Spark UI. Spark will support some path variables via patterns which can vary on cluster manager. Please check the documentation for your cluster manager to see which patterns are supported, if any. Please note that this configuration also replaces original log urls in event log, which will be also effective when accessing the application on history server. The new log urls must be permanent, otherwise you might have dead link for executor log urls. For now, only YARN and K8s cluster manager supports this configuration""",
+                                                                                is_required=False,
+                                                                            ),
+                                                                        }
+                                                                    )
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                }
+                                            )
                                         ),
                                         "retainedDeadExecutors": Field(
                                             StringSource,
@@ -699,6 +1192,66 @@ def spark_config():
                                             StringSource,
                                             description="""Spark UI: Comma separated list of filter class names to apply to the Spark Web UI. The filter should be a standard javax servlet Filter. Filter parameters can also be specified in the configuration, by setting config entries of the form spark.<class name of filter>.param.<param name>=<value> For example: spark.ui.filters=com.test.filter1 spark.com.test.filter1.param.name1=foo spark.com.test.filter1.param.name2=bar""",
                                             is_required=False,
+                                        ),
+                                        "requestHeaderSize": Field(
+                                            StringSource,
+                                            description="""Spark UI: The maximum allowed size for a HTTP request header, in bytes unless otherwise specified. This setting applies for the Spark History Server too.""",
+                                            is_required=False,
+                                        ),
+                                        "timelineEnabled": Field(
+                                            StringSource,
+                                            description="""Spark UI: Whether to display event timeline data on UI pages.""",
+                                            is_required=False,
+                                        ),
+                                        "timeline": Field(
+                                            Permissive(
+                                                fields={
+                                                    "executors": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "maximum": Field(
+                                                                    StringSource,
+                                                                    description="""Spark UI: The maximum number of executors shown in the event timeline.""",
+                                                                    is_required=False,
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                    "jobs": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "maximum": Field(
+                                                                    StringSource,
+                                                                    description="""Spark UI: The maximum number of jobs shown in the event timeline.""",
+                                                                    is_required=False,
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                    "stages": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "maximum": Field(
+                                                                    StringSource,
+                                                                    description="""Spark UI: The maximum number of stages shown in the event timeline.""",
+                                                                    is_required=False,
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                    "tasks": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "maximum": Field(
+                                                                    StringSource,
+                                                                    description="""Spark UI: The maximum number of tasks shown in the event timeline.""",
+                                                                    is_required=False,
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                }
+                                            )
                                         ),
                                     }
                                 )
@@ -774,7 +1327,7 @@ def spark_config():
                                         ),
                                         "blockInterval": Field(
                                             StringSource,
-                                            description="""Spark Streaming: Interval at which data received by Spark Streaming receivers is chunked into blocks of data before storing them in Spark. Minimum recommended - 50 ms. See the performance tuning section in the Spark Streaming programing guide for more details.""",
+                                            description="""Spark Streaming: Interval at which data received by Spark Streaming receivers is chunked into blocks of data before storing them in Spark. Minimum recommended - 50 ms. See the performance tuning section in the Spark Streaming programming guide for more details.""",
                                             is_required=False,
                                         ),
                                         "receiver": Field(
@@ -782,7 +1335,7 @@ def spark_config():
                                                 fields={
                                                     "maxRate": Field(
                                                         StringSource,
-                                                        description="""Spark Streaming: Maximum rate (number of records per second) at which each receiver will receive data. Effectively, each stream will consume at most this number of records per second. Setting this configuration to 0 or a negative number will put no limit on the rate. See the deployment guide in the Spark Streaming programing guide for mode details.""",
+                                                        description="""Spark Streaming: Maximum rate (number of records per second) at which each receiver will receive data. Effectively, each stream will consume at most this number of records per second. Setting this configuration to 0 or a negative number will put no limit on the rate. See the deployment guide in the Spark Streaming programming guide for mode details.""",
                                                         is_required=False,
                                                     ),
                                                     "writeAheadLog": Field(
@@ -790,7 +1343,7 @@ def spark_config():
                                                             fields={
                                                                 "enable": Field(
                                                                     StringSource,
-                                                                    description="""Spark Streaming: Enable write-ahead logs for receivers. All the input data received through receivers will be saved to write-ahead logs that will allow it to be recovered after driver failures. See the deployment guide in the Spark Streaming programing guide for more details.""",
+                                                                    description="""Spark Streaming: Enable write-ahead logs for receivers. All the input data received through receivers will be saved to write-ahead logs that will allow it to be recovered after driver failures. See the deployment guide in the Spark Streaming programming guide for more details.""",
                                                                     is_required=False,
                                                                 ),
                                                                 "closeFileAfterWrite": Field(
@@ -827,11 +1380,6 @@ def spark_config():
                                                         description="""Spark Streaming: Minimum rate (number of records per second) at which data will be read from each Kafka partition when using the new Kafka direct stream API.""",
                                                         is_required=False,
                                                     ),
-                                                    "maxRetries": Field(
-                                                        StringSource,
-                                                        description="""Spark Streaming: Maximum number of consecutive retries the driver will make in order to find the latest offsets on the leader of each partition (a default value of 1 means that the driver will make a maximum of 2 attempts). Only applies to the new Kafka direct stream API.""",
-                                                        is_required=False,
-                                                    ),
                                                 }
                                             )
                                         ),
@@ -855,6 +1403,17 @@ def spark_config():
                                     }
                                 )
                             ),
+                            "appStatusStore": Field(
+                                Permissive(
+                                    fields={
+                                        "diskStoreDir": Field(
+                                            StringSource,
+                                            description="""Spark UI: Local directory where to store diagnostic information of SQL executions. This configuration is only for live UI.""",
+                                            is_required=False,
+                                        ),
+                                    }
+                                )
+                            ),
                             "broadcast": Field(
                                 Permissive(
                                     fields={
@@ -871,6 +1430,22 @@ def spark_config():
                                         "checksum": Field(
                                             StringSource,
                                             description="""Execution Behavior: Whether to enable checksum for broadcast. If enabled, broadcasts will include a checksum, which can help detect corrupted blocks, at the cost of computing and sending a little more data. It's possible to disable it if the network has other mechanisms to guarantee data won't be corrupted during broadcast.""",
+                                            is_required=False,
+                                        ),
+                                        "UDFCompressionThreshold": Field(
+                                            StringSource,
+                                            description="""Execution Behavior: The threshold at which user-defined functions (UDFs) and Python RDD commands are compressed by broadcast in bytes unless otherwise specified.""",
+                                            is_required=False,
+                                        ),
+                                    }
+                                )
+                            ),
+                            "checkpoint": Field(
+                                Permissive(
+                                    fields={
+                                        "compress": Field(
+                                            StringSource,
+                                            description="""Compression and Serialization: Whether to compress RDD checkpoints. Generally a good idea. Compression will use spark.io.compression.codec.""",
                                             is_required=False,
                                         ),
                                     }
@@ -892,7 +1467,7 @@ def spark_config():
                                                             fields={
                                                                 "blockSize": Field(
                                                                     StringSource,
-                                                                    description="""Compression and Serialization: Block size in bytes used in LZ4 compression, in the case when LZ4 compression codec is used. Lowering this block size will also lower shuffle memory usage when LZ4 is used.""",
+                                                                    description="""Compression and Serialization: Block size used in LZ4 compression, in the case when LZ4 compression codec is used. Lowering this block size will also lower shuffle memory usage when LZ4 is used. Default unit is bytes, unless otherwise specified. This configuration only applies to `spark.io.compression.codec`.""",
                                                                     is_required=False,
                                                                 ),
                                                             }
@@ -903,7 +1478,7 @@ def spark_config():
                                                             fields={
                                                                 "blockSize": Field(
                                                                     StringSource,
-                                                                    description="""Compression and Serialization: Block size in bytes used in Snappy compression, in the case when Snappy compression codec is used. Lowering this block size will also lower shuffle memory usage when Snappy is used.""",
+                                                                    description="""Compression and Serialization: Block size in Snappy compression, in the case when Snappy compression codec is used. Lowering this block size will also lower shuffle memory usage when Snappy is used. Default unit is bytes, unless otherwise specified. This configuration only applies to `spark.io.compression.codec`.""",
                                                                     is_required=False,
                                                                 ),
                                                             }
@@ -914,13 +1489,24 @@ def spark_config():
                                                             fields={
                                                                 "level": Field(
                                                                     StringSource,
-                                                                    description="""Compression and Serialization: Compression level for Zstd compression codec. Increasing the compression level will result in better compression at the expense of more CPU and memory.""",
+                                                                    description="""Compression and Serialization: Compression level for Zstd compression codec. Increasing the compression level will result in better compression at the expense of more CPU and memory. This configuration only applies to `spark.io.compression.codec`.""",
                                                                     is_required=False,
                                                                 ),
                                                                 "bufferSize": Field(
                                                                     StringSource,
-                                                                    description="""Compression and Serialization: Buffer size in bytes used in Zstd compression, in the case when Zstd compression codec is used. Lowering this size will lower the shuffle memory usage when Zstd is used, but it might increase the compression cost because of excessive JNI call overhead.""",
+                                                                    description="""Compression and Serialization: Buffer size in bytes used in Zstd compression, in the case when Zstd compression codec is used. Lowering this size will lower the shuffle memory usage when Zstd is used, but it might increase the compression cost because of excessive JNI call overhead. This configuration only applies to `spark.io.compression.codec`.""",
                                                                     is_required=False,
+                                                                ),
+                                                                "bufferPool": Field(
+                                                                    Permissive(
+                                                                        fields={
+                                                                            "enabled": Field(
+                                                                                StringSource,
+                                                                                description="""Compression and Serialization: If true, enable buffer pool of ZSTD JNI library.""",
+                                                                                is_required=False,
+                                                                            ),
+                                                                        }
+                                                                    )
                                                                 ),
                                                             }
                                                         )
@@ -1034,16 +1620,11 @@ def spark_config():
                                                     ),
                                                     "size": Field(
                                                         IntSource,
-                                                        description="""Memory Management: The absolute amount of memory in bytes which can be used for off-heap allocation. This setting has no impact on heap memory usage, so if your executors' total memory consumption must fit within some hard limit then be sure to shrink your JVM heap size accordingly. This must be set to a positive value when spark.memory.offHeap.enabled=true.""",
+                                                        description="""Memory Management: The absolute amount of memory which can be used for off-heap allocation, in bytes unless otherwise specified. This setting has no impact on heap memory usage, so if your executors' total memory consumption must fit within some hard limit then be sure to shrink your JVM heap size accordingly. This must be set to a positive value when spark.memory.offHeap.enabled=true.""",
                                                         is_required=False,
                                                     ),
                                                 }
                                             )
-                                        ),
-                                        "useLegacyMode": Field(
-                                            Bool,
-                                            description="""Memory Management: Whether to enable the legacy memory management mode used in Spark 1.5 and before. The legacy mode rigidly partitions the heap space into fixed-size regions, potentially leading to excessive spilling if the application was not tuned. The following deprecated memory fraction configurations are not read unless this is enabled: spark.shuffle.memoryFraction spark.storage.memoryFraction spark.storage.unrollFraction""",
-                                            is_required=False,
                                         ),
                                     }
                                 )
@@ -1051,14 +1632,9 @@ def spark_config():
                             "storage": Field(
                                 Permissive(
                                     fields={
-                                        "memoryFraction": Field(
-                                            Float,
-                                            description="""Memory Management: (deprecated) This is read only if spark.memory.useLegacyMode is enabled. Fraction of Java heap to use for Spark's memory cache. This should not be larger than the "old" generation of objects in the JVM, which by default is given 0.6 of the heap, but you can increase it if you configure your own old generation size.""",
-                                            is_required=False,
-                                        ),
-                                        "unrollFraction": Field(
-                                            Float,
-                                            description="""Memory Management: (deprecated) This is read only if spark.memory.useLegacyMode is enabled. Fraction of spark.storage.memoryFraction to use for unrolling blocks in memory. This is dynamically allocated by dropping existing blocks when there is not enough free storage space to unroll the new block in its entirety.""",
+                                        "unrollMemoryThreshold": Field(
+                                            StringSource,
+                                            description="""Memory Management: Initial memory to request before unrolling any block.""",
                                             is_required=False,
                                         ),
                                         "replication": Field(
@@ -1072,10 +1648,80 @@ def spark_config():
                                                 }
                                             )
                                         ),
+                                        "localDiskByExecutors": Field(
+                                            Permissive(
+                                                fields={
+                                                    "cacheSize": Field(
+                                                        StringSource,
+                                                        description="""Memory Management: The max number of executors for which the local dirs are stored. This size is both applied for the driver and both for the executors side to avoid having an unbounded store. This cache will be used to avoid the network in case of fetching disk persisted RDD blocks or shuffle blocks (when spark.shuffle.readHostLocalDisk is set) from the same host.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
                                         "memoryMapThreshold": Field(
                                             StringSource,
-                                            description="""Execution Behavior: Size in bytes of a block above which Spark memory maps when reading a block from disk. This prevents Spark from memory mapping very small blocks. In general, memory mapping has high overhead for blocks close to or below the page size of the operating system.""",
+                                            description="""Execution Behavior: Size of a block above which Spark memory maps when reading a block from disk. Default unit is bytes, unless specified otherwise. This prevents Spark from memory mapping very small blocks. In general, memory mapping has high overhead for blocks close to or below the page size of the operating system.""",
                                             is_required=False,
+                                        ),
+                                        "decommission": Field(
+                                            Permissive(
+                                                fields={
+                                                    "enabled": Field(
+                                                        StringSource,
+                                                        description="""Execution Behavior: Whether to decommission the block manager when decommissioning executor.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "shuffleBlocks": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "enabled": Field(
+                                                                    StringSource,
+                                                                    description="""Execution Behavior: Whether to transfer shuffle blocks during block manager decommissioning. Requires a migratable shuffle resolver (like sort based shuffle).""",
+                                                                    is_required=False,
+                                                                ),
+                                                                "maxThreads": Field(
+                                                                    StringSource,
+                                                                    description="""Execution Behavior: Maximum number of threads to use in migrating shuffle files.""",
+                                                                    is_required=False,
+                                                                ),
+                                                                "maxDiskSize": Field(
+                                                                    StringSource,
+                                                                    description="""Execution Behavior: Maximum disk space to use to store shuffle blocks before rejecting remote shuffle blocks. Rejecting remote shuffle blocks means that an executor will not receive any shuffle migrations, and if there are no other executors available for migration then shuffle blocks will be lost unless spark.storage.decommission.fallbackStorage.path is configured.""",
+                                                                    is_required=False,
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                    "rddBlocks": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "enabled": Field(
+                                                                    StringSource,
+                                                                    description="""Execution Behavior: Whether to transfer RDD blocks during block manager decommissioning.""",
+                                                                    is_required=False,
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                    "fallbackStorage": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "path": Field(
+                                                                    StringSource,
+                                                                    description="""Execution Behavior: The location for fallback storage during block manager decommissioning. For example, s3a://spark-storage/. In case of empty, fallback storage is disabled. The storage should be managed by TTL because Spark will not clean it up.""",
+                                                                    is_required=False,
+                                                                ),
+                                                                "cleanUp": Field(
+                                                                    StringSource,
+                                                                    description="""Execution Behavior: If true, Spark cleans up its fallback storage data during shutting down.""",
+                                                                    is_required=False,
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                }
+                                            )
                                         ),
                                     }
                                 )
@@ -1164,7 +1810,7 @@ def spark_config():
                                                                         fields={
                                                                             "version": Field(
                                                                                 IntSource,
-                                                                                description="""Execution Behavior: The file output committer algorithm version, valid algorithm version number: 1 or 2. Version 2 may have better performance, but version 1 may handle failures better in certain situations, as per MAPREDUCE-4815.""",
+                                                                                description="""Execution Behavior: The file output committer algorithm version, valid algorithm version number: 1 or 2. Note that 2 may cause a correctness issue like MAPREDUCE-7282.""",
                                                                                 is_required=False,
                                                                             ),
                                                                         }
@@ -1187,23 +1833,28 @@ def spark_config():
                                                 fields={
                                                     "maxSize": Field(
                                                         StringSource,
-                                                        description="""Networking: Maximum message size (in MB) to allow in "control plane" communication; generally only applies to map output size information sent between executors and the driver. Increase this if you are running jobs with many thousands of map and reduce tasks and see messages about the RPC message size.""",
+                                                        description="""Networking: Maximum message size (in MiB) to allow in "control plane" communication; generally only applies to map output size information sent between executors and the driver. Increase this if you are running jobs with many thousands of map and reduce tasks and see messages about the RPC message size.""",
                                                         is_required=False,
                                                     ),
                                                 }
                                             )
                                         ),
-                                        "numRetries": Field(
-                                            StringSource,
-                                            description="""Networking: Number of times to retry before an RPC task gives up. An RPC task will run at most times of this number.""",
-                                            is_required=False,
-                                        ),
-                                        "retry": Field(
+                                        "io": Field(
                                             Permissive(
                                                 fields={
-                                                    "wait": Field(
+                                                    "backLog": Field(
                                                         StringSource,
-                                                        description="""Networking: Duration for an RPC ask operation to wait before retrying.""",
+                                                        description="""Networking: Length of the accept queue for the RPC server. For large applications, this value may need to be increased, so that incoming connections are not dropped when a large number of connections arrives in a short period of time.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "connectionTimeout": Field(
+                                                        StringSource,
+                                                        description="""Networking: Timeout for the established connections between RPC peers to be marked as idled and closed if there are outstanding RPC requests but no traffic on the channel for at least `connectionTimeout`.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "connectionCreationTimeout": Field(
+                                                        StringSource,
+                                                        description="""Networking: Timeout for establishing a connection between RPC peers.""",
                                                         is_required=False,
                                                     ),
                                                 }
@@ -1238,7 +1889,28 @@ def spark_config():
                                     fields={
                                         "timeout": Field(
                                             StringSource,
-                                            description="""Networking: Default timeout for all network interactions. This config will be used in place of spark.core.connection.ack.wait.timeout, spark.storage.blockManagerSlaveTimeoutMs, spark.shuffle.io.connectionTimeout, spark.rpc.askTimeout or spark.rpc.lookupTimeout if they are not configured.""",
+                                            description="""Networking: Default timeout for all network interactions. This config will be used in place of spark.storage.blockManagerHeartbeatTimeoutMs, spark.shuffle.io.connectionTimeout, spark.rpc.askTimeout or spark.rpc.lookupTimeout if they are not configured.""",
+                                            is_required=False,
+                                        ),
+                                        "timeoutInterval": Field(
+                                            StringSource,
+                                            description="""Networking: Interval for the driver to check and expire dead executors.""",
+                                            is_required=False,
+                                        ),
+                                        "io": Field(
+                                            Permissive(
+                                                fields={
+                                                    "preferDirectBufs": Field(
+                                                        StringSource,
+                                                        description="""Networking: If enabled then off-heap buffer allocations are preferred by the shared allocators. Off-heap buffers are used to reduce garbage collection during shuffle and cache block transfer. For environments where off-heap memory is tightly limited, users may wish to turn this off to force all allocations to be on-heap.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                        "maxRemoteBlockSizeFetchToMem": Field(
+                                            StringSource,
+                                            description="""Networking: Remote block will be fetched to disk when size of the block is above this threshold in bytes. This is to avoid a giant request takes too much memory. Note this configuration will affect both shuffle fetch and block manager remote block fetch. For users who enabled external shuffle service, this feature can only work when external shuffle service is at least 2.3.0.""",
                                             is_required=False,
                                         ),
                                     }
@@ -1251,35 +1923,6 @@ def spark_config():
                                             StringSource,
                                             description="""Networking: Maximum number of retries when binding to a port before giving up. When a port is given a specific value (non 0), each subsequent retry will increment the port used in the previous attempt by 1 before retrying. This essentially allows it to try a range of ports from the start port specified to port + maxRetries.""",
                                             is_required=False,
-                                        ),
-                                    }
-                                )
-                            ),
-                            "core": Field(
-                                Permissive(
-                                    fields={
-                                        "connection": Field(
-                                            Permissive(
-                                                fields={
-                                                    "ack": Field(
-                                                        Permissive(
-                                                            fields={
-                                                                "wait": Field(
-                                                                    Permissive(
-                                                                        fields={
-                                                                            "timeout": Field(
-                                                                                StringSource,
-                                                                                description="""Networking: How long for the connection to wait for ack to occur before timing out and giving up. To avoid unwilling timeout caused by long pause like GC, you can set larger value.""",
-                                                                                is_required=False,
-                                                                            ),
-                                                                        }
-                                                                    )
-                                                                ),
-                                                            }
-                                                        )
-                                                    ),
-                                                }
-                                            )
                                         ),
                                     }
                                 )
@@ -1364,7 +2007,106 @@ def spark_config():
                                                             fields={
                                                                 "capacity": Field(
                                                                     StringSource,
-                                                                    description="""Scheduling: Capacity for event queue in Spark listener bus, must be greater than 0. Consider increasing value (e.g. 20000) if listener events are dropped. Increasing this value may result in the driver using more memory.""",
+                                                                    description="""Scheduling: The default capacity for event queues. Spark will try to initialize an event queue using capacity specified by `spark.scheduler.listenerbus.eventqueue.queueName.capacity` first. If it's not configured, Spark will use the default capacity specified by this config. Note that capacity must be greater than 0. Consider increasing value (e.g. 20000) if listener events are dropped. Increasing this value may result in the driver using more memory.""",
+                                                                    is_required=False,
+                                                                ),
+                                                                "shared": Field(
+                                                                    Permissive(
+                                                                        fields={
+                                                                            "capacity": Field(
+                                                                                StringSource,
+                                                                                description="""Scheduling: Capacity for shared event queue in Spark listener bus, which hold events for external listener(s) that register to the listener bus. Consider increasing value, if the listener events corresponding to shared queue are dropped. Increasing this value may result in the driver using more memory.""",
+                                                                                is_required=False,
+                                                                            ),
+                                                                        }
+                                                                    )
+                                                                ),
+                                                                "appStatus": Field(
+                                                                    Permissive(
+                                                                        fields={
+                                                                            "capacity": Field(
+                                                                                StringSource,
+                                                                                description="""Scheduling: Capacity for appStatus event queue, which hold events for internal application status listeners. Consider increasing value, if the listener events corresponding to appStatus queue are dropped. Increasing this value may result in the driver using more memory.""",
+                                                                                is_required=False,
+                                                                            ),
+                                                                        }
+                                                                    )
+                                                                ),
+                                                                "executorManagement": Field(
+                                                                    Permissive(
+                                                                        fields={
+                                                                            "capacity": Field(
+                                                                                StringSource,
+                                                                                description="""Scheduling: Capacity for executorManagement event queue in Spark listener bus, which hold events for internal executor management listeners. Consider increasing value if the listener events corresponding to executorManagement queue are dropped. Increasing this value may result in the driver using more memory.""",
+                                                                                is_required=False,
+                                                                            ),
+                                                                        }
+                                                                    )
+                                                                ),
+                                                                "eventLog": Field(
+                                                                    Permissive(
+                                                                        fields={
+                                                                            "capacity": Field(
+                                                                                StringSource,
+                                                                                description="""Scheduling: Capacity for eventLog queue in Spark listener bus, which hold events for Event logging listeners that write events to eventLogs. Consider increasing value if the listener events corresponding to eventLog queue are dropped. Increasing this value may result in the driver using more memory.""",
+                                                                                is_required=False,
+                                                                            ),
+                                                                        }
+                                                                    )
+                                                                ),
+                                                                "streams": Field(
+                                                                    Permissive(
+                                                                        fields={
+                                                                            "capacity": Field(
+                                                                                StringSource,
+                                                                                description="""Scheduling: Capacity for streams queue in Spark listener bus, which hold events for internal streaming listener. Consider increasing value if the listener events corresponding to streams queue are dropped. Increasing this value may result in the driver using more memory.""",
+                                                                                is_required=False,
+                                                                            ),
+                                                                        }
+                                                                    )
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                        "resource": Field(
+                                            Permissive(
+                                                fields={
+                                                    "profileMergeConflicts": Field(
+                                                        StringSource,
+                                                        description="""Scheduling: If set to "true", Spark will merge ResourceProfiles when different profiles are specified in RDDs that get combined into a single stage. When they are merged, Spark chooses the maximum of each resource and creates a new ResourceProfile. The default of false results in Spark throwing an exception if multiple different ResourceProfiles are found in RDDs going into the same stage.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                        "excludeOnFailure": Field(
+                                            Permissive(
+                                                fields={
+                                                    "unschedulableTaskSetTimeout": Field(
+                                                        StringSource,
+                                                        description="""Scheduling: The timeout in seconds to wait to acquire a new executor and schedule a task before aborting a TaskSet which is unschedulable because all executors are excluded due to task failures.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                        "barrier": Field(
+                                            Permissive(
+                                                fields={
+                                                    "maxConcurrentTasksCheck": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "interval": Field(
+                                                                    StringSource,
+                                                                    description="""Barrier Execution Mode: Time in seconds to wait between a max concurrent tasks check failure and the next check. A max concurrent tasks check ensures the cluster can launch more concurrent tasks than required by a barrier stage on job submitted. The check can fail in case a cluster has just started and not enough executors have registered, so we wait for a little while and try to perform the check again. If the check fails more than a configured max failure times for a job then fail current job submission. Note this config only applies to jobs that contain one or more barrier stages, we won't perform the check on non-barrier jobs.""",
+                                                                    is_required=False,
+                                                                ),
+                                                                "maxFailures": Field(
+                                                                    StringSource,
+                                                                    description="""Barrier Execution Mode: Number of max concurrent tasks check failures allowed before fail a job submission. A max concurrent tasks check ensures the cluster can launch more concurrent tasks than required by a barrier stage on job submitted. The check can fail in case a cluster has just started and not enough executors have registered, so we wait for a little while and try to perform the check again. If the check fails more than a configured max failure times for a job then fail current job submission. Note this config only applies to jobs that contain one or more barrier stages, we won't perform the check on non-barrier jobs.""",
                                                                     is_required=False,
                                                                 ),
                                                             }
@@ -1376,17 +2118,34 @@ def spark_config():
                                     }
                                 )
                             ),
-                            "blacklist": Field(
+                            "standalone": Field(
+                                Permissive(
+                                    fields={
+                                        "submit": Field(
+                                            Permissive(
+                                                fields={
+                                                    "waitAppCompletion": Field(
+                                                        StringSource,
+                                                        description="""Scheduling: If set to true, Spark will merge ResourceProfiles when different profiles are specified in RDDs that get combined into a single stage. When they are merged, Spark chooses the maximum of each resource and creates a new ResourceProfile. The default of false results in Spark throwing an exception if multiple different ResourceProfiles are found in RDDs going into the same stage.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                    }
+                                )
+                            ),
+                            "excludeOnFailure": Field(
                                 Permissive(
                                     fields={
                                         "enabled": Field(
                                             StringSource,
-                                            description="""Scheduling: If set to "true", prevent Spark from scheduling tasks on executors that have been blacklisted due to too many task failures. The blacklisting algorithm can be further controlled by the other "spark.blacklist" configuration options.""",
+                                            description="""Scheduling: If set to "true", prevent Spark from scheduling tasks on executors that have been excluded due to too many task failures. The algorithm used to exclude executors and nodes can be further controlled by the other "spark.excludeOnFailure" configuration options.""",
                                             is_required=False,
                                         ),
                                         "timeout": Field(
                                             StringSource,
-                                            description="""Scheduling: (Experimental) How long a node or executor is blacklisted for the entire application, before it is unconditionally removed from the blacklist to attempt running new tasks.""",
+                                            description="""Scheduling: (Experimental) How long a node or executor is excluded for the entire application, before it is unconditionally removed from the excludelist to attempt running new tasks.""",
                                             is_required=False,
                                         ),
                                         "task": Field(
@@ -1394,12 +2153,12 @@ def spark_config():
                                                 fields={
                                                     "maxTaskAttemptsPerExecutor": Field(
                                                         StringSource,
-                                                        description="""Scheduling: (Experimental) For a given task, how many times it can be retried on one executor before the executor is blacklisted for that task.""",
+                                                        description="""Scheduling: (Experimental) For a given task, how many times it can be retried on one executor before the executor is excluded for that task.""",
                                                         is_required=False,
                                                     ),
                                                     "maxTaskAttemptsPerNode": Field(
                                                         StringSource,
-                                                        description="""Scheduling: (Experimental) For a given task, how many times it can be retried on one node, before the entire node is blacklisted for that task.""",
+                                                        description="""Scheduling: (Experimental) For a given task, how many times it can be retried on one node, before the entire node is excluded for that task.""",
                                                         is_required=False,
                                                     ),
                                                 }
@@ -1410,12 +2169,12 @@ def spark_config():
                                                 fields={
                                                     "maxFailedTasksPerExecutor": Field(
                                                         StringSource,
-                                                        description="""Scheduling: (Experimental) How many different tasks must fail on one executor, within one stage, before the executor is blacklisted for that stage.""",
+                                                        description="""Scheduling: (Experimental) How many different tasks must fail on one executor, within one stage, before the executor is excluded for that stage.""",
                                                         is_required=False,
                                                     ),
                                                     "maxFailedExecutorsPerNode": Field(
                                                         StringSource,
-                                                        description="""Scheduling: (Experimental) How many different executors are marked as blacklisted for a given stage, before the entire node is marked as failed for the stage.""",
+                                                        description="""Scheduling: (Experimental) How many different executors are marked as excluded for a given stage, before the entire node is marked as failed for the stage.""",
                                                         is_required=False,
                                                     ),
                                                 }
@@ -1426,12 +2185,12 @@ def spark_config():
                                                 fields={
                                                     "maxFailedTasksPerExecutor": Field(
                                                         StringSource,
-                                                        description="""Scheduling: (Experimental) How many different tasks must fail on one executor, in successful task sets, before the executor is blacklisted for the entire application. Blacklisted executors will be automatically added back to the pool of available resources after the timeout specified by spark.blacklist.timeout. Note that with dynamic allocation, though, the executors may get marked as idle and be reclaimed by the cluster manager.""",
+                                                        description="""Scheduling: (Experimental) How many different tasks must fail on one executor, in successful task sets, before the executor is excluded for the entire application. Excluded executors will be automatically added back to the pool of available resources after the timeout specified by spark.excludeOnFailure.timeout. Note that with dynamic allocation, though, the executors may get marked as idle and be reclaimed by the cluster manager.""",
                                                         is_required=False,
                                                     ),
                                                     "maxFailedExecutorsPerNode": Field(
                                                         StringSource,
-                                                        description="""Scheduling: (Experimental) How many different executors must be blacklisted for the entire application, before the node is blacklisted for the entire application. Blacklisted nodes will be automatically added back to the pool of available resources after the timeout specified by spark.blacklist.timeout. Note that with dynamic allocation, though, the executors on the node may get marked as idle and be reclaimed by the cluster manager.""",
+                                                        description="""Scheduling: (Experimental) How many different executors must be excluded for the entire application, before the node is excluded for the entire application. Excluded nodes will be automatically added back to the pool of available resources after the timeout specified by spark.excludeOnFailure.timeout. Note that with dynamic allocation, though, the executors on the node may get marked as idle and be reclaimed by the cluster manager.""",
                                                         is_required=False,
                                                     ),
                                                     "fetchFailure": Field(
@@ -1439,7 +2198,7 @@ def spark_config():
                                                             fields={
                                                                 "enabled": Field(
                                                                     StringSource,
-                                                                    description="""Scheduling: (Experimental) If set to "true", Spark will blacklist the executor immediately when a fetch failure happens. If external shuffle service is enabled, then the whole node will be blacklisted.""",
+                                                                    description="""Scheduling: (Experimental) If set to "true", Spark will exclude the executor immediately when a fetch failure happens. If external shuffle service is enabled, then the whole node will be excluded.""",
                                                                     is_required=False,
                                                                 ),
                                                             }
@@ -1448,9 +2207,9 @@ def spark_config():
                                                 }
                                             )
                                         ),
-                                        "killBlacklistedExecutors": Field(
+                                        "killExcludedExecutors": Field(
                                             StringSource,
-                                            description="""Scheduling: (Experimental) If set to "true", allow Spark to automatically kill the executors when they are blacklisted on fetch failure or blacklisted for the entire application, as controlled by spark.blacklist.application.*. Note that, when an entire node is added to the blacklist, all of the executors on that node will be killed.""",
+                                            description="""Scheduling: (Experimental) If set to "true", allow Spark to automatically kill the executors when they are excluded on fetch failure or excluded for the entire application, as controlled by spark.killExcludedExecutors.application.*. Note that, when an entire node is added excluded, all of the executors on that node will be killed.""",
                                             is_required=False,
                                         ),
                                     }
@@ -1479,6 +2238,49 @@ def spark_config():
                                             description="""Scheduling: Fraction of tasks which must be complete before speculation is enabled for a particular stage.""",
                                             is_required=False,
                                         ),
+                                        "minTaskRuntime": Field(
+                                            StringSource,
+                                            description="""Scheduling: Minimum amount of time a task runs before being considered for speculation. This can be used to avoid launching speculative copies of tasks that are very short.""",
+                                            is_required=False,
+                                        ),
+                                        "task": Field(
+                                            Permissive(
+                                                fields={
+                                                    "duration": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "threshold": Field(
+                                                                    StringSource,
+                                                                    description="""Scheduling: Task duration after which scheduler would try to speculative run the task. If provided, tasks would be speculatively run if current stage contains less tasks than or equal to the number of slots on a single executor and the task is taking longer time than the threshold. This config helps speculate stage with very few tasks. Regular speculation configs may also apply if the executor slots are large enough. E.g. tasks might be re-launched if there are enough successful runs even though the threshold hasn't been reached. The number of slots is computed based on the conf values of spark.executor.cores and spark.task.cpus minimum 1. Default unit is bytes, unless otherwise specified.""",
+                                                                    is_required=False,
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                }
+                                            )
+                                        ),
+                                        "efficiency": Field(
+                                            Permissive(
+                                                fields={
+                                                    "processRateMultiplier": Field(
+                                                        StringSource,
+                                                        description="""Scheduling: A multiplier that used when evaluating inefficient tasks. The higher the multiplier is, the more tasks will be possibly considered as inefficient.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "longRunTaskFactor": Field(
+                                                        StringSource,
+                                                        description="""Scheduling: A task will be speculated anyway as long as its duration has exceeded the value of multiplying the factor and the time threshold (either be spark.speculation.multiplier * successfulTaskDurations.median or spark.speculation.minTaskRuntime) regardless of it's data process rate is good or not. This avoids missing the inefficient tasks when task slow isn't related to data process rate.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "enabled": Field(
+                                                        StringSource,
+                                                        description="""Scheduling: When set to true, spark will evaluate the efficiency of task processing through the stage task metrics or its duration, and only need to speculate the inefficient tasks. A task is inefficient when 1)its data process rate is less than the average data process rate of all successful tasks in the stage multiplied by a multiplier or 2)its duration has exceeded the value of multiplying spark.speculation.efficiency.longRunTaskFactor and the time threshold (either be spark.speculation.multiplier * successfulTaskDurations.median or spark.speculation.minTaskRuntime).""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
                                     }
                                 )
                             ),
@@ -1490,9 +2292,26 @@ def spark_config():
                                             description="""Scheduling: Number of cores to allocate for each task.""",
                                             is_required=False,
                                         ),
+                                        "resource": Field(
+                                            Permissive(
+                                                fields={
+                                                    "{resourceName}": Field(
+                                                        Permissive(
+                                                            fields={
+                                                                "amount": Field(
+                                                                    StringSource,
+                                                                    description="""Scheduling: Amount of a particular resource type to allocate for each task, note that this can be a double. If this is specified you must also provide the executor config spark.executor.resource.{resourceName}.amount and any corresponding discovery configs so that your executors are created with that resource type. In addition to whole amounts, a fractional amount (for example, 0.25, which means 1/4th of a resource) may be specified. Fractional amounts must be less than or equal to 0.5, or in other words, the minimum amount of resource sharing is 2 tasks per resource. Additionally, fractional amounts are floored in order to assign resource slots (e.g. a 0.2222 configuration, or 1/0.2222 slots will become 4 tasks/resource, not 5).""",
+                                                                    is_required=False,
+                                                                ),
+                                                            }
+                                                        )
+                                                    ),
+                                                }
+                                            )
+                                        ),
                                         "maxFailures": Field(
                                             StringSource,
-                                            description="""Scheduling: Number of failures of any particular task before giving up on the job. The total number of failures spread across different tasks will not cause the job to fail; a particular task has to fail this number of attempts. Should be greater than or equal to 1. Number of allowed retries = this value - 1.""",
+                                            description="""Scheduling: Number of continuous failures of any particular task before giving up on the job. The total number of failures spread across different tasks will not cause the job to fail; a particular task has to fail this number of attempts continuously. If any attempt succeeds, the failure count for the task will be reset. Should be greater than or equal to 1. Number of allowed retries = this value - 1.""",
                                             is_required=False,
                                         ),
                                         "reaper": Field(
@@ -1532,6 +2351,28 @@ def spark_config():
                                             description="""Scheduling: Number of consecutive stage attempts allowed before a stage is aborted.""",
                                             is_required=False,
                                         ),
+                                        "ignoreDecommissionFetchFailure": Field(
+                                            StringSource,
+                                            description="""Scheduling: Whether ignore stage fetch failure caused by executor decommission when count spark.stage.maxConsecutiveAttempts""",
+                                            is_required=False,
+                                        ),
+                                    }
+                                )
+                            ),
+                            "barrier": Field(
+                                Permissive(
+                                    fields={
+                                        "sync": Field(
+                                            Permissive(
+                                                fields={
+                                                    "timeout": Field(
+                                                        StringSource,
+                                                        description="""Barrier Execution Mode: The timeout in seconds for each barrier() call from a barrier task. If the coordinator didn't receive all the sync messages from barrier tasks within the configured time, throw a SparkException to fail all the tasks. The default value is set to 31536000(3600 * 24 * 365) so the barrier() call shall wait for one year.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
+                                        ),
                                     }
                                 )
                             ),
@@ -1540,7 +2381,7 @@ def spark_config():
                                     fields={
                                         "enabled": Field(
                                             StringSource,
-                                            description="""Dynamic Allocation: Whether to use dynamic resource allocation, which scales the number of executors registered with this application up and down based on the workload. For more detail, see the description here. This requires spark.shuffle.service.enabled to be set. The following configurations are also relevant: spark.dynamicAllocation.minExecutors, spark.dynamicAllocation.maxExecutors, and spark.dynamicAllocation.initialExecutors spark.dynamicAllocation.executorAllocationRatio""",
+                                            description="""Dynamic Allocation: Whether to use dynamic resource allocation, which scales the number of executors registered with this application up and down based on the workload. For more detail, see the description here. This requires one of the following conditions: 1) enabling external shuffle service through spark.shuffle.service.enabled, or 2) enabling shuffle tracking through spark.dynamicAllocation.shuffleTracking.enabled, or 3) enabling shuffle blocks decommission through spark.decommission.enabled and spark.storage.decommission.shuffleBlocks.enabled, or 4) (Experimental) configuring spark.shuffle.sort.io.plugin.class to use a custom ShuffleDataIO who's ShuffleDriverComponents supports reliable storage. The following configurations are also relevant: spark.dynamicAllocation.minExecutors, spark.dynamicAllocation.maxExecutors, and spark.dynamicAllocation.initialExecutors spark.dynamicAllocation.executorAllocationRatio""",
                                             is_required=False,
                                         ),
                                         "executorIdleTimeout": Field(
@@ -1582,6 +2423,22 @@ def spark_config():
                                             StringSource,
                                             description="""Dynamic Allocation: Same as spark.dynamicAllocation.schedulerBacklogTimeout, but used only for subsequent executor requests. For more detail, see this description.""",
                                             is_required=False,
+                                        ),
+                                        "shuffleTracking": Field(
+                                            Permissive(
+                                                fields={
+                                                    "enabled": Field(
+                                                        StringSource,
+                                                        description="""Dynamic Allocation: Enables shuffle file tracking for executors, which allows dynamic allocation without the need for an external shuffle service. This option will try to keep alive executors that are storing shuffle data for active jobs.""",
+                                                        is_required=False,
+                                                    ),
+                                                    "timeout": Field(
+                                                        StringSource,
+                                                        description="""Dynamic Allocation: When shuffle tracking is enabled, controls the timeout for executors that are holding shuffle data. The default value means that Spark will rely on the shuffles being garbage collected to be able to release executors. If for some reason garbage collection is not cleaning up shuffles quickly enough, this option can be used to control when to time out executors even when they are storing shuffle data.""",
+                                                        is_required=False,
+                                                    ),
+                                                }
+                                            )
                                         ),
                                     }
                                 )

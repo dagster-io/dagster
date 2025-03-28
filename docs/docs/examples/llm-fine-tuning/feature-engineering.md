@@ -38,23 +38,23 @@ order by 2 desc
 limit 15;
 ```
 
-| category | category_count |
-| --- | --- |
-| to-read | 87252 |
-| comics | 76283 |
-| graphic-novels | 67923 |
-| graphic-novel | 58219 |
-| currently-reading | 57252 |
-| fiction | 50014 |
-| owned | 48936 |
-| favorites | 47256 |
-| comic | 46948 |
-| comics-graphic-novels | 38433 |
-| fantasy | 37003 |
-| comic-books | 36638 |
-| default | 35292 |
-| books-i-own | 34620 |
-| library | 31378 |
+| category              | category_count |
+| --------------------- | -------------- |
+| to-read               | 87252          |
+| comics                | 76283          |
+| graphic-novels        | 67923          |
+| graphic-novel         | 58219          |
+| currently-reading     | 57252          |
+| fiction               | 50014          |
+| owned                 | 48936          |
+| favorites             | 47256          |
+| comic                 | 46948          |
+| comics-graphic-novels | 38433          |
+| fantasy               | 37003          |
+| comic-books           | 36638          |
+| default               | 35292          |
+| books-i-own           | 34620          |
+| library               | 31378          |
 
 A lot of these shelves would be hard to use for modeling (such as `owned` or `default`). But genres such as `fantasy` could be interesting. If we continued looking through shelves, these are the most popular genres:
 
@@ -68,14 +68,24 @@ CATEGORIES = [
 
 Using these categories, we can construct a table of the most common genres and select the single best genre for each book (assuming it was shelved that way at least three times). We can then wrap that query in an asset and materialize it as a table alongside our other DuckDB tables:
 
-<CodeExample path="docs_projects/project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" startAfter="start_book_category" endBefore="end_book_category"/>
+<CodeExample
+  path="docs_projects/project_llm_fine_tune/project_llm_fine_tune/assets.py"
+  language="python"
+  startAfter="start_book_category"
+  endBefore="end_book_category"
+/>
 
 ## Enrichment table
 
 With our `book_category` asset created, we can combine that with the `author` and `graphic_novel` assets to create our final data set we will use for modeling. Here we will both create the table within DuckDB and select its contents into a DataFrame, which we can pass to our next series of assets:
 
-<CodeExample path="docs_projects/project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" startAfter="start_enriched_graphic_novels" endBefore="end_enriched_graphic_novels"/>
+<CodeExample
+  path="docs_projects/project_llm_fine_tune/project_llm_fine_tune/assets.py"
+  language="python"
+  startAfter="start_enriched_graphic_novels"
+  endBefore="end_enriched_graphic_novels"
+/>
 
 ## Next steps
 
-- Continue this example with [file creation](file-creation)
+- Continue this example with [file creation](/examples/llm-fine-tuning/file-creation)

@@ -233,7 +233,7 @@ class TestAzureComputeLogManager(TestComputeLogManager):
     __test__ = True
 
     @pytest.fixture(name="compute_log_manager")
-    def compute_log_manager(
+    def compute_log_manager(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         blob_client,
         storage_account,
@@ -262,7 +262,7 @@ class TestAzureComputeLogManager(TestComputeLogManager):
 
     # for streaming tests
     @pytest.fixture(name="write_manager")
-    def write_manager(
+    def write_manager(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         blob_client,
         storage_account,
@@ -291,7 +291,7 @@ class TestAzureComputeLogManager(TestComputeLogManager):
             )
 
     @pytest.fixture(name="read_manager")
-    def read_manager(self, compute_log_manager):
+    def read_manager(self, compute_log_manager):  # pyright: ignore[reportIncompatibleMethodOverride]
         yield compute_log_manager
 
 

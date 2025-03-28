@@ -5,7 +5,7 @@ name: Perian
 title: Dagster & Perian
 sidebar_label: Perian
 excerpt: The `dagster-perian` integration allows you to easily dockerize your codebase and execute it on the PERIAN platform, PERIAN's serverless GPU environment.
-date: 
+date:
 apireflink:
 docslink:
 partnerlink:

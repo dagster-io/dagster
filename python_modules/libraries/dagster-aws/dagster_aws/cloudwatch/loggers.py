@@ -7,11 +7,11 @@ from dagster import (
     Field,
     StringSource,
     _check as check,
-    _seven,
     logger,
 )
 from dagster._annotations import deprecated
 from dagster._core.utils import coerce_valid_log_level
+from dagster_shared import seven
 
 # The maximum batch size is 1,048,576 bytes, and this size is calculated as the sum of all event
 # messages in UTF-8, plus 26 bytes for each log event.
@@ -122,7 +122,7 @@ class CloudwatchLogsHandler(logging.Handler):
     def log_error(self, record, exc):
         logging.critical("Error while logging!")
         try:
-            logging.error(f"Attempted to log: {_seven.json.dumps(record.__dict__)}")
+            logging.error(f"Attempted to log: {seven.json.dumps(record.__dict__)}")
         except Exception:
             pass
         logging.exception(str(exc))
@@ -134,7 +134,7 @@ class CloudwatchLogsHandler(logging.Handler):
         self._emit(record, retry=True)
 
     def _emit(self, record, retry=False):
-        message = _seven.json.dumps(record.__dict__)
+        message = seven.json.dumps(record.__dict__)
         timestamp = millisecond_timestamp(
             datetime.datetime.strptime(record.dagster_meta["log_timestamp"], "%Y-%m-%dT%H:%M:%S.%f")
         )

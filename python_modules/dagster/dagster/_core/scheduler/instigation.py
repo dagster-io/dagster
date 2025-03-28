@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import AbstractSet, Any, Generic, NamedTuple, Optional, Union  # noqa: UP035
 
+from dagster_shared.serdes import EnumSerializer, deserialize_value, whitelist_for_serdes
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -22,7 +23,6 @@ from dagster._core.definitions.selector import InstigatorSelector, RepositorySel
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._serdes import create_snapshot_id
-from dagster._serdes.serdes import EnumSerializer, deserialize_value, whitelist_for_serdes
 from dagster._time import get_current_timestamp, utc_datetime_from_naive
 from dagster._utils import xor
 from dagster._utils.error import SerializableErrorInfo

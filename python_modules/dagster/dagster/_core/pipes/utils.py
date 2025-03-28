@@ -84,7 +84,7 @@ class PipesTempFileContextInjector(PipesContextInjector):
     """
 
     @contextmanager
-    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:
+    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Inject context to external environment by writing it to an automatically-generated
         temporary file as JSON and exposing the path to the file.
 
@@ -148,7 +148,7 @@ class PipesFileMessageReader(PipesMessageReader):
         )
         self._cleanup_file = cleanup_file
 
-    def on_launched(self, params: PipesLaunchedData) -> None:
+    def on_launched(self, params: PipesLaunchedData) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         self.launched_payload = params
 
     @contextmanager
@@ -558,7 +558,7 @@ class PipesBlobStoreMessageReader(PipesThreadedMessageReader):
         ...
         # historical reasons, keeping the original interface of PipesBlobStoreMessageReader
 
-    def download_messages(
+    def download_messages(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, cursor: Optional[int], params: PipesParams
     ) -> Optional[tuple[int, str]]:
         # mapping new interface to the old one

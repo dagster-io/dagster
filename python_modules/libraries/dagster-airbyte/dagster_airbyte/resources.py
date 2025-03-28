@@ -27,10 +27,10 @@ from dagster._config.pythonic_config import infer_schema_from_config_class
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._model import DagsterModel
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import deep_merge_dicts
+from dagster_shared.dagster_model import DagsterModel
 from pydantic import Field, PrivateAttr
 from requests.exceptions import RequestException
 
@@ -524,7 +524,7 @@ class AirbyteResource(BaseAirbyteResource):
         )
         return {**auth_param, **self.request_additional_params}
 
-    def make_request(
+    def make_request(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, endpoint: str, data: Optional[Mapping[str, object]]
     ) -> Optional[Mapping[str, object]]:
         """Creates and sends a request to the desired Airbyte REST API endpoint.
@@ -1378,10 +1378,10 @@ class AirbyteCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, 
     def defs_key(self) -> str:
         return f"{AIRBYTE_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.workspace_id}"
 
-    def fetch_state(self) -> AirbyteWorkspaceData:
+    def fetch_state(self) -> AirbyteWorkspaceData:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.workspace.fetch_airbyte_workspace_data()
 
-    def defs_from_state(self, state: AirbyteWorkspaceData) -> Definitions:
+    def defs_from_state(self, state: AirbyteWorkspaceData) -> Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
         all_asset_specs = [
             self.translator.get_asset_spec(props)
             for props in state.to_airbyte_connection_table_props_data()

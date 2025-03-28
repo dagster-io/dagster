@@ -6,7 +6,7 @@ import random
 from typing import NamedTuple
 
 import objgraph
-from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
+from dagster_shared.utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
 
 
 def test_cached_method() -> None:

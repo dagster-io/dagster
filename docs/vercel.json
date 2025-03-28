@@ -1,46 +1,6 @@
 {
   "redirects": [
     {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "docs-preview.dagster.io"
-        }
-      ],
-      "destination": "https://docs.dagster.io"
-    },
-    {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "new-docs.dagster.io"
-        }
-      ],
-      "destination": "https://docs.dagster.io"
-    },
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "docs-preview.dagster.io"
-        }
-      ],
-      "destination": "https://docs.dagster.io/:path*"
-    },
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "new-docs.dagster.io"
-        }
-      ],
-      "destination": "https://docs.dagster.io/:path*"
-    },
-    {
       "source": "/dagster-cloud/:path*",
       "destination": "/dagster-plus/:path*"
     },
@@ -80,6 +40,10 @@
     {
       "source": "/master/_apidocs/:path*",
       "destination": "/api/python-api/:path*"
+    },
+    {
+      "source": "/apidocs/external-assets-rest",
+      "destination": "/api/python-api/external-assets-rest-api"
     },
     {
       "source": "/api/libraries/:path*",
@@ -519,13 +483,91 @@
     },
     {
       "source": "/integrations/airflow/migrating-to-dagster",
-      "destination": "/integrations/libraries/airlift/airflow-to-dagster/",
-      "permanent": false
+      "destination": "/guides/migrate/airflow-to-dagster/"
+    },
+    {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/",
+      "destination": "/guides/migrate/airflow-to-dagster/"
+    },
+    {
+      "source": "/integrations/libraries/airlift/federation-tutorial/",
+      "destination": "/guides/migrate/airflow-to-dagster/federation/"
+    },
+    {
+      "source": "/integrations/airlift/federation-tutorial/overview",
+      "destination": "/guides/migrate/airflow-to-dagster/federation/"
+    },
+    {
+      "source": "/integrations/airlift/full_dag",
+      "destination": "/guides/migrate/airflow-to-dagster/dag-level-migration/"
+    },
+    {
+      "source": "/integrations/airlift/operator-migration/kubernetes-pod-operator",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/kubernetes-pod-operator"
+    },
+    {
+      "source": "/integrations/airlift/operator-migration/bash-operator-general",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/bash-operator-general"
+    },
+    {
+      "source": "/integrations/airlift/operator-migration/bash-operator-dbt",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/bash-operator-dbt"
+    },
+    {
+      "source": "/integrations/airlift/operator-migration/python-operator",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/python-operator"
+    },
+    {
+      "source": "/integrations/airlift/reference",
+      "destination": "/guides/migrate/airflow-to-dagster/migration-reference"
+    },
+    {
+      "source": "/integrations/libraries/airlift/federation-tutorial/observe",
+      "destination": "/guides/migrate/airflow-to-dagster/federation/observe"
+    },
+    {
+      "source": "/integrations/airlift/tutorial",
+      "destination": "/guides/migrate/airflow-to-dagster/"
+    },
+    {
+      "source": "/integrations/airlift/tutorial/setup",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/setup"
+    },
+    {
+      "source": "/integrations/libraries/airlift/federation-tutorial/federated-execution",
+      "destination": "/guides/migrate/airflow-to-dagster/federation/federate-execution"
+    },
+    {
+      "source": "/integrations/libraries/airlift/operator-migration/",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/"
+    },
+    {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/peer",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/peer"
+    },
+    {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/observe",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/observe"
+    },
+    {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/migrate",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/migrate"
+    },
+    {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/decomission",
+      "destination": "/guides/migrate/airflow-to-dagster/task-level-migration/decommission"
+    },
+    {
+      "source": "/integrations/libraries/airlift/airflow-to-dagster/migrate-a-full-dag",
+      "destination": "/guides/migrate/airflow-to-dagster/dag-level-migration/"
     },
     {
       "source": "/integrations/airflow/reference",
-      "destination": "/integrations/libraries/airlift/",
-      "permanent": false
+      "destination": "/integrations/libraries/airlift/"
+    },
+    {
+      "source": "/integrations/airlift/airflow-dagster-equivalents",
+      "destination": "/guides/migrate/airflow-to-dagster/airflow-operator-migration/"
     },
     {
       "source": "/deployment/open-source",
@@ -614,6 +656,10 @@
     {
       "source": "/concepts/assets/asset-jobs",
       "destination": "/guides/build/assets/asset-jobs"
+    },
+    {
+      "source": "/guides/build/assets/asset-jobs",
+      "destination": "/guides/build/jobs/asset-jobs"
     },
     {
       "source": "/concepts/assets/asset-observations",
@@ -796,6 +842,10 @@
       "destination": "/guides/build/graphs"
     },
     {
+      "source": "/guides/build/graphs",
+      "destination": "/guides/build/ops/graphs"
+    },
+    {
       "source": "/concepts/ops-jobs-graphs/jobs",
       "destination": "/guides/build/assets/asset-jobs"
     },
@@ -872,6 +922,11 @@
       "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
     },
     {
+      "source": "/guides/build/external-pipelines/aws-emr-pipeline",
+      "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
+    },
+
+    {
       "source": "/guides/build/external-pipelines/aws-emr-containers-pipeline",
       "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
     },
@@ -890,14 +945,6 @@
     {
       "source": "/guides/build/external-pipelines/aws-glue-pipeline",
       "destination": "/guides/build/external-pipelines/aws/aws-glue-pipeline"
-    },
-    {
-      "source": "/guides/build/external-pipelines/aws-emr-pipeline",
-      "destination": "/guides/build/external-pipelines/aws/aws-emr-pipeline"
-    },
-    {
-      "source": "/guides/build/external-pipelines/aws/aws-emr-containers-pipeline",
-      "destination": "/guides/build/external-pipelines/aws/aws-emr-containers-pipeline"
     },
     {
       "source": "/guides/build/external-pipelines/aws-emr-serverless-pipeline",
@@ -1804,6 +1851,783 @@
         }
       ],
       "destination": "/about/changelog"
+    },
+    {
+      "source": "/_modules/dagster_airbyte/asset_defs",
+      "destination": "/api/python-api/libraries/dagster-airbyte"
+    },
+    {
+      "source": "/_modules/dagster_airbyte/resources",
+      "destination": "/api/python-api/libraries/dagster-airbyte"
+    },
+    {
+      "source": "/_modules/dagster_airlift/core/airflow_instance",
+      "destination": "/api/python-api/libraries/dagster-airlift#core-dagster_airliftcore"
+    },
+    {
+      "source": "/_modules/dagster_airlift/in_airflow/base_asset_operator",
+      "destination": "/api/python-api/libraries/dagster-airlift#in-airflow-dagster_airliftin_airflow"
+    },
+    {
+      "source": "/_modules/dagster_aws/ecs/executor",
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.ecs.ecs_executor"
+    },
+    {
+      "source": "/_modules/dagster_aws/ecs/launcher",
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.ecs.EcsRunLauncher"
+    },
+    {
+      "source": "/_modules/dagster_aws/pipes/clients/ecs",
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.pipes.PipesECSClient"
+    },
+    {
+      "source": "/_modules/dagster_aws/pipes/context_injectors",
+      "destination": "/api/python-api/libraries/dagster-aws#context-injectors"
+    },
+    {
+      "source": "/_modules/dagster_aws/redshift/resources",
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.redshift.RedshiftClientResource"
+    },
+    {
+      "source": "/_modules/dagster_aws/s3/compute_log_manager",
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.s3.S3ComputeLogManager"
+    },
+    {
+      "source": "/_modules/dagster_aws/s3/file_manager",
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.s3.S3FileHandle"
+    },
+    {
+      "source": "/_modules/dagster_aws/s3/io_manager",
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.s3.S3PickleIOManager"
+    },
+    {
+      "source": "/_modules/dagster_aws/s3/resources",
+      "destination": "/api/python-api/libraries/dagster-aws#s3"
+    },
+    {
+      "source": "/_modules/dagster_aws/secretsmanager/resources",
+      "destination": "/api/python-api/libraries/dagster-aws#dagster_aws.secretsmanager.SecretsManagerResource"
+    },
+    {
+      "source": "/_modules/dagster_azure/adls2/io_manager",
+      "destination": "/api/python-api/libraries/dagster-azure#io-manager"
+    },
+    {
+      "source": "/_modules/dagster_azure/adls2/resources",
+      "destination": "/api/python-api/libraries/dagster-azure#resources"
+    },
+    {
+      "source": "/_modules/dagster_azure/blob/compute_log_manager",
+      "destination": "/api/python-api/libraries/dagster-azure#dagster_azure.blob.AzureBlobComputeLogManager"
+    },
+    {
+      "source": "/_modules/dagster_celery_docker/executor",
+      "destination": "/api/python-api/libraries/dagster-celery-docker#dagster_celery_docker.celery_docker_executor"
+    },
+    {
+      "source": "/_modules/dagster_celery_k8s/executor",
+      "destination": "/api/python-api/libraries/dagster-celery-k8s#dagster_celery_k8s.celery_k8s_job_executor"
+    },
+    {
+      "source": "/_modules/dagster_celery_k8s/launcher",
+      "destination": "/api/python-api/libraries/dagster-celery-k8s#dagster_celery_k8s.CeleryK8sRunLauncher"
+    },
+    {
+      "source": "/_modules/dagster_celery/executor",
+      "destination": "/api/python-api/libraries/dagster-celery#dagster_celery.celery_executor"
+    },
+    {
+      "source": "/_modules/dagster_databricks/databricks",
+      "destination": "/api/python-api/libraries/dagster-databricks"
+    },
+    {
+      "source": "/_modules/dagster_databricks/databricks_pyspark_step_launcher",
+      "destination": "/api/python-api/libraries/dagster-databricks#step-launcher"
+    },
+    {
+      "source": "/_modules/dagster_databricks/pipes",
+      "destination": "/api/python-api/libraries/dagster-databricks#pipes"
+    },
+    {
+      "source": "/_modules/dagster_databricks/resources",
+      "destination": "api/python-api/libraries/dagster-databricks#resources"
+    },
+    {
+      "source": "/_modules/dagster_datahub/resources",
+      "destination": "/api/python-api/libraries/dagster-datahub"
+    },
+    {
+      "source": "/_modules/dagster_dbt/asset_decorator",
+      "destination": "/api/python-api/libraries/dagster-dbt#assets-dbt-core"
+    },
+    {
+      "source": "/_modules/dagster_dbt/asset_utils",
+      "destination": "/api/python-api/libraries/dagster-dbt#utils"
+    },
+    {
+      "source": "/_modules/dagster_dbt/cloud/asset_defs",
+      "destination": "/api/python-api/libraries/dagster-dbt#assets-dbt-cloud"
+    },
+    {
+      "source": "/_modules/dagster_dbt/cloud/resources",
+      "destination": "/api/python-api/libraries/dagster-dbt#resources-dbt-cloud"
+    },
+    {
+      "source": "/_modules/dagster_dbt/core/dbt_cli_event",
+      "destination": "/api/python-api/libraries/dagster-dbt#cli-resource"
+    },
+    {
+      "source": "/_modules/dagster_dbt/core/dbt_cli_invocation",
+      "destination": "/api/python-api/libraries/dagster-dbt#dagster_dbt.DbtCliInvocation"
+    },
+    {
+      "source": "/_modules/dagster_dbt/core/dbt_event_iterator",
+      "destination": "/api/python-api/libraries/dagster-dbt#dagster_dbt.core.dbt_cli_invocation.DbtEventIterator"
+    },
+    {
+      "source": "/_modules/dagster_dbt/core/resource",
+      "destination": "/api/python-api/libraries/dagster-dbt#dagster_dbt.DbtCliResource"
+    },
+    {
+      "source": "/_modules/dagster_dbt/dagster_dbt_translator",
+      "destination": "/api/python-api/libraries/dagster-dbt#dagster_dbt.DagsterDbtTranslator"
+    },
+    {
+      "source": "/_modules/dagster_dbt/dbt_manifest_asset_selection",
+      "destination": "/api/python-api/libraries/dagster-dbt#dagster_dbt.DbtManifestAssetSelection"
+    },
+    {
+      "source": "/_modules/dagster_dbt/dbt_project",
+      "destination": "/api/python-api/libraries/dagster-dbt#dagster-dbt-project"
+    },
+    {
+      "source": "/_modules/dagster_dbt/errors",
+      "destination": "/api/python-api/libraries/dagster-dbt#dagster_dbt.DagsterDbtError"
+    },
+    {
+      "source": "/_modules/dagster_dbt/freshness_builder",
+      "destination": "/api/python-api/libraries/dagster-dbt#dagster_dbt.build_freshness_checks_from_dbt_assets"
+    },
+    {
+      "source": "/_modules/dagster_deltalake/io_manager",
+      "destination": "/api/python-api/libraries/dagster-deltalake#dagster_deltalake.DeltaLakeIOManager"
+    },
+    {
+      "source": "/_modules/dagster_docker/docker_executor",
+      "destination": "/api/python-api/libraries/dagster-docker#dagster_docker.docker_executor"
+    },
+    {
+      "source": "/_modules/dagster_docker/docker_run_launcher",
+      "destination": "/api/python-api/libraries/dagster-docker#dagster_docker.DockerRunLauncher"
+    },
+    {
+      "source": "/_modules/dagster_docker/ops/docker_container_op",
+      "destination": "/api/python-api/libraries/dagster-docker#dagster_docker.docker_container_op"
+    },
+    {
+      "source": "/_modules/dagster_docker/pipes",
+      "destination": "/api/python-api/libraries/dagster-docker#dagster_docker.PipesDockerClient"
+    },
+    {
+      "source": "/_modules/dagster_duckdb_pandas/duckdb_pandas_type_handler",
+      "destination": "/api/python-api/libraries/dagster-duckdb-pandas#dagster_duckdb_pandas.DuckDBPandasTypeHandler"
+    },
+    {
+      "source": "/_modules/dagster_duckdb_pyspark/duckdb_pyspark_type_handler",
+      "destination": "/api/python-api/libraries/dagster-duckdb-pyspark#dagster_duckdb_pyspark.DuckDBPySparkTypeHandler"
+    },
+    {
+      "source": "/_modules/dagster_duckdb/io_manager",
+      "destination": "/api/python-api/libraries/dagster-duckdb#dagster_duckdb.DuckDBIOManager"
+    },
+    {
+      "source": "/_modules/dagster_duckdb/resource",
+      "destination": "/api/python-api/libraries/dagster-duckdb#dagster_duckdb.DuckDBResource"
+    },
+    {
+      "source": "/_modules/dagster_embedded_elt/dlt/asset_decorator",
+      "destination": "/api/python-api/libraries/dagster-dlt#dagster_dlt.dlt_assets"
+    },
+    {
+      "source": "/_modules/dagster_embedded_elt/dlt/resource",
+      "destination": "/api/python-api/libraries/dagster-dlt#dagster_dlt.DagsterDltResource"
+    },
+    {
+      "source": "/_modules/dagster_embedded_elt/dlt/translator",
+      "destination": "/api/python-api/libraries/dagster-dlt#dagster_dlt.DagsterDltTranslator"
+    },
+    {
+      "source": "/_modules/dagster_embedded_elt/sling/asset_decorator",
+      "destination": "/api/python-api/libraries/dagster-sling#dagster_sling.sling_assets"
+    },
+    {
+      "source": "/_modules/dagster_embedded_elt/sling/dagster_sling_translator",
+      "destination": "/api/python-api/libraries/dagster-sling#dagster_sling.DagsterSlingTranslator"
+    },
+    {
+      "source": "/_modules/dagster_embedded_elt/sling/resources",
+      "destination": "/api/python-api/libraries/dagster-sling#dagster_sling.SlingResource"
+    },
+    {
+      "source": "/_modules/dagster_fivetran/asset_defs",
+      "destination": "/api/python-api/libraries/dagster-fivetran#assets-fivetran-api"
+    },
+    {
+      "source": "/_modules/dagster_fivetran/resources",
+      "destination": "/api/python-api/libraries/dagster-fivetran#dagster_fivetran.fivetran_resource"
+    },
+    {
+      "source": "/_modules/dagster_gcp/bigquery/io_manager",
+      "destination": "/api/python-api/libraries/dagster-gcp#dagster_gcp.BigQueryIOManager"
+    },
+    {
+      "source": "/_modules/dagster_gcp/gcs/io_manager",
+      "destination": "/api/python-api/libraries/dagster-gcp#dagster_gcp.GCSPickleIOManager"
+    },
+    {
+      "source": "/_modules/dagster_gcp/gcs/resources",
+      "destination": "/api/python-api/libraries/dagster-gcp#dagster_gcp.GCSResource"
+    },
+    {
+      "source": "/_modules/dagster_gcp/gcs/sensor",
+      "destination": "/api/python-api/libraries/dagster-gcp#dagster_gcp.gcs.sensor.get_gcs_keys"
+    },
+    {
+      "source": "/_modules/dagster_github/resources",
+      "destination": "/api/python-api/libraries/dagster-github#dagster_github.resources.GithubResource"
+    },
+    {
+      "source": "/_modules/dagster_graphql/client/client",
+      "destination": "/api/python-api/libraries/dagster-graphql#dagster_graphql.DagsterGraphQLClient"
+    },
+    {
+      "source": "/_modules/dagster_k8s/executor",
+      "destination": "/api/python-api/libraries/dagster-k8s#dagster_k8s.k8s_job_executor"
+    },
+    {
+      "source": "/_modules/dagster_k8s/launcher",
+      "destination": "/api/python-api/libraries/dagster-k8s#dagster_k8s.K8sRunLauncher"
+    },
+    {
+      "source": "/_modules/dagster_k8s/ops/k8s_job_op",
+      "destination": "/api/python-api/libraries/dagster-k8s#dagster_k8s.k8s_job_op"
+    },
+    {
+      "source": "/_modules/dagster_k8s/pipes",
+      "destination": "/api/python-api/libraries/dagster-k8s#dagster_k8s.PipesK8sClient"
+    },
+    {
+      "source": "/_modules/dagster_mlflow/resources",
+      "destination": "/api/python-api/libraries/dagster-mlflow"
+    },
+    {
+      "source": "/_modules/dagster_msteams/hooks",
+      "destination": "/api/python-api/libraries/dagster-msteams#sensors"
+    },
+    {
+      "source": "/_modules/dagster_msteams/resources",
+      "destination": "/api/python-api/libraries/dagster-msteams#dagster_msteams.MSTeamsResource"
+    },
+    {
+      "source": "/_modules/dagster_mysql/event_log/event_log",
+      "destination": "/api/python-api/libraries/dagster-mysql#dagster_mysql.MySQLEventLogStorage"
+    },
+    {
+      "source": "/_modules/dagster_mysql/run_storage/run_storage",
+      "destination": "/api/python-api/libraries/dagster-mysql#dagster_mysql.MySQLRunStorage"
+    },
+    {
+      "source": "/_modules/dagster_mysql/schedule_storage/schedule_storage",
+      "destination": "/api/python-api/libraries/dagster-mysql#dagster_mysql.MySQLScheduleStorage"
+    },
+    {
+      "source": "/_modules/dagster_pandas/data_frame",
+      "destination": "/api/python-api/libraries/dagster-pandas#dagster_pandas.create_dagster_pandas_dataframe_type"
+    },
+    {
+      "source": "/_modules/dagster_polars/io_managers/base",
+      "destination": "/api/python-api/libraries/dagster-polars#dagster_polars.BasePolarsUPathIOManager"
+    },
+    {
+      "source": "/_modules/dagster_polars/io_managers/bigquery",
+      "destination": "/api/python-api/libraries/dagster-polars#dagster_polars.PolarsBigQueryIOManager"
+    },
+    {
+      "source": "/_modules/dagster_polars/io_managers/delta",
+      "destination": "/api/python-api/libraries/dagster-polars#dagster_polars.PolarsDeltaIOManager"
+    },
+    {
+      "source": "/_modules/dagster_polars/io_managers/parquet",
+      "destination": "/api/python-api/libraries/dagster-polars#dagster_polars.PolarsParquetIOManager"
+    },
+    {
+      "source": "/_modules/dagster_postgres/event_log/event_log",
+      "destination": "/api/python-api/libraries/dagster-postgres#dagster_postgres.PostgresEventLogStorage"
+    },
+    {
+      "source": "/_modules/dagster_postgres/run_storage/run_storage",
+      "destination": "/api/python-api/libraries/dagster-postgres#dagster_postgres.PostgresRunStorage"
+    },
+    {
+      "source": "/_modules/dagster_postgres/schedule_storage/schedule_storage",
+      "destination": "/api/python-api/libraries/dagster-postgres#dagster_postgres.PostgresScheduleStorage"
+    },
+    {
+      "source": "/_modules/dagster_powerbi/assets",
+      "destination": "/api/python-api/libraries/dagster-powerbi#assets-powerbi"
+    },
+    {
+      "source": "/_modules/dagster_pyspark/resources",
+      "destination": "/api/python-api/libraries/dagster-pyspark#dagster_pyspark.PySparkResource"
+    },
+    {
+      "source": "/_modules/dagster_shell/ops",
+      "destination": "/api/python-api/pipes"
+    },
+    {
+      "source": "/_modules/dagster_slack/hooks",
+      "destination": "/api/python-api/libraries/dagster-slack"
+    },
+    {
+      "source": "/_modules/dagster_slack/resources",
+      "destination": "/api/python-api/libraries/dagster-slack"
+    },
+    {
+      "source": "/_modules/dagster_slack/sensors",
+      "destination": "/api/python-api/libraries/dagster-slack"
+    },
+    {
+      "source": "/_modules/dagster_snowflake/resources",
+      "destination": "/api/python-api/libraries/dagster-snowflake#dagster_snowflake.SnowflakeResource"
+    },
+    {
+      "source": "/_modules/dagster_snowflake/snowflake_io_manager",
+      "destination": "/api/python-api/libraries/dagster-snowflake#dagster_snowflake.SnowflakeIOManager"
+    },
+    {
+      "source": "/_modules/dagster_ssh/resources",
+      "destination": "/api/python-api/libraries/dagster-ssh#dagster_ssh.ssh_resource"
+    },
+    {
+      "source": "/_modules/dagster/_config/config_schema",
+      "destination": "/api/python-api/config#dagster.ConfigSchema"
+    },
+    {
+      "source": "/_modules/dagster/_config/config_type",
+      "destination": "/api/python-api/config"
+    },
+    {
+      "source": "/_modules/dagster/_config/field",
+      "destination": "/api/python-api/config#dagster.Field"
+    },
+    {
+      "source": "/_modules/dagster/_config/field_utils",
+      "destination": "/api/python-api/config#config-utilities"
+    },
+    {
+      "source": "/_modules/dagster/_config/pythonic_config/config",
+      "destination": "/api/python-api/config#dagster.Config"
+    },
+    {
+      "source": "/_modules/dagster/_config/pythonic_config/resource",
+      "destination": "/api/python-api/config#pythonic-config-system"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/asset_check_result",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/asset_check_spec",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/asset_dep",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/asset_key",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/asset_out",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/asset_selection",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/asset_spec",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/assets",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/auto_materialize_rule",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/backfill_policy",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/declarative_automation/automation_condition",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/decorators/asset_check_decorator",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/decorators/asset_decorator",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/decorators/op_decorator",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/decorators/repository_decorator",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/decorators/schedule_decorator",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/decorators/sensor_decorator",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/definitions_class",
+      "destination": "/api/python-api/definitions#dagster.Definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/dependency",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/events",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/executor_definition",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/graph_definition",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/hook_definition",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/input",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/job_definition",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/load_asset_checks_from_modules",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/load_assets_from_modules",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/materialize",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/metadata",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/metadata/metadata_value",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/metadata/source_code",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/multi_asset_sensor_definition",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/multi_dimensional_partitions",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/op_definition",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/output",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/partition",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/partition_mapping",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/partitioned_schedule",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/policy",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/reconstruct",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/repository_definition/repository_data",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/repository_definition/repository_definition",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/resource_definition",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/run_request",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/run_status_sensor_definition",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/schedule_definition",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/sensor_definition",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/source_asset",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/time_window_partition_mapping",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/time_window_partitions",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/unresolved_asset_job_definition",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/definitions/utils",
+      "destination": "/api/python-api/definitions"
+    },
+    {
+      "source": "/_modules/dagster/_core/errors",
+      "destination": "/api/python-api/errors"
+    },
+    {
+      "source": "/_modules/dagster/_core/event_api",
+      "destination": "/api/python-api/"
+    },
+    {
+      "source": "/_modules/dagster/_core/events",
+      "destination": "/api/python-api/execution#dagster.DagsterEvent"
+    },
+    {
+      "source": "/_modules/dagster/_core/events/log",
+      "destination": "/api/python-api/"
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/api",
+      "destination": "/api/python-api/execution"
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/build_resources",
+      "destination": "/api/python-api/execution"
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/asset_execution_context",
+      "destination": "/api/python-api/execution#dagster.AssetExecutionContext"
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/hook",
+      "destination": "/api/python-api/execution#contexts"
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/init",
+      "destination": "/api/python-api/execution#contexts"
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/input",
+      "destination": "/api/python-api/execution#contexts"
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/invocation",
+      "destination": "/api/python-api/execution#contexts"
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/op_execution_context",
+      "destination": "/api/python-api/execution#contexts"
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/output",
+      "destination": "/api/python-api/execution#contexts"
+    },
+    {
+      "source": "/_modules/dagster/_core/execution/context/system",
+      "destination": "/api/python-api/execution#contexts"
+    },
+    {
+      "source": "/_modules/dagster/_core/instance",
+      "destination": "/api/python-api/internals#dagster.DagsterInstance"
+    },
+    {
+      "source": "/_modules/dagster/_core/instance/ref",
+      "destination": "/api/python-api/internals#dagster._core.instance.InstanceRef"
+    },
+    {
+      "source": "/_modules/dagster/_core/launcher/default_run_launcher",
+      "destination": "/api/python-api/internals#dagster._core.launcher.DefaultRunLauncher"
+    },
+    {
+      "source": "/_modules/dagster/_core/log_manager",
+      "destination": "/api/python-api/internals#dagster._core.storage.compute_log_manager.ComputeLogManager"
+    },
+    {
+      "source": "/_modules/dagster/_core/pipes/context",
+      "destination": "/api/python-api/pipes"
+    },
+    {
+      "source": "/_modules/dagster/_core/pipes/utils",
+      "destination": "/api/python-api/pipes"
+    },
+    {
+      "source": "/_modules/dagster/_core/run_coordinator/queued_run_coordinator",
+      "destination": "/api/python-api/internals#dagster._core.run_coordinator.QueuedRunCoordinator"
+    },
+    {
+      "source": "/_modules/dagster/_core/scheduler/scheduler",
+      "destination": "/api/python-api/internals#dagster._core.scheduler.Scheduler"
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/dagster_run",
+      "destination": "/api/python-api/internals#dagster.DagsterRun"
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/event_log/base",
+      "destination": "/api/python-api/internals#dagster._core.storage.event_log.EventLogStorage"
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/event_log/sql_event_log",
+      "destination": "/api/python-api/internals#dagster._core.storage.event_log.SqlEventLogStorage"
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/event_log/sqlite/consolidated_sqlite_event_log",
+      "destination": "/api/python-api/internals#dagster._core.storage.event_log.ConsolidatedSqliteEventLogStorage"
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/event_log/sqlite/sqlite_event_log",
+      "destination": "/api/python-api/internals#dagster._core.storage.event_log.SqliteEventLogStorage"
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/file_manager",
+      "destination": "/api/python-api/internals#dagster._core.storage.file_manager.FileManager"
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/fs_io_manager",
+      "destination": "/api/python-api/internals#storage"
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/io_manager",
+      "destination": "/api/python-api/internals#storage"
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/local_compute_log_manager",
+      "destination": "/api/python-api/internals#dagster._core.storage.local_compute_log_manager.LocalComputeLogManager"
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/mem_io_manager",
+      "destination": "/api/python-api/internals#storage"
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/runs/base",
+      "destination": "/api/python-api/internals#dagster.DagsterRun"
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/runs/sql_run_storage",
+      "destination": "/api/python-api/internals#dagster._core.storage.runs.SqlRunStorage"
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/runs/sqlite/sqlite_run_storage",
+      "destination": "/api/python-api/internals#dagster._core.storage.runs.SqliteRunStorage"
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/schedules/sql_schedule_storage",
+      "destination": "/api/python-api/internals#dagster._core.storage.schedules.SqlScheduleStorage"
+    },
+    {
+      "source": "/_modules/dagster/_core/storage/upath_io_manager",
+      "destination": "/api/python-api/internals#storage"
+    },
+    {
+      "source": "/_modules/dagster/_core/types/dagster_type",
+      "destination": "/api/python-api/types#dagster.DagsterType"
+    },
+    {
+      "source": "/_modules/dagster/_serdes/config_class",
+      "destination": "/api/python-api/internals#dagster._serdes.ConfigurableClass"
+    },
+    {
+      "source": "/_modules/dagster/_utils",
+      "destination": "/api/python-api/utilities"
+    },
+    {
+      "source": "/_modules/dagster/_utils/alert",
+      "destination": "/api/python-api/utilities"
+    },
+    {
+      "source": "/_modules/dagster/_utils/forked_pdb",
+      "destination": "/api/python-api/utilities#dagster._utils.forked_pdb.ForkedPdb"
+    },
+    {
+      "source": "/_modules/dagster/_utils/log",
+      "destination": "/api/python-api/utilities#dagster.get_dagster_logger"
+    },
+    {
+      "source": "/_modules/dagster/_utils/warnings",
+      "destination": "/api/python-api/utilities#dagster.PreviewWarning"
+    },
+    {
+      "source": "/_modules/dagstermill/context",
+      "destination": "/api/python-api/libraries/dagstermill#dagstermill.DagstermillExecutionContext"
+    },
+    {
+      "source": "/_modules/dagstermill/factory",
+      "destination": "/api/python-api/libraries/dagstermill"
+    },
+    {
+      "source": "/_modules/dagstermill/io_managers",
+      "destination": "/api/python-api/libraries/dagstermill#dagstermill.ConfigurableLocalOutputNotebookIOManager"
     }
-  ]
+  ],
+  "trailingSlash": false
 }

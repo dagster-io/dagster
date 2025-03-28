@@ -1,5 +1,5 @@
 ---
-title: "external assets REST API"
+title: 'external assets REST API'
 ---
 
 # External assets REST API reference
@@ -43,11 +43,11 @@ The full URL you send requests to will vary depending on how you access your Dag
 
 ## Available APIs
 
-| Endpoint                                                                  | Description                                                                        |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| [`POST /report_asset_materialization/`](#report-an-asset-materialization) | Records an <PyObject section="ops" module="dagster" object="AssetMaterialization" /> event for an external asset. |
-| [`POST /report_asset_check/`](#report-an-asset-check-evaluation)          | Records an <PyObject section="asset-checks" module="dagster" object="asset_check" /> evaluation for an external asset.     |
-| [`POST /report_asset_observation/`](#report-an-asset-observation)         | Records an <PyObject section="assets" module="dagster" object="AssetObservation" /> event for an external asset.     |
+| Endpoint                                                                  | Description                                                                                                            |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| [`POST /report_asset_materialization/`](#report-an-asset-materialization) | Records an <PyObject section="ops" module="dagster" object="AssetMaterialization" /> event for an external asset.      |
+| [`POST /report_asset_check/`](#report-an-asset-check-evaluation)          | Records an <PyObject section="asset-checks" module="dagster" object="asset_check" /> evaluation for an external asset. |
+| [`POST /report_asset_observation/`](#report-an-asset-observation)         | Records an <PyObject section="assets" module="dagster" object="AssetObservation" /> event for an external asset.       |
 
 ### Report an asset materialization
 
@@ -60,16 +60,14 @@ Using this endpoint, you could report to Dagster that an [external asset](/guide
 <table
   className="table"
   style={{
-    width: "100%",
-  }}
->
+    width: '100%',
+  }}>
   <tbody>
     <tr>
       <td
         style={{
-          width: "15%",
-        }}
-      >
+          width: '15%',
+        }}>
         <strong>Method</strong>
       </td>
       <td>POST</td>
@@ -87,9 +85,8 @@ Using this endpoint, you could report to Dagster that an [external asset](/guide
         <strong>Authentication</strong>
       </td>
       <td>
-        <strong>Required only for Dagster+.</strong> The request header must
-        contain the <code>Dagster-Cloud-Api-Token</code> header and a valid user
-        token.
+        <strong>Required only for Dagster+.</strong> The request header must contain the{' '}
+        <code>Dagster-Cloud-Api-Token</code> header and a valid user token.
       </td>
     </tr>
     <tr>
@@ -100,12 +97,12 @@ Using this endpoint, you could report to Dagster that an [external asset](/guide
         The request header must specify the following:
         <ul>
           <li>
-            <code>Dagster-Cloud-Api-Token</code> - Required if using Dagster+,
-            e.g. <code>Dagster-Cloud-Api-Token: [USER_TOKEN]</code>
+            <code>Dagster-Cloud-Api-Token</code> - Required if using Dagster+, e.g.{' '}
+            <code>Dagster-Cloud-Api-Token: [USER_TOKEN]</code>
           </li>
           <li>
-            <code>Content-Type</code> - Required if the request contains a JSON
-            body, specified as <code>Content-Type: application/json</code>
+            <code>Content-Type</code> - Required if the request contains a JSON body, specified as{' '}
+            <code>Content-Type: application/json</code>
           </li>
         </ul>
       </td>
@@ -130,23 +127,20 @@ Parameters can be passed in multiple ways and will be considered in the followin
 <table
   className="table"
   style={{
-    width: "100%",
-  }}
->
+    width: '100%',
+  }}>
   <thead>
     <tr>
       <th
         style={{
-          width: "15%",
-        }}
-      >
+          width: '15%',
+        }}>
         Name
       </th>
       <th
         style={{
-          width: "15%",
-        }}
-      >
+          width: '15%',
+        }}>
         Required/Optional
       </th>
       <th>Description</th>
@@ -160,18 +154,17 @@ Parameters can be passed in multiple ways and will be considered in the followin
         The key of the materialized asset. May be passed as:
         <ul>
           <li>
-            <strong>URL path</strong> - Specified as path components after 
-            <code>/report_asset_materialization/</code>, where each 
-            <code>/</code> delimits parts of a multipart 
+            <strong>URL path</strong> - Specified as path components after
+            <code>/report_asset_materialization/</code>, where each
+            <code>/</code> delimits parts of a multipart
             <PyObject section="assets" module="dagster" object="AssetKey" />.
           </li>
           <li>
-            <strong>JSON body</strong> - Value is passed to the 
+            <strong>JSON body</strong> - Value is passed to the
             <PyObject section="assets" module="dagster" object="AssetKey" /> constructor.
           </li>
           <li>
-            <strong>Query parameter</strong> - Accepts string or JSON encoded
-            array for multipart keys.
+            <strong>Query parameter</strong> - Accepts string or JSON encoded array for multipart keys.
           </li>
         </ul>
       </td>
@@ -180,11 +173,10 @@ Parameters can be passed in multiple ways and will be considered in the followin
       <td>metadata</td>
       <td>Optional</td>
       <td>
-        Arbitrary metadata about the asset, specified as key-value pairs. May be
-        passed as:
+        Arbitrary metadata about the asset, specified as key-value pairs. May be passed as:
         <ul>
           <li>
-            <strong>JSON body</strong> - Value is passed to the 
+            <strong>JSON body</strong> - Value is passed to the
             <PyObject section="ops" module="dagster" object="AssetMaterialization" /> constructor.
           </li>
           <li>
@@ -197,8 +189,8 @@ Parameters can be passed in multiple ways and will be considered in the followin
       <td>data_version</td>
       <td>Optional</td>
       <td>
-        The data version of the asset associated with the materialization. May
-        be passed in JSON body or as a query parameter; value is passed to 
+        The data version of the asset associated with the materialization. May be passed in JSON body or as a query
+        parameter; value is passed to
         <PyObject section="ops" module="dagster" object="AssetMaterialization" /> via <code>tags</code>.
       </td>
     </tr>
@@ -206,8 +198,8 @@ Parameters can be passed in multiple ways and will be considered in the followin
       <td>description</td>
       <td>Optional</td>
       <td>
-        A human-readable description of the materialized value. May be passed in
-        JSON body or as a query parameter; value is passed to the 
+        A human-readable description of the materialized value. May be passed in JSON body or as a query parameter;
+        value is passed to the
         <PyObject section="ops" module="dagster" object="AssetMaterialization" /> constructor.
       </td>
     </tr>
@@ -215,8 +207,8 @@ Parameters can be passed in multiple ways and will be considered in the followin
       <td>partition</td>
       <td>Optional</td>
       <td>
-        The name of the partition that was materialized. May be passed in JSON
-        body or as a query parameter; value is passed to the 
+        The name of the partition that was materialized. May be passed in JSON body or as a query parameter; value is
+        passed to the
         <PyObject section="ops" module="dagster" object="AssetMaterialization" /> constructor.
       </td>
     </tr>
@@ -312,16 +304,14 @@ Using this endpoint, you could report to Dagster that an [asset check](/guides/t
 <table
   className="table"
   style={{
-    width: "100%",
-  }}
->
+    width: '100%',
+  }}>
   <tbody>
     <tr>
       <td
         style={{
-          width: "15%",
-        }}
-      >
+          width: '15%',
+        }}>
         <strong>Method</strong>
       </td>
       <td>POST</td>
@@ -339,9 +329,8 @@ Using this endpoint, you could report to Dagster that an [asset check](/guides/t
         <strong>Authentication</strong>
       </td>
       <td>
-        <strong>Required only for Dagster+.</strong> The request header must
-        contain the <code>Dagster-Cloud-Api-Token</code> header and a valid user
-        token.
+        <strong>Required only for Dagster+.</strong> The request header must contain the{' '}
+        <code>Dagster-Cloud-Api-Token</code> header and a valid user token.
       </td>
     </tr>
     <tr>
@@ -352,12 +341,12 @@ Using this endpoint, you could report to Dagster that an [asset check](/guides/t
         The request header must specify the following:
         <ul>
           <li>
-            <code>Dagster-Cloud-Api-Token</code> - Required if using Dagster+,
-            e.g. <code>Dagster-Cloud-Api-Token: [USER_TOKEN]</code>
+            <code>Dagster-Cloud-Api-Token</code> - Required if using Dagster+, e.g.{' '}
+            <code>Dagster-Cloud-Api-Token: [USER_TOKEN]</code>
           </li>
           <li>
-            <code>Content-Type</code> - Required if the request contains a JSON
-            body, specified as <code>Content-Type: application/json</code>
+            <code>Content-Type</code> - Required if the request contains a JSON body, specified as{' '}
+            <code>Content-Type: application/json</code>
           </li>
         </ul>
       </td>
@@ -382,23 +371,20 @@ Parameters can be passed in multiple ways and will be considered in the followin
 <table
   className="table"
   style={{
-    width: "100%",
-  }}
->
+    width: '100%',
+  }}>
   <thead>
     <tr>
       <th
         style={{
-          width: "15%",
-        }}
-      >
+          width: '15%',
+        }}>
         Name
       </th>
       <th
         style={{
-          width: "15%",
-        }}
-      >
+          width: '15%',
+        }}>
         Required/Optional
       </th>
       <th>Description</th>
@@ -412,17 +398,16 @@ Parameters can be passed in multiple ways and will be considered in the followin
         The key of the checked asset. May be passed as:
         <ul>
           <li>
-            <strong>URL path</strong> - Specified as path components after 
-            <code>/report_asset_check/</code>, where each <code>/</code> 
+            <strong>URL path</strong> - Specified as path components after
+            <code>/report_asset_check/</code>, where each <code>/</code>
             delimits parts of a multipart <PyObject section="assets" module="dagster" object="AssetKey" />.
           </li>
           <li>
-            <strong>JSON body</strong> - Value is passed to the 
+            <strong>JSON body</strong> - Value is passed to the
             <PyObject section="assets" module="dagster" object="AssetKey" /> constructor.
           </li>
           <li>
-            <strong>Query parameter</strong> - Accepts string or JSON encoded
-            array for multipart keys.
+            <strong>Query parameter</strong> - Accepts string or JSON encoded array for multipart keys.
           </li>
         </ul>
       </td>
@@ -434,11 +419,11 @@ Parameters can be passed in multiple ways and will be considered in the followin
         The pass/fail result of the check. May be passed as:
         <ul>
           <li>
-            <strong>JSON body</strong> - Value is passed to the 
+            <strong>JSON body</strong> - Value is passed to the
             <code>AssetCheckEvaluation</code> constructor.
           </li>
           <li>
-            <strong>Query parameter</strong> - Accepts a JSON encoded boolean: 
+            <strong>Query parameter</strong> - Accepts a JSON encoded boolean:
             <code>true</code> or <code>false</code>.
           </li>
         </ul>
@@ -448,8 +433,8 @@ Parameters can be passed in multiple ways and will be considered in the followin
       <td>check_name</td>
       <td>Required</td>
       <td>
-        The name of the check. May be passed in JSON body or as a query
-        parameter; value is passed to the <code>AssetCheckEvaluation</code> 
+        The name of the check. May be passed in JSON body or as a query parameter; value is passed to the{' '}
+        <code>AssetCheckEvaluation</code>
         constructor.
       </td>
     </tr>
@@ -457,11 +442,10 @@ Parameters can be passed in multiple ways and will be considered in the followin
       <td>metadata</td>
       <td>Optional</td>
       <td>
-        Arbitrary metadata about the check, specified as key-value pairs. May be
-        passed as:
+        Arbitrary metadata about the check, specified as key-value pairs. May be passed as:
         <ul>
           <li>
-            <strong>JSON body</strong> - Value is passed to the 
+            <strong>JSON body</strong> - Value is passed to the
             <code>AssetCheckEvaluation</code> constructor.
           </li>
           <li>
@@ -483,8 +467,8 @@ Parameters can be passed in multiple ways and will be considered in the followin
             <code>ERROR</code> (default)
           </li>
         </ul>
-        May be passed in JSON body or as a query parameter; value is passed to
-        the <code>AssetCheckEvaluation</code> constructor.
+        May be passed in JSON body or as a query parameter; value is passed to the <code>AssetCheckEvaluation</code>{' '}
+        constructor.
       </td>
     </tr>
   </tbody>
@@ -544,16 +528,14 @@ Records an <PyObject section="assets" module="dagster" object="AssetObservation"
 <table
   className="table"
   style={{
-    width: "100%",
-  }}
->
+    width: '100%',
+  }}>
   <tbody>
     <tr>
       <td
         style={{
-          width: "15%",
-        }}
-      >
+          width: '15%',
+        }}>
         <strong>Method</strong>
       </td>
       <td>POST</td>
@@ -571,9 +553,8 @@ Records an <PyObject section="assets" module="dagster" object="AssetObservation"
         <strong>Authentication</strong>
       </td>
       <td>
-        <strong>Required only for Dagster+.</strong> The request header must
-        contain the <code>Dagster-Cloud-Api-Token</code> header and a valid user
-        token.
+        <strong>Required only for Dagster+.</strong> The request header must contain the{' '}
+        <code>Dagster-Cloud-Api-Token</code> header and a valid user token.
       </td>
     </tr>
     <tr>
@@ -584,12 +565,12 @@ Records an <PyObject section="assets" module="dagster" object="AssetObservation"
         The request header must specify the following:
         <ul>
           <li>
-            <code>Dagster-Cloud-Api-Token</code> - Required if using Dagster+,
-            e.g. <code>Dagster-Cloud-Api-Token: [USER_TOKEN]</code>
+            <code>Dagster-Cloud-Api-Token</code> - Required if using Dagster+, e.g.{' '}
+            <code>Dagster-Cloud-Api-Token: [USER_TOKEN]</code>
           </li>
           <li>
-            <code>Content-Type</code> - Required if the request contains a JSON
-            body, specified as <code>Content-Type: application/json</code>
+            <code>Content-Type</code> - Required if the request contains a JSON body, specified as{' '}
+            <code>Content-Type: application/json</code>
           </li>
         </ul>
       </td>
@@ -614,23 +595,20 @@ Parameters can be passed in multiple ways and will be considered in the followin
 <table
   className="table"
   style={{
-    width: "100%",
-  }}
->
+    width: '100%',
+  }}>
   <thead>
     <tr>
       <th
         style={{
-          width: "15%",
-        }}
-      >
+          width: '15%',
+        }}>
         Name
       </th>
       <th
         style={{
-          width: "15%",
-        }}
-      >
+          width: '15%',
+        }}>
         Required/Optional
       </th>
       <th>Description</th>
@@ -644,17 +622,16 @@ Parameters can be passed in multiple ways and will be considered in the followin
         The key of the observed asset. May be passed as:
         <ul>
           <li>
-            <strong>URL path</strong> - Specified as path components after 
-            <code>/report_asset_observation/</code>, where each <code>/</code> 
+            <strong>URL path</strong> - Specified as path components after
+            <code>/report_asset_observation/</code>, where each <code>/</code>
             delimits parts of a multipart <PyObject section="assets" module="dagster" object="AssetKey" />.
           </li>
           <li>
-            <strong>JSON body</strong> - Value is passed to the 
+            <strong>JSON body</strong> - Value is passed to the
             <PyObject section="assets" module="dagster" object="AssetKey" /> constructor.
           </li>
           <li>
-            <strong>Query parameter</strong> - Accepts string or JSON encoded
-            array for multipart keys.
+            <strong>Query parameter</strong> - Accepts string or JSON encoded array for multipart keys.
           </li>
         </ul>
       </td>
@@ -663,11 +640,10 @@ Parameters can be passed in multiple ways and will be considered in the followin
       <td>metadata</td>
       <td>Optional</td>
       <td>
-        Arbitrary metadata about the asset, specified as key-value pairs. May be
-        passed as:
+        Arbitrary metadata about the asset, specified as key-value pairs. May be passed as:
         <ul>
           <li>
-            <strong>JSON body</strong> - Value is passed to the 
+            <strong>JSON body</strong> - Value is passed to the
             <PyObject section="assets" module="dagster" object="AssetObservation" /> constructor.
           </li>
           <li>
@@ -680,8 +656,7 @@ Parameters can be passed in multiple ways and will be considered in the followin
       <td>data_version</td>
       <td>Optional</td>
       <td>
-        The data version of the observed asset. May be passed in JSON body or as
-        a query parameter; value is passed to 
+        The data version of the observed asset. May be passed in JSON body or as a query parameter; value is passed to
         <PyObject section="assets" module="dagster" object="AssetObservation" /> via <code>tags</code>.
       </td>
     </tr>
@@ -689,8 +664,8 @@ Parameters can be passed in multiple ways and will be considered in the followin
       <td>description</td>
       <td>Optional</td>
       <td>
-        A human-readable description of the asset or observation. May be passed
-        in JSON body or as a query parameter; value is passed to the 
+        A human-readable description of the asset or observation. May be passed in JSON body or as a query parameter;
+        value is passed to the
         <PyObject section="assets" module="dagster" object="AssetObservation" /> constructor.
       </td>
     </tr>
@@ -698,8 +673,8 @@ Parameters can be passed in multiple ways and will be considered in the followin
       <td>partition</td>
       <td>Optional</td>
       <td>
-        The name of the partition that was observed. May be passed in JSON body
-        or as a query parameter; value is passed to the 
+        The name of the partition that was observed. May be passed in JSON body or as a query parameter; value is passed
+        to the
         <PyObject section="assets" module="dagster" object="AssetObservation" /> constructor.
       </td>
     </tr>

@@ -251,7 +251,7 @@ class TestS3ComputeLogManager(TestComputeLogManager):
     __test__ = True
 
     @pytest.fixture(name="compute_log_manager")
-    def compute_log_manager(self, mock_s3_bucket):
+    def compute_log_manager(self, mock_s3_bucket):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory() as temp_dir:
             yield S3ComputeLogManager(
                 bucket=mock_s3_bucket.name, prefix="my_prefix", local_dir=temp_dir
@@ -259,7 +259,7 @@ class TestS3ComputeLogManager(TestComputeLogManager):
 
     # for streaming tests
     @pytest.fixture(name="write_manager")
-    def write_manager(self, mock_s3_bucket):
+    def write_manager(self, mock_s3_bucket):  # pyright: ignore[reportIncompatibleMethodOverride]
         # should be a different local directory as the read manager
         with tempfile.TemporaryDirectory() as temp_dir:
             yield S3ComputeLogManager(
@@ -270,7 +270,7 @@ class TestS3ComputeLogManager(TestComputeLogManager):
             )
 
     @pytest.fixture(name="read_manager")
-    def read_manager(self, mock_s3_bucket):
+    def read_manager(self, mock_s3_bucket):  # pyright: ignore[reportIncompatibleMethodOverride]
         # should be a different local directory as the write manager
         with tempfile.TemporaryDirectory() as temp_dir:
             yield S3ComputeLogManager(

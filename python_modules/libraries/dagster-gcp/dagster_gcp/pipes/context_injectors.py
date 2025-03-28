@@ -32,7 +32,7 @@ class PipesGCSContextInjector(PipesContextInjector):
         self.client = client
 
     @contextmanager
-    def inject_context(self, context: PipesContextData) -> Iterator[PipesParams]:
+    def inject_context(self, context: PipesContextData) -> Iterator[PipesParams]:  # pyright: ignore[reportIncompatibleMethodOverride]
         key_prefix = (self.key_prefix or "") + "".join(random.choices(string.ascii_letters, k=30))
         key = os.path.join(key_prefix, _CONTEXT_FILENAME)
         self.client.get_bucket(self.bucket).blob(key).upload_from_string(json.dumps(context))

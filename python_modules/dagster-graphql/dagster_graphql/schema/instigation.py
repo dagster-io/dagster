@@ -26,7 +26,7 @@ from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_ty
 from dagster._core.utils import is_valid_run_id
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster._utils.yaml_utils import dump_run_config_yaml
+from dagster_shared.yaml_utils import dump_run_config_yaml
 
 from dagster_graphql.implementation.fetch_instigators import get_tick_log_events
 from dagster_graphql.implementation.fetch_schedules import get_schedule_next_tick
@@ -170,7 +170,7 @@ class DynamicPartitionsRequestMixin:
 
 
 class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.ObjectType):
-    class Meta:
+    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
         name = "DynamicPartitionRequest"
 
     def __init__(
@@ -192,7 +192,7 @@ class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.O
 
 
 class GrapheneDynamicPartitionsRequestResult(DynamicPartitionsRequestMixin, graphene.ObjectType):
-    class Meta:
+    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
         name = "DynamicPartitionsRequestResult"
 
     skippedPartitionKeys = non_null_list(graphene.String)

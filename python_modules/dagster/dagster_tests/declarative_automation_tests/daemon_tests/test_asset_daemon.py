@@ -7,6 +7,7 @@ from unittest import mock
 
 import pytest
 from dagster import (
+    AssetKey,
     AssetSpec,
     AutoMaterializeRule,
     AutomationCondition,
@@ -35,19 +36,21 @@ from dagster._core.storage.tags import (
     SENSOR_NAME_TAG,
     TICK_ID_TAG,
 )
+from dagster._core.test_utils import environ
 from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
     _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
+    SKIP_DECLARATIVE_AUTOMATION_KEYS_ENV_VAR,
     asset_daemon_cursor_from_instigator_serialized_cursor,
     get_has_migrated_sensor_names,
     get_has_migrated_to_sensors,
     set_auto_materialize_paused,
 )
-from dagster._serdes.serdes import deserialize_value, serialize_value
 from dagster._time import get_current_datetime, get_current_timestamp
+from dagster_shared.serdes import deserialize_value, serialize_value
 
 from dagster_tests.declarative_automation_tests.legacy_tests.updated_scenarios.basic_scenarios import (
     basic_scenarios,
@@ -382,6 +385,58 @@ def test_daemon_paused() -> None:
         assert ticks[-1].timestamp == state.current_time.timestamp()
         assert ticks[-1].tick_data.end_timestamp == state.current_time.timestamp()
         assert ticks[-1].automation_condition_evaluation_id == 2
+
+
+def test_daemon_skip_env_var() -> None:
+    with get_daemon_instance(
+        paused=True, extra_overrides={"auto_materialize": {"use_sensors": False}}
+    ) as instance:
+        ticks = _get_asset_daemon_ticks(instance)
+        assert len(ticks) == 0
+
+        set_auto_materialize_paused(instance, False)
+
+        with environ(
+            {
+                SKIP_DECLARATIVE_AUTOMATION_KEYS_ENV_VAR: f"{AssetKey(['A']).to_user_string()},{AssetKey(['B']).to_user_string()}"
+            }
+        ):
+            state = daemon_scenario.evaluate_daemon(instance)
+
+        ticks = _get_asset_daemon_ticks(instance)
+
+        assert len(ticks) == 1
+        assert ticks[0]
+        assert ticks[0].status == TickStatus.SKIPPED
+        assert ticks[0].timestamp == state.current_time.timestamp()
+        assert ticks[0].tick_data.end_timestamp == state.current_time.timestamp()
+
+        runs = instance.get_runs()
+
+        # No materializations for either asset due to the env var
+
+        assert len(runs) == 0
+
+        with environ(
+            {SKIP_DECLARATIVE_AUTOMATION_KEYS_ENV_VAR: f"{AssetKey(['B']).to_user_string()}"}
+        ):
+            state = daemon_scenario.evaluate_daemon(instance)
+
+        ticks = _get_asset_daemon_ticks(instance)
+        assert len(ticks) == 2
+
+        assert ticks[-1].status == TickStatus.SUCCESS
+        assert ticks[-1].timestamp == state.current_time.timestamp()
+        assert ticks[-1].tick_data.end_timestamp == state.current_time.timestamp()
+
+        runs = instance.get_runs()
+
+        assert len(runs) == 2
+
+        assert len(instance.fetch_materializations(AssetKey(["A"]), limit=1000).records) == 2
+
+        # No materializations for B due to the env var
+        assert len(instance.fetch_materializations(AssetKey(["B"]), limit=1000).records) == 0
 
 
 three_assets = ScenarioSpec(asset_specs=[AssetSpec("A"), AssetSpec("B"), AssetSpec("C")])

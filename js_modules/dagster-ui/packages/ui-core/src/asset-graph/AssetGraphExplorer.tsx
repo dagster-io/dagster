@@ -15,7 +15,7 @@ import pickBy from 'lodash/pickBy';
 import uniq from 'lodash/uniq';
 import without from 'lodash/without';
 import * as React from 'react';
-import {useCallback, useLayoutEffect, useMemo, useState} from 'react';
+import {useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGraphAssetSelectionInput} from 'shared/asset-graph/AssetGraphAssetSelectionInput.oss';
 import {useAssetGraphExplorerFilters} from 'shared/asset-graph/useAssetGraphExplorerFilters.oss';
@@ -60,10 +60,10 @@ import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {AssetKey} from '../assets/types';
 import {DEFAULT_MAX_ZOOM} from '../graph/SVGConsts';
 import {SVGViewport, SVGViewportRef} from '../graph/SVGViewport';
-import {SVGViewportProvider} from '../graph/SVGViewportContext';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';
 import {AssetGroupSelector} from '../graphql/types';
+import {usePreviousDistinctValue} from '../hooks/usePrevious';
 import {useQueryAndLocalStoragePersistedState} from '../hooks/useQueryAndLocalStoragePersistedState';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {
@@ -75,13 +75,16 @@ import {
 import {
   EmptyDAGNotice,
   EntirelyFilteredDAGNotice,
+  InvalidSelectionQueryNotice,
   LoadingContainer,
   LoadingNotice,
 } from '../pipelines/GraphNotices';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {SyntaxError} from '../selection/CustomErrorListener';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
-import {Loading, LoadingSpinner} from '../ui/Loading';
-
+import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
+import {LoadingSpinner} from '../ui/Loading';
+import {isIframe} from '../util/isIframe';
 type AssetNode = AssetNodeForGraphQueryFragment;
 
 type Props = {
@@ -105,16 +108,19 @@ export const GROUPS_ONLY_SCALE = 0.15;
 
 const DEFAULT_SET_HIDE_NODES_MATCH = (_node: AssetNodeForGraphQueryFragment) => true;
 
-export const AssetGraphExplorer = (props: Props) => {
-  const {fullAssetGraphData} = useFullAssetGraphData(props.fetchOptions);
+export const AssetGraphExplorer = React.memo((props: Props) => {
+  const {fullAssetGraphData: currentFullAssetGraphData} = useFullAssetGraphData(props.fetchOptions);
+  const previousFullAssetGraphData = usePreviousDistinctValue(currentFullAssetGraphData);
+
+  const fullAssetGraphData = currentFullAssetGraphData ?? previousFullAssetGraphData;
   const [hideNodesMatching, setHideNodesMatching] = useState(() => DEFAULT_SET_HIDE_NODES_MATCH);
 
   const {
     loading: graphDataLoading,
     fetchResult,
-    assetGraphData,
-    graphQueryItems,
-    allAssetKeys,
+    assetGraphData: currentAssetGraphData,
+    graphQueryItems: currentGraphQueryItems,
+    allAssetKeys: currentAllAssetKeys,
   } = useAssetGraphData(
     props.explorerPath.opsQuery,
     useMemo(
@@ -154,48 +160,47 @@ export const AssetGraphExplorer = (props: Props) => {
     setHideNodesMatching(() => (node: AssetNodeForGraphQueryFragment) => !filterFn(node));
   }, [filterFn]);
 
+  const previousAssetGraphData = usePreviousDistinctValue(currentAssetGraphData);
+  const previousGraphQueryItems = usePreviousDistinctValue(currentGraphQueryItems);
+  const previousAllAssetKeys = usePreviousDistinctValue(currentAllAssetKeys);
+
+  const assetGraphData = currentAssetGraphData ?? previousAssetGraphData;
+  const graphQueryItems = currentGraphQueryItems ?? previousGraphQueryItems;
+  const allAssetKeys = currentAllAssetKeys ?? previousAllAssetKeys;
+
+  if (
+    (fetchResult.loading || graphDataLoading || filteredAssetsLoading) &&
+    (!assetGraphData || !allAssetKeys)
+  ) {
+    return <LoadingSpinner purpose="page" />;
+  }
+
+  if (!assetGraphData || !allAssetKeys) {
+    return <NonIdealState icon="error" title="Query Error" />;
+  }
+
+  const hasCycles = graphHasCycles(assetGraphData);
+
+  if (hasCycles) {
+    return <NonIdealState icon="error" title="Cycle detected" />;
+  }
+
   return (
-    <SVGViewportProvider>
-      <Loading allowStaleData queryResult={fetchResult}>
-        {() => {
-          if (graphDataLoading || filteredAssetsLoading) {
-            return <LoadingSpinner purpose="page" />;
-          }
-          if (!assetGraphData || !allAssetKeys) {
-            return <NonIdealState icon="error" title="Query Error" />;
-          }
-
-          const hasCycles = graphHasCycles(assetGraphData);
-
-          if (hasCycles) {
-            return (
-              <NonIdealState
-                icon="error"
-                title="Cycle detected"
-                description="Assets dependencies form a cycle"
-              />
-            );
-          }
-          return (
-            <AssetGraphExplorerWithData
-              key={props.explorerPath.pipelineName}
-              assetGraphData={assetGraphData}
-              fullAssetGraphData={fullAssetGraphData ?? assetGraphData}
-              allAssetKeys={allAssetKeys}
-              graphQueryItems={graphQueryItems}
-              filterBar={filterBar}
-              filterButton={button}
-              kindFilter={kindFilter}
-              groupsFilter={groupsFilter}
-              loading={filteredAssetsLoading || graphDataLoading}
-              {...props}
-            />
-          );
-        }}
-      </Loading>
-    </SVGViewportProvider>
+    <AssetGraphExplorerWithData
+      key={props.explorerPath.pipelineName}
+      assetGraphData={assetGraphData}
+      fullAssetGraphData={fullAssetGraphData ?? assetGraphData}
+      allAssetKeys={allAssetKeys}
+      graphQueryItems={graphQueryItems}
+      filterBar={filterBar}
+      filterButton={button}
+      kindFilter={kindFilter}
+      groupsFilter={groupsFilter}
+      loading={filteredAssetsLoading || graphDataLoading || fetchResult.loading}
+      {...props}
+    />
   );
-};
+});
 
 type WithDataProps = Props & {
   allAssetKeys: AssetKey[];
@@ -688,7 +693,14 @@ const AssetGraphExplorerWithData = ({
     </SVGViewport>
   ) : null;
 
-  const loading = layoutLoading || dataLoading;
+  const nextLayoutLoading = layoutLoading || dataLoading;
+  const isInitialLayout = useRef(true);
+  if (!nextLayoutLoading && isInitialLayout.current) {
+    isInitialLayout.current = false;
+  }
+  const loading = (layoutLoading || dataLoading) && isInitialLayout.current;
+
+  const [errorState, setErrorState] = useState<SyntaxError[]>([]);
 
   const explorer = (
     <SplitPanelContainer
@@ -705,12 +717,16 @@ const AssetGraphExplorerWithData = ({
           </LoadingContainer>
         ) : (
           <ErrorBoundary region="graph">
-            {graphQueryItems.length === 0 ? (
+            {!loading && graphQueryItems.length === 0 ? (
               <EmptyDAGNotice nodeType="asset" isGraph />
-            ) : Object.keys(assetGraphData.nodes).length === 0 ? (
-              <EntirelyFilteredDAGNotice nodeType="asset" />
+            ) : !loading && Object.keys(assetGraphData.nodes).length === 0 ? (
+              errorState.length > 0 ? (
+                <InvalidSelectionQueryNotice errors={errorState} />
+              ) : (
+                <EntirelyFilteredDAGNotice nodeType="asset" />
+              )
             ) : undefined}
-            {loading || !layout ? (
+            {loading && !layout ? (
               <LoadingNotice async={async} nodeType="asset" />
             ) : (
               <AssetGraphBackgroundContextMenu
@@ -772,6 +788,11 @@ const AssetGraphExplorerWithData = ({
                         assets={graphQueryItems}
                         value={explorerPath.opsQuery}
                         onChange={onChangeAssetSelection}
+                        onErrorStateChange={(errors) => {
+                          if (errors !== errorState) {
+                            setErrorState(errors);
+                          }
+                        }}
                       />
                     ) : (
                       <AssetGraphAssetSelectionInput
@@ -787,16 +808,27 @@ const AssetGraphExplorerWithData = ({
                     <CreateCatalogViewButton />
                   ) : null}
                   <AssetLiveDataRefreshButton />
-                  <LaunchAssetExecutionButton
-                    preferredJobName={explorerPath.pipelineName}
-                    scope={
-                      selectedDefinitions.length
-                        ? {selected: selectedDefinitions}
-                        : {all: allDefinitionsForMaterialize}
-                    }
-                  />
+                  {isIframe() ? null : (
+                    <LaunchAssetExecutionButton
+                      preferredJobName={explorerPath.pipelineName}
+                      scope={
+                        selectedDefinitions.length
+                          ? {selected: selectedDefinitions}
+                          : {all: allDefinitionsForMaterialize}
+                      }
+                    />
+                  )}
                 </Box>
                 {featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : filterBar}
+                <IndeterminateLoadingBar
+                  $loading={nextLayoutLoading}
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    bottom: -2,
+                  }}
+                />
               </Box>
             </TopbarWrapper>
           </ErrorBoundary>

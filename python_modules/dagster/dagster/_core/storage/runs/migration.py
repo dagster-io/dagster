@@ -441,4 +441,4 @@ def get_end_timestamp_for_backfill(run_storage: RunStorage, backfill: PartitionB
         # reconstruct the time the backfill actually moved to a terminal state, so use the start
         # time as an estimation
         return backfill.backfill_timestamp
-    return max([record.end_time or 0 for record in run_records])
+    return max([record.end_time or 0.0 for record in run_records])

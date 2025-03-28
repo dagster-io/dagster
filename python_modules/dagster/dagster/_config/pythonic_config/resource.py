@@ -14,6 +14,7 @@ from typing import (  # noqa: UP035
     cast,
 )
 
+from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
 from pydantic import BaseModel
 from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
@@ -49,9 +50,12 @@ from dagster._core.definitions.resource_definition import (
     has_at_least_one_parameter,
 )
 from dagster._core.definitions.resource_requirement import ResourceRequirement
-from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster._core.errors import (
+    DagsterError,
+    DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
+)
 from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
-from dagster._model.pydantic_compat_layer import model_fields
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.typing_api import is_closed_python_optional_type
@@ -73,7 +77,7 @@ class NestedResourcesResourceDefinition(ResourceDefinition, ABC):
     @abstractmethod
     def configurable_resource_cls(self) -> type: ...
 
-    def get_resource_requirements(self, source_key: str) -> Iterator["ResourceRequirement"]:
+    def get_resource_requirements(self, source_key: str) -> Iterator["ResourceRequirement"]:  # pyright: ignore[reportIncompatibleMethodOverride]
         for attr_name, partial_resource in self.nested_partial_resources.items():
             yield PartialResourceDependencyRequirement(
                 class_name=self.configurable_resource_cls.__name__,
@@ -406,15 +410,41 @@ class ConfigurableResourceFactory(
             return updated_resource.create_resource(context)
 
     @contextlib.contextmanager
+    def _async_to_sync_cm(
+        self,
+        context: InitResourceContext,
+        async_cm: contextlib.AbstractAsyncContextManager,
+    ):
+        aio_exit_stack = contextlib.AsyncExitStack()
+        loop = context.event_loop
+        if loop is None:
+            raise DagsterError(
+                "Unable to handle resource with async def yield_for_execution in the current context. "
+                "If using direct execution utilities like build_context, pass an event loop in and use "
+                "the same event loop to execute your asset/op."
+            )
+
+        try:
+            value = loop.run_until_complete(aio_exit_stack.enter_async_context(async_cm))
+            yield value
+        finally:
+            loop.run_until_complete(aio_exit_stack.aclose())
+
+    @contextlib.contextmanager
     def _initialize_and_run_cm(
-        self, context: InitResourceContext
+        self,
+        context: InitResourceContext,
     ) -> Generator[TResValue, None, None]:
         with self._resolve_and_update_nested_resources(context) as has_nested_resource:
             updated_resource = has_nested_resource.with_replaced_resource_context(  # noqa: SLF001
                 context
             )._with_updated_values(context.resource_config)
 
-            with updated_resource.yield_for_execution(context) as value:
+            resource_cm = updated_resource.yield_for_execution(context)
+            if isinstance(resource_cm, contextlib.AbstractAsyncContextManager):
+                resource_cm = self._async_to_sync_cm(context, resource_cm)
+
+            with resource_cm as value:
                 yield value
 
     def setup_for_execution(self, context: InitResourceContext) -> None:

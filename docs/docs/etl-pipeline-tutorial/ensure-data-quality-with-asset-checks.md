@@ -15,11 +15,16 @@ In Dagster, you define [asset checks](/guides/test/asset-checks) like you define
 
 ## 1. Define an asset check
 
-In this case we want to create a check to identify if there are any rows in `joined_data` that are missing a value for `rep_name` or `product_name`. 
+In this case we want to create a check to identify if there are any rows in `joined_data` that are missing a value for `rep_name` or `product_name`.
 
 Copy the following code beneath the `joined_data` asset.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py" language="python" lineStart="134" lineEnd="150"/>
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/etl_tutorial/etl_tutorial/definitions.py"
+  language="python"
+  lineStart="134"
+  lineEnd="150"
+/>
 
 ## 2. Run the asset check
 
@@ -38,6 +43,7 @@ defs = dg.Definitions(
     resources={"duckdb": DuckDBResource(database="data/mydb.duckdb")},
 )
 ```
+
 Asset checks will run when an asset is materialized, but asset checks can also be executed manually in the UI:
 
 1. Reload your Definitions.
@@ -45,8 +51,8 @@ Asset checks will run when an asset is materialized, but asset checks can also b
 3. Select the "Checks" tab.
 4. Click the **Execute** button for `missing_dimension_check`.
 
-  ![2048 resolution](/images/tutorial/etl-tutorial/asset-check.png)
+![2048 resolution](/images/tutorial/etl-tutorial/asset-check.png)
 
 ## Next steps
 
-- Continue this tutorial with [creating and materializing partitioned assets](create-and-materialize-partitioned-asset)
+- Continue this tutorial with [creating and materializing partitioned assets](/etl-pipeline-tutorial/create-and-materialize-partitioned-asset)

@@ -1,26 +1,46 @@
+import importlib
 import sys
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
+import pytest
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_components.core.component_defs_builder import build_defs_from_component_path
+from dagster._utils import pushd
+from dagster_components.core.load_defs import DefinitionsModuleCache
 
 from dagster_components_tests.utils import create_project_from_components
 
 
+@contextmanager
 def load_test_component_defs(
-    src_path: str, local_component_defn_to_inject: Optional[Path] = None
-) -> Definitions:
+    src_path: Union[str, Path], local_component_defn_to_inject: Optional[Path] = None
+) -> Iterator[Definitions]:
     """Loads a component from a test component project, making the provided local component defn
     available in that component's __init__.py.
     """
     with create_project_from_components(
-        src_path, local_component_defn_to_inject=local_component_defn_to_inject
-    ) as code_location_dir:
-        sys.path.append(str(code_location_dir))
+        str(src_path), local_component_defn_to_inject=local_component_defn_to_inject
+    ) as (_, project_name):
+        module = importlib.import_module(f"{project_name}.defs.{Path(src_path).stem}")
 
-        return build_defs_from_component_path(
-            components_root=Path(code_location_dir) / "my_location" / "defs",
-            path=Path(code_location_dir) / "my_location" / "defs" / Path(src_path).stem,
-            resources={},
-        )
+        yield DefinitionsModuleCache(resources={}).load_defs(module=module)
+
+
+def sync_load_test_component_defs(
+    src_path: str, local_component_defn_to_inject: Optional[Path] = None
+) -> Definitions:
+    with load_test_component_defs(src_path, local_component_defn_to_inject) as defs:
+        return defs
+
+
+@pytest.fixture(autouse=True)
+def chdir():
+    with pushd(str(Path(__file__).parent.parent)):
+        path = str(Path(__file__).parent)
+        try:
+            sys.path.append(str(Path(__file__).parent))
+            yield
+        finally:
+            sys.path.remove(path)

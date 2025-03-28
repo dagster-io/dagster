@@ -490,10 +490,10 @@ def test_asset_with_io_manager_def():
     events = []
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, _obj):
+        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             events.append(f"entered for {context.step_key}")
 
-        def load_input(self, _context):
+        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
     @io_manager
@@ -513,10 +513,10 @@ def test_asset_with_io_manager_def_plain_old_python_object_iomanager() -> None:
     events = []
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, _obj):
+        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             events.append(f"entered for {context.step_key}")
 
-        def load_input(self, _context):
+        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
     @asset(io_manager_def=MyIOManager())
@@ -666,10 +666,10 @@ def test_multi_asset_resources_execution():
         def __init__(self, the_list):
             self._the_list = the_list
 
-        def handle_output(self, _context, obj):
+        def handle_output(self, _context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             self._the_list.append(obj)
 
-        def load_input(self, _context):
+        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
     foo_list = []
@@ -715,11 +715,11 @@ def test_multi_asset_io_manager_execution_specs() -> None:
         def __init__(self, the_list):
             self._the_list = the_list
 
-        def handle_output(self, _context, obj):
+        def handle_output(self, _context, obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             assert isinstance(obj, int)
             self._the_list.append(obj)
 
-        def load_input(self, _context):
+        def load_input(self, _context):  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
     foo_list = []
@@ -828,7 +828,7 @@ def test_graph_backed_asset_io_manager():
     events = []
 
     class MyIOManager(IOManager):
-        def handle_output(self, context, _obj):
+        def handle_output(self, context, _obj):  # pyright: ignore[reportIncompatibleMethodOverride]
             events.append(f"entered handle_output for {context.step_key}")
 
         def load_input(self, context):
@@ -2352,6 +2352,19 @@ def test_asset_out_with_tags():
     with pytest.raises(DagsterInvalidDefinitionError, match="Found invalid tag key"):
 
         @multi_asset(outs={"asset1": AssetOut(tags={"a%": "b"})})  # key has illegal character
+        def assets(): ...
+
+
+def test_asset_out_with_kinds():
+    @multi_asset(outs={"asset1": AssetOut(kinds={"a", "b"})})
+    def assets(): ...
+
+    assert assets.specs_by_key[AssetKey("asset1")].kinds == {"a", "b"}
+
+    # the error contains "tag" because that's how kinds are currently implemented
+    with pytest.raises(DagsterInvalidDefinitionError, match="Found invalid tag key"):
+
+        @multi_asset(outs={"asset1": AssetOut(kinds={"a%", "b"})})  # key has illegal character
         def assets(): ...
 
 

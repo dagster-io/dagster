@@ -334,7 +334,7 @@ def test_backfill_policy(
     expected_backfill_policy: BackfillPolicy,
 ) -> None:
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
+        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[FreshnessPolicy]:  # pyright: ignore[reportIncompatibleMethodOverride]
             # Disable freshness policies when using static partitions
             return None
 
@@ -578,7 +578,7 @@ def test_with_description_replacements(test_jaffle_shop_manifest: dict[str, Any]
     expected_description = "customized description"
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_description(self, _: Mapping[str, Any]) -> str:
+        def get_description(self, _: Mapping[str, Any]) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_description
 
     expected_specs_by_key = {
@@ -604,7 +604,7 @@ def test_with_metadata_replacements(test_jaffle_shop_manifest: dict[str, Any]) -
     expected_metadata = {"customized": "metadata"}
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_metadata(self, _: Mapping[str, Any]) -> Mapping[str, Any]:
+        def get_metadata(self, _: Mapping[str, Any]) -> Mapping[str, Any]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_metadata
 
     expected_specs_by_key = {
@@ -629,7 +629,7 @@ def test_with_tag_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> Non
     expected_tags = {"customized": "tag"}
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_tags(self, _: Mapping[str, Any]) -> Mapping[str, str]:
+        def get_tags(self, _: Mapping[str, Any]) -> Mapping[str, str]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_tags
 
     expected_specs_by_key = {
@@ -654,7 +654,7 @@ def test_with_owner_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> N
     expected_owners = ["custom@custom.com"]
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_owners(self, _: Mapping[str, Any]) -> Optional[Sequence[str]]:
+        def get_owners(self, _: Mapping[str, Any]) -> Optional[Sequence[str]]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_owners
 
     expected_specs_by_key = {
@@ -679,7 +679,7 @@ def test_with_group_replacements(test_jaffle_shop_manifest: dict[str, Any]) -> N
     expected_group = "customized_group"
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_group_name(self, _: Mapping[str, Any]) -> Optional[str]:
+        def get_group_name(self, _: Mapping[str, Any]) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_group
 
     expected_specs_by_key = {
@@ -705,7 +705,7 @@ def test_with_code_version_replacements(test_jaffle_shop_manifest: dict[str, Any
     expected_code_version = "customized_code_version"
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_code_version(self, _: Mapping[str, Any]) -> Optional[str]:
+        def get_code_version(self, _: Mapping[str, Any]) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_code_version
 
     @dbt_assets(
@@ -733,7 +733,7 @@ def test_with_freshness_policy_replacements(test_jaffle_shop_manifest: dict[str,
     expected_freshness_policy = FreshnessPolicy(maximum_lag_minutes=60)
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
+        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[FreshnessPolicy]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_freshness_policy
 
     expected_specs_by_key = {
@@ -760,7 +760,7 @@ def test_with_auto_materialize_policy_replacements(
     expected_auto_materialize_policy = AutoMaterializePolicy.eager()
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_auto_materialize_policy(
+        def get_auto_materialize_policy(  # pyright: ignore[reportIncompatibleMethodOverride]
             self, _: Mapping[str, Any]
         ) -> Optional[AutoMaterializePolicy]:
             return expected_auto_materialize_policy
@@ -793,7 +793,7 @@ def test_with_automation_condition_replacements(test_jaffle_shop_manifest: dict[
     expected_automation_condition = AutomationCondition.eager()
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_automation_condition(self, _: Mapping[str, Any]) -> Optional[AutomationCondition]:
+        def get_automation_condition(self, _: Mapping[str, Any]) -> Optional[AutomationCondition]:  # pyright: ignore[reportIncompatibleMethodOverride]
             return expected_automation_condition
 
     expected_specs_by_key = {

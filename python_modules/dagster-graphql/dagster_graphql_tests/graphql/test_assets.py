@@ -10,6 +10,7 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     AssetSelection,
+    DagsterEvent,
     DagsterEventType,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
@@ -19,11 +20,18 @@ from dagster import (
     define_asset_job,
     repository,
 )
+from dagster._core.definitions.events import (
+    AssetMaterializationFailure,
+    AssetMaterializationFailureReason,
+)
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+from dagster._core.events import StepMaterializationData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
+from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._time import get_current_timestamp
 from dagster._utils import Counter, safe_tempfile_path, traced_counter
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -94,6 +102,40 @@ GET_ASSET_MATERIALIZATION_WITH_PARTITION = """
                     partition
                     label
                 }
+            }
+        }
+    }
+"""
+
+GET_ASSET_MATERIALIZATION_HISTORY = """
+    query AssetQuery($assetKey: AssetKeyInput!, $eventTypeSelector: MaterializationHistoryEventTypeSelector, $limit: Int, $cursor: String) {
+        assetOrError(assetKey: $assetKey) {
+            ... on Asset {
+                id
+                assetMaterializationHistory(eventTypeSelector: $eventTypeSelector, limit: $limit, cursor: $cursor) {
+                    results {
+                        __typename
+                        ... on FailedToMaterializeEvent {
+                            materializationFailureReason
+                            assetKey {
+                                path
+                            }
+                            runId
+                            timestamp
+                        }
+                        ... on MaterializationEvent {
+                            assetKey {
+                                path
+                            }
+                            runId
+                            timestamp
+                        }
+                    }
+                    cursor
+                }
+            }
+            ... on AssetNotFoundError {
+                __typename
             }
         }
     }
@@ -3598,3 +3640,96 @@ def test_concurrency_assets(graphql_context: WorkspaceRequestContext):
     assert _graphql_pool(AssetKey(["concurrency_asset"])) == {"foo"}
     assert _graphql_pool(AssetKey(["concurrency_graph_asset"])) == {"bar", "baz"}
     assert _graphql_pool(AssetKey(["concurrency_multi_asset_1"])) == {"buzz"}
+
+
+class TestAssetMaterializationHistory(ExecutingGraphQLContextTestMatrix):
+    def test_asset_materialization_history(self, graphql_context: WorkspaceRequestContext):
+        """Documents current behavior of the asset materialization history query for OSS. It
+        currently does not include asset failed to materialize events.
+        """
+        asset_key = AssetKey("asset_1")
+        num_events = 5
+        for i in range(num_events):
+            run_id_1 = make_new_run_id()
+            failure_event = EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=run_id_1,
+                timestamp=get_current_timestamp(),
+                dagster_event=DagsterEvent.build_asset_failed_to_materialize_event(
+                    job_name="the_job",
+                    step_key="the_step",
+                    asset_materialization_failure=AssetMaterializationFailure(
+                        asset_key=asset_key,
+                        partition=None,
+                        reason=AssetMaterializationFailureReason.COMPUTE_FAILED,
+                    ),
+                ),
+            )
+            graphql_context.instance.store_event(failure_event)
+            run_id_2 = make_new_run_id()
+            materialize_event = EventLogEntry(
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=run_id_2,
+                timestamp=get_current_timestamp(),
+                dagster_event=DagsterEvent(
+                    DagsterEventType.ASSET_MATERIALIZATION.value,
+                    "the_job",
+                    event_specific_data=StepMaterializationData(
+                        AssetMaterialization(
+                            asset_key=asset_key,
+                            partition=None,
+                        )
+                    ),
+                ),
+            )
+            graphql_context.instance.store_event(materialize_event)
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_MATERIALIZATION_HISTORY,
+            variables={"assetKey": {"path": ["asset_1"]}, "eventTypeSelector": "ALL"},
+        )
+
+        assert result.data
+        assert result.data["assetOrError"]
+        assert len(result.data["assetOrError"]["assetMaterializationHistory"]["results"]) == 5
+        min_timestamp_seen = None
+        for event in result.data["assetOrError"]["assetMaterializationHistory"]["results"]:
+            assert event["__typename"] == "MaterializationEvent"
+            assert event["assetKey"]["path"] == ["asset_1"]
+            # events should be sorted by storage id with the newest event first. Use timestamp
+            # as a proxy
+            if min_timestamp_seen:
+                assert int(event["timestamp"]) <= min_timestamp_seen
+            min_timestamp_seen = int(event["timestamp"])
+
+        # test cursoring
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_MATERIALIZATION_HISTORY,
+            variables={"assetKey": {"path": ["asset_1"]}, "eventTypeSelector": "ALL", "limit": 2},
+        )
+
+        assert result.data
+        assert result.data["assetOrError"]
+        assert len(result.data["assetOrError"]["assetMaterializationHistory"]["results"]) == 2
+        assert result.data["assetOrError"]["assetMaterializationHistory"]["cursor"] is not None
+        cursor = result.data["assetOrError"]["assetMaterializationHistory"]["cursor"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_MATERIALIZATION_HISTORY,
+            variables={
+                "assetKey": {"path": ["asset_1"]},
+                "eventTypeSelector": "ALL",
+                "cursor": cursor,
+            },
+        )
+
+        assert result.data
+        assert result.data["assetOrError"]
+        assert len(result.data["assetOrError"]["assetMaterializationHistory"]["results"]) == 3
+        assert result.data["assetOrError"]["assetMaterializationHistory"]["cursor"] != cursor

@@ -6,6 +6,7 @@ from dagster import (
     AssetObservation,
     Output,
 )
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 
 
 def test_output_object_with_metadata() -> None:
@@ -110,6 +111,39 @@ def test_asset_check_result_object_with_metadata() -> None:
 
     check = _get_check_result()
     assert check.with_metadata({**check.metadata, "new": "metadata"}) == AssetCheckResult(
+        asset_key=AssetKey("my_key"),
+        metadata={"foo": "bar", "new": "metadata"},
+        passed=True,
+        severity=AssetCheckSeverity.WARN,
+        description="foo",
+        check_name="my_check",
+    )
+
+
+def test_asset_check_evaluation_object_with_metadata() -> None:
+    def _get_check_evaluation() -> AssetCheckEvaluation:
+        return AssetCheckEvaluation(
+            asset_key=AssetKey("my_key"),
+            metadata={"foo": "bar"},
+            passed=True,
+            severity=AssetCheckSeverity.WARN,
+            description="foo",
+            check_name="my_check",
+        )
+
+    assert _get_check_evaluation() == _get_check_evaluation()
+
+    assert _get_check_evaluation().with_metadata({"new": "metadata"}) == AssetCheckEvaluation(
+        asset_key=AssetKey("my_key"),
+        metadata={"new": "metadata"},
+        passed=True,
+        severity=AssetCheckSeverity.WARN,
+        description="foo",
+        check_name="my_check",
+    )
+
+    check = _get_check_evaluation()
+    assert check.with_metadata({**check.metadata, "new": "metadata"}) == AssetCheckEvaluation(
         asset_key=AssetKey("my_key"),
         metadata={"foo": "bar", "new": "metadata"},
         passed=True,

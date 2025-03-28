@@ -280,72 +280,201 @@ describe('useQueryPersistedState', () => {
     expect(screen.getByText(`Functions Same: true`)).toBeVisible();
   });
 
-  it('correctly encodes arrays, using bracket syntax', async () => {
-    const TestArray = () => {
-      const [state, setState] = useQueryPersistedState<{value: string[]}>({defaults: {value: []}});
-      return (
-        <div onClick={() => setState({value: [...state.value, `Added${state.value.length}`]})}>
-          {JSON.stringify(state.value)}
-        </div>
+  describe('Array encoding/decoding', () => {
+    beforeEach(() => {
+      // Mock console.error so we don't spew anything in Jest.
+      jest.spyOn(global.console, 'error').mockImplementation(jest.fn());
+    });
+
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('correctly encodes arrays, using `indices` syntax', async () => {
+      const TestArray = () => {
+        const [state, setState] = useQueryPersistedState<{value: string[]}>({
+          defaults: {value: []},
+        });
+        return (
+          <div onClick={() => setState({value: [...state.value, `Added${state.value.length}`]})}>
+            {JSON.stringify(state.value)}
+          </div>
+        );
+      };
+
+      let querySearch: string | undefined;
+      render(
+        <MemoryRouter initialEntries={['/page']}>
+          <TestArray />
+          <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+        </MemoryRouter>,
       );
-    };
 
-    let querySearch: string | undefined;
-    render(
-      <MemoryRouter initialEntries={['/page']}>
-        <TestArray />
-        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
-      </MemoryRouter>,
-    );
-
-    await userEvent.click(screen.getByText(`[]`));
-    await waitFor(() => {
-      expect(querySearch).toEqual('?value%5B%5D=Added0');
-    });
-    await userEvent.click(screen.getByText(`["Added0"]`));
-    await userEvent.click(screen.getByText(`["Added0","Added1"]`));
-    await waitFor(() => {
-      expect(querySearch).toEqual('?value%5B%5D=Added0&value%5B%5D=Added1&value%5B%5D=Added2');
-    });
-  });
-
-  it('correctly encodes arrays alongside other values, using bracket syntax', async () => {
-    const TestArray = () => {
-      const [state, setState] = useQueryPersistedState<{hello: boolean; items: string[]}>({
-        defaults: {hello: false, items: []},
+      await userEvent.click(screen.getByText(`[]`));
+      await waitFor(() => {
+        expect(querySearch).toEqual('?value%5B0%5D=Added0');
       });
-      return (
-        <div
-          onClick={() =>
-            setState({hello: true, items: [...state.items, `Added${state.items.length}`]})
-          }
-        >
-          {JSON.stringify(state)}
-        </div>
-      );
-    };
-
-    let querySearch: any;
-
-    render(
-      <MemoryRouter initialEntries={['/page']}>
-        <TestArray />
-        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
-      </MemoryRouter>,
-    );
-
-    await userEvent.click(screen.getByText(`{"hello":false,"items":[]}`));
-
-    await waitFor(() => {
-      expect(querySearch).toEqual('?hello=true&items%5B%5D=Added0');
+      await userEvent.click(screen.getByText(`["Added0"]`));
+      await userEvent.click(screen.getByText(`["Added0","Added1"]`));
+      await waitFor(() => {
+        expect(querySearch).toEqual('?value%5B0%5D=Added0&value%5B1%5D=Added1&value%5B2%5D=Added2');
+      });
     });
-    await userEvent.click(screen.getByText(`{"hello":true,"items":["Added0"]}`));
-    await userEvent.click(screen.getByText(`{"hello":true,"items":["Added0","Added1"]}`));
 
-    await waitFor(() => {
-      expect(querySearch).toEqual(
-        '?hello=true&items%5B%5D=Added0&items%5B%5D=Added1&items%5B%5D=Added2',
+    it('correctly encodes arrays of objects, using `indices` syntax', async () => {
+      const TestArray = () => {
+        const [state, setState] = useQueryPersistedState<{value: {foo: string; bar: string}[]}>({
+          defaults: {value: []},
+        });
+
+        return (
+          <div
+            onClick={() =>
+              setState({
+                value: [...state.value, {foo: `len${state.value.length}`, bar: 'baz'}],
+              })
+            }
+          >
+            {JSON.stringify(state.value)}
+          </div>
+        );
+      };
+
+      let querySearch: string | undefined;
+      render(
+        <MemoryRouter initialEntries={['/page']}>
+          <TestArray />
+          <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+        </MemoryRouter>,
       );
+
+      await userEvent.click(screen.getByText(`[]`));
+      await waitFor(() => {
+        expect(querySearch).toEqual('?value%5B0%5D%5Bfoo%5D=len0&value%5B0%5D%5Bbar%5D=baz');
+      });
+      await userEvent.click(screen.getByText(`[{"foo":"len0","bar":"baz"}]`));
+      await userEvent.click(
+        screen.getByText(`[{"foo":"len0","bar":"baz"},{"foo":"len1","bar":"baz"}]`),
+      );
+      await waitFor(() => {
+        expect(querySearch).toEqual(
+          '?value%5B0%5D%5Bfoo%5D=len0&value%5B0%5D%5Bbar%5D=baz&value%5B1%5D%5Bfoo%5D=len1&value%5B1%5D%5Bbar%5D=baz&value%5B2%5D%5Bfoo%5D=len2&value%5B2%5D%5Bbar%5D=baz',
+        );
+      });
+    });
+
+    it('correctly encodes arrays alongside other values, using `indices` syntax', async () => {
+      const TestArray = () => {
+        const [state, setState] = useQueryPersistedState<{hello: boolean; items: string[]}>({
+          defaults: {hello: false, items: []},
+        });
+        return (
+          <div
+            onClick={() =>
+              setState({hello: true, items: [...state.items, `Added${state.items.length}`]})
+            }
+          >
+            {JSON.stringify(state)}
+          </div>
+        );
+      };
+
+      let querySearch: any;
+
+      render(
+        <MemoryRouter initialEntries={['/page']}>
+          <TestArray />
+          <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+        </MemoryRouter>,
+      );
+
+      await userEvent.click(screen.getByText(`{"hello":false,"items":[]}`));
+
+      await waitFor(() => {
+        expect(querySearch).toEqual('?hello=true&items%5B0%5D=Added0');
+      });
+      await userEvent.click(screen.getByText(`{"hello":true,"items":["Added0"]}`));
+      await userEvent.click(screen.getByText(`{"hello":true,"items":["Added0","Added1"]}`));
+
+      await waitFor(() => {
+        expect(querySearch).toEqual(
+          '?hello=true&items%5B0%5D=Added0&items%5B1%5D=Added1&items%5B2%5D=Added2',
+        );
+      });
+    });
+
+    it('correctly handles very large arrays', async () => {
+      /**
+       * Note that this test checks an extreme case, and GET requests will not really be able to support
+       * query strings of this length.
+       */
+
+      const arr = new Array(1001).fill(0).map((_, i) => `Added${i}`);
+      const TestLargeArray = () => {
+        const [state, setState] = useQueryPersistedState<{hello: boolean; items: string[]}>({
+          defaults: {hello: false, items: []},
+        });
+        return (
+          <div onClick={() => setState({hello: true, items: arr})}>{JSON.stringify(state)}</div>
+        );
+      };
+
+      let querySearch: any;
+
+      render(
+        <MemoryRouter initialEntries={['/page']}>
+          <TestLargeArray />
+          <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+        </MemoryRouter>,
+      );
+
+      await userEvent.click(screen.getByText(`{"hello":false,"items":[]}`));
+
+      // Fire a console error so that we can track this. We will still allow the parse to proceed.
+      expect(console.error).toHaveBeenCalledWith(
+        'Very large array (>1000 items) detected in query string. This will be permitted, but should be investigated.',
+      );
+
+      // Verify that the value is stringified, without trying to check the entire thing.
+      await waitFor(() => {
+        expect(querySearch.startsWith('?hello=true&items%5B0%5D=Added0')).toBe(true);
+      });
+
+      // We have allowed the parse to continue, so item #10001 (index 10000) is present.
+      expect(querySearch.endsWith('&items%5B1000%5D=Added1000')).toBe(true);
+    });
+
+    it('correctly handles sparse array with very large indices', async () => {
+      const arr = new Array(1001);
+      arr[1000] = 'Added1000';
+
+      const TestLargeArray = () => {
+        const [state, setState] = useQueryPersistedState<{hello: boolean; items: string[]}>({
+          defaults: {hello: false, items: []},
+        });
+        return (
+          <div onClick={() => setState({hello: true, items: arr})}>{JSON.stringify(state)}</div>
+        );
+      };
+
+      let querySearch: any;
+
+      const {findByText} = render(
+        <MemoryRouter initialEntries={['/page']}>
+          <TestLargeArray />
+          <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+        </MemoryRouter>,
+      );
+
+      await userEvent.click(await findByText(`{"hello":false,"items":[]}`));
+
+      // High index is present in stringified parameter.
+      await waitFor(() => {
+        expect(querySearch.startsWith('?hello=true&items%5B1000%5D=Added1000')).toBe(true);
+      });
+
+      // Sparse array is collapsed down on parse, only one item is present.
+      expect(await findByText(`{"hello":true,"items":["Added1000"]}`)).toBeVisible();
     });
   });
 
@@ -433,7 +562,9 @@ describe('useQueryPersistedState', () => {
       </MemoryRouter>,
     );
 
-    push!('/page?');
+    act(() => {
+      push!('/page?');
+    });
 
     await userEvent.click(screen.getByText(`one`));
     await waitFor(() => {

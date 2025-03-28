@@ -4,6 +4,7 @@ from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import deprecated, public
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
@@ -432,6 +433,10 @@ class OpExecutionContext(AbstractComputeExecutionContext):
         if isinstance(event, AssetMaterialization):
             self._events.append(
                 DagsterEvent.asset_materialization(self._step_execution_context, event)
+            )
+        elif isinstance(event, AssetCheckEvaluation):
+            self._events.append(
+                DagsterEvent.asset_check_evaluation(self._step_execution_context, event)
             )
         elif isinstance(event, AssetObservation):
             self._events.append(DagsterEvent.asset_observation(self._step_execution_context, event))

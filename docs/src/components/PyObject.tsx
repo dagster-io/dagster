@@ -40,8 +40,6 @@ export const PyObject: React.FunctionComponent<{
     href = `/api/python-api/libraries/${_package}#${module}.${object}`;
   }
 
-  console.log('->', href);
-
   return (
     <Link href={href}>
       <code style={{paddingLeft: '4px', paddingRight: '4px'}}>{textValue}</code>

@@ -22,10 +22,10 @@ from dagster._core.telemetry import START_DAGSTER_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
 from dagster._core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
 from dagster._serdes import deserialize_value
-from dagster._serdes.ipc import interrupt_on_ipc_shutdown_message
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, find_free_port, is_port_in_use
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
+from dagster_shared.ipc import interrupt_on_ipc_shutdown_message
 
 from dagster_webserver.app import create_app_from_workspace_process_context
 from dagster_webserver.version import __version__

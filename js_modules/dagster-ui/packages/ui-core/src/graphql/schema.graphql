@@ -45,6 +45,7 @@ enum DagsterEventType {
   STEP_RESTARTED
   ASSET_MATERIALIZATION
   ASSET_MATERIALIZATION_PLANNED
+  ASSET_FAILED_TO_MATERIALIZE
   ASSET_OBSERVATION
   STEP_EXPECTATION_RESULT
   ASSET_CHECK_EVALUATION_PLANNED
@@ -615,7 +616,58 @@ type Asset {
     afterTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
+  assetMaterializationHistory(
+    partitions: [String!]
+    partitionInLast: Int
+    beforeTimestampMillis: String
+    afterTimestampMillis: String
+    limit: Int
+    eventTypeSelector: MaterializationHistoryEventTypeSelector
+    cursor: String
+  ): MaterializationHistoryConnection!
   definition: AssetNode
+}
+
+type MaterializationHistoryConnection {
+  results: [AssetMaterializationEventType!]!
+  cursor: String!
+}
+
+union AssetMaterializationEventType = FailedToMaterializeEvent | MaterializationEvent
+
+type FailedToMaterializeEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String
+  description: String
+  metadataEntries: [MetadataEntry!]!
+  assetKey: AssetKey
+  runOrError: RunOrError!
+  stepStats: RunStepStats!
+  partition: String
+  tags: [EventTag!]!
+  materializationFailureReason: AssetMaterializationFailureReason!
+}
+
+enum AssetMaterializationFailureReason {
+  COMPUTE_FAILED
+  UPSTREAM_COMPUTE_FAILED
+  SKIPPED_OPTIONAL
+  UPSTREAM_SKIPPED
+  USER_TERMINATION
+  UNEXPECTED_TERMINATION
+  UNKNOWN
+}
+
+enum MaterializationHistoryEventTypeSelector {
+  MATERIALIZATION
+  FAILED_TO_MATERIALIZE
+  ALL
 }
 
 type AssetNode {
@@ -1217,6 +1269,7 @@ union DagsterRunEvent =
   | StepExpectationResultEvent
   | MaterializationEvent
   | ObservationEvent
+  | FailedToMaterializeEvent
   | EngineEvent
   | HookCompletedEvent
   | HookSkippedEvent

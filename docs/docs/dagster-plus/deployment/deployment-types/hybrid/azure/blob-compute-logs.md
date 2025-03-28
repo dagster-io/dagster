@@ -1,5 +1,5 @@
 ---
-title: "Store compute logs in Azure Blob Storage/Azure Data Lake Storage"
+title: 'Store compute logs in Azure Blob Storage/Azure Data Lake Storage'
 sidebar_position: 300
 ---
 
@@ -7,7 +7,7 @@ In this guide, we'll walk through how to store compute logs in Azure Blob Storag
 
 This guide focuses on using Azure Blob Storage, but the same steps should be applicable for Azure Data Lake Storage.
 
-If you have not yet set up an AKS agent, you can follow the [Deploy an Azure Kubernetes Service (AKS) agent guide](aks-agent). If you have not yet deployed user code in ACR, you can follow the [Deploy user code in Azure Container Registry (ACR) guide](acr-user-code).
+If you have not yet set up an AKS agent, you can follow the [Deploy an Azure Kubernetes Service (AKS) agent guide](/dagster-plus/deployment/deployment-types/hybrid/azure/aks-agent). If you have not yet deployed user code in ACR, you can follow the [Deploy user code in Azure Container Registry (ACR) guide](/dagster-plus/deployment/deployment-types/hybrid/azure/acr-user-code).
 
 ## Prerequisites
 
@@ -71,21 +71,21 @@ You will need to add new annotations and labels in Kubernetes to enable the use 
 ```yaml
 serviceAccount:
   annotations:
-    azure.workload.identity/client-id: "<managed-identity-client-id>"
+    azure.workload.identity/client-id: '<managed-identity-client-id>'
 
 dagsterCloudAgent:
   labels:
-    azure.workload.identity/use: "true"
+    azure.workload.identity/use: 'true'
 
 workspace:
   labels:
-    azure.workload.identity/use: "true"
+    azure.workload.identity/use: 'true'
 ```
 
 :::tip
 
 If you need to retrieve the values used by your Helm deployment, you can run:
-  `helm get values user-cloud > values.yaml`.
+`helm get values user-cloud > values.yaml`.
 
 :::
 
@@ -120,7 +120,7 @@ computeLogs:
       default_azure_credential:
         exclude_environment_credential: false
       prefix: dagster-logs
-      local_dir: "/tmp/cool"
+      local_dir: '/tmp/cool'
       upload_interval: 30
 ```
 

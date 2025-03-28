@@ -2,7 +2,15 @@ import {Box, Colors, Icon, Popover, UnstyledButton} from '@dagster-io/ui-compone
 import useResizeObserver from '@react-hook/resize-observer';
 import CodeMirror, {Editor, EditorChange} from 'codemirror';
 import debounce from 'lodash/debounce';
-import React, {KeyboardEvent, useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import React, {
+  KeyboardEvent,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import styled from 'styled-components';
 
 import {SyntaxError} from './CustomErrorListener';
@@ -11,6 +19,7 @@ import {SelectionInputAutoCompleteResults} from './SelectionInputAutoCompleteRes
 import {SelectionAutoCompleteInputCSS} from './SelectionInputHighlighter';
 import {useSelectionInputLintingAndHighlighting} from './useSelectionInputLintingAndHighlighting';
 import {useTrackEvent} from '../app/analytics';
+import {upgradeSyntax} from '../asset-selection/syntaxUpgrader';
 import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
 import {usePrevious} from '../hooks/usePrevious';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
@@ -26,11 +35,14 @@ type SelectionAutoCompleteInputProps = {
   placeholder: string;
   linter: (content: string) => SyntaxError[];
   value: string;
-  onChange: (value: string) => void;
   useAutoComplete: SelectionAutoCompleteProvider['useAutoComplete'];
   saveOnBlur?: boolean;
+  onErrorStateChange?: (errors: SyntaxError[]) => void;
+  onChange: (value: string) => void;
+  wildcardAttributeName: string;
 };
 
+const emptyArray: SyntaxError[] = [];
 export const SelectionAutoCompleteInput = ({
   id,
   value,
@@ -39,6 +51,8 @@ export const SelectionAutoCompleteInput = ({
   linter,
   useAutoComplete,
   saveOnBlur = false,
+  onErrorStateChange,
+  wildcardAttributeName,
 }: SelectionAutoCompleteInputProps) => {
   const trackEvent = useTrackEvent();
 
@@ -59,16 +73,31 @@ export const SelectionAutoCompleteInput = ({
 
   const onSelectionChange = useCallback(
     (selection: string) => {
-      onChange(selection);
-      trackSelection(selection);
+      let nextValue = selection;
+      if (wildcardAttributeName) {
+        nextValue = upgradeSyntax(selection, wildcardAttributeName);
+      }
+      onChange(nextValue);
+      trackSelection(nextValue);
     },
-    [onChange, trackSelection],
+    [onChange, trackSelection, wildcardAttributeName],
   );
 
   const editorRef = useRef<HTMLDivElement>(null);
   const cmInstance = useRef<CodeMirror.Editor | null>(null);
 
-  const [showResults, setShowResults] = useState({current: false});
+  const [selectedIndexRef, setSelectedIndex] = useState({current: -1});
+  const [showResults, _setShowResults] = useState({current: false});
+  const showResultsRef = useUpdatingRef(showResults.current);
+  const setShowResults = useCallback(
+    (nextShowResults: {current: boolean}) => {
+      if (showResultsRef.current !== nextShowResults.current) {
+        selectedIndexRef.current = -1;
+      }
+      _setShowResults(nextShowResults);
+    },
+    [_setShowResults, selectedIndexRef, showResultsRef],
+  );
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [innerValue, setInnerValue] = useState(value);
   const cursorPositionRef = useUpdatingRef(cursorPosition);
@@ -81,8 +110,6 @@ export const SelectionAutoCompleteInput = ({
   const hintContainerRef = useRef<HTMLDivElement | null>(null);
 
   const focusRef = useRef(false);
-
-  const [selectedIndexRef, setSelectedIndex] = useState({current: -1});
 
   // Memoize the stringified results to avoid resetting the selected index down below
   const resultsJson = useMemo(() => {
@@ -185,7 +212,6 @@ export const SelectionAutoCompleteInput = ({
 
   const errorTooltip = useSelectionInputLintingAndHighlighting({
     cmInstance,
-    value: innerValue,
     linter,
   });
 
@@ -212,10 +238,10 @@ export const SelectionAutoCompleteInput = ({
     if (cmInstance.current && currentValue !== noNewLineValue) {
       const instance = cmInstance.current;
       const cursor = instance.getCursor();
-      instance.setValue(noNewLineValue);
-      instance.setCursor(cursor);
       setCursorPosition(cursor.ch);
       requestAnimationFrame(() => {
+        instance.setValue(noNewLineValue);
+        instance.setCursor(cursor);
         // Reset selected index on value change
         setSelectedIndex({current: -1});
       });
@@ -300,9 +326,10 @@ export const SelectionAutoCompleteInput = ({
       showResults,
       selectedIndexRef,
       selectedItem,
+      onSelect,
       onSelectionChange,
       innerValueRef,
-      onSelect,
+      setShowResults,
       autoCompleteResults?.list.length,
     ],
   );
@@ -360,6 +387,19 @@ export const SelectionAutoCompleteInput = ({
 
   useResizeObserver(inputRef, adjustHeight);
 
+  const errors = useMemo(() => {
+    const linterErrors = linter(value);
+    if (linterErrors.length > 0) {
+      return linterErrors;
+    }
+    // Keep the reference the same to avoid re-rendering
+    return emptyArray;
+  }, [linter, value]);
+
+  useEffect(() => {
+    onErrorStateChange?.(errors);
+  }, [onErrorStateChange, errors]);
+
   return (
     <div onBlur={onBlur} style={{width: '100%'}}>
       <Popover
@@ -382,6 +422,7 @@ export const SelectionAutoCompleteInput = ({
       >
         <InputDiv
           $isCommitted={innerValue === value}
+          $hasErrors={errors.length > 0}
           style={{
             display: 'grid',
             gridTemplateColumns: 'auto minmax(0, 1fr) auto',
@@ -420,7 +461,7 @@ export const SelectionAutoCompleteInput = ({
   );
 };
 
-export const InputDiv = styled.div<{$isCommitted: boolean}>`
+export const InputDiv = styled.div<{$isCommitted: boolean; $hasErrors: boolean}>`
   ${SelectionAutoCompleteInputCSS}
   ${({$isCommitted}) =>
     $isCommitted
@@ -428,4 +469,10 @@ export const InputDiv = styled.div<{$isCommitted: boolean}>`
       : `
       background: ${Colors.backgroundLight()}; 
       `}
+  ${({$hasErrors}) =>
+    $hasErrors
+      ? `
+      border: 1px solid ${Colors.accentRed()};
+      `
+      : ''}
 `;

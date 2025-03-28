@@ -32,7 +32,6 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.test_utils import create_run_for_test, environ
 from dagster._core.utils import make_new_backfill_id
-from dagster._seven import get_system_temp_directory
 from dagster._utils import safe_tempfile_path
 from dagster_graphql.client.query import (
     LAUNCH_PARTITION_BACKFILL_MUTATION,
@@ -45,6 +44,7 @@ from dagster_graphql.test.utils import (
     infer_repository_selector,
     main_repo_location_name,
 )
+from dagster_shared.seven import get_system_temp_directory
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

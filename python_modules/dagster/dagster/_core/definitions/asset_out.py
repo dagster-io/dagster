@@ -75,6 +75,8 @@ class AssetOut:
             e.g. `team:finops`.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
+        kinds (Optional[set[str]]): A set of strings representing the kinds of the asset. These
+    will be made visible in the Dagster UI.
     """
 
     _spec: AssetSpec
@@ -99,6 +101,7 @@ class AssetOut:
         backfill_policy: Optional[BackfillPolicy] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        kinds: Optional[set[str]] = None,
         **kwargs,
     ):
         # Accept a hidden "spec" argument to allow for the AssetOut to be constructed from an AssetSpec
@@ -129,6 +132,7 @@ class AssetOut:
                 freshness_policy,
                 owners,
                 tags,
+                kinds,
             ]
         )
         check.invariant(
@@ -157,6 +161,7 @@ class AssetOut:
                 ),
                 owners=check.opt_sequence_param(owners, "owners", of_type=str),
                 tags=normalize_tags(tags or {}, strict=True),
+                kinds=check.opt_set_param(kinds, "kinds", of_type=str),
             )
         self.key_prefix = key_prefix
         self.dagster_type = dagster_type
@@ -200,6 +205,10 @@ class AssetOut:
     def tags(self) -> Optional[Mapping[str, str]]:
         return self._spec.tags
 
+    @property
+    def kinds(self) -> Optional[set[str]]:
+        return self._spec.kinds
+
     def to_out(self) -> Out:
         return Out(
             dagster_type=self.dagster_type,
@@ -220,6 +229,7 @@ class AssetOut:
         return self._spec.replace_attributes(
             key=key,
             tags={**additional_tags, **self.tags} if self.tags else additional_tags,
+            kinds=self.kinds,
             deps=[*self._spec.deps, *deps],
             partitions_def=partitions_def if partitions_def is not None else ...,
         )

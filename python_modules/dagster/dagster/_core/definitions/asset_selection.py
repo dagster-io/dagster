@@ -6,6 +6,7 @@ from collections.abc import Iterable, Sequence
 from functools import reduce
 from typing import AbstractSet, Optional, Union, cast  # noqa: UP035
 
+from dagster_shared.serdes import whitelist_for_serdes
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
@@ -31,7 +32,6 @@ from dagster._core.selector.subset_selector import (
     parse_clause,
 )
 from dagster._record import copy, record
-from dagster._serdes.serdes import whitelist_for_serdes
 
 CoercibleToAssetSelection: TypeAlias = Union[
     str,
@@ -633,7 +633,7 @@ class AllAssetCheckSelection(AssetSelection):
     ) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return asset_graph.asset_check_keys
@@ -652,7 +652,7 @@ class AssetChecksForAssetKeysSelection(AssetSelection):
     ) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return {
@@ -675,7 +675,7 @@ class AssetCheckKeysSelection(AssetSelection):
     ) -> AbstractSet[AssetKey]:
         return set()
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         specified_keys = set(self.selected_asset_check_keys)
@@ -736,7 +736,7 @@ class AndAssetSelection(OperandListAssetSelection):
             ),
         )
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return reduce(
@@ -764,7 +764,7 @@ class OrAssetSelection(OperandListAssetSelection):
             ),
         )
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return reduce(
@@ -792,7 +792,7 @@ class SubtractAssetSelection(AssetSelection):
             asset_graph, allow_missing=allow_missing
         ) - self.right.resolve_inner(asset_graph, allow_missing=allow_missing)
 
-    def resolve_checks_inner(
+    def resolve_checks_inner(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, asset_graph: AssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetCheckKey]:
         return self.left.resolve_checks_inner(

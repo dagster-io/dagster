@@ -1,5 +1,5 @@
 ---
-title: "Change tracking in branch deployments"
+title: 'Change tracking in branch deployments'
 sidebar_position: 200
 unlisted: true
 ---
@@ -17,7 +17,7 @@ Branch Deployments compare asset definitions in the branch deployment against th
 You can also apply filters to show only new and changed assets in the UI. This makes it easy to understand which assets will be impacted by the changes in the pull request associated with the branch deployment.
 
 {/* **Note:** The default main deployment is `prod`. To configure a different deployment as the main deployment, [create a branch deployment using the dagster-cloud CLI](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments) and specify it using the optional `--base-deployment-name` parameter. */}
-**Note:** The default main deployment is `prod`. To configure a different deployment as the main deployment, [create a branch deployment using the dagster-cloud CLI](using-branch-deployments-with-the-cli) and specify it using the optional `--base-deployment-name` parameter.
+**Note:** The default main deployment is `prod`. To configure a different deployment as the main deployment, [create a branch deployment using the dagster-cloud CLI](/dagster-plus/features/ci-cd/branch-deployments/using-branch-deployments-with-the-cli) and specify it using the optional `--base-deployment-name` parameter.
 
 ## Supported change types
 
@@ -194,18 +194,10 @@ def products(): ...
 </TabItem>
 </Tabs>
 
-## Related
+{/* ## Related */}
 
-{/*
-<ArticleList>
-  <ArticleListItem
-    title="Branch deployments"
-    href="/dagster-plus/managing-deployments/branch-deployments"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Managing Dagster+ deployments"
-    href="/dagster-plus/managing-deployments"
-  ></ArticleListItem>
-  <ArticleListItem title="Dagster Cloud" href="/dagster-plus"></ArticleListItem>
-</ArticleList>
-*/}
+{/* <ArticleList> */}
+{/* <ArticleListItem title="Branch deployments" href="/dagster-plus/managing-deployments/branch-deployments"></ArticleListItem> */}
+{/* <ArticleListItem title="Managing Dagster+ deployments" href="/dagster-plus/managing-deployments"></ArticleListItem> */}
+{/* <ArticleListItem title="Dagster Cloud" href="/dagster-plus"></ArticleListItem> */}
+{/* </ArticleList> */}

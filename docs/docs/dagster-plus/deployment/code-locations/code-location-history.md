@@ -1,5 +1,5 @@
 ---
-title: "Code location history and rollbacks"
+title: 'Code location history and rollbacks'
 sidebar_position: 100
 ---
 
@@ -50,4 +50,4 @@ If you notice an issue with newly deployed code, or your code fails to deploy su
 ## Next steps
 
 - Learn more about [Code Locations](/dagster-plus/deployment/code-locations)
-- Learn how to [Alert when a code location fails to load](/dagster-plus/features/alerts/creating-alerts#alerting-when-a-code-location-fails-to-load)
+- [Create an alert](/dagster-plus/features/alerts/creating-alerts) when a code location fails to load

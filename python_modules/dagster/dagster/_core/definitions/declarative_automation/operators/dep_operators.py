@@ -1,5 +1,8 @@
 from abc import abstractmethod
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, AbstractSet, Any, Generic, Optional, Union  # noqa: UP035
+
+from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
 from dagster._annotations import public
@@ -13,7 +16,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._record import copy, record
-from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._utils.security import non_secure_md5_hash_str
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AssetSelection
@@ -31,7 +34,7 @@ class EntityMatchesCondition(
     def name(self) -> str:
         return self.key.to_user_string()
 
-    async def evaluate(
+    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         # if the key we're mapping to is a child of the key we're mapping from and is not
@@ -107,6 +110,17 @@ class DepsAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
     def requires_cursor(self) -> bool:
         return False
 
+    def get_node_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
+        """Ignore allow_selection / ignore_selection for the cursor hash."""
+        parts = [str(parent_unique_id), str(index), self.base_name]
+        return non_secure_md5_hash_str("".join(parts).encode())
+
+    def get_backcompat_node_unique_ids(
+        self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
+    ) -> Sequence[str]:
+        # backcompat for previous cursors where the allow/ignore selection influenced the hash
+        return [super().get_node_unique_id(parent_unique_id=parent_unique_id, index=index)]
+
     @public
     def allow(self, selection: "AssetSelection") -> "DepsAutomationCondition":
         """Returns a copy of this condition that will only consider dependencies within the provided
@@ -169,7 +183,7 @@ class AnyDepsCondition(DepsAutomationCondition[T_EntityKey]):
     def base_name(self) -> str:
         return "ANY_DEPS_MATCH"
 
-    async def evaluate(
+    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         dep_results = []
@@ -194,7 +208,7 @@ class AllDepsCondition(DepsAutomationCondition[T_EntityKey]):
     def base_name(self) -> str:
         return "ALL_DEPS_MATCH"
 
-    async def evaluate(
+    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         dep_results = []

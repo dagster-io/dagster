@@ -1,5 +1,5 @@
 ---
-title: "Hybrid deployment"
+title: 'Hybrid deployment'
 sidebar_label: Hybrid
 sidebar_position: 20
 ---
@@ -8,7 +8,7 @@ In a Dagster+ Hybrid deployment, the orchestration control plane is run by Dagst
 
 :::note
 
-For an overview of the Hybrid design, including security considerations, see [Dagster+ Hybrid architecture](architecture).
+For an overview of the Hybrid design, including security considerations, see [Dagster+ Hybrid architecture](/dagster-plus/deployment/deployment-types/hybrid/architecture).
 
 :::
 
@@ -24,10 +24,10 @@ To get started with a Hybrid deployment, you'll need to:
 
 The Dagster+ agent is a long-lived process that polls Dagster+'s API servers for new work. Currently supported agents include:
 
- - [Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes)
- - [AWS ECS](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/new-vpc)
- - [Docker](/dagster-plus/deployment/deployment-types/hybrid/docker)
- - [Local agent](/dagster-plus/deployment/deployment-types/hybrid/local)
+- [Kubernetes](/dagster-plus/deployment/deployment-types/hybrid/kubernetes)
+- [AWS ECS](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/new-vpc)
+- [Docker](/dagster-plus/deployment/deployment-types/hybrid/docker)
+- [Local agent](/dagster-plus/deployment/deployment-types/hybrid/local)
 
 :::tip
 
@@ -39,10 +39,9 @@ If you're not sure which agent to use, we recommend the [Dagster+ Kubernetes age
 
 ### Code location servers
 
-Dagster+ runs your Dagster projects through code locations. To add a code location, see the  [code locations documentation](/dagster-plus/deployment/code-locations/).
+Dagster+ runs your Dagster projects through code locations. To add a code location, see the [code locations documentation](/dagster-plus/deployment/code-locations/).
 
 When you inform Dagster+ about a new code location, we enqueue instructions for your agent to launch a new code server. The agent uses your container image to launch a code server that interacts with your Dagster definitions. The agent will run one long-standing code server for each code location. Once the code server is running, the agent will send Dagster+ metadata about your Dagster definitions that Dagster+ uses to make orchestration decisions.
-
 
 ### Runs
 
@@ -57,5 +56,6 @@ Your agent will send Dagster+ metadata letting us know the run has been launched
 ### Security
 
 You can do the following to make your Dagster+ Hybrid deployment more secure:
+
 - [Disable log forwarding](/dagster-plus/deployment/management/settings/customizing-agent-settings#disabling-compute-logs)
 - [Manage tokens](/dagster-plus/deployment/management/tokens/agent-tokens)

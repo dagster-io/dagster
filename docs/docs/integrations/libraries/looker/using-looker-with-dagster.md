@@ -1,9 +1,9 @@
 ---
-title: "Using Looker with Dagster"
+title: 'Using Looker with Dagster'
 description: Represent your Looker assets in Dagster
 ---
 
-import Beta from '../../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
@@ -55,7 +55,6 @@ Note that the content and size of Looker instance may affect the performance of 
 
 By default, Dagster will generate asset specs for each Looker asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" module="dagster_looker" object="DagsterLookerApiTranslator" /> subclass to the <PyObject section="libraries" module="dagster_looker" object="load_looker_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Looker asset type.
 
-
 <CodeExample path="docs_snippets/docs_snippets/integrations/looker/customize-looker-assets.py" />
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
@@ -63,7 +62,6 @@ Note that `super()` is called in each of the overridden methods to generate the 
 ### Materialize Looker PDTs from Dagster
 
 You can use Dagster to orchestrate the materialization of Looker PDTs. To model PDTs as assets, build their asset definitions by passing a list of <PyObject section="libraries" module="dagster_looker" object="RequestStartPdtBuild" /> to <PyObject section="libraries" module="dagster_looker" object="build_looker_pdt_assets_definitions" /> function.
-
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/looker/materializing-looker-pdts.py" />
 

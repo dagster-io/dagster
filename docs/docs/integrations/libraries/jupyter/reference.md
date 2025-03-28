@@ -1,12 +1,12 @@
 ---
-title: "dagstermill integration reference"
+title: 'dagstermill integration reference'
 description: The Dagstermill package lets you run notebooks using the Dagster tools and integrate them into your data pipelines.
 sidebar_position: 200
 ---
 
 This reference provides a high-level look at working with Jupyter notebooks using the [`dagstermill` integration library](/api/python-api/libraries/dagstermill).
 
-For a step-by-step implementation walkthrough, refer to the [Using notebooks with Dagster tutorial](using-notebooks-with-dagster).
+For a step-by-step implementation walkthrough, refer to the [Using notebooks with Dagster tutorial](/integrations/libraries/jupyter/using-notebooks-with-dagster).
 
 ## Notebooks as assets
 
@@ -18,7 +18,7 @@ In this code block, we use `define_dagstermill_asset` to create a Dagster asset.
 
 ## Notebooks as ops
 
-Dagstermill also supports running Jupyter notebooks as [ops](/guides/build/ops). We can use <PyObject section="libraries" module="dagstermill" object="define_dagstermill_op" /> to turn a notebook into an op:
+Dagstermill also supports running Jupyter notebooks as [ops](/guides/build/ops/). We can use <PyObject section="libraries" module="dagstermill" object="define_dagstermill_op" /> to turn a notebook into an op.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/dagstermill/iris_notebook_op.py" startAfter="start" />
 
@@ -34,7 +34,11 @@ You can use the development context to access asset and op config and resources,
 
 For instance, suppose we want to make the number of clusters (the _k_ in k-means) configurable. We'll change our asset definition to include a config field:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dagstermill/iris_notebook_config.py" startAfter="start" endBefore="end" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dagstermill/iris_notebook_config.py"
+  startAfter="start"
+  endBefore="end"
+/>
 
 You can also provide `config_schema` to `define_dagstermill_op` in the same way demonstrated in this code snippet.
 
@@ -62,12 +66,19 @@ The functionality described in this section only works for notebooks run with `d
 
 If you are using `define_dagstermill_op` and you'd like to yield a result to be consumed downstream of a notebook, you can call <PyObject section="libraries" module="dagstermill" object="yield_result" /> with the value of the result and its name. In interactive execution, this is a no-op, so you don't need to change anything when moving from interactive exploration and development to production.
 
-
-<CodeExample path="docs_snippets/docs_snippets/integrations/dagstermill/notebook_outputs.py" startAfter="start_notebook" endBefore="end_notebook" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dagstermill/notebook_outputs.py"
+  startAfter="start_notebook"
+  endBefore="end_notebook"
+/>
 
 And then:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dagstermill/notebook_outputs.py" startAfter="start_py_file" endBefore="end_py_file" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dagstermill/notebook_outputs.py"
+  startAfter="start_py_file"
+  endBefore="end_py_file"
+/>
 
 ## Dagster events
 

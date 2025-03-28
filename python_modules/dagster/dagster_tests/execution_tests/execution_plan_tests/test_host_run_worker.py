@@ -61,7 +61,7 @@ class ExplodingTestPipeline(ReconstructableJob):
             asset_selection,
         )
 
-    def get_definition(self):
+    def get_definition(self):  # pyright: ignore[reportIncompatibleVariableOverride]
         if os.getpid() == _explode_pid["pid"]:
             raise Exception("Got the definition in the run worker process")
         return super().get_definition()

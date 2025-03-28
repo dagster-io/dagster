@@ -102,7 +102,7 @@ BuildkiteStep: TypeAlias = Union[
 BuildkiteLeafStep = Union[CommandStep, TriggerStep, WaitStep]
 BuildkiteTopLevelStep = Union[CommandStep, GroupStep]
 
-UV_PIN = "uv==0.5.27"
+UV_PIN = "uv==0.6.9"
 
 
 def is_command_step(step: BuildkiteStep) -> TypeGuard[CommandStep]:
@@ -324,7 +324,7 @@ def has_dg_or_components_changes():
     return any(
         "dagster-dg" in str(path)
         or "dagster-components" in str(path)
-        or "docs_beta_snippets" in str(path)
+        or "docs_snippets" in str(path)
         for path in ChangedFiles.all
     )
 
@@ -351,12 +351,17 @@ def has_storage_test_fixture_changes():
     )
 
 
-def skip_if_not_dlift_commit() -> Optional[str]:
-    """If no dlift files are touched, then do NOT run. Even if on master."""
+def skip_if_not_dagster_dbt_cloud_commit() -> Optional[str]:
+    """If no dagster-dbt cloud v2 files are touched, then do NOT run. Even if on master."""
     return (
         None
-        if any("dagster-dlift" in str(path) for path in ChangedFiles.all)
-        else "Not a dlift commit"
+        if (
+            any("dagster_dbt/cloud_v2" in str(path) for path in ChangedFiles.all)
+            # The kitchen sink in dagster-dbt in only testing the dbt Cloud integration v2.
+            # Do not skip tests if changes are made to this test suite.
+            or any("dagster-dbt/kitchen-sink" in str(path) for path in ChangedFiles.all)
+        )
+        else "Not a dagster-dbt Cloud commit"
     )
 
 
@@ -383,6 +388,9 @@ def message_contains(substring: str) -> bool:
 
 def skip_if_no_docs_changes():
     if message_contains("NO_SKIP"):
+        return None
+
+    if message_contains("BUILDKITE_DOCS"):
         return None
 
     if not is_feature_branch(os.getenv("BUILDKITE_BRANCH")):  # pyright: ignore[reportArgumentType]

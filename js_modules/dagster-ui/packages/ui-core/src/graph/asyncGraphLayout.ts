@@ -9,6 +9,7 @@ import {GraphData} from '../asset-graph/Utils';
 import {AssetGraphLayout, LayoutAssetGraphOptions, layoutAssetGraph} from '../asset-graph/layout';
 import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {workerSpawner} from '../workers/workerSpawner';
 
 const ASYNC_LAYOUT_SOLID_COUNT = 50;
 
@@ -27,7 +28,7 @@ export const getFullOpLayout = memoize(layoutOpGraph, _opLayoutCacheKey);
 
 const asyncGetFullOpLayout = asyncMemoize((ops: ILayoutOp[], opts: LayoutOpGraphOptions) => {
   return new Promise<OpGraphLayout>((resolve) => {
-    const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
+    const worker = spawnLayoutWorker();
     worker.onMessage((event) => {
       resolve(event.data);
       worker.terminate();
@@ -74,13 +75,25 @@ const _assetLayoutCacheKey = (graphData: GraphData, opts: LayoutAssetGraphOption
 
 const getFullAssetLayout = memoize(layoutAssetGraph, _assetLayoutCacheKey);
 
+const EMPTY_LAYOUT: AssetGraphLayout = {
+  width: 0,
+  height: 0,
+  nodes: {},
+  edges: [],
+  groups: {},
+};
+
 export const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
-      const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
+      const worker = spawnLayoutWorker();
       worker.onMessage((event) => {
         resolve(event.data);
         worker.terminate();
+      });
+      worker.onError((error) => {
+        console.error(error);
+        resolve(EMPTY_LAYOUT);
       });
       worker.postMessage({type: 'layoutAssetGraph', opts, graphData});
     });
@@ -91,10 +104,14 @@ export const asyncGetFullAssetLayoutIndexDB = indexedDBAsyncMemoize(
 const asyncGetFullAssetLayout = asyncMemoize(
   (graphData: GraphData, opts: LayoutAssetGraphOptions) => {
     return new Promise<AssetGraphLayout>((resolve) => {
-      const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
+      const worker = spawnLayoutWorker();
       worker.onMessage((event) => {
         resolve(event.data);
         worker.terminate();
+      });
+      worker.onError((error) => {
+        console.error(error);
+        resolve(EMPTY_LAYOUT);
       });
       worker.postMessage({type: 'layoutAssetGraph', opts, graphData});
     });
@@ -102,6 +119,9 @@ const asyncGetFullAssetLayout = asyncMemoize(
   _assetLayoutCacheKey,
 );
 
+const spawnLayoutWorker = workerSpawner(
+  () => new Worker(new URL('../workers/dagre_layout.worker', import.meta.url)),
+);
 // Helper Hooks:
 // - Automatically switch between sync and async loading strategies
 // - Re-layout when the cache key function returns a different value
@@ -125,7 +145,7 @@ type Action =
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'loading':
-      return {loading: true, layout: null, cacheKey: ''};
+      return {loading: true, layout: state.layout, cacheKey: state.cacheKey};
     case 'layout':
       return {
         loading: false,
@@ -195,6 +215,7 @@ export function useAssetLayout(
   _graphData: GraphData,
   expandedGroups: string[],
   opts: LayoutAssetGraphOptions,
+  dataLoading?: boolean,
 ) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const flags = useFeatureFlags();
@@ -206,6 +227,9 @@ export function useAssetLayout(
   const runAsync = nodeCount >= ASYNC_LAYOUT_SOLID_COUNT;
 
   useLayoutEffect(() => {
+    if (dataLoading) {
+      return;
+    }
     let canceled = false;
     async function runAsyncLayout() {
       dispatch({type: 'loading'});
@@ -231,7 +255,7 @@ export function useAssetLayout(
     return () => {
       canceled = true;
     };
-  }, [cacheKey, graphData, runAsync, flags, opts]);
+  }, [cacheKey, graphData, runAsync, flags, opts, dataLoading]);
 
   const uid = useRef(0);
   useDangerousRenderEffect(() => {

@@ -1,7 +1,7 @@
 import datetime
 from typing import NamedTuple
 
-from dagster._serdes.serdes import whitelist_for_serdes
+from dagster_shared.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes

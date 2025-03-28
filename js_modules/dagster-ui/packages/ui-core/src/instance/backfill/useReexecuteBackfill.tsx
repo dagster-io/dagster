@@ -51,6 +51,7 @@ export function useReexecuteBackfill(
         icon: 'error',
         intent: 'danger',
         action: {
+          type: 'button',
           text: 'View error',
           onClick: () =>
             showCustomAlert({

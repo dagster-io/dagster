@@ -1,5 +1,5 @@
 ---
-title: "Deploying Dagster using Docker Compose"
+title: 'Deploying Dagster using Docker Compose'
 description: A guide to deploying Dagster with Docker Compose.
 sidebar_position: 40
 ---
@@ -9,12 +9,9 @@ This guide provides instructions for deploying Dagster using Docker Compose. Thi
 The [full example is available on GitHub](https://github.com/dagster-io/dagster/blob/master/examples/deploy_docker).
 
 <details>
-  <summary>Prerequisites</summary>
-- Familiarity with Docker and Docker Compose
-- Familiarity with `dagster.yaml` instance configuration
-- Familiarity with `workspace.yaml` code location configuration
+  <summary>Prerequisites</summary>- Familiarity with Docker and Docker Compose - Familiarity with `dagster.yaml`
+  instance configuration - Familiarity with `workspace.yaml` code location configuration
 </details>
-
 
 ## Define a Docker image for the Dagster webserver and daemon
 
@@ -43,6 +40,7 @@ WORKDIR $DAGSTER_HOME
 ```
 
 Additionally, the following files should be in the same directory as the Docker file:
+
 - A `workspace.yaml` to tell the webserver and daemon the location of the code servers
 - A `dagster.yaml` to configure the Dagster instance
 
@@ -76,7 +74,7 @@ CMD ["dagster", "code-server", "start", "-h", "0.0.0.0", "-p", "4000", "-f", "de
 The following `docker-compose.yaml` defines how to run the webserver container, daemon container, code location containers, and database container:
 
 ```yaml title="docker-compose.yaml"
-version: "3.7"
+version: '3.7'
 
 services:
   # This service runs the postgres DB used by dagster for run storage, schedule storage,
@@ -86,13 +84,13 @@ services:
     image: postgres:11
     container_name: docker_example_postgresql
     environment:
-      POSTGRES_USER: "postgres_user"
-      POSTGRES_PASSWORD: "postgres_password"
-      POSTGRES_DB: "postgres_db"
+      POSTGRES_USER: 'postgres_user'
+      POSTGRES_PASSWORD: 'postgres_password'
+      POSTGRES_DB: 'postgres_db'
     networks:
       - docker_example_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres_user -d postgres_db"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres_user -d postgres_db']
       interval: 10s
       timeout: 8s
       retries: 5
@@ -102,7 +100,7 @@ services:
   # run launcher to use this same image when launching runs in a new container as well.
   # Multiple containers like this can be deployed separately - each just needs to run on
   # its own port, and have its own entry in the workspace.yaml file that's loaded by the
-      # webserver.
+  # webserver.
   docker_example_user_code:
     build:
       context: .
@@ -111,10 +109,10 @@ services:
     image: docker_example_user_code_image
     restart: always
     environment:
-      DAGSTER_POSTGRES_USER: "postgres_user"
-      DAGSTER_POSTGRES_PASSWORD: "postgres_password"
-      DAGSTER_POSTGRES_DB: "postgres_db"
-      DAGSTER_CURRENT_IMAGE: "docker_example_user_code_image"
+      DAGSTER_POSTGRES_USER: 'postgres_user'
+      DAGSTER_POSTGRES_PASSWORD: 'postgres_password'
+      DAGSTER_POSTGRES_DB: 'postgres_db'
+      DAGSTER_CURRENT_IMAGE: 'docker_example_user_code_image'
     networks:
       - docker_example_network
 
@@ -128,20 +126,20 @@ services:
     entrypoint:
       - dagster-webserver
       - -h
-      - "0.0.0.0"
+      - '0.0.0.0'
       - -p
-      - "3000"
+      - '3000'
       - -w
       - workspace.yaml
     container_name: docker_example_webserver
     expose:
-      - "3000"
+      - '3000'
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
-      DAGSTER_POSTGRES_USER: "postgres_user"
-      DAGSTER_POSTGRES_PASSWORD: "postgres_password"
-      DAGSTER_POSTGRES_DB: "postgres_db"
+      DAGSTER_POSTGRES_USER: 'postgres_user'
+      DAGSTER_POSTGRES_PASSWORD: 'postgres_password'
+      DAGSTER_POSTGRES_DB: 'postgres_db'
     volumes: # Make docker client accessible so we can terminate containers from the webserver
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/io_manager_storage:/tmp/io_manager_storage
@@ -165,9 +163,9 @@ services:
     container_name: docker_example_daemon
     restart: on-failure
     environment:
-      DAGSTER_POSTGRES_USER: "postgres_user"
-      DAGSTER_POSTGRES_PASSWORD: "postgres_password"
-      DAGSTER_POSTGRES_DB: "postgres_db"
+      DAGSTER_POSTGRES_USER: 'postgres_user'
+      DAGSTER_POSTGRES_PASSWORD: 'postgres_password'
+      DAGSTER_POSTGRES_DB: 'postgres_db'
     volumes: # Make docker client accessible so we can launch containers using host docker
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/io_manager_storage:/tmp/io_manager_storage

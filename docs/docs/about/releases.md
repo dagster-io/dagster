@@ -17,18 +17,30 @@ If a version breaks your code, help us out by filing an issue on [GitHub](https:
 
 Our public, stable Python API includes:
 
-- All classes, functions, and variables that are exported at the top-level of the `dagster` package, unless they're marked [experimental](#experimental-apis).
-- Public, non-[experimental](#experimental-apis) methods and properties of public, stable classes. Public methods and properties are those included in the [API reference](/api). Within the codebase, they're marked with a `@public` decorator.
+- All classes, functions, and variables that are exported at the top-level of the `dagster` package, unless they're marked as [preview](#preview-apis) or [beta](#beta-apis).
+- Public, non-[preview](#preview-apis) and non-[beta](#beta-apis) methods and properties of public, stable classes. Public methods and properties are those included in the [API reference](/api). Within the codebase, they're marked with a `@public` decorator.
 
-### Experimental APIs
+### Preview APIs
 
-The `Experimental` marker allows us to offer new APIs to users and rapidly iterate based on their feedback. Experimental APIs are marked as such in the [API reference](/api) and usually raise an `ExperimentalWarning` when used.
+The `Preview` marker allows us to offer new APIs to users and rapidly iterate based on their feedback. Preview APIs are marked as such in the [API reference](/api) and usually raise a `PreviewWarning` when used.
 
-Experimental APIs may change or disappear within any release, but we try to avoid breaking them within minor releases if they have been around for a long time.
+Preview APIs may have breaking changes in patch version releases. These features are not considered ready for production use.
+
+### Beta APIs
+
+The `Beta` marker allows us to offer new APIs to users and rapidly iterate based on their feedback. Beta APIs are marked as such in the [API reference](/api) and usually raise a `BetaWarning` when used.
+
+Beta APIs may have breaking changes in minor version releases, with behavior changes in patch releases, but we try to avoid breaking them within minor releases if they have been around for a long time.
+
+### Superseded APIs
+
+The `Superseded` marker indicates that an API is still available, but is no longer the best practice. Usually, a better alternative is available. Superseded APIs are marked as such in the [API reference](/api) and usually raise a `SupersessionWarning` when used.
+
+Like non-deprecated public stable APIs, superseded public stable APIs won't break within any major release after 1.0.
 
 ### Deprecated APIs
 
-The `Deprecated` marker indicates that we recommend avoiding an API, usually because there's a preferred option that should be used instead.
+The `Deprecated` marker indicates that we recommend avoiding an API, because it will be removed in the future.
 
 Like non-deprecated public stable APIs, deprecated public stable APIs won't break within any major release after 1.0.
 
@@ -38,7 +50,7 @@ Dagster's integration libraries haven't yet achieved the same API maturity as Da
 
 While technically the 0.y.z phase of semantic versioning is "anything goes", we're conservative about making changes and will provide guidance about when to expect breaking changes:
 
-- Upgrading to a new dot version within a minor release, such as 0.8.1 to 0.8.2, should never result in broken code. An exception to this guarantee is [experimental APIs](#experimental-apis).
+- Upgrading to a new dot version within a minor release, such as 0.8.1 to 0.8.2, should never result in broken code. An exception to this guarantee is [preview](#preview-apis) and [beta](#beta-apis).
 - As often as possible, deprecation warnings will precede removals. For example, if the current version is 0.8.5 and we want to remove an API, we'll issue a deprecation [warning](https://docs.python.org/3/library/warnings.html) when the API is used and remove it from 0.9.0.
 - Upgrading to a new minor version, such as 0.7.5 to 0.8.0, may result in breakages or new deprecation [warnings](https://docs.python.org/3/library/warnings.html).
 

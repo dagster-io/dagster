@@ -4,6 +4,12 @@ from collections.abc import Iterable, Mapping
 from datetime import datetime
 from typing import AbstractSet, Any, Callable, NamedTuple, Optional, Union, cast  # noqa: UP035
 
+from dagster_shared.serdes import (
+    NamedTupleSerializer,
+    SerializableNonScalarKeyMapping,
+    whitelist_for_serdes,
+)
+
 from dagster import _check as check
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
@@ -12,11 +18,6 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._serdes.serdes import (
-    NamedTupleSerializer,
-    SerializableNonScalarKeyMapping,
-    whitelist_for_serdes,
-)
 
 
 class PartitionsSubsetMappingNamedTupleSerializer(NamedTupleSerializer):
@@ -131,7 +132,7 @@ class AssetGraphSubset(NamedTuple):
         for asset_key in self.asset_keys:
             yield self.get_asset_subset(asset_key, asset_graph)
 
-    def __contains__(self, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:
+    def __contains__(self, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         """If asset is an AssetKeyPartitionKey, check if the given AssetKeyPartitionKey is in the
         subset. If asset is an AssetKey, check if any of partitions of the given AssetKey are in
         the subset.
@@ -236,9 +237,13 @@ class AssetGraphSubset(NamedTuple):
     def __eq__(self, other) -> bool:
         return (
             isinstance(other, AssetGraphSubset)
-            and self.partitions_subsets_by_asset_key == other.partitions_subsets_by_asset_key
             and self.non_partitioned_asset_keys == other.non_partitioned_asset_keys
+            and _non_empty(self.partitions_subsets_by_asset_key)
+            == _non_empty(other.partitions_subsets_by_asset_key)
         )
+
+    def __ne__(self, other) -> bool:
+        return not self.__eq__(other)
 
     def __repr__(self) -> str:
         return (
@@ -435,3 +440,8 @@ class AssetGraphSubset(NamedTuple):
             partitions_subsets_by_asset_key=partitions_subsets_by_asset_key,
             non_partitioned_asset_keys=non_partitioned_asset_keys,
         )
+
+
+def _non_empty(d: Mapping[AssetKey, PartitionsSubset]) -> Mapping[AssetKey, PartitionsSubset]:
+    """Returns a new dictionary with only the non-empty PartitionsSubsets in d."""
+    return {k: v for k, v in d.items() if not v.is_empty}

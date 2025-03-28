@@ -1,10 +1,11 @@
 from collections.abc import Mapping, Sequence
 from typing import NamedTuple, Optional, Union
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
-from dagster._serdes.serdes import whitelist_for_serdes
 
 # ########################
 # ##### TABLE RECORD

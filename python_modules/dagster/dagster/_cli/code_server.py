@@ -6,8 +6,8 @@ import threading
 from typing import Optional
 
 import click
+import dagster_shared.seven as seven
 
-import dagster._seven as seven
 from dagster._cli.utils import assert_no_remaining_opts
 from dagster._cli.workspace.cli_target import PythonPointerOpts, python_pointer_options
 from dagster._core.instance import InstanceRef

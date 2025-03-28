@@ -1,6 +1,6 @@
 import {css} from 'styled-components';
 
-export const darktNoRedGreenThemeColors = css`
+export const darkNoRedGreenThemeColors = css`
   --browser-color-scheme: dark;
   --color-keyline-default: var(--color-translucent-gray20);
   --color-link-default: var(--color-core-blue200);
@@ -10,7 +10,7 @@ export const darktNoRedGreenThemeColors = css`
   --color-text-light: var(--color-core-gray300);
   --color-text-lighter: var(--color-core-gray500);
   --color-text-disabled: var(--color-core-gray600);
-  --color-text-red: var(--color-core-red200);
+  --color-text-red: var(--color-core-yellow200);
   --color-text-yellow: var(--color-core-yellow200);
   --color-text-green: var(--color-core-cobalt200);
   --color-text-blue: var(--color-core-blue200);
@@ -102,16 +102,16 @@ export const darktNoRedGreenThemeColors = css`
   --color-data-viz-cyan-alt: var(--color-dataviz-cyan100);
   --color-data-viz-gray: var(--color-dataviz-gray200);
   --color-data-viz-gray-alt: var(--color-dataviz-gray100);
-  --color-data-viz-green: var(--color-dataviz-green200);
-  --color-data-viz-green-alt: var(--color-dataviz-green100);
+  --color-data-viz-green: var(--color-core-cobalt200);
+  --color-data-viz-green-alt: var(--color-core-cobalt100);
   --color-data-viz-lime: var(--color-dataviz-lime200);
   --color-data-viz-lime-alt: var(--color-dataviz-lime100);
   --color-data-viz-orange: var(--color-dataviz-orange200);
   --color-data-viz-orange-alt: var(--color-dataviz-orange100);
   --color-data-viz-pink: var(--color-dataviz-pink200);
   --color-data-viz-pink-alt: var(--color-dataviz-pink100);
-  --color-data-viz-red: var(--color-dataviz-red200);
-  --color-data-viz-red-alt: var(--color-dataviz-red100);
+  --color-data-viz-red: var(--color-dataviz-yellow300);
+  --color-data-viz-red-alt: var(--color-dataviz-yellow200);
   --color-data-viz-teal: var(--color-dataviz-teal200);
   --color-data-viz-teal-alt: var(--color-dataviz-teal100);
   --color-data-viz-violet: var(--color-dataviz-violet200);
@@ -120,6 +120,7 @@ export const darktNoRedGreenThemeColors = css`
   --color-data-viz-yellow-alt: var(--color-dataviz-yellow100);
   --color-checkbox-unchecked: var(--color-core-gray500);
   --color-checkbox-checked: var(--color-core-cobalt500);
+  --color-checkbox-disabled: var(--color-core-gray700);
   --color-blue-gradient: linear-gradient(
     var(--color-core-gray950),
     var(--color-translucent-blue15) 100%

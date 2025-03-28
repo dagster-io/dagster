@@ -1,7 +1,7 @@
 ---
-title: "Setting environment variables using agent config"
+title: 'Setting environment variables using agent config'
 sidebar_position: 300
-sidebar_label: "Set with agent config"
+sidebar_label: 'Set with agent config'
 ---
 
 :::note
@@ -14,6 +14,10 @@ There are two ways to set environment variables:
 
 - **On a per-code location basis**, which involves modifying the `dagster_cloud.yaml` file. **Note**: This approach is functionally the same as [setting environment variables using the Dagster+ UI](/dagster-plus/deployment/management/environment-variables/dagster-ui). Values will pass through Dagster+.
 - **For a full deployment and all the code locations it contains**. This approach makes variables available for all code locations in a full Dagster+ deployment. As values are pulled from the user cluster, values will bypass Dagster+ entirely.
+
+:::note
+Environment variables that have been set in the Dagster+ UI will take precedence over duplicates set in the agent's configuration.
+:::
 
 ## Prerequisites
 
@@ -58,19 +62,19 @@ locations:
           - DATABASE_NAME=testing
           - DATABASE_PASSWORD
         secrets:
-          - name: "MY_API_TOKEN"
-            valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::"
-          - name: "MY_PASSWORD"
-            valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::"
+          - name: 'MY_API_TOKEN'
+            valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::'
+          - name: 'MY_PASSWORD'
+            valueFrom: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::'
         secrets_tags:
-          - "my_tag_name"
+          - 'my_tag_name'
 ```
 
-| Key                                  | Description                                                                                                                                                                        |
-|--------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `container_context.ecs.env_vars`     | A list of keys or key-value pairs. If a value is not specified, it pulls from the agent task. E.g., `FOO_ENV_VAR` = `foo_value`, `BAR_ENV_VAR` = agent task value. |
-| `container_context.ecs.secrets`      | Individual secrets using the [ECS API structure](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html).                                                       |
-| `container_context.ecs.secrets_tags` | A list of tag names; secrets tagged with these in AWS Secrets Manager will be environment variables. The variable name is the secret name, the value is the secret's value.  |
+| Key                                  | Description                                                                                                                                                                 |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `container_context.ecs.env_vars`     | A list of keys or key-value pairs. If a value is not specified, it pulls from the agent task. E.g., `FOO_ENV_VAR` = `foo_value`, `BAR_ENV_VAR` = agent task value.          |
+| `container_context.ecs.secrets`      | Individual secrets using the [ECS API structure](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html).                                                |
+| `container_context.ecs.secrets_tags` | A list of tag names; secrets tagged with these in AWS Secrets Manager will be environment variables. The variable name is the secret name, the value is the secret's value. |
 
 After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
@@ -117,16 +121,16 @@ locations:
     container_context:
       k8s:
         env_vars:
-          - database_name        # value pulled from agent's environment
+          - database_name # value pulled from agent's environment
           - database_username=hooli_testing
         env_secrets:
           - database_password
 ```
 
- | Key           | Description                                                                                                                                                                                                                                                                                                                                              |
- |---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
- | `env_vars`    | A list of environment variable names to inject into the job, formatted as `KEY` or `KEY=VALUE`. If only `KEY` is specified, the value will be pulled from the current process.                                                                                                                                          |
- | `env_secrets` | A list of secret names, from which environment variables for a job are drawn using `envFrom`. For more information, see the [Kubernetes](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables). |
+| Key           | Description                                                                                                                                                                                                                                                                                                     |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `env_vars`    | A list of environment variable names to inject into the job, formatted as `KEY` or `KEY=VALUE`. If only `KEY` is specified, the value will be pulled from the current process.                                                                                                                                  |
+| `env_secrets` | A list of secret names, from which environment variables for a job are drawn using `envFrom`. For more information, see the [Kubernetes](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables). |
 
 After you've modified `dagster_cloud.yaml`, redeploy the code location in Dagster+ to apply the changes:
 
@@ -165,7 +169,6 @@ To make environment variables accessible to a full deployment with an Amazon ECS
 6. In the section displaying the template YAML, locate the `AgentTaskDefinition` section:
 
    ![Highlighted AgentTaskDefinition section of the AWS ECS agent CloudFormation template in the AWS Console](/images/dagster-plus/deployment/environment-variables/aws-ecs-cloudformation-template.png)
-
 
 7. In the `user_code_launcher.config` portion of the `AgentTaskDefinition` section, add the environment variables as follows:
 

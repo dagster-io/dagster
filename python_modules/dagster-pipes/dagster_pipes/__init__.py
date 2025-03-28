@@ -796,7 +796,7 @@ class PipesStdioLogWriter(PipesLogWriter[T_LogChannel]):
         pass
 
     @contextmanager
-    def open(self, params: PipesParams) -> Iterator[None]:
+    def open(self, params: PipesParams) -> Iterator[None]:  # pyright: ignore[reportIncompatibleMethodOverride]
         with ExitStack() as stack:
             stdout_channel = self.make_channel(params, stream="stdout")
             stderr_channel = self.make_channel(params, stream="stderr")

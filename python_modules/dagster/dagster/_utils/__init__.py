@@ -1,4 +1,3 @@
-import _thread as thread
 import contextlib
 import contextvars
 import datetime
@@ -16,14 +15,13 @@ import tempfile
 import threading
 import time
 import uuid
-from collections.abc import Generator, Hashable, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
 from datetime import timezone
 from enum import Enum
 from pathlib import Path
 from signal import Signals
 from typing import (  # noqa: UP035
     TYPE_CHECKING,
-    AbstractSet,
     Any,
     Callable,
     ContextManager,
@@ -41,13 +39,20 @@ from typing import (  # noqa: UP035
     overload,
 )
 
-import packaging.version
+import dagster_shared.seven as seven
+from dagster_shared.ipc import send_interrupt as send_interrupt
+from dagster_shared.libraries import (
+    library_version_from_core_version as library_version_from_core_version,
+    parse_package_version as parse_package_version,
+)
+from dagster_shared.utils.hash import (
+    hash_collection as hash_collection,
+    make_hashable as make_hashable,
+)
 from filelock import FileLock
-from pydantic import BaseModel
 from typing_extensions import Literal, TypeAlias, TypeGuard
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._utils.internal_init import IHasInternalInit as IHasInternalInit
 
 if TYPE_CHECKING:
@@ -92,34 +97,6 @@ def check_for_debug_crash(
     os.kill(os.getpid(), kill_signal_or_exception)
     time.sleep(10)
     raise Exception("Process didn't terminate after sending crash signal")
-
-
-# Use this to get the "library version" (pre-1.0 version) from the "core version" (post 1.0
-# version). 16 is from the 0.16.0 that library versions stayed on when core went to 1.0.0.
-def library_version_from_core_version(core_version: str) -> str:
-    parsed_version = parse_package_version(core_version)
-
-    release = parsed_version.release
-    if release[0] >= 1:
-        library_version = ".".join(["0", str(16 + release[1]), str(release[2])])
-
-        if parsed_version.is_prerelease:
-            library_version = library_version + "".join(
-                [str(pre) for pre in check.not_none(parsed_version.pre)]
-            )
-
-        if parsed_version.is_postrelease:
-            library_version = library_version + "post" + str(parsed_version.post)
-
-        return library_version
-    else:
-        return core_version
-
-
-def parse_package_version(version_str: str) -> packaging.version.Version:
-    parsed_version = packaging.version.parse(version_str)
-    assert isinstance(parsed_version, packaging.version.Version)
-    return parsed_version
 
 
 def convert_dagster_submodule_name(name: str, mode: Literal["private", "public"]) -> str:
@@ -239,62 +216,6 @@ def mkdir_p(path: str) -> str:
             return path
         else:
             raise
-
-
-def hash_collection(
-    collection: Union[
-        Mapping[Hashable, Any], Sequence[Any], AbstractSet[Any], tuple[Any, ...], NamedTuple
-    ],
-) -> int:
-    """Hash a mutable collection or immutable collection containing mutable elements.
-
-    This is useful for hashing Dagster-specific NamedTuples that contain mutable lists or dicts.
-    The default NamedTuple __hash__ function assumes the contents of the NamedTuple are themselves
-    hashable, and will throw an error if they are not. This can occur when trying to e.g. compute a
-    cache key for the tuple for use with `lru_cache`.
-
-    This alternative implementation will recursively process collection elements to convert basic
-    lists and dicts to tuples prior to hashing. It is recommended to cache the result:
-
-    Example:
-        .. code-block:: python
-
-            def __hash__(self):
-                if not hasattr(self, '_hash'):
-                    self._hash = hash_named_tuple(self)
-                return self._hash
-    """
-    assert isinstance(
-        collection, (list, dict, set, tuple)
-    ), f"Cannot hash collection of type {type(collection)}"
-    return hash(make_hashable(collection))
-
-
-@overload
-def make_hashable(value: Union[list[Any], set[Any]]) -> tuple[Any, ...]: ...
-
-
-@overload
-def make_hashable(value: dict[Any, Any]) -> tuple[tuple[Any, Any]]: ...
-
-
-@overload
-def make_hashable(value: Any) -> Any: ...
-
-
-def make_hashable(value: Any) -> Any:
-    from dagster._record import as_dict, is_record
-
-    if isinstance(value, dict):
-        return tuple(sorted((key, make_hashable(value)) for key, value in value.items()))
-    elif is_record(value):
-        return tuple(make_hashable(value) for value in as_dict(value).values())
-    elif isinstance(value, (list, tuple, set)):
-        return tuple([make_hashable(x) for x in value])
-    elif isinstance(value, BaseModel):
-        return make_hashable(value.dict())
-    else:
-        return value
 
 
 def get_prop_or_key(elem: object, key: str) -> object:
@@ -434,16 +355,6 @@ def _termination_handler(
     if not is_done_event.is_set():
         # if we should stop but are not yet done, interrupt the MainThread
         send_interrupt()
-
-
-def send_interrupt() -> None:
-    if seven.IS_WINDOWS:
-        # This will raise a KeyboardInterrupt in python land - meaning this wont be able to
-        # interrupt things like sleep()
-        thread.interrupt_main()
-    else:
-        # If on unix send an os level signal to interrupt any situation we may be stuck in
-        os.kill(os.getpid(), signal.SIGINT)
 
 
 # Function to be invoked by daemon thread in processes which seek to be cancellable.

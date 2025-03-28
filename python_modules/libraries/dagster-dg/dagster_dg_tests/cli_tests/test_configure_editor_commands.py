@@ -19,6 +19,7 @@ def test_utils_configure_editor(editor: str) -> None:
     with (
         ProxyRunner.test() as runner,
         TemporaryDirectory() as extension_dir,
+        mock.patch("dagster_dg.utils.editor.has_editor_cli_command", new=lambda x: True),
         mock.patch("dagster_dg.utils.editor.run_editor_cli_command", new=mock_vscode_cli_command),
         mock.patch(
             "dagster_dg.utils.editor.get_default_extension_dir",

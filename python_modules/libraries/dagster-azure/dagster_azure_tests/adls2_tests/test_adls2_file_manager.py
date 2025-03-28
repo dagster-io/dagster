@@ -5,13 +5,8 @@ from dagster import ResourceDefinition, build_op_context, configured, op
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
-from dagster_azure.adls2 import (
-    ADLS2FileHandle,
-    ADLS2FileManager,
-    ADLS2Key,
-    FakeADLS2Resource,
-    adls2_file_manager,
-)
+from dagster_azure.adls2 import ADLS2FileHandle, ADLS2FileManager, ADLS2Key, adls2_file_manager
+from dagster_azure.fakes import FakeADLS2Resource
 
 # For deps
 

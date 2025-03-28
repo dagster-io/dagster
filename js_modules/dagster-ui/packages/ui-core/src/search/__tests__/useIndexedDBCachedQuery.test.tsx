@@ -1,8 +1,8 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
+import {waitFor} from '@testing-library/dom';
 import {act, renderHook} from '@testing-library/react-hooks';
 import {ReactNode, useMemo} from 'react';
 
-import {useApolloClient} from '../../apollo-client';
 import {ASSET_CATALOG_TABLE_QUERY} from '../../assets/AssetsCatalogTable';
 import {AssetCatalogTableMockAssets} from '../../assets/__fixtures__/AssetTables.fixtures';
 import {
@@ -10,7 +10,7 @@ import {
   AssetCatalogTableQueryVariables,
 } from '../../assets/types/AssetsCatalogTable.types';
 import {buildAssetConnection} from '../../graphql/types';
-import {buildQueryMock} from '../../testing/mocking';
+import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {cache as _cache} from '../../util/idb-lru-cache';
 import {__resetForJest, useIndexedDBCachedQuery} from '../useIndexedDBCachedQuery';
 
@@ -41,6 +41,7 @@ afterEach(() => {
   jest.resetModules();
 });
 
+let mockedApolloClient = false;
 jest.mock('@apollo/client', () => {
   const actual = jest.requireActual('@apollo/client');
   const query = jest.fn().mockReturnValue({
@@ -49,11 +50,16 @@ jest.mock('@apollo/client', () => {
   const client = {query};
   return {
     ...actual,
-    useApolloClient: () => client,
+    useApolloClient: () => {
+      if (mockedApolloClient) {
+        return client;
+      }
+      return actual.useApolloClient();
+    },
   };
 });
 
-const mock = ({delay}: {delay: number} = {delay: 10}) =>
+const mock = ({delay}: {delay?: number} = {delay: 10}) =>
   buildQueryMock<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>({
     query: ASSET_CATALOG_TABLE_QUERY,
     variableMatcher: () => true,
@@ -71,6 +77,7 @@ describe('useIndexedDBCachedQuery', () => {
   );
 
   beforeEach(() => {
+    mockedApolloClient = false;
     jest.clearAllMocks();
   });
 
@@ -86,6 +93,7 @@ describe('useIndexedDBCachedQuery', () => {
         });
 
         it('should use cached data if available and version matches', async () => {
+          mockedApolloClient = true;
           if (!throwingError) {
             mockCache().has.mockResolvedValue(true);
             mockCache().get.mockResolvedValue({value: {data: 'test', version: 1}});
@@ -143,6 +151,8 @@ describe('useIndexedDBCachedQuery', () => {
           }
           const mock1 = mock();
           const mock2 = mock();
+          const mockFn1 = getMockResultFn(mock1);
+          const mockFn2 = getMockResultFn(mock2);
           let result1;
           let result2;
           renderHook(
@@ -169,9 +179,50 @@ describe('useIndexedDBCachedQuery', () => {
               ),
             },
           );
-          expect(useApolloClient().query).toHaveBeenCalledTimes(1);
-          expect(result1!.data).toEqual(result2!.data);
-          expect(result1!.loading).toEqual(result2!.loading);
+          await waitFor(() => {
+            expect(mockFn1).toHaveBeenCalledTimes(1);
+            expect(mockFn2).not.toHaveBeenCalled();
+
+            expect(result1!.data).toEqual(result2!.data);
+            expect(result1!.loading).toEqual(result2!.loading);
+          });
+        });
+
+        it('fetches data when variables or version change', async () => {
+          const mock1 = mock({});
+          const mock2 = mock({});
+          const mockFn1 = getMockResultFn(mock1);
+          const mockFn2 = getMockResultFn(mock2);
+          const {rerender} = renderHook(
+            ({variables, version}: {variables: AssetCatalogTableQueryVariables; version: number}) =>
+              useIndexedDBCachedQuery({
+                key: 'testKey',
+                query: ASSET_CATALOG_TABLE_QUERY,
+                version,
+                variables,
+              }),
+            {
+              initialProps: {variables: {limit: 10}, version: 1},
+              wrapper: ({
+                children,
+              }: {children?: ReactNode} & {
+                variables: AssetCatalogTableQueryVariables;
+                version: number;
+              }) => <Wrapper mocks={[mock1, mock2]}>{children}</Wrapper>,
+            },
+          );
+
+          await waitFor(() => {
+            expect(mockFn1).toHaveBeenCalledTimes(1);
+            expect(mockFn2).not.toHaveBeenCalled();
+          });
+          act(async () => {
+            rerender({variables: {limit: 1}, version: 2});
+          });
+          await waitFor(() => {
+            expect(mockFn1).toHaveBeenCalledTimes(1);
+            expect(mockFn2).toHaveBeenCalledTimes(1);
+          });
         });
       },
     );

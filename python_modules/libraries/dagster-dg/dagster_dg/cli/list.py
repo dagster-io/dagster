@@ -4,12 +4,12 @@ from pathlib import Path
 from typing import Any
 
 import click
+from dagster_shared.serdes.objects import ComponentTypeSnap
 from rich.console import Console
 from rich.table import Table
 
-from dagster_dg.cli.scaffold import SHIM_COMPONENTS
 from dagster_dg.cli.shared_options import dg_global_options
-from dagster_dg.component import RemoteComponentRegistry
+from dagster_dg.component import RemoteLibraryObjectRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.defs import (
@@ -21,6 +21,7 @@ from dagster_dg.defs import (
 )
 from dagster_dg.error import DgError
 from dagster_dg.utils import DgClickCommand, DgClickGroup
+from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 
 @click.group(name="list", cls=DgClickGroup)
@@ -35,13 +36,14 @@ def list_group():
 
 @list_group.command(name="project", cls=DgClickCommand)
 @dg_global_options
-def project_list_command(**global_options: object) -> None:
+@cli_telemetry_wrapper
+def list_project_command(**global_options: object) -> None:
     """List projects in the current workspace."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_workspace_environment(Path.cwd(), cli_config)
 
-    for project in dg_context.get_project_names():
-        click.echo(project)
+    for project in dg_context.project_specs:
+        click.echo(project.path)
 
 
 # ########################
@@ -51,7 +53,8 @@ def project_list_command(**global_options: object) -> None:
 
 @list_group.command(name="component", cls=DgClickCommand)
 @dg_global_options
-def component_list_command(**global_options: object) -> None:
+@cli_telemetry_wrapper
+def list_component_command(**global_options: object) -> None:
     """List Dagster component instances defined in the current project."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
@@ -74,23 +77,27 @@ def component_list_command(**global_options: object) -> None:
     help="Output as JSON instead of a table.",
 )
 @dg_global_options
-def component_type_list(output_json: bool, **global_options: object) -> None:
+@cli_telemetry_wrapper
+def list_component_type_command(output_json: bool, **global_options: object) -> None:
     """List registered Dagster components in the current project environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
-    registry = RemoteComponentRegistry.from_dg_context(dg_context)
+    registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
 
-    sorted_keys = sorted(registry.keys() - SHIM_COMPONENTS.keys(), key=lambda k: k.to_typename())
+    sorted_keys = sorted(
+        (k for k in registry.keys() if isinstance(registry.get(k), ComponentTypeSnap)),
+        key=lambda k: k.to_typename(),
+    )
 
     # JSON
     if output_json:
         output: list[dict[str, object]] = []
         for key in sorted_keys:
-            component_type_metadata = registry.get(key)
+            obj = registry.get(key)
             output.append(
                 {
                     "key": key.to_typename(),
-                    "summary": component_type_metadata.summary,
+                    "summary": obj.summary,
                 }
             )
         click.echo(json.dumps(output, indent=4))
@@ -120,13 +127,23 @@ def component_type_list(output_json: bool, **global_options: object) -> None:
     help="Output as JSON instead of a table.",
 )
 @dg_global_options
+@cli_telemetry_wrapper
 def list_defs_command(output_json: bool, **global_options: object) -> None:
-    """List registered Dagster components in the current project environment."""
+    """List registered Dagster definitions in the current project environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
     result = dg_context.external_components_command(
-        ["list", "definitions", "-m", dg_context.code_location_target_module_name]
+        [
+            "list",
+            "definitions",
+            "-m",
+            dg_context.code_location_target_module_name,
+        ],
+        # Sets the "--location" option for "dagster-components definitions list"
+        # using the click auto-envvar prefix for backwards compatibility on older versions
+        # before that option was added
+        additional_env={"DG_CLI_LIST_DEFINITIONS_LOCATION": dg_context.code_location_name},
     )
     definitions = [_resolve_definition(x) for x in json.loads(result)]
 

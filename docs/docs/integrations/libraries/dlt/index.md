@@ -15,7 +15,7 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, etl]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/dlthub.jpeg
 ---
 
@@ -29,7 +29,7 @@ pip install dagster-dlt
 
 ### Example
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/dlt.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/dlt.py" language="python" />
 
 :::note
 

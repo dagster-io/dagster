@@ -1,5 +1,5 @@
 ---
-title: "Executing Dagster on Dask"
+title: 'Executing Dagster on Dask'
 sidebar_position: 800
 ---
 
@@ -23,7 +23,11 @@ First, run `pip install dagster-dask`.
 
 Then, create a job with the dask executor:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dask_hello_world.py" startAfter="start_local_job_marker" endBefore="end_local_job_marker" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dask_hello_world.py"
+  startAfter="start_local_job_marker"
+  endBefore="end_local_job_marker"
+/>
 
 Now you can run this job with a config block such as the following:
 
@@ -37,7 +41,11 @@ If you want to use a Dask cluster for distributed execution, you will first need
 
 You'll also need an IO manager that uses persistent shared storage, which should be attached to the job along with any resources on which it depends. Here, we use the <PyObject section="libraries" module="dagster_aws" object="s3.s3_pickle_io_manager"/>:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dask_hello_world_distributed.py" startAfter="start_distributed_job_marker" endBefore="end_distributed_job_marker" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dask_hello_world_distributed.py"
+  startAfter="start_distributed_job_marker"
+  endBefore="end_distributed_job_marker"
+/>
 
 For distributing task execution on a Dask cluster, you must provide a config block that includes the address/port of the Dask scheduler:
 

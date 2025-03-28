@@ -1,7 +1,7 @@
 ---
 title: "Kind tags"
-description: "Use kind tags to easily categorize assets within you Dagster project."
-sidebar_position: 200
+description: "Use kind tags to easily categorize assets within your Dagster project."
+sidebar_position: 2000
 ---
 
 Kind tags can help you quickly identify the underlying system or technology used for a given asset in the Dagster UI. These tags allow you to organize assets within a Dagster project and can be used to filter or search across all your assets.
@@ -41,7 +41,7 @@ def my_asset():
     pass
 ```
 
-## Supported Icons
+## Supported icons
 
 Some kinds are given a branded icon in the UI. We currently support nearly 200 unique technology icons.
 

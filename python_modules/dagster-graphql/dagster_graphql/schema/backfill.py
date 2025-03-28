@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 import graphene
-from dagster import AssetKey, _seven
+from dagster import AssetKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -28,6 +28,7 @@ from dagster._core.storage.tags import (
     get_tag_type,
 )
 from dagster._core.workspace.permissions import Permissions
+from dagster_shared import seven
 
 from dagster_graphql.implementation.fetch_partition_sets import (
     partition_status_counts_from_run_partition_data,
@@ -696,7 +697,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             if not line:
                 continue
             try:
-                record_dict = _seven.json.loads(line)
+                record_dict = seven.json.loads(line)
             except json.JSONDecodeError:
                 continue
 

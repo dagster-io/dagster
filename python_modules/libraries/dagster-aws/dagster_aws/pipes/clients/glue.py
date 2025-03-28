@@ -58,7 +58,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         return True
 
     @public
-    def run(
+    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],

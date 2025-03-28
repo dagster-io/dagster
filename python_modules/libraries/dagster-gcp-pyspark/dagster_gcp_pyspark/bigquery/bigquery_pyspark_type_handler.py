@@ -58,7 +58,7 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
 
     """
 
-    def handle_output(
+    def handle_output(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: OutputContext, table_slice: TableSlice, obj: DataFrame, _
     ) -> Mapping[str, RawMetadataValue]:
         options = _get_bigquery_write_options(context.resource_config, table_slice)
@@ -78,7 +78,7 @@ class BigQueryPySparkTypeHandler(DbTypeHandler[DataFrame]):
             ),
         }
 
-    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:
+    def load_input(self, context: InputContext, table_slice: TableSlice, _) -> DataFrame:  # pyright: ignore[reportIncompatibleMethodOverride]
         options = _get_bigquery_read_options(table_slice)
         spark = SparkSession.builder.getOrCreate()  # type: ignore
 

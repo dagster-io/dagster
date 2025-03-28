@@ -25,13 +25,13 @@ from dagster._core.workspace.load_target import (
 )
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import GrpcServerProcess, wait_for_grpc_server
-from dagster._serdes.ipc import open_ipc_subprocess
 from dagster._utils import safe_tempfile_path
 from dagster._utils.merger import merge_dicts
 from dagster._utils.test import FilesystemTestScheduler
 from dagster._utils.test.postgres_instance import TestPostgresInstance
 from dagster_graphql import DagsterGraphQLClient
 from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_shared.ipc import open_ipc_subprocess
 from graphql import DocumentNode, print_ast
 
 
@@ -837,7 +837,7 @@ def make_graphql_context_test_suite(context_variants):
                 yield graphql_context
 
         @pytest.fixture(name="graphql_context")
-        def yield_graphql_context(self, class_scoped_graphql_context):
+        def yield_graphql_context(self, class_scoped_graphql_context):  # pyright: ignore[reportIncompatibleMethodOverride]
             instance = class_scoped_graphql_context.instance
             instance.wipe()
             instance.wipe_all_schedules()

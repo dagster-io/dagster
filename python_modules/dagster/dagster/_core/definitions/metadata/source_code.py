@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
+from dagster_shared.dagster_model import DagsterModel
+
 import dagster._check as check
 from dagster._annotations import beta, public
 from dagster._core.definitions.metadata.metadata_set import (
@@ -13,7 +15,6 @@ from dagster._core.definitions.metadata.metadata_set import (
     TableMetadataSet as TableMetadataSet,
 )
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
-from dagster._model import DagsterModel
 from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
@@ -46,7 +47,7 @@ class UrlCodeReference(DagsterModel):
 
 @beta
 @whitelist_for_serdes
-class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMetadataValue"]):
+class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMetadataValue"]):  # pyright: ignore[reportIncompatibleMethodOverride]
     """Metadata value type which represents source locations (locally or otherwise)
     of the asset in question. For example, the file path and line number where the
     asset is defined.

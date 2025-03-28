@@ -11,6 +11,7 @@ import {
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import {memo, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {Link} from 'react-router-dom';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import styled from 'styled-components';
 
@@ -21,17 +22,12 @@ import {LogType, LogsToolbar} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
-import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
-import {
-  matchingComputeLogKeyFromStepKey,
-  useComputeLogFileKeyForSelection,
-} from './useComputeLogFileKeyForSelection';
-import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
+import {runsPathWithFilters} from './RunsFilterInput';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {featureEnabled} from '../app/Flags';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
-import {GanttChart, GanttChartLoadingState, GanttChartMode, QueuedState} from '../gantt/GanttChart';
+import {GanttChart, GanttChartLoadingState, GanttChartMode} from '../gantt/GanttChart';
 import {toGraphQueryItems} from '../gantt/toGraphQueryItems';
 import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -39,6 +35,12 @@ import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 import {filterRunSelectionByQuery} from '../run-selection/AntlrRunSelection';
+import {RunDagsterRunEventFragment, RunPageFragment} from './types/RunFragments.types';
+import {
+  matchingComputeLogKeyFromStepKey,
+  useComputeLogFileKeyForSelection,
+} from './useComputeLogFileKeyForSelection';
+import {useQueryPersistedLogFilter} from './useQueryPersistedLogFilter';
 
 interface RunProps {
   runId: string;
@@ -334,10 +336,6 @@ const RunWithData = ({
       return <GanttChartLoadingState runId={runId} />;
     }
 
-    if (run.status === 'QUEUED') {
-      return <QueuedState run={run} />;
-    }
-
     if (run.executionPlan && runtimeGraph) {
       return (
         <ErrorBoundary region="gantt chart">
@@ -376,6 +374,45 @@ const RunWithData = ({
     return <NonIdealState icon="error" title="Unable to build execution plan" />;
   };
 
+  const logContent = () => {
+    if (run?.status === 'QUEUED') {
+      return (
+        <NonIdealState
+          icon="arrow_forward"
+          title="Run queued"
+          description="This run is queued for execution and will start soon."
+          action={
+            <Link to={runsPathWithFilters([{token: 'status', value: 'QUEUED'}])}>
+              View queued runs
+            </Link>
+          }
+        />
+      );
+    }
+    if (logType === LogType.structured) {
+      return (
+        <LogsScrollingTable
+          logs={logs}
+          filter={logsFilter}
+          filterStepKeys={logsFilterStepKeys}
+          filterKey={`${JSON.stringify(logsFilter)}`}
+          metadata={metadata}
+        />
+      );
+    }
+    if (computeLogFileKey) {
+      return (
+        <CapturedOrExternalLogPanel
+          logKey={computeLogFileKey ? [runId, 'compute_logs', computeLogFileKey] : []}
+          logCaptureInfo={logCaptureInfo}
+          visibleIOType={LogType[logType]}
+          onSetDownloadUrl={setComputeLogUrl}
+        />
+      );
+    }
+    return <NoStepSelectionState type={logType} />;
+  };
+
   return (
     <>
       <SplitPanelContainer
@@ -403,26 +440,7 @@ const RunWithData = ({
                 isSectionExpanded={isBottomExpanded}
                 toggleExpanded={isBottomExpanded ? resetPanels : expandBottomPanel}
               />
-              {logType !== LogType.structured ? (
-                !computeLogFileKey ? (
-                  <NoStepSelectionState type={logType} />
-                ) : (
-                  <CapturedOrExternalLogPanel
-                    logKey={computeLogFileKey ? [runId, 'compute_logs', computeLogFileKey] : []}
-                    logCaptureInfo={logCaptureInfo}
-                    visibleIOType={LogType[logType]}
-                    onSetDownloadUrl={setComputeLogUrl}
-                  />
-                )
-              ) : (
-                <LogsScrollingTable
-                  logs={logs}
-                  filter={logsFilter}
-                  filterStepKeys={logsFilterStepKeys}
-                  filterKey={`${JSON.stringify(logsFilter)}`}
-                  metadata={metadata}
-                />
-              )}
+              {logContent()}
             </LogsContainer>
           </ErrorBoundary>
         }

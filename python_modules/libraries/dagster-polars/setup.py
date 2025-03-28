@@ -42,14 +42,15 @@ setup(
         "universal_pathlib>=0.1.4",
     ],
     extras_require={
-        "deltalake": ["deltalake>=0.15.0"],
+        "deltalake": ["deltalake>=0.25.0"],
         "gcp": ["dagster-gcp>=0.19.5"],
         "test": [
+            "polars>=1.24.0",
             "pytest>=8",
             "hypothesis[zoneinfo]>=6.89.0",
             "deepdiff>=6.3.0",
             "pytest-cases>=3.6.14",
-            "pyarrow<19.0.0",  # temporary pin until https://github.com/apache/arrow/issues/45283 is fixed
+            "pytest_mock",
         ],
     },
     zip_safe=False,

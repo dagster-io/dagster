@@ -949,7 +949,7 @@ class StaticPartitionMapping(
                 f" {extra_keys}"
             )
 
-    def get_downstream_partitions_for_partitions(
+    def get_downstream_partitions_for_partitions(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         upstream_partitions_subset: PartitionsSubset,
         upstream_partitions_def: StaticPartitionsDefinition,
@@ -965,7 +965,7 @@ class StaticPartitionMapping(
             downstream_keys.update(self._mapping[key])
         return downstream_subset.with_partition_keys(downstream_keys)
 
-    def get_upstream_mapped_partitions_result_for_partitions(
+    def get_upstream_mapped_partitions_result_for_partitions(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         downstream_partitions_subset: Optional[PartitionsSubset],
         downstream_partitions_def: Optional[PartitionsDefinition],

@@ -19,10 +19,12 @@ import click
 import tomlkit
 import tomlkit.items
 from click.core import ParameterSource
+from dagster_shared.plus.config import load_config
+from dagster_shared.utils.config import get_dg_config_path
 from typing_extensions import Never, NotRequired, Required, Self, TypeAlias, TypeGuard
 
 from dagster_dg.error import DgError, DgValidationError
-from dagster_dg.utils import get_toml_value, is_macos, is_windows
+from dagster_dg.utils import get_toml_node, is_macos, is_windows
 
 T = TypeVar("T")
 
@@ -108,13 +110,16 @@ class DgConfig:
         root_file_config: Optional["DgFileConfig"] = None,
         container_workspace_file_config: Optional["DgWorkspaceFileConfig"] = None,
         command_line_config: Optional["DgRawCliConfig"] = None,
+        user_config: Optional["DgRawCliConfig"] = None,
     ) -> Self:
         cli_partials: list[DgRawCliConfig] = []
 
         if container_workspace_file_config:
             if "cli" in container_workspace_file_config:
                 cli_partials.append(container_workspace_file_config["cli"])
-            workspace_config = DgWorkspaceConfig.from_raw(container_workspace_file_config)
+            workspace_config = DgWorkspaceConfig.from_raw(
+                container_workspace_file_config["workspace"]
+            )
 
         if root_file_config:
             if "cli" in root_file_config:
@@ -134,9 +139,13 @@ class DgConfig:
 
         if command_line_config:
             cli_partials.append(command_line_config)
-        cli_config = DgCliConfig.from_raw(*cli_partials) if cli_partials else DgCliConfig.default()
 
-        return cls(cli_config, project_config, workspace_config)
+        all_cli_config = [user_config, *cli_partials] if user_config else cli_partials
+        cli_config = (
+            DgCliConfig.from_raw(*all_cli_config) if all_cli_config else DgCliConfig.default()
+        )
+
+        return cls(cli_config, project_config, workspace_config)  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 # ########################
@@ -157,20 +166,13 @@ class DgCliConfig:
             Any components retrieved from the remote environment will be filtered to only include those
             from these modules. This is useful primarily for testing, as it allows targeting of a stable
             set of test components.
-        use_dg_managed_environment (bool): If True, `dg` will build and manage a virtual environment
-            using `uv`. Note that disabling the managed enviroment will also disable caching.
-        require_local_venv (bool): If True, commands that access an environment with
-            dagster-components will only use a `.venv` directory discovered in the ancestor tree. If no
-            `.venv` directory is discovered, an error will be raised. Note that this disallows the use
-            of both the system python environment and non-local but activated virtual environments.
     """
 
     disable_cache: bool = False
     cache_dir: Path = DEFAULT_CACHE_DIR
     verbose: bool = False
     use_component_modules: list[str] = field(default_factory=list)
-    use_dg_managed_environment: bool = True
-    require_local_venv: bool = True
+    telemetry_enabled: bool = True
 
     @classmethod
     def default(cls) -> Self:
@@ -185,13 +187,16 @@ class DgCliConfig:
             verbose=merged.get("verbose", DgCliConfig.verbose),
             use_component_modules=merged.get(
                 "use_component_modules",
-                DgCliConfig.__dataclass_fields__["use_component_modules"].default_factory(),
+                cls.__dataclass_fields__["use_component_modules"].default_factory(),
             ),
-            use_dg_managed_environment=merged.get(
-                "use_dg_managed_environment", DgCliConfig.use_dg_managed_environment
+            telemetry_enabled=merged.get("telemetry", {}).get(
+                "enabled", DgCliConfig.telemetry_enabled
             ),
-            require_local_venv=merged.get("require_local_venv", DgCliConfig.require_local_venv),
         )
+
+
+class RawDgTelemetryConfig(TypedDict, total=False):
+    enabled: bool
 
 
 # All fields are optional
@@ -200,13 +205,14 @@ class DgRawCliConfig(TypedDict, total=False):
     cache_dir: str
     verbose: bool
     use_component_modules: Sequence[str]
-    use_dg_managed_environment: bool
-    require_local_venv: bool
+    telemetry: RawDgTelemetryConfig
 
 
 # ########################
 # ##### PROJECT
 # ########################
+
+DgProjectPythonEnvironment: TypeAlias = Literal["active", "persistent_uv"]
 
 
 @dataclass
@@ -215,6 +221,7 @@ class DgProjectConfig:
     defs_module: Optional[str] = None
     code_location_target_module: Optional[str] = None
     code_location_name: Optional[str] = None
+    python_environment: DgProjectPythonEnvironment = "active"
 
     @classmethod
     def from_raw(cls, raw: "DgRawProjectConfig") -> Self:
@@ -226,6 +233,7 @@ class DgProjectConfig:
                 "code_location_target_module",
                 DgProjectConfig.code_location_target_module,
             ),
+            python_environment=raw.get("python_environment", DgProjectConfig.python_environment),
         )
 
 
@@ -234,6 +242,7 @@ class DgRawProjectConfig(TypedDict):
     defs_module: NotRequired[str]
     code_location_target_module: NotRequired[str]
     code_location_name: NotRequired[str]
+    python_environment: NotRequired[DgProjectPythonEnvironment]
 
 
 # ########################
@@ -243,15 +252,72 @@ class DgRawProjectConfig(TypedDict):
 
 @dataclass
 class DgWorkspaceConfig:
-    pass
+    projects: list["DgWorkspaceProjectSpec"]
+    scaffold_project_options: "DgWorkspaceScaffoldProjectOptions"
 
     @classmethod
     def from_raw(cls, raw: "DgRawWorkspaceConfig") -> Self:
-        return cls()
+        projects = [DgWorkspaceProjectSpec.from_raw(spec) for spec in raw.get("projects", [])]
+        scaffold_project_options = DgWorkspaceScaffoldProjectOptions.from_raw(
+            raw.get("scaffold_project_options", {})
+        )
+        return cls(projects, scaffold_project_options)
 
 
-class DgRawWorkspaceConfig(TypedDict):
-    pass
+class DgRawWorkspaceConfig(TypedDict, total=False):
+    projects: list["DgRawWorkspaceProjectSpec"]
+    scaffold_project_options: "DgRawWorkspaceNewProjectOptions"
+
+
+@dataclass
+class DgWorkspaceProjectSpec:
+    path: Path
+    code_location_name: Optional[str] = None
+
+    @classmethod
+    def from_raw(cls, raw: "DgRawWorkspaceProjectSpec") -> Self:
+        return cls(
+            path=Path(raw["path"]),
+            code_location_name=raw.get(
+                "code_location_name", DgWorkspaceProjectSpec.code_location_name
+            ),
+        )
+
+
+class DgRawWorkspaceProjectSpec(TypedDict, total=False):
+    path: Required[str]
+    code_location_name: str
+
+
+@dataclass
+class DgWorkspaceScaffoldProjectOptions:
+    use_editable_dagster: Union[str, bool] = False
+
+    @classmethod
+    def from_raw(cls, raw: "DgRawWorkspaceNewProjectOptions") -> Self:
+        return cls(
+            use_editable_dagster=raw.get(
+                "use_editable_dagster", DgWorkspaceScaffoldProjectOptions.use_editable_dagster
+            ),
+        )
+
+    # This is here instead of on `DgRawWorkspaceNewProjectOptions` because TypedDict can't have
+    # methods.
+    @classmethod
+    def get_raw_from_cli(
+        cls,
+        use_editable_dagster: Optional[str],
+    ) -> "DgRawWorkspaceNewProjectOptions":
+        raw_scaffold_project_options: DgRawWorkspaceNewProjectOptions = {}
+        if use_editable_dagster:
+            raw_scaffold_project_options["use_editable_dagster"] = (
+                True if use_editable_dagster == "TRUE" else use_editable_dagster
+            )
+        return raw_scaffold_project_options
+
+
+class DgRawWorkspaceNewProjectOptions(TypedDict, total=False):
+    use_editable_dagster: Union[str, bool]
 
 
 # ########################
@@ -329,10 +395,14 @@ DgFileConfig: TypeAlias = Union[DgWorkspaceFileConfig, DgProjectFileConfig]
 def has_dg_file_config(
     path: Path, predicate: Optional[Callable[[Mapping[str, Any]], bool]] = None
 ) -> bool:
-    toml = tomlkit.parse(path.read_text())
-    return "dg" in toml.get("tool", {}) and (
-        predicate(get_toml_value(toml, ["tool", "dg"], dict)) if predicate else True
-    )
+    toml = tomlkit.parse(path.read_text()).unwrap()
+    return "dg" in toml.get("tool", {}) and (predicate(toml["tool"]["dg"]) if predicate else True)
+
+
+def load_dg_user_file_config() -> DgRawCliConfig:
+    contents = load_config(get_dg_config_path()).get("cli", {})
+
+    return DgRawCliConfig(**{k: v for k, v in contents.items() if k != "plus"})
 
 
 def load_dg_root_file_config(path: Path) -> DgFileConfig:
@@ -349,7 +419,7 @@ def load_dg_workspace_file_config(path: Path) -> "DgWorkspaceFileConfig":
 
 def _load_dg_file_config(path: Path) -> DgFileConfig:
     toml = tomlkit.parse(path.read_text())
-    raw_dict = get_toml_value(toml, ["tool", "dg"], tomlkit.items.Table).unwrap()
+    raw_dict = get_toml_node(toml, ("tool", "dg"), tomlkit.items.Table).unwrap()
     try:
         config = _validate_dg_file_config({k: v for k, v in raw_dict.items()})
     except DgValidationError as e:
@@ -385,7 +455,7 @@ def _validate_dg_file_config(raw_dict: Mapping[str, object]) -> DgFileConfig:
 
 def _validate_dg_config_file_cli_section(section: object) -> None:
     if not isinstance(section, dict):
-        raise DgValidationError("`tool.dg.cli` must be a table.")
+        _raise_mistyped_key_error("tool.dg.cli", get_type_str(dict), section)
     for key, type_ in DgRawCliConfig.__annotations__.items():
         _validate_file_config_setting(section, key, type_, "tool.dg.cli")
     _validate_file_config_no_extraneous_keys(
@@ -395,7 +465,7 @@ def _validate_dg_config_file_cli_section(section: object) -> None:
 
 def _validate_file_config_project_section(section: object) -> None:
     if not isinstance(section, dict):
-        raise DgValidationError("`tool.dg.project` must be a table.")
+        _raise_mistyped_key_error("tool.dg.project", get_type_str(dict), section)
     for key, type_ in DgRawProjectConfig.__annotations__.items():
         _validate_file_config_setting(section, key, type_, "tool.dg.project")
     _validate_file_config_no_extraneous_keys(
@@ -405,11 +475,50 @@ def _validate_file_config_project_section(section: object) -> None:
 
 def _validate_file_config_workspace_section(section: object) -> None:
     if not isinstance(section, dict):
-        raise DgValidationError("`tool.dg.workspace` must be a table.")
+        _raise_mistyped_key_error("tool.dg.workspace", get_type_str(dict), section)
     for key, type_ in DgRawWorkspaceConfig.__annotations__.items():
-        _validate_file_config_setting(section, key, type_, "tool.dg.workspace")
+        if key == "projects":
+            _validate_file_config_setting(section, key, list, "tool.dg.workspace")
+            for i, spec in enumerate(section.get("projects") or []):
+                _validate_file_config_workspace_project_spec(spec, i)
+        elif key == "scaffold_project_options":
+            _validate_file_config_workspace_scaffold_project_options(
+                section.get("scaffold_project_options", {})
+            )
+        else:
+            _validate_file_config_setting(section, key, type_, "tool.dg.workspace")
     _validate_file_config_no_extraneous_keys(
         set(DgRawWorkspaceConfig.__annotations__.keys()), section, "tool.dg.workspace"
+    )
+
+
+def _validate_file_config_workspace_project_spec(section: object, index: int) -> None:
+    if not isinstance(section, dict):
+        _raise_mistyped_key_error(
+            f"tool.dg.workspace.projects[{index}]", get_type_str(dict), section
+        )
+    for key, type_ in DgRawWorkspaceProjectSpec.__annotations__.items():
+        _validate_file_config_setting(section, key, type_, f"tool.dg.workspace.projects[{index}]")
+    _validate_file_config_no_extraneous_keys(
+        set(DgRawWorkspaceProjectSpec.__annotations__.keys()),
+        section,
+        f"tool.dg.workspace.projects[{index}]",
+    )
+
+
+def _validate_file_config_workspace_scaffold_project_options(section: object) -> None:
+    if not isinstance(section, dict):
+        _raise_mistyped_key_error(
+            "tool.dg.workspace.scaffold_project_options", get_type_str(dict), section
+        )
+    for key, type_ in DgRawWorkspaceNewProjectOptions.__annotations__.items():
+        _validate_file_config_setting(
+            section, key, type_, "tool.dg.workspace.scaffold_project_options"
+        )
+    _validate_file_config_no_extraneous_keys(
+        set(DgRawWorkspaceNewProjectOptions.__annotations__.keys()),
+        section,
+        "tool.dg.workspace.scaffold_project_options",
     )
 
 
@@ -469,7 +578,7 @@ def get_type_str(t: Any) -> str:
     else:
         # It's a parametric type like list[str], Union[int, str], etc.
         args = get_args(t)
-        arg_strs = [get_type_str(a) for a in args]
+        arg_strs = sorted([get_type_str(a) for a in args])
         if origin is Union:
             return " | ".join(arg_strs)
         if origin is Literal:

@@ -1,5 +1,5 @@
 ---
-title: "Run configuration"
+title: 'Run configuration'
 description: Job run configuration allows providing parameters to jobs at the time they're executed.
 sidebar_position: 100
 ---
@@ -23,29 +23,41 @@ During execution, the specified config is accessed within the body of the op or 
 
 Here, we define a subclass of <PyObject section="config" module="dagster" object="Config"/> holding a single string value representing the name of a user. We can access the config through the `config` parameter in the asset body.
 
-{/* TODO add dedent=4 prop when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py" startAfter="start_basic_asset_config" endBefore="end_basic_asset_config" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  startAfter="start_basic_asset_config"
+  endBefore="end_basic_asset_config"
+  dedent="4"
+/>
 
 </TabItem>
 <TabItem value="Using ops and jobs">
 
 Here, we define a subclass of <PyObject section="config" module="dagster" object="Config"/> holding a single string value representing the name of a user. We can access the config through the `config` parameter in the op body.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py" startAfter="start_basic_op_config" endBefore="end_basic_op_config" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  startAfter="start_basic_op_config"
+  endBefore="end_basic_op_config"
+/>
 
 You can also build config into jobs.
 
 </TabItem>
 </Tabs>
 
-These examples showcase the most basic config types that can be used. For more information on the set of config types Dagster supports, see [the advanced config types documentation](advanced-config-types).
+These examples showcase the most basic config types that can be used. For more information on the set of config types Dagster supports, see [the advanced config types documentation](/guides/operate/configuration/advanced-config-types).
 
 ## Defining and accessing Pythonic configuration for a resource
 
 Configurable parameters for a resource are defined by specifying attributes for a resource class, which subclasses <PyObject section="resources" module="dagster" object="ConfigurableResource"/>. The below resource defines a configurable connection URL, which can be accessed in any methods defined on the resource.
 
-{/* TODO add dedent=4 prop when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py" startAfter="start_basic_resource_config" endBefore="end_basic_resource_config" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  startAfter="start_basic_resource_config"
+  endBefore="end_basic_resource_config"
+  dedent="4"
+/>
 
 For more information on using resources, refer to the [Resources guide](/guides/build/external-resources/).
 
@@ -58,8 +70,12 @@ To execute a job or materialize an asset that specifies config, you'll need to p
 
 When specifying config from the Python API, we can use the `run_config` argument for <PyObject section="jobs" module="dagster" object="JobDefinition.execute_in_process" /> or <PyObject section="execution" module="dagster" object="materialize"/>. This takes a <PyObject section="config" module="dagster" object="RunConfig"/> object, within which we can supply config on a per-op or per-asset basis. The config is specified as a dictionary, with the keys corresponding to the op/asset names and the values corresponding to the config values.
 
-{/* TODO add dedent=4 prop when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py" startAfter="start_execute_with_config" endBefore="end_execute_with_config" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  startAfter="start_execute_with_config"
+  endBefore="end_execute_with_config"
+  dedent="4"
+/>
 
 </TabItem>
 <TabItem value="Dagster UI">
@@ -97,18 +113,26 @@ dagster job execute --config my_config.yaml
 
 Dagster validates any provided run config against the corresponding Pydantic model. It will abort execution with a <PyObject section="errors" module="dagster" object="DagsterInvalidConfigError"/> or Pydantic `ValidationError` if validation fails. For example, both of the following will fail, because there is no `nonexistent_config_value` in the config schema:
 
-{/* TODO add dedent=4 prop when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py" startAfter="start_execute_with_bad_config" endBefore="end_execute_with_bad_config" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  startAfter="start_execute_with_bad_config"
+  endBefore="end_execute_with_bad_config"
+  dedent="4"
+/>
 
 ### Using environment variables with config
 
 Assets and ops can be configured using environment variables by passing an <PyObject section="resources" module="dagster" object="EnvVar" /> when constructing a config object. This is useful when the value is sensitive or may vary based on environment. If using Dagster+, environment variables can be [set up directly in the UI](/guides/deploy/using-environment-variables-and-secrets).
 
-{/* TODO add dedent=4 prop when implemented */}
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py" startAfter="start_execute_with_config_envvar" endBefore="end_execute_with_config_envvar" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/pythonic_config/pythonic_config.py"
+  startAfter="start_execute_with_config_envvar"
+  endBefore="end_execute_with_config_envvar"
+  dedent="4"
+/>
 
 Refer to the [Environment variables and secrets guide](/guides/deploy/using-environment-variables-and-secrets) for more general info about environment variables in Dagster.
 
 ## Next steps
 
-Config is a powerful tool for making Dagster pipelines more flexible and observable. For a deeper dive into the supported config types, see [the advanced config types documentation](advanced-config-types). For more information on using resources, which are a powerful way to encapsulate reusable logic, see [the Resources guide](/guides/build/external-resources).
+Config is a powerful tool for making Dagster pipelines more flexible and observable. For a deeper dive into the supported config types, see [the advanced config types documentation](/guides/operate/configuration/advanced-config-types). For more information on using resources, which are a powerful way to encapsulate reusable logic, see [the Resources guide](/guides/build/external-resources).

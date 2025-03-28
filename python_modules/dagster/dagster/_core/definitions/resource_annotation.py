@@ -3,9 +3,10 @@ from collections.abc import Sequence
 from inspect import Parameter
 from typing import Annotated, Any, Optional, TypeVar
 
+from dagster_shared.seven import is_subclass
+
 from dagster._core.decorator_utils import get_function_params, get_type_hints
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._seven import is_subclass
 
 
 def get_resource_args(fn) -> Sequence[Parameter]:

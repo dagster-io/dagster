@@ -914,6 +914,12 @@ class FivetranWorkspace(ConfigurableResource):
                 connector = FivetranConnector.from_connector_details(
                     connector_details=connector_details,
                 )
+                if not connector.is_connected:
+                    self._log.warning(
+                        f"Ignoring incomplete or broken connector `{connector.name}`. "
+                        f"Dagster requires a connector to be connected before fetching its data."
+                    )
+                    continue
 
                 schema_config_details = client.get_schema_config_for_connector(
                     connector_id=connector.id
@@ -924,7 +930,6 @@ class FivetranWorkspace(ConfigurableResource):
 
                 if (
                     (connector_selector_fn and not connector_selector_fn(connector))
-                    or not connector.is_connected
                     # A connector that has not been synced yet has no `schemas` field in its schema config.
                     # Schemas are required for creating the asset definitions,
                     # so connectors for which the schemas are missing are discarded.
@@ -1168,12 +1173,12 @@ class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]
     def defs_key(self) -> str:
         return f"{FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.account_id}"
 
-    def fetch_state(self) -> FivetranWorkspaceData:
+    def fetch_state(self) -> FivetranWorkspaceData:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.workspace.fetch_fivetran_workspace_data(
             connector_selector_fn=self.connector_selector_fn
         )
 
-    def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:
+    def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
         all_asset_specs = [
             self.translator.get_asset_spec(props)
             for props in state.to_fivetran_connector_table_props_data()

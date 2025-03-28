@@ -1,5 +1,4 @@
 import keyBy from 'lodash/keyBy';
-import memoize from 'lodash/memoize';
 import reject from 'lodash/reject';
 import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
@@ -25,6 +24,7 @@ import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
+import {workerSpawner} from '../workers/workerSpawner';
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
@@ -61,6 +61,11 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
     version: AssetGraphQueryVersion,
   });
 
+  const spawnBuildGraphDataWorker = useMemo(
+    () => workerSpawner(() => new Worker(new URL('./ComputeGraphData.worker', import.meta.url))),
+    [],
+  );
+
   const nodes = fetchResult.data?.assetNodes;
   const queryItems = useMemo(
     () => (nodes ? buildGraphQueryItems(nodes) : []).map(({node}) => node),
@@ -78,9 +83,12 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
       return;
     }
     const requestId = ++currentRequestRef.current;
-    buildGraphData({
-      nodes: queryItems,
-    })
+    buildGraphData(
+      {
+        nodes: queryItems,
+      },
+      spawnBuildGraphDataWorker,
+    )
       ?.then((data) => {
         if (lastProcessedRequestRef.current < requestId) {
           lastProcessedRequestRef.current = requestId;
@@ -91,7 +99,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
         // buildGraphData is throttled and rejects promises when another call is made before the throttle delay.
         console.warn(e);
       });
-  }, [options.loading, queryItems]);
+  }, [options.loading, queryItems, spawnBuildGraphDataWorker]);
 
   return {fullAssetGraphData, loading: !fetchResult.data || fetchResult.loading || options.loading};
 }
@@ -163,6 +171,11 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   const {loading: supplementaryDataLoading, data: supplementaryData} =
     useAssetGraphSupplementaryData(opsQuery);
 
+  const spawnComputeGraphDataWorker = useMemo(
+    () => workerSpawner(() => new Worker(new URL('./ComputeGraphData.worker', import.meta.url))),
+    [],
+  );
+
   useLayoutEffect(() => {
     if (options.loading || supplementaryDataLoading) {
       return;
@@ -177,14 +190,18 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     }
 
     setGraphDataLoading(true);
-    computeGraphData({
-      repoFilteredNodes,
-      graphQueryItems,
-      opsQuery,
-      kinds,
-      hideEdgesToNodesOutsideQuery,
-      supplementaryData,
-    })
+
+    computeGraphData(
+      {
+        repoFilteredNodes,
+        graphQueryItems,
+        opsQuery,
+        kinds,
+        hideEdgesToNodesOutsideQuery,
+        supplementaryData,
+      },
+      spawnComputeGraphDataWorker,
+    )
       ?.then((data) => {
         if (lastProcessedRequestRef.current < requestId) {
           lastProcessedRequestRef.current = requestId;
@@ -210,6 +227,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     options.loading,
     supplementaryData,
     supplementaryDataLoading,
+    spawnComputeGraphDataWorker,
   ]);
 
   const loading = fetchResult.loading || graphDataLoading || supplementaryDataLoading;
@@ -226,13 +244,12 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
 type AssetNode = AssetNodeForGraphQueryFragment;
 
-const computeGraphData = indexedDBAsyncMemoize<
-  Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
-  GraphDataState,
-  typeof computeGraphDataWrapper
->(computeGraphDataWrapper, (props) => {
-  return JSON.stringify(props);
-});
+const computeGraphData = indexedDBAsyncMemoize<GraphDataState, typeof computeGraphDataWrapper>(
+  computeGraphDataWrapper,
+  (props) => {
+    return JSON.stringify(props);
+  },
+);
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
   const items: {[name: string]: AssetGraphQueryItem} = {};
@@ -354,23 +371,25 @@ export const ASSET_GRAPH_QUERY = gql`
   ${ASSET_NODE_FRAGMENT}
 `;
 
-const getWorker = memoize(
-  (_key: 'computeGraphWorker' | 'buildGraphWorker') =>
-    new Worker(new URL('./ComputeGraphData.worker', import.meta.url)),
-);
+const EMPTY_GRAPH_DATA: GraphData = {
+  nodes: {},
+  downstream: {},
+  upstream: {},
+};
 
-if (typeof jest === 'undefined') {
-  // Pre-warm workers
-  getWorker('computeGraphWorker');
-  getWorker('buildGraphWorker');
-}
+const EMPTY_GRAPH_DATA_STATE: GraphDataState = {
+  graphAssetKeys: [],
+  allAssetKeys: [],
+  assetGraphData: EMPTY_GRAPH_DATA,
+};
 
 let _id = 0;
 async function computeGraphDataWrapper(
   props: Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
+  spawnComputeGraphDataWorker: () => Worker,
 ): Promise<GraphDataState> {
   if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
-    const worker = getWorker('computeGraphWorker');
+    const worker = spawnComputeGraphDataWorker();
     return new Promise<GraphDataState>((resolve) => {
       const id = ++_id;
       const removeMessageListener = worker.onMessage((event: MessageEvent) => {
@@ -378,6 +397,7 @@ async function computeGraphDataWrapper(
         if (data.id === id) {
           resolve(data);
           removeMessageListener();
+          worker.terminate();
         }
       });
       const message: ComputeGraphDataMessageType = {
@@ -385,25 +405,30 @@ async function computeGraphDataWrapper(
         id,
         ...props,
       };
+      worker.onError((error) => {
+        console.error(error);
+        resolve(EMPTY_GRAPH_DATA_STATE);
+        worker.terminate();
+      });
       worker.postMessage(message);
     });
   }
   return computeGraphDataImpl(props);
 }
 
-const buildGraphData = indexedDBAsyncMemoize<
-  BuildGraphDataMessageType,
-  GraphData,
-  typeof buildGraphDataWrapper
->(buildGraphDataWrapper, (props) => {
-  return JSON.stringify(props);
-});
+const buildGraphData = indexedDBAsyncMemoize<GraphData, typeof buildGraphDataWrapper>(
+  buildGraphDataWrapper,
+  (props) => {
+    return JSON.stringify(props);
+  },
+);
 
 async function buildGraphDataWrapper(
   props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,
+  spawnBuildGraphDataWorker: () => Worker,
 ): Promise<GraphData> {
   if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
-    const worker = getWorker('buildGraphWorker');
+    const worker = spawnBuildGraphDataWorker();
     return new Promise<GraphData>((resolve) => {
       const id = ++_id;
       const removeMessageListener = worker.onMessage((event: MessageEvent) => {
@@ -411,7 +436,13 @@ async function buildGraphDataWrapper(
         if (data.id === id) {
           resolve(data);
           removeMessageListener();
+          worker.terminate();
         }
+      });
+      worker.onError((error) => {
+        console.error(error);
+        resolve(EMPTY_GRAPH_DATA);
+        worker.terminate();
       });
       const message: BuildGraphDataMessageType = {
         type: 'buildGraphData',

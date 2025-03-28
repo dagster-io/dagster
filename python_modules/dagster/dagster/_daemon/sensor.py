@@ -8,12 +8,12 @@ from collections.abc import Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import AbstractContextManager
 from types import TracebackType
-from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Callable, NamedTuple, Optional, Union, cast
 
+import dagster_shared.seven as seven
 from typing_extensions import Self
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_key import EntityKey
 from dagster._core.definitions.declarative_automation.serialized_objects import (
@@ -80,6 +80,16 @@ MAX_TIME_TO_RESUME_TICK_SECONDS = 60 * 60 * 24
 MAX_FAILURE_RESUBMISSION_RETRIES = 1
 
 FINISHED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILURE]
+
+
+# sensor, elapsed, min_interval
+ElapsedInstrumentation = Callable[[RemoteSensor, Optional[float], int], None]
+
+
+def default_elapsed_instrumentation(
+    sensor: RemoteSensor, elapsed: Optional[float], min_interval: int
+) -> None:
+    pass
 
 
 class DagsterSensorDaemonError(DagsterError):
@@ -273,7 +283,7 @@ class SensorLaunchContext(AbstractContextManager):
     def __enter__(self) -> Self:
         return self
 
-    def __exit__(
+    def __exit__(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         exception_type: type[BaseException],
         exception_value: Exception,
@@ -338,6 +348,7 @@ def execute_sensor_iteration_loop(
     until: Optional[float] = None,
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
+    instrument_elapsed: ElapsedInstrumentation = default_elapsed_instrumentation,
 ) -> "DaemonIterator":
     """Helper function that performs sensor evaluations on a tighter loop, while reusing grpc locations
     within a given daemon interval.  Rather than relying on the daemon machinery to run the
@@ -362,6 +373,7 @@ def execute_sensor_iteration_loop(
                 threadpool_executor=threadpool_executor,
                 submit_threadpool_executor=submit_threadpool_executor,
                 sensor_tick_futures=sensor_tick_futures,
+                instrument_elapsed=instrument_elapsed,
             )
         except Exception:
             error_info = DaemonErrorCapture.process_exception(
@@ -389,6 +401,7 @@ def execute_sensor_iteration(
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
     sensor_tick_futures: Optional[dict[str, Future]] = None,
     debug_crash_flags: Optional[DebugCrashFlags] = None,
+    instrument_elapsed: ElapsedInstrumentation = default_elapsed_instrumentation,
 ):
     instance = workspace_process_context.instance
 
@@ -444,6 +457,9 @@ def execute_sensor_iteration(
             instance.add_instigator_state(sensor_state)
         elif is_under_min_interval(sensor_state, sensor):
             continue
+
+        elapsed = get_elapsed(sensor_state)
+        instrument_elapsed(sensor, elapsed, sensor.min_interval_seconds)
 
         if threadpool_executor:
             if sensor_tick_futures is None:
@@ -1233,21 +1249,28 @@ def _submit_backfill_request(
 
 
 def is_under_min_interval(state: InstigatorState, remote_sensor: RemoteSensor) -> bool:
-    instigator_data = _sensor_instigator_data(state)
-    if not instigator_data:
-        return False
-
-    if not instigator_data.last_tick_start_timestamp and not instigator_data.last_tick_timestamp:
+    elapsed = get_elapsed(state)
+    if elapsed is None:
         return False
 
     if not remote_sensor.min_interval_seconds:
         return False
 
-    elapsed = get_current_timestamp() - max(
+    return elapsed < remote_sensor.min_interval_seconds
+
+
+def get_elapsed(state: InstigatorState) -> Optional[float]:
+    instigator_data = _sensor_instigator_data(state)
+    if not instigator_data:
+        return None
+
+    if not instigator_data.last_tick_start_timestamp and not instigator_data.last_tick_timestamp:
+        return None
+
+    return get_current_timestamp() - max(
         instigator_data.last_tick_timestamp or 0,
         instigator_data.last_tick_start_timestamp or 0,
     )
-    return elapsed < remote_sensor.min_interval_seconds
 
 
 def _fetch_existing_runs(

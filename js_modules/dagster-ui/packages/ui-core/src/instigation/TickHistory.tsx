@@ -49,6 +49,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {TimeElapsed} from '../runs/TimeElapsed';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {humanizeSensorCursor} from '../sensors/SensorDetails';
 import {TickLogDialog} from '../ticks/TickLogDialog';
 import {TickResultType, TickStatusTag} from '../ticks/TickStatusTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -486,7 +487,7 @@ function TickRow({
                   overflow: 'hidden',
                 }}
               >
-                <MiddleTruncate text={tick.cursor || ''} />
+                <MiddleTruncate text={humanizeSensorCursor(tick.cursor) || ''} />
               </div>
               <CopyButton
                 onClick={async () => {

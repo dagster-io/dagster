@@ -1,23 +1,65 @@
+import threading
+from typing import Optional
+
+import pytest
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
 
-from dagster_dg_tests.utils import ProxyRunner, assert_runner_result, isolated_components_venv
+import time
+from unittest import mock
+
+import requests
+from dagster_dg.cli import docs
+
+from dagster_dg_tests.utils import (
+    ProxyRunner,
+    assert_runner_result,
+    find_free_port,
+    isolated_components_venv,
+)
 
 # ########################
 # ##### COMPONENT TYPE
 # ########################
 
 
-def test_docs_component_type_success():
+@pytest.mark.parametrize("port", [None, find_free_port()])
+@pytest.mark.skip(reason="Temporarily skip while moving dg docs content")
+def test_docs_component_type_success(port: Optional[int]):
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
     ):
-        result = runner.invoke(
-            "docs", "component-type", "dagster_test.components.SimpleAssetComponent"
-        )
-        assert_runner_result(result)
+        url = None
+
+        def mock_open(url_arg):
+            nonlocal url
+            url = url_arg
+
+        with mock.patch("webbrowser.open", side_effect=mock_open):
+
+            def run_docs(runner: ProxyRunner) -> None:
+                runner.invoke(
+                    "docs",
+                    "serve",
+                    *(["--port", str(port)] if port else []),
+                    catch_exceptions=True,
+                )
+
+            check_thread = threading.Thread(target=run_docs, args=(runner,))
+            check_thread.daemon = True
+            check_thread.start()
+
+            while url is None:
+                time.sleep(0.5)
+
+        if port:
+            assert f":{port}" in url
+
+        docs_contents = requests.get(url).text
+        assert "dagster_test.components.ComplexAssetComponent" in docs_contents
+        docs.SHOULD_DOCS_EXIT = True
 
 
 def _includes_ignore_indent(text: str, substr: str) -> bool:
@@ -28,6 +70,7 @@ def _includes_ignore_indent(text: str, substr: str) -> bool:
     return substr_no_leading_whitespace in text_no_leading_whitespace
 
 
+@pytest.mark.skip(reason="New docs command does not yet support output to console")
 def test_docs_component_type_success_output_console():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,

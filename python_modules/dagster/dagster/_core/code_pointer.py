@@ -7,11 +7,13 @@ from collections.abc import Sequence
 from types import ModuleType
 from typing import Callable, NamedTuple, Optional, cast
 
+from dagster_shared.seven import get_import_error_message, import_module_from_path
+from dagster_shared.utils.hash import hash_collection
+
 import dagster._check as check
 from dagster._core.errors import DagsterImportError, DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
-from dagster._seven import get_import_error_message, import_module_from_path
-from dagster._utils import alter_sys_path, hash_collection
+from dagster._utils import alter_sys_path
 
 
 class CodePointer(ABC):

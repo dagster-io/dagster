@@ -12,6 +12,7 @@ from typing import Any, Final, NamedTuple, Optional, Union, cast
 
 import orjson
 from dagster import (
+    AssetCheckEvaluation,
     AssetCheckResult,
     AssetExecutionContext,
     AssetMaterialization,
@@ -283,13 +284,11 @@ class DbtCliInvocation:
     @public
     def stream(
         self,
-    ) -> (
-        "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
-    ):
+    ) -> "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]":
         """Stream the events from the dbt CLI process and convert them to Dagster events.
 
         Returns:
-            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult, AssetCheckEvaluation]]:
                 A set of corresponding Dagster events.
 
                 In a Dagster asset definition, the following are yielded:
@@ -298,8 +297,9 @@ class DbtCliInvocation:
                 - AssetObservation for dbt test results that are not enabled as asset checks.
 
                 In a Dagster op definition, the following are yielded:
-                - AssetMaterialization for dbt test results that are not enabled as asset checks.
-                - AssetObservation for dbt test results.
+                - AssetMaterialization refables (e.g. models, seeds, snapshots.)
+                - AssetCheckEvaluation for dbt test results that are enabled as asset checks.
+                - AssetObservation for dbt test results that are not enabled as asset checks.
 
         Examples:
             .. code-block:: python

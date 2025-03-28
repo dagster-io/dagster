@@ -4,7 +4,9 @@ from typing import Any, Callable, Optional
 from dagster import (
     AssetsDefinition,
     AssetSpec,
+    BackfillPolicy,
     PartitionsDefinition,
+    TimeWindowPartitionsDefinition,
     _check as check,
     multi_asset,
 )
@@ -57,6 +59,7 @@ def dlt_assets(
     group_name: Optional[str] = None,
     dagster_dlt_translator: Optional[DagsterDltTranslator] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
+    backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     pool: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
@@ -69,6 +72,9 @@ def dlt_assets(
         group_name (Optional[str], optional): The name of the asset group.
         dagster_dlt_translator (DagsterDltTranslator, optional): Customization object for defining asset parameters from dlt resources.
         partitions_def (Optional[PartitionsDefinition]): Optional partitions definition.
+        backfill_policy (Optional[BackfillPolicy]): If a partitions_def is defined, this determines
+            how to execute backfills that target multiple partitions. If a time window partition
+            definition is used, this parameter defaults to a single-run policy.
         op_tags (Optional[Mapping[str, Any]]): The tags for the underlying op.
         pool (Optional[str]): A string that identifies the concurrency pool that governs the dlt assets' execution.
 
@@ -132,11 +138,20 @@ def dlt_assets(
         "dagster_dlt_translator",
         DagsterDltTranslator,
     )
+
+    if (
+        partitions_def
+        and isinstance(partitions_def, TimeWindowPartitionsDefinition)
+        and not backfill_policy
+    ):
+        backfill_policy = BackfillPolicy.single_run()
+
     return multi_asset(
         name=name,
         group_name=group_name,
         can_subset=True,
         partitions_def=partitions_def,
+        backfill_policy=backfill_policy,
         op_tags=op_tags,
         specs=build_dlt_asset_specs(
             dlt_source=dlt_source,

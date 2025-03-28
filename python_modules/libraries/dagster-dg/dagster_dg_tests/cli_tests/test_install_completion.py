@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import shellingham
+
 from dagster_dg_tests.utils import ProxyRunner, assert_runner_result
 
 

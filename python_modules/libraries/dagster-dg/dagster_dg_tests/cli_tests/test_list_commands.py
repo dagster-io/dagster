@@ -27,15 +27,20 @@ from dagster_dg_tests.utils import (
 
 def test_list_project_success():
     with ProxyRunner.test() as runner, isolated_example_workspace(runner):
-        runner.invoke("scaffold", "project", "foo")
-        runner.invoke("scaffold", "project", "bar")
+        result = runner.invoke("scaffold", "project", "foo")
+        assert_runner_result(result)
+        result = runner.invoke("scaffold", "project", "projects/bar")
+        assert_runner_result(result)
+        result = runner.invoke("scaffold", "project", "more_projects/baz")
+        assert_runner_result(result)
         result = runner.invoke("list", "project")
         assert_runner_result(result)
         assert (
             result.output.strip()
             == textwrap.dedent("""
-                bar
                 foo
+                projects/bar
+                more_projects/baz
             """).strip()
         )
 
@@ -45,16 +50,13 @@ def test_list_project_success():
 # ########################
 
 
-def test_list_components_succeeds():
+def test_list_components_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         result = runner.invoke(
-            "scaffold",
-            "component",
-            "dagster_test.components.AllMetadataEmptyComponent",
-            "qux",
+            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result)
         result = runner.invoke("list", "component")
@@ -119,7 +121,7 @@ def test_list_component_types_success():
             match_terminal_box_output(output.strip(), _EXPECTED_COMPONENT_TYPES)
 
 
-def test_list_component_type_json_succeeds():
+def test_list_component_type_json_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
@@ -148,12 +150,12 @@ def test_list_component_type_bad_entry_point_fails(capfd):
 
         expected_error_message = format_error_message("""
             An error occurred while executing a `dagster-components` command in the
-            Python environment
+            active Python environment
         """)
         assert expected_error_message in result.output
 
         captured = capfd.readouterr()
-        assert "Error loading entry point `foo_bar` in group `dagster.components`." in captured.err
+        assert "Error loading entry point `foo_bar` in group `dagster_dg.library`." in captured.err
 
 
 # ########################
@@ -235,10 +237,7 @@ def test_list_defs_succeeds(use_json: bool):
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         result = runner.invoke(
-            "scaffold",
-            "component",
-            "dagster_components.dagster.DefinitionsComponent",
-            "mydefs",
+            "scaffold", "dagster_components.dagster.DefinitionsComponent", "mydefs"
         )
         assert_runner_result(result)
 
@@ -297,10 +296,7 @@ def test_list_defs_complex_assets_succeeds():
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         result = runner.invoke(
-            "scaffold",
-            "component",
-            "dagster_components.dagster.DefinitionsComponent",
-            "mydefs",
+            "scaffold", "dagster_components.dagster.DefinitionsComponent", "mydefs"
         )
         assert_runner_result(result)
 
@@ -340,4 +336,54 @@ def _sample_complex_asset_defs():
 
     @asset(kinds={"dbt"}, group_name="group_2", description="This is epsilon.")
     def epsilon(delta):
+        pass
+
+
+_EXPECTED_ENV_VAR_ASSET_DEFS = textwrap.dedent("""
+    Assets
+    ┌───────┬───────┬──────┬───────┬─────────────┐
+    │ Key   │ Group │ Deps │ Kinds │ Description │
+    ├───────┼───────┼──────┼───────┼─────────────┤
+    │ alpha │ bar   │      │ sling │             │
+    └───────┴───────┴──────┴───────┴─────────────┘
+""").strip()
+
+
+def test_list_defs_with_env_file_succeeds():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        result = runner.invoke(
+            "scaffold",
+            "dagster_components.dagster.DefinitionsComponent",
+            "mydefs",
+        )
+        assert_runner_result(result)
+
+        with Path("foo_bar/defs/mydefs/definitions.py").open("w") as f:
+            defs_source = textwrap.dedent(
+                inspect.getsource(_sample_env_var_assets).split("\n", 1)[1]
+            )
+            f.write(defs_source)
+            env_file_contents = """
+GROUP_NAME=bar
+"""
+
+        with Path(".env").open("w") as f:
+            f.write(env_file_contents)
+
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
+        output = "\n".join(result.output.split("\n")[1:])
+        match_terminal_box_output(output.strip(), _EXPECTED_ENV_VAR_ASSET_DEFS)
+
+
+def _sample_env_var_assets():
+    import os
+
+    from dagster import asset
+
+    @asset(kinds={"sling"}, group_name=os.getenv("GROUP_NAME", "MISSING"))
+    def alpha():
         pass

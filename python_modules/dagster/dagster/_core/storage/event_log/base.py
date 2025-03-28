@@ -61,11 +61,12 @@ class AssetEntry(
             ("last_run_id", Optional[str]),
             ("asset_details", Optional[AssetDetails]),
             ("cached_status", Optional["AssetStatusCacheValue"]),
-            # This is an optional field which can be used for more performant last observation
+            # Below are optional fields which can be used for more performant
             # queries if the underlying storage supports it
             ("last_observation_record", Optional[EventLogRecord]),
             ("last_planned_materialization_storage_id", Optional[int]),
             ("last_planned_materialization_run_id", Optional[str]),
+            ("last_failed_to_materialize_record", Optional[EventLogRecord]),
         ],
     )
 ):
@@ -79,6 +80,7 @@ class AssetEntry(
         last_observation_record: Optional[EventLogRecord] = None,
         last_planned_materialization_storage_id: Optional[int] = None,
         last_planned_materialization_run_id: Optional[str] = None,
+        last_failed_to_materialize_record: Optional[EventLogRecord] = None,
     ):
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
@@ -106,6 +108,11 @@ class AssetEntry(
                 last_planned_materialization_run_id,
                 "last_planned_materialization_run_id",
             ),
+            last_failed_to_materialize_record=check.opt_inst_param(
+                last_failed_to_materialize_record,
+                "last_failed_to_materialize_record",
+                EventLogRecord,
+            ),
         )
 
     @property
@@ -125,6 +132,18 @@ class AssetEntry(
         if self.last_materialization_record is None:
             return None
         return self.last_materialization_record.storage_id
+
+    @property
+    def last_failed_to_materialize_entry(self) -> Optional["EventLogEntry"]:
+        if self.last_failed_to_materialize_record is None:
+            return None
+        return self.last_failed_to_materialize_record.event_log_entry
+
+    @property
+    def last_failed_to_materialize_storage_id(self) -> Optional[int]:
+        if self.last_failed_to_materialize_record is None:
+            return None
+        return self.last_failed_to_materialize_record.storage_id
 
 
 class AssetRecord(
@@ -376,7 +395,11 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         pass
 
     @property
-    def asset_records_have_last_planned_materialization_storage_id(self) -> bool:
+    def asset_records_have_last_planned_and_failed_materializations(self) -> bool:
+        return False
+
+    @property
+    def can_store_asset_failure_events(self) -> bool:
         return False
 
     @abstractmethod
@@ -431,18 +454,6 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         self, asset_keys: Iterable[AssetKey]
     ) -> Mapping[AssetKey, Optional["EventLogEntry"]]:
         pass
-
-    def supports_add_asset_event_tags(self) -> bool:
-        return False
-
-    def add_asset_event_tags(
-        self,
-        event_id: int,
-        event_timestamp: float,
-        asset_key: AssetKey,
-        new_tags: Mapping[str, str],
-    ) -> None:
-        raise NotImplementedError()
 
     @abstractmethod
     def get_event_tags_for_asset(
@@ -541,6 +552,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         return False
 
     @property
+    def supports_partition_subset_in_asset_materialization_planned_events(self) -> bool:
+        return False
+
+    @property
     def asset_records_have_last_observation(self) -> bool:
         return False
 
@@ -633,6 +648,16 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
 
     @abstractmethod
     def fetch_materializations(
+        self,
+        records_filter: Union[AssetKey, AssetRecordsFilter],
+        limit: int,
+        cursor: Optional[str] = None,
+        ascending: bool = False,
+    ) -> EventRecordsResult:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def fetch_failed_materializations(
         self,
         records_filter: Union[AssetKey, AssetRecordsFilter],
         limit: int,

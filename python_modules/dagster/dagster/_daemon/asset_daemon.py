@@ -2,6 +2,7 @@ import base64
 import dataclasses
 import datetime
 import logging
+import os
 import sys
 import threading
 import zlib
@@ -11,6 +12,8 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
 from types import TracebackType
 from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
+
+from dagster_shared.serdes import deserialize_value
 
 import dagster._check as check
 from dagster._core.definitions.asset_daemon_cursor import (
@@ -68,10 +71,9 @@ from dagster._core.utils import (
 )
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.daemon import DaemonIterator, DagsterDaemon, SpanMarker
-from dagster._daemon.sensor import is_under_min_interval, mark_sensor_state_for_tick
+from dagster._daemon.sensor import get_elapsed, is_under_min_interval, mark_sensor_state_for_tick
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._serdes import serialize_value
-from dagster._serdes.serdes import deserialize_value
 from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash, return_as_list
 
@@ -81,6 +83,7 @@ _PRE_SENSOR_ASSET_DAEMON_PAUSED_KEY = "ASSET_DAEMON_PAUSED"
 _MIGRATED_CURSOR_TO_SENSORS_KEY = "MIGRATED_CURSOR_TO_SENSORS"
 _MIGRATED_SENSOR_NAMES_KEY = "MIGRATED_SENSOR_NAMES_KEY"
 
+SKIP_DECLARATIVE_AUTOMATION_KEYS_ENV_VAR = "DAGSTER_SKIP_DECLARATIVE_AUTOMATION_KEYS"
 
 EVALUATIONS_TTL_DAYS = 30
 
@@ -374,6 +377,11 @@ class AssetDaemon(DagsterDaemon):
     def daemon_type(cls) -> str:
         return "ASSET"
 
+    def instrument_elapsed(
+        self, sensor: Optional[RemoteSensor], elapsed: Optional[float], min_interval: int
+    ) -> None:
+        pass
+
     def _get_print_sensor_name(self, sensor: Optional[RemoteSensor]) -> str:
         if not sensor:
             return ""
@@ -519,12 +527,13 @@ class AssetDaemon(DagsterDaemon):
                 if not get_has_migrated_sensor_names(instance):
                     # Do a one-time migration to copy state from sensors with the legacy default
                     # name to the new default name
-                    self._logger.info(
-                        "Renaming any states corresponding to the legacy default name"
-                    )
-                    all_sensor_states = self._copy_default_auto_materialize_sensor_states(
-                        instance, all_sensor_states
-                    )
+                    if all_sensor_states:
+                        self._logger.info(
+                            "Renaming any states corresponding to the legacy default name"
+                        )
+                        all_sensor_states = self._copy_default_auto_materialize_sensor_states(
+                            instance, all_sensor_states
+                        )
                     set_has_migrated_sensor_names(instance)
 
                 self._checked_migrations = True
@@ -579,6 +588,12 @@ class AssetDaemon(DagsterDaemon):
                 instance.add_instigator_state(auto_materialize_state)
             elif is_under_min_interval(auto_materialize_state, sensor):
                 continue
+
+            self.instrument_elapsed(
+                sensor,
+                get_elapsed(auto_materialize_state) if auto_materialize_state else None,
+                sensor.min_interval_seconds if sensor else self._pre_sensor_interval_seconds,
+            )
 
             if threadpool_executor:
                 # only one tick per sensor can be in flight
@@ -952,6 +967,15 @@ class AssetDaemon(DagsterDaemon):
                 evaluations_by_key = {}
         else:
             sensor_tags = {SENSOR_NAME_TAG: sensor.name, **sensor.run_tags} if sensor else {}
+
+            skip_key_env_var = os.getenv(SKIP_DECLARATIVE_AUTOMATION_KEYS_ENV_VAR)
+            if skip_key_env_var:
+                skip_keys = skip_key_env_var.split(",")
+
+                skip_keys = {AssetKey.from_user_string(key) for key in skip_keys}
+                auto_materialize_entity_keys = {
+                    key for key in auto_materialize_entity_keys if key not in skip_keys
+                }
 
             # mold this into a shape AutomationTickEvaluationContext expects
             asset_selection = AssetSelection.keys(

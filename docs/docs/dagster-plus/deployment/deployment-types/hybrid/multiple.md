@@ -78,6 +78,7 @@ If using the CloudFormation template provided by Dagster, the number of replicas
 ## Running multiple agents in different environments
 
 To run multiple agents in an environment where each agent can not access the others' resources (for example, multiple Kubernetes namespaces or different clusters), enable the `isolated_agents` option. This is supported for all agent types.
+
 <Tabs groupId="multipleAgentsDifferentEnvironment">
 <TabItem value="Docker" label="Docker">
 
@@ -91,7 +92,7 @@ isolated_agents:
 
 dagster_cloud_api:
   # <your other config>
-  agent_label: "My agent" # optional
+  agent_label: 'My agent' # optional
 ```
 
 </TabItem>
@@ -115,7 +116,7 @@ isolatedAgents:
   enabled: true
 
 dagsterCloud:
-  agentLabel: "My agent" # optional, only supported on 0.13.14 and later
+  agentLabel: 'My agent' # optional, only supported on 0.13.14 and later
 ```
 
 </TabItem>
@@ -159,6 +160,7 @@ locations:
 ### Step 2: Configure an agent to handle the agent queue
 
 Next, configure an agent to handle your agent queue.
+
 <Tabs groupId="agentQueue">
 <TabItem value="Docker" label="Docker">
 

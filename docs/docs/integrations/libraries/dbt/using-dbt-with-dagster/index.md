@@ -1,5 +1,5 @@
 ---
-title: "Using dbt with Dagster"
+title: 'Using dbt with Dagster'
 description: Dagster can orchestrate dbt alongside other technologies.
 ---
 
@@ -17,10 +17,10 @@ By the end of this tutorial, you'll have your dbt models represented in Dagster 
 
 To get there, you will:
 
-- [Set up a dbt project](set-up-dbt-project)
-- [Load the dbt models into Dagster as assets](load-dbt-models)
-- [Create and materialize upstream Dagster assets](upstream-assets)
-- [Create and materialize a downstream asset](downstream-assets) that outputs a plotly chart
+- [Set up a dbt project](/integrations/libraries/dbt/using-dbt-with-dagster/set-up-dbt-project)
+- [Load the dbt models into Dagster as assets](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models)
+- [Create and materialize upstream Dagster assets](/integrations/libraries/dbt/using-dbt-with-dagster/upstream-assets)
+- [Create and materialize a downstream asset](/integrations/libraries/dbt/using-dbt-with-dagster/downstream-assets) that outputs a plotly chart
 
 ## Prerequisites
 
@@ -38,4 +38,4 @@ To complete this tutorial, you'll need:
 
 ## Ready to get started?
 
-When you've fulfilled all the prerequisites for the tutorial, you can get started by [setting up the dbt project](set-up-dbt-project).
+When you've fulfilled all the prerequisites for the tutorial, you can get started by [setting up the dbt project](/integrations/libraries/dbt/using-dbt-with-dagster/set-up-dbt-project).

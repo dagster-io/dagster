@@ -1,9 +1,9 @@
 ---
-title: "Configuring run retries"
+title: 'Configuring run retries'
 sidebar_position: 600
 ---
 
-If you configure run retries, a new run will be kicked off whenever a run fails for any reason. Compared to [op](/guides/build/ops) retries, the maximum retry limit for run retries applies to the whole run instead of each individual op. Run retries also handle the case where the run process crashes or is unexpectedly terminated.
+If you configure run retries, a new run will be kicked off whenever a run fails for any reason. Compared to [op retries](/guides/build/ops/op-retries), the maximum retry limit for run retries applies to the whole run instead of each individual op. Run retries also handle the case where the run process crashes or is unexpectedly terminated.
 
 ## Configuration
 

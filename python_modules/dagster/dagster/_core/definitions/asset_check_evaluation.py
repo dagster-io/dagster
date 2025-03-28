@@ -3,7 +3,7 @@ from typing import NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
-from dagster._core.definitions.events import AssetKey, MetadataValue
+from dagster._core.definitions.events import AssetKey, MetadataValue, RawMetadataValue
 from dagster._core.definitions.metadata import normalize_metadata
 from dagster._serdes import whitelist_for_serdes
 
@@ -81,7 +81,7 @@ class AssetCheckEvaluation(
             The name of the check.
         passed (bool):
             The pass/fail result of the check.
-        metadata (Dict[str, MetadataValue]):
+        metadata (Optional[Mapping[str, MetadataValue]]):
             Arbitrary user-provided metadata about the asset.  Keys are displayed string labels, and
             values are one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
@@ -98,13 +98,13 @@ class AssetCheckEvaluation(
         asset_key: AssetKey,
         check_name: str,
         passed: bool,
-        metadata: Mapping[str, MetadataValue],
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         target_materialization_data: Optional[AssetCheckEvaluationTargetMaterializationData] = None,
         severity: AssetCheckSeverity = AssetCheckSeverity.ERROR,
         description: Optional[str] = None,
     ):
         normed_metadata = normalize_metadata(
-            check.dict_param(metadata, "metadata", key_type=str),
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
 
         return super().__new__(
@@ -125,3 +125,9 @@ class AssetCheckEvaluation(
     @property
     def asset_check_key(self) -> AssetCheckKey:
         return AssetCheckKey(self.asset_key, self.check_name)
+
+    def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "AssetCheckEvaluation":
+        normed_metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+        )
+        return self._replace(metadata=normed_metadata)

@@ -5,8 +5,8 @@ from dagster._core.test_utils import instance_for_test
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import GrpcServerCommand, open_server_process
 from dagster._grpc.server_watcher import create_grpc_watch_thread
-from dagster._serdes.ipc import interrupt_ipc_subprocess_pid
 from dagster._utils import find_free_port
+from dagster_shared.ipc import interrupt_ipc_subprocess_pid
 
 
 def wait_for_condition(fn, interval, timeout=60):

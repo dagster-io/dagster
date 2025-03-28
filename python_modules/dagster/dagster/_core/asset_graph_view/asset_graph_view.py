@@ -12,7 +12,7 @@ from typing import (  # noqa: UP035
 )
 
 from dagster import _check as check
-from dagster._check.functions import CheckError
+from dagster._check import CheckError
 from dagster._core.asset_graph_view.entity_subset import EntitySubset, _ValidatedEntitySubsetValue
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
@@ -146,7 +146,7 @@ class AssetGraphView(LoadingContext):
         return self._instance
 
     @property
-    def loaders(self) -> dict[type, DataLoader]:
+    def loaders(self) -> dict[type, DataLoader]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._loaders
 
     @property
@@ -678,13 +678,11 @@ class AssetGraphView(LoadingContext):
                 else self.get_empty_subset(key=subset.key)
             )
 
-    def _run_record_targets_entity(self, run_record: "RunRecord", target_key: EntityKey) -> bool:
-        asset_selection = run_record.dagster_run.asset_selection or set()
-        check_selection = run_record.dagster_run.asset_check_selection or set()
-        return target_key in (asset_selection | check_selection)
-
-    async def _compute_latest_check_run_executed_with_target(
-        self, partition_key: Optional[str], query_key: AssetCheckKey, target_key: EntityKey
+    async def _compute_latest_check_run_matches(
+        self,
+        partition_key: Optional[str],
+        query_key: AssetCheckKey,
+        filter_fn: Callable[["RunRecord"], bool],
     ) -> bool:
         from dagster._core.storage.dagster_run import RunRecord
         from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
@@ -694,12 +692,15 @@ class AssetGraphView(LoadingContext):
         check_record = summary.last_check_execution_record if summary else None
         if check_record and check_record.event:
             run_record = await RunRecord.gen(self, check_record.event.run_id)
-            return bool(run_record) and self._run_record_targets_entity(run_record, target_key)
+            return bool(run_record) and filter_fn(run_record)
         else:
             return False
 
-    async def _compute_latest_asset_run_executed_with_target(
-        self, partition_key: Optional[str], query_key: AssetKey, target_key: EntityKey
+    async def _compute_latest_asset_run_matches(
+        self,
+        partition_key: Optional[str],
+        query_key: AssetKey,
+        filter_fn: Callable[["RunRecord"], bool],
     ) -> bool:
         from dagster._core.storage.dagster_run import RunRecord
         from dagster._core.storage.event_log.base import AssetRecord
@@ -715,32 +716,25 @@ class AssetGraphView(LoadingContext):
             run_record = await RunRecord.gen(
                 self, asset_record.asset_entry.last_materialization.run_id
             )
-            return bool(run_record) and self._run_record_targets_entity(run_record, target_key)
+            return bool(run_record) and filter_fn(run_record)
         else:
             return False
 
-    async def compute_latest_run_executed_with_subset(
-        self, from_subset: EntitySubset, target: EntityKey
+    async def compute_latest_run_matches_subset(
+        self, from_subset: EntitySubset, filter_fn: Callable[["RunRecord"], bool]
     ) -> EntitySubset:
-        """Computes the subset of from_subset for which the latest run also targeted
-        the provided target EntityKey.
-        """
         return await _dispatch(
             key=from_subset.key,
             check_method=lambda k: self._expensively_filter_entity_subset(
                 from_subset,
                 filter_fn=functools.partial(
-                    self._compute_latest_check_run_executed_with_target,
-                    query_key=k,
-                    target_key=target,
+                    self._compute_latest_check_run_matches, query_key=k, filter_fn=filter_fn
                 ),
             ),
             asset_method=lambda k: self._expensively_filter_entity_subset(
                 from_subset,
                 filter_fn=functools.partial(
-                    self._compute_latest_asset_run_executed_with_target,
-                    query_key=k,
-                    target_key=target,
+                    self._compute_latest_asset_run_matches, query_key=k, filter_fn=filter_fn
                 ),
             ),
         )

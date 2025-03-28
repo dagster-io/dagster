@@ -1,6 +1,8 @@
 from dataclasses import dataclass, replace
 from typing import Generic, Optional, Union
 
+from dagster_shared.serdes.serdes import DataclassSerializer, whitelist_for_serdes
+
 import dagster._check as check
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -10,7 +12,6 @@ from dagster._core.definitions.partition import (
     PartitionsSubset,
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
-from dagster._serdes.serdes import DataclassSerializer, whitelist_for_serdes
 
 EntitySubsetValue = Union[bool, PartitionsSubset]
 
@@ -22,7 +23,7 @@ class EntitySubsetSerializer(DataclassSerializer):
         # backcompat
         return "AssetSubset"
 
-    def before_pack(self, value: "SerializableEntitySubset") -> "SerializableEntitySubset":
+    def before_pack(self, value: "SerializableEntitySubset") -> "SerializableEntitySubset":  # pyright: ignore[reportIncompatibleMethodOverride]
         if value.is_partitioned:
             return replace(value, value=value.subset_value.to_serializable_subset())
         return value

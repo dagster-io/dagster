@@ -29,11 +29,10 @@ def run_editor_cli_command(executable_name: str, args: list[str]) -> bytes:
 
 def recommend_yaml_extension(executable_name: str) -> None:
     if not has_editor_cli_command(executable_name):
-        click.echo(
+        raise click.ClickException(
             f"Could not find `{executable_name}` executable in PATH. In order to use the dagster-components-schema extension, "
             "please install the redhat.vscode-yaml extension manually."
         )
-        return
 
     extensions = (
         run_editor_cli_command(executable_name, ["--list-extensions"]).decode("utf-8").split("\n")

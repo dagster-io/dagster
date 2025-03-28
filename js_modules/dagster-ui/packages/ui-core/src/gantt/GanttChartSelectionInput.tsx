@@ -23,6 +23,7 @@ export const GanttChartSelectionInput = ({
   return (
     <Wrapper>
       <SelectionAutoCompleteInput
+        wildcardAttributeName="name"
         id="run-gantt-chart"
         useAutoComplete={useGanttChartSelectionAutoCompleteProvider(items).useAutoComplete}
         placeholder="Search and filter steps"

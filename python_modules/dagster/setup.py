@@ -78,13 +78,11 @@ setup(
         "click>=5.0",
         "coloredlogs>=6.1,<=14.0",
         "Jinja2",
-        "PyYAML>=5.1",
         # core (not explicitly expressed atm)
         # pin around issues in specific versions of alembic that broke our migrations
         "alembic>=1.2.1,!=1.6.3,!=1.7.0,!=1.11.0",
         f"grpcio>={GRPC_VERSION_FLOOR}",
         f"grpcio-health-checking>={GRPC_VERSION_FLOOR}",
-        "packaging>=20.9",
         "protobuf>=3.20.0,<6; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and greater
         "protobuf>=4,<6; python_version>='3.11'",
         "python-dotenv",
@@ -95,7 +93,6 @@ setup(
         "tabulate",
         "tomli<3",
         "tqdm<5",
-        "typing_extensions>=4.10.0,<5",
         'tzdata; platform_system=="Windows"',
         "structlog",
         "sqlalchemy>=1.0,<3",
@@ -107,10 +104,10 @@ setup(
         "docstring-parser",
         "universal_pathlib; python_version<'3.12'",
         "universal_pathlib>=0.2.0; python_version>='3.12'",
-        "pydantic>=2,<3.0.0",
         "rich",
         "filelock",
         f"dagster-pipes{pin}",
+        f"dagster-shared{pin}",
         "antlr4-python3-runtime",
     ],
     extras_require={

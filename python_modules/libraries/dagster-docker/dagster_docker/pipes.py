@@ -99,7 +99,7 @@ class PipesDockerClient(PipesClient, TreatAsResourceParam):
     def _is_dagster_maintained(cls) -> bool:
         return True
 
-    def run(
+    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],

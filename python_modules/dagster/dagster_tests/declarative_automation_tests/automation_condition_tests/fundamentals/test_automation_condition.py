@@ -3,7 +3,6 @@ import operator
 
 import pytest
 from dagster import AutoMaterializePolicy, AutomationCondition, Definitions, asset
-from dagster._check.functions import CheckError
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
@@ -13,7 +12,8 @@ from dagster._core.definitions.declarative_automation.operators import (
 )
 from dagster._core.remote_representation.external_data import RepositorySnap
 from dagster._serdes import serialize_value
-from dagster._serdes.serdes import deserialize_value
+from dagster_shared.check import CheckError
+from dagster_shared.serdes import deserialize_value
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -202,6 +202,23 @@ def test_replace_automation_conditions() -> None:
     assert orig.replace("not_any_deps_in_progress", d) == a & b | d
     assert orig.replace("any_deps_in_progress", d) == a & b | (~d).with_label(
         "not_any_deps_in_progress"
+    )
+
+
+def test_replace_automation_condition_since() -> None:
+    a = AutomationCondition.in_latest_time_window().with_label("in_latest_time_window")
+    b = AutomationCondition.any_deps_match(AutomationCondition.in_progress())
+    c = (~AutomationCondition.any_deps_in_progress()).with_label("not_any_deps_in_progress")
+    d = AutomationCondition.missing()
+
+    orig = a.since(b | c)
+
+    assert orig.replace(a, d) == d.since(b | c)
+    assert orig.replace(b, d) == a.since(d | c)
+    assert orig.replace("not_any_deps_in_progress", d) == a.since(b | d)
+
+    assert AutomationCondition.eager() != AutomationCondition.eager().replace(
+        "handled", AutomationCondition.newly_updated()
     )
 
 

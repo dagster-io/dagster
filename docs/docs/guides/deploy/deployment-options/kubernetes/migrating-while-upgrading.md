@@ -1,5 +1,5 @@
 ---
-title: "Migrating a Dagster instance while upgrading Dagster in a Kubernetes environment"
+title: 'Migrating a Dagster instance while upgrading Dagster in a Kubernetes environment'
 description: We walk through how to migrate your Dagster instance using a Kubernetes Job from the Helm chart.
 ---
 

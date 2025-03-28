@@ -28,9 +28,9 @@ from dagster._core.test_utils import (
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget, WorkspaceLoadTarget
-from dagster._serdes.serdes import deserialize_value
 from dagster._time import get_current_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
+from dagster_shared.serdes import deserialize_value
 
 from dagster_tests.daemon_sensor_tests.conftest import create_workspace_load_target
 from dagster_tests.daemon_sensor_tests.test_sensor_run import (

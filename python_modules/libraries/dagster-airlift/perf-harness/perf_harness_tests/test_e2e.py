@@ -72,7 +72,7 @@ def test_dagster_materializes(
         if asset_materialization:
             break
 
-    assert asset_materialization, "Could not find asset materialization for asset dag key"
+    assert asset_materialization, "Could not find asset materialization for asset dag key"  # pyright: ignore[reportPossiblyUnboundVariable]
 
     if module.endswith("observe") or module.endswith("migrate"):
         asset_materialization = dagster_instance.get_latest_materialization_event(

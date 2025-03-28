@@ -1,6 +1,8 @@
 from collections.abc import Sequence
 from typing import Optional
 
+from dagster_shared.serdes import whitelist_for_serdes
+
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.asset_graph_view.serializable_entity_subset import SerializableEntitySubset
 from dagster._core.definitions.asset_key import T_EntityKey
@@ -11,7 +13,6 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
@@ -38,7 +39,7 @@ class NewlyTrueCondition(BuiltinAutomationCondition[T_EntityKey]):
             return None
         return context.asset_graph_view.get_subset_from_serializable_subset(true_subset)
 
-    async def evaluate(self, context: AutomationContext) -> AutomationResult:
+    async def evaluate(self, context: AutomationContext) -> AutomationResult:  # pyright: ignore[reportIncompatibleMethodOverride]
         # evaluate child condition
         child_result = await context.for_child_condition(
             self.operand,

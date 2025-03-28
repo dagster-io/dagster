@@ -20,8 +20,8 @@ from dagster._core.executor.step_delegating.step_handler.base import (
 )
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.utils import parse_env_var
-from dagster._serdes.utils import hash_str
 from dagster._utils.merger import merge_dicts
+from dagster_shared.serdes.utils import hash_str
 
 from dagster_docker.container_context import DockerContainerContext
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image

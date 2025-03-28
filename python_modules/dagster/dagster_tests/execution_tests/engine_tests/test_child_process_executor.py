@@ -42,13 +42,13 @@ class CrashyCommand(ChildProcessCommand):
 
 
 class SegfaultCommand(ChildProcessCommand):
-    def execute(self):
+    def execute(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         # access inner API to simulate hard crash
         segfault()
 
 
 class LongRunningCommand(ChildProcessCommand):
-    def execute(self):
+    def execute(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         time.sleep(0.5)
         yield 1
 

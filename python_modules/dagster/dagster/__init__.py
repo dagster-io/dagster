@@ -19,7 +19,7 @@ sys.meta_path.insert(
             "dagster.grpc": "dagster._grpc",
             "dagster.loggers": "dagster._loggers",
             "dagster.serdes": "dagster._serdes",
-            "dagster.seven": "dagster._seven",
+            "dagster.seven": "dagster_shared.seven",
             "dagster.time": "dagster._time",
             "dagster.utils": "dagster._utils",
             # Added in 1.3.4 for backcompat when `_core.storage.pipeline_run` was renamed to
@@ -72,6 +72,12 @@ sys.meta_path.insert(
 # ##### DYNAMIC IMPORTS
 # ########################
 
+from dagster_shared.libraries import DagsterLibraryRegistry
+from dagster_shared.serdes import (
+    deserialize_value as deserialize_value,
+    serialize_value as serialize_value,
+)
+
 from dagster._builtins import (
     Any as Any,
     Bool as Bool,
@@ -112,6 +118,9 @@ from dagster._config.source import (
     StringSource as StringSource,
 )
 from dagster._core.definitions import AssetCheckResult as AssetCheckResult
+from dagster._core.definitions.asset_check_evaluation import (
+    AssetCheckEvaluation as AssetCheckEvaluation,
+)
 from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
     build_last_update_freshness_checks as build_last_update_freshness_checks,
 )
@@ -616,10 +625,6 @@ from dagster._loggers import (
     default_system_loggers as default_system_loggers,
     json_console_logger as json_console_logger,
 )
-from dagster._serdes.serdes import (
-    deserialize_value as deserialize_value,
-    serialize_value as serialize_value,
-)
 from dagster._utils import file_relative_path as file_relative_path
 from dagster._utils.alert import (
     make_email_on_run_failure_sensor as make_email_on_run_failure_sensor,
@@ -633,6 +638,8 @@ from dagster._utils.warnings import (
     SupersessionWarning as SupersessionWarning,
 )
 from dagster.version import __version__ as __version__
+
+DagsterLibraryRegistry.register("dagster", __version__)
 
 # ruff: isort: split
 

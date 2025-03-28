@@ -116,6 +116,7 @@ def test_antlr_tree_invalid(selection_str):
     [
         ("key:a", KeyWildCardAssetSelection(selected_key_wildcard="a")),
         ('key:"*/a+"', KeyWildCardAssetSelection(selected_key_wildcard="*/a+")),
+        ("key:prefix/thing", KeyWildCardAssetSelection(selected_key_wildcard="prefix/thing")),
         (
             "not key:a",
             AssetSelection.all(include_sources=True)
@@ -230,7 +231,8 @@ def test_full_test_coverage() -> None:
     names = AssetSelectionParser.literalNames
 
     all_selection_strings_we_are_testing = [
-        selection_str for selection_str, _ in test_antlr_visit_basic.pytestmark[0].args[1]
+        selection_str
+        for selection_str, _ in test_antlr_visit_basic.pytestmark[0].args[1]  # pyright: ignore[reportFunctionMemberAccess]
     ]
 
     for name in names:

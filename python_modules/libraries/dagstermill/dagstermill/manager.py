@@ -1,6 +1,7 @@
 import os
 import pickle
 import uuid
+from asyncio import AbstractEventLoop
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, AbstractSet, Any, Optional, cast  # noqa: UP035
 
@@ -85,6 +86,7 @@ class Manager:
         resource_keys_to_init: Optional[AbstractSet[str]],
         instance: Optional[DagsterInstance],
         emit_persistent_events: Optional[bool],
+        event_loop: Optional[AbstractEventLoop],
     ):
         """Drop-in replacement for
         `dagster._core.execution.resources_init.resource_initialization_manager`.  It uses a
@@ -99,6 +101,7 @@ class Manager:
             resource_keys_to_init=resource_keys_to_init,
             instance=instance,
             emit_persistent_events=emit_persistent_events,
+            event_loop=event_loop,
         )
         self.resource_manager = DagstermillResourceEventGenerationManager(
             generator, ScopedResourcesBuilder

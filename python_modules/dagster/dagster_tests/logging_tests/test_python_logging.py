@@ -183,7 +183,7 @@ def define_multilevel_logging_job(inside: bool, python: bool) -> JobDefinition:
         if inside:
             logger = logging.getLogger("my_logger_inside") if python else get_dagster_logger()
         else:
-            logger = outside_logger
+            logger = outside_logger  # pyright: ignore[reportPossiblyUnboundVariable]
         for level in [
             logging.DEBUG,
             logging.INFO,
@@ -195,7 +195,7 @@ def define_multilevel_logging_job(inside: bool, python: bool) -> JobDefinition:
         if inside:
             logger = logging.getLogger("my_logger_inside") if python else get_dagster_logger()
         else:
-            logger = outside_logger
+            logger = outside_logger  # pyright: ignore[reportPossiblyUnboundVariable]
         for level in [
             logging.WARNING,
             logging.ERROR,

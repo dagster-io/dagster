@@ -21,7 +21,7 @@ def unset_dagster_home():
 
 class SharedSnapshotExtension(AmberSnapshotExtension):
     @classmethod
-    def get_snapshot_name(
+    def get_snapshot_name(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls,
         *,
         index: "SnapshotIndex",

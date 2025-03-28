@@ -193,7 +193,7 @@ class ReplicationTranslator:
         return AssetKey(str(table_definition.get("name")))
 ```
 
-Next, we'll update `custom_replication_assets` to use the translator when defining the `key` on the `AssetSpec`. 
+Next, we'll update `custom_replication_assets` to use the translator when defining the `key` on the `AssetSpec`.
 
 :::note
 Note that we took this opportunity to also include the replication project and translator instance on the `AssetSpec` metadata. This is a workaround that we tend to employ in this approach, as it makes it possible to define these objects once and then access them on the context of our asset.
@@ -267,4 +267,7 @@ Defining integrations with this approach aligns nicely with the overall developm
 
 The code in its entirety can be seen below:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/tutorials/multi-asset-integration/integration.py" language="python" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/tutorials/multi-asset-integration/integration.py"
+  language="python"
+/>

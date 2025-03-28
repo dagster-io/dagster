@@ -1,0 +1,11 @@
+.tag {
+  background-color: var(--color-background-cyan);
+  border: none;
+  border-radius: 4px;
+  font-family: var(--font-geist-mono);
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-cyan);
+  cursor: default;
+}
