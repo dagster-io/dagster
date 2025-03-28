@@ -27,6 +27,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.new_freshness_thing import NewFreshnessThing
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import (
@@ -154,6 +155,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     owners: PublicAttr[Sequence[str]]
     tags: PublicAttr[Mapping[str, str]]
     partitions_def: PublicAttr[Optional[PartitionsDefinition]]
+    new_freshness_thing: Optional[NewFreshnessThing]
 
     def __new__(
         cls,
@@ -170,6 +172,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         tags: Optional[Mapping[str, str]] = None,
         kinds: Optional[set[str]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
+        new_freshness_thing: Optional[NewFreshnessThing] = None,
         **kwargs,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
@@ -221,6 +224,9 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
+            new_freshness_thing=check.opt_inst_param(
+                new_freshness_thing, "new_freshness_thing", NewFreshnessThing
+            ),
         )
 
     @staticmethod
@@ -255,6 +261,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             tags=tags,
             kinds=kinds,
             partitions_def=partitions_def,
+            new_freshness_thing=kwargs.get("new_freshness_thing"),
         )
 
     @cached_property
@@ -310,6 +317,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         kinds: Optional[set[str]] = ...,
         partitions_def: Optional[PartitionsDefinition] = ...,
         freshness_policy: Optional[FreshnessPolicy] = ...,
+        new_freshness_thing: Optional[NewFreshnessThing] = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes replaced."""
         current_tags_without_kinds = {
@@ -334,6 +342,9 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
                 tags=tags if tags is not ... else current_tags_without_kinds,
                 kinds=kinds if kinds is not ... else self.kinds,
                 partitions_def=partitions_def if partitions_def is not ... else self.partitions_def,
+                new_freshness_thing=new_freshness_thing
+                if new_freshness_thing is not ...
+                else self.new_freshness_thing,
             )
 
     @public
@@ -381,6 +392,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
                 tags={**current_tags_without_kinds, **(tags if tags is not ... else {})},
                 kinds={*self.kinds, *(kinds if kinds is not ... else {})},
                 partitions_def=self.partitions_def,
+                new_freshness_thing=self.new_freshness_thing,
             )
 
 
