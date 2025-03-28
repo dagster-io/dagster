@@ -245,7 +245,11 @@ def get_telemetry_enabled_from_dagster_yaml() -> bool:
 
     with open(dagster_yaml_path, encoding="utf8") as dagster_yaml_file:
         dagster_yaml_data = yaml.safe_load(dagster_yaml_file)
-        if "telemetry" in dagster_yaml_data and "enabled" in dagster_yaml_data["telemetry"]:
+        if (
+            dagster_yaml_data
+            and "telemetry" in dagster_yaml_data
+            and "enabled" in dagster_yaml_data["telemetry"]
+        ):
             return dagster_yaml_data["telemetry"]["enabled"]
     return True
 
