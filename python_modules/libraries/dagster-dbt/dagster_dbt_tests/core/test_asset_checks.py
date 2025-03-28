@@ -31,6 +31,9 @@ pytest.importorskip("dbt.version", "1.6")
 dagster_dbt_translator_with_checks = DagsterDbtTranslator(
     settings=DagsterDbtTranslatorSettings(enable_asset_checks=True)
 )
+dagster_dbt_translator_with_checks_and_source_checks = DagsterDbtTranslator(
+    settings=DagsterDbtTranslatorSettings(enable_source_tests_as_checks=True)
+)
 dagster_dbt_translator_without_checks = DagsterDbtTranslator(
     settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
 )
@@ -787,10 +790,10 @@ def test_dbt_with_dotted_dependency_names(test_dbt_alias_manifest: dict[str, Any
     assert result.success
 
 
-def test_dbt_source_tests(
+def test_dbt_source_tests_checks_disabled(
     test_asset_checks_manifest: dict[str, Any],
 ) -> None:
-    """Test default behavior when dbt source tests are configured."""
+    """Test default behavior when dbt source tests are configured, but checks are disabled."""
 
     @dbt_assets(
         manifest=test_asset_checks_manifest,
@@ -832,3 +835,40 @@ def test_dbt_source_tests(
         )
         == 1
     )
+
+
+def test_dbt_source_tests_checks_enabled(
+    test_asset_checks_manifest: dict[str, Any],
+) -> None:
+    """Test default behavior when dbt source tests are configured, but checks are disabled."""
+
+    @dbt_assets(
+        manifest=test_asset_checks_manifest,
+        dagster_dbt_translator=dagster_dbt_translator_with_checks_and_source_checks,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    # In order to get the source tests to run, you need to force select the
+    # check keys. This is because the source assets are not part of the underlying
+    # assets definition.
+    # In order to make this work more broadly; we'll have to make some changes to how
+    # asset selection works.
+    all_asset_keys = my_dbt_assets.keys
+    all_check_keys = my_dbt_assets.check_keys
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_asset_checks_path))},
+        raise_on_error=False,
+        selection=AssetSelection.keys(*all_asset_keys).__or__(
+            AssetSelection.checks(*all_check_keys)
+        ),
+    )
+    assert not result.success
+    asset_check_results = [
+        eval_result.asset_key
+        for eval_result in result.get_asset_check_evaluations()
+        if eval_result.asset_key == AssetKey(["jaffle_shop", "raw_customers"])
+    ]
+    assert len(asset_check_results) == 2

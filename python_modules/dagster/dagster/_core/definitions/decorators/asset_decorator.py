@@ -570,6 +570,7 @@ def multi_asset(
     specs: Optional[Sequence[AssetSpec]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     pool: Optional[str] = None,
+    _disable_check_specs_target_relevant_asset_keys: bool = False,
     **kwargs: Any,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
@@ -702,6 +703,7 @@ def multi_asset(
         decorator_name="@multi_asset",
         execution_type=AssetExecutionType.MATERIALIZATION,
         pool=pool,
+        disable_check_specs_target_relevant_asset_keys=_disable_check_specs_target_relevant_asset_keys,
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:

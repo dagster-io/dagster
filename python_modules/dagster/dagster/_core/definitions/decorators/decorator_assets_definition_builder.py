@@ -245,6 +245,7 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     upstream_asset_deps: Optional[Iterable[AssetDep]]
     execution_type: Optional[AssetExecutionType]
     pool: Optional[str]
+    disable_check_specs_target_relevant_asset_keys: bool = False
 
     @property
     def check_specs(self) -> Sequence[AssetCheckSpec]:
@@ -318,6 +319,7 @@ class DecoratorAssetsDefinitionBuilder:
                 asset_specs=args.specs,
                 can_subset=args.can_subset,
                 asset_in_map=args.asset_in_map,
+                disable_check_specs_target_relevant_asset_keys=args.disable_check_specs_target_relevant_asset_keys,
             )
 
         return DecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(
@@ -339,6 +341,7 @@ class DecoratorAssetsDefinitionBuilder:
         can_subset: bool,
         asset_in_map: Mapping[str, AssetIn],
         passed_args: DecoratorAssetsDefinitionBuilderArgs,
+        disable_check_specs_target_relevant_asset_keys: bool = False,
     ) -> "DecoratorAssetsDefinitionBuilder":
         check.param_invariant(passed_args.specs, "passed_args", "Must use specs in this codepath")
 
@@ -387,9 +390,10 @@ class DecoratorAssetsDefinitionBuilder:
             if spec.deps is not None
         }
 
-        _validate_check_specs_target_relevant_asset_keys(
-            passed_args.check_specs, [spec.key for spec in asset_specs]
-        )
+        if not disable_check_specs_target_relevant_asset_keys:
+            _validate_check_specs_target_relevant_asset_keys(
+                passed_args.check_specs, [spec.key for spec in asset_specs]
+            )
 
         return DecoratorAssetsDefinitionBuilder(
             named_ins_by_asset_key=named_ins_by_asset_key,
