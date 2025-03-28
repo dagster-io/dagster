@@ -3401,7 +3401,7 @@ class DagsterInstance(DynamicPartitionsStore):
     def da_request_backfills(self) -> bool:
         return False
 
-    def asset_health_supported(self) -> bool:
+    def dagster_observe_supported(self) -> bool:
         return False
 
     def can_read_failure_events(self) -> bool:
