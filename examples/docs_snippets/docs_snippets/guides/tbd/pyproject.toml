@@ -1,0 +1,9 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+# highlight-start
+[tool.dagster]
+module_name = "my_module"
+code_location_name = "my_code_location"  ## optional
+# highlight-end

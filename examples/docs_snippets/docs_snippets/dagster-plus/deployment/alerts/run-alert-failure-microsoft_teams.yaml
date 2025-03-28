@@ -1,0 +1,12 @@
+# alert_policies.yaml
+
+alert_policies:
+  description: Sends a Microsoft Teams webhook when a run fails.
+  event_types:
+  - JOB_FAILURE
+  name: run-alert-failure-microsoft_teams
+  notification_service:
+    microsoft_teams:
+      webhook_url: https://yourdomain.webhook.office.com/...
+  tags:
+    important: 'true'

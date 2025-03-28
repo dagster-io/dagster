@@ -1,0 +1,17 @@
+tree
+
+.
+└── my-project
+    ├── my_project
+    │   ├── __init__.py
+    │   ├── definitions.py
+    │   ├── defs
+    │   │   └── __init__.py
+    │   └── lib
+    │       └── __init__.py
+    ├── my_project_tests
+    │   └── __init__.py
+    ├── pyproject.toml
+    └── uv.lock
+
+6 directories, 7 files

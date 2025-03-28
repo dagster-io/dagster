@@ -1,0 +1,17 @@
+query AuditLogQuery(
+    $limit: Int,
+    $cursor: String,
+    $filters: AuditLogFilters
+) {
+    auditLog {
+        auditLogEntries(limit: $limit, cursor: $cursor, filters: $filters) {
+            id
+            eventType
+            authorUserEmail
+            authorAgentTokenId
+            eventMetadata
+            timestamp
+            deploymentName
+        }
+    }
+}

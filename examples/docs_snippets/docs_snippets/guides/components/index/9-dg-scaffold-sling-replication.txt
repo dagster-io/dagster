@@ -1,0 +1,3 @@
+dg scaffold 'dagster_components.dagster_sling.SlingReplicationCollectionComponent' ingest_files
+
+Using /.../jaffle-platform/.venv/bin/dagster-components

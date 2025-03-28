@@ -1,0 +1,6 @@
+
+target/
+dbt_packages/
+logs/
+*.duckdb
+order_count_chart.html

@@ -1,0 +1,5 @@
+type: dagster_components.dagster_dbt.DbtProjectComponent
+
+attributes:
+  dbt:
+    project_dir: ../../../dbt/jdbt

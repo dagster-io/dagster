@@ -1,0 +1,5 @@
+dg scaffold project jaffle-platform
+
+Creating a Dagster project at /.../jaffle-platform.
+Scaffolded files for Dagster project at /.../jaffle-platform.
+...
