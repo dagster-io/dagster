@@ -4,5 +4,5 @@ attributes:
   asset_post_processors:
     - target: "*"
       attributes:
-        tags: 
+        tags:
           loose_defs_tag: "true"
