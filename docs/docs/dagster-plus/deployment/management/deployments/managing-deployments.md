@@ -93,7 +93,7 @@ Deployment settings can be configured in the Dagster+ interface or using the `da
 5. When finished, click **Save deployment settings**.
 
   </TabItem>
-  <TabItem value="dagster-cloud CLI">
+<TabItem value="dagster-cloud CLI">
 
 :::note
 

@@ -83,21 +83,21 @@ You can [add dependencies](#add-dependencies) in your `setup.py` file, but when 
 Setting a custom base image isn't supported for GitLab CI/CD workflows out of the box, but you can write a custom GitLab CI/CD yaml file that implements the manual steps noted.
 :::
 
-1. Include `dagster-cloud[serverless]` as a dependency in your Docker image by adding the following line to your `Dockerfile`:
-   ```
-   RUN pip install "dagster-cloud[serverless]"
-   ```
-2. Build your Docker image, using your usual Docker toolchain.
-3. Upload your Docker image to Dagster+ using the `upload-base-image` command. This command will print out the tag used in Dagster+ to identify your image:
+1.  Include `dagster-cloud[serverless]` as a dependency in your Docker image by adding the following line to your `Dockerfile`:
+    ```
+    RUN pip install "dagster-cloud[serverless]"
+    ```
+2.  Build your Docker image, using your usual Docker toolchain.
+3.  Upload your Docker image to Dagster+ using the `upload-base-image` command. This command will print out the tag used in Dagster+ to identify your image:
 
-   ```bash
-   $ dagster-cloud serverless upload-base-image local-image:tag
+    ```bash
+    $ dagster-cloud serverless upload-base-image local-image:tag
 
-   ...
-   To use the uploaded image run: dagster-cloud serverless deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
-   ```
+    ...
+    To use the uploaded image run: dagster-cloud serverless deploy-python-executable ... --base-image-tag=sha256_518ad2f92b078c63c60e89f0310f13f19d3a1c7ea9e1976d67d59fcb7040d0d6
+    ```
 
-4. Specify this base image tag in you GitHub workflow, or using the `dagster-cloud` CLI:
+4.  Specify this base image tag in you GitHub workflow, or using the `dagster-cloud` CLI:
 
 <Tabs groupId="method">
 
@@ -108,6 +108,7 @@ In your `.github/workflows/deploy.yml` file, add the `SERVERLESS_BASE_IMAGE_TAG`
 <CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/github_base_image.yaml" language="yaml" title="Setting a custom base image in deploy.yml" />
 
   </TabItem>
+
   <TabItem value="CLI" label="CLI">
 
 You can specify the base image when you deploy your code with the `dagster-cloud serverless deploy-python-executable` command:
@@ -190,6 +191,7 @@ Setting a custom base image isn't supported for GitLab CI/CD workflows out of th
 2.  Specify this base image tag in your GitHub workflow, or using the `dagster-cloud` CLI:
 
 <Tabs groupId="method">
+
 <TabItem value="GitHub" label="GitHub">
 
 In your `.github/workflows/deploy.yml` file, add the `SERVERLESS_BASE_IMAGE_TAG` environment variable and set it to the tag printed out in the previous step:
@@ -197,6 +199,7 @@ In your `.github/workflows/deploy.yml` file, add the `SERVERLESS_BASE_IMAGE_TAG`
 <CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/serverless/runtime-environment/github_no_pex_custom_base_image.yaml" language="yaml" title="Setting a custom base image in `deploy.yml`" />
 
 </TabItem>
+
 <TabItem value="CLI" label="CLI">
 
 You can specify the base image when you deploy your code with the `dagster-cloud serverless deploy` command:
