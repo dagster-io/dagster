@@ -43,7 +43,7 @@ class NewlyTrueCondition(BuiltinAutomationCondition[T_EntityKey]):
         # evaluate child condition
         child_result = await context.for_child_condition(
             self.operand,
-            child_index=0,
+            child_indices=[0],
             # must evaluate child condition over the entire subset to avoid missing state transitions
             candidate_subset=context.asset_graph_view.get_full_subset(key=context.key),
         ).evaluate_async()

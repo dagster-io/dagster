@@ -38,10 +38,14 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
         trigger_result, reset_result = await asyncio.gather(
             *[
                 context.for_child_condition(
-                    self.trigger_condition, child_index=0, candidate_subset=child_candidate_subset
+                    self.trigger_condition,
+                    child_indices=[0],
+                    candidate_subset=child_candidate_subset,
                 ).evaluate_async(),
                 context.for_child_condition(
-                    self.reset_condition, child_index=1, candidate_subset=child_candidate_subset
+                    self.reset_condition,
+                    child_indices=[1],
+                    candidate_subset=child_candidate_subset,
                 ).evaluate_async(),
             ]
         )

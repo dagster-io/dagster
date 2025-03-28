@@ -71,7 +71,7 @@ class AutomationContext(Generic[T_EntityKey]):
         condition = check.not_none(
             evaluator.asset_graph.get(key).automation_condition or evaluator.default_condition
         )
-        unique_ids = condition.get_node_unique_ids(parent_unique_ids=[None], index=None)
+        unique_ids = condition.get_node_unique_ids(parent_unique_ids=[None], child_indices=[None])
 
         return AutomationContext(
             condition=condition,
@@ -92,11 +92,13 @@ class AutomationContext(Generic[T_EntityKey]):
     def for_child_condition(
         self,
         child_condition: AutomationCondition[U_EntityKey],
-        child_index: int,
+        child_indices: Sequence[Optional[int]],
         candidate_subset: EntitySubset[U_EntityKey],
     ) -> "AutomationContext[U_EntityKey]":
+        check.invariant(len(child_indices) > 0, "Must be at least one child index")
+
         unique_ids = child_condition.get_node_unique_ids(
-            parent_unique_ids=self.condition_unique_ids, index=child_index
+            parent_unique_ids=self.condition_unique_ids, child_indices=child_indices
         )
         return AutomationContext(
             condition=child_condition,
