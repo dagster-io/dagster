@@ -298,6 +298,7 @@ def _subset_assets_defs(
             selected_check_subset = {
                 key for key in asset.check_keys if key.asset_key in selected_asset_keys
             }
+            # if the selected set of asset keys is the entire set of asset keys; and no checks were selected; should we just include all checks? That feels kinda confusing and subtle too.
 
         # all assets in this def are selected
         if selected_subset == asset.keys and selected_check_subset == asset.check_keys:

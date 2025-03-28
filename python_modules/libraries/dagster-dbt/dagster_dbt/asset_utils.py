@@ -837,6 +837,23 @@ def build_dbt_specs(
         # to no longer rely on `get_asset_key` as a standalone method
         for upstream_id in get_upstream_unique_ids(dbt_nodes, resource_props):
             key_by_unique_id[upstream_id] = translator.get_asset_key(dbt_nodes[upstream_id])
+            if (
+                upstream_id.startswith("source")
+                and translator.settings.enable_source_tests_as_checks
+            ):
+                for child_unique_id in manifest["child_map"][upstream_id]:
+                    if not child_unique_id.startswith("test"):
+                        continue
+
+                    check_spec = default_asset_check_fn(
+                        manifest,
+                        dbt_nodes,
+                        translator,
+                        key_by_unique_id[upstream_id],
+                        child_unique_id,
+                    )
+                    if check_spec:
+                        check_specs.append(check_spec)
 
     _validate_asset_keys(translator, dbt_nodes, key_by_unique_id)
     return specs, check_specs

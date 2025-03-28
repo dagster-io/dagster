@@ -642,6 +642,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
         owners_by_output_name: Optional[Mapping[str, Sequence[str]]] = None,
+        disable_checks_target_relevant_asset_keys_assertion: bool = False,
     ) -> "AssetsDefinition":
         from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
             _validate_check_specs_target_relevant_asset_keys,
@@ -682,9 +683,10 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                     )
                 transformed_internal_asset_deps[keys_by_output_name[output_name]] = asset_keys
 
-        _validate_check_specs_target_relevant_asset_keys(
-            check_specs, list(keys_by_output_name.values())
-        )
+        if not disable_checks_target_relevant_asset_keys_assertion:
+            _validate_check_specs_target_relevant_asset_keys(
+                check_specs, list(keys_by_output_name.values())
+            )
 
         keys_by_output_name_with_prefix: dict[str, AssetKey] = {}
         key_prefix_list = [key_prefix] if isinstance(key_prefix, str) else key_prefix
@@ -1513,11 +1515,19 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             keys_by_input_name=self.node_keys_by_input_name,
             keys_by_output_name=self.node_keys_by_output_name,
             node_def=self._computation.node_def if self._computation else None,
+            # TODO: Is this the correct behavior change? Before it was this:
+            # selected_asset_keys=self.keys,
+            # Which automatically selects all the keys in the assets definition;
+            # but has the subtle side effect of changing the check keys that are selected
+            # materially, this amounts to discarding dbt source tests, which don't target assets
+            # directly within the dbt assets definition.
+            # Instead, rely on selection resolution logic in the constructor.
             selected_asset_keys=self.keys,
             can_subset=self.can_subset,
             resource_defs=self._resource_defs,
             backfill_policy=self.backfill_policy,
             check_specs_by_output_name=self._check_specs_by_output_name,
+            # same here
             selected_asset_check_keys=self.check_keys,
             specs=self.specs,
             is_subset=self.is_subset,
