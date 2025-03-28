@@ -606,7 +606,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not graphene_info.context.instance.dagster_observe_supported():
             return None
         return GrapheneAssetHealth(
-            asset_check_status=await self.get_asset_check_status_for_asset_health(graphene_info),
+            assetChecksStatus=await self.get_asset_check_status_for_asset_health(graphene_info),
             materializationStatus=self.get_materialization_status_for_asset_health(graphene_info),
             freshnessStatus=self.get_freshness_status_for_asset_health(graphene_info),
         )
