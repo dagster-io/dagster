@@ -19,7 +19,17 @@ def scaffold_cli() -> None:
 @click.argument("typename", type=str)
 @click.argument("path", type=Path)
 @click.option("--json-params", type=str, default=None)
-def scaffold_object_command(typename: str, path: Path, json_params: Optional[str]) -> None:
+@click.option(
+    "--scaffold-format",
+    type=click.Choice(["yaml", "python"], case_sensitive=False),
+    help="Format of the component configuration (yaml or python)",
+)
+def scaffold_object_command(
+    typename: str,
+    path: Path,
+    json_params: Optional[str],
+    scaffold_format: str,
+) -> None:
     key = LibraryObjectKey.from_typename(typename)
     obj = load_library_object(key)
 
@@ -33,4 +43,4 @@ def scaffold_object_command(typename: str, path: Path, json_params: Optional[str
     else:
         scaffold_params = {}
 
-    scaffold_object(path, obj, typename, scaffold_params)
+    scaffold_object(path, obj, typename, scaffold_params, scaffold_format)

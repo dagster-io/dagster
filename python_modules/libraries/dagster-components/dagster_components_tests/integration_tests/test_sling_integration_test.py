@@ -323,6 +323,8 @@ def test_scaffold_sling():
                 "object",
                 "dagster_components.dagster_sling.SlingReplicationCollectionComponent",
                 "bar/components/qux",
+                "--scaffold-format",
+                "yaml",
             ],
         )
         assert result.exit_code == 0
