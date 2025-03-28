@@ -547,6 +547,8 @@ class GrapheneAssetNode(graphene.ObjectType):
             return GrapheneAssetHealthStatus.HEALTHY
 
         asset_record = await AssetRecord.gen(graphene_info.context, self._asset_node_snap.asset_key)
+        if asset_record is None:
+            return GrapheneAssetHealthStatus.UNKNOWN
         asset_entry = asset_record.asset_entry
 
         if graphene_info.context.instance.can_read_failure_events():
@@ -729,7 +731,9 @@ class GrapheneAssetNode(graphene.ObjectType):
             return None
         return GrapheneAssetHealth(
             assetChecksStatus=await self.get_asset_check_status_for_asset_health(graphene_info),
-            materializationStatus=await self.get_materialization_status_for_asset_health(graphene_info),
+            materializationStatus=await self.get_materialization_status_for_asset_health(
+                graphene_info
+            ),
             freshnessStatus=self.get_freshness_status_for_asset_health(graphene_info),
         )
 
