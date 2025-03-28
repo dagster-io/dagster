@@ -1,12 +1,14 @@
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import click
 import yaml
+from dagster_shared import check
 
 from dagster_components.scaffold.scaffold import (
     ScaffolderUnavailableReason,
+    ScaffoldFormatOptions,
     ScaffoldRequest,
     get_scaffolder,
 )
@@ -24,16 +26,25 @@ def scaffold_component(
     request: ScaffoldRequest,
     yaml_attributes: Optional[Mapping[str, Any]] = None,
 ) -> None:
-    with open(request.target_path / "component.yaml", "w") as f:
-        component_data = {"type": request.type_name, "attributes": yaml_attributes or {}}
-        yaml.dump(
-            component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
-        )
-        f.writelines([""])
+    if request.scaffold_format == "yaml":
+        with open(request.target_path / "component.yaml", "w") as f:
+            component_data = {"type": request.type_name, "attributes": yaml_attributes or {}}
+            yaml.dump(
+                component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
+            )
+            f.writelines([""])
+    elif request.scaffold_format == "python":
+        raise NotImplementedError("Python scaffolding not yet implemented.")
+    else:
+        check.assert_never(request.scaffold_format)
 
 
 def scaffold_object(
-    path: Path, obj: object, typename: str, scaffold_params: Mapping[str, Any]
+    path: Path,
+    obj: object,
+    typename: str,
+    scaffold_params: Mapping[str, Any],
+    scaffold_format: str,
 ) -> None:
     from dagster_components.component.component import Component
 
@@ -46,7 +57,19 @@ def scaffold_object(
             f"Object type {typename} does not have a scaffolder. Reason: {scaffolder.message}."
         )
 
-    scaffolder.scaffold(ScaffoldRequest(type_name=typename, target_path=path), scaffold_params)
+    check.invariant(
+        scaffold_format in ["yaml", "python"],
+        f"scaffold must be either 'yaml' or 'python'. Got {scaffold_format}.",
+    )
+
+    scaffolder.scaffold(
+        ScaffoldRequest(
+            type_name=typename,
+            target_path=path,
+            scaffold_format=cast(ScaffoldFormatOptions, scaffold_format),
+        ),
+        scaffold_params,
+    )
 
     if isinstance(obj, type) and issubclass(obj, Component):
         component_yaml_path = path / "component.yaml"
