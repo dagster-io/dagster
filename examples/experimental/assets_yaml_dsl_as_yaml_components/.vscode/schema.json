@@ -1,0 +1,596 @@
+{
+  "$defs": {
+    "AssetAttributesModel": {
+      "additionalProperties": false,
+      "description": "Resolves into a dictionary of asset attributes. This is similar to AssetSpecSchema, but\ndoes not require a key. This is useful in contexts where you want to modify attributes of\nan existing AssetSpec.",
+      "properties": {
+        "deps": {
+          "description": "The asset keys for the upstream assets that this asset depends on.",
+          "examples": [
+            [
+              "my_database/my_schema/upstream_table"
+            ]
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Deps",
+          "type": "array"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable description of the asset.",
+          "examples": [
+            "Refined sales data"
+          ],
+          "title": "Description"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          ],
+          "description": "Additional metadata for the asset.",
+          "title": "Metadata"
+        },
+        "group_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Used to organize assets into groups, defaults to 'default'.",
+          "examples": [
+            "staging"
+          ],
+          "title": "Group Name"
+        },
+        "skippable": {
+          "default": false,
+          "description": "Whether this asset can be omitted during materialization, causing downstream dependencies to skip.",
+          "title": "Skippable",
+          "type": "boolean"
+        },
+        "code_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A version representing the code that produced the asset. Increment this value when the code changes.",
+          "examples": [
+            "3"
+          ],
+          "title": "Code Version"
+        },
+        "owners": {
+          "description": "A list of strings representing owners of the asset. Each string can be a user's email address, or a team name prefixed with `team:`, e.g. `team:finops`.",
+          "examples": [
+            [
+              "team:analytics",
+              "nelson@hooli.com"
+            ]
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Owners",
+          "type": "array"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            }
+          ],
+          "description": "Tags for filtering and organizing.",
+          "examples": [
+            {
+              "team": "analytics",
+              "tier": "prod"
+            }
+          ],
+          "title": "Tags"
+        },
+        "kinds": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A list of strings representing the kinds of the asset. These will be made visible in the Dagster UI.",
+          "examples": [
+            [
+              "snowflake"
+            ]
+          ],
+          "title": "Kinds"
+        },
+        "automation_condition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The condition under which the asset will be automatically materialized.",
+          "title": "Automation Condition"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A unique identifier for the asset.",
+          "title": "Key"
+        }
+      },
+      "title": "AssetAttributesModel",
+      "type": "object"
+    },
+    "AssetPostProcessorModel": {
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "default": "*",
+          "title": "Target",
+          "type": "string"
+        },
+        "operation": {
+          "default": "merge",
+          "enum": [
+            "merge",
+            "replace"
+          ],
+          "title": "Operation",
+          "type": "string"
+        },
+        "attributes": {
+          "$ref": "#/$defs/AssetAttributesModel"
+        }
+      },
+      "required": [
+        "attributes"
+      ],
+      "title": "AssetPostProcessorModel",
+      "type": "object"
+    },
+    "AssetSpecModel": {
+      "additionalProperties": false,
+      "properties": {
+        "deps": {
+          "description": "The asset keys for the upstream assets that this asset depends on.",
+          "examples": [
+            [
+              "my_database/my_schema/upstream_table"
+            ]
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Deps",
+          "type": "array"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable description of the asset.",
+          "examples": [
+            "Refined sales data"
+          ],
+          "title": "Description"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": true,
+              "type": "object"
+            }
+          ],
+          "description": "Additional metadata for the asset.",
+          "title": "Metadata"
+        },
+        "group_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Used to organize assets into groups, defaults to 'default'.",
+          "examples": [
+            "staging"
+          ],
+          "title": "Group Name"
+        },
+        "skippable": {
+          "default": false,
+          "description": "Whether this asset can be omitted during materialization, causing downstream dependencies to skip.",
+          "title": "Skippable",
+          "type": "boolean"
+        },
+        "code_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A version representing the code that produced the asset. Increment this value when the code changes.",
+          "examples": [
+            "3"
+          ],
+          "title": "Code Version"
+        },
+        "owners": {
+          "description": "A list of strings representing owners of the asset. Each string can be a user's email address, or a team name prefixed with `team:`, e.g. `team:finops`.",
+          "examples": [
+            [
+              "team:analytics",
+              "nelson@hooli.com"
+            ]
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Owners",
+          "type": "array"
+        },
+        "tags": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            }
+          ],
+          "description": "Tags for filtering and organizing.",
+          "examples": [
+            {
+              "team": "analytics",
+              "tier": "prod"
+            }
+          ],
+          "title": "Tags"
+        },
+        "kinds": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A list of strings representing the kinds of the asset. These will be made visible in the Dagster UI.",
+          "examples": [
+            [
+              "snowflake"
+            ]
+          ],
+          "title": "Kinds"
+        },
+        "automation_condition": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The condition under which the asset will be automatically materialized.",
+          "title": "Automation Condition"
+        },
+        "key": {
+          "description": "A unique identifier for the asset.",
+          "title": "Key",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "title": "AssetSpecModel",
+      "type": "object"
+    },
+    "DefsFolderComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "dagster_components.dagster.DefsFolderComponent",
+          "default": "dagster_components.dagster.DefsFolderComponent",
+          "title": "Type",
+          "type": "string"
+        },
+        "attributes": {
+          "$ref": "#/$defs/DefsModuleArgsModel",
+          "default": null
+        }
+      },
+      "title": "DefsFolderComponent",
+      "type": "object"
+    },
+    "DefsModuleArgsModel": {
+      "additionalProperties": false,
+      "properties": {
+        "asset_post_processors": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/AssetPostProcessorModel"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Asset Post Processors"
+        }
+      },
+      "title": "DefsModuleArgsModel",
+      "type": "object"
+    },
+    "Forecast": {
+      "additionalProperties": false,
+      "properties": {
+        "days": {
+          "title": "Days",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "days"
+      ],
+      "title": "Forecast",
+      "type": "object"
+    },
+    "IndexStrategy": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "IndexStrategy",
+      "type": "object"
+    },
+    "PipesSubprocessScriptCollectionComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "dagster_components.dagster.PipesSubprocessScriptCollectionComponent",
+          "default": "dagster_components.dagster.PipesSubprocessScriptCollectionComponent",
+          "title": "Type",
+          "type": "string"
+        },
+        "attributes": {
+          "$ref": "#/$defs/PipesSubprocessScriptCollectionModel",
+          "default": null
+        }
+      },
+      "title": "PipesSubprocessScriptCollectionComponent",
+      "type": "object"
+    },
+    "PipesSubprocessScriptCollectionModel": {
+      "additionalProperties": false,
+      "properties": {
+        "scripts": {
+          "items": {
+            "$ref": "#/$defs/PipesSubprocessScriptModel"
+          },
+          "title": "Scripts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "scripts"
+      ],
+      "title": "PipesSubprocessScriptCollectionModel",
+      "type": "object"
+    },
+    "PipesSubprocessScriptModel": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "assets": {
+          "items": {
+            "$ref": "#/$defs/AssetSpecModel"
+          },
+          "title": "Assets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "path",
+        "assets"
+      ],
+      "title": "PipesSubprocessScriptModel",
+      "type": "object"
+    },
+    "StockInfo": {
+      "additionalProperties": false,
+      "properties": {
+        "ticker": {
+          "title": "Ticker",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ticker"
+      ],
+      "title": "StockInfo",
+      "type": "object"
+    },
+    "assets_yaml_dsl_as_yaml_components__lib__domain_specific_dsl_component__DomainSpecificDslComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "stock_infos": {
+          "items": {
+            "$ref": "#/$defs/StockInfo"
+          },
+          "title": "Stock Infos",
+          "type": "array"
+        },
+        "index_strategy": {
+          "$ref": "#/$defs/IndexStrategy"
+        },
+        "forecast": {
+          "$ref": "#/$defs/Forecast"
+        }
+      },
+      "required": [
+        "stock_infos",
+        "index_strategy",
+        "forecast"
+      ],
+      "title": "DomainSpecificDslComponent",
+      "type": "object"
+    },
+    "dagster_components__cli__list__DefinitionsComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "dagster_components.dagster.DefinitionsComponent",
+          "default": "dagster_components.dagster.DefinitionsComponent",
+          "title": "Type",
+          "type": "string"
+        },
+        "attributes": {
+          "$ref": "#/$defs/dagster_components__lib__definitions_component__component__DefinitionsComponent",
+          "default": null
+        }
+      },
+      "title": "DefinitionsComponent",
+      "type": "object"
+    },
+    "dagster_components__cli__list__DomainSpecificDslComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "assets_yaml_dsl_as_yaml_components.lib.DomainSpecificDslComponent",
+          "default": "assets_yaml_dsl_as_yaml_components.lib.DomainSpecificDslComponent",
+          "title": "Type",
+          "type": "string"
+        },
+        "attributes": {
+          "$ref": "#/$defs/assets_yaml_dsl_as_yaml_components__lib__domain_specific_dsl_component__DomainSpecificDslComponent",
+          "default": null
+        }
+      },
+      "title": "DomainSpecificDslComponent",
+      "type": "object"
+    },
+    "dagster_components__lib__definitions_component__component__DefinitionsComponent": {
+      "additionalProperties": false,
+      "description": "Wraps an arbitrary set of Dagster definitions.",
+      "properties": {
+        "definitions_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Relative path to a file containing Dagster definitions.",
+          "title": "Definitions Path"
+        }
+      },
+      "title": "DefinitionsComponent",
+      "type": "object"
+    }
+  },
+  "anyOf": [
+    {
+      "$ref": "#/$defs/dagster_components__cli__list__DomainSpecificDslComponent"
+    },
+    {
+      "$ref": "#/$defs/dagster_components__cli__list__DefinitionsComponent"
+    },
+    {
+      "$ref": "#/$defs/DefsFolderComponent"
+    },
+    {
+      "$ref": "#/$defs/PipesSubprocessScriptCollectionComponent"
+    }
+  ]
+}

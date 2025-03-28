@@ -1,0 +1,15 @@
+type: assets_yaml_dsl_as_yaml_components.lib.DomainSpecificDslComponent
+
+attributes:
+  stock_infos:
+    - ticker: AAPL
+    - ticker: MSFT
+    - ticker: GOOGL
+    - ticker: AMZN
+    - ticker: TSLA
+    - ticker: META
+    - ticker: NVDA
+  index_strategy:
+    type: something
+  forecast:
+    days: 30
