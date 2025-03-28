@@ -991,7 +991,7 @@ def load_dbt_cloud_definitions() -> Definitions:
         )
     finally:
         # Clearing cache for other tests
-        workspace.load_specs.cache_clear()
+        workspace.load_specs.cache_clear()  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 def fully_loaded_repo_from_dbt_cloud_workspace() -> RepositoryDefinition:
