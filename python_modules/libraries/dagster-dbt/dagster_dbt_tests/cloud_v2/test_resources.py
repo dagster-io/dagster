@@ -12,8 +12,8 @@ from dagster_dbt_tests.cloud_v2.conftest import (
     TEST_CUSTOM_ADHOC_JOB_NAME,
     TEST_DEFAULT_ADHOC_JOB_NAME,
     TEST_ENVIRONMENT_ID,
-    TEST_FINISHED_AT_END,
-    TEST_FINISHED_AT_START,
+    TEST_FINISHED_AT_LOWER_BOUND,
+    TEST_FINISHED_AT_UPPER_BOUND,
     TEST_JOB_ID,
     TEST_PROJECT_ID,
     TEST_REST_API_BASE_URL,
@@ -58,8 +58,8 @@ def test_basic_resource_request(
     client.get_runs_batch(
         project_id=TEST_PROJECT_ID,
         environment_id=TEST_ENVIRONMENT_ID,
-        finished_at_start=TEST_FINISHED_AT_START,
-        finished_at_end=TEST_FINISHED_AT_END,
+        finished_at_lower_bound=TEST_FINISHED_AT_LOWER_BOUND,
+        finished_at_upper_bound=TEST_FINISHED_AT_UPPER_BOUND,
     )
     client.list_run_artifacts(run_id=TEST_RUN_ID)
     client.get_account_details()
