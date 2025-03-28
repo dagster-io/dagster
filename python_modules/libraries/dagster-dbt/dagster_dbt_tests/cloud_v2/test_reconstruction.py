@@ -1,3 +1,4 @@
+import pytest
 import responses
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.definitions_class import Definitions
@@ -19,6 +20,7 @@ def cacheable_dbt_cloud_workspace_data():
     )
 
 
+@pytest.mark.order("last")
 def test_cacheable_dbt_cloud_workspace_data(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
