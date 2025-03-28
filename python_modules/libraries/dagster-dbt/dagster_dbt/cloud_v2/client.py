@@ -93,6 +93,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
         data: Optional[Mapping[str, Any]] = None,
         params: Optional[Mapping[str, Any]] = None,
         session_attr: str = "_get_session",
+        include_full_response: bool = False,
     ) -> Mapping[str, Any]:
         url = f"{base_url}/{endpoint}"
 
@@ -109,7 +110,11 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 )
                 response.raise_for_status()
                 resp_dict = response.json()
-                return resp_dict["data"] if "data" in resp_dict else resp_dict
+                return (
+                    resp_dict["data"]
+                    if "data" in resp_dict and not include_full_response
+                    else resp_dict
+                )
             except RequestException as e:
                 self._log.error(
                     f"Request to dbt Cloud API failed for url {url} with method {method} : {e}"
@@ -248,8 +253,8 @@ class DbtCloudWorkspaceClient(DagsterModel):
         finished_at_start: datetime.datetime,
         finished_at_end: datetime.datetime,
         offset: int = 0,
-    ) -> Sequence[Mapping[str, Any]]:
-        """Retrieves a batch of dbt cloud runs from a dbt Cloud workspace for a given project and environment.
+    ) -> tuple[Sequence[Mapping[str, Any]], int]:
+        """Retrieves a batch of dbt Cloud runs from a dbt Cloud workspace for a given project and environment.
 
         Args:
             project_id (str): The dbt Cloud Project ID. You can retrieve this value from the
@@ -263,25 +268,28 @@ class DbtCloudWorkspaceClient(DagsterModel):
             offset (str): The pagination offset for this request.
 
         Returns:
-            List[Dict[str, Any]]: A List of parsed json data from the response to this request
+            tuple[List[Dict[str, Any]], int]: A tuple containing:
+                - a list of run details as parsed json data from the response to this request;
+                - the total number of runs for the given parameters.
         """
-        return cast(
-            Sequence[Mapping[str, Any]],
-            self._make_request(
-                method="get",
-                endpoint="runs",
-                base_url=self.api_v2_url,
-                params={
-                    "account_id": self.account_id,
-                    "environment_id": environment_id,
-                    "project_id": project_id,
-                    "limit": DAGSTER_DBT_CLOUD_BATCH_RUNS_REQUEST_LIMIT,
-                    "offset": offset,
-                    "finished_at__range": f"""["{finished_at_start.isoformat()}", "{finished_at_end.isoformat()}"]""",
-                    "order_by": "finished_at",
-                },
-            ),
+        resp = self._make_request(
+            method="get",
+            endpoint="runs",
+            base_url=self.api_v2_url,
+            params={
+                "account_id": self.account_id,
+                "environment_id": environment_id,
+                "project_id": project_id,
+                "limit": DAGSTER_DBT_CLOUD_BATCH_RUNS_REQUEST_LIMIT,
+                "offset": offset,
+                "finished_at__range": f"""["{finished_at_start.isoformat()}", "{finished_at_end.isoformat()}"]""",
+                "order_by": "finished_at",
+            },
+            include_full_response=True,
         )
+        data = cast(Sequence[Mapping[str, Any]], resp["data"])
+        total_count = resp["extra"]["pagination"]["total_count"]
+        return data, total_count
 
     def get_run_details(self, run_id: int) -> Mapping[str, Any]:
         """Retrieves the details of a given dbt Cloud Run.

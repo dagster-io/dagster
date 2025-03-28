@@ -61,12 +61,13 @@ def test_cloud_job_apis(
     assert run.id == polled_run.id
     assert polled_run.status == DbtCloudJobRunStatusType.SUCCESS
 
-    batched_runs = client.get_runs_batch(
+    batched_runs, total_count = client.get_runs_batch(
         project_id=project_id,
         environment_id=environment_id,
         finished_at_start=start_run_process,
         finished_at_end=end_run_process,
     )
+    assert total_count == 1
     assert len(batched_runs) == 1
 
     batched_run = DbtCloudRun.from_run_details(run_details=next(iter(batched_runs)))
