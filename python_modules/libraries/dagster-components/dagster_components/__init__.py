@@ -17,15 +17,13 @@ from dagster_components.resolved.context import ResolutionContext as ResolutionC
 from dagster_components.resolved.core_models import (
     AssetAttributesModel as AssetAttributesModel,
     AssetPostProcessorModel as AssetPostProcessorModel,
-    AssetSpecModel as AssetSpecModel,
-    OpSpecModel as OpSpecModel,
     ResolvedAssetSpec as ResolvedAssetSpec,
 )
 from dagster_components.resolved.metadata import ResolvableFieldInfo as ResolvableFieldInfo
 from dagster_components.resolved.model import (
-    ResolvableModel as ResolvableModel,
-    ResolvedFrom as ResolvedFrom,
-    ResolvedKwargs as ResolvedKwargs,
+    Injectable as Injectable,
+    Injected as Injected,
+    Model as Model,
     Resolver as Resolver,
 )
 from dagster_components.scaffold.scaffold import (

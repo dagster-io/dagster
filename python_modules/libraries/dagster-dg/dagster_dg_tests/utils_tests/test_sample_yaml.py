@@ -1,16 +1,16 @@
 from collections.abc import Sequence
 from typing import Annotated
 
-from dagster_components import ResolvableFieldInfo, ResolvableModel
+from dagster_components import Model, Resolvable, ResolvableFieldInfo
 from dagster_dg.docs import generate_sample_yaml
 
 
-class SampleSubModel(ResolvableModel):
+class SampleSubModel(Model):
     str_field: str
     int_field: int
 
 
-class SampleModel(ResolvableModel):
+class SampleModel(Model, Resolvable):
     sub_scoped: Annotated[SampleSubModel, ResolvableFieldInfo(required_scope={"outer_scope"})]
     sub_optional: SampleSubModel
     sub_list: Sequence[SampleSubModel]

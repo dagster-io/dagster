@@ -3,9 +3,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from dagster import AssetSpec, AutomationCondition, Definitions
-from dagster_components import AssetAttributesModel, Component, ComponentLoadContext
+from dagster_components import Component, ComponentLoadContext, Resolvable
 from dagster_components.resolved.core_models import ResolvedAssetAttributes
-from dagster_components.resolved.model import ResolvableModel, ResolvedFrom
 
 
 def my_custom_fn(a: str, b: str) -> str:
@@ -16,12 +15,8 @@ def my_custom_automation_condition(cron_schedule: str) -> AutomationCondition:
     return AutomationCondition.cron_tick_passed(cron_schedule) & ~AutomationCondition.in_progress()
 
 
-class CustomScopeModel(ResolvableModel):
-    asset_attributes: AssetAttributesModel
-
-
 @dataclass
-class HasCustomScope(Component, ResolvedFrom[CustomScopeModel]):
+class HasCustomScope(Component, Resolvable):
     asset_attributes: ResolvedAssetAttributes
 
     @classmethod

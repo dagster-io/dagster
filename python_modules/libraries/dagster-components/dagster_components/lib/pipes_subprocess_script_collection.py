@@ -3,7 +3,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING
 
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
@@ -11,37 +11,24 @@ from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
 
-from dagster_components.component.component import Component
-from dagster_components.core.context import ComponentLoadContext
-from dagster_components.resolved.core_models import AssetSpecModel, ResolvedAssetSpec
-from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
+from dagster_components import Component, ComponentLoadContext, Resolvable
+from dagster_components.resolved.core_models import ResolvedAssetSpec
 
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
 
 
-class PipesSubprocessScriptModel(ResolvableModel):
-    path: str
-    assets: Sequence[AssetSpecModel]
-
-
 @dataclass
-class PipesSubprocessScript(ResolvedFrom[PipesSubprocessScriptModel]):
+class PipesSubprocessScript(Resolvable):
     path: str
     assets: Sequence[ResolvedAssetSpec]
 
 
-class PipesSubprocessScriptCollectionModel(ResolvableModel):
-    scripts: Sequence[PipesSubprocessScriptModel]
-
-
 @dataclass
-class PipesSubprocessScriptCollectionComponent(
-    Component, ResolvedFrom[PipesSubprocessScriptCollectionModel]
-):
+class PipesSubprocessScriptCollectionComponent(Component, Resolvable):
     """Assets that wrap Python scripts executed with Dagster's PipesSubprocessClient."""
 
-    scripts: Annotated[Sequence[PipesSubprocessScript], Resolver.from_annotation()]
+    scripts: Sequence[PipesSubprocessScript]
 
     @cached_property
     def specs_by_path(self) -> Mapping[str, Sequence[AssetSpec]]:
@@ -56,7 +43,7 @@ class PipesSubprocessScriptCollectionComponent(
             ]
         )
 
-    def build_defs(self, context: ComponentLoadContext) -> "Definitions":
+    def build_defs(self, context: "ComponentLoadContext") -> "Definitions":
         from dagster._core.definitions.definitions_class import Definitions
 
         return Definitions(

@@ -13,6 +13,7 @@ import click
 from dagster import _check as check
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import DagsterError
+from pydantic import BaseModel
 
 from dagster_components.resolved.context import ResolutionContext
 from dagster_components.resolved.core_models import (
@@ -74,16 +75,14 @@ TRANSLATOR_MERGE_ATTRIBUTES = {"metadata", "tags"}
 @dataclass
 class TranslatorResolvingInfo:
     obj_name: str
-    asset_attributes: Union[str, AssetAttributesModel]
+    asset_attributes: Union[str, BaseModel]
     resolution_context: ResolutionContext
 
-    def _resolve_asset_attributes(
-        self, context: Mapping[str, Any]
-    ) -> Union[AssetSpec, AssetAttributesModel]:
+    def _resolve_asset_attributes(self, context: Mapping[str, Any]) -> Union[AssetSpec, BaseModel]:
         """Resolves the user-specified asset attributes into an AssetAttributesModel, or an AssetSpec
         if the UDF returns one.
         """
-        if isinstance(self.asset_attributes, AssetAttributesModel):
+        if not isinstance(self.asset_attributes, str):
             return self.asset_attributes
 
         resolved_asset_attributes = (
