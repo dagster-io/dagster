@@ -1,5 +1,5 @@
 ---
-title: "Detect and restart crashed workers with run monitoring"
+title: 'Detect and restart crashed workers with run monitoring'
 sidebar_position: 500
 ---
 

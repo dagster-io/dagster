@@ -1,18 +1,20 @@
 ---
-title: "Sensors"
+title: 'Sensors'
 sidebar_position: 30
 ---
 
 Sensors enable you to take action in response to events that occur either internally within Dagster or in external systems. They check for events at regular intervals and either perform an action or provide an explanation for why the action was skipped.
 
 Examples of events include:
+
 - a run completes in Dagster
 - a run fails in Dagster
-- a job materializes a specific asset 
+- a job materializes a specific asset
 - a file appears in an s3 bucket
 - an external system is down
 
 Examples of actions include:
+
 - launching a run
 - sending a Slack message
 - inserting a row into a database
@@ -24,12 +26,13 @@ An alternative to polling with sensors is to push events to Dagster using the [D
 :::
 
 <details>
-<summary>Prerequisites</summary>
+  <summary>Prerequisites</summary>
 
 To follow the steps in this guide, you'll need:
 
 - Familiarity with [assets](/guides/build/assets/)
 - Familiarity with [jobs](/guides/build/jobs/)
+
 </details>
 
 ## Basic sensor
@@ -43,7 +46,7 @@ If the sensor finds new files, it starts a run of `my_job`. If not, it skips the
 :::tip
 Unless a sensor has a `default_status` of `DefaultSensorStatus.RUNNING`, it won't be enabled when first deployed to a Dagster instance. To find and enable the sensor, click **Automation > Sensors** in the Dagster UI.
 
-To explicitly disable a sensor, you can use `DefaultSensorStatus.STOPPED`. 
+To explicitly disable a sensor, you can use `DefaultSensorStatus.STOPPED`.
 :::
 
 ## Customizing intervals between evaluations

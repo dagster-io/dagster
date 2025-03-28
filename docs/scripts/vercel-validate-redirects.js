@@ -5,9 +5,8 @@ const fs = require('fs').promises;
 const BASE_URL = 'https://docs-preview.dagster.io';
 const SLEEP_DURATION = 1;
 
-
 function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function loadRedirects() {
@@ -39,9 +38,8 @@ async function validateRedirect(url) {
 (async () => {
   const redirects = await loadRedirects();
   for (const redirect of redirects) {
-    const url = BASE_URL + redirect.source.replace(/:path\*/g, 'placeholder')
+    const url = BASE_URL + redirect.source.replace(/:path\*/g, 'placeholder');
     await validateRedirect(url);
     await sleep(1000);
   }
 })();
-

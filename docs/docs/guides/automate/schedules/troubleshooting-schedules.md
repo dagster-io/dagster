@@ -101,4 +101,3 @@ The last step is to check that the schedule executed successfully. If you didn't
 ## More help
 
 **Still stuck?** If these steps didn't resolve the issue, reach out in [Slack](https://dagster.io/slack or [file an issue on GitHub](https://github.com/dagster-io/dagster/issues).
-

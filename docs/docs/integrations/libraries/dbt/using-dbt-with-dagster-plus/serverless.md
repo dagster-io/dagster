@@ -1,5 +1,5 @@
 ---
-title: "Using dbt with Serverless deployments in Dagster+"
+title: 'Using dbt with Serverless deployments in Dagster+'
 description: Deploy your dbt & Dagster project with Serverless deployments in Dagster+.
 ---
 

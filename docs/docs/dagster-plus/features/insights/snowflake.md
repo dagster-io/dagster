@@ -1,6 +1,6 @@
 ---
-title: "Track Snowflake usage with Dagster+ Insights"
-sidebar_label: "Snowflake"
+title: 'Track Snowflake usage with Dagster+ Insights'
+sidebar_label: 'Snowflake'
 sidebar_position: 300
 ---
 

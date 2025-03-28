@@ -1,5 +1,5 @@
 ---
-title: "Python logging"
+title: 'Python logging'
 sidebar_position: 200
 ---
 
@@ -13,8 +13,8 @@ Configuration settings include:
 
 ## Relevant APIs
 
-| Name                                                     | Description                                                                             |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Name                                                                         | Description                                                                             |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | <PyObject section="utilities" module="dagster" object="get_dagster_logger"/> | A function that returns a Python logger that will automatically be captured by Dagster. |
 
 ## Production environments and event log storage
@@ -32,7 +32,7 @@ By default, logs generated using the Python logging module aren't captured into 
 
 For example, imagine you have the following code:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/logging/python_logger.py" startAfter="start_python_logger" endBefore="end_python_logger" /> 
+<CodeExample path="docs_snippets/docs_snippets/concepts/logging/python_logger.py" startAfter="start_python_logger" endBefore="end_python_logger" />
 
 Because this code uses a custom Python logger instead of `context.log`, the log statement won't be added as an event to the Dagster event log or show up in the UI.
 
@@ -49,7 +49,6 @@ Once this key is set, Dagster will treat any normal Python log call from one of 
 If `python_log_level` is set, the loggers listed here will be set to the given level before a run is launched. Refer to the [Configuring global log levels](#configuring-global-log-levels) for more info and an example.
 
 :::
-
 
 ## Configuring global log levels \{#configuring-global-log-levels}
 
@@ -96,7 +95,6 @@ The logging module retains global state, meaning the logger returned by this fun
 If you want to output all Dagster logs to a file, use the Python logging module's built-in [`logging.FileHandler`](https://docs.python.org/3/library/logging.handlers.html#logging.FileHandler) class. This sends log output to a disk file.
 
 To enable this, define a new `myHandler` handler in your `dagster.yaml` file to be a `logging.FileHandler` object:
-
 
 <CodeExample language="yaml" path="docs_snippets/docs_snippets/concepts/logging/python_logging_file_output_config.yaml" />
 

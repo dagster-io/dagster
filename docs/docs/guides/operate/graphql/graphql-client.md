@@ -1,5 +1,5 @@
 ---
-title: "Dagster GraphQL Python client"
+title: 'Dagster GraphQL Python client'
 description: Dagster provides a Python client to interact with its GraphQL API
 ---
 
@@ -7,8 +7,8 @@ Dagster provides a GraphQL Python Client to interface with [Dagster's GraphQL AP
 
 ## Relevant APIs
 
-| Name                                                                    | Description                                                          |
-| ----------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Name                                                                                        | Description                                                          |
+| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | <PyObject section="libraries" module="dagster_graphql" object="DagsterGraphQLClient"/>      | The client class to interact with Dagster's GraphQL API from Python. |
 | <PyObject section="libraries" module="dagster_graphql" object="DagsterGraphQLClientError"/> | The exception that the client raises upon a response error.          |
 
@@ -22,30 +22,10 @@ When is this useful? Dagster exposes a powerful GraphQL API, but this level of f
 
 Note that all GraphQL methods on the API are not yet available in Python - the `DagsterGraphQLClient` currently only provides the following methods:
 
-- <PyObject
-  section="libraries"
-  module="dagster_graphql"
-  object="DagsterGraphQLClient"
-  method="submit_job_execution"
-  /> [submit_job_execution](#submitting-a-job-run)
-- <PyObject
-  section="libraries"
-  module="dagster_graphql"
-  object="DagsterGraphQLClient"
-  method="get_run_status"
-  /> [get_run_status](#getting-a-job-runs-status)
-- <PyObject
-  section="libraries"
-  module="dagster_graphql"
-  object="DagsterGraphQLClient"
-  method="reload_repository_location"
-  /> [reload_repository_location](#reloading-all-repositories-in-a-repository-location)
-- <PyObject
-  section="libraries"
-  module="dagster_graphql"
-  object="DagsterGraphQLClient"
-  method="shutdown_repository_location"
-  /> [shutdown_repository_location](#shutting-down-a-repository-location-server)
+- <PyObject section="libraries" module="dagster_graphql" object="DagsterGraphQLClient" method="submit_job_execution" /> [submit_job_execution](#submitting-a-job-run)
+- <PyObject section="libraries" module="dagster_graphql" object="DagsterGraphQLClient" method="get_run_status" /> [get_run_status](#getting-a-job-runs-status)
+- <PyObject section="libraries" module="dagster_graphql" object="DagsterGraphQLClient" method="reload_repository_location" /> [reload_repository_location](#reloading-all-repositories-in-a-repository-location)
+- <PyObject section="libraries" module="dagster_graphql" object="DagsterGraphQLClient" method="shutdown_repository_location" /> [shutdown_repository_location](#shutting-down-a-repository-location-server)
 
 ## Using the GraphQL Client
 
@@ -86,7 +66,6 @@ If you're running your own gRPC server, we generally recommend updating your rep
 One way to cause your server to restart and your repositories to be reloaded is to run your server in an environment like Kubernetes that automatically restarts services when they fail (or docker-compose with `restart: always` set on the service), and then use the `shutdown_repository_location` function on the GraphQL client to shut down the server. The server will then be restarted by your environment, which will be automatically detected by the UI.
 
 Example usage:
-
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/webserver/graphql/client_example.py" startAfter="start_shutdown_repo_location_marker" endBefore="end_shutdown_repo_location_marker" />
 

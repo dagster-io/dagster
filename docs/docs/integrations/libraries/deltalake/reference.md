@@ -1,5 +1,5 @@
 ---
-title: "dagster-deltalake integration reference"
+title: 'dagster-deltalake integration reference'
 description: Store your Dagster assets in Delta Lake
 sidebar_position: 200
 ---

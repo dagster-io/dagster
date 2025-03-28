@@ -1,6 +1,6 @@
 ---
-title: "Using Snowflake with with Dagster I/O managers"
-description: "Learn to integrate Snowflake with Dagster using a Snowflake I/O manager."
+title: 'Using Snowflake with with Dagster I/O managers'
+description: 'Learn to integrate Snowflake with Dagster using a Snowflake I/O manager.'
 sidebar_position: 100
 ---
 
@@ -45,7 +45,6 @@ To complete this tutorial, you'll need:
     Refer to the [Using environment variables and secrets guide](/guides/deploy/using-environment-variables-and-secrets) for more info.
 
     For more information on authenticating with a private key, see [Authenticating with a private key](/integrations/libraries/snowflake/reference#authenticating-using-a-private-key) in the Snowflake reference guide.
-
 
 ## Step 1: Configure the Snowflake I/O manager
 

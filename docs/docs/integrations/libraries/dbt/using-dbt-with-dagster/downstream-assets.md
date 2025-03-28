@@ -1,5 +1,5 @@
 ---
-title: "Add a downstream asset"
+title: 'Add a downstream asset'
 description: Dagster can orchestrate dbt alongside other technologies.
 sidebar_position: 400
 ---

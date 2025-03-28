@@ -18,7 +18,8 @@ export const CodeReferenceLink = ({
   isInline: boolean;
   children: ReactNode;
 }) => {
-  const preferredVersionLabel = useDocsPreferredVersion('default').preferredVersion?.label;
+  const preferredVersionLabel =
+    useDocsPreferredVersion('default').preferredVersion?.label;
   const siteVersion = preferredVersionLabel
     ? preferredVersionLabel.match(/^\d+\.\d+\.\d+/)?.[0] || 'master'
     : 'master';
@@ -29,7 +30,8 @@ export const CodeReferenceLink = ({
   } else {
     return (
       <Admonition type="tip" title="Title">
-        You can find the code for this example on <Link href={url}>GitHub</Link>.
+        You can find the code for this example on <Link href={url}>GitHub</Link>
+        .
       </Admonition>
     );
   }

@@ -1,5 +1,5 @@
 ---
-title: "dagstermill integration reference"
+title: 'dagstermill integration reference'
 description: The Dagstermill package lets you run notebooks using the Dagster tools and integrate them into your data pipelines.
 sidebar_position: 200
 ---
@@ -61,7 +61,6 @@ The functionality described in this section only works for notebooks run with `d
 :::
 
 If you are using `define_dagstermill_op` and you'd like to yield a result to be consumed downstream of a notebook, you can call <PyObject section="libraries" module="dagstermill" object="yield_result" /> with the value of the result and its name. In interactive execution, this is a no-op, so you don't need to change anything when moving from interactive exploration and development to production.
-
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/dagstermill/notebook_outputs.py" startAfter="start_notebook" endBefore="end_notebook" />
 

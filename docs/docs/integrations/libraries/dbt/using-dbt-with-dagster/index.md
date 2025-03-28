@@ -1,5 +1,5 @@
 ---
-title: "Using dbt with Dagster"
+title: 'Using dbt with Dagster'
 description: Dagster can orchestrate dbt alongside other technologies.
 ---
 

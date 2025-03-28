@@ -1,5 +1,5 @@
 ---
-title: "Migrate DAG-mapped assets"
+title: 'Migrate DAG-mapped assets'
 sidebar_position: 400
 ---
 

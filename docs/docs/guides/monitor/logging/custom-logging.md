@@ -31,13 +31,11 @@ The following example shows how to add the custom logger to your code location d
 
 <CodeExample path="docs_snippets/docs_snippets/guides/monitor-alert/custom-logging/asset-job-example.py" language="python" title="Add custom logger to asset job" />
 
-
 ### Add the custom logger to your ops-based jobs
 
 Configuring a ops job to use the custom logger slightly differs from the asset job example. The following example shows how:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/monitor-alert/custom-logging/ops-job-example.py" language="python" title="Add custom logger to ops job" />
-
 
 ### Expected `json_console_logger` output
 

@@ -1,5 +1,5 @@
 ---
-title: "Using Delta Lake with Dagster"
+title: 'Using Delta Lake with Dagster'
 description: Store your Dagster assets in a Delta Lake
 sidebar_position: 100
 ---

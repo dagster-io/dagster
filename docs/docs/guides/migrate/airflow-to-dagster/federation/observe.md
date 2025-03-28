@@ -1,5 +1,5 @@
 ---
-title: "Observe multiple Airflow instances from Dagster"
+title: 'Observe multiple Airflow instances from Dagster'
 sidebar_position: 200
 ---
 
@@ -77,7 +77,7 @@ You can repeat the same process for the `customer_metrics` DAG in the `metrics` 
 
 :::note Complete code
 
-To see what the code should look like after you have completed all the steps above, check out the [example in GitHub](https://github.com/dagster-io/dagster/blob/master/examples/airlift-federation-tutorial/airlift_federation_tutorial/dagster_defs/stages/observe_complete.py). 
+To see what the code should look like after you have completed all the steps above, check out the [example in GitHub](https://github.com/dagster-io/dagster/blob/master/examples/airlift-federation-tutorial/airlift_federation_tutorial/dagster_defs/stages/observe_complete.py).
 
 :::
 

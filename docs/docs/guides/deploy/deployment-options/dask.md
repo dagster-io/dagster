@@ -1,5 +1,5 @@
 ---
-title: "Executing on Dask"
+title: 'Executing on Dask'
 description: The dask_executor uses Dask to execute Dagster ops.
 ---
 

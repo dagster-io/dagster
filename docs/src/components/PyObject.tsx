@@ -15,7 +15,14 @@ export const PyObject: React.FunctionComponent<{
   displayText?: string;
   pluralize?: boolean;
   decorator?: boolean;
-}> = ({section, object, displayText, module = 'dagster', pluralize = false, decorator = false}) => {
+}> = ({
+  section,
+  object,
+  displayText,
+  module = 'dagster',
+  pluralize = false,
+  decorator = false,
+}) => {
   let textValue = displayText || object;
   if (pluralize) {
     textValue += 's';

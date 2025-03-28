@@ -33,6 +33,7 @@ Dagster+ Pro customers may request a quota increase by [contacting Sales](https:
 ## Next steps
 
 To start using Dagster+ Serverless, you must [create a Dagster+ organization](https://dagster.plus/signup) if you have not already done so. You can sign up with:
+
 - a Google email address
 - a GitHub account
 - a one-time email link (ideal if you are using a corporate email). You can set up SSO after completing these steps.

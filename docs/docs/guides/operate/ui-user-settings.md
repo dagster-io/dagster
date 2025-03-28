@@ -1,6 +1,6 @@
 ---
-title: "Managing user settings in the Dagster UI"
-sidebar_label: "User settings in the UI"
+title: 'Managing user settings in the Dagster UI'
+sidebar_label: 'User settings in the UI'
 sidebar_position: 30
 ---
 

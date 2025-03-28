@@ -47,12 +47,11 @@ See the [`duckdb`](https://duckdb.org/docs/installation/?version=stable&environm
 
 :::
 
-
 ### 2. Scaffold a new project
 
 After installing dependencies, scaffold a components-ready project:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-scaffold.txt"  />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-scaffold.txt" />
 
 The `dg scaffold project` command builds a project at `jaffle-platform` and initializes a new Python
 virtual environment inside it. When you use `dg`'s default environment management behavior, you won't need to worry about activating this virtual environment yourself.
@@ -97,7 +96,7 @@ This adds a component instance to the project at `jaffle_platform/defs/ingest_fi
 
 A single file, `component.yaml`, was created in the component folder. The `component.yaml` file is common to all Dagster components, and specifies the component type and any parameters used to scaffold definitions from the component at runtime.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/components/index/11-component.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/ingest_files/component.yaml"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/components/index/11-component.yaml" language="YAML" title="jaffle-platform/jaffle_platform/defs/ingest_files/component.yaml" />
 
 Right now the parameters define a single "replication"-- this is a Sling concept that specifies how data should be replicated from a source to a target. The details are specified in a `replication.yaml` file that is read by Sling. This file does not yet exist-- we are going to create it shortly.
 
@@ -155,12 +154,11 @@ To confirm that the `dagster_components.dbt_project` component type is now avail
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/18-dg-list-component-types.txt" />
 
-
 ### 3. Scaffold a new instance of the dbt project component
 
 Next, scaffold a new instance of the `dagster_components.dbt_project` component, providing the path to the dbt project you cloned earlier as the `project_path` scaffold parameter:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/19-dg-scaffold-jdbt.txt"/>
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/19-dg-scaffold-jdbt.txt" />
 
 This creates a new component instance in the project at `jaffle_platform/defs/jdbt`. To see the component configuration, open `component.yaml` in that directory:
 

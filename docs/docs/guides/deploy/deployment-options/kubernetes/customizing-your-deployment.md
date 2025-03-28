@@ -1,5 +1,5 @@
 ---
-title: "Customizing your Kubernetes deployment"
+title: 'Customizing your Kubernetes deployment'
 description: This section covers common ways to customize your Dagster Kubernetes deployment.
 sidebar_position: 200
 ---
@@ -115,9 +115,9 @@ Consider the following example:
 
   ```json
   {
-    "node_selector": { "disktype": "ssd" },
+    "node_selector": {"disktype": "ssd"},
     "dns_policy": "ClusterFirst",
-    "image_pull_secrets": [{ "name": "my-secret" }]
+    "image_pull_secrets": [{"name": "my-secret"}]
   }
   ```
 
@@ -126,9 +126,9 @@ Consider the following example:
   ```json
   {
     "pod_spec_config": {
-      "node_selector": { "region": "east" },
+      "node_selector": {"region": "east"},
       "dns_policy": "Default",
-      "image_pull_secrets": [{ "name": "another-secret" }]
+      "image_pull_secrets": [{"name": "another-secret"}]
     }
   }
   ```
@@ -137,9 +137,9 @@ The job will merge the two `node_selector` dictionaries, append the two `image_p
 
 ```json
 {
-  "node_selector": { "disktype": "ssd", "region": "east" },
+  "node_selector": {"disktype": "ssd", "region": "east"},
   "dns_policy": "Default",
-  "image_pull_secrets": [{ "name": "my-secret" }, { "name": "another-secret" }]
+  "image_pull_secrets": [{"name": "my-secret"}, {"name": "another-secret"}]
 }
 ```
 
@@ -151,9 +151,9 @@ To modify the previous example:
 
   ```json
   {
-    "node_selector": { "disktype": "ssd" },
+    "node_selector": {"disktype": "ssd"},
     "dns_policy": "ClusterFirst",
-    "image_pull_secrets": [{ "name": "my-secret" }]
+    "image_pull_secrets": [{"name": "my-secret"}]
   }
   ```
 
@@ -162,8 +162,8 @@ To modify the previous example:
   ```json
   {
     "pod_spec_config": {
-      "node_selector": { "region": "east" },
-      "image_pull_secrets": [{ "name": "another-secret" }]
+      "node_selector": {"region": "east"},
+      "image_pull_secrets": [{"name": "another-secret"}]
     },
     "merge_behavior": "SHALLOW"
   }
@@ -175,9 +175,9 @@ The resulting `pod_spec_config` will be:
 
 ```json
 {
-  "node_selector": { "region": "east" },
+  "node_selector": {"region": "east"},
   "dns_policy": "ClusterFirst",
-  "image_pull_secrets": [{ "name": "another-secret" }]
+  "image_pull_secrets": [{"name": "another-secret"}]
 }
 ```
 
@@ -194,10 +194,10 @@ In a real deployment, users will likely want to set up an external PostgreSQL da
 ```yaml
 postgresql:
   enabled: false
-  postgresqlHost: "postgresqlHost"
-  postgresqlUsername: "postgresqlUsername"
-  postgresqlPassword: "postgresqlPassword"
-  postgresqlDatabase: "postgresqlDatabase"
+  postgresqlHost: 'postgresqlHost'
+  postgresqlUsername: 'postgresqlUsername'
+  postgresqlPassword: 'postgresqlPassword'
+  postgresqlDatabase: 'postgresqlDatabase'
   service:
     port: 5432
 ```
@@ -208,7 +208,7 @@ If you use a secrets manager like [Vault](https://www.hashicorp.com/products/vau
 
 ```yaml
 global:
-  postgresqlSecretName: "dagster-postgresql-secret"
+  postgresqlSecretName: 'dagster-postgresql-secret'
 
 generatePostgresqlPasswordSecret: false
 ```
@@ -246,7 +246,7 @@ dagsterWebserver:
   workspace:
     enabled: true
     servers:
-      - host: "k8s-example-user-code-1"
+      - host: 'k8s-example-user-code-1'
         port: 3030
       - ...
 ```

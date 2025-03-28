@@ -1,6 +1,6 @@
 ---
-title: "Constructing schedules from partitioned assets and jobs"
-description: "Learn to construct schedules for your partitioned jobs."
+title: 'Constructing schedules from partitioned assets and jobs'
+description: 'Learn to construct schedules for your partitioned jobs.'
 sidebar_position: 400
 ---
 
@@ -125,10 +125,10 @@ If we only want to target the `Antarctica` partition, we can create a schedule l
 
 ## APIs in this guide
 
-| Name                                                      | Description                                                                                         |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />                  | Decorator that defines a schedule that executes according to a given cron schedule.                 |
-| <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job" /> | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
-| <PyObject section="schedules-sensors" module="dagster" object="RunRequest" />                          | A class that represents all the information required to launch a single run.                        |
-| <PyObject section="assets" module="dagster" object="define_asset_job" />                    | A function for defining a job from a [selection of assets](/guides/build/assets/asset-selection-syntax).                                           |
-| <PyObject section="jobs" module="dagster" object="job" decorator />                       | The decorator used to define a job.                                                                 |
+| Name                                                                                                   | Description                                                                                              |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />                  | Decorator that defines a schedule that executes according to a given cron schedule.                      |
+| <PyObject section="schedules-sensors" module="dagster" object="build_schedule_from_partitioned_job" /> | A function that constructs a schedule whose interval matches the partitioning of a partitioned job.      |
+| <PyObject section="schedules-sensors" module="dagster" object="RunRequest" />                          | A class that represents all the information required to launch a single run.                             |
+| <PyObject section="assets" module="dagster" object="define_asset_job" />                               | A function for defining a job from a [selection of assets](/guides/build/assets/asset-selection-syntax). |
+| <PyObject section="jobs" module="dagster" object="job" decorator />                                    | The decorator used to define a job.                                                                      |

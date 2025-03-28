@@ -1,5 +1,5 @@
 ---
-title: "Migrating an Airflow KubernetesPodOperator to Dagster"
+title: 'Migrating an Airflow KubernetesPodOperator to Dagster'
 sidebar_position: 400
 ---
 

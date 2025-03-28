@@ -1,5 +1,5 @@
 ---
-title: "Load dbt models as Dagster assets"
+title: 'Load dbt models as Dagster assets'
 description: Dagster can orchestrate dbt alongside other technologies.
 sidebar_position: 200
 ---

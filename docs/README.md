@@ -82,7 +82,7 @@ yarn vale /path/to/file      ## check individual file
 yarn vale --no-wrap          ## remove wrapping from output
 ```
 
-For more information on Vale, see https://vale.sh/. 
+For more information on Vale, see https://vale.sh/.
 
 ---
 
@@ -100,7 +100,7 @@ yarn rebuild-kinds-tags
 
 Previous versions of the docs site are made accessible through preview deployments in Vercel, for example:
 
-* https://release-1-9-13.archive.dagster-docs.io/
+- https://release-1-9-13.archive.dagster-docs.io/
 
 Which is hosted on the `archive` subdomain of dagster-docs.io where `release-1-9-13` is the release branch in version control.
 

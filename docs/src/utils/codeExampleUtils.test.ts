@@ -47,7 +47,11 @@ describe('filterComments', () => {
       'from typing import Dict, Any  # isort:skip',
     ];
 
-    const expected = ['', 'from typing import Dict, Any', 'from typing import Dict, Any'];
+    const expected = [
+      '',
+      'from typing import Dict, Any',
+      'from typing import Dict, Any',
+    ];
 
     expect(filterComments(input)).toEqual(expected);
   });

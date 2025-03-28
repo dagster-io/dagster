@@ -1,5 +1,5 @@
 ---
-title: "BigQuery integration reference"
+title: 'BigQuery integration reference'
 description: Store your Dagster assets in BigQuery
 sidebar_position: 200
 ---
@@ -135,27 +135,25 @@ If you want to store assets in different datasets, you can specify the dataset a
 You can also specify the dataset as part of the asset's asset key:
 
 {/* TODO add dedent=4 to CodeExample below */}
+
 <CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/dataset.py" startAfter="start_asset_key" endBefore="end_asset_key" />
 
 The dataset will be the last prefix before the asset's name. In this example, the `iris_data` asset will be stored in the `IRIS` dataset, and the `daffodil_data` asset will be found in the `DAFFODIL` dataset.
 
 :::note
 
-  The dataset is determined in this order:
-  <ol>
-    <li>If the dataset is set via metadata, that dataset will be used</li>
-    <li>
-      Otherwise, the dataset set as configuration on the I/O manager will be
-      used
-    </li>
-    <li>
-      Otherwise, if there is a <code>key_prefix</code>, that dataset will be
-      used
-    </li>
-    <li>
-      If none of the above are provided, the default dataset will be <code>PUBLIC</code>
-    </li>
-  </ol>
+The dataset is determined in this order:
+
+<ol>
+  <li>If the dataset is set via metadata, that dataset will be used</li>
+  <li>Otherwise, the dataset set as configuration on the I/O manager will be used</li>
+  <li>
+    Otherwise, if there is a <code>key_prefix</code>, that dataset will be used
+  </li>
+  <li>
+    If none of the above are provided, the default dataset will be <code>PUBLIC</code>
+  </li>
+</ol>
 
 :::
 
@@ -190,12 +188,10 @@ The `BigQueryPySparkIOManager` requires that a `SparkSession` be active and conf
 <Tabs>
 <TabItem value="With the spark_resource">
 
-
 <CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/pyspark_with_spark_resource.py" />
 
 </TabItem>
 <TabItem value="With your own SparkSession">
-
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/pyspark_with_spark_session.py" />
 
@@ -211,7 +207,6 @@ In order to load data from BigQuery as a PySpark DataFrame, the BigQuery PySpark
 ## Using Pandas and PySpark DataFrames with BigQuery
 
 If you work with both Pandas and PySpark DataFrames and want a single I/O manager to handle storing and loading these DataFrames in BigQuery, you can write a new I/O manager that handles both types. To do this, inherit from the <PyObject section="libraries" module="dagster_gcp" object="BigQueryIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `BigQueryIOManager`.
-
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/reference/pandas_and_pyspark.py" startAfter="start_example" endBefore="end_example" />
 

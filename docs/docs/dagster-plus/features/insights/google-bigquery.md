@@ -1,6 +1,6 @@
 ---
-title: "Track Google BigQuery usage with Dagster+ Insights"
-sidebar_label: "Google BigQuery"
+title: 'Track Google BigQuery usage with Dagster+ Insights'
+sidebar_label: 'Google BigQuery'
 sidebar_position: 400
 ---
 

@@ -5,7 +5,7 @@ name: MSSQL Bulk Copy Tool
 title: Dagster & MSSQL Bulk Copy Tool
 sidebar_label: MSSQL Bulk Copy Tool
 excerpt: The community-supported `dagster-mssql-bcp` package is a custom Dagster I/O manager for loading data into SQL Server using the bcp utility.
-date: 
+date:
 apireflink:
 docslink:
 partnerlink:

@@ -22,7 +22,9 @@
     "build-api-docs": "./scripts/build-api-docs.sh",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "format": "prettier --write .",
+    "format:diff": "prettier --list-different ."
   },
   "dependencies": {
     "@docusaurus/core": "^3.7.0",

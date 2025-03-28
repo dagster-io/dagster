@@ -3,7 +3,8 @@ const path = require('path');
 
 const CODE_EXAMPLE_MAPPING_FILE = 'src/code-examples-content.js';
 const VALID_DOCUMENT_EXTENSIONS = ['.md', '.mdx'];
-const CODE_EXAMPLE_PATH_REGEX = /<(?:(?:CodeExample)|(?:CliInvocationExample))\s+[^>]*path=["']([^"']+)["'][^>]*>/g;
+const CODE_EXAMPLE_PATH_REGEX =
+  /<(?:(?:CodeExample)|(?:CliInvocationExample))\s+[^>]*path=["']([^"']+)["'][^>]*>/g;
 
 /**
  * Returns a list of file paths for a given `dir`.
@@ -67,5 +68,7 @@ export const CODE_EXAMPLE_PATH_MAPPINGS = \{
 
 fs.writeFile(CODE_EXAMPLE_MAPPING_FILE, _module, (err) => {
   if (err) throw err;
-  console.log(`Generated ${uniqueMatches.length} code references in ${CODE_EXAMPLE_MAPPING_FILE}.`);
+  console.log(
+    `Generated ${uniqueMatches.length} code references in ${CODE_EXAMPLE_MAPPING_FILE}.`,
+  );
 });

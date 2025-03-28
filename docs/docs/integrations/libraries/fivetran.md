@@ -15,7 +15,7 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, etl]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/fivetran.svg
 ---
 
@@ -100,7 +100,7 @@ To enable this feature, call <PyObject section="libraries" object="fivetran_even
 
 ### Load Fivetran asset for selected connectors
 
-To select a subset of Fivetran connectors for which your Fivetran assets will be loaded, you can use the <PyObject section="libraries" module="dagster_fivetran" object="ConnectorSelectorFn" /> callback and define your selection conditions. 
+To select a subset of Fivetran connectors for which your Fivetran assets will be loaded, you can use the <PyObject section="libraries" module="dagster_fivetran" object="ConnectorSelectorFn" /> callback and define your selection conditions.
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/fivetran/select_fivetran_connectors.py" language="python" />
 

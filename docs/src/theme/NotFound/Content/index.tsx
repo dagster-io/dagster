@@ -17,8 +17,11 @@ export default function NotFoundContent({className}: Props): JSX.Element {
               We can&apos;t seem to find what you&apos;re looking for.
             </p>
             <p id="theme.NotFound.p2">
-              If you believe that this is an error&mdash;we would greatly appreciate it if you
-              opened a <Link href="https://github.com/dagster-io/dagster/issues">GitHub issue</Link>
+              If you believe that this is an error&mdash;we would greatly
+              appreciate it if you opened a{' '}
+              <Link href="https://github.com/dagster-io/dagster/issues">
+                GitHub issue
+              </Link>
               .
             </p>
           </div>

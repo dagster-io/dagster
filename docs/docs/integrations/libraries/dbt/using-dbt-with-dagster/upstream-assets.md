@@ -1,5 +1,5 @@
 ---
-title: "Define assets upstream of your dbt models"
+title: 'Define assets upstream of your dbt models'
 description: Dagster can orchestrate dbt alongside other technologies.
 sidebar_position: 300
 ---
@@ -67,7 +67,7 @@ Finally, let's update the `assets` argument of our `Definitions` object, in `def
          - name: raw_customers
            meta:
              dagster:
-               asset_key: ["raw_customers"] # This metadata specifies the corresponding Dagster asset for this dbt source.
+               asset_key: ['raw_customers'] # This metadata specifies the corresponding Dagster asset for this dbt source.
    ```
 
 This is a standard dbt source definition, with one addition: it includes metadata, under the `meta` property, that specifies the Dagster asset that it corresponds to. When Dagster reads the contents of the dbt project, it reads this metadata and infers the correspondence. For any dbt model that depends on this dbt source, Dagster then knows that the Dagster asset corresponding to the dbt model should depend on the Dagster asset corresponding to the source.
@@ -118,7 +118,6 @@ Click the **Materialize all** button. This will launch a run with two steps:
 If you click to view the run, you can see a graphical representation of these steps, along with logs.
 
 ![Run page for run with dbt models and Python asset](/images/integrations/dbt/using-dbt-with-dagster/upstream-assets/run-page.png)
-
 
 ## What's next?
 

@@ -7,18 +7,17 @@ ignorecase: true
 action:
   name: replace
 swap:
-
-# General
+  # General
   HTTPs: HTTPS
-  "[Ss]cim": "SCIM"
-  ui: "UI"
-  web server: "webserver"
+  '[Ss]cim': 'SCIM'
+  ui: 'UI'
+  web server: 'webserver'
 
-# Languages
-  "[Gg]raphql": "GraphQL"
-  javascript: "JavaScript"
-  "[Nn]ode[.]?[Jj][Ss]": "Node.js"
-  python: "Python"
-  pythonic: "Pythonic"
-  sql: "SQL"
-  "[Tt]ypescript": "TypeScript"
+  # Languages
+  '[Gg]raphql': 'GraphQL'
+  javascript: 'JavaScript'
+  '[Nn]ode[.]?[Jj][Ss]': 'Node.js'
+  python: 'Python'
+  pythonic: 'Pythonic'
+  sql: 'SQL'
+  '[Tt]ypescript': 'TypeScript'

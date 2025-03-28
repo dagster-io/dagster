@@ -1,5 +1,5 @@
 ---
-title: "Customizing automation conditions"
+title: 'Customizing automation conditions'
 sidebar_position: 10
 ---
 

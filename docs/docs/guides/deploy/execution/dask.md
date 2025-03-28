@@ -1,5 +1,5 @@
 ---
-title: "Executing Dagster on Dask"
+title: 'Executing Dagster on Dask'
 sidebar_position: 800
 ---
 

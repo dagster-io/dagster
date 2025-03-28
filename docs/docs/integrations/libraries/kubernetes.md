@@ -14,7 +14,7 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, compute]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/kubernetes.svg
 ---
 

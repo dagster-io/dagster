@@ -1,5 +1,5 @@
 ---
-title: "Observe Airflow tasks"
+title: 'Observe Airflow tasks'
 sidebar_position: 300
 ---
 
@@ -31,16 +31,13 @@ uv pip install 'dagster-airlift[dbt]'
 
 Next, construct the assets:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe.py" language="python"/>
+<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/observe.py" language="python" />
 
 ## View observed assets
 
 Once you have created the three assets above, you should be able to navigate to the UI, reload your Dagster definitions, and see a full representation of the `dbt` project and other data assets in your code:
 
-<img
-  src="/images/integrations/airlift/observe.svg"
-  alt="Observed asset graph in Dagster"
-/>
+<img src="/images/integrations/airlift/observe.svg" alt="Observed asset graph in Dagster" />
 
 After you initiate a run of the DAG in Airflow, you should see the newly created assets materialize in Dagster as each task completes.
 
@@ -87,7 +84,7 @@ airflow db clean
 In order for partitioned assets to work with `dagster-airlift`, the following things need to be true:
 
 - The asset can only be time-window partitioned. This means static, dynamic, and multi partitioned definitions will require custom functionality.
-- The partitioning scheme must match up with the [logical_date/execution_date](https://airflow.apache.org/docs/apache-airflow/stable/faq.html#what-does-execution-date-mean) of corresponding Airflow runs. That is, each logical_date should correspond _exactly_ to a partition in Dagster.
+- The partitioning scheme must match up with the [logical_date/execution_date](https://airflow.apache.org/docs/apache-airflow/stable/faq.html#what-does-execution-date-mean) of corresponding Airflow runs. That is, each logical*date should correspond \_exactly* to a partition in Dagster.
 
 :::
 

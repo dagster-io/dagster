@@ -1,6 +1,6 @@
 ---
-title: "Integrate asset metadata into Dagster+ Insights"
-sidebar_label: "Integrate asset metadata"
+title: 'Integrate asset metadata into Dagster+ Insights'
+sidebar_label: 'Integrate asset metadata'
 sidebar_position: 100
 ---
 

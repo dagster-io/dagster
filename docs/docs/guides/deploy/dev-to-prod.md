@@ -1,5 +1,5 @@
 ---
-title: "Transitioning from development to production"
+title: 'Transitioning from development to production'
 sidebar_position: 500
 ---
 

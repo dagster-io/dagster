@@ -5,7 +5,7 @@ name: Ray
 title: Dagster & Ray
 sidebar_label: Ray
 excerpt: The community-supported `dagster-ray` package allows orchestrating distributed Ray compute from Dagster pipelines.
-date: 
+date:
 apireflink:
 docslink:
 partnerlink:

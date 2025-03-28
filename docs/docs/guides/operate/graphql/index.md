@@ -1,5 +1,5 @@
 ---
-title: "Dagster GraphQL API"
+title: 'Dagster GraphQL API'
 description: Dagster exposes a GraphQL API that allows clients to interact with Dagster programmatically
 sidebar_position: 60
 ---
@@ -10,7 +10,6 @@ The GraphQL API is still evolving and is subject to breaking changes. A large po
 For any of the queries below, we will be clear about breaking changes in release notes.
 
 :::
-
 
 Dagster exposes a GraphQL API that allows clients to interact with Dagster programmatically. The API allows users to:
 

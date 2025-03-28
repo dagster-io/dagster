@@ -1,5 +1,5 @@
 ---
-title: "Unit testing assets and ops"
+title: 'Unit testing assets and ops'
 sidebar_position: 400
 ---
 
@@ -25,7 +25,7 @@ Before you begin implementing unit tests, note that:
 
 The simplest assets to test are those with no arguments. In these cases, you can directly invoke definitions.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-no-argument.py" language="python"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/quality-testing/unit-testing-assets-and-ops/asset-no-argument.py" language="python" />
 
 ### Assets with upstream dependencies \{#upstream-dependencies}
 

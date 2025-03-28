@@ -18,8 +18,7 @@ You can then update the `type:` field in your `component.yaml` file to reference
 ```yaml
 type: .custom_subclass
 
-attributes:
-    ...
+attributes: ...
 ```
 
 ## Customizing execution

@@ -1,5 +1,5 @@
 ---
-title: "Data freshness checks"
+title: 'Data freshness checks'
 sidebar_position: 300
 ---
 
@@ -34,6 +34,7 @@ To get started with freshness checks, follow these general steps:
 1. **Define a freshness check**: Freshness checks are defined using `build_last_update_freshness_checks`, which utilizes an asset's last updated time to determine freshness.
 
    **If using Dagster+ Pro**, you can also use [`build_anomaly_detection_freshness_checks`](#anomaly-detection) to define a freshness check that uses an anomaly detection model to determine freshness.
+
 2. **Define a schedule or sensor**: Defining a schedule or sensor (`build_sensor_for_freshness_checks`) is required to ensure the freshness check executes. If the check only runs after the asset has been materialized, the check won't be able to detect the times materialization fails.
 3. **Pass the freshness check and schedule/sensor to the `Definitions` object**: Freshness checks and the associated schedule or sensor must be added to a `Definitions` object for Dagster to recognize them.
 4. **View the freshness check results in the Dagster UI**: Freshness check results will appear in the UI, allowing you to track the results over time.

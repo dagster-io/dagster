@@ -1,5 +1,5 @@
 ---
-title: "Migrating an Airflow PythonOperator to Dagster"
+title: 'Migrating an Airflow PythonOperator to Dagster'
 sidebar_position: 300
 ---
 

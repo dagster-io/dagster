@@ -15,7 +15,7 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, other]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/airflow.svg
 ---
 

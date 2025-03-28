@@ -1,5 +1,5 @@
 ---
-title: "Example customizations"
+title: 'Example customizations'
 sidebar_position: 200
 ---
 

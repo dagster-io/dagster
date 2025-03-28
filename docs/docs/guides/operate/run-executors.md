@@ -1,5 +1,5 @@
 ---
-title: "Run executors"
+title: 'Run executors'
 description: Executors are responsible for executing steps within a job run.
 sidebar_position: 40
 ---
@@ -10,10 +10,10 @@ Executors can range from single-process serial executors to managing per-step co
 
 ## Relevant APIs
 
-| Name                                     | Description                                                                                  |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Name                                                                          | Description                                                                                                                       |
+| ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | <PyObject section="internals" module="dagster" object="executor" decorator /> | The decorator used to define executors. Defines an <PyObject section="internals" module="dagster" object="ExecutorDefinition" />. |
-| <PyObject section="internals" module="dagster" object="ExecutorDefinition" /> | An executor definition.                                                                      |
+| <PyObject section="internals" module="dagster" object="ExecutorDefinition" /> | An executor definition.                                                                                                           |
 
 ## Specifying executors
 
@@ -44,16 +44,16 @@ Executing a job via <PyObject section="jobs" module="dagster" object="JobDefinit
 
 ## Example executors
 
-| Name | Description |
-|------|-------------|
-| <PyObject section="execution" module="dagster" object="in_process_executor" /> | Execution plan executes serially within the run worker itself. |
-| <PyObject section="execution" module="dagster" object="multiprocess_executor" /> | Executes each step within its own spawned process. Has a configurable level of parallelism. |
-| <PyObject section="libraries" module="dagster_dask" object="dask_executor" /> | Executes each step within a Dask task. |
-| <PyObject section="libraries" module="dagster_celery" object="celery_executor" /> | Executes each step within a Celery task. |
-| <PyObject section="libraries" module="dagster_docker" object="docker_executor" /> | Executes each step within an ephemeral Kubernetes pod. |
-| <PyObject section="libraries" module="dagster_k8s" object="k8s_job_executor" /> | Executes each step within an ephemeral Kubernetes pod. |
-| <PyObject section="libraries" module="dagster_celery_k8s" object="celery_k8s_job_executor" /> | Executes each step within a ephemeral Kubernetes pod, using Celery as a control plane for prioritization and queuing. |
-| <PyObject section="libraries" module="dagster_celery_docker" object="celery_docker_executor" /> | Executes each step within a Docker container, using Celery as a control plane for prioritization and queueing. |
+| Name                                                                                            | Description                                                                                                           |
+| ----------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| <PyObject section="execution" module="dagster" object="in_process_executor" />                  | Execution plan executes serially within the run worker itself.                                                        |
+| <PyObject section="execution" module="dagster" object="multiprocess_executor" />                | Executes each step within its own spawned process. Has a configurable level of parallelism.                           |
+| <PyObject section="libraries" module="dagster_dask" object="dask_executor" />                   | Executes each step within a Dask task.                                                                                |
+| <PyObject section="libraries" module="dagster_celery" object="celery_executor" />               | Executes each step within a Celery task.                                                                              |
+| <PyObject section="libraries" module="dagster_docker" object="docker_executor" />               | Executes each step within an ephemeral Kubernetes pod.                                                                |
+| <PyObject section="libraries" module="dagster_k8s" object="k8s_job_executor" />                 | Executes each step within an ephemeral Kubernetes pod.                                                                |
+| <PyObject section="libraries" module="dagster_celery_k8s" object="celery_k8s_job_executor" />   | Executes each step within a ephemeral Kubernetes pod, using Celery as a control plane for prioritization and queuing. |
+| <PyObject section="libraries" module="dagster_celery_docker" object="celery_docker_executor" /> | Executes each step within a Docker container, using Celery as a control plane for prioritization and queueing.        |
 
 ## Custom executors
 

@@ -14,7 +14,7 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, storage]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/azure.svg
 ---
 

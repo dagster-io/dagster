@@ -5,7 +5,7 @@ name: HashiCorp Nomad
 title: Dagster & HashiCorp
 sidebar_label: HashiCorp Nomad
 excerpt: The community-supported `dagster-nomad` package provides an integration with HashiCorp Nomad.
-date: 
+date:
 apireflink:
 docslink:
 partnerlink:

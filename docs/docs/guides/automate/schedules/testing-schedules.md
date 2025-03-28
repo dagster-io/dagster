@@ -1,5 +1,5 @@
 ---
-title: "Testing schedules"
+title: 'Testing schedules'
 sidebar_position: 600
 ---
 
@@ -17,23 +17,23 @@ Using the UI, you can manually trigger test evaluations of a schedule and view t
 
 4. You'll be prompted to select a mock schedule evaluation time. As schedules are defined on a cadence, the evaluation times in the dropdown are past and future times along that cadence.
 
-    For example, let's say you're testing a schedule with a cadence of `"Every day at X time"`. In the dropdown, you'd see past and future evaluation times along that cadence:
+   For example, let's say you're testing a schedule with a cadence of `"Every day at X time"`. In the dropdown, you'd see past and future evaluation times along that cadence:
 
-    ![Selecting a mock evaluation time for a schedule in the Dagster UI](/images/guides/automate/schedules/testing-select-timestamp-page.png)
+   ![Selecting a mock evaluation time for a schedule in the Dagster UI](/images/guides/automate/schedules/testing-select-timestamp-page.png)
 
 5. After selecting an evaluation time, click the **Continue** button.
 
 6. A window containing the evaluation result will display after the test completes:
 
-    ![Results page after evaluating the schedule in the Dagster UI](/images/guides/automate/schedules/testing-result-page.png)
+   ![Results page after evaluating the schedule in the Dagster UI](/images/guides/automate/schedules/testing-result-page.png)
 
-    If the preview was successful, then for each produced run request, you can view the run config and tags produced by that run request by clicking the **{}** button in the Actions column:
+   If the preview was successful, then for each produced run request, you can view the run config and tags produced by that run request by clicking the **{}** button in the Actions column:
 
-    ![Actions page in the Dagster UI](/images/guides/automate/schedules/testing-actions-page.png)
+   ![Actions page in the Dagster UI](/images/guides/automate/schedules/testing-actions-page.png)
 
 7. Click the **Launch all & commit tick result** on the bottom right to launch all the run requests. This will launch the runs and link to the /runs page filtered to the IDs of the runs that launched:
 
-    ![Runs page after launching all runs in the Dagster UI](/images/guides/automate/schedules/testing-launched-runs-page.png)
+   ![Runs page after launching all runs in the Dagster UI](/images/guides/automate/schedules/testing-launched-runs-page.png)
 
 ## Testing schedules in Python
 
@@ -62,17 +62,17 @@ For schedules that utilize [resources](/guides/build/external-resources), you ca
 
 Let's say we want to test the `process_data_schedule` in this example:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_on_schedule" endBefore="end_new_resource_on_schedule" dedent="4"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_new_resource_on_schedule" endBefore="end_new_resource_on_schedule" dedent="4" />
 
 In the test for this schedule, we provided the `date_formatter` resource to the schedule when we invoked its function:
 
-<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_test_resource_on_schedule" endBefore="end_test_resource_on_schedule" dedent="4"/>
+<CodeExample path="docs_snippets/docs_snippets/concepts/resources/pythonic_resources.py" startAfter="start_test_resource_on_schedule" endBefore="end_test_resource_on_schedule" dedent="4" />
 
 ## APIs in this guide
 
-| Name                                            | Description                                                                           |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Name                                                                                         | Description                                                                           |
+| -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | <PyObject section="schedules-sensors" module="dagster" object="schedule" decorator />        | Decorator that defines a schedule that executes according to a given cron schedule.   |
-| <PyObject section="execution" module="dagster" object="validate_run_config" />       | A function that validates a provided run config blob against a job.                   |
+| <PyObject section="execution" module="dagster" object="validate_run_config" />               | A function that validates a provided run config blob against a job.                   |
 | <PyObject section="schedules-sensors" module="dagster" object="build_schedule_context" />    | A function that constructs a `ScheduleEvaluationContext`, typically used for testing. |
 | <PyObject section="schedules-sensors" module="dagster" object="ScheduleEvaluationContext" /> | The context passed to the schedule definition execution function.                     |

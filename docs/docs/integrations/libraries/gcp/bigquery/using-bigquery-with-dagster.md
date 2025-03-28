@@ -1,5 +1,5 @@
 ---
-title: "Using Google BigQuery with Dagster"
+title: 'Using Google BigQuery with Dagster'
 description: Store your Dagster assets in BigQuery
 sidebar_position: 100
 ---

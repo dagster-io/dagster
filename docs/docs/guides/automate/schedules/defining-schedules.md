@@ -17,7 +17,12 @@ This example demonstrates how to define a schedule using <PyObject section="sche
 :::note
 
 The `cron_schedule` argument accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron). If your `croniter` dependency's version is `>= 1.0.12`, the argument will also accept the following:
-<ul><li>`@daily`</li><li>`@hourly`</li><li>`@monthly`</li></ul>
+
+<ul>
+  <li>`@daily`</li>
+  <li>`@hourly`</li>
+  <li>`@monthly`</li>
+</ul>
 
 :::
 
@@ -35,7 +40,12 @@ def basic_schedule(): ...
 :::note
 
 The `cron_schedule` argument accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron). If your `croniter` dependency's version is `>= 1.0.12`, the argument will also accept the following:
-<ul><li>`@daily`</li><li>`@hourly`</li><li>`@monthly`</li></ul>
+
+<ul>
+  <li>`@daily`</li>
+  <li>`@hourly`</li>
+  <li>`@monthly`</li>
+</ul>
 
 :::
 
@@ -53,4 +63,3 @@ This example demonstrates how to emit log messages from a schedule during its ev
 Schedule logs are stored in your [Dagster instance's compute log storage](/guides/deploy/dagster-instance-configuration#compute-log-storage). You should ensure that your compute log storage is configured to view your schedule logs.
 
 :::
-

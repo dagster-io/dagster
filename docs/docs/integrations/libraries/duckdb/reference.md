@@ -1,5 +1,5 @@
 ---
-title: "dagster-duckdb integration reference"
+title: 'dagster-duckdb integration reference'
 description: Store your Dagster assets in DuckDB
 sidebar_position: 200
 ---
@@ -56,7 +56,7 @@ In the following sections, we describe how the I/O manager constructs these quer
 
 To store static partitioned assets in DuckDB, specify `partition_expr` metadata on the asset to tell the DuckDB I/O manager which column contains the partition data:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/static_partition.py"  startAfter="start_example" endBefore="end_example" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/static_partition.py" startAfter="start_example" endBefore="end_example" />
 
 Dagster uses the `partition_expr` metadata to craft the `SELECT` statement when loading the partition in the downstream asset. When loading a static partition (or multiple static partitions), the following statement is used:
 
@@ -133,6 +133,7 @@ You can specify the default schema where data will be stored as configuration to
 If you want to store assets in different schemas, you can specify the schema as metadata:
 
 {/* TODO add dedent to this CodeExample */}
+
 <CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/schema.py" startAfter="start_metadata" endBefore="end_metadata" />
 
 You can also specify the schema as part of the asset's key:
@@ -143,19 +144,18 @@ In this example, the `iris_dataset` asset will be stored in the `IRIS` schema, a
 
 :::note
 
-  The schema is determined in this order:
-  <ol>
-    <li>If the schema is set via metadata, that schema will be used</li>
-    <li>
-      Otherwise, the schema set as configuration on the I/O manager will be used
-    </li>
-    <li>
-      Otherwise, if there is a <code>key_prefix</code>, that schema will be used
-    </li>
-    <li>
-      If none of the above are provided, the default schema will be <code>PUBLIC</code>
-    </li>
-  </ol>
+The schema is determined in this order:
+
+<ol>
+  <li>If the schema is set via metadata, that schema will be used</li>
+  <li>Otherwise, the schema set as configuration on the I/O manager will be used</li>
+  <li>
+    Otherwise, if there is a <code>key_prefix</code>, that schema will be used
+  </li>
+  <li>
+    If none of the above are provided, the default schema will be <code>PUBLIC</code>
+  </li>
+</ol>
 
 :::
 
@@ -198,7 +198,6 @@ The `DuckDBPySparkIOManager` requires an active `SparkSession`. You can either c
 </TabItem>
 <TabItem value="With your own SparkSession">
 
-
 <CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/pyspark_with_spark_session.py" startAfter="start" endBefore="end" />
 
 </TabItem>
@@ -215,7 +214,6 @@ pip install dagster-duckdb-polars
 
 Then you can use the `DuckDBPolarsIOManager` in your <PyObject section="definitions" module="dagster" object="Definitions" /> as in [Step 1: Configure the DuckDB I/O manager](/integrations/libraries/duckdb/using-duckdb-with-dagster#step-1-configure-the-duckdb-io-manager) of the [Using Dagster with DuckDB tutorial](/integrations/libraries/duckdb/using-duckdb-with-dagster).
 
-
 <CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/polars_configuration.py" startAfter="start_configuration" endBefore="end_configuration" />
 
 </TabItem>
@@ -226,6 +224,5 @@ Then you can use the `DuckDBPolarsIOManager` in your <PyObject section="definiti
 If you work with several DataFrame libraries and want a single I/O manager to handle storing and loading these DataFrames in DuckDB, you can write a new I/O manager that handles the DataFrame types.
 
 To do this, inherit from the <PyObject section="libraries" module="dagster_duckdb" object="DuckDBIOManager" /> base class and implement the `type_handlers` and `default_load_type` methods. The resulting I/O manager will inherit the configuration fields of the base `DuckDBIOManager`.
-
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/reference/multiple_dataframe_types.py" startAfter="start_example" endBefore="end_example" />

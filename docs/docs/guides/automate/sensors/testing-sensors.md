@@ -22,23 +22,23 @@ In the UI, you can manually trigger a test evaluation of a sensor and view the r
 
 3. Click the **Preview tick result** button, located near the top right corner of the page.
 
-    ![Test sensor button](/images/guides/automate/sensors/test-sensor-button.png)
+   ![Test sensor button](/images/guides/automate/sensors/test-sensor-button.png)
 
 4. You'll be prompted to provide a cursor value (optional). You can use the existing cursor for the sensor (which will be prepopulated) or enter a different value. If you're not using cursors, leave this field blank.
 
-    ![Cursor value field](/images/guides/automate/sensors/provide-cursor-page.png)
+   ![Cursor value field](/images/guides/automate/sensors/provide-cursor-page.png)
 
 5. Click **Continue** to fire the sensor. A window containing the result of the evaluation will display, whether it's run requests, a skip reason, or a Python error:
 
-    ![Evaluation result page](/images/guides/automate/sensors/eval-result-page.png)
+   ![Evaluation result page](/images/guides/automate/sensors/eval-result-page.png)
 
 6. If the preview was successful, then for each produced run request, you can view the run config and tags produced by that run request by clicking the **{}** button in the Actions column.
 
-    ![Actions page in the Dagster UI](/images/guides/automate/sensors/actions-page.png)
+   ![Actions page in the Dagster UI](/images/guides/automate/sensors/actions-page.png)
 
 7. Click the **Launch all & commit tick result** on the bottom right to launch all the run requests. It will launch the runs and link to the /runs page filtered to the IDs of the runs that launched.
 
-    ![Runs page after launching all runs in the Dagster UI](/images/guides/automate/sensors/launch-all-page.png)
+   ![Runs page after launching all runs in the Dagster UI](/images/guides/automate/sensors/launch-all-page.png)
 
 </TabItem>
 <TabItem value="Via the CLI">
@@ -57,7 +57,6 @@ dagster sensor preview my_sensor_name
 **Via Python**
 
 To unit test sensors, you can directly invoke the sensor's Python function. This will return all the run requests yielded by the sensor. The config obtained from the returned run requests can be validated using the <PyObject section="execution" module="dagster" object="validate_run_config" /> function:
-
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/sensors/sensors.py" startAfter="start_sensor_testing" endBefore="end_sensor_testing" />
 

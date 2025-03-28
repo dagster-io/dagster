@@ -1,5 +1,5 @@
 ---
-title: "Using DuckDB with Dagster"
+title: 'Using DuckDB with Dagster'
 description: Store your Dagster assets in DuckDB
 sidebar_position: 100
 ---
@@ -72,7 +72,6 @@ In this example, you're defining an asset that fetches the Iris dataset as a Pan
 **Making Dagster aware of existing tables**
 
 If you already have existing tables in DuckDB and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies. Making Dagster aware of these tables will allow you to track the full data lineage in Dagster. You can accomplish this by defining [external assets](/guides/build/assets/external-assets) for these tables.
-
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/duckdb/tutorial/io_manager/source_asset.py" />
 

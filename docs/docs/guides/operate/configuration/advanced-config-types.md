@@ -1,5 +1,5 @@
 ---
-title: "Advanced config types"
+title: 'Advanced config types'
 description: Dagster's config system supports a variety of more advanced config types.
 sidebar_position: 200
 ---

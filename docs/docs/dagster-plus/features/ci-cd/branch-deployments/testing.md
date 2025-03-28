@@ -1,5 +1,5 @@
 ---
-title: "Testing against production with branch deployments"
+title: 'Testing against production with branch deployments'
 sidebar_position: 400
 ---
 
@@ -82,12 +82,7 @@ We'll first need to define a job that clones our `PRODUCTION` database for each 
 
 :::note
 
-<strong> Why use ops and jobs instead of assets? </strong> We'll be writing
-ops to clone the production database for each branch deployment and drop the
-clone once the branch is merged. In this case, we chose to use ops since we
-are primarily interested in the task that's being performed: cloning or
-dropping the database. Additionally, we don't need asset-specific features for
-these tasks, like viewing them in the Global Asset Graph.
+<strong> Why use ops and jobs instead of assets? </strong> We'll be writing ops to clone the production database for each branch deployment and drop the clone once the branch is merged. In this case, we chose to use ops since we are primarily interested in the task that's being performed: cloning or dropping the database. Additionally, we don't need asset-specific features for these tasks, like viewing them in the Global Asset Graph.
 
 :::
 

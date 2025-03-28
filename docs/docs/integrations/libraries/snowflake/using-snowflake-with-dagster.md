@@ -1,6 +1,6 @@
 ---
-title: "Using Snowflake with Dagster resources"
-description: "Learn to integrate Snowflake with Dagster using a Snowflake resource."
+title: 'Using Snowflake with Dagster resources'
+description: 'Learn to integrate Snowflake with Dagster using a Snowflake resource.'
 sidebar_position: 200
 ---
 
@@ -28,7 +28,7 @@ To complete this tutorial, you'll need:
 - **To gather the following information**, which is required to use the Snowflake resource:
 
   - **Snowflake account name**: You can find this by logging into Snowflake and getting the account name from the URL:
-    
+
     ![Snowflake account name in URL](/images/integrations/snowflake/snowflake-account.png)
 
   - **Snowflake credentials**: You can authenticate with Snowflake two ways: with a username and password or with a username and private key.
@@ -43,7 +43,6 @@ To complete this tutorial, you'll need:
     Refer to the [Using environment variables and secrets guide](/guides/deploy/using-environment-variables-and-secrets) for more info.
 
     For more information on authenticating with a private key, see [Authenticating with a private key](/integrations/libraries/snowflake/reference#authenticating-using-a-private-key) in the Snowflake reference guide.
-
 
 ## Step 1: Configure the Snowflake resource
 

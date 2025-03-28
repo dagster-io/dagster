@@ -12,7 +12,7 @@ partnerlink: https://airbyte.com/tutorials/orchestrate-data-ingestion-and-transf
 enabledBy:
 enables:
 tags: [dagster-supported, etl]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/airbyte.svg
   categories:
     - etl

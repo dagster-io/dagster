@@ -1,9 +1,8 @@
 ---
-title: "Managing multiple projects and teams with Dagster+ Hybrid"
-description: "How to set up and manage multiple projects with Dagster+ Hybrid deployments."
+title: 'Managing multiple projects and teams with Dagster+ Hybrid'
+description: 'How to set up and manage multiple projects with Dagster+ Hybrid deployments.'
 sidebar_position: 300
 ---
-
 
 In this guide, we'll cover some strategies for managing multiple projects/code bases and teams in a Dagster+ account.
 
@@ -22,10 +21,10 @@ If you want to manage complexity or divide your work into areas of responsibilit
 
 Refer to the following table for more information, including the pros and cons of each approach.
 
-| Approach | How it works | Pros | Cons |
-|----------|--------------|------|------|
-| **Multiple directories in a single repository** | You can use a single repository to manage multiple projects by placing each project in a separate directory. Depending on your VCS, you may be able to set code owners to restrict who can modify each project. | <ul><li>Simple to implement</li><li>Facilitates code sharing between projects</li></ul> | <ul><li>All projects share the same CI/CD pipeline and cannot be deployed independently</li><li>Shared dependencies between projects may cause conflicts and require coordination between teams</li></ul> |
-| **Multiple repositories** | For stronger isolation, you can use multiple repositories to manage multiple projects. | <ul><li>Stronger isolation between projects and teams</li><li>Each project has its own CI/CD pipeline and be deployed independently</li><li>Dependencies between projects can be managed independently</li></ul> | Code sharing between projects require additional coordination to publish and reuse packages between projects. |
+| Approach                                        | How it works                                                                                                                                                                                                    | Pros                                                                                                                                                                                                             | Cons                                                                                                                                                                                                      |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Multiple directories in a single repository** | You can use a single repository to manage multiple projects by placing each project in a separate directory. Depending on your VCS, you may be able to set code owners to restrict who can modify each project. | <ul><li>Simple to implement</li><li>Facilitates code sharing between projects</li></ul>                                                                                                                          | <ul><li>All projects share the same CI/CD pipeline and cannot be deployed independently</li><li>Shared dependencies between projects may cause conflicts and require coordination between teams</li></ul> |
+| **Multiple repositories**                       | For stronger isolation, you can use multiple repositories to manage multiple projects.                                                                                                                          | <ul><li>Stronger isolation between projects and teams</li><li>Each project has its own CI/CD pipeline and be deployed independently</li><li>Dependencies between projects can be managed independently</li></ul> | Code sharing between projects require additional coordination to publish and reuse packages between projects.                                                                                             |
 
 ### Deployment configuration
 
@@ -67,14 +66,14 @@ Whether you use a single repository or multiple, you can use a [`dagster_cloud.y
            if: steps.prerun.outputs.result != 'skip'
            uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
            with:
-             command: "ci set-build-output --location-name=project_a --image-tag=$IMAGE_TAG"
+             command: 'ci set-build-output --location-name=project_a --image-tag=$IMAGE_TAG'
 
          - name: Update build session with image tag for "project_b" code location
            id: ci-set-build-output-project-b
            if: steps.prerun.outputs.result != 'skip'
            uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
            with:
-             command: "ci set-build-output --location-name=project_b --image-tag=$IMAGE_TAG"
+             command: 'ci set-build-output --location-name=project_b --image-tag=$IMAGE_TAG'
          # ...
    ```
 
@@ -101,16 +100,14 @@ If you have no specific requirements for isolation beyond the ability to deploy 
 <table
   className="table"
   style={{
-    width: "100%",
-  }}
->
+    width: '100%',
+  }}>
   <thead>
     <tr>
       <th
         style={{
-          width: "50%",
-        }}
-      >
+          width: '50%',
+        }}>
         Pros
       </th>
       <th>Cons</th>
@@ -121,14 +118,12 @@ If you have no specific requirements for isolation beyond the ability to deploy 
       <td>
         <ul
           style={{
-            marginTop: "0px",
-          }}
-        >
+            marginTop: '0px',
+          }}>
           <li
             style={{
-              marginTop: "0px",
-            }}
-          >
+              marginTop: '0px',
+            }}>
             Simplest and most cost-effective solution
           </li>
           <li>User access control can be set at the code location level</li>
@@ -138,14 +133,12 @@ If you have no specific requirements for isolation beyond the ability to deploy 
       <td>
         <ul
           style={{
-            marginTop: "0px",
-          }}
-        >
+            marginTop: '0px',
+          }}>
           <li
             style={{
-              marginTop: "0px",
-            }}
-          >
+              marginTop: '0px',
+            }}>
             No isolation between execution environments
           </li>
         </ul>
@@ -174,16 +167,14 @@ Motivations for utilizing this approach could include:
 <table
   className="table"
   style={{
-    width: "100%",
-  }}
->
+    width: '100%',
+  }}>
   <thead>
     <tr>
       <th
         style={{
-          width: "50%",
-        }}
-      >
+          width: '50%',
+        }}>
         Pros
       </th>
       <th>Cons</th>
@@ -194,14 +185,12 @@ Motivations for utilizing this approach could include:
       <td>
         <ul
           style={{
-            marginTop: "0px",
-          }}
-        >
+            marginTop: '0px',
+          }}>
           <li
             style={{
-              marginTop: "0px",
-            }}
-          >
+              marginTop: '0px',
+            }}>
             Isolation between execution environments
           </li>
           <li>User access control can be set at the code location level</li>
@@ -228,16 +217,14 @@ Of the approaches outlined in this guide, multiple deployments are the most isol
 <table
   className="table"
   style={{
-    width: "100%",
-  }}
->
+    width: '100%',
+  }}>
   <thead>
     <tr>
       <th
         style={{
-          width: "50%",
-        }}
-      >
+          width: '50%',
+        }}>
         Pros
       </th>
       <th>Cons</th>
@@ -248,26 +235,18 @@ Of the approaches outlined in this guide, multiple deployments are the most isol
       <td>
         <ul
           style={{
-            marginTop: "0px",
-          }}
-        >
+            marginTop: '0px',
+          }}>
           <li
             style={{
-              marginTop: "0px",
-            }}
-          >
+              marginTop: '0px',
+            }}>
             Isolation between assets and execution environments
           </li>
-          <li>
-            User access control can be set at the code location and deployment
-            level
-          </li>
+          <li>User access control can be set at the code location and deployment level</li>
         </ul>
       </td>
-      <td>
-        No single glass pane to view all assets (requires switching between
-        multiple deployments in the UI)
-      </td>
+      <td>No single glass pane to view all assets (requires switching between multiple deployments in the UI)</td>
     </tr>
   </tbody>
 </table>

@@ -19,7 +19,7 @@ In projects that heavily use `dg`, you would typically keep all definitions in t
 
 Let's walk through an example of migrating your existing definitions, with a project that has the following structure:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-definitions/1-tree.txt"  />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/migrating-definitions/1-tree.txt" />
 
 At the top level, we load definitions from various modules:
 

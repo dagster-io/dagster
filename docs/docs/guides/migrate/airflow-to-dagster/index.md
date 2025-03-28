@@ -9,13 +9,13 @@ Airflow allows Dagster to connect to live Airflow instances through Airflow’s 
 
 A complete Airlift migration works through the following steps:
 
-* **Peer** - View the Airflow instance within Dagster.
-* **Observe** - Map the Airflow DAG to a full lineage of assets in Dagster.
-* **Migrate** - Move execution of specific Airflow tasks or an entire Airflow DAG to Dagster.
-* **Decomission** - Remove your Airflow code and move execution responsibilities over to Dagster.
+- **Peer** - View the Airflow instance within Dagster.
+- **Observe** - Map the Airflow DAG to a full lineage of assets in Dagster.
+- **Migrate** - Move execution of specific Airflow tasks or an entire Airflow DAG to Dagster.
+- **Decomission** - Remove your Airflow code and move execution responsibilities over to Dagster.
 
 However, you don't need to complete every step with Airlift, and should tailor the migration process to your organization's needs. You may find immediate value from simply observing Airflow processes in Dagster and building around those workflows. To get started, see the documentation that best fits your situation:
 
-* [Federate execution between multiple Airflow instances with Dagster](federation/)
-* [Migrate from a single Airflow instance to Dagster at the DAG level](dag-level-migration/)
-* [Migrate from a single Airflow instance to Dagster at the task level](task-level-migration/)
+- [Federate execution between multiple Airflow instances with Dagster](federation/)
+- [Migrate from a single Airflow instance to Dagster at the DAG level](dag-level-migration/)
+- [Migrate from a single Airflow instance to Dagster at the task level](task-level-migration/)

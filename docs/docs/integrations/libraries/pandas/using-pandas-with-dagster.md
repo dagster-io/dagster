@@ -1,6 +1,6 @@
 ---
-title: "Pandas & Dagster"
-description: "The dagster-pandas library provides the ability to perform data validation, emit summary statistics, and enable reliable dataframe serialization/deserialization."
+title: 'Pandas & Dagster'
+description: 'The dagster-pandas library provides the ability to perform data validation, emit summary statistics, and enable reliable dataframe serialization/deserialization.'
 ---
 
 # Pandas & Dagster
@@ -27,7 +27,6 @@ The `dagster_pandas` library provides the ability to perform data validation, em
 ## Creating Dagster DataFrame Types
 
 To create a custom `dagster_pandas` type, use `create_dagster_pandas_dataframe_type` and provide a list of `PandasColumn` objects which specify column-level schema and constraints. For example, we can construct a custom dataframe type to represent a set of e-bike trips in the following way:
-
 
 <CodeExample path="docs_snippets/docs_snippets/legacy/dagster_pandas_guide/core_trip.py" startAfter="start_core_trip_marker_0" endBefore="end_core_trip_marker_0" />
 

@@ -1,5 +1,5 @@
 ---
-title: "Migrating an Airflow BashOperator (dbt) to Dagster"
+title: 'Migrating an Airflow BashOperator (dbt) to Dagster'
 sidebar_position: 200
 ---
 
@@ -30,7 +30,7 @@ Migrating the operator breaks down into a few steps:
 First, you'll need to make the dbt project available to the Dagster runtime and build the manifest.
 
 - If you're building your Dagster deployment in a monorepo alongside your dbt and Airflow projects, you can follow this guide: [Monorepo setup](/integrations/libraries/dbt/reference#deploying-a-dagster-project-with-a-dbt-project).
-- If you're deploying within a separate repository, you can follow this guide: [Separate repository setup](/integrations/libraries/dbt/reference#deploying-a-dbt-project-from-a-separate-git-repository). */}
+- If you're deploying within a separate repository, you can follow this guide: [Separate repository setup](/integrations/libraries/dbt/reference#deploying-a-dbt-project-from-a-separate-git-repository). \*/}
 
 ### Step 2: Writing a @dbt_asset-decorated function
 

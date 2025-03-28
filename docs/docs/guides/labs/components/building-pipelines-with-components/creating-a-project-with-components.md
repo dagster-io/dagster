@@ -9,7 +9,7 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 After [installing dependencies](/guides/labs/components#installation), you can scaffold a components-ready project. In the example below, we scaffold a project called `jaffle-platform`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-scaffold.txt"  />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/2-scaffold.txt" />
 
 This command builds a project and initializes a new Python virtual environment inside of it. When using `dg`'s default environment management behavior, you won't need to worry about activating this virtual environment yourself.
 
@@ -28,7 +28,7 @@ Running `dg scaffold project <project-name>` creates a fairly standard Python pr
 The following files and directories are included:
 
 - A Python package `jaffle_platform`-- the name is an underscored inflection of the
-project root directory (`jaffle_platform`).
+  project root directory (`jaffle_platform`).
 - An (empty) `jaffle_platform_tests` test package.
 - A `uv.lock` file.
 - A `pyproject.toml` file.

@@ -5,7 +5,7 @@ name: Modal
 title: Dagster & Modal
 sidebar_label: Modal
 excerpt: The community-supported `dagster-modal` package provides an integration with Modal.
-date: 
+date:
 apireflink:
 docslink:
 partnerlink:

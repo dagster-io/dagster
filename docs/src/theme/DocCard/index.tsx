@@ -1,14 +1,20 @@
 import React, {type ReactNode} from 'react';
 import clsx from 'clsx';
 import Link from '@docusaurus/Link';
-import {useDocById, findFirstSidebarItemLink} from '@docusaurus/plugin-content-docs/client';
+import {
+  useDocById,
+  findFirstSidebarItemLink,
+} from '@docusaurus/plugin-content-docs/client';
 import {usePluralForm} from '@docusaurus/theme-common';
 import isInternalUrl from '@docusaurus/isInternalUrl';
 import {translate} from '@docusaurus/Translate';
 
 import type {Props} from '@theme/DocCard';
 import Heading from '@theme/Heading';
-import type {PropSidebarItemCategory, PropSidebarItemLink} from '@docusaurus/plugin-content-docs';
+import type {
+  PropSidebarItemCategory,
+  PropSidebarItemLink,
+} from '@docusaurus/plugin-content-docs';
 
 import styles from './styles.module.css';
 import useBaseUrl from '@docusaurus/useBaseUrl';
@@ -33,13 +39,18 @@ function useCategoryItemsPlural() {
     );
 }
 
-function CardContainer({href, children}: {href: string; children: ReactNode}): ReactNode {
+function CardContainer({
+  href,
+  children,
+}: {
+  href: string;
+  children: ReactNode;
+}): ReactNode {
   return (
     <Link
       href={href}
       className={clsx('card padding--lg', styles.cardContainer)}
-      style={{height: '100%'}}
-    >
+      style={{height: '100%'}}>
       {children}
     </Link>
   );
@@ -77,7 +88,11 @@ function CardLayout({
           <Heading as="h2" className={clsx('', styles.cardTitle)} title={title}>
             {title}
           </Heading>
-          {community && <p className={clsx(styles.cardSubtitle)}>Community / Partner supported</p>}
+          {community && (
+            <p className={clsx(styles.cardSubtitle)}>
+              Community / Partner supported
+            </p>
+          )}
           {description && (
             <p className={clsx(styles.cardDescription)} title={description}>
               {description}

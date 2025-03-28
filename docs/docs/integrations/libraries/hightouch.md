@@ -15,7 +15,7 @@ categories:
 enabledBy:
 enables:
 tags: [community-supported, etl]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/hightouch.svg
   community: true
 ---
