@@ -1,22 +1,21 @@
 ---
-title: User roles & permissions in Dagster+
-sidebar_label: 'User roles & permissions'
-sidebar_position: 200
+title: User roles and permissions in Dagster+
+sidebar_label: 'User roles and permissions'
+sidebar_position: 300
 ---
 
 Role-based access control (RBAC) enables you to grant specific permissions to users in your organization, ensuring that Dagster users have access to what they require in Dagster+, and no more.
 
 In this guide, we'll cover how RBAC works in Dagster+, how to assign roles to users, and the granular permissions for each user role.
 
-<details>
-  <summary>Prerequisites</summary>
+:::info Prerequisites
 
 To complete the steps in this guide, you'll need:
 
 - A Dagster+ account
-  - Additionally, in certain cases listed below, a Dagster+ Pro plan
+- Additionally, in certain cases listed below, a Dagster+ Pro plan
 
-</details>
+:::
 
 ## Dagster+ user roles
 
@@ -28,15 +27,47 @@ Dagster+ uses a hierarchical model for RBAC, meaning that the most permissive ro
 - Launcher (Pro plans only)
 - Viewer
 
-For example, the **Admin** user role includes permissions specific to this role and all permissions in the **Editor**, **Launcher**, and **Viewer** user roles. Refer to the [User permissions reference](#user-permissions-reference) for the full list of user permissions in Dagster+.
+For example, the **Admin** user role includes permissions specific to this role and all permissions in the **Editor**, **Launcher**, and **Viewer** user roles. Refer to the [User permissions reference](#user-permissions-reference) for the full list of user permissions in Dagster+. All user roles are enforced both in Dagster+ and the [GraphQL API](/guides/operate/graphql).
 
-### User role enforcement
+:::tip Teams in Dagster+ Pro
 
-All user roles are enforced both in Dagster+ and the GraphQL API.
+Dagster+ Pro users can create teams of users and assign default permission sets. For more information, see "[Managing teams in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/teams)".
 
-### Teams
+:::
 
-Dagster+ Pro users can create teams of users and assign default permission sets. Refer to the [Managing teams in Dagster+](/dagster-plus/features/authentication-and-access-control/rbac/teams) guide for more info.
+## Custom roles
+
+### Creating custom roles
+
+1. Navigate to the **Organization Settings** page.
+2. Click the **Roles** tab.
+3. Click the **Create new role** button.
+4. Select a name and icon.
+5. Provide a brief description.
+6. Choose deployment or organization type depending on where you want your role applied.
+7. Select the permissions you want to apply to the role. Note that you can base your role off of an existing role for ease of creation.
+
+### Editing custom roles
+
+1. Navigate to the **Organization Settings** page.
+2. Click the **Roles** tab.
+3. Click the **edit** button next to the role you want to edit.
+4. Make your changes and save them. You should see a confirmation dialog including the changes that have been made.
+
+### Deleting custom roles
+
+:::warning
+
+Deleting a role is a permanent action and cannot be undone.
+
+:::
+
+If you no longer need a custom role, you can delete it. If the role is currently assigned to any users, you will need to reassign them to a different role before deleting the role.
+
+1. Navigate to the **Organization Settings** page.
+2. Click the Roles tab.
+3. Click the edit button next to the role you want to delete.
+4. At the bottom of the edit dialog, click **Delete role**.
 
 ## Assigning user and team roles
 
@@ -48,7 +79,7 @@ Organization Admins have access to the entire organization, including all [deplo
 | ------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Deployment         | All plans | Defines the level of access for a given deployment. Roles set at this level will be the default role for the user or team for all code locations in the deployment. <br/><br/> <strong>Note</strong>: Granting access to a deployment grants a minimum of <strong>Viewer</strong> access to all code locations. Preventing access for specific code locations isn't currently supported. Additionally, having access to a deployment doesn't grant access to Branch Deployments - those permissions must be granted separately.                      |
 | Code location      | Pro       | Defines the level of access for a given code location in a deployment. <br/><br/> Dagster+ Pro users can [override the default deployment-level role for individual code locations](/dagster-plus/deployment/code-locations). For example, if the <strong>Deployment</strong> role is <strong>Launcher</strong>, you could override this role with a more permissive role, such as <strong>Editor</strong> or <strong>Admin</strong>. <br/><br/> For non-Pro users, users will have the same level of access for all code locations in a deployment. |
-| Branch deployments | All plans | Defines the level of access for all Branch Deployments in the code locations the user or team has access to.                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Branch deployments | All plans | Defines the level of access for all Branch Deployments in the code locations the user or team has access to.  |
 
 ### Applying role overrides
 

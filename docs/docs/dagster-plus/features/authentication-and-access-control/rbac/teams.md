@@ -1,23 +1,19 @@
 ---
-title: Team management in Dagster+
-sidebar_label: "Team management"
-sidebar_position: 100
+title: "Managing teams in Dagster+"
+sidebar_label: "Managing teams"
+sidebar_position: 200
 ---
 
-As part of [role-based access control (RBAC)](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions), Dagster+ supports the ability to assign users to teams. A team is a group of users with a set of default deployment, code location, and Branch Deployment user roles.
+As part of role-based access control (RBAC), Dagster+ supports the ability to assign users to teams. A team is a group of users with a set of default deployment, code location, and Branch Deployment user roles.
 
-<details>
-  <summary>Prerequisites</summary>
+:::info Prerequisites
 
 To complete the steps in this guide, you'll need:
 
 - A Dagster+ Pro plan
-- Dagster+ [Organization Admin permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions):
-   - In your organization, and
-   - For the deployments where you want to manage teams
+- Dagster+ [Organization Admin permissions](/dagster-plus/features/authentication-and-access-control/rbac/user-roles-permissions) in your organization, and for the deployments where you want to manage teams.
 
-</details>
-
+:::
 
 ## Adding teams
 
