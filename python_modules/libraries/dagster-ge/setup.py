@@ -31,8 +31,8 @@ setup(
     include_package_data=True,
     python_requires=">=3.10,<3.13",
     install_requires=[
-        "dagster==1.10.7rc0",
-        "dagster-pandas==0.26.7rc0",
+        "dagster==1.10.7",
+        "dagster-pandas==0.26.7",
         "pandas",
         "great_expectations>=0.17.15,<1.0.0",  # need to migrate from DataContext
     ],
