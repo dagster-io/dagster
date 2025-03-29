@@ -19,16 +19,15 @@ from dagster._core.execution.context.asset_execution_context import AssetExecuti
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
+from dagster_components import load_defs
 from dagster_components.cli import cli
 from dagster_components.core.defs_module import (
     ComponentFileModel,
     DefsModuleDecl,
     YamlComponentDecl,
 )
-from dagster_components.core.load_defs import load_defs
 from dagster_components.lib.sling_replication_collection.component import (
     SlingReplicationCollectionComponent,
-    SlingReplicationCollectionModel,
 )
 from dagster_components.resolved.context import ResolutionException
 from dagster_components.resolved.core_models import AssetAttributesModel
@@ -92,7 +91,7 @@ def temp_sling_component_instance(
 def test_python_attributes() -> None:
     with temp_sling_component_instance([{"path": "./replication.yaml"}]) as decl_node:
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
+        attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
         component = SlingReplicationCollectionComponent.load(attributes, context)
 
         replications = component.replications
@@ -116,7 +115,7 @@ def test_python_attributes_op_name() -> None:
         ]
     ) as decl_node:
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
+        attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
         component = SlingReplicationCollectionComponent.load(attributes, context=context)
         replications = component.replications
         assert len(replications) == 1
@@ -138,7 +137,7 @@ def test_python_attributes_op_tags() -> None:
         ]
     ) as decl_node:
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
+        attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
         component = SlingReplicationCollectionComponent.load(attributes=attributes, context=context)
         replications = component.replications
         assert len(replications) == 1
@@ -156,7 +155,7 @@ def test_python_params_include_metadata() -> None:
         ]
     ) as decl_node:
         context = script_load_context(decl_node)
-        attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
+        attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
         component = SlingReplicationCollectionComponent.load(attributes=attributes, context=context)
         replications = component.replications
         assert len(replications) == 1
@@ -211,7 +210,7 @@ def test_sling_subclass() -> None:
         ),
     )
     context = script_load_context(decl_node)
-    attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
+    attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
     component_inst = DebugSlingReplicationComponent.load(attributes=attributes, context=context)
     assert component_inst.build_defs(context).get_asset_graph().get_all_asset_keys() == {
         AssetKey("input_csv"),
@@ -287,7 +286,7 @@ def test_asset_attributes(
         ) as decl_node,
     ):
         context = script_load_context(decl_node)
-        attrs = decl_node.get_attributes(SlingReplicationCollectionModel)
+        attrs = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
         component = SlingReplicationCollectionComponent.load(attributes=attrs, context=context)
         defs = component.build_defs(context)
 
@@ -342,7 +341,7 @@ def test_spec_is_available_in_scope() -> None:
         ]
     ) as decl_node:
         context = script_load_context(decl_node)
-        attrs = decl_node.get_attributes(SlingReplicationCollectionModel)
+        attrs = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
         component = SlingReplicationCollectionComponent.load(attributes=attrs, context=context)
         defs = component.build_defs(context)
 
@@ -356,7 +355,7 @@ def map_spec(spec: AssetSpec) -> AssetSpec:
     return spec.replace_attributes(tags={"is_custom_spec": "yes"})
 
 
-def map_spec_to_attributes(spec: AssetSpec) -> AssetAttributesModel:
+def map_spec_to_attributes(spec: AssetSpec):
     return AssetAttributesModel(tags={"is_custom_spec": "yes"})
 
 
@@ -386,7 +385,7 @@ def test_udf_map_spec(map_fn: Callable[[AssetSpec], Any]) -> None:
     context = script_load_context(decl_node).with_rendering_scope(
         DebugSlingReplicationComponent.get_additional_scope()
     )
-    attributes = decl_node.get_attributes(SlingReplicationCollectionModel)
+    attributes = decl_node.get_attributes(SlingReplicationCollectionComponent.model())
     component_inst = DebugSlingReplicationComponent.load(attributes=attributes, context=context)
 
     defs = component_inst.build_defs(context)

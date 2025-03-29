@@ -12,7 +12,7 @@ class MyNewComponent(Component):
     name = "my_new_component"
 
     @classmethod
-    def get_schema(cls):  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get_schema(cls):
         return MyNewComponentSchema
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:

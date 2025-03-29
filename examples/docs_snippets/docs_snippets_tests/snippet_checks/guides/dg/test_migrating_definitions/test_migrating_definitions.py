@@ -17,6 +17,7 @@ from docs_snippets_tests.snippet_checks.utils import (
 MASK_MY_EXISTING_PROJECT = (r" \/.*?\/my-existing-project", " /.../my-existing-project")
 MASK_ISORT = (r"#isort:skip-file", "# definitions.py")
 MASK_VENV = (r"Using.*\.venv.*", "")
+MASK_USING_LOG_MESSAGE = (r"Using.*\n", "")
 
 
 SNIPPETS_DIR = (
@@ -154,5 +155,5 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
             snippet_path=SNIPPETS_DIR
             / f"{get_next_snip_number()}-list-defs-after-all.txt",
             update_snippets=update_snippets,
-            snippet_replace_regex=[MASK_VENV],
+            snippet_replace_regex=[MASK_VENV, MASK_USING_LOG_MESSAGE],
         )

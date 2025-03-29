@@ -1,23 +1,16 @@
 from dataclasses import dataclass
 from typing import Annotated, Optional
 
-from dagster_components import Component
-from dagster_components.resolved.base import Resolvable
-from dagster_components.resolved.model import ResolvableModel, ResolvedFrom, Resolver
+from dagster_components import Component, Model, Resolvable, Resolver
 from dagster_components.test.utils import load_direct
 
 
-class MyModel(ResolvableModel):
+class MyModel(Model):
     foo: str
 
 
-class ComponentModel(ResolvableModel):
-    thing: MyModel
-    num: str
-
-
 def test_nested_resolvable():
-    class ResolvableComponent(Component, ResolvableModel):
+    class ResolvableComponent(Component, Resolvable, Model):
         thing: MyModel
 
         def build_defs(self, _): ...  # type: ignore
@@ -32,9 +25,15 @@ thing:
     assert c.thing.foo
 
     @dataclass
-    class ResolveFromComponent(Component, ResolvedFrom[ComponentModel]):
+    class ResolveFromComponent(Component, Resolvable):
         thing: MyModel
-        num: Annotated[int, Resolver(lambda _, v: int(v))]
+        num: Annotated[
+            int,
+            Resolver(
+                lambda _, v: int(v),
+                model_field_type=str,
+            ),
+        ]
 
         def build_defs(self, _): ...  # type: ignore
 
@@ -48,14 +47,16 @@ thing:
     )
     assert c.thing.foo
 
-    class ListComponentModel(ResolvableModel):
-        thing: Optional[list[MyModel]]
-        num: str
-
     @dataclass
-    class ResolveFromListComponent(Component, ResolvedFrom[ListComponentModel]):
+    class ResolveFromListComponent(Component, Resolvable):
         thing: Optional[list[MyModel]]
-        num: Annotated[int, Resolver(lambda _, v: int(v))]
+        num: Annotated[
+            int,
+            Resolver(
+                lambda _, v: int(v),
+                model_field_type=str,
+            ),
+        ]
 
         def build_defs(self, _): ...  # type: ignore
 
@@ -77,12 +78,13 @@ def test_class():
         def __init__(
             self,
             thing: MyModel,
-            num: Annotated[int, Resolver(lambda _, v: int(v))],
+            num: Annotated[int, Resolver(lambda _, v: int(v), model_field_type=str)],
         ):
             self.thing = thing
             self.num = num
 
-        def build_defs(self, _): ...  # type: ignore
+        def build_defs(self, _):  # type: ignore
+            return []
 
     c = load_direct(
         ResolveFromComponent,

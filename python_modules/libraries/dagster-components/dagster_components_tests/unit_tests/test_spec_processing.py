@@ -4,7 +4,6 @@ import pytest
 from dagster import AssetKey, AssetSpec, AutomationCondition, Definitions
 from dagster_components.resolved.context import ResolutionContext
 from dagster_components.resolved.core_models import (
-    AssetAttributesModel,
     AssetPostProcessorModel,
     apply_post_processor_to_defs,
 )
@@ -28,7 +27,7 @@ def test_replace_attributes() -> None:
     op = AssetPostProcessorModel(
         operation="replace",
         target="group:g2",
-        attributes=AssetAttributesModel(tags={"newtag": "newval"}),
+        attributes={"tags": {"newtag": "newval"}},
     )
 
     newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
@@ -42,7 +41,7 @@ def test_merge_attributes() -> None:
     op = AssetPostProcessorModel(
         operation="merge",
         target="group:g2",
-        attributes=AssetAttributesModel(tags={"newtag": "newval"}),
+        attributes={"tags": {"newtag": "newval"}},
     )
 
     newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
@@ -54,7 +53,7 @@ def test_merge_attributes() -> None:
 
 def test_render_attributes_asset_context() -> None:
     op = AssetPostProcessorModel(
-        attributes=AssetAttributesModel(tags={"group_name_tag": "group__{{ asset.group_name }}"})
+        attributes={"tags": {"group_name_tag": "group__{{ asset.group_name }}"}}
     )
 
     newdefs = apply_post_processor_to_defs(model=op, defs=defs, context=ResolutionContext.default())
@@ -68,11 +67,11 @@ def test_render_attributes_custom_context() -> None:
     op = AssetPostProcessorModel(
         operation="replace",
         target="group:g2",
-        attributes=AssetAttributesModel(
-            tags={"a": "{{ foo }}", "b": "prefix_{{ foo }}"},
-            metadata="{{ metadata }}",
-            automation_condition="{{ custom_cron('@daily') }}",
-        ),
+        attributes={
+            "tags": {"a": "{{ foo }}", "b": "prefix_{{ foo }}"},
+            "metadata": "{{ metadata }}",
+            "automation_condition": "{{ custom_cron('@daily') }}",
+        },
     )
 
     def _custom_cron(s):
@@ -104,14 +103,14 @@ def test_render_attributes_custom_context() -> None:
         # default to merge and a * target
         (
             {"attributes": {"tags": {"a": "b"}}},
-            AssetPostProcessorModel(target="*", attributes=AssetAttributesModel(tags={"a": "b"})),
+            AssetPostProcessorModel(target="*", attributes={"tags": {"a": "b"}}),
         ),
         (
             {"operation": "replace", "attributes": {"tags": {"a": "b"}}},
             AssetPostProcessorModel(
                 operation="replace",
                 target="*",
-                attributes=AssetAttributesModel(tags={"a": "b"}),
+                attributes={"tags": {"a": "b"}},
             ),
         ),
         # explicit target
@@ -119,7 +118,7 @@ def test_render_attributes_custom_context() -> None:
             {"attributes": {"tags": {"a": "b"}}, "target": "group:g2"},
             AssetPostProcessorModel(
                 target="group:g2",
-                attributes=AssetAttributesModel(tags={"a": "b"}),
+                attributes={"tags": {"a": "b"}},
             ),
         ),
         (
@@ -127,7 +126,7 @@ def test_render_attributes_custom_context() -> None:
             AssetPostProcessorModel(
                 operation="replace",
                 target="group:g2",
-                attributes=AssetAttributesModel(tags={"a": "b"}),
+                attributes={"tags": {"a": "b"}},
             ),
         ),
     ],
