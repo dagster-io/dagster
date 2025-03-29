@@ -111,7 +111,7 @@ class SlingReplicationCollectionComponent(Component, Resolvable):
     [Sling](https://slingdata.io/) is a Powerful Data Integration tool enabling seamless ELT
     operations as well as quality checks across files, databases, and storage systems.
 
-    dg scaffold component dagster_components.dagster_sling.SlingReplicationCollectionComponent {component_name} to get started.
+    dg component dagster_components.dagster_sling.SlingReplicationCollectionComponent defs/{folder_name} to get started.
 
     This will create a component.yaml as well as a `replication.yaml` which is a Sling-specific configuration
     file. See Sling's [documentation](https://docs.slingdata.io/concepts/replication#overview) on `replication.yaml`.

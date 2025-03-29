@@ -24,7 +24,7 @@ When using `dg` with default settings, the Python subprocess is spawned after de
 
 By default, `dg` uses a special `uv` command called `uv run` for environment detection and command execution. `uv run` resolves a local virtual environment (`.venv` in an ancestor directory) before running a command, and additionally makes sure that the environment is up to date with the project's specified dependencies before running the command.
 
-`dg`'s use of `uv run` means you don't need to manage global shell state by activating and deactivating virtual environments during development. Instead, `dg` expects (and will scaffold for you) a `.venv` directory in the root of each project, and will use that virtual environment when executing commands (such as `dg scaffold defs` or `dg list component-type`) against that project.
+`dg`'s use of `uv run` means you don't need to manage global shell state by activating and deactivating virtual environments during development. Instead, `dg` expects (and will scaffold for you) a `.venv` directory in the root of each project, and will use that virtual environment when executing commands (such as `dg scaffold` or `dg list component-type`) against that project.
 
 ## Disabling use of `uv run`
 

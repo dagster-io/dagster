@@ -315,7 +315,7 @@ def _core_scaffold(
         scaffold_params = None
 
     scaffold_library_object(
-        Path(dg_context.defs_path) / instance_name,
+        Path.cwd() / instance_name,
         object_key.to_typename(),
         scaffold_params,
         dg_context,
@@ -331,7 +331,7 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
         cls=ScaffoldSubCommand,
         context_settings={"help_option_names": ["-h", "--help"]},
     )
-    @click.argument("instance_name", type=str)
+    @click.argument("path", type=str)
     @click.option(
         "--json-params",
         type=str,
@@ -349,7 +349,7 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
     @cli_telemetry_wrapper
     def scaffold_command(
         cli_context: click.Context,
-        instance_name: str,
+        path: str,
         json_params: Mapping[str, Any],
         format: str,  # noqa: A002 "format" name required for click magic
         **key_value_params: Any,
@@ -357,17 +357,17 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
         f"""Scaffold a {key.name} object.
 
         This command must be run inside a Dagster project directory. The component scaffold will be
-        placed in submodule `<project_name>.defs.<INSTANCE_NAME>`.
+        placed in the target path
 
         Objects can optionally be passed scaffold parameters. There are two ways to do this:
 
         (1) Passing a single --json-params option with a JSON string of parameters. For example:
 
-            dg scaffold foo.bar my_object --json-params '{{"param1": "value", "param2": "value"}}'`.
+            dg scaffold foo.bar defs/my_object --json-params '{{"param1": "value", "param2": "value"}}'`.
 
         (2) Passing each parameter as an option. For example:
 
-            dg scaffold foo.bar my_object --param1 value1 --param2 value2`
+            dg scaffold foo.bar defs/my_object --param1 value1 --param2 value2`
 
         It is an error to pass both --json-params and key-value pairs as options.
         """
@@ -380,7 +380,7 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
             cli_context,
             cli_config,
             key,
-            instance_name,
+            path,
             key_value_params,
             json_params,
             cast(ScaffoldFormatOptions, format),
