@@ -22,8 +22,6 @@ from dagster_dg_tests.utils import (
 
 NO_TELEMETRY_COMMANDS = {
     ("utils", "inspect-component-type"),
-    # Is actually instrumented, but since subcommands are dynamically generated we test manually
-    ("scaffold",),
 }
 
 
@@ -139,7 +137,6 @@ def test_telemetry_disabled_dg_config(caplog: pytest.LogCaptureFixture) -> None:
         assert len(caplog.records) == 0
 
 
-@pytest.mark.skip("temp")
 def test_telemetry_scaffold_component(caplog: pytest.LogCaptureFixture) -> None:
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
