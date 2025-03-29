@@ -136,6 +136,12 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
         ...PythonErrorFragment
       }
     }
+    ... on FailedToMaterializeEvent {
+      partition
+      assetKey {
+        path
+      }
+    }
     ... on MaterializationEvent {
       partition
       assetKey {

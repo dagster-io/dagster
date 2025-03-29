@@ -18,8 +18,8 @@ on your local db
 """
 
 asset_keys = [AssetKey(["asset_1"]), AssetKey(["asset_2"])]
-num_failed_events_per_asset = 1000
-num_success_events_per_asset = 1000
+num_failed_events_per_asset = 10
+num_success_events_per_asset = 10
 
 
 @op
