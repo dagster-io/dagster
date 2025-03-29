@@ -1038,6 +1038,31 @@ def test_dbt_with_custom_resource_key(test_meta_config_manifest: dict[str, Any])
     assert result.success
 
 
+def test_dbt_include_compiled_sql(test_meta_config_manifest: dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_meta_config_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream(include_compiled_sql=True)
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_meta_config_path))},
+    )
+    assert result.success
+    staging_orders_mat = next(
+        iter(
+            [
+                event.materialization
+                for event in result.get_asset_materialization_events()
+                if event.materialization.asset_key.to_user_string() == "customized/staging/orders"
+            ]
+        )
+    )
+    assert "compiled_sql" in staging_orders_mat.metadata
+    assert (
+        Path(__file__).parent / "expected_compiled_stg_orders.txt"
+    ).read_text() == staging_orders_mat.metadata["compiled_sql"].value
+
+
 def test_dbt_with_dotted_dependency_names(test_dbt_alias_manifest: dict[str, Any]) -> None:
     @dbt_assets(manifest=test_dbt_alias_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
