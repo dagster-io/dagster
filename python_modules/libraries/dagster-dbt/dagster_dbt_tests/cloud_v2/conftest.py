@@ -898,9 +898,9 @@ def fetch_workspace_data_api_mocks_fixture(
 
 
 @pytest.fixture(
-    name="all_api_mocks",
+    name="cli_invocation_api_mocks",
 )
-def all_api_mocks_fixture(
+def cli_invocation_mocks_fixture(
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> Iterator[responses.RequestsMock]:
     fetch_workspace_data_api_mocks.add(
@@ -911,23 +911,32 @@ def all_api_mocks_fixture(
     )
     fetch_workspace_data_api_mocks.add(
         method=responses.GET,
-        url=f"{TEST_REST_API_BASE_URL}/runs",
-        json=SAMPLE_LIST_RUNS_RESPONSE,
-        status=200,
-    )
-    fetch_workspace_data_api_mocks.add(
-        method=responses.GET,
         url=f"{TEST_REST_API_BASE_URL}/runs/{TEST_RUN_ID}/artifacts",
         json=SAMPLE_LIST_RUN_ARTIFACTS,
         status=200,
     )
-    fetch_workspace_data_api_mocks.add(
+    yield fetch_workspace_data_api_mocks
+
+
+@pytest.fixture(
+    name="all_api_mocks",
+)
+def all_api_mocks_fixture(
+    cli_invocation_api_mocks: responses.RequestsMock,
+) -> Iterator[responses.RequestsMock]:
+    cli_invocation_api_mocks.add(
+        method=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/runs",
+        json=SAMPLE_LIST_RUNS_RESPONSE,
+        status=200,
+    )
+    cli_invocation_api_mocks.add(
         method=responses.GET,
         url=f"{TEST_REST_API_BASE_URL}",
         json=SAMPLE_ACCOUNT_RESPONSE,
         status=200,
     )
-    yield fetch_workspace_data_api_mocks
+    yield cli_invocation_api_mocks
 
 
 @pytest.fixture(
