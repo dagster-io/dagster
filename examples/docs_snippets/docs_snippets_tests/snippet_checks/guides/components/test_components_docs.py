@@ -120,7 +120,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
         # Scaffold new ingestion, validate new files
         run_command_and_snippet_output(
-            cmd="dg scaffold 'dagster_components.dagster_sling.SlingReplicationCollectionComponent' defs/ingest_files",
+            cmd="dg scaffold 'dagster_components.dagster_sling.SlingReplicationCollectionComponent' jaffle_platform/defs/ingest_files",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-dg-scaffold-sling-replication.txt",
             update_snippets=update_snippets,
@@ -252,7 +252,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
             # Scaffold dbt project components
             run_command_and_snippet_output(
-                cmd="dg scaffold dagster_components.dagster_dbt.DbtProjectComponent defs/jdbt --project-path dbt/jdbt",
+                cmd="dg scaffold dagster_components.dagster_dbt.DbtProjectComponent jaffle_platform/defs/jdbt --project-path dbt/jdbt",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-scaffold-jdbt.txt",
                 update_snippets=update_snippets,

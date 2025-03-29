@@ -4,8 +4,11 @@ jaffle_platform
 ├── __init__.py
 ├── definitions.py
 ├── defs
-│   └── __init__.py
+│   ├── __init__.py
+│   └── ingest_files
+│       ├── component.yaml
+│       └── replication.yaml
 └── lib
     └── __init__.py
 
-3 directories, 4 files
+4 directories, 6 files

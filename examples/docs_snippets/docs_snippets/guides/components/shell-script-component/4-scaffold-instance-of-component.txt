@@ -1,4 +1,5 @@
-dg scaffold 'my_component_library.lib.ShellCommand' defs/my_shell_command
+dg scaffold 'my_component_library.lib.ShellCommand' my_component_library/defs/my_shell_command
 
 Using /.../my-component-library/.venv/bin/dagster-components
+Absolute target path: /.../my-component-library/my_component_library/defs/my_shell_command
 Using /.../my-component-library/.venv/bin/dagster-components

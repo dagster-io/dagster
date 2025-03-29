@@ -1,4 +1,5 @@
-dg scaffold dagster.asset defs/assets/my_asset.py
+dg scaffold dagster.asset my_project/defs/assets/my_asset.py
 
 Using /.../my-project/.venv/bin/dagster-components
+Absolute target path: /.../my-project/my_project/defs/assets/my_asset.py
 Using /.../my-project/.venv/bin/dagster-components

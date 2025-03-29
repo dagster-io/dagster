@@ -315,7 +315,7 @@ def _core_scaffold(
         scaffold_params = None
 
     scaffold_library_object(
-        Path(instance_name),
+        Path.cwd() / instance_name,
         object_key.to_typename(),
         scaffold_params,
         dg_context,
