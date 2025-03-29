@@ -1,5 +1,5 @@
 ---
-title: "SCIM provisioning"
+title: 'SCIM provisioning'
 sidebar_position: 30
 ---
 
@@ -16,10 +16,10 @@ When SCIM is enabled in Dagster+, a few things about user management will change
 
 ![Highlighted unsynced user in the Dagster+ UI](/images/dagster-plus/features/authentication-and-access-control/scim-unsynced-user.png)
 
-  You might see unsynced users in Dagster+ when:
+You might see unsynced users in Dagster+ when:
 
-  - **Users exist in Dagster+, but not in the IdP.** In this case, create matching users in the IdP and then provision them. This will link the IdP users to the Dagster+ users.
-  - **Users are assigned to the Dagster+ IdP app before provisioning is enabled.** In this case, you'll need to provision the users in the IdP to link them to the Dagster+ users.
+- **Users exist in Dagster+, but not in the IdP.** In this case, create matching users in the IdP and then provision them. This will link the IdP users to the Dagster+ users.
+- **Users are assigned to the Dagster+ IdP app before provisioning is enabled.** In this case, you'll need to provision the users in the IdP to link them to the Dagster+ users.
 
 If you choose to disable SCIM provisioning in Dagster+, users and teams will remain as-is at the time SCIM is disabled.
 

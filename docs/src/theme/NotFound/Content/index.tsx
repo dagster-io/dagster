@@ -13,13 +13,10 @@ export default function NotFoundContent({className}: Props): JSX.Element {
             <Heading as="h1" className="not-found-title hover-wiggle">
               404
             </Heading>
-            <p className="hero__subtitle">
-              We can&apos;t seem to find what you&apos;re looking for.
-            </p>
+            <p className="hero__subtitle">We can&apos;t seem to find what you&apos;re looking for.</p>
             <p id="theme.NotFound.p2">
-              If you believe that this is an error&mdash;we would greatly appreciate it if you
-              opened a <Link href="https://github.com/dagster-io/dagster/issues">GitHub issue</Link>
-              .
+              If you believe that this is an error&mdash;we would greatly appreciate it if you opened a{' '}
+              <Link href="https://github.com/dagster-io/dagster/issues">GitHub issue</Link>.
             </p>
           </div>
         </div>

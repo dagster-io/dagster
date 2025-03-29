@@ -1,5 +1,5 @@
 ---
-title: "Setup"
+title: 'Setup'
 sidebar_position: 100
 ---
 

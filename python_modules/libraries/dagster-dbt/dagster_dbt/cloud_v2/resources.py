@@ -1,6 +1,6 @@
 import re
 from collections.abc import Sequence
-from functools import lru_cache
+from functools import cached_property, lru_cache
 from typing import NamedTuple, Optional, Union
 
 from dagster import (
@@ -22,6 +22,7 @@ from dagster_dbt.asset_utils import build_dbt_specs
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.run_handler import DbtCloudJobRunHandler
 from dagster_dbt.cloud_v2.types import (
+    DbtCloudAccount,
     DbtCloudEnvironment,
     DbtCloudJob,
     DbtCloudProject,
@@ -99,6 +100,44 @@ class DbtCloudWorkspace(ConfigurableResource):
         """
         return f"{self.project_id}-{self.environment_id}"
 
+    @cached_property
+    def account_name(self) -> Optional[str]:
+        """The name of the account for this dbt Cloud workspace.
+
+        Returns:
+            str: the name of the account for this dbt Cloud workspace.
+        """
+        account = DbtCloudAccount.from_account_details(
+            account_details=self.get_client().get_account_details()
+        )
+        return account.name
+
+    @cached_property
+    def project_name(self) -> Optional[str]:
+        """The name of the project for this dbt Cloud workspace.
+
+        Returns:
+            str: the name of the project for this dbt Cloud workspace.
+        """
+        project = DbtCloudProject.from_project_details(
+            project_details=self.get_client().get_project_details(project_id=self.project_id)
+        )
+        return project.name
+
+    @cached_property
+    def environment_name(self) -> Optional[str]:
+        """The name of the environment for this dbt Cloud workspace.
+
+        Returns:
+            str: the name of the environment for this dbt Cloud workspace.
+        """
+        environment = DbtCloudEnvironment.from_environment_details(
+            environment_details=self.get_client().get_environment_details(
+                environment_id=self.environment_id
+            )
+        )
+        return environment.name
+
     @cached_method
     def get_client(self) -> DbtCloudWorkspaceClient:
         """Get the dbt Cloud client to interact with this dbt Cloud workspace.
@@ -122,17 +161,11 @@ class DbtCloudWorkspace(ConfigurableResource):
             DbtCloudJob: Internal representation of the dbt Cloud job.
         """
         client = self.get_client()
-        project = DbtCloudProject.from_project_details(
-            project_details=client.get_project_details(project_id=self.project_id)
-        )
-        environment = DbtCloudEnvironment.from_environment_details(
-            environment_details=client.get_environment_details(environment_id=self.environment_id)
-        )
         expected_job_name = self.adhoc_job_name or get_dagster_adhoc_job_name(
-            project_id=project.id,
-            project_name=project.name,
-            environment_id=environment.id,
-            environment_name=environment.name,
+            project_id=self.project_id,
+            project_name=self.project_name,
+            environment_id=self.environment_id,
+            environment_name=self.environment_name,
         )
         jobs = [
             DbtCloudJob.from_job_details(job_details)
@@ -156,7 +189,7 @@ class DbtCloudWorkspace(ConfigurableResource):
             )
         )
 
-    def fetch_workspace_data(self) -> DbtCloudWorkspaceData:
+    def _fetch_workspace_data(self) -> DbtCloudWorkspaceData:
         job = self._get_or_create_dagster_adhoc_job()
         run_handler = DbtCloudJobRunHandler.run(
             job_id=job.id,
@@ -170,6 +203,11 @@ class DbtCloudWorkspace(ConfigurableResource):
             job_id=job.id,
             manifest=run_handler.get_manifest(),
         )
+
+    def fetch_workspace_data(self) -> DbtCloudWorkspaceData:
+        return DbtCloudWorkspaceDefsLoader(
+            workspace=self, translator=DagsterDbtTranslator()
+        ).get_or_fetch_state()
 
     # Cache spec retrieval for a specific translator class.
     @lru_cache(maxsize=1)
@@ -241,7 +279,7 @@ class DbtCloudWorkspaceDefsLoader(StateBackedDefinitionsLoader[DbtCloudWorkspace
         return f"{DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX}.{self.workspace.unique_id}"
 
     def fetch_state(self) -> DbtCloudWorkspaceData:
-        return self.workspace.fetch_workspace_data()
+        return self.workspace._fetch_workspace_data()  # noqa
 
     def defs_from_state(self, state: DbtCloudWorkspaceData) -> Definitions:
         all_asset_specs, all_check_specs = build_dbt_specs(

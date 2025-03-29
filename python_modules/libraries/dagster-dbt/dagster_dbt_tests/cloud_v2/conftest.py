@@ -1,16 +1,32 @@
 import datetime
 import json
-from collections.abc import Iterator, Mapping
+from collections.abc import Generator, Iterator, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
 import pytest
 import responses
+from dagster import (
+    DagsterInstance,
+    Definitions,
+    SensorEvaluationContext,
+    SensorResult,
+    build_sensor_context,
+)
+from dagster._core.definitions.definitions_load_context import (
+    DefinitionsLoadContext,
+    DefinitionsLoadType,
+)
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
+from dagster._core.test_utils import instance_for_test
 from dagster_dbt.cloud_v2.resources import (
     DbtCloudCredentials,
     DbtCloudWorkspace,
     get_dagster_adhoc_job_name,
 )
+from dagster_dbt.cloud_v2.sensor_builder import build_dbt_cloud_polling_sensor
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType
 
 tests_path = Path(__file__).joinpath("..").resolve()
@@ -19,6 +35,7 @@ run_results_path = tests_path.joinpath("run_results.json")
 
 
 TEST_ACCOUNT_ID = 1111
+TEST_ACCOUNT_NAME = "test_account_name"
 TEST_ACCESS_URL = "https://cloud.getdbt.com"
 TEST_TOKEN = "test_token"
 
@@ -41,8 +58,8 @@ TEST_ANOTHER_JOB_NAME = "test_another_job_name"
 TEST_RUN_URL = (
     f"{TEST_ACCESS_URL}/deploy/{TEST_ACCOUNT_ID}/projects/{TEST_PROJECT_ID}/runs/{TEST_RUN_ID}/"
 )
-TEST_FINISHED_AT_START = datetime.datetime(2019, 1, 1)
-TEST_FINISHED_AT_END = datetime.datetime(2019, 12, 31)
+TEST_FINISHED_AT_LOWER_BOUND = datetime.datetime(2019, 1, 1)
+TEST_FINISHED_AT_UPPER_BOUND = datetime.datetime(2019, 12, 31)
 
 TEST_REST_API_BASE_URL = f"{TEST_ACCESS_URL}/api/v2/accounts/{TEST_ACCOUNT_ID}"
 
@@ -153,6 +170,52 @@ SAMPLE_CUSTOM_CREATE_JOB_RESPONSE = {
     "data": get_sample_job_data(job_name=TEST_CUSTOM_ADHOC_JOB_NAME),
     "status": {
         "code": 201,
+        "is_success": True,
+        "user_message": "string",
+        "developer_message": "string",
+    },
+}
+
+# Taken from dbt Cloud REST API documentation
+# https://docs.getdbt.com/dbt-cloud/api-v2#/operations/Retrieve%20Account
+SAMPLE_ACCOUNT_RESPONSE = {
+    "data": {
+        "id": TEST_ACCOUNT_ID,
+        "name": TEST_ACCOUNT_NAME,
+        "plan": "cancelled",
+        "run_slots": 1,
+        "developer_seats": 0,
+        "it_seats": 0,
+        "explorer_seats": 0,
+        "read_only_seats": 0,
+        "locked": False,
+        "lock_reason": "string",
+        "lock_cause": "trial_expired",
+        "unlocked_at": "2019-08-24T14:15:22Z",
+        "pending_cancel": False,
+        "billing_email_address": "string",
+        "pod_memory_request_mebibytes": 600,
+        "develop_pod_memory_request_mebibytes": 0,
+        "run_duration_limit_seconds": 86400,
+        "queue_limit": 50,
+        "enterprise_login_slug": "string",
+        "business_critical": False,
+        "starter_repo_url": "string",
+        "git_auth_level": "string",
+        "identifier": "string",
+        "trial_end_date": "2019-08-24T14:15:22Z",
+        "static_subdomain": "string",
+        "run_locked_until": "2019-08-24T14:15:22Z",
+        "state": 1,
+        "docs_job_id": 0,
+        "freshness_job_id": 0,
+        "account_migration_events": [None],
+        "groups": [],
+        "created_at": "2019-08-24T14:15:22Z",
+        "updated_at": "2019-08-24T14:15:22Z",
+    },
+    "status": {
+        "code": 200,
         "is_success": True,
         "user_message": "string",
         "developer_message": "string",
@@ -580,10 +643,28 @@ SAMPLE_SUCCESS_RUN_RESPONSE = get_sample_run_response(
     run_status=int(DbtCloudJobRunStatusType.SUCCESS)
 )
 
+
 # Taken from dbt Cloud REST API documentation
 # https://docs.getdbt.com/dbt-cloud/api-v2#/operations/List%20Runs
-SAMPLE_LIST_RUNS_RESPONSE = {
-    "data": [
+def get_sample_list_runs_sample(data: Sequence[Mapping[str, Any]], count: int, total_count: int):
+    return {
+        "data": data,
+        "extra": {
+            "filters": {"property1": None, "property2": None},
+            "order_by": "string",
+            "pagination": {"count": count, "total_count": total_count},
+        },
+        "status": {
+            "code": 200,
+            "is_success": True,
+            "user_message": "string",
+            "developer_message": "string",
+        },
+    }
+
+
+SAMPLE_LIST_RUNS_RESPONSE = get_sample_list_runs_sample(
+    data=[
         {
             "id": TEST_RUN_ID,
             "trigger_id": 0,
@@ -716,18 +797,12 @@ SAMPLE_LIST_RUNS_RESPONSE = {
             "used_repo_cache": True,
         }
     ],
-    "extra": {
-        "filters": {"property1": None, "property2": None},
-        "order_by": "string",
-        "pagination": {"count": 0, "total_count": 0},
-    },
-    "status": {
-        "code": 200,
-        "is_success": True,
-        "user_message": "string",
-        "developer_message": "string",
-    },
-}
+    count=1,
+    total_count=1,
+)
+
+SAMPLE_EMPTY_BATCH_LIST_RUNS_RESPONSE = get_sample_list_runs_sample(data=[], count=0, total_count=1)
+
 
 # Taken from dbt Cloud REST API documentation
 # https://docs.getdbt.com/dbt-cloud/api-v2#/operations/List%20Run%20Artifacts
@@ -754,7 +829,7 @@ def credentials_fixture() -> DbtCloudCredentials:
     )
 
 
-@pytest.fixture(name="workspace")
+@pytest.fixture(name="workspace", scope="function")
 def workspace_fixture(credentials: DbtCloudCredentials) -> DbtCloudWorkspace:
     return DbtCloudWorkspace(
         credentials=credentials,
@@ -846,4 +921,93 @@ def all_api_mocks_fixture(
         json=SAMPLE_LIST_RUN_ARTIFACTS,
         status=200,
     )
+    fetch_workspace_data_api_mocks.add(
+        method=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}",
+        json=SAMPLE_ACCOUNT_RESPONSE,
+        status=200,
+    )
     yield fetch_workspace_data_api_mocks
+
+
+@pytest.fixture(
+    name="sensor_no_runs_api_mocks",
+)
+def sensor_no_runs_api_mocks_fixture(
+    all_api_mocks: responses.RequestsMock,
+) -> Iterator[responses.RequestsMock]:
+    all_api_mocks.replace(
+        method_or_response=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/runs",
+        json=SAMPLE_EMPTY_BATCH_LIST_RUNS_RESPONSE,
+    )
+    all_api_mocks.remove(
+        method_or_response=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/runs/{TEST_RUN_ID}/artifacts",
+    )
+    all_api_mocks.remove(
+        method_or_response=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/runs/{TEST_RUN_ID}/artifacts/run_results.json",
+    )
+
+    yield all_api_mocks
+
+
+@pytest.fixture(name="instance")
+def instance_fixture() -> Generator[DagsterInstance, None, None]:
+    """Yields a test Dagster instance."""
+    with instance_for_test() as instance:
+        yield instance
+
+
+def _set_init_load_context() -> None:
+    """Sets the load context to initialization."""
+    DefinitionsLoadContext.set(DefinitionsLoadContext(load_type=DefinitionsLoadType.INITIALIZATION))
+
+
+@pytest.fixture(name="init_load_context")
+def load_context_fixture() -> Generator[None, None, None]:
+    """Sets initialization load context before and after the test."""
+    _set_init_load_context()
+    yield
+    _set_init_load_context()
+
+
+def load_dbt_cloud_definitions() -> Definitions:
+    try:
+        workspace = DbtCloudWorkspace(
+            credentials=DbtCloudCredentials(
+                account_id=TEST_ACCOUNT_ID,
+                access_url=TEST_ACCESS_URL,
+                token=TEST_TOKEN,
+            ),
+            project_id=TEST_PROJECT_ID,
+            environment_id=TEST_ENVIRONMENT_ID,
+        )
+
+        return Definitions(
+            assets=workspace.load_asset_specs(),
+            sensors=[build_dbt_cloud_polling_sensor(workspace=workspace)],
+        )
+    finally:
+        # Clearing cache for other tests
+        workspace.load_specs.cache_clear()  # pyright: ignore[reportPossiblyUnboundVariable]
+
+
+def fully_loaded_repo_from_dbt_cloud_workspace() -> RepositoryDefinition:
+    defs = load_dbt_cloud_definitions()
+    repo_def = defs.get_repository_def()
+    repo_def.load_all_definitions()
+    return repo_def
+
+
+def build_and_invoke_sensor(
+    *,
+    instance: DagsterInstance,
+) -> tuple[SensorResult, SensorEvaluationContext]:
+    repo_def = fully_loaded_repo_from_dbt_cloud_workspace()
+    sensor = next(iter(repo_def.sensor_defs))
+    sensor_context = build_sensor_context(repository_def=repo_def, instance=instance)
+    result = sensor(sensor_context)
+    assert isinstance(result, SensorResult)
+    return result, sensor_context

@@ -1,5 +1,5 @@
 ---
-title: "Decommission the Airflow DAG"
+title: 'Decommission the Airflow DAG'
 sidebar_position: 500
 ---
 
@@ -13,4 +13,4 @@ Finally, we can attach our example assets to a <PyObject section="schedules-sens
 
 When you have finished the above steps, your code should look like the following:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/standalone.py" language="python"/>
+<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/standalone.py" language="python" />

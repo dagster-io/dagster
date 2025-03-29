@@ -16,7 +16,6 @@ instead of this:
 For more information, see "[Defining assets](defining-assets)".
 ```
 
-
 ### Partials
 
 Docusaurus supports [markdown partials](https://docusaurus.io/docs/markdown-features/react#importing-markdown) for including content in multiple places.
@@ -151,11 +150,11 @@ Here's a note
 
 Available admonitions:
 
-* `:::note`
-* `:::tip`
-* `:::info`
-* `:::warning`
-* `:::danger`
+- `:::note`
+- `:::tip`
+- `:::info`
+- `:::warning`
+- `:::danger`
 
 You can specify your own title for admonitions:
 

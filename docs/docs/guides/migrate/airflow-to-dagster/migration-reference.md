@@ -1,5 +1,5 @@
 ---
-title: "Airflow to Dagster migration reference"
+title: 'Airflow to Dagster migration reference'
 sidebar_position: 50
 ---
 

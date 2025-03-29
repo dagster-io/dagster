@@ -6,6 +6,7 @@ tree
 │   ├── __init__.py
 │   ├── assets.py
 │   └── definitions.py
-└── pyproject.toml
+├── py.typed
+└── setup.py
 
-2 directories, 5 files
+2 directories, 6 files

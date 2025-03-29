@@ -138,18 +138,24 @@ class AutomationCondition(ABC, Generic[T_EntityKey]):
         return []
 
     def get_node_unique_ids(
-        self, *, parent_unique_ids: Sequence[Optional[str]], index: Optional[int]
+        self,
+        *,
+        parent_unique_ids: Sequence[Optional[str]],
+        child_indices: Sequence[Optional[int]],
     ) -> Sequence[str]:
         unique_ids = []
         for parent_unique_id in parent_unique_ids:
-            unique_ids.extend(
-                [
-                    self.get_node_unique_id(parent_unique_id=parent_unique_id, index=index),
-                    *self.get_backcompat_node_unique_ids(
-                        parent_unique_id=parent_unique_id, index=index
-                    ),
-                ]
-            )
+            for child_index in child_indices:
+                unique_ids.extend(
+                    [
+                        self.get_node_unique_id(
+                            parent_unique_id=parent_unique_id, index=child_index
+                        ),
+                        *self.get_backcompat_node_unique_ids(
+                            parent_unique_id=parent_unique_id, index=child_index
+                        ),
+                    ]
+                )
         return unique_ids
 
     def get_unique_id(

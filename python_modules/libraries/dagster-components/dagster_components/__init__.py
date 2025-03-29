@@ -6,9 +6,7 @@ from dagster_components.component.component_loader import component as component
 from dagster_components.component.component_scaffolder import (
     DefaultComponentScaffolder as DefaultComponentScaffolder,
 )
-from dagster_components.component_scaffolding import (
-    scaffold_component_yaml as scaffold_component_yaml,
-)
+from dagster_components.component_scaffolding import scaffold_component as scaffold_component
 from dagster_components.core.context import ComponentLoadContext as ComponentLoadContext
 from dagster_components.core.load_defs import (
     build_component_defs as build_component_defs,
@@ -19,14 +17,13 @@ from dagster_components.resolved.context import ResolutionContext as ResolutionC
 from dagster_components.resolved.core_models import (
     AssetAttributesModel as AssetAttributesModel,
     AssetPostProcessorModel as AssetPostProcessorModel,
-    AssetSpecModel as AssetSpecModel,
-    OpSpecModel as OpSpecModel,
+    ResolvedAssetSpec as ResolvedAssetSpec,
 )
 from dagster_components.resolved.metadata import ResolvableFieldInfo as ResolvableFieldInfo
 from dagster_components.resolved.model import (
-    ResolvableModel as ResolvableModel,
-    ResolvedFrom as ResolvedFrom,
-    ResolvedKwargs as ResolvedKwargs,
+    Injectable as Injectable,
+    Injected as Injected,
+    Model as Model,
     Resolver as Resolver,
 )
 from dagster_components.scaffold.scaffold import (

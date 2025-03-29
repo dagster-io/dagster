@@ -119,11 +119,12 @@ def check_definitions_command(
         *(["--verbose"] if verbose else []),
     ]
 
-    run_cmds = (
-        ["uv", "run", "dagster", "definitions", "validate"]
-        if dg_context.is_project
-        else ["uv", "tool", "run", "dagster", "definitions", "validate"]
-    )
+    if dg_context.use_dg_managed_environment:
+        run_cmds = ["uv", "run", "dagster", "definitions", "validate"]
+    elif dg_context.is_project:
+        run_cmds = ["dagster", "definitions", "validate"]
+    else:
+        run_cmds = ["uv", "tool", "run", "dagster", "definitions", "validate"]
 
     with (
         pushd(dg_context.root_path),

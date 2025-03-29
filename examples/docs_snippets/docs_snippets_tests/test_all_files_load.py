@@ -30,8 +30,9 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/components/existing-project/definitions-after.py",
     # there are no components defined in the snippets and so it would fail to load
     f"{snippets_folder}/guides/components/index/5-definitions.py",
-    f"{snippets_folder}/guides/components/existing-project/6-initial-definitions.py",
-    f"{snippets_folder}/guides/components/existing-project/7-updated-definitions.py",
+    f"{snippets_folder}/guides/components/existing-project/2-setup.py",
+    f"{snippets_folder}/guides/components/existing-project/8-initial-definitions.py",
+    f"{snippets_folder}/guides/components/existing-project/9-updated-definitions.py",
     f"{snippets_folder}/guides/components/migrating-definitions/2-definitions-before.py",
     f"{snippets_folder}/guides/components/migrating-definitions/5-elt-nested-definitions.py",
     f"{snippets_folder}/guides/components/migrating-definitions/7-definitions-after.py",
@@ -40,6 +41,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/guides/dg/migrating-definitions/2-definitions-before.py",
     f"{snippets_folder}/guides/dg/migrating-definitions/4-definitions-after.py",
     f"{snippets_folder}/guides/dg/migrating-definitions/7-definitions-after-all.py",
+    f"{snippets_folder}/guides/dg/migrating-project/2-setup.py",
     f"{snippets_folder}/guides/dg/migrating-project/6-initial-definitions.py",
     f"{snippets_folder}/guides/dg/migrating-project/7-updated-definitions.py",
     # migrated from legacy `docs_snippets/`

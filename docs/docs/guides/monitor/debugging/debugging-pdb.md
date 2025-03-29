@@ -1,5 +1,5 @@
 ---
-title: "Debugging assets during execution"
+title: 'Debugging assets during execution'
 description: 'Debugging assets during execution'
 sidebar_position: 10
 ---
@@ -49,7 +49,7 @@ The `pdb` debugger will start at the point in the asset where you set the breakp
 10
 ```
 
-You can navigate through the asset code using any [pdb commands](https://docs.python.org/3/library/pdb.html#debugger-commands) and access variables at different points to see how values change over time. 
+You can navigate through the asset code using any [pdb commands](https://docs.python.org/3/library/pdb.html#debugger-commands) and access variables at different points to see how values change over time.
 
 ```bash
 --Return--

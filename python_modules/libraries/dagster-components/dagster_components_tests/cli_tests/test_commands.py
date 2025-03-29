@@ -229,6 +229,8 @@ def test_scaffold_component_command():
                 "bar/components/qux",
                 "--json-params",
                 '{"asset_key": "my_asset", "filename": "my_asset.py"}',
+                "--scaffold-format",
+                "yaml",
             ],
         )
         assert_runner_result(result)

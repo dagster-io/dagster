@@ -1,5 +1,5 @@
 ---
-title: "Federate execution"
+title: 'Federate execution'
 sidebar_position: 300
 ---
 
@@ -9,13 +9,21 @@ In the [previous step](/guides/migrate/airflow-to-dagster/federation/observe), w
 
 To federate execution of the `customer_metrics` Airflow DAG, you first need to make its corresponding asset executable within Dagster.
 
-To do this, you can use the <PyObject section="assets" module="dagster" object="multi_asset" displayText="@multi_asset" />  decorator to define how the `customer_metrics` asset should be executed. You'll use the `AirflowInstance` defined earlier to trigger a run of the `customer_metrics` DAG. If the run completes successfully, the asset will be materialized. If the run fails, an exception will be raised:
+To do this, you can use the <PyObject section="assets" module="dagster" object="multi_asset" displayText="@multi_asset" /> decorator to define how the `customer_metrics` asset should be executed. You'll use the `AirflowInstance` defined earlier to trigger a run of the `customer_metrics` DAG. If the run completes successfully, the asset will be materialized. If the run fails, an exception will be raised:
 
-<CodeExample path="airlift-federation-tutorial/snippets/federated_execution.py" startAfter="start_multi_asset" endBefore="end_multi_asset" />
+<CodeExample
+  path="airlift-federation-tutorial/snippets/federated_execution.py"
+  startAfter="start_multi_asset"
+  endBefore="end_multi_asset"
+/>
 
 Next, replace the `customer_metrics_dag_asset` in the <PyObject section="definitions" module="dagster" object="Definitions" /> object with the `run_customer_metrics` function:
 
-<CodeExample path="airlift-federation-tutorial/snippets/federated_execution.py" startAfter="start_multi_asset_defs" endBefore="end_multi_asset_defs" />
+<CodeExample
+  path="airlift-federation-tutorial/snippets/federated_execution.py"
+  startAfter="start_multi_asset_defs"
+  endBefore="end_multi_asset_defs"
+/>
 
 In the Dagster UI, you should see that the `customer_metrics` asset can now be materialized.
 
@@ -25,15 +33,27 @@ Ultimately, we would like to trigger a run of `customer_metrics` whenever `load_
 
 First, add an [`AutomationCondition.eager()`](/api/python-api/assets#dagster.AutomationCondition.eager) to the `customer_metrics_dag_asset`. This will tell Dagster to run the `run_customer_metrics` function whenever the `load_customers` asset is materialized:
 
-<CodeExample path="airlift-federation-tutorial/snippets/federated_execution.py" startAfter="start_eager" endBefore="end_eager" />
+<CodeExample
+  path="airlift-federation-tutorial/snippets/federated_execution.py"
+  startAfter="start_eager"
+  endBefore="end_eager"
+/>
 
 Next, create an <PyObject section="assets" module="dagster" object="AutomationConditionSensorDefinition" /> to set up Declarative Automation:
 
-<CodeExample path="airlift-federation-tutorial/snippets/federated_execution.py" startAfter="start_automation_sensor" endBefore="end_automation_sensor" />
+<CodeExample
+  path="airlift-federation-tutorial/snippets/federated_execution.py"
+  startAfter="start_automation_sensor"
+  endBefore="end_automation_sensor"
+/>
 
 Add this sensor to the <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-<CodeExample path="airlift-federation-tutorial/snippets/federated_execution.py" startAfter="start_complete_defs" endBefore="end_complete_defs" />
+<CodeExample
+  path="airlift-federation-tutorial/snippets/federated_execution.py"
+  startAfter="start_complete_defs"
+  endBefore="end_complete_defs"
+/>
 
 Now the `run_customer_metrics` function will be executed whenever the `load_customers` asset is materialized. You can test this by triggering a run of the `load_customers` DAG in Airflow. When the run completes, you should see a materialization of the `customer_metrics` asset start in the Dagster UI, and eventually a run of the `customer_metrics` DAG in the metrics Airflow instance.
 

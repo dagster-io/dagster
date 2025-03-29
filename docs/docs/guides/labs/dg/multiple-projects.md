@@ -13,7 +13,6 @@ If you're just getting started, we recommend [scaffolding a single project](/gui
 
 :::
 
-
 If you need to collaborate with multiple teams, or work with conflicting dependencies that require isolation from each other, you can scaffold a workspace directory that contains multiple projects, each with their own separate Python environment.
 
 A workspace directory contains a root `pyproject.toml` with workspace-level settings, and a `projects` directory with one or more projects.
@@ -40,7 +39,11 @@ The new workspace has the following structure:
 
 The `pyproject.toml` file for the `workspace` folder contains an `is_workspace` setting that marks this directory as a workspace:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/workspace/3-pyproject.toml" language="TOML" title="workspace/pyproject.toml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/workspace/3-pyproject.toml"
+  language="TOML"
+  title="workspace/pyproject.toml"
+/>
 
 :::note
 
@@ -51,19 +54,23 @@ The `pyproject.toml` file for the `workspace` folder contains an `is_workspace` 
 The `project-1` directory contains a `pyproject.toml` file that defines
 it as a Dagster project:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/workspace/4-project-pyproject.toml" language="TOML" title="workspace/projects/project-1/pyproject.toml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dg/workspace/4-project-pyproject.toml"
+  language="TOML"
+  title="workspace/projects/project-1/pyproject.toml"
+/>
 
 ## Add a second project to the workspace
 
-As noted above, environments are scoped per project.  `dg` commands will only use the environment of `project-1` when you are inside the `project-1` directory.
+As noted above, environments are scoped per project. `dg` commands will only use the environment of `project-1` when you are inside the `project-1` directory.
 
 Let's create another project:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/5-scaffold-project.txt"  />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/5-scaffold-project.txt" />
 
 Now we have two projects. We can list them with:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/6-project-list.txt"  />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/workspace/6-project-list.txt" />
 
 ## Load workspace with `dg`
 

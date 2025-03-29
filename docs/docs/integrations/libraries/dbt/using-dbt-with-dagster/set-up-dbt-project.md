@@ -1,5 +1,5 @@
 ---
-title: "Set up the dbt project"
+title: 'Set up the dbt project'
 description: Dagster can orchestrate dbt alongside other technologies.
 sidebar_position: 100
 ---

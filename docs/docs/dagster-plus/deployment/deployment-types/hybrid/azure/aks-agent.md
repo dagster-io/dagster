@@ -1,5 +1,5 @@
 ---
-title: "Deploy a Dagster+ agent on an Azure Kubernetes Service cluster"
+title: 'Deploy a Dagster+ agent on an Azure Kubernetes Service cluster'
 sidebar_position: 100
 ---
 

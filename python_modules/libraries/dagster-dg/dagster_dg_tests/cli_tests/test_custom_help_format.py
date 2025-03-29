@@ -189,21 +189,22 @@ def test_dynamic_subcommand_help_message():
         assert match_terminal_box_output(
             output.strip(),
             textwrap.dedent("""
-                 Usage: dg scaffold [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS] INSTANCE_NAME 
+Usage: dg scaffold [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS] INSTANCE_NAME
 
-                ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-                │ *    instance_name      TEXT  [required]                                                                             │
-                ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-                ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-                │ --json-params          TEXT  JSON string of component parameters.                                                    │
-                │ --asset-key            TEXT  asset_key                                                                               │
-                │ --filename             TEXT  filename                                                                                │
-                │ --help         -h            Show this message and exit.                                                             │
-                ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-                ╭─ Global options ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
-                │ --cache-dir            TEXT  Specify a directory to use for the cache.                                               │
-                │ --disable-cache              Disable the cache..                                                                     │
-                │ --verbose                    Enable verbose output for debugging.                                                    │
-                ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-        """).strip(),
+╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ *    instance_name      TEXT  [required]                                                                             │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --json-params          TEXT           JSON string of component parameters.                                           │
+│ --format               [yaml|python]  Format of the component configuration (yaml or python)                         │
+│ --asset-key            TEXT           asset_key                                                                      │
+│ --filename             TEXT           filename                                                                       │
+│ --help         -h                     Show this message and exit.                                                    │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Global options ─────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --cache-dir            TEXT  Specify a directory to use for the cache.                                               │
+│ --disable-cache              Disable the cache..                                                                     │
+│ --verbose                    Enable verbose output for debugging.                                                    │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+                            """).strip(),
         )

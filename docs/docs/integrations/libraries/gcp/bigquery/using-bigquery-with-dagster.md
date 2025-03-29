@@ -1,5 +1,5 @@
 ---
-title: "Using Google BigQuery with Dagster"
+title: 'Using Google BigQuery with Dagster'
 description: Store your Dagster assets in BigQuery
 sidebar_position: 100
 ---
@@ -64,7 +64,11 @@ To use the BigQuery resource, you'll need to add it to your `Definitions` object
 
 You can also specify a `location` where computation should take place.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/resource/configuration.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/resource/configuration.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 ### Step 2: Create tables in BigQuery
 
@@ -76,7 +80,11 @@ You can also specify a `location` where computation should take place.
 
 Using the BigQuery resource, you can create BigQuery tables using the BigQuery Python API:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/resource/create_table.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/resource/create_table.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 In this example, you're defining an asset that fetches the Iris dataset as a Pandas DataFrame and renames the columns. Then, using the BigQuery resource, the DataFrame is stored in BigQuery as the `iris.iris_data` table.
 
@@ -102,7 +110,11 @@ In this example, you're creating an <PyObject section="assets" module="dagster" 
 
 Once you have created an asset that represents a table in BigQuery, you will likely want to create additional assets that work with the data.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/resource/downstream.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/resource/downstream.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 In this asset, you're creating second table that only contains the data for the _Iris Setosa_ species. This asset has a dependency on the `iris_data` asset. To define this dependency, you provide the `iris_data` asset as the `deps` parameter to the `iris_setosa` asset. You can then run the SQL query to create the table of _Iris Setosa_ data.
 
@@ -132,7 +144,11 @@ To use the BigQuery I/O manager, you'll need to add it to your `Definitions` obj
 
 You can also specify a `location` where data should be stored and processed and `dataset` that should hold the created tables. You can also set a `timeout` when working with Pandas DataFrames.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/io_manager/configuration.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/io_manager/configuration.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 With this configuration, if you materialized an asset called `iris_data`, the BigQuery I/O manager would store the data in the `IRIS.IRIS_DATA` table in the `my-gcp-project` project. The BigQuery instance would be located in `us-east5`.
 
@@ -179,7 +195,11 @@ Because you already supplied the project and dataset in the I/O manager configur
 
 Once you have created an asset that represents a table in BigQuery, you will likely want to create additional assets that work with the data. Dagster and the BigQuery I/O manager allow you to load the data stored in BigQuery tables into downstream assets.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/io_manager/load_downstream.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/bigquery/tutorial/io_manager/load_downstream.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 In this asset, you're providing the `iris_data` asset from the [Store a Dagster asset as a table in BigQuery](#option-2-step-2) example to the `iris_setosa` asset.
 

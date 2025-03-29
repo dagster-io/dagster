@@ -19,9 +19,7 @@ export const CodeReferenceLink = ({
   children: ReactNode;
 }) => {
   const preferredVersionLabel = useDocsPreferredVersion('default').preferredVersion?.label;
-  const siteVersion = preferredVersionLabel
-    ? preferredVersionLabel.match(/^\d+\.\d+\.\d+/)?.[0] || 'master'
-    : 'master';
+  const siteVersion = preferredVersionLabel ? preferredVersionLabel.match(/^\d+\.\d+\.\d+/)?.[0] || 'master' : 'master';
   const url = `https://github.com/dagster-io/dagster/tree/${siteVersion}/${filePath}`;
 
   if (isInline) {

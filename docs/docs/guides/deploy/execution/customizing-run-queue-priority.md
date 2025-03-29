@@ -1,5 +1,5 @@
 ---
-title: "Customizing run queue priority"
+title: 'Customizing run queue priority'
 sidebar_position: 400
 ---
 
@@ -21,7 +21,7 @@ For example, if three runs are submitted in the following order:
 2. Run `B`
 3. Run `C`
 
-Then the runs will be launched in the same order: Run `A`, then `B`, then `C`. This will be true unless there are [pool or run tag concurrency limits](/guides/operate/managing-concurrency) in place.  The launch order can also be customized using prioritization rules, which we’ll cover later in this guide.
+Then the runs will be launched in the same order: Run `A`, then `B`, then `C`. This will be true unless there are [pool or run tag concurrency limits](/guides/operate/managing-concurrency) in place. The launch order can also be customized using prioritization rules, which we’ll cover later in this guide.
 
 By default, all runs have a priority of `0`. Dagster launches runs with higher priority first. If multiple runs have the same priority, Dagster will launch the runs in the order they're submitted to the queue.
 
@@ -43,7 +43,11 @@ When defining a priority value, note that:
 
 In this example, the priority is set to `-1` with a `dagster/priority` tag value of `"-1"`:
 
-<CodeExample startAfter="start_marker_priority" endBefore="end_marker_priority" path="docs_snippets/docs_snippets/deploying/concurrency_limits/concurrency_limits.py" />
+<CodeExample
+  startAfter="start_marker_priority"
+  endBefore="end_marker_priority"
+  path="docs_snippets/docs_snippets/deploying/concurrency_limits/concurrency_limits.py"
+/>
 
 </TabItem>
 <TabItem value="In the Dagster UI" label="In the Dagster UI">
@@ -75,9 +79,8 @@ Before any more runs are launched, let’s add the following configuration to ou
 concurrency:
   runs:
     tag_concurrency_limits:
-      - key: "team"
+      - key: 'team'
         limit: 1
-
 ```
 
 Now, runs `A` and `B` can’t execute concurrently, while there isn’t a limit on run `C`. Assuming each run executes for a minimum of five minutes, the order in which the runs are launched will change.

@@ -2,7 +2,7 @@
 title: Analyzing Bluesky data
 description: Learn how to build an end-to-end analytics pipeline
 last_update:
-   author: Dennis Hume
+  author: Dennis Hume
 sidebar_position: 10
 sidebar_custom_props:
   logo: images/integrations/dbt/dbt.svg
@@ -32,8 +32,8 @@ To follow the steps in this guide, you'll need:
 - Understanding of data pipelines and the extract, transform, and load process (ETL).
 - Familiar with [dbt](https://www.getdbt.com/) and data transformation.
 - Usage of BI tools for dashboards.
-</details>
 
+</details>
 
 ## Step 1: Set up your Dagster environment
 
@@ -48,18 +48,12 @@ First, set up a new Dagster project.
 2. Create and activate a virtual environment:
 
    <Tabs>
-   <TabItem value="macos" label="MacOS">
-   ```bash
-   uv venv dagster_example
-   source dagster_example/bin/activate
-   ```
-   </TabItem>
-   <TabItem value="windows" label="Windows">
-   ```bash
-   uv venv dagster_example
-   dagster_example\Scripts\activate
-   ```
-   </TabItem>
+     <TabItem value="macos" label="MacOS">
+       ```bash uv venv dagster_example source dagster_example/bin/activate ```
+     </TabItem>
+     <TabItem value="windows" label="Windows">
+       ```bash uv venv dagster_example dagster_example\Scripts\activate ```
+     </TabItem>
    </Tabs>
 
 3. Install Dagster and the required dependencies:
@@ -80,7 +74,7 @@ First, set up a new Dagster project.
 
 To make sure Dagster and its dependencies were installed correctly, navigate to the project root directory and start the Dagster webserver:
 
-followed by a bash code snippet for 
+followed by a bash code snippet for
 
 ```bash
 dagster dev

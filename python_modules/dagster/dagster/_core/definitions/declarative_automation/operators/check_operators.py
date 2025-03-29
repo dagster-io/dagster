@@ -117,7 +117,10 @@ class AnyChecksCondition(ChecksAutomationCondition):
         coroutines = [
             context.for_child_condition(
                 child_condition=EntityMatchesCondition(key=check_key, operand=self.operand),
-                child_index=i,
+                child_indices=[
+                    None,
+                    i,
+                ],  # Prefer a non-indexed ID in case asset keys move around, but fall back to the indexed one for back-compat
                 candidate_subset=context.candidate_subset,
             ).evaluate_async()
             for i, check_key in enumerate(
@@ -149,7 +152,10 @@ class AllChecksCondition(ChecksAutomationCondition):
         ):
             check_result = await context.for_child_condition(
                 child_condition=EntityMatchesCondition(key=check_key, operand=self.operand),
-                child_index=i,
+                child_indices=[
+                    None,
+                    i,
+                ],  # Prefer a non-indexed ID in case asset keys move around, but fall back to the indexed one for back-compat
                 candidate_subset=context.candidate_subset,
             ).evaluate_async()
             check_results.append(check_result)

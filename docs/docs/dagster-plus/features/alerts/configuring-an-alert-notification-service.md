@@ -16,6 +16,7 @@ Before [creating alerts](/dagster-plus/features/alerts/creating-alerts), you'll 
     No additional configuration is required to send emails from Dagster+.
 
 All alert emails will be sent by `"no-reply@dagster.cloud"` or `"no-reply@<subdomain>.dagster.cloud"`. Alerts can be configured to be sent to any number of emails.
+
   </TabItem>
   <TabItem value='microsoft_teams' label='Microsoft Teams'>
     Follow the [Microsoft Teams documentation](https://support.microsoft.com/en-us/office/create-incoming-webhooks-with-workflows-for-microsoft-teams-8ae491c7-0394-4861-ba59-055e33f75498) to create an incoming webhook with a workflow using a template. Dagster requires the workflow to allow anyone to trigger it (the default authentication type).
@@ -46,7 +47,7 @@ Navigate to **Deployment > Alerts** in the Dagster+ UI and click **Connect to Sl
 
 When setting up an alert, you can choose a Slack channel to send those alerts to. Make sure to invite the `@Dagster Cloud` bot to any channel that you'd like to receive an alert in.
 
-To disconnect Dagster+ from Slack, remove the Dagster Cloud app from your Slack workspace. For more information, see the  [Slack documentation](https://slack.com/help/articles/360003125231-Remove-apps-and-custom-integrations-from-your-workspace#remove-an-app).
+To disconnect Dagster+ from Slack, remove the Dagster Cloud app from your Slack workspace. For more information, see the [Slack documentation](https://slack.com/help/articles/360003125231-Remove-apps-and-custom-integrations-from-your-workspace#remove-an-app).
 
   </TabItem>
 </Tabs>

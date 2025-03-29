@@ -1,5 +1,5 @@
 ---
-title: "Kubernetes"
+title: 'Kubernetes'
 sidebar_position: 30
 ---
 

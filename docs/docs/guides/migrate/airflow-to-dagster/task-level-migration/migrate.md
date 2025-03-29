@@ -1,5 +1,5 @@
 ---
-title: "Migrate Airflow tasks"
+title: 'Migrate Airflow tasks'
 sidebar_position: 400
 ---
 
@@ -17,11 +17,14 @@ For this tutorial, in the example Airflow DAG directory, create a `proxied_state
 
 Given our example `rebuild_customers_list` DAG with its three tasks, `load_raw_customers`, `run_dbt_model`, and `export_customers`, your `proxied_state/rebuild_customers_list.yaml` file should look like the following:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/airflow_dags/proxied_state/rebuild_customers_list.yaml" language="yaml"/>
+<CodeExample
+  path="airlift-migration-tutorial/tutorial_example/airflow_dags/proxied_state/rebuild_customers_list.yaml"
+  language="yaml"
+/>
 
 Next, you will need to modify your Airflow DAG to make it aware of the proxied state. This is already done in the example DAG:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/snippets/dags_truncated.py" language="python"/>
+<CodeExample path="airlift-migration-tutorial/tutorial_example/snippets/dags_truncated.py" language="python" />
 
 Set `PROXYING` to `True` or eliminate the `if` statement.
 
@@ -46,7 +49,7 @@ A task which has been proxied can be easily toggled back to run in Airflow (for 
 
 For some common operator patterns, like our `dbt` operator, Dagster supplies factories to build software-defined assets for our tasks. In fact, the <PyObject section="libraries" module="dagster_dbt" object="dbt_assets" decorator /> decorator used earlier already backs its assets with definitions, so we can change the proxied state of the `build_dbt_models` task to `proxied: True` in the proxied state file:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/snippets/dbt_proxied.yaml" language="yaml"/>
+<CodeExample path="airlift-migration-tutorial/tutorial_example/snippets/dbt_proxied.yaml" language="yaml" />
 
 :::info
 
@@ -66,11 +69,11 @@ For all other operator types, we will need to build our own asset definitions. W
 
 For example, our `load_raw_customers` task uses a custom `LoadCSVToDuckDB` operator. We'll define a function `load_csv_to_duckdb_defs` factory to build corresponding software-defined assets. Similarly for `export_customers` we'll define a function `export_duckdb_to_csv_defs` to build software-defined assets:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/migrate.py" language="python"/>
+<CodeExample path="airlift-migration-tutorial/tutorial_example/dagster_defs/stages/migrate.py" language="python" />
 
 We can then toggle the proxied state of the remaining tasks in the `proxied_state` file:
 
-<CodeExample path="airlift-migration-tutorial/tutorial_example/snippets/all_proxied.yaml" language="yaml"/>
+<CodeExample path="airlift-migration-tutorial/tutorial_example/snippets/all_proxied.yaml" language="yaml" />
 
 ## Next steps
 

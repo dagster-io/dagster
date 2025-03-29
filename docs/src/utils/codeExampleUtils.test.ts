@@ -11,13 +11,7 @@ describe('filterComments', () => {
       '    # noqa: this is all comment',
     ];
 
-    const expected = [
-      'def example_function():',
-      '    x = 5',
-      '    y = 10  # regular comment',
-      '    print(x + y)',
-      '',
-    ];
+    const expected = ['def example_function():', '    x = 5', '    y = 10  # regular comment', '    print(x + y)', ''];
 
     expect(filterComments(input)).toEqual(expected);
   });
@@ -57,12 +51,7 @@ describe('filterComments', () => {
   });
 
   it('should handle lines without ignored comments', () => {
-    const input = [
-      'def example_function():',
-      '    x = 5  # some comment',
-      '    y = 10',
-      '    print(x + y)',
-    ];
+    const input = ['def example_function():', '    x = 5  # some comment', '    y = 10', '    print(x + y)'];
 
     expect(filterComments(input)).toEqual(input);
   });
@@ -82,28 +71,13 @@ describe('trimMainBlock', () => {
       '    print("This should be removed")',
     ];
 
-    const expected = [
-      'import os',
-      'import sys',
-      '',
-      'def main():',
-      '    print("Hello, world!")',
-      '',
-    ];
+    const expected = ['import os', 'import sys', '', 'def main():', '    print("Hello, world!")', ''];
 
     expect(trimMainBlock(input)).toEqual(expected);
   });
 
   it('should handle input without if __name__ block', () => {
-    const input = [
-      'import os',
-      'import sys',
-      '',
-      'def main():',
-      '    print("Hello, world!")',
-      '',
-      'main()',
-    ];
+    const input = ['import os', 'import sys', '', 'def main():', '    print("Hello, world!")', '', 'main()'];
 
     expect(trimMainBlock(input)).toEqual(input);
   });
@@ -113,14 +87,7 @@ describe('trimMainBlock', () => {
   });
 
   it('should handle if __name__ with different spacing', () => {
-    const input = [
-      'import os',
-      '',
-      'def main():',
-      '    pass',
-      'if    __name__    ==    "__main__":',
-      '    main()',
-    ];
+    const input = ['import os', '', 'def main():', '    pass', 'if    __name__    ==    "__main__":', '    main()'];
 
     const expected = ['import os', '', 'def main():', '    pass'];
 

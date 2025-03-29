@@ -36,7 +36,7 @@ from dagster_aws.ecs.tasks import (
     get_current_ecs_task_metadata,
     get_task_kwargs_from_current_task,
 )
-from dagster_aws.ecs.utils import RetryableEcsException, run_ecs_task
+from dagster_aws.ecs.utils import RetryableEcsException, run_ecs_task, sanitize_tag
 
 DEFAULT_STEP_TASK_RETRIES = "5"
 
@@ -224,8 +224,7 @@ class EcsStepHandler(StepHandler):
                 for tag in run_launcher.build_ecs_tags_for_run_task(run, container_context)
             },
             **step_handler_context.dagster_run.dagster_execution_info,
-            "dagster/step-key": step_key,
-            "dagster/step-id": self._get_step_id(step_handler_context),
+            "dagster/step-key": sanitize_tag(step_key),
         }
 
         run_task_kwargs["tags"] = [
@@ -426,13 +425,12 @@ class EcsStepHandler(StepHandler):
         step_id = self._get_step_id(step_handler_context)
         step_key = self._get_step_key(step_handler_context)
 
-        try:
-            task_arn = self._launched_tasks[step_id]
-        except KeyError:
-            raise DagsterInvariantViolationError(
-                f"Task ARN for step {step_key} could not be found in executor's task map. This is likely a bug."
-            )
+        if step_id not in self._launched_tasks:
+            # this can happen if an exception was raised during launch_step and the executor
+            # is now trying to terminate all running steps
+            return
 
+        task_arn = self._launched_tasks[step_id]
         cluster_arn = self._cluster_arn
 
         DagsterEvent.engine_event(

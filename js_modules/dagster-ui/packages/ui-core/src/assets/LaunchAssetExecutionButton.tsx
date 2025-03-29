@@ -128,6 +128,38 @@ export const ERROR_INVALID_ASSET_SELECTION =
   ` the same code location and share a partition space, or form a connected` +
   ` graph in which root assets share the same partitioning.`;
 
+function materializationDisabledReason(all: Asset[], materializable: Asset[]) {
+  if (!all.length) {
+    return 'Select one or more assets to materialize';
+  }
+  if (all.some((a) => !a.hasMaterializePermission)) {
+    return 'You do not have permission to materialize assets';
+  }
+  if (all.every((a) => !a.isExecutable)) {
+    return 'External assets cannot be materialized';
+  }
+  if (all.every((a) => a.isObservable)) {
+    return 'Observable assets cannot be materialized';
+  }
+  if (materializable.length === 0) {
+    return 'No executable assets selected.';
+  }
+  return null;
+}
+
+function observationDisabledReason(all: Asset[], observable: Asset[]) {
+  if (!all.length) {
+    return 'Select one or more assets to observe';
+  }
+  if (all.some((a) => !a.hasMaterializePermission)) {
+    return 'You do not have permission to observe assets';
+  }
+  if (observable.length === 0) {
+    return 'Assets do not have observation functions';
+  }
+  return null;
+}
+
 export function optionsForExecuteButton(
   assets: Asset[],
   {skipAllTerm, isSelection}: {skipAllTerm?: boolean; isSelection?: boolean},
@@ -139,15 +171,7 @@ export function optionsForExecuteButton(
   return {
     materializeOption: {
       assetKeys: materializable.map((a) => a.assetKey),
-      disabledReason: assets.some((a) => !a.hasMaterializePermission)
-        ? 'You do not have permission to materialize assets'
-        : assets.every((a) => !a.isExecutable)
-          ? 'External assets cannot be materialized'
-          : assets.every((a) => a.isObservable)
-            ? 'Observable assets cannot be materialized'
-            : materializable.length === 0
-              ? 'No executable assets selected.'
-              : null,
+      disabledReason: materializationDisabledReason(assets, materializable),
       icon: <Icon name="materialization" />,
       label: isSelection
         ? `Materialize selected${countIfPluralOrNotAll(materializable, assets)}${ellipsis}`
@@ -157,11 +181,7 @@ export function optionsForExecuteButton(
     },
     observeOption: {
       assetKeys: observable.map((a) => a.assetKey),
-      disabledReason: assets.some((a) => !a.hasMaterializePermission)
-        ? 'You do not have permission to observe assets'
-        : observable.length === 0
-          ? 'Assets do not have observation functions'
-          : null,
+      disabledReason: observationDisabledReason(assets, observable),
       icon: <Icon name="observation" />,
       label: isSelection
         ? `Observe selected${countIfPluralOrNotAll(observable, assets)}`

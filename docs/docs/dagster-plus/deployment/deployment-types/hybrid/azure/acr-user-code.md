@@ -1,5 +1,5 @@
 ---
-title: "Deploy user code in Azure Container Registry with Dagster+"
+title: 'Deploy user code in Azure Container Registry with Dagster+'
 sidebar_position: 200
 ---
 

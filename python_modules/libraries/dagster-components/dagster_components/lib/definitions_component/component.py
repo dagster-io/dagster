@@ -8,15 +8,15 @@ from dagster._core.definitions.module_loaders.load_defs_from_module import (
 from dagster._core.definitions.module_loaders.utils import find_objects_in_module_of_types
 from pydantic import Field
 
+from dagster_components import Model, Resolvable
 from dagster_components.component.component import Component
 from dagster_components.core.context import ComponentLoadContext
 from dagster_components.lib.definitions_component.scaffolder import DefinitionsComponentScaffolder
-from dagster_components.resolved.model import ResolvableModel
 from dagster_components.scaffold.scaffold import scaffold_with
 
 
 @scaffold_with(DefinitionsComponentScaffolder)
-class DefinitionsComponent(Component, ResolvableModel):
+class DefinitionsComponent(Component, Resolvable, Model):
     """Wraps an arbitrary set of Dagster definitions."""
 
     definitions_path: Optional[str] = Field(

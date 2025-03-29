@@ -44,8 +44,7 @@ const CliInvocationExampleInner: React.FC<CliInvocationExampleProps> = (props) =
           result
             ? 'cli-invocation-example-command cli-invocation-example-command-with-result'
             : 'cli-invocation-example-command'
-        }
-      >
+        }>
         <CodeBlock language={language} {...extraProps}>
           {command || 'Loading...'}
         </CodeBlock>

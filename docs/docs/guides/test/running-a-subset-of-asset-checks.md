@@ -1,5 +1,5 @@
 ---
-title: "Running a subset of asset checks"
+title: 'Running a subset of asset checks'
 sidebar_position: 200
 ---
 
@@ -43,11 +43,10 @@ Let's review what we did to accomplish this:
 
 ## APIs in this guide
 
-| Name                                              | Description                                                                                                                           |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Name                                                                                      | Description                                                                                          |
+| ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | <PyObject section="asset-checks" module="dagster" object="multi_asset_check" decorator /> | A decorator used to define a set of asset checks that execute together in the same op.               |
-| <PyObject section="asset-checks" module="dagster" object="AssetCheckResult" />            | The class returned by asset checks.                                                                                                   |
-| <PyObject section="asset-checks" module="dagster" object="AssetCheckSeverity" />          | Defines the severity of a given asset check result.                                                                                   |
+| <PyObject section="asset-checks" module="dagster" object="AssetCheckResult" />            | The class returned by asset checks.                                                                  |
+| <PyObject section="asset-checks" module="dagster" object="AssetCheckSeverity" />          | Defines the severity of a given asset check result.                                                  |
 | <PyObject section="asset-checks" module="dagster" object="AssetCheckSpec" />              | A class that's passed to asset decorators to define checks that execute in the same op as the asset. |
-| <PyObject section="assets" module="dagster" object="multi_asset" decorator />       | A decorator used to define [multi-assets](/guides/build/assets/defining-assets#multi-asset).                                                             |
-
+| <PyObject section="assets" module="dagster" object="multi_asset" decorator />             | A decorator used to define [multi-assets](/guides/build/assets/defining-assets#multi-asset).         |

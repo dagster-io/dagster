@@ -1,5 +1,5 @@
 ---
-title: "Federate execution across Airflow instances with Dagster"
+title: 'Federate execution across Airflow instances with Dagster'
 sidebar_position: 10
 ---
 

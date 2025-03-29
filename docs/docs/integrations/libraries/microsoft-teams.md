@@ -14,7 +14,7 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, alerting]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/microsoft_teams.svg
 ---
 

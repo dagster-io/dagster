@@ -1,5 +1,5 @@
 ---
-title: "Asset sensors"
+title: 'Asset sensors'
 sidebar_position: 40
 ---
 
@@ -90,7 +90,7 @@ stateDiagram-v2
 
 In the following example, the `@asset_sensor` decorator defines a custom evaluation function that returns a `RunRequest` object when the asset is materialized and certain metadata is present, otherwise it skips the run.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/automation/asset-sensor-custom-eval.py" language="python"/>
+<CodeExample path="docs_snippets/docs_snippets/guides/automation/asset-sensor-custom-eval.py" language="python" />
 
 ## Triggering a job with custom configuration
 

@@ -17,13 +17,12 @@ sidebar_custom_props:
   logo: images/integrations/sling.png
 ---
 
-The `dagster-embedded-elt` package provides a framework for building ELT pipelines with Dagster through helpful asset decorators and resources. It includes the `dagster-dlt` and `dagster-sling` packages, which you can also use on their own. To get started, 
+The `dagster-embedded-elt` package provides a framework for building ELT pipelines with Dagster through helpful asset decorators and resources. It includes the `dagster-dlt` and `dagster-sling` packages, which you can also use on their own. To get started,
 
 This package includes two integrations:
 
 - [Sling](https://slingdata.io) provides a simple way to sync data between databases and file systems.
 - [data Load Tool (dlt)](https://dlthub.com) easily loads data from external systems and APIs.
-
 
 ## Installation
 

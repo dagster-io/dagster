@@ -1,7 +1,11 @@
 import datetime
+import time
+from collections.abc import Set
 
 import pytest
 from dagster import (
+    AssetCheckKey,
+    AssetKey,
     AssetMaterialization,
     AutomationCondition,
     DagsterInstance,
@@ -9,8 +13,10 @@ from dagster import (
     asset,
     asset_check,
     evaluate_automation_conditions,
+    materialize,
     observable_source_asset,
 )
+from dagster._time import datetime_from_timestamp
 
 from dagster_tests.declarative_automation_tests.scenario_utils.automation_condition_scenario import (
     AutomationConditionScenarioState,
@@ -227,3 +233,78 @@ def test_on_cron_on_observable_source() -> None:
         defs=defs, instance=instance, cursor=result.cursor, evaluation_time=current_time
     )
     assert result.total_requested == 2
+
+
+def test_asset_order_change_doesnt_reset_cursor_state() -> None:
+    @asset
+    def A() -> None: ...
+
+    @asset
+    def B() -> None: ...
+
+    @asset
+    def C() -> None: ...
+
+    @asset(
+        key=AssetKey(["downstream"]),
+        deps=[B, C],
+        automation_condition=AutomationCondition.all_deps_updated_since_cron("* * * * *", "UTC"),
+    )
+    def downstream_before() -> None: ...
+
+    @asset(
+        key=AssetKey(["downstream"]),
+        deps=[A, B, C],
+        automation_condition=AutomationCondition.all_deps_updated_since_cron("* * * * *", "UTC"),
+    )
+    def downstream_aftter() -> None: ...
+
+    # B is at index 0 before
+    defs_before = Definitions(assets=[B, C, downstream_before])
+
+    # B is at index 1 after
+    defs_after = Definitions(assets=[A, B, C, downstream_aftter])
+
+    instance = DagsterInstance.ephemeral()
+
+    def _emit_check(defs: Definitions, checks: Set[AssetCheckKey], passed: bool):
+        defs.get_implicit_global_asset_job_def().get_subset(
+            asset_check_selection=checks
+        ).execute_in_process(
+            tags={"passed": ""} if passed else None, instance=instance, raise_on_error=passed
+        )
+
+    start_time = time.time()
+
+    result = evaluate_automation_conditions(
+        defs=defs_before, instance=instance, evaluation_time=datetime_from_timestamp(start_time)
+    )
+    assert result.total_requested == 0
+
+    # Cross a cron boundary
+    start_time += 60
+    result = evaluate_automation_conditions(
+        defs=defs_before, instance=instance, evaluation_time=datetime_from_timestamp(start_time)
+    )
+    assert result.total_requested == 0
+
+    materialize([B], instance=instance)
+
+    result = evaluate_automation_conditions(
+        defs=defs_before,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime_from_timestamp(start_time),
+    )
+    assert result.total_requested == 0
+
+    materialize([A], instance=instance)
+    materialize([C], instance=instance)
+
+    result = evaluate_automation_conditions(
+        defs=defs_after,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime_from_timestamp(start_time),
+    )
+    assert result.total_requested == 1

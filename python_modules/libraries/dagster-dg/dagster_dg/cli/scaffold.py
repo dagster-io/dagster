@@ -1,10 +1,11 @@
 from collections.abc import Mapping
 from copy import copy
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import click
 from click.core import ParameterSource
+from dagster_shared import check
 from dagster_shared.serdes.objects import LibraryObjectKey, LibraryObjectSnap
 from typer.rich_utils import rich_format_help
 
@@ -26,6 +27,7 @@ from dagster_dg.config import (
 )
 from dagster_dg.context import DgContext
 from dagster_dg.scaffold import (
+    ScaffoldFormatOptions,
     scaffold_component_type,
     scaffold_library_object,
     scaffold_project,
@@ -158,7 +160,11 @@ def scaffold_group(context: click.Context, help_: bool, **global_options: object
 # ########################
 
 
-@scaffold_group.command(name="workspace", cls=DgClickCommand)
+@scaffold_group.command(
+    name="workspace",
+    cls=ScaffoldSubCommand,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
 @click.argument("name", type=str, default=DEFAULT_WORKSPACE_NAME)
 @dg_editable_dagster_options
 @dg_global_options
@@ -194,7 +200,11 @@ def scaffold_workspace_command(
 # ########################
 
 
-@scaffold_group.command(name="project", cls=DgClickCommand)
+@scaffold_group.command(
+    name="project",
+    cls=ScaffoldSubCommand,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
 @click.argument("path", type=Path)
 @click.option(
     "--skip-venv",
@@ -275,6 +285,7 @@ def _core_scaffold(
     instance_name: str,
     key_value_params,
     json_params,
+    scaffold_format: ScaffoldFormatOptions,
 ) -> None:
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
     registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
@@ -308,6 +319,7 @@ def _core_scaffold(
         object_key.to_typename(),
         scaffold_params,
         dg_context,
+        scaffold_format,
     )
 
 
@@ -327,12 +339,19 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
         help="JSON string of component parameters.",
         callback=parse_json_option,
     )
+    @click.option(
+        "--format",
+        type=click.Choice(["yaml", "python"], case_sensitive=False),
+        default="yaml",
+        help="Format of the component configuration (yaml or python)",
+    )
     @click.pass_context
     @cli_telemetry_wrapper
     def scaffold_command(
         cli_context: click.Context,
         instance_name: str,
         json_params: Mapping[str, Any],
+        format: str,  # noqa: A002 "format" name required for click magic
         **key_value_params: Any,
     ) -> None:
         f"""Scaffold a {key.name} object.
@@ -352,8 +371,20 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
 
         It is an error to pass both --json-params and key-value pairs as options.
         """
+        check.invariant(
+            format in ["yaml", "python"],
+            "format must be either 'yaml' or 'python'",
+        )
         cli_config = get_config_from_cli_context(cli_context)
-        _core_scaffold(cli_context, cli_config, key, instance_name, key_value_params, json_params)
+        _core_scaffold(
+            cli_context,
+            cli_config,
+            key,
+            instance_name,
+            key_value_params,
+            json_params,
+            cast(ScaffoldFormatOptions, format),
+        )
 
     # If there are defined scaffold params, add them to the command
     if obj.scaffolder_schema:
@@ -371,7 +402,11 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
 # ########################
 
 
-@scaffold_group.command(name="component-type", cls=DgClickCommand)
+@scaffold_group.command(
+    name="component-type",
+    cls=ScaffoldSubCommand,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
 @click.argument("name", type=str)
 @dg_global_options
 @click.pass_context

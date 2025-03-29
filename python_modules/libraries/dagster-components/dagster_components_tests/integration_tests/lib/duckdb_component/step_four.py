@@ -1,20 +1,18 @@
 import os
 from collections.abc import Sequence
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
 import dagster as dg
 import duckdb
 from dagster_components import (
-    AssetSpecModel,
     Component,
     ComponentLoadContext,
-    ResolvableModel,
-    ResolvedFrom,
+    Model,
+    Resolvable,
     Scaffolder,
     ScaffoldRequest,
-    scaffold_component_yaml,
+    scaffold_component,
 )
 from dagster_components.resolved.core_models import ResolvedAssetSpec
 from dagster_components.scaffold.scaffold import scaffold_with
@@ -34,29 +32,23 @@ class DuckDbComponentScaffolder(Scaffolder):
 
         Path(sql_file).touch()
 
-        scaffold_component_yaml(
+        scaffold_component(
             request=request,
-            attributes={"sql_file": sql_file, "assets": [{"key": asset_key}]},
+            yaml_attributes={"sql_file": sql_file, "assets": [{"key": asset_key}]},
         )
 
 
-class DuckDbComponentModel(ResolvableModel):
-    sql_file: str
-    assets: Sequence[AssetSpecModel]
-
-
 @scaffold_with(DuckDbComponentScaffolder)
-@dataclass
-class DuckDbComponent(Component, ResolvedFrom[DuckDbComponentModel]):
+class DuckDbComponent(Component, Model, Resolvable):
     """A component that allows you to write SQL without learning dbt or Dagster's concepts."""
 
     assets: Sequence[ResolvedAssetSpec]
     sql_file: str
 
-    def build_defs(self, load_context: ComponentLoadContext) -> dg.Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         assert len(self.assets) >= 1, "Must have asset"
         name = f"run_{self.assets[0].key.to_user_string()}"
-        sql_file_path = (load_context.path / Path(self.sql_file)).absolute()
+        sql_file_path = (context.path / Path(self.sql_file)).absolute()
         assert sql_file_path.exists(), f"Path {sql_file_path} does not exist."
 
         @dg.multi_asset(name=name, specs=self.assets)

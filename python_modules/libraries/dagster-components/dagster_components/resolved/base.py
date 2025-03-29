@@ -4,10 +4,11 @@ from dataclasses import MISSING, fields, is_dataclass
 from enum import Enum, auto
 from functools import partial
 from types import GenericAlias
-from typing import Annotated, Any, Optional, TypeVar, Union, get_args, get_origin
+from typing import Annotated, Any, Final, Literal, Optional, TypeVar, Union, get_args, get_origin
 
 from dagster import _check as check
 from dagster._utils.pydantic_yaml import _parse_and_populate_model_with_annotated_errors
+from dagster_shared.record import get_record_annotations, get_record_defaults, is_record
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from pydantic import BaseModel, PydanticSchemaGenerationError, create_model
 from pydantic.fields import Field, FieldInfo
@@ -15,12 +16,7 @@ from typing_extensions import TypeGuard
 
 from dagster_components.resolved.context import ResolutionContext
 from dagster_components.resolved.errors import ResolutionException
-from dagster_components.resolved.model import (
-    ResolvableModel,
-    Resolver,
-    _is_implicitly_resolved_type,
-    derive_field_resolver,
-)
+from dagster_components.resolved.model import Model, Resolver
 
 try:
     # this type only exists in python 3.10+
@@ -51,32 +47,40 @@ class Resolvable:
     """
 
     @classmethod
-    def model(cls) -> type[ResolvableModel]:
+    def model(cls) -> type[BaseModel]:
         return derive_model_type(cls)
 
     @classmethod
-    def resolve_from_model(cls, context: "ResolutionContext", model: ResolvableModel):
-        return cls(**_resolve_fields(model, cls, context))
+    def resolve_from_model(cls, context: "ResolutionContext", model: BaseModel):
+        return cls(**resolve_fields(model, cls, context))
 
     @classmethod
     def resolve_from_yaml(cls, yaml: str):
         parsed_and_src_tree = parse_yaml_with_source_positions(yaml)
-        model = _parse_and_populate_model_with_annotated_errors(
-            cls=cls.model(),
-            obj_parse_root=parsed_and_src_tree,
-            obj_key_path_prefix=[],
-        )
+        model_cls = cls.model()
+        if parsed_and_src_tree:
+            model = _parse_and_populate_model_with_annotated_errors(
+                cls=model_cls,
+                obj_parse_root=parsed_and_src_tree,
+                obj_key_path_prefix=[],
+            )
+        else:  # yaml parsed as None
+            model = model_cls()
         # support adding scopes?
-        context = ResolutionContext.default(parsed_and_src_tree.source_position_tree)
+        context = ResolutionContext.default(
+            parsed_and_src_tree.source_position_tree if parsed_and_src_tree else None
+        )
         return cls.resolve_from_model(context, model)
 
 
-class _Unset: ...  # marker type for skipping kwargs and triggering defaults
+# marker type for skipping kwargs and triggering defaults
+# must be a string to make sure it is json serializable
+_Unset: Final[str] = "__DAGSTER_UNSET_DEFAULT__"
 
 
 def derive_model_type(
     target_type: type[Resolvable],
-) -> type[ResolvableModel]:
+) -> type[BaseModel]:
     if target_type not in _DERIVED_MODEL_REGISTRY:
         model_name = f"{target_type.__name__}Model"
 
@@ -97,6 +101,9 @@ def derive_model_type(
                 # to trigger the default on the target type
                 field_infos.append(Field(default=_Unset))
 
+            if field_resolver.can_inject:  # derive and serve via model_field_type
+                field_type = Union[field_type, str]
+
             model_fields[field_name] = (
                 field_type,
                 FieldInfo.merge_field_infos(*field_infos),
@@ -105,7 +112,7 @@ def derive_model_type(
         try:
             _DERIVED_MODEL_REGISTRY[target_type] = create_model(
                 model_name,
-                __base__=ResolvableModel,
+                __base__=Model,
                 **model_fields,
             )
         except PydanticSchemaGenerationError as e:
@@ -114,8 +121,33 @@ def derive_model_type(
     return _DERIVED_MODEL_REGISTRY[target_type]
 
 
+def _is_implicitly_resolved_type(annotation):
+    if annotation in (int, float, str, bool, Any, type(None)):
+        return True
+
+    if _safe_is_subclass(annotation, Resolvable):
+        return False
+
+    if _safe_is_subclass(annotation, BaseModel):
+        return True
+
+    origin = get_origin(annotation)
+    args = get_args(annotation)
+
+    if origin in (Union, UnionType, list, Sequence, tuple, dict, Mapping) and all(
+        _is_implicitly_resolved_type(arg) for arg in args
+    ):
+        return True
+
+    if origin is Literal and all(_is_implicitly_resolved_type(type(arg)) for arg in args):
+        return True
+
+    return False
+
+
 def _get_annotations(resolved_type: type[Resolvable]):
     annotations: dict[str, tuple[Any, bool]] = {}
+    init_kwargs = _get_init_kwargs(resolved_type)
     if is_dataclass(resolved_type):
         for f in fields(resolved_type):
             has_default = f.default is not MISSING or f.default_factory is not MISSING
@@ -126,16 +158,22 @@ def _get_annotations(resolved_type: type[Resolvable]):
             has_default = not field_info.is_required()
             annotations[name] = (field_info.rebuild_annotation(), has_default)
         return annotations
-    elif init_kwargs := _get_init_kwargs(resolved_type):
+    elif is_record(resolved_type):
+        defaults = get_record_defaults(resolved_type)
+        for name, ttype in get_record_annotations(resolved_type).items():
+            annotations[name] = (ttype, name in defaults)
+        return annotations
+    elif init_kwargs is not None:
         return init_kwargs
     # can update to support:
     # * @record
     else:
         raise ResolutionException(
             f"Invalid Resolved type {resolved_type} could not determine fields, expected:\n"
+            "* class with __init__\n"
             "* @dataclass\n"
+            "* pydantic Model\n"
             "* @record\n"
-            "* class with non empty __init__\n"
         )
 
 
@@ -167,8 +205,8 @@ def _get_init_kwargs(target_type: type[Resolvable]):
     return fields
 
 
-def _resolve_fields(
-    model: ResolvableModel,
+def resolve_fields(
+    model: BaseModel,
     resolved_cls: type[Resolvable],
     context: "ResolutionContext",
 ) -> Mapping[str, Any]:
@@ -218,9 +256,13 @@ def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
     res = _dig_for_resolver(annotation, [])
     if res:
         return res
-
-    # legacy resolvers, to be removed
-    return derive_field_resolver(annotation, field_name)
+    raise ResolutionException(
+        f"Could not derive resolver for annotation {field_name}: {annotation}.\n"
+        "Field types are expected to be:\n"
+        "* serializable types such as str, float, int, bool, list, etc\n"
+        "* pydantic Models\n"
+        "* Annotated with an appropriate Resolver."
+    )
 
 
 def _dig_for_resolver(annotation, path: Sequence[_TypeContainer]):

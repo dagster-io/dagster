@@ -1,10 +1,6 @@
-# isort: skip_file
-from my_existing_project import assets
-
 import dagster as dg
-
-all_assets = dg.load_assets_from_modules([assets])
+from my_existing_project.assets import my_asset
 
 defs = dg.Definitions(
-    assets=all_assets,
+    assets=[my_asset],
 )

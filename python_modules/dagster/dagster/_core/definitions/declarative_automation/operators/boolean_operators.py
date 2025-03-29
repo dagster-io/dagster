@@ -50,7 +50,9 @@ class AndAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         true_subset = context.candidate_subset
         for i, child in enumerate(self.children):
             child_result = await context.for_child_condition(
-                child_condition=child, child_index=i, candidate_subset=true_subset
+                child_condition=child,
+                child_indices=[i],
+                candidate_subset=true_subset,
             ).evaluate_async()
             child_results.append(child_result)
             true_subset = true_subset.compute_intersection(child_result.true_subset)
@@ -156,7 +158,9 @@ class OrAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
 
         coroutines = [
             context.for_child_condition(
-                child_condition=child, child_index=i, candidate_subset=context.candidate_subset
+                child_condition=child,
+                child_indices=[i],
+                candidate_subset=context.candidate_subset,
             ).evaluate_async()
             for i, child in enumerate(self.children)
         ]
@@ -250,7 +254,9 @@ class NotAutomationCondition(BuiltinAutomationCondition[T_EntityKey]):
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         child_result = await context.for_child_condition(
-            child_condition=self.operand, child_index=0, candidate_subset=context.candidate_subset
+            child_condition=self.operand,
+            child_indices=[0],
+            candidate_subset=context.candidate_subset,
         ).evaluate_async()
         true_subset = context.candidate_subset.compute_difference(child_result.true_subset)
 

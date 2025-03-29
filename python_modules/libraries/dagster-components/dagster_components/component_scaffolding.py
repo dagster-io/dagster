@@ -1,12 +1,15 @@
+import textwrap
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import click
 import yaml
+from dagster_shared import check
 
 from dagster_components.scaffold.scaffold import (
     ScaffolderUnavailableReason,
+    ScaffoldFormatOptions,
     ScaffoldRequest,
     get_scaffolder,
 )
@@ -20,19 +23,46 @@ class ComponentDumper(yaml.Dumper):
         super().write_line_break()
 
 
-def scaffold_component_yaml(
-    request: ScaffoldRequest, attributes: Optional[Mapping[str, Any]]
+def scaffold_component(
+    request: ScaffoldRequest,
+    yaml_attributes: Optional[Mapping[str, Any]] = None,
 ) -> None:
-    with open(request.target_path / "component.yaml", "w") as f:
-        component_data = {"type": request.type_name, "attributes": attributes or {}}
-        yaml.dump(
-            component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
-        )
-        f.writelines([""])
+    if request.scaffold_format == "yaml":
+        with open(request.target_path / "component.yaml", "w") as f:
+            component_data = {"type": request.type_name, "attributes": yaml_attributes or {}}
+            yaml.dump(
+                component_data, f, Dumper=ComponentDumper, sort_keys=False, default_flow_style=False
+            )
+            f.writelines([""])
+    elif request.scaffold_format == "python":
+        with open(request.target_path / "component.py", "w") as f:
+            fqtn = request.type_name
+            check.invariant("." in fqtn, "Component must be a fully qualified type name")
+            module_path, class_name = (
+                ".".join(fqtn.split(".")[:-1]),
+                fqtn.split(".")[-1],
+            )
+            f.write(
+                textwrap.dedent(
+                    f"""
+                        from dagster_components import component, ComponentLoadContext
+                        from {module_path} import {class_name}
+
+                        @component
+                        def load(context: ComponentLoadContext) -> {class_name}: ...
+                """
+                ).lstrip()
+            )
+    else:
+        check.assert_never(request.scaffold_format)
 
 
 def scaffold_object(
-    path: Path, obj: object, typename: str, scaffold_params: Mapping[str, Any]
+    path: Path,
+    obj: object,
+    typename: str,
+    scaffold_params: Mapping[str, Any],
+    scaffold_format: str,
 ) -> None:
     from dagster_components.component.component import Component
 
@@ -45,11 +75,24 @@ def scaffold_object(
             f"Object type {typename} does not have a scaffolder. Reason: {scaffolder.message}."
         )
 
-    scaffolder.scaffold(ScaffoldRequest(type_name=typename, target_path=path), scaffold_params)
+    check.invariant(
+        scaffold_format in ["yaml", "python"],
+        f"scaffold must be either 'yaml' or 'python'. Got {scaffold_format}.",
+    )
+
+    scaffolder.scaffold(
+        ScaffoldRequest(
+            type_name=typename,
+            target_path=path,
+            scaffold_format=cast(ScaffoldFormatOptions, scaffold_format),
+        ),
+        scaffold_params,
+    )
 
     if isinstance(obj, type) and issubclass(obj, Component):
         component_yaml_path = path / "component.yaml"
-        if not component_yaml_path.exists():
+        component_py_path = path / "component.py"
+        if not (component_yaml_path.exists() or component_py_path.exists()):
             raise Exception(
-                f"Currently all components require a component.yaml file. Please ensure your implementation of scaffold writes this file at {component_yaml_path}."
+                f"Currently all components require a component.yaml or component.py file. Please ensure your implementation of scaffold writes this file at {component_yaml_path} or {component_py_path}."
             )

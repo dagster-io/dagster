@@ -2,11 +2,12 @@ import json
 import os
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 import click
 import tomlkit
 import tomlkit.items
+from typing_extensions import TypeAlias
 
 from dagster_dg.component import RemoteLibraryObjectRegistry
 from dagster_dg.config import (
@@ -25,6 +26,7 @@ from dagster_dg.utils import (
     set_toml_node,
 )
 
+ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
 # ########################
 # ##### WORKSPACE
 # ########################
@@ -256,7 +258,11 @@ def scaffold_component_type(dg_context: DgContext, class_name: str, module_name:
 
 
 def scaffold_library_object(
-    path: Path, typename: str, scaffold_params: Optional[Mapping[str, Any]], dg_context: "DgContext"
+    path: Path,
+    typename: str,
+    scaffold_params: Optional[Mapping[str, Any]],
+    dg_context: "DgContext",
+    scaffold_format: ScaffoldFormatOptions,
 ) -> None:
     scaffold_command = [
         "scaffold",
@@ -264,5 +270,6 @@ def scaffold_library_object(
         typename,
         str(path),
         *(["--json-params", json.dumps(scaffold_params)] if scaffold_params else []),
+        *(["--scaffold-format", scaffold_format]),
     ]
     dg_context.external_components_command(scaffold_command)

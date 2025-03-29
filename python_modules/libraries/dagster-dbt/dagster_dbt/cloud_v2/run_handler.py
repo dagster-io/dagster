@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 from dagster import AssetCheckEvaluation, AssetCheckSeverity, AssetMaterialization, MetadataValue
 from dagster._annotations import preview
 from dagster._record import record
+from dateutil import parser
 from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
@@ -22,6 +23,8 @@ else:
 
 if TYPE_CHECKING:
     from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
+
+COMPLETED_AT_TIMESTAMP_METADATA_KEY = "dagster_dbt/completed_at_timestamp"
 
 
 @preview
@@ -57,6 +60,13 @@ class DbtCloudJobRunHandler:
 
     def get_manifest(self) -> Mapping[str, Any]:
         return self.client.get_run_manifest_json(run_id=self.run_id)
+
+
+def get_completed_at_timestamp(result: Mapping[str, Any]) -> float:
+    # result["timing"] is a list of events in run_results.json
+    # For successful models and passing tests,
+    # the last item of that list includes the timing details of the execution.
+    return parser.parse(result["timing"][-1]["completed_at"]).timestamp()
 
 
 @preview
@@ -110,7 +120,7 @@ class DbtCloudJobRunResults:
             default_metadata = {
                 "unique_id": unique_id,
                 "invocation_id": invocation_id,
-                "Execution Duration": result["execution_time"],
+                "execution_duration": result["execution_time"],
             }
 
             if run.url:
@@ -140,12 +150,20 @@ class DbtCloudJobRunResults:
                 spec = asset_specs[0]
                 yield AssetMaterialization(
                     asset_key=spec.key,
-                    metadata=default_metadata,
+                    metadata={
+                        **default_metadata,
+                        COMPLETED_AT_TIMESTAMP_METADATA_KEY: MetadataValue.timestamp(
+                            get_completed_at_timestamp(result=result)
+                        ),
+                    },
                 )
             elif resource_type == NodeType.Test and result_status == NodeStatus.Pass:
                 metadata = {
                     **default_metadata,
                     "status": result_status,
+                    COMPLETED_AT_TIMESTAMP_METADATA_KEY: MetadataValue.timestamp(
+                        get_completed_at_timestamp(result=result)
+                    ),
                 }
                 if result["failures"] is not None:
                     metadata["dagster_dbt/failed_row_count"] = result["failures"]
