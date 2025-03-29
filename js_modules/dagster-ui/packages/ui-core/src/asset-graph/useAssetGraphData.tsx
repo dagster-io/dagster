@@ -36,6 +36,7 @@ export interface AssetGraphFetchScope {
   // This is used to indicate we shouldn't start handling any input.
   // This is used by pages where `hideNodesMatching` is only available asynchronously.
   loading?: boolean;
+  useWorker?: boolean;
 }
 
 export type AssetGraphQueryItem = GraphQueryItem & {
@@ -65,6 +66,11 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
     () => workerSpawner(() => new Worker(new URL('./ComputeGraphData.worker', import.meta.url))),
     [],
   );
+  useEffect(() => {
+    return () => {
+      spawnBuildGraphDataWorker.terminate();
+    };
+  }, [spawnBuildGraphDataWorker]);
 
   const nodes = fetchResult.data?.assetNodes;
   const queryItems = useMemo(
@@ -88,6 +94,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
         nodes: queryItems,
       },
       spawnBuildGraphDataWorker,
+      options.useWorker ?? true,
     )
       ?.then((data) => {
         if (lastProcessedRequestRef.current < requestId) {
@@ -99,7 +106,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
         // buildGraphData is throttled and rejects promises when another call is made before the throttle delay.
         console.warn(e);
       });
-  }, [options.loading, queryItems, spawnBuildGraphDataWorker]);
+  }, [options.loading, options.useWorker, queryItems, spawnBuildGraphDataWorker]);
 
   return {fullAssetGraphData, loading: !fetchResult.data || fetchResult.loading || options.loading};
 }
@@ -175,6 +182,11 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     () => workerSpawner(() => new Worker(new URL('./ComputeGraphData.worker', import.meta.url))),
     [],
   );
+  useEffect(() => {
+    return () => {
+      spawnComputeGraphDataWorker.terminate();
+    };
+  }, [spawnComputeGraphDataWorker]);
 
   useLayoutEffect(() => {
     if (options.loading || supplementaryDataLoading) {
@@ -201,6 +213,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
         supplementaryData,
       },
       spawnComputeGraphDataWorker,
+      options.useWorker ?? true,
     )
       ?.then((data) => {
         if (lastProcessedRequestRef.current < requestId) {
@@ -228,6 +241,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     supplementaryData,
     supplementaryDataLoading,
     spawnComputeGraphDataWorker,
+    options.useWorker,
   ]);
 
   const loading = fetchResult.loading || graphDataLoading || supplementaryDataLoading;
@@ -387,8 +401,9 @@ let _id = 0;
 async function computeGraphDataWrapper(
   props: Omit<ComputeGraphDataMessageType, 'id' | 'type'>,
   spawnComputeGraphDataWorker: () => Worker,
+  useWorker: boolean,
 ): Promise<GraphDataState> {
-  if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
+  if (featureEnabled(FeatureFlag.flagAssetSelectionWorker) && useWorker) {
     const worker = spawnComputeGraphDataWorker();
     return new Promise<GraphDataState>((resolve) => {
       const id = ++_id;
@@ -426,8 +441,9 @@ const buildGraphData = indexedDBAsyncMemoize<GraphData, typeof buildGraphDataWra
 async function buildGraphDataWrapper(
   props: Omit<BuildGraphDataMessageType, 'id' | 'type'>,
   spawnBuildGraphDataWorker: () => Worker,
+  useWorker: boolean,
 ): Promise<GraphData> {
-  if (featureEnabled(FeatureFlag.flagAssetSelectionWorker)) {
+  if (featureEnabled(FeatureFlag.flagAssetSelectionWorker) && useWorker) {
     const worker = spawnBuildGraphDataWorker();
     return new Promise<GraphData>((resolve) => {
       const id = ++_id;

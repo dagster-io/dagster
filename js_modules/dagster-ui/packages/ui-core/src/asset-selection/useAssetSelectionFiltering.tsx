@@ -6,6 +6,7 @@ import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 
+const emptyAssets: any[] = [];
 export const useAssetSelectionFiltering = <
   T extends {
     id: string;
@@ -16,14 +17,19 @@ export const useAssetSelectionFiltering = <
   loading: assetsLoading,
   assetSelection,
   assets,
+  useWorker = true,
 }: {
   loading?: boolean;
   assetSelection: string;
 
-  assets: T[];
+  assets: T[] | undefined;
+  useWorker?: boolean;
 }) => {
   const assetsByKey = useMemo(
-    () => Object.fromEntries(assets.map((asset) => [tokenForAssetKey(asset.key), asset])),
+    () =>
+      Object.fromEntries(
+        (assets ?? emptyAssets).map((asset) => [tokenForAssetKey(asset.key), asset]),
+      ),
     [assets],
   );
 
@@ -37,9 +43,10 @@ export const useAssetSelectionFiltering = <
           return !assetsByKey[tokenForAssetKey(node.assetKey)];
         },
         loading: !!assetsLoading,
+        useWorker,
       }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [assetsByKeyStringified, assetsLoading],
+      [assetsByKeyStringified, assetsLoading, useWorker],
     ),
   );
 
