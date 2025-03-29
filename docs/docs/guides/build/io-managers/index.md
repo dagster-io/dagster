@@ -15,7 +15,7 @@ For assets that follow this pattern, an I/O manager can streamline the code that
 
 :::note
 
-This article assumes familiarity with: [assets](/guides/build/assets/) and [resources](/guides/build/external-resources/)
+This article assumes familiarity with: [assets](https://docs.dagster.io/guides/build/assets/) and [resources](https://docs.dagster.io/guides/build/external-resources/)
 
 :::
 
@@ -33,7 +33,7 @@ This article assumes familiarity with: [assets](/guides/build/assets/) and [reso
 - Your pipeline manages I/O on its own by using other libraries/tools that write to storage
 - Your assets won't fit in memory, such as a database table with billions of rows
 
-As a general rule, if your pipeline becomes more complicated in order to use I/O managers, it's likely that I/O managers aren't a good fit. In these cases you should use `deps` to [define dependencies](/guides/build/assets/passing-data-between-assets).
+As a general rule, if your pipeline becomes more complicated in order to use I/O managers, it's likely that I/O managers aren't a good fit. In these cases you should use `deps` to [define dependencies](https://docs.dagster.io/guides/build/assets/passing-data-between-assets).
 
 ## Using I/O managers in assets \{#io-in-assets}
 
@@ -80,5 +80,5 @@ Dagster offers built-in library implementations for I/O managers for popular dat
 
 ## Next steps
 
-- Learn to [connect databases](/guides/build/external-resources/connecting-to-databases) with resources
-- Learn to [connect APIs](/guides/build/external-resources/connecting-to-apis) with resources
+- Learn to [connect databases](https://docs.dagster.io/guides/build/external-resources/connecting-to-databases) with resources
+- Learn to [connect APIs](https://docs.dagster.io/guides/build/external-resources/connecting-to-apis) with resources

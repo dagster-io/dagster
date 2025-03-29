@@ -3,7 +3,7 @@ title: 'Logging'
 sidebar_position: 10
 ---
 
-Dagster supports a variety of [built-in logging options](/api/python-api/loggers#built-in-loggers), as well as the ability to extend and customize them. Logs can be produced by runs, sensor and schedule evaluations, and processes like the [Dagster webserver](/guides/operate/webserver) and daemon.
+Dagster supports a variety of [built-in logging options](https://docs.dagster.io/api/python-api/loggers#built-in-loggers), as well as the ability to extend and customize them. Logs can be produced by runs, sensor and schedule evaluations, and processes like the [Dagster webserver](https://docs.dagster.io/guides/operate/webserver) and daemon.
 
 By default, Dagster automatically tracks and captures all execution events, which includes:
 
@@ -72,16 +72,16 @@ When a job with the above configuration is executed, you'll only see the `ERROR`
 
 ## Customizing Dagster's built-in loggers
 
-Dagster's [built-in loggers](/api/python-api/loggers#built-in-loggers):
+Dagster's [built-in loggers](https://docs.dagster.io/api/python-api/loggers#built-in-loggers):
 
 - Support all levels of Python logs, such as `INFO`, `DEBUG`, `ERROR`, etc.
 - Can be configured to capture only specified levels, such as `ERROR`
 - Can include manually-defined messages produced inside certain Dagster definitions like assets, ops, and sensors
 
-For more information on customizing loggers, see "[Customizing Dagster's built-in loggers](/guides/monitor/logging/custom-logging)".
+For more information on customizing loggers, see "[Customizing Dagster's built-in loggers](https://docs.dagster.io/guides/monitor/logging/custom-logging)".
 
 ## Integrating external loggers
 
 In addition to built-in loggers, you can also integrate external loggers to augment Dagster's default logs and configure them to display in the UI. Other options, such as custom handlers and formatters, can be configured in your project's `dagster.yaml`.
 
-Refer to the [Python logging guide](/guides/monitor/logging/python-logging) for more information and examples.
+Refer to the [Python logging guide](https://docs.dagster.io/guides/monitor/logging/python-logging) for more information and examples.

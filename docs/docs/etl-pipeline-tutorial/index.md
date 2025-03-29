@@ -95,7 +95,7 @@ dagster-etl-tutorial/
 {/* vale on */}
 
 :::info
-Dagster has several example projects you can install depending on your use case. To see the full list, run `dagster project list-examples`. For more information on the `dagster project` command, see the [API documentation](https://docs-preview.dagster.io/api/cli#dagster-project).
+Dagster has several example projects you can install depending on your use case. To see the full list, run `dagster project list-examples`. For more information on the `dagster project` command, see the [API documentation](https://docs.dagster.io/api/python-api/cli#dagster-project).
 :::
 
 ### Dagster project structure
@@ -130,4 +130,4 @@ dagster dev
 
 ## Next steps
 
-- Continue this tutorial by [creating and materializing assets](/etl-pipeline-tutorial/create-and-materialize-assets)
+- Continue this tutorial by [creating and materializing assets](https://docs.dagster.io/etl-pipeline-tutorial/create-and-materialize-assets)

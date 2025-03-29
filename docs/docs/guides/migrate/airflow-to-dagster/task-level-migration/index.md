@@ -3,7 +3,7 @@ title: 'Migrate from Airflow to Dagster at the task level'
 sidebar_position: 30
 ---
 
-This tutorial demonstrates using [`dagster-airlift`](/api/python-api/libraries/dagster-airlift) to migrate an Airflow DAG to Dagster at the task level.
+This tutorial demonstrates using [`dagster-airlift`](https://docs.dagster.io/api/python-api/libraries/dagster-airlift) to migrate an Airflow DAG to Dagster at the task level.
 
 Using `dagster-airlift` you can:
 
@@ -24,7 +24,7 @@ In this tutorial, you'll take the following steps:
 
 ## Next steps
 
-To get started with this tutorial, follow the [setup steps](/guides/migrate/airflow-to-dagster/task-level-migration/setup) to install the example code, set up a local environment, and run Airflow locally.
+To get started with this tutorial, follow the [setup steps](https://docs.dagster.io/guides/migrate/airflow-to-dagster/task-level-migration/setup) to install the example code, set up a local environment, and run Airflow locally.
 
 :::tip Migration best practices
 

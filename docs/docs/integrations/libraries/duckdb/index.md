@@ -18,7 +18,7 @@ sidebar_custom_props:
   logo: images/integrations/duckdb.svg
 ---
 
-This library provides an integration with the DuckDB database, and allows for an out-of-the-box [I/O Manager](/guides/build/io-managers/) so that you can make DuckDB your storage of choice.
+This library provides an integration with the DuckDB database, and allows for an out-of-the-box [I/O Manager](https://docs.dagster.io/guides/build/io-managers/) so that you can make DuckDB your storage of choice.
 
 ### Installation
 

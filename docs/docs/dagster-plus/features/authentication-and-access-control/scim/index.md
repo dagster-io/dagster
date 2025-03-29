@@ -25,7 +25,7 @@ If you choose to disable SCIM provisioning in Dagster+, users and teams will rem
 
 ## Managing teams
 
-In addition to the above user management changes, there are a few things to keep in mind when managing user groups, otherwise known as Dagster+ [teams](/dagster-plus/features/authentication-and-access-control/rbac/teams).
+In addition to the above user management changes, there are a few things to keep in mind when managing user groups, otherwise known as Dagster+ [teams](https://docs.dagster.io/dagster-plus/features/authentication-and-access-control/rbac/teams).
 
 User groups in your IdP can be mapped to Dagster+ teams, allowing you to centralize the management of user groups and memberships. When SCIM is enabled:
 

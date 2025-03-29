@@ -66,7 +66,7 @@ dg.AssetCheckSpec(
 
 ### Customizing automation conditions
 
-If the [pre-built automation conditions](#automation-conditions) don't fit your needs, you can build your own. For more information, see "[Customizing automation conditions](customizing-automation-conditions/)".
+If the [pre-built automation conditions](#automation-conditions) don't fit your needs, you can build your own. For more information, see "[Customizing automation conditions](https://docs.dagster.io/guides/automate/declarative-automation/customizing-automation-conditions)".
 
 ## Automation condition sensors
 

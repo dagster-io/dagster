@@ -41,5 +41,5 @@ import DgReference from '@site/docs/partials/\_DgReference.md';
 
 ## Next steps
 
-- [Check out the components ETL pipeline tutorial](/guides/labs/components/components-etl-pipeline-tutorial)
-- [Build your own pipeline with components](/guides/labs/components/building-pipelines-with-components)
+- [Check out the components ETL pipeline tutorial](https://docs.dagster.io/guides/labs/components/components-etl-pipeline-tutorial)
+- [Build your own pipeline with components](https://docs.dagster.io/guides/labs/components/building-pipelines-with-components)

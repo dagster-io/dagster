@@ -3,7 +3,7 @@ title: 'Airflow to Dagster'
 sidebar_position: 10
 ---
 
-[Airlift](/integrations/libraries/airlift) is a toolkit for integrating Airflow into Dagster that you can use to migrate and consolidate existing Airflow DAGs into the Dagster control plane.
+[Airlift](https://docs.dagster.io/integrations/libraries/airlift) is a toolkit for integrating Airflow into Dagster that you can use to migrate and consolidate existing Airflow DAGs into the Dagster control plane.
 
 Airflow allows Dagster to connect to live Airflow instances through Airflow’s REST API to observe Airflow executions as they happen. This makes it easy to transition the operation of Airflow pipelines into Dagster, or use Dagster to act as the control plane across multiple Airflow instances.
 
@@ -16,6 +16,6 @@ A complete Airlift migration works through the following steps:
 
 However, you don't need to complete every step with Airlift, and should tailor the migration process to your organization's needs. You may find immediate value from simply observing Airflow processes in Dagster and building around those workflows. To get started, see the documentation that best fits your situation:
 
-- [Federate execution between multiple Airflow instances with Dagster](federation/)
-- [Migrate from a single Airflow instance to Dagster at the DAG level](dag-level-migration/)
-- [Migrate from a single Airflow instance to Dagster at the task level](task-level-migration/)
+- [Federate execution between multiple Airflow instances with Dagster](https://docs.dagster.io/guides/migrate/airflow-to-dagster/federation)
+- [Migrate from a single Airflow instance to Dagster at the DAG level](https://docs.dagster.io/guides/migrate/airflow-to-dagster/dag-level-migration/)
+- [Migrate from a single Airflow instance to Dagster at the task level](https://docs.dagster.io/guides/migrate/airflow-to-dagster/task-level-migration/)
