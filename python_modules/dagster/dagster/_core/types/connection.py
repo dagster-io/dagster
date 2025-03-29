@@ -1,0 +1,85 @@
+import base64
+from typing import (
+    Any,
+    Generic,
+    Optional,
+    Sequence,
+)
+from dagster_shared.seven import json
+from dagster._record import record
+
+from typing_extensions import TypeVar
+
+T = TypeVar("T")
+
+
+@record
+class Connection(Generic[T]):
+    results: Sequence[T]
+    cursor: str
+    has_more: bool
+
+    """
+    A wrapper for paginated results of type T.
+
+    Attributes:
+        results (Sequence[T]): The sequence of returned objects
+        cursor (Optional[str]): Pagination cursor for fetching next page
+        has_more (bool): Whether more results are available
+    """
+
+    @classmethod
+    def create_from_sequence(
+        cls, seq: Sequence[T], limit: int, ascending: bool, cursor: Optional[str] = None
+    ) -> "Connection[T]":
+        """
+        Create a Connection from a sequence of objects.
+
+        Args:
+            seq (Sequence[T]): The sequence of objects to paginate
+
+        Returns:
+            Connection[T]: A Connection object with the given sequence
+        """
+        seq = seq if ascending else list(reversed(seq))
+        if cursor:
+            value = ValueIndexCursor.from_cursor(cursor).value
+            if value is None or value not in seq:
+                offset = 0
+            else:
+                offset = seq.index(value) + 1
+
+            seq = seq[offset:]
+        else:
+            value = None
+
+        has_more = len(seq) > limit
+        seq = seq[:limit]
+
+        last_seen_value = seq[-1] if seq else value
+        new_cursor = ValueIndexCursor(value=last_seen_value).to_string()
+
+        return Connection(results=seq, cursor=new_cursor, has_more=has_more)
+
+
+@record
+class ValueIndexCursor:
+    """
+    Cursor class useful for paginating results based on a last seen value.
+    """
+
+    value: Any
+
+    def __str__(self) -> str:
+        return self.to_string()
+
+    def to_string(self) -> str:
+        raw = json.dumps({"value": self.value})
+        return base64.b64encode(bytes(raw, encoding="utf-8")).decode("utf-8")
+
+    @classmethod
+    def from_cursor(cls, cursor: str):
+        raw = json.loads(base64.b64decode(cursor).decode("utf-8"))
+        if "value" not in raw:
+            raise ValueError(f"Invalid cursor: {cursor}")
+        return ValueIndexCursor(value=raw["value"])
