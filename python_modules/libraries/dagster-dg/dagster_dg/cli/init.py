@@ -46,19 +46,11 @@ def init_command(
     project_python_environment: DgProjectPythonEnvironment,
     **global_options: object,
 ):
-    """Initialize a new Dagster workspace and a first project within that workspace.
+    """Initialize a new Dagster project or workspace.
 
-    The scaffolded workspace folder has the following structure:
-
-    \b
-    ├── dagster-workspace
-    │   ├── projects
-    |   |   └── <Dagster projects go here>
-    |   ├── libraries
-    |   |   └── <Shared packages go here>
-    │   └── pyproject.toml
-
-    """  # noqa: D301
+    By default, only a standalone project is created. A workspace can also be created using
+    the --workspace-name option.
+    """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
     workspace_path = None
