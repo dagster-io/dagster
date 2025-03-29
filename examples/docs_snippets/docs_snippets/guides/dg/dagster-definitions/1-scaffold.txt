@@ -1,4 +1,4 @@
-dg scaffold dagster.asset assets/my_asset.py
+dg scaffold dagster.asset defs/assets/my_asset.py
 
 Using /.../my-project/.venv/bin/dagster-components
 Using /.../my-project/.venv/bin/dagster-components

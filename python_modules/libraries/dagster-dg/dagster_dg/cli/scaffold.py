@@ -331,7 +331,7 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
         cls=ScaffoldSubCommand,
         context_settings={"help_option_names": ["-h", "--help"]},
     )
-    @click.argument("instance_name", type=str)
+    @click.argument("path", type=str)
     @click.option(
         "--json-params",
         type=str,
@@ -357,17 +357,17 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
         f"""Scaffold a {key.name} object.
 
         This command must be run inside a Dagster project directory. The component scaffold will be
-        placed in submodule `<project_name>.defs.<INSTANCE_NAME>`.
+        placed in the target path
 
         Objects can optionally be passed scaffold parameters. There are two ways to do this:
 
         (1) Passing a single --json-params option with a JSON string of parameters. For example:
 
-            dg scaffold foo.bar my_object --json-params '{{"param1": "value", "param2": "value"}}'`.
+            dg scaffold foo.bar defs/my_object --json-params '{{"param1": "value", "param2": "value"}}'`.
 
         (2) Passing each parameter as an option. For example:
 
-            dg scaffold foo.bar my_object --param1 value1 --param2 value2`
+            dg scaffold foo.bar defs/my_object --param1 value1 --param2 value2`
 
         It is an error to pass both --json-params and key-value pairs as options.
         """

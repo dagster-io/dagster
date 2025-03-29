@@ -1,13 +1,14 @@
 tree
 
 .
+├── defs
+│   └── assets
+│       └── my_asset.py
 ├── my_project
 │   ├── __init__.py
 │   ├── definitions.py
 │   ├── defs
-│   │   ├── __init__.py
-│   │   └── assets
-│   │       └── my_asset.py
+│   │   └── __init__.py
 │   └── lib
 │       └── __init__.py
 ├── my_project_tests
@@ -15,4 +16,4 @@ tree
 ├── pyproject.toml
 └── uv.lock
 
-6 directories, 8 files
+7 directories, 8 files

@@ -38,10 +38,10 @@ This will display a webpage containing documentation for the specified component
 Once you've decided on the component type that you'd like to use, you can instantiate it by running:
 
 ```bash
-dg scaffold component <component-type> <component-name>
+dg scaffold component <component-type> <component-path>
 ```
 
-This will create a new directory inside your `components/` folder that contains a `component.yaml` file. Some component types may also generate additional files as needed.
+This will create a new directory that contains a `component.yaml` file. Some component types may also generate additional files as needed.
 
 ## Configuration
 

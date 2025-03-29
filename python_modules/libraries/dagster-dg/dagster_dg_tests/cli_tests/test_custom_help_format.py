@@ -189,7 +189,7 @@ def test_dynamic_subcommand_help_message():
         assert match_terminal_box_output(
             output.strip(),
             textwrap.dedent("""
-Usage: dg scaffold [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS] INSTANCE_NAME
+Usage: dg scaffold [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS] PATH
 
 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ *    instance_name      TEXT  [required]                                                                             │
