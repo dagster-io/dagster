@@ -8,7 +8,7 @@ from typing import Optional, Union
 import pytest
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
-from dagster_components.core.load_defs import DefinitionsModuleCache
+from dagster_components.core.load_defs import load_defs
 
 from dagster_components_tests.utils import create_project_from_components
 
@@ -25,7 +25,7 @@ def load_test_component_defs(
     ) as (_, project_name):
         module = importlib.import_module(f"{project_name}.defs.{Path(src_path).stem}")
 
-        yield DefinitionsModuleCache(resources={}).load_defs(module=module)
+        yield load_defs(defs_root=module)
 
 
 def sync_load_test_component_defs(
