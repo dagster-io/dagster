@@ -56,9 +56,12 @@ def discover_config_file(
 ) -> Optional[Path]:
     current_path = path.absolute()
     while True:
-        config_path = current_path / "pyproject.toml"
-        if config_path.exists() and has_dg_file_config(config_path, predicate):
-            return config_path
+        dg_toml_path = current_path / "dg.toml"
+        if dg_toml_path.exists() and has_dg_file_config(dg_toml_path, predicate):
+            return dg_toml_path
+        pyproject_toml_path = current_path / "pyproject.toml"
+        if pyproject_toml_path.exists() and has_dg_file_config(pyproject_toml_path, predicate):
+            return pyproject_toml_path
         if current_path == current_path.parent:  # root
             return
         current_path = current_path.parent
