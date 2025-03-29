@@ -237,7 +237,7 @@ def test_list_defs_succeeds(use_json: bool):
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         result = runner.invoke(
-            "scaffold", "dagster_components.dagster.DefinitionsComponent", "mydefs"
+            "scaffold", "dagster_components.dagster.DefsFolderComponent", "mydefs"
         )
         assert_runner_result(result)
 
@@ -296,7 +296,7 @@ def test_list_defs_complex_assets_succeeds():
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         result = runner.invoke(
-            "scaffold", "dagster_components.dagster.DefinitionsComponent", "mydefs"
+            "scaffold", "dagster_components.dagster.DefsFolderComponent", "mydefs"
         )
         assert_runner_result(result)
 
@@ -356,7 +356,7 @@ def test_list_defs_with_env_file_succeeds():
     ):
         result = runner.invoke(
             "scaffold",
-            "dagster_components.dagster.DefinitionsComponent",
+            "dagster_components.dagster.DefsFolderComponent",
             "mydefs",
         )
         assert_runner_result(result)

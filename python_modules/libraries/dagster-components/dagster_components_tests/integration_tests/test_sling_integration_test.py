@@ -21,7 +21,7 @@ from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
 from dagster_components import ComponentLoadContext
 from dagster_components.cli import cli
-from dagster_components.core.defs_module import DefsModule, YamlComponentDefsModule
+from dagster_components.core.defs_module import DefsModuleComponent, YamlComponentDefsModule
 from dagster_components.lib.sling_replication_collection.component import (
     SlingReplicationCollectionComponent,
 )
@@ -80,7 +80,7 @@ def temp_sling_component_instance(
                 data["attributes"]["sling"]["connections"][0]["instance"] = f"{temp_dir}/duckdb"
 
             context = ComponentLoadContext.for_test().for_path(component_path)
-            defs_module = DefsModule.from_context(context)
+            defs_module = DefsModuleComponent.from_context(context)
             assert isinstance(defs_module, YamlComponentDefsModule)
             assert isinstance(defs_module.wrapped, SlingReplicationCollectionComponent)
             yield defs_module.wrapped, defs_module.build_defs(context)

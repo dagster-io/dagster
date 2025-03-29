@@ -25,6 +25,8 @@ from dagster_components.component.component import Component
 from dagster_components.component.component_loader import is_component_loader
 from dagster_components.core.context import ComponentLoadContext
 from dagster_components.core.library_object import load_library_object
+from dagster_components.resolved.base import Resolvable
+from dagster_components.resolved.core_models import AssetPostProcessor
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -42,52 +44,89 @@ class ComponentFileModel(BaseModel):
 
 
 @dataclass
-class DefsModule(Component):
+class DefsModuleComponent(Component):
     path: Path
 
     @classmethod
-    def from_context(cls, context: ComponentLoadContext) -> Optional["DefsModule"]:
+    def from_context(cls, context: ComponentLoadContext) -> Optional["DefsModuleComponent"]:
         # this defines the priority of the module types
         module_types = (
             YamlComponentDefsModule,
             PythonicComponentDefsModule,
             DagsterDefsModule,
-            FolderDefsModule,
+            DefsFolderComponent,
         )
         module_filter = filter(None, (cls.from_context(context) for cls in module_types))
         return next(module_filter, None)
 
     @classmethod
-    def load(cls, attributes: Any, context: ComponentLoadContext) -> "DefsModule":
+    def load(cls, attributes: Any, context: ComponentLoadContext) -> "DefsModuleComponent":
         return check.not_none(cls.from_context(context))
 
 
 @dataclass
-class FolderDefsModule(DefsModule):
+class _DefsFolderComponentYaml(Resolvable):
+    asset_post_processors: Optional[Sequence[AssetPostProcessor]] = None
+
+
+@dataclass
+class DefsFolderComponent(DefsModuleComponent):
     """A folder containing multiple submodules."""
 
-    submodules: Sequence[DefsModule]
+    submodules: Sequence[DefsModuleComponent]
+    asset_post_processors: Optional[Sequence[AssetPostProcessor]]
 
     @classmethod
-    def from_context(cls, context: ComponentLoadContext) -> Optional["FolderDefsModule"]:
+    def get_schema(cls):
+        return _DefsFolderComponentYaml.model()
+
+    @classmethod
+    def load(cls, attributes: Any, context: ComponentLoadContext) -> "DefsFolderComponent":
+        # doing this funky thing because some of our attributes are resolved from the context,
+        # so we split up resolving the yaml-defined attributes and the context-defined attributes,
+        # meaning we manually invoke the resolution system here
+        resolved_attributes = _DefsFolderComponentYaml.resolve_from_model(
+            context.resolution_context.at_path("attributes"),
+            attributes,
+        )
+        return check.not_none(
+            DefsFolderComponent.from_context(
+                context, post_processors=resolved_attributes.asset_post_processors
+            )
+        )
+
+    @classmethod
+    def from_context(
+        cls,
+        context: ComponentLoadContext,
+        post_processors: Optional[Sequence[AssetPostProcessor]] = None,
+    ) -> Optional["DefsFolderComponent"]:
         if not context.path.is_dir():
             return None
         submodules = (
-            DefsModule.from_context(context.for_path(subpath)) for subpath in context.path.iterdir()
+            DefsModuleComponent.from_context(context.for_path(subpath))
+            for subpath in context.path.iterdir()
         )
-        return FolderDefsModule(path=context.path, submodules=list(filter(None, submodules)))
+        return DefsFolderComponent(
+            path=context.path,
+            submodules=list(filter(None, submodules)),
+            asset_post_processors=post_processors,
+        )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
-        return Definitions.merge(
+        defs = Definitions.merge(
             *(
                 submodule.build_defs(context.for_path(submodule.path))
                 for submodule in self.submodules
             )
         )
+        for post_processor in self.asset_post_processors or []:
+            defs = post_processor(defs)
+        return defs
 
 
 @dataclass
-class DagsterDefsModule(DefsModule):
+class DagsterDefsModule(DefsModuleComponent):
     """A module containing python dagster definitions."""
 
     @classmethod
@@ -113,7 +152,7 @@ class DagsterDefsModule(DefsModule):
 
 
 @dataclass
-class WrappedDefsModule(DefsModule):
+class WrappedDefsModule(DefsModuleComponent):
     """A module containing a component definition."""
 
     wrapped: Component
