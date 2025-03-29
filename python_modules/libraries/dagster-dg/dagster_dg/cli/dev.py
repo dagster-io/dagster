@@ -1,3 +1,4 @@
+import json
 import os
 import signal
 import subprocess
@@ -15,7 +16,7 @@ from dagster_dg.cli.utils import create_dagster_cli_cmd
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.error import DgError
-from dagster_dg.utils import DgClickCommand, pushd
+from dagster_dg.utils import DgClickCommand, pushd, strip_activated_venv_from_env_vars
 from dagster_dg.utils.cli import format_forwarded_option
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
@@ -106,6 +107,18 @@ def dev_command(
         *(["--verbose"] if dg_context.config.cli.verbose else []),
     ]
 
+    if dg_context.is_workspace:
+        os.environ["DAGSTER_PROJECT_ENV_FILE_PATHS"] = json.dumps(
+            {
+                dg_context.with_root_path(project.path).code_location_name: str(project.path)
+                for project in dg_context.project_specs
+            }
+        )
+    else:
+        os.environ["DAGSTER_PROJECT_ENV_FILE_PATHS"] = json.dumps(
+            {dg_context.code_location_name: str(dg_context.root_path)}
+        )
+
     # In a project context, we can just run `dagster dev` directly, using `dagster` from the
     # code location's environment.
     # In a workspace context, dg dev will construct a temporary
@@ -186,4 +199,5 @@ def _open_subprocess(command: Sequence[str]) -> "subprocess.Popen":
     return subprocess.Popen(
         command,
         creationflags=creationflags,
+        env=strip_activated_venv_from_env_vars(os.environ),
     )
