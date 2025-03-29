@@ -64,6 +64,12 @@ def test_params() -> None:
             }
         )
     }
+    assert not next(iter(check.check_specs)).blocking
+
+    blocking_check = build_time_partition_freshness_checks(
+        assets=[my_partitioned_asset], deadline_cron="0 0 * * *", blocking=True
+    )[0]
+    assert next(iter(blocking_check.check_specs)).blocking
     assert (
         check.node_def.name
         == f"freshness_check_{non_secure_md5_hash_str(json.dumps([str(my_partitioned_asset.key)]).encode())[:8]}"
