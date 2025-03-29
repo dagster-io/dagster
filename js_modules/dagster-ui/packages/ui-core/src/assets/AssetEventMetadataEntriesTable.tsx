@@ -138,7 +138,12 @@ export const AssetEventMetadataEntriesTable = ({
     () =>
       allRows
         .filter((row) => !filter || row.entry.label.toLowerCase().includes(filter.toLowerCase()))
-        .filter((row) => !isEntryHidden(row.entry, {hideEntriesShownOnOverview})),
+        .filter(
+          (row) =>
+            !isEntryHidden(row.entry, {hideEntriesShownOnOverview}) ||
+            row.entry.label === 'dagster/uri' ||
+            row.entry.label === 'dagster/table_name',
+        ),
     [allRows, filter, hideEntriesShownOnOverview],
   );
 
