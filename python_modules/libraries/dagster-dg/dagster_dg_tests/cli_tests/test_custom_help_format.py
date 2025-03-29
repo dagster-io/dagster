@@ -192,7 +192,7 @@ def test_dynamic_subcommand_help_message():
 Usage: dg scaffold [GLOBAL OPTIONS] dagster_test.components.SimplePipesScriptComponent [OPTIONS] PATH
 
 ╭─ Arguments ──────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│ *    instance_name      TEXT  [required]                                                                             │
+│ *    path      TEXT  [required]                                                                                      │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ --json-params          TEXT           JSON string of component parameters.                                           │
