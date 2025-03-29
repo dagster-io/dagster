@@ -138,7 +138,12 @@ export const AssetEventMetadataEntriesTable = ({
     () =>
       allRows
         .filter((row) => !filter || row.entry.label.toLowerCase().includes(filter.toLowerCase()))
-        .filter((row) => !isEntryHidden(row.entry, {hideEntriesShownOnOverview})),
+        .filter(
+          (row) =>
+            !isEntryHidden(row.entry, {hideEntriesShownOnOverview}) ||
+            row.entry.label === 'dagster/uri' ||
+            row.entry.label === 'dagster/table_name',
+        ),
     [allRows, filter, hideEntriesShownOnOverview],
   );
 
@@ -324,6 +329,10 @@ export const StyledTableWithHeader = styled.table`
       max-width: 300px;
       word-wrap: break-word;
       width: 25%;
+      
+    &.uri-entry{
+      background-color: ${Colors.keylineDefault()};
+      font-weight: bold;
     }
   }
 `;
@@ -349,7 +358,7 @@ function isEntryHidden(
       isCanonicalTableNameEntry(entry) ||
       isCanonicalUriEntry(entry))
   ) {
-    return true;
+    return false;
   }
   return false;
 }
