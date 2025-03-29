@@ -696,12 +696,12 @@ class PartialResource(
 
     def __init__(
         self,
-        resource_cls: type[ConfigurableResourceFactory[TResValue]],
-        data: dict[str, Any],
+        resource_cls: type[ConfigurableResourceFactory[TResValue]] | None = None,
+        data: dict[str, Any] | None = None,
+        **kwargs: Any,
     ):
-        resource_pointers, _data_without_resources = separate_resource_params(resource_cls, data)
-
         super().__init__(data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
+        resource_pointers, _data_without_resources = separate_resource_params(resource_cls, data)
 
         def resource_fn(context: InitResourceContext):
             to_populate = resource_cls._get_non_default_public_field_values_cls(  # noqa: SLF001
