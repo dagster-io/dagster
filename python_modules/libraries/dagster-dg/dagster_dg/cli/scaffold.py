@@ -349,7 +349,7 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
     @cli_telemetry_wrapper
     def scaffold_command(
         cli_context: click.Context,
-        instance_name: str,
+        path: str,
         json_params: Mapping[str, Any],
         format: str,  # noqa: A002 "format" name required for click magic
         **key_value_params: Any,
@@ -380,7 +380,7 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
             cli_context,
             cli_config,
             key,
-            instance_name,
+            path,
             key_value_params,
             json_params,
             cast(ScaffoldFormatOptions, format),
