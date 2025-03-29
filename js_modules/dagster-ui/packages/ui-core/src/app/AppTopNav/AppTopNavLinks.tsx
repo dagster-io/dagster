@@ -1,14 +1,14 @@
 import {Box} from '@dagster-io/ui-components';
 import {ReactElement} from 'react';
 import {useHistory} from 'react-router-dom';
-
-import {TopNavLink} from './AppTopNav';
 import {
   assetsPathMatcher,
   automationPathMatcher,
   deploymentPathMatcher,
   jobsPathMatcher,
-} from './activePathMatchers';
+} from 'shared/app/AppTopNav/activePathMatchers.oss';
+
+import {TopNavLink} from './AppTopNav';
 import {JobStateForNav} from './useJobStateForNav';
 import {DeploymentStatusIcon} from '../../nav/DeploymentStatusIcon';
 import {ShortcutHandler} from '../ShortcutHandler';

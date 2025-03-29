@@ -51,5 +51,5 @@ export const useAssetSelectionInput = <
     );
   }
 
-  return {filterInput, loading, filtered, assetSelection, setAssetSelection};
+  return {filterInput, loading, filtered: filtered as T[], assetSelection, setAssetSelection};
 };

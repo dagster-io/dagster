@@ -51,7 +51,9 @@ export const AssetPageHeader = ({
     const headerItems = headerBreadcrumbs.map((item) => {
       return {
         ...item,
-        href: item.href ? history.createHref({pathname: item.href}) : undefined,
+        href: item.href
+          ? history.createHref({pathname: item.href, search: filterStateQueryString})
+          : undefined,
       };
     });
 
