@@ -36,7 +36,7 @@ def other_repo():
     return [noop_job]
 
 
-def _can_connect(origin, endpoint, instance):
+def _can_connect(origin, endpoint):
     try:
         with GrpcServerCodeLocation(
             origin=origin,
@@ -44,7 +44,7 @@ def _can_connect(origin, endpoint, instance):
             socket=endpoint.socket,
             host=endpoint.host,
             watch_server=False,
-            instance=instance,
+            auto_materialize_use_sensors=True,
         ):
             return True
     except Exception:
@@ -83,7 +83,7 @@ def test_error_repo_in_registry(instance):
                 socket=endpoint.socket,
                 host=endpoint.host,
                 watch_server=False,
-                instance=instance,
+                auto_materialize_use_sensors=True,
             ):
                 pass
 
@@ -95,7 +95,7 @@ def test_error_repo_in_registry(instance):
                 socket=endpoint.socket,
                 host=endpoint.host,
                 watch_server=False,
-                instance=instance,
+                auto_materialize_use_sensors=True,
             ):
                 pass
 
@@ -119,7 +119,7 @@ def test_server_unexpectedly_killed(instance: DagsterInstance):
         ) as registry:
             endpoint_one = registry.get_grpc_endpoint(origin)
 
-            assert _can_connect(origin, endpoint_one, instance)
+            assert _can_connect(origin, endpoint_one)
 
             # Kill the server process. A new server should be automatically started.
             process = registry._all_processes[0]  # noqa: SLF001
@@ -127,7 +127,7 @@ def test_server_unexpectedly_killed(instance: DagsterInstance):
             os.kill(pid, get_terminate_signal())
             time.sleep(5)
             endpoint_one = registry.get_grpc_endpoint(origin)
-            assert _can_connect(origin, endpoint_one, instance)
+            assert _can_connect(origin, endpoint_one)
 
 
 def test_reload_updates_server_id(instance: DagsterInstance):
@@ -148,7 +148,7 @@ def test_reload_updates_server_id(instance: DagsterInstance):
     ) as registry:
         endpoint_one = registry.get_grpc_endpoint(origin)
 
-        assert _can_connect(origin, endpoint_one, instance)
+        assert _can_connect(origin, endpoint_one)
 
         initial_server_id = endpoint_one.create_client().get_server_id()
 
@@ -181,18 +181,18 @@ def test_server_registry(instance, server_command: GrpcServerCommand):
 
         assert endpoint_two == endpoint_one
 
-        assert _can_connect(origin, endpoint_one, instance)
-        assert _can_connect(origin, endpoint_two, instance)
+        assert _can_connect(origin, endpoint_one)
+        assert _can_connect(origin, endpoint_two)
 
         endpoint_three = registry.reload_grpc_endpoint(origin)
 
-        assert _can_connect(origin, endpoint_three, instance)
+        assert _can_connect(origin, endpoint_three)
 
         start_time = time.time()
         while True:
             # Server at endpoint_one should eventually die due to heartbeat failure
 
-            if not _can_connect(origin, endpoint_one, instance):
+            if not _can_connect(origin, endpoint_one):
                 break
 
             if time.time() - start_time > 30:
@@ -201,8 +201,8 @@ def test_server_registry(instance, server_command: GrpcServerCommand):
             time.sleep(1)
 
     # Cleaned up once we have left the context
-    assert not _can_connect(origin, endpoint_two, instance)
-    assert not _can_connect(origin, endpoint_three, instance)
+    assert not _can_connect(origin, endpoint_two)
+    assert not _can_connect(origin, endpoint_three)
 
 
 def _registry_thread(origin, registry, endpoint, event):
@@ -248,9 +248,9 @@ def test_registry_multithreading(instance, server_command: GrpcServerCommand):
         for event in success_events:
             assert event.is_set()
 
-        assert _can_connect(origin, endpoint, instance)
+        assert _can_connect(origin, endpoint)
 
-    assert not _can_connect(origin, endpoint, instance)
+    assert not _can_connect(origin, endpoint)
 
 
 class TestMockProcessGrpcServerRegistry(GrpcServerRegistry):
@@ -303,8 +303,8 @@ def test_custom_loadable_target_origin(instance):
         assert endpoint_two != endpoint_one
 
     registry.wait_for_processes()
-    assert not _can_connect(origin, endpoint_one, instance)
-    assert not _can_connect(origin, endpoint_two, instance)
+    assert not _can_connect(origin, endpoint_one)
+    assert not _can_connect(origin, endpoint_two)
 
 
 def test_failure_on_open_server_process(instance):
