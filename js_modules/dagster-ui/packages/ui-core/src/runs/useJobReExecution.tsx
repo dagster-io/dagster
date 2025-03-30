@@ -1,28 +1,21 @@
-import {Body, Box, Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
 import {useCallback, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION, handleLaunchResult} from './RunUtils';
 import {gql, useApolloClient, useMutation} from '../apollo-client';
+import {ReexecutionDialog, ReexecutionDialogProps} from './ReexecutionDialog';
 import {DagsterTag} from './RunTag';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
-import {
-  BulkActionStatus,
-  ExecutionParams,
-  ExecutionTag,
-  ReexecutionStrategy,
-  Run,
-} from '../graphql/types';
+import {BulkActionStatus, ExecutionParams, ReexecutionStrategy, Run} from '../graphql/types';
 import {showLaunchError} from '../launchpad/showLaunchError';
 import {
   CheckBackfillStatusQuery,
   CheckBackfillStatusQueryVariables,
 } from './types/useJobReExecution.types';
-import {EditableTagList, validateTagEditState} from '../launchpad/TagEditor';
 
 /**
  * This hook gives you a mutation method that you can use to re-execute runs.
@@ -43,7 +36,7 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
     LaunchPipelineReexecutionMutationVariables
   >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
 
-  const [dialogProps, setDialogProps] = useState<ReexecutionEditTagsDialogProps | null>(null);
+  const [dialogProps, setDialogProps] = useState<ReexecutionDialogProps | null>(null);
   const onClick = useCallback(
     async (
       run: Pick<Run, 'id' | 'pipelineName' | 'tags'>,
@@ -51,6 +44,18 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
       forceLaunchpad: boolean,
     ) => {
       const backfillTag = run.tags.find((t) => t.key === DagsterTag.Backfill);
+
+      if (forceLaunchpad && typeof param === 'string') {
+        setDialogProps({
+          isOpen: true,
+          onClose: () => setDialogProps(null),
+          onComplete: () => onCompleted?.(),
+          selectedRuns: {[run.id]: run.id},
+          selectedRunBackfillIds: backfillTag ? [backfillTag.value] : [],
+          reexecutionStrategy: param,
+        });
+        return;
+      }
 
       if (backfillTag) {
         const {data} = await client.query<
@@ -82,59 +87,20 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
         }
       }
 
-      const launch = async (variables: LaunchPipelineReexecutionMutationVariables) => {
-        try {
-          const result = await launchPipelineReexecution({variables});
-          handleLaunchResult(run.pipelineName, result.data?.launchPipelineReexecution, history, {
-            preserveQuerystring: true,
-            behavior: 'open',
-          });
-          onCompleted?.();
-        } catch (error) {
-          showLaunchError(error as Error);
-        }
-      };
-
-      if (forceLaunchpad) {
-        setDialogProps({
-          tags: run.tags,
-          onCancel: () => setDialogProps(null),
-          onContinue: async (extraTags) => {
-            setDialogProps(null);
-
-            if (typeof param === 'string') {
-              await launch({
-                reexecutionParams: {
-                  parentRunId: run.id,
-                  strategy: param,
-                  extraTags,
-                },
-              });
-            } else {
-              const em = param.executionMetadata || {};
-              const extraTagKeys = new Set(extraTags.map((t) => t.key));
-
-              await launch({
-                executionParams: {
-                  ...param,
-                  executionMetadata: {
-                    ...em,
-                    tags: [
-                      ...(em.tags || []).filter((t) => !extraTagKeys.has(t.key)),
-                      ...extraTags,
-                    ],
-                  },
-                },
-              });
-            }
-          },
+      try {
+        const result = await launchPipelineReexecution({
+          variables:
+            typeof param === 'string'
+              ? {reexecutionParams: {parentRunId: run.id, strategy: param}}
+              : {executionParams: param},
         });
-      } else {
-        await launch(
-          typeof param === 'string'
-            ? {reexecutionParams: {parentRunId: run.id, strategy: param}}
-            : {executionParams: param},
-        );
+        handleLaunchResult(run.pipelineName, result.data?.launchPipelineReexecution, history, {
+          preserveQuerystring: true,
+          behavior: 'open',
+        });
+        onCompleted?.();
+      } catch (error) {
+        showLaunchError(error as Error);
       }
     },
     [client, confirm, launchPipelineReexecution, history, onCompleted],
@@ -142,66 +108,8 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
 
   return {
     onClick,
-    launchpadElement: dialogProps ? <ReexecutionEditTagsDialog {...dialogProps} /> : null,
+    launchpadElement: dialogProps ? <ReexecutionDialog {...dialogProps} /> : null,
   };
-};
-
-/** Ben Note: Wiring this into the existing launchpad is /messy/ - we only want to allow
- * editing tags (and possibly runConfigYaml in the future), and we need to disable everything
- * else. We also need to rewire the Launch button to run this mutation with the remaining args.
- */
-interface ReexecutionEditTagsDialogProps {
-  tags: ExecutionTag[];
-  onContinue: (tags: ExecutionTag[]) => Promise<void>;
-  onCancel: () => void;
-}
-
-const ReexecutionEditTagsDialog = (props: ReexecutionEditTagsDialogProps) => {
-  const parentRunCustomTags = props.tags.filter((t) => !t.key.startsWith(DagsterTag.Namespace));
-  const [tags, setTags] = useState(
-    parentRunCustomTags.length === 0 ? [{key: '', value: ''}] : parentRunCustomTags,
-  );
-  const {toError, toSave} = validateTagEditState(tags);
-
-  const onSave = () => {
-    const parentRunValues = Object.fromEntries(parentRunCustomTags.map((t) => [t.key, t.value]));
-    const toSaveModified = toSave.filter((t) => t.value !== parentRunValues[t.key]);
-    if (!toError.length) {
-      props.onContinue(toSaveModified);
-    }
-  };
-
-  const disabled = !!toError.length;
-
-  return (
-    <Dialog
-      icon="info"
-      onClose={props.onCancel}
-      style={{minWidth: 700}}
-      title="Re-execute"
-      isOpen={true}
-    >
-      <DialogBody>
-        <Box padding={{bottom: 16}}>
-          <Body>
-            Re-executed runs inherit tags from the parent run automatically. Edit existing tags to
-            override their values or add more tags below.
-          </Body>
-        </Box>
-        <EditableTagList
-          editState={tags}
-          setEditState={setTags}
-          tagsFromParentRun={parentRunCustomTags}
-        />
-      </DialogBody>
-      <DialogFooter>
-        <Button onClick={props.onCancel}>Cancel</Button>
-        <Button intent="primary" onClick={onSave} disabled={disabled}>
-          Launch Run
-        </Button>
-      </DialogFooter>
-    </Dialog>
-  );
 };
 
 const CHECK_BACKFILL_STATUS_QUERY = gql`

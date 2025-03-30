@@ -120,10 +120,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
   );
 
   const reexecute = useJobReexecution();
-  const reexecuteWithSelection = async (
-    e: React.MouseEvent | KeyboardEvent,
-    selection: StepSelection,
-  ) => {
+  const reexecuteWithSelection = async (selection: StepSelection) => {
     if (!run || !repoMatch || !run.pipelineSnapshotId) {
       return;
     }
@@ -133,7 +130,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
       repositoryLocationName: repoMatch.match.repositoryLocation.name,
       repositoryName: repoMatch.match.repository.name,
     });
-    await reexecute.onClick(run, executionParams, e.shiftKey);
+    await reexecute.onClick(run, executionParams, false);
   };
 
   const full: LaunchButtonConfiguration = {
@@ -158,10 +155,9 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
             ? 'Wait for all of the steps to finish to re-execute the same subset.'
             : 'Re-execute the same step subset used for this run:'}
         <StepSelectionDescription selection={currentRunSelection} />
-        {' Shift-click to adjust tags.'}
       </div>
     ),
-    onClick: (e) => reexecuteWithSelection(e, currentRunSelection!),
+    onClick: () => reexecuteWithSelection(currentRunSelection!),
   };
 
   const selected: LaunchButtonConfiguration = {
@@ -177,19 +173,17 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
             ? 'Wait for the steps to finish to re-execute them.'
             : 'Re-execute the selected steps with existing configuration:'}
         <StepSelectionDescription selection={selection} />
-        {' Shift-click to adjust tags.'}
       </div>
     ),
-    onClick: (e) => reexecuteWithSelection(e, selection),
+    onClick: () => reexecuteWithSelection(selection),
   };
 
   const fromSelected: LaunchButtonConfiguration = {
     icon: 'arrow_forward',
     title: 'From selected',
     disabled: !canRunAllSteps(run) || selection.keys.length !== 1,
-    tooltip:
-      'Re-execute the pipeline downstream from the selected steps. Shift-click to adjust tags.',
-    onClick: async (e) => {
+    tooltip: 'Re-execute the pipeline downstream from the selected steps.',
+    onClick: async () => {
       if (!run.executionPlan) {
         console.warn('Run execution plan must be present to launch from-selected execution');
         return Promise.resolve();
@@ -204,7 +198,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         (node) => node.name,
       );
 
-      await reexecuteWithSelection(e, {
+      await reexecuteWithSelection({
         keys: selectionKeys,
         query: selectionForPythonFiltering,
       });

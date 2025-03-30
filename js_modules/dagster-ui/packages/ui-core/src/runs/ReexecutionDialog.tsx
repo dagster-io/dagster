@@ -24,7 +24,7 @@ import {
 } from './types/RunUtils.types';
 import {ExecutionTag, ReexecutionStrategy} from '../graphql/types';
 
-interface Props {
+export interface ReexecutionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: (reexecutionState: ReexecutionState) => void;
@@ -138,7 +138,7 @@ const reexecutionDialogReducer = (
   }
 };
 
-export const ReexecutionDialog = (props: Props) => {
+export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
   const {isOpen, onClose, onComplete, reexecutionStrategy, selectedRuns, selectedRunBackfillIds} =
     props;
 
