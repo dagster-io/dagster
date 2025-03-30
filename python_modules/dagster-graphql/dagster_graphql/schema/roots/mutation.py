@@ -523,23 +523,20 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
                 execution_params_dict=executionParams,
             )
         elif reexecutionParams:
-            run_config = None
-            if reexecutionParams.get("runConfigData"):
-                run_config = parse_run_config_input(  # pyright: ignore[reportArgumentType]
-                    reexecutionParams["runConfigData"],
-                    raise_on_error=True,
-                )
-
             extra_tags = None
             if reexecutionParams.get("extraTags"):
-                extra_tags={t["key"]: t["value"] for t in reexecutionParams["extraTags"]},
+                extra_tags={t["key"]: t["value"] for t in reexecutionParams["extraTags"]}
+            print(extra_tags)
+            use_parent_run_tags = None
+            if reexecutionParams.get("useParentRunTags") is not None:
+                use_parent_run_tags= reexecutionParams["useParentRunTags"]
 
             return launch_reexecution_from_parent_run(
                 graphene_info,
                 parent_run_id=reexecutionParams["parentRunId"],
                 strategy=reexecutionParams["strategy"],
-                run_config=run_config,
                 extra_tags=extra_tags,
+                use_parent_run_tags=use_parent_run_tags
             )
         else:
             check.failed("Unreachable")

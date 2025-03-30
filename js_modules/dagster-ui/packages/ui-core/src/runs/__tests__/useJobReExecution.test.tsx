@@ -1,5 +1,7 @@
+import {MockedProvider} from '@apollo/client/testing';
 import {Body, Box, Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
-import {useCallback, useState} from 'react';
+import {renderHook, waitFor} from '@testing-library/react';
+import {ReactNode, useCallback, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {LAUNCH_PIPELINE_REEXECUTION_MUTATION, handleLaunchResult} from './RunUtils';
@@ -22,7 +24,36 @@ import {
   CheckBackfillStatusQuery,
   CheckBackfillStatusQueryVariables,
 } from './types/useJobReExecution.types';
+import {buildLaunchPipelineReexecutionSuccessMock} from '../__fixtures__/Reexecution.fixtures';
 import {EditableTagList, validateTagEditState} from '../launchpad/TagEditor';
+
+describe('useJobReexecution', () => {
+  it('creates the correct mutation for FROM_FAILURE', async () => {
+    const wrapper = ({children}: {children: ReactNode}) => (
+      <MockedProvider
+        addTypename={false}
+        mocks={[
+          buildLaunchPipelineReexecutionSuccessMock({
+            parentRunId: '1',
+            extraTags: [{key: 'a', value: 'b'}],
+          }),
+        ]}
+      >
+        {children}
+      </MockedProvider>
+    );
+
+    const {result} = renderHook(() => useJobReexecution(), {wrapper});
+
+    await result.current.onClick(
+      {id: '1', pipelineName: 'abc', tags: [{key: 'a', value: 'b'}]},
+      'FROM_FAILURE',
+      true,
+    );
+
+    expect(screen.findByText('Re-executed runs inherit tags'));
+  });
+});
 
 /**
  * This hook gives you a mutation method that you can use to re-execute runs.

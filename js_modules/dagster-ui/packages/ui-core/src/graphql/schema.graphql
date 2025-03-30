@@ -3881,6 +3881,9 @@ type Mutation {
 input ReexecutionParams {
   parentRunId: String!
   strategy: ReexecutionStrategy!
+  runConfigData: RunConfigData
+  extraTags: [ExecutionTag!]
+  useParentRunTags: Boolean
 }
 
 enum ReexecutionStrategy {

@@ -4187,8 +4187,11 @@ export type QueryWorkspaceLocationEntryOrErrorArgs = {
 };
 
 export type ReexecutionParams = {
+  extraTags?: InputMaybe<Array<ExecutionTag>>;
   parentRunId: Scalars['String']['input'];
+  runConfigData?: InputMaybe<Scalars['RunConfigData']['input']>;
   strategy: ReexecutionStrategy;
+  useParentRunTags?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export enum ReexecutionStrategy {
@@ -12728,12 +12731,19 @@ export const buildReexecutionParams = (
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
   relationshipsToOmit.add('ReexecutionParams');
   return {
+    extraTags: overrides && overrides.hasOwnProperty('extraTags') ? overrides.extraTags! : [],
     parentRunId:
       overrides && overrides.hasOwnProperty('parentRunId') ? overrides.parentRunId! : 'sunt',
+    runConfigData:
+      overrides && overrides.hasOwnProperty('runConfigData') ? overrides.runConfigData! : 'et',
     strategy:
       overrides && overrides.hasOwnProperty('strategy')
         ? overrides.strategy!
         : ReexecutionStrategy.ALL_STEPS,
+    useParentRunTags:
+      overrides && overrides.hasOwnProperty('useParentRunTags')
+        ? overrides.useParentRunTags!
+        : false,
   };
 };
 

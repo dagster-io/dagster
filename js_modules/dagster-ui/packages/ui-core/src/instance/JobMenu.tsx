@@ -34,7 +34,7 @@ export const JobMenu = (props: Props) => {
   };
 
   const materialize = useMaterializationAction(job.name);
-  const onReexecute = useJobReexecution();
+  const reexecute = useJobReexecution();
 
   const {
     permissions: {canLaunchPipelineReexecution, canLaunchPipelineExecution},
@@ -84,8 +84,10 @@ export const JobMenu = (props: Props) => {
     <MenuItem
       icon="replay"
       text="Re-execute latest run"
-      onClick={() => (run ? onReexecute(run, ReexecutionStrategy.ALL_STEPS) : undefined)}
       disabled={!canLaunchPipelineReexecution || !run || !canRunAllSteps(run)}
+      onClick={(e) =>
+        run ? reexecute.onClick(run, ReexecutionStrategy.ALL_STEPS, e.shiftKey) : undefined
+      }
     />
   );
 
@@ -93,14 +95,17 @@ export const JobMenu = (props: Props) => {
     <MenuItem
       icon="sync_problem"
       text="Re-execute latest run from failure"
-      onClick={() => (run ? onReexecute(run, ReexecutionStrategy.FROM_FAILURE) : undefined)}
       disabled={!canLaunchPipelineReexecution || !run || !canRunFromFailure(run)}
+      onClick={(e) =>
+        run ? reexecute.onClick(run, ReexecutionStrategy.FROM_FAILURE, e.shiftKey) : undefined
+      }
     />
   );
 
   return (
     <>
       {materialize.launchpadElement}
+      {reexecute.launchpadElement}
       <Popover
         onOpened={() => fetchIfPossible()}
         content={

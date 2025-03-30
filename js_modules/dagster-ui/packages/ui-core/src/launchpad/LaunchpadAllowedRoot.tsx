@@ -22,7 +22,7 @@ import {RepoAddress} from '../workspace/types';
 
 const LaunchpadStoredSessionsContainer = lazy(() => import('./LaunchpadStoredSessionsContainer'));
 
-interface Props {
+export interface LaunchpadAllowedRootProps {
   launchpadType: LaunchpadType;
   pipelinePath: string;
   repoAddress: RepoAddress;
@@ -46,7 +46,7 @@ const filterDefaultYamlForSubselection = (defaultYaml: string, opNames: Set<stri
   return yaml.stringify(parsedYaml);
 };
 
-export const LaunchpadAllowedRoot = (props: Props) => {
+export const LaunchpadAllowedRoot = (props: LaunchpadAllowedRootProps) => {
   useTrackPageView();
 
   const {pipelinePath, repoAddress, launchpadType, sessionPresets} = props;

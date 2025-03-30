@@ -120,7 +120,10 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
   );
 
   const reexecute = useJobReexecution();
-  const reexecuteWithSelection = async (selection: StepSelection) => {
+  const reexecuteWithSelection = async (
+    e: React.MouseEvent | KeyboardEvent,
+    selection: StepSelection,
+  ) => {
     if (!run || !repoMatch || !run.pipelineSnapshotId) {
       return;
     }
@@ -130,16 +133,16 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
       repositoryLocationName: repoMatch.match.repositoryLocation.name,
       repositoryName: repoMatch.match.repository.name,
     });
-    await reexecute(run, executionParams);
+    await reexecute.onClick(run, executionParams, e.shiftKey);
   };
 
   const full: LaunchButtonConfiguration = {
     icon: 'cached',
     scope: '*',
     title: 'All steps in root run',
-    tooltip: 'Re-execute the pipeline run from scratch',
+    tooltip: 'Re-execute the pipeline run from scratch. Shift-click to adjust tags.',
     disabled: !canRunAllSteps(run),
-    onClick: () => reexecute(run, ReexecutionStrategy.ALL_STEPS),
+    onClick: (e) => reexecute.onClick(run, ReexecutionStrategy.ALL_STEPS, e.shiftKey),
   };
 
   const same: LaunchButtonConfiguration = {
@@ -155,9 +158,10 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
             ? 'Wait for all of the steps to finish to re-execute the same subset.'
             : 'Re-execute the same step subset used for this run:'}
         <StepSelectionDescription selection={currentRunSelection} />
+        {' Shift-click to adjust tags.'}
       </div>
     ),
-    onClick: () => reexecuteWithSelection(currentRunSelection!),
+    onClick: (e) => reexecuteWithSelection(e, currentRunSelection!),
   };
 
   const selected: LaunchButtonConfiguration = {
@@ -173,17 +177,19 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
             ? 'Wait for the steps to finish to re-execute them.'
             : 'Re-execute the selected steps with existing configuration:'}
         <StepSelectionDescription selection={selection} />
+        {' Shift-click to adjust tags.'}
       </div>
     ),
-    onClick: () => reexecuteWithSelection(selection),
+    onClick: (e) => reexecuteWithSelection(e, selection),
   };
 
   const fromSelected: LaunchButtonConfiguration = {
     icon: 'arrow_forward',
     title: 'From selected',
     disabled: !canRunAllSteps(run) || selection.keys.length !== 1,
-    tooltip: 'Re-execute the pipeline downstream from the selected steps',
-    onClick: async () => {
+    tooltip:
+      'Re-execute the pipeline downstream from the selected steps. Shift-click to adjust tags.',
+    onClick: async (e) => {
       if (!run.executionPlan) {
         console.warn('Run execution plan must be present to launch from-selected execution');
         return Promise.resolve();
@@ -198,7 +204,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         (node) => node.name,
       );
 
-      await reexecuteWithSelection({
+      await reexecuteWithSelection(e, {
         keys: selectionKeys,
         query: selectionForPythonFiltering,
       });
@@ -213,8 +219,8 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
     disabled: !fromFailureEnabled,
     tooltip: !fromFailureEnabled
       ? 'Retry is only enabled when the pipeline has failed.'
-      : 'Retry the pipeline run, skipping steps that completed successfully',
-    onClick: () => reexecute(run, ReexecutionStrategy.FROM_FAILURE),
+      : 'Retry the pipeline run, skipping steps that completed successfully. Shift-click to adjust tags.',
+    onClick: (e) => reexecute.onClick(run, ReexecutionStrategy.FROM_FAILURE, e.shiftKey),
   };
 
   if (!artifactsPersisted) {
@@ -263,6 +269,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
         />
       </Box>
       {!doneStatuses.has(run.status) ? <CancelRunButton run={run} /> : null}
+      {reexecute.launchpadElement}
     </Group>
   );
 };
