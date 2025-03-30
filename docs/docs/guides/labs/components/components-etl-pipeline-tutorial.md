@@ -222,26 +222,18 @@ To verify the fix, you can view a sample of the newly materialized assets in Duc
 
 ## Automate the pipeline
 
-### 1. Automate Sling ingestion
+Now that you've defined some assets, let's schedule them.
 
-Now that you've defined some assets, you can automate them to keep them up to date by using [declarative automation](/guides/automate/declarative-automation) directly in the `component.yaml` file.
+First scaffold in a schedule:
 
-Navigate to `defs/ingest_files/component.yaml` and add the `automation_condition` below to automatically pull in data with Sling every day:
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/26-scaffold-daily-jaffle.txt" />
 
-<CodeExample
-  path="docs_snippets/docs_snippets/guides/components/index/26-component-ingest-automation.yaml"
-  language="YAML"
-  title="jaffle-platform/jaffle_platform/defs/ingest_files/component.yaml"
-/>
-
-### 2. Automate dbt transformation
-
-Next, update the dbt project so it executes after the Sling replication runs. Navigate to `components/jdbt/component.yaml` and add the `automation_condition` below:
+And now target `*` and schedule `@daily`:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/components/index/27-component-jdbt-automation.yaml"
-  language="YAML"
-  title="jaffle-platform/jaffle_platform/defs/jdbt/component.yaml"
+  path="docs_snippets/docs_snippets/guides/components/index/27-daily-jaffle.py"
+  language="Python"
+  title="jaffle-platform/jaffle_platform/defs/daily_jaffle.py"
 />
 
 ## Next steps
