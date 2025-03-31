@@ -187,15 +187,15 @@ export async function handleLaunchMultipleResult(
   const params = new URLSearchParams();
   successfulRunIds.forEach((id) => params.append('q[]', `id:${id}`));
 
-  const queryString = `/runs?${params.toString()}`;
-  history.push(queryString);
+  const pathAndQueryString = `/runs?${params.toString()}`;
+  history.push(pathAndQueryString);
 
   await showSharedToaster({
     intent: 'success',
     message: <div>Launched {successfulRunIds.length} runs</div>,
     action: {
       type: 'custom',
-      element: <AnchorButton to={history.createHref({pathname: queryString})}>View</AnchorButton>,
+      element: <AnchorButton to={pathAndQueryString}>View</AnchorButton>,
     },
   });
 

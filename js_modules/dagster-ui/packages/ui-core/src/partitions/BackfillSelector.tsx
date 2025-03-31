@@ -13,7 +13,6 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useHistory} from 'react-router-dom';
 
 import {
   DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT,
@@ -76,7 +75,6 @@ export const BackfillPartitionSelector = ({
   onSubmit: () => void;
   repoAddress: RepoAddress;
 }) => {
-  const history = useHistory();
   const [range, _setRange] = React.useState<string[]>(
     Object.keys(runStatusData).filter(
       (k) => !runStatusData[k] || runStatusData[k] === RunStatus.FAILURE,
@@ -122,7 +120,7 @@ export const BackfillPartitionSelector = ({
   }, [onLaunch]);
 
   const onSuccess = (backfillId: string) => {
-    showBackfillSuccessToast(history, backfillId, false);
+    showBackfillSuccessToast(backfillId, false);
     onLaunch?.(backfillId, query);
   };
 

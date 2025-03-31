@@ -1,5 +1,4 @@
 import {Alert, ButtonLink, Colors, Group, Mono} from '@dagster-io/ui-components';
-import {History} from 'history';
 import * as React from 'react';
 
 import {gql, useQuery} from '../apollo-client';
@@ -68,13 +67,8 @@ export async function showBackfillErrorToast(
   });
 }
 
-export async function showBackfillSuccessToast(
-  history: History<unknown>,
-  backfillId: string,
-  isAssetBackfill: boolean,
-) {
+export async function showBackfillSuccessToast(backfillId: string, isAssetBackfill: boolean) {
   const url = getBackfillPath(backfillId, isAssetBackfill);
-  const [pathname, search] = url.split('?');
   await showSharedToaster({
     intent: 'success',
     message: (
@@ -84,7 +78,7 @@ export async function showBackfillSuccessToast(
     ),
     action: {
       type: 'custom',
-      element: <AnchorButton to={history.createHref({pathname, search})}>View</AnchorButton>,
+      element: <AnchorButton to={url}>View</AnchorButton>,
     },
   });
 }
