@@ -196,8 +196,7 @@ def check_yaml(
             )
         if updated_files:
             click.echo(
-                "The following component files were updated to fix environment variable requirements:\n"
-                + "\n".join(updated_files)
+                f"{len(updated_files)} component files were updated to fix environment variable requirements."
             )
         return False
     else:
@@ -206,10 +205,8 @@ def check_yaml(
         ) - os.environ.keys()
         if updated_files:
             click.echo(
-                "The following component files were updated to fix environment variable requirements:\n"
-                + "\n".join(str(file) for file in updated_files)
+                f"{len(updated_files)} component files were updated to fix environment variable requirements."
             )
-
         if missing_env_vars:
             click.echo(
                 "The following environment variables are used in components but not specified in the .env file or the current shell environment:\n"

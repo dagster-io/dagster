@@ -141,7 +141,8 @@ def pull_env_command(**global_options: object) -> None:
                 secrets_by_location[project_ctx.project_name]
             )
             env.write()
-            projects_without_secrets.remove(project_ctx.project_name)
+            if project_ctx.project_name in projects_without_secrets:
+                projects_without_secrets.remove(project_ctx.project_name)
 
     if dg_context.is_project:
         click.echo("Environment variables saved to .env")

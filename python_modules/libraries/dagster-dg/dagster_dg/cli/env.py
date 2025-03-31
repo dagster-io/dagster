@@ -3,6 +3,7 @@ from pathlib import Path
 
 import click
 import yaml
+from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from rich.console import Console
 from rich.table import Table
@@ -12,8 +13,10 @@ from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import get_specified_env_var_deps, get_used_env_vars
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
-from dagster_dg.env import ProjectEnvVars
+from dagster_dg.env import ProjectEnvVars, get_project_specified_env_vars
 from dagster_dg.utils import DgClickCommand, DgClickGroup
+from dagster_dg.utils.plus import gql
+from dagster_dg.utils.plus.gql_client import DagsterCloudGraphQLClient
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 
@@ -35,16 +38,61 @@ def list_env_command(**global_options: object) -> None:
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
 
+    env_vars = get_project_specified_env_vars(dg_context)
+
     env = ProjectEnvVars.from_ctx(dg_context)
-    if not env.values:
-        click.echo("No environment variables are defined for this project.")
-        return
 
     table = Table(border_style="dim")
     table.add_column("Env Var")
-    table.add_column("Value")
-    for key, value in env.values.items():
-        table.add_row(key, value)
+    table.add_column("Local Value")
+    table.add_column("Components")
+    env_var_keys = set(env.values.keys()) | set(env_vars.keys())
+
+    if DagsterPlusCliConfig.exists():
+        table.add_column("Dev")
+        table.add_column("Branch")
+        table.add_column("Full")
+        scopes_for_key = {}
+        config = DagsterPlusCliConfig.get()
+        gql_client = DagsterCloudGraphQLClient.from_config(config)
+        for key in env_var_keys:
+            secrets_by_location = gql_client.execute(
+                gql.GET_SECRETS_FOR_SCOPES_QUERY,
+                {
+                    "locationName": dg_context.project_name,
+                    "scopes": {
+                        "fullDeploymentScope": True,
+                        "allBranchDeploymentsScope": True,
+                        "localDeploymentScope": True,
+                    },
+                    "secretName": key,
+                },
+            )["secretsForScopes"]["secrets"]
+            scopes_for_key[key] = {
+                "full": any(secret["fullDeploymentScope"] for secret in secrets_by_location),
+                "branch": any(
+                    secret["allBranchDeploymentsScope"] for secret in secrets_by_location
+                ),
+                "local": any(secret["localDeploymentScope"] for secret in secrets_by_location),
+            }
+
+    if not env_var_keys:
+        click.echo("No environment variables are defined for this project.")
+        return
+
+    for key in env_var_keys:
+        value = env.values.get(key)
+        components = env_vars.get(key, [])
+        table.add_row(
+            key,
+            value,
+            ", ".join(str(path) for path in components),
+            *(
+                ["X" if scopes_for_key[key][scope] else "" for scope in ["local", "branch", "full"]]
+                if DagsterPlusCliConfig.exists()
+                else []
+            ),
+        )
     console = Console()
     console.print(table)
 

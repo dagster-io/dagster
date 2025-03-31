@@ -70,6 +70,7 @@ def list_all_components_schema_command(entry_points: bool, extra_modules: tuple[
                     key.name,
                     type=(Literal[key_string], key_string),
                     attributes=(schema_type, None),
+                    requires=(dict[str, list[str]], None),
                     __config__=ConfigDict(extra="forbid"),
                 )
             )

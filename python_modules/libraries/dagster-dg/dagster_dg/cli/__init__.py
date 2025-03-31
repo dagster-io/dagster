@@ -4,6 +4,7 @@ import click
 
 from dagster_dg.cache import DgCache
 from dagster_dg.cli.check import check_group
+from dagster_dg.cli.deploy import deploy_command
 from dagster_dg.cli.dev import dev_command
 from dagster_dg.cli.docs import docs_group
 from dagster_dg.cli.env import env_group
@@ -37,6 +38,7 @@ def create_dg_cli():
             "dev": dev_command,
             "init": init_command,
             "plus": plus_group,
+            "deploy": deploy_command,
         },
         context_settings={
             "max_content_width": DG_CLI_MAX_OUTPUT_WIDTH,

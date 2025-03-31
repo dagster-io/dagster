@@ -146,6 +146,7 @@ def dev_command(
                 check_result = check_yaml_fn(
                     dg_context.for_project_environment(project_dir, cli_config),
                     [],
+                    fix_env_requirements=False,
                 )
                 overall_check_result = overall_check_result and check_result
             if not overall_check_result:
