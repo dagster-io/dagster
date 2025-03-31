@@ -4189,7 +4189,6 @@ export type QueryWorkspaceLocationEntryOrErrorArgs = {
 export type ReexecutionParams = {
   extraTags?: InputMaybe<Array<ExecutionTag>>;
   parentRunId: Scalars['String']['input'];
-  runConfigData?: InputMaybe<Scalars['RunConfigData']['input']>;
   strategy: ReexecutionStrategy;
   useParentRunTags?: InputMaybe<Scalars['Boolean']['input']>;
 };
@@ -12734,8 +12733,6 @@ export const buildReexecutionParams = (
     extraTags: overrides && overrides.hasOwnProperty('extraTags') ? overrides.extraTags! : [],
     parentRunId:
       overrides && overrides.hasOwnProperty('parentRunId') ? overrides.parentRunId! : 'sunt',
-    runConfigData:
-      overrides && overrides.hasOwnProperty('runConfigData') ? overrides.runConfigData! : 'et',
     strategy:
       overrides && overrides.hasOwnProperty('strategy')
         ? overrides.strategy!

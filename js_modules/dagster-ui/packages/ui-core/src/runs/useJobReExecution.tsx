@@ -10,7 +10,7 @@ import {
   LaunchPipelineReexecutionMutation,
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
-import {BulkActionStatus, ExecutionParams, ReexecutionStrategy, Run} from '../graphql/types';
+import {BulkActionStatus, ExecutionParams, ReexecutionStrategy} from '../graphql/types';
 import {showLaunchError} from '../launchpad/showLaunchError';
 import {
   CheckBackfillStatusQuery,
@@ -39,7 +39,7 @@ export const useJobReexecution = (opts?: {onCompleted?: () => void}) => {
   const [dialogProps, setDialogProps] = useState<ReexecutionDialogProps | null>(null);
   const onClick = useCallback(
     async (
-      run: Pick<Run, 'id' | 'pipelineName' | 'tags'>,
+      run: {id: string; pipelineName: string; tags: {key: string; value: string}[]},
       param: ReexecutionStrategy | ExecutionParams,
       forceLaunchpad: boolean,
     ) => {
