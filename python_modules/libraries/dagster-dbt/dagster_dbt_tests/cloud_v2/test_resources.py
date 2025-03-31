@@ -195,7 +195,10 @@ def test_cli_invocation_in_asset_decorator(
 
     @dbt_cloud_assets(workspace=workspace)
     def my_dbt_cloud_assets(context: AssetExecutionContext, dbt_cloud: DbtCloudWorkspace):
-        yield from dbt_cloud.cli(args=["build"], context=context).wait()
+        cli_invocation = dbt_cloud.cli(args=["build"], context=context)
+        # The cli invocation args are updated with the context
+        assert cli_invocation.args == ["build", "--select", "fqn:*"]
+        yield from cli_invocation.wait()
 
     result = materialize(
         [my_dbt_cloud_assets],
