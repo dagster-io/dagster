@@ -76,10 +76,10 @@ def migrate_metadata_asset(context: AssetExecutionContext, config: MetadataMigra
             new_deployment=new_deployment,
             new_dagster_cloud_api_token=new_dagster_cloud_api_token,
             asset_key=asset_key,
-            partition=partition_to_report,
-            metadata=metadata_to_report,
+            partition=partition_to_report,  # type: ignore
+            metadata=metadata_to_report,  # type: ignore
         )
-        print(f"Migrated asset {asset_key} for partition {partition_to_report}")  # noqa: T201
+        print(f"Migrated asset {asset_key} for partition {partition_to_report}")  # type: ignore # noqa: T201
 
 
 migrate_metadata_job = define_asset_job(
