@@ -263,6 +263,7 @@ class AssetMaterializationFailureReason(Enum):
         "UNEXPECTED_TERMINATION"  # An external event resulted in the run being terminated
     )
     UNKNOWN = "UNKNOWN"
+    SKIPPED_UNKNOWN = "SKIPPED_UNKNOWN"
 
 
 # The asset can fail to materialize in two ways, an unexpected/unintentional failure that should update

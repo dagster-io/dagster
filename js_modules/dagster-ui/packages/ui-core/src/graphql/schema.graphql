@@ -662,6 +662,7 @@ enum AssetMaterializationFailureReason {
   USER_TERMINATION
   UNEXPECTED_TERMINATION
   UNKNOWN
+  SKIPPED_UNKNOWN
 }
 
 enum MaterializationHistoryEventTypeSelector {
