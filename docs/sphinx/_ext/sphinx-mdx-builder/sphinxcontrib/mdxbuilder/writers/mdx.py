@@ -431,6 +431,9 @@ class MdxTranslator(SphinxTranslator):
         last_update = datetime.now().strftime("%Y-%m-%d")
         frontmatter += "last_update:\n"
         frontmatter += f"  date: '{last_update}'\n"
+
+        # prevent API docs from having `Edit this page` link; in the future we may want to configure this to point to the `.rst` file
+        frontmatter += "custom_edit_url: null\n"
         frontmatter += "---\n\n"
         self.end_state()
         self.body = frontmatter
