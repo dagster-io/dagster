@@ -32,7 +32,7 @@ from dagster._core.errors import (
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.types.connection import Connection
 from dagster._record import IHaveNew, record, record_custom
-from dagster._serdes import whitelist_for_serdes
+from dagster._serdes import deserialize_value, serialize_value, whitelist_for_serdes
 from dagster._time import (
     create_datetime,
     datetime_from_timestamp,
@@ -144,6 +144,7 @@ class TimeWindow(NamedTuple):
     end: PublicAttr[datetime]
 
 
+@whitelist_for_serdes
 @record
 class TimeWindowCursor:
     start_timestamp: int
@@ -154,31 +155,12 @@ class TimeWindowCursor:
         return self.to_string()
 
     def to_string(self) -> str:
-        raw = json.dumps(
-            {
-                "start_timestamp": self.start_timestamp,
-                "end_timestamp": self.end_timestamp,
-                "offset_partition_count": self.offset_partition_count,
-            }
-        )
-        return base64.b64encode(bytes(raw, encoding="utf-8")).decode("utf-8")
+        string_serialized = serialize_value(self)
+        return base64.b64encode(bytes(string_serialized, encoding="utf-8")).decode("utf-8")
 
     @classmethod
     def from_cursor(cls, cursor: str):
-        raw = json.loads(base64.b64decode(cursor).decode("utf-8"))
-        if "end_timestamp" not in raw or "start_timestamp" not in raw:
-            raise ValueError(f"Invalid cursor: {cursor}")
-        try:
-            start_timestamp = int(raw["start_timestamp"])
-            end_timestamp = int(raw["end_timestamp"])
-            offset_partition_count = int(raw.get("offset_partition_count", 0))
-        except ValueError:
-            raise ValueError(f"Invalid cursor: {cursor}")
-        return TimeWindowCursor(
-            start_timestamp=start_timestamp,
-            end_timestamp=end_timestamp,
-            offset_partition_count=offset_partition_count,
-        )
+        return deserialize_value(base64.b64decode(cursor).decode("utf-8"), cls)
 
 
 @whitelist_for_serdes(

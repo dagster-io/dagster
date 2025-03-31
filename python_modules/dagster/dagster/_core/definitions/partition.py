@@ -37,6 +37,7 @@ from dagster._core.errors import (
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._core.types.connection import Connection
+from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import xor
 from dagster._utils.cached_method import cached_method
@@ -61,7 +62,8 @@ INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v",
 PartitionConfigFn: TypeAlias = Callable[[str], Union[RunConfig, Mapping[str, Any]]]
 
 
-class TemporalContext(NamedTuple):
+@record
+class TemporalContext:
     """TemporalContext represents an effective time, used for business logic, and last_event_id
     which is used to identify that state of the event log at some point in time. Put another way,
     the value of a TemporalContext represents a point in time and a snapshot of the event log.
@@ -86,7 +88,8 @@ class TemporalContext(NamedTuple):
     last_event_id: Optional[int]
 
 
-class PartitionLoadingContext(NamedTuple):
+@record
+class PartitionLoadingContext:
     """PartitionLoadingContext is a context object that is passed the partition keys functions of a
     PartitionedJobDefinition. It contains information about where partitions are being loaded from
     and the effective time for the partition loading.

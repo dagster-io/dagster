@@ -5,8 +5,8 @@ from typing import (
     Optional,
     Sequence,
 )
-from dagster_shared.seven import json
 from dagster._record import record
+from dagster._serdes import whitelist_for_serdes, deserialize_value, serialize_value
 
 from typing_extensions import TypeVar
 
@@ -62,6 +62,7 @@ class Connection(Generic[T]):
         return Connection(results=seq, cursor=new_cursor, has_more=has_more)
 
 
+@whitelist_for_serdes
 @record
 class ValueIndexCursor:
     """
@@ -74,12 +75,11 @@ class ValueIndexCursor:
         return self.to_string()
 
     def to_string(self) -> str:
-        raw = json.dumps({"value": self.value})
-        return base64.b64encode(bytes(raw, encoding="utf-8")).decode("utf-8")
+        string_serialized = serialize_value(self)
+        return base64.b64encode(bytes(string_serialized, encoding="utf-8")).decode(
+            "utf-8"
+        )
 
     @classmethod
     def from_cursor(cls, cursor: str):
-        raw = json.loads(base64.b64decode(cursor).decode("utf-8"))
-        if "value" not in raw:
-            raise ValueError(f"Invalid cursor: {cursor}")
-        return ValueIndexCursor(value=raw["value"])
+        return deserialize_value(base64.b64decode(cursor).decode("utf-8"), cls)
