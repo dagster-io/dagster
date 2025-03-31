@@ -2,12 +2,13 @@ from typing import Optional
 
 import pytest
 import responses
-
+from dagster import AssetCheckEvaluation, AssetExecutionContext, AssetMaterialization, Failure
 from dagster._core.definitions.materialize import materialize
-from dagster import AssetCheckEvaluation, AssetMaterialization, Failure, AssetExecutionContext
+from dagster._core.test_utils import environ
+from dagster_dbt.asset_utils import DBT_INDIRECT_SELECTION_ENV
+from dagster_dbt.cloud_v2.asset_decorator import dbt_cloud_assets
 from dagster_dbt.cloud_v2.resources import DbtCloudCredentials, DbtCloudWorkspace
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType
-from dagster_dbt.cloud_v2.asset_decorator import dbt_cloud_assets
 
 from dagster_dbt_tests.cloud_v2.conftest import (
     SAMPLE_CUSTOM_CREATE_JOB_RESPONSE,
@@ -192,7 +193,6 @@ def test_cli_invocation(
 def test_cli_invocation_in_asset_decorator(
     workspace: DbtCloudWorkspace, cli_invocation_api_mocks: responses.RequestsMock
 ):
-
     @dbt_cloud_assets(workspace=workspace)
     def my_dbt_cloud_assets(context: AssetExecutionContext, dbt_cloud: DbtCloudWorkspace):
         cli_invocation = dbt_cloud.cli(args=["build"], context=context)
@@ -223,6 +223,29 @@ def test_cli_invocation_in_asset_decorator(
     assert first_check_eval.check_name == "not_null_customers_customer_id"
     assert first_check_eval.asset_key.path == ["customers"]
 
+
+def test_cli_invocation_with_custom_indirect_selection(
+    workspace: DbtCloudWorkspace, cli_invocation_api_mocks: responses.RequestsMock
+):
+    with environ({DBT_INDIRECT_SELECTION_ENV: "eager"}):
+
+        @dbt_cloud_assets(workspace=workspace)
+        def my_dbt_cloud_assets(context: AssetExecutionContext, dbt_cloud: DbtCloudWorkspace):
+            cli_invocation = dbt_cloud.cli(args=["build"], context=context)
+            # The cli invocation args are updated with the context
+            assert cli_invocation.args == [
+                "build",
+                "--select",
+                "fqn:*",
+                "--indirect-selection eager",
+            ]
+            yield from cli_invocation.wait()
+
+        result = materialize(
+            [my_dbt_cloud_assets],
+            resources={"dbt_cloud": workspace},
+        )
+        assert result.success
 
 
 @pytest.mark.parametrize(
