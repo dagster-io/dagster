@@ -534,7 +534,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         # if any partitions failed, degraded
         if (
             not graphene_info.context.instance.dagster_observe_supported()
-            or not graphene_info.context.instance.can_read_failure_events()
+            or not graphene_info.context.instance.can_read_failure_events_for_asset(
+                self._asset_node_snap.asset_key
+            )
         ):
             # compute materialization status how we do today by checking the latest run the asset was materialized in (or using asset status cache for partitioned)
             pass
