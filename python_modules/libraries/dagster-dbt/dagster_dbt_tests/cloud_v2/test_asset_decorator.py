@@ -35,7 +35,6 @@ def test_asset_defs(
 
 
 class MyCustomTranslator(DagsterDbtTranslator):
-    
     # DagsterDbtTranslator doesn't have a `get_asset_spec` method yet.
     def get_metadata(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
         default_metadata = super().get_metadata(dbt_resource_props)
