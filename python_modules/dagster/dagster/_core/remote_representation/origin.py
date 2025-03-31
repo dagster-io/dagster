@@ -382,22 +382,14 @@ class GrpcServerCodeLocationOrigin(
     storage_name="ExternalRepositoryOrigin",
     storage_field_names={"code_location_origin": "repository_location_origin"},
 )
-class RemoteRepositoryOrigin(
-    NamedTuple(
-        "_ExternalRepositoryOrigin",
-        [("code_location_origin", CodeLocationOrigin), ("repository_name", str)],
-    )
-):
+@record
+class RemoteRepositoryOrigin:
     """Serializable representation of an ExternalRepository that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, code_location_origin: CodeLocationOrigin, repository_name: str):
-        return super().__new__(
-            cls,
-            check.inst_param(code_location_origin, "code_location_origin", CodeLocationOrigin),
-            check.str_param(repository_name, "repository_name"),
-        )
+    code_location_origin: CodeLocationOrigin
+    repository_name: str
 
     def get_id(self) -> str:
         return create_snapshot_id(self)
