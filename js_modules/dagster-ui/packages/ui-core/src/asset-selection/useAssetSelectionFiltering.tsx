@@ -16,14 +16,16 @@ export const useAssetSelectionFiltering = <
   loading: assetsLoading,
   assetSelection,
   assets,
+  useWorker = true,
 }: {
   loading?: boolean;
   assetSelection: string;
 
-  assets: T[];
+  assets: T[] | undefined;
+  useWorker?: boolean;
 }) => {
   const assetsByKey = useMemo(
-    () => Object.fromEntries(assets.map((asset) => [tokenForAssetKey(asset.key), asset])),
+    () => Object.fromEntries((assets ?? []).map((asset) => [tokenForAssetKey(asset.key), asset])),
     [assets],
   );
 
@@ -37,9 +39,10 @@ export const useAssetSelectionFiltering = <
           return !assetsByKey[tokenForAssetKey(node.assetKey)];
         },
         loading: !!assetsLoading,
+        useWorker,
       }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [assetsByKeyStringified, assetsLoading],
+      [assetsByKeyStringified, assetsLoading, useWorker],
     ),
   );
 

@@ -5,7 +5,6 @@ import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGraphFilterBar} from 'shared/asset-graph/AssetGraphFilterBar.oss';
-import {CatalogViewSelector} from 'shared/assets/CatalogViewSelector.oss';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
 
@@ -292,7 +291,7 @@ export const AssetsCatalogTable = ({
               }
             }}
           />
-          {featureEnabled(FeatureFlag.flagSelectionSyntax) ? <CatalogViewSelector /> : filterButton}
+          {featureEnabled(FeatureFlag.flagSelectionSyntax) ? null : filterButton}
           {filterInput}
           {featureEnabled(FeatureFlag.flagSelectionSyntax) ? <CreateCatalogViewButton /> : null}
         </Box>
