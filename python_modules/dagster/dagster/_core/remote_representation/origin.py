@@ -407,7 +407,7 @@ class RemoteRepositoryOrigin(NamedTupleAdapter["RemoteRepositoryOrigin"]):
         return f"{self.repository_name}@{self.code_location_origin.location_name}"
 
     def get_job_origin(self, job_name: str) -> "RemoteJobOrigin":
-        return RemoteJobOrigin(self, job_name)
+        return RemoteJobOrigin(repository_origin=self, job_name=job_name)
 
     def get_instigator_origin(self, instigator_name: str) -> "RemoteInstigatorOrigin":
         return RemoteInstigatorOrigin(self, instigator_name)
@@ -423,26 +423,14 @@ class RemoteRepositoryOrigin(NamedTupleAdapter["RemoteRepositoryOrigin"]):
         "job_name": "pipeline_name",
     },
 )
-class RemoteJobOrigin(
-    NamedTuple(
-        "_RemoteJobOrigin",
-        [("repository_origin", RemoteRepositoryOrigin), ("job_name", str)],
-    )
-):
+@record
+class RemoteJobOrigin:
     """Serializable representation of an ExternalJob that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, repository_origin: RemoteRepositoryOrigin, job_name: str):
-        return super().__new__(
-            cls,
-            check.inst_param(
-                repository_origin,
-                "repository_origin",
-                RemoteRepositoryOrigin,
-            ),
-            check.str_param(job_name, "job_name"),
-        )
+    repository_origin: RemoteRepositoryOrigin
+    job_name: str
 
     def get_id(self) -> str:
         return create_snapshot_id(self)
