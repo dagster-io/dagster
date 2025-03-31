@@ -222,10 +222,10 @@ Team management is accessed in the UI by navigating to **user menu (your icon) >
 ### Workspace administration
 
 |                                                | Viewer | Launcher | Editor | Admin | Organization <br/> admin |
-| ---------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ | ------------------------------------------------------------------------------------------------------ |
+| ---------------------------------------------- | ------ | -------- | ------ | ----- | ------------------------ |
 | Manage [alerts](/dagster-plus/features/alerts) | ❌     | ❌       | ✅     | ✅    | ✅                       |
 | Edit workspace                                 | ❌     | ❌       | ✅     | ✅    | ✅                       |
-| Administer SAML                                | ❌     | ❌       | ❌     | ❌    | ✅                       | {/* [Administer SAML](/dagster-plus/features/authentication-and-access-control/sso/authentication) */} |
+| [Administer SAML](/dagster-plus/features/authentication-and-access-control/sso/authentication)| ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Manage SCIM                                    | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | View usage                                     | ❌     | ❌       | ❌     | ❌    | ✅                       |
 | Manage billing                                 | ❌     | ❌       | ❌     | ❌    | ✅                       |
