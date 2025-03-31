@@ -67,7 +67,7 @@ def migrate_metadata_asset(context: AssetExecutionContext, config: MetadataMigra
         record: EventLogRecord = result.records[0]
         dagster_event = record.event_log_entry.dagster_event
         if dagster_event is not None:
-            data = dagster_event.event_specific_data.materialization # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
+            data = dagster_event.event_specific_data.materialization  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
             partition_to_report = data.partition
             metadata_to_report = {key: value.value for key, value in data.metadata.items()}
         cursor = result.cursor
