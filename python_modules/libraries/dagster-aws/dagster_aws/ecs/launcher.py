@@ -91,12 +91,12 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         container_name (str): If not provided, defaults to "run".
         secrets (Optional[list[str]]): If not provided, defaults to None.
         secrets_tag (str): If not provided, defaults to "dagster".
-        env_vars (Optional[Sequence[str]]) If not provided, defaults to None.
-        include_sidecars (bool). If not provided, defaults to False.
+        env_vars (Optional[Sequence[str]]): If not provided, defaults to None.
+        include_sidecars (bool): If not provided, defaults to False.
         use_current_ecs_task_config (bool): If not provided, defaults to True.
         run_task_kwargs (Optional[Mapping[str, Any]]): If not provided, defaults to None.
-        run_resources (Optional[dict[str, Any]]) If not provided, defaults to None.
-        run_ecs_tags (Optional[list[dict[str, Optional[str]]]]) If not provided, defaults to None.
+        run_resources (Optional[dict[str, Any]]): If not provided, defaults to None.
+        run_ecs_tags (Optional[list[dict[str, Optional[str]]]]): If not provided, defaults to None.
         propagate_tags (Optional[dict[str, Any]]): If not provided, defaults to None.
         task_definition_prefix (str): If not provided, defaults to "run".
 
