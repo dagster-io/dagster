@@ -280,6 +280,7 @@ MATERIALIZATION_ATTEMPT_SKIPPED_TYPES = [
     AssetMaterializationFailureReason.SKIPPED_OPTIONAL,
     AssetMaterializationFailureReason.UPSTREAM_SKIPPED,
     AssetMaterializationFailureReason.USER_TERMINATION,
+    AssetMaterializationFailureReason.SKIPPED_UNKNOWN,
 ]
 
 
