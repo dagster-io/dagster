@@ -37,6 +37,7 @@ AVAILABLE_EXAMPLES = [
     "feature_graph_backed_assets",
     "getting_started_etl_tutorial",
     "google_drive_factory",
+    "oss-metadata-to-plus",
     "project_analytics",
     "project_dagster_university_start",
     "project_du_dbt_starter",
