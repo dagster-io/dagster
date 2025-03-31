@@ -84,7 +84,7 @@ DEFAULT_RUN_TASK_RETRIES = 5
 
 class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
     """RunLauncher that starts a task in ECS for each Dagster job run.
-    
+
     Args:
         inst_data (Optional[ConfigurableClassData]): If not provided, defaults to None.
         task_definition: If not provided, defaults to None.
