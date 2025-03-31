@@ -100,9 +100,14 @@ assert os.environ["OVERWRITTEN_ENV_VAR"] == "4"
 """
         )
         port = find_free_port()
-        dev_process = _launch_dev_command(["--port", str(port)])
-        projects = {"project-1", "project-2"}
-        _assert_projects_loaded_and_exit(projects, port, dev_process)
+        with tempfile.NamedTemporaryFile() as stdout_file, open(stdout_file.name, "w") as stdout:
+            dev_process = _launch_dev_command(["--port", str(port)], stdout=stdout)
+            projects = {"project-1", "project-2"}
+            _assert_projects_loaded_and_exit(projects, port, dev_process)
+
+            assert ("nvironment variables will not be injected") not in Path(
+                stdout_file.name
+            ).read_text()
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
@@ -131,10 +136,10 @@ def test_dev_workspace_load_env_files_backcompat(monkeypatch):
             install_to_venv(
                 Path(".venv"),
                 [
-                    "dagster==1.10.6",
-                    "dagster-webserver==1.10.6",
-                    "dagster-shared==0.26.6",
-                    "dagster-components==0.26.6",
+                    "dagster==1.10.7",
+                    "dagster-webserver==1.10.7",
+                    "dagster-shared==0.26.7",
+                    "dagster-components==0.26.7",
                 ],
             )
 
@@ -147,7 +152,7 @@ def test_dev_workspace_load_env_files_backcompat(monkeypatch):
 
 from dagster import __version__
 
-assert __version__ == "1.10.6"
+assert __version__ == "1.10.7"
 assert os.getenv("PROJECT_ENV_VAR") is None
 assert os.environ["WORKSPACE_ENV_VAR"] == "1"
 assert os.environ["OVERWRITTEN_ENV_VAR"] == "3"
@@ -167,7 +172,7 @@ defs = dg.Definitions()
             _assert_projects_loaded_and_exit(projects, port, dev_process)
 
             assert (
-                "Warning: Dagster version 1.10.6 is less than the minimum required version for .env file environment variable injection "
+                "Warning: Dagster version 1.10.7 is less than the minimum required version for .env file environment variable injection "
                 "(1.10.8). Environment variables will not be injected for location project-2."
             ) in Path(stdout_file.name).read_text()
 

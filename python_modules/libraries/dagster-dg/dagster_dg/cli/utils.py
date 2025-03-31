@@ -4,9 +4,10 @@ from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, NamedTuple, Optional, cast
+from typing import Any, NamedTuple, Optional
 
 import click
+import packaging.version
 import yaml
 from dagster_shared.serdes.objects import LibraryObjectKey
 
@@ -137,19 +138,13 @@ def _workspace_entry_for_project(dg_context: DgContext) -> dict[str, dict[str, s
     return {"python_module": entry}
 
 
-def _semver(version: str) -> Optional[tuple[int, int, int]]:
-    try:
-        return cast(tuple[int, int, int], tuple(map(int, version.split("."))))
-    except ValueError:
-        return None
-
-
 def _semver_less_than(version: str, other: str) -> bool:
-    version_semver = _semver(version)
-    other_semver = _semver(other)
-    if version_semver is None or other_semver is None:
+    try:
+        parsed_version = packaging.version.parse(version)
+        parsed_other = packaging.version.parse(other)
+        return parsed_version < parsed_other
+    except packaging.version.InvalidVersion:
         return False
-    return version_semver < other_semver
 
 
 MIN_ENV_VAR_INJECTION_VERSION = "1.10.8"
