@@ -39,6 +39,7 @@ setup(
             "slack_sdk",
             "syrupy",
             "xgboost",
+            "pytest-httpserver",
         ],
     },
 )

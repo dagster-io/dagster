@@ -1,0 +1,8 @@
+dg env list
+
+DagsterPlusCliConfig(url='http://localhost:60818', organization='hooli', default_deployment='test', user_token='test', agent_timeout=None)
+┏━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━┳━━━━━━━━┳━━━━━━┓
+┃ Env Var    ┃ Local Value ┃ Components ┃ Dev ┃ Branch ┃ Full ┃
+┡━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━╇━━━━━━━━╇━━━━━━┩
+│ DBT_SCHEMA │ jaffle_shop │ jdbt       │ X   │ X      │      │
+└────────────┴─────────────┴────────────┴─────┴────────┴──────┘

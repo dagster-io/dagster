@@ -48,33 +48,36 @@ def list_env_command(**global_options: object) -> None:
     table.add_column("Components")
     env_var_keys = set(env.values.keys()) | set(env_vars.keys())
 
+    scopes_for_key = None
     if DagsterPlusCliConfig.exists():
-        table.add_column("Dev")
-        table.add_column("Branch")
-        table.add_column("Full")
-        scopes_for_key = {}
         config = DagsterPlusCliConfig.get()
-        gql_client = DagsterCloudGraphQLClient.from_config(config)
-        for key in env_var_keys:
-            secrets_by_location = gql_client.execute(
-                gql.GET_SECRETS_FOR_SCOPES_QUERY,
-                {
-                    "locationName": dg_context.project_name,
-                    "scopes": {
-                        "fullDeploymentScope": True,
-                        "allBranchDeploymentsScope": True,
-                        "localDeploymentScope": True,
+        print(config)
+        if config.organization:
+            scopes_for_key = {}
+            table.add_column("Dev")
+            table.add_column("Branch")
+            table.add_column("Full")
+            gql_client = DagsterCloudGraphQLClient.from_config(config)
+            for key in env_var_keys:
+                secrets_by_location = gql_client.execute(
+                    gql.GET_SECRETS_FOR_SCOPES_QUERY,
+                    {
+                        "locationName": dg_context.project_name,
+                        "scopes": {
+                            "fullDeploymentScope": True,
+                            "allBranchDeploymentsScope": True,
+                            "localDeploymentScope": True,
+                        },
+                        "secretName": key,
                     },
-                    "secretName": key,
-                },
-            )["secretsForScopes"]["secrets"]
-            scopes_for_key[key] = {
-                "full": any(secret["fullDeploymentScope"] for secret in secrets_by_location),
-                "branch": any(
-                    secret["allBranchDeploymentsScope"] for secret in secrets_by_location
-                ),
-                "local": any(secret["localDeploymentScope"] for secret in secrets_by_location),
-            }
+                )["secretsForScopes"]["secrets"]
+                scopes_for_key[key] = {
+                    "full": any(secret["fullDeploymentScope"] for secret in secrets_by_location),
+                    "branch": any(
+                        secret["allBranchDeploymentsScope"] for secret in secrets_by_location
+                    ),
+                    "local": any(secret["localDeploymentScope"] for secret in secrets_by_location),
+                }
 
     if not env_var_keys:
         click.echo("No environment variables are defined for this project.")
@@ -89,7 +92,7 @@ def list_env_command(**global_options: object) -> None:
             ", ".join(str(path) for path in components),
             *(
                 ["X" if scopes_for_key[key][scope] else "" for scope in ["local", "branch", "full"]]
-                if DagsterPlusCliConfig.exists()
+                if scopes_for_key is not None
                 else []
             ),
         )

@@ -1,0 +1,7 @@
+type: dagster_components.dagster_dbt.DbtProjectComponent
+
+attributes:
+  dbt:
+    project_dir: ../../../dbt/jdbt
+  asset_attributes:
+    key: "jaffle_platform/{{ env('DBT_SCHEMA') }}/{{ node.name }}"
