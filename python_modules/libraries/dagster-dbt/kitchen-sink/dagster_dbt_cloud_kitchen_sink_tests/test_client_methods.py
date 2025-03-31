@@ -67,11 +67,13 @@ def test_cloud_job_apis(
         finished_at_lower_bound=start_run_process,
         finished_at_upper_bound=end_run_process,
     )
-    assert total_count == 1
-    assert len(batched_runs) == 1
-
-    batched_run = DbtCloudRun.from_run_details(run_details=next(iter(batched_runs)))
-    assert batched_run.id == run.id
+    # If this test is executed multiple times in parallel, e.g. in another PR, there might be more than one run.
+    assert total_count >= 1
+    assert len(batched_runs) >= 1
+    assert any(
+        run.id == DbtCloudRun.from_run_details(run_details=batched_run).id
+        for batched_run in batched_runs
+    )
 
     run_artifacts = client.list_run_artifacts(run_id=run.id)
     assert "run_results.json" in run_artifacts
