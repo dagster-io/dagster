@@ -282,23 +282,18 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
     storage_name="GrpcServerRepositoryLocationOrigin",
     skip_when_empty_fields={"use_ssl", "additional_metadata"},
 )
-class GrpcServerCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
-    NamedTuple(
-        "_GrpcServerCodeLocationOrigin",
-        [
-            ("host", str),
-            ("port", Optional[int]),
-            ("socket", Optional[str]),
-            ("location_name", str),
-            ("use_ssl", Optional[bool]),
-            ("additional_metadata", Optional[Mapping[str, Any]]),
-        ],
-    ),
-    CodeLocationOrigin,
-):
+@record_custom
+class GrpcServerCodeLocationOrigin(IHaveNew, CodeLocationOrigin):
     """Identifies a repository location hosted in a gRPC server managed by the user. Dagster
     is not responsible for managing the lifecycle of the server.
     """
+
+    host: str
+    port: Optional[int]
+    socket: Optional[str]
+    location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    use_ssl: Optional[bool]
+    additional_metadata: Optional[Mapping[str, Any]]
 
     def __new__(
         cls,
@@ -311,16 +306,14 @@ class GrpcServerCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariabl
     ):
         return super().__new__(
             cls,
-            check.str_param(host, "host"),
-            check.opt_int_param(port, "port"),
-            check.opt_str_param(socket, "socket"),
-            (
-                check.str_param(location_name, "location_name")
-                if location_name
-                else _assign_grpc_location_name(port, socket, host)
-            ),
-            use_ssl if check.opt_bool_param(use_ssl, "use_ssl") else None,
-            additional_metadata=check.opt_mapping_param(additional_metadata, "additional_metadata"),
+            host=host,
+            port=port,
+            socket=socket,
+            location_name=location_name
+            if location_name
+            else _assign_grpc_location_name(port, socket, host),
+            use_ssl=use_ssl,
+            additional_metadata=additional_metadata,
         )
 
     def get_display_metadata(self) -> Mapping[str, str]:
