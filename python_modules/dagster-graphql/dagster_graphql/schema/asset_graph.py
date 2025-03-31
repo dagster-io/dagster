@@ -551,11 +551,8 @@ class GrapheneAssetNode(graphene.ObjectType):
             return GrapheneAssetHealthStatus.UNKNOWN
         asset_entry = asset_record.asset_entry
 
-        if (
-            graphene_info.context.instance.can_read_failure_events()
-            and graphene_info.context.instance.event_log_storage.get_is_writing_failure_events_for_asset(
-                asset_entry.asset_key
-            )
+        if graphene_info.context.instance.can_read_failure_events_for_asset(
+            self._asset_node_snap.asset_key
         ):
             # compute the status based on the asset key table
 
