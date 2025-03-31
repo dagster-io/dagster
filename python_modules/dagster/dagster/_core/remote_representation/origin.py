@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, NamedTuple, NoReturn, Optional, cast
 
 import grpc
-from dagster_shared.record import IHaveNew, NamedTupleAdapter, record_custom
+from dagster_shared.record import IHaveNew, NamedTupleAdapter, record, record_custom
 
 import dagster._check as check
 from dagster._core.definitions.selector import (
@@ -111,17 +111,14 @@ class CodeLocationOrigin(ABC):
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="RegisteredRepositoryLocationOrigin")
-class RegisteredCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
-    NamedTuple("RegisteredCodeLocationOrigin", [("location_name", str)]),
-    CodeLocationOrigin,
-):
+@record
+class RegisteredCodeLocationOrigin(CodeLocationOrigin):
     """Identifies a repository location of a handle managed using metadata stored outside of the
     origin - can only be loaded in an environment that is managing repository locations using
     its own mapping from location name to repository location metadata.
     """
 
-    def __new__(cls, location_name: str):
-        return super().__new__(cls, location_name)
+    location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
 
     def get_display_metadata(self) -> Mapping[str, Any]:
         return {}
