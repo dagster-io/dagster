@@ -1,5 +1,4 @@
 import {Group} from '@dagster-io/ui-components';
-import {useHistory} from 'react-router-dom';
 
 import {gql, useMutation} from '../../apollo-client';
 import {BackfillActionsBackfillFragment} from './types/BackfillFragments.types';
@@ -18,7 +17,6 @@ export function useReexecuteBackfill(
   backfill: BackfillActionsBackfillFragment,
   refetch: () => void,
 ) {
-  const history = useHistory();
   const [reexecuteBackfill] = useMutation<
     ReexecuteBackfillMutation,
     ReexecuteBackfillMutationVariables
@@ -29,7 +27,7 @@ export function useReexecuteBackfill(
       variables: {reexecutionParams: {parentRunId: backfill.id, strategy}},
     });
     if (data && data.reexecutePartitionBackfill.__typename === 'LaunchBackfillSuccess') {
-      showBackfillSuccessToast(history, data.reexecutePartitionBackfill.backfillId, true);
+      showBackfillSuccessToast(data.reexecutePartitionBackfill.backfillId, true);
       refetch();
     } else if (data && data.reexecutePartitionBackfill.__typename === 'UnauthorizedError') {
       await showSharedToaster({

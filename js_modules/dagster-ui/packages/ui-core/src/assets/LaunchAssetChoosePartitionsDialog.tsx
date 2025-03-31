@@ -16,7 +16,6 @@ import {
 } from '@dagster-io/ui-components';
 import reject from 'lodash/reject';
 import {useEffect, useMemo, useState} from 'react';
-import {useHistory} from 'react-router-dom';
 import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {partitionCountString} from './AssetNodePartitionCounts';
@@ -213,7 +212,6 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   }, [missingFailedOnly, selections, displayedHealth]);
 
   const client = useApolloClient();
-  const history = useHistory();
 
   const launchWithTelemetry = useLaunchWithTelemetry();
   const launchAsBackfill =
@@ -351,11 +349,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     });
 
     if (launchBackfillData?.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess') {
-      showBackfillSuccessToast(
-        history,
-        launchBackfillData?.launchPartitionBackfill.backfillId,
-        true,
-      );
+      showBackfillSuccessToast(launchBackfillData?.launchPartitionBackfill.backfillId, true);
       setOpen(false);
     } else {
       showBackfillErrorToast(launchBackfillData);
