@@ -619,9 +619,10 @@ class GrapheneAssetNode(graphene.ObjectType):
             run_record = await RunRecord.gen(graphene_info.context, asset_entry.last_run_id)
             if run_record is None or not run_record.dagster_run.is_finished:
                 return fallback_status
+            run_end_time = check.not_none(run_record.end_time)
             if (
                 asset_entry.last_materialization
-                and asset_entry.last_materialization.timestamp > run_record.end_time
+                and asset_entry.last_materialization.timestamp > run_end_time
             ):
                 # latest materialization was reported manually
                 return GrapheneAssetHealthStatus.HEALTHY
