@@ -13,7 +13,12 @@ def test_default_asset_events_from_run_results(
         run_results_json=get_sample_run_results_json()
     )
 
-    events = [event for event in run_results.to_default_asset_events(workspace=workspace)]
+    events = [
+        event
+        for event in run_results.to_default_asset_events(
+            client=workspace.get_client(), manifest=workspace.fetch_workspace_data().manifest
+        )
+    ]
 
     asset_materializations = [event for event in events if isinstance(event, AssetMaterialization)]
     asset_check_evaluations = [event for event in events if isinstance(event, AssetCheckEvaluation)]

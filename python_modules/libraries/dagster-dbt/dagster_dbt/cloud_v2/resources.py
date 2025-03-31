@@ -259,8 +259,16 @@ class DbtCloudWorkspace(ConfigurableResource):
     ) -> DbtCloudCliInvocation:
         """Creates a dbt cli invocation with the dbt Cloud client."""
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
+        workspace_data = self.fetch_workspace_data()
+        # We pass the manifest instead of the workspace data
+        # because we use the manifest included in the asset definitions
+        # when this method is called inside a function decorated with `@dbt_cloud_assets`
         return DbtCloudCliInvocation.run(
-            args=args, workspace=self, dagster_dbt_translator=dagster_dbt_translator
+            job_id=workspace_data.job_id,
+            args=args,
+            client=self.get_client(),
+            manifest=workspace_data.manifest,
+            dagster_dbt_translator=dagster_dbt_translator,
         )
 
 
