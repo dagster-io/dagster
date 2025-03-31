@@ -105,7 +105,7 @@ assert os.environ["OVERWRITTEN_ENV_VAR"] == "4"
             projects = {"project-1", "project-2"}
             _assert_projects_loaded_and_exit(projects, port, dev_process)
 
-            assert ("nvironment variables will not be injected") not in Path(
+            assert ("Environment variables will not be injected") not in Path(
                 stdout_file.name
             ).read_text()
 

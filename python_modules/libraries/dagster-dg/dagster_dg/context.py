@@ -302,6 +302,12 @@ class DgContext:
             raise DgError("`project_name` is only available in a Dagster project context")
         return self.root_path.name
 
+    def resolve_package_manager_executable(self) -> list[str]:
+        if self.use_dg_managed_environment:
+            return ["uv", "pip"]
+        else:
+            return [str(self.get_executable("python")), "-m", "pip"]
+
     def get_module_version(self, module_name: str) -> str:
         if not self.use_dg_managed_environment:
             raise DgError("`get_module_version` is only available in a Dagster project context")
@@ -309,8 +315,7 @@ class DgContext:
         with pushd(self.root_path):
             result = subprocess.check_output(
                 [
-                    "uv",
-                    "pip",
+                    *self.resolve_package_manager_executable(),
                     "list",
                     "--format",
                     "json",
