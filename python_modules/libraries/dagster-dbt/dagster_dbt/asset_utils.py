@@ -2,14 +2,15 @@ import hashlib
 import os
 import textwrap
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, AbstractSet, Any, Optional  # noqa: UP035
+from typing import TYPE_CHECKING, AbstractSet, Any, Final, Optional, Union  # noqa: UP035
 
 from dagster import (
     AssetCheckKey,
     AssetCheckSpec,
     AssetDep,
+    AssetExecutionContext,
     AssetKey,
     AssetsDefinition,
     AssetSelection,
@@ -19,12 +20,14 @@ from dagster import (
     DagsterInvariantViolationError,
     DefaultScheduleStatus,
     FreshnessPolicy,
+    OpExecutionContext,
     RunConfig,
     ScheduleDefinition,
     TableColumn,
     TableSchema,
     _check as check,
     define_asset_job,
+    get_dagster_logger,
 )
 from dagster._core.definitions.asset_spec import SYSTEM_METADATA_KEY_DAGSTER_TYPE
 from dagster._core.definitions.metadata import TableMetadataSet
@@ -53,12 +56,17 @@ DAGSTER_DBT_SELECT_METADATA_KEY = "dagster_dbt/select"
 DAGSTER_DBT_EXCLUDE_METADATA_KEY = "dagster_dbt/exclude"
 DAGSTER_DBT_UNIQUE_ID_METADATA_KEY = "dagster_dbt/unique_id"
 
+DBT_INDIRECT_SELECTION_ENV: Final[str] = "DBT_INDIRECT_SELECTION"
+DBT_EMPTY_INDIRECT_SELECTION: Final[str] = "empty"
+
 DUPLICATE_ASSET_KEY_ERROR_MESSAGE = (
     "The following dbt resources are configured with identical Dagster asset keys."
     " Please ensure that each dbt resource generates a unique Dagster asset key."
     " See the reference for configuring Dagster asset keys for your dbt project:"
     " https://docs.dagster.io/integrations/libraries/dbt/reference#customizing-asset-keys."
 )
+
+logger = get_dagster_logger()
 
 
 def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: str) -> AssetKey:
@@ -946,3 +954,185 @@ def get_asset_check_key_for_test(
             or manifest["sources"].get(attached_node_unique_id)
         ),
     )
+
+
+def get_subset_selection_for_context(
+    context: Union[OpExecutionContext, AssetExecutionContext],
+    manifest: Mapping[str, Any],
+    select: Optional[str],
+    exclude: Optional[str],
+    dagster_dbt_translator: "DagsterDbtTranslator",
+    current_dbt_indirect_selection_env: Optional[str],
+) -> tuple[list[str], Optional[str]]:
+    """Generate a dbt selection string and DBT_INDIRECT_SELECTION setting to execute the selected
+    resources in a subsetted execution context.
+
+    See https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work.
+
+    Args:
+        context (Union[OpExecutionContext, AssetExecutionContext]): The execution context for the current execution step.
+        manifest (Mapping[str, Any]): The dbt manifest blob.
+        select (Optional[str]): A dbt selection string to select resources to materialize.
+        exclude (Optional[str]): A dbt selection string to exclude resources from materializing.
+        dagster_dbt_translator (DagsterDbtTranslator): The translator to link dbt nodes to Dagster
+            assets.
+        current_dbt_indirect_selection_env (Optional[str]): The user's value for the DBT_INDIRECT_SELECTION
+            environment variable.
+
+
+    Returns:
+        List[str]: dbt CLI arguments to materialize the selected resources in a
+            subsetted execution context.
+
+            If the current execution context is not performing a subsetted execution,
+            return CLI arguments composed of the inputed selection and exclusion arguments.
+        Optional[str]: A value for the DBT_INDIRECT_SELECTION environment variable. If None, then
+            the environment variable is not set and will either use dbt's default (eager) or the
+            user's setting.
+    """
+    default_dbt_selection = []
+    if select:
+        default_dbt_selection += ["--select", select]
+    if exclude:
+        default_dbt_selection += ["--exclude", exclude]
+
+    assets_def = context.assets_def
+    is_asset_subset = assets_def.keys_by_output_name != assets_def.node_keys_by_output_name
+    is_checks_subset = (
+        assets_def.check_specs_by_output_name != assets_def.node_check_specs_by_output_name
+    )
+
+    # It's nice to use the default dbt selection arguments when not subsetting for readability. We
+    # also use dbt indirect selection to avoid hitting cli arg length limits.
+    # https://github.com/dagster-io/dagster/issues/16997#issuecomment-1832443279
+    # A biproduct is that we'll run singular dbt tests (not currently modeled as asset checks) in
+    # cases when we can use indirection selection, an not when we need to turn it off.
+    if not (is_asset_subset or is_checks_subset):
+        logger.info(
+            "A dbt subsetted execution is not being performed. Using the default dbt selection"
+            f" arguments `{default_dbt_selection}`."
+        )
+        # default eager indirect selection. This means we'll also run any singular tests (which
+        # aren't modeled as asset checks currently).
+        return default_dbt_selection, None
+
+    # Explicitly select a dbt resource by its path. Selecting a resource by path is more terse
+    # than selecting it by its fully qualified name.
+    # https://docs.getdbt.com/reference/node-selection/methods#the-path-method
+    dbt_nodes = get_dbt_resource_props_by_dbt_unique_id_from_manifest(manifest)
+    selected_asset_resources = get_dbt_resource_names_for_asset_keys(
+        dagster_dbt_translator, dbt_nodes, assets_def, context.selected_asset_keys
+    )
+
+    # if all asset checks for the subsetted assets are selected, then we can just select the
+    # assets and use indirect selection for the tests. We verify that
+    # 1. all the selected checks are for selected assets
+    # 2. no checks for selected assets are excluded
+    # This also means we'll run any singular tests.
+    checks_on_non_selected_assets = [
+        check_key
+        for check_key in context.selected_asset_check_keys
+        if check_key.asset_key not in context.selected_asset_keys
+    ]
+    all_check_keys = {
+        check_spec.key for check_spec in assets_def.node_check_specs_by_output_name.values()
+    }
+    excluded_checks = all_check_keys.difference(context.selected_asset_check_keys)
+    excluded_checks_on_selected_assets = [
+        check_key
+        for check_key in excluded_checks
+        if check_key.asset_key in context.selected_asset_keys
+    ]
+
+    # note that this will always be false if checks are disabled (which means the assets_def has no
+    # check specs)
+    if excluded_checks_on_selected_assets:
+        # select all assets and tests explicitly, and turn off indirect selection. This risks
+        # hitting the CLI argument length limit, but in the common scenarios that can be launched from the UI
+        # (all checks disabled, only one check and no assets) it's not a concern.
+        # Since we're setting DBT_INDIRECT_SELECTION=empty, we won't run any singular tests.
+        selected_dbt_resources = [
+            *selected_asset_resources,
+            *get_dbt_test_names_for_check_keys(
+                dagster_dbt_translator, dbt_nodes, assets_def, context.selected_asset_check_keys
+            ),
+        ]
+        indirect_selection_override = DBT_EMPTY_INDIRECT_SELECTION
+        logger.info(
+            "Overriding default `DBT_INDIRECT_SELECTION` "
+            f"{current_dbt_indirect_selection_env or 'eager'} with "
+            f"`{indirect_selection_override}` due to additional checks "
+            f"{', '.join([c.to_user_string() for c in checks_on_non_selected_assets])} "
+            f"and excluded checks {', '.join([c.to_user_string() for c in excluded_checks_on_selected_assets])}."
+        )
+    elif checks_on_non_selected_assets:
+        # explicitly select the tests that won't be run via indirect selection
+        selected_dbt_resources = [
+            *selected_asset_resources,
+            *get_dbt_test_names_for_check_keys(
+                dagster_dbt_translator, dbt_nodes, assets_def, checks_on_non_selected_assets
+            ),
+        ]
+        indirect_selection_override = None
+    else:
+        selected_dbt_resources = selected_asset_resources
+        indirect_selection_override = None
+
+    logger.info(
+        "A dbt subsetted execution is being performed. Overriding default dbt selection"
+        f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`."
+    )
+
+    # Take the union of all the selected resources.
+    # https://docs.getdbt.com/reference/node-selection/set-operators#unions
+    union_selected_dbt_resources = ["--select"] + [" ".join(selected_dbt_resources)]
+
+    return union_selected_dbt_resources, indirect_selection_override
+
+
+def get_dbt_resource_names_for_asset_keys(
+    translator: "DagsterDbtTranslator",
+    dbt_nodes: Mapping[str, Any],
+    assets_def: AssetsDefinition,
+    asset_keys: Iterable[AssetKey],
+) -> Sequence[str]:
+    dbt_resource_props_gen = (
+        dbt_nodes[assets_def.get_asset_spec(key).metadata[DAGSTER_DBT_UNIQUE_ID_METADATA_KEY]]
+        for key in asset_keys
+    )
+
+    # Explicitly select a dbt resource by its file name.
+    # https://docs.getdbt.com/reference/node-selection/methods#the-file-method
+    if translator.settings.enable_dbt_selection_by_name:
+        return [
+            Path(dbt_resource_props["original_file_path"]).stem
+            for dbt_resource_props in dbt_resource_props_gen
+        ]
+
+    # Explictly select a dbt resource by its fully qualified name (FQN).
+    # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
+    return [".".join(dbt_resource_props["fqn"]) for dbt_resource_props in dbt_resource_props_gen]
+
+
+def get_dbt_test_names_for_check_keys(
+    translator: "DagsterDbtTranslator",
+    dbt_nodes: Mapping[str, Any],
+    assets_def: AssetsDefinition,
+    check_keys: Iterable[AssetCheckKey],
+) -> Sequence[str]:
+    dbt_resource_props_gen = (
+        dbt_nodes[
+            (assets_def.get_spec_for_check_key(key).metadata or {})[
+                DAGSTER_DBT_UNIQUE_ID_METADATA_KEY
+            ]
+        ]
+        for key in check_keys
+    )
+    # Explicitly select a dbt test by its test name.
+    # https://docs.getdbt.com/reference/node-selection/test-selection-examples#more-complex-selection.
+    if translator.settings.enable_dbt_selection_by_name:
+        return [asset_check_key.name for asset_check_key in check_keys]
+
+    # Explictly select a dbt test by its fully qualified name (FQN).
+    # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
+    return [".".join(dbt_resource_props["fqn"]) for dbt_resource_props in dbt_resource_props_gen]

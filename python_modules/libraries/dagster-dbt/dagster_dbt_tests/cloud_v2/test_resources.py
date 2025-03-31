@@ -2,9 +2,12 @@ from typing import Optional
 
 import pytest
 import responses
-from dagster import AssetCheckEvaluation, AssetMaterialization, Failure
+
+from dagster._core.definitions.materialize import materialize
+from dagster import AssetCheckEvaluation, AssetMaterialization, Failure, AssetExecutionContext
 from dagster_dbt.cloud_v2.resources import DbtCloudCredentials, DbtCloudWorkspace
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType
+from dagster_dbt.cloud_v2.asset_decorator import dbt_cloud_assets
 
 from dagster_dbt_tests.cloud_v2.conftest import (
     SAMPLE_CUSTOM_CREATE_JOB_RESPONSE,
@@ -184,6 +187,39 @@ def test_cli_invocation(
     first_check_eval = next(check_eval for check_eval in sorted(asset_check_evaluations))
     assert first_check_eval.check_name == "not_null_customers_customer_id"
     assert first_check_eval.asset_key.path == ["customers"]
+
+
+def test_cli_invocation_in_asset_decorator(
+    workspace: DbtCloudWorkspace, cli_invocation_api_mocks: responses.RequestsMock
+):
+
+    @dbt_cloud_assets(workspace=workspace)
+    def my_dbt_cloud_assets(context: AssetExecutionContext, dbt_cloud: DbtCloudWorkspace):
+        yield from dbt_cloud.cli(args=["build"], context=context).wait()
+
+    result = materialize(
+        [my_dbt_cloud_assets],
+        resources={"dbt_cloud": workspace},
+    )
+    assert result.success
+
+    asset_materialization_events = result.get_asset_materialization_events()
+    asset_check_evaluation = result.get_asset_check_evaluations()
+
+    # 8 asset materializations
+    assert len(asset_materialization_events) == 8
+    # 20 asset check evaluations
+    assert len(asset_check_evaluation) == 20
+
+    # Sanity check
+    first_mat = next(event.materialization for event in sorted(asset_materialization_events))
+    assert first_mat.asset_key.path == ["customers"]
+    assert first_mat.metadata["run_url"].value == TEST_RUN_URL
+
+    first_check_eval = next(check_eval for check_eval in sorted(asset_check_evaluation))
+    assert first_check_eval.check_name == "not_null_customers_customer_id"
+    assert first_check_eval.asset_key.path == ["customers"]
+
 
 
 @pytest.mark.parametrize(

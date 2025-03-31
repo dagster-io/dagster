@@ -1,10 +1,14 @@
+import os
 import re
 from collections.abc import Sequence
+from contextlib import suppress
 from functools import cached_property, lru_cache
 from typing import NamedTuple, Optional, Union
 
 from dagster import (
     AssetCheckSpec,
+    AssetExecutionContext,
+    AssetsDefinition,
     AssetSpec,
     ConfigurableResource,
     Definitions,
@@ -14,11 +18,17 @@ from dagster import (
 from dagster._annotations import preview
 from dagster._config.pythonic_config.resource import ResourceDependency
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
+from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from pydantic import Field
 
-from dagster_dbt.asset_utils import build_dbt_specs
+from dagster_dbt.asset_utils import (
+    DBT_INDIRECT_SELECTION_ENV,
+    build_dbt_specs,
+    get_manifest_and_translator_from_dbt_assets,
+    get_subset_selection_for_context,
+)
 from dagster_dbt.cloud_v2.cli_invocation import DbtCloudCliInvocation
 from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.run_handler import DbtCloudJobRunHandler
@@ -29,7 +39,7 @@ from dagster_dbt.cloud_v2.types import (
     DbtCloudProject,
     DbtCloudWorkspaceData,
 )
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
 
 DAGSTER_ADHOC_PREFIX = "DAGSTER_ADHOC_JOB__"
 DBT_CLOUD_RECONSTRUCTION_METADATA_KEY_PREFIX = "__dbt_cloud"
@@ -255,19 +265,61 @@ class DbtCloudWorkspace(ConfigurableResource):
         ]
 
     def cli(
-        self, args: Sequence[str], dagster_dbt_translator: Optional[DagsterDbtTranslator] = None
+        self,
+        args: Sequence[str],
+        dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
+        context: Optional[AssetExecutionContext] = None,
     ) -> DbtCloudCliInvocation:
         """Creates a dbt cli invocation with the dbt Cloud client."""
+        dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
+
+        client = self.get_client()
         workspace_data = self.fetch_workspace_data()
+        job_id = workspace_data.job_id
+        manifest = workspace_data.manifest
+
+        assets_def: Optional[AssetsDefinition] = None
+        with suppress(DagsterInvalidPropertyError):
+            assets_def = context.assets_def if context else assets_def
+
+        selection_args: list[str] = []
+        indirect_selection_args: list[str] = []
+        if context and assets_def is not None:
+            manifest, dagster_dbt_translator = get_manifest_and_translator_from_dbt_assets(
+                [assets_def]
+            )
+
+            indirect_selection = os.getenv(DBT_INDIRECT_SELECTION_ENV, None)
+
+            selection_args, indirect_selection_override = get_subset_selection_for_context(
+                context=context,
+                manifest=manifest,
+                select="fqn:*",
+                exclude=None,
+                dagster_dbt_translator=dagster_dbt_translator,
+                current_dbt_indirect_selection_env=indirect_selection,
+            )
+
+            # set dbt indirect selection if needed to execute specific dbt tests due to asset check
+            # selection
+            indirect_selection = (
+                indirect_selection_override if indirect_selection_override else indirect_selection
+            )
+            indirect_selection_args = (
+                [f"--indirect-selection {indirect_selection}"] if indirect_selection else []
+            )
+
+        full_dbt_args = [*args, *selection_args, *indirect_selection_args]
+
         # We pass the manifest instead of the workspace data
         # because we use the manifest included in the asset definitions
         # when this method is called inside a function decorated with `@dbt_cloud_assets`
         return DbtCloudCliInvocation.run(
-            job_id=workspace_data.job_id,
-            args=args,
-            client=self.get_client(),
-            manifest=workspace_data.manifest,
+            job_id=job_id,
+            args=full_dbt_args,
+            client=client,
+            manifest=manifest,
             dagster_dbt_translator=dagster_dbt_translator,
         )
 
