@@ -95,6 +95,7 @@ from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iter
 from dagster._record import copy
 from dagster._time import create_datetime, get_current_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
+from dagster_shared.record import replace
 
 from dagster_tests.daemon_sensor_tests.conftest import create_workspace_load_target
 
@@ -1322,8 +1323,9 @@ def test_sensors_keyed_on_selector_not_origin(
 
         code_location_origin = existing_origin.repository_origin.code_location_origin
         assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
-        modified_loadable_target_origin = code_location_origin.loadable_target_origin._replace(
-            executable_path="/different/executable_path"
+        modified_loadable_target_origin = replace(
+            code_location_origin.loadable_target_origin,
+            executable_path="/different/executable_path",
         )
 
         # Change metadata on the origin that shouldn't matter for execution
