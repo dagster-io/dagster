@@ -602,7 +602,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         # if SLA violated with error, degraded
         return GrapheneAssetHealthStatus.UNKNOWN
 
-    def resolve_assetHealth(self, graphene_info: ResolveInfo):
+    async def resolve_assetHealth(self, graphene_info: ResolveInfo):
         if not graphene_info.context.instance.dagster_observe_supported():
             return None
         return GrapheneAssetHealth(
