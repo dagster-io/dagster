@@ -6,7 +6,6 @@ import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 
-const emptyAssets: any[] = [];
 export const useAssetSelectionFiltering = <
   T extends {
     id: string;
@@ -26,10 +25,7 @@ export const useAssetSelectionFiltering = <
   useWorker?: boolean;
 }) => {
   const assetsByKey = useMemo(
-    () =>
-      Object.fromEntries(
-        (assets ?? emptyAssets).map((asset) => [tokenForAssetKey(asset.key), asset]),
-      ),
+    () => Object.fromEntries((assets ?? []).map((asset) => [tokenForAssetKey(asset.key), asset])),
     [assets],
   );
 
