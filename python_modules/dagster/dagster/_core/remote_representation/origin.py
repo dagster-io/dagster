@@ -2,7 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, NamedTuple, NoReturn, Optional, cast
+from typing import TYPE_CHECKING, Any, NoReturn, Optional, cast
 
 import grpc
 from dagster_shared.record import IHaveNew, NamedTupleAdapter, record, record_custom
@@ -413,7 +413,9 @@ class RemoteRepositoryOrigin(NamedTupleAdapter["RemoteRepositoryOrigin"]):
         return RemoteInstigatorOrigin(repository_origin=self, instigator_name=instigator_name)
 
     def get_partition_set_origin(self, partition_set_name: str) -> "RemotePartitionSetOrigin":
-        return RemotePartitionSetOrigin(self, partition_set_name)
+        return RemotePartitionSetOrigin(
+            repository_origin=self, partition_set_name=partition_set_name
+        )
 
 
 @whitelist_for_serdes(
@@ -480,26 +482,14 @@ class RemoteInstigatorOrigin(NamedTupleAdapter["RemoteInstigatorOrigin"]):
     storage_name="ExternalPartitionSetOrigin",
     storage_field_names={"repository_origin": "external_repository_origin"},
 )
-class RemotePartitionSetOrigin(
-    NamedTuple(
-        "_PartitionSetOrigin",
-        [("repository_origin", RemoteRepositoryOrigin), ("partition_set_name", str)],
-    )
-):
+@record
+class RemotePartitionSetOrigin:
     """Serializable representation of an ExternalPartitionSet that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, repository_origin: RemoteRepositoryOrigin, partition_set_name: str):
-        return super().__new__(
-            cls,
-            check.inst_param(
-                repository_origin,
-                "repository_origin",
-                RemoteRepositoryOrigin,
-            ),
-            check.str_param(partition_set_name, "partition_set_name"),
-        )
+    repository_origin: RemoteRepositoryOrigin
+    partition_set_name: str
 
     def get_id(self) -> str:
         return create_snapshot_id(self)
