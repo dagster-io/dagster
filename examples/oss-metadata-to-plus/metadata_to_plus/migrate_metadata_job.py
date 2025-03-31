@@ -79,7 +79,7 @@ def migrate_metadata_asset(context: AssetExecutionContext, config: MetadataMigra
             partition=partition_to_report,  # type: ignore
             metadata=metadata_to_report,  # type: ignore
         )
-        print(f"Migrated asset {asset_key} for partition {partition_to_report}")  # noqa: T201
+        print(f"Migrated asset {asset_key} for partition {partition_to_report}")  # type: ignore # noqa: T201
 
 
 migrate_metadata_job = define_asset_job(
