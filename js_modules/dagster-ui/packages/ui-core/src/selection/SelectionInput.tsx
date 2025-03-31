@@ -426,6 +426,7 @@ export const SelectionAutoCompleteInput = ({
           style={{
             display: 'grid',
             gridTemplateColumns: 'auto minmax(0, 1fr) auto',
+            contain: 'layout paint style',
           }}
           ref={inputRef}
           onKeyDownCapture={handleKeyDown} // Added keyboard event handler
