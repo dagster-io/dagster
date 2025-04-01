@@ -10,7 +10,6 @@ from dagster_components import (
     Resolvable,
     ResolvedAssetSpec,
 )
-from dagster_components.resolved.core_models import ResolvedAssetSpec
 
 import dagster as dg
 
