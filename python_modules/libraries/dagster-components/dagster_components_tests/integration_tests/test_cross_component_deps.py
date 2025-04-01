@@ -12,7 +12,7 @@ CROSS_COMPONENT_DEPENDENCY_PATH = (
 def test_dependency_between_components():
     sys.path.append(str(CROSS_COMPONENT_DEPENDENCY_PATH.parent))
 
-    defs = build_component_defs(CROSS_COMPONENT_DEPENDENCY_PATH / "defs", {})
+    defs = build_component_defs(CROSS_COMPONENT_DEPENDENCY_PATH / "defs")
     assert (
         AssetKey("downstream_of_all_my_python_defs") in defs.get_asset_graph().get_all_asset_keys()
     )
@@ -32,7 +32,7 @@ CROSS_COMPONENT_DEPENDENCY_PATH_CUSTOM_COMPONENT = (
 def test_dependency_between_components_with_custom_component():
     sys.path.append(str(CROSS_COMPONENT_DEPENDENCY_PATH_CUSTOM_COMPONENT.parent))
 
-    defs = build_component_defs(CROSS_COMPONENT_DEPENDENCY_PATH_CUSTOM_COMPONENT / "defs", {})
+    defs = build_component_defs(CROSS_COMPONENT_DEPENDENCY_PATH_CUSTOM_COMPONENT / "defs")
     assert (
         AssetKey("downstream_of_all_my_python_defs") in defs.get_asset_graph().get_all_asset_keys()
     )

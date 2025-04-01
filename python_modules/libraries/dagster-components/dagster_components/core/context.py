@@ -6,29 +6,25 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any, Union
 
-from dagster import _check as check
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterError
 from dagster._utils import pushd
+from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
 from dagster_components.resolved.context import ResolutionContext
-
-if TYPE_CHECKING:
-    from dagster_components.core.defs_module import DefsModuleDecl
-    from dagster_components.core.load_defs import DefinitionsModuleCache
+from dagster_components.utils import get_path_from_module
 
 
 @dataclass
 class ComponentLoadContext:
     """Context for loading a single component."""
 
-    defs_root: Path
+    path: Path
+    defs_module_path: Path
     defs_module_name: str
-    decl_node: Optional["DefsModuleDecl"]
     resolution_context: ResolutionContext
-    module_cache: "DefinitionsModuleCache"
 
     @staticmethod
     def current() -> "ComponentLoadContext":
@@ -40,39 +36,47 @@ class ComponentLoadContext:
         return context
 
     @staticmethod
-    def for_test(
-        *,
-        resources: Optional[Mapping[str, object]] = None,
-        decl_node: Optional["DefsModuleDecl"] = None,
-    ) -> "ComponentLoadContext":
-        from dagster_components.core.load_defs import DefinitionsModuleCache
-
+    def for_module(defs_module: ModuleType) -> "ComponentLoadContext":
+        path = get_path_from_module(defs_module)
         return ComponentLoadContext(
-            defs_root=Path.cwd(),
-            defs_module_name="test",
-            decl_node=decl_node,
+            path=path,
+            defs_module_path=path,
+            defs_module_name=defs_module.__name__,
             resolution_context=ResolutionContext.default(),
-            module_cache=DefinitionsModuleCache(resources=resources or {}),
         )
 
-    @property
-    def path(self) -> Path:
-        return check.not_none(self.decl_node).path
+    @staticmethod
+    def for_test() -> "ComponentLoadContext":
+        return ComponentLoadContext(
+            path=Path.cwd(),
+            defs_module_path=Path.cwd(),
+            defs_module_name="test",
+            resolution_context=ResolutionContext.default(),
+        )
+
+    def _with_resolution_context(
+        self, resolution_context: ResolutionContext
+    ) -> "ComponentLoadContext":
+        return dataclasses.replace(self, resolution_context=resolution_context)
 
     def with_rendering_scope(self, rendering_scope: Mapping[str, Any]) -> "ComponentLoadContext":
-        return dataclasses.replace(
-            self,
-            resolution_context=self.resolution_context.with_scope(**rendering_scope),
+        return self._with_resolution_context(self.resolution_context.with_scope(**rendering_scope))
+
+    def with_source_position_tree(
+        self, source_position_tree: SourcePositionTree
+    ) -> "ComponentLoadContext":
+        return self._with_resolution_context(
+            self.resolution_context.with_source_position_tree(source_position_tree)
         )
 
-    def for_decl(self, decl: "DefsModuleDecl") -> "ComponentLoadContext":
-        return dataclasses.replace(self, decl_node=decl)
+    def for_path(self, path: Path) -> "ComponentLoadContext":
+        return dataclasses.replace(self, path=path)
 
     def defs_relative_module_name(self, path: Path) -> str:
         """Returns the name of the python module at the given path, relative to the project root."""
         container_path = self.path.parent if self.path.is_file() else self.path
         with pushd(str(container_path)):
-            relative_path = path.resolve().relative_to(self.defs_root.resolve())
+            relative_path = path.resolve().relative_to(self.defs_module_path.resolve())
             if path.name == "__init__.py":
                 # e.g. "a_project/defs/something/__init__.py" -> "a_project.defs.something"
                 relative_parts = relative_path.parts[:-1]
@@ -96,7 +100,12 @@ class ComponentLoadContext:
 
         This is useful for resolving dependencies on other components.
         """
-        return self.module_cache.load_defs(module)
+        # FIXME: This should go through the component loader system
+        # to allow for this value to be cached and more selectively
+        # loaded. This is just a temporary hack to keep tests passing.
+        from dagster_components.core.load_defs import load_defs
+
+        return load_defs(module)
 
     def load_defs_relative_python_module(self, path: Path) -> ModuleType:
         """Load a python module relative to the defs's context path. This is useful for loading code
