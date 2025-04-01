@@ -28,8 +28,6 @@ from dagster_dg.utils import get_toml_node, is_macos, is_windows
 
 T = TypeVar("T")
 
-DEFAULT_BUILTIN_COMPONENT_LIB = "dagster_components"
-
 
 def _get_default_cache_dir() -> Path:
     if is_windows():

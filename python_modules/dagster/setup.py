@@ -114,6 +114,13 @@ setup(
         "docker": ["docker"],
         "test": [
             "buildkite-test-collector",
+            "dagster-test",
+            "dbt-duckdb",
+            "dagster-dg",
+            "tomlkit",
+            "jsonschema",
+            "pandas",
+            "duckdb",
             "docker",
             f"grpcio-tools>={GRPC_VERSION_FLOOR}",
             "mypy-protobuf",

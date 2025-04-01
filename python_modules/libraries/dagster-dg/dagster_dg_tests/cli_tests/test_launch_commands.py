@@ -40,9 +40,7 @@ def test_launch_assets(capfd) -> None:
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
-        result = runner.invoke(
-            "scaffold", "dagster_components.dagster.DefsFolderComponent", "mydefs"
-        )
+        result = runner.invoke("scaffold", "dagster.DefsFolderComponent", "mydefs")
         assert_runner_result(result)
 
         with Path("foo_bar/defs/mydefs/definitions.py").open("w") as f:

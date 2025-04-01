@@ -638,18 +638,13 @@ def test_scaffold_dbt_project_instance(params) -> None:
         # We need to add dagster-dbt also because we are using editable installs. Only
         # direct dependencies will be resolved by uv.tool.sources.
         subprocess.run(["uv", "add", "dagster-components[dbt]", "dagster-dbt"], check=True)
-        result = runner.invoke(
-            "scaffold", "dagster_components.dagster_dbt.DbtProjectComponent", "my_project", *params
-        )
+        result = runner.invoke("scaffold", "dagster_dbt.DbtProjectComponent", "my_project", *params)
         assert_runner_result(result)
         assert Path("foo_bar/defs/my_project").exists()
 
         component_yaml_path = Path("foo_bar/defs/my_project/component.yaml")
         assert component_yaml_path.exists()
-        assert (
-            "type: dagster_components.dagster_dbt.DbtProjectComponent"
-            in component_yaml_path.read_text()
-        )
+        assert "type: dagster_dbt.DbtProjectComponent" in component_yaml_path.read_text()
         assert (
             cross_platfrom_string_path("stub_projects/dbt_project_location/defs/jaffle_shop")
             in component_yaml_path.read_text()

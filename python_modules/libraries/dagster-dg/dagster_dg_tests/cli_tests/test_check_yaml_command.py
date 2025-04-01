@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 
 import pytest
-from dagster_components.test.test_cases import (
+from dagster._components.test.test_cases import (
     BASIC_COMPONENT_TYPE_FILEPATH,
     BASIC_INVALID_VALUE,
     BASIC_MISSING_VALUE,
