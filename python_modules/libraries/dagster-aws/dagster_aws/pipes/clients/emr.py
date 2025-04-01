@@ -101,7 +101,7 @@ class PipesEMRClient(PipesClient, TreatAsResourceParam):
         Args:
             context (Union[OpExecutionContext, AssetExecutionContext]): The context of the currently executing Dagster op or asset.
             run_job_flow_params (Optional[dict]): Parameters for the ``run_job_flow`` boto3 EMR client call.
-                See `Boto3 EMR API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/emr/client/emr.html#emr>`_
+                See `Boto3 EMR API Documentation <https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/emr.html>`_
             extras (Optional[Dict[str, Any]]): Additional information to pass to the Pipes session in the external process.
 
         Returns:

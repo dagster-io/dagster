@@ -54,7 +54,7 @@ def with_usage_metadata(
     context: Union[AssetExecutionContext, OpExecutionContext], output_name: Optional[str], func
 ):
     """This wrapper can be used on any endpoint of the
-    `openai library <https://github.com/openai/openai-python>`
+    `openai library <https://github.com/openai/openai-python>`_
     to log the OpenAI API usage metadata in the asset metadata.
 
     Examples:

@@ -246,7 +246,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             tick that is equal to or after this value.
         timezone (Optional[str]): The timezone in which each time should exist.
             Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            `IANA time zone database <https://www.iana.org/time-zones>`_ - e.g. "America/Los_Angeles".
 
         end (datetime): The last partition (excluding) in the set.
         fmt (str): The date format to use for partition_keys. Note that if a non-UTC timezone is
@@ -1060,7 +1060,7 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
         timezone (Optional[str]): The timezone in which each date should exist.
             Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            `IANA time zone database <https://www.iana.org/time-zones>`_ - e.g. "America/Los_Angeles".
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current
@@ -1175,7 +1175,7 @@ def daily_partitioned_config(
         hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
         timezone (Optional[str]): The timezone in which each date should exist.
             Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            `IANA time zone database <https://www.iana.org/time-zones>`_ - e.g. "America/Los_Angeles".
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current
@@ -1242,7 +1242,7 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
             key will have the UTC offset automatically appended to it.
         timezone (Optional[str]): The timezone in which each date should exist.
             Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            `IANA time zone database <https://www.iana.org/time-zones>`_ - e.g. "America/Los_Angeles".
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current
             time. If end_offset is 1, the second-to-last partition ends before the current time,
@@ -1326,7 +1326,7 @@ def hourly_partitioned_config(
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         timezone (Optional[str]): The timezone in which each date should exist.
             Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            `IANA time zone database <https://www.iana.org/time-zones>`_ - e.g. "America/Los_Angeles".
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current
             time. If end_offset is 1, the second-to-last partition ends before the current time,
@@ -1389,7 +1389,7 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         day_offset (int): Day of the month to "split" the partition. Defaults to 1.
         timezone (Optional[str]): The timezone in which each date should exist.
             Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            `IANA time zone database <https://www.iana.org/time-zones>`_ - e.g. "America/Los_Angeles".
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current
@@ -1488,7 +1488,7 @@ def monthly_partitioned_config(
         day_offset (int): Day of the month to "split" the partition. Defaults to 1.
         timezone (Optional[str]): The timezone in which each date should exist.
             Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            `IANA time zone database <https://www.iana.org/time-zones>`_ - e.g. "America/Los_Angeles".
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current
@@ -1556,7 +1556,7 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
         day_offset (int): Day of the week to "split" the partition. Defaults to 0 (Sunday).
         timezone (Optional[str]): The timezone in which each date should exist.
             Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            `IANA time zone database <https://www.iana.org/time-zones>`_ - e.g. "America/Los_Angeles".
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current
@@ -1650,7 +1650,7 @@ def weekly_partitioned_config(
         day_offset (int): Day of the week to "split" the partition. Defaults to 0 (Sunday).
         timezone (Optional[str]): The timezone in which each date should exist.
             Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            `IANA time zone database <https://www.iana.org/time-zones>`_ - e.g. "America/Los_Angeles".
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         end_offset (int): Extends the partition set by a number of partitions equal to the value
             passed. If end_offset is 0 (the default), the last partition ends before the current
