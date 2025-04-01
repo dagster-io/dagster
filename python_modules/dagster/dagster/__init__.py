@@ -608,7 +608,7 @@ from dagster._core.types.config_schema import (
     DagsterTypeLoader as DagsterTypeLoader,
     dagster_type_loader as dagster_type_loader,
 )
-from dagster._core.types.connection import Connection as Connection
+from dagster._core.types.connection import PaginatedConnection as PaginatedConnection
 from dagster._core.types.dagster_type import (
     DagsterType as DagsterType,
     List as List,

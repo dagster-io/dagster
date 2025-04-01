@@ -30,7 +30,7 @@ from dagster._core.errors import (
     DagsterInvalidDeserializationVersionError,
 )
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.types.connection import Connection
+from dagster._core.types.connection import PaginatedConnection
 from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import deserialize_value, serialize_value, whitelist_for_serdes
 from dagster._time import (
@@ -503,7 +503,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         limit: int,
         ascending: bool,
         cursor: Optional[str] = None,
-    ) -> Connection[str]:
+    ) -> PaginatedConnection[str]:
         current_timestamp = self._get_current_timestamp(context.temporal_context.effective_dt)
 
         if cursor:
@@ -618,7 +618,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 offset_partition_count=offset_partitions_count,
             )
 
-        return Connection(
+        return PaginatedConnection(
             results=partition_keys,
             cursor=str(next_cursor),
             has_more=has_more,
@@ -864,7 +864,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         limit: Optional[int] = None,
         ascending: bool = True,
         cursor: Optional[str] = None,
-    ) -> Connection[str]:
+    ) -> PaginatedConnection[str]:
         result: list[str] = []
         if cursor:
             start_ts = TimeWindowCursor.from_cursor(cursor).start_timestamp
@@ -900,7 +900,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                     break
             else:
                 break
-        return Connection(results=result, cursor=new_cursor, has_more=has_more)
+        return PaginatedConnection(results=result, cursor=new_cursor, has_more=has_more)
 
     def get_partition_subset_in_time_window(
         self, time_window: TimeWindow

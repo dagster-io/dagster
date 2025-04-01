@@ -32,7 +32,7 @@ from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_multidimensional_partition_tag,
 )
-from dagster._core.types.connection import Connection
+from dagster._core.types.connection import PaginatedConnection
 from dagster._record import record
 from dagster._time import get_current_datetime
 
@@ -345,7 +345,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         limit: int,
         ascending: bool,
         cursor: Optional[str] = None,
-    ) -> Connection[str]:
+    ) -> PaginatedConnection[str]:
         """Returns a connection object that contains a list of partition keys and all the necessary
         information to paginate through them.
 
@@ -354,7 +354,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             limit: (Optional[int]): The maximum number of partition keys to return.
 
         Returns:
-            Connection[MultiPartitionKey]
+            PaginatedConnection[MultiPartitionKey]
         """
         partition_keys = []
         iterator = MultiDimensionalPartitionKeyIterator(
@@ -377,7 +377,9 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
         if not next_cursor:
             next_cursor = MultiPartitionCursor(last_seen_key=None).to_string()
 
-        return Connection(results=partition_keys, cursor=next_cursor, has_more=iterator.has_next())
+        return PaginatedConnection(
+            results=partition_keys, cursor=next_cursor, has_more=iterator.has_next()
+        )
 
     def filter_valid_partition_keys(
         self, partition_keys: set[str], dynamic_partitions_store: DynamicPartitionsStore
