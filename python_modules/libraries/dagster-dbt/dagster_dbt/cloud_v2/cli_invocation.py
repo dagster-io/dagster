@@ -1,7 +1,7 @@
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Union
+from typing import Any, Optional, Union
 
-from dagster import AssetCheckEvaluation, AssetMaterialization
+from dagster import AssetCheckEvaluation, AssetExecutionContext, AssetMaterialization, Output
 from dagster._annotations import preview
 from dagster._record import record
 
@@ -20,6 +20,7 @@ class DbtCloudCliInvocation:
     manifest: Mapping[str, Any]
     dagster_dbt_translator: DagsterDbtTranslator
     run_handler: DbtCloudJobRunHandler
+    context: Optional[AssetExecutionContext]
 
     @classmethod
     def run(
@@ -29,6 +30,7 @@ class DbtCloudCliInvocation:
         client: DbtCloudWorkspaceClient,
         manifest: Mapping[str, Any],
         dagster_dbt_translator: DagsterDbtTranslator,
+        context: Optional[AssetExecutionContext] = None,
     ) -> "DbtCloudCliInvocation":
         run_handler = DbtCloudJobRunHandler.run(
             job_id=job_id,
@@ -41,9 +43,10 @@ class DbtCloudCliInvocation:
             manifest=manifest,
             dagster_dbt_translator=dagster_dbt_translator,
             run_handler=run_handler,
+            context=context,
         )
 
-    def wait(self) -> Iterator[Union[AssetMaterialization, AssetCheckEvaluation]]:
+    def wait(self) -> Iterator[Union[AssetMaterialization, AssetCheckEvaluation, Output]]:
         self.run_handler.wait_for_success()
         if "run_results.json" not in self.run_handler.list_run_artifacts():
             return
@@ -54,4 +57,5 @@ class DbtCloudCliInvocation:
             client=self.client,
             manifest=self.manifest,
             dagster_dbt_translator=self.dagster_dbt_translator,
+            context=self.context,
         )

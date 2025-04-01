@@ -321,6 +321,7 @@ class DbtCloudWorkspace(ConfigurableResource):
             client=client,
             manifest=manifest,
             dagster_dbt_translator=dagster_dbt_translator,
+            context=context,
         )
 
 

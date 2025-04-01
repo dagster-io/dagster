@@ -209,6 +209,10 @@ def test_cli_invocation_in_asset_decorator(
     asset_materialization_events = result.get_asset_materialization_events()
     asset_check_evaluation = result.get_asset_check_evaluations()
 
+    # materializations are successful outputs, asset check evaluations are not outputs
+    outputs = [event for event in result.all_events if event.is_successful_output]
+    assert len(outputs) == 8
+
     # 8 asset materializations
     assert len(asset_materialization_events) == 8
     # 20 asset check evaluations
