@@ -1,5 +1,5 @@
 ---
-title: "Setting up branch deployments"
+title: 'Setting up branch deployments'
 sidebar_position: 100
 ---
 
@@ -80,53 +80,56 @@ While you can use your existing production agent, we recommend creating a dedica
 <Tabs>
   <TabItem value="ecs" label="Amazon ECS">
 
-  1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/new-vpc) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/existing-vpc) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
+1. **Deploy an ECS agent to serve your branch deployments**. Follow the [ECS agent](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/new-vpc) setup guide, making sure to set the **Enable Branch Deployments** parameter if using the CloudFormation template. If you are running an existing agent, follow the [upgrade guide](/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/existing-vpc) to ensure your template is up-to-date. Then, turn on the **Enable Branch Deployments** parameter.
 
-  2. **Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories).** Refer to the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html) for instructions.
+2. **Create a private [Amazon Elastic Registry (ECR) repository](https://console.aws.amazon.com/ecr/repositories).** Refer to the [AWS ECR documentation](https://docs.aws.amazon.com/AmazonECR/latest/userguide/repository-create.html) for instructions.
 
-  After the repository has been created, navigate back to the list of [ECR repositories](https://console.aws.amazon.com/ecr/repositories).
+After the repository has been created, navigate back to the list of [ECR repositories](https://console.aws.amazon.com/ecr/repositories).
 
-  In the list, locate the repository and its **URI**:
+In the list, locate the repository and its **URI**:
 
-  ![Show this in the UI](/images/dagster-plus/features/branch-deployments/aws-ecr-uri.png)
+![Show this in the UI](/images/dagster-plus/features/branch-deployments/aws-ecr-uri.png)
 
-  Keep this around, as you'll need it in a later step.
+Keep this around, as you'll need it in a later step.
 
-  3. [**Create an IAM user.**](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html) This user must:
+3. [**Create an IAM user.**](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html) This user must:
 
-     - Have push access to the ECR repository, and
-     - Have programmatic access to AWS using an [access key](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html)
+   - Have push access to the ECR repository, and
+   - Have programmatic access to AWS using an [access key](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html)
 
-     After the user is created, save the **Access key ID** and **Secret access key** values shown on the confirmation page:
+   After the user is created, save the **Access key ID** and **Secret access key** values shown on the confirmation page:
 
-     ![Show this in the UI](/images/dagster-plus/features/branch-deployments/aws-iam-user-keys.png)
+   ![Show this in the UI](/images/dagster-plus/features/branch-deployments/aws-iam-user-keys.png)
 
   </TabItem>
   <TabItem value="docker" label="Docker">
 
-  1. Set up a new Docker agent. Refer to the [Docker agent setup guide](/dagster-plus/deployment/deployment-types/hybrid/docker) for instructions.
-  2. After the agent is set up, modify the `dagster.yaml` file as follows:
+1. Set up a new Docker agent. Refer to the [Docker agent setup guide](/dagster-plus/deployment/deployment-types/hybrid/docker) for instructions.
+2. After the agent is set up, modify the `dagster.yaml` file as follows:
 
-     - Set the `dagster_cloud_api.branch_deployments` field to `true`
-     - Remove any `deployment` field(s)
+   - Set the `dagster_cloud_api.branch_deployments` field to `true`
+   - Remove any `deployment` field(s)
 
-     For example:
+   For example:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/branch-deployments/dagster.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster.yaml"
+  language="yaml"
+/>
 
   </TabItem>
   <TabItem value="k8s" label="Kubernetes" default>
 
-  1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/dagster-plus/deployment/deployment-types/hybrid/kubernetes) for instructions.
+1. Set up a new Kubernetes agent. Refer to the [Kubernetes agent setup guide](/dagster-plus/deployment/deployment-types/hybrid/kubernetes) for instructions.
 
-  2. After the agent is set up, modify your Helm values file to include the following:
+2. After the agent is set up, modify your Helm values file to include the following:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/branch-deployments/helm.yaml" language="yaml" />
+<CodeExample path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/helm.yaml" language="yaml" />
 
   </TabItem>
 </Tabs>
 
-## Step 4: Set up branch  deployments
+## Step 4: Set up branch deployments
 
 <Tabs groupId="method">
   <TabItem value="github" label="GitHub">
@@ -154,7 +157,10 @@ In the `dagster_cloud.yaml` file, replace `build.registry` with the registry use
 
 For example:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/branch-deployments/dagster_cloud.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster_cloud.yaml"
+  language="yaml"
+/>
 
 **Step 4.3: Configure GitHub Action secrets**
 
@@ -258,19 +264,20 @@ In the next step, you'll modify these files to work with your Dagster+ setup.
 If you used the GitLab app to configure your repository, this step isn't required and you can skip ahead to Step 4.5.
 :::
 
-
 In the `dagster_cloud.yaml` file, replace `build.registry` with the registry used by the [agent you created in Step 2](#step-2-generate-a-dagster-agent-token).
 
 For example:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/dagster-plus/deployment/branch-deployments/dagster_cloud.yaml" language="yaml" />
+<CodeExample
+  path="docs_snippets/docs_snippets/dagster-plus/deployment/branch-deployments/dagster_cloud.yaml"
+  language="yaml"
+/>
 
 **Step 4.3: configure GitLab CI/CD variables**
 
 :::note
 If you used the GitLab app to configure your repository, this step isn't required and you can skip ahead to Step 4.5.
 :::
-
 
 1. In your project, click the **Settings** tab.
 2. In the **CI/CD** section of the sidebar, expand **Variables**.
@@ -369,17 +376,17 @@ The following examples assume the registry URL and image tag are stored in the `
 
 Execute the following command within your CI/CD process:
 
-   ```shell
-   BRANCH_DEPLOYMENT_NAME=$(
-       dagster-cloud branch-deployment create-or-update \
-           --organization $ORGANIZATION_NAME \
-           --api-token $DAGSTER_CLOUD_API_TOKEN \ # Agent token from Step 1
-           --git-repo-name $REPOSITORY_NAME \ # Git repository name
-           --branch-name $BRANCH_NAME \ # Git branch name
-           --commit-hash $COMMIT_SHA \ # Latest commit SHA on the branch
-           --timestamp $TIMESTAMP # UTC unixtime timestamp of the latest commit
-   )
-   ```
+```shell
+BRANCH_DEPLOYMENT_NAME=$(
+    dagster-cloud branch-deployment create-or-update \
+        --organization $ORGANIZATION_NAME \
+        --api-token $DAGSTER_CLOUD_API_TOKEN \ # Agent token from Step 1
+        --git-repo-name $REPOSITORY_NAME \ # Git repository name
+        --branch-name $BRANCH_NAME \ # Git branch name
+        --commit-hash $COMMIT_SHA \ # Latest commit SHA on the branch
+        --timestamp $TIMESTAMP # UTC unixtime timestamp of the latest commit
+)
+```
 
 One or more additional parameters can optionally be supplied to the `create-or-update` command to enhance the Branch Deployments UI in Dagster+:
 

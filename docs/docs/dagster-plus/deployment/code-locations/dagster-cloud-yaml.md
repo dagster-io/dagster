@@ -9,7 +9,6 @@ This reference is applicable to Dagster+.
 
 `dagster_cloud.yaml` is used to define multiple code locations for Dagster+. It is similar to `workspace.yaml` in Dagster open source. For [Hybrid deployments](/dagster-plus/deployment/deployment-types/hybrid/), `dagster_cloud.yaml` can be used to manage environment variables and secrets.
 
-
 ## File location
 
 The `dagster_cloud.yaml` file should be placed in the root of your Dagster project, similar to the example below:
@@ -91,7 +90,7 @@ locations:
 ```
 
 | Property        | Description                                                                            | Format   |
-|-----------------|----------------------------------------------------------------------------------------|----------|
+| --------------- | -------------------------------------------------------------------------------------- | -------- |
 | `location_name` | The name of your code location that will appear in the Dagster UI Code locations page. | `string` |
 
 ### Code source
@@ -131,7 +130,7 @@ locations:
 </Tabs>
 
 | Property                   | Description                                                                       | Format                   |
-|----------------------------|-----------------------------------------------------------------------------------|--------------------------|
+| -------------------------- | --------------------------------------------------------------------------------- | ------------------------ |
 | `code_source.package_name` | The name of a package containing Dagster code                                     | `string` (folder name)   |
 | `code_source.python_file`  | The name of a Python file containing Dagster code (e.g. `analytics_pipeline.py` ) | `string` (.py file name) |
 | `code_source.module_name`  | The name of a Python module containing Dagster code (e.g. `analytics_etl`)        | `string` (module name)   |
@@ -169,7 +168,7 @@ locations:
 ```
 
 | Property            | Description                                                             | Format          |
-|---------------------|-------------------------------------------------------------------------|-----------------|
+| ------------------- | ----------------------------------------------------------------------- | --------------- |
 | `working_directory` | The path of the directory that Dagster should load the code source from | `string` (path) |
 
 ### Build
@@ -193,12 +192,10 @@ locations:
       registry: your-docker-image-registry/image-name # e.g. localhost:5000/myimage
 ```
 
-
 | Property          | Description                                                                                                                                                           | Format                     | Default |
-|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------|---------|
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | ------- |
 | `build.directory` | The path to the directory in your project that you want to deploy. If there are subdirectories, you can specify the path to only deploy a specific project directory. | `string` (path)            | `.`     |
 | `build.registry`  | **Applicable to Hybrid deployments.** The Docker registry to push your code location to                                                                               | `string` (docker registry) |         |
-
 
 ### Python executable
 
@@ -221,7 +218,7 @@ locations:
 ```
 
 | Property          | Description                                   | Format          |
-|-------------------|-----------------------------------------------|-----------------|
+| ----------------- | --------------------------------------------- | --------------- |
 | `executable_path` | The file path of the Python executable to use | `string` (path) |
 
 ### Container context

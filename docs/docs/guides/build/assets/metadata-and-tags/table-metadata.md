@@ -51,7 +51,7 @@ To attach row count metadata to an asset, you will need to attach a numerical va
 
 ## Attaching column-level lineage
 
-Column lineage enables data and analytics engineers alike to understand how a column is created and used in your data platform. For more information, see the [column-level lineage documentation](column-level-lineage).
+Column lineage enables data and analytics engineers alike to understand how a column is created and used in your data platform. For more information, see the [column-level lineage documentation](/guides/build/assets/metadata-and-tags/column-level-lineage).
 
 ## Ensuring table schema consistency
 

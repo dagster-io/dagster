@@ -6,7 +6,7 @@ sidebar_position: 200
 
 :::note
 
-This is part two of the [Using Dagster Pipes to run a local subprocess](index.md) tutorial.
+This is part two of the [Using Dagster Pipes to run a local subprocess](/guides/build/external-pipelines/using-dagster-pipes) tutorial.
 
 :::
 
@@ -15,7 +15,7 @@ At this point, you should have two files:
 - `external_code.py` which is a standalone Python script that you want to orchestrate with Dagster.
 - `dagster_code.py` which includes a Dagster asset and other Dagster definitions.
 
-In this section, you'll learn how to modify the standalone Python script to work with [Dagster Pipes](/guides/build/external-pipelines/) in order to stream information back to Dagster. To do this, you'll:
+In this section, you'll learn how to modify the standalone Python script to work with [Dagster Pipes](/guides/build/external-pipelines) in order to stream information back to Dagster. To do this, you'll:
 
 - [Make Dagster context available in external code](#step-1-make-dagster-context-available-in-external-code)
 - [Stream log messages back to Dagster](#step-2-send-log-messages-to-dagster)
@@ -57,7 +57,7 @@ Sometimes, you may want to log information from your external code as structured
 
 ### Report asset materialization
 
-Similar to [reporting materialization metadata within the Dagster process](/guides/build/assets/metadata-and-tags/), you can also report asset materialization back to Dagster from the external process.
+Similar to [reporting materialization metadata within the Dagster process](/guides/build/assets/metadata-and-tags), you can also report asset materialization back to Dagster from the external process.
 
 In this example, we’re passing a piece of metadata named `total_orders` to the `metadata` parameter of the <PyObject section="libraries" module="dagster_pipes" object="PipesContext" method="report_asset_materialization" />. This payload will be sent from the external process back to Dagster:
 
@@ -122,6 +122,6 @@ In this tutorial, you learned how to get access to Dagster Pipes context, report
 
 What's next? From here, you can:
 
-- Learn about other capabilities of executing external code in subprocess via Dagster Pipes in the [Subprocess reference](reference)
+- Learn about other capabilities of executing external code in subprocess via Dagster Pipes in the [Subprocess reference](/guides/build/external-pipelines/using-dagster-pipes/reference)
 - Learn how to [customize your own Dagster Pipes protocols](/guides/build/external-pipelines/dagster-pipes-details-and-customization)
-- Learn about [other integrations with Dagster Pipes](/guides/build/external-pipelines/)
+- Learn about [other integrations with Dagster Pipes](/guides/build/external-pipelines)

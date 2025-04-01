@@ -1,5 +1,5 @@
 ---
-title: "Using Delta Lake with Dagster"
+title: 'Using Delta Lake with Dagster'
 description: Store your Dagster assets in a Delta Lake
 sidebar_position: 100
 ---
@@ -13,7 +13,7 @@ By the end of the tutorial, you will:
 - Make a Delta Lake table available in Dagster
 - Load Delta tables in downstream assets
 
-While this guide focuses on storing and loading Pandas DataFrames in Delta Lakes, Dagster also supports using PyArrow Tables and Polars DataFrames. Learn more about setting up and using the Delta Lake I/O manager with PyArrow Tables and Polars DataFrames in the [Delta Lake reference](reference).
+While this guide focuses on storing and loading Pandas DataFrames in Delta Lakes, Dagster also supports using PyArrow Tables and Polars DataFrames. Learn more about setting up and using the Delta Lake I/O manager with PyArrow Tables and Polars DataFrames in the [Delta Lake reference](/integrations/libraries/deltalake/reference).
 
 ## Prerequisites
 
@@ -27,7 +27,11 @@ pip install dagster-deltalake dagster-deltalake-pandas
 
 The Delta Lake I/O manager requires some configuration to set up your Delta Lake. You must provide a root path where your Delta tables will be created. Additionally, you can specify a `schema` where the Delta Lake I/O manager will create tables.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/deltalake/configuration.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/deltalake/configuration.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 With this configuration, if you materialized an asset called `iris_dataset`, the Delta Lake I/O manager would store the data within a folder `iris/iris_dataset` under the provided root directory `path/to/deltalake`.
 
@@ -72,7 +76,11 @@ Because we already supplied the database and schema in the I/O manager configura
 
 Once you've created an asset that represents a table in your Delta Lake, you will likely want to create additional assets that work with the data. Dagster and the Delta Lake I/O manager allow you to load the data stored in Delta tables into downstream assets.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/deltalake/load_downstream.py" startAfter="start_example" endBefore="end_example" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/deltalake/load_downstream.py"
+  startAfter="start_example"
+  endBefore="end_example"
+/>
 
 In this example, we want to provide the `iris_dataset` asset to the `iris_cleaned` asset. Refer to the Store a Dagster asset as a table in Delta Lake example in [step 2](#step-2-create-delta-lake-tables) for a look at the `iris_dataset` asset.
 
@@ -88,7 +96,7 @@ When finished, your code should look like the following:
 
 ## Related
 
-For more Delta Lake features, refer to the [Delta Lake reference](reference).
+For more Delta Lake features, refer to the [Delta Lake reference](/integrations/libraries/deltalake/reference).
 
 For more information on asset definitions, see the [Assets documentation](/guides/build/assets/defining-assets).
 

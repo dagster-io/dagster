@@ -1,5 +1,5 @@
 ---
-title: "Using branch deployments with the dagster-cloud CLI"
+title: 'Using branch deployments with the dagster-cloud CLI'
 sidebar_position: 300
 ---
 
@@ -17,7 +17,7 @@ Using this approach to branch deployments may be a good fit if:
 - You use an alternate CI platform
 - You want full control over Branch Deployment configuration
 
-**If you use GitHub for version control or want Dagster to automate branch deployments**, see "[Setting up branch deployments](setting-up-branch-deployments)" and choose the GitHub tab.
+**If you use GitHub for version control or want Dagster to automate branch deployments**, see "[Setting up branch deployments](/dagster-plus/features/ci-cd/branch-deployments/setting-up-branch-deployments)" and choose the GitHub tab.
 
 ## Prerequisites
 
@@ -35,9 +35,9 @@ In this step, you'll generate a token for the Dagster+ agent. The Dagster+ agent
 1. Sign in to your Dagster+ instance.
 2. Click the **user menu (your icon) > Organization Settings**.
 3. In the **Organization Settings** page, click the **Tokens** tab.
-3. Click the **+ Create agent token** button.
-4. After the token has been created, click **Reveal token**.
-5. Copy the token somewhere safe, since you'll need it to complete the setup.
+4. Click the **+ Create agent token** button.
+5. After the token has been created, click **Reveal token**.
+6. Copy the token somewhere safe, since you'll need it to complete the setup.
 
 ## Step 2: Create and configure an agent
 

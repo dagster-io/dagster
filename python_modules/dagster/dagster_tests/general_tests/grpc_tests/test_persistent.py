@@ -41,6 +41,7 @@ from dagster._utils.error import SerializableErrorInfo
 from dagster.version import __version__ as dagster_version
 from dagster_shared import seven
 from dagster_shared.serdes import deserialize_value, serialize_value
+from dagster_shared.version import __version__ as dagster_shared_version
 
 
 def entrypoints():
@@ -952,7 +953,10 @@ def test_load_with_container_context(entrypoint):
         assert list_repositories_response.entry_point == ["dagster"]
         assert list_repositories_response.executable_path == sys.executable
         assert list_repositories_response.container_context == container_context
-        assert list_repositories_response.dagster_library_versions == {"dagster": dagster_version}
+        assert list_repositories_response.dagster_library_versions == {
+            "dagster": dagster_version,
+            "dagster-shared": dagster_shared_version,
+        }
 
     finally:
         process.terminate()

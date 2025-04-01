@@ -1,5 +1,5 @@
 ---
-title: "Migrating an Airflow KubernetesPodOperator to Dagster"
+title: 'Migrating an Airflow KubernetesPodOperator to Dagster'
 sidebar_position: 400
 ---
 
@@ -31,7 +31,11 @@ First, you need to ensure that your Dagster deployment has access to the Kuberne
 
 Here's an example of what this might look like when configuring the client to access an EKS cluster:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/k8s_eks_fake_example.py" startAfter="start_client" endBefore="end_client" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/k8s_eks_fake_example.py"
+  startAfter="start_client"
+  endBefore="end_client"
+/>
 
 ### Step 2: Writing an asset that executes the task within a Kubernetes pod
 
@@ -39,7 +43,11 @@ Once you have access to the Kubernetes cluster, you can write an asset that exec
 
 In the [parameter comparison](#parameter-comparison) section of this doc, you'll find a detailed comparison describing how to map the KubernetesPodOperator parameters to the PipesK8sClient parameters.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/k8s_eks_fake_example.py" startAfter="start_asset" endBefore="end_asset" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/k8s_eks_fake_example.py"
+  startAfter="start_asset"
+  endBefore="end_asset"
+/>
 
 This is just a snippet of what the PipesK8sClient can do. Take a look at our full guide on the [dagster-k8s PipesK8sClient](/guides/build/external-pipelines/kubernetes-pipeline) for more information.
 

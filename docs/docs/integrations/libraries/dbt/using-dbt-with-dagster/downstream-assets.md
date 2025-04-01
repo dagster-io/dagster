@@ -1,10 +1,10 @@
 ---
-title: "Add a downstream asset"
+title: 'Add a downstream asset'
 description: Dagster can orchestrate dbt alongside other technologies.
 sidebar_position: 400
 ---
 
-By this point, you've [set up a dbt project](set-up-dbt-project), [loaded dbt models into Dagster as assets](load-dbt-models), and [defined assets upstream of your dbt models](upstream-assets).
+By this point, you've [set up a dbt project](/integrations/libraries/dbt/using-dbt-with-dagster/set-up-dbt-project), [loaded dbt models into Dagster as assets](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models), and [defined assets upstream of your dbt models](/integrations/libraries/dbt/using-dbt-with-dagster/upstream-assets).
 
 In this step, you'll:
 
@@ -22,19 +22,27 @@ pip install plotly
 
 You've added upstream assets to your data pipeline, but nothing downstream - until now. In this step, you'll define a Dagster asset called `order_count_chart` that uses the data in the `customers` dbt model to computes a plotly chart of the number of orders per customer.
 
-Like the `raw_customers` asset that we added in the [previous section](upstream-assets#step-2-define-an-upstream-dagster-asset), we'll put this asset in our `assets.py` file, inside the `jaffle_dagster` directory.
+Like the `raw_customers` asset that we added in the [previous section](/integrations/libraries/dbt/using-dbt-with-dagster/upstream-assets#step-2-define-an-upstream-dagster-asset), we'll put this asset in our `assets.py` file, inside the `jaffle_dagster` directory.
 
 To add the `order_count_chart` asset:
 
 1. Replace the imports section with the following:
 
-   <CodeExample path="docs_snippets/docs_snippets/integrations/dbt/tutorial/downstream_assets/assets.py" startAfter="start_imports" endBefore="end_imports" />
+   <CodeExample
+     path="docs_snippets/docs_snippets/integrations/dbt/tutorial/downstream_assets/assets.py"
+     startAfter="start_imports"
+     endBefore="end_imports"
+   />
 
    This adds an import for plotly, as well as <PyObject section="libraries" module="dagster_dbt" object="get_asset_key_for_model" /> and <PyObject section="metadata" module="dagster" object="MetadataValue" />, which we'll use in our asset.
 
 2. After your definition of `jaffle_shop_dbt_assets`, add the definition for the `order_count_chart` asset:
 
-   <CodeExample path="docs_snippets/docs_snippets/integrations/dbt/tutorial/downstream_assets/assets.py" startAfter="start_downstream_asset" endBefore="end_downstream_asset" />
+   <CodeExample
+     path="docs_snippets/docs_snippets/integrations/dbt/tutorial/downstream_assets/assets.py"
+     startAfter="start_downstream_asset"
+     endBefore="end_downstream_asset"
+   />
 
    This asset definition looks similar the asset we defined in the previous section. In this case, instead of fetching data from an external source and writing it to DuckDB, it reads data from DuckDB, and then uses it to make a plot.
 
@@ -42,7 +50,11 @@ To add the `order_count_chart` asset:
 
 3. Add the `order_count_chart` to the `Definitions`:
 
-   <CodeExample path="docs_snippets/docs_snippets/integrations/dbt/tutorial/downstream_assets/definitions.py" startAfter="start_defs" endBefore="end_defs" />
+   <CodeExample
+     path="docs_snippets/docs_snippets/integrations/dbt/tutorial/downstream_assets/definitions.py"
+     startAfter="start_defs"
+     endBefore="end_defs"
+   />
 
 ## Step 3: Materialize the order_count_chart asset
 

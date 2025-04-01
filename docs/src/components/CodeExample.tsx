@@ -41,13 +41,9 @@ function processModule({
   const lineEndIndex = lineEnd && lineEnd <= lines.length ? lineEnd : lines.length;
 
   // limit to range of `startAfter` and `endBefore`
-  let startAfterIndex = startAfter
-    ? lines.findIndex((line: string) => line.includes(startAfter)) + 1
-    : 0;
+  let startAfterIndex = startAfter ? lines.findIndex((line: string) => line.includes(startAfter)) + 1 : 0;
 
-  const endAfterIndex = endBefore
-    ? lines.findIndex((line: string) => line.includes(endBefore))
-    : lines.length;
+  const endAfterIndex = endBefore ? lines.findIndex((line: string) => line.includes(endBefore)) : lines.length;
 
   const ix1 = Math.max(lineStartIndex, startAfterIndex);
   const ix2 = Math.min(lineEndIndex, endAfterIndex);
@@ -87,7 +83,15 @@ export function useLoadModule(
      */
     throw CODE_EXAMPLE_PATH_MAPPINGS[path]()
       .then((module) => {
-        processModule({cacheKey, module, lineStart, lineEnd, startAfter, endBefore, dedent});
+        processModule({
+          cacheKey,
+          module,
+          lineStart,
+          lineEnd,
+          startAfter,
+          endBefore,
+          dedent,
+        });
       })
       .catch((e) => {
         contentCache[cacheKey] = {error: e.toString()};

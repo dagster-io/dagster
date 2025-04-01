@@ -114,6 +114,17 @@ describe('LaunchAssetExecutionButton', () => {
         'Materialize selected (1)…', // 2 instead of 3
       );
     });
+
+    it('should be disabled if the selection is empty', async () => {
+      renderButton({
+        scope: {selected: []},
+      });
+      const button = await screen.findByTestId('materialize-button');
+      expect(button).toBeDisabled();
+
+      userEvent.hover(button);
+      expect(await screen.findByText('Select one or more assets to materialize')).toBeDefined();
+    });
   });
 
   describe('observable assets', () => {

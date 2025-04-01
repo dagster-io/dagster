@@ -5,22 +5,18 @@ from collections.abc import Iterator, Mapping
 from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import Any, Callable, Optional
 
 import pytest
-from dagster import AssetKey, AssetsDefinition, AssetSpec, BackfillPolicy
+from dagster import AssetKey, AssetSpec, BackfillPolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
-from dagster_components.components.dbt_project.component import DbtProjectComponent, DbtProjectModel
-from dagster_components.core.component_defs_builder import build_component_defs
-from dagster_components.core.defs_module import ComponentFileModel, YamlComponentDecl
+from dagster_components.core.load_defs import build_component_defs
+from dagster_components.lib.dbt_project.component import DbtProjectComponent
 from dagster_components.resolved.core_models import AssetAttributesModel
 from dagster_dbt import DbtProject
 
 from dagster_components_tests.integration_tests.component_loader import load_test_component_defs
-from dagster_components_tests.utils import get_asset_keys, script_load_context
-
-if TYPE_CHECKING:
-    from dagster import AssetsDefinition
+from dagster_components_tests.utils import build_component_defs_for_test
 
 STUB_LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "dbt_project_location"
 COMPONENT_RELPATH = "defs/jaffle_shop_dbt"
@@ -43,9 +39,10 @@ def dbt_path() -> Iterator[Path]:
     with tempfile.TemporaryDirectory() as temp_dir:
         shutil.copytree(STUB_LOCATION_PATH, temp_dir, dirs_exist_ok=True)
         # make sure a manifest.json file is created
-        project = DbtProject(Path(temp_dir) / "defs/jaffle_shop_dbt/jaffle_shop")
+        dbt_path = Path(temp_dir) / "defs/jaffle_shop_dbt/jaffle_shop"
+        project = DbtProject(dbt_path)
         project.preparer.prepare(project)
-        yield Path(temp_dir)
+        yield dbt_path
 
 
 @pytest.mark.parametrize(
@@ -60,22 +57,15 @@ def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
     elif backfill_policy == "multi_run_with_max_partitions":
         backfill_policy_arg["backfill_policy"] = {"type": "multi_run", "max_partitions_per_run": 3}
 
-    decl_node = YamlComponentDecl(
-        path=dbt_path / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
-            type="dbt_project",
-            attributes={
-                "dbt": {"project_dir": "jaffle_shop"},
-                "op": {"name": "some_op", "tags": {"tag1": "value"}, **backfill_policy_arg},
-            },
-        ),
+    defs = build_component_defs_for_test(
+        DbtProjectComponent,
+        {
+            "dbt": {"project_dir": dbt_path},
+            "op": {"name": "some_op", "tags": {"tag1": "value"}, **backfill_policy_arg},
+        },
     )
-    attributes = decl_node.get_attributes(DbtProjectModel)
-    context = script_load_context(decl_node)
-    component = DbtProjectComponent.load(attributes=attributes, context=context)
-    assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
-    defs = component.build_defs(script_load_context())
-    assets_def: AssetsDefinition = defs.get_assets_def("stg_customers")
+    assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
+    assets_def = defs.get_assets_def("stg_customers")
     assert assets_def.op.name == "some_op"
     assert assets_def.op.tags["tag1"] == "value"
 
@@ -95,7 +85,7 @@ def test_python_params(dbt_path: Path, backfill_policy: Optional[str]) -> None:
 
 
 def test_load_from_path(dbt_path: Path) -> None:
-    with load_test_component_defs(str(dbt_path / COMPONENT_RELPATH)) as defs:
+    with load_test_component_defs(dbt_path.parent.parent.parent) as defs:
         assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
 
         for asset_node in defs.get_asset_graph().asset_nodes:
@@ -111,25 +101,14 @@ def test_dbt_subclass_additional_scope_fn(dbt_path: Path) -> None:
         def get_additional_scope(cls) -> Mapping[str, Any]:
             return {"get_tags_for_node": lambda node: {"model_id": node["name"].replace("_", "-")}}
 
-    decl_node = YamlComponentDecl(
-        path=dbt_path / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
-            type="debug_dbt_project",
-            attributes={
-                "dbt": {"project_dir": "jaffle_shop"},
-                "asset_attributes": {"tags": "{{ get_tags_for_node(node) }}"},
-            },
-        ),
+    defs = build_component_defs_for_test(
+        DebugDbtProjectComponent,
+        {
+            "dbt": {"project_dir": dbt_path},
+            "asset_attributes": {"tags": "{{ get_tags_for_node(node) }}"},
+        },
     )
-    context = script_load_context(decl_node).with_rendering_scope(
-        DebugDbtProjectComponent.get_additional_scope()
-    )
-    component = DebugDbtProjectComponent.load(
-        attributes=decl_node.get_attributes(DebugDbtProjectComponent.get_schema()),  # type: ignore
-        context=context,
-    )
-    defs = component.build_defs(script_load_context())
-    assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("stg_customers"))
+    assets_def = defs.get_assets_def(AssetKey("stg_customers"))
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["model_id"] == "stg-customers"
 
 
@@ -203,23 +182,15 @@ def test_asset_attributes(
 ) -> None:
     wrapper = pytest.raises(Exception) if should_error else nullcontext()
     with wrapper:
-        decl_node = YamlComponentDecl(
-            path=dbt_path / COMPONENT_RELPATH,
-            component_file_model=ComponentFileModel(
-                type="dbt_project",
-                attributes={
-                    "dbt": {"project_dir": "jaffle_shop"},
-                    "asset_attributes": attributes,
-                },
-            ),
+        defs = build_component_defs_for_test(
+            DbtProjectComponent,
+            {
+                "dbt": {"project_dir": dbt_path},
+                "asset_attributes": attributes,
+            },
         )
-        context = script_load_context(decl_node)
-        component = DbtProjectComponent.load(
-            attributes=decl_node.get_attributes(DbtProjectModel), context=context
-        )
-        assert get_asset_keys(component) == JAFFLE_SHOP_KEYS
-        defs = component.build_defs(script_load_context())
-        assets_def: AssetsDefinition = defs.get_assets_def("stg_customers")
+        assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
+        assets_def = defs.get_assets_def("stg_customers")
     if assertion:
         assert assertion(assets_def.get_asset_spec(AssetKey("stg_customers")))
 
@@ -240,39 +211,19 @@ def test_asset_attributes_is_comprehensive():
 
 
 def test_subselection(dbt_path: Path) -> None:
-    decl_node = YamlComponentDecl(
-        path=dbt_path / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
-            type="dbt_project",
-            attributes={
-                "dbt": {"project_dir": "jaffle_shop"},
-                "select": "raw_customers",
-            },
-        ),
+    defs = build_component_defs_for_test(
+        DbtProjectComponent,
+        {"dbt": {"project_dir": dbt_path}, "select": "raw_customers"},
     )
-    context = script_load_context(decl_node)
-    component = DbtProjectComponent.load(
-        attributes=decl_node.get_attributes(DbtProjectModel), context=context
-    )
-    assert get_asset_keys(component) == {AssetKey("raw_customers")}
+    assert defs.get_asset_graph().get_all_asset_keys() == {AssetKey("raw_customers")}
 
 
 def test_exclude(dbt_path: Path) -> None:
-    decl_node = YamlComponentDecl(
-        path=dbt_path / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
-            type="dbt_project",
-            attributes={
-                "dbt": {"project_dir": "jaffle_shop"},
-                "exclude": "customers",
-            },
-        ),
+    defs = build_component_defs_for_test(
+        DbtProjectComponent,
+        {"dbt": {"project_dir": dbt_path}, "exclude": "customers"},
     )
-    context = script_load_context(decl_node)
-    component = DbtProjectComponent.load(
-        attributes=decl_node.get_attributes(DbtProjectModel), context=context
-    )
-    assert get_asset_keys(component) == set(JAFFLE_SHOP_KEYS) - {AssetKey("customers")}
+    assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS - {AssetKey("customers")}
 
 
 DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH = (
@@ -289,7 +240,7 @@ def test_dependency_on_dbt_project():
     )
     project.preparer.prepare(project)
 
-    defs = build_component_defs(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH / "defs", {})
+    defs = build_component_defs(DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH / "defs")
     assert AssetKey("downstream_of_customers") in defs.get_asset_graph().get_all_asset_keys()
     downstream_of_customers_def = defs.get_assets_def("downstream_of_customers")
     assert set(downstream_of_customers_def.asset_deps[AssetKey("downstream_of_customers")]) == {
@@ -298,23 +249,14 @@ def test_dependency_on_dbt_project():
 
 
 def test_spec_is_available_in_scope(dbt_path: Path) -> None:
-    decl_node = YamlComponentDecl(
-        path=dbt_path / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
-            type="  ",
-            attributes={
-                "dbt": {"project_dir": "jaffle_shop"},
-                "asset_attributes": {"metadata": {"asset_key": "{{ spec.key.path }}"}},
-            },
-        ),
+    defs = build_component_defs_for_test(
+        DbtProjectComponent,
+        {
+            "dbt": {"project_dir": dbt_path},
+            "asset_attributes": {"metadata": {"asset_key": "{{ spec.key.path }}"}},
+        },
     )
-    context = script_load_context(decl_node)
-    component = DbtProjectComponent.load(
-        attributes=decl_node.get_attributes(DbtProjectComponent.get_schema()),  # type: ignore
-        context=context,
-    )
-    defs = component.build_defs(script_load_context())
-    assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("stg_customers"))
+    assets_def = defs.get_assets_def(AssetKey("stg_customers"))
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).metadata["asset_key"] == [
         "stg_customers"
     ]
@@ -324,7 +266,7 @@ def map_spec(spec: AssetSpec) -> AssetSpec:
     return spec.replace_attributes(tags={"is_custom_spec": "yes"})
 
 
-def map_spec_to_attributes(spec: AssetSpec) -> AssetAttributesModel:
+def map_spec_to_attributes(spec: AssetSpec):
     return AssetAttributesModel(tags={"is_custom_spec": "yes"})
 
 
@@ -340,23 +282,12 @@ def test_udf_map_spec(dbt_path: Path, map_fn: Callable[[AssetSpec], Any]) -> Non
         def get_additional_scope(cls) -> Mapping[str, Any]:
             return {"map_spec": map_fn}
 
-    decl_node = YamlComponentDecl(
-        path=dbt_path / COMPONENT_RELPATH,
-        component_file_model=ComponentFileModel(
-            type="debug_dbt_project",
-            attributes={
-                "dbt": {"project_dir": "jaffle_shop"},
-                "asset_attributes": "{{ map_spec(spec) }}",
-            },
-        ),
+    defs = build_component_defs_for_test(
+        DebugDbtProjectComponent,
+        {
+            "dbt": {"project_dir": dbt_path},
+            "asset_attributes": "{{ map_spec(spec) }}",
+        },
     )
-    context = script_load_context(decl_node).with_rendering_scope(
-        DebugDbtProjectComponent.get_additional_scope()
-    )
-    component = DebugDbtProjectComponent.load(
-        attributes=decl_node.get_attributes(DebugDbtProjectComponent.get_schema()),  # type: ignore
-        context=context,
-    )
-    defs = component.build_defs(script_load_context())
-    assets_def: AssetsDefinition = defs.get_assets_def(AssetKey("stg_customers"))
+    assets_def = defs.get_assets_def(AssetKey("stg_customers"))
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["is_custom_spec"] == "yes"

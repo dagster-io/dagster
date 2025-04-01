@@ -1,5 +1,5 @@
 ---
-title: "Migrating an Airflow PythonOperator to Dagster"
+title: 'Migrating an Airflow PythonOperator to Dagster'
 sidebar_position: 300
 ---
 
@@ -9,13 +9,21 @@ In this page, we'll explain migrating an Airflow `PythonOperator` to Dagster.
 
 In Airflow, the `PythonOperator` runs arbitrary Python functions. For example, you might have a task that runs a function `write_to_db`, which combs a directory for files, and writes each one to a db table.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/python_operator.py" starAfter="start_op" endBefore="end_op" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/python_operator.py"
+  starAfter="start_op"
+  endBefore="end_op"
+/>
 
 ## Dagster equivalent
 
 The Dagster equivalent is instead to construct a <PyObject section="assets" object="asset" module="dagster"/> or <PyObject section="assets" object="multi_asset" module="dagster"/>-decorated function, which materializes assets corresponding to what your python function is doing.
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/pyop_multi_asset_complete.py" starAfter="start_asset" endBefore="end_asset" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/pyop_multi_asset_complete.py"
+  starAfter="start_asset"
+  endBefore="end_asset"
+/>
 
 ## Migrating the operator
 
@@ -46,7 +54,11 @@ airflow_repo/
 
 With dag code that looks this:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/python_operator.py" starAfter="start_op" endBefore="end_op" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/python_operator.py"
+  starAfter="start_op"
+  endBefore="end_op"
+/>
 
 You might create a new top-level package to contain the shared code:
 
@@ -62,7 +74,11 @@ airflow_repo/
 
 And then import the function from the shared package in Airflow:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/python_operator.py" starAfter="start_shared" endBefore="end_shared" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/airlift/operator_migration/python_operator.py"
+  starAfter="start_shared"
+  endBefore="end_shared"
+/>
 
 The reason we recommend using a separate `shared` package is to help ensure that there aren't dependency conflicts between Airflow and Dagster as you migrate. Airflow has very complex dependency management, and migrating to Dagster gives you an opportunity to clean up and isolate your dependencies. You can do this with a series of shared packages in the monorepo, which will eventually be isolated code locations in Dagster.
 

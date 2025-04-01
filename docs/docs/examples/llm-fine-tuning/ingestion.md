@@ -12,10 +12,15 @@ Since the data is normalized across these two files, we will want to combine the
 
 We will start by creating two Dagster assets to load in the data. Each asset will load one of the files and create a DuckDB table (`graphic_novels` and `authors`). The asset will use the Dagster `DuckDBResource`, which gives us an easy way to interact with and run queries in DuckDB. Both files will create a table from their respective JSON files:
 
-<CodeExample path="docs_projects/project_llm_fine_tune/project_llm_fine_tune/assets.py" language="python" startAfter="start_graphic_novel" endBefore="end_graphic_novel"/>
+<CodeExample
+  path="docs_projects/project_llm_fine_tune/project_llm_fine_tune/assets.py"
+  language="python"
+  startAfter="start_graphic_novel"
+  endBefore="end_graphic_novel"
+/>
 
 Now that the base tables are loaded, we can move on to working with the data.
 
 ## Next steps
 
-- Continue this example with [feature engineering](feature-engineering)
+- Continue this example with [feature engineering](/examples/llm-fine-tuning/feature-engineering)

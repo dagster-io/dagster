@@ -2,7 +2,7 @@
 title: Build your first Dagster project
 description: Learn how to quickly get up and running with Dagster
 sidebar_position: 30
-sidebar_label: "Quickstart"
+sidebar_label: 'Quickstart'
 ---
 
 Welcome to Dagster! In this guide, you'll use Dagster to create a basic pipeline that:
@@ -26,6 +26,7 @@ To follow the steps in this guide, you'll need:
 
 - Basic Python knowledge
 - Python 3.9+ installed on your system. Refer to the [Installation guide](/getting-started/installation) for information.
+
 </details>
 
 ## Step 1: Set up the Dagster environment
@@ -40,18 +41,12 @@ To follow the steps in this guide, you'll need:
 2. Create and activate a virtual environment:
 
    <Tabs>
-   <TabItem value="macos" label="MacOS">
-   ```bash
-   python -m venv venv
-   source venv/bin/activate
-   ```
-   </TabItem>
-   <TabItem value="windows" label="Windows">
-   ```bash
-   python -m venv venv
-   source venv\Scripts\activate
-   ```
-   </TabItem>
+     <TabItem value="macos" label="MacOS">
+       ```bash python -m venv venv source venv/bin/activate ```
+     </TabItem>
+     <TabItem value="windows" label="Windows">
+       ```bash python -m venv venv source venv\Scripts\activate ```
+     </TabItem>
    </Tabs>
 
 3. Install Dagster and the required dependencies:
@@ -101,7 +96,7 @@ dagster-quickstart/
 
 Now, create the assets for the ETL pipeline. Open `quickstart/assets.py` and add the following code:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/getting-started/quickstart.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/getting-started/quickstart.py" language="python" />
 
 This may seem unusual if you're used to task-based orchestration. In that case, you'd have three separate steps for extracting, transforming, and loading.
 

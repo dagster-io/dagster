@@ -1,0 +1,8 @@
+type: dagster_components.dagster.DefsFolderComponent
+
+attributes:
+  asset_post_processors:
+    - target: "*"
+      attributes:
+        tags:
+          defs_object_tag: "true"

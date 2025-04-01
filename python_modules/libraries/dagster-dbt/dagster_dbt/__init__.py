@@ -53,8 +53,8 @@ from collections.abc import Mapping, Sequence
 from typing import Any, Final, Tuple  # noqa: F401, UP035
 
 from dagster._annotations import deprecated
-from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._utils.warnings import deprecation_warning
+from dagster_shared.libraries import DagsterLibraryRegistry
 from dbt.version import __version__ as __dbt_version__
 
 DagsterLibraryRegistry.register("dagster-dbt", __version__)

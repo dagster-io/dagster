@@ -1,6 +1,6 @@
 ---
-title: "Dagster instance"
-description: "Define configuration options for your Dagster instance."
+title: 'Dagster instance'
+description: 'Define configuration options for your Dagster instance.'
 sidebar_position: 200
 ---
 
@@ -45,12 +45,12 @@ $DAGSTER_HOME
 
 Here's a breakdown of the files and directories that are generated:
 
-| File or directory | Description |
-|-------------------|-------------|
-| history/          | A directory containing historical information for runs. |
-| history/runs.db   | SQLite database file that contains information about runs. |
-| history/[run_id].db | SQLite database file that contains per-run event logs. |
-| storage/          | A directory of subdirectories, one for each run. |
+| File or directory             | Description                                                                                                                          |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| history/                      | A directory containing historical information for runs.                                                                              |
+| history/runs.db               | SQLite database file that contains information about runs.                                                                           |
+| history/[run_id].db           | SQLite database file that contains per-run event logs.                                                                               |
+| storage/                      | A directory of subdirectories, one for each run.                                                                                     |
 | storage/[run_id]/compute_logs | A directory specific to the run that contains the `stdout` and `stderr` logs from the execution of the compute functions of each op. |
 
 ## Configuration reference
@@ -59,19 +59,19 @@ In persistent Dagster deployments, you'll typically want to configure many of th
 
 To do this, provide a `$DAGSTER_HOME/dagster.yaml` file, which the webserver and all other Dagster tools will look for on startup. In this file, you can configure different aspects of your Dagster instance, including:
 
-| Name                   | Key                       | Description  |
-|------------------------|---------------------------|--------------|
-|  Dagster storage       |  `storage`                |  Controls how job and asset history is persisted. This includes run, event log, and schedule/sensor tick metadata, as well as other useful data. |
-|  Run launcher          |  `run_launcher`           | Determines where runs are executed. |
-|  Run coordinator       |  `run_coordinator`        |  Determines the policy used to set prioritization rules and concurrency limits for runs. |
-|  Compute log storage   |  `compute_logs`           |  Controls the capture and persistence of raw stdout and{" "} stderr ext logs. |
-|  Local artifact storage|  `local_artifact_storage` |  Configures storage for artifacts that require a local disk or when using the filesystem I/O manager (  ). |
-|  Telemetry             |  `telemetry`              |  Used to opt in/out of Dagster collecting anonymized usage statistics. |
-|  gRPC servers          |  `code_servers`           | Configures how Dagster loads the code in a code location. |
-|  Data retention        |  `data_retention`         |  Controls how long Dagster retains certain types of data that have diminishing value over time, such as schedule/sensor tick data. |
-|  Sensor evaluation     |  `sensors`                | Controls how sensors are evaluated. |
-|  Schedule evaluation   |  `schedules`              | Controls how schedules are evaluated. |
-|  Auto-materialize      |  `auto_materialize`       | Controls how assets are auto-materialized.|
+| Name                   | Key                      | Description                                                                                                                                     |
+| ---------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dagster storage        | `storage`                | Controls how job and asset history is persisted. This includes run, event log, and schedule/sensor tick metadata, as well as other useful data. |
+| Run launcher           | `run_launcher`           | Determines where runs are executed.                                                                                                             |
+| Run coordinator        | `run_coordinator`        | Determines the policy used to set prioritization rules and concurrency limits for runs.                                                         |
+| Compute log storage    | `compute_logs`           | Controls the capture and persistence of raw stdout and{" "} stderr ext logs.                                                                    |
+| Local artifact storage | `local_artifact_storage` | Configures storage for artifacts that require a local disk or when using the filesystem I/O manager ( ).                                        |
+| Telemetry              | `telemetry`              | Used to opt in/out of Dagster collecting anonymized usage statistics.                                                                           |
+| gRPC servers           | `code_servers`           | Configures how Dagster loads the code in a code location.                                                                                       |
+| Data retention         | `data_retention`         | Controls how long Dagster retains certain types of data that have diminishing value over time, such as schedule/sensor tick data.               |
+| Sensor evaluation      | `sensors`                | Controls how sensors are evaluated.                                                                                                             |
+| Schedule evaluation    | `schedules`              | Controls how schedules are evaluated.                                                                                                           |
+| Auto-materialize       | `auto_materialize`       | Controls how assets are auto-materialized.                                                                                                      |
 
 :::note
 
@@ -92,7 +92,11 @@ Refer to the following tabs for available options and sample configuration.
 
 To use a SQLite database for storage, configure `storage.sqlite` in `dagster.yaml`:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_storage_sqlite" endBefore="end_marker_storage_sqlite" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_storage_sqlite"
+  endBefore="end_marker_storage_sqlite"
+/>
 
 </TabItem>
 <TabItem value="Postgres storage" label="Postgres storage">
@@ -107,8 +111,11 @@ To use Postgres storage, you'll need to install the [dagster-postgres](/api/pyth
 
 To use a [PostgreSQL database](/api/python-api/libraries/dagster-postgres) for storage, configure `storage.postgres` in `dagster.yaml`:
 
-
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_storage_postgres" endBefore="end_marker_storage_postgres" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_storage_postgres"
+  endBefore="end_marker_storage_postgres"
+/>
 
 </TabItem>
 <TabItem value="MySQL storage" label="MySQL storage">
@@ -123,8 +130,11 @@ To use MySQL storage, you'll need to install the [dagster-mysql](/api/python-api
 
 To use a [MySQL database](/api/python-api/libraries/dagster-mysql) for storage, configure `storage.mysql` in `dagster.yaml`:
 
-
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_storage_mysql" endBefore="end_marker_storage_mysql" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_storage_mysql"
+  endBefore="end_marker_storage_mysql"
+/>
 
 </TabItem>
 </Tabs>
@@ -142,8 +152,11 @@ Refer to the following tabs for available options and sample configuration. Keep
 
 The <PyObject section="internals" module="dagster._core.launcher" object="DefaultRunLauncher" /> spawns a new process in the same node as a job's code location.
 
-
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_run_launcher_default" endBefore="end_marker_run_launcher_default" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_run_launcher_default"
+  endBefore="end_marker_run_launcher_default"
+/>
 
 </TabItem>
 <TabItem value="DockerRunLauncher" label="DockerRunLauncher">
@@ -152,8 +165,11 @@ The <PyObject section="internals" module="dagster._core.launcher" object="Defaul
 
 The <PyObject section="libraries" module="dagster_docker" object="DockerRunLauncher" /> allocates a Docker container per run.
 
-
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_run_launcher_docker" endBefore="end_marker_run_launcher_docker" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_run_launcher_docker"
+  endBefore="end_marker_run_launcher_docker"
+/>
 
 </TabItem>
 <TabItem value="K8sRunLauncher" label="K8sRunLauncher">
@@ -162,7 +178,11 @@ The <PyObject section="libraries" module="dagster_docker" object="DockerRunLaunc
 
 The <PyObject section="libraries" module="dagster_k8s" object="K8sRunLauncher" /> allocates a Kubernetes job per run.
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_run_launcher_k8s" endBefore="end_marker_run_launcher_k8s" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_run_launcher_k8s"
+  endBefore="end_marker_run_launcher_k8s"
+/>
 
 </TabItem>
 </Tabs>
@@ -180,8 +200,11 @@ Refer to the following tabs for available options and sample configuration.
 
 The default run coordinator, the <PyObject section="internals" module="dagster._core.run_coordinator" object="DefaultRunCoordinator" /> immediately sends runs to the [run launcher](#run-launcher). There isn't a notion of `Queued` runs.
 
-
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_run_coordinator_default" endBefore="end_marker_run_coordinator_default" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_run_coordinator_default"
+  endBefore="end_marker_run_coordinator_default"
+/>
 
 </TabItem>
 <TabItem value="QueuedRunCoordinator" label="QueuedRunCoordinator">
@@ -192,8 +215,11 @@ The <PyObject section="internals" module="dagster._core.run_coordinator" object=
 
 This run coordinator supports both limiting the overall number of concurrent runs and specific limits based on run tags. For example, to avoid throttling, you can specify a concurrency limit for runs that interact with a specific cloud service.
 
-
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_run_coordinator_queued" endBefore="end_marker_run_coordinator_queued" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_run_coordinator_queued"
+  endBefore="end_marker_run_coordinator_queued"
+/>
 
 </TabItem>
 </Tabs>
@@ -211,8 +237,11 @@ Refer to the following tabs for available options and sample configuration.
 
 Used by default, the <PyObject section="internals" module="dagster._core.storage.local_compute_log_manager" object="LocalComputeLogManager" /> writes `stdout` and `stderr` logs to disk.
 
-
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_compute_log_storage_local" endBefore="end_marker_compute_log_storage_local" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_compute_log_storage_local"
+  endBefore="end_marker_compute_log_storage_local"
+/>
 
 </TabItem>
 <TabItem value="NoOpComputeLogManager" label="NoOpComputeLogManager">
@@ -221,7 +250,11 @@ Used by default, the <PyObject section="internals" module="dagster._core.storage
 
 The <PyObject section="internals" module="dagster._core.storage.noop_compute_log_manager" object="NoOpComputeLogManager" /> does not store `stdout` and `stderr` logs for any step.
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_compute_log_storage_noop" endBefore="end_marker_compute_log_storage_noop" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_compute_log_storage_noop"
+  endBefore="end_marker_compute_log_storage_noop"
+/>
 
 </TabItem>
 <TabItem value="AzureBlobComputeLogManager" label="AzureBlobComputeLogManager">
@@ -230,7 +263,11 @@ The <PyObject section="internals" module="dagster._core.storage.noop_compute_log
 
 The <PyObject section="libraries" module="dagster_azure" object="blob.AzureBlobComputeLogManager" /> writes `stdout` and `stderr` to Azure Blob Storage.
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_compute_log_storage_blob" endBefore="end_marker_compute_log_storage_blob" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_compute_log_storage_blob"
+  endBefore="end_marker_compute_log_storage_blob"
+/>
 
 </TabItem>
 <TabItem value="GCSComputeLogManager" label="GCSComputeLogManager">
@@ -239,7 +276,11 @@ The <PyObject section="libraries" module="dagster_azure" object="blob.AzureBlobC
 
 The <PyObject section="libraries" module="dagster_gcp" object="gcs.GCSComputeLogManager" /> writes `stdout` and `stderr` to Google Cloud Storage.
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_compute_log_storage_gcs" endBefore="end_marker_compute_log_storage_gcs" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_compute_log_storage_gcs"
+  endBefore="end_marker_compute_log_storage_gcs"
+/>
 
 </TabItem>
 <TabItem value="S3ComputeLogManager" label="S3ComputeLogManager">
@@ -248,7 +289,11 @@ The <PyObject section="libraries" module="dagster_gcp" object="gcs.GCSComputeLog
 
 The <PyObject section="libraries" module="dagster_aws" object="s3.S3ComputeLogManager" /> writes `stdout` and `stderr` to an Amazon Web Services S3 bucket.
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_compute_log_storage_s3" endBefore="end_marker_compute_log_storage_s3" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_compute_log_storage_s3"
+  endBefore="end_marker_compute_log_storage_s3"
+/>
 
 </TabItem>
 </Tabs>
@@ -262,17 +307,27 @@ The `local_artifact_storage` key allows you to configure local artifact storage.
 
 :::note
 
-<PyObject section="internals" module="dagster._core.storage.root" object="LocalArtifactStorage" /> is currently the only option for local artifact storage. This option configures the directory used by the default filesystem I/O Manager, as well as any artifacts that require a local disk.
+<PyObject section="internals" module="dagster._core.storage.root" object="LocalArtifactStorage" />
+is currently the only option for local artifact storage. This option configures the directory used by the default
+filesystem I/O Manager, as well as any artifacts that require a local disk.
 
 :::
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_local_artifact_storage" endBefore="end_marker_local_artifact_storage" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_local_artifact_storage"
+  endBefore="end_marker_local_artifact_storage"
+/>
 
 ### Telemetry
 
 The `telemetry` key allows you to opt in or out of Dagster collecting anonymized usage statistics. This is set to `true` by default.
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_telemetry" endBefore="end_marker_telemetry" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_telemetry"
+  endBefore="end_marker_telemetry"
+/>
 
 For more information, see the [Telemetry documentation](/about/telemetry).
 
@@ -284,7 +339,11 @@ When you aren't [running your own gRPC server](/guides/deploy/code-locations/wor
 
 If you expect that your code will take longer than 180 seconds to load, set the `code_servers.local_startup_timeout` key. The value should be an integer that indicates the maximum timeout, in seconds.
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_code_servers" endBefore="end_marker_code_servers" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_code_servers"
+  endBefore="end_marker_code_servers"
+/>
 
 ### Data retention
 
@@ -292,7 +351,11 @@ The `retention` key allows you to configure how long Dagster retains certain typ
 
 By default, Dagster retains skipped sensor ticks for seven days and all other tick types indefinitely. To customize the retention policies for schedule and sensor ticks, use the `purge_after_days` key:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_retention" endBefore="end_marker_retention" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_retention"
+  endBefore="end_marker_retention"
+/>
 
 The `purge_after_days` key accepts either:
 
@@ -303,7 +366,11 @@ The `purge_after_days` key accepts either:
 
 The `sensors` key allows you to configure how sensors are evaluated. To evaluate multiple sensors in parallel simultaneously, set the `use_threads` and `num_workers` keys:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_sensors" endBefore="end_marker_sensors" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_sensors"
+  endBefore="end_marker_sensors"
+/>
 
 You can also set the optional `num_submit_workers` key to evaluate multiple run requests from the same sensor tick in parallel, which can help decrease latency when a single sensor tick returns many run requests.
 
@@ -313,6 +380,10 @@ The `schedules` key allows you to configure how schedules are evaluated. By defa
 
 To evaluate multiple schedules in parallel simultaneously, set the `use_threads` and `num_workers` keys:
 
-<CodeExample path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml" startAfter="start_marker_schedules" endBefore="end_marker_schedules" />
+<CodeExample
+  path="docs_snippets/docs_snippets/deploying/dagster_instance/dagster.yaml"
+  startAfter="start_marker_schedules"
+  endBefore="end_marker_schedules"
+/>
 
 You can also set the optional `num_submit_workers` key to evaluate multiple run requests from the same schedule tick in parallel, which can help decrease latency when a single schedule tick returns many run requests.

@@ -7,7 +7,7 @@ import time
 
 from dagster._utils import file_relative_path
 from dagster._utils.interrupts import setup_interrupt_handlers
-from dagster_shared.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster_shared.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 
 if __name__ == "__main__":
     setup_interrupt_handlers()

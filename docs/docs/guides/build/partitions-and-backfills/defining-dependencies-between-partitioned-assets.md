@@ -39,7 +39,7 @@ In the following code, we use a <PyObject section="partitions" module="dagster" 
 
 <CodeExample path="docs_snippets/docs_snippets/concepts/partitions_schedules_sensors/partition_mapping.py" />
 
-For a list of available `PartitionMappings`, see the [API docs](/api/python-api/partitions#dagster.PartitionMapping).
+For a list of available `PartitionMappings`, see the [API docs](/api/python-api/partitions#dagster.PartitionMapping). Note that custom `PartitionMapping` and overriding `PartitionMapping` outside of Dagster is not currently supported.
 
 ## Examples
 
@@ -50,7 +50,7 @@ The following example creates two partitions: `daily_sales_data` and `daily_sale
 <details>
 <summary>Show example</summary>
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/partitioning/time_based_partitioning.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/time_based_partitioning.py" language="python" />
 
 </details>
 
@@ -58,7 +58,7 @@ However, sometimes you might want to define dependencies between different time-
 
 Consider the following example:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/guides/data-modeling/partitioning/time_based_partition_dependencies.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/guides/data-modeling/partitioning/time_based_partition_dependencies.py" language="python" />
 
 In this example:
 

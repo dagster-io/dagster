@@ -8,9 +8,9 @@ In this guide, we’ll show you how to use [Dagster Pipes](/guides/build/externa
 
 To get there, you'll:
 
-- [Create a Dagster asset that invokes a subprocess](create-subprocess-asset)
-- [Modify existing code to work with Dagster Pipes to send information back to Dagster](modify-external-code)
-- Learn about using Dagster Pipes with other entities in the Dagster system in the [Reference](reference) section
+- [Create a Dagster asset that invokes a subprocess](/guides/build/external-pipelines/using-dagster-pipes/create-subprocess-asset)
+- [Modify existing code to work with Dagster Pipes to send information back to Dagster](/guides/build/external-pipelines/using-dagster-pipes/modify-external-code)
+- Learn about using Dagster Pipes with other entities in the Dagster system in the [Reference](/guides/build/external-pipelines/using-dagster-pipes/reference) section
 
 :::note
 
@@ -30,4 +30,4 @@ Create a file named `external_code.py` and paste the following into it:
 
 ## Ready to get started?
 
-When you've fulfilled all the prerequisites for the tutorial, you can get started by [creating a Dagster asset that executes a subprocess](create-subprocess-asset).
+When you've fulfilled all the prerequisites for the tutorial, you can get started by [creating a Dagster asset that executes a subprocess](/guides/build/external-pipelines/using-dagster-pipes/create-subprocess-asset).

@@ -1,15 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
-import {
-  Box,
-  Colors,
-  Heading,
-  Icon,
-  IconWrapper,
-  MiddleTruncate,
-  PageHeader,
-  Tooltip,
-} from '@dagster-io/ui-components';
+import {Box, Colors, Heading, Icon, MiddleTruncate, PageHeader} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useContext} from 'react';
 import {Link, useHistory, useLocation} from 'react-router-dom';
@@ -17,9 +8,8 @@ import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFi
 import styled from 'styled-components';
 
 import {AppContext} from '../app/AppContext';
-import {showSharedToaster} from '../app/DomUtils';
-import {useCopyToClipboard} from '../app/browser';
 import {AnchorButton} from '../ui/AnchorButton';
+import {CopyIconButton} from '../ui/CopyButton';
 
 type Props = Partial<React.ComponentProps<typeof PageHeader>> & {
   assetKey: {path: string[]};
@@ -40,28 +30,7 @@ export const AssetPageHeader = ({
   const history = useHistory();
   const {basePath} = useContext(AppContext);
 
-  const copy = useCopyToClipboard();
   const copyableString = assetKey.path.join('/');
-  const [didCopy, setDidCopy] = React.useState(false);
-  const iconTimeout = React.useRef<ReturnType<typeof setTimeout>>();
-
-  const performCopy = React.useCallback(async () => {
-    if (iconTimeout.current) {
-      clearTimeout(iconTimeout.current);
-    }
-
-    copy(copyableString);
-    setDidCopy(true);
-    await showSharedToaster({
-      icon: 'done',
-      intent: 'primary',
-      message: 'Copied asset key!',
-    });
-
-    iconTimeout.current = setTimeout(() => {
-      setDidCopy(false);
-    }, 2000);
-  }, [copy, copyableString]);
 
   const location = useLocation();
   const filterStateQueryString = getAssetFilterStateQueryString(location.search);
@@ -82,7 +51,9 @@ export const AssetPageHeader = ({
     const headerItems = headerBreadcrumbs.map((item) => {
       return {
         ...item,
-        href: item.href ? history.createHref({pathname: item.href}) : undefined,
+        href: item.href
+          ? history.createHref({pathname: item.href, search: filterStateQueryString})
+          : undefined,
       };
     });
 
@@ -130,16 +101,7 @@ export const AssetPageHeader = ({
                 popoverClassName: 'dagster-popover',
               }}
             />
-            {copyableString ? (
-              <Tooltip placement="bottom" content="Copy asset key">
-                <CopyButton onClick={performCopy}>
-                  <Icon
-                    name={didCopy ? 'copy_to_clipboard_done' : 'copy_to_clipboard'}
-                    color={Colors.accentGray()}
-                  />
-                </CopyButton>
-              </Tooltip>
-            ) : undefined}
+            {copyableString ? <CopyIconButton value={copyableString} /> : undefined}
           </Title>
         </Box>
       }
@@ -151,26 +113,6 @@ export const AssetPageHeader = ({
 const TruncatedHeading = styled(Heading)`
   max-width: 300px;
   overflow: hidden;
-`;
-
-const CopyButton = styled.button`
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  padding: 3px;
-  margin-top: 2px;
-
-  :focus {
-    outline: none;
-  }
-
-  ${IconWrapper} {
-    transition: background-color 100ms linear;
-  }
-
-  :hover ${IconWrapper} {
-    background-color: ${Colors.accentGrayHover()};
-  }
 `;
 
 export const AssetGlobalLineageLink = () => (

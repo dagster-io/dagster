@@ -1,35 +1,35 @@
 ---
-title: "dagster-dbt integration reference"
+title: 'dagster-dbt integration reference'
 description: Dagster can orchestrate dbt alongside other technologies.
 ---
 
 :::note
 
-Using dbt Cloud? Check out the [dbt Cloud with Dagster guide](dbt-cloud).
+Using dbt Cloud? Check out the [dbt Cloud with Dagster guide](/integrations/libraries/dbt/dbt-cloud).
 
 :::
 
 This reference provides a high-level look at working with dbt models through Dagster's [software-defined assets](/guides/build/assets/) framework using the [`dagster-dbt` integration library](/api/python-api/libraries/dagster-dbt).
 
-For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](using-dbt-with-dagster).
+For a step-by-step implementation walkthrough, refer to the [Using dbt with Dagster asset definitions tutorial](/integrations/libraries/dbt/using-dbt-with-dagster).
 
 ## Relevant APIs
 
-| Name                                                                                           | Description                                                                                                                                           |
-| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`dagster-dbt project scaffold`](/api/python-api/libraries/dagster-dbt#scaffold) | A CLI command to initialize a new Dagster project for an existing dbt project.                                                                        |
-| <PyObject section="libraries" module="dagster_dbt" object="dbt_assets" decorator />                                | A decorator used to define Dagster assets for dbt models defined in a dbt manifest.                                                                   |
-| <PyObject section="libraries" module="dagster_dbt" object="DbtCliResource" />                                      | A class that defines a Dagster resource used to execute dbt CLI commands.                                                                             |
-| <PyObject section="libraries" module="dagster_dbt" object="DbtCliInvocation" />                                    | A class that defines the representation of an invoked dbt command.                                                                                    |
-| <PyObject section="libraries" module="dagster_dbt" object="DbtProject" />                                          | A class that defines the representation of a dbt project and related settings that assist with managing dependencies and `manifest.json` preparation. |
-| <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" />                                | A class that can be overridden to customize how Dagster asset metadata is derived from a dbt manifest.                                                |
-| <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslatorSettings" />                        | A class with settings to enable Dagster features for a dbt project.                                                                                   |
-| <PyObject section="libraries" module="dagster_dbt" object="DbtManifestAssetSelection" />                           | A class that defines a selection of assets from a dbt manifest and a dbt selection string.                                                            |
-| <PyObject section="libraries" module="dagster_dbt" object="build_dbt_asset_selection" />                           | A helper method that builds a <PyObject section="libraries" module="dagster_dbt" object="DbtManifestAssetSelection" /> from a dbt manifest and dbt selection string.      |
-| <PyObject section="libraries" module="dagster_dbt" object="build_schedule_from_dbt_selection" />                   | A helper method that builds a <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" /> from a dbt manifest, dbt selection string, and cron string.   |
-| <PyObject section="libraries" module="dagster_dbt" object="get_asset_key_for_model" />                             | A helper method that retrieves the <PyObject section="assets" module="dagster" object="AssetKey" /> for a dbt model.                                                   |
-| <PyObject section="libraries" module="dagster_dbt" object="get_asset_key_for_source" />                            | A helper method that retrieves the <PyObject section="assets" module="dagster" object="AssetKey" /> for a dbt source with a singular table.                            |
-| <PyObject section="libraries" module="dagster_dbt" object="get_asset_keys_by_output_name_for_source" />            | A helper method that retrieves the <PyObject section="assets" module="dagster" object="AssetKey" pluralize /> for a dbt source with multiple tables.                           |
+| Name                                                                                                    | Description                                                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`dagster-dbt project scaffold`](/api/python-api/libraries/dagster-dbt#scaffold)                        | A CLI command to initialize a new Dagster project for an existing dbt project.                                                                                                  |
+| <PyObject section="libraries" module="dagster_dbt" object="dbt_assets" decorator />                     | A decorator used to define Dagster assets for dbt models defined in a dbt manifest.                                                                                             |
+| <PyObject section="libraries" module="dagster_dbt" object="DbtCliResource" />                           | A class that defines a Dagster resource used to execute dbt CLI commands.                                                                                                       |
+| <PyObject section="libraries" module="dagster_dbt" object="DbtCliInvocation" />                         | A class that defines the representation of an invoked dbt command.                                                                                                              |
+| <PyObject section="libraries" module="dagster_dbt" object="DbtProject" />                               | A class that defines the representation of a dbt project and related settings that assist with managing dependencies and `manifest.json` preparation.                           |
+| <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" />                     | A class that can be overridden to customize how Dagster asset metadata is derived from a dbt manifest.                                                                          |
+| <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslatorSettings" />             | A class with settings to enable Dagster features for a dbt project.                                                                                                             |
+| <PyObject section="libraries" module="dagster_dbt" object="DbtManifestAssetSelection" />                | A class that defines a selection of assets from a dbt manifest and a dbt selection string.                                                                                      |
+| <PyObject section="libraries" module="dagster_dbt" object="build_dbt_asset_selection" />                | A helper method that builds a <PyObject section="libraries" module="dagster_dbt" object="DbtManifestAssetSelection" /> from a dbt manifest and dbt selection string.            |
+| <PyObject section="libraries" module="dagster_dbt" object="build_schedule_from_dbt_selection" />        | A helper method that builds a <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" /> from a dbt manifest, dbt selection string, and cron string. |
+| <PyObject section="libraries" module="dagster_dbt" object="get_asset_key_for_model" />                  | A helper method that retrieves the <PyObject section="assets" module="dagster" object="AssetKey" /> for a dbt model.                                                            |
+| <PyObject section="libraries" module="dagster_dbt" object="get_asset_key_for_source" />                 | A helper method that retrieves the <PyObject section="assets" module="dagster" object="AssetKey" /> for a dbt source with a singular table.                                     |
+| <PyObject section="libraries" module="dagster_dbt" object="get_asset_keys_by_output_name_for_source" /> | A helper method that retrieves the <PyObject section="assets" module="dagster" object="AssetKey" pluralize /> for a dbt source with multiple tables.                            |
 
 ## dbt models and Dagster asset definitions
 
@@ -56,7 +56,7 @@ Here's what's happening in this example:
 
 :::note
 
-Check out [part two of the dbt & Dagster tutorial](using-dbt-with-dagster/load-dbt-models) to see this concept in context.
+Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models) to see this concept in context.
 
 :::
 
@@ -72,7 +72,7 @@ This creates a directory called `project_dagster/` inside the current directory.
 
 :::note
 
-Check out [part two of the dbt & Dagster tutorial](using-dbt-with-dagster/load-dbt-models) to see this concept in context.
+Check out [part two of the dbt & Dagster tutorial](/integrations/libraries/dbt/using-dbt-with-dagster/load-dbt-models) to see this concept in context.
 
 :::
 
@@ -89,7 +89,11 @@ The easiest way to handle the creation of your manifest file is to use <PyObject
 
 In the Dagster project created by the [`dagster-dbt project scaffold`](/api/python-api/libraries/dagster-dbt#scaffold) command, the creation of your manifest is handled at run time during development:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" startAfter="start_compile_dbt_manifest_with_dbt_project" endBefore="end_compile_dbt_manifest_with_dbt_project" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+  startAfter="start_compile_dbt_manifest_with_dbt_project"
+  endBefore="end_compile_dbt_manifest_with_dbt_project"
+/>
 
 The manifest path can then be accessed with `my_dbt_project.manifest_path`.
 
@@ -176,21 +180,31 @@ Update your Dagster code to pass a `state_path` to your `DbtProject` object. Not
 
 Also, update the dbt command in your `@dbt_assets` definition to pass the defer args using `get_defer_args`.
 
-<CodeExample startAfter="start_use_dbt_defer_with_dbt_project" endBefore="end_use_dbt_defer_with_dbt_project" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_use_dbt_defer_with_dbt_project"
+  endBefore="end_use_dbt_defer_with_dbt_project"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 ## Using config with `@dbt_assets`
-
-{/* Similar to Dagster software-defined assets, `@dbt_assets` can use a config system to enable [run configuration](/concepts/configuration/config-schema). This allows to provide parameters to jobs at the time they're executed. */}
 
 Similar to Dagster software-defined assets, `@dbt_assets` can use a config system to enable [run configuration](/guides/operate/configuration/run-configuration). This allows to provide parameters to jobs at the time they're executed.
 
 In the context of dbt, this can be useful if you want to run commands or flags for specific use cases. For instance, you may want to add [the --full-refresh flag](https://docs.getdbt.com/reference/resource-configs/full_refresh) to your dbt commands in some cases. Using a config system, the `@dbt_assets` object can be easily modified to support this use case.
 
-<CodeExample startAfter="start_config_dbt_assets" endBefore="end_config_dbt_assets" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_config_dbt_assets"
+  endBefore="end_config_dbt_assets"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 Now that the `@dbt_assets` object is updated, the run configuration can be passed to a job.
 
-<CodeExample startAfter="start_config_dbt_job" endBefore="end_config_dbt_job" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_config_dbt_job"
+  endBefore="end_config_dbt_job"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 In the example above, the job is configured to use the `--full-refresh` flag with the dbt build command when materializing the assets.
 
@@ -202,14 +216,21 @@ Once you have your dbt assets, you can define a job to materialize a selection o
 
 In this example, we use the <PyObject section="libraries" module="dagster_dbt" object="build_schedule_from_dbt_selection" /> function to create a job, `daily_dbt_models`, as well as a schedule which will execute this job once a day. We define the set of models we'd like to execute using [dbt's selection syntax](https://docs.getdbt.com/reference/node-selection/syntax#how-does-selection-work), in this case selecting only the models with the tag `daily`.
 
-
-<CodeExample startAfter="start_schedule_assets_dbt_only" endBefore="end_schedule_assets_dbt_only" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_schedule_assets_dbt_only"
+  endBefore="end_schedule_assets_dbt_only"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 ### Scheduling jobs that contain dbt assets and non-dbt assets
 
 In many cases, it's useful to be able to schedule dbt assets alongside non-dbt assets. In this example, we build an <PyObject section="assets" module="dagster" object="AssetSelection" /> of dbt assets using <PyObject section="libraries" module="dagster_dbt" object="build_dbt_asset_selection" />, then select all assets (dbt-related or not) which are downstream of these dbt models. From there, we create a job that targets that selection of assets and schedule it to run daily.
 
-<CodeExample startAfter="start_schedule_assets_dbt_downstream" endBefore="end_schedule_assets_dbt_downstream" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_schedule_assets_dbt_downstream"
+  endBefore="end_schedule_assets_dbt_downstream"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 Refer to the [Schedule documentation](/guides/automate/schedules/) for more info on running jobs on a schedule.
 
@@ -257,12 +278,16 @@ sources:
       - name: orders
         meta:
           dagster:
-            asset_key: ["snowflake", "jaffle_shop", "orders"]
+            asset_key: ['snowflake', 'jaffle_shop', 'orders']
 ```
 
 Alternatively, to override the asset key generation for all dbt nodes in your dbt project, you can create a custom <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator.get_asset_key" />. The following example adds a `snowflake` prefix to the default generated asset key:
 
-<CodeExample startAfter="start_custom_asset_key_dagster_dbt_translator" endBefore="end_custom_asset_key_dagster_dbt_translator" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_custom_asset_key_dagster_dbt_translator"
+  endBefore="end_custom_asset_key_dagster_dbt_translator"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 ### Customizing group names
 
@@ -292,7 +317,11 @@ models:
 
 Alternatively, to override the Dagster group name generation for all dbt nodes in your dbt project, you can create a custom <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator.get_group_name" />. The following example defines `snowflake` as the group name for all dbt nodes:
 
-<CodeExample startAfter="start_custom_group_name_dagster_dbt_translator" endBefore="end_custom_group_name_dagster_dbt_translator" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_custom_group_name_dagster_dbt_translator"
+  endBefore="end_custom_group_name_dagster_dbt_translator"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 ### Customizing owners
 
@@ -319,12 +348,16 @@ models:
     config:
       meta:
         dagster:
-          owners: ["owner@company.com", "team:data@company.com"]
+          owners: ['owner@company.com', 'team:data@company.com']
 ```
 
 Alternatively, to override the Dagster generation of owners for all dbt nodes in your dbt project, you can create a custom <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator.get_group_name" />. The following example defines `owner@company.com` and `team:data@company.com` as the owners for all dbt nodes:
 
-<CodeExample startAfter="start_custom_owners_dagster_dbt_translator" endBefore="end_custom_owners_dagster_dbt_translator" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_custom_owners_dagster_dbt_translator"
+  endBefore="end_custom_owners_dagster_dbt_translator"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 ### Customizing descriptions
 
@@ -332,7 +365,11 @@ For dbt models, seeds, and snapshots, the default Dagster description will be th
 
 To override the Dagster description for all dbt nodes in your dbt project, you can create a custom <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator.get_description" />. The following example defines the raw SQL of the dbt node as the Dagster description:
 
-<CodeExample startAfter="start_custom_description_dagster_dbt_translator" endBefore="end_custom_description_dagster_dbt_translator" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_custom_description_dagster_dbt_translator"
+  endBefore="end_custom_description_dagster_dbt_translator"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 ### Customizing metadata
 
@@ -340,13 +377,16 @@ For dbt models, seeds, and snapshots, the default Dagster definition metadata wi
 
 To override the Dagster definition metadata for all dbt nodes in your dbt project, you can create a custom <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator.get_metadata"/>. The following example defines the metadata of the dbt node as the Dagster metadata, using <PyObject section="metadata" module="dagster" object="MetadataValue"/>:
 
-<CodeExample startAfter="start_custom_metadata_dagster_dbt_translator" endBefore="end_custom_metadata_dagster_dbt_translator" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_custom_metadata_dagster_dbt_translator"
+  endBefore="end_custom_metadata_dagster_dbt_translator"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 Dagster also supports fetching additional metadata at dbt execution time to attach to asset materializations. For more information, see the [Customizing asset materialization metadata](#customizing-asset-materialization-metadata) section.
 
 #### Attaching code reference metadata
 
-{/* Dagster's dbt integration can automatically attach [code reference](/guides/dagster/code-references) metadata to the SQL files backing your dbt assets. */}
 Dagster's dbt integration can automatically attach [code reference](/guides/build/assets/metadata-and-tags/index.md#source-code) metadata to the SQL files backing your dbt assets. To enable this feature, set the `enable_code_references` parameter to `True` in the <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> passed to your <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" />:
 
 <CodeExample path="docs_snippets/docs_snippets/guides/dagster/code_references/with_dbt_code_references.py" />
@@ -365,13 +405,21 @@ Any dbt tags that don't match Dagster's supported tag key format (e.g. they cont
 
 To override the Dagster tags for all dbt nodes in your dbt project, you can create a custom <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator.get_tags" />. The following converts dbt tags of the form `foo=bar` to key/value pairs:
 
-<CodeExample startAfter="start_custom_tags_dagster_dbt_translator" endBefore="end_custom_tags_dagster_dbt_translator" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_custom_tags_dagster_dbt_translator"
+  endBefore="end_custom_tags_dagster_dbt_translator"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 ### Customizing automation conditions
 
 To override the <PyObject section="assets" module="dagster" object="AutomationCondition" /> generated for each dbt node in your dbt project, you can create a custom <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator.get_automation_condition" />. The following example defines <PyObject section="assets" object="AutomationCondition.eager" /> as the condition for all dbt nodes:
 
-<CodeExample startAfter="start_custom_automation_condition_dagster_dbt_translator" endBefore="end_custom_automation_condition_dagster_dbt_translator" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_custom_automation_condition_dagster_dbt_translator"
+  endBefore="end_custom_automation_condition_dagster_dbt_translator"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 :::note
 
@@ -430,7 +478,11 @@ If this metadata isn't provided, Dagster won't ingest the test as an asset check
 
 You can disable modeling your dbt tests as asset checks. The tests will still run and will be emitted as <PyObject section="assets" module="dagster" object="AssetObservation"/> events. To do so you'll need to define a <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslator" /> with <PyObject section="libraries" module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> that have asset checks disabled. The following example disables asset checks when using <PyObject section="libraries" module="dagster_dbt" object="dbt_assets" decorator/>:
 
-<CodeExample startAfter="start_disable_asset_check_dagster_dbt_translator" endBefore="end_disable_asset_check_dagster_dbt_translator" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_disable_asset_check_dagster_dbt_translator"
+  endBefore="end_disable_asset_check_dagster_dbt_translator"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 ## Customizing asset materialization metadata
 
@@ -448,7 +500,11 @@ Dagster can automatically fetch [row counts](/guides/build/assets/metadata-and-t
 
 Row counts are fetched in parallel to the execution of your dbt models. To enable this feature, call <PyObject section="libraries" object="core.dbt_cli_invocation.DbtEventIterator.fetch_row_counts" module="dagster_dbt" displayText="fetch_row_counts()" /> on the <PyObject section="libraries" object="core.dbt_cli_invocation.DbtEventIterator" module="dagster_dbt" /> returned by the `stream()` dbt CLI call:
 
-<CodeExample startAfter="start_fetch_row_count" endBefore="end_fetch_row_count" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_fetch_row_count"
+  endBefore="end_fetch_row_count"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 Once your dbt models have been materialized, you can view the row count data in the metadata table.
 
@@ -466,13 +522,21 @@ With this metadata, you can view documentation in Dagster for all columns, not j
 
 Column-level metadata is fetched in parallel to the execution of your dbt models. To enable this feature, call <PyObject section="libraries" object="core.dbt_cli_invocation.DbtEventIterator.fetch_column_metadata" module="dagster_dbt" displayText="fetch_column_metadata()" /> on the <PyObject section="libraries" object="core.dbt_cli_invocation.DbtEventIterator" module="dagster_dbt" /> returned by the `stream()` dbt CLI call:
 
-<CodeExample startAfter="start_fetch_column_metadata" endBefore="end_fetch_column_metadata" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_fetch_column_metadata"
+  endBefore="end_fetch_column_metadata"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 ### Composing metadata fetching methods
 
 Metadata fetching methods such as <PyObject section="libraries" object="core.dbt_cli_invocation.DbtEventIterator.fetch_column_metadata" module="dagster_dbt" displayText="fetch_column_metadata()" /> can be chained with other metadata fetching methods like <PyObject section="libraries" object="core.dbt_cli_invocation.DbtEventIterator.fetch_row_counts" module="dagster_dbt" displayText="fetch_row_counts()" />:
 
-<CodeExample startAfter="start_fetch_column_metadata_chain" endBefore="end_fetch_column_metadata_chain" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" /> 
+<CodeExample
+  startAfter="start_fetch_column_metadata_chain"
+  endBefore="end_fetch_column_metadata_chain"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 ## Defining dependencies
 
@@ -485,7 +549,11 @@ Metadata fetching methods such as <PyObject section="libraries" object="core.dbt
 
 Dagster allows you to define existing assets as upstream dependencies of dbt models. For example, say you have the following asset with asset key `upstream`:
 
-<CodeExample startAfter="start_upstream_dagster_asset" endBefore="end_upstream_dagster_asset" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_upstream_dagster_asset"
+  endBefore="end_upstream_dagster_asset"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 Then, in the downstream model, you can select from this source data. This defines a dependency relationship between your upstream asset and dbt model:
 
@@ -520,7 +588,11 @@ Then this model has an upstream source with the `jaffle_shop/orders` asset key.
 
 In order to manage this upstream asset with Dagster, you can define it by passing the key into an asset definition via <PyObject section="libraries" module="dagster_dbt" object="get_asset_key_for_source"/>:
 
-<CodeExample startAfter="start_upstream_asset" endBefore="end_upstream_asset" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_upstream_asset"
+  endBefore="end_upstream_asset"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 This allows you to change asset keys within your dbt project without having to update the corresponding Dagster definitions.
 
@@ -536,19 +608,31 @@ sources:
 
 You can use define a <PyObject section="assets" module="dagster" object="multi_asset" decorator/> with keys from <PyObject section="libraries" module="dagster_dbt" object="get_asset_keys_by_output_name_for_source"/> instead:
 
-<CodeExample startAfter="start_upstream_multi_asset" endBefore="end_upstream_multi_asset" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_upstream_multi_asset"
+  endBefore="end_upstream_multi_asset"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 ### Downstream dependencies
 
 Dagster allows you to define assets that are downstream of specific dbt models via <PyObject section="libraries" module="dagster_dbt" object="get_asset_key_for_model"/>. The below example defines `my_downstream_asset` as a downstream dependency of `my_dbt_model`:
 
-<CodeExample startAfter="start_downstream_asset" endBefore="end_downstream_asset" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_downstream_asset"
+  endBefore="end_downstream_asset"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 In the downstream asset, you may want direct access to the contents of the dbt model. To do so, you can customize the code within your `@asset`-decorated function to load upstream data.
 
 Dagster alternatively allows you to delegate loading data to an I/O manager. For example, if you wanted to consume a dbt model with the asset key `my_dbt_model` as a Pandas dataframe, that would look something like the following:
 
-<CodeExample startAfter="start_downstream_asset_pandas_df_manager" endBefore="end_downstream_asset_pandas_df_manager" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" /> 
+<CodeExample
+  startAfter="start_downstream_asset_pandas_df_manager"
+  endBefore="end_downstream_asset_pandas_df_manager"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 ## Building incremental models using partitions
 
@@ -558,7 +642,11 @@ Partitioned assets will be able to access the <PyObject section="partitions" mod
 
 When a partition definition to passed to the <PyObject section="libraries" module="dagster_dbt" object="dbt_assets" decorator/> decorator, all assets are defined to operate on the same partitions. With this in mind, we can retrieve any time window from <PyObject section="execution" module="dagster"  object="AssetExecutionContext.partition_time_window" /> property in order to get the current start and end partitions.
 
-<CodeExample startAfter="start_build_incremental_model" endBefore="end_build_incremental_model" path="docs_snippets/docs_snippets/integrations/dbt/dbt.py" />
+<CodeExample
+  startAfter="start_build_incremental_model"
+  endBefore="end_build_incremental_model"
+  path="docs_snippets/docs_snippets/integrations/dbt/dbt.py"
+/>
 
 With the variables defined, we can now reference `min_date` and `max_date` in our SQL and configure the dbt model as incremental. Here, we define an incremental run to operate on rows with `order_date` that is between our `min_date` and `max_date`.
 

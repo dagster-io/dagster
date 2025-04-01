@@ -1,5 +1,5 @@
 import memoize from 'lodash/memoize';
-import React, {createContext, useCallback, useContext, useEffect} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useMemo} from 'react';
 
 import {
   ApolloClient,
@@ -90,6 +90,7 @@ export class IndexedDBQueryCache<TQuery, TVariables extends OperationVariables> 
   private version: number | string;
   private queryFn: (variables?: TVariables) => Promise<{data: TQuery | undefined; error: any}>;
   private variables?: TVariables;
+  private queryId: number;
 
   constructor({
     key,
@@ -103,6 +104,7 @@ export class IndexedDBQueryCache<TQuery, TVariables extends OperationVariables> 
     queryFn: (variables?: TVariables) => Promise<{data: TQuery | undefined; error: any}>;
   }) {
     this.key = key;
+    this.queryId = 0;
     this.version = version;
     this.variables = variables;
     this.queryFn = queryFn;
@@ -123,8 +125,9 @@ export class IndexedDBQueryCache<TQuery, TVariables extends OperationVariables> 
         return {data: cachedData, error: undefined};
       }
     }
+    const globalKey = `${this.key}-${JSON.stringify(this.variables)}-${this.version}`;
 
-    const currentState = globalFetchStates[this.key];
+    const currentState = globalFetchStates[globalKey];
     if (currentState) {
       return new Promise((resolve) => {
         currentState.onFetched.push(resolve as any);
@@ -132,29 +135,28 @@ export class IndexedDBQueryCache<TQuery, TVariables extends OperationVariables> 
     }
 
     const state = {onFetched: [] as ((value: {data: TQuery | undefined; error: any}) => void)[]};
-    globalFetchStates[this.key] = state;
+    globalFetchStates[globalKey] = state;
 
-    try {
-      const result = await this.queryFn(this.variables);
+    const result = await this.queryFn(this.variables);
 
-      if (result.data && !result.error) {
-        await this.cacheManager.set(result.data, this.version);
-      }
-
-      const onFetchedHandlers = state.onFetched;
-      if (globalFetchStates[this.key] === state) {
-        delete globalFetchStates[this.key]; // Clean up fetch state after handling
-      }
-
-      onFetchedHandlers.forEach((handler) => handler(result)); // Notify all waiting fetches
-
-      return result;
-    } catch (error) {
-      if (globalFetchStates[this.key] === state) {
-        delete globalFetchStates[this.key];
-      }
-      return {data: undefined, error};
+    if (result.data && !result.error) {
+      await this.cacheManager.set(result.data, this.version);
     }
+
+    const onFetchedHandlers = state.onFetched;
+    if (globalFetchStates[globalKey] === state) {
+      delete globalFetchStates[globalKey]; // Clean up fetch state after handling
+    }
+
+    onFetchedHandlers.forEach((handler) => {
+      try {
+        handler(result);
+      } catch (e) {
+        console.error('Error in onFetched handler', e);
+      }
+    }); // Notify all waiting fetches
+
+    return result;
   }
 
   async clearCache(): Promise<void> {
@@ -163,10 +165,12 @@ export class IndexedDBQueryCache<TQuery, TVariables extends OperationVariables> 
 
   updateVariables(variables: TVariables): void {
     this.variables = variables;
+    this.queryId++;
   }
 
   updateVersion(version: number | string): void {
     this.version = version;
+    this.queryId++;
   }
 }
 
@@ -225,40 +229,21 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
   const [loading, setLoading] = React.useState(true);
   const dataRef = useUpdatingRef(data);
 
-  const cacheRef = React.useRef<ApolloIndexedDBQueryCache<TQuery, TVariables>>();
-
-  // Initialize cache if not initialized
-  if (!cacheRef.current) {
-    cacheRef.current = new ApolloIndexedDBQueryCache<TQuery, TVariables>({
+  const cacheRef = useMemo(() => {
+    return new ApolloIndexedDBQueryCache<TQuery, TVariables>({
       client,
       key,
       query,
       version,
       variables,
     });
-  }
-
-  // Update variables or version if they change
-  React.useEffect(() => {
-    if (cacheRef.current && variables) {
-      cacheRef.current.updateVariables(variables);
-    }
-  }, [variables]);
-
-  React.useEffect(() => {
-    if (cacheRef.current) {
-      cacheRef.current.updateVersion(version);
-    }
-  }, [version]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, query, client]);
 
   const fetch = useCallback(
     async (bypassCache = false) => {
-      if (!cacheRef.current) {
-        return;
-      }
-
       setLoading(true);
-      const {data, error} = await cacheRef.current.fetchData(bypassCache);
+      const {data, error} = await cacheRef.fetchData(bypassCache);
 
       if (
         data &&
@@ -271,28 +256,33 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
       setError(error);
       setLoading(false);
     },
-    [dataRef],
+    [dataRef, cacheRef],
   );
-
-  React.useEffect(() => {
-    if (skip || !cacheRef.current) {
-      return;
-    }
-
-    cacheRef.current.getCachedData().then((data) => {
-      if (data && !dataRef.current) {
-        setData(data);
-        setLoading(false);
-      }
-    });
-  }, [dataRef, skip]);
 
   React.useEffect(() => {
     if (skip) {
       return;
     }
+
+    cacheRef.getCachedData().then((data) => {
+      if (data && !dataRef.current) {
+        setData(data);
+        setLoading(false);
+      }
+    });
+  }, [dataRef, skip, cacheRef]);
+
+  // JSON stringify variables to avoid refetching if the caller hasn't memoized it
+  const stringifiedVariables = useMemo(() => JSON.stringify(variables ?? {}), [variables]);
+
+  React.useEffect(() => {
+    if (skip) {
+      return;
+    }
+    cacheRef.updateVariables(JSON.parse(stringifiedVariables));
+    cacheRef.updateVersion(version);
     fetch(true);
-  }, [fetch, skip]);
+  }, [fetch, skip, version, cacheRef, stringifiedVariables]);
 
   const dep = useBlockTraceUntilTrue(`useIndexedDBCachedQuery-${key}`, !!data, {
     skip,

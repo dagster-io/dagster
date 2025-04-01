@@ -21,7 +21,7 @@ from dagster._grpc.server import (
     open_server_process,
 )
 from dagster._utils import find_free_port, safe_tempfile_path
-from dagster_shared.serdes.ipc import interrupt_ipc_subprocess_pid
+from dagster_shared.ipc import interrupt_ipc_subprocess_pid
 
 
 def _cleanup_process(process):

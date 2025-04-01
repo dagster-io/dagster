@@ -511,6 +511,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
         self,
         partition_keys: frozenset[str],
         validate: bool = True,
+        current_time: Optional[datetime] = None,
     ) -> Sequence[TimeWindow]:
         if len(partition_keys) == 0:
             return []
@@ -541,8 +542,8 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
                 partition_key_time_windows.append(next(cur_windows_iterator))
 
         if validate:
-            start_time_window = self.get_first_partition_window()
-            end_time_window = self.get_last_partition_window()
+            start_time_window = self.get_first_partition_window(current_time=current_time)
+            end_time_window = self.get_last_partition_window(current_time=current_time)
 
             if start_time_window is None or end_time_window is None:
                 check.failed("No partitions in the PartitionsDefinition")

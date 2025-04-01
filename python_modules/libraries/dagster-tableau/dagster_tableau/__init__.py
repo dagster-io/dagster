@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_tableau.asset_utils import (
     parse_tableau_external_and_materializable_asset_specs as parse_tableau_external_and_materializable_asset_specs,

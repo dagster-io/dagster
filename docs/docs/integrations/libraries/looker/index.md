@@ -15,11 +15,11 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, bi]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/looker.svg
 ---
 
-import Beta from '../../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
@@ -37,7 +37,7 @@ To load Looker assets into the Dagster asset graph, you must first construct a <
 
 Dagster can automatically load all views, explores, and dashboards from your Looker instance as asset specs. Call the <PyObject section="libraries" module="dagster_looker" object="load_looker_asset_specs" /> function, which returns a list of <PyObject section="assets" module="dagster" object="AssetSpec" pluralize /> representing your Looker assets. You can then include these asset specs in your <PyObject section="definitions" module="dagster" object="Definitions" /> object:
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/looker/asset_graph.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/looker/asset_graph.py" language="python" />
 
 ### Load Looker assets from filtered dashboards and explores
 
@@ -47,11 +47,11 @@ Note that the content and size of Looker instance may affect the performance of 
 
 ### Customize asset definition metadata for Looker assets
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/looker/asset_graph_filtered.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/looker/asset_graph_filtered.py" language="python" />
 
 By default, Dagster will generate asset specs for each Looker asset based on its type, and populate default metadata. You can further customize asset properties by passing a custom <PyObject section="libraries" module="dagster_looker" object="DagsterLookerApiTranslator" /> subclass to the <PyObject section="libraries" module="dagster_looker" object="load_looker_asset_specs" /> function. This subclass can implement methods to customize the asset specs for each Looker asset type.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/looker/asset_metadata.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/looker/asset_metadata.py" language="python" />
 
 Note that `super()` is called in each of the overridden methods to generate the default asset spec. It is best practice to generate the default asset spec before customizing it.
 
@@ -59,7 +59,7 @@ Note that `super()` is called in each of the overridden methods to generate the 
 
 You can use Dagster to orchestrate the materialization of Looker PDTs. To model PDTs as assets, build their asset definitions by passing a list of <PyObject section="libraries" module="dagster_looker" object="RequestStartPdtBuild" /> to <PyObject section="libraries" module="dagster_looker" object="build_looker_pdt_assets_definitions" /> function.
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/looker/pdts.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/looker/pdts.py" language="python" />
 
 ### About Looker
 

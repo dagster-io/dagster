@@ -2,7 +2,7 @@ import os
 import sys
 import traceback
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, overload
+from typing import Any, Optional, TypeVar, Union, overload
 
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
@@ -12,9 +12,9 @@ from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from jinja2 import Undefined
 from jinja2.exceptions import UndefinedError
 from jinja2.nativetypes import NativeTemplate
+from pydantic import BaseModel
 
-if TYPE_CHECKING:
-    from dagster_components.resolved.model import ResolvableModel
+from dagster_components.resolved.errors import ResolutionException
 
 T = TypeVar("T")
 
@@ -31,9 +31,6 @@ def automation_condition_scope() -> Mapping[str, Any]:
 
 
 T = TypeVar("T")
-
-
-class ResolutionException(Exception): ...
 
 
 @record
@@ -54,6 +51,11 @@ class ResolutionContext:
 
     def with_scope(self, **additional_scope) -> "ResolutionContext":
         return copy(self, scope={**self.scope, **additional_scope})
+
+    def with_source_position_tree(
+        self, source_position_tree: SourcePositionTree
+    ) -> "ResolutionContext":
+        return copy(self, source_position_tree=source_position_tree)
 
     def _location_parts(self, inline_err: str) -> list[str]:
         if not self.source_position_tree:
@@ -99,7 +101,7 @@ class ResolutionContext:
         self,
         fmt_exc: list[str],
         field_name: str,
-        model: "ResolvableModel",
+        model: BaseModel,
     ) -> ResolutionException:
         msg_parts = self._location_parts(fmt_exc[-1] if fmt_exc else "ResolutionException")
         msg_parts.append(

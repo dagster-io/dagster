@@ -97,7 +97,7 @@ def test_list_library_objects_from_project() -> None:
     with create_project_from_components(
         "definitions/local_component_sample",
         "definitions/other_local_component_sample",
-        "definitions/default_file",
+        "definitions/single_file",
     ) as (tmpdir, location_name):
         with new_cwd(str(tmpdir)):
             result = runner.invoke(
@@ -149,7 +149,7 @@ def test_list_library_objects_from_project() -> None:
                     "--no-entry-points",
                     f"{location_name}.defs.local_component_sample",
                     f"{location_name}.defs.other_local_component_sample",
-                    f"{location_name}.defs.default_file",
+                    f"{location_name}.defs.single_file",
                 ],
             )
 
@@ -224,11 +224,13 @@ def test_scaffold_component_command():
             cli,
             [
                 "scaffold",
-                "component",
+                "object",
                 "dagster_test.components.SimplePipesScriptComponent",
                 "bar/components/qux",
                 "--json-params",
                 '{"asset_key": "my_asset", "filename": "my_asset.py"}',
+                "--scaffold-format",
+                "yaml",
             ],
         )
         assert_runner_result(result)

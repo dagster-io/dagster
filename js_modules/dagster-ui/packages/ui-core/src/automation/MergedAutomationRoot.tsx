@@ -114,12 +114,8 @@ export const MergedAutomationRoot = () => {
       repoBuckets,
       useCallback((repoBucket) => {
         return [
-          ...repoBucket.schedules.flatMap((schedule) =>
-            schedule.tags.map(({key, value}) => ({key, value})),
-          ),
-          ...repoBucket.sensors.flatMap((sensor) =>
-            sensor.tags.map(({key, value}) => ({key, value})),
-          ),
+          ...repoBucket.schedules.flatMap((schedule) => schedule.tags),
+          ...repoBucket.sensors.flatMap((sensor) => sensor.tags),
         ];
       }, []),
     ),

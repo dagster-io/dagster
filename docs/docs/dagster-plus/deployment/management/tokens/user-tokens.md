@@ -12,6 +12,7 @@ This guide is applicable to Dagster+.
 In this guide, we'll walk you through creating user tokens in Dagster+.
 
 ## Managing user tokens
+
 1. Sign in to your Dagster+ account.
 2. Click the **user menu (your icon) > Organization Settings**.
 3. Click the **Tokens** tab.
@@ -26,7 +27,7 @@ After the token is created:
 To manage tokens for another user, select the user from the **Manage tokens for** dropdown:
 
 <ThemedImage
-  style={{width:'100%', height: 'auto'}}
+  style={{width: '100%', height: 'auto'}}
   sources={{
     light: '/images/dagster-plus/deployment/management/user-token-management/manage-user-tokens-for.png',
     dark: '/images/dagster-plus/deployment/management/user-token-management/manage-user-tokens-for.png',

@@ -15,7 +15,6 @@ import {useMutation} from '../apollo-client';
 import {RunFragment} from './types/RunFragments.types';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
-import {useCopyToClipboard} from '../app/browser';
 import {RunStatus} from '../graphql/types';
 import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/InstanceConcurrencyKeyInfo';
 import {
@@ -36,7 +35,6 @@ type VisibleDialog =
   | null;
 
 export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean}) => {
-  const {runConfigYaml} = run;
   const runMetricsEnabled = run.hasRunMetricsEnabled;
 
   const [visibleDialog, setVisibleDialog] = useState<VisibleDialog>(null);
@@ -44,22 +42,12 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
   const {rootServerURI} = useContext(AppContext);
   const {refetch} = useContext(RunsQueryRefetchContext);
 
-  const copy = useCopyToClipboard();
   const history = useHistory();
 
   const [freeSlots] = useMutation<
     FreeConcurrencySlotsMutation,
     FreeConcurrencySlotsMutationVariables
   >(FREE_CONCURRENCY_SLOTS_MUTATION);
-
-  const copyConfig = async () => {
-    copy(runConfigYaml);
-    await showSharedToaster({
-      intent: 'success',
-      icon: 'copy_to_clipboard_done',
-      message: 'Copied!',
-    });
-  };
 
   const freeConcurrencySlots = async () => {
     const resp = await freeSlots({variables: {runId: run.id}});
@@ -160,7 +148,6 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
       <RunConfigDialog
         isOpen={visibleDialog === 'config'}
         onClose={() => setVisibleDialog(null)}
-        copyConfig={() => copyConfig()}
         mode={run.mode}
         runConfigYaml={run.runConfigYaml}
         tags={run.tags}

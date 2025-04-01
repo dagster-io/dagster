@@ -1,10 +1,10 @@
 ---
-title: "Load dbt models as Dagster assets"
+title: 'Load dbt models as Dagster assets'
 description: Dagster can orchestrate dbt alongside other technologies.
 sidebar_position: 200
 ---
 
-At this point, you should have a [fully-configured dbt project](set-up-dbt-project) that's ready to work with Dagster.
+At this point, you should have a [fully-configured dbt project](/integrations/libraries/dbt/using-dbt-with-dagster/set-up-dbt-project) that's ready to work with Dagster.
 
 In this section, you'll finally begin integrating dbt with Dagster. To do so, you'll:
 
@@ -76,7 +76,11 @@ In our `definitions.py` Python file, we import from `assets.py`, which contains 
 
 To retrieve the `manifest.json`, `assets.py` imports from `project.py`, which defines an internal representation of your dbt project. Then, in `assets.py`, the path to the `manifest.json` file can be accessed with `jaffle_shop_project.manifest_path`:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/tutorial/load_dbt_models/project.py" startAfter="start_load_project" endBefore="end_load_project" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/tutorial/load_dbt_models/project.py"
+  startAfter="start_load_project"
+  endBefore="end_load_project"
+/>
 
 Generating the `manifest.json` file for a dbt project is time-consuming, so it's best to avoid doing so every time this Python module is imported. Thus, in production deployments of Dagster, you'll typically have the CI/CD system that packages up your code generate your `manifest.json`.
 
@@ -86,7 +90,11 @@ However, in development, you typically want changes made to files in your dbt pr
 
 Once you've got a `manifest.json` file, it's time to define your Dagster assets using it. The following code, in your project's `assets.py`, does this:
 
-<CodeExample path="docs_snippets/docs_snippets/integrations/dbt/tutorial/load_dbt_models/assets.py" startAfter="start_dbt_assets" endBefore="end_dbt_assets" />
+<CodeExample
+  path="docs_snippets/docs_snippets/integrations/dbt/tutorial/load_dbt_models/assets.py"
+  startAfter="start_dbt_assets"
+  endBefore="end_dbt_assets"
+/>
 
 This code might look a bit fancy, because it uses a decorator. Here's a breakdown of what's going on:
 
@@ -98,4 +106,4 @@ If you later want to customize how your dbt models are translated into Dagster a
 
 ## What's next?
 
-At this point, you've loaded your dbt models into Dagster as assets, viewed them in Dagster's asset graph UI, and materialized them. Next, you'll learn how to [add upstream Dagster assets](upstream-assets).
+At this point, you've loaded your dbt models into Dagster as assets, viewed them in Dagster's asset graph UI, and materialized them. Next, you'll learn how to [add upstream Dagster assets](/integrations/libraries/dbt/using-dbt-with-dagster/upstream-assets).

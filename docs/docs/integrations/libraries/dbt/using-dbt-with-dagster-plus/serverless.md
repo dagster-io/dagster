@@ -1,5 +1,5 @@
 ---
-title: "Using dbt with Serverless deployments in Dagster+"
+title: 'Using dbt with Serverless deployments in Dagster+'
 description: Deploy your dbt & Dagster project with Serverless deployments in Dagster+.
 ---
 
@@ -19,7 +19,7 @@ To follow the steps in this guide, you'll need **Dagster+ Organization Admin**, 
 - [`dbt_project.yml`](https://docs.getdbt.com/reference/dbt_project.yml)
 - [`profiles.yml`](https://docs.getdbt.com/docs/core/connect-data-platform/profiles.yml)
 
-**For dbt and Dagster projects**, Dagster+ requires several files to be present in your project. Refer to the [dbt & Dagster tutorial](/integrations/libraries/dbt/using-dbt-with-dagster/) to learn more about the structure and files required in a dbt and Dagster project.
+**For dbt and Dagster projects**, Dagster+ requires several files to be present in your project. Refer to the [dbt & Dagster tutorial](/integrations/libraries/dbt/using-dbt-with-dagster) to learn more about the structure and files required in a dbt and Dagster project.
 
 ## Step 1: Import your project in Dagster+
 

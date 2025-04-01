@@ -4,7 +4,7 @@ description: To organize the ops inside a job, you can nest sets of ops into sub
 sidebar_position: 500
 ---
 
-import OpsNote from '../../../partials/\_OpsNote.md';
+import OpsNote from '@site/docs/partials/\_OpsNote.md';
 
 <OpsNote />
 

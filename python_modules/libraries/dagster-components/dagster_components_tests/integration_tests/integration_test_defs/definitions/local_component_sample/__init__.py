@@ -1,11 +1,5 @@
 from dagster._core.definitions.definitions_class import Definitions
-from dagster_components import Component, ResolvableModel
-from dagster_components.core.component import ComponentLoadContext
-
-
-class MyComponentModel(ResolvableModel):
-    a_string: str
-    an_int: int
+from dagster_components import Component, ComponentLoadContext
 
 
 class MyComponent(Component):

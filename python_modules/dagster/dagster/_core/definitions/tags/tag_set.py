@@ -27,7 +27,7 @@ class NamespacedTagSet(NamespacedKVSet):
     """
 
     def __init__(self, *args, **kwargs) -> None:
-        for field_name, field in model_fields(self).items():
+        for field_name, field in model_fields(self.__class__).items():
             annotation_type = field.annotation
 
             is_optional = is_closed_python_optional_type(annotation_type)

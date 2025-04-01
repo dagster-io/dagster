@@ -1,5 +1,5 @@
 ---
-title: "Testing assets"
+title: 'Testing assets'
 sidebar_class_name: hidden
 ---
 

@@ -13,6 +13,11 @@ def sanitize_family(family):
     return re.sub(r"[^\w^\-]", "", family)[:255]
 
 
+def sanitize_tag(tag):
+    # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-using-tags.html
+    return re.sub("[^A-Za-z0-9_]", "-", tag)[:255].strip("-")
+
+
 def _get_family_hash(name):
     m = hashlib.sha1()
     m.update(name.encode("utf-8"))

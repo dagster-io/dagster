@@ -4,7 +4,7 @@ from dagster._core.remote_representation.origin import (
     RemoteRepositoryOrigin,
 )
 
-from dagster_aws.ecs.utils import get_task_definition_family, sanitize_family
+from dagster_aws.ecs.utils import get_task_definition_family, sanitize_family, sanitize_tag
 
 
 def test_sanitize_family():
@@ -14,6 +14,14 @@ def test_sanitize_family():
     assert sanitize_family("abc_123") == "abc_123"
     assert sanitize_family("abc 123") == "abc123"
     assert sanitize_family("abc~123") == "abc123"
+
+
+def test_sanitize_tag():
+    assert sanitize_tag("abc") == "abc"
+    assert sanitize_tag("abc123") == "abc123"
+    assert sanitize_tag("foo.bar[filename_0]") == "foo-bar-filename_0"
+    assert sanitize_tag("AaBbCc") == "AaBbCc"
+    assert sanitize_tag("A" * 270) == "A" * 255
 
 
 def test_get_task_definition_family():

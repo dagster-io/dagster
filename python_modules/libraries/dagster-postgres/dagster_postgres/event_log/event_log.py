@@ -176,7 +176,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             event (EventLogEntry): The event to store.
         """
         check.inst_param(event, "event", EventLogEntry)
-
         insert_event_statement = self.prepare_insert_event(event)  # from SqlEventLogStorage.py
         with self._connect() as conn:
             result = conn.execute(
@@ -218,6 +217,13 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             all(event.get_dagster_event().event_type in BATCH_WRITABLE_EVENTS for event in events),
             f"{BATCH_WRITABLE_EVENTS} are the only currently supported events for batch writes.",
         )
+        events = [
+            event
+            for event in events
+            if not event.get_dagster_event().is_asset_failed_to_materialize
+        ]
+        if len(events) == 0:
+            return
 
         insert_event_statement = self.prepare_insert_event_batch(events)
         with self._connect() as conn:

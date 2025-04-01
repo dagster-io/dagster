@@ -54,7 +54,15 @@ Sensors
 
 .. autodecorator:: asset_sensor
 
+.. autodecorator:: multi_asset_sensor
+
+.. autodecorator:: run_status_sensor
+
+.. autodecorator:: run_failure_sensor
+
 .. autoclass:: AssetSensorDefinition
+
+.. autoclass:: MultiAssetSensorDefinition
 
 .. autoclass:: RunStatusSensorDefinition
 
@@ -67,10 +75,6 @@ Sensors
 .. autoclass:: RepositorySelector
 
 .. autofunction:: build_run_status_sensor_context
-
-.. autodecorator:: run_status_sensor
-
-.. autodecorator:: run_failure_sensor
 
 .. autoclass:: SensorResult
 

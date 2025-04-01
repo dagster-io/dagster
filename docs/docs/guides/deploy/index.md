@@ -1,5 +1,5 @@
 ---
-title: "Deploying Dagster"
+title: 'Deploying Dagster'
 sidebar_class_name: hidden
 ---
 

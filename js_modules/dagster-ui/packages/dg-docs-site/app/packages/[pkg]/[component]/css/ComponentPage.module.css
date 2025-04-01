@@ -1,0 +1,40 @@
+.outer {
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 16px;
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 300px;
+}
+
+.main {
+  overflow-y: auto;
+  flex: 1;
+  padding: 32px 48px;
+}
+
+.tableOfContents {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  box-shadow: inset 1px 0 0 0 var(--color-keyline-default);
+  margin-top: 24px;
+  padding: 0 16px 0 16px;
+}
+
+.tableOfContents ol {
+  padding: 8px 16px;
+  margin-left: 0;
+}
+
+.tableOfContents li:hover {
+  color: var(--color-link-default)
+}

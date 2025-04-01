@@ -2,15 +2,21 @@ from dagster import Definitions
 from dagster_components import (
     Component,
     ComponentLoadContext,
-    ResolvableModel,
+    Resolvable,
 )
 
-class {{ name }}(Component, ResolvableModel):
+class {{ name }}(Component, Resolvable):
     """COMPONENT SUMMARY HERE.
 
     COMPONENT DESCRIPTION HERE.
     """
 
-    def build_defs(self, load_context: ComponentLoadContext) -> Definitions:
+    def __init__(
+        self,
+        # added arguments here will define yaml schema via Resolvable
+    ):
+        pass
+
+    def build_defs(self, context: ComponentLoadContext) -> Definitions:
         # Add definition construction logic here.
         return Definitions()

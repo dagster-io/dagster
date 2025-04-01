@@ -37,7 +37,7 @@ STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
 
 def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
     """Note that this does not pick up:
-    - all `component scaffold` subcommands, because these are dynamically generated and vary across
+    - all `scaffold` subcommands, because these are dynamically generated and vary across
       environment.
     - special --ACTION options with callbacks (e.g. `--rebuild-component-registry`).
     """
@@ -46,7 +46,7 @@ def crawl_cli_commands() -> dict[tuple[str, ...], click.Command]:
     def _crawl(command: click.Command, path: tuple[str, ...]):
         assert command.name
         new_path = (*path, command.name)
-        if isinstance(command, click.Group) and not new_path == ("dg", "scaffold", "component"):
+        if isinstance(command, click.Group):
             for subcommand in command.commands.values():
                 assert subcommand.name
                 _crawl(subcommand, new_path)
@@ -80,6 +80,27 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
                 "dagster-pipes",
                 "libraries/dagster-shared",
                 "dagster-test",
+            ],
+        )
+
+        venv_exec_path = get_venv_executable(venv_path).parent
+        assert (venv_exec_path / "python").exists() or (venv_exec_path / "python.exe").exists()
+        with modify_environment_variable(
+            "PATH", os.pathsep.join([str(venv_exec_path), os.environ["PATH"]])
+        ):
+            yield venv_path
+
+
+@contextmanager
+def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
+    with runner.isolated_filesystem():
+        subprocess.run(["uv", "venv", ".venv"], check=True)
+        venv_path = Path.cwd() / ".venv"
+        _install_libraries_to_venv(
+            venv_path,
+            [
+                "libraries/dagster-dg",
+                "libraries/dagster-shared",
             ],
         )
 
@@ -175,7 +196,7 @@ def isolated_example_project_foo_bar(
             "project",
             "--use-editable-dagster",
             dagster_git_repo_dir,
-            *(["--no-use-dg-managed-environment"] if skip_venv else []),
+            *(["--skip-venv"] if skip_venv else []),
             *(["--no-populate-cache"] if not populate_cache else []),
             "foo-bar",
         ]
@@ -414,7 +435,6 @@ class ProxyRunner:
         verbose: bool = False,
         disable_cache: bool = False,
         console_width: int = DG_CLI_MAX_OUTPUT_WIDTH,
-        require_local_venv: bool = True,
     ) -> Iterator[Self]:
         # We set the `COLUMNS` environment variable because this determines the width of output from
         # `rich`, which we use for generating tables etc.
@@ -429,17 +449,16 @@ class ProxyRunner:
                 "--cache-dir",
                 str(cache_dir),
                 *(["--verbose"] if verbose else []),
-                *(["--no-require-local-venv"] if not require_local_venv else []),
                 *(["--disable-cache"] if disable_cache else []),
             ]
             yield cls(CliRunner(), append_args=append_opts, console_width=console_width)
 
     def invoke(self, *args: str, **invoke_kwargs: Any) -> Result:
-        # We need to find the right spot to inject global options. For the `dg scaffold component`
+        # We need to find the right spot to inject global options. For the `dg scaffold`
         # command, we need to inject the global options before the final subcommand. For everything
         # else they can be appended at the end of the options.
-        if args[:2] == ("scaffold", "component"):
-            index = 2
+        if args[0] == "scaffold":
+            index = 1
         elif "--help" in args:
             index = args.index("--help")
         elif "--" in args:

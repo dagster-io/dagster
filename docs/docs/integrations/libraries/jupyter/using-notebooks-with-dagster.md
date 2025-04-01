@@ -1,5 +1,5 @@
 ---
-title: "Using Jupyter notebooks with Papermill and Dagster"
+title: 'Using Jupyter notebooks with Papermill and Dagster'
 description: The Dagstermill package lets you run notebooks using the Dagster tools and integrate them into your data pipelines.
 ---
 
@@ -280,7 +280,7 @@ To add the `parameters` tag, you may need to turn on the display of cell tags in
 
 1. In Jupyter, navigate to **View > Cell Toolbar > Tags**:
 
-    ![Jupyer turn on display of cell tags](/images/integrations/jupyter/jupyter-view-menu.png)
+   ![Jupyer turn on display of cell tags](/images/integrations/jupyter/jupyter-view-menu.png)
 
 2. Click **Add Tag** to add a `parameters` tag:
 
@@ -296,7 +296,7 @@ Next, we'll materialize our `iris_dataset` and notebook assets.
 
    At this point, the `iris_dataset` asset should display above the `iris_kmeans_jupyter` asset as an upstream dependency:
 
-    ![Upstream Iris dataset asset](/images/integrations/jupyter/ui-three.png)
+   ![Upstream Iris dataset asset](/images/integrations/jupyter/ui-three.png)
 
 3. Click the **Materialize all** button near the top right corner of the page, which will launch a run to materialize the assets.
 
@@ -328,4 +328,4 @@ To integrate the new notebook, follow the steps from [Step 5.3](#step-53-modify-
 
 ## Conclusion
 
-Now we have successfully created an asset from a Jupyter notebook and integrated it with our Dagster project! To learn about additional `dagstermill` features, refer to the [Dagstermill integration reference](reference).
+Now we have successfully created an asset from a Jupyter notebook and integrated it with our Dagster project! To learn about additional `dagstermill` features, refer to the [Dagstermill integration reference](/integrations/libraries/jupyter/reference).

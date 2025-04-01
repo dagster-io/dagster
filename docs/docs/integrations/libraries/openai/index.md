@@ -14,7 +14,7 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/openai.svg
 ---
 
@@ -30,7 +30,7 @@ pip install dagster dagster-openai
 
 ### Example
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/openai.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/openai.py" language="python" />
 
 ### About OpenAI
 

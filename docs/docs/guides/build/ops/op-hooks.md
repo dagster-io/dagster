@@ -4,7 +4,7 @@ description: Op hooks let you define success and failure handling policies on op
 sidebar_position: 200
 ---
 
-import OpsNote from '../../../partials/\_OpsNote.md';
+import OpsNote from '@site/docs/partials/\_OpsNote.md';
 
 <OpsNote />
 

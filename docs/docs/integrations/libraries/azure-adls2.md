@@ -14,7 +14,7 @@ categories:
 enabledBy:
 enables:
 tags: [dagster-supported, storage]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/azure.svg
 ---
 
@@ -28,7 +28,7 @@ pip install dagster-azure
 
 ### Example
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/azure-adls2.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/azure-adls2.py" language="python" />
 
 In this updated code, we use `ADLS2Resource` directly instead of `adls2_resource`. The configuration is passed to `ADLS2Resource` during its instantiation.
 

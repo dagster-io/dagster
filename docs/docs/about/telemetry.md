@@ -1,5 +1,5 @@
 ---
-title: "Dagster telemetry"
+title: 'Dagster telemetry'
 sidebar_position: 40
 ---
 

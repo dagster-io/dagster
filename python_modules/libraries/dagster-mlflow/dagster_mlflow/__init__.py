@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_mlflow.hooks import end_mlflow_on_run_finished
 from dagster_mlflow.resources import mlflow_tracking

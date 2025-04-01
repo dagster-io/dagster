@@ -78,6 +78,7 @@ export const PipelineExplorerContainer = (props: {
     const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
     return (
       <AssetGraphExplorer
+        key={explorerPath.pipelineName}
         options={options}
         setOptions={setOptions}
         fetchOptions={{pipelineSelector}}

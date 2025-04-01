@@ -18,7 +18,13 @@ from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error, push
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 # from pathlib import Path
-DOCS_DIR = Path(__file__).parent.parent / "docs"
+DOCS_DIR = (
+    Path(__file__).parent.parent.parent.parent.parent.parent
+    / "js_modules"
+    / "dagster-ui"
+    / "packages"
+    / "dg-docs-site"
+)
 DOCS_JSON_PATH = DOCS_DIR / "contents" / "generated.json"
 
 SHOULD_DOCS_EXIT = False

@@ -1,5 +1,5 @@
 ---
-title: "Single sign-on"
+title: 'Single sign-on'
 sidebar_position: 20
 ---
 

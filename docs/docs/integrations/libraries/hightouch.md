@@ -15,7 +15,7 @@ categories:
 enabledBy:
 enables:
 tags: [community-supported, etl]
-sidebar_custom_props: 
+sidebar_custom_props:
   logo: images/integrations/hightouch.svg
   community: true
 ---
@@ -32,7 +32,7 @@ pip install dagster-hightouch
 
 ### Example
 
-<CodeExample path="docs_beta_snippets/docs_beta_snippets/integrations/hightouch.py" language="python" />
+<CodeExample path="docs_snippets/docs_snippets/integrations/hightouch.py" language="python" />
 
 ### About Hightouch
 

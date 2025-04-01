@@ -5,7 +5,7 @@ name: Tableau
 title: Dagster & Tableau
 sidebar_label: Tableau
 excerpt: See and understand your data with Tableau through Dagster.
-date: 
+date:
 apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-tableau
 docslink:
 partnerlink:
@@ -18,7 +18,7 @@ sidebar_custom_props:
   logo: images/integrations/tableau.svg
 ---
 
-import Beta from '../../partials/\_Beta.md';
+import Beta from '@site/docs/partials/\_Beta.md';
 
 <Beta />
 
@@ -72,7 +72,6 @@ Use <PyObject section="libraries" module="dagster_tableau" object="TableauCloudW
 
 Use <PyObject section="libraries" module="dagster_tableau" object="TableauServerWorkspace" /> to interact with your Tableau Server workspace:
 
-
 <CodeExample path="docs_snippets/docs_snippets/integrations/tableau/representing-tableau-server-assets.py" />
 
 </TabItem>
@@ -104,7 +103,6 @@ Note that only workbooks created with extracts can be refreshed using this metho
 ### Add a Data Quality Warning in Tableau using a sensor
 
 When an upstream dependency of a Tableau asset fails to materialize or to pass the asset checks, it is possible to add a [Data Quality Warning](https://help.tableau.com/current/online/en-us/dm_dqw.htm) to the corresponding data source in Tableau. This can be achieved by leveraging the `add_data_quality_warning_to_data_source` in a sensor.
-
 
 <CodeExample path="docs_snippets/docs_snippets/integrations/tableau/add-tableau-data-quality-warning.py" />
 

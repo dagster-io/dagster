@@ -40,6 +40,7 @@ from dagster._core.storage.partition_status_cache import (
     get_validated_partition_keys,
     is_cacheable_partition_type,
 )
+from dagster._time import get_current_datetime
 
 from dagster_graphql.implementation.loader import StaleStatusLoader
 
@@ -632,6 +633,8 @@ def get_2d_run_length_encoded_partitions(
         GrapheneMultiPartitionStatuses,
     )
 
+    current_time = get_current_datetime()
+
     check.invariant(
         isinstance(partitions_def, MultiPartitionsDefinition),
         "Partitions definition should be multipartitioned",
@@ -676,7 +679,7 @@ def get_2d_run_length_encoded_partitions(
     materialized_2d_ranges = []
 
     dim1_keys = primary_dim.partitions_def.get_partition_keys(
-        dynamic_partitions_store=dynamic_partitions_store
+        current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
     )
     unevaluated_idx = 0
     range_start_idx = 0  # pointer to first dim1 partition with same dim2 materialization status
@@ -685,7 +688,8 @@ def get_2d_run_length_encoded_partitions(
         len(dim1_keys) == 0
         or len(
             secondary_dim.partitions_def.get_partition_keys(
-                dynamic_partitions_store=dynamic_partitions_store
+                current_time=current_time,
+                dynamic_partitions_store=dynamic_partitions_store,
             )
         )
         == 0
@@ -717,7 +721,11 @@ def get_2d_run_length_encoded_partitions(
                 if isinstance(primary_partitions_def, TimeWindowPartitionsDefinition):
                     time_windows = cast(
                         TimeWindowPartitionsDefinition, primary_partitions_def
-                    ).time_windows_for_partition_keys(frozenset([start_key, end_key]))
+                    ).time_windows_for_partition_keys(
+                        frozenset([start_key, end_key]),
+                        current_time=current_time,
+                        validate=False,  # we already know these keys are in the partition set
+                    )
                     start_time = time_windows[0].start.timestamp()
                     end_time = time_windows[-1].end.timestamp()
                 else:

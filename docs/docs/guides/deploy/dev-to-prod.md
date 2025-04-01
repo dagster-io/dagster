@@ -1,5 +1,5 @@
 ---
-title: "Transitioning from development to production"
+title: 'Transitioning from development to production'
 sidebar_position: 500
 ---
 
@@ -45,11 +45,19 @@ In this section we will:
 
 Let’s start by writing our three assets. We'll use Pandas DataFrames to interact with the data.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/assets.py" startAfter="start_assets" endBefore="end_assets" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/assets.py"
+  startAfter="start_assets"
+  endBefore="end_assets"
+/>
 
 Now we can add these assets to our <PyObject section="definitions" module="dagster" object="Definitions" /> object and materialize them via the UI as part of our local development workflow. We can pass in credentials to our `SnowflakePandasIOManager`.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v1.py" startAfter="start" endBefore="end" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v1.py"
+  startAfter="start"
+  endBefore="end"
+/>
 
 Note that we have passwords in our configuration in this code snippet. This is bad practice, and we will resolve it shortly.
 
@@ -78,7 +86,11 @@ We want to store the assets in a production Snowflake database, so we need to up
 
 Instead, we can determine the configuration for resources based on the environment:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v2.py" startAfter="start" endBefore="end" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v2.py"
+  startAfter="start"
+  endBefore="end"
+/>
 
 Note that we still have passwords in our configuration in this code snippet. This is bad practice, and we will resolve it next.
 
@@ -91,7 +103,11 @@ We still have some problems with this setup:
 
 We can easily solve these problems using <PyObject section="resources" module="dagster" object="EnvVar"/>, which lets us source configuration for resources from environment variables. This allows us to store Snowflake configuration values as environment variables and point the I/O manager to those environment variables:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v3.py" startAfter="start" endBefore="end" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v3.py"
+  startAfter="start"
+  endBefore="end"
+/>
 
 ### Staging
 
@@ -101,7 +117,11 @@ Depending on your organization’s Dagster setup, there are a couple of options 
 
 - **For a self-hosted staging deployment**, we’ve already done most of the necessary work to run our assets in staging! All we need to do is add another entry to the `resources` dictionary and set `DAGSTER_DEPLOYMENT=staging` in our staging deployment.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v3.py" startAfter="start_staging" endBefore="end_staging" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v3.py"
+  startAfter="start_staging"
+  endBefore="end_staging"
+/>
 
 ## Advanced: Unit tests with stubs and mocks
 
@@ -124,11 +144,19 @@ Determining when it makes sense to stub a resource for a unit test can be a topi
 
 We'll start by writing the "real" Hacker News API Client:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/resources/resources_v1.py" startAfter="start_resource" endBefore="end_resource" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/resources/resources_v1.py"
+  startAfter="start_resource"
+  endBefore="end_resource"
+/>
 
 We'll also need to update the `items` asset to use this client as a resource:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/assets_v2.py" startAfter="start_items" endBefore="end_items" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/assets_v2.py"
+  startAfter="start_items"
+  endBefore="end_items"
+/>
 
 :::note
 
@@ -138,11 +166,19 @@ For the sake of brevity, we've omitted the implementation of the property `item_
 
 We'll also need to add an instance of `HNAPIClient` to `resources` in our `Definitions` object.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v3.py" startAfter="start_hn_resource" endBefore="end_hn_resource" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/repository/repository_v3.py"
+  startAfter="start_hn_resource"
+  endBefore="end_hn_resource"
+/>
 
 Now we can write a stubbed version of the Hacker News resource. We want to make sure the stub has implementations for each method `HNAPIClient` implements.
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/resources/resources_v2.py" startAfter="start_mock" endBefore="end_mock" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/resources/resources_v2.py"
+  startAfter="start_mock"
+  endBefore="end_mock"
+/>
 
 :::note
 
@@ -152,7 +188,11 @@ Since the stub Hacker News resource and the real Hacker News resource need to im
 
 Now we can use the stub Hacker News resource to test that the `items` asset transforms the data in the way we expect:
 
-<CodeExample path="docs_snippets/docs_snippets/guides/dagster/development_to_production/test_assets.py" startAfter="start" endBefore="end" />
+<CodeExample
+  path="docs_snippets/docs_snippets/guides/dagster/development_to_production/test_assets.py"
+  startAfter="start"
+  endBefore="end"
+/>
 
 :::note
 

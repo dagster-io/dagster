@@ -314,7 +314,7 @@ export const createProvider = <
     textCallback?: (text: string) => string;
   }) {
     const attribute = primaryAttributeKey as string;
-    const text = `key:"*${query}*"`;
+    const text = `${attribute}:"*${query}*"`;
     let displayAttribute = attribute.replace(/_/g, ' ');
     displayAttribute = displayAttribute[0]!.toUpperCase() + displayAttribute.slice(1);
     const displayText = (

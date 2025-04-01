@@ -1,6 +1,6 @@
 import pytest
 import yaml
-from dagster._core.test_utils import remove_none_recursively
+from dagster_shared.utils import remove_none_recursively
 from kubernetes.client import models
 from schema.charts.dagster.subschema.run_launcher import (
     CeleryK8sRunLauncherConfig,

@@ -41,10 +41,7 @@ def test_launch_assets(capfd) -> None:
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         result = runner.invoke(
-            "scaffold",
-            "component",
-            "dagster_components.dagster.DefinitionsComponent",
-            "mydefs",
+            "scaffold", "dagster_components.dagster.DefsFolderComponent", "mydefs"
         )
         assert_runner_result(result)
 

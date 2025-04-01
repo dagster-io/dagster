@@ -40,6 +40,7 @@ In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
 3.  On the **Set up single sign-on with SAML** page, click the pencil icon for **Basic SAML Configuration** to edit the settings.
 
     ![Settings Dropdown](/images/dagster-plus/features/authentication-and-access-control/azure/set-up-single-sign-on.png)
+
 4.  In the **Basic SAML Configuration** section, fill in the **Identifier** and **Reply URL** fields as follows:
 
     Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
@@ -57,7 +58,9 @@ In this step, you'll configure and enable SSO for Azure AD in your Azure portal.
     - `Email` - `user.userprincipalname`
 
     Add these attribute mappings to the SAML assertion.
+
 8.  On the **Set up single sign-on with SAML** page:
+
     1. Locate the **SAML Signing Certificate** section.
     2. Next to **Federation Metadata XML**, click **Download**:
 
@@ -88,7 +91,7 @@ In this section, you'll create a test user in the Azure portal.
    - Select the **Show password** checkbox and write down the value displayed in the **Password** box.
 5. Click **Create**.
 
-import TestSSO from '../../../../partials/\_TestSSO.md';
+import TestSSO from '@site/docs/partials/\_TestSSO.md';
 
 <TestSSO />
 

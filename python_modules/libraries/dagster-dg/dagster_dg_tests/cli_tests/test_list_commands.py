@@ -56,10 +56,7 @@ def test_list_components_success():
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         result = runner.invoke(
-            "scaffold",
-            "component",
-            "dagster_test.components.AllMetadataEmptyComponent",
-            "qux",
+            "scaffold", "dagster_test.components.AllMetadataEmptyComponent", "qux"
         )
         assert_runner_result(result)
         result = runner.invoke("list", "component")
@@ -153,7 +150,7 @@ def test_list_component_type_bad_entry_point_fails(capfd):
 
         expected_error_message = format_error_message("""
             An error occurred while executing a `dagster-components` command in the
-            Python environment
+            active Python environment
         """)
         assert expected_error_message in result.output
 
@@ -240,10 +237,7 @@ def test_list_defs_succeeds(use_json: bool):
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         result = runner.invoke(
-            "scaffold",
-            "component",
-            "dagster_components.dagster.DefinitionsComponent",
-            "mydefs",
+            "scaffold", "dagster_components.dagster.DefsFolderComponent", "mydefs"
         )
         assert_runner_result(result)
 
@@ -302,10 +296,7 @@ def test_list_defs_complex_assets_succeeds():
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         result = runner.invoke(
-            "scaffold",
-            "component",
-            "dagster_components.dagster.DefinitionsComponent",
-            "mydefs",
+            "scaffold", "dagster_components.dagster.DefsFolderComponent", "mydefs"
         )
         assert_runner_result(result)
 
@@ -365,8 +356,7 @@ def test_list_defs_with_env_file_succeeds():
     ):
         result = runner.invoke(
             "scaffold",
-            "component",
-            "dagster_components.dagster.DefinitionsComponent",
+            "dagster_components.dagster.DefsFolderComponent",
             "mydefs",
         )
         assert_runner_result(result)

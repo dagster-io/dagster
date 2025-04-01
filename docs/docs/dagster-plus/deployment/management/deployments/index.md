@@ -1,5 +1,5 @@
 ---
-title: "Full deployments"
+title: 'Full deployments'
 sidebar_position: 50
 ---
 

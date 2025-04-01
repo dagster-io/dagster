@@ -5,7 +5,7 @@ name: DingTalk
 title: Dagster & DingTalk
 sidebar_label: DingTalk
 excerpt: The community-supported `dagster-dingtalk` package provides an integration with DingTalk.
-date: 
+date:
 apireflink:
 docslink:
 partnerlink:

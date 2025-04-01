@@ -36,42 +36,46 @@ To complete the steps in this guide, you'll need:
 ## Step 2: Configure SSO in Google Workspace \{#configure-sso}
 
 1. On the **App details** page:
-    1. Fill in the **App name** field.
-    2. Fill in the **Description** field.
 
-       The page should look similar to the following:
+   1. Fill in the **App name** field.
+   2. Fill in the **Description** field.
 
-       ![Application Details](/images/dagster-plus/features/authentication-and-access-control/google-workspace/application-details.png)
+      The page should look similar to the following:
 
-    3. Click **Continue**.
+      ![Application Details](/images/dagster-plus/features/authentication-and-access-control/google-workspace/application-details.png)
+
+   3. Click **Continue**.
 
 2. On the **Google Identity Provider details** page, click **Continue**. No action is required for this page.
 3. On the **Service provider details** page:
-    1.  In the **ACS URL** and **Entity ID** fields:
 
-        Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
+   1. In the **ACS URL** and **Entity ID** fields:
 
-        ```
-        https://<organization_name>.dagster.cloud/auth/saml/consume
-        ```
+      Copy and paste the following URL, replacing `<organization_name>` with your Dagster+ organization name:
 
-    2.  Check the **Signed Response** box. The page should look similar to the image below. In this example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud`:
+      ```
+      https://<organization_name>.dagster.cloud/auth/saml/consume
+      ```
 
-        ![Service Provider Details](/images/dagster-plus/features/authentication-and-access-control/google-workspace/service-provider-details.png)
+   2. Check the **Signed Response** box. The page should look similar to the image below. In this example, the organization's name is `hooli` and the Dagster+ domain is `https://hooli.dagster.cloud`:
 
-    3.  When finished, click **Continue**.
-4.  On the **Attributes** page:
-    1. Click **Add mapping** to add and configure the following attributes:
+      ![Service Provider Details](/images/dagster-plus/features/authentication-and-access-control/google-workspace/service-provider-details.png)
 
-       - **Basic Information > First Name** - `FirstName`
-       - **Basic Information > Last Name** - `LastName`
-       - **Basic Information > Email** - `Email`
+   3. When finished, click **Continue**.
 
-       The page should look like the following image:
+4. On the **Attributes** page:
 
-       ![Attribute Mapping](/images/dagster-plus/features/authentication-and-access-control/google-workspace/attribute-mapping.png)
+   1. Click **Add mapping** to add and configure the following attributes:
 
-    2. Click **Finish**.
+      - **Basic Information > First Name** - `FirstName`
+      - **Basic Information > Last Name** - `LastName`
+      - **Basic Information > Email** - `Email`
+
+      The page should look like the following image:
+
+      ![Attribute Mapping](/images/dagster-plus/features/authentication-and-access-control/google-workspace/attribute-mapping.png)
+
+   2. Click **Finish**.
 
 ## Step 3: Upload the SAML metadata to Dagster+ \{#upload-saml}
 
@@ -102,7 +106,7 @@ In this step, you'll assign users in your Google Workspace to the Dagster+ appli
 
    ![Assign New Login](/images/dagster-plus/features/authentication-and-access-control/google-workspace/new-login.png)
 
-import TestSSO from '../../../../partials/\_TestSSO.md';
+import TestSSO from '@site/docs/partials/\_TestSSO.md';
 
 <TestSSO />
 

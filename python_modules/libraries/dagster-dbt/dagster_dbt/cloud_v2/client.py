@@ -1,8 +1,9 @@
+import datetime
 import logging
 import os
 import time
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import requests
 from dagster import Failure, MetadataValue, get_dagster_logger
@@ -16,6 +17,9 @@ from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType, DbtCloudRun
 
 DAGSTER_DBT_CLOUD_LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = int(
     os.getenv("DAGSTER_DBT_CLOUD_LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT", "100")
+)
+DAGSTER_DBT_CLOUD_BATCH_RUNS_REQUEST_LIMIT = int(
+    os.getenv("DAGSTER_DBT_CLOUD_BATCH_RUNS_REQUEST_LIMIT", "100")
 )
 DEFAULT_POLL_INTERVAL = 1
 DEFAULT_POLL_TIMEOUT = 60
@@ -84,13 +88,13 @@ class DbtCloudWorkspaceClient(DagsterModel):
     def _make_request(
         self,
         method: str,
-        endpoint: str,
+        endpoint: Optional[str],
         base_url: str,
         data: Optional[Mapping[str, Any]] = None,
         params: Optional[Mapping[str, Any]] = None,
         session_attr: str = "_get_session",
     ) -> Mapping[str, Any]:
-        url = f"{base_url}/{endpoint}"
+        url = f"{base_url}/{endpoint}" if endpoint else base_url
 
         num_retries = 0
         while True:
@@ -98,14 +102,13 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 session = getattr(self, session_attr)()
                 response = session.request(
                     method=method,
-                    url=f"{self.api_v2_url}/{endpoint}",
+                    url=url,
                     json=data,
                     params=params,
                     timeout=self.request_timeout,
                 )
                 response.raise_for_status()
-                resp_dict = response.json()
-                return resp_dict["data"] if "data" in resp_dict else resp_dict
+                return response.json()
             except RequestException as e:
                 self._log.error(
                     f"Request to dbt Cloud API failed for url {url} with method {method} : {e}"
@@ -153,7 +156,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 "description": description,
                 "job_type": "other",
             },
-        )
+        )["data"]
 
     def list_jobs(
         self,
@@ -183,7 +186,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
                 "limit": DAGSTER_DBT_CLOUD_LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT,
                 "offset": len(results),
             },
-        ):
+        )["data"]:
             results.extend(jobs)
             if len(jobs) < DAGSTER_DBT_CLOUD_LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT:
                 break
@@ -199,7 +202,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             method="get",
             endpoint=f"jobs/{job_id}",
             base_url=self.api_v2_url,
-        )
+        )["data"]
 
     def destroy_job(self, job_id: int) -> Mapping[str, Any]:
         """Destroys a given dbt Cloud job.
@@ -211,7 +214,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             method="delete",
             endpoint=f"jobs/{job_id}",
             base_url=self.api_v2_url,
-        )
+        )["data"]
 
     def trigger_job_run(
         self, job_id: int, steps_override: Optional[Sequence[str]] = None
@@ -235,7 +238,51 @@ class DbtCloudWorkspaceClient(DagsterModel):
             data={"steps_override": steps_override, "cause": "Triggered by dagster."}
             if steps_override
             else None,
+        )["data"]
+
+    def get_runs_batch(
+        self,
+        project_id: int,
+        environment_id: int,
+        finished_at_lower_bound: datetime.datetime,
+        finished_at_upper_bound: datetime.datetime,
+        offset: int = 0,
+    ) -> tuple[Sequence[Mapping[str, Any]], int]:
+        """Retrieves a batch of dbt Cloud runs from a dbt Cloud workspace for a given project and environment.
+
+        Args:
+            project_id (str): The dbt Cloud Project ID. You can retrieve this value from the
+                URL of the "Explore" tab in the dbt Cloud UI.
+            environment_id (str): The dbt Cloud Environment ID. You can retrieve this value from the
+                URL of the given environment page the dbt Cloud UI.
+            finished_at_lower_bound (datetime.datetime): The first run in this batch will have finished
+                at a time that is equal to or after this value.
+            finished_at_upper_bound (datetime.datetime): The last run in this batch will have finished
+                at a time that is equal to or before this value.
+            offset (str): The pagination offset for this request.
+
+        Returns:
+            tuple[List[Dict[str, Any]], int]: A tuple containing:
+                - a list of run details as parsed json data from the response to this request;
+                - the total number of runs for the given parameters.
+        """
+        resp = self._make_request(
+            method="get",
+            endpoint="runs",
+            base_url=self.api_v2_url,
+            params={
+                "account_id": self.account_id,
+                "environment_id": environment_id,
+                "project_id": project_id,
+                "limit": DAGSTER_DBT_CLOUD_BATCH_RUNS_REQUEST_LIMIT,
+                "offset": offset,
+                "finished_at__range": f"""["{finished_at_lower_bound.isoformat()}", "{finished_at_upper_bound.isoformat()}"]""",
+                "order_by": "finished_at",
+            },
         )
+        data = cast(Sequence[Mapping[str, Any]], resp["data"])
+        total_count = resp["extra"]["pagination"]["total_count"]
+        return data, total_count
 
     def get_run_details(self, run_id: int) -> Mapping[str, Any]:
         """Retrieves the details of a given dbt Cloud Run.
@@ -251,7 +298,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             method="get",
             endpoint=f"runs/{run_id}",
             base_url=self.api_v2_url,
-        )
+        )["data"]
 
     def poll_run(
         self,
@@ -296,6 +343,25 @@ class DbtCloudWorkspaceClient(DagsterModel):
             time.sleep(poll_interval)
         raise Exception(f"Run {run.id} did not complete within {poll_timeout} seconds.")  # pyright: ignore[reportPossiblyUnboundVariable]
 
+    def list_run_artifacts(
+        self,
+        run_id: int,
+    ) -> Sequence[str]:
+        """Retrieves a list of artifact names for a given dbt Cloud Run.
+
+        Returns:
+            List[str]: a list of artifact names taken from the response to this request.
+        """
+        return cast(
+            Sequence[str],
+            self._make_request(
+                method="get",
+                endpoint=f"runs/{run_id}/artifacts",
+                base_url=self.api_v2_url,
+                session_attr="_get_artifact_session",
+            )["data"],
+        )
+
     def get_run_artifact(self, run_id: int, path: str) -> Mapping[str, Any]:
         """Retrieves an artifact at the given path for a given dbt Cloud Run.
 
@@ -339,7 +405,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             method="get",
             endpoint=f"projects/{project_id}",
             base_url=self.api_v2_url,
-        )
+        )["data"]
 
     def get_environment_details(self, environment_id: int) -> Mapping[str, Any]:
         """Retrieves the details of a given dbt Cloud Environment.
@@ -355,7 +421,7 @@ class DbtCloudWorkspaceClient(DagsterModel):
             method="get",
             endpoint=f"environments/{environment_id}",
             base_url=self.api_v2_url,
-        )
+        )["data"]
 
     def get_account_details(self) -> Mapping[str, Any]:
         """Retrieves the details of the account associated to the dbt Cloud workspace.
@@ -365,9 +431,9 @@ class DbtCloudWorkspaceClient(DagsterModel):
         """
         return self._make_request(
             method="get",
-            endpoint="",
+            endpoint=None,
             base_url=self.api_v2_url,
-        )
+        )["data"]
 
     def verify_connection(self) -> None:
         """Verifies the connection to the dbt Cloud REST API."""
