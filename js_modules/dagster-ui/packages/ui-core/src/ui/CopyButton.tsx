@@ -4,7 +4,17 @@ import React from 'react';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 
-export const CopyIconButton = ({value}: {value: string | (() => string)}) => {
+interface CopyIconButtonProps {
+  value: string | (() => string);
+  iconSize?: 16 | 20 | 24;
+  iconColor?: string;
+}
+
+export const CopyIconButton = ({
+  value,
+  iconSize = 16,
+  iconColor = Colors.accentGray(),
+}: CopyIconButtonProps) => {
   const copyToClipboard = useCopyToClipboard();
   const [didCopy, setDidCopy] = React.useState(false);
   const iconTimeout = React.useRef<ReturnType<typeof setTimeout>>();
@@ -32,7 +42,8 @@ export const CopyIconButton = ({value}: {value: string | (() => string)}) => {
     <UnstyledButton $expandedClickPx={6} onClick={performCopy}>
       <Icon
         name={didCopy ? 'copy_to_clipboard_done' : 'copy_to_clipboard'}
-        color={Colors.accentGray()}
+        color={iconColor}
+        size={iconSize}
       />
     </UnstyledButton>
   );
