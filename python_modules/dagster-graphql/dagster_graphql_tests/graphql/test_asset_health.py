@@ -27,15 +27,4 @@ class TestAssetHealth(ExecutingGraphQLContextTestMatrix):
         res = execute_dagster_graphql(
             graphql_context, GET_ASSET_HEALTH, variables={"assetKey": {"path": ["asset_1"]}}
         )
-        assert res.data == {
-            "assetNodes": [
-                {
-                    "assetHealth": {
-                        "assetHealth": "UNKNOWN",
-                        "assetChecksStatus": "UNKNOWN",
-                        "freshnessStatus": "UNKNOWN",
-                        "materializationStatus": "UNKNOWN",
-                    }
-                }
-            ]
-        }
+        assert res.data == {"assetNodes": [{"assetHealth": None}]}
