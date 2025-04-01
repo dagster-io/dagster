@@ -1,11 +1,9 @@
 import json
-from collections.abc import Iterable
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import click
-from dagster_shared.serdes.objects import ComponentTypeSnap, LibraryEntryKey
 from rich.console import Console
 from rich.table import Table
 
@@ -70,9 +68,16 @@ def list_component_command(**global_options: object) -> None:
 
 
 def _list_library_entries(
-    registry: RemoteLibraryEntryRegistry, keys: Iterable[LibraryEntryKey], output_json: bool
+    registry: RemoteLibraryEntryRegistry, output_json: bool, entry_type: Optional[str]
 ) -> None:
-    sorted_keys = sorted(keys, key=lambda k: k.to_typename())
+    sorted_keys = sorted(
+        [
+            key
+            for key in registry.keys()
+            if entry_type is None or entry_type in registry.get(key).types
+        ],
+        key=lambda k: k.to_typename(),
+    )
 
     # JSON
     if output_json:
@@ -114,7 +119,7 @@ def list_library_command(output_json: bool, **global_options: object) -> None:
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteLibraryEntryRegistry.from_dg_context(dg_context)
 
-    _list_library_entries(registry, registry.keys(), output_json)
+    _list_library_entries(registry, output_json, entry_type=None)
 
 
 @list_group.command(name="component-type", cls=DgClickCommand)
@@ -133,11 +138,7 @@ def list_component_type_command(output_json: bool, **global_options: object) -> 
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteLibraryEntryRegistry.from_dg_context(dg_context)
 
-    _list_library_entries(
-        registry,
-        (k for k in registry.keys() if isinstance(registry.get(k), ComponentTypeSnap)),
-        output_json,
-    )
+    _list_library_entries(registry, output_json, entry_type="component")
 
 
 # ########################

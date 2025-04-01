@@ -7,12 +7,8 @@ from dagster._core.test_utils import new_cwd
 from dagster_components.cli import cli
 from dagster_components.utils import ensure_dagster_components_tests_import
 from dagster_shared import check
-from dagster_shared.serdes.objects import (
-    ComponentTypeSnap,
-    LibraryEntryKey,
-    LibraryEntrySnap,
-    ScaffolderSnap,
-)
+from dagster_shared.serdes.objects import LibraryEntryKey, LibraryEntrySnap
+from dagster_shared.serdes.objects.library_object import ComponentTypeData, ScaffoldTargetTypeData
 from dagster_shared.serdes.serdes import deserialize_value
 from jsonschema import Draft202012Validator, ValidationError
 
@@ -52,21 +48,25 @@ def test_list_library_objects_from_module():
         "dagster_test.components.scaffoldable_fn",
     ]
 
-    assert result[2] == ComponentTypeSnap(
+    assert result[2] == LibraryEntrySnap(
         key=LibraryEntryKey(namespace="dagster_test.components", name="SimpleAssetComponent"),
-        schema={
-            "additionalProperties": False,
-            "properties": {
-                "asset_key": {"title": "Asset Key", "type": "string"},
-                "value": {"title": "Value", "type": "string"},
-            },
-            "required": ["asset_key", "value"],
-            "title": "SimpleAssetComponentModel",
-            "type": "object",
-        },
         description="A simple asset that returns a constant string value.",
         summary="A simple asset that returns a constant string value.",
-        scaffolder=ScaffolderSnap(schema=None),
+        type_data=[
+            ComponentTypeData(
+                schema={
+                    "additionalProperties": False,
+                    "properties": {
+                        "asset_key": {"title": "Asset Key", "type": "string"},
+                        "value": {"title": "Value", "type": "string"},
+                    },
+                    "required": ["asset_key", "value"],
+                    "title": "SimpleAssetComponentModel",
+                    "type": "object",
+                }
+            ),
+            ScaffoldTargetTypeData(schema=None),
+        ],
     )
 
     pipes_script_params_schema = {
@@ -79,12 +79,14 @@ def test_list_library_objects_from_module():
         "type": "object",
     }
 
-    assert result[3] == ComponentTypeSnap(
+    assert result[3] == LibraryEntrySnap(
         key=LibraryEntryKey(namespace="dagster_test.components", name="SimplePipesScriptComponent"),
-        schema=pipes_script_params_schema,
         description="A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
         summary="A simple asset that runs a Python script with the Pipes subprocess client.",
-        scaffolder=ScaffolderSnap(schema=pipes_script_params_schema),
+        type_data=[
+            ComponentTypeData(schema=pipes_script_params_schema),
+            ScaffoldTargetTypeData(schema=pipes_script_params_schema),
+        ],
     )
 
 

@@ -117,7 +117,8 @@ def check_yaml(
     )
     for key, component_doc_tree in component_contents_by_key.items():
         try:
-            json_schema = component_registry.get_component_type(key).schema or {}
+            type_data = component_registry.get(key).get_type_data("component")
+            json_schema = (type_data.schema if type_data else None) or {}
 
             v = Draft202012Validator(json_schema)
             for err in v.iter_errors(component_doc_tree.value["attributes"]):

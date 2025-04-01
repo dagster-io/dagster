@@ -91,36 +91,36 @@ def inspect_component_type_command(
             "Only one of --description, --scaffold-params-schema, and --component-schema can be specified."
         )
 
-    component_type_snap = registry.get_component_type(component_key)
+    entry_snap = registry.get(component_key)
 
     if description:
-        if component_type_snap.description:
-            click.echo(component_type_snap.description)
+        if entry_snap.description:
+            click.echo(entry_snap.description)
         else:
             click.echo("No description available.")
     elif scaffold_params_schema:
-        if component_type_snap.scaffolder_schema:
-            click.echo(_serialize_json_schema(component_type_snap.scaffolder_schema))
+        if entry_snap.scaffolder_schema:
+            click.echo(_serialize_json_schema(entry_snap.scaffolder_schema))
         else:
             click.echo("No scaffold params schema defined.")
     elif component_schema:
-        if component_type_snap.schema:
-            click.echo(_serialize_json_schema(component_type_snap.schema))
+        if entry_snap.component_schema:
+            click.echo(_serialize_json_schema(entry_snap.component_schema))
         else:
             click.echo("No component schema defined.")
 
     # print all available metadata
     else:
         click.echo(component_type)
-        if component_type_snap.description:
+        if entry_snap.description:
             click.echo("\nDescription:\n")
-            click.echo(component_type_snap.description)
-        if component_type_snap.scaffolder_schema:
+            click.echo(entry_snap.description)
+        if entry_snap.scaffolder_schema:
             click.echo("\nScaffold params schema:\n")
-            click.echo(_serialize_json_schema(component_type_snap.scaffolder_schema))
-        if component_type_snap.schema:
+            click.echo(_serialize_json_schema(entry_snap.scaffolder_schema))
+        if entry_snap.component_schema:
             click.echo("\nComponent schema:\n")
-            click.echo(_serialize_json_schema(component_type_snap.schema))
+            click.echo(_serialize_json_schema(entry_snap.component_schema))
 
 
 def _serialize_json_schema(schema: Mapping[str, Any]) -> str:

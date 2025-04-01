@@ -1,6 +1,6 @@
 from dagster_shared.serdes.objects.library_object import (
-    ComponentTypeSnap as ComponentTypeSnap,
+    ComponentTypeData as ComponentTypeData,
     LibraryEntryKey as LibraryEntryKey,
     LibraryEntrySnap as LibraryEntrySnap,
-    ScaffolderSnap as ScaffolderSnap,
+    ScaffoldTargetTypeData as ScaffoldTargetTypeData,
 )

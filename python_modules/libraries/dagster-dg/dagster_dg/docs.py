@@ -5,11 +5,11 @@ from itertools import groupby
 from typing import Any, Optional, TypedDict, Union
 
 import yaml
-from dagster_shared.serdes.objects import LibraryEntryKey
+from dagster_shared.serdes.objects import ComponentTypeData, LibraryEntryKey, LibraryEntrySnap
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
-from dagster_dg.component import ComponentTypeSnap, RemoteLibraryEntryRegistry
+from dagster_dg.component import RemoteLibraryEntryRegistry
 
 REF_BASE = "#/$defs/"
 JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY = "dagster_required_scope"
@@ -175,11 +175,16 @@ def json_for_all_components(
     registry: RemoteLibraryEntryRegistry,
 ) -> list[ComponentTypeNamespaceJson]:
     """Returns a list of JSON representations of all component types in the registry."""
-    component_json = [
-        (key.namespace.split(".")[0], json_for_component_type(key, library_obj))
-        for key, library_obj in registry.items()
-        if isinstance(library_obj, ComponentTypeSnap) and library_obj.schema is not None
-    ]
+    component_json = []
+    for key, library_obj in registry.items():
+        component_type_data = library_obj.get_type_data("component")
+        if component_type_data and component_type_data.schema:
+            component_json.append(
+                (
+                    key.namespace.split(".")[0],
+                    json_for_component_type(key, library_obj, component_type_data),
+                )
+            )
     return [
         ComponentTypeNamespaceJson(
             name=namespace,
@@ -190,15 +195,15 @@ def json_for_all_components(
 
 
 def json_for_component_type(
-    key: LibraryEntryKey, remote_component_type: ComponentTypeSnap
+    key: LibraryEntryKey, library_entry: LibraryEntrySnap, component_type_data: ComponentTypeData
 ) -> ComponentTypeJson:
     typename = key.to_typename()
-    sample_yaml = generate_sample_yaml(typename, remote_component_type.schema or {})
+    sample_yaml = generate_sample_yaml(typename, component_type_data.schema or {})
     return ComponentTypeJson(
         name=typename,
         author="",
         tags=[],
         example=sample_yaml,
-        schema=json.dumps(remote_component_type.schema),
-        description=remote_component_type.description,
+        schema=json.dumps(component_type_data.schema),
+        description=library_entry.description,
     )
