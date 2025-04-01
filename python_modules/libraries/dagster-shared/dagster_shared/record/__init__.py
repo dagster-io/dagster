@@ -9,6 +9,7 @@ from typing import (  # noqa: UP035
     Any,
     Callable,
     Generic,
+    Iterator,
     NamedTuple,
     Optional,
     Tuple,  # noqa: F401
@@ -629,5 +630,5 @@ class NamedTupleAdapter(Generic[TRecord]):
     def _replace(self: TRecord, **kwargs) -> TRecord:
         return replace(self, **kwargs)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator:
         return tuple.__iter__(self)  # type: ignore
