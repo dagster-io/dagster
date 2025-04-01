@@ -443,6 +443,13 @@ export type AssetHealthMaterializationWarningPartitionedMeta = {
   totalNumPartitions: Scalars['Int']['output'];
 };
 
+export type AssetHealthFilter = {
+  assetChecksStatus?: InputMaybe<AssetHealthStatus>;
+  assetHealth?: InputMaybe<AssetHealthStatus>;
+  freshnessStatus?: InputMaybe<AssetHealthStatus>;
+  materializationStatus?: InputMaybe<AssetHealthStatus>;
+};
+
 export enum AssetHealthStatus {
   DEGRADED = 'DEGRADED',
   HEALTHY = 'HEALTHY',
@@ -4076,6 +4083,7 @@ export type QueryAssetNodeOrErrorArgs = {
 };
 
 export type QueryAssetNodesArgs = {
+  assetHealthFilter?: InputMaybe<AssetHealthFilter>;
   assetKeys?: InputMaybe<Array<AssetKeyInput>>;
   group?: InputMaybe<AssetGroupSelector>;
   loadMaterializations?: InputMaybe<Scalars['Boolean']['input']>;
@@ -6860,6 +6868,32 @@ export const buildAssetHealthMaterializationWarningPartitionedMeta = (
       overrides && overrides.hasOwnProperty('totalNumPartitions')
         ? overrides.totalNumPartitions!
         : 8637,
+  };
+};
+
+export const buildAssetHealthFilter = (
+  overrides?: Partial<AssetHealthFilter>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): AssetHealthFilter => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetHealthFilter');
+  return {
+    assetChecksStatus:
+      overrides && overrides.hasOwnProperty('assetChecksStatus')
+        ? overrides.assetChecksStatus!
+        : AssetHealthStatus.DEGRADED,
+    assetHealth:
+      overrides && overrides.hasOwnProperty('assetHealth')
+        ? overrides.assetHealth!
+        : AssetHealthStatus.DEGRADED,
+    freshnessStatus:
+      overrides && overrides.hasOwnProperty('freshnessStatus')
+        ? overrides.freshnessStatus!
+        : AssetHealthStatus.DEGRADED,
+    materializationStatus:
+      overrides && overrides.hasOwnProperty('materializationStatus')
+        ? overrides.materializationStatus!
+        : AssetHealthStatus.DEGRADED,
   };
 };
 

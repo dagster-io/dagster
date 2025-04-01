@@ -2602,6 +2602,13 @@ enum BulkActionStatus {
   COMPLETED_FAILED
 }
 
+input AssetHealthFilter {
+  assetHealth: AssetHealthStatus
+  materializationStatus: AssetHealthStatus
+  assetChecksStatus: AssetHealthStatus
+  freshnessStatus: AssetHealthStatus
+}
+
 type DaemonHealth {
   id: String!
   daemonStatus(daemonType: String): DaemonStatus!
@@ -3513,6 +3520,7 @@ type Query {
     pipeline: PipelineSelector
     assetKeys: [AssetKeyInput!]
     loadMaterializations: Boolean = false
+    assetHealthFilter: AssetHealthFilter
   ): [AssetNode!]!
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
   assetNodeAdditionalRequiredKeys(assetKeys: [AssetKeyInput!]!): [AssetKey!]!
