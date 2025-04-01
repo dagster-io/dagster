@@ -75,7 +75,6 @@ from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 from dagster._vendored.dateutil.relativedelta import relativedelta
-from dagster_shared.record import replace
 
 from dagster_tests.scheduler_tests.conftest import loadable_target_origin, workspace_load_target
 
@@ -1601,9 +1600,8 @@ class TestSchedulerRun:
 
         code_location_origin = existing_origin.repository_origin.code_location_origin
         assert isinstance(code_location_origin, ManagedGrpcPythonEnvCodeLocationOrigin)
-        modified_loadable_target_origin = replace(
-            code_location_origin.loadable_target_origin,
-            executable_path="/different/executable_path",
+        modified_loadable_target_origin = code_location_origin.loadable_target_origin._replace(
+            executable_path="/different/executable_path"
         )
 
         # Change metadata on the origin that shouldn't matter for execution
