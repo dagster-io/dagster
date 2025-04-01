@@ -1,6 +1,7 @@
 from collections.abc import Mapping
 from typing import Any, Optional
 
+import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
@@ -28,4 +29,11 @@ class DagsterCloudGraphQLClient:
         )
 
     def execute(self, query: str, variables: Optional[Mapping[str, Any]] = None):
-        return self.client.execute(gql(query), variable_values=dict(variables or {}))
+        result = self.client.execute(gql(query), variable_values=dict(variables or {}))
+        value = next(iter(result.values()))
+        if isinstance(value, Mapping):
+            if value.get("__typename") == "UnauthorizedError":
+                raise click.ClickException("Unauthorized: " + value["message"])
+            elif value.get("__typename", "").endswith("Error"):
+                raise click.ClickException("Error: " + value["message"])
+        return result

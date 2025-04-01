@@ -13,6 +13,11 @@ import tomlkit
 import yaml
 from click.testing import CliRunner
 from dagster_dg.cli.plus import plus_group
+from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_dg.utils.plus import gql
+
+ensure_dagster_dg_tests_import()
+from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response
 from dagster_shared.plus.config import DagsterPlusCliConfig
 
 
@@ -106,6 +111,13 @@ def test_setup_command_web(fixture_name, request: pytest.FixtureRequest):
                 ]
             }
         },
+    )
+    mock_gql_response(
+        query=gql.FULL_DEPLOYMENTS_QUERY,
+        json_data={"data": {"fullDeployments": [{"deploymentName": "hooli-dev"}]}},
+        url="https://custom_subdomain.dagster.cloud/hooli/graphql"
+        if fixture_name == "setup_dg_cli_config_custom_url"
+        else "https://dagster.cloud/hooli/graphql",
     )
     responses.add_passthru("http://localhost:4000/callback")
     runner = CliRunner()
