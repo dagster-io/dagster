@@ -74,15 +74,18 @@ def test_list_components_success():
 # ########################
 
 _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
-    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    ┃ Library Entry                                      ┃ Summary                                                         ┃
-    ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-    │ dagster_test.components.AllMetadataEmptyComponent  │                                                                 │
-    │ dagster_test.components.ComplexAssetComponent      │ An asset that has a complex schema.                             │
-    │ dagster_test.components.SimpleAssetComponent       │ A simple asset that returns a constant string value.            │
-    │ dagster_test.components.SimplePipesScriptComponent │ A simple asset that runs a Python script with the Pipes         │
-    │                                                    │ subprocess client.                                              │
-    └────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────┘
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Library Entry                                      ┃ Summary                          ┃ Types                        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ dagster_test.components.AllMetadataEmptyComponent  │                                  │ [component, scaffold-target] │
+│ dagster_test.components.ComplexAssetComponent      │ An asset that has a complex      │ [component, scaffold-target] │
+│                                                    │ schema.                          │                              │
+│ dagster_test.components.SimpleAssetComponent       │ A simple asset that returns a    │ [component, scaffold-target] │
+│                                                    │ constant string value.           │                              │
+│ dagster_test.components.SimplePipesScriptComponent │ A simple asset that runs a       │ [component, scaffold-target] │
+│                                                    │ Python script with the Pipes     │                              │
+│                                                    │ subprocess client.               │                              │
+└────────────────────────────────────────────────────┴──────────────────────────────────┴──────────────────────────────┘
 """).strip()
 
 _EXPECTED_COMPONENT_TYPES_JSON = textwrap.dedent("""
@@ -120,6 +123,12 @@ def test_list_component_types_success():
             output = "\n".join(result.output.split("\n")[1:])
             match_terminal_box_output(output.strip(), _EXPECTED_COMPONENT_TYPES)
 
+            result = runner.invoke("list", "library", "--entry-type", "component")
+            assert_runner_result(result)
+            # strip the first line of logging output
+            output = "\n".join(result.output.split("\n")[1:])
+            match_terminal_box_output(output.strip(), _EXPECTED_COMPONENT_TYPES)
+
 
 def test_list_component_type_json_success():
     with (
@@ -134,17 +143,22 @@ def test_list_component_type_json_success():
 
 
 _EXPECTED_LIBRARY = textwrap.dedent("""
-    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    ┃ Library Entry                                      ┃ Summary                                                         ┃
-    ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-    │ dagster_test.components.AllMetadataEmptyComponent  │                                                                 │
-    │ dagster_test.components.ComplexAssetComponent      │ An asset that has a complex schema.                             │
-    │ dagster_test.components.SimpleAssetComponent       │ A simple asset that returns a constant string value.            │
-    │ dagster_test.components.SimplePipesScriptComponent │ A simple asset that runs a Python script with the Pipes         │
-    │                                                    │ subprocess client.                                              │
-    │ dagster_test.components.scaffoldable_fn            │ A sample function that can be scaffolded.                       │
-    └────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────┘
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Library Entry                                      ┃ Summary                          ┃ Types                        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ dagster_test.components.AllMetadataEmptyComponent  │                                  │ [component, scaffold-target] │
+│ dagster_test.components.ComplexAssetComponent      │ An asset that has a complex      │ [component, scaffold-target] │
+│                                                    │ schema.                          │                              │
+│ dagster_test.components.SimpleAssetComponent       │ A simple asset that returns a    │ [component, scaffold-target] │
+│                                                    │ constant string value.           │                              │
+│ dagster_test.components.SimplePipesScriptComponent │ A simple asset that runs a       │ [component, scaffold-target] │
+│                                                    │ Python script with the Pipes     │                              │
+│                                                    │ subprocess client.               │                              │
+│ dagster_test.components.scaffoldable_fn            │ A sample function that can be    │ []                           │
+│                                                    │ scaffolded.                      │                              │
+└────────────────────────────────────────────────────┴──────────────────────────────────┴──────────────────────────────┘
 """).strip()
+
 
 _EXPECTED_LIBRARY_JSON = textwrap.dedent("""
     [

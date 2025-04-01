@@ -4,8 +4,10 @@ from pathlib import Path
 from typing import Any, Optional
 
 import click
+from dagster_shared.serdes.objects import LibraryEntrySnap
 from rich.console import Console
 from rich.table import Table
+from rich.text import Text
 
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import RemoteLibraryEntryRegistry
@@ -66,6 +68,18 @@ def list_component_command(**global_options: object) -> None:
 # ##### LIBRARY
 # #############
 
+ENTRY_TYPE_COLOR_MAP = {"component": "deep_sky_blue3", "scaffold-target": "khaki1"}
+
+
+def _pretty_entry_types(entry: LibraryEntrySnap) -> Text:
+    text = Text()
+    for entry_type in entry.types:
+        if len(text) > 0:
+            text += Text(", ")
+        text += Text(entry_type, style=ENTRY_TYPE_COLOR_MAP.get(entry_type, ""))
+    text = Text("[") + text + Text("]")
+    return text
+
 
 def _list_library_entries(
     registry: RemoteLibraryEntryRegistry, output_json: bool, entry_type: Optional[str]
@@ -97,8 +111,10 @@ def _list_library_entries(
         table = Table(border_style="dim")
         table.add_column("Library Entry", style="bold cyan", no_wrap=True)
         table.add_column("Summary")
+        table.add_column("Types")
         for key in sorted_keys:
-            table.add_row(key.to_typename(), registry.get(key).summary)
+            entry = registry.get(key)
+            table.add_row(key.to_typename(), entry.summary, _pretty_entry_types(entry))
         console = Console()
         console.print(table)
 
@@ -111,15 +127,22 @@ def _list_library_entries(
     default=False,
     help="Output as JSON instead of a table.",
 )
+@click.option(
+    "--entry-type",
+    type=click.Choice(["component", "scaffold-target"]),
+    help="Filter by entry type.",
+)
 @dg_global_options
 @cli_telemetry_wrapper
-def list_library_command(output_json: bool, **global_options: object) -> None:
+def list_library_command(
+    output_json: bool, entry_type: Optional[str], **global_options: object
+) -> None:
     """List registered Dagster library entries in the current project environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteLibraryEntryRegistry.from_dg_context(dg_context)
 
-    _list_library_entries(registry, output_json, entry_type=None)
+    _list_library_entries(registry, output_json, entry_type=entry_type)
 
 
 @list_group.command(name="component-type", cls=DgClickCommand)
