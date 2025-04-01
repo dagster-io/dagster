@@ -9,22 +9,6 @@ from dagster_components.component.component_loader import ComponentLoadFn, is_co
 TComponent = TypeVar("TComponent", bound=Component)
 
 
-# def load_direct(
-#     component_type: type[TComponent],
-#     attribute_yaml: str,
-# ) -> TComponent:
-#     decl_node = DirectForTestComponentDecl(
-#         path=Path("/"),
-#         component_type=component_type,
-#         attributes_yaml=attribute_yaml,
-#     )
-#     context = ComponentLoadContext.for_test(
-#         decl_node=decl_node,
-#     )
-#     components = decl_node.load(context)
-#     return components[0]  # type: ignore
-
-
 def load_component_defs(
     *,
     context: Optional["ComponentLoadContext"] = None,
