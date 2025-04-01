@@ -198,7 +198,7 @@ class DeltaLakeDbClient(DbClient):
         # the operation being executed.
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
 
-        if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+        if table_slice.partition_dimensions:
             query = f"SELECT {col_str} FROM {table_slice.schema}.{table_slice.table} WHERE\n"
             return query + _partition_where_clause(table_slice.partition_dimensions)
         else:
