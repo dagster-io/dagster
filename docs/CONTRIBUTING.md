@@ -40,6 +40,16 @@ import Deprecated from '@site/docs/partials/\_Deprecated.md';
 <Deprecated />
 ```
 
+### API documentation
+
+API documentation lives in reStructuredText files in the [/docs/sphinx/sections/api/apidocs](https://github.com/dagster-io/dagster/tree/master/docs/sphinx/sections/api/apidocs) directory. These files reference modules, classes, and methods from Python files in the [python_modules](https://github.com/dagster-io/dagster/tree/master/python_modules) directory (mainly the `dagster`, `dagster-pipes`, and `libraries` directories). When the API docs are built, Sphinx populates them with the docstrings from those modules, classes, and methods.
+
+When you make changes to the API, you may need to do some or all of the following:
+* Add or update docstrings in Python files
+* Update reStructuredText files to reference new modules, classes, or methods
+
+In any case, you will need to follow the [reStructuredText syntax](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html).
+
 ## Formatting
 
 ### PyObject references
