@@ -4,7 +4,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from dagster._components.utils import format_error_message
+from dagster.components.utils import format_error_message
 from dagster_dg.utils import ensure_dagster_dg_tests_import
 
 ensure_dagster_dg_tests_import()
@@ -236,7 +236,7 @@ def test_list_defs_succeeds(use_json: bool):
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
-        result = runner.invoke("scaffold", "dagster.DefsFolderComponent", "mydefs")
+        result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
         assert_runner_result(result)
 
         with Path("foo_bar/defs/mydefs/definitions.py").open("w") as f:
@@ -293,7 +293,7 @@ def test_list_defs_complex_assets_succeeds():
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
-        result = runner.invoke("scaffold", "dagster.DefsFolderComponent", "mydefs")
+        result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
         assert_runner_result(result)
 
         with Path("foo_bar/defs/mydefs/definitions.py").open("w") as f:
@@ -352,7 +352,7 @@ def test_list_defs_with_env_file_succeeds():
     ):
         result = runner.invoke(
             "scaffold",
-            "dagster.DefsFolderComponent",
+            "dagster.components.DefsFolderComponent",
             "mydefs",
         )
         assert_runner_result(result)

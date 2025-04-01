@@ -1,7 +1,7 @@
 import importlib
 
-from dagster._components import Component
-from dagster._components.core.library_object import get_library_objects_in_module
+from dagster.components import Component
+from dagster.components.core.library_object import get_library_objects_in_module
 
 _COMPONENT_LIBRARY_MODULES = [
     "dagster",

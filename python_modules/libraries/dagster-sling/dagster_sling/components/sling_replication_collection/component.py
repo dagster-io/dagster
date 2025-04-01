@@ -3,20 +3,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Annotated, Any, Literal, Optional, Union
 
-from dagster._components import Resolvable, Resolver
-from dagster._components.component.component import Component
-from dagster._components.core.context import ComponentLoadContext
-from dagster._components.lib.sling_replication_collection.scaffolder import (
-    SlingReplicationComponentScaffolder,
-)
-from dagster._components.resolved.context import ResolutionContext
-from dagster._components.resolved.core_models import (
-    AssetAttributesModel,
-    AssetPostProcessor,
-    OpSpec,
-)
-from dagster._components.scaffold.scaffold import scaffold_with
-from dagster._components.utils import TranslatorResolvingInfo
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -25,9 +11,21 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
-from dagster_sling import DagsterSlingTranslator, SlingResource, sling_assets
-from dagster_sling.resources import AssetExecutionContext
+from dagster.components import Resolvable, Resolver
+from dagster.components.component.component import Component
+from dagster.components.core.context import ComponentLoadContext
+from dagster.components.resolved.context import ResolutionContext
+from dagster.components.resolved.core_models import AssetAttributesModel, AssetPostProcessor, OpSpec
+from dagster.components.scaffold.scaffold import scaffold_with
+from dagster.components.utils import TranslatorResolvingInfo
 from typing_extensions import TypeAlias
+
+from dagster_sling.asset_decorator import sling_assets
+from dagster_sling.components.sling_replication_collection.scaffolder import (
+    SlingReplicationComponentScaffolder,
+)
+from dagster_sling.dagster_sling_translator import DagsterSlingTranslator
+from dagster_sling.resources import AssetExecutionContext, SlingResource
 
 SlingMetadataAddons: TypeAlias = Literal["column_metadata", "row_count"]
 

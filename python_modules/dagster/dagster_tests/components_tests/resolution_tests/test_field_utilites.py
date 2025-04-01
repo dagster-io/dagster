@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Annotated
 
-from dagster._components import Resolvable, Resolver
-from dagster._components.resolved.base import _get_annotations, _get_resolver
+from dagster.components import Resolvable, Resolver
+from dagster.components.resolved.base import _get_annotations, _get_resolver
 from pydantic import BaseModel
 
 

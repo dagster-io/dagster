@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
-from dagster._components.cli import cli
 from dagster._core.test_utils import ensure_dagster_tests_import, new_cwd
+from dagster.components.cli import cli
 from dagster_shared import check
 from dagster_shared.serdes.objects import (
     ComponentTypeSnap,

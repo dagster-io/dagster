@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import Optional, Union
 
 import pytest
-from dagster._components.core.load_defs import load_defs
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
+from dagster.components.core.load_defs import load_defs
 
 from dagster_tests.components_tests.utils import create_project_from_components
 

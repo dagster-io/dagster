@@ -456,6 +456,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "api_tests",
             "asset_defs_tests",
             "cli_tests",
+            "components_tests",
             "core_tests",
             "daemon_sensor_tests",
             "daemon_tests",

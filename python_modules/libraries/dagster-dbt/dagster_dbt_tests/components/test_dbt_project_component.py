@@ -9,17 +9,20 @@ from typing import Any, Callable, Optional
 
 import pytest
 from dagster import AssetKey, AssetSpec, BackfillPolicy
-from dagster._components.core.load_defs import build_component_defs
-from dagster._components.lib.dbt_project.component import DbtProjectComponent
-from dagster._components.resolved.core_models import AssetAttributesModel
 from dagster._core.definitions.backfill_policy import BackfillPolicyType
-from dagster_dbt import DbtProject
+from dagster._core.test_utils import ensure_dagster_tests_import
+from dagster.components.core.load_defs import build_component_defs
+from dagster.components.resolved.core_models import AssetAttributesModel
+from dagster_dbt import DbtProject, DbtProjectComponent
+
+ensure_dagster_tests_import()
+
 from dagster_tests.components_tests.integration_tests.component_loader import (
     load_test_component_defs,
 )
 from dagster_tests.components_tests.utils import build_component_defs_for_test
 
-STUB_LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "dbt_project_location"
+STUB_LOCATION_PATH = Path(__file__).parent / "code_locations" / "dbt_project_location"
 COMPONENT_RELPATH = "defs/jaffle_shop_dbt"
 
 JAFFLE_SHOP_KEYS = {
@@ -203,7 +206,7 @@ def test_asset_attributes_is_comprehensive():
     all_asset_attribute_keys = []
     for test_arg in test_asset_attributes.pytestmark[0].args[1]:  # pyright: ignore[reportFunctionMemberAccess]
         all_asset_attribute_keys.extend(test_arg[0].keys())
-    from dagster._components.resolved.core_models import AssetAttributesModel
+    from dagster.components.resolved.core_models import AssetAttributesModel
 
     assert (
         set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS
@@ -228,7 +231,7 @@ def test_exclude(dbt_path: Path) -> None:
 
 
 DEPENDENCY_ON_DBT_PROJECT_LOCATION_PATH = (
-    Path(__file__).parent.parent / "code_locations" / "dependency_on_dbt_project_location"
+    Path(__file__).parent / "code_locations" / "dependency_on_dbt_project_location"
 )
 
 

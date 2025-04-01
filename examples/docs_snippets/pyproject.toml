@@ -11,6 +11,7 @@ extend-exclude = [
   "docs_snippets/guides/dg/migrating-project/6-initial-definitions.py",
   "docs_snippets/guides/components/shell-script-component/2-shell-command-empty.py",
   "docs_snippets/guides/components/migrating-definitions/2-definitions-before.py",
+  "docs_snippets/guides/dg/migrating-definitions/7-definitions-after-all.py",
 ]
 
 [tool.ruff.lint]

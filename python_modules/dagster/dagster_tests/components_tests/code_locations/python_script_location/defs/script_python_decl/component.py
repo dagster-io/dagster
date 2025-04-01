@@ -1,6 +1,6 @@
 from dagster import AssetSpec, AutomationCondition
-from dagster._components import ComponentLoadContext, component
-from dagster._components.lib.pipes_subprocess_script_collection import (
+from dagster.components import ComponentLoadContext, component
+from dagster.components.lib.pipes_subprocess_script_collection import (
     PipesSubprocessScript,
     PipesSubprocessScriptCollectionComponent,
 )

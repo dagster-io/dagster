@@ -38,7 +38,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         _run_command(cmd="uv venv")
         _run_command(cmd="uv sync")
         _run_command(
-            f"uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}' '{DAGSTER_ROOT / 'python_modules' / 'dagster'!s}' '{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}'"
+            f"uv add --editable '{DAGSTER_ROOT / 'python_modules' / 'dagster'!s}' '{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}'"
         )
 
         run_command_and_snippet_output(
@@ -67,6 +67,7 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
             Path("my_project") / "defs" / "assets" / "my_asset.py",
             format_multiline('''
                 import dagster as dg
+
 
                 @dg.asset(group_name="my_group")
                 def my_asset(context: dg.AssetExecutionContext) -> None:

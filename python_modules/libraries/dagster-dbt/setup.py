@@ -64,7 +64,10 @@ setup(
         "console_scripts": [
             "dagster-dbt-cloud = dagster_dbt.cloud.cli:app",
             "dagster-dbt = dagster_dbt.cli.app:app",
-        ]
+        ],
+        "dagster_dg.library": [
+            "dagster_dbt = dagster_dbt",
+        ],
     },
     zip_safe=False,
 )

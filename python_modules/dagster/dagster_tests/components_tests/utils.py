@@ -14,10 +14,10 @@ from typing import Any, Iterable, Optional, TypeVar, Union  # noqa: UP035
 import tomlkit
 from click.testing import Result
 from dagster import Definitions
-from dagster._components import Component, ComponentLoadContext
-from dagster._components.utils import ensure_loadable_path
 from dagster._utils import alter_sys_path, pushd
 from dagster._utils.pydantic_yaml import enrich_validation_errors_with_source_position
+from dagster.components import Component, ComponentLoadContext
+from dagster.components.utils import ensure_loadable_path
 from dagster_shared import check
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from pydantic import TypeAdapter

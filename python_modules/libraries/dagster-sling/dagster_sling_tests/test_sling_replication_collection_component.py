@@ -9,14 +9,6 @@ import pytest
 import yaml
 from click.testing import CliRunner
 from dagster import AssetKey
-from dagster._components import ComponentLoadContext
-from dagster._components.cli import cli
-from dagster._components.core.defs_module import DefsModuleComponent, WrappedYamlComponent
-from dagster._components.lib.sling_replication_collection.component import (
-    SlingReplicationCollectionComponent,
-)
-from dagster._components.resolved.context import ResolutionException
-from dagster._components.resolved.core_models import AssetAttributesModel
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
@@ -28,7 +20,12 @@ from dagster._core.instance_for_test import instance_for_test
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import alter_sys_path
 from dagster._utils.env import environ
-from dagster_sling import SlingResource
+from dagster.components import ComponentLoadContext
+from dagster.components.cli import cli
+from dagster.components.core.defs_module import DefsModuleComponent, WrappedYamlComponent
+from dagster.components.resolved.context import ResolutionException
+from dagster.components.resolved.core_models import AssetAttributesModel
+from dagster_sling import SlingReplicationCollectionComponent, SlingResource
 
 ensure_dagster_tests_import()
 
@@ -40,7 +37,7 @@ from dagster_tests.components_tests.utils import (
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
 
-STUB_LOCATION_PATH = Path(__file__).parent.parent / "code_locations" / "sling_location"
+STUB_LOCATION_PATH = Path(__file__).parent / "code_locations" / "sling_location"
 COMPONENT_RELPATH = "defs/ingest"
 REPLICATION_PATH = STUB_LOCATION_PATH / COMPONENT_RELPATH / "replication.yaml"
 
@@ -264,7 +261,7 @@ def test_asset_attributes_is_comprehensive():
     all_asset_attribute_keys = []
     for test_arg in test_asset_attributes.pytestmark[0].args[1]:  # pyright: ignore[reportFunctionMemberAccess]
         all_asset_attribute_keys.extend(test_arg[0].keys())
-    from dagster._components.resolved.core_models import AssetAttributesModel
+    from dagster.components.resolved.core_models import AssetAttributesModel
 
     assert (
         set(AssetAttributesModel.model_fields.keys()) - IGNORED_KEYS

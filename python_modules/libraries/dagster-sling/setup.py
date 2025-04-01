@@ -46,4 +46,9 @@ setup(
             "duckdb",
         ]
     },
+    entry_points={
+        "dagster_dg.library": [
+            "dagster_sling = dagster_sling",
+        ],
+    },
 )

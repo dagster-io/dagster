@@ -2,11 +2,11 @@ from dataclasses import dataclass, field
 from typing import Annotated, Optional
 
 import pytest
-from dagster._components.resolved.base import Resolvable
-from dagster._components.resolved.core_models import ResolvedAssetSpec
-from dagster._components.resolved.errors import ResolutionException
-from dagster._components.resolved.model import Resolver
 from dagster._core.definitions.asset_key import AssetKey
+from dagster.components.resolved.base import Resolvable
+from dagster.components.resolved.core_models import ResolvedAssetSpec
+from dagster.components.resolved.errors import ResolutionException
+from dagster.components.resolved.model import Resolver
 from pydantic import BaseModel, ConfigDict
 
 

@@ -3,8 +3,8 @@ from typing import cast
 
 import dagster as dg
 from component_component_deps.defs import my_python_defs  # type:ignore
-from dagster._components.core.context import ComponentLoadContext
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster.components.core.context import ComponentLoadContext
 
 ctx = ComponentLoadContext.current()
 

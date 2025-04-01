@@ -76,7 +76,6 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
             venv_path,
             [
                 "dagster",
-                "libraries/dagster-components",
                 "dagster-pipes",
                 "libraries/dagster-shared",
                 "dagster-test",

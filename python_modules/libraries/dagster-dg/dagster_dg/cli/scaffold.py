@@ -322,6 +322,7 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
     # value of context settings from the parent group, which has been customized.
     @click.command(
         cls=ScaffoldSubCommand,
+        name=key.to_typename(),
         context_settings={"help_option_names": ["-h", "--help"]},
     )
     @click.argument("instance_name", type=str)

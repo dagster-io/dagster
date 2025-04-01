@@ -44,11 +44,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             custom_comparison_fn=compare_tree_output,
         )
 
-        # Inject dagster-components as a dependency
         setup_py_content = Path("setup.py").read_text()
-        setup_py_content = setup_py_content.replace(
-            '"dagster",\n', '"dagster",\n        "dagster-components",\n'
-        )
         Path("setup.py").write_text(setup_py_content)
 
         # In the tests we use `uv` to avoid need to activate a virtual env, in the
@@ -66,8 +62,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
         )
 
         _run_command(
-            f"uv pip install --editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-components'!s}' "
-            f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster'!s}' "
+            f"uv pip install --editable '{DAGSTER_ROOT / 'python_modules' / 'dagster'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'libraries' / 'dagster-shared'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-webserver'!s}' "
             f"--editable '{DAGSTER_ROOT / 'python_modules' / 'dagster-pipes'!s}' "
@@ -122,7 +117,6 @@ def test_components_docs_index(update_snippets: bool) -> None:
         create_file(
             Path("my_existing_project") / "definitions.py",
             contents=format_multiline("""
-                import dagster_components as dg_components
                 import my_existing_project.defs
                 from my_existing_project.assets import my_asset
 
@@ -130,7 +124,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
                 defs = dg.Definitions.merge(
                     dg.Definitions(assets=[my_asset]),
-                    dg_components.load_defs(my_existing_project.defs),
+                    dg.components.load_defs(my_existing_project.defs),
                 )
             """),
             snippet_path=COMPONENTS_SNIPPETS_DIR

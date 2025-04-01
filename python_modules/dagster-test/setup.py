@@ -23,7 +23,6 @@ setup(
     ],
     extras_require={
         # Eventually we sholud remove this as an extra and just include it in the main package
-        "components": ["dagster-components"],
         "pyspark": ["pyspark"],
     },
     zip_safe=False,

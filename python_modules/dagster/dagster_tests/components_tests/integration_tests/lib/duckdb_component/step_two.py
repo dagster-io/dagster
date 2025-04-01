@@ -2,7 +2,7 @@ from pathlib import Path
 
 import dagster as dg
 import duckdb
-from dagster._components import Component, ComponentLoadContext, Model, Resolvable
+from dagster.components import Component, ComponentLoadContext, Model, Resolvable
 
 
 class DuckDbComponent(Component, Model, Resolvable):

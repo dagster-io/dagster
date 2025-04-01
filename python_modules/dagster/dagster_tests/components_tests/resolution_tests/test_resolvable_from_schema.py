@@ -1,7 +1,7 @@
 from typing import Annotated
 
-from dagster._components import Resolvable, Resolver
-from dagster._components.resolved.context import ResolutionContext
+from dagster.components import Resolvable, Resolver
+from dagster.components.resolved.context import ResolutionContext
 
 
 def test_simple_dataclass_resolveable_from_model():

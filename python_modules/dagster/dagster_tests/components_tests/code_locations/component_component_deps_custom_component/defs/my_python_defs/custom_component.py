@@ -1,5 +1,5 @@
 import dagster as dg
-from dagster._components import Component, ComponentLoadContext
+from dagster.components import Component, ComponentLoadContext
 
 
 class MyBaseAssetsComponent(Component):

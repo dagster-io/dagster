@@ -4,18 +4,6 @@ from functools import cached_property
 from types import ModuleType
 from typing import Annotated, Any, Optional, Union, cast
 
-from dagster._components import Resolvable, Resolver
-from dagster._components.component.component import Component
-from dagster._components.core.context import ComponentLoadContext
-from dagster._components.lib.dbt_project.scaffolder import DbtProjectComponentScaffolder
-from dagster._components.resolved.core_models import (
-    AssetAttributesModel,
-    AssetPostProcessor,
-    OpSpec,
-    ResolutionContext,
-)
-from dagster._components.scaffold.scaffold import scaffold_with
-from dagster._components.utils import TranslatorResolvingInfo
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
@@ -24,20 +12,31 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster_dbt import (
-    DagsterDbtTranslator,
-    DbtCliResource,
-    DbtManifestAssetSelection,
-    DbtProject,
-    dbt_assets,
+from dagster.components import Resolvable, Resolver
+from dagster.components.component.component import Component
+from dagster.components.core.context import ComponentLoadContext
+from dagster.components.resolved.core_models import (
+    AssetAttributesModel,
+    AssetPostProcessor,
+    OpSpec,
+    ResolutionContext,
 )
+from dagster.components.scaffold.scaffold import scaffold_with
+from dagster.components.utils import TranslatorResolvingInfo
+from typing_extensions import override
+
+from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_utils import (
     get_asset_key_for_model as get_asset_key_for_model,
     get_asset_spec,
 )
+from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
+from dagster_dbt.core.resource import DbtCliResource
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 from dagster_dbt.dbt_manifest import validate_manifest
+from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
+from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.utils import get_dbt_resource_props_by_dbt_unique_id_from_manifest
-from typing_extensions import override
 
 
 def resolve_translator(context: ResolutionContext, model) -> DagsterDbtTranslator:
@@ -226,8 +225,8 @@ def get_asset_key_for_model_from_module(
         .. code-block:: python
 
             from dagster import asset
-            from dagster._components.components.dbt_project import get_asset_key_for_model_from_module
-            from dagster._components.core.component import ComponentLoadContext
+            from dagster.components.components.dbt_project import get_asset_key_for_model_from_module
+            from dagster.components.core.component import ComponentLoadContext
             from my_project.defs import dbt_component
 
             ctx = ComponentLoadContext.get()

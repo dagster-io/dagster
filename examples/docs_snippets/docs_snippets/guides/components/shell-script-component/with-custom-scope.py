@@ -4,14 +4,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from dagster_components import (
+import dagster as dg
+from dagster.components import (
     Component,
     ComponentLoadContext,
     Resolvable,
     ResolvedAssetSpec,
 )
-
-import dagster as dg
 
 
 @dataclass

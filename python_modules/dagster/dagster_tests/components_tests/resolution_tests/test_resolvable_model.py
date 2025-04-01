@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from typing import Annotated, Optional
 
-from dagster._components import Injectable, ResolutionContext, Resolvable, Resolver
+from dagster.components import Injectable, ResolutionContext, Resolvable, Resolver
 from pydantic import BaseModel
 
 

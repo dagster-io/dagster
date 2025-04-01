@@ -2,8 +2,8 @@ from collections.abc import Sequence
 
 import pytest
 from dagster import AssetKey, AssetSpec, AutomationCondition, Definitions
-from dagster._components.resolved.context import ResolutionContext
-from dagster._components.resolved.core_models import (
+from dagster.components.resolved.context import ResolutionContext
+from dagster.components.resolved.core_models import (
     AssetPostProcessorModel,
     apply_post_processor_to_defs,
 )

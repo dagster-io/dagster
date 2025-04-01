@@ -7,11 +7,11 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Optional
 
-from dagster._components import Component
-from dagster._components.core.library_object import discover_entry_point_library_objects
-from dagster._components.core.snapshot import get_library_object_snap
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import pushd
+from dagster.components import Component
+from dagster.components.core.library_object import discover_entry_point_library_objects
+from dagster.components.core.snapshot import get_library_object_snap
 from dagster_dg.utils import get_venv_executable
 from dagster_shared.serdes.objects import LibraryObjectKey
 from dagster_shared.serdes.serdes import deserialize_value
@@ -69,7 +69,7 @@ def _find_repo_root():
 
 def _generate_test_component_source(number: int) -> str:
     return textwrap.dedent(f"""
-    from dagster._components import Component
+    from dagster.components import Component
 
     class TestComponent{number}(Component):
         def build_defs(self, context):
@@ -98,30 +98,29 @@ def test_components_from_dagster():
     for pkg_name in ["dagster", "dagster-pipes", "dagster-shared"]:
         common_deps.extend(["-e", _get_editable_package_root(pkg_name)])
 
-    components_root = _get_editable_package_root("dagster-components")
     dbt_root = _get_editable_package_root("dagster-dbt")
     sling_root = _get_editable_package_root("dagster-sling")
 
     # No extras
-    with _temp_venv([*common_deps, "-e", components_root]) as python_executable:
+    with _temp_venv(
+        [
+            *common_deps,
+        ]
+    ) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster.PipesSubprocessScriptCollectionComponent" in component_types
+        assert "dagster.components.PipesSubprocessScriptCollectionComponent" in component_types
         assert "dagster_dbt.DbtProjectComponent" not in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" not in component_types
 
-    with _temp_venv(
-        [*common_deps, "-e", f"{components_root}[dbt]", "-e", dbt_root]
-    ) as python_executable:
+    with _temp_venv([*common_deps, "-e", dbt_root]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster.PipesSubprocessScriptCollectionComponent" in component_types
+        assert "dagster.components.PipesSubprocessScriptCollectionComponent" in component_types
         assert "dagster_dbt.DbtProjectComponent" in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" not in component_types
 
-    with _temp_venv(
-        [*common_deps, "-e", f"{components_root}[sling]", "-e", sling_root]
-    ) as python_executable:
+    with _temp_venv([*common_deps, "-e", sling_root]) as python_executable:
         component_types = _get_component_types_in_python_environment(python_executable)
-        assert "dagster.PipesSubprocessScriptCollectionComponent" in component_types
+        assert "dagster.components.PipesSubprocessScriptCollectionComponent" in component_types
         assert "dagster_dbt.DbtProjectComponent" not in component_types
         assert "dagster_sling.SlingReplicationCollectionComponent" in component_types
 

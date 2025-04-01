@@ -5,7 +5,7 @@ from typing import Optional
 
 import dagster as dg
 import duckdb
-from dagster._components import (
+from dagster.components import (
     Component,
     ComponentLoadContext,
     Model,
@@ -14,8 +14,8 @@ from dagster._components import (
     ScaffoldRequest,
     scaffold_component,
 )
-from dagster._components.resolved.core_models import ResolvedAssetSpec
-from dagster._components.scaffold.scaffold import scaffold_with
+from dagster.components.resolved.core_models import ResolvedAssetSpec
+from dagster.components.scaffold.scaffold import scaffold_with
 from pydantic import BaseModel
 
 

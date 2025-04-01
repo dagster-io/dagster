@@ -15,7 +15,7 @@ from pydantic import BaseModel, ConfigDict
 from typing_extensions import TypeVar
 
 import dagster._check as check
-from dagster import (
+from dagster._config import (
     Field as DagsterField,
     Shape,
 )

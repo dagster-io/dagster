@@ -1,5 +1,5 @@
 import pytest
-from dagster._components.scaffold.scaffold import (
+from dagster.components.scaffold.scaffold import (
     Scaffolder,
     get_scaffolder,
     has_scaffolder,

@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Optional
 
 import dagster._check as check
-from dagster._components.component.component_scaffolder import Scaffolder, ScaffoldRequest
-from dagster._components.component_scaffolding import scaffold_component
+from dagster.components.component.component_scaffolder import Scaffolder, ScaffoldRequest
+from dagster.components.component_scaffolding import scaffold_component
 from dbt.cli.main import dbtRunner
 from pydantic import BaseModel, Field
 

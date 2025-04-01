@@ -5,7 +5,7 @@ from pathlib import Path
 
 import dagster as dg
 import duckdb
-from dagster._components import Component, ComponentLoadContext
+from dagster.components import Component, ComponentLoadContext
 
 
 @dataclass

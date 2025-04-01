@@ -2,18 +2,18 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Optional
 
-from dagster._components import Resolvable
-from dagster._components.resolved.context import ResolutionContext
-from dagster._components.resolved.core_models import (
-    AssetSpecKwargs,
-    ResolvedAssetSpec,
-    resolve_asset_spec,
-)
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
+)
+from dagster.components import Resolvable
+from dagster.components.resolved.context import ResolutionContext
+from dagster.components.resolved.core_models import (
+    AssetSpecKwargs,
+    ResolvedAssetSpec,
+    resolve_asset_spec,
 )
 
 

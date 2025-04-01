@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import Annotated, Optional
 
-from dagster._components import Component
-from dagster._components.resolved.base import Model, Resolvable
-from dagster._components.resolved.model import Resolver
+from dagster.components import Component
+from dagster.components.resolved.base import Model, Resolvable
+from dagster.components.resolved.model import Resolver
 
 from dagster_tests.components_tests.utils import load_component_for_test
 

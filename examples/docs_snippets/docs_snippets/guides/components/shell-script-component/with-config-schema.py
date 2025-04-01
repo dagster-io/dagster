@@ -1,13 +1,12 @@
 from collections.abc import Sequence
 
-from dagster_components import (
+import dagster as dg
+from dagster.components import (
     Component,
     ComponentLoadContext,
     Resolvable,
     ResolvedAssetSpec,
 )
-
-import dagster as dg
 
 
 class ShellCommand(Component, Resolvable):

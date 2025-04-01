@@ -1,8 +1,8 @@
 from typing import Any
 
 import yaml
-from dagster._components.component.component_scaffolder import Scaffolder, ScaffoldRequest
-from dagster._components.component_scaffolding import scaffold_component
+from dagster.components.component.component_scaffolder import Scaffolder, ScaffoldRequest
+from dagster.components.component_scaffolding import scaffold_component
 
 
 class SlingReplicationComponentScaffolder(Scaffolder):

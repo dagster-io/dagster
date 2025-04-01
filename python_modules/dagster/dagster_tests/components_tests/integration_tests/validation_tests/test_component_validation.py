@@ -1,12 +1,12 @@
 import pytest
-from dagster._components.resolved.context import ResolutionException
-from dagster._components.test.test_cases import (
+from dagster._core.test_utils import ensure_dagster_tests_import
+from dagster.components.resolved.context import ResolutionException
+from dagster.components.test.test_cases import (
     BASIC_COMPONENT_TYPE_FILEPATH,
     COMPONENT_VALIDATION_TEST_CASES,
     ComponentValidationTestCase,
     msg_includes_all_of,
 )
-from dagster._core.test_utils import ensure_dagster_tests_import
 from pydantic import ValidationError
 from yaml.scanner import ScannerError
 

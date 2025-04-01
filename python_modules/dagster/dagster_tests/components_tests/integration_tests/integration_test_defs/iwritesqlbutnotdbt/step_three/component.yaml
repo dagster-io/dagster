@@ -1,4 +1,4 @@
-type: dagster_components_tests.integration_tests.lib.duckdb_component.step_three.DuckDbComponent
+type: dagster_tests.components_tests.integration_tests.lib.duckdb_component.step_three.DuckDbComponent
 attributes:
   sql_file: "step_three_query.sql"
   assets:

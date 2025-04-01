@@ -3,8 +3,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from dagster import AssetSpec, AutomationCondition, Definitions
-from dagster._components import Component, ComponentLoadContext, Resolvable
-from dagster._components.resolved.core_models import ResolvedAssetAttributes
+from dagster.components import Component, ComponentLoadContext, Resolvable
+from dagster.components.resolved.core_models import ResolvedAssetAttributes
 
 
 def my_custom_fn(a: str, b: str) -> str:

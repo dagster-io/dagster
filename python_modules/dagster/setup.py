@@ -114,13 +114,6 @@ setup(
         "docker": ["docker"],
         "test": [
             "buildkite-test-collector",
-            "dagster-test",
-            "dbt-duckdb",
-            "dagster-dg",
-            "tomlkit",
-            "jsonschema",
-            "pandas",
-            "duckdb",
             "docker",
             f"grpcio-tools>={GRPC_VERSION_FLOOR}",
             "mypy-protobuf",
@@ -138,6 +131,12 @@ setup(
             "rapidfuzz",
             "flaky",
             "psutil",
+        ],
+        "test-components": [
+            "tomlkit",
+            "jsonschema",
+            "pandas",
+            "duckdb",
         ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [
@@ -168,7 +167,12 @@ setup(
     entry_points={
         "console_scripts": [
             "dagster = dagster.cli:main",
+            "dagster-components = dagster.components.cli:main",
             "dagster-daemon = dagster.daemon.cli:main",
-        ]
+        ],
+        "dagster_dg.library": [
+            "dagster = dagster",
+            "dagster.components = dagster.components",
+        ],
     },
 )

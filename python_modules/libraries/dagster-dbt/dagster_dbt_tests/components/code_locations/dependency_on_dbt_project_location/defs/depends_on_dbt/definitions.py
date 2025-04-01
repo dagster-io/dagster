@@ -1,6 +1,6 @@
 import dagster as dg
-from dagster._components.core.context import ComponentLoadContext
-from dagster._components.lib.dbt_project.component import get_asset_key_for_model_from_module
+from dagster.components.core.context import ComponentLoadContext
+from dagster_dbt.components.dbt_project.component import get_asset_key_for_model_from_module
 from dependency_on_dbt_project_location.defs import jaffle_shop_dbt  # type: ignore
 
 ctx = ComponentLoadContext.current()

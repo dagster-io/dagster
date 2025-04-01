@@ -1,14 +1,14 @@
 import shutil
 from pathlib import Path
 
-from dagster._components import Component, ComponentLoadContext
-from dagster._components.component_scaffolding import scaffold_component
-from dagster._components.scaffold.scaffold import Scaffolder, ScaffoldRequest, scaffold_with
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
+from dagster.components import Component, ComponentLoadContext
+from dagster.components.component_scaffolding import scaffold_component
+from dagster.components.scaffold.scaffold import Scaffolder, ScaffoldRequest, scaffold_with
 from pydantic import BaseModel
 
 

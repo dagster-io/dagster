@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import cast
 
 import dagster as dg
-from dagster._components import Component, ComponentLoadContext
+from dagster.components import Component, ComponentLoadContext
 
 MY_PYTHON_DEFS_COMPONENT_PATH = Path(__file__).parent.parent / "my_python_defs"
 

@@ -1,7 +1,7 @@
 import importlib
 
 from dagster import AssetSpec, AutomationCondition
-from dagster._components.core.load_defs import load_defs
+from dagster.components.core.load_defs import load_defs
 
 
 def test_custom_scope() -> None:
