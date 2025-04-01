@@ -340,7 +340,7 @@ class BigQueryClient(DbClient):
     def get_select_statement(table_slice: TableSlice) -> str:
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
 
-        if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+        if table_slice.partition_dimensions:
             query = (
                 f"SELECT {col_str} FROM"
                 f" `{table_slice.database}.{table_slice.schema}.{table_slice.table}` WHERE\n"
@@ -368,7 +368,7 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     """Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
-    if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+    if table_slice.partition_dimensions:
         query = (
             f"DELETE FROM `{table_slice.database}.{table_slice.schema}.{table_slice.table}` WHERE\n"
         )
