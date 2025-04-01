@@ -563,15 +563,17 @@ class InstanceRef(
 
     @property
     def secrets_loader(self) -> Optional["SecretsLoader"]:
+        from dagster._core.secrets.env_file import PerProjectEnvFileLoader
         from dagster._core.secrets.loader import SecretsLoader
 
-        # Defining a default here rather than in stored config to avoid
-        # back-compat issues when loading the config on older versions where
-        # EnvFileLoader was not defined
+        # Default PerProjectEnvFileLoader is injected here, rather than
+        # in config_defaults, to avoid back-compat issues when loading the
+        # config on older versions where PerProjectEnvFileLoader was not
+        # defined.
         return (
             self.secrets_loader_data.rehydrate(as_type=SecretsLoader)
             if self.secrets_loader_data
-            else None
+            else PerProjectEnvFileLoader()
         )
 
     @property

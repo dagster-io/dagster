@@ -1,15 +1,23 @@
 import signal
 import subprocess
+import tempfile
 import time
 from pathlib import Path
+from typing import Optional, TextIO
 
 import psutil
 import pytest
 import requests
-from dagster_dg.utils import discover_git_root, ensure_dagster_dg_tests_import, is_windows
+from dagster_dg.utils import (
+    discover_git_root,
+    ensure_dagster_dg_tests_import,
+    install_to_venv,
+    is_windows,
+)
 from dagster_graphql.client import DagsterGraphQLClient
 
 ensure_dagster_dg_tests_import()
+
 
 from dagster_components.test.test_cases import BASIC_INVALID_VALUE, BASIC_MISSING_VALUE
 from dagster_dg.utils import ensure_dagster_dg_tests_import, pushd
@@ -48,10 +56,125 @@ def test_dev_workspace_context_success(monkeypatch):
             "project-2",
         )
         assert_runner_result(result)
+
+        (Path("project-2") / "project_2" / "defs" / "my_asset.py").write_text(
+            "import dagster as dg\n\n@dg.asset\ndef my_asset(): pass"
+        )
         port = find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
         projects = {"project-1", "project-2"}
         _assert_projects_loaded_and_exit(projects, port, dev_process)
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_dev_workspace_load_env_files(monkeypatch):
+    """Test that the dg dev command properly loads env files from the workspace and projects."""
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    with ProxyRunner.test() as runner, isolated_example_workspace(runner, create_venv=True):
+        Path(".env").write_text("WORKSPACE_ENV_VAR=1\nOVERWRITTEN_ENV_VAR=3")
+        result = runner.invoke(
+            "scaffold",
+            "project",
+            "--use-editable-dagster",
+            dagster_git_repo_dir,
+            "project-1",
+        )
+        assert_runner_result(result)
+        result = runner.invoke(
+            "scaffold",
+            "project",
+            "--use-editable-dagster",
+            dagster_git_repo_dir,
+            "project-2",
+        )
+        assert_runner_result(result)
+
+        (Path("project-2") / ".env").write_text("PROJECT_ENV_VAR=2\nOVERWRITTEN_ENV_VAR=4")
+
+        (Path("project-2") / "project_2" / "defs" / "my_def.py").write_text(
+            """import os
+
+assert os.environ["PROJECT_ENV_VAR"] == "2"
+assert os.environ["WORKSPACE_ENV_VAR"] == "1"
+assert os.environ["OVERWRITTEN_ENV_VAR"] == "4"
+"""
+        )
+        port = find_free_port()
+        with tempfile.NamedTemporaryFile() as stdout_file, open(stdout_file.name, "w") as stdout:
+            dev_process = _launch_dev_command(["--port", str(port)], stdout=stdout)
+            projects = {"project-1", "project-2"}
+            _assert_projects_loaded_and_exit(projects, port, dev_process)
+
+            assert ("Environment variables will not be injected") not in Path(
+                stdout_file.name
+            ).read_text()
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_dev_workspace_load_env_files_backcompat(monkeypatch):
+    """Test that when .env files are not loaded, for backcompat reasons (e.g. the PerProjectEnvFileLoader
+    is not yet available), we issue a warning.
+    """
+    dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
+    with ProxyRunner.test() as runner, isolated_example_workspace(runner, create_venv=True):
+        Path(".env").write_text("WORKSPACE_ENV_VAR=1\nOVERWRITTEN_ENV_VAR=3")
+        result = runner.invoke(
+            "scaffold",
+            "project",
+            "--use-editable-dagster",
+            dagster_git_repo_dir,
+            "project-1",
+        )
+        assert_runner_result(result)
+        result = runner.invoke(
+            "scaffold",
+            "project",
+            "project-2",
+        )
+        assert_runner_result(result)
+        with pushd(Path("project-2")):
+            install_to_venv(
+                Path(".venv"),
+                [
+                    "dagster==1.10.7",
+                    "dagster-webserver==1.10.7",
+                    "dagster-shared==0.26.7",
+                    "dagster-components==0.26.7",
+                ],
+            )
+
+        (Path("project-2") / ".env").write_text("PROJECT_ENV_VAR=2\nOVERWRITTEN_ENV_VAR=4")
+
+        # Expect that the project env vars are not loaded, since the Dagster version is old
+        # enough
+        (Path("project-2") / "project_2" / "definitions.py").write_text(
+            """import os
+
+from dagster import __version__
+
+assert __version__ == "1.10.7"
+assert os.getenv("PROJECT_ENV_VAR") is None
+assert os.environ["WORKSPACE_ENV_VAR"] == "1"
+assert os.environ["OVERWRITTEN_ENV_VAR"] == "3"
+
+import dagster as dg
+defs = dg.Definitions()
+"""
+        )
+        port = find_free_port()
+
+        with tempfile.NamedTemporaryFile() as stdout_file, open(stdout_file.name, "w") as stdout:
+            dev_process = _launch_dev_command(
+                ["--port", str(port), "--no-check-yaml"], stdout=stdout
+            )
+            projects = {"project-1", "project-2"}
+
+            _assert_projects_loaded_and_exit(projects, port, dev_process)
+
+            assert (
+                "Warning: Dagster version 1.10.7 is less than the minimum required version for .env file environment variable injection "
+                "(1.10.8). Environment variables will not be injected for location project-2."
+            ) in Path(stdout_file.name).read_text()
 
 
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
@@ -165,16 +288,19 @@ def test_implicit_yaml_check_from_dg_dev_workspace() -> None:
 # ########################
 
 
-def _launch_dev_command(options: list[str], capture_output: bool = False) -> subprocess.Popen:
+def _launch_dev_command(
+    options: list[str], capture_output: bool = False, stdout: Optional[TextIO] = None
+) -> subprocess.Popen:
     # We start a new process instead of using the runner to avoid blocking the test. We need to
     # poll the webserver to know when it is ready.
+    assert stdout is None or capture_output is False, "Cannot set both stdout and capture_output"
     return subprocess.Popen(
         [
             "dg",
             "dev",
             *options,
         ],
-        stdout=subprocess.PIPE if capture_output else None,
+        stdout=stdout if stdout else (subprocess.PIPE if capture_output else None),
     )
 
 

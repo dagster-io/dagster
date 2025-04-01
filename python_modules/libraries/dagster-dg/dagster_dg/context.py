@@ -1,3 +1,4 @@
+import json
 import os
 import shlex
 import shutil
@@ -300,6 +301,34 @@ class DgContext:
         if not self.is_project:
             raise DgError("`project_name` is only available in a Dagster project context")
         return self.root_path.name
+
+    def resolve_package_manager_executable(self) -> list[str]:
+        if self.use_dg_managed_environment:
+            return ["uv", "pip"]
+        else:
+            return [str(self.get_executable("python")), "-m", "pip"]
+
+    def get_module_version(self, module_name: str) -> str:
+        if not self.use_dg_managed_environment:
+            raise DgError("`get_module_version` is only available in a Dagster project context")
+
+        with pushd(self.root_path):
+            result = subprocess.check_output(
+                [
+                    *self.resolve_package_manager_executable(),
+                    "list",
+                    "--format",
+                    "json",
+                    "--python",
+                    get_venv_executable(Path(".venv")),
+                ],
+                env=strip_activated_venv_from_env_vars(os.environ),
+            )
+        modules = json.loads(result)
+        for module in modules:
+            if module["name"] == module_name:
+                return module["version"]
+        raise DgError(f"Module `{module_name}` not found")
 
     @property
     def project_python_executable(self) -> Path:
