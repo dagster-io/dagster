@@ -108,6 +108,7 @@ from dagster_graphql.schema.asset_graph import (
     GrapheneAssetNodeDefinitionCollision,
     GrapheneAssetNodeOrError,
 )
+from dagster_graphql.schema.asset_health import compute_health_status_from_component_statuses
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationRecordsOrError,
 )
@@ -131,6 +132,7 @@ from dagster_graphql.schema.inputs import (
     GrapheneAssetBackfillPreviewParams,
     GrapheneAssetCheckHandleInput,
     GrapheneAssetGroupSelector,
+    GrapheneAssetHealthFilter,
     GrapheneAssetKeyInput,
     GrapheneBulkActionsFilter,
     GrapheneGraphSelector,
@@ -474,8 +476,9 @@ class GrapheneQuery(graphene.ObjectType):
         pipeline=graphene.Argument(GraphenePipelineSelector),
         assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
         loadMaterializations=graphene.Boolean(default_value=False),
+        assetHealthFilter=graphene.Argument(GrapheneAssetHealthFilter),
         description=(
-            "Retrieve asset nodes after applying a filter on asset group, job, and asset keys."
+            "Retrieve asset nodes after applying a filter on asset group, job, asset keys, and asset health status."
         ),
     )
 
@@ -1018,13 +1021,14 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_instance(self, graphene_info: ResolveInfo):
         return GrapheneInstance(graphene_info.context.instance)
 
-    def resolve_assetNodes(
+    async def resolve_assetNodes(
         self,
         graphene_info: ResolveInfo,
         loadMaterializations: bool,
         group: Optional[GrapheneAssetGroupSelector] = None,
         pipeline: Optional[GraphenePipelineSelector] = None,
         assetKeys: Optional[Sequence[GrapheneAssetKeyInput]] = None,
+        assetHealthFilter: Optional[GrapheneAssetHealthFilter] = None,
     ) -> Sequence[GrapheneAssetNode]:
         if assetKeys == []:
             return []
@@ -1102,6 +1106,48 @@ class GrapheneQuery(graphene.ObjectType):
             )
             for remote_node in results
         ]
+        if assetHealthFilter:
+            filtered_nodes = []
+            for node in nodes:
+                materialization_status = None
+                check_status = None
+                freshness_status = None
+                if assetHealthFilter.materializationStatus is not None:
+                    materialization_status = await node.get_materialization_status_for_asset_health(
+                        graphene_info
+                    )
+                    if materialization_status != assetHealthFilter.materializationStatus:
+                        continue
+                if assetHealthFilter.assetChecksStatus is not None:
+                    check_status = await node.get_asset_check_status_for_asset_health(graphene_info)
+                    if check_status != assetHealthFilter.assetChecksStatus:
+                        continue
+                if assetHealthFilter.freshnessStatus is not None:
+                    freshness_status = node.get_materialization_status_for_asset_health(
+                        graphene_info
+                    )
+                    if freshness_status != assetHealthFilter.freshnessStatus:
+                        continue
+                if assetHealthFilter.assetHealth is not None:
+                    if materialization_status is None:
+                        materialization_status = (
+                            await node.get_materialization_status_for_asset_health(graphene_info)
+                        )
+                    if check_status is None:
+                        check_status = await node.get_asset_check_status_for_asset_health(
+                            graphene_info
+                        )
+                    if freshness_status is None:
+                        freshness_status = node.get_freshness_status_for_asset_health(graphene_info)
+                    overall_status = compute_health_status_from_component_statuses(
+                        [materialization_status, check_status, freshness_status]
+                    )
+                    if overall_status != assetHealthFilter.assetHealth:
+                        continue
+                filtered_nodes.append(node)
+
+            nodes = filtered_nodes
+
         return sorted(nodes, key=lambda node: node.id)
 
     def resolve_assetNodeOrError(self, graphene_info: ResolveInfo, assetKey: GrapheneAssetKeyInput):

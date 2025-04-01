@@ -14,6 +14,34 @@ class GrapheneAssetHealthStatus(graphene.Enum):
         name = "AssetHealthStatus"
 
 
+def compute_health_status_from_component_statuses(
+    materialization_status: GrapheneAssetHealthStatus,
+    check_status: GrapheneAssetHealthStatus,
+    freshness_status: GrapheneAssetHealthStatus,
+) -> GrapheneAssetHealthStatus:
+    all_statuses = [
+        materialization_status,
+        check_status,
+        freshness_status,
+    ]
+
+    if GrapheneAssetHealthStatus.DEGRADED in all_statuses:
+        return GrapheneAssetHealthStatus.DEGRADED
+    if GrapheneAssetHealthStatus.WARNING in all_statuses:
+        return GrapheneAssetHealthStatus.WARNING
+    # at this point, all statuses are HEALTHY, UNKNOWN, or NOT_APPLICABLE
+    if materialization_status == GrapheneAssetHealthStatus.UNKNOWN:
+        return GrapheneAssetHealthStatus.UNKNOWN
+    if all(
+        status == GrapheneAssetHealthStatus.UNKNOWN
+        or status == GrapheneAssetHealthStatus.NOT_APPLICABLE
+        for status in all_statuses
+    ):
+        return GrapheneAssetHealthStatus.UNKNOWN
+    # at least one status must be HEALTHY
+    return GrapheneAssetHealthStatus.HEALTHY
+
+
 class GrapheneAssetHealth(graphene.ObjectType):
     assetHealth = graphene.NonNull(GrapheneAssetHealthStatus)
     materializationStatus = graphene.NonNull(GrapheneAssetHealthStatus)
@@ -26,23 +54,9 @@ class GrapheneAssetHealth(graphene.ObjectType):
     def resolve_assetHealth(self, graphene_info: ResolveInfo):
         if not graphene_info.context.instance.dagster_observe_supported():
             return GrapheneAssetHealthStatus.UNKNOWN
-        statuses = [
-            self.materializationStatus,
-            self.assetChecksStatus,
-            self.freshnessStatus,
-        ]
-        if GrapheneAssetHealthStatus.DEGRADED in statuses:
-            return GrapheneAssetHealthStatus.DEGRADED
-        if GrapheneAssetHealthStatus.WARNING in statuses:
-            return GrapheneAssetHealthStatus.WARNING
-        # at this point, all statuses are HEALTHY, UNKNOWN, or NOT_APPLICABLE
-        if self.materializationStatus == GrapheneAssetHealthStatus.UNKNOWN:
-            return GrapheneAssetHealthStatus.UNKNOWN
-        if all(
-            status == GrapheneAssetHealthStatus.UNKNOWN
-            or status == GrapheneAssetHealthStatus.NOT_APPLICABLE
-            for status in statuses
-        ):
-            return GrapheneAssetHealthStatus.UNKNOWN
-        # at least one status must be HEALTHY
-        return GrapheneAssetHealthStatus.HEALTHY
+
+        return compute_health_status_from_component_statuses(
+            materialization_status=self.materializationStatus,
+            check_status=self.assetChecksStatus,
+            freshness_status=self.freshnessStatus,
+        )
