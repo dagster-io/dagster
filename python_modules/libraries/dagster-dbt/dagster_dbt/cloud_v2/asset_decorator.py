@@ -57,4 +57,9 @@ def dbt_cloud_assets(
             exclude=exclude,
         ),
         op_tags=op_tags,
+        check_specs=workspace.load_check_specs(
+            dagster_dbt_translator=dagster_dbt_translator,
+            select=select,
+            exclude=exclude,
+        )
     )
