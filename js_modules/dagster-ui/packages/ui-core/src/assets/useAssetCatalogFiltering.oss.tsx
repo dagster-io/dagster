@@ -200,7 +200,7 @@ export function useAssetCatalogFiltering<
     isFiltered,
     filterFn,
     filteredAssets,
-    filteredAssetsLoading: false,
+    filteredAssetsLoading: loading,
     kindFilter,
     groupsFilter,
     renderFilterButton: components.renderButton,
