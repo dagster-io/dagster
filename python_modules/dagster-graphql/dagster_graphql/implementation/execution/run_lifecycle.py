@@ -8,7 +8,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import CodeLocation
 from dagster._core.remote_representation.external import RemoteJob
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster._core.storage.tags import DAGSTER_GRAPHQL_TAG, RESUME_RETRY_TAG
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 from dagster._utils.merger import merge_dicts
@@ -78,7 +78,9 @@ def create_valid_pipeline_run(
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
     )
-    tags = merge_dicts(remote_job.tags, execution_params.execution_metadata.tags)
+    tags = merge_dicts(
+        remote_job.tags, execution_params.execution_metadata.tags, {DAGSTER_GRAPHQL_TAG: "true"}
+    )
 
     dagster_run = graphql_context.instance.create_run(
         job_snapshot=remote_job.job_snapshot,

@@ -1,5 +1,7 @@
 import textwrap
-from typing import Any, Optional
+from typing import Any, Literal, Optional
+
+from typing_extensions import TypeAlias
 
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
@@ -33,9 +35,13 @@ class LibraryEntryKey:
         return LibraryEntryKey(name=name, namespace=namespace)
 
 
+ScaffolderScope: TypeAlias = Literal["global", "project", "defs"]
+
+
 @whitelist_for_serdes
 @record
 class ScaffolderSnap:
+    scope: ScaffolderScope
     schema: Optional[dict[str, Any]]
 
 
@@ -50,6 +56,10 @@ class LibraryEntrySnap:
     @property
     def scaffolder_schema(self) -> Optional[dict[str, Any]]:
         return self.scaffolder.schema if self.scaffolder else None
+
+    @property
+    def scaffolder_scope(self) -> Optional[ScaffolderScope]:
+        return self.scaffolder.scope if self.scaffolder else None
 
 
 @whitelist_for_serdes

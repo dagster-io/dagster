@@ -28,7 +28,7 @@ def _get_scaffolder_snap(obj: object) -> Optional[ScaffolderSnap]:
         return None
     scaffolder_schema = scaffolder.get_scaffold_params()
     return ScaffolderSnap(
-        schema=scaffolder_schema.model_json_schema() if scaffolder_schema else None
+        scope="defs", schema=scaffolder_schema.model_json_schema() if scaffolder_schema else None
     )
 
 

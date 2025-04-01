@@ -66,7 +66,7 @@ def test_list_library_objects_from_module():
         },
         description="A simple asset that returns a constant string value.",
         summary="A simple asset that returns a constant string value.",
-        scaffolder=ScaffolderSnap(schema=None),
+        scaffolder=ScaffolderSnap(scope="defs", schema=None),
     )
 
     pipes_script_params_schema = {
@@ -84,7 +84,7 @@ def test_list_library_objects_from_module():
         schema=pipes_script_params_schema,
         description="A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
         summary="A simple asset that runs a Python script with the Pipes subprocess client.",
-        scaffolder=ScaffolderSnap(schema=pipes_script_params_schema),
+        scaffolder=ScaffolderSnap(scope="defs", schema=pipes_script_params_schema),
     )
 
 

@@ -79,6 +79,9 @@ GLOBAL_CONCURRENCY_TAG = f"{SYSTEM_TAG_PREFIX}concurrency_key"
 # This tag is used to tag runs and backfills with the email of the creator.
 USER_TAG = "user"
 
+# This tag is used to distinguish runs created via the dagster-graphql API
+DAGSTER_GRAPHQL_TAG = f"{SYSTEM_TAG_PREFIX}from_graphql"
+
 # This tag is used to tag runless asset events reported via the UI with the email of the reporting user.
 REPORTING_USER_TAG = f"{SYSTEM_TAG_PREFIX}reporting_user"
 
