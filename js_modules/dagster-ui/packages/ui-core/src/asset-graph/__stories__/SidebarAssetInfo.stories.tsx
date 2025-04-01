@@ -14,6 +14,7 @@ import {
   buildFreshnessPolicy,
   buildMaterializationEvent,
   buildMaterializationHistoryConnection,
+  buildObservationEventConnection,
   buildRegularDagsterType,
   buildRepository,
   buildRepositoryLocation,
@@ -21,6 +22,7 @@ import {
   buildRun,
   buildRunNotFoundError,
   buildSolidDefinition,
+  buildObservationEvent
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
@@ -194,33 +196,32 @@ const buildEventsMock = ({reported}: {reported: boolean}): MockedResponse<AssetE
             }),
           ],
         }),
-        assetObservations: [
-          {
-            __typename: 'ObservationEvent',
-            description: '1234',
-            runId: '12345',
-            metadataEntries: [],
-            partition: null,
-            timestamp: '1234567865400',
-            label: null,
-            stepKey: 'op',
-            tags: [],
-            runOrError: {
-              __typename: 'Run',
-              pipelineName: '__ASSET_JOB_1',
-              mode: 'default',
-              pipelineSnapshotId: null,
-              id: '12345',
-              status: RunStatus.SUCCESS,
-              repositoryOrigin: {
-                __typename: 'RepositoryOrigin',
-                id: 'test.py',
-                repositoryLocationName: 'repo',
-                repositoryName: 'test.py',
-              },
-            },
-          },
-        ],
+        assetObservations: buildObservationEventConnection({
+          results: [
+            buildObservationEvent({
+              description: '1234',
+              runId: '12345',
+              metadataEntries: [],
+              partition: null,
+              timestamp: '1234567865400',
+              label: null,
+              stepKey: 'op',
+              tags: [],
+              runOrError: buildRun({
+                pipelineName: '__ASSET_JOB_1',
+                mode: 'default',
+                pipelineSnapshotId: null,
+                id: '12345',
+                status: RunStatus.SUCCESS,
+                repositoryOrigin: buildRepositoryOrigin({
+                  id: 'test.py',
+                  repositoryLocationName: 'repo',
+                  repositoryName: 'test.py',
+                }),
+              }),
+            }),
+          ],
+        }),
       },
     },
   },
