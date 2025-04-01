@@ -29,6 +29,7 @@ T = TypeVar("T")
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 10.0  # 10 seconds
 DEFAULT_JOB_POD_COUNT = 1  # expect job:pod to be 1:1 by default
+DEFAULT_K8S_REQUEST_TIMEOUT_SEC = 10
 
 
 class WaitForPodState(Enum):
@@ -327,7 +328,9 @@ class DagsterKubernetesClient:
             # Get all jobs in the namespace and find the matching job
             def _get_jobs_for_namespace():
                 jobs = self.batch_api.list_namespaced_job(
-                    namespace=namespace, field_selector=f"metadata.name={job_name}"
+                    namespace=namespace,
+                    field_selector=f"metadata.name={job_name}",
+                    _request_timeout=DEFAULT_K8S_REQUEST_TIMEOUT_SEC,
                 )
                 if jobs.items:
                     check.invariant(
@@ -496,7 +499,9 @@ class DagsterKubernetesClient:
     ) -> Optional[V1JobStatus]:
         def _get_job_status():
             try:
-                job = self.batch_api.read_namespaced_job_status(job_name, namespace=namespace)
+                job = self.batch_api.read_namespaced_job_status(
+                    job_name, namespace=namespace, _request_timeout=DEFAULT_K8S_REQUEST_TIMEOUT_SEC
+                )
             except kubernetes.client.rest.ApiException as e:
                 if e.status == 404:
                     return None
@@ -533,13 +538,21 @@ class DagsterKubernetesClient:
 
             errors = []
             try:
-                self.batch_api.delete_namespaced_job(name=job_name, namespace=namespace)
+                self.batch_api.delete_namespaced_job(
+                    name=job_name,
+                    namespace=namespace,
+                    _request_timeout=DEFAULT_K8S_REQUEST_TIMEOUT_SEC,
+                )
             except Exception as e:
                 errors.append(e)
 
             for pod_name in pod_names:
                 try:
-                    self.core_api.delete_namespaced_pod(name=pod_name, namespace=namespace)
+                    self.core_api.delete_namespaced_pod(
+                        name=pod_name,
+                        namespace=namespace,
+                        _request_timeout=DEFAULT_K8S_REQUEST_TIMEOUT_SEC,
+                    )
                 except Exception as e:
                     errors.append(e)
 
@@ -575,7 +588,9 @@ class DagsterKubernetesClient:
         check.str_param(namespace, "namespace")
 
         return self.core_api.list_namespaced_pod(
-            namespace=namespace, label_selector=f"job-name={job_name}"
+            namespace=namespace,
+            label_selector=f"job-name={job_name}",
+            _request_timeout=DEFAULT_K8S_REQUEST_TIMEOUT_SEC,
         ).items
 
     def get_pod_names_in_job(self, job_name, namespace):
@@ -647,7 +662,9 @@ class DagsterKubernetesClient:
 
         while True:
             pods = self.core_api.list_namespaced_pod(
-                namespace=namespace, field_selector=f"metadata.name={pod_name}"
+                namespace=namespace,
+                field_selector=f"metadata.name={pod_name}",
+                _request_timeout=DEFAULT_K8S_REQUEST_TIMEOUT_SEC,
             ).items
             pod = pods[0] if pods else None
 
@@ -671,7 +688,9 @@ class DagsterKubernetesClient:
 
         while True:
             pods = self.core_api.list_namespaced_pod(
-                namespace=namespace, field_selector=f"metadata.name={pod_name}"
+                namespace=namespace,
+                field_selector=f"metadata.name={pod_name}",
+                _request_timeout=DEFAULT_K8S_REQUEST_TIMEOUT_SEC,
             ).items
             pod = pods[0] if pods else None
             if pod is None:
@@ -834,6 +853,7 @@ class DagsterKubernetesClient:
             namespace=namespace,
             container=container_name,
             _preload_content=False,
+            _request_timeout=DEFAULT_K8S_REQUEST_TIMEOUT_SEC,
             **kwargs,
         ).data.decode("utf-8")
 
@@ -880,7 +900,11 @@ class DagsterKubernetesClient:
     ) -> list[Any]:
         # https://github.com/kubernetes-client/python/blob/master/kubernetes/docs/EventsV1Event.md
         field_selector = f"involvedObject.name={pod_name}"
-        return self.core_api.list_namespaced_event(namespace, field_selector=field_selector).items
+        return self.core_api.list_namespaced_event(
+            namespace,
+            field_selector=field_selector,
+            _request_timeout=DEFAULT_K8S_REQUEST_TIMEOUT_SEC,
+        ).items
 
     def _has_container_logs(self, container_status):
         # Logs are availalbe if either the container is running or terminated, or it's waiting
@@ -915,7 +939,9 @@ class DagsterKubernetesClient:
         namespace: str,
     ) -> str:
         jobs = self.batch_api.list_namespaced_job(
-            namespace=namespace, field_selector=f"metadata.name={job_name}"
+            namespace=namespace,
+            field_selector=f"metadata.name={job_name}",
+            _request_timeout=DEFAULT_K8S_REQUEST_TIMEOUT_SEC,
         ).items
         job = jobs[0] if jobs else None
 
@@ -927,6 +953,7 @@ class DagsterKubernetesClient:
             events = self.core_api.list_namespaced_event(
                 namespace=namespace,
                 field_selector=f"involvedObject.name={job_name}",
+                _request_timeout=DEFAULT_K8S_REQUEST_TIMEOUT_SEC,
             ).items
             for event in events:
                 event_strs.append(f"{event.reason}: {event.message}")
@@ -946,7 +973,9 @@ class DagsterKubernetesClient:
     ) -> str:
         if pod is None:
             pods = self.core_api.list_namespaced_pod(
-                namespace=namespace, field_selector=f"metadata.name={pod_name}"
+                namespace=namespace,
+                field_selector=f"metadata.name={pod_name}",
+                _request_timeout=DEFAULT_K8S_REQUEST_TIMEOUT_SEC,
             ).items
             pod = pods[0] if pods else None
 
@@ -1041,7 +1070,9 @@ class DagsterKubernetesClient:
         wait_time_between_attempts: float = DEFAULT_WAIT_BETWEEN_ATTEMPTS,
     ) -> None:
         k8s_api_retry_creation_mutation(
-            lambda: self.batch_api.create_namespaced_job(body=body, namespace=namespace),
+            lambda: self.batch_api.create_namespaced_job(
+                body=body, namespace=namespace, _request_timeout=DEFAULT_K8S_REQUEST_TIMEOUT_SEC
+            ),
             max_retries=3,
             timeout=wait_time_between_attempts,
         )
