@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any, Optional, Union
 
 from dagster import AssetCheckEvaluation, AssetCheckSeverity, AssetMaterialization, MetadataValue
 from dagster._annotations import preview
@@ -20,9 +20,6 @@ if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
     REFABLE_NODE_TYPES = NodeType.refable()  # type: ignore
 else:
     from dbt.node_types import REFABLE_NODE_TYPES as REFABLE_NODE_TYPES
-
-if TYPE_CHECKING:
-    from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
 
 COMPLETED_AT_TIMESTAMP_METADATA_KEY = "dagster_dbt/completed_at_timestamp"
 
@@ -89,13 +86,15 @@ class DbtCloudJobRunResults:
 
     def to_default_asset_events(
         self,
-        workspace: "DbtCloudWorkspace",
+        client: DbtCloudWorkspaceClient,
+        manifest: Mapping[str, Any],
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
     ) -> Iterator[Union[AssetMaterialization, AssetCheckEvaluation]]:
         """Convert the run results of a dbt Cloud job run to a set of corresponding Dagster events.
 
         Args:
-            workspace (DbtCloudWorkspace): The dbt Cloud workspace.
+            client (DbtCloudWorkspaceClient): The client for the dbt Cloud workspace.
+            manifest (Mapping[str, Any]): The dbt manifest blob.
             dagster_dbt_translator (DagsterDbtTranslator): Optionally, a custom translator for
                 linking dbt nodes to Dagster assets.
 
@@ -108,10 +107,7 @@ class DbtCloudJobRunResults:
                 - AssetCheckEvaluation for dbt tests.
         """
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
-        workspace_data = workspace.fetch_workspace_data()
-        client = workspace.get_client()
 
-        manifest = workspace_data.manifest
         run = DbtCloudRun.from_run_details(run_details=client.get_run_details(run_id=self.run_id))
 
         invocation_id: str = self.run_results["metadata"]["invocation_id"]

@@ -1,48 +1,44 @@
-from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Union
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Any, Union
 
 from dagster import AssetCheckEvaluation, AssetMaterialization
 from dagster._annotations import preview
+from dagster._record import record
 
+from dagster_dbt.cloud_v2.client import DbtCloudWorkspaceClient
 from dagster_dbt.cloud_v2.run_handler import DbtCloudJobRunHandler, DbtCloudJobRunResults
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
-if TYPE_CHECKING:
-    from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
-
 
 @preview
+@record
 class DbtCloudCliInvocation:
     """Represents a dbt Cloud cli invocation."""
 
-    def __init__(
-        self,
-        args: Sequence[str],
-        workspace: "DbtCloudWorkspace",
-        dagster_dbt_translator: DagsterDbtTranslator,
-        run_handler: DbtCloudJobRunHandler,
-    ):
-        self.args = args
-        self.workspace = workspace
-        self.dagster_dbt_translator = dagster_dbt_translator
-        self.run_handler = run_handler
+    args: Sequence[str]
+    client: DbtCloudWorkspaceClient
+    manifest: Mapping[str, Any]
+    dagster_dbt_translator: DagsterDbtTranslator
+    run_handler: DbtCloudJobRunHandler
 
     @classmethod
     def run(
         cls,
+        job_id: int,
         args: Sequence[str],
-        workspace: "DbtCloudWorkspace",
+        client: DbtCloudWorkspaceClient,
+        manifest: Mapping[str, Any],
         dagster_dbt_translator: DagsterDbtTranslator,
     ) -> "DbtCloudCliInvocation":
-        workspace_data = workspace.fetch_workspace_data()
         run_handler = DbtCloudJobRunHandler.run(
-            job_id=workspace_data.job_id,
+            job_id=job_id,
             args=args,
-            client=workspace.get_client(),
+            client=client,
         )
         return DbtCloudCliInvocation(
             args=args,
-            workspace=workspace,
+            client=client,
+            manifest=manifest,
             dagster_dbt_translator=dagster_dbt_translator,
             run_handler=run_handler,
         )
@@ -55,5 +51,7 @@ class DbtCloudCliInvocation:
             run_results_json=self.run_handler.get_run_results()
         )
         yield from run_results.to_default_asset_events(
-            workspace=self.workspace, dagster_dbt_translator=self.dagster_dbt_translator
+            client=self.client,
+            manifest=self.manifest,
+            dagster_dbt_translator=self.dagster_dbt_translator,
         )
