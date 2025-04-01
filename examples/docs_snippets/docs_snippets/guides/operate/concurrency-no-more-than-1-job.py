@@ -22,7 +22,15 @@ def my_schedule(context):
     # Find runs of the same job that are currently running
     # highlight-start
     run_records = context.instance.get_run_records(
-        dg.RunsFilter(job_name="my_job", statuses=[dg.DagsterRunStatus.STARTED])
+        dg.RunsFilter(
+            job_name="my_job",
+            statuses=[
+                dg.DagsterRunStatus.QUEUED,
+                dg.DagsterRunStatus.NOT_STARTED,
+                dg.DagsterRunStatus.STARTING,
+                dg.DagsterRunStatus.STARTED,
+            ],
+        )
     )
     # skip a schedule run if another run of the same job is already running
     if len(run_records) > 0:
