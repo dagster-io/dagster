@@ -1,0 +1,5 @@
+dg plus env add DBT_SCHEMA --from-local-env --scope local
+
+Reading environment variable DBT_SCHEMA from project .env file
+
+Environment variable DBT_SCHEMA set in local scope for location jaffle-platform in deployment test

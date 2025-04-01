@@ -1,1 +1,15 @@
-echo 'DBT_SCHEMA=jaffle_shop' >> .env
+dg check yaml
+
+/.../jaffle-platform/jaffle_platform/defs/jdbt/component.yaml:1 - requires.env Component uses environment variables that are not specified in the component file: DBT_SCHEMA
+To automatically add these environment variables to the component file, run `dg check yaml --fix-env-requirements`
+     | 
+   1 | type: dagster_components.dagster_dbt.DbtProjectComponent
+     | ^ Component uses environment variables that are not specified in the component file: DBT_SCHEMA
+To automatically add these environment variables to the component file, run `dg check yaml --fix-env-requirements`
+   2 | 
+   3 | attributes:
+   4 |   dbt:
+   5 |     project_dir: ../../../dbt/jdbt
+   6 |   asset_attributes:
+   7 |     key: "jaffle_platform/{{ env('DBT_SCHEMA') }}/{{ node.name }}"
+     |

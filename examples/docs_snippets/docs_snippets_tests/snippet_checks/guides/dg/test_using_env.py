@@ -30,6 +30,8 @@ from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response, respo
 
 MASK_VENV = (r"Using.*\.venv.*", "")
 
+REMOVE_EXCESS_DESCRIPTION_ROW = (r"\n│\s+│\s+│\s+│\s+│.*│\n", "\n")
+
 
 SNIPPETS_DIR = (
     DAGSTER_ROOT
@@ -52,6 +54,7 @@ def mock_gql_mutation(
 ) -> None:
     def match(request: Request) -> bool:
         json_body = request.json or {}
+        print("body is \n\n", json_body, "\n\n", expected_variables)
         body_query_first_line_normalized = (
             json_body["query"].strip().split("\n")[0].strip()
         )
@@ -130,6 +133,18 @@ def test_component_docs_using_env(
                 MASK_JAFFLE_PLATFORM,
             ],
         )
+        # run dbt parse to generate a manifest
+        run_command_and_snippet_output(
+            cmd="dbt parse --project-dir dbt/jdbt --profiles-dir dbt/jdbt",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dbt-parse.txt",
+            update_snippets=update_snippets,
+        )
+        run_command_and_snippet_output(
+            cmd="dg list defs",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-list-defs.txt",
+            update_snippets=update_snippets,
+            snippet_replace_regex=[MASK_JAFFLE_PLATFORM, REMOVE_EXCESS_DESCRIPTION_ROW],
+        )
         create_file(
             Path("jaffle_platform") / "defs" / "jdbt" / "component.yaml",
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-project-jdbt.yaml",
@@ -165,8 +180,7 @@ def test_component_docs_using_env(
         )
         run_command_and_snippet_output(
             cmd="echo 'DBT_SCHEMA=jaffle_shop' >> .env",
-            snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-component-check.txt",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-inject-env.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 MASK_JAFFLE_PLATFORM,
@@ -175,7 +189,7 @@ def test_component_docs_using_env(
         run_command_and_snippet_output(
             cmd="dg check yaml",
             snippet_path=SNIPPETS_DIR
-            / f"{get_next_snip_number()}-dg-component-check.txt",
+            / f"{get_next_snip_number()}-dg-component-check-fixed.txt",
             update_snippets=update_snippets,
         )
         run_command_and_snippet_output(
@@ -183,24 +197,16 @@ def test_component_docs_using_env(
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-env-list.txt",
             update_snippets=update_snippets,
         )
+        run_command_and_snippet_output(
+            cmd="dg list defs",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-list-defs.txt",
+            update_snippets=update_snippets,
+            snippet_replace_regex=[MASK_JAFFLE_PLATFORM, REMOVE_EXCESS_DESCRIPTION_ROW],
+        )
 
         mock_gql_mutation(
             gql.GET_SECRETS_FOR_SCOPES_QUERY,
-            json_data={
-                "data": {
-                    "secretsForScopes": {
-                        "secrets": [
-                            {
-                                "secretName": "DBT_SCHEMA",
-                                "locationNames": ["jaffle-platform"],
-                                "fullDeploymentScope": False,
-                                "allBranchDeploymentsScope": True,
-                                "localDeploymentScope": True,
-                            }
-                        ]
-                    }
-                }
-            },
+            json_data={"data": {"secretsForScopes": {"secrets": []}}},
             expected_variables={
                 "locationName": "jaffle-platform",
                 "scopes": {
@@ -213,7 +219,8 @@ def test_component_docs_using_env(
         )
 
         def _handle(request: Request) -> Response:
-            for match, data in gql_matchers:
+            print("HANDLING REQUEST!\n")
+            for match, data in reversed(gql_matchers):
                 if match(request):
                     return Response(json.dumps(data), status=200)
             return Response(
@@ -233,6 +240,173 @@ def test_component_docs_using_env(
             user_token = "test"
             default_deployment = "test"
             """
+        )
+
+        run_command_and_snippet_output(
+            cmd="dg env list",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-env-list.txt",
+            update_snippets=update_snippets,
+        )
+
+        mock_gql_mutation(
+            gql.GET_SECRETS_FOR_SCOPES_QUERY,
+            json_data={"data": {"secretsForScopes": {"secrets": []}}},
+            expected_variables={
+                "locationName": "jaffle-platform",
+                "scopes": {
+                    "fullDeploymentScope": False,
+                    "allBranchDeploymentsScope": False,
+                    "localDeploymentScope": True,
+                },
+                "secretName": "DBT_SCHEMA",
+            },
+        )
+        mock_gql_mutation(
+            gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
+            json_data={
+                "data": {
+                    "createOrUpdateSecretForScopes": {
+                        "secret": {
+                            "secretName": "DBT_SCHEMA",
+                            "locationNames": ["jaffle-platform"],
+                            "fullDeploymentScope": False,
+                            "allBranchDeploymentsScope": False,
+                            "localDeploymentScope": True,
+                        }
+                    }
+                }
+            },
+            expected_variables={
+                "locationName": "jaffle-platform",
+                "scopes": {
+                    "fullDeploymentScope": False,
+                    "allBranchDeploymentsScope": False,
+                    "localDeploymentScope": True,
+                },
+                "secretName": "DBT_SCHEMA",
+                "secretValue": "jaffle_shop",
+            },
+        )
+
+        run_command_and_snippet_output(
+            cmd="dg plus env add DBT_SCHEMA --from-local-env --scope local",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-plus-env-add.txt",
+            update_snippets=update_snippets,
+        )
+
+        mock_gql_mutation(
+            gql.GET_SECRETS_FOR_SCOPES_QUERY,
+            json_data={
+                "data": {
+                    "secretsForScopes": {
+                        "secrets": [
+                            {
+                                "secretName": "DBT_SCHEMA",
+                                "locationNames": ["jaffle-platform"],
+                                "fullDeploymentScope": False,
+                                "allBranchDeploymentsScope": False,
+                                "localDeploymentScope": True,
+                            }
+                        ]
+                    }
+                }
+            },
+            expected_variables={
+                "locationName": "jaffle-platform",
+                "scopes": {
+                    "fullDeploymentScope": True,
+                    "allBranchDeploymentsScope": True,
+                    "localDeploymentScope": True,
+                },
+                "secretName": "DBT_SCHEMA",
+            },
+        )
+
+        run_command_and_snippet_output(
+            cmd="dg env list",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-env-list.txt",
+            update_snippets=update_snippets,
+        )
+
+        mock_gql_mutation(
+            gql.GET_SECRETS_FOR_SCOPES_QUERY,
+            json_data={"data": {"secretsForScopes": {"secrets": []}}},
+            expected_variables={
+                "locationName": "jaffle-platform",
+                "scopes": {
+                    "fullDeploymentScope": True,
+                    "allBranchDeploymentsScope": True,
+                    "localDeploymentScope": False,
+                },
+                "secretName": "DBT_SCHEMA",
+            },
+        )
+        mock_gql_mutation(
+            gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
+            json_data={
+                "data": {
+                    "createOrUpdateSecretForScopes": {
+                        "secret": {
+                            "secretName": "DBT_SCHEMA",
+                            "locationNames": ["jaffle-platform"],
+                            "fullDeploymentScope": True,
+                            "allBranchDeploymentsScope": True,
+                            "localDeploymentScope": False,
+                        }
+                    }
+                }
+            },
+            expected_variables={
+                "locationName": "jaffle-platform",
+                "scopes": {
+                    "fullDeploymentScope": True,
+                    "allBranchDeploymentsScope": True,
+                    "localDeploymentScope": False,
+                },
+                "secretName": "DBT_SCHEMA",
+                "secretValue": "jaffle_shop_prod",
+            },
+        )
+
+        run_command_and_snippet_output(
+            cmd="dg plus env add DBT_SCHEMA jaffle_shop_prod --scope full --scope branch",
+            snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-dg-plus-env-add.txt",
+            update_snippets=update_snippets,
+        )
+
+        mock_gql_mutation(
+            gql.GET_SECRETS_FOR_SCOPES_QUERY,
+            json_data={
+                "data": {
+                    "secretsForScopes": {
+                        "secrets": [
+                            {
+                                "secretName": "DBT_SCHEMA",
+                                "locationNames": ["jaffle-platform"],
+                                "fullDeploymentScope": False,
+                                "allBranchDeploymentsScope": False,
+                                "localDeploymentScope": True,
+                            },
+                            {
+                                "secretName": "DBT_SCHEMA",
+                                "locationNames": ["jaffle-platform"],
+                                "fullDeploymentScope": True,
+                                "allBranchDeploymentsScope": True,
+                                "localDeploymentScope": False,
+                            },
+                        ]
+                    }
+                }
+            },
+            expected_variables={
+                "locationName": "jaffle-platform",
+                "scopes": {
+                    "fullDeploymentScope": True,
+                    "allBranchDeploymentsScope": True,
+                    "localDeploymentScope": True,
+                },
+                "secretName": "DBT_SCHEMA",
+            },
         )
 
         run_command_and_snippet_output(

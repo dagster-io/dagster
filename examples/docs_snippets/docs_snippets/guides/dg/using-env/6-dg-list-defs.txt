@@ -1,0 +1,273 @@
+dg list defs
+
+Using /.../jaffle-platform/.venv/bin/dagster-components
+Assets
+┏━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Key                ┃ Group   ┃ Deps               ┃ Kinds  ┃ Description               ┃
+┡━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ customers          │ default │ stg_customers      │ dbt    │ dbt model customers       │
+│                    │         │ stg_orders         │ duckdb │                           │
+│                    │         │ stg_payments       │        │ #### Raw SQL:             │
+│                    │         │                    │        │     with customers as (   │
+│                    │         │                    │        │         select * from {{  │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │ ref('stg_orders') }}      │
+│                    │         │                    │        │     ),                    │
+│                    │         │                    │        │     payments as (         │
+│                    │         │                    │        │         select * from {{  │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │             customer_id,  │
+│                    │         │                    │        │             min(order_da… │
+│                    │         │                    │        │             max(order_da… │
+│                    │         │                    │        │             count(order_… │
+│                    │         │                    │        │         from orders       │
+│                    │         │                    │        │         group by          │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │ (                         │
+│                    │         │                    │        │         select            │
+│                    │         │                    │        │             sum(amount)   │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         from payments     │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         left join orders  │
+│                    │         │                    │        │ on                        │
+│                    │         │                    │        │              payments.or… │
+│                    │         │                    │        │ = orders.order_id         │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         group by          │
+│                    │         │                    │        │ orders.customer_id        │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     ),                    │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     final as (            │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         select            │
+│                    │         │                    │        │             customers.cu… │
+│                    │         │                    │        │             customers.fi… │
+│                    │         │                    │        │             customers.la… │
+│                    │         │                    │        │             customer_ord… │
+│                    │         │                    │        │             customer_ord… │
+│                    │         │                    │        │             customer_ord… │
+│                    │         │                    │        │             customer_pay… │
+│                    │         │                    │        │ as                        │
+│                    │         │                    │        │ customer_lifetime_value   │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         from customers    │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         left join         │
+│                    │         │                    │        │ customer_orders           │
+│                    │         │                    │        │             on            │
+│                    │         │                    │        │ customers.customer_id =   │
+│                    │         │                    │        │ customer_orders.customer… │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         left join         │
+│                    │         │                    │        │ customer_payments         │
+│                    │         │                    │        │             on            │
+│                    │         │                    │        │ customers.customer_id =   │
+│                    │         │                    │        │ customer_payments.custom… │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     )                     │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     select * from final   │
+│                    │         │                    │        │ ```                       │
+│ main/raw_customers │ default │                    │        │                           │
+│ main/raw_orders    │ default │                    │        │                           │
+│ main/raw_payments  │ default │                    │        │                           │
+│ orders             │ default │ stg_orders         │ dbt    │ dbt model orders          │
+│                    │         │ stg_payments       │ duckdb │                           │
+│                    │         │                    │        │ #### Raw SQL:             │
+│                    │         │                    │        │ ```sql                    │
+│                    │         │                    │        │     {% set                │
+│                    │         │                    │        │ payment_methods =         │
+│                    │         │                    │        │ ['credit_card', 'coupon', │
+│                    │         │                    │        │ 'bank_transfer',          │
+│                    │         │                    │        │ 'gift_card'] %}           │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     with orders as (      │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         select * from {{  │
+│                    │         │                    │        │ ref('stg_orders') }}      │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     ),                    │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     payments as (         │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         select * from {{  │
+│                    │         │                    │        │ ref('stg_payments') }}    │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     ),                    │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     order_payments as (   │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         select            │
+│                    │         │                    │        │             order_id,     │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │             {% for        │
+│                    │         │                    │        │ payment_method in         │
+│                    │         │                    │        │ payment_methods -%}       │
+│                    │         │                    │        │             sum(case when │
+│                    │         │                    │        │ payment_method = '{{      │
+│                    │         │                    │        │ payment_method }}' then   │
+│                    │         │                    │        │ amount else 0 end) as {{  │
+│                    │         │                    │        │ payment_method }}_amount, │
+│                    │         │                    │        │             {% endfor -%} │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │             sum(amount)   │
+│                    │         │                    │        │ as total_amount           │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         from payments     │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         group by order_id │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     ),                    │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     final as (            │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         select            │
+│                    │         │                    │        │             orders.order… │
+│                    │         │                    │        │             orders.custo… │
+│                    │         │                    │        │             orders.order… │
+│                    │         │                    │        │             orders.statu… │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │             {% for        │
+│                    │         │                    │        │ payment_method in         │
+│                    │         │                    │        │ payment_methods -%}       │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │             order_paymen… │
+│                    │         │                    │        │ payment_method }}_amount, │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │             {% endfor -%} │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │             order_paymen… │
+│                    │         │                    │        │ as amount                 │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         from orders       │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         left join         │
+│                    │         │                    │        │ order_payments            │
+│                    │         │                    │        │             on            │
+│                    │         │                    │        │ orders.order_id =         │
+│                    │         │                    │        │ order_payments.order_id   │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     )                     │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     select * from final   │
+│                    │         │                    │        │ ```                       │
+│ stg_customers      │ default │ main/raw_customers │ dbt    │ dbt model stg_customers   │
+│                    │         │                    │ duckdb │                           │
+│                    │         │                    │        │ #### Raw SQL:             │
+│                    │         │                    │        │ ```sql                    │
+│                    │         │                    │        │     with source as (      │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         {#-               │
+│                    │         │                    │        │         Normally we would │
+│                    │         │                    │        │ select from the table     │
+│                    │         │                    │        │ here, but we are using    │
+│                    │         │                    │        │ seeds to load             │
+│                    │         │                    │        │         our data in this  │
+│                    │         │                    │        │ project                   │
+│                    │         │                    │        │         #}                │
+│                    │         │                    │        │         select * from {{  │
+│                    │         │                    │        │ source('main',            │
+│                    │         │                    │        │ 'raw_customers') }}       │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     ),                    │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     renamed as (          │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         select            │
+│                    │         │                    │        │             id as         │
+│                    │         │                    │        │ customer_id,              │
+│                    │         │                    │        │             first_name,   │
+│                    │         │                    │        │             last_name     │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         from source       │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     )                     │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     select * from renamed │
+│                    │         │                    │        │ ```                       │
+│ stg_orders         │ default │ main/raw_orders    │ dbt    │ dbt model stg_orders      │
+│                    │         │                    │ duckdb │                           │
+│                    │         │                    │        │ #### Raw SQL:             │
+│                    │         │                    │        │ ```sql                    │
+│                    │         │                    │        │     with source as (      │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         {#-               │
+│                    │         │                    │        │         Normally we would │
+│                    │         │                    │        │ select from the table     │
+│                    │         │                    │        │ here, but we are using    │
+│                    │         │                    │        │ seeds to load             │
+│                    │         │                    │        │         our data in this  │
+│                    │         │                    │        │ project                   │
+│                    │         │                    │        │         #}                │
+│                    │         │                    │        │         select * from {{  │
+│                    │         │                    │        │ source('main',            │
+│                    │         │                    │        │ 'raw_orders') }}          │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     ),                    │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     renamed as (          │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         select            │
+│                    │         │                    │        │             id as         │
+│                    │         │                    │        │ order_id,                 │
+│                    │         │                    │        │             user_id as    │
+│                    │         │                    │        │ customer_id,              │
+│                    │         │                    │        │             order_date,   │
+│                    │         │                    │        │             status        │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         from source       │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     )                     │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     select * from renamed │
+│                    │         │                    │        │ ```                       │
+│ stg_payments       │ default │ main/raw_payments  │ dbt    │ dbt model stg_payments    │
+│                    │         │                    │ duckdb │                           │
+│                    │         │                    │        │ #### Raw SQL:             │
+│                    │         │                    │        │ ```sql                    │
+│                    │         │                    │        │     with source as (      │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         {#-               │
+│                    │         │                    │        │         Normally we would │
+│                    │         │                    │        │ select from the table     │
+│                    │         │                    │        │ here, but we are using    │
+│                    │         │                    │        │ seeds to load             │
+│                    │         │                    │        │         our data in this  │
+│                    │         │                    │        │ project                   │
+│                    │         │                    │        │         #}                │
+│                    │         │                    │        │         select * from {{  │
+│                    │         │                    │        │ source('main',            │
+│                    │         │                    │        │ 'raw_payments') }}        │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     ),                    │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     renamed as (          │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         select            │
+│                    │         │                    │        │             id as         │
+│                    │         │                    │        │ payment_id,               │
+│                    │         │                    │        │             order_id,     │
+│                    │         │                    │        │             payment_meth… │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │             -- `amount`   │
+│                    │         │                    │        │ is currently stored in    │
+│                    │         │                    │        │ cents, so we convert it   │
+│                    │         │                    │        │ to dollars                │
+│                    │         │                    │        │             amount / 100  │
+│                    │         │                    │        │ as amount                 │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │         from source       │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     )                     │
+│                    │         │                    │        │                           │
+│                    │         │                    │        │     select * from renamed │
+│                    │         │                    │        │ ```                       │
+└────────────────────┴─────────┴────────────────────┴────────┴───────────────────────────┘

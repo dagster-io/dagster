@@ -1,6 +1,5 @@
 dg env list
 
-DagsterPlusCliConfig(url=None, organization=None, default_deployment=None, user_token=None, agent_timeout=None)
 ┏━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
 ┃ Env Var    ┃ Local Value ┃ Components ┃
 ┡━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━┩

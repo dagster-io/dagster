@@ -1,0 +1,6 @@
+dbt parse --project-dir dbt/jdbt --profiles-dir dbt/jdbt
+
+16:42:10  Running with dbt=1.9.3
+16:42:11  Registered adapter: duckdb=1.9.2
+16:42:11  Unable to do partial parsing because saved manifest not found. Starting full parse.
+16:42:11  Performance info: dbt/jdbt/target/perf_info.json

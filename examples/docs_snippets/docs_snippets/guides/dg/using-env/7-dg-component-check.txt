@@ -1,6 +1,0 @@
-dg check yaml --fix-env-requirements
-
-Updated /.../jaffle-platform/jaffle_platform/defs/jdbt/component.yaml
-1 component files were updated to fix environment variable requirements.
-The following environment variables are used in components but not specified in the .env file or the current shell environment:
-DBT_SCHEMA

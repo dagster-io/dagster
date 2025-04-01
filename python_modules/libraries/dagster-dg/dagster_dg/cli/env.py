@@ -51,7 +51,6 @@ def list_env_command(**global_options: object) -> None:
     scopes_for_key = None
     if DagsterPlusCliConfig.exists():
         config = DagsterPlusCliConfig.get()
-        print(config)
         if config.organization:
             scopes_for_key = {}
             table.add_column("Dev")
