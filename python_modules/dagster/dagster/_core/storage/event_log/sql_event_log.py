@@ -99,10 +99,7 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_select,
     db_subquery,
 )
-from dagster._core.types.connection import (
-    Connection as PaginatedConnection,
-    StorageIdCursor,
-)
+from dagster._core.types.connection import PaginatedConnection, StorageIdCursor
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import datetime_from_timestamp, get_current_timestamp, utc_datetime_from_naive
 from dagster._utils import PrintFn

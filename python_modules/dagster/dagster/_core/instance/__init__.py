@@ -80,7 +80,7 @@ from dagster._core.storage.tags import (
     TAGS_TO_MAYBE_OMIT_ON_RETRY,
     WILL_RETRY_TAG,
 )
-from dagster._core.types.connection import Connection
+from dagster._core.types.connection import PaginatedConnection
 from dagster._serdes import ConfigurableClass
 from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
@@ -339,7 +339,7 @@ class DynamicPartitionsStore(Protocol):
     @abstractmethod
     def get_dynamic_partitions_connection(
         self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
-    ) -> Connection[str]: ...
+    ) -> PaginatedConnection[str]: ...
 
     @abstractmethod
     def has_dynamic_partition(self, partitions_def_name: str, partition_key: str) -> bool: ...
@@ -2405,7 +2405,7 @@ class DagsterInstance(DynamicPartitionsStore):
     @traced
     def get_dynamic_partitions_connection(
         self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
-    ) -> Connection[str]:
+    ) -> PaginatedConnection[str]:
         """Get a paginatable subset of partition keys for the specified :py:class:`DynamicPartitionsDefinition`.
 
         Args:

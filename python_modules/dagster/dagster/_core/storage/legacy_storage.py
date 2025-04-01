@@ -29,7 +29,7 @@ from dagster._core.storage.event_log.base import (
 from dagster._core.storage.runs.base import RunStorage
 from dagster._core.storage.schedules.base import ScheduleStorage
 from dagster._core.storage.sql import AlembicVersion
-from dagster._core.types.connection import Connection as PaginatedConnection
+from dagster._core.types.connection import PaginatedConnection
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
