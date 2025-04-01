@@ -49,6 +49,7 @@ def test_list_library_objects_from_module():
         "dagster_test.components.ComplexAssetComponent",
         "dagster_test.components.SimpleAssetComponent",
         "dagster_test.components.SimplePipesScriptComponent",
+        "dagster_test.components.scaffoldable_fn",
     ]
 
     assert result[2] == ComponentTypeSnap(

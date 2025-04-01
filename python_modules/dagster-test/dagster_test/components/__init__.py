@@ -11,6 +11,7 @@ from dagster_test.components.all_metadata_empty_asset import (
 from dagster_test.components.complex_schema_asset import (
     ComplexAssetComponent as ComplexAssetComponent,
 )
+from dagster_test.components.scaffoldable_function import scaffoldable_fn as scaffoldable_fn
 from dagster_test.components.simple_asset import SimpleAssetComponent as SimpleAssetComponent
 from dagster_test.components.simple_pipes_script_asset import (
     SimplePipesScriptComponent as SimplePipesScriptComponent,

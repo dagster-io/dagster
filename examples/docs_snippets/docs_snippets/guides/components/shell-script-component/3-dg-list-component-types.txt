@@ -2,7 +2,7 @@ dg list component-type
 
 Using /.../my-component-library/.venv/bin/dagster-components
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
-┃ Component Type                                                      ┃ Summary          ┃
+┃ Library Entry                                                       ┃ Summary          ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
 │ dagster_components.dagster.DefinitionsComponent                     │ An arbitrary set │
 │                                                                     │ of dagster       │

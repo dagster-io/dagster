@@ -75,7 +75,7 @@ def test_list_components_success():
 
 _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    ┃ Component Type                                     ┃ Summary                                                         ┃
+    ┃ Library Entry                                      ┃ Summary                                                         ┃
     ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
     │ dagster_test.components.AllMetadataEmptyComponent  │                                                                 │
     │ dagster_test.components.ComplexAssetComponent      │ An asset that has a complex schema.                             │
@@ -131,6 +131,71 @@ def test_list_component_type_json_success():
         # strip the first line of logging output
         output = "\n".join(result.output.split("\n")[1:])
         assert output.strip() == _EXPECTED_COMPONENT_TYPES_JSON
+
+
+_EXPECTED_LIBRARY = textwrap.dedent("""
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    ┃ Library Entry                                      ┃ Summary                                                         ┃
+    ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+    │ dagster_test.components.AllMetadataEmptyComponent  │                                                                 │
+    │ dagster_test.components.ComplexAssetComponent      │ An asset that has a complex schema.                             │
+    │ dagster_test.components.SimpleAssetComponent       │ A simple asset that returns a constant string value.            │
+    │ dagster_test.components.SimplePipesScriptComponent │ A simple asset that runs a Python script with the Pipes         │
+    │                                                    │ subprocess client.                                              │
+    │ dagster_test.components.scaffoldable_fn            │ A sample function that can be scaffolded.                       │
+    └────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────┘
+""").strip()
+
+_EXPECTED_LIBRARY_JSON = textwrap.dedent("""
+    [
+        {
+            "key": "dagster_test.components.AllMetadataEmptyComponent",
+            "summary": null
+        },
+        {
+            "key": "dagster_test.components.ComplexAssetComponent",
+            "summary": "An asset that has a complex schema."
+        },
+        {
+            "key": "dagster_test.components.SimpleAssetComponent",
+            "summary": "A simple asset that returns a constant string value."
+        },
+        {
+            "key": "dagster_test.components.SimplePipesScriptComponent",
+            "summary": "A simple asset that runs a Python script with the Pipes subprocess client."
+        },
+        {
+            "key": "dagster_test.components.scaffoldable_fn",
+            "summary": "A sample function that can be scaffolded."
+        }
+    ]
+
+""").strip()
+
+
+def test_list_library_success():
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
+        with fixed_panel_width(width=120):
+            result = runner.invoke("list", "library")
+            assert_runner_result(result)
+            # strip the first line of logging output
+            output = "\n".join(result.output.split("\n")[1:])
+            match_terminal_box_output(output.strip(), _EXPECTED_LIBRARY)
+
+
+def test_list_library_json_success():
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner),
+    ):
+        result = runner.invoke("list", "library", "--json")
+        assert_runner_result(result)
+        # strip the first line of logging output
+        output = "\n".join(result.output.split("\n")[1:])
+        assert output.strip() == _EXPECTED_LIBRARY_JSON
 
 
 # Need to use capfd here to capture stderr from the subprocess invoked by the `list component-type`
