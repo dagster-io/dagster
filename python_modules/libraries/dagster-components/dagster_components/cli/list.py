@@ -114,7 +114,7 @@ def list_definitions_command(
                     group=node.group_name,
                     kinds=sorted(list(node.kinds)),
                     description=node.description,
-                    automation_condition=node.automation_condition.__name__
+                    automation_condition=node.automation_condition.get_label()
                     if node.automation_condition
                     else None,
                 )
