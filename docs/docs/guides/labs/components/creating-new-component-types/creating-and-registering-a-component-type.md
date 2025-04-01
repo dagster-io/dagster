@@ -46,7 +46,7 @@ In this case, we'll want to define a few things:
 
 Our class inherits from `Resolvable` in addition to `Component`. This will handle deriving a yaml schema for our class based on what the class is annotated with. To simplify common use cases, `dagster-components` provides annotations for common bits of configuration, such as `ResolvedAssetSpec`, which will handle exposing a schema for defining `AssetSpec`s from yaml and resolving them before instantiating our component.
 
-We can the schema for our component and add it to our class as follows:
+We can define the schema for our component and add it to our class as follows:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema.py"
