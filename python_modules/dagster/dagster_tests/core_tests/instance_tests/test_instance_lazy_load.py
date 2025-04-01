@@ -1,4 +1,5 @@
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
 import pytest
 from dagster._core.launcher.default_run_launcher import DefaultRunLauncher
@@ -77,7 +78,7 @@ class InitFailRunCoordinator(DefaultRunCoordinator, ConfigurableClass):
         raise Exception("Expected init fail")
 
     @classmethod
-    def from_config_value(
+    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
         return cls(inst_data=inst_data)

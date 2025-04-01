@@ -1,17 +1,13 @@
 # ruff: isort: skip_file
 # ruff: noqa: T201
-
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from dagster import Definitions
+import dagster as dg
 
 
 def new_resource_testing() -> None:
     # start_new_resource_testing
-    from dagster import ConfigurableResource
+    import dagster as dg
 
-    class MyResource(ConfigurableResource):
+    class MyResource(dg.ConfigurableResource):
         value: str
 
         def get_value(self) -> str:
@@ -27,12 +23,12 @@ def new_resource_testing() -> None:
 
 def new_resource_testing_with_nesting() -> None:
     # start_new_resource_testing_with_nesting
-    from dagster import ConfigurableResource
+    import dagster as dg
 
-    class StringHolderResource(ConfigurableResource):
+    class StringHolderResource(dg.ConfigurableResource):
         value: str
 
-    class MyResourceRequiresAnother(ConfigurableResource):
+    class MyResourceRequiresAnother(dg.ConfigurableResource):
         foo: StringHolderResource
         bar: str
 
@@ -47,23 +43,21 @@ def new_resource_testing_with_nesting() -> None:
     test_my_resource_with_nesting()
 
 
-from typing import TYPE_CHECKING, Dict, Any
+from typing import Any
 
 
-def new_resources_assets_defs() -> "Definitions":
+def new_resources_assets_defs() -> "dg.Definitions":
     # start_new_resources_assets_defs
-
-    from dagster import asset, Definitions
-    from dagster import ResourceParam
     import requests
+    import dagster as dg
 
-    from typing import Dict, Any
+    from typing import Any
 
-    @asset
-    def data_from_url(data_url: ResourceParam[str]) -> Dict[str, Any]:
+    @dg.asset
+    def data_from_url(data_url: dg.ResourceParam[str]) -> dict[str, Any]:
         return requests.get(data_url).json()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[data_from_url],
         resources={"data_url": "https://dagster.io"},
     )
@@ -73,21 +67,20 @@ def new_resources_assets_defs() -> "Definitions":
     return defs
 
 
-def new_resources_ops_defs() -> "Definitions":
+def new_resources_ops_defs() -> "dg.Definitions":
     # start_new_resources_ops_defs
-
-    from dagster import op, Definitions, job, ResourceParam
+    import dagster as dg
     import requests
 
-    @op
-    def print_data_from_resource(data_url: ResourceParam[str]):
+    @dg.op
+    def print_data_from_resource(data_url: dg.ResourceParam[str]):
         print(requests.get(data_url).json())
 
-    @job
+    @dg.job
     def print_data_from_url_job():
         print_data_from_resource()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[print_data_from_url_job],
         resources={"data_url": "https://dagster.io"},
     )
@@ -97,14 +90,14 @@ def new_resources_ops_defs() -> "Definitions":
     return defs
 
 
-def new_resources_configurable_defs() -> "Definitions":
+def new_resources_configurable_defs() -> "dg.Definitions":
     # start_new_resources_configurable_defs
-
-    from dagster import asset, Definitions, ConfigurableResource
+    import dagster as dg
     import requests
+
     from requests import Response
 
-    class MyConnectionResource(ConfigurableResource):
+    class MyConnectionResource(dg.ConfigurableResource):
         username: str
 
         def request(self, endpoint: str) -> Response:
@@ -113,11 +106,11 @@ def new_resources_configurable_defs() -> "Definitions":
                 headers={"user-agent": "dagster"},
             )
 
-    @asset
-    def data_from_service(my_conn: MyConnectionResource) -> Dict[str, Any]:
+    @dg.asset
+    def data_from_service(my_conn: MyConnectionResource) -> dict[str, Any]:
         return my_conn.request("/fetch_data").json()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[data_from_service],
         resources={
             "my_conn": MyConnectionResource(username="my_user"),
@@ -129,14 +122,14 @@ def new_resources_configurable_defs() -> "Definitions":
     return defs
 
 
-def new_resources_configurable_defs_ops() -> "Definitions":
+def new_resources_configurable_defs_ops() -> "dg.Definitions":
     # start_new_resources_configurable_defs_ops
-
-    from dagster import Definitions, job, op, ConfigurableResource
+    import dagster as dg
     import requests
+
     from requests import Response
 
-    class MyConnectionResource(ConfigurableResource):
+    class MyConnectionResource(dg.ConfigurableResource):
         username: str
 
         def request(self, endpoint: str) -> Response:
@@ -145,15 +138,15 @@ def new_resources_configurable_defs_ops() -> "Definitions":
                 headers={"user-agent": "dagster"},
             )
 
-    @op
+    @dg.op
     def update_service(my_conn: MyConnectionResource):
         my_conn.request("/update")
 
-    @job
+    @dg.job
     def update_service_job():
         update_service()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[update_service_job],
         resources={
             "my_conn": MyConnectionResource(username="my_user"),
@@ -165,20 +158,20 @@ def new_resources_configurable_defs_ops() -> "Definitions":
     return defs
 
 
-def new_resource_runtime() -> "Definitions":
+def new_resource_runtime() -> "dg.Definitions":
     # start_new_resource_runtime
-    from dagster import ConfigurableResource, Definitions, asset
+    import dagster as dg
 
-    class DatabaseResource(ConfigurableResource):
+    class DatabaseResource(dg.ConfigurableResource):
         table: str
 
         def read(self): ...
 
-    @asset
+    @dg.asset
     def data_from_database(db_conn: DatabaseResource):
         return db_conn.read()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[data_from_database],
         resources={"db_conn": DatabaseResource.configure_at_launch()},
     )
@@ -186,18 +179,18 @@ def new_resource_runtime() -> "Definitions":
     # end_new_resource_runtime
 
     # start_new_resource_runtime_launch
-    from dagster import sensor, define_asset_job, RunRequest, RunConfig
+    import dagster as dg
 
-    update_data_job = define_asset_job(
+    update_data_job = dg.define_asset_job(
         name="update_data_job", selection=[data_from_database]
     )
 
-    @sensor(job=update_data_job)
+    @dg.sensor(job=update_data_job)
     def table_update_sensor():
         tables = ...
         for table_name in tables:
-            yield RunRequest(
-                run_config=RunConfig(
+            yield dg.RunRequest(
+                run_config=dg.RunConfig(
                     resources={
                         "db_conn": DatabaseResource(table=table_name),
                     },
@@ -206,7 +199,7 @@ def new_resource_runtime() -> "Definitions":
 
     # end_new_resource_runtime_launch
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[data_from_database],
         jobs=[update_data_job],
         resources={"db_conn": DatabaseResource.configure_at_launch()},
@@ -219,26 +212,26 @@ def get_filestore_client(*args, **kwargs):
     pass
 
 
-def new_resources_nesting() -> "Definitions":
-    from dagster import asset
+def new_resources_nesting() -> dg.Definitions:
+    import dagster as dg
 
-    @asset
+    @dg.asset
     def my_asset():
         pass
 
     # start_new_resources_nesting
-    from dagster import Definitions, ConfigurableResource, ResourceDependency
+    import dagster as dg
 
-    class CredentialsResource(ConfigurableResource):
+    class CredentialsResource(dg.ConfigurableResource):
         username: str
         password: str
 
-    class FileStoreBucket(ConfigurableResource):
-        credentials: ResourceDependency[CredentialsResource]
+    class FileStoreBucket(dg.ConfigurableResource):
+        credentials: dg.ResourceDependency[CredentialsResource]
         region: str
 
         def write(self, data: str):
-            # We can access the credentials resource via `self.credentials`,
+            # We can access the credentials dg.resource via `self.credentials`,
             # which will be an initialized instance of `CredentialsResource`
             get_filestore_client(
                 username=self.credentials.username,
@@ -246,7 +239,7 @@ def new_resources_nesting() -> "Definitions":
                 region=self.region,
             ).write(data)
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset],
         resources={
             "bucket": FileStoreBucket(
@@ -262,7 +255,7 @@ def new_resources_nesting() -> "Definitions":
     # start_new_resource_dep_job_runtime
     credentials = CredentialsResource.configure_at_launch()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset],
         resources={
             "credentials": credentials,
@@ -280,19 +273,18 @@ def new_resources_nesting() -> "Definitions":
 
 def new_resources_env_vars() -> None:
     # start_new_resources_env_vars
+    import dagster as dg
 
-    from dagster import EnvVar, Definitions, ConfigurableResource
-
-    class CredentialsResource(ConfigurableResource):
+    class CredentialsResource(dg.ConfigurableResource):
         username: str
         password: str
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=...,
         resources={
             "credentials": CredentialsResource(
-                username=EnvVar("MY_USERNAME"),
-                password=EnvVar("MY_PASSWORD"),
+                username=dg.EnvVar("MY_USERNAME"),
+                password=dg.EnvVar("MY_PASSWORD"),
             )
         },
     )
@@ -317,19 +309,18 @@ class GitHub:
 
 def raw_github_resource() -> None:
     # start_raw_github_resource
-
-    from dagster import Definitions, asset, ResourceParam
+    import dagster as dg
 
     # `ResourceParam[GitHub]` is treated exactly like `GitHub` for type checking purposes,
     # and the runtime type of the github parameter is `GitHub`. The purpose of the
-    # `ResourceParam` wrapper is to let Dagster know that `github` is a resource and not an
-    # upstream asset.
+    # `ResourceParam` wrapper is to let Dagster know that `github` is a dg.resource and not an
+    # upstream dg.asset.
 
-    @asset
-    def public_github_repos(github: ResourceParam[GitHub]):
+    @dg.asset
+    def public_github_repos(github: dg.ResourceParam[GitHub]):
         return github.organization("dagster-io").repositories()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[public_github_repos],
         resources={"github": GitHub(...)},
     )
@@ -362,18 +353,17 @@ def create_engine(*args, **kwargs):
 
 def raw_github_resource_dep() -> None:
     # start_raw_github_resource_dep
+    import dagster as dg
 
-    from dagster import ConfigurableResource, ResourceDependency, Definitions
-
-    class DBResource(ConfigurableResource):
-        engine: ResourceDependency[Engine]
+    class DBResource(dg.ConfigurableResource):
+        engine: dg.ResourceDependency[Engine]
 
         def query(self, query: str):
             with self.engine.connect() as conn:
                 return conn.execute(query)
 
     engine = create_engine(...)
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=...,
         resources={"db": DBResource(engine=engine)},
     )
@@ -383,14 +373,7 @@ def raw_github_resource_dep() -> None:
 
 def resource_adapter() -> None:
     # start_resource_adapter
-
-    from dagster import (
-        resource,
-        Definitions,
-        ResourceDefinition,
-        asset,
-        ConfigurableLegacyResourceAdapter,
-    )
+    import dagster as dg
 
     # Old code, interface cannot be changed for back-compat purposes
     class Writer:
@@ -400,24 +383,24 @@ def resource_adapter() -> None:
         def output(self, text: str) -> None:
             print(self._prefix + text)
 
-    @resource(config_schema={"prefix": str})
+    @dg.resource(config_schema={"prefix": str})
     def writer_resource(context):
         prefix = context.resource_config["prefix"]
         return Writer(prefix)
 
     # New adapter layer
-    class WriterResource(ConfigurableLegacyResourceAdapter):
+    class WriterResource(dg.ConfigurableLegacyResourceAdapter):
         prefix: str
 
         @property
-        def wrapped_resource(self) -> ResourceDefinition:
+        def wrapped_resource(self) -> dg.ResourceDefinition:
             return writer_resource
 
-    @asset
+    @dg.asset
     def my_asset(writer: Writer):
         writer.output("hello, world!")
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[my_asset], resources={"writer": WriterResource(prefix="greeting: ")}
     )
 
@@ -426,57 +409,48 @@ def resource_adapter() -> None:
 
 def io_adapter() -> None:
     # start_io_adapter
+    import dagster as dg
 
-    from dagster import (
-        Definitions,
-        IOManagerDefinition,
-        io_manager,
-        IOManager,
-        InputContext,
-        ConfigurableLegacyIOManagerAdapter,
-        OutputContext,
-    )
     import os
 
     # Old code, interface cannot be changed for back-compat purposes
-    class OldFileIOManager(IOManager):
+    class OldFileIOManager(dg.IOManager):
         def __init__(self, base_path: str):
             self.base_path = base_path
 
-        def handle_output(self, context: OutputContext, obj):
+        def handle_output(self, context: dg.OutputContext, obj):
             with open(
                 os.path.join(self.base_path, context.step_key, context.name), "w"
             ) as fd:
                 fd.write(obj)
 
-        def load_input(self, context: InputContext):
+        def load_input(self, context: dg.InputContext):
             with open(
                 os.path.join(
                     self.base_path,
                     context.upstream_output.step_key,  # type: ignore
                     context.upstream_output.name,  # type: ignore
                 ),
-                "r",
             ) as fd:
                 return fd.read()
 
-    @io_manager(config_schema={"base_path": str})
+    @dg.io_manager(config_schema={"base_path": str})
     def old_file_io_manager(context):
         base_path = context.resource_config["base_path"]
         return OldFileIOManager(base_path)
 
     # New adapter layer
-    class MyIOManager(ConfigurableLegacyIOManagerAdapter):
+    class MyIOManager(dg.ConfigurableLegacyIOManagerAdapter):
         base_path: str
 
         @property
-        def wrapped_io_manager(self) -> IOManagerDefinition:
+        def wrapped_io_manager(self) -> dg.IOManagerDefinition:
             return old_file_io_manager
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=...,
         resources={
-            "io_manager": MyIOManager(base_path="/tmp/"),
+            "dg.io_manager": MyIOManager(base_path="/tmp/"),
         },
     )
 
@@ -485,14 +459,13 @@ def io_adapter() -> None:
 
 def impl_details_resolve() -> None:
     # start_impl_details_resolve
+    import dagster as dg
 
-    from dagster import ConfigurableResource
-
-    class CredentialsResource(ConfigurableResource):
+    class CredentialsResource(dg.ConfigurableResource):
         username: str
         password: str
 
-    class FileStoreBucket(ConfigurableResource):
+    class FileStoreBucket(dg.ConfigurableResource):
         credentials: CredentialsResource
         region: str
 
@@ -530,30 +503,23 @@ def read_csv(path: str):
 
 def new_io_manager() -> None:
     # start_new_io_manager
+    import dagster as dg
 
-    from dagster import (
-        Definitions,
-        AssetKey,
-        OutputContext,
-        InputContext,
-        ConfigurableIOManager,
-    )
-
-    class MyIOManager(ConfigurableIOManager):
+    class MyIOManager(dg.ConfigurableIOManager):
         root_path: str
 
-        def _get_path(self, asset_key: AssetKey) -> str:
+        def _get_path(self, asset_key: dg.AssetKey) -> str:
             return self.root_path + "/".join(asset_key.path)
 
-        def handle_output(self, context: OutputContext, obj):
+        def handle_output(self, context: dg.OutputContext, obj):
             write_csv(self._get_path(context.asset_key), obj)
 
-        def load_input(self, context: InputContext):
+        def load_input(self, context: dg.InputContext):
             return read_csv(self._get_path(context.asset_key))
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=...,
-        resources={"io_manager": MyIOManager(root_path="/tmp/")},
+        resources={"dg.io_manager": MyIOManager(root_path="/tmp/")},
     )
 
     # end_new_io_manager
@@ -561,29 +527,22 @@ def new_io_manager() -> None:
 
 def raw_github_resource_factory() -> None:
     # start_raw_github_resource_factory
+    import dagster as dg
 
-    from dagster import (
-        ConfigurableResourceFactory,
-        Resource,
-        asset,
-        Definitions,
-        EnvVar,
-    )
-
-    class GitHubResource(ConfigurableResourceFactory[GitHub]):
+    class GitHubResource(dg.ConfigurableResourceFactory[GitHub]):
         access_token: str
 
         def create_resource(self, _context) -> GitHub:
             return GitHub(self.access_token)
 
-    @asset
-    def public_github_repos(github: Resource[GitHub]):
+    @dg.asset
+    def public_github_repos(github: dg.Resource[GitHub]):
         return github.organization("dagster-io").repositories()
 
-    defs = Definitions(
+    defs = dg.Definitions(
         assets=[public_github_repos],
         resources={
-            "github": GitHubResource(access_token=EnvVar("GITHUB_ACCESS_TOKEN"))
+            "github": GitHubResource(access_token=dg.EnvVar("GITHUB_ACCESS_TOKEN"))
         },
     )
 
@@ -592,15 +551,11 @@ def raw_github_resource_factory() -> None:
 
 def new_resource_testing_with_context():
     # start_new_resource_testing_with_context
+    import dagster as dg
 
-    from dagster import (
-        ConfigurableResource,
-        build_init_resource_context,
-        DagsterInstance,
-    )
     from typing import Optional
 
-    class MyContextResource(ConfigurableResource[GitHub]):
+    class MyContextResource(dg.ConfigurableResource[GitHub]):
         base_path: Optional[str] = None
 
         def effective_base_path(self) -> str:
@@ -611,8 +566,8 @@ def new_resource_testing_with_context():
             return instance.storage_directory()
 
     def test_my_context_resource():
-        with DagsterInstance.ephemeral() as instance:
-            context = build_init_resource_context(instance=instance)
+        with dg.DagsterInstance.ephemeral() as instance:
+            context = dg.build_init_resource_context(instance=instance)
             assert (
                 MyContextResource(base_path=None)
                 .with_resource_context(context)
@@ -625,18 +580,18 @@ def new_resource_testing_with_context():
 
 def with_state_example() -> None:
     # start_with_state_example
-    from dagster import ConfigurableResource, InitResourceContext, asset
+    import dagster as dg
     import requests
 
     from pydantic import PrivateAttr
 
-    class MyClientResource(ConfigurableResource):
+    class MyClientResource(dg.ConfigurableResource):
         username: str
         password: str
 
         _api_token: str = PrivateAttr()
 
-        def setup_for_execution(self, context: InitResourceContext) -> None:
+        def setup_for_execution(self, context: dg.InitResourceContext) -> None:
             # Fetch and set up an API token based on the username and password
             self._api_token = requests.get(
                 "https://my-api.com/token", auth=(self.username, self.password)
@@ -648,7 +603,7 @@ def with_state_example() -> None:
                 headers={"Authorization": self._api_token},
             )
 
-    @asset
+    @dg.asset
     def my_asset(client: MyClientResource):
         return client.get_all_users()
 
@@ -657,8 +612,8 @@ def with_state_example() -> None:
 
 def with_complex_state_example() -> None:
     # start_with_complex_state_example
+    import dagster as dg
 
-    from dagster import ConfigurableResource, asset, InitResourceContext
     from contextlib import contextmanager
     from pydantic import PrivateAttr
 
@@ -670,14 +625,14 @@ def with_complex_state_example() -> None:
     @contextmanager  # type: ignore
     def get_database_connection(username: str, password: str): ...
 
-    class MyClientResource(ConfigurableResource):
+    class MyClientResource(dg.ConfigurableResource):
         username: str
         password: str
 
         _db_connection: DBConnection = PrivateAttr()
 
         @contextmanager
-        def yield_for_execution(self, context: InitResourceContext):
+        def yield_for_execution(self, context: dg.InitResourceContext):
             # keep connection open for the duration of the execution
             with get_database_connection(self.username, self.password) as conn:
                 # set up the connection attribute so it can be used in the execution
@@ -689,7 +644,7 @@ def with_complex_state_example() -> None:
         def query(self, body: str):
             return self._db_connection.query(body)
 
-    @asset
+    @dg.asset
     def my_asset(client: MyClientResource):
         client.query("SELECT * FROM my_table")
 
@@ -698,8 +653,8 @@ def with_complex_state_example() -> None:
 
 def new_resource_testing_with_state_ops() -> None:
     # start_new_resource_testing_with_state_ops
+    import dagster as dg
 
-    from dagster import ConfigurableResource, op
     from unittest import mock
 
     class MyClient:
@@ -707,14 +662,14 @@ def new_resource_testing_with_state_ops() -> None:
 
         def query(self, body: str): ...
 
-    class MyClientResource(ConfigurableResource):
+    class MyClientResource(dg.ConfigurableResource):
         username: str
         password: str
 
         def get_client(self):
             return MyClient(self.username, self.password)
 
-    @op
+    @dg.op
     def my_op(client: MyClientResource):
         return client.get_client().query("SELECT * FROM my_table")
 
@@ -734,30 +689,22 @@ def new_resource_testing_with_state_ops() -> None:
 
 def new_resource_on_sensor() -> None:
     # start_new_resource_on_sensor
-    from dagster import (
-        sensor,
-        RunRequest,
-        SensorEvaluationContext,
-        ConfigurableResource,
-        job,
-        Definitions,
-        RunConfig,
-    )
-    import requests
-    from typing import List
+    import dagster as dg
 
-    class UsersAPI(ConfigurableResource):
+    import requests
+
+    class UsersAPI(dg.ConfigurableResource):
         url: str
 
-        def fetch_users(self) -> List[str]:
+        def fetch_users(self) -> list[str]:
             return requests.get(self.url).json()
 
-    @job
+    @dg.job
     def process_user(): ...
 
-    @sensor(job=process_user)
+    @dg.sensor(job=process_user)
     def process_new_users_sensor(
-        context: SensorEvaluationContext,
+        context: dg.SensorEvaluationContext,
         users_api: UsersAPI,
     ):
         last_user = int(context.cursor) if context.cursor else 0
@@ -765,14 +712,14 @@ def new_resource_on_sensor() -> None:
 
         num_users = len(users)
         for user_id in users[last_user:]:
-            yield RunRequest(
+            yield dg.RunRequest(
                 run_key=user_id,
                 tags={"user_id": user_id},
             )
 
         context.update_cursor(str(num_users))
 
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[process_user],
         sensors=[process_new_users_sensor],
         resources={"users_api": UsersAPI(url="https://my-api.com/users")},
@@ -781,11 +728,11 @@ def new_resource_on_sensor() -> None:
 
     # start_test_resource_on_sensor
 
-    from dagster import build_sensor_context, validate_run_config
+    from dagster import build_sensor_context
 
     def test_process_new_users_sensor():
         class FakeUsersAPI:
-            def fetch_users(self) -> List[str]:
+            def fetch_users(self) -> list[str]:
                 return ["1", "2", "3"]
 
         context = build_sensor_context()
@@ -797,40 +744,32 @@ def new_resource_on_sensor() -> None:
 
 def new_resource_on_schedule() -> None:
     # start_new_resource_on_schedule
-    from dagster import (
-        schedule,
-        ScheduleEvaluationContext,
-        ConfigurableResource,
-        job,
-        RunRequest,
-        RunConfig,
-        Definitions,
-    )
-    from datetime import datetime
-    from typing import List
+    import dagster as dg
 
-    class DateFormatter(ConfigurableResource):
+    from datetime import datetime
+
+    class DateFormatter(dg.ConfigurableResource):
         format: str
 
         def strftime(self, dt: datetime) -> str:
             return dt.strftime(self.format)
 
-    @job
+    @dg.job
     def process_data(): ...
 
-    @schedule(job=process_data, cron_schedule="* * * * *")
+    @dg.schedule(job=process_data, cron_schedule="* * * * *")
     def process_data_schedule(
-        context: ScheduleEvaluationContext,
+        context: dg.ScheduleEvaluationContext,
         date_formatter: DateFormatter,
     ):
         formatted_date = date_formatter.strftime(context.scheduled_execution_time)
 
-        return RunRequest(
+        return dg.RunRequest(
             run_key=None,
             tags={"date": formatted_date},
         )
 
-    defs = Definitions(
+    defs = dg.Definitions(
         jobs=[process_data],
         schedules=[process_data_schedule],
         resources={"date_formatter": DateFormatter(format="%Y-%m-%d")},
@@ -838,7 +777,7 @@ def new_resource_on_schedule() -> None:
     # end_new_resource_on_schedule
     # start_test_resource_on_schedule
 
-    from dagster import build_schedule_context, validate_run_config
+    from dagster import build_schedule_context
 
     def test_process_data_schedule():
         context = build_schedule_context(

@@ -1,0 +1,12 @@
+tree
+
+.
+├── README.md
+├── my_existing_project
+│   ├── __init__.py
+│   ├── assets.py
+│   ├── definitions.py
+│   └── py.typed
+└── setup.py
+
+2 directories, 6 files

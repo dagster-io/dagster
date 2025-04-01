@@ -38,6 +38,11 @@ type Props = {
   loading: boolean;
 };
 
+export const RecentUpdatesTimelineForAssetKey = (props: {assetKey: AssetKey}) => {
+  const data = useRecentAssetEvents(props.assetKey, {}, {assetHasDefinedPartitions: false});
+  return <RecentUpdatesTimeline assetKey={props.assetKey} {...data} />;
+};
+
 export const RecentUpdatesTimeline = ({
   assetKey,
   observations,
@@ -80,13 +85,7 @@ export const RecentUpdatesTimeline = ({
     );
   }, [materializations, observations]);
 
-  const endTimestamp = parseInt(
-    sortedMaterializations[sortedMaterializations.length - 1]?.timestamp ?? '0',
-  );
-  const startTimestamp = Math.min(
-    parseInt(sortedMaterializations[0]?.timestamp ?? '0'),
-    endTimestamp - 100,
-  );
+  const [startTimestamp, endTimestamp] = getTimelineBounds(sortedMaterializations);
   const timeRange = endTimestamp - startTimestamp;
   const bucketTimeRange = timeRange / buckets;
 
@@ -331,3 +330,21 @@ const TickLines = styled.div`
     transparent 5% /* spacing between lines */
   );
 `;
+
+const ONE_DAY = 24 * 60 * 60 * 1000;
+
+function getTimelineBounds(sortedMaterializations: {timestamp: string}[]): [number, number] {
+  if (!sortedMaterializations.length) {
+    const nowUnix = Math.floor(Date.now());
+    return [nowUnix - 7 * ONE_DAY, nowUnix];
+  }
+
+  const endTimestamp = parseInt(
+    sortedMaterializations[sortedMaterializations.length - 1]!.timestamp,
+  );
+  const startTimestamp = Math.min(
+    parseInt(sortedMaterializations[0]!.timestamp),
+    endTimestamp - 100,
+  );
+  return [startTimestamp, endTimestamp];
+}

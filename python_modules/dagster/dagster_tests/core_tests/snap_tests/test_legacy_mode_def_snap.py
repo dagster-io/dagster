@@ -2,7 +2,7 @@ from dagster import job, logger, resource
 from dagster._core.snap import JobSnap
 from dagster._core.snap.mode import ModeDefSnap
 from dagster._serdes import serialize_value
-from dagster._serdes.serdes import deserialize_value
+from dagster_shared.serdes import deserialize_value
 
 
 def test_mode_snap(snapshot):
@@ -14,11 +14,11 @@ def test_mode_snap(snapshot):
     def no_config_resource(_):
         pass
 
-    @logger(config_schema={"bar": str})
+    @logger(config_schema={"bar": str})  # pyright: ignore[reportArgumentType]
     def a_logger(_):
         pass
 
-    @logger(description="logger_description")
+    @logger(description="logger_description")  # pyright: ignore[reportCallIssue]
     def no_config_logger(_):
         pass
 
@@ -27,7 +27,7 @@ def test_mode_snap(snapshot):
             "some_resource": a_resource,
             "no_config_resource": no_config_resource,
         },
-        logger_defs={
+        logger_defs={  # pyright: ignore[reportArgumentType]
             "some_logger": a_logger,
             "no_config_logger": no_config_logger,
         },

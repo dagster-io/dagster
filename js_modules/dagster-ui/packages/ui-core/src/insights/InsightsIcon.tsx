@@ -9,10 +9,11 @@ export type InsightsIconType = IconName | IntegrationIconName;
 interface InsightsIconProps {
   name: InsightsIconType;
   color?: string;
+  size?: number;
 }
 
 export const InsightsIcon = (props: InsightsIconProps) => {
-  const {name, color = Colors.accentPrimary()} = props;
+  const {name, color = Colors.accentPrimary(), size = 16} = props;
   if (IconNames.includes(name as IconName)) {
     return <Icon name={name as IconName} style={{marginLeft: 0}} color={color} />;
   } else {
@@ -20,7 +21,7 @@ export const InsightsIcon = (props: InsightsIconProps) => {
     return (
       <IconWrapper
         role="img"
-        $size={16}
+        $size={size}
         $img={extractIconSrc(known)}
         $color={color}
         $rotation={null}

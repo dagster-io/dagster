@@ -2,31 +2,35 @@ import re
 import sys
 import warnings
 from abc import abstractmethod
-from typing import NamedTuple, get_type_hints
+from typing import Annotated, NamedTuple, get_type_hints
 
 import pytest
-from dagster import resource
+from dagster import BetaWarning, PreviewWarning, SupersessionWarning, resource
 from dagster._annotations import (
     PUBLIC,
     PublicAttr,
+    beta,
+    beta_param,
     deprecated,
     deprecated_param,
-    experimental,
-    experimental_param,
+    get_beta_info,
     get_deprecated_info,
-    get_experimental_info,
+    get_preview_info,
+    get_superseded_info,
     hidden_param,
+    is_beta,
+    is_beta_param,
     is_deprecated,
     is_deprecated_param,
-    is_experimental,
-    is_experimental_param,
+    is_preview,
     is_public,
+    is_superseded,
     only_allow_hidden_params_in_kwargs,
+    preview,
     public,
+    superseded,
 )
 from dagster._check import CheckError
-from dagster._utils.warnings import ExperimentalWarning
-from typing_extensions import Annotated
 
 from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 
@@ -207,7 +211,7 @@ def test_deprecated_classmethod(decorators):
     with pytest.warns(
         DeprecationWarning, match=r"`[^`]+Foo.bar` is deprecated and will be removed in 2.0"
     ) as warning:
-        Foo.bar()
+        Foo.bar()  # pyright: ignore[reportCallIssue]
     assert warning[0].filename.endswith("test_annotations.py")
 
 
@@ -325,7 +329,7 @@ def test_deprecated_param_staticmethod(decorators):
     with pytest.warns(
         DeprecationWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is deprecated"
     ) as warning:
-        Foo.bar(baz="ok")
+        Foo.bar(baz="ok")  # pyright: ignore[reportArgumentType]
     assert warning[0].filename.endswith("test_annotations.py")
 
 
@@ -351,7 +355,7 @@ def test_deprecated_param_classmethod(decorators):
     with pytest.warns(
         DeprecationWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is deprecated"
     ) as warning:
-        Foo.bar(baz="ok")
+        Foo.bar(baz="ok")  # pyright: ignore[reportCallIssue]
     assert warning[0].filename.endswith("test_annotations.py")
 
 
@@ -362,8 +366,8 @@ def test_deprecated_param_classmethod(decorators):
         (abstractmethod, deprecated_param_bound),
     ],
     ids=[
-        "experimental-abstractmethod",
-        "abstractmethod-experimental",
+        "deprecated_param-abstractmethod",
+        "abstractmethod-deprecated_param",
     ],
 )
 def test_deprecated_param_abstractmethod(decorators):
@@ -411,20 +415,20 @@ def test_invalid_deprecated_param():
 
 
 ########################
-##### EXPERIMENTAL
+##### PREVIEW
 ########################
 
 
-def test_experimental_method():
+def test_preview_method():
     class Foo:
-        @experimental(additional_warn_text="baz")
+        @preview(additional_warn_text="baz")
         def bar(self):
             pass
 
-    assert is_experimental(Foo.bar)
-    assert get_experimental_info(Foo.bar).additional_warn_text == "baz"
+    assert is_preview(Foo.bar)
+    assert get_preview_info(Foo.bar).additional_warn_text == "baz"
 
-    with pytest.warns(ExperimentalWarning, match=r"`[^`]+Foo.bar` is experimental") as warning:
+    with pytest.warns(PreviewWarning, match=r"`[^`]+Foo.bar` is currently in preview") as warning:
         Foo().bar()
     assert warning[0].filename.endswith("test_annotations.py")
 
@@ -432,23 +436,23 @@ def test_experimental_method():
 @pytest.mark.parametrize(
     "decorators",
     [
-        (experimental, property),
-        (property, experimental),
+        (preview, property),
+        (property, preview),
     ],
     ids=[
-        "experimental-property",
-        "property-experimental",
+        "preview-property",
+        "property-preview",
     ],
 )
-def test_experimental_property(decorators):
+def test_preview_property(decorators):
     class Foo:
         @compose_decorators(*decorators)
         def bar(self):
             return 1
 
-    assert is_experimental(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+    assert is_preview(Foo.__dict__["bar"])  # __dict__ access to get descriptor
 
-    with pytest.warns(ExperimentalWarning, match=r"`[^`]+Foo.bar` is experimental") as warning:
+    with pytest.warns(PreviewWarning, match=r"`[^`]+Foo.bar` is currently in preview") as warning:
         assert Foo().bar
     assert warning[0].filename.endswith("test_annotations.py")
 
@@ -456,23 +460,23 @@ def test_experimental_property(decorators):
 @pytest.mark.parametrize(
     "decorators",
     [
-        (experimental, staticmethod),
-        (staticmethod, experimental),
+        (preview, staticmethod),
+        (staticmethod, preview),
     ],
     ids=[
-        "experimental-staticmethod",
-        "staticmethod-experimental",
+        "preview-staticmethod",
+        "staticmethod-preview",
     ],
 )
-def test_experimental_staticmethod(decorators):
+def test_preview_staticmethod(decorators):
     class Foo:
         @compose_decorators(*decorators)
         def bar():
             pass
 
-    assert is_experimental(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+    assert is_preview(Foo.__dict__["bar"])  # __dict__ access to get descriptor
 
-    with pytest.warns(ExperimentalWarning, match=r"`[^`]+Foo.bar` is experimental") as warning:
+    with pytest.warns(PreviewWarning, match=r"`[^`]+Foo.bar` is currently in preview") as warning:
         Foo.bar()
     assert warning[0].filename.endswith("test_annotations.py")
 
@@ -480,152 +484,353 @@ def test_experimental_staticmethod(decorators):
 @pytest.mark.parametrize(
     "decorators",
     [
-        (experimental, classmethod),
-        (classmethod, experimental),
+        (preview, classmethod),
+        (classmethod, preview),
     ],
     ids=[
-        "experimental-classmethod",
-        "classmethod-experimental",
+        "preview-classmethod",
+        "classmethod-preview",
     ],
 )
-def test_experimental_classmethod(decorators):
+def test_preview_classmethod(decorators):
     class Foo:
         @compose_decorators(*decorators)
         def bar(cls):
             pass
 
-    assert is_experimental(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+    assert is_preview(Foo.__dict__["bar"])  # __dict__ access to get descriptor
 
-    with pytest.warns(ExperimentalWarning, match=r"`[^`]+Foo.bar` is experimental") as warning:
-        Foo.bar()
+    with pytest.warns(PreviewWarning, match=r"`[^`]+Foo.bar` is currently in preview") as warning:
+        Foo.bar()  # pyright: ignore[reportCallIssue]
     assert warning[0].filename.endswith("test_annotations.py")
 
 
 @pytest.mark.parametrize(
     "decorators",
     [
-        (experimental, abstractmethod),
-        (abstractmethod, experimental),
+        (preview, abstractmethod),
+        (abstractmethod, preview),
     ],
     ids=[
-        "experimental-abstractmethod",
-        "abstractmethod-experimental",
+        "preview-abstractmethod",
+        "abstractmethod-preview",
     ],
 )
-def test_experimental_abstractmethod(decorators):
+def test_preview_abstractmethod(decorators):
     class Foo:
         @compose_decorators(*decorators)
         def bar(self): ...
 
-    assert is_experimental(Foo.bar)
+    assert is_preview(Foo.bar)
 
 
-def test_experimental_class():
-    @experimental
+def test_preview_class():
+    @preview
     class Foo:
         def bar(self): ...
 
-    assert is_experimental(Foo)
+    assert is_preview(Foo)
 
-    with pytest.warns(ExperimentalWarning, match=r"`[^`]+Foo` is experimental") as warning:
+    with pytest.warns(PreviewWarning, match=r"`[^`]+Foo` is currently in preview") as warning:
         Foo()
     assert warning[0].filename.endswith("test_annotations.py")
 
 
-def test_experimental_class_with_methods():
-    @experimental
-    class ExperimentalClass:
+def test_preview_class_with_methods():
+    @preview
+    class PreviewClass:
         def __init__(self, salutation="hello"):
             self.salutation = salutation
 
         def hello(self, name):
             return f"{self.salutation} {name}"
 
-    @experimental
-    class ExperimentalClassWithExperimentalFunction(ExperimentalClass):
+    @preview
+    class PreviewClassWithPreviewFunction(PreviewClass):
         def __init__(self, sendoff="goodbye", **kwargs):
             self.sendoff = sendoff
             super().__init__(**kwargs)
 
-        @experimental
+        @preview
         def goodbye(self, name):
             return f"{self.sendoff} {name}"
 
     with pytest.warns(
-        ExperimentalWarning,
-        match=r"`[^`]+ExperimentalClass` is experimental",
+        PreviewWarning,
+        match=r"`[^`]+PreviewClass` is currently in preview",
     ):
-        experimental_class = ExperimentalClass(salutation="howdy")
+        preview_class = PreviewClass(salutation="howdy")
 
     with assert_no_warnings():
-        assert experimental_class.hello("dagster") == "howdy dagster"
+        assert preview_class.hello("dagster") == "howdy dagster"
 
     with pytest.warns(
-        ExperimentalWarning,
-        match=r"Class `[^`]+ExperimentalClassWithExperimentalFunction` is experimental",
+        PreviewWarning,
+        match=r"Class `[^`]+PreviewClassWithPreviewFunction` is currently in preview",
     ):
-        experimental_class_with_experimental_function = ExperimentalClassWithExperimentalFunction()
+        preview_class_with_preview_function = PreviewClassWithPreviewFunction()
 
     with assert_no_warnings():
-        assert experimental_class_with_experimental_function.hello("dagster") == "hello dagster"
+        assert preview_class_with_preview_function.hello("dagster") == "hello dagster"
 
     with pytest.warns(
-        ExperimentalWarning,
-        match=r"Function `[^`]+goodbye` is experimental",
+        PreviewWarning,
+        match=r"Function `[^`]+goodbye` currently in preview",
     ):
-        assert experimental_class_with_experimental_function.goodbye("dagster") == "goodbye dagster"
+        assert preview_class_with_preview_function.goodbye("dagster") == "goodbye dagster"
 
-    @experimental
-    class ExperimentalNamedTupleClass(NamedTuple("_", [("salutation", str)])):
+    @preview
+    class PreviewNamedTupleClass(NamedTuple("_", [("salutation", str)])):
         pass
 
     with pytest.warns(
-        ExperimentalWarning,
-        match=r"`[^`]+ExperimentalNamedTupleClass` is experimental",
+        PreviewWarning,
+        match=r"`[^`]+PreviewNamedTupleClass` is currently in preview",
     ):
-        assert ExperimentalNamedTupleClass(salutation="howdy").salutation == "howdy"
+        assert PreviewNamedTupleClass(salutation="howdy").salutation == "howdy"
 
 
-def test_experimental_namedtuple_class():
-    @experimental
+def test_preview_namedtuple_class():
+    @preview
     class Foo(NamedTuple("_", [("bar", str)])):
         pass
 
-    with pytest.warns(ExperimentalWarning, match=r"Class `[^`]+Foo` is experimental") as warning:
+    with pytest.warns(PreviewWarning, match=r"Class `[^`]+Foo` is currently in preview") as warning:
         Foo(bar="ok")
     assert warning[0].filename.endswith("test_annotations.py")
 
 
-def test_experimental_resource():
-    @experimental
+def test_preview_resource():
+    @preview
     @resource
     def foo(): ...
 
-    assert is_experimental(foo)
+    assert is_preview(foo)
 
     with pytest.warns(
-        ExperimentalWarning,
-        match=r"Dagster resource `[^`]+foo` is experimental",
+        PreviewWarning,
+        match=r"Dagster resource `[^`]+foo` is currently in preview",
+    ) as warning:
+        foo()
+        assert warning[0].filename.endswith("test_annotations.py")
+
+
+########################
+##### BETA
+########################
+
+
+def test_beta_method():
+    class Foo:
+        @beta(additional_warn_text="baz")
+        def bar(self):
+            pass
+
+    assert is_beta(Foo.bar)
+    assert get_beta_info(Foo.bar).additional_warn_text == "baz"
+
+    with pytest.warns(BetaWarning, match=r"`[^`]+Foo.bar` is currently in beta") as warning:
+        Foo().bar()
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (beta, property),
+        (property, beta),
+    ],
+    ids=[
+        "beta-property",
+        "property-beta",
+    ],
+)
+def test_beta_property(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(self):
+            return 1
+
+    assert is_beta(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+
+    with pytest.warns(BetaWarning, match=r"`[^`]+Foo.bar` is currently in beta") as warning:
+        assert Foo().bar
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (beta, staticmethod),
+        (staticmethod, beta),
+    ],
+    ids=[
+        "beta-staticmethod",
+        "staticmethod-beta",
+    ],
+)
+def test_beta_staticmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar():
+            pass
+
+    assert is_beta(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+
+    with pytest.warns(BetaWarning, match=r"`[^`]+Foo.bar` is currently in beta") as warning:
+        Foo.bar()
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (beta, classmethod),
+        (classmethod, beta),
+    ],
+    ids=[
+        "beta-classmethod",
+        "classmethod-beta",
+    ],
+)
+def test_beta_classmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(cls):
+            pass
+
+    assert is_beta(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+
+    with pytest.warns(BetaWarning, match=r"`[^`]+Foo.bar` is currently in beta") as warning:
+        Foo.bar()  # pyright: ignore[reportCallIssue]
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (beta, abstractmethod),
+        (abstractmethod, beta),
+    ],
+    ids=[
+        "beta-abstractmethod",
+        "abstractmethod-beta",
+    ],
+)
+def test_beta_abstractmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(self): ...
+
+    assert is_beta(Foo.bar)
+
+
+def test_beta_class():
+    @beta
+    class Foo:
+        def bar(self): ...
+
+    assert is_beta(Foo)
+
+    with pytest.warns(BetaWarning, match=r"`[^`]+Foo` is currently in beta") as warning:
+        Foo()
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_beta_class_with_methods():
+    @beta
+    class BetaClass:
+        def __init__(self, salutation="hello"):
+            self.salutation = salutation
+
+        def hello(self, name):
+            return f"{self.salutation} {name}"
+
+    @beta
+    class BetaClassWithBetaFunction(BetaClass):
+        def __init__(self, sendoff="goodbye", **kwargs):
+            self.sendoff = sendoff
+            super().__init__(**kwargs)
+
+        @beta
+        def goodbye(self, name):
+            return f"{self.sendoff} {name}"
+
+    with pytest.warns(
+        BetaWarning,
+        match=r"`[^`]+BetaClass` is currently in beta",
+    ):
+        beta_class = BetaClass(salutation="howdy")
+
+    with assert_no_warnings():
+        assert beta_class.hello("dagster") == "howdy dagster"
+
+    with pytest.warns(
+        BetaWarning,
+        match=r"Class `[^`]+BetaClassWithBetaFunction` is currently in beta",
+    ):
+        beta_class_with_beta_function = BetaClassWithBetaFunction()
+
+    with assert_no_warnings():
+        assert beta_class_with_beta_function.hello("dagster") == "hello dagster"
+
+    with pytest.warns(
+        BetaWarning,
+        match=r"Function `[^`]+goodbye` is currently in beta",
+    ):
+        assert beta_class_with_beta_function.goodbye("dagster") == "goodbye dagster"
+
+    @beta
+    class BetaNamedTupleClass(NamedTuple("_", [("salutation", str)])):
+        pass
+
+    with pytest.warns(
+        BetaWarning,
+        match=r"`[^`]+BetaNamedTupleClass` is currently in beta",
+    ):
+        assert BetaNamedTupleClass(salutation="howdy").salutation == "howdy"
+
+
+def test_beta_namedtuple_class():
+    @beta
+    class Foo(NamedTuple("_", [("bar", str)])):
+        pass
+
+    with pytest.warns(BetaWarning, match=r"Class `[^`]+Foo` is currently in beta") as warning:
+        Foo(bar="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_beta_resource():
+    @beta
+    @resource
+    def foo(): ...
+
+    assert is_beta(foo)
+
+    with pytest.warns(
+        BetaWarning,
+        match=r"Dagster resource `[^`]+foo` is currently in beta",
     ) as warning:
         foo()
         assert warning[0].filename.endswith("test_annotations.py")
 
 
 # ########################
-# ##### EXPERIMENTAL PARAM
+# ##### BETA PARAM
 # ########################
 
 
-def test_experimental_param_method():
+def test_beta_param_method():
     class Foo:
-        @experimental_param(param="baz")
+        @beta_param(param="baz")
         def bar(self, baz=None):
             pass
 
-    assert is_experimental_param(Foo.bar, "baz")
+    assert is_beta_param(Foo.bar, "baz")
 
     with pytest.warns(
-        ExperimentalWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is experimental"
+        BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is currently in beta"
     ) as warning:
         Foo().bar(baz="ok")
     assert warning[0].filename.endswith("test_annotations.py")
@@ -634,108 +839,309 @@ def test_experimental_param_method():
 @pytest.mark.parametrize(
     "decorators",
     [
-        (experimental_param(param="baz"), staticmethod),
-        (staticmethod, experimental_param(param="baz")),
+        (beta_param(param="baz"), staticmethod),
+        (staticmethod, beta_param(param="baz")),
     ],
     ids=[
-        "experimental_param-staticmethod",
-        "staticmethod-experimental_param",
+        "beta_param-staticmethod",
+        "staticmethod-beta_param",
     ],
 )
-def test_experimental_param_staticmethod(decorators):
+def test_beta_param_staticmethod(decorators):
     class Foo:
         @compose_decorators(*decorators)
         def bar(baz=None):
             pass
 
-    assert is_experimental_param(Foo.__dict__["bar"], "baz")  # __dict__ to access descriptor
+    assert is_beta_param(Foo.__dict__["bar"], "baz")  # __dict__ to access descriptor
 
     with pytest.warns(
-        ExperimentalWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is experimental"
+        BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is currently in beta"
     ) as warning:
-        Foo.bar(baz="ok")
+        Foo.bar(baz="ok")  # pyright: ignore[reportArgumentType]
     assert warning[0].filename.endswith("test_annotations.py")
 
 
 @pytest.mark.parametrize(
     "decorators",
     [
-        (experimental_param(param="baz"), classmethod),
-        (classmethod, experimental_param(param="baz")),
+        (beta_param(param="baz"), classmethod),
+        (classmethod, beta_param(param="baz")),
     ],
     ids=[
-        "experimental_param-classmethod",
-        "classmethod-experimental_param",
+        "beta_param-classmethod",
+        "classmethod-beta_param",
     ],
 )
-def test_experimental_param_classmethod(decorators):
+def test_beta_param_classmethod(decorators):
     class Foo:
         @compose_decorators(*decorators)
         def bar(cls, baz=None):
             pass
 
-    assert is_experimental_param(Foo.__dict__["bar"], "baz")  # __dict__ to access descriptor
+    assert is_beta_param(Foo.__dict__["bar"], "baz")  # __dict__ to access descriptor
 
     with pytest.warns(
-        ExperimentalWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is experimental"
+        BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.bar` is currently in beta"
     ) as warning:
-        Foo.bar(baz="ok")
+        Foo.bar(baz="ok")  # pyright: ignore[reportCallIssue]
     assert warning[0].filename.endswith("test_annotations.py")
 
 
 @pytest.mark.parametrize(
     "decorators",
     [
-        (experimental_param(param="baz"), abstractmethod),
-        (abstractmethod, experimental_param(param="baz")),
+        (beta_param(param="baz"), abstractmethod),
+        (abstractmethod, beta_param(param="baz")),
     ],
     ids=[
-        "experimental-abstractmethod",
-        "abstractmethod-experimental",
+        "beta-abstractmethod",
+        "abstractmethod-beta",
     ],
 )
-def test_experimental_param_abstractmethod(decorators):
+def test_beta_param_abstractmethod(decorators):
     class Foo:
         @compose_decorators(*decorators)
         def bar(self, baz=None): ...
 
-    assert is_experimental_param(Foo.bar, "baz")
+    assert is_beta_param(Foo.bar, "baz")
 
 
-def test_experimental_param_class():
-    @experimental_param(param="baz")
+def test_beta_param_class():
+    @beta_param(param="baz")
     class Foo:
         def __init__(self, baz=None): ...
 
-    assert is_experimental_param(Foo, "baz")
+    assert is_beta_param(Foo, "baz")
 
     with pytest.warns(
-        ExperimentalWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.__init__` is experimental"
+        BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.__init__` is currently in beta"
     ) as warning:
         Foo(baz="ok")
     assert warning[0].filename.endswith("test_annotations.py")
 
 
-def test_experimental_param_named_tuple_class():
-    @experimental_param(param="baz")
+def test_beta_param_named_tuple_class():
+    @beta_param(param="baz")
     class Foo(NamedTuple("_", [("baz", str)])):
         def __new__(cls, baz=None): ...
 
-    assert is_experimental_param(Foo, "baz")
+    assert is_beta_param(Foo, "baz")
 
     with pytest.warns(
-        ExperimentalWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.__init__` is experimental"
+        BetaWarning, match=r"Parameter `baz` of [^`]+`[^`]+Foo.__init__` is currently in beta"
     ) as warning:
         Foo(baz="ok")
     assert warning[0].filename.endswith("test_annotations.py")
 
 
-def test_invalid_experimental_param():
+def test_invalid_beta_param():
     with pytest.raises(CheckError, match="undefined parameter"):
 
-        @experimental_param(param="baz")
+        @beta_param(param="baz")
         def foo():
             pass
+
+
+########################
+##### SUPERSEDED
+########################
+
+
+def test_superseded_method():
+    class Foo:
+        @superseded(additional_warn_text="baz")
+        def bar(self):
+            pass
+
+    assert is_superseded(Foo.bar)
+    assert get_superseded_info(Foo.bar).additional_warn_text == "baz"
+
+    with pytest.warns(SupersessionWarning, match=r"`[^`]+Foo.bar` is superseded") as warning:
+        Foo().bar()
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (superseded, property),
+        (property, superseded),
+    ],
+    ids=[
+        "superseded-property",
+        "property-superseded",
+    ],
+)
+def test_superseded_property(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(self):
+            return 1
+
+    assert is_superseded(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+
+    with pytest.warns(SupersessionWarning, match=r"`[^`]+Foo.bar` is superseded") as warning:
+        assert Foo().bar
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (superseded, staticmethod),
+        (staticmethod, superseded),
+    ],
+    ids=[
+        "superseded-staticmethod",
+        "staticmethod-superseded",
+    ],
+)
+def test_superseded_staticmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar():
+            pass
+
+    assert is_superseded(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+
+    with pytest.warns(SupersessionWarning, match=r"`[^`]+Foo.bar` is superseded") as warning:
+        Foo.bar()
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (superseded, classmethod),
+        (classmethod, superseded),
+    ],
+    ids=[
+        "superseded-classmethod",
+        "classmethod-superseded",
+    ],
+)
+def test_superseded_classmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(cls):
+            pass
+
+    assert is_superseded(Foo.__dict__["bar"])  # __dict__ access to get descriptor
+
+    with pytest.warns(SupersessionWarning, match=r"`[^`]+Foo.bar` is superseded") as warning:
+        Foo.bar()  # pyright: ignore[reportCallIssue]
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+@pytest.mark.parametrize(
+    "decorators",
+    [
+        (superseded, abstractmethod),
+        (abstractmethod, superseded),
+    ],
+    ids=[
+        "superseded-abstractmethod",
+        "abstractmethod-superseded",
+    ],
+)
+def test_superseded_abstractmethod(decorators):
+    class Foo:
+        @compose_decorators(*decorators)
+        def bar(self): ...
+
+    assert is_superseded(Foo.bar)
+
+
+def test_superseded_class():
+    @superseded
+    class Foo:
+        def bar(self): ...
+
+    assert is_superseded(Foo)
+
+    with pytest.warns(SupersessionWarning, match=r"`[^`]+Foo` is superseded") as warning:
+        Foo()
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_superseded_class_with_methods():
+    @superseded
+    class SupersededClass:
+        def __init__(self, salutation="hello"):
+            self.salutation = salutation
+
+        def hello(self, name):
+            return f"{self.salutation} {name}"
+
+    @superseded
+    class SupersededClassWithSupersededFunction(SupersededClass):
+        def __init__(self, sendoff="goodbye", **kwargs):
+            self.sendoff = sendoff
+            super().__init__(**kwargs)
+
+        @superseded
+        def goodbye(self, name):
+            return f"{self.sendoff} {name}"
+
+    with pytest.warns(
+        SupersessionWarning,
+        match=r"`[^`]+SupersededClass` is superseded",
+    ):
+        superseded_class = SupersededClass(salutation="howdy")
+
+    with assert_no_warnings():
+        assert superseded_class.hello("dagster") == "howdy dagster"
+
+    with pytest.warns(
+        SupersessionWarning,
+        match=r"Class `[^`]+SupersededClassWithSupersededFunction` is superseded",
+    ):
+        superseded_class_with_superseded_function = SupersededClassWithSupersededFunction()
+
+    with assert_no_warnings():
+        assert superseded_class_with_superseded_function.hello("dagster") == "hello dagster"
+
+    with pytest.warns(
+        SupersessionWarning,
+        match=r"Function `[^`]+goodbye` is superseded",
+    ):
+        assert superseded_class_with_superseded_function.goodbye("dagster") == "goodbye dagster"
+
+    @superseded
+    class SupersededNamedTupleClass(NamedTuple("_", [("salutation", str)])):
+        pass
+
+    with pytest.warns(
+        SupersessionWarning,
+        match=r"`[^`]+SupersededNamedTupleClass` is superseded",
+    ):
+        assert SupersededNamedTupleClass(salutation="howdy").salutation == "howdy"
+
+
+def test_superseded_namedtuple_class():
+    @superseded
+    class Foo(NamedTuple("_", [("bar", str)])):
+        pass
+
+    with pytest.warns(SupersessionWarning, match=r"Class `[^`]+Foo` is superseded") as warning:
+        Foo(bar="ok")
+    assert warning[0].filename.endswith("test_annotations.py")
+
+
+def test_superseded_resource():
+    @superseded
+    @resource
+    def foo(): ...
+
+    assert is_superseded(foo)
+
+    with pytest.warns(
+        SupersessionWarning,
+        match=r"Dagster resource `[^`]+foo` is superseded",
+    ) as warning:
+        foo()
+        assert warning[0].filename.endswith("test_annotations.py")
 
 
 # ########################
@@ -746,20 +1152,30 @@ def test_invalid_experimental_param():
 def test_all_annotations():
     @public
     @deprecated(breaking_version="2.0", additional_warn_text="foo")
-    @experimental
+    @superseded
+    @beta
+    @preview
     def foo():
         pass
 
     assert is_public(foo)
     assert is_deprecated(foo)
-    assert is_experimental(foo)
+    assert is_preview(foo)
+    assert is_beta(foo)
+    assert is_superseded(foo)
 
     with warnings.catch_warnings(record=True) as all_warnings:
         warnings.simplefilter("always")
         foo()
 
-    exp = next(warning for warning in all_warnings if warning.category == ExperimentalWarning)
+    exp = next(warning for warning in all_warnings if warning.category == PreviewWarning)
     assert re.search(r"`[^`]+foo`", str(exp.message))
+
+    exp = next(warning for warning in all_warnings if warning.category == BetaWarning)
+    assert re.search(r"`[^`]+foo`", str(exp.message))
+
+    dep = next(warning for warning in all_warnings if warning.category == SupersessionWarning)
+    assert re.search(r"`[^`]+foo` is superseded", str(dep.message))
 
     dep = next(warning for warning in all_warnings if warning.category == DeprecationWarning)
     assert re.search(r"`[^`]+foo` is deprecated", str(dep.message))

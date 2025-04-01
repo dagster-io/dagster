@@ -1,11 +1,12 @@
 import re
+from collections.abc import Mapping, Sequence
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, List, Mapping, NamedTuple, Optional, Sequence, TypeVar, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeVar, Union
 
+import dagster_shared.seven as seven
 from dagster_pipes import to_assey_key_path
 
 import dagster._check as check
-import dagster._seven as seven
 from dagster._annotations import PublicAttr, public
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._record import IHaveNew, record_custom
@@ -101,7 +102,7 @@ class AssetKey(IHaveNew):
         if suffix is not None:
             path.append(suffix)
 
-        return "__".join(path).replace("-", "_")
+        return "__".join(path).replace("-", "_").replace(".", "_")
 
     @staticmethod
     def from_user_string(asset_key_string: str) -> "AssetKey":
@@ -256,6 +257,12 @@ class AssetCheckKey(NamedTuple):
     def to_db_string(self) -> str:
         return seven.json.dumps({"asset_key": self.asset_key.to_string(), "check_name": self.name})
 
+    def with_asset_key_prefix(self, prefix: CoercibleToAssetKeyPrefix) -> "AssetCheckKey":
+        return AssetCheckKey(self.asset_key.with_prefix(prefix), self.name)
+
+    def replace_asset_key(self, asset_key: AssetKey) -> "AssetCheckKey":
+        return AssetCheckKey(asset_key, self.name)
+
 
 EntityKey = Union[AssetKey, AssetCheckKey]
 T_EntityKey = TypeVar("T_EntityKey", AssetKey, AssetCheckKey, EntityKey)
@@ -271,7 +278,7 @@ def asset_keys_from_defs_and_coercibles(
 ) -> Sequence[AssetKey]:
     from dagster._core.definitions.assets import AssetsDefinition
 
-    result: List[AssetKey] = []
+    result: list[AssetKey] = []
     for el in assets:
         if isinstance(el, AssetsDefinition):
             result.extend(el.keys)

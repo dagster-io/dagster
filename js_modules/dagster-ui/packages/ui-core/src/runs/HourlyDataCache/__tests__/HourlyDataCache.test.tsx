@@ -1,12 +1,14 @@
+import {waitFor} from '@testing-library/dom';
+
 import {HourlyDataCache, ONE_HOUR_S, getHourlyBuckets} from '../HourlyDataCache';
 
 const mockedCache = {
-  has: jest.fn(),
-  get: jest.fn(),
-  set: jest.fn(),
+  has: jest.fn<any, any, any>(() => false),
+  get: jest.fn<any, any, any>(),
+  set: jest.fn<any, any, any>(),
 };
 let mockShouldThrowError = false;
-jest.mock('idb-lru-cache', () => {
+jest.mock('../../../util/idb-lru-cache', () => {
   return {
     cache: jest.fn(() => {
       if (mockShouldThrowError) {
@@ -31,10 +33,10 @@ describe('HourlyDataCache', () => {
       expect(cache.getHourData(0)).toEqual([1, 2, 3]);
     });
 
-    it('throws if you attempt to add data spanning multiple hours to partial cache', () => {
-      expect(() => {
-        cache.addData(0, 2 * ONE_HOUR_S, [1, 2, 3, 4, 5, 6]);
-      }).toThrow('Expected all data to fit within an hour');
+    it('throws if you attempt to add data spanning multiple hours to partial cache', async () => {
+      await expect(() => {
+        return cache.addData(0, 2 * ONE_HOUR_S, [1, 2, 3, 4, 5, 6]);
+      }).rejects.toThrow('Expected all data to fit within an hour');
     });
   });
 
@@ -142,48 +144,61 @@ describe('HourlyDataCache Subscriptions', () => {
         beforeEach(() => {
           mockShouldThrowError = throwingError;
           cache = new HourlyDataCache<number>({version: VERSION, id: 'test'});
+          mockedCache.has.mockResolvedValue(false);
         });
-        it('should notify subscriber immediately with existing data', () => {
+
+        it('should notify subscriber immediately with existing data', async () => {
+          mockedCache.has.mockResolvedValue(false);
           cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
 
           const callback = jest.fn();
           cache.subscribe(1, callback);
 
-          expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+          await waitFor(() => {
+            expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+          });
         });
 
-        it('should notify subscriber with new data added to the subscribed hour', () => {
+        it('should notify subscriber with new data added to the subscribed hour', async () => {
           const callback = jest.fn();
           cache.subscribe(0, callback);
 
           cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
 
-          expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+          await waitFor(() => {
+            expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+          });
         });
 
-        it('should notify subscriber with new data added to subsequent hours', () => {
+        it('should notify subscriber with new data added to subsequent hours', async () => {
           const callback = jest.fn();
           cache.subscribe(0, callback);
 
           cache.addData(ONE_HOUR_S, 2 * ONE_HOUR_S, [4, 5, 6]);
 
-          expect(callback).toHaveBeenCalledWith([4, 5, 6]);
+          await waitFor(() => {
+            expect(callback).toHaveBeenCalledWith([4, 5, 6]);
+          });
         });
 
-        it('should aggregate data from multiple hours for the subscriber', () => {
+        it('should aggregate data from multiple hours for the subscriber', async () => {
           cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
 
           const callback = jest.fn();
           cache.subscribe(0, callback);
 
-          expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+          await waitFor(() => {
+            expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+          });
 
           cache.addData(ONE_HOUR_S, 2 * ONE_HOUR_S, [4, 5, 6]);
 
-          expect(callback).toHaveBeenCalledWith([1, 2, 3, 4, 5, 6]);
+          await waitFor(() => {
+            expect(callback).toHaveBeenCalledWith([1, 2, 3, 4, 5, 6]);
+          });
         });
 
-        it('should not notify subscribers of data added before their subscription hour', () => {
+        it('should not notify subscribers of data added before their subscription hour', async () => {
           cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
 
           const callback = jest.fn();
@@ -191,10 +206,12 @@ describe('HourlyDataCache Subscriptions', () => {
 
           cache.addData(2 * ONE_HOUR_S, 3 * ONE_HOUR_S, [4, 5, 6]);
 
-          expect(callback).toHaveBeenCalledWith([4, 5, 6]);
+          await waitFor(() => {
+            expect(callback).toHaveBeenCalledWith([4, 5, 6]);
+          });
         });
 
-        it('should stop notifying unsubscribed callbacks', () => {
+        it('should stop notifying unsubscribed callbacks', async () => {
           const callback = jest.fn();
           const unsubscribe = cache.subscribe(0, callback);
           unsubscribe();
@@ -202,7 +219,9 @@ describe('HourlyDataCache Subscriptions', () => {
           cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
           cache.addData(ONE_HOUR_S, 2 * ONE_HOUR_S, [4, 5, 6]);
 
-          expect(callback).not.toHaveBeenCalled();
+          await waitFor(() => {
+            expect(callback).not.toHaveBeenCalled();
+          });
         });
       },
     );
@@ -240,6 +259,8 @@ describe('HourlyDataCache with IndexedDB', () => {
 
     cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
 
+    await Promise.resolve();
+
     const mockCallArgs = mockedCache.set.mock.calls[0];
     const map = mockCallArgs[1];
     expect(map.cache).toEqual(
@@ -276,5 +297,44 @@ describe('HourlyDataCache with IndexedDB', () => {
 
     expect(cache.getHourData(sixDaysAgo)).toEqual([1, 2, 3]);
     expect(cache.getHourData(eightDaysAgo)).toEqual([]);
+  });
+
+  it('should notify subscribers of existing data if the subscription is added before the indexeddb cache data is loaded', async () => {
+    let res: any;
+    mockedCache.has.mockResolvedValue(true);
+
+    const sec = Date.now() / 1000;
+    const nowHour = Math.floor(sec / ONE_HOUR_S);
+
+    mockedCache.get.mockImplementation(async () => {
+      await new Promise((resolve) => {
+        res = () => {
+          resolve(true);
+        };
+      });
+      return {
+        value: {
+          version: VERSION,
+          cache: new Map([
+            [nowHour, [{start: nowHour, end: nowHour + ONE_HOUR_S, data: [1, 2, 3]}]],
+          ]),
+        },
+      };
+    });
+
+    const cache = new HourlyDataCache<number>({id: 'test', version: VERSION});
+
+    cache.addData(0, ONE_HOUR_S, [4]);
+
+    const callback = jest.fn();
+    cache.subscribe(0, callback);
+
+    await Promise.resolve();
+
+    res(true);
+
+    await waitFor(() => {
+      expect(callback).toHaveBeenCalledWith([1, 2, 3]);
+    });
   });
 });

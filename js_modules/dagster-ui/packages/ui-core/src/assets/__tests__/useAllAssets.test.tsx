@@ -1,9 +1,9 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {renderHook, waitFor} from '@testing-library/react';
-import {cache as mockedCache} from 'idb-lru-cache';
 
 import {Asset, buildAsset, buildAssetConnection} from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
+import {cache as mockedCache} from '../../util/idb-lru-cache';
 import {ASSET_CATALOG_TABLE_QUERY, useAllAssets} from '../AssetsCatalogTable';
 import {
   AssetCatalogTableQuery,
@@ -11,7 +11,7 @@ import {
   AssetCatalogTableQueryVersion,
 } from '../types/AssetsCatalogTable.types';
 
-jest.mock('idb-lru-cache', () => {
+jest.mock('../../util/idb-lru-cache', () => {
   const mockedCache = {
     has: jest.fn(),
     get: jest.fn(),

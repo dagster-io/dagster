@@ -29,14 +29,19 @@ export function useLaunchMultipleRunsWithTelemetry() {
         const executionParamsList = Array.isArray(variables.executionParamsList)
           ? variables.executionParamsList
           : [variables.executionParamsList];
-        const jobNames = executionParamsList.map((params) => params.selector?.jobName);
+
+        const jobNames = executionParamsList.map(
+          (params) => params.selector.jobName || params.selector.pipelineName,
+        );
 
         if (
           jobNames.length !== executionParamsList.length ||
           jobNames.includes(undefined) ||
           jobNames.includes(null)
         ) {
-          throw new Error('Invalid job names');
+          throw new Error(
+            'Error: Invalid job names. Each RunRequest must specify a job name to launch all runs',
+          );
         }
 
         const metadata: {[key: string]: string | string[] | null | undefined} = {

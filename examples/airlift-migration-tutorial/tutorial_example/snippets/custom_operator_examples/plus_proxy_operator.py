@@ -9,13 +9,13 @@ class DagsterCloudProxyOperator(BaseProxyTaskToDagsterOperator):
             raise ValueError("No variables found in context")
         return context["var"]["value"][var_name]
 
-    def get_dagster_session(self, context: Context) -> requests.Session:
+    def get_dagster_session(self, context: Context) -> requests.Session:  # pyright: ignore[reportIncompatibleMethodOverride]
         dagster_cloud_user_token = self.get_variable(context, "dagster_cloud_user_token")
         session = requests.Session()
         session.headers.update({"Dagster-Cloud-Api-Token": dagster_cloud_user_token})
         return session
 
-    def get_dagster_url(self, context: Context) -> str:
+    def get_dagster_url(self, context: Context) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
         org_name = self.get_variable(context, "dagster_plus_organization_name")
         deployment_name = self.get_variable(context, "dagster_plus_deployment_name")
         return f"https://{org_name}.dagster.plus/{deployment_name}"

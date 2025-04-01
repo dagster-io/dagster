@@ -1,19 +1,9 @@
 import datetime
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-)
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, AbstractSet, Optional, Union, cast  # noqa: UP035
 
-import dagster._seven as seven
+import dagster_shared.seven as seven
 from dagster import (
     AssetKey,
     DagsterEventType,
@@ -22,7 +12,6 @@ from dagster import (
     MultiPartitionsDefinition,
     _check as check,
 )
-from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.partition import (
     CachingDynamicPartitionsLoader,
@@ -36,7 +25,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
     fetch_flattened_time_window_ranges,
 )
-from dagster._core.event_api import AssetRecordsFilter
+from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.loader import LoadingContext
@@ -51,6 +40,7 @@ from dagster._core.storage.partition_status_cache import (
     get_validated_partition_keys,
     is_cacheable_partition_type,
 )
+from dagster._time import get_current_datetime
 
 from dagster_graphql.implementation.loader import StaleStatusLoader
 
@@ -126,7 +116,7 @@ def get_assets(
 def get_additional_required_keys(
     graphene_info: "ResolveInfo",
     asset_keys: AbstractSet[AssetKey],
-) -> List["AssetKey"]:
+) -> list["AssetKey"]:
     asset_nodes = {graphene_info.context.asset_graph.get(asset_key) for asset_key in asset_keys}
 
     required_asset_keys = set()
@@ -138,11 +128,11 @@ def get_additional_required_keys(
 
 def get_asset_node_definition_collisions(
     graphene_info: "ResolveInfo", asset_keys: AbstractSet[AssetKey]
-) -> List["GrapheneAssetNodeDefinitionCollision"]:
+) -> list["GrapheneAssetNodeDefinitionCollision"]:
     from dagster_graphql.schema.asset_graph import GrapheneAssetNodeDefinitionCollision
     from dagster_graphql.schema.external import GrapheneRepository
 
-    repos: Dict[AssetKey, List[GrapheneRepository]] = defaultdict(list)
+    repos: dict[AssetKey, list[GrapheneRepository]] = defaultdict(list)
     for asset_key in asset_keys:
         remote_asset_node = graphene_info.context.asset_graph.get(asset_key)
         for info in remote_asset_node.repo_scoped_asset_infos:
@@ -157,7 +147,7 @@ def get_asset_node_definition_collisions(
 
             repos[asset_node_snap.asset_key].append(GrapheneRepository(info.handle))
 
-    results: List[GrapheneAssetNodeDefinitionCollision] = []
+    results: list[GrapheneAssetNodeDefinitionCollision] = []
     for asset_key in repos.keys():
         if len(repos[asset_key]) > 1:
             results.append(
@@ -177,22 +167,10 @@ def _graphene_asset_node(
 ):
     from dagster_graphql.schema.asset_graph import GrapheneAssetNode
 
-    handle = remote_node.resolve_to_singular_repo_scoped_node().repository_handle
-    base_deployment_context = graphene_info.context.get_base_deployment_context()
-
     return GrapheneAssetNode(
         remote_node=remote_node,
         stale_status_loader=stale_status_loader,
         dynamic_partitions_loader=dynamic_partitions_loader,
-        # base_deployment_context will be None if we are not in a branch deployment
-        asset_graph_differ=AssetGraphDiffer.from_remote_repositories(
-            code_location_name=handle.location_name,
-            repository_name=handle.repository_name,
-            branch_workspace=graphene_info.context,
-            base_workspace=base_deployment_context,
-        )
-        if base_deployment_context is not None
-        else None,
     )
 
 
@@ -274,7 +252,7 @@ def get_asset(
     return GrapheneAsset(key=asset_key, definition=def_node)
 
 
-def get_asset_materializations(
+def get_asset_materialization_event_records(
     graphene_info: "ResolveInfo",
     asset_key: AssetKey,
     partitions: Optional[Sequence[str]] = None,
@@ -282,7 +260,8 @@ def get_asset_materializations(
     before_timestamp: Optional[float] = None,
     after_timestamp: Optional[float] = None,
     storage_ids: Optional[Sequence[int]] = None,
-) -> Sequence[EventLogEntry]:
+    cursor: Optional[str] = None,
+) -> Sequence[EventLogRecord]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
@@ -297,7 +276,6 @@ def get_asset_materializations(
     )
     if limit is None:
         event_records = []
-        cursor = None
         while True:
             event_records_result = instance.fetch_materializations(
                 records_filter=records_filter,
@@ -310,10 +288,73 @@ def get_asset_materializations(
                 break
     else:
         event_records = instance.fetch_materializations(
-            records_filter=records_filter, limit=limit
+            records_filter=records_filter, limit=limit, cursor=cursor
         ).records
 
-    return [event_record.event_log_entry for event_record in event_records]
+    return event_records
+
+
+def get_asset_materializations(
+    graphene_info: "ResolveInfo",
+    asset_key: AssetKey,
+    partitions: Optional[Sequence[str]] = None,
+    limit: Optional[int] = None,
+    before_timestamp: Optional[float] = None,
+    after_timestamp: Optional[float] = None,
+    storage_ids: Optional[Sequence[int]] = None,
+) -> Sequence[EventLogEntry]:
+    return [
+        event_record.event_log_entry
+        for event_record in get_asset_materialization_event_records(
+            graphene_info,
+            asset_key,
+            partitions,
+            limit,
+            before_timestamp,
+            after_timestamp,
+            storage_ids,
+        )
+    ]
+
+
+def get_asset_failed_to_materialize_event_records(
+    graphene_info: "ResolveInfo",
+    asset_key: AssetKey,
+    partitions: Optional[Sequence[str]] = None,
+    limit: Optional[int] = None,
+    before_timestamp: Optional[float] = None,
+    after_timestamp: Optional[float] = None,
+    storage_ids: Optional[Sequence[int]] = None,
+    cursor: Optional[str] = None,
+) -> Sequence[EventLogRecord]:
+    check.inst_param(asset_key, "asset_key", AssetKey)
+    check.opt_int_param(limit, "limit")
+    check.opt_float_param(before_timestamp, "before_timestamp")
+
+    instance = graphene_info.context.instance
+    records_filter = AssetRecordsFilter(
+        asset_key=asset_key,
+        asset_partitions=partitions,
+        before_timestamp=before_timestamp,
+        after_timestamp=after_timestamp,
+        storage_ids=storage_ids,
+    )
+    if limit is None:
+        event_records = []
+        while True:
+            event_records_result = instance.fetch_failed_materializations(
+                records_filter=records_filter, limit=get_max_event_records_limit(), cursor=cursor
+            )
+            cursor = event_records_result.cursor
+            event_records.extend(event_records_result.records)
+            if not event_records_result.has_more:
+                break
+    else:
+        event_records = instance.fetch_failed_materializations(
+            records_filter=records_filter, limit=limit, cursor=cursor
+        ).records
+
+    return event_records
 
 
 def get_asset_observations(
@@ -415,7 +456,7 @@ def get_partition_subsets(
     asset_key: AssetKey,
     dynamic_partitions_loader: DynamicPartitionsStore,
     partitions_def: Optional[PartitionsDefinition] = None,
-) -> Tuple[Optional[PartitionsSubset], Optional[PartitionsSubset], Optional[PartitionsSubset]]:
+) -> tuple[Optional[PartitionsSubset], Optional[PartitionsSubset], Optional[PartitionsSubset]]:
     """Returns a tuple of PartitionSubset objects: the first is the materialized partitions,
     the second is the failed partitions, and the third are in progress.
     """
@@ -592,6 +633,8 @@ def get_2d_run_length_encoded_partitions(
         GrapheneMultiPartitionStatuses,
     )
 
+    current_time = get_current_datetime()
+
     check.invariant(
         isinstance(partitions_def, MultiPartitionsDefinition),
         "Partitions definition should be multipartitioned",
@@ -600,7 +643,7 @@ def get_2d_run_length_encoded_partitions(
     primary_dim = partitions_def.primary_dimension
     secondary_dim = partitions_def.secondary_dimension
 
-    dim2_materialized_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
+    dim2_materialized_partition_subset_by_dim1: dict[str, PartitionsSubset] = defaultdict(
         lambda: secondary_dim.partitions_def.empty_subset()
     )
     for partition_key in materialized_partitions_subset.get_partition_keys():
@@ -611,7 +654,7 @@ def get_2d_run_length_encoded_partitions(
             multipartition_key.keys_by_dimension[primary_dim.name]
         ].with_partition_keys([multipartition_key.keys_by_dimension[secondary_dim.name]])
 
-    dim2_failed_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
+    dim2_failed_partition_subset_by_dim1: dict[str, PartitionsSubset] = defaultdict(
         lambda: secondary_dim.partitions_def.empty_subset()
     )
     for partition_key in failed_partitions_subset.get_partition_keys():
@@ -622,7 +665,7 @@ def get_2d_run_length_encoded_partitions(
             multipartition_key.keys_by_dimension[primary_dim.name]
         ].with_partition_keys([multipartition_key.keys_by_dimension[secondary_dim.name]])
 
-    dim2_in_progress_partition_subset_by_dim1: Dict[str, PartitionsSubset] = defaultdict(
+    dim2_in_progress_partition_subset_by_dim1: dict[str, PartitionsSubset] = defaultdict(
         lambda: secondary_dim.partitions_def.empty_subset()
     )
     for partition_key in in_progress_partitions_subset.get_partition_keys():
@@ -636,7 +679,7 @@ def get_2d_run_length_encoded_partitions(
     materialized_2d_ranges = []
 
     dim1_keys = primary_dim.partitions_def.get_partition_keys(
-        dynamic_partitions_store=dynamic_partitions_store
+        current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
     )
     unevaluated_idx = 0
     range_start_idx = 0  # pointer to first dim1 partition with same dim2 materialization status
@@ -645,7 +688,8 @@ def get_2d_run_length_encoded_partitions(
         len(dim1_keys) == 0
         or len(
             secondary_dim.partitions_def.get_partition_keys(
-                dynamic_partitions_store=dynamic_partitions_store
+                current_time=current_time,
+                dynamic_partitions_store=dynamic_partitions_store,
             )
         )
         == 0
@@ -677,7 +721,11 @@ def get_2d_run_length_encoded_partitions(
                 if isinstance(primary_partitions_def, TimeWindowPartitionsDefinition):
                     time_windows = cast(
                         TimeWindowPartitionsDefinition, primary_partitions_def
-                    ).time_windows_for_partition_keys(frozenset([start_key, end_key]))
+                    ).time_windows_for_partition_keys(
+                        frozenset([start_key, end_key]),
+                        current_time=current_time,
+                        validate=False,  # we already know these keys are in the partition set
+                    )
                     start_time = time_windows[0].start.timestamp()
                     end_time = time_windows[-1].end.timestamp()
                 else:

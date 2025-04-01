@@ -31,7 +31,7 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(name="instance", scope="function")
-    def instance(self, conn_string):
+    def instance(self, conn_string):  # pyright: ignore[reportIncompatibleMethodOverride]
         PostgresEventLogStorage.create_clean_storage(conn_string)
 
         with instance_for_test(
@@ -40,7 +40,7 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
             yield instance
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self, instance):
+    def event_log_storage(self, instance):  # pyright: ignore[reportIncompatibleMethodOverride]
         event_log_storage = instance.event_log_storage
         assert isinstance(event_log_storage, PostgresEventLogStorage)
         yield event_log_storage
@@ -136,4 +136,4 @@ class TestPostgresEventLogStorage(TestEventLogStorage):
             with instance_for_test(overrides=yaml.safe_load(explicit_cfg)) as explicit_instance:
                 from_explicit = explicit_instance._event_storage  # noqa: SLF001
 
-                assert from_url.postgres_url == from_explicit.postgres_url
+                assert from_url.postgres_url == from_explicit.postgres_url  # pyright: ignore[reportAttributeAccessIssue]

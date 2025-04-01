@@ -1,12 +1,6 @@
 # start_job
 
-from dagster import (
-    AssetExecutionContext,
-    Config,
-    asset,
-    define_asset_job,
-    static_partitioned_config,
-)
+import dagster as dg
 
 CONTINENTS = [
     "Africa",
@@ -19,21 +13,21 @@ CONTINENTS = [
 ]
 
 
-@static_partitioned_config(partition_keys=CONTINENTS)
+@dg.static_partitioned_config(partition_keys=CONTINENTS)
 def continent_config(partition_key: str):
     return {"ops": {"continents": {"config": {"continent_name": partition_key}}}}
 
 
-class ContinentOpConfig(Config):
+class ContinentOpConfig(dg.Config):
     continent_name: str
 
 
-@asset
-def continents(context: AssetExecutionContext, config: ContinentOpConfig):
+@dg.asset
+def continents(context: dg.AssetExecutionContext, config: ContinentOpConfig):
     context.log.info(config.continent_name)
 
 
-continent_job = define_asset_job(
+continent_job = dg.define_asset_job(
     name="continent_job", selection=[continents], config=continent_config
 )
 

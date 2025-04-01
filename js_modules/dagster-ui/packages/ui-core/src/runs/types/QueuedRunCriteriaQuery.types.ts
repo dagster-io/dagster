@@ -8,6 +8,11 @@ export type QueuedRunCriteriaQueryVariables = Types.Exact<{
 
 export type QueuedRunCriteriaQuery = {
   __typename: 'Query';
+  instance: {
+    __typename: 'Instance';
+    id: string;
+    poolConfig: {__typename: 'PoolConfig'; poolGranularity: string | null} | null;
+  };
   runOrError:
     | {__typename: 'PythonError'}
     | {
@@ -15,8 +20,9 @@ export type QueuedRunCriteriaQuery = {
         id: string;
         rootConcurrencyKeys: Array<string> | null;
         hasUnconstrainedRootNodes: boolean;
+        allPools: Array<string> | null;
       }
     | {__typename: 'RunNotFoundError'};
 };
 
-export const QueuedRunCriteriaQueryVersion = 'da19aeed8a0a7e6f47619c6ba9efd721345481d8f08223282ea774e468400f21';
+export const QueuedRunCriteriaQueryVersion = 'f925e1576792948317528a64856c3c020591feefac39f1aaebb3092d0fd3cd0b';

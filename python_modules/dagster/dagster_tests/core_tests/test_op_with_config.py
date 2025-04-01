@@ -114,7 +114,7 @@ def test_extra_config_ignored_no_default_input():
         )
 
     # works if input added, don't need to remove other stuff
-    run_config["ops"]["op2"] = {"inputs": {"input_table": {"value": "public.table_1"}}}
+    run_config["ops"]["op2"] = {"inputs": {"input_table": {"value": "public.table_1"}}}  # pyright: ignore[reportArgumentType]
     assert my_job.execute_in_process(
         run_config=run_config,
         op_selection=["op2"],

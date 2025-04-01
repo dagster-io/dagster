@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_duckdb.io_manager import (
     DuckDBIOManager as DuckDBIOManager,

@@ -2,14 +2,15 @@ import {CharStreams, CommonTokenStream} from 'antlr4ts';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {AntlrRunSelectionVisitor} from './AntlrRunSelectionVisitor';
-import {AntlrInputErrorListener} from '../asset-selection/AntlrAssetSelection';
+import {featureEnabled} from '../app/Flags';
+import {filterByQuery} from '../app/GraphQueryImpl';
+import {AntlrInputErrorListener} from '../asset-selection/parseAssetSelectionQuery';
 import {RunGraphQueryItem} from '../gantt/toGraphQueryItems';
 import {RunSelectionLexer} from './generated/RunSelectionLexer';
 import {RunSelectionParser} from './generated/RunSelectionParser';
-import {featureEnabled} from '../app/Flags';
-import {filterByQuery} from '../app/GraphQueryImpl';
+import {weakMapMemoize} from '../util/weakMapMemoize';
 
-type RunSelectionQueryResult = {
+export type RunSelectionQueryResult = {
   all: RunGraphQueryItem[];
   focus: RunGraphQueryItem[];
 };
@@ -44,17 +45,19 @@ export const parseRunSelectionQuery = (
   }
 };
 
-export const filterRunSelectionByQuery = (
-  all_runs: RunGraphQueryItem[],
-  query: string,
-): RunSelectionQueryResult => {
-  if (featureEnabled(FeatureFlag.flagRunSelectionSyntax)) {
-    const result = parseRunSelectionQuery(all_runs, query);
-    if (result instanceof Error) {
-      // fall back to old behavior
-      return filterByQuery(all_runs, query);
+export const filterRunSelectionByQuery = weakMapMemoize(
+  (all_runs: RunGraphQueryItem[], query: string): RunSelectionQueryResult => {
+    if (query.length === 0) {
+      return {all: all_runs, focus: []};
     }
-    return result;
-  }
-  return filterByQuery(all_runs, query);
-};
+    if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+      const result = parseRunSelectionQuery(all_runs, query);
+      if (result instanceof Error) {
+        return {all: [], focus: []};
+      }
+      return result;
+    }
+    return filterByQuery(all_runs, query);
+  },
+  {maxEntries: 20},
+);

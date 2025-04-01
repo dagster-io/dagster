@@ -1,5 +1,6 @@
+from collections.abc import Iterable, Iterator, Sequence
 from datetime import timedelta
-from typing import Iterable, Iterator, List, Optional, Sequence, Set
+from typing import Optional
 
 from dagster import (
     AssetCheckKey,
@@ -13,6 +14,7 @@ from dagster import (
     _check as check,
     sensor,
 )
+from dagster._annotations import beta
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.events import AssetObservation
@@ -28,8 +30,8 @@ from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._grpc.client import DEFAULT_SENSOR_GRPC_TIMEOUT
 from dagster._record import record
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp, get_current_datetime
+from dagster_shared.serdes import whitelist_for_serdes
 
 from dagster_airlift.constants import (
     AUTOMAPPED_TASK_METADATA_KEY,
@@ -51,7 +53,7 @@ from dagster_airlift.core.sensor.event_translation import (
 )
 
 MAIN_LOOP_TIMEOUT_SECONDS = DEFAULT_SENSOR_GRPC_TIMEOUT - 20
-DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS = 1
+DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS = 30
 START_LOOKBACK_SECONDS = 60  # Lookback one minute in time for the initial setting of the cursor.
 
 
@@ -70,7 +72,7 @@ class AirliftSensorEventTransformerError(DagsterUserCodeExecutionError):
 
 
 def check_keys_for_asset_keys(
-    repository_def: RepositoryDefinition, asset_keys: Set[AssetKey]
+    repository_def: RepositoryDefinition, asset_keys: set[AssetKey]
 ) -> Iterable[AssetCheckKey]:
     for assets_def in repository_def.asset_graph.assets_defs:
         for check_spec in assets_def.check_specs:
@@ -78,17 +80,19 @@ def check_keys_for_asset_keys(
                 yield check_spec.key
 
 
+@beta
 def build_airflow_polling_sensor(
     *,
     mapped_assets: Sequence[MappedAsset],
     airflow_instance: AirflowInstance,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
     minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
+    default_sensor_status: Optional[DefaultSensorStatus] = None,
 ) -> SensorDefinition:
     """The constructed sensor polls the Airflow instance for activity, and inserts asset events into Dagster's event log.
 
     The sensor decides which Airflow dags and tasks to monitor by inspecting the metadata of the passed-in Definitions object `mapped_defs`.
-    The metadata performing this mapping is typically set by calls to `dag_defs` and `task_defs`.
+    The metadata performing this mapping is typically set by calls to `assets_with_dag_mappings` and `assets_with_task_mappings`.
 
     Using the `event_transformer_fn` argument, users can provide a function that transforms the materializations emitted by the sensor.
     The expected return type of this function is an iterable of `AssetMaterialization`, `AssetObservation`, or `AssetCheckEvaluation` objects.
@@ -111,7 +115,7 @@ def build_airflow_polling_sensor(
     @sensor(
         name=f"{airflow_data.airflow_instance.name}__airflow_dag_status_sensor",
         minimum_interval_seconds=minimum_interval_seconds,
-        default_status=DefaultSensorStatus.RUNNING,
+        default_status=default_sensor_status or DefaultSensorStatus.RUNNING,
         # This sensor will only ever execute asset checks and not asset materializations.
         asset_selection=AssetSelection.all_asset_checks(),
     )
@@ -143,13 +147,14 @@ def build_airflow_polling_sensor(
             offset=current_dag_offset,
             airflow_data=airflow_data,
         )
-        all_asset_events: List[AssetMaterialization] = []
-        all_check_keys: Set[AssetCheckKey] = set()
+        all_asset_events: list[AssetMaterialization] = []
+        all_check_keys: set[AssetCheckKey] = set()
         latest_offset = current_dag_offset
         repository_def = check.not_none(context.repository_def)
         while get_current_datetime() - current_date < timedelta(seconds=MAIN_LOOP_TIMEOUT_SECONDS):
             batch_result = next(sensor_iter, None)
             if batch_result is None:
+                context.log.info("Received no batch result. Breaking.")
                 break
             all_asset_events.extend(batch_result.asset_events)
 
@@ -158,7 +163,7 @@ def build_airflow_polling_sensor(
             )
             latest_offset = batch_result.idx
 
-        if batch_result is not None:
+        if batch_result is not None:  # pyright: ignore[reportPossiblyUnboundVariable]
             new_cursor = AirflowPollingSensorCursor(
                 end_date_gte=end_date_gte,
                 end_date_lte=end_date_lte,
@@ -196,7 +201,7 @@ def build_airflow_polling_sensor(
 def sorted_asset_events(
     asset_events: Sequence[AssetEvent],
     repository_def: RepositoryDefinition,
-) -> List[AssetEvent]:
+) -> list[AssetEvent]:
     """Sort materializations by end date and toposort order."""
     topo_aks = repository_def.asset_graph.toposorted_asset_keys
     materializations_and_timestamps = [
@@ -243,7 +248,7 @@ def _get_transformer_result(
 class BatchResult:
     idx: int
     asset_events: Sequence[AssetMaterialization]
-    all_asset_keys_materialized: Set[AssetKey]
+    all_asset_keys_materialized: set[AssetKey]
 
 
 def materializations_and_requests_from_batch_iter(
@@ -253,30 +258,50 @@ def materializations_and_requests_from_batch_iter(
     offset: int,
     airflow_data: AirflowDefinitionsData,
 ) -> Iterator[Optional[BatchResult]]:
-    runs = airflow_data.airflow_instance.get_dag_runs_batch(
-        dag_ids=list(airflow_data.dag_ids_with_mapped_asset_keys),
-        end_date_gte=datetime_from_timestamp(end_date_gte),
-        end_date_lte=datetime_from_timestamp(end_date_lte),
-        offset=offset,
-    )
-    context.log.info(f"Found {len(runs)} dag runs for {airflow_data.airflow_instance.name}")
-    context.log.info(f"All runs {runs}")
-    for i, dag_run in enumerate(runs):
-        mats = build_synthetic_asset_materializations(
-            context, airflow_data.airflow_instance, dag_run, airflow_data
+    total_processed_runs = 0
+    total_entries = 0
+    while True:
+        latest_offset = total_processed_runs + offset
+        runs, total_entries = airflow_data.airflow_instance.get_dag_runs_batch(
+            dag_ids=list(airflow_data.dag_ids_with_mapped_asset_keys),
+            end_date_gte=datetime_from_timestamp(end_date_gte),
+            end_date_lte=datetime_from_timestamp(end_date_lte),
+            offset=latest_offset,
         )
-        context.log.info(f"Found {len(mats)} materializations for {dag_run.run_id}")
-
-        all_asset_keys_materialized = {mat.asset_key for mat in mats}
-        yield (
-            BatchResult(
-                idx=i + offset,
-                asset_events=mats,
-                all_asset_keys_materialized=all_asset_keys_materialized,
+        if len(runs) == 0:
+            yield None
+            context.log.info("Received no runs. Breaking.")
+            break
+        context.log.info(
+            f"Processing {len(runs)}/{total_entries} dag runs for {airflow_data.airflow_instance.name}..."
+        )
+        for i, dag_run in enumerate(runs):
+            context.log.info(
+                f"dag ids: {[dag_id for dag_id in airflow_data.dag_ids_with_mapped_asset_keys]}"
             )
-            if mats
-            else None
+            mats = build_synthetic_asset_materializations(
+                context, airflow_data.airflow_instance, dag_run, airflow_data
+            )
+            context.log.info(f"Found {len(mats)} materializations for {dag_run.run_id}")
+
+            all_asset_keys_materialized = {mat.asset_key for mat in mats}
+            yield (
+                BatchResult(
+                    idx=i + latest_offset,
+                    asset_events=mats,
+                    all_asset_keys_materialized=all_asset_keys_materialized,
+                )
+                if mats
+                else None
+            )
+        total_processed_runs += len(runs)
+        context.log.info(
+            f"Processed {total_processed_runs}/{total_entries} dag runs for {airflow_data.airflow_instance.name}."
         )
+        if total_processed_runs == total_entries:
+            yield None
+            context.log.info("Processed all runs. Breaking.")
+            break
 
 
 def build_synthetic_asset_materializations(
@@ -284,7 +309,7 @@ def build_synthetic_asset_materializations(
     airflow_instance: AirflowInstance,
     dag_run: DagRun,
     airflow_data: AirflowDefinitionsData,
-) -> List[AssetMaterialization]:
+) -> list[AssetMaterialization]:
     """In this function we need to return the asset materializations we want to synthesize
     on behalf of the user.
 
@@ -340,7 +365,7 @@ def get_synthetic_task_mats(
     dag_run: DagRun,
     airflow_data: AirflowDefinitionsData,
     context: SensorEvaluationContext,
-) -> List[AssetMaterialization]:
+) -> list[AssetMaterialization]:
     task_instances = airflow_instance.get_task_instance_batch(
         run_id=dag_run.run_id,
         dag_id=dag_run.dag_id,
@@ -386,7 +411,7 @@ def get_synthetic_task_mats(
 
 def automapped_tasks_asset_keys(
     dag_run: DagRun, airflow_data: AirflowDefinitionsData, task_instance: TaskInstance
-) -> Set[AssetKey]:
+) -> set[AssetKey]:
     asset_keys_to_emit = set()
     asset_keys = airflow_data.asset_keys_in_task(dag_run.dag_id, task_instance.task_id)
     for asset_key in asset_keys:

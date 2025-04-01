@@ -7,6 +7,7 @@ from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.execution.api import execute_job
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import create_run_for_test
+from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._grpc.types import CancelExecutionRequest
 from dagster._utils import file_relative_path, safe_tempfile_path
@@ -54,18 +55,16 @@ mutation TerminateRuns($runIds: [String!]!) {
     }
     ... on TerminateRunsResult {
       terminateRunResults {
+        __typename
         ... on TerminateRunSuccess {
-            __typename
             run {
                 runId
             }
         }
         ... on RunNotFoundError {
-            __typename
             runId
         }
         ... on TerminateRunFailure {
-            __typename
             run {
                 runId
             }
@@ -269,6 +268,19 @@ class TestTerminationReadonly(ReadonlyGraphQLContextTestMatrix):
         assert (
             "do not have permission"
             in result.data["terminateRuns"]["terminateRunResults"][0]["message"]
+        )
+
+    def test_cancel_runs_permission_failure_non_existent_run(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        run_id = make_new_run_id()
+        result = execute_dagster_graphql(
+            graphql_context, RUNS_CANCELLATION_QUERY, variables={"runIds": [run_id]}
+        )
+
+        assert (
+            result.data["terminateRuns"]["terminateRunResults"][0]["__typename"]
+            == "UnauthorizedError"
         )
 
     def test_no_bulk_terminate_permission(self, graphql_context: WorkspaceRequestContext):

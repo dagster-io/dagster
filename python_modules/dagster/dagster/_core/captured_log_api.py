@@ -1,7 +1,8 @@
 import base64
-from typing import NamedTuple, Sequence
+from collections.abc import Sequence
+from typing import NamedTuple
 
-from dagster._seven import json
+from dagster_shared.seven import json
 
 
 class LogLineCursor(NamedTuple):

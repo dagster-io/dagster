@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_pipes/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -37,4 +36,9 @@ setup(
     include_package_data=True,
     python_requires=">=3.9,<3.13",
     zip_safe=False,
+    extras_require={
+        "stubs": [
+            "google-cloud-storage",
+        ]
+    },
 )

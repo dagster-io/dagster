@@ -1,12 +1,10 @@
+from collections.abc import Iterator, Mapping
 from functools import update_wrapper
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
-    Dict,
-    Iterator,
-    Mapping,
     Optional,
     Union,
     cast,
@@ -16,7 +14,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import experimental_param, public
+from dagster._annotations import beta_param, public
 from dagster._core.decorator_utils import (
     format_docstring_for_description,
     get_function_params,
@@ -56,7 +54,7 @@ ResourceFunction: TypeAlias = Union[
 ]
 
 
-@experimental_param(param="version")
+@beta_param(param="version")
 class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
     """Core class for defining resources.
 
@@ -82,7 +80,7 @@ class ResourceDefinition(AnonymousConfigurableDefinition, IHasInternalInit):
         required_resource_keys: (Optional[Set[str]]) Keys for the resources required by this
             resource. A DagsterInvariantViolationError will be raised during initialization if
             dependencies are cyclic.
-        version (Optional[str]): (Experimental) The version of the resource's definition fn. Two
+        version (Optional[str]): (Beta) The version of the resource's definition fn. Two
             wrapped resource functions should only have the same version if they produce the same
             resource definition when provided with the same inputs.
     """
@@ -374,6 +372,7 @@ def resource(
 ) -> Callable[[ResourceFunction], "ResourceDefinition"]: ...
 
 
+@beta_param(param="version")
 def resource(
     config_schema: Union[ResourceFunction, CoercableToConfigSchema] = None,
     description: Optional[str] = None,
@@ -395,7 +394,7 @@ def resource(
         config_schema (Optional[ConfigSchema]): The schema for the config. Configuration data available in
             `init_context.resource_config`. If not set, Dagster will accept any config provided.
         description(Optional[str]): A human-readable description of the resource.
-        version (Optional[str]): (Experimental) The version of a resource function. Two wrapped
+        version (Optional[str]): (Beta) The version of a resource function. Two wrapped
             resource functions should only have the same version if they produce the same resource
             definition when provided with the same inputs.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by this resource.
@@ -407,7 +406,7 @@ def resource(
 
     def _wrap(resource_fn: ResourceFunction) -> "ResourceDefinition":
         return _ResourceDecoratorCallable(
-            config_schema=cast(Optional[Dict[str, Any]], config_schema),
+            config_schema=cast(Optional[dict[str, Any]], config_schema),
             description=description,
             required_resource_keys=required_resource_keys,
             version=version,

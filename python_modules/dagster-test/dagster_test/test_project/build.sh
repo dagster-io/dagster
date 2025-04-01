@@ -49,6 +49,7 @@ copy_py $ROOT/python_modules/dagster \
         $ROOT/python_modules/dagster-webserver \
         $ROOT/python_modules/dagster-graphql \
         $ROOT/python_modules/dagster-pipes \
+        $ROOT/python_modules/libraries/dagster-shared \
         $ROOT/python_modules/libraries/dagster-airflow \
         $ROOT/python_modules/libraries/dagster-aws \
         $ROOT/python_modules/libraries/dagster-celery \

@@ -1,0 +1,11 @@
+*.svg
+.docusaurus
+.svg
+.yarn
+
+.direnv/
+.tox/
+build/
+dist/
+node_modules/
+sphinx/

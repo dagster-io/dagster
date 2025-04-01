@@ -1,4 +1,5 @@
-from typing import Mapping, Optional, Sequence, Type
+from collections.abc import Mapping, Sequence
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -354,5 +355,5 @@ class SnowflakePandasIOManager(SnowflakeIOManager):
         return [SnowflakePandasTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return pd.DataFrame

@@ -222,15 +222,32 @@ def run_key_sensor(_context):
 
 
 @sensor(job_name="the_job")
+def dup_run_key_sensor(_context):
+    yield RunRequest(run_key="only_once", tags={"foo": "bar"})
+    yield RunRequest(run_key="only_once")
+
+
+@sensor(job_name="the_job")
 def only_once_cursor_sensor(context):
     if not context.cursor:
-        context.update_cursor(str("cursor"))
+        context.update_cursor("cursor")
         return RunRequest()
 
 
 @sensor(job_name="the_job")
 def error_sensor(context):
     context.update_cursor("the exception below should keep this from being persisted")
+    raise Exception("womp womp")
+
+
+NUM_CALLS = {"calls": 0}
+
+
+@sensor(job_name="the_job")
+def passes_on_retry_sensor(context):
+    NUM_CALLS["calls"] = NUM_CALLS["calls"] + 1
+    if NUM_CALLS["calls"] > 1:
+        return RunRequest()
     raise Exception("womp womp")
 
 
@@ -264,6 +281,18 @@ def run_cursor_sensor(context):
 
     context.update_cursor(str(cursor))
     return RunRequest(run_key=None, run_config={}, tags={})
+
+
+@sensor(job_name="the_job")
+def many_requests_cursor_sensor(context):
+    if not context.cursor:
+        cursor = 1
+    else:
+        cursor = int(context.cursor) + 1
+
+    context.update_cursor(str(cursor))
+    for _ in range(5):
+        yield RunRequest(run_key=None, run_config={}, tags={})
 
 
 @sensor(job_name="the_job")
@@ -606,7 +635,7 @@ def all_code_locations_run_status_sensor():
 @sensor(job=the_job)
 def logging_sensor(context):
     class Handler(logging.Handler):
-        def handle(self, record):
+        def handle(self, record):  # pyright: ignore[reportIncompatibleMethodOverride]
             try:
                 self.message = record.getMessage()
             except TypeError:
@@ -631,7 +660,7 @@ def logging_sensor(context):
 @multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
 def multi_asset_logging_sensor(context: MultiAssetSensorEvaluationContext) -> SkipReason:
     class Handler(logging.Handler):
-        def handle(self, record):
+        def handle(self, record):  # pyright: ignore[reportIncompatibleMethodOverride]
             try:
                 self.message = record.getMessage()
             except TypeError:
@@ -837,11 +866,14 @@ def the_repo():
         asset_and_check_job,
         large_sensor,
         many_request_sensor,
+        many_requests_cursor_sensor,
         simple_sensor,
         error_sensor,
+        passes_on_retry_sensor,
         wrong_config_sensor,
         always_on_sensor,
         run_key_sensor,
+        dup_run_key_sensor,
         only_once_cursor_sensor,
         custom_interval_sensor,
         skip_cursor_sensor,
@@ -1210,6 +1242,71 @@ def test_simple_sensor(instance, workspace_context, remote_repo, executor):
         )
 
 
+def test_sensor_stopped_while_submitting_runs(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+    executor: ThreadPoolExecutor,
+):
+    sensor = remote_repo.get_sensor("many_requests_cursor_sensor")
+
+    freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
+
+    with freeze_time(freeze_datetime):
+        instance.start_sensor(sensor)
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 0
+
+        with mock.patch(
+            "dagster._daemon.sensor.SensorLaunchContext.sensor_is_enabled"
+        ) as sensor_enabled_mock:
+            sensor_enabled_mock.return_value = False
+
+            evaluate_sensors(workspace_context, executor)
+
+        # sensor is stopped after the first run is submitted, so only one run should exist
+        assert instance.get_runs_count() == 1
+        first_run = instance.get_runs()[0]
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.SKIPPED,
+            [first_run.run_id],
+        )
+
+        assert ticks[0].run_requests and len(ticks[0].run_requests) == 5
+        assert len(ticks[0].unsubmitted_run_ids_with_requests) == 4
+        assert first_run.run_id not in [
+            run_id for run_id, _ in ticks[0].unsubmitted_run_ids_with_requests
+        ]
+        # if a tick is stopped mid-iteration we don't reset the cursor
+        assert ticks[0].cursor == "1"
+
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+
+    with freeze_time(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+        wait_for_all_runs_to_start(instance)
+        assert instance.get_runs_count() == 6
+        runs = instance.get_runs()
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 2
+
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+            [run.run_id for run in runs if run.run_id != first_run.run_id],
+        )
+        assert ticks[0].cursor == "2"
+
+
 def test_sensors_keyed_on_selector_not_origin(
     instance: DagsterInstance,
     workspace_context: WorkspaceProcessContext,
@@ -1351,6 +1448,8 @@ def test_error_sensor(caplog, executor, instance, workspace_context, remote_repo
             [],
             "Error occurred during the execution of evaluation_fn for sensor error_sensor",
         )
+        assert ticks[0].tick_data.failure_count == 1
+        assert ticks[0].tick_data.consecutive_failure_count == 1
 
         assert (
             "Error occurred during the execution of evaluation_fn for sensor error_sensor"
@@ -1362,6 +1461,87 @@ def test_error_sensor(caplog, executor, instance, workspace_context, remote_repo
         assert state.instigator_data.sensor_type == SensorType.STANDARD
         assert state.instigator_data.cursor is None
         assert state.instigator_data.last_tick_timestamp == freeze_datetime.timestamp()
+
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    caplog.clear()
+    with freeze_time(freeze_datetime):
+        evaluate_sensors(workspace_context, executor)
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 2
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.FAILURE,
+            [],
+            "Error occurred during the execution of evaluation_fn for sensor error_sensor",
+        )
+        assert ticks[0].tick_data.failure_count == 1
+        assert ticks[0].tick_data.consecutive_failure_count == 2
+
+
+def test_passes_on_retry_sensor(caplog, instance, workspace_context, remote_repo):
+    freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59)
+    with freeze_time(freeze_datetime):
+        sensor = remote_repo.get_sensor("passes_on_retry_sensor")
+        instance.add_instigator_state(
+            InstigatorState(
+                sensor.get_remote_origin(),
+                InstigatorType.SENSOR,
+                InstigatorStatus.RUNNING,
+            )
+        )
+
+        state = instance.get_instigator_state(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert state.instigator_data is None
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 0
+
+        evaluate_sensors(workspace_context, None)
+
+        assert instance.get_runs_count() == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.FAILURE,
+            [],
+            "Error occurred during the execution of evaluation_fn for sensor passes_on_retry_sensor",
+        )
+        assert ticks[0].tick_data.failure_count == 1
+        assert ticks[0].tick_data.consecutive_failure_count == 1
+
+        assert (
+            "Error occurred during the execution of evaluation_fn for sensor passes_on_retry_sensor"
+            in caplog.text
+        )
+
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    caplog.clear()
+    with freeze_time(freeze_datetime):
+        evaluate_sensors(workspace_context, None)
+        assert instance.get_runs_count() == 1
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 2
+        assert ticks[0].status == TickStatus.SUCCESS
+        assert ticks[0].tick_data.failure_count == 0
+        assert ticks[0].tick_data.consecutive_failure_count == 0
+
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    caplog.clear()
+    with freeze_time(freeze_datetime):
+        evaluate_sensors(workspace_context, None)
+        assert instance.get_runs_count() == 2
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert len(ticks) == 3
+        assert ticks[0].status == TickStatus.SUCCESS
+        assert ticks[0].tick_data.failure_count == 0
+        assert ticks[0].tick_data.consecutive_failure_count == 0
 
 
 def test_wrong_config_sensor(caplog, executor, instance, workspace_context, remote_repo):
@@ -1433,6 +1613,7 @@ def test_launch_failure(caplog, executor, workspace_context, remote_repo):
                 "class": "ExplodingRunLauncher",
             },
         },
+        synchronous_run_coordinator=True,
     ) as instance:
         with freeze_time(freeze_datetime):
             exploding_workspace_context = workspace_context.copy_for_test_instance(instance)
@@ -1573,6 +1754,62 @@ def test_launch_once(caplog, executor, instance, workspace_context, remote_repo)
             sensor,
             freeze_datetime,
             TickStatus.SKIPPED,
+        )
+
+
+def test_duplicate_run_key_within_tick_launches_once(
+    executor: ThreadPoolExecutor,
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    freeze_datetime = create_datetime(
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
+    )
+    with (
+        freeze_time(freeze_datetime),
+        patch.object(DagsterInstance, "get_ticks", wraps=instance.get_ticks) as mock_get_ticks,
+    ):
+        sensor = remote_repo.get_sensor("dup_run_key_sensor")
+        instance.add_instigator_state(
+            InstigatorState(
+                sensor.get_remote_origin(),
+                InstigatorType.SENSOR,
+                InstigatorStatus.RUNNING,
+            )
+        )
+        assert instance.get_runs_count() == 0
+
+        assert mock_get_ticks.call_count == 0
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert mock_get_ticks.call_count == 1
+        assert len(ticks) == 0
+
+        evaluate_sensors(workspace_context, executor)
+
+        # call another time to get previous tick
+        assert mock_get_ticks.call_count == 2
+
+        wait_for_all_runs_to_start(instance)
+
+        assert instance.get_runs_count() == 1
+        run = instance.get_runs()[0]
+        assert run.tags["foo"] == "bar"
+        ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
+        assert mock_get_ticks.call_count == 3
+
+        assert len(ticks) == 1
+        validate_tick(
+            ticks[0],
+            sensor,
+            freeze_datetime,
+            TickStatus.SUCCESS,
+            expected_run_ids=[run.run_id],
         )
 
 
@@ -2600,7 +2837,7 @@ def test_status_in_code_sensor(executor, instance):
     ) as workspace_context:
         remote_repo = next(
             iter(workspace_context.create_request_context().get_code_location_entries().values())
-        ).code_location.get_repository("the_status_in_code_repo")
+        ).code_location.get_repository("the_status_in_code_repo")  # pyright: ignore[reportOptionalMemberAccess]
 
         with freeze_time(freeze_datetime):
             running_sensor = remote_repo.get_sensor("always_running_sensor")
@@ -2858,11 +3095,11 @@ def test_repository_namespacing(executor):
                 full_workspace_context.create_request_context().get_code_location_entries().values()
             )
         ).code_location
-        repo = full_location.get_repository("the_repo")
-        other_repo = full_location.get_repository("the_other_repo")
+        repo = full_location.get_repository("the_repo")  # pyright: ignore[reportOptionalMemberAccess]
+        other_repo = full_location.get_repository("the_other_repo")  # pyright: ignore[reportOptionalMemberAccess]
 
         # stop always on sensor
-        status_in_code_repo = full_location.get_repository("the_status_in_code_repo")
+        status_in_code_repo = full_location.get_repository("the_status_in_code_repo")  # pyright: ignore[reportOptionalMemberAccess]
         running_sensor = status_in_code_repo.get_sensor("always_running_sensor")
         instance.stop_sensor(
             running_sensor.get_remote_origin_id(), running_sensor.selector_id, running_sensor
@@ -2906,12 +3143,6 @@ def test_repository_namespacing(executor):
             assert instance.get_runs_count() == 2  # still 2
             ticks = instance.get_ticks(sensor.get_remote_origin_id(), sensor.selector_id)
             assert len(ticks) == 2
-
-
-def test_settings():
-    settings = {"use_threads": True, "num_workers": 4}
-    with instance_for_test(overrides={"sensors": settings}) as thread_inst:
-        assert thread_inst.get_settings("sensors") == settings
 
 
 @pytest.mark.parametrize("sensor_name", ["logging_sensor", "multi_asset_logging_sensor"])

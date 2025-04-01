@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Claude context file
+CLAUDE.md
 # C extensions
 *.so
 
@@ -175,3 +177,9 @@ scripts/.build
 
 # dbt .user files
 .user.yml
+
+# exponent config
+exponent.txt
+
+# google cloud storage emulater
+.cloudstorage/

@@ -11,13 +11,14 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {DagsterTag, TagType} from './RunTag';
-import {RunTags} from './RunTags';
+import {RunTags, tagsAsYamlString} from './RunTags';
 import {getBackfillPath} from './RunsFeedUtils';
 import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
 import {useTagPinning} from './useTagPinning';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PipelineTag} from '../graphql/types';
+import {CopyButton} from '../ui/CopyButton';
 
 export const RunRowTags = ({
   run,
@@ -25,12 +26,14 @@ export const RunRowTags = ({
   isHovered,
   isJob,
   hideTags,
+  hidePartition,
 }: {
   run: Pick<RunTableRunFragment, 'tags' | 'assetSelection' | 'mode'>;
   onAddTag?: (token: RunFilterToken) => void;
   isHovered: boolean;
   isJob: boolean;
   hideTags?: string[];
+  hidePartition?: boolean;
 }) => {
   const {isTagPinned, onToggleTagPin} = useTagPinning();
   const [showRunTags, setShowRunTags] = React.useState(false);
@@ -66,12 +69,15 @@ export const RunRowTags = ({
       if (hideTags?.includes(tag.key)) {
         return;
       }
+      if (hidePartition && tag.key === DagsterTag.Partition) {
+        return;
+      }
       if (tag.pinned) {
         tags.push(tag);
       }
     });
     return tags;
-  }, [allTagsWithPinned, hideTags, run.assetSelection?.length]);
+  }, [allTagsWithPinned, hideTags, hidePartition, run.assetSelection?.length]);
 
   return (
     <>
@@ -120,12 +126,8 @@ export const RunRowTags = ({
           <RunTags tags={allTagsWithPinned} onAddTag={onAddTag} onToggleTagPin={onToggleTagPin} />
         </DialogBody>
         <DialogFooter topBorder>
-          <Button
-            intent="primary"
-            onClick={() => {
-              setShowRunTags(false);
-            }}
-          >
+          <CopyButton value={() => tagsAsYamlString(run.tags)}>Copy tags</CopyButton>
+          <Button intent="primary" onClick={() => setShowRunTags(false)}>
             Close
           </Button>
         </DialogFooter>

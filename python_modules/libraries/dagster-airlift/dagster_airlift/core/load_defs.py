@@ -1,5 +1,6 @@
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable, Iterator, Optional, Sequence, Union
+from typing import Any, Callable, Optional, Union
 
 from dagster import (
     AssetsDefinition,
@@ -7,9 +8,10 @@ from dagster import (
     Definitions,
     _check as check,
 )
+from dagster._annotations import beta
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.external_asset import external_asset_from_spec
-from dagster._utils.warnings import suppress_dagster_warnings
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 
 from dagster_airlift.core.airflow_defs_data import MappedAsset
 from dagster_airlift.core.airflow_instance import AirflowInstance
@@ -23,7 +25,6 @@ from dagster_airlift.core.sensor.sensor_builder import (
 )
 from dagster_airlift.core.serialization.compute import DagSelectorFn, compute_serialized_data
 from dagster_airlift.core.serialization.defs_construction import (
-    construct_automapped_dag_assets_defs,
     construct_dag_assets_defs,
     get_airflow_data_to_spec_mapper,
 )
@@ -38,8 +39,9 @@ from dagster_airlift.core.utils import get_metadata_key, spec_iterator
 class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDefinitionsData]):
     airflow_instance: AirflowInstance
     mapped_assets: Sequence[MappedAsset]
+    source_code_retrieval_enabled: Optional[bool]
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS
-    dag_selector_fn: Optional[Callable[[DagInfo], bool]] = None
+    dag_selector_fn: Optional[DagSelectorFn] = None
 
     @property
     def defs_key(self) -> str:
@@ -50,9 +52,11 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
             airflow_instance=self.airflow_instance,
             mapped_assets=self.mapped_assets,
             dag_selector_fn=self.dag_selector_fn,
+            automapping_enabled=False,
+            source_code_retrieval_enabled=self.source_code_retrieval_enabled,
         )
 
-    def defs_from_state(
+    def defs_from_state(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, serialized_airflow_data: SerializedAirflowDefinitionsData
     ) -> Definitions:
         return Definitions(
@@ -63,14 +67,16 @@ class AirflowInstanceDefsLoader(StateBackedDefinitionsLoader[SerializedAirflowDe
         )
 
 
-@suppress_dagster_warnings
+@beta
 def build_defs_from_airflow_instance(
     *,
     airflow_instance: AirflowInstance,
     defs: Optional[Definitions] = None,
     sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
     event_transformer_fn: DagsterEventTransformerFn = default_event_transformer,
-    dag_selector_fn: Optional[DagSelectorFn] = None,
+    dag_selector_fn: Optional[Callable[[DagInfo], bool]] = None,
+    source_code_retrieval_enabled: Optional[bool] = None,
+    default_sensor_status: Optional[DefaultSensorStatus] = None,
 ) -> Definitions:
     """Builds a :py:class:`dagster.Definitions` object from an Airflow instance.
 
@@ -97,7 +103,9 @@ def build_defs_from_airflow_instance(
         sensor_minimum_interval_seconds (int): The minimum interval in seconds between sensor runs.
         event_transformer_fn (DagsterEventTransformerFn): A function that allows for modifying the Dagster events
             produced by the sensor.
-        dag_selector_fn (Optional[DagSelectorFn]): A function that allows for filtering which DAGs assets are created for.
+        dag_selector_fn (Optional[Callable[[DagInfo], bool]]): A function that allows for filtering which DAGs assets are created for.
+        source_code_retrieval_enabled (Optional[bool]): Whether to retrieve source code for the Airflow DAGs. By default, source code is retrieved when the number of DAGs is under 50 for performance reasons. This setting overrides the default behavior.
+        default_sensor_status (Optional[DefaultSensorStatus]): The default status for the sensor. By default, the sensor will be enabled.
 
     Returns:
         Definitions: A :py:class:`dagster.Definitions` object containing the assets and sensor.
@@ -212,6 +220,7 @@ def build_defs_from_airflow_instance(
         airflow_instance=airflow_instance,
         mapped_assets=mapped_assets,
         dag_selector_fn=dag_selector_fn,
+        source_code_retrieval_enabled=source_code_retrieval_enabled,
     ).get_or_fetch_state()
     mapped_and_constructed_assets = [
         *_apply_airflow_data_to_specs(mapped_assets, serialized_airflow_data),
@@ -230,66 +239,7 @@ def build_defs_from_airflow_instance(
                     airflow_instance=airflow_instance,
                     minimum_interval_seconds=sensor_minimum_interval_seconds,
                     event_transformer_fn=event_transformer_fn,
-                )
-            ]
-        ),
-    )
-
-
-@dataclass
-class FullAutomappedDagsLoader(StateBackedDefinitionsLoader[SerializedAirflowDefinitionsData]):
-    airflow_instance: AirflowInstance
-    mapped_assets: Sequence[MappedAsset]
-    sensor_minimum_interval_seconds: int
-
-    @property
-    def defs_key(self) -> str:
-        return get_metadata_key(self.airflow_instance.name)
-
-    def fetch_state(self) -> SerializedAirflowDefinitionsData:
-        return compute_serialized_data(
-            airflow_instance=self.airflow_instance,
-            mapped_assets=self.mapped_assets,
-            dag_selector_fn=None,
-        )
-
-    def defs_from_state(
-        self, serialized_airflow_data: SerializedAirflowDefinitionsData
-    ) -> Definitions:
-        return Definitions(
-            assets=[
-                *_apply_airflow_data_to_specs(self.mapped_assets, serialized_airflow_data),
-                *construct_automapped_dag_assets_defs(serialized_airflow_data),
-            ]
-        )
-
-
-def build_full_automapped_dags_from_airflow_instance(
-    *,
-    airflow_instance: AirflowInstance,
-    sensor_minimum_interval_seconds: int = DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
-    defs: Optional[Definitions] = None,
-) -> Definitions:
-    defs = defs or Definitions()
-    mapped_assets = _type_narrow_defs_assets(defs or Definitions())
-    serialized_data = FullAutomappedDagsLoader(
-        airflow_instance=airflow_instance,
-        sensor_minimum_interval_seconds=sensor_minimum_interval_seconds,
-        mapped_assets=mapped_assets,
-    ).get_or_fetch_state()
-    airflow_assets = [
-        *_apply_airflow_data_to_specs(mapped_assets, serialized_data),
-        *construct_automapped_dag_assets_defs(serialized_data),
-    ]
-    resolved_defs = replace_assets_in_defs(defs=defs, assets=airflow_assets)
-    return Definitions.merge(
-        resolved_defs,
-        Definitions(
-            sensors=[
-                build_airflow_polling_sensor(
-                    minimum_interval_seconds=sensor_minimum_interval_seconds,
-                    mapped_assets=airflow_assets,
-                    airflow_instance=airflow_instance,
+                    default_sensor_status=default_sensor_status,
                 )
             ]
         ),
@@ -341,23 +291,29 @@ def replace_assets_in_defs(
 def enrich_airflow_mapped_assets(
     mapped_assets: Sequence[MappedAsset],
     airflow_instance: AirflowInstance,
+    source_code_retrieval_enabled: Optional[bool],
 ) -> Sequence[AssetsDefinition]:
     """Enrich Airflow-mapped assets with metadata from the provided :py:class:`AirflowInstance`."""
     serialized_data = AirflowInstanceDefsLoader(
-        airflow_instance=airflow_instance, mapped_assets=mapped_assets
+        airflow_instance=airflow_instance,
+        mapped_assets=mapped_assets,
+        source_code_retrieval_enabled=source_code_retrieval_enabled,
     ).get_or_fetch_state()
     return list(_apply_airflow_data_to_specs(mapped_assets, serialized_data))
 
 
+@beta
 def load_airflow_dag_asset_specs(
     airflow_instance: AirflowInstance,
     mapped_assets: Optional[Sequence[MappedAsset]] = None,
-    dag_selector_fn: Optional[DagSelectorFn] = None,
+    dag_selector_fn: Optional[Callable[[DagInfo], bool]] = None,
+    source_code_retrieval_enabled: Optional[bool] = None,
 ) -> Sequence[AssetSpec]:
     """Load asset specs for Airflow DAGs from the provided :py:class:`AirflowInstance`, and link upstreams from mapped assets."""
     serialized_data = AirflowInstanceDefsLoader(
         airflow_instance=airflow_instance,
         mapped_assets=mapped_assets or [],
         dag_selector_fn=dag_selector_fn,
+        source_code_retrieval_enabled=source_code_retrieval_enabled,
     ).get_or_fetch_state()
     return list(spec_iterator(construct_dag_assets_defs(serialized_data)))

@@ -1,7 +1,7 @@
 import datetime
 import random
 from collections import defaultdict
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple, Optional
 from unittest import mock
 
 import pytest
@@ -131,7 +131,7 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
             for entry in instance.all_logs(
                 result.run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
             ):
-                asset_key = entry.dagster_event.event_specific_data.materialization.asset_key
+                asset_key = entry.dagster_event.event_specific_data.materialization.asset_key  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
                 materialization_times_index[asset_key][idx] = datetime.datetime.fromtimestamp(
                     entry.timestamp, tz=datetime.timezone.utc
                 )
@@ -148,11 +148,11 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
                         ) as tags_property:
                             tags_property.return_value = None
                             upstream_data_times = data_time_queryer.get_data_time_by_key_for_record(
-                                record=latest_asset_record,
+                                record=latest_asset_record,  # pyright: ignore[reportArgumentType]
                             )
                     else:
                         upstream_data_times = data_time_queryer.get_data_time_by_key_for_record(
-                            record=latest_asset_record,
+                            record=latest_asset_record,  # pyright: ignore[reportArgumentType]
                         )
                     assert upstream_data_times == {
                         AssetKey(k): materialization_times_index[AssetKey(k)][v]
@@ -201,8 +201,8 @@ def _get_record(instance):
 
 
 class PartitionedDataTimeScenario(NamedTuple):
-    before_partitions: List[str]
-    after_partitions: List[str]
+    before_partitions: list[str]
+    after_partitions: list[str]
     expected_time: Optional[datetime.datetime]
 
 

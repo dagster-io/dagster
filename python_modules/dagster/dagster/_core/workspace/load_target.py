@@ -1,12 +1,14 @@
 import os
 from abc import ABC, abstractmethod
-from typing import Dict, List, NamedTuple, Optional, Sequence
+from collections.abc import Sequence
+from typing import NamedTuple, Optional, Union, cast
 
 import tomli
 
 from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
+    InProcessCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.workspace.load import (
@@ -41,6 +43,21 @@ class WorkspaceFileTarget(
         return location_origins_from_yaml_paths(self.paths)
 
 
+class InProcessWorkspaceLoadTarget(WorkspaceLoadTarget):
+    """A workspace load target that is in-process and does not spin up a gRPC server."""
+
+    def __init__(
+        self, origin: Union[InProcessCodeLocationOrigin, Sequence[InProcessCodeLocationOrigin]]
+    ):
+        self._origins = cast(
+            Sequence[InProcessCodeLocationOrigin],
+            origin if isinstance(origin, list) else [origin],
+        )
+
+    def create_origins(self) -> Sequence[InProcessCodeLocationOrigin]:
+        return self._origins
+
+
 def validate_dagster_block_for_module_name_or_modules(dagster_block):
     module_name_present = "module_name" in dagster_block and isinstance(
         dagster_block.get("module_name"), str
@@ -60,7 +77,7 @@ def validate_dagster_block_for_module_name_or_modules(dagster_block):
     return True
 
 
-def is_valid_modules_list(modules: List[Dict[str, str]]) -> bool:
+def is_valid_modules_list(modules: list[dict[str, str]]) -> bool:
     # Could be skipped theorectically, but double check maybe useful, if this functions finds it's way elsewhere
     if not isinstance(modules, list):
         raise ValueError("Modules should be a list.")
@@ -113,6 +130,19 @@ def get_origins_from_toml(
                         ).create_origins()
                     )
             return origins
+
+        # This allows `dagster dev` to work with projects scaffolded by the new `dg` CLI
+        # without the need to include a `tool.dagster` section.
+        dg_block = data.get("tool", {}).get("dg", {}).get("project", {})
+        if dg_block:
+            default_module_name = f"{dg_block['root_module']}.definitions"
+            module_name = dg_block.get("code_location_target_module", default_module_name)
+            return ModuleTarget(
+                module_name=module_name,
+                attribute=None,
+                working_directory=os.getcwd(),
+                location_name=dg_block.get("code_location_name"),
+            ).create_origins()
         else:
             return []
 

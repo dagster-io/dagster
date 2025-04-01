@@ -25,8 +25,9 @@ export const PageHeader = (props: Props) => {
     >
       {title && (
         <Box
+          padding={{vertical: 8}}
           style={{minHeight: 52, alignContent: 'center'}}
-          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+          flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8}}
         >
           <Box flex={{direction: 'row', alignItems: 'center', gap: 12, wrap: 'wrap'}}>
             {title}

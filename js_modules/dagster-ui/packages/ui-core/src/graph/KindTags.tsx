@@ -1,9 +1,11 @@
 import {CaptionMono, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {OpTags} from './OpTags';
+import {featureEnabled} from '../app/Flags';
 import {DefinitionTag} from '../graphql/types';
-import {linkToAssetTableWithKindFilter} from '../search/useGlobalSearch';
+import {linkToAssetTableWithKindFilter} from '../search/links';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 
 export const LEGACY_COMPUTE_KIND_TAG = 'kind';
@@ -29,6 +31,7 @@ export const AssetKind = ({
   style,
   linkToFilteredAssetsTable: shouldLink,
   currentPageFilter,
+  onChangeAssetSelection,
   ...rest
 }: {
   kind: string;
@@ -38,11 +41,12 @@ export const AssetKind = ({
   reversed?: boolean;
   linkToFilteredAssetsTable?: boolean;
   currentPageFilter?: StaticSetFilter<string>;
+  onChangeAssetSelection?: (selection: string) => void;
 }) => {
   return (
     <Tooltip
       content={
-        currentPageFilter ? (
+        currentPageFilter || onChangeAssetSelection ? (
           <>
             Filter to <CaptionMono>{kind}</CaptionMono> assets
           </>
@@ -64,13 +68,20 @@ export const AssetKind = ({
         tags={[
           {
             label: kind,
-            onClick: currentPageFilter
-              ? () => currentPageFilter.setState(new Set([kind, ...currentPageFilter.state]))
-              : shouldLink
+            onClick:
+              currentPageFilter || onChangeAssetSelection
                 ? () => {
-                    window.location.href = linkToAssetTableWithKindFilter(kind);
+                    if (featureEnabled(FeatureFlag.flagSelectionSyntax) && onChangeAssetSelection) {
+                      onChangeAssetSelection?.(`kind:"${kind}"`);
+                    } else if (currentPageFilter) {
+                      currentPageFilter.setState(new Set([kind, ...currentPageFilter.state]));
+                    }
                   }
-                : () => {},
+                : shouldLink
+                  ? () => {
+                      window.location.href = linkToAssetTableWithKindFilter(kind);
+                    }
+                  : () => {},
           },
         ]}
       />

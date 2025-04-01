@@ -9,7 +9,7 @@
    sections/api/apidocs/config
    sections/api/apidocs/errors
    sections/api/apidocs/execution
-   sections/api/apidocs/external-assets
+   sections/api/apidocs/external-assets-instance-api
    sections/api/apidocs/graphs
    sections/api/apidocs/hooks
    sections/api/apidocs/internals
@@ -43,11 +43,11 @@
    sections/api/apidocs/libraries/dagster-deltalake
    sections/api/apidocs/libraries/dagster-deltalake-pandas
    sections/api/apidocs/libraries/dagster-deltalake-polars
+   sections/api/apidocs/libraries/dagster-dlt
    sections/api/apidocs/libraries/dagster-duckdb
    sections/api/apidocs/libraries/dagster-duckdb-pandas
    sections/api/apidocs/libraries/dagster-duckdb-pyspark
    sections/api/apidocs/libraries/dagster-duckdb-polars
-   sections/api/apidocs/libraries/dagster-embedded-elt
    sections/api/apidocs/libraries/dagster-fivetran
    sections/api/apidocs/libraries/dagster-docker
    sections/api/apidocs/libraries/dagster-gcp
@@ -71,9 +71,9 @@
    sections/api/apidocs/libraries/dagster-powerbi
    sections/api/apidocs/libraries/dagster-prometheus
    sections/api/apidocs/libraries/dagster-pyspark
-   sections/api/apidocs/libraries/dagster-shell
    sections/api/apidocs/libraries/dagster-sigma
    sections/api/apidocs/libraries/dagster-slack
+   sections/api/apidocs/libraries/dagster-sling
    sections/api/apidocs/libraries/dagster-snowflake
    sections/api/apidocs/libraries/dagster-snowflake-pandas
    sections/api/apidocs/libraries/dagster-snowflake-pyspark

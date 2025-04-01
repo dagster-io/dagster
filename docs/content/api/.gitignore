@@ -1,4 +1,0 @@
-# prevent these files from returning
-modules.json
-searchindex.json
-sections.json

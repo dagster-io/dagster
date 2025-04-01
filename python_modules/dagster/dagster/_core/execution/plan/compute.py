@@ -1,6 +1,6 @@
-import asyncio
 import inspect
-from typing import Any, AsyncIterator, Iterator, List, Mapping, Sequence, Set, TypeVar, Union
+from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from typing import Any, TypeVar, Union
 
 from typing_extensions import TypeAlias
 
@@ -55,14 +55,14 @@ def create_step_outputs(
     check.inst_param(handle, "handle", NodeHandle)
 
     # the run config has the node output name configured
-    config_output_names: Set[str] = set()
+    config_output_names: set[str] = set()
     current_handle = handle
     while current_handle:
         op_config = resolved_run_config.ops[str(current_handle)]
         current_handle = current_handle.parent
         config_output_names = config_output_names.union(op_config.outputs.output_names)
 
-    step_outputs: List[StepOutput] = []
+    step_outputs: list[StepOutput] = []
     for name, output_def in node.definition.output_dict.items():
         asset_key = asset_layer.asset_key_for_output(handle, name)
         asset_node = asset_layer.asset_graph.get(asset_key) if asset_key else None
@@ -105,33 +105,28 @@ def _validate_event(event: Any, step_context: StepExecutionContext) -> OpOutputU
         ),
     ):
         raise DagsterInvariantViolationError(
-            (
-                f"Compute function for {step_context.describe_op()} yielded a value of type {type(event)} "
-                "rather than an instance of Output, AssetMaterialization, or ExpectationResult."
-                f" Values yielded by {step_context.op_def.node_type_str}s must be wrapped in one of these types. If your "
-                f"{step_context.op_def.node_type_str} has a single output and yields no other events, you may want to use "
-                f"`return` instead of `yield` in the body of your {step_context.op_def.node_type_str} compute function. If "
-                "you are already using `return`, and you expected to return a value of type "
-                f"{type(event)}, you may be inadvertently returning a generator rather than the value "
-                # f"you expected. Value is {str(event[0])}"
-            )
+            f"Compute function for {step_context.describe_op()} yielded a value of type {type(event)} "
+            "rather than an instance of Output, AssetMaterialization, or ExpectationResult."
+            f" Values yielded by {step_context.op_def.node_type_str}s must be wrapped in one of these types. If your "
+            f"{step_context.op_def.node_type_str} has a single output and yields no other events, you may want to use "
+            f"`return` instead of `yield` in the body of your {step_context.op_def.node_type_str} compute function. If "
+            "you are already using `return`, and you expected to return a value of type "
+            f"{type(event)}, you may be inadvertently returning a generator rather than the value "
+            # f"you expected. Value is {str(event[0])}"
         )
 
     return event
 
 
-def gen_from_async_gen(async_gen: AsyncIterator[T]) -> Iterator[T]:
-    # prime use for asyncio.Runner, but new in 3.11 and did not find appealing backport
-    loop = asyncio.new_event_loop()
-    try:
-        while True:
-            try:
-                yield loop.run_until_complete(async_gen.__anext__())
-            except StopAsyncIteration:
-                return
-    finally:
-        loop.run_until_complete(loop.shutdown_asyncgens())
-        loop.close()
+def gen_from_async_gen(
+    context: StepExecutionContext,
+    async_gen: AsyncIterator[T],
+) -> Iterator[T]:
+    while True:
+        try:
+            yield context.event_loop.run_until_complete(async_gen.__anext__())
+        except StopAsyncIteration:
+            return
 
 
 def _yield_compute_results(
@@ -144,18 +139,16 @@ def _yield_compute_results(
 
     if isinstance(user_event_generator, Output):
         raise DagsterInvariantViolationError(
-            (
-                f"Compute function for {step_context.describe_op()} returned an Output rather than "
-                f"yielding it. The compute_fn of the {step_context.op_def.node_type_str} must yield "
-                "its results"
-            )
+            f"Compute function for {step_context.describe_op()} returned an Output rather than "
+            f"yielding it. The compute_fn of the {step_context.op_def.node_type_str} must yield "
+            "its results"
         )
 
     if user_event_generator is None:
         return
 
     if inspect.isasyncgen(user_event_generator):
-        user_event_generator = gen_from_async_gen(user_event_generator)
+        user_event_generator = gen_from_async_gen(step_context, user_event_generator)
 
     op_label = step_context.describe_op()
 
@@ -200,7 +193,9 @@ def execute_core_compute(
                 or step_context.job_def.asset_layer.asset_key_for_node(step_context.node_handle)
             )
             emitted_result_names.add(
-                step_context.job_def.asset_layer.node_output_handle_for_asset(asset_key).output_name
+                step_context.job_def.asset_layer.asset_graph.get(
+                    asset_key
+                ).assets_def.get_output_name_for_asset_key(asset_key)
             )
             # Check results embedded in MaterializeResult are counted
             for check_result in step_output.check_results or []:
@@ -209,11 +204,6 @@ def execute_core_compute(
                     handle
                 )
                 emitted_result_names.add(output_name)
-        elif isinstance(step_output, AssetCheckEvaluation):
-            output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
-                step_output.asset_check_key
-            )
-            emitted_result_names.add(output_name)
         elif isinstance(step_output, AssetCheckResult):
             if step_output.asset_key and step_output.check_name:
                 handle = AssetCheckKey(step_output.asset_key, step_output.check_name)

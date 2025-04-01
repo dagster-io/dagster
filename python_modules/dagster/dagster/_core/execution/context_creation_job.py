@@ -1,22 +1,17 @@
+import asyncio
 import logging
 import sys
 from abc import ABC, abstractmethod
+from collections.abc import Generator, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
-    Dict,
-    Generator,
     Generic,
-    Iterable,
-    Iterator,
-    Mapping,
     NamedTuple,
     Optional,
-    Sequence,
-    Type,
     TypeVar,
     Union,
     cast,
@@ -164,7 +159,7 @@ class ExecutionContextManager(Generic[TContextType], ABC):
 
     @property
     @abstractmethod
-    def context_type(self) -> Type[TContextType]:
+    def context_type(self) -> type[TContextType]:
         pass
 
     def prepare_context(self) -> Iterable[DagsterEvent]:  # ode to Preparable
@@ -191,7 +186,7 @@ def execution_context_event_generator(
         Callable[..., EventGenerationManager[ScopedResourcesBuilder]]
     ] = None,
     raise_on_error: Optional[bool] = False,
-    output_capture: Optional[Dict["StepOutputHandle", Any]] = None,
+    output_capture: Optional[dict["StepOutputHandle", Any]] = None,
 ) -> Generator[Union[DagsterEvent, PlanExecutionContext], None, None]:
     scoped_resources_builder_cm = cast(
         Callable[..., EventGenerationManager[ScopedResourcesBuilder]],
@@ -221,31 +216,48 @@ def execution_context_event_generator(
 
     log_manager = create_log_manager(context_creation_data)
     resource_defs = job_def.get_required_resource_defs()
+    event_loop = asyncio.new_event_loop()
+    try:
+        resources_manager = scoped_resources_builder_cm(
+            resource_defs=resource_defs,
+            resource_configs=context_creation_data.resolved_run_config.resources,
+            log_manager=log_manager,
+            execution_plan=execution_plan,
+            dagster_run=context_creation_data.dagster_run,
+            resource_keys_to_init=context_creation_data.resource_keys_to_init,
+            instance=instance,
+            emit_persistent_events=True,
+            event_loop=event_loop,
+        )
+        yield from resources_manager.generate_setup_events()
+        scoped_resources_builder = check.inst(
+            resources_manager.get_object(), ScopedResourcesBuilder
+        )
 
-    resources_manager = scoped_resources_builder_cm(
-        resource_defs=resource_defs,
-        resource_configs=context_creation_data.resolved_run_config.resources,
-        log_manager=log_manager,
-        execution_plan=execution_plan,
-        dagster_run=context_creation_data.dagster_run,
-        resource_keys_to_init=context_creation_data.resource_keys_to_init,
-        instance=instance,
-        emit_persistent_events=True,
-    )
-    yield from resources_manager.generate_setup_events()
-    scoped_resources_builder = check.inst(resources_manager.get_object(), ScopedResourcesBuilder)
+        execution_context = PlanExecutionContext(
+            plan_data=create_plan_data(context_creation_data, raise_on_error, retry_mode),
+            execution_data=create_execution_data(context_creation_data, scoped_resources_builder),
+            log_manager=log_manager,
+            output_capture=output_capture,
+            event_loop=event_loop,
+        )
 
-    execution_context = PlanExecutionContext(
-        plan_data=create_plan_data(context_creation_data, raise_on_error, retry_mode),
-        execution_data=create_execution_data(context_creation_data, scoped_resources_builder),
-        log_manager=log_manager,
-        output_capture=output_capture,
-    )
+        _validate_plan_with_context(execution_context, execution_plan)
 
-    _validate_plan_with_context(execution_context, execution_plan)
+        yield execution_context
+        yield from resources_manager.generate_teardown_events()
 
-    yield execution_context
-    yield from resources_manager.generate_teardown_events()
+    finally:
+        try:
+            # If are running in another active event loop than this cleanup
+            # will throw RuntimeError('Cannot run the event loop while another loop is running')
+            # There is no public API that does not throw to check for this condition, so just run
+            # the cleanup and ignore the exception.
+            event_loop.run_until_complete(event_loop.shutdown_asyncgens())
+        except RuntimeError:
+            pass
+
+        event_loop.close()
 
 
 class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationContext]):
@@ -261,7 +273,7 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
         dagster_run: DagsterRun,
         instance: DagsterInstance,
         raise_on_error: Optional[bool] = False,
-        output_capture: Optional[Dict["StepOutputHandle", Any]] = None,
+        output_capture: Optional[dict["StepOutputHandle", Any]] = None,
         executor_defs: Optional[Sequence[ExecutorDefinition]] = None,
         resume_from_failure=False,
     ):
@@ -276,10 +288,10 @@ class PlanOrchestrationContextManager(ExecutionContextManager[PlanOrchestrationC
             output_capture,
             resume_from_failure=resume_from_failure,
         )
-        super(PlanOrchestrationContextManager, self).__init__(event_generator)
+        super().__init__(event_generator)
 
     @property
-    def context_type(self) -> Type[PlanOrchestrationContext]:
+    def context_type(self) -> type[PlanOrchestrationContext]:
         return PlanOrchestrationContext
 
 
@@ -291,7 +303,7 @@ def orchestration_context_event_generator(
     instance: DagsterInstance,
     raise_on_error: bool,
     executor_defs: Optional[Sequence[ExecutorDefinition]],
-    output_capture: Optional[Dict["StepOutputHandle", Any]],
+    output_capture: Optional[dict["StepOutputHandle", Any]],
     resume_from_failure: bool = False,
 ) -> Iterator[Union[DagsterEvent, PlanOrchestrationContext]]:
     check.invariant(executor_defs is None)
@@ -359,9 +371,9 @@ class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext])
             Callable[..., EventGenerationManager[ScopedResourcesBuilder]]
         ] = None,
         raise_on_error: Optional[bool] = False,
-        output_capture: Optional[Dict["StepOutputHandle", Any]] = None,
+        output_capture: Optional[dict["StepOutputHandle", Any]] = None,
     ):
-        super(PlanExecutionContextManager, self).__init__(
+        super().__init__(
             execution_context_event_generator(
                 job,
                 execution_plan,
@@ -376,7 +388,7 @@ class PlanExecutionContextManager(ExecutionContextManager[PlanExecutionContext])
         )
 
     @property
-    def context_type(self) -> Type[PlanExecutionContext]:
+    def context_type(self) -> type[PlanExecutionContext]:
         return PlanExecutionContext
 
 

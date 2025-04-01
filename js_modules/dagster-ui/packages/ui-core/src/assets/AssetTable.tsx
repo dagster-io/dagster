@@ -22,6 +22,8 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {InvalidSelectionQueryNotice} from '../pipelines/GraphNotices';
+import {SyntaxError} from '../selection/CustomErrorListener';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
 
@@ -43,6 +45,8 @@ interface Props {
   isFiltered: boolean;
   kindFilter?: StaticSetFilter<string>;
   isLoading: boolean;
+  onChangeAssetSelection: (selection: string) => void;
+  errorState?: SyntaxError[];
 }
 
 export const AssetTable = ({
@@ -57,6 +61,8 @@ export const AssetTable = ({
   view,
   kindFilter,
   isLoading,
+  onChangeAssetSelection,
+  errorState,
 }: Props) => {
   const groupedByDisplayKey = useMemo(
     () => groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a))),
@@ -81,6 +87,13 @@ export const AssetTable = ({
 
   const content = () => {
     if (!assets.length && !isLoading) {
+      if (errorState?.length) {
+        return (
+          <Box padding={{top: 64}}>
+            <InvalidSelectionQueryNotice errors={errorState} />
+          </Box>
+        );
+      }
       if (assetSelection) {
         return (
           <Box padding={{top: 64}}>
@@ -143,6 +156,7 @@ export const AssetTable = ({
         view={view}
         kindFilter={kindFilter}
         isLoading={isLoading}
+        onChangeAssetSelection={onChangeAssetSelection}
       />
     );
   };
@@ -157,7 +171,7 @@ export const AssetTable = ({
             top: 0,
             zIndex: 1,
             background: Colors.backgroundDefault(),
-            alignItems: 'center',
+            alignItems: 'flex-start',
             gap: 12,
             display: 'grid',
             gridTemplateColumns: 'minmax(0, 1fr) auto',
@@ -165,7 +179,7 @@ export const AssetTable = ({
         >
           <div>{actionBarComponents}</div>
           <Box
-            style={{alignSelf: 'end'}}
+            style={{justifySelf: 'flex-end'}}
             flex={{gap: 12, direction: 'row-reverse', alignItems: 'center'}}
           >
             <QueryRefreshCountdown refreshState={refreshState} />

@@ -8,7 +8,7 @@ This package provides:
     to execute an arbitrary task in Databricks.
 """
 
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_databricks.databricks import (
     DatabricksClient as DatabricksClient,

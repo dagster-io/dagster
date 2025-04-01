@@ -26,14 +26,13 @@
 
 ### LIBRARIES
 
--e docs/dagster-ui-screenshot
 -e docs/sphinx/_ext/dagster-sphinx
 -e python_modules/automation
 -e python_modules/dagster[pyright,test]
 -e python_modules/dagit
 -e python_modules/dagster-graphql
 -e python_modules/dagster-test
--e python_modules/dagster-pipes
+-e python_modules/dagster-pipes[stubs]
 -e python_modules/dagster-webserver
 -e python_modules/libraries/dagster-airbyte/
 -e python_modules/libraries/dagster-airflow[test_airflow_2]
@@ -52,6 +51,8 @@
 -e python_modules/libraries/dagster-deltalake/
 -e python_modules/libraries/dagster-deltalake-pandas/
 -e python_modules/libraries/dagster-deltalake-polars/
+-e python_modules/libraries/dagster-dlt/
+-e python_modules/libraries/dagster-dg[test]
 -e python_modules/libraries/dagster-docker/
 -e python_modules/libraries/dagster-duckdb/
 -e python_modules/libraries/dagster-duckdb-pandas/
@@ -59,7 +60,7 @@
 -e python_modules/libraries/dagster-duckdb-polars/
 -e python_modules/libraries/dagster-embedded-elt
 -e python_modules/libraries/dagster-fivetran/
--e python_modules/libraries/dagster-gcp/
+-e python_modules/libraries/dagster-gcp[test,dataproc]
 -e python_modules/libraries/dagster-gcp-pandas[test]
 -e python_modules/libraries/dagster-gcp-pyspark/
 -e python_modules/libraries/dagster-ge/
@@ -80,10 +81,10 @@
 -e python_modules/libraries/dagster-powerbi
 -e python_modules/libraries/dagster-prometheus/
 -e python_modules/libraries/dagster-pyspark/
--e python_modules/libraries/dagster-sdf/
--e python_modules/libraries/dagster-shell/
+-e python_modules/libraries/dagster-shared/
 -e python_modules/libraries/dagster-sigma[test]
 -e python_modules/libraries/dagster-slack/
+-e python_modules/libraries/dagster-sling/
 -e python_modules/libraries/dagster-snowflake/
 -e python_modules/libraries/dagster-snowflake-pandas/
 -e python_modules/libraries/dagster-snowflake-pyspark/
@@ -93,6 +94,13 @@
 -e python_modules/libraries/dagster-twilio/
 -e python_modules/libraries/dagster-wandb[dev]
 -e python_modules/libraries/dagstermill/
+
+### COMMUNITY
+dagster-anthropic
+dagster-chroma
+dagster-gemini
+dagster-weaviate
+dagster-qdrant
 
 ### OTHER
 pandas_gbq  # (quickstart_gcp)
@@ -106,7 +114,7 @@ wordcloud  # (quickstart-*)
 apache-airflow>2.7
 pendulum<3
 types-sqlalchemy==1.4.53.34
-
+fastapi>=0.115.6 # producing a bizarrely early version of fastapi without this
 
 ### EXAMPLES
 
@@ -132,12 +140,17 @@ types-sqlalchemy==1.4.53.34
 -e examples/with_openai
 -e examples/with_pyspark
 -e examples/with_wandb
--e examples/experimental/dagster-blueprints
 -e python_modules/libraries/dagster-airlift[mwaa,dbt,test] # (includes airflow dependencies)
 -e examples/experimental/dagster-dlift
 -e examples/starlift-demo
 -e python_modules/libraries/dagster-airlift/kitchen-sink
+-e python_modules/libraries/dagster-dbt/kitchen-sink
 -e examples/experimental/dagster-dlift/kitchen-sink
 -e python_modules/libraries/dagster-airlift/perf-harness
 -e examples/airlift-migration-tutorial
 -e examples/use_case_repository[dev]
+-e examples/docs_projects/project_atproto_dashboard
+-e examples/docs_projects/project_dagster_modal_pipes
+-e examples/docs_projects/project_prompt_eng
+# -e examples/docs_projects/project_ask_ai_dagster
+# -e examples/docs_projects/project_llm_fine_tune

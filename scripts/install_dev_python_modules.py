@@ -3,7 +3,7 @@ import argparse
 import itertools
 import subprocess
 import sys
-from typing import List, Optional
+from typing import Optional
 
 # We allow extra packages to be passed in via the command line because pip's version resolution
 # requires everything to be installed at the same time.
@@ -26,7 +26,7 @@ parser.add_argument(
 
 def main(
     quiet: bool,
-    extra_packages: List[str],
+    extra_packages: list[str],
     include_prebuilt_grpcio_wheel: Optional[bool],
     system: Optional[bool],
 ) -> None:
@@ -39,7 +39,7 @@ def main(
     # build errors, try this first. For context, there is a lengthy discussion here:
     # https://github.com/pypa/pip/issues/5599
 
-    install_targets: List[str] = [
+    install_targets: list[str] = [
         *extra_packages,
     ]
 
@@ -50,23 +50,24 @@ def main(
     # Supported on all Python versions.
     editable_target_paths = [
         ".buildkite/dagster-buildkite",
-        "examples/experimental/dagster-blueprints",
         "python_modules/libraries/dagster-airlift[core,in-airflow,mwaa,dbt,test]",
         "integration_tests/python_modules/dagster-k8s-test-infra",
         "helm/dagster/schema[test]",
         "python_modules/automation",
         "python_modules/dagster[pyright,ruff,test]",
-        "python_modules/dagster-pipes",
+        "python_modules/dagster-pipes[stubs]",
         "python_modules/dagster-graphql",
         "python_modules/dagster-test",
         "python_modules/dagster-webserver",
         "python_modules/dagit",
+        "python_modules/libraries/dagster-shared",
         "python_modules/libraries/dagster-managed-elements",
         "python_modules/libraries/dagster-airbyte",
         "python_modules/libraries/dagster-aws[stubs,test]",
         "python_modules/libraries/dagster-azure",
         "python_modules/libraries/dagster-celery",
         "python_modules/libraries/dagster-celery-docker",
+        "python_modules/libraries/dagster-components",
         "python_modules/libraries/dagster-dask[yarn,pbs,kube]",
         "python_modules/libraries/dagster-databricks",
         "python_modules/libraries/dagster-datadog",
@@ -75,11 +76,11 @@ def main(
         "python_modules/libraries/dagster-deltalake",
         "python_modules/libraries/dagster-deltalake-pandas",
         "python_modules/libraries/dagster-deltalake-polars",
+        "python_modules/libraries/dagster-dlt",
         "python_modules/libraries/dagster-docker",
-        "python_modules/libraries/dagster-gcp",
+        "python_modules/libraries/dagster-gcp[test, dataproc]",
         "python_modules/libraries/dagster-gcp-pandas",
         "python_modules/libraries/dagster-gcp-pyspark",
-        "python_modules/libraries/dagster-ge",
         "python_modules/libraries/dagster-embedded-elt",
         "python_modules/libraries/dagster-fivetran",
         "python_modules/libraries/dagster-k8s",
@@ -98,8 +99,8 @@ def main(
         "python_modules/libraries/dagster-postgres",
         "python_modules/libraries/dagster-prometheus",
         "python_modules/libraries/dagster-pyspark",
-        "python_modules/libraries/dagster-shell",
         "python_modules/libraries/dagster-slack",
+        "python_modules/libraries/dagster-sling",
         "python_modules/libraries/dagster-snowflake",
         "python_modules/libraries/dagster-snowflake-pandas",
         "python_modules/libraries/dagster-spark",
@@ -107,6 +108,11 @@ def main(
         "python_modules/libraries/dagster-twilio",
         "python_modules/libraries/dagstermill",
     ]
+
+    if sys.version_info >= (3, 10):
+        editable_target_paths += [
+            "python_modules/libraries/dagster-ge",
+        ]
 
     if sys.version_info <= (3, 12):
         editable_target_paths += [

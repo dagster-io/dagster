@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, NamedTuple, Optional, Type, TypeVar, Union, cast
+from typing import Any, Callable, NamedTuple, Optional, TypeVar, Union, cast
 
 from typing_extensions import Self
 
@@ -169,7 +169,7 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> None:
         " call `configured` on either an OpDefinition and GraphDefinition. To fix"
         " this error, make sure to call `configured` on the definition object *before* using"
         " the `tag` or `alias` methods. For usage examples, see"
-        " https://docs.dagster.io/concepts/configuration/configured",
+        " https://legacy-docs.dagster.io/concepts/configuration/configured",
     )
     from dagster._config.pythonic_config import ConfigurableResourceFactory, safe_is_subclass
 
@@ -183,7 +183,7 @@ def _check_configurable_param(configurable: ConfigurableDefinition) -> None:
             "Only the following types can be used with the `configured` method: ResourceDefinition,"
             " ExecutorDefinition, GraphDefinition, NodeDefinition, and LoggerDefinition."
             " For usage examples of `configured`, see"
-            " https://docs.dagster.io/concepts/configuration/configured",
+            " https://legacy-docs.dagster.io/concepts/configuration/configured",
         )
 
 
@@ -232,7 +232,7 @@ def _wrap_user_fn_if_pythonic_config(
     )
 
     config_schema_from_class = infer_schema_from_config_annotation(param.annotation, param.default)
-    config_cls = cast(Type[Config], param.annotation)
+    config_cls = cast(type[Config], param.annotation)
 
     param_name = param.name
 
@@ -324,7 +324,7 @@ def configured(
         configurable_inner = cast(
             ResourceDefinition,
             (
-                cast(Type[ConfigurableResourceFactory], configurable)
+                cast(type[ConfigurableResourceFactory], configurable)
                 .configure_at_launch()
                 .get_resource_definition()
             ),

@@ -6,7 +6,7 @@ import {TruncatedTextWithFullTextOnHover} from '../../../nav/getLeftNavItemsForO
 import {FilterDropdown} from '../FilterDropdown';
 import {useFilters} from '../useFilters';
 import {useStaticSetFilter} from '../useStaticSetFilter';
-import {useTimeRangeFilter} from '../useTimeRangeFilter';
+import {TimeRangeState, useTimeRangeFilter} from '../useTimeRangeFilter';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -90,10 +90,16 @@ const TestComponent = () => {
     ),
   });
 
+  const [timeRangeState, setTimeRangeState] = useState<TimeRangeState | undefined>(undefined);
+
   const timeRangeFilter = useTimeRangeFilter({
     name: 'Timestamp',
     activeFilterTerm: 'Timestamp',
     icon: 'date',
+    onStateChanged: (state) => {
+      setTimeRangeState(state);
+    },
+    state: timeRangeState,
   });
 
   const filters = useMemo(

@@ -1,6 +1,6 @@
 import os
 from datetime import timedelta
-from typing import Callable, List, Tuple
+from typing import Callable
 
 import pytest
 from dagster import AssetKey, DagsterInstance
@@ -19,7 +19,7 @@ def module_and_instance_fixture(request) -> str:
 
 
 @pytest.fixture(name="dagster_dev_cmd")
-def dagster_dev_cmd_fixture(module_and_instance: Tuple) -> List[str]:
+def dagster_dev_cmd_fixture(module_and_instance: tuple) -> list[str]:
     module, instance = module_and_instance
     return ["dagster", "dev", "-m", module, "-p", "3333"]
 
@@ -56,7 +56,7 @@ def test_dagster_materializes(
     airflow_instance: None,
     dagster_dev: None,
     dagster_home: str,
-    module_and_instance: Tuple[str, Callable[[], AirflowInstance]],
+    module_and_instance: tuple[str, Callable[[], AirflowInstance]],
 ) -> None:
     """Test that assets can load properly, and that materializations register."""
     module, instance_fn = module_and_instance
@@ -72,7 +72,7 @@ def test_dagster_materializes(
         if asset_materialization:
             break
 
-    assert asset_materialization, "Could not find asset materialization for asset dag key"
+    assert asset_materialization, "Could not find asset materialization for asset dag key"  # pyright: ignore[reportPossiblyUnboundVariable]
 
     if module.endswith("observe") or module.endswith("migrate"):
         asset_materialization = dagster_instance.get_latest_materialization_event(

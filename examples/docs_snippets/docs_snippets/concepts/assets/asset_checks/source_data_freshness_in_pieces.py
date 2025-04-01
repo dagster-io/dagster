@@ -1,19 +1,14 @@
 # start_multi_observable_marker
 from dagster_snowflake import SnowflakeResource, fetch_last_updated_timestamps
 
-from dagster import (
-    AssetSpec,
-    MetadataValue,
-    ObserveResult,
-    multi_observable_source_asset,
-)
+import dagster as dg
 
 TABLE_SCHEMA = "PUBLIC"
 table_names = ["charges", "customers"]
-asset_specs = [AssetSpec(table_name) for table_name in table_names]
+asset_specs = [dg.AssetSpec(table_name) for table_name in table_names]
 
 
-@multi_observable_source_asset(specs=asset_specs)
+@dg.multi_observable_source_asset(specs=asset_specs)
 def source_tables(snowflake: SnowflakeResource):
     with snowflake.get_connection() as conn:
         freshness_results = fetch_last_updated_timestamps(
@@ -22,10 +17,10 @@ def source_tables(snowflake: SnowflakeResource):
             schema=TABLE_SCHEMA,
         )
         for table_name, last_updated in freshness_results.items():
-            yield ObserveResult(
+            yield dg.ObserveResult(
                 asset_key=table_name,
                 metadata={
-                    "dagster/last_updated_timestamp": MetadataValue.timestamp(
+                    "dagster/last_updated_timestamp": dg.MetadataValue.timestamp(
                         last_updated
                     )
                 },

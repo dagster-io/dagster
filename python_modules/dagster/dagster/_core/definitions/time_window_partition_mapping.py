@@ -1,8 +1,9 @@
+from collections.abc import Sequence
 from datetime import datetime, timedelta
-from typing import List, NamedTuple, Optional, Sequence, cast
+from typing import NamedTuple, Optional, cast
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental_param
+from dagster._annotations import PublicAttr, beta_param
 from dagster._core.definitions.partition import (
     AllPartitionsSubset,
     PartitionsDefinition,
@@ -21,7 +22,7 @@ from dagster._time import add_absolute_time
 
 
 @whitelist_for_serdes
-@experimental_param(param="allow_nonexistent_upstream_partitions")
+@beta_param(param="allow_nonexistent_upstream_partitions")
 class TimeWindowPartitionMapping(
     PartitionMapping,
     NamedTuple(
@@ -52,7 +53,7 @@ class TimeWindowPartitionMapping(
     the upstream is hourly, then each daily partition in the downstream asset will map to the 24
     hourly partitions in the upstream that occur on that day.
 
-    Attributes:
+    Args:
         start_offset (int): If not 0, then the starts of the upstream windows are shifted by this
             offset relative to the starts of the downstream windows. For example, if start_offset=-1
             and end_offset=0, then the downstream partition "2022-07-04" would map to the upstream
@@ -101,7 +102,7 @@ class TimeWindowPartitionMapping(
         end_offset: int = 0,
         allow_nonexistent_upstream_partitions: bool = False,
     ):
-        return super(TimeWindowPartitionMapping, cls).__new__(
+        return super().__new__(
             cls,
             start_offset=check.int_param(start_offset, "start_offset"),
             end_offset=check.int_param(end_offset, "end_offset"),
@@ -205,7 +206,7 @@ class TimeWindowPartitionMapping(
             return []
 
         sorted_time_windows = sorted(time_windows, key=lambda tw: tw.start.timestamp())
-        merged_time_windows: List[TimeWindow] = [sorted_time_windows[0]]
+        merged_time_windows: list[TimeWindow] = [sorted_time_windows[0]]
 
         for window in sorted_time_windows[1:]:
             last_window = merged_time_windows[-1]
@@ -331,7 +332,7 @@ class TimeWindowPartitionMapping(
                 time_windows.append(TimeWindow(offsetted_to_start_dt, offsetted_to_end_dt))
 
         filtered_time_windows = []
-        required_but_nonexistent_partition_keys = set()
+        required_but_nonexistent_subset = to_partitions_def.empty_subset()
 
         for time_window in time_windows:
             if (
@@ -369,21 +370,20 @@ class TimeWindowPartitionMapping(
                     )
 
                 if invalid_time_window:
-                    required_but_nonexistent_partition_keys.update(
-                        set(
-                            to_partitions_def.get_partition_keys_in_time_window(
-                                time_window=invalid_time_window
-                            )
+                    required_but_nonexistent_subset = (
+                        required_but_nonexistent_subset
+                        | to_partitions_def.get_partition_subset_in_time_window(
+                            time_window=invalid_time_window
                         )
                     )
 
         return UpstreamPartitionsResult(
-            TimeWindowPartitionsSubset(
+            partitions_subset=TimeWindowPartitionsSubset(
                 to_partitions_def,
                 num_partitions=None,
                 included_time_windows=self._merge_time_windows(filtered_time_windows),
             ),
-            sorted(list(required_but_nonexistent_partition_keys)),
+            required_but_nonexistent_subset=required_but_nonexistent_subset,
         )
 
     def _do_cheap_partition_mapping_if_possible(
@@ -401,14 +401,20 @@ class TimeWindowPartitionMapping(
         None if the mapping doesn't fit into any of these cases.
         """
         if from_partitions_subset.is_empty:
-            return UpstreamPartitionsResult(to_partitions_def.empty_subset(), [])
+            return UpstreamPartitionsResult(
+                partitions_subset=to_partitions_def.empty_subset(),
+                required_but_nonexistent_subset=to_partitions_def.empty_subset(),
+            )
 
         if start_offset != 0 or end_offset != 0:
             return None
 
         # Same PartitionsDefinitions
         if from_partitions_def == to_partitions_def:
-            return UpstreamPartitionsResult(from_partitions_subset, [])
+            return UpstreamPartitionsResult(
+                partitions_subset=from_partitions_subset,
+                required_but_nonexistent_subset=to_partitions_def.empty_subset(),
+            )
 
         # Same PartitionsDefinitions except for start and end dates
         if (
@@ -427,7 +433,8 @@ class TimeWindowPartitionMapping(
             )
         ):
             return UpstreamPartitionsResult(
-                from_partitions_subset.with_partitions_def(to_partitions_def), []
+                partitions_subset=from_partitions_subset.with_partitions_def(to_partitions_def),
+                required_but_nonexistent_subset=to_partitions_def.empty_subset(),
             )
 
         # Daily to hourly
@@ -449,12 +456,12 @@ class TimeWindowPartitionMapping(
             )
         ):
             return UpstreamPartitionsResult(
-                TimeWindowPartitionsSubset(
+                partitions_subset=TimeWindowPartitionsSubset(
                     partitions_def=to_partitions_def,
                     num_partitions=None,
                     included_time_windows=from_partitions_subset.included_time_windows,
                 ),
-                [],
+                required_but_nonexistent_subset=to_partitions_def.empty_subset(),
             )
 
         # The subset we're mapping from doesn't exist in the PartitionsDefinition we're mapping to
@@ -462,18 +469,20 @@ class TimeWindowPartitionMapping(
             to_partitions_def.start, to_partitions_def.cron_schedule
         ):
             if self.allow_nonexistent_upstream_partitions:
-                required_but_nonexistent_partition_keys = []
+                required_but_nonexistent_subset = to_partitions_def.empty_subset()
             else:
-                required_but_nonexistent_partition_keys = [
-                    pk
-                    for time_window in from_partitions_subset.included_time_windows
-                    for pk in to_partitions_def.get_partition_keys_in_time_window(
-                        time_window=time_window
+                required_but_nonexistent_subset = to_partitions_def.empty_subset()
+                for time_window in from_partitions_subset.included_time_windows:
+                    required_but_nonexistent_subset = (
+                        required_but_nonexistent_subset
+                        | to_partitions_def.get_partition_subset_in_time_window(
+                            time_window.to_public_time_window()
+                        )
                     )
-                ]
 
             return UpstreamPartitionsResult(
-                to_partitions_def.empty_subset(), required_but_nonexistent_partition_keys
+                partitions_subset=to_partitions_def.empty_subset(),
+                required_but_nonexistent_subset=required_but_nonexistent_subset,
             )
 
         return None

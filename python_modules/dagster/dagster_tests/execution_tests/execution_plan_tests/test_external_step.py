@@ -4,7 +4,6 @@ import time
 import uuid
 from collections import defaultdict
 from threading import Thread
-from typing import List
 
 import pytest
 from dagster import (
@@ -91,7 +90,7 @@ class RequestRetryLocalExternalStepLauncher(LocalExternalStepLauncher):
         if step_context.previous_attempt_count == 0:
             raise RetryRequested()
         else:
-            return super(RequestRetryLocalExternalStepLauncher, self).launch_step(step_context)
+            return super().launch_step(step_context)
 
 
 @resource(config_schema=local_external_step_launcher.config_schema)
@@ -109,7 +108,7 @@ def _define_failing_job(has_policy: bool, is_explicit: bool = True) -> JobDefini
             if is_explicit:
                 raise Failure(description="some failure description", metadata={"foo": 1.23})
             else:
-                _ = "x" + 1
+                _ = "x" + 1  # pyright: ignore[reportOperatorIssue]
         return context.retry_number
 
     @job(
@@ -154,7 +153,7 @@ def _define_dynamic_job(launch_initial, launch_final):
         return i + 1
 
     @op(required_resource_keys={"final_launcher"})
-    def total(ins: List[int]):
+    def total(ins: list[int]):
         return sum(ins)
 
     @job(
@@ -367,7 +366,7 @@ def test_step_context_to_step_run_ref():
     with DagsterInstance.ephemeral() as instance:
         step_context = initialize_step_context("", instance)
         step = step_context.step
-        step_run_ref = step_context_to_step_run_ref(step_context)
+        step_run_ref = step_context_to_step_run_ref(step_context)  # pyright: ignore[reportArgumentType]
         assert step_run_ref.run_config == step_context.dagster_run.run_config
         assert step_run_ref.run_id == step_context.dagster_run.run_id
 
@@ -388,7 +387,7 @@ def test_local_external_step_launcher():
             step_context = initialize_step_context(tmpdir, instance)
 
             step_launcher = LocalExternalStepLauncher(tmpdir)
-            events = list(step_launcher.launch_step(step_context))
+            events = list(step_launcher.launch_step(step_context))  # pyright: ignore[reportArgumentType]
             event_types = [event.event_type for event in events]
             assert DagsterEventType.STEP_START in event_types
             assert DagsterEventType.STEP_SUCCESS in event_types
@@ -407,7 +406,7 @@ def test_asset_check_step_launcher():
             )
 
             step_launcher = LocalExternalStepLauncher(tmpdir)
-            events = list(step_launcher.launch_step(step_context))
+            events = list(step_launcher.launch_step(step_context))  # pyright: ignore[reportArgumentType]
             event_types = [event.event_type for event in events]
             assert DagsterEventType.STEP_START in event_types
             assert DagsterEventType.STEP_SUCCESS in event_types
@@ -557,8 +556,8 @@ def test_explicit_failure():
                 raise_on_error=False,
             ) as result:
                 fd = result.failure_data_for_node("retry_op")
-                assert fd.user_failure_data.description == "some failure description"
-                assert fd.user_failure_data.metadata == {"foo": MetadataValue.float(1.23)}
+                assert fd.user_failure_data.description == "some failure description"  # pyright: ignore[reportOptionalMemberAccess]
+                assert fd.user_failure_data.metadata == {"foo": MetadataValue.float(1.23)}  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_arbitrary_error():
@@ -580,7 +579,7 @@ def test_arbitrary_error():
                     e for e in result.all_events if e.event_type_value == "STEP_FAILURE"
                 ]
                 assert len(failure_events) == 1
-                assert result.failure_data_for_node("retry_op").error.cause.cls_name == "TypeError"
+                assert result.failure_data_for_node("retry_op").error.cause.cls_name == "TypeError"  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_launcher_requests_retry():

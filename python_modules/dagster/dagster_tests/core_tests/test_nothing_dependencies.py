@@ -363,7 +363,7 @@ def test_asset_none_output_non_none_input():
 
 
 def test_asset_nothing_output_non_none_input():
-    @asset(dagster_type=Nothing)
+    @asset(dagster_type=Nothing)  # pyright: ignore[reportArgumentType]
     def asset1():
         pass
 

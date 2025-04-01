@@ -1,7 +1,9 @@
+from collections.abc import Sequence
 from functools import cached_property, lru_cache
-from typing import NamedTuple, Sequence, Type, Union
+from typing import NamedTuple, Union
 
 from dagster import AssetCheckSpec, AssetSpec
+from dagster._annotations import preview
 
 from dagster_dlift.client import UnscopedDbtCloudClient
 from dagster_dlift.compute import compute_environment_data
@@ -9,6 +11,7 @@ from dagster_dlift.env_client import EnvScopedDbtCloudClient
 from dagster_dlift.translator import DagsterDbtCloudTranslator, DbtCloudProjectEnvironmentData
 
 
+@preview
 class DbtCloudCredentials(NamedTuple):
     account_id: int
     token: str
@@ -17,6 +20,7 @@ class DbtCloudCredentials(NamedTuple):
 
 
 # Eventually a configurable resource
+@preview
 class DBTCloudProjectEnvironment:
     """Represents an environment within a project of dbt cloud."""
 
@@ -39,7 +43,7 @@ class DBTCloudProjectEnvironment:
         )
 
     def get_client(
-        self, translator_cls: Type[DagsterDbtCloudTranslator] = DagsterDbtCloudTranslator
+        self, translator_cls: type[DagsterDbtCloudTranslator] = DagsterDbtCloudTranslator
     ) -> EnvScopedDbtCloudClient:
         env_data = self.get_or_compute_data()
         return EnvScopedDbtCloudClient(
@@ -63,7 +67,7 @@ class DBTCloudProjectEnvironment:
     # Cache spec retrieval for a specific translator class.
     @lru_cache(maxsize=1)
     def get_specs(
-        self, translator_cls: Type[DagsterDbtCloudTranslator]
+        self, translator_cls: type[DagsterDbtCloudTranslator]
     ) -> Sequence[Union[AssetSpec, AssetCheckSpec]]:
         data = self.get_or_compute_data()
         translator = translator_cls(context=data)
@@ -75,11 +79,11 @@ class DBTCloudProjectEnvironment:
         return [translator.get_spec(data) for data in all_external_data]
 
     def get_asset_specs(
-        self, translator_cls: Type[DagsterDbtCloudTranslator] = DagsterDbtCloudTranslator
+        self, translator_cls: type[DagsterDbtCloudTranslator] = DagsterDbtCloudTranslator
     ) -> Sequence[AssetSpec]:
         return [spec for spec in self.get_specs(translator_cls) if isinstance(spec, AssetSpec)]
 
     def get_check_specs(
-        self, translator_cls: Type[DagsterDbtCloudTranslator] = DagsterDbtCloudTranslator
+        self, translator_cls: type[DagsterDbtCloudTranslator] = DagsterDbtCloudTranslator
     ) -> Sequence[AssetCheckSpec]:
         return [spec for spec in self.get_specs(translator_cls) if isinstance(spec, AssetCheckSpec)]

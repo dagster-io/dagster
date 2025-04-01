@@ -1,4 +1,5 @@
-from typing import Mapping, NamedTuple, Optional, Sequence, Type, Union
+from collections.abc import Mapping, Sequence
+from typing import NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -22,13 +23,13 @@ class AssetIn(
             ("key_prefix", PublicAttr[Optional[Sequence[str]]]),
             ("input_manager_key", PublicAttr[Optional[str]]),
             ("partition_mapping", PublicAttr[Optional[PartitionMapping]]),
-            ("dagster_type", PublicAttr[Union[DagsterType, Type[NoValueSentinel]]]),
+            ("dagster_type", PublicAttr[Union[DagsterType, type[NoValueSentinel]]]),
         ],
     )
 ):
     """Defines an asset dependency.
 
-    Attributes:
+    Args:
         key_prefix (Optional[Union[str, Sequence[str]]]): If provided, the asset's key is the
             concatenation of the key_prefix and the input name. Only one of the "key_prefix" and
             "key" arguments should be provided.
@@ -53,7 +54,7 @@ class AssetIn(
         key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
         input_manager_key: Optional[str] = None,
         partition_mapping: Optional[PartitionMapping] = None,
-        dagster_type: Union[DagsterType, Type] = NoValueSentinel,
+        dagster_type: Union[DagsterType, type] = NoValueSentinel,
     ):
         if isinstance(key_prefix, str):
             key_prefix = [key_prefix]
@@ -62,7 +63,7 @@ class AssetIn(
             not (key and key_prefix), "key and key_prefix cannot both be set on AssetIn"
         )
 
-        return super(AssetIn, cls).__new__(
+        return super().__new__(
             cls,
             key=AssetKey.from_coercible(key) if key is not None else None,
             metadata=check.opt_inst_param(metadata, "metadata", Mapping),
@@ -77,3 +78,10 @@ class AssetIn(
                 else resolve_dagster_type(dagster_type)
             ),
         )
+
+    @classmethod
+    def from_coercible(cls, coercible: "CoercibleToAssetIn") -> "AssetIn":
+        return coercible if isinstance(coercible, AssetIn) else AssetIn(key=coercible)
+
+
+CoercibleToAssetIn = Union[AssetIn, CoercibleToAssetKey]

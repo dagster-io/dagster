@@ -14,7 +14,7 @@ You can install this library with:
 
 .. code-block::
 
-   pip install dagster_pagerduty
+   pip install dagster-pagerduty
 
 To use this integration, you'll first need to create an Events API V2 PagerDuty integration on a PagerDuty service. There are instructions
 `here <https://support.pagerduty.com/docs/services-and-integrations#section-events-api-v2>`_ for

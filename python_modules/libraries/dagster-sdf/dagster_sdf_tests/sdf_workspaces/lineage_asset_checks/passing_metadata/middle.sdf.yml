@@ -1,8 +1,0 @@
-table:
-  name: middle
-  tests:
-    - expect: unique_columns(["user_id", "phone"])
-  columns:
-    - name: phone
-      tests:
-        - expect: not_null()

@@ -1,11 +1,11 @@
 import time
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import jwt
 import requests
 from dagster import ConfigurableResource, resource
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
 
@@ -101,13 +101,21 @@ def to_seconds(dt: datetime) -> float:
     return (dt - datetime(1970, 1, 1)).total_seconds()
 
 
+@deprecated(
+    breaking_version="0.27",
+    additional_warn_text=(
+        "`GithubClient` is deprecated. Use your own resource and client instead. "
+        "Learn how to create your own resource here: "
+        "https://docs.dagster.io/guides/build/external-resources/defining-resources"
+    ),
+)
 class GithubClient:
     """A client for interacting with the GitHub API.
 
     This client handles authentication and provides methods for making requests
     to the GitHub API using an authenticated session.
 
-    Attributes:
+    Args:
         client (requests.Session): The HTTP session used for making requests.
         app_id (int): The GitHub App ID.
         app_private_rsa_key (str): The private RSA key for the GitHub App.
@@ -129,8 +137,8 @@ class GithubClient:
         self.app_private_rsa_key = app_private_rsa_key
         self.app_id = app_id
         self.default_installation_id = default_installation_id
-        self.installation_tokens: Dict[Any, Any] = {}
-        self.app_token: Dict[str, Any] = {}
+        self.installation_tokens: dict[Any, Any] = {}
+        self.app_token: dict[str, Any] = {}
         self.hostname = hostname
 
     def __set_app_token(self) -> None:
@@ -163,7 +171,7 @@ class GithubClient:
             self.__set_app_token()
 
     @public
-    def get_installations(self, headers: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def get_installations(self, headers: Optional[dict[str, Any]] = None) -> dict[str, Any]:
         """Retrieve the list of installations for the authenticated GitHub App.
 
         This method makes a GET request to the GitHub API to fetch the installations
@@ -196,7 +204,7 @@ class GithubClient:
         return request.json()
 
     def __set_installation_token(
-        self, installation_id: int, headers: Optional[Dict[str, Any]] = None
+        self, installation_id: int, headers: Optional[dict[str, Any]] = None
     ) -> None:
         if headers is None:
             headers = {}
@@ -228,10 +236,10 @@ class GithubClient:
     def execute(
         self,
         query: str,
-        variables: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, Any]] = None,
+        variables: Optional[dict[str, Any]] = None,
+        headers: Optional[dict[str, Any]] = None,
         installation_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute a GraphQL query against the GitHub API.
 
         This method sends a POST request to the GitHub API with the provided GraphQL query
@@ -262,7 +270,7 @@ class GithubClient:
         self.__check_installation_tokens(installation_id)
         headers["Authorization"] = f"token {self.installation_tokens[installation_id]['value']}"
 
-        json: Dict[str, Any] = {"query": query}
+        json: dict[str, Any] = {"query": query}
         if variables:
             json["variables"] = variables
 
@@ -288,7 +296,7 @@ class GithubClient:
         title: str,
         body: str,
         installation_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a new issue in the specified GitHub repository.
 
         This method first retrieves the repository ID using the provided repository name
@@ -331,7 +339,7 @@ class GithubClient:
         source: str,
         target: str,
         installation_id=None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a new reference (branch) in the specified GitHub repository.
 
         This method first retrieves the repository ID and the source reference (branch or tag)
@@ -386,7 +394,7 @@ class GithubClient:
         maintainer_can_modify: Optional[bool] = None,
         draft: Optional[bool] = None,
         installation_id: Optional[int] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Create a new pull request in the specified GitHub repository.
 
         This method creates a pull request from the head reference (branch) to the base reference (branch)
@@ -438,13 +446,21 @@ class GithubClient:
         return pull_request
 
 
+@deprecated(
+    breaking_version="0.27",
+    additional_warn_text=(
+        "`GithubResource` is deprecated. Use your own resource instead. "
+        "Learn how to create your own resource here: "
+        "https://docs.dagster.io/guides/build/external-resources/defining-resources"
+    ),
+)
 class GithubResource(ConfigurableResource):
     """A resource configuration class for GitHub integration.
 
     This class provides configuration fields for setting up a GitHub Application,
     including the application ID, private RSA key, installation ID, and hostname.
 
-    Attributes:
+    Args:
         github_app_id (int): The GitHub Application ID. For more information, see
             https://developer.github.com/apps/.
         github_app_private_rsa_key (str): The private RSA key text for the GitHub Application.
@@ -504,6 +520,14 @@ class GithubResource(ConfigurableResource):
         )
 
 
+@deprecated(
+    breaking_version="0.27",
+    additional_warn_text=(
+        "`github_resource` is deprecated. Use your own resource instead. "
+        "Learn how to create your own resource here: "
+        "https://docs.dagster.io/guides/build/external-resources/defining-resources"
+    ),
+)
 @dagster_maintained_resource
 @resource(
     config_schema=GithubResource.to_config_schema(),

@@ -14,6 +14,7 @@ import {AutomaterializeRunsTable} from './AutomaterializeRunsTable';
 import {PartitionSubsetList} from './PartitionSubsetList';
 import {PartitionTagSelector} from './PartitionTagSelector';
 import {PolicyEvaluationTable} from './PolicyEvaluationTable';
+import {runTableFiltersForEvaluation} from './runTableFiltersForEvaluation';
 import {
   AssetConditionEvaluationRecordFragment,
   GetEvaluationsSpecificPartitionQuery,
@@ -22,7 +23,6 @@ import {usePartitionsForAssetKey} from './usePartitionsForAssetKey';
 import {useFeatureFlags} from '../../app/Flags';
 import {formatElapsedTimeWithMsec} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
-import {RunsFilter} from '../../graphql/types';
 import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
@@ -111,8 +111,8 @@ export const AutomaterializeMiddlePanelWithData = ({
 
   const {partitions: allPartitions} = usePartitionsForAssetKey(definition?.assetKey.path || []);
 
-  const runsFilter: RunsFilter | null = useMemo(
-    () => (selectedEvaluation?.runIds.length ? {runIds: selectedEvaluation.runIds} : null),
+  const runsFilter = useMemo(
+    () => runTableFiltersForEvaluation(selectedEvaluation?.runIds || []),
     [selectedEvaluation],
   );
 
@@ -163,7 +163,7 @@ export const AutomaterializeMiddlePanelWithData = ({
           {flagLegacyRunsPage ? (
             <AutomaterializeRunsTable runIds={selectedEvaluation.runIds} />
           ) : runsFilter ? (
-            <RunsFeedTableWithFilters filter={runsFilter} />
+            <RunsFeedTableWithFilters filter={runsFilter} includeRunsFromBackfills={false} />
           ) : (
             <Box padding={{vertical: 12}}>
               <NonIdealState

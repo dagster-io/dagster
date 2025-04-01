@@ -1,5 +1,6 @@
 import datetime
-from typing import Any, Literal, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Literal, Optional
 
 import great_expectations as ge
 from dagster import (
@@ -16,6 +17,7 @@ from dagster import (
     op,
     resource,
 )
+from dagster._annotations import beta
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
@@ -26,8 +28,9 @@ from great_expectations.render.view import DefaultMarkdownPageView
 from pydantic import Field
 
 
+@beta
 class GEContextResource(ConfigurableResource, IAttachDifferentObjectToOpContext):
-    ge_root_dir: str = Field(
+    ge_root_dir: Optional[str] = Field(
         default=None,
         description="The root directory for your Great Expectations project.",
     )
@@ -41,12 +44,14 @@ class GEContextResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
         return self.get_data_context()
 
 
+@beta
 @dagster_maintained_resource
 @resource(config_schema=GEContextResource.to_config_schema())
 def ge_data_context(context: InitResourceContext) -> GEContextResource:
     return GEContextResource.from_resource_context(context).get_data_context()
 
 
+@beta
 def ge_validation_op_factory(
     name: str,
     datasource_name: str,

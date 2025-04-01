@@ -1,2 +1,0 @@
-class DgError(Exception):
-    pass

@@ -1,8 +1,9 @@
+import {Colors} from '@dagster-io/ui-components';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeSanitize, {defaultSchema} from 'rehype-sanitize';
 import gfm from 'remark-gfm';
-
+import {createGlobalStyle} from 'styled-components';
 import 'highlight.js/styles/github.css';
 
 const sanitizeConfig = {
@@ -62,17 +63,82 @@ const sanitizeConfig = {
   },
 };
 
+const GlobalStyle = createGlobalStyle`
+  .dagster-markdown {
+    .hljs-doctag,
+    .hljs-keyword,
+    .hljs-meta .hljs-keyword,
+    .hljs-template-tag,
+    .hljs-template-variable,
+    .hljs-type,
+    .hljs-variable.language_ {
+      color: ${Colors.textBlue()}
+    }
+
+    .hljs-title,
+    .hljs-title.class_,
+    .hljs-title.class_.inherited__,
+    .hljs-title.function_ {
+      color: ${Colors.textBlue()};
+    }
+
+    .hljs-attr,
+    .hljs-attribute,
+    .hljs-literal,
+    .hljs-meta,
+    .hljs-number,
+    .hljs-operator,
+    .hljs-selector-attr,
+    .hljs-selector-class,
+    .hljs-selector-id,
+    .hljs-variable {
+      color: ${Colors.textLight()};
+    }
+
+    .hljs-meta .hljs-string,
+    .hljs-regexp,
+    .hljs-string {
+      color: ${Colors.textCyan()};
+    }
+
+    .hljs-built_in,
+    .hljs-symbol {
+      color: ${Colors.textYellow()};
+    }
+
+    .hljs-code,
+    .hljs-comment,
+    .hljs-formula {
+      color: ${Colors.textLight()};
+    }
+
+    .hljs-name,
+    .hljs-quote,
+    .hljs-selector-pseudo,
+    .hljs-selector-tag {
+      color: ${Colors.textGreen()};
+    }
+  }
+`;
+
 interface Props {
   children: string;
 }
 
 export const MarkdownWithPlugins = (props: Props) => {
   return (
-    <ReactMarkdown
-      {...props}
-      remarkPlugins={[gfm]}
-      rehypePlugins={[rehypeHighlight, [rehypeSanitize, sanitizeConfig]]}
-    />
+    <>
+      <GlobalStyle />
+      <ReactMarkdown
+        {...props}
+        className="dagster-markdown"
+        remarkPlugins={[gfm]}
+        rehypePlugins={[
+          [rehypeHighlight, {ignoreMissing: true}],
+          [rehypeSanitize, sanitizeConfig],
+        ]}
+      />
+    </>
   );
 };
 

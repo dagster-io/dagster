@@ -1,6 +1,7 @@
 import pickle
 import tempfile
-from typing import Any, Callable, Iterable, Mapping, Optional, Set, Type, Union, cast
+from collections.abc import Iterable, Mapping
+from typing import Any, Callable, Optional, Union, cast
 
 import dagster._check as check
 from dagster import (
@@ -16,6 +17,7 @@ from dagster import (
     SourceAsset,
     asset,
 )
+from dagster._annotations import beta, beta_param
 from dagster._config.pythonic_config import Config, infer_schema_from_config_class
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
@@ -68,6 +70,8 @@ def _make_dagstermill_asset_compute_fn(
     return _t_fn
 
 
+@beta
+@beta_param(param="resource_defs")
 def define_dagstermill_asset(
     name: str,
     notebook_path: str,
@@ -76,7 +80,7 @@ def define_dagstermill_asset(
     deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
     config_schema: Optional[Union[Any, Mapping[str, Any]]] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
@@ -85,7 +89,7 @@ def define_dagstermill_asset(
     io_manager_key: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
     save_notebook_on_failure: bool = False,
-    non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
+    non_argument_deps: Optional[Union[set[AssetKey], set[str]]] = None,
     asset_tags: Optional[Mapping[str, Any]] = None,
 ) -> AssetsDefinition:
     """Creates a Dagster asset for a Jupyter notebook.
@@ -116,7 +120,7 @@ def define_dagstermill_asset(
         group_name (Optional[str]): A string name used to organize multiple assets into groups. If not provided,
             the name "default" is used.
         resource_defs (Optional[Mapping[str, ResourceDefinition]]):
-            (Experimental) A mapping of resource keys to resource definitions. These resources
+            (Beta) A mapping of resource keys to resource definitions. These resources
             will be initialized during execution, and can be accessed from the
             context within the notebook.
         io_manager_key (Optional[str]): A string key for the IO manager used to store the output notebook.
@@ -194,7 +198,7 @@ def define_dagstermill_asset(
     }
 
     if safe_is_subclass(config_schema, Config):
-        config_schema = infer_schema_from_config_class(cast(Type[Config], config_schema))
+        config_schema = infer_schema_from_config_class(cast(type[Config], config_schema))
 
     return asset(
         name=name,

@@ -1,10 +1,11 @@
 import json
 import logging
-from typing import TYPE_CHECKING, Optional, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Optional
 
 import dagster._check as check
 import graphene
-from dagster import AssetKey, _seven
+from dagster import AssetKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -27,13 +28,14 @@ from dagster._core.storage.tags import (
     get_tag_type,
 )
 from dagster._core.workspace.permissions import Permissions
+from dagster_shared import seven
 
 from dagster_graphql.implementation.fetch_partition_sets import (
     partition_status_counts_from_run_partition_data,
     partition_statuses_from_run_partition_data,
 )
 from dagster_graphql.implementation.utils import has_permission_for_asset_graph
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GrapheneError,
     GrapheneInvalidOutputError,
@@ -383,7 +385,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         description="Included to comply with RunsFeedEntry interface.",
     )
     assetCheckSelection = graphene.List(
-        graphene.NonNull("dagster_graphql.schema.asset_checks.GrapheneAssetCheckHandle")
+        graphene.NonNull("dagster_graphql.schema.entity_key.GrapheneAssetCheckHandle")
     )
 
     def __init__(self, backfill_job: PartitionBackfill):
@@ -524,13 +526,21 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return GrapheneBulkActionStatus(self.status).to_dagster_run_status()
 
     def resolve_endTimestamp(self, graphene_info: ResolveInfo) -> Optional[float]:
+        if self._backfill_job.backfill_end_timestamp is not None:
+            return self._backfill_job.backfill_end_timestamp
         if self._backfill_job.status == BulkActionStatus.REQUESTED:
             # if it's still in progress then there is no end time
             return None
         records = self._get_records(graphene_info)
+        if len(records) == 0:
+            # backfill was moved to a terminal state before any runs were launched. We cannot
+            # reconstruct the time the backfill actually moved to a terminal state, so use the start
+            # time as an estimation
+            return self.creationTime
         max_end_time = 0
         for record in records:
             max_end_time = max(record.end_time or 0, max_end_time)
+
         return max_end_time
 
     def resolve_endTime(self, graphene_info: ResolveInfo) -> Optional[float]:
@@ -687,7 +697,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             if not line:
                 continue
             try:
-                record_dict = _seven.json.loads(line)
+                record_dict = seven.json.loads(line)
             except json.JSONDecodeError:
                 continue
 

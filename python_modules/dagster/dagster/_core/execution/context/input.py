@@ -1,5 +1,6 @@
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Iterable, Iterator, List, Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
@@ -106,8 +107,8 @@ class InputContext:
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
             self._cm_scope_entered = False
 
-        self._events: List["DagsterEvent"] = []
-        self._observations: List[AssetObservation] = []
+        self._events: list[DagsterEvent] = []
+        self._observations: list[AssetObservation] = []
         self._instance = instance
 
     def __enter__(self):
@@ -683,7 +684,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
         raise NotImplementedError()
 
-    def with_partition_key_range(
+    def with_partition_key_range(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         partition_key_range: PartitionKeyRange,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
@@ -719,8 +720,11 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
     ) -> bool:
         raise NotImplementedError()
 
+    def empty_subset(self) -> "PartitionsSubset":
+        raise NotImplementedError()
+
     @classmethod
-    def empty_subset(
+    def create_empty_subset(
         cls, partitions_def: Optional["PartitionsDefinition"] = None
     ) -> "PartitionsSubset":
         raise NotImplementedError()

@@ -4,6 +4,7 @@ from dagster import (
     AssetOut,
     FilesystemIOManager,
     IOManager,
+    Nothing,
     SourceAsset,
     TimeWindowPartitionMapping,
     asset,
@@ -12,7 +13,9 @@ from dagster import (
 )
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind
 
@@ -45,7 +48,7 @@ def test_instantiation_with_asset_dep():
     og_dep = AssetDep("upstream", partition_mapping=partition_mapping)
 
     with pytest.raises(ParameterCheckError):
-        assert AssetDep(og_dep) == AssetDep("upstream")
+        assert AssetDep(og_dep) == AssetDep("upstream")  # pyright: ignore[reportArgumentType]
 
 
 def test_multi_asset_errors():
@@ -97,7 +100,7 @@ def test_from_coercible():
     # Test bad type
     with pytest.raises(ParameterCheckError, match='Param "asset" is not one of'):
         # full error msg: Param "asset" is not one of ['AssetKey', 'AssetSpec', 'AssetsDefinition', 'SourceAsset', 'str']. Got 1 which is type <class 'int'>.
-        AssetDep.from_coercible(1)
+        AssetDep.from_coercible(1)  # pyright: ignore[reportArgumentType]
 
 
 ### Tests for deps parameter on @asset and @multi_asset
@@ -121,8 +124,8 @@ def test_single_asset_deps_via_asset_dep():
     def asset_2():
         return None
 
-    assert len(asset_2.input_names) == 1
-    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing
+    assert len(asset_2.input_names) == 1  # pyright: ignore[reportArgumentType]
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
 
@@ -138,8 +141,8 @@ def test_single_asset_deps_via_assets_definition():
     def asset_2():
         return None
 
-    assert len(asset_2.input_names) == 1
-    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing
+    assert len(asset_2.input_names) == 1  # pyright: ignore[reportArgumentType]
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
 
@@ -155,8 +158,8 @@ def test_single_asset_deps_via_string():
     def asset_2():
         return None
 
-    assert len(asset_2.input_names) == 1
-    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing
+    assert len(asset_2.input_names) == 1  # pyright: ignore[reportArgumentType]
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
 
@@ -172,8 +175,8 @@ def test_single_asset_deps_via_asset_key():
     def asset_2():
         return None
 
-    assert len(asset_2.input_names) == 1
-    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing
+    assert len(asset_2.input_names) == 1  # pyright: ignore[reportArgumentType]
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
     assert res.success
@@ -196,10 +199,10 @@ def test_single_asset_deps_via_mixed_types():
     def downstream():
         return None
 
-    assert len(downstream.input_names) == 3
-    assert downstream.op.ins["via_definition"].dagster_type.is_nothing
-    assert downstream.op.ins["via_string"].dagster_type.is_nothing
-    assert downstream.op.ins["via_asset_key"].dagster_type.is_nothing
+    assert len(downstream.input_names) == 3  # pyright: ignore[reportArgumentType]
+    assert downstream.op.ins["via_definition"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert downstream.op.ins["via_string"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert downstream.op.ins["via_asset_key"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize(
         [via_definition, via_string, via_asset_key, downstream],
@@ -222,16 +225,16 @@ def test_multi_asset_deps_via_string():
     def depends_on_one_sub_asset():
         return None
 
-    assert len(depends_on_one_sub_asset.input_names) == 1
-    assert depends_on_one_sub_asset.op.ins["asset_1"].dagster_type.is_nothing
+    assert len(depends_on_one_sub_asset.input_names) == 1  # pyright: ignore[reportArgumentType]
+    assert depends_on_one_sub_asset.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     @asset(deps=["asset_1", "asset_2"])
     def depends_on_both_sub_assets():
         return None
 
-    assert len(depends_on_both_sub_assets.input_names) == 2
-    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing
-    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing
+    assert len(depends_on_both_sub_assets.input_names) == 2  # pyright: ignore[reportArgumentType]
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize(
         [a_multi_asset, depends_on_one_sub_asset, depends_on_both_sub_assets],
@@ -254,16 +257,16 @@ def test_multi_asset_deps_via_key():
     def depends_on_one_sub_asset():
         return None
 
-    assert len(depends_on_one_sub_asset.input_names) == 1
-    assert depends_on_one_sub_asset.op.ins["asset_1"].dagster_type.is_nothing
+    assert len(depends_on_one_sub_asset.input_names) == 1  # pyright: ignore[reportArgumentType]
+    assert depends_on_one_sub_asset.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     @asset(deps=[AssetKey("asset_1"), AssetKey("asset_2")])
     def depends_on_both_sub_assets():
         return None
 
-    assert len(depends_on_both_sub_assets.input_names) == 2
-    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing
-    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing
+    assert len(depends_on_both_sub_assets.input_names) == 2  # pyright: ignore[reportArgumentType]
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize(
         [a_multi_asset, depends_on_one_sub_asset, depends_on_both_sub_assets],
@@ -286,9 +289,9 @@ def test_multi_asset_deps_via_mixed_types():
     def depends_on_both_sub_assets():
         return None
 
-    assert len(depends_on_both_sub_assets.input_names) == 2
-    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing
-    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing
+    assert len(depends_on_both_sub_assets.input_names) == 2  # pyright: ignore[reportArgumentType]
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize(
         [a_multi_asset, depends_on_both_sub_assets], resources={"io_manager": TestingIOManager()}
@@ -310,9 +313,9 @@ def test_multi_asset_deps_with_set():
     def depends_on_both_sub_assets():
         return None
 
-    assert len(depends_on_both_sub_assets.input_names) == 2
-    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing
-    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing
+    assert len(depends_on_both_sub_assets.input_names) == 2  # pyright: ignore[reportArgumentType]
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize(
         [a_multi_asset, depends_on_both_sub_assets], resources={"io_manager": TestingIOManager()}
@@ -334,9 +337,9 @@ def test_multi_asset_deps_via_assets_definition():
     def depends_on_both_sub_assets():
         return None
 
-    assert len(depends_on_both_sub_assets.input_names) == 2
-    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing
-    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing
+    assert len(depends_on_both_sub_assets.input_names) == 2  # pyright: ignore[reportArgumentType]
+    assert depends_on_both_sub_assets.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert depends_on_both_sub_assets.op.ins["asset_2"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize(
         [a_multi_asset, depends_on_both_sub_assets], resources={"io_manager": TestingIOManager()}
@@ -353,8 +356,8 @@ def test_multi_asset_downstream_deps_via_assets_definition():
     def asset_2():
         return None, None
 
-    assert len(asset_2.input_names) == 1
-    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing
+    assert len(asset_2.input_names) == 1  # pyright: ignore[reportArgumentType]
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
 
@@ -370,8 +373,8 @@ def test_multi_asset_downstream_deps_via_string():
     def asset_2():
         return None, None
 
-    assert len(asset_2.input_names) == 1
-    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing
+    assert len(asset_2.input_names) == 1  # pyright: ignore[reportArgumentType]
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
 
@@ -387,8 +390,8 @@ def test_multi_asset_downstream_deps_via_asset_key():
     def asset_2():
         return None, None
 
-    assert len(asset_2.input_names) == 1
-    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing
+    assert len(asset_2.input_names) == 1  # pyright: ignore[reportArgumentType]
+    assert asset_2.op.ins["asset_1"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize([asset_1, asset_2], resources={"io_manager": TestingIOManager()})
     assert res.success
@@ -414,10 +417,10 @@ def test_multi_asset_downstream_deps_via_mixed_types():
     def downstream():
         return None, None
 
-    assert len(downstream.input_names) == 3
-    assert downstream.op.ins["via_definition"].dagster_type.is_nothing
-    assert downstream.op.ins["via_string"].dagster_type.is_nothing
-    assert downstream.op.ins["via_asset_key"].dagster_type.is_nothing
+    assert len(downstream.input_names) == 3  # pyright: ignore[reportArgumentType]
+    assert downstream.op.ins["via_definition"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert downstream.op.ins["via_string"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert downstream.op.ins["via_asset_key"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize(
         [via_definition, via_string, via_asset_key, downstream],
@@ -433,8 +436,8 @@ def test_source_asset_deps_via_assets_definition():
     def depends_on_source_asset():
         return None
 
-    assert len(depends_on_source_asset.input_names) == 1
-    assert depends_on_source_asset.op.ins["a_key"].dagster_type.is_nothing
+    assert len(depends_on_source_asset.input_names) == 1  # pyright: ignore[reportArgumentType]
+    assert depends_on_source_asset.op.ins["a_key"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize([depends_on_source_asset], resources={"io_manager": TestingIOManager()})
     assert res.success
@@ -447,8 +450,8 @@ def test_source_asset_deps_via_string():
     def depends_on_source_asset():
         return None
 
-    assert len(depends_on_source_asset.input_names) == 1
-    assert depends_on_source_asset.op.ins["a_key"].dagster_type.is_nothing
+    assert len(depends_on_source_asset.input_names) == 1  # pyright: ignore[reportArgumentType]
+    assert depends_on_source_asset.op.ins["a_key"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize([depends_on_source_asset], resources={"io_manager": TestingIOManager()})
     assert res.success
@@ -461,8 +464,8 @@ def test_source_asset_deps_via_key():
     def depends_on_source_asset():
         return None
 
-    assert len(depends_on_source_asset.input_names) == 1
-    assert depends_on_source_asset.op.ins["a_key"].dagster_type.is_nothing
+    assert len(depends_on_source_asset.input_names) == 1  # pyright: ignore[reportArgumentType]
+    assert depends_on_source_asset.op.ins["a_key"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize([depends_on_source_asset], resources={"io_manager": TestingIOManager()})
     assert res.success
@@ -483,9 +486,9 @@ def test_interop():
     def interop_asset(value_asset: int):
         assert value_asset == 1
 
-    assert len(interop_asset.input_names) == 2
-    assert interop_asset.op.ins["no_value_asset"].dagster_type.is_nothing
-    assert interop_asset.op.ins["value_asset"].dagster_type.kind == DagsterTypeKind.SCALAR
+    assert len(interop_asset.input_names) == 2  # pyright: ignore[reportArgumentType]
+    assert interop_asset.op.ins["no_value_asset"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
+    assert interop_asset.op.ins["value_asset"].dagster_type.kind == DagsterTypeKind.SCALAR  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize(
         [no_value_asset, value_asset, interop_asset],
@@ -516,24 +519,162 @@ def test_bad_types():
         match='Param "asset" is not one of ',
     ):
 
-        @asset(deps=[not_an_asset])
+        @asset(deps=[not_an_asset])  # pyright: ignore[reportArgumentType]
         def my_asset():
             return None
 
 
 def test_dep_via_deps_and_fn():
+    """Test combining deps and ins in the same @asset-decorated function."""
+
     @asset
     def the_upstream_asset():
         return 1
 
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=r"deps value .* also declared as input/AssetIn",
-    ):
+    # When deps and ins are both set, expect that deps is only used for the asset key and potentially input name.
+    for param_dict in [
+        {"partition_mapping": IdentityPartitionMapping()},
+        {"metadata": {"foo": "bar"}},
+        {"key_prefix": "prefix"},
+        {"dagster_type": Nothing},
+    ]:
+        with pytest.raises(DagsterInvalidDefinitionError):
 
-        @asset(deps=[the_upstream_asset])
-        def depends_on_upstream_asset(the_upstream_asset):
+            @asset(
+                deps=[AssetDep(the_upstream_asset)],
+                ins={"the_upstream_asset": AssetIn(**param_dict)},
+            )
+            def _(the_upstream_asset):
+                return None
+
+    # We allow the asset key to be set via deps and ins as long as no additional information is set.
+    @asset(deps=[the_upstream_asset])
+    def depends_on_upstream_asset_implicit_remap(the_upstream_asset):
+        assert the_upstream_asset == 1
+
+    @asset(
+        deps=[AssetDep(the_upstream_asset)], ins={"remapped": AssetIn(key=the_upstream_asset.key)}
+    )
+    def depends_on_upstream_asset_explicit_remap(remapped):
+        assert remapped == 1
+
+    res = materialize(
+        [
+            the_upstream_asset,
+            depends_on_upstream_asset_implicit_remap,
+            depends_on_upstream_asset_explicit_remap,
+        ],
+    )
+    assert res.success
+
+    @asset
+    def upstream2():
+        return 2
+
+    # As an unfortunate consequence of the many iterations of dependency specification and the fact that they were all additive with each other,
+    # we have to support the case where deps are specified separately in both the function signature and the decorator.
+    # This is not recommended, but it is supported.
+    @asset(deps=[the_upstream_asset])
+    def some_explicit_and_implicit_deps(the_upstream_asset, upstream2):
+        assert the_upstream_asset == 1
+        assert upstream2 == 2
+
+    @asset(deps=[the_upstream_asset], ins={"remapped": AssetIn(key=upstream2.key)})
+    def deps_disjoint_between_args(the_upstream_asset, remapped):
+        assert the_upstream_asset == 1
+        assert remapped == 2
+
+    res = materialize(
+        [
+            the_upstream_asset,
+            upstream2,
+            some_explicit_and_implicit_deps,
+            deps_disjoint_between_args,
+        ],
+    )
+    assert res.success
+
+
+def test_multi_asset_specs_deps_and_fn():
+    @asset
+    def the_upstream_asset():
+        return 1
+
+    # When deps and ins are both set, expect that deps is only used for the asset key and potentially input name.
+    for param_dict in [
+        {"partition_mapping": IdentityPartitionMapping()},
+        {"metadata": {"foo": "bar"}},
+        {"key_prefix": "prefix"},
+        {"dagster_type": Nothing},
+    ]:
+        with pytest.raises(DagsterInvalidDefinitionError):
+
+            @multi_asset(
+                specs=[AssetSpec("the_asset", deps=[AssetDep(the_upstream_asset)])],
+                ins={"the_upstream_asset": AssetIn(**param_dict)},
+            )
+            def _(the_upstream_asset):
+                return None
+
+    # We allow the asset key to be set via deps and ins as long as no additional information is set.
+    @multi_asset(specs=[AssetSpec("the_asset", deps=[the_upstream_asset])])
+    def depends_on_upstream_asset_implicit_remap(the_upstream_asset):
+        assert the_upstream_asset == 1
+
+    @multi_asset(
+        specs=[AssetSpec("other_asset", deps=[AssetDep(the_upstream_asset)])],
+        ins={"remapped": AssetIn(key=the_upstream_asset.key)},
+    )
+    def depends_on_upstream_asset_explicit_remap(remapped):
+        assert remapped == 1
+
+    res = materialize(
+        [
+            the_upstream_asset,
+            depends_on_upstream_asset_implicit_remap,
+            depends_on_upstream_asset_explicit_remap,
+        ],
+    )
+    assert res.success
+
+    # We do not allow you to set a dependency purely via input if you're opting in to the spec pattern.
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @multi_asset(
+            specs=[AssetSpec("the_asset")],
+        )
+        def _(the_upstream_asset):
             return None
+
+
+def test_allow_remapping_io_manager_key() -> None:
+    @asset
+    def the_upstream_asset():
+        return 1
+
+    @asset(
+        deps=[the_upstream_asset],
+        ins={"the_upstream_asset": AssetIn(input_manager_key="custom_io")},
+    )
+    def depends_on_upstream_asset(the_upstream_asset):
+        assert the_upstream_asset == 1
+
+    calls = []
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            raise Exception("Should not be called")
+
+        def load_input(self, context):
+            calls.append("load_input")
+            return 1
+
+    res = materialize(
+        [the_upstream_asset, depends_on_upstream_asset],
+        resources={"custom_io": MyIOManager()},
+    )
+    assert res.success
+    assert calls == ["load_input"]
 
 
 def test_duplicate_deps():
@@ -545,8 +686,8 @@ def test_duplicate_deps():
     def the_downstream_asset():
         return None
 
-    assert len(the_downstream_asset.input_names) == 1
-    assert the_downstream_asset.op.ins["the_upstream_asset"].dagster_type.is_nothing
+    assert len(the_downstream_asset.input_names) == 1  # pyright: ignore[reportArgumentType]
+    assert the_downstream_asset.op.ins["the_upstream_asset"].dagster_type.is_nothing  # pyright: ignore[reportAttributeAccessIssue]
 
     res = materialize(
         [the_downstream_asset, the_upstream_asset],

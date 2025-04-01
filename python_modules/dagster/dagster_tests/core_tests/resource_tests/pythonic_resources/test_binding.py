@@ -346,10 +346,10 @@ def test_bind_io_manager_default() -> None:
     outputs = []
 
     class MyIOManager(ConfigurableIOManager):
-        def load_input(self, _) -> None:
+        def load_input(self, _) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
-        def handle_output(self, _, obj) -> None:
+        def handle_output(self, _, obj) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             outputs.append(obj)
 
     @op
@@ -376,17 +376,17 @@ def test_bind_io_manager_override() -> None:
     outputs = []
 
     class MyIOManager(ConfigurableIOManager):
-        def load_input(self, _) -> None:
+        def load_input(self, _) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
-        def handle_output(self, _, obj) -> None:
+        def handle_output(self, _, obj) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             outputs.append(obj)
 
     class MyOtherIOManager(ConfigurableIOManager):
-        def load_input(self, _) -> None:
+        def load_input(self, _) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
-        def handle_output(self, _, obj) -> None:
+        def handle_output(self, _, obj) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
             pass
 
     @op

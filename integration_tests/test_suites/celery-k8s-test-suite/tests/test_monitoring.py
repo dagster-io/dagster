@@ -7,10 +7,10 @@ import time
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import merge_yamls
 from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.job import get_job_name_from_run_id
 from dagster_k8s_test_infra.integration_utils import image_pull_policy, launch_run_over_graphql
+from dagster_shared.yaml_utils import merge_yamls
 from dagster_test.test_project import get_test_project_environments_path
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
@@ -96,10 +96,10 @@ def test_run_monitoring_fails_on_interrupt(
         assert DagsterKubernetesClient.production_client().delete_job(
             get_job_name_from_run_id(run_id), helm_namespace
         )
-        poll_for_finished_run(dagster_instance, run.run_id, timeout=120)
+        poll_for_finished_run(dagster_instance, run.run_id, timeout=120)  # pyright: ignore[reportPossiblyUnboundVariable]
         assert dagster_instance.get_run_by_id(run_id).status == DagsterRunStatus.FAILURE
     finally:
-        log_run_events(dagster_instance, run_id)
+        log_run_events(dagster_instance, run_id)  # pyright: ignore[reportPossiblyUnboundVariable]
 
 
 def test_run_monitoring_startup_fail(
@@ -132,7 +132,7 @@ def test_run_monitoring_startup_fail(
         assert DagsterKubernetesClient.production_client().delete_job(
             get_job_name_from_run_id(run_id), helm_namespace
         )
-        poll_for_finished_run(dagster_instance, run.run_id, timeout=120)
+        poll_for_finished_run(dagster_instance, run.run_id, timeout=120)  # pyright: ignore[reportPossiblyUnboundVariable]
         assert dagster_instance.get_run_by_id(run_id).status == DagsterRunStatus.FAILURE
     finally:
-        log_run_events(dagster_instance, run_id)
+        log_run_events(dagster_instance, run_id)  # pyright: ignore[reportPossiblyUnboundVariable]

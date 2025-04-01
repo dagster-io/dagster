@@ -7,26 +7,22 @@ import time
 import unittest.mock
 import warnings
 from collections import defaultdict
+from collections.abc import Iterator, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from functools import update_wrapper
 from pathlib import Path
 from signal import Signals
 from threading import Event
-from typing import (
+from typing import (  # noqa: UP035
     AbstractSet,
     Any,
     Callable,
-    Dict,
-    Iterator,
-    Mapping,
     NamedTuple,
     NoReturn,
     Optional,
-    Sequence,
     TypeVar,
     Union,
-    cast,
 )
 
 from typing_extensions import Self
@@ -73,8 +69,11 @@ from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
-from dagster._core.workspace.load_target import WorkspaceLoadTarget
-from dagster._core.workspace.workspace import CodeLocationEntry, WorkspaceSnapshot
+from dagster._core.workspace.load_target import (
+    InProcessWorkspaceLoadTarget as InProcessTestWorkspaceLoadTarget,
+    WorkspaceLoadTarget,
+)
+from dagster._core.workspace.workspace import CodeLocationEntry, CurrentWorkspace
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._time import create_datetime, get_timezone
@@ -90,6 +89,7 @@ def assert_namedtuple_lists_equal(
     t2_list: Sequence[T_NamedTuple],
     exclude_fields: Optional[Sequence[str]] = None,
 ) -> None:
+    assert len(t1_list) == len(t2_list)
     for t1, t2 in zip(t1_list, t2_list):
         assert_namedtuples_equal(t1, t2, exclude_fields)
 
@@ -124,17 +124,17 @@ def nesting_graph(depth: int, num_children: int, name: Optional[str] = None) -> 
         @graph(name=name)
         def wrap():
             for i in range(num_children):
-                op_alias = "%s_node_%d" % (name, i)
+                op_alias = "%s_node_%d" % (name, i)  # noqa: UP031
                 inner.alias(op_alias)()
 
         return wrap
 
     @graph(name=name)
     def nested_graph():
-        graph_def = create_wrap(leaf_node, "layer_%d" % depth)
+        graph_def = create_wrap(leaf_node, "layer_%d" % depth)  # noqa: UP031
 
         for i in range(depth):
-            graph_def = create_wrap(graph_def, "layer_%d" % (depth - (i + 1)))
+            graph_def = create_wrap(graph_def, "layer_%d" % (depth - (i + 1)))  # noqa: UP031
 
         graph_def.alias("outer")()
 
@@ -379,7 +379,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
 
         super().__init__()
 
-    def launch_run(self, context):
+    def launch_run(self, context):  # pyright: ignore[reportIncompatibleMethodOverride]
         run = context.dagster_run
         check.inst_param(run, "run", DagsterRun)
         check.invariant(run.status == DagsterRunStatus.STARTING)
@@ -456,11 +456,11 @@ class MockedRunCoordinator(RunCoordinator, ConfigurableClass):
 
 
 class TestSecretsLoader(SecretsLoader, ConfigurableClass):
-    def __init__(self, inst_data: Optional[ConfigurableClassData], env_vars: Dict[str, str]):
+    def __init__(self, inst_data: Optional[ConfigurableClassData], env_vars: dict[str, str]):
         self._inst_data = inst_data
         self.env_vars = env_vars
 
-    def get_secrets_for_environment(self, location_name: str) -> Dict[str, str]:
+    def get_secrets_for_environment(self, location_name: str) -> dict[str, str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self.env_vars.copy()
 
     @property
@@ -480,20 +480,6 @@ class TestSecretsLoader(SecretsLoader, ConfigurableClass):
 
 def get_crash_signals() -> Sequence[Signals]:
     return [get_terminate_signal()]
-
-
-# Test utility for creating a test workspace for a function
-class InProcessTestWorkspaceLoadTarget(WorkspaceLoadTarget):
-    def __init__(
-        self, origin: Union[InProcessCodeLocationOrigin, Sequence[InProcessCodeLocationOrigin]]
-    ):
-        self._origins = cast(
-            Sequence[InProcessCodeLocationOrigin],
-            origin if isinstance(origin, list) else [origin],
-        )
-
-    def create_origins(self) -> Sequence[InProcessCodeLocationOrigin]:
-        return self._origins
 
 
 @contextmanager
@@ -540,23 +526,6 @@ def load_remote_repo(
     )
     assert code_location_entry.code_location, code_location_entry.load_error
     return code_location_entry.code_location.get_repository(repo_name)
-
-
-def remove_none_recursively(obj: T) -> T:
-    """Remove none values from a dict. This can be used to support comparing provided config vs.
-    config we retrive from kubernetes, which returns all fields, even those which have no value
-    configured.
-    """
-    if isinstance(obj, (list, tuple, set)):
-        return type(obj)(remove_none_recursively(x) for x in obj if x is not None)
-    elif isinstance(obj, dict):
-        return type(obj)(
-            (remove_none_recursively(k), remove_none_recursively(v))
-            for k, v in obj.items()
-            if k is not None and v is not None
-        )
-    else:
-        return obj
 
 
 default_resources_for_test = {"io_manager": fs_io_manager}
@@ -631,7 +600,7 @@ def test_counter():
     assert counts["bar"] == 10
 
 
-def wait_for_futures(futures: Dict[str, Future], timeout: Optional[float] = None):
+def wait_for_futures(futures: dict[str, Future], timeout: Optional[float] = None):
     start_time = time.time()
     results = {}
     for target_id, future in futures.copy().items():
@@ -770,10 +739,7 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
         yield
 
 
-class TestType: ...
-
-
-def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> WorkspaceSnapshot:
+def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> CurrentWorkspace:
     remote_repos = {}
     for repo in repos:
         remote_repos[repo.name] = RemoteRepository(
@@ -782,10 +748,10 @@ def mock_workspace_from_repos(repos: Sequence[RepositoryDefinition]) -> Workspac
                 location_name="test",
                 repository_name=repo.name,
             ),
-            instance=DagsterInstance.ephemeral(),
+            auto_materialize_use_sensors=True,
         )
     mock_entry = unittest.mock.MagicMock(spec=CodeLocationEntry)
     mock_location = unittest.mock.MagicMock(spec=CodeLocation)
     mock_location.get_repositories.return_value = remote_repos
     type(mock_entry).code_location = unittest.mock.PropertyMock(return_value=mock_location)
-    return WorkspaceSnapshot(code_location_entries={"test": mock_entry})
+    return CurrentWorkspace(code_location_entries={"test": mock_entry})

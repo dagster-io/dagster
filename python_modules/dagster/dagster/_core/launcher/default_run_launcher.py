@@ -1,9 +1,10 @@
 import time
-from typing import TYPE_CHECKING, Any, Mapping, Optional, cast
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any, Optional, cast
 
+import dagster_shared.seven as seven
 from typing_extensions import Self
 
-import dagster._seven as seven
 from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import (
@@ -138,7 +139,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         if GRPC_INFO_TAG not in tags:
             return None
 
-        grpc_info = seven.json.loads(tags.get(GRPC_INFO_TAG))
+        grpc_info = seven.json.loads(tags.get(GRPC_INFO_TAG))  # pyright: ignore[reportArgumentType]
 
         return DagsterGrpcClient(
             port=grpc_info.get("port"),
@@ -194,7 +195,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 for run_id in self._run_ids
                 if (
                     self._instance.get_run_by_id(run_id)
-                    and not self._instance.get_run_by_id(run_id).is_finished
+                    and not self._instance.get_run_by_id(run_id).is_finished  # pyright: ignore[reportOptionalMemberAccess]
                 )
             ]
 

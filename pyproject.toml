@@ -14,7 +14,6 @@
 
 include = [
   ".buildkite/dagster-buildkite",
-  "docs/dagster-ui-screenshot",
   "docs/sphinx/_ext/dagster-sphinx",
   "python_modules",
   "examples",
@@ -42,18 +41,11 @@ exclude = [
 venv = ".venv"
 venvPath = "pyright/master"
 
-# Set to false to help us during the transition from mypy to pyright. Mypy does
-# not analyze unannotated functions by default, and so as of 2023-02 the codebase contains a large
-# number of type errors in unannotated functions. Eventually we can turn off this setting.
-analyzeUnannotatedFunctions = false
 
 # Minimum version of Python on which code must run. This determines the standard library stubs used by
 # pyright.
 pythonVersion = "3.9"
 
-# Use "basic" ruleset. This differs from strict in several ways, but most
-# importantly it does not flag untyped code as an error.
-typeCheckingMode = "basic"
 
 # Disable reading type annotations from libraries that are not explicitly marked as typed (i.e. that
 # include a py.typed file). All imports from these libraries are given the `Unknown` type (i.e.
@@ -71,6 +63,13 @@ reportPrivateImportUsage = false
 # recognize.
 reportUnnecessaryTypeIgnoreComment = "warning"
 
+# Skip analyzing unannotated code in examples to facilitate terse code.
+executionEnvironments = [
+  { root = "examples", analyzeUnannotatedFunctions=false },
+  { root = "python_modules" },
+  { root = "integration_tests" }
+]
+
 # ########################
 # ##### PYTEST
 # ########################
@@ -78,7 +77,9 @@ reportUnnecessaryTypeIgnoreComment = "warning"
 [tool.pytest.ini_options]
 
 filterwarnings = [
-  "ignore::dagster.ExperimentalWarning",
+  "ignore::dagster.BetaWarning",
+  "ignore::dagster.PreviewWarning",
+  "ignore::dagster.SupersessionWarning",
   "ignore::DeprecationWarning",
   "ignore::UserWarning",
   "ignore::pytest.PytestCollectionWarning",
@@ -116,7 +117,7 @@ extend-exclude = [
 line-length = 100
 
 # Fail if Ruff is not running this version.
-required-version = "0.5.5"
+required-version = "0.8.4"
 
 [tool.ruff.lint]
 
@@ -243,8 +244,8 @@ select = [
   # (disallow print statements) keep debugging statements out of the codebase
   "T20",
 
-  # (f-strings) use f-strings instead of .format()
-  "UP032",
+  # (pyupgrade) auto-upgrade syntax to newer versions of Python
+  "UP",
 
   # (invalid escape sequence) flag errant backslashes
   "W605",
@@ -280,7 +281,7 @@ ban-relative-imports = "all"
 
 # Don't format docstrings in alembic migrations.
 "**/alembic/versions/*.py" = ["D"]
-"examples/docs_beta_snippets/docs_beta_snippets/guides/etl/transform-dbt/dbt_definitions*.py" = ["I001"]
+"examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_definitions*.py" = ["I001"]
 
 [tool.ruff.lint.pydocstyle]
 
@@ -290,7 +291,7 @@ ban-relative-imports = "all"
 convention = "google"
 
 [tool.ruff.format]
-exclude = ["examples/docs_beta_snippets/docs_beta_snippets/guides/etl/transform-dbt/dbt_definitions*.py"]
+exclude = ["examples/docs_snippets/docs_snippets/guides/etl/transform-dbt/dbt_definitions*.py"]
 
 [tool.dagster]
 module_name = "dagster_test.toys.repo"

@@ -1,12 +1,13 @@
 import sys
-from typing import Mapping, Optional, Union
+from collections.abc import Mapping
+from typing import Optional, Union
 
 import dagster._check as check
 import graphene
 import yaml
 from dagster._core.storage.dagster_run import RunsFilter
 from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.yaml_utils import load_run_config_yaml
+from dagster_shared.yaml_utils import load_run_config_yaml
 from graphene.types.generic import GenericScalar
 
 from dagster_graphql.implementation.fetch_runs import get_run_ids, get_runs, get_runs_count

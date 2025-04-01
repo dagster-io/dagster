@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from functools import partial
-from typing import TYPE_CHECKING, Dict, Generic, Iterable, Optional, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Generic, Optional, TypeVar
 
 from typing_extensions import Self
 
@@ -55,10 +56,10 @@ class LoadingContext(ABC):
 
     @property
     @abstractmethod
-    def loaders(self) -> Dict[Type, Tuple[DataLoader, BlockingDataLoader]]:
+    def loaders(self) -> dict[type, tuple[DataLoader, BlockingDataLoader]]:
         raise NotImplementedError()
 
-    def get_loaders_for(self, ttype: Type["LoadableBy"]) -> Tuple[DataLoader, BlockingDataLoader]:
+    def get_loaders_for(self, ttype: type["LoadableBy"]) -> tuple[DataLoader, BlockingDataLoader]:
         if ttype not in self.loaders:
             if not issubclass(ttype, LoadableBy):
                 check.failed(f"{ttype} is not Loadable")
@@ -150,5 +151,5 @@ class LoadingContextForTest(LoadingContext):
         return self._instance
 
     @property
-    def loaders(self) -> Dict[Type, Tuple[DataLoader, BlockingDataLoader]]:
+    def loaders(self) -> dict[type, tuple[DataLoader, BlockingDataLoader]]:
         return self._loaders

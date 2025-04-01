@@ -1,5 +1,4 @@
 import os
-from typing import Dict
 from unittest import mock
 
 import pytest
@@ -24,7 +23,7 @@ ADLS2_STORAGE_ACCOUNT = "dagsterdatabrickstests"
 ADLS2_CONTAINER = "dagster-databricks-tests"
 
 
-BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: Dict[str, object] = {
+BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG: dict[str, object] = {
     "databricks_host": os.environ.get("DATABRICKS_HOST") or "https://",
     "databricks_token": os.environ.get("DATABRICKS_TOKEN"),
     "local_job_package_path": os.path.abspath(os.path.dirname(__file__)),
@@ -192,7 +191,7 @@ def test_pyspark_databricks(
     mock_submit_run_response = mock.Mock()
     mock_submit_run_response.bind.return_value = {"run_id": 12345}
     mock_submit_run.return_value = mock_submit_run_response
-    mock_read_file.return_value = "somefilecontents".encode()
+    mock_read_file.return_value = b"somefilecontents"
 
     running_state = DatabricksRunState(DatabricksRunLifeCycleState.RUNNING, None, "")
     final_state = DatabricksRunState(
@@ -269,7 +268,7 @@ def test_pyspark_databricks(
     with instance_for_test() as instance:
         config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
         config.pop("local_job_package_path")
-        config["run_config"]["cluster"] = {"existing": "cluster_id"}
+        config["run_config"]["cluster"] = {"existing": "cluster_id"}  # pyright: ignore[reportIndexIssue]
         with pytest.raises(ValueError) as excinfo:
             execute_job(
                 job=reconstructable(define_do_nothing_test_job),
@@ -307,7 +306,7 @@ def test_pyspark_databricks(
     reason="This test is slow and requires a Databricks cluster; run only upon explicit request",
 )
 def test_do_it_live_databricks_s3():
-    result = execute_job(
+    result = execute_job(  # pyright: ignore[reportCallIssue]
         reconstructable(define_pyspark_s3_job),
         run_config={
             "ops": {"blah": {"config": {"foo": "a string", "bar": 123}}},
@@ -339,7 +338,7 @@ def test_do_it_live_databricks_adls2():
         }
     }
 
-    result = execute_job(
+    result = execute_job(  # pyright: ignore[reportCallIssue]
         reconstructable(define_pyspark_adls2_job),
         run_config={
             "ops": {"blah": {"config": {"foo": "a string", "bar": 123}}},

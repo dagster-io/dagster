@@ -32,10 +32,10 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id
 from dagster_azure.adls2 import create_adls2_client
-from dagster_azure.adls2.fake_adls2_resource import fake_adls2_resource
 from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
 from dagster_azure.adls2.resources import adls2_resource
 from dagster_azure.blob import create_blob_client
+from dagster_azure.fakes import fake_adls2_resource
 from upath import UPath
 
 
@@ -261,7 +261,7 @@ def test_asset_io_manager(storage_account, file_system, credential):
 
     @asset(
         name=f"upstream_{_id}",
-        ins={"asset3": AssetIn(asset_key=AssetKey([f"asset3_{_id}"]))},
+        ins={"asset3": AssetIn(asset_key=AssetKey([f"asset3_{_id}"]))},  # pyright: ignore[reportCallIssue]
     )
     def upstream(asset3):
         return asset3 + 1
@@ -287,7 +287,7 @@ def test_asset_io_manager(storage_account, file_system, credential):
 
     @asset(
         name=f"downstream_{_id}",
-        ins={"upstream": AssetIn(asset_key=AssetKey([f"upstream_{_id}"]))},
+        ins={"upstream": AssetIn(asset_key=AssetKey([f"upstream_{_id}"]))},  # pyright: ignore[reportCallIssue]
     )
     def downstream(upstream, source):
         assert upstream == 7

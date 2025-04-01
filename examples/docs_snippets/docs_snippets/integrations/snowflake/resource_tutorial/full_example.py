@@ -18,7 +18,6 @@ snowflake = SnowflakeResource(
 # end_config
 
 # start_asset
-
 import pandas as pd
 from dagster_snowflake import SnowflakeResource
 from snowflake.connector.pandas_tools import write_pandas
@@ -75,7 +74,7 @@ def iris_setosa(snowflake: SnowflakeResource) -> None:
     """
 
     with snowflake.get_connection() as conn:
-        conn.cursor.execute(query)
+        conn.cursor.execute(query)  # pyright: ignore[reportFunctionMemberAccess]
 
 
 # end_downstream
@@ -86,5 +85,4 @@ from dagster import Definitions
 defs = Definitions(
     assets=[iris_dataset, iris_setosa], resources={"snowflake": snowflake}
 )
-
 # end_definitions

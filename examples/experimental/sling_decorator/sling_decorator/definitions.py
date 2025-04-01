@@ -1,6 +1,6 @@
 from dagster import Definitions, file_relative_path
-from dagster_embedded_elt.sling import sling_assets
-from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
+from dagster_sling import sling_assets
+from dagster_sling.resources import SlingConnectionResource, SlingResource
 
 replication_config = file_relative_path(__file__, "../sling_replication.yaml")
 

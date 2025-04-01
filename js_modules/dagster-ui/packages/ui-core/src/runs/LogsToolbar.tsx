@@ -77,14 +77,19 @@ export const LogsToolbar = (props: ILogsToolbarProps | WithExpandCollapseProps) 
 
   const activeItems = React.useMemo(() => new Set([logType]), [logType]);
 
+  const noStepsStarted = React.useMemo(
+    () => Object.values(metadata.steps).every((step) => !step.start),
+    [metadata],
+  );
+
   return (
     <OptionsContainer style={{gap: 12}}>
       <ButtonGroup
         activeItems={activeItems}
         buttons={[
           {id: LogType.structured, icon: 'logs_structured', label: 'Events'},
-          {id: LogType.stdout, icon: 'logs_stdout', label: 'stdout'},
-          {id: LogType.stderr, icon: 'logs_stderr', label: 'stderr'},
+          {id: LogType.stdout, icon: 'logs_stdout', label: 'stdout', disabled: noStepsStarted},
+          {id: LogType.stderr, icon: 'logs_stderr', label: 'stderr', disabled: noStepsStarted},
         ]}
         onClick={(id) => onSetLogType(id)}
       />

@@ -1,20 +1,20 @@
 import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
-import {useContext, useMemo} from 'react';
+import {memo, useContext, useMemo} from 'react';
+import {AddToFavoritesMenuItem} from 'shared/assets/AddToFavoritesMenuItem.oss';
 
 import {optionsForExecuteButton, useMaterializationAction} from './LaunchAssetExecutionButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
 import {useObserveAction} from './useObserveAction';
-import {useReportEventsModal} from './useReportEventsModal';
-import {useWipeModal} from './useWipeModal';
+import {useReportEventsDialog} from './useReportEventsDialog';
+import {useWipeDialog} from './useWipeDialog';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {AssetKeyInput} from '../graphql/types';
 import {MenuLink} from '../ui/MenuLink';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
 interface Props {
   path: string[];
   definition: AssetTableDefinitionFragment | null;
@@ -22,7 +22,7 @@ interface Props {
   onRefresh?: () => void;
 }
 
-export const AssetActionMenu = (props: Props) => {
+export const AssetActionMenu = memo((props: Props) => {
   const {repoAddress, path, definition, onRefresh} = props;
   const {
     featureContext: {canSeeMaterializeAction},
@@ -45,12 +45,12 @@ export const AssetActionMenu = (props: Props) => {
     onRefresh,
   );
 
-  const wipe = useWipeModal(
+  const wipe = useWipeDialog(
     repoAddress && definition ? {repository: definition.repository, assetKey: {path}} : null,
     onRefresh,
   );
 
-  const reportEvents = useReportEventsModal(
+  const reportEvents = useReportEventsDialog(
     repoAddress
       ? {
           assetKey: {path},
@@ -71,6 +71,7 @@ export const AssetActionMenu = (props: Props) => {
         content={
           <Menu>
             {executeItem}
+            <AddToFavoritesMenuItem assetKey={{path}} />
 
             <MenuLink
               text="Show in group"
@@ -125,7 +126,7 @@ export const AssetActionMenu = (props: Props) => {
       </Popover>
     </>
   );
-};
+});
 
 export const useExecuteAssetMenuItem = (
   definition: {

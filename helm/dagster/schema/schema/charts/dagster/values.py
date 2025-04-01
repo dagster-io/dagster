@@ -1,4 +1,5 @@
-from typing import Any, List, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -23,7 +24,7 @@ class DagsterHelmValues(BaseModel, extra="allow"):
     redis: subschema.Redis
     flower: subschema.Flower
     ingress: subschema.Ingress
-    imagePullSecrets: List[kubernetes.SecretRef]
+    imagePullSecrets: list[kubernetes.SecretRef]
     computeLogManager: subschema.ComputeLogManager
     scheduler: subschema.Scheduler
     runLauncher: subschema.RunLauncher

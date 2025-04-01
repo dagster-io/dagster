@@ -10,6 +10,7 @@ import {buildRepoAddress} from './buildRepoAddress';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
 import {StaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
+import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {Container, Inner} from '../ui/VirtualizedTable';
 
 type Row =
@@ -28,6 +29,7 @@ interface Props {
   view?: AssetViewType;
   kindFilter?: StaticSetFilter<string>;
   isLoading?: boolean;
+  onChangeAssetSelection?: (selection: string) => void;
 }
 
 export const VirtualizedAssetTable = (props: Props) => {
@@ -42,11 +44,12 @@ export const VirtualizedAssetTable = (props: Props) => {
     view = 'flat',
     kindFilter,
     isLoading,
+    onChangeAssetSelection,
   } = props;
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
   const rows: Row[] = React.useMemo(() => {
-    if (isLoading) {
+    if (isLoading && !Object.keys(groups).length) {
       return new Array(5).fill({type: 'shimmer'});
     }
     return Object.entries(groups).map(([displayKey, assets]) => {
@@ -70,6 +73,7 @@ export const VirtualizedAssetTable = (props: Props) => {
 
   return (
     <div style={{overflow: 'hidden'}}>
+      <IndeterminateLoadingBar $loading={isLoading} />
       <Container ref={parentRef}>
         <VirtualizedAssetCatalogHeader headerCheckbox={headerCheckbox} view={view} />
         <Inner $totalHeight={totalHeight}>
@@ -117,6 +121,7 @@ export const VirtualizedAssetTable = (props: Props) => {
                 onToggleChecked={onToggleFactory(row.displayKey)}
                 onRefresh={onRefresh}
                 kindFilter={kindFilter}
+                onChangeAssetSelection={onChangeAssetSelection}
               />
             );
           })}

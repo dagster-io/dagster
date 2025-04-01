@@ -8,7 +8,7 @@ from dagster_airlift.in_airflow.proxied_state import load_proxied_state_from_yam
 
 
 class CustomProxyToDagsterOperator(BaseProxyTaskToDagsterOperator):
-    def get_dagster_session(self, context: Context) -> requests.Session:
+    def get_dagster_session(self, context: Context) -> requests.Session:  # pyright: ignore[reportIncompatibleMethodOverride]
         if "var" not in context:
             raise ValueError("No variables found in context")
         api_key = context["var"]["value"].get("my_api_key")
@@ -16,7 +16,7 @@ class CustomProxyToDagsterOperator(BaseProxyTaskToDagsterOperator):
         session.headers.update({"Authorization": f"Bearer {api_key}"})
         return session
 
-    def get_dagster_url(self, context: Context) -> str:
+    def get_dagster_url(self, context: Context) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
         return "https://dagster.example.com/"
 
 

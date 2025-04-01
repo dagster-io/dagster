@@ -1,10 +1,17 @@
 import * as React from 'react';
+import {useMemo} from 'react';
 
 import {LogsProviderLogs} from './LogsProvider';
 import {RunContext} from './RunContext';
-import {gql} from '../apollo-client';
+import {gql, useQuery} from '../apollo-client';
+import {flattenOneLevel} from '../util/flattenOneLevel';
 import {RunFragment} from './types/RunFragments.types';
-import {RunMetadataProviderMessageFragment} from './types/RunMetadataProvider.types';
+import {
+  RunMetadataProviderMessageFragment,
+  RunStepStatsFragment,
+  RunStepStatsQuery,
+  RunStepStatsQueryVariables,
+} from './types/RunMetadataProvider.types';
 import {StepEventStatus} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 
@@ -59,6 +66,11 @@ export interface IStepMetadata {
   markers: IMarker[];
 }
 
+export interface ILogRetrievalShellCommand {
+  stdout?: string | null;
+  stderr?: string | null;
+}
+
 export interface ILogCaptureInfo {
   fileKey: string;
   stepKeys: string[];
@@ -66,6 +78,7 @@ export interface ILogCaptureInfo {
   pid?: string;
   externalStdoutUrl?: string;
   externalStderrUrl?: string;
+  shellCmd?: ILogRetrievalShellCommand | null;
 }
 
 export interface IRunMetadataDict {
@@ -102,13 +115,17 @@ export const extractLogCaptureStepsFromLegacySteps = (stepKeys: string[]) => {
 
 const fromTimestamp = (ts: number | null) => (ts ? Math.floor(ts * 1000) : undefined);
 
-function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
+function extractMetadataFromRun(
+  run: RunFragment | null = null,
+  stepStats: RunStepStatsFragment['stepStats'] = [],
+): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
     firstLogAt: 0,
     mostRecentLogAt: 0,
     globalMarkers: [],
     steps: {},
   };
+
   if (!run) {
     return metadata;
   }
@@ -119,7 +136,7 @@ function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
     metadata.exitedAt = fromTimestamp(run.endTime);
   }
 
-  run.stepStats.forEach((stepStat) => {
+  stepStats.forEach((stepStat) => {
     metadata.steps[stepStat.stepKey] = {
       // state:
       // current state
@@ -266,6 +283,7 @@ export function extractMetadataFromLogs(
         pid: String(log.pid),
         externalStdoutUrl: log.externalStdoutUrl || undefined,
         externalStderrUrl: log.externalStderrUrl || undefined,
+        shellCmd: log.shellCmd || undefined,
       };
     }
 
@@ -303,6 +321,9 @@ export function extractMetadataFromLogs(
       } else if (log.__typename === 'ExecutionStepSkippedEvent') {
         upsertState(step, timestamp, IStepState.SKIPPED);
       } else if (log.__typename === 'ExecutionStepFailureEvent') {
+        upsertState(step, timestamp, IStepState.FAILED);
+        step.end = Math.max(timestamp, step.end || 0);
+      } else if (log.__typename === 'ResourceInitFailureEvent') {
         upsertState(step, timestamp, IStepState.FAILED);
         step.end = Math.max(timestamp, step.end || 0);
       } else if (log.__typename === 'ExecutionStepUpForRetryEvent') {
@@ -369,13 +390,54 @@ interface IRunMetadataProviderProps {
 
 export const RunMetadataProvider = ({logs, children}: IRunMetadataProviderProps) => {
   const run = React.useContext(RunContext);
-  const runMetadata = React.useMemo(() => extractMetadataFromRun(run), [run]);
+
+  // Step stats can be expensive to load, so we separate them from the main run query.
+  const {data} = useQuery<RunStepStatsQuery, RunStepStatsQueryVariables>(RUN_STEP_STATS_QUERY, {
+    variables: run ? {runId: run.id} : undefined,
+    skip: !run,
+  });
+
+  const stepStats = useMemo(() => {
+    return data?.pipelineRunOrError.__typename === 'Run' ? data.pipelineRunOrError.stepStats : [];
+  }, [data]);
+
+  const runMetadata = React.useMemo(() => extractMetadataFromRun(run, stepStats), [run, stepStats]);
   const metadata = React.useMemo(
-    () => (logs.loading ? runMetadata : extractMetadataFromLogs(logs.allNodes)),
+    () =>
+      logs.loading ? runMetadata : extractMetadataFromLogs(flattenOneLevel(logs.allNodeChunks)),
     [logs, runMetadata],
   );
   return <>{children(metadata)}</>;
 };
+
+const RUN_STEP_STATS_QUERY = gql`
+  query RunStepStatsQuery($runId: ID!) {
+    pipelineRunOrError(runId: $runId) {
+      ... on Run {
+        id
+        ...RunStepStatsFragment
+      }
+    }
+  }
+
+  fragment RunStepStatsFragment on Run {
+    id
+    stepStats {
+      stepKey
+      status
+      startTime
+      endTime
+      attempts {
+        startTime
+        endTime
+      }
+      markers {
+        startTime
+        endTime
+      }
+    }
+  }
+`;
 
 export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
   fragment RunMetadataProviderMessageFragment on DagsterRunEvent {
@@ -402,6 +464,10 @@ export const RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT = gql`
       pid
       externalStdoutUrl
       externalStderrUrl
+      shellCmd {
+        stdout
+        stderr
+      }
     }
   }
 

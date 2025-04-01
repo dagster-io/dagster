@@ -5,8 +5,9 @@ import random
 import string
 import sys
 import time
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack, contextmanager
-from typing import Any, Dict, Iterator, Literal, Mapping, Optional, Sequence, Set, TextIO, Union
+from typing import Any, Literal, Optional, TextIO, Union
 
 import dagster._check as check
 from dagster._core.definitions.metadata import RawMetadataMapping
@@ -27,7 +28,7 @@ from dagster._core.pipes.utils import (
     PipesLogReader,
     open_pipes_session,
 )
-from dagster_pipes import PipesContextData, PipesExtras, PipesParams
+from dagster_pipes import PipesBlobStoreMessageWriter, PipesContextData, PipesExtras, PipesParams
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files, jobs
 from pydantic import Field
@@ -38,8 +39,8 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
 
     Args:
         client (WorkspaceClient): A databricks `WorkspaceClient` object.
-        env (Optional[Mapping[str,str]]: An optional dict of environment variables to pass to the
-            databricks job.
+        env (Optional[Mapping[str,str]]: An optional dict of environment
+            variables to pass to the databricks job.
         context_injector (Optional[PipesContextInjector]): A context injector to use to inject
             context into the k8s container process. Defaults to :py:class:`PipesDbfsContextInjector`.
         message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
@@ -99,11 +100,17 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
             if cluster.get("cluster_log_conf", {}).get("dbfs", None):
                 existing_cluster_has_logging_configured = True
 
-        logging_configured = (
-            new_cluster_logging_configured or existing_cluster_has_logging_configured
-        )
+        if (
+            isinstance(self.message_reader, PipesDbfsMessageReader)
+            and self.message_reader.include_stdio_in_messages
+        ):  # logs will be coming from Pipes messages, we don't need to create log readers
+            create_log_readers = False
+        elif new_cluster_logging_configured or existing_cluster_has_logging_configured:
+            create_log_readers = True
+        else:
+            create_log_readers = False
 
-        if logging_configured:
+        if create_log_readers:
             log_readers = [
                 PipesDbfsLogReader(
                     client=self.client,
@@ -125,7 +132,7 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
             log_readers=log_readers,
         )
 
-    def run(
+    def run(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         *,
         context: Union[OpExecutionContext, AssetExecutionContext],
@@ -193,8 +200,8 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
         self,
         context: Union[OpExecutionContext, AssetExecutionContext],
         session: PipesSession,
-        submit_task_dict: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        submit_task_dict: dict[str, Any],
+    ) -> dict[str, Any]:
         if "existing_cluster_id" in submit_task_dict:
             # we can't set env vars on an existing cluster
             # so we must use CLI to pass Pipes params
@@ -210,7 +217,7 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
 
                     submit_task_dict[task_type]["parameters"] = existing_params
                     context.log.debug(
-                        f'Passing Pipes bootstrap parameters via Databricks parameters as "{key}.parameters". Make sure to use the PipesCliArgsParamsLoader in the task.'
+                        f'Passing Pipes bootstrap parameters via Databricks parameters as "{key}.parameters". Make sure to use the PipesCliArgsParamsLoader in the task.'  # pyright: ignore[reportPossiblyUnboundVariable]
                     )
                     break
 
@@ -230,7 +237,7 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
 
         return submit_task_dict
 
-    def get_task_fields_which_support_cli_parameters(self) -> Set[str]:
+    def get_task_fields_which_support_cli_parameters(self) -> set[str]:
         return {"spark_python_task", "python_wheel_task"}
 
     def _poll_til_success(
@@ -324,7 +331,7 @@ class PipesDbfsContextInjector(PipesContextInjector):
         self.dbfs_client = files.DbfsAPI(client.api_client)
 
     @contextmanager
-    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:
+    def inject_context(self, context: "PipesContextData") -> Iterator[PipesParams]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Inject context to external environment by writing it to an automatically-generated
         DBFS temporary file as JSON and exposing the path to the file.
 
@@ -361,7 +368,8 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         client (WorkspaceClient): A databricks `WorkspaceClient` object.
         cluster_log_root (Optional[str]): The root path on DBFS where the cluster logs are written.
             If set, this will be used to read stderr/stdout logs.
-        log_readers (Optional[Sequence[PipesLogReader]]): A se of log readers for logs on DBFS.
+        include_stdio_in_messages (bool): Whether to send stdout/stderr to Dagster via Pipes messages. Defaults to False.
+        log_readers (Optional[Sequence[PipesLogReader]]): A set of log readers for logs on DBFS.
     """
 
     def __init__(
@@ -369,8 +377,12 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         *,
         interval: float = 10,
         client: WorkspaceClient,
+        include_stdio_in_messages: bool = False,
         log_readers: Optional[Sequence[PipesLogReader]] = None,
     ):
+        self.include_stdio_in_messages = check.bool_param(
+            include_stdio_in_messages, "include_stdio_in_messages"
+        )
         super().__init__(
             interval=interval,
             log_readers=log_readers,
@@ -382,6 +394,9 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         with ExitStack() as stack:
             params: PipesParams = {}
             params["path"] = stack.enter_context(dbfs_tempdir(self.dbfs_client))
+            params[PipesBlobStoreMessageWriter.INCLUDE_STDIO_IN_MESSAGES_KEY] = (
+                self.include_stdio_in_messages
+            )
             yield params
 
     def messages_are_readable(self, params: PipesParams) -> bool:
@@ -401,7 +416,7 @@ class PipesDbfsMessageReader(PipesBlobStoreMessageReader):
         # An error here is an expected result, since an IOError will be thrown if the next message
         # chunk doesn't yet exist. Swallowing the error here is equivalent to doing a no-op on a
         # status check showing a non-existent file.
-        except IOError:
+        except OSError:
             return None
 
     def no_messages_debug_text(self) -> str:
@@ -463,7 +478,7 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
                 chunk = content[self.log_position :]
                 self.log_position = len(content)
                 return chunk
-            except IOError:
+            except OSError:
                 return None
 
     @property
@@ -474,12 +489,14 @@ class PipesDbfsLogReader(PipesChunkedLogReader):
     # job has finished.
     def _get_log_path(self, params: PipesParams) -> Optional[str]:
         if self.log_path is None:
-            cluster_driver_log_root = params["extras"].get("cluster_driver_log_root")
+            cluster_driver_log_root = (
+                params["extras"].get("cluster_driver_log_root") if "extras" in params else None
+            )
             if cluster_driver_log_root is None:
                 return None
             try:
                 child_dirs = list(self.dbfs_client.list(cluster_driver_log_root))
-            except IOError:
+            except OSError:
                 child_dirs = []  # log root doesn't exist yet
             match = next(
                 (

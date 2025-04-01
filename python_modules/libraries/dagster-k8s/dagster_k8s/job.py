@@ -2,8 +2,9 @@ import copy
 import json
 import random
 import string
+from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, NamedTuple, Optional
 
 import dagster._check as check
 import kubernetes
@@ -159,7 +160,7 @@ class UserDefinedDagsterK8sConfig(
         if service_metadata:
             service_metadata = k8s_snake_case_dict(kubernetes.client.V1ObjectMeta, service_metadata)
 
-        return super(UserDefinedDagsterK8sConfig, cls).__new__(
+        return super().__new__(
             cls,
             container_config=container_config,
             pod_template_spec_metadata=pod_template_spec_metadata,
@@ -790,13 +791,13 @@ def construct_dagster_k8s_job(
 
     check.invariant(
         len(job_name) <= MAX_K8S_NAME_LEN,
-        "job_name is %d in length; Kubernetes Jobs cannot be longer than %d characters."
+        "job_name is %d in length; Kubernetes Jobs cannot be longer than %d characters."  # noqa: UP031
         % (len(job_name), MAX_K8S_NAME_LEN),
     )
 
     check.invariant(
         len(pod_name) <= MAX_K8S_NAME_LEN,
-        "job_name is %d in length; Kubernetes Pods cannot be longer than %d characters."
+        "job_name is %d in length; Kubernetes Pods cannot be longer than %d characters."  # noqa: UP031
         % (len(pod_name), MAX_K8S_NAME_LEN),
     )
 
@@ -808,7 +809,7 @@ def construct_dagster_k8s_job(
     additional_labels = {k: sanitize_k8s_label(v) for k, v in (labels or {}).items()}
     dagster_labels = merge_dicts(k8s_common_labels, additional_labels)
 
-    env: List[Mapping[str, Any]] = []
+    env: list[Mapping[str, Any]] = []
     if env_vars:
         env.extend(env_vars)
 

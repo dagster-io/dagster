@@ -6,7 +6,7 @@ Metadata
 Dagster uses metadata to communicate arbitrary user-specified metadata about structured
 events.
 
-Refer to the `Metadata <https://docs.dagster.io/concepts/metadata-tags>`_ documentation for more information.
+Refer to the `Metadata <https://docs.dagster.io/guides/build/assets/metadata-and-tags/>`_ documentation for more information.
 
 .. autoclass:: MetadataValue
 

@@ -8,12 +8,12 @@ import {AssetGlobalLineageLink, AssetPageHeader} from 'shared/assets/AssetPageHe
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {AssetKey, AssetViewParams} from './types';
+import {AssetKey} from './types';
 import {gql} from '../apollo-client';
+import {useAssetViewParams} from './useAssetViewParams';
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 export const AssetsOverviewRoot = ({
@@ -28,7 +28,8 @@ export const AssetsOverviewRoot = ({
   useTrackPageView();
 
   const params = useParams();
-  const [searchParams] = useQueryPersistedState<AssetViewParams>({});
+  const [searchParams] = useAssetViewParams();
+
   const history = useHistory();
 
   const currentPathStr = (params as any)['0'];

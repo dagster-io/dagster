@@ -1,6 +1,6 @@
 import {Box, Colors, ConfigTypeSchema, Icon, Spinner} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import {AddToFavoritesButton} from 'shared/asset-graph/AddToFavoritesButton.oss';
 
 import {GraphNode, displayNameForAssetKey, nodeDependsOnSelf, stepKeyForAsset} from './Utils';
 import {gql, useQuery} from '../apollo-client';
@@ -38,6 +38,7 @@ import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../pipelines/SidebarComponents';
 import {ResourceContainer, ResourceHeader} from '../pipelines/SidebarOpHelpers';
 import {pluginForMetadata} from '../plugins';
+import {AnchorButton} from '../ui/AnchorButton';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -237,11 +238,15 @@ const Header = ({assetNode, repoAddress}: HeaderProps) => {
         <Box>{displayName}</Box>
       </SidebarTitle>
       <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-        <AssetCatalogLink to={assetDetailsPathForKey(assetNode.assetKey)}>
-          {'View in Asset Catalog '}
-          <Icon name="open_in_new" color={Colors.linkDefault()} />
-        </AssetCatalogLink>
-
+        <Box flex={{direction: 'row', gap: 4}}>
+          <AnchorButton
+            to={assetDetailsPathForKey(assetNode.assetKey)}
+            icon={<Icon name="open_in_new" color={Colors.linkDefault()} />}
+          >
+            {'View in Asset Catalog '}
+          </AnchorButton>
+          <AddToFavoritesButton assetKey={assetNode.assetKey} />
+        </Box>
         {repoAddress && (
           <UnderlyingOpsOrGraph assetNode={assetNode} repoAddress={repoAddress} minimal />
         )}
@@ -249,15 +254,6 @@ const Header = ({assetNode, repoAddress}: HeaderProps) => {
     </Box>
   );
 };
-
-const AssetCatalogLink = styled(Link)`
-  display: flex;
-  gap: 4px;
-  padding: 2px;
-  margin: -2px;
-  align-items: center;
-  white-space: nowrap;
-`;
 
 const SIDEBAR_ASSET_FRAGMENT = gql`
   fragment SidebarAssetFragment on AssetNode {
@@ -274,6 +270,7 @@ const SIDEBAR_ASSET_FRAGMENT = gql`
     backfillPolicy {
       description
     }
+    pools
     partitionDefinition {
       description
     }

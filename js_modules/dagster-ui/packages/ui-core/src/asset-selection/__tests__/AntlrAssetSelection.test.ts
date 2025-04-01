@@ -7,7 +7,7 @@ import {
   buildRepositoryLocation,
   buildUserAssetOwner,
 } from '../../graphql/types';
-import {parseAssetSelectionQuery} from '../AntlrAssetSelection';
+import {parseAssetSelectionQuery} from '../parseAssetSelectionQuery';
 
 const TEST_GRAPH: AssetGraphQueryItem[] = [
   // Top Layer
@@ -53,12 +53,11 @@ const TEST_GRAPH: AssetGraphQueryItem[] = [
 
 function assertQueryResult(query: string, expectedNames: string[]) {
   const result = parseAssetSelectionQuery(TEST_GRAPH, query);
-  expect(result).not.toBeInstanceOf(Error);
   if (result instanceof Error) {
     throw result;
   }
-  expect(result.all.length).toBe(expectedNames.length);
   expect(new Set(result.all.map((asset) => asset.name))).toEqual(new Set(expectedNames));
+  expect(result.all.length).toBe(expectedNames.length);
 }
 
 describe('parseAssetSelectionQuery', () => {
@@ -86,11 +85,6 @@ describe('parseAssetSelectionQuery', () => {
       assertQueryResult('key:A', ['A']);
     });
 
-    it('should parse key_substring query', () => {
-      assertQueryResult('key_substring:A', ['A']);
-      assertQueryResult('key_substring:B', ['B', 'B2']);
-    });
-
     it('should parse and query', () => {
       assertQueryResult('key:A and key:B', []);
       assertQueryResult('key:A and key:B and key:C', []);
@@ -102,43 +96,50 @@ describe('parseAssetSelectionQuery', () => {
       assertQueryResult('(key:A or key:B) and (key:B or key:C)', ['B']);
     });
 
+    it('should parse not query', () => {
+      assertQueryResult('not key:A', ['B', 'B2', 'C']);
+      assertQueryResult('NOT key:A', ['B', 'B2', 'C']);
+    });
+
     it('should parse upstream plus query', () => {
-      assertQueryResult('+key:A', ['A']);
-      assertQueryResult('+key:B', ['A', 'B']);
-      assertQueryResult('+key:C', ['B', 'B2', 'C']);
-      assertQueryResult('++key:C', ['A', 'B', 'B2', 'C']);
+      assertQueryResult('1+key:A', ['A']);
+      assertQueryResult('1+key:B', ['A', 'B']);
+      assertQueryResult('1+key:C', ['B', 'B2', 'C']);
+      assertQueryResult('2+key:C', ['A', 'B', 'B2', 'C']);
     });
 
     it('should parse downstream plus query', () => {
-      assertQueryResult('key:A+', ['A', 'B', 'B2']);
-      assertQueryResult('key:A++', ['A', 'B', 'B2', 'C']);
-      assertQueryResult('key:C+', ['C']);
-      assertQueryResult('key:B+', ['B', 'C']);
+      assertQueryResult('key:A+1', ['A', 'B', 'B2']);
+      assertQueryResult('key:A+2', ['A', 'B', 'B2', 'C']);
+      assertQueryResult('key:C+1', ['C']);
+      assertQueryResult('key:B+1', ['B', 'C']);
     });
 
     it('should parse upstream star query', () => {
-      assertQueryResult('*key:A', ['A']);
-      assertQueryResult('*key:B', ['A', 'B']);
-      assertQueryResult('*key:C', ['A', 'B', 'B2', 'C']);
+      assertQueryResult('+key:A', ['A']);
+      assertQueryResult('+key:B', ['A', 'B']);
+      assertQueryResult('+key:C', ['A', 'B', 'B2', 'C']);
     });
 
     it('should parse downstream star query', () => {
-      assertQueryResult('key:A*', ['A', 'B', 'B2', 'C']);
-      assertQueryResult('key:B*', ['B', 'C']);
-      assertQueryResult('key:C*', ['C']);
+      assertQueryResult('key:A+', ['A', 'B', 'B2', 'C']);
+      assertQueryResult('key:B+', ['B', 'C']);
+      assertQueryResult('key:C+', ['C']);
     });
 
     it('should parse up and down traversal queries', () => {
-      assertQueryResult('key:A* and *key:C', ['A', 'B', 'B2', 'C']);
-      assertQueryResult('*key:B*', ['A', 'B', 'C']);
-      assertQueryResult('key:A* and *key:C and *key:B*', ['A', 'B', 'C']);
-      assertQueryResult('key:A* and *key:B* and *key:C', ['A', 'B', 'C']);
+      assertQueryResult('key:A+ and +key:C', ['A', 'B', 'B2', 'C']);
+      assertQueryResult('+key:B+', ['A', 'B', 'C']);
+      assertQueryResult('key:A+ and +key:C and +key:B+', ['A', 'B', 'C']);
+      assertQueryResult('key:A+ and +key:B+ and +key:C', ['A', 'B', 'C']);
+      assertQueryResult('key:A+ AND +key:B+ AND +key:C', ['A', 'B', 'C']);
     });
 
     it('should parse sinks query', () => {
       assertQueryResult('sinks(*)', ['C']);
       assertQueryResult('sinks(key:A)', ['A']);
       assertQueryResult('sinks(key:A or key:B)', ['B']);
+      assertQueryResult('sinks(key:A OR key:B)', ['B']);
     });
 
     it('should parse roots query', () => {

@@ -40,7 +40,7 @@ export function useDeleteDynamicPartitionsDialog(
     !canSeeWipeMaterializationAction
   ) {
     return {
-      element: <span />,
+      element: undefined,
       dropdownOptions: [] as JSX.Element[],
     };
   }

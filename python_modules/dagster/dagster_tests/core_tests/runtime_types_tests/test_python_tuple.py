@@ -1,3 +1,5 @@
+# ruff: noqa: UP006, UP035
+
 from typing import Tuple
 
 import pytest
@@ -83,18 +85,18 @@ def test_open_typing_tuple_input_fail():
 def test_typed_python_tuple_directly():
     int_str_tuple = create_typed_tuple(int, str)
 
-    int_str_tuple.type_check(None, (1, "foo"))
+    int_str_tuple.type_check(None, (1, "foo"))  # pyright: ignore[reportArgumentType]
 
-    res = int_str_tuple.type_check(None, None)
+    res = int_str_tuple.type_check(None, None)  # pyright: ignore[reportArgumentType]
     assert not res.success
 
-    res = int_str_tuple.type_check(None, "bar")
+    res = int_str_tuple.type_check(None, "bar")  # pyright: ignore[reportArgumentType]
     assert not res.success
 
-    res = int_str_tuple.type_check(None, (1, 2, 3))
+    res = int_str_tuple.type_check(None, (1, 2, 3))  # pyright: ignore[reportArgumentType]
     assert not res.success
 
-    res = int_str_tuple.type_check(None, ("1", 2))
+    res = int_str_tuple.type_check(None, ("1", 2))  # pyright: ignore[reportArgumentType]
     assert not res.success
 
 
@@ -103,15 +105,15 @@ def test_nested_python_tuple_directly():
 
     nested_tuple = create_typed_tuple(bool, list, int_str_tuple_kls)
 
-    nested_tuple.type_check(None, (True, [1], (1, "foo")))
+    nested_tuple.type_check(None, (True, [1], (1, "foo")))  # pyright: ignore[reportArgumentType]
 
-    res = nested_tuple.type_check(None, None)
+    res = nested_tuple.type_check(None, None)  # pyright: ignore[reportArgumentType]
     assert not res.success
 
-    res = nested_tuple.type_check(None, "bar")
+    res = nested_tuple.type_check(None, "bar")  # pyright: ignore[reportArgumentType]
     assert not res.success
 
-    res = nested_tuple.type_check(None, (True, [1], (1, 2)))
+    res = nested_tuple.type_check(None, (True, [1], (1, 2)))  # pyright: ignore[reportArgumentType]
     assert not res.success
 
 

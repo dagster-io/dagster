@@ -1,6 +1,7 @@
 from abc import abstractmethod
+from collections.abc import Sequence
 from contextlib import contextmanager
-from typing import Any, Dict, Optional, Sequence, Type, cast
+from typing import Any, Optional, cast
 
 import duckdb
 from dagster import IOManagerDefinition, OutputContext, io_manager
@@ -22,7 +23,7 @@ DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def build_duckdb_io_manager(
-    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[Type] = None
+    type_handlers: Sequence[DbTypeHandler], default_load_type: Optional[type] = None
 ) -> IOManagerDefinition:
     """Builds an IO manager definition that reads inputs from and writes outputs to DuckDB.
 
@@ -224,7 +225,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
     """
 
     database: str = Field(description="Path to the DuckDB database.")
-    connection_config: Dict[str, Any] = Field(
+    connection_config: dict[str, Any] = Field(
         description=(
             "DuckDB connection configuration options. See"
             " https://duckdb.org/docs/sql/configuration.html"
@@ -240,7 +241,7 @@ class DuckDBIOManager(ConfigurableIOManagerFactory):
     def type_handlers() -> Sequence[DbTypeHandler]: ...
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         return None
 
     def create_io_manager(self, context) -> DbIOManager:
@@ -271,7 +272,7 @@ class DuckDbClient(DbClient):
     def get_select_statement(table_slice: TableSlice) -> str:
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
 
-        if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+        if table_slice.partition_dimensions:
             query = f"SELECT {col_str} FROM {table_slice.schema}.{table_slice.table} WHERE\n"
             return query + _partition_where_clause(table_slice.partition_dimensions)
         else:
@@ -279,7 +280,7 @@ class DuckDbClient(DbClient):
 
     @staticmethod
     @contextmanager
-    def connect(context, _):
+    def connect(context, _):  # pyright: ignore[reportIncompatibleMethodOverride]
         config = context.resource_config["connection_config"]
 
         # support for `custom_user_agent` was added in v1.0.0
@@ -310,7 +311,7 @@ def _get_cleanup_statement(table_slice: TableSlice) -> str:
     """Returns a SQL statement that deletes data in the given table to make way for the output data
     being written.
     """
-    if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:
+    if table_slice.partition_dimensions:
         query = f"DELETE FROM {table_slice.schema}.{table_slice.table} WHERE\n"
         return query + _partition_where_clause(table_slice.partition_dimensions)
     else:

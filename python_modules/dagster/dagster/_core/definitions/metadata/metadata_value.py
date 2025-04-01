@@ -1,13 +1,23 @@
 import os
 from abc import ABC, abstractmethod
+from collections.abc import Mapping, Sequence
 from datetime import datetime
-from typing import Any, Callable, Generic, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import Any, Callable, Generic, NamedTuple, Optional, Union
 
+import dagster_shared.seven as seven
+from dagster_shared.serdes.serdes import (
+    FieldSerializer,
+    JsonSerializableValue,
+    PackableValue,
+    UnpackContext,
+    WhitelistMap,
+    pack_value,
+    whitelist_for_serdes,
+)
 from typing_extensions import Self, TypeVar
 
 import dagster._check as check
-import dagster._seven as seven
-from dagster._annotations import PublicAttr, experimental, public
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.metadata.table import (
     TableColumn as TableColumn,
@@ -19,18 +29,8 @@ from dagster._core.definitions.metadata.table import (
     TableSchema as TableSchema,
 )
 from dagster._core.errors import DagsterInvalidMetadata
-from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import PackableValue
 
 T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, covariant=True)
-from dagster._serdes import pack_value
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    JsonSerializableValue,
-    PackableValue,
-    UnpackContext,
-    WhitelistMap,
-)
 
 # ########################
 # ##### METADATA VALUE
@@ -401,7 +401,6 @@ class MetadataValue(ABC, Generic[T_Packable]):
 
     @public
     @staticmethod
-    @experimental
     def table(
         records: Sequence[TableRecord], schema: Optional[TableSchema] = None
     ) -> "TableMetadataValue":
@@ -420,7 +419,7 @@ class MetadataValue(ABC, Generic[T_Packable]):
                         metadata={
                             "errors": MetadataValue.table(
                                 records=[
-                                    TableRecord(code="invalid-data-type", row=2, col="name"),
+                                    TableRecord(data={"code": "invalid-data-type", "row": 2, "col": "name"})
                                 ],
                                 schema=TableSchema(
                                     columns=[
@@ -501,6 +500,16 @@ class MetadataValue(ABC, Generic[T_Packable]):
         """
         return CodeLocationReconstructionMetadataValue(data)
 
+    @public
+    @staticmethod
+    def pool(pool: str) -> "PoolMetadataValue":
+        """Static constructor for a metadata value wrapping a reference to a concurrency pool.
+
+        Args:
+            pool (str): The identifier for the pool.
+        """
+        return PoolMetadataValue(pool=pool)
+
 
 # ########################
 # ##### METADATA VALUE TYPES
@@ -531,13 +540,11 @@ class TextMetadataValue(
     """
 
     def __new__(cls, text: Optional[str]):
-        return super(TextMetadataValue, cls).__new__(
-            cls, check.opt_str_param(text, "text", default="")
-        )
+        return super().__new__(cls, check.opt_str_param(text, "text", default=""))
 
     @public
     @property
-    def value(self) -> Optional[str]:
+    def value(self) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Optional[str]: The wrapped text data."""
         return self.text
 
@@ -559,13 +566,11 @@ class UrlMetadataValue(
     """
 
     def __new__(cls, url: Optional[str]):
-        return super(UrlMetadataValue, cls).__new__(
-            cls, check.opt_str_param(url, "url", default="")
-        )
+        return super().__new__(cls, check.opt_str_param(url, "url", default=""))
 
     @public
     @property
-    def value(self) -> Optional[str]:
+    def value(self) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Optional[str]: The wrapped URL."""
         return self.url
 
@@ -581,13 +586,11 @@ class PathMetadataValue(
     """
 
     def __new__(cls, path: Optional[Union[str, os.PathLike]]):
-        return super(PathMetadataValue, cls).__new__(
-            cls, check.opt_path_param(path, "path", default="")
-        )
+        return super().__new__(cls, check.opt_path_param(path, "path", default=""))
 
     @public
     @property
-    def value(self) -> Optional[str]:
+    def value(self) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Optional[str]: The wrapped path."""
         return self.path
 
@@ -603,13 +606,11 @@ class NotebookMetadataValue(
     """
 
     def __new__(cls, path: Optional[Union[str, os.PathLike]]):
-        return super(NotebookMetadataValue, cls).__new__(
-            cls, check.opt_path_param(path, "path", default="")
-        )
+        return super().__new__(cls, check.opt_path_param(path, "path", default=""))
 
     @public
     @property
-    def value(self) -> Optional[str]:
+    def value(self) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Optional[str]: The wrapped path to the notebook as a string."""
         return self.path
 
@@ -624,7 +625,7 @@ class JsonDataFieldSerializer(FieldSerializer):
         # return the json serializable data field as is
         return mapping
 
-    def unpack(
+    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         unpacked_value: JsonSerializableValue,
         whitelist_map: WhitelistMap,
@@ -661,11 +662,11 @@ class JsonMetadataValue(
             seven.dumps(data)
         except TypeError:
             raise DagsterInvalidMetadata("Value is not JSON serializable.")
-        return super(JsonMetadataValue, cls).__new__(cls, data)
+        return super().__new__(cls, data)
 
     @public
     @property
-    def value(self) -> Optional[Union[Sequence[Any], Mapping[str, Any]]]:
+    def value(self) -> Optional[Union[Sequence[Any], Mapping[str, Any]]]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Optional[Union[Sequence[Any], Dict[str, Any]]]: The wrapped JSON data."""
         return self.data
 
@@ -687,13 +688,11 @@ class MarkdownMetadataValue(
     """
 
     def __new__(cls, md_str: Optional[str]):
-        return super(MarkdownMetadataValue, cls).__new__(
-            cls, check.opt_str_param(md_str, "md_str", default="")
-        )
+        return super().__new__(cls, check.opt_str_param(md_str, "md_str", default=""))
 
     @public
     @property
-    def value(self) -> Optional[str]:
+    def value(self) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Optional[str]: The wrapped markdown as a string."""
         return self.md_str
 
@@ -718,7 +717,7 @@ class PythonArtifactMetadataValue(
     """
 
     def __new__(cls, module: str, name: str):
-        return super(PythonArtifactMetadataValue, cls).__new__(
+        return super().__new__(
             cls, check.str_param(module, "module"), check.str_param(name, "name")
         )
 
@@ -730,7 +729,7 @@ class PythonArtifactMetadataValue(
 
 
 @whitelist_for_serdes(storage_name="FloatMetadataEntryData")
-class FloatMetadataValue(
+class FloatMetadataValue(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_FloatMetadataValue",
         [
@@ -746,11 +745,11 @@ class FloatMetadataValue(
     """
 
     def __new__(cls, value: Optional[float]):
-        return super(FloatMetadataValue, cls).__new__(cls, check.opt_float_param(value, "value"))
+        return super().__new__(cls, check.opt_float_param(value, "value"))
 
 
 @whitelist_for_serdes(storage_name="IntMetadataEntryData")
-class IntMetadataValue(
+class IntMetadataValue(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_IntMetadataValue",
         [
@@ -766,11 +765,11 @@ class IntMetadataValue(
     """
 
     def __new__(cls, value: Optional[int]):
-        return super(IntMetadataValue, cls).__new__(cls, check.opt_int_param(value, "value"))
+        return super().__new__(cls, check.opt_int_param(value, "value"))
 
 
 @whitelist_for_serdes(storage_name="BoolMetadataEntryData")
-class BoolMetadataValue(
+class BoolMetadataValue(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple("_BoolMetadataValue", [("value", PublicAttr[Optional[bool]])]),
     MetadataValue[bool],
 ):
@@ -781,11 +780,11 @@ class BoolMetadataValue(
     """
 
     def __new__(cls, value: Optional[bool]):
-        return super(BoolMetadataValue, cls).__new__(cls, check.opt_bool_param(value, "value"))
+        return super().__new__(cls, check.opt_bool_param(value, "value"))
 
 
 @whitelist_for_serdes
-class TimestampMetadataValue(
+class TimestampMetadataValue(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_DateTimeMetadataValue",
         [("value", PublicAttr[float])],
@@ -799,7 +798,7 @@ class TimestampMetadataValue(
     """
 
     def __new__(cls, value: float):
-        return super(TimestampMetadataValue, cls).__new__(cls, check.float_param(value, "value"))
+        return super().__new__(cls, check.float_param(value, "value"))
 
 
 @whitelist_for_serdes(storage_name="DagsterPipelineRunMetadataEntryData")
@@ -819,7 +818,7 @@ class DagsterRunMetadataValue(
     """
 
     def __new__(cls, run_id: str):
-        return super(DagsterRunMetadataValue, cls).__new__(cls, check.str_param(run_id, "run_id"))
+        return super().__new__(cls, check.str_param(run_id, "run_id"))
 
     @public
     @property
@@ -855,7 +854,7 @@ class DagsterJobMetadataValue(
         location_name: str,
         repository_name: Optional[str] = None,
     ):
-        return super(DagsterJobMetadataValue, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(job_name, "job_name"),
             check.str_param(location_name, "location_name"),
@@ -882,9 +881,7 @@ class DagsterAssetMetadataValue(
     def __new__(cls, asset_key: AssetKey):
         from dagster._core.definitions.events import AssetKey
 
-        return super(DagsterAssetMetadataValue, cls).__new__(
-            cls, check.inst_param(asset_key, "asset_key", AssetKey)
-        )
+        return super().__new__(cls, check.inst_param(asset_key, "asset_key", AssetKey))
 
     @public
     @property
@@ -894,7 +891,6 @@ class DagsterAssetMetadataValue(
 
 
 # This should be deprecated or fixed so that `value` does not return itself.
-@experimental
 @whitelist_for_serdes(storage_name="TableMetadataEntryData")
 class TableMetadataValue(
     NamedTuple(
@@ -958,7 +954,7 @@ class TableMetadataValue(
                 ]
             )
 
-        return super(TableMetadataValue, cls).__new__(
+        return super().__new__(
             cls,
             records,
             schema,
@@ -983,9 +979,7 @@ class TableSchemaMetadataValue(
     """
 
     def __new__(cls, schema: TableSchema):
-        return super(TableSchemaMetadataValue, cls).__new__(
-            cls, check.inst_param(schema, "schema", TableSchema)
-        )
+        return super().__new__(cls, check.inst_param(schema, "schema", TableSchema))
 
     @public
     @property
@@ -1009,7 +1003,7 @@ class TableColumnLineageMetadataValue(
     """
 
     def __new__(cls, column_lineage: TableColumnLineage):
-        return super(TableColumnLineageMetadataValue, cls).__new__(
+        return super().__new__(
             cls, check.inst_param(column_lineage, "column_lineage", TableColumnLineage)
         )
 
@@ -1045,12 +1039,25 @@ class CodeLocationReconstructionMetadataValue(
     """
 
     def __new__(cls, data: str):
-        return super(CodeLocationReconstructionMetadataValue, cls).__new__(
-            cls, check.str_param(data, "data")
-        )
+        return super().__new__(cls, check.str_param(data, "data"))
 
     @public
     @property
     def value(self) -> str:
         """str: The wrapped code location state data."""
         return self.data
+
+
+@whitelist_for_serdes
+class PoolMetadataValue(
+    NamedTuple("_PoolMetadataValue", [("pool", PublicAttr[str])]),
+    MetadataValue[str],
+):
+    def __new__(cls, pool: str):
+        return super().__new__(cls, check.str_param(pool, "pool"))
+
+    @public
+    @property
+    def value(self) -> str:
+        """str: The wrapped pool string."""
+        return self.pool

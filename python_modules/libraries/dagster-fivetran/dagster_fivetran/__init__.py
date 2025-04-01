@@ -1,4 +1,4 @@
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 from dagster_fivetran.asset_decorator import fivetran_assets as fivetran_assets
 from dagster_fivetran.asset_defs import (
@@ -11,6 +11,7 @@ from dagster_fivetran.ops import (
     fivetran_sync_op as fivetran_sync_op,
 )
 from dagster_fivetran.resources import (
+    ConnectorSelectorFn as ConnectorSelectorFn,
     FivetranResource as FivetranResource,
     FivetranWorkspace as FivetranWorkspace,
     fivetran_resource as fivetran_resource,

@@ -19,8 +19,12 @@ setup(
     python_requires=">=3.9,<3.13",
     install_requires=[
         "dagster",
-        "pyspark",
         "rich",
     ],
+    extras_require={
+        # Eventually we sholud remove this as an extra and just include it in the main package
+        "components": ["dagster-components"],
+        "pyspark": ["pyspark"],
+    },
     zip_safe=False,
 )

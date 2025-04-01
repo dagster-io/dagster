@@ -6,7 +6,7 @@ from dagster._annotations import PublicAttr
 class PartitionKeyRange(NamedTuple):
     """Defines a range of partitions.
 
-    Attributes:
+    Args:
         start (str): The starting partition key in the range (inclusive).
         end (str): The ending partition key in the range (inclusive).
 

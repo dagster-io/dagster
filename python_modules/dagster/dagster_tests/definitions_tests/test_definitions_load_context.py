@@ -30,8 +30,8 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance_for_test import instance_for_test
 from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.test.definitions import lazy_definitions, scoped_reconstruction_serdes_objects
+from dagster_shared.serdes import whitelist_for_serdes
 
 FOO_INTEGRATION_SOURCE_KEY = "foo_integration"
 
@@ -119,7 +119,7 @@ def test_invalid_reconstruction_metadata():
     with pytest.raises(
         DagsterInvariantViolationError, match=r"Reconstruction metadata values must be strings"
     ):
-        Definitions().with_reconstruction_metadata({"foo": {"not": "a string"}})
+        Definitions().with_reconstruction_metadata({"foo": {"not": "a string"}})  # pyright: ignore[reportArgumentType]
 
 
 def test_default_global_context():

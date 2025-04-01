@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Iterator, Mapping, NamedTuple, Optional
+from collections.abc import Iterator, Mapping
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import superseded
@@ -45,7 +46,7 @@ class StepRunRef(
     ):
         from dagster._core.execution.plan.state import KnownExecutionState
 
-        return super(StepRunRef, cls).__new__(
+        return super().__new__(
             cls,
             check.mapping_param(run_config, "run_config", key_type=str),
             check.inst_param(dagster_run, "dagster_run", DagsterRun),
@@ -59,7 +60,7 @@ class StepRunRef(
 
 _step_launcher_supersession = superseded(
     subject="StepLauncher",
-    additional_warn_text="Consider using Dagster Pipes instead. Learn more here: https://docs.dagster.io/concepts/dagster-pipes",
+    additional_warn_text="While there is no plan to remove this functionality, for new projects, we recommend using Dagster Pipes. For more information, see https://docs.dagster.io/guides/build/external-pipelines/",
 )
 
 

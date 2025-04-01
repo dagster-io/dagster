@@ -1,6 +1,7 @@
 import os
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, List, Optional, Sequence
+from typing import Any, Optional
 
 import dagster._check as check
 from dagster import (
@@ -10,6 +11,7 @@ from dagster import (
     InitResourceContext,
     IOManager,
 )
+from dagster._annotations import beta
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
@@ -33,7 +35,7 @@ class OutputNotebookIOManager(IOManager):
 
 class LocalOutputNotebookIOManager(OutputNotebookIOManager):
     def __init__(self, base_dir: str, asset_key_prefix: Optional[Sequence[str]] = None):
-        super(LocalOutputNotebookIOManager, self).__init__(asset_key_prefix=asset_key_prefix)
+        super().__init__(asset_key_prefix=asset_key_prefix)
         self.base_dir = base_dir
         self.write_mode = "wb"
         self.read_mode = "rb"
@@ -82,6 +84,7 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
             return file_obj.read()
 
 
+@beta
 class ConfigurableLocalOutputNotebookIOManager(ConfigurableIOManagerFactory):
     """Built-in IO Manager for handling output notebook."""
 
@@ -92,7 +95,7 @@ class ConfigurableLocalOutputNotebookIOManager(ConfigurableIOManagerFactory):
             " directory if not provided."
         ),
     )
-    asset_key_prefix: List[str] = Field(
+    asset_key_prefix: list[str] = Field(
         default=[],
         description=(
             "Asset key prefix to apply to assets materialized for output notebooks. Defaults to no"
@@ -111,6 +114,7 @@ class ConfigurableLocalOutputNotebookIOManager(ConfigurableIOManagerFactory):
         )
 
 
+@beta
 @dagster_maintained_io_manager
 @io_manager(config_schema=ConfigurableLocalOutputNotebookIOManager.to_config_schema())
 def local_output_notebook_io_manager(init_context) -> LocalOutputNotebookIOManager:

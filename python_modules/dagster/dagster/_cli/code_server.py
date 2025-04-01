@@ -6,19 +6,18 @@ import threading
 from typing import Optional
 
 import click
+import dagster_shared.seven as seven
 
-import dagster._check as check
-import dagster._seven as seven
-from dagster._cli.workspace.cli_target import (
-    get_working_directory_from_kwargs,
-    python_origin_target_argument,
-)
+from dagster._cli.utils import assert_no_remaining_opts
+from dagster._cli.workspace.cli_target import PythonPointerOpts, python_pointer_options
 from dagster._core.instance import InstanceRef
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._serdes import deserialize_value
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
+
+DEFAULT_HEARTBEAT_TIMEOUT = 30
 
 
 @click.group(name="code-server")
@@ -60,11 +59,9 @@ def code_server_cli():
     "-n",
     type=click.INT,
     required=False,
-    default=None,
     help="Maximum number of (threaded) workers to use in the code server",
     envvar="DAGSTER_CODE_SERVER_MAX_WORKERS",
 )
-@python_origin_target_argument
 @click.option(
     "--use-python-environment-entry-point",
     is_flag=True,
@@ -145,37 +142,59 @@ def code_server_cli():
     envvar="DAGSTER_CODE_SERVER_STARTUP_TIMEOUT",
 )
 @click.option(
+    "--heartbeat",
+    is_flag=True,
+    default=False,
+    help=(
+        "If set, the GRPC server will shut itself down when it fails to receive a heartbeat "
+        "after a timeout configurable with --heartbeat-timeout."
+    ),
+)
+@click.option(
+    "--heartbeat-timeout",
+    type=click.INT,
+    required=False,
+    default=DEFAULT_HEARTBEAT_TIMEOUT,
+    help="How long to wait for a heartbeat from the caller before timing out. Only comes into play if --heartbeat is set. Defaults to 30 seconds.",
+)
+@click.option(
     "--instance-ref",
     type=click.STRING,
     required=False,
     help="[INTERNAL] Serialized InstanceRef to use for accessing the instance",
     envvar="DAGSTER_INSTANCE_REF",
 )
+@python_pointer_options
 def start_command(
-    port: Optional[int] = None,
-    socket: Optional[str] = None,
-    host: str = "localhost",
-    max_workers: Optional[int] = None,
-    fixed_server_id: Optional[str] = None,
-    log_level: str = "INFO",
-    log_format: str = "colored",
-    use_python_environment_entry_point: bool = False,
-    container_image: Optional[str] = None,
-    container_context: Optional[str] = None,
-    location_name: Optional[str] = None,
-    inject_env_vars_from_instance: bool = False,
-    startup_timeout: int = 0,
-    instance_ref=None,
-    **kwargs,
+    port: Optional[int],
+    socket: Optional[str],
+    host: str,
+    max_workers: Optional[int],
+    use_python_environment_entry_point: bool,
+    fixed_server_id: Optional[str],
+    log_level: str,
+    log_format: str,
+    container_image: Optional[str],
+    container_context: Optional[str],
+    inject_env_vars_from_instance: bool,
+    location_name: Optional[str],
+    startup_timeout: int,
+    heartbeat: bool,
+    heartbeat_timeout,
+    instance_ref: Optional[str],
+    **other_opts,
 ):
     from dagster._grpc import DagsterGrpcServer
     from dagster._grpc.proxy_server import DagsterProxyApiServicer
+
+    python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
 
     if seven.IS_WINDOWS and port is None:
         raise click.UsageError(
             "You must pass a valid --port/-p on Windows: --socket/-s not supported."
         )
-    if not (port or socket and not (port and socket)):
+    if not (port or (socket and not (port and socket))):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
     setup_interrupt_handlers()
@@ -186,16 +205,13 @@ def start_command(
     container_image = container_image or os.getenv("DAGSTER_CURRENT_IMAGE")
 
     # in the gRPC api CLI we never load more than one module or python file at a time
-    module_name = check.opt_str_elem(kwargs, "module_name")
-    python_file = check.opt_str_elem(kwargs, "python_file")
-
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable if use_python_environment_entry_point else None,
-        attribute=kwargs["attribute"],
-        working_directory=get_working_directory_from_kwargs(kwargs),
-        module_name=module_name,
-        python_file=python_file,
-        package_name=kwargs["package_name"],
+        attribute=python_pointer_opts.attribute,
+        working_directory=python_pointer_opts.working_directory or os.getcwd(),
+        module_name=python_pointer_opts.module_name,
+        python_file=python_pointer_opts.python_file,
+        package_name=python_pointer_opts.package_name,
     )
 
     code_desc = " "
@@ -231,6 +247,8 @@ def start_command(
         instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
         server_termination_event=server_termination_event,
         logger=logger,
+        server_heartbeat=heartbeat,
+        server_heartbeat_timeout=heartbeat_timeout,
     )
     server = DagsterGrpcServer(
         server_termination_event=server_termination_event,

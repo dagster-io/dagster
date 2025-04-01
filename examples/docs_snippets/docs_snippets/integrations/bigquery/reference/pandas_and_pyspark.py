@@ -13,14 +13,16 @@ def rose_data():
 
 # start_example
 
-from typing import Optional, Sequence, Type
+from collections.abc import Sequence
+from typing import Optional
 
 import pandas as pd
 from dagster_gcp import BigQueryIOManager
 from dagster_gcp_pandas import BigQueryPandasTypeHandler
 from dagster_gcp_pyspark import BigQueryPySparkTypeHandler
 
-from dagster import DbTypeHandler, Definitions
+from dagster import Definitions
+from dagster._core.storage.db_io_manager import DbTypeHandler
 
 
 class MyBigQueryIOManager(BigQueryIOManager):
@@ -34,7 +36,7 @@ class MyBigQueryIOManager(BigQueryIOManager):
         return [BigQueryPandasTypeHandler(), BigQueryPySparkTypeHandler()]
 
     @staticmethod
-    def default_load_type() -> Optional[Type]:
+    def default_load_type() -> Optional[type]:
         """If an asset is not annotated with an return type, default_load_type will be used to
         determine which TypeHandler to use to store and load the output.
 

@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_polars/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -43,13 +42,15 @@ setup(
         "universal_pathlib>=0.1.4",
     ],
     extras_require={
-        "deltalake": ["deltalake>=0.15.0"],
+        "deltalake": ["deltalake>=0.25.0"],
         "gcp": ["dagster-gcp>=0.19.5"],
         "test": [
+            "polars>=1.24.0",
             "pytest>=8",
             "hypothesis[zoneinfo]>=6.89.0",
             "deepdiff>=6.3.0",
             "pytest-cases>=3.6.14",
+            "pytest_mock",
         ],
     },
     zip_safe=False,

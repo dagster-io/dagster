@@ -1,21 +1,14 @@
-from dagster import (
-    AssetMaterialization,
-    AssetSpec,
-    Definitions,
-    OpExecutionContext,
-    job,
-    op,
-)
+import dagster as dg
 
 
-@op
-def an_op(context: OpExecutionContext) -> None:
-    context.log_event(AssetMaterialization(asset_key="external_asset"))
+@dg.op
+def an_op(context: dg.OpExecutionContext) -> None:
+    context.log_event(dg.AssetMaterialization(asset_key="external_asset"))
 
 
-@job
+@dg.job
 def a_job() -> None:
     an_op()
 
 
-defs = Definitions(assets=[AssetSpec("external_asset")], jobs=[a_job])
+defs = dg.Definitions(assets=[dg.AssetSpec("external_asset")], jobs=[a_job])

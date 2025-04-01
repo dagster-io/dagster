@@ -1,11 +1,12 @@
+from collections.abc import Mapping
 from functools import cached_property
-from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Set
+from typing import AbstractSet, Any, NamedTuple, Optional  # noqa: UP035
 
 from dagster import (
     AssetKey,
     _check as check,
 )
-from dagster._annotations import PublicAttr
+from dagster._annotations import PublicAttr, beta
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 
@@ -16,17 +17,18 @@ class TaskInfo:
     webserver_url: str
     dag_id: str
     task_id: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
     @property
     def dag_url(self) -> str:
         return f"{self.webserver_url}/dags/{self.dag_id}"
 
     @cached_property
-    def downstream_task_ids(self) -> List[str]:
+    def downstream_task_ids(self) -> list[str]:
         return check.is_list(self.metadata["downstream_task_ids"], str)
 
 
+@beta
 @whitelist_for_serdes
 @record
 class DagInfo:
@@ -35,14 +37,14 @@ class DagInfo:
     Users should not instantiate this class directly. It is provided when customizing which DAGs are included
     in the generated definitions using the `dag_selector_fn` argument of :py:func:`build_defs_from_airflow_instance`.
 
-    Attributes:
+    Args:
         metadata (Dict[str, Any]): The metadata associated with the dag, retrieved by the Airflow REST API:
             https://airflow.apache.org/docs/apache-airflow/stable/stable-rest-api-ref.html#operation/get_dags
     """
 
     webserver_url: str
     dag_id: str
-    metadata: PublicAttr[Dict[str, Any]]
+    metadata: PublicAttr[dict[str, Any]]
 
     @property
     def url(self) -> str:
@@ -76,8 +78,8 @@ class SerializedDagData:
 
     dag_id: str
     dag_info: DagInfo
-    source_code: str
-    leaf_asset_keys: Set[AssetKey]
+    source_code: Optional[str]
+    leaf_asset_keys: set[AssetKey]
     task_infos: Mapping[str, TaskInfo]
 
 
@@ -108,14 +110,14 @@ class KeyScopedDagHandles:
 @record
 class SerializedAirflowDefinitionsData:
     instance_name: str
-    key_scoped_task_handles: List[KeyScopedTaskHandles]
-    key_scoped_dag_handles: List[KeyScopedDagHandles]
+    key_scoped_task_handles: list[KeyScopedTaskHandles]
+    key_scoped_dag_handles: list[KeyScopedDagHandles]
     dag_datas: Mapping[str, SerializedDagData]
 
     @cached_property
-    def all_mapped_tasks(self) -> Dict[AssetKey, AbstractSet[TaskHandle]]:
+    def all_mapped_tasks(self) -> dict[AssetKey, AbstractSet[TaskHandle]]:
         return {item.asset_key: item.mapped_tasks for item in self.key_scoped_task_handles}
 
     @cached_property
-    def all_mapped_dags(self) -> Dict[AssetKey, AbstractSet[DagHandle]]:
+    def all_mapped_dags(self) -> dict[AssetKey, AbstractSet[DagHandle]]:
         return {item.asset_key: item.mapped_dags for item in self.key_scoped_dag_handles}

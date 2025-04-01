@@ -29,7 +29,7 @@ def topstories(context: AssetExecutionContext) -> MaterializeResult:
 
     API Docs: https://github.com/HackerNews/API#items
     """
-    with open("data/topstory_ids.json", "r") as f:
+    with open("data/topstory_ids.json") as f:
         topstory_ids = json.load(f)
 
     results = []

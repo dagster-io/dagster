@@ -1,4 +1,5 @@
-from typing import Any, Callable, Mapping, Optional, Set
+from collections.abc import Mapping
+from typing import Any, Callable, Optional
 
 from dagster import (
     AssetsDefinition,
@@ -14,7 +15,7 @@ from dagster._utils.warnings import suppress_dagster_warnings
 from dagster_dbt.asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,
-    build_dbt_multi_asset_args,
+    build_dbt_specs,
 )
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
@@ -33,9 +34,10 @@ def dbt_assets(
     dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     project: Optional[DbtProject] = None,
     retry_policy: Optional[RetryPolicy] = None,
+    pool: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
@@ -71,6 +73,8 @@ def dbt_assets(
             project location and manifest. Not required, but needed to attach code references from
             model code to Dagster assets.
         retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
+        pool (Optional[str]): A string that identifies the concurrency pool that governs the dbt
+            assets' execution.
 
     Examples:
         Running ``dbt build`` for a dbt project:
@@ -302,14 +306,9 @@ def dbt_assets(
     dagster_dbt_translator = validate_translator(dagster_dbt_translator or DagsterDbtTranslator())
     manifest = validate_manifest(manifest)
 
-    (
-        deps,
-        outs,
-        internal_asset_deps,
-        check_specs,
-    ) = build_dbt_multi_asset_args(
+    specs, check_specs = build_dbt_specs(
+        translator=dagster_dbt_translator,
         manifest=manifest,
-        dagster_dbt_translator=dagster_dbt_translator,
         select=select,
         exclude=exclude or "",
         io_manager_key=io_manager_key,
@@ -342,15 +341,14 @@ def dbt_assets(
         backfill_policy = BackfillPolicy.single_run()
 
     return multi_asset(
-        outs=outs,
         name=name,
-        internal_asset_deps=internal_asset_deps,
-        deps=deps,
+        specs=specs,
+        check_specs=check_specs,
+        can_subset=True,
         required_resource_keys=required_resource_keys,
         partitions_def=partitions_def,
-        can_subset=True,
         op_tags=resolved_op_tags,
-        check_specs=check_specs,
         backfill_policy=backfill_policy,
         retry_policy=retry_policy,
+        pool=pool,
     )

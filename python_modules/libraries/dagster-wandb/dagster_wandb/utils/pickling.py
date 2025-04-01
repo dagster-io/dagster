@@ -55,7 +55,7 @@ def pickle_artifact_content(
             **artifact.metadata,
             **{
                 "source_serialization_module": "dill",
-                "source_dill_version_used": dill.__version__,
+                "source_dill_version_used": dill.__version__,  # pyright: ignore[reportOptionalMemberAccess]
                 "source_pickle_protocol_used": serialization_module_parameters_with_protocol[
                     "protocol"
                 ],
@@ -63,7 +63,7 @@ def pickle_artifact_content(
         }
         with artifact.new_file(DILL_FILENAME, "wb") as file:
             try:
-                dill.dump(
+                dill.dump(  # pyright: ignore[reportOptionalMemberAccess]
                     obj,
                     file,
                     **serialization_module_parameters_with_protocol,
@@ -88,7 +88,7 @@ def pickle_artifact_content(
             **artifact.metadata,
             **{
                 "source_serialization_module": "cloudpickle",
-                "source_cloudpickle_version_used": cloudpickle.__version__,
+                "source_cloudpickle_version_used": cloudpickle.__version__,  # pyright: ignore[reportOptionalMemberAccess]
                 "source_pickle_protocol_used": serialization_module_parameters_with_protocol[
                     "protocol"
                 ],
@@ -96,7 +96,7 @@ def pickle_artifact_content(
         }
         with artifact.new_file(CLOUDPICKLE_FILENAME, "wb") as file:
             try:
-                cloudpickle.dump(
+                cloudpickle.dump(  # pyright: ignore[reportOptionalMemberAccess]
                     obj,
                     file,
                     **serialization_module_parameters_with_protocol,
@@ -120,7 +120,7 @@ def pickle_artifact_content(
             **artifact.metadata,
             **{
                 "source_serialization_module": "joblib",
-                "source_joblib_version_used": joblib.__version__,
+                "source_joblib_version_used": joblib.__version__,  # pyright: ignore[reportOptionalMemberAccess]
                 "source_pickle_protocol_used": serialization_module_parameters_with_protocol[
                     "protocol"
                 ],
@@ -128,7 +128,7 @@ def pickle_artifact_content(
         }
         with artifact.new_file(JOBLIB_FILENAME, "wb") as file:
             try:
-                joblib.dump(
+                joblib.dump(  # pyright: ignore[reportOptionalMemberAccess]
                     obj,
                     file,
                     **serialization_module_parameters_with_protocol,
@@ -182,7 +182,7 @@ def unpickle_artifact_content(artifact_dir):
                 " was not found. Please, make sure it's installed."
             )
         with open(f"{artifact_dir}/{DILL_FILENAME}", "rb") as file:
-            input_value = dill.load(file)
+            input_value = dill.load(file)  # pyright: ignore[reportOptionalMemberAccess]
             return input_value
     elif os.path.exists(f"{artifact_dir}/{CLOUDPICKLE_FILENAME}"):
         if not has_cloudpickle:
@@ -191,7 +191,7 @@ def unpickle_artifact_content(artifact_dir):
                 " module was not found. Please, make sure it's installed."
             )
         with open(f"{artifact_dir}/{CLOUDPICKLE_FILENAME}", "rb") as file:
-            input_value = cloudpickle.load(file)
+            input_value = cloudpickle.load(file)  # pyright: ignore[reportOptionalMemberAccess]
             return input_value
     elif os.path.exists(f"{artifact_dir}/{JOBLIB_FILENAME}"):
         if not has_joblib:
@@ -200,7 +200,7 @@ def unpickle_artifact_content(artifact_dir):
                 " was not found. Please, make sure it's installed."
             )
         with open(f"{artifact_dir}/{JOBLIB_FILENAME}", "rb") as file:
-            input_value = joblib.load(file)
+            input_value = joblib.load(file)  # pyright: ignore[reportOptionalMemberAccess]
             return input_value
     elif os.path.exists(f"{artifact_dir}/{PICKLE_FILENAME}"):
         with open(f"{artifact_dir}/{PICKLE_FILENAME}", "rb") as file:

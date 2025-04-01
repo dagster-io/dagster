@@ -8,8 +8,8 @@ from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.storage.tags import PRIORITY_TAG
-from dagster._serdes.serdes import deserialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster_shared.serdes import deserialize_value
 
 from dagster_celery.defaults import task_default_priority, task_default_queue
 from dagster_celery.make_app import make_app

@@ -62,9 +62,18 @@ interface WorkspaceState {
   setHidden: SetVisibleOrHiddenFn;
 }
 
-export const WorkspaceContext = React.createContext<WorkspaceState>(
-  new Error('WorkspaceContext should never be uninitialized') as any,
-);
+export const WorkspaceContext = React.createContext<WorkspaceState>({
+  allRepos: [],
+  visibleRepos: [],
+  data: {},
+  refetch: () => Promise.reject<any>(),
+  toggleVisible: () => {},
+  loading: false,
+  locationEntries: [],
+  locationStatuses: {},
+  setVisible: () => {},
+  setHidden: () => {},
+});
 
 interface BaseLocationParams {
   localCacheIdPrefix?: string;
@@ -87,6 +96,7 @@ interface RefreshLocationsIfNeededParams
     React.SetStateAction<Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>>
   >;
   previousLocationVersionsRef: React.MutableRefObject<Record<string, string>>;
+  fetchingStatusesRef: React.MutableRefObject<Record<string, Promise<any>>>;
 }
 
 interface HandleDeletedLocationsParams
@@ -104,6 +114,9 @@ interface FetchLocationDataParams
   setLocationEntryData: React.Dispatch<
     React.SetStateAction<Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>>
   >;
+  locationStatuses: Record<string, LocationStatusEntryFragment>;
+  fetchingStatusesRef: React.MutableRefObject<Record<string, Promise<any> | undefined>>;
+  previousLocationVersionsRef: React.MutableRefObject<Record<string, string>>;
 }
 
 const UNLOADED_CACHED_DATA = {};
@@ -120,6 +133,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     );
 
   const previousLocationVersionsRef = useRef<Record<string, string>>({});
+  const fetchingStatusesRef = useRef<Record<string, Promise<any>>>({});
 
   const {locationStatuses, loading: loadingLocationStatuses} =
     useCodeLocationStatuses(localCacheIdPrefix);
@@ -153,6 +167,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
       getData,
       setLocationEntryData,
       previousLocationVersionsRef,
+      fetchingStatusesRef,
     };
     refreshLocationsIfNeeded(params);
   }, [locationStatuses, locationEntryData, client, localCacheIdPrefix, getData, loadingCachedData]);
@@ -188,6 +203,9 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         localCacheIdPrefix,
         getData,
         setLocationEntryData,
+        locationStatuses,
+        fetchingStatusesRef,
+        previousLocationVersionsRef,
       };
       return await fetchLocationData(params);
     });
@@ -259,6 +277,7 @@ async function refreshLocationsIfNeeded(params: RefreshLocationsIfNeededParams):
     getData,
     setLocationEntryData,
     previousLocationVersionsRef,
+    fetchingStatusesRef,
   } = params;
 
   const locationsToFetch = identifyStaleLocations(
@@ -272,18 +291,19 @@ async function refreshLocationsIfNeeded(params: RefreshLocationsIfNeededParams):
   }
 
   await Promise.all(
-    locationsToFetch.map((location) =>
-      fetchLocationData({
+    locationsToFetch.map(async (location) => {
+      await fetchLocationData({
         name: location.name,
         client,
         localCacheIdPrefix,
         getData,
         setLocationEntryData,
-      }),
-    ),
+        locationStatuses,
+        previousLocationVersionsRef,
+        fetchingStatusesRef,
+      });
+    }),
   );
-
-  previousLocationVersionsRef.current = mapLocationVersions(locationStatuses);
 }
 
 /**
@@ -330,29 +350,53 @@ function handleDeletedLocations(params: HandleDeletedLocationsParams): void {
 async function fetchLocationData(
   params: FetchLocationDataParams,
 ): Promise<LocationWorkspaceQuery | undefined> {
-  const {name, client, localCacheIdPrefix, getData, setLocationEntryData} = params;
-  try {
-    const {data} = await getData<LocationWorkspaceQuery, LocationWorkspaceQueryVariables>({
-      client,
-      query: LOCATION_WORKSPACE_QUERY,
-      key: `${localCacheIdPrefix}${locationWorkspaceKey(name)}`,
-      version: LocationWorkspaceQueryVersion,
-      variables: {name},
-      bypassCache: true,
-    });
+  const {
+    name,
+    client,
+    localCacheIdPrefix,
+    getData,
+    setLocationEntryData,
+    locationStatuses,
+    fetchingStatusesRef,
+    previousLocationVersionsRef,
+  } = params;
 
-    const entry = data?.workspaceLocationEntryOrError;
-    if (entry) {
-      setLocationEntryData((prevData) => ({
-        ...prevData,
-        [name]: entry,
-      }));
-    }
-    return data;
-  } catch (error) {
-    console.error(`Error fetching location data for ${name}:`, error);
+  const localKey = name + '@' + (locationStatuses[name]?.versionKey ?? '');
+  if (fetchingStatusesRef.current[localKey]) {
+    return fetchingStatusesRef.current[localKey];
   }
-  return undefined;
+  fetchingStatusesRef.current[localKey] = new Promise(async (res) => {
+    try {
+      const {data} = await getData<LocationWorkspaceQuery, LocationWorkspaceQueryVariables>({
+        client,
+        query: LOCATION_WORKSPACE_QUERY,
+        key: `${localCacheIdPrefix}${locationWorkspaceKey(name)}`,
+        version: LocationWorkspaceQueryVersion,
+        variables: {name},
+        bypassCache: true,
+      });
+
+      const entry = data?.workspaceLocationEntryOrError;
+      if (entry) {
+        if (entry.__typename === 'WorkspaceLocationEntry') {
+          previousLocationVersionsRef.current[name] = entry.versionKey;
+        }
+        setLocationEntryData((prevData) => ({
+          ...prevData,
+          [name]: entry,
+        }));
+      }
+      res(data);
+    } catch (error) {
+      console.error(`Error fetching location data for ${name}:`, error);
+    }
+    res(undefined);
+  });
+  const result = await fetchingStatusesRef.current[localKey];
+  requestAnimationFrame(() => {
+    delete fetchingStatusesRef.current[localKey];
+  });
+  return result;
 }
 
 /**
@@ -413,6 +457,7 @@ function identifyStaleLocations(
     const entry = locationEntryData[statusEntry.name];
     const locationEntry = entry?.__typename === 'WorkspaceLocationEntry' ? entry : null;
     const dataVersion = locationEntry?.versionKey || '';
+
     return currentVersion !== prevVersion || currentVersion !== dataVersion;
   });
 }

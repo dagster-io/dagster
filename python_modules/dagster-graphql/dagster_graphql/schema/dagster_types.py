@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import graphene
 from dagster._config.snap import ConfigTypeSnap
@@ -41,7 +41,7 @@ def to_dagster_type(
 ) -> GrapheneDagsterTypeUnion:
     dagster_type_meta = get_dagster_type(dagster_type_key)
 
-    base_args: Dict[str, Any] = dict(
+    base_args: dict[str, Any] = dict(
         key=dagster_type_meta.key,
         name=dagster_type_meta.name,
         display_name=dagster_type_meta.display_name,

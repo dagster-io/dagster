@@ -9,8 +9,16 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 import sqlalchemy
 import sqlalchemy as db
-from dagster import DagsterInstance
+from dagster import AssetKey, AssetMaterialization, DagsterInstance, Out, Output, RetryRequested, op
 from dagster._core.errors import DagsterEventLogInvalidForRun
+from dagster._core.events import DagsterEvent, EngineEventData, SerializableErrorInfo, StepRetryData
+from dagster._core.events.log import EventLogEntry
+from dagster._core.execution.stats import (
+    StepEventStatus,
+    build_run_stats_from_events,
+    build_run_step_stats_from_events,
+    build_run_step_stats_snapshot_from_events,
+)
 from dagster._core.storage.event_log import (
     ConsolidatedSqliteEventLogStorage,
     SqlEventLogStorageMetadata,
@@ -28,18 +36,21 @@ from dagster._utils.test import ConcurrencyEnabledSqliteTestEventLogStorage
 from sqlalchemy import __version__ as sqlalchemy_version
 from sqlalchemy.engine import Connection
 
-from dagster_tests.storage_tests.utils.event_log_storage import TestEventLogStorage
+from dagster_tests.storage_tests.utils.event_log_storage import (
+    TestEventLogStorage,
+    _synthesize_events,
+)
 
 
 class TestInMemoryEventLogStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self, instance):
+    def event_log_storage(self, instance):  # pyright: ignore[reportIncompatibleMethodOverride]
         yield instance.event_log_storage
 
     @pytest.fixture(name="instance", scope="function")
-    def instance(self):
+    def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with DagsterInstance.ephemeral() as the_instance:
             yield the_instance
 
@@ -55,16 +66,19 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(name="instance", scope="function")
-    def instance(self):
+    def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
             with instance_for_test(temp_dir=tmpdir_path) as instance:
                 yield instance
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self, instance):
+    def event_log_storage(self, instance):  # pyright: ignore[reportIncompatibleMethodOverride]
         event_log_storage = instance.event_log_storage
         assert isinstance(event_log_storage, SqliteEventLogStorage)
         yield instance.event_log_storage
+
+    def supports_multiple_event_type_queries(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+        return False
 
     def test_filesystem_event_log_storage_run_corrupted(self, storage):
         # URL begins sqlite:///
@@ -73,7 +87,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
             os.path.abspath(storage.conn_string_for_shard("foo")[10:]), "w", encoding="utf8"
         ) as fd:
             fd.write("some nonsense")
-        with pytest.raises(sqlalchemy.exc.DatabaseError):
+        with pytest.raises(sqlalchemy.exc.DatabaseError):  # pyright: ignore[reportAttributeAccessIssue]
             storage.get_logs_for_run("foo")
 
     def test_filesystem_event_log_storage_run_corrupted_bad_data(self, storage):
@@ -138,7 +152,7 @@ class TestConsolidatedSqliteEventLogStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(name="instance", scope="function")
-    def instance(self):
+    def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
             with instance_for_test(
                 temp_dir=tmpdir_path,
@@ -153,7 +167,7 @@ class TestConsolidatedSqliteEventLogStorage(TestEventLogStorage):
                 yield instance
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self, instance):
+    def event_log_storage(self, instance):  # pyright: ignore[reportIncompatibleMethodOverride]
         event_log_storage = instance.event_log_storage
         assert isinstance(event_log_storage, ConsolidatedSqliteEventLogStorage)
         yield event_log_storage
@@ -163,13 +177,13 @@ class TestLegacyStorage(TestEventLogStorage):
     __test__ = True
 
     @pytest.fixture(name="instance", scope="function")
-    def instance(self):
+    def instance(self):  # pyright: ignore[reportIncompatibleMethodOverride]
         with tempfile.TemporaryDirectory(dir=os.getcwd()) as tmpdir_path:
             with instance_for_test(temp_dir=tmpdir_path) as instance:
                 yield instance
 
     @pytest.fixture(scope="function", name="storage")
-    def event_log_storage(self, instance):
+    def event_log_storage(self, instance):  # pyright: ignore[reportIncompatibleMethodOverride]
         storage = instance.get_ref().storage
         assert isinstance(storage, DagsterSqliteStorage)
         legacy_storage = LegacyEventLogStorage(storage)
@@ -181,6 +195,9 @@ class TestLegacyStorage(TestEventLogStorage):
 
     def is_sqlite(self, storage):
         return True
+
+    def supports_multiple_event_type_queries(self):  # pyright: ignore[reportIncompatibleMethodOverride]
+        return False
 
     @pytest.mark.parametrize("dagster_event_type", ["dummy"])
     def test_get_latest_tags_by_partition(self, storage, instance, dagster_event_type):
@@ -279,3 +296,153 @@ def test_concurrency_reconcile():
             assert _get_slot_count(conn, "bar") == 3
             assert _get_limit_row_num(conn, "foo") == 5
             assert _get_limit_row_num(conn, "bar") == 3
+
+
+def test_run_stats():
+    @op
+    def op_success(_):
+        return 1
+
+    @op
+    def asset_op(_):
+        yield AssetMaterialization(asset_key=AssetKey("asset_1"))
+        yield Output(1)
+
+    @op
+    def op_failure(_):
+        raise ValueError("failing")
+
+    def _ops():
+        op_success()
+        asset_op()
+        op_failure()
+
+    events, result = _synthesize_events(_ops, check_success=False)
+
+    run_stats = build_run_stats_from_events(result.run_id, events)
+
+    assert run_stats.run_id == result.run_id
+    assert run_stats.materializations == 1
+    assert run_stats.steps_succeeded == 2
+    assert run_stats.steps_failed == 1
+    assert (
+        run_stats.start_time is not None
+        and run_stats.end_time is not None
+        and run_stats.end_time > run_stats.start_time
+    )
+
+    # build up run stats through incremental events
+    incremental_run_stats = None
+    for event in events:
+        incremental_run_stats = build_run_stats_from_events(
+            result.run_id, [event], incremental_run_stats
+        )
+
+    assert incremental_run_stats == run_stats
+
+
+def test_step_stats():
+    @op
+    def op_success(_):
+        return 1
+
+    @op
+    def asset_op(_):
+        yield AssetMaterialization(asset_key=AssetKey("asset_1"))
+        yield Output(1)
+
+    @op(out=Out(str))
+    def op_failure(_):
+        time.sleep(0.001)
+        raise RetryRequested(max_retries=3)
+
+    def _ops():
+        op_success()
+        asset_op()
+        op_failure()
+
+    events, result = _synthesize_events(_ops, check_success=False)
+
+    step_stats = build_run_step_stats_from_events(result.run_id, events)
+    assert len(step_stats) == 3
+    assert len([step for step in step_stats if step.status == StepEventStatus.SUCCESS]) == 2
+    assert len([step for step in step_stats if step.status == StepEventStatus.FAILURE]) == 1
+    assert all([step.run_id == result.run_id for step in step_stats])
+
+    op_failure_stats = next(
+        iter([step for step in step_stats if step.step_key == "op_failure"]), None
+    )
+    assert op_failure_stats
+    assert op_failure_stats.attempts == 4
+    assert len(op_failure_stats.attempts_list) == 4
+
+    # build up run stats through incremental events
+    incremental_snapshot = None
+    for event in events:
+        incremental_snapshot = build_run_step_stats_snapshot_from_events(
+            result.run_id, [event], incremental_snapshot
+        )
+
+    assert incremental_snapshot
+    assert incremental_snapshot.step_key_stats == step_stats
+
+
+def test_step_worker_failure_attempts():
+    run_id = "run_id"
+    step_key = "step_key"
+    job_name = "job_name"
+
+    STEP_EVENT_LOGS = [
+        EventLogEntry(
+            error_info=None,
+            level=10,
+            user_message="",
+            run_id=run_id,
+            timestamp=1738790993.7522137,
+            step_key=step_key,
+            job_name=job_name,
+            dagster_event=DagsterEvent(
+                event_type_value="STEP_WORKER_STARTING",
+                job_name=job_name,
+                event_specific_data=EngineEventData(marker_start="step_process_start"),
+                step_key=step_key,
+            ),
+        ),
+        EventLogEntry(
+            error_info=None,
+            level=10,
+            user_message="",
+            run_id=run_id,
+            timestamp=1738791010.1940305,
+            step_key=step_key,
+            job_name=job_name,
+            dagster_event=DagsterEvent(
+                event_type_value="STEP_UP_FOR_RETRY",
+                job_name=job_name,
+                event_specific_data=StepRetryData(
+                    error=SerializableErrorInfo(message="", stack=[], cls_name=None),
+                ),
+                step_key=step_key,
+            ),
+        ),
+        EventLogEntry(
+            error_info=None,
+            level=10,
+            user_message="",
+            run_id=run_id,
+            timestamp=1738791036.962399,
+            step_key=step_key,
+            job_name=job_name,
+            dagster_event=DagsterEvent(
+                event_type_value="STEP_WORKER_STARTING",
+                job_name=job_name,
+                event_specific_data=EngineEventData(marker_start="step_process_start"),
+                step_key=step_key,
+            ),
+        ),
+    ]
+
+    run_step_stats = build_run_step_stats_from_events(run_id, STEP_EVENT_LOGS)
+    assert len(run_step_stats) == 1
+    step_stat = run_step_stats[0]
+    assert step_stat.attempts == 1

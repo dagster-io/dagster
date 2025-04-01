@@ -23,9 +23,10 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
+from dagster._core.utils import is_valid_run_id
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster._utils.yaml_utils import dump_run_config_yaml
+from dagster_shared.yaml_utils import dump_run_config_yaml
 
 from dagster_graphql.implementation.fetch_instigators import get_tick_log_events
 from dagster_graphql.implementation.fetch_schedules import get_schedule_next_tick
@@ -33,7 +34,7 @@ from dagster_graphql.implementation.fetch_sensors import get_sensor_next_tick
 from dagster_graphql.implementation.fetch_ticks import get_instigation_ticks
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GrapheneError,
     GraphenePythonError,
@@ -169,7 +170,7 @@ class DynamicPartitionsRequestMixin:
 
 
 class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.ObjectType):
-    class Meta:
+    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
         name = "DynamicPartitionRequest"
 
     def __init__(
@@ -191,7 +192,7 @@ class GrapheneDynamicPartitionsRequest(DynamicPartitionsRequestMixin, graphene.O
 
 
 class GrapheneDynamicPartitionsRequestResult(DynamicPartitionsRequestMixin, graphene.ObjectType):
-    class Meta:
+    class Meta:  # pyright: ignore[reportIncompatibleVariableOverride]
         name = "DynamicPartitionsRequestResult"
 
     skippedPartitionKeys = non_null_list(graphene.String)
@@ -275,7 +276,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
         )
 
     def resolve_id(self, _):
-        return "%s:%s" % (self._tick.instigator_origin_id, self._tick.timestamp)
+        return f"{self._tick.instigator_origin_id}:{self._tick.timestamp}"
 
     def resolve_tickId(self, _: ResolveInfo) -> str:
         return str(self._tick.tick_id)
@@ -284,7 +285,11 @@ class GrapheneInstigationTick(graphene.ObjectType):
         from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 
         instance = graphene_info.context.instance
-        run_ids = self._tick.origin_run_ids or self._tick.run_ids
+        run_ids = self._tick.origin_run_ids or self._tick.run_ids or []
+
+        # filter out backfills
+        run_ids = [run_id for run_id in run_ids if is_valid_run_id(run_id)]
+
         if not run_ids:
             return []
 

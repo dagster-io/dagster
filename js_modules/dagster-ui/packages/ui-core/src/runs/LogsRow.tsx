@@ -1,6 +1,7 @@
 import {Box, Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useMemo, useState} from 'react';
+import {SummarizeErrorWithAIButton} from 'shared/runs/SummarizeErrorWithAIButton.oss';
 
 import {CellTruncationProvider} from './CellTruncationProvider';
 import {
@@ -76,9 +77,21 @@ export const Structured = (props: StructuredProps) => {
     };
   }, [metadata, node]);
 
+  const buttons = useMemo(() => {
+    if ('error' in node && node.error) {
+      return <SummarizeErrorWithAIButton error={node.error} outlined={false} intent="primary" />;
+    }
+    return null;
+  }, [node]);
+
   return (
-    <CellTruncationProvider style={style} onExpand={() => setExpanded(true)}>
-      <StructuredMemoizedContent node={node} metadata={metadata} highlighted={highlighted} />
+    <CellTruncationProvider style={style} onExpand={() => setExpanded(true)} buttons={buttons}>
+      <StructuredMemoizedContent
+        node={node}
+        metadata={metadata}
+        highlighted={highlighted}
+        buttons={buttons}
+      />
       <Dialog
         title={title}
         isOpen={expanded}
@@ -124,11 +137,13 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       }
     }
     ... on MaterializationEvent {
+      partition
       assetKey {
         path
       }
     }
     ... on ObservationEvent {
+      partition
       assetKey {
         path
       }
@@ -197,6 +212,10 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       externalUrl
       externalStdoutUrl
       externalStderrUrl
+      shellCmd {
+        stdout
+        stderr
+      }
     }
     ... on AssetCheckEvaluationEvent {
       evaluation {
@@ -224,6 +243,7 @@ interface StructuredMemoizedContentProps {
   node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
   highlighted: boolean;
+  buttons: React.ReactNode;
 }
 
 const StructuredMemoizedContent = React.memo((props: StructuredMemoizedContentProps) => {
@@ -276,26 +296,24 @@ export const UnstructuredDialogContent = ({message}: {message: string}) => {
   );
 };
 
-export class Unstructured extends React.Component<UnstructuredProps> {
-  onExpand = () => {
+export const Unstructured = (props: UnstructuredProps) => {
+  const onExpand = () => {
     showCustomAlert({
       title: 'Log',
-      body: <UnstructuredDialogContent message={this.props.node.message} />,
+      body: <UnstructuredDialogContent message={props.node.message} />,
     });
   };
 
-  render() {
-    return (
-      <CellTruncationProvider style={this.props.style || {}} onExpand={this.onExpand}>
-        <UnstructuredMemoizedContent
-          node={this.props.node}
-          highlighted={this.props.highlighted}
-          metadata={this.props.metadata}
-        />
-      </CellTruncationProvider>
-    );
-  }
-}
+  return (
+    <CellTruncationProvider style={props.style || {}} onExpand={onExpand}>
+      <UnstructuredMemoizedContent
+        node={props.node}
+        highlighted={props.highlighted}
+        metadata={props.metadata}
+      />
+    </CellTruncationProvider>
+  );
+};
 
 export const LOGS_ROW_UNSTRUCTURED_FRAGMENT = gql`
   fragment LogsRowUnstructuredFragment on DagsterRunEvent {

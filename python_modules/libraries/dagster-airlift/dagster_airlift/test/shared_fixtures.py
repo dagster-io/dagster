@@ -3,15 +3,18 @@ import signal
 import subprocess
 import sys
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Callable, Generator, List, Optional
+from typing import Any, Callable, Optional
 
+import psutil
 import pytest
 import requests
 from dagster._core.test_utils import environ
 from dagster._time import get_current_timestamp
+from dagster._utils import process_is_alive
 
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
@@ -72,7 +75,7 @@ def reserialize_fixture(airflow_instance: None) -> Callable[[], None]:
 @contextmanager
 def stand_up_airflow(
     env: Any = {},
-    airflow_cmd: List[str] = ["airflow", "standalone"],
+    airflow_cmd: list[str] = ["airflow", "standalone"],
     cwd: Optional[Path] = None,
     stdout_channel: Optional[int] = None,
     port: int = 8080,
@@ -100,8 +103,10 @@ def stand_up_airflow(
         assert airflow_ready, "Airflow did not start within 30 seconds..."
         yield process
     finally:
-        # Kill process group, since process.kill and process.terminate do not work.
-        os.killpg(process.pid, signal.SIGKILL)
+        if process_is_alive(process.pid):
+            # Kill process group, since process.kill and process.terminate do not work.
+            os.killpg(process.pid, signal.SIGKILL)
+            process.wait(5)
 
 
 @pytest.fixture(name="airflow_instance")
@@ -132,14 +137,14 @@ def setup_dagster_home() -> Generator[str, None, None]:
 
 
 @pytest.fixture(name="dagster_dev_cmd")
-def dagster_dev_cmd(dagster_defs_path: str) -> List[str]:
+def dagster_dev_cmd(dagster_defs_path: str) -> list[str]:
     """Return the command used to stand up dagster dev."""
     return ["dagster", "dev", "-f", dagster_defs_path, "-p", "3333"]
 
 
 @pytest.fixture(name="dagster_dev")
 def setup_dagster(
-    airflow_instance: None, dagster_home: str, dagster_dev_cmd: List[str]
+    airflow_instance: None, dagster_home: str, dagster_dev_cmd: list[str]
 ) -> Generator[Any, None, None]:
     # The version of airflow we use on 3.12 or greater (2.10.2) takes longer to reconcile the dags, and sometimes does it partially.
     # We need to wait for all the dags to be loaded before we can start dagster.
@@ -148,11 +153,12 @@ def setup_dagster(
         time.sleep(20)
     with stand_up_dagster(dagster_dev_cmd) as process:
         yield process
+    time.sleep(5)
 
 
 @contextmanager
 def stand_up_dagster(
-    dagster_dev_cmd: List[str], port: int = 3333
+    dagster_dev_cmd: list[str], port: int = 3333
 ) -> Generator[subprocess.Popen, None, None]:
     """Stands up a dagster instance using the dagster dev CLI. dagster_defs_path must be provided
     by a fixture included in the callsite.
@@ -178,7 +184,9 @@ def stand_up_dagster(
         assert dagster_ready, "Dagster did not start within 30 seconds..."
         yield process
     finally:
-        os.killpg(process.pid, signal.SIGKILL)
+        if psutil.Process(pid=process.pid).is_running():
+            # Kill process group, since process.kill and process.terminate do not work.
+            os.killpg(process.pid, signal.SIGKILL)
 
 
 ####################################################################################################

@@ -7,6 +7,7 @@ export type RunFragment = {
   id: string;
   runConfigYaml: string;
   canTerminate: boolean;
+  allPools: Array<string> | null;
   hasReExecutePermission: boolean;
   hasTerminatePermission: boolean;
   hasDeletePermission: boolean;
@@ -49,15 +50,6 @@ export type RunFragment = {
       }>;
     }>;
   } | null;
-  stepStats: Array<{
-    __typename: 'RunStepStats';
-    stepKey: string;
-    status: Types.StepEventStatus | null;
-    startTime: number | null;
-    endTime: number | null;
-    attempts: Array<{__typename: 'RunMarker'; startTime: number | null; endTime: number | null}>;
-    markers: Array<{__typename: 'RunMarker'; startTime: number | null; endTime: number | null}>;
-  }>;
 };
 
 export type RunDagsterRunEventFragment_AlertFailureEvent = {
@@ -178,6 +170,7 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -357,6 +350,7 @@ export type RunDagsterRunEventFragment_EngineEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -541,6 +535,7 @@ export type RunDagsterRunEventFragment_ExecutionStepFailureEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -709,6 +704,7 @@ export type RunDagsterRunEventFragment_ExecutionStepInputEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -869,6 +865,7 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -1026,6 +1023,7 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -1162,6 +1160,165 @@ export type RunDagsterRunEventFragment_ExecutionStepUpForRetryEvent = {
   } | null;
 };
 
+export type RunDagsterRunEventFragment_FailedToMaterializeEvent = {
+  __typename: 'FailedToMaterializeEvent';
+  message: string;
+  timestamp: string;
+  level: Types.LogLevel;
+  stepKey: string | null;
+  eventType: Types.DagsterEventType | null;
+  label: string | null;
+  description: string | null;
+  metadataEntries: Array<
+    | {
+        __typename: 'AssetMetadataEntry';
+        label: string;
+        description: string | null;
+        assetKey: {__typename: 'AssetKey'; path: Array<string>};
+      }
+    | {
+        __typename: 'BoolMetadataEntry';
+        boolValue: boolean | null;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
+        __typename: 'FloatMetadataEntry';
+        floatValue: number | null;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'IntMetadataEntry';
+        intValue: number | null;
+        intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JsonMetadataEntry';
+        jsonString: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'MarkdownMetadataEntry';
+        mdStr: string;
+        label: string;
+        description: string | null;
+      }
+    | {__typename: 'NotebookMetadataEntry'; path: string; label: string; description: string | null}
+    | {__typename: 'NullMetadataEntry'; label: string; description: string | null}
+    | {__typename: 'PathMetadataEntry'; path: string; label: string; description: string | null}
+    | {
+        __typename: 'PipelineRunMetadataEntry';
+        runId: string;
+        label: string;
+        description: string | null;
+      }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
+    | {
+        __typename: 'PythonArtifactMetadataEntry';
+        module: string;
+        name: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
+      }
+    | {
+        __typename: 'TableMetadataEntry';
+        label: string;
+        description: string | null;
+        table: {
+          __typename: 'Table';
+          records: Array<string>;
+          schema: {
+            __typename: 'TableSchema';
+            columns: Array<{
+              __typename: 'TableColumn';
+              name: string;
+              description: string | null;
+              type: string;
+              tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+              constraints: {
+                __typename: 'TableColumnConstraints';
+                nullable: boolean;
+                unique: boolean;
+                other: Array<string>;
+              };
+            }>;
+            constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
+          };
+        };
+      }
+    | {
+        __typename: 'TableSchemaMetadataEntry';
+        label: string;
+        description: string | null;
+        schema: {
+          __typename: 'TableSchema';
+          columns: Array<{
+            __typename: 'TableColumn';
+            name: string;
+            description: string | null;
+            type: string;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
+            constraints: {
+              __typename: 'TableColumnConstraints';
+              nullable: boolean;
+              unique: boolean;
+              other: Array<string>;
+            };
+          }>;
+          constraints: {__typename: 'TableConstraints'; other: Array<string>} | null;
+        };
+      }
+    | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
+    | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
+  >;
+};
+
 export type RunDagsterRunEventFragment_HandledOutputEvent = {
   __typename: 'HandledOutputEvent';
   message: string;
@@ -1242,6 +1399,7 @@ export type RunDagsterRunEventFragment_HandledOutputEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -1441,6 +1599,7 @@ export type RunDagsterRunEventFragment_LoadedInputEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -1543,6 +1702,11 @@ export type RunDagsterRunEventFragment_LogsCapturedEvent = {
   externalStderrUrl: string | null;
   eventType: Types.DagsterEventType | null;
   externalUrl: string | null;
+  shellCmd: {
+    __typename: 'LogRetrievalShellCommand';
+    stdout: string | null;
+    stderr: string | null;
+  } | null;
 };
 
 export type RunDagsterRunEventFragment_MaterializationEvent = {
@@ -1554,6 +1718,7 @@ export type RunDagsterRunEventFragment_MaterializationEvent = {
   eventType: Types.DagsterEventType | null;
   label: string | null;
   description: string | null;
+  partition: string | null;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -1623,6 +1788,7 @@ export type RunDagsterRunEventFragment_MaterializationEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -1788,6 +1954,7 @@ export type RunDagsterRunEventFragment_ObjectStoreOperationEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -1878,6 +2045,7 @@ export type RunDagsterRunEventFragment_ObservationEvent = {
   eventType: Types.DagsterEventType | null;
   label: string | null;
   description: string | null;
+  partition: string | null;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -1947,6 +2115,7 @@ export type RunDagsterRunEventFragment_ObservationEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -2108,6 +2277,7 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -2278,6 +2448,7 @@ export type RunDagsterRunEventFragment_ResourceInitStartedEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -2438,6 +2609,7 @@ export type RunDagsterRunEventFragment_ResourceInitSuccessEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -2696,6 +2868,7 @@ export type RunDagsterRunEventFragment_StepExpectationResultEvent = {
           label: string;
           description: string | null;
         }
+      | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
       | {
           __typename: 'PythonArtifactMetadataEntry';
           module: string;
@@ -2857,6 +3030,7 @@ export type RunDagsterRunEventFragment_StepWorkerStartedEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -3017,6 +3191,7 @@ export type RunDagsterRunEventFragment_StepWorkerStartingEvent = {
         label: string;
         description: string | null;
       }
+    | {__typename: 'PoolMetadataEntry'; pool: string; label: string; description: string | null}
     | {
         __typename: 'PythonArtifactMetadataEntry';
         module: string;
@@ -3113,6 +3288,7 @@ export type RunDagsterRunEventFragment =
   | RunDagsterRunEventFragment_ExecutionStepStartEvent
   | RunDagsterRunEventFragment_ExecutionStepSuccessEvent
   | RunDagsterRunEventFragment_ExecutionStepUpForRetryEvent
+  | RunDagsterRunEventFragment_FailedToMaterializeEvent
   | RunDagsterRunEventFragment_HandledOutputEvent
   | RunDagsterRunEventFragment_HookCompletedEvent
   | RunDagsterRunEventFragment_HookErroredEvent
@@ -3144,6 +3320,7 @@ export type RunPageFragment = {
   parentPipelineSnapshotId: string | null;
   runConfigYaml: string;
   canTerminate: boolean;
+  allPools: Array<string> | null;
   hasReExecutePermission: boolean;
   hasTerminatePermission: boolean;
   hasDeletePermission: boolean;
@@ -3186,13 +3363,4 @@ export type RunPageFragment = {
       }>;
     }>;
   } | null;
-  stepStats: Array<{
-    __typename: 'RunStepStats';
-    stepKey: string;
-    status: Types.StepEventStatus | null;
-    startTime: number | null;
-    endTime: number | null;
-    attempts: Array<{__typename: 'RunMarker'; startTime: number | null; endTime: number | null}>;
-    markers: Array<{__typename: 'RunMarker'; startTime: number | null; endTime: number | null}>;
-  }>;
 };

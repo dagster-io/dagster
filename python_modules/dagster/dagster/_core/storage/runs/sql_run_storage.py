@@ -3,26 +3,15 @@ import uuid
 import zlib
 from abc import abstractmethod
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import (
-    Any,
-    Callable,
-    ContextManager,
-    Dict,
-    Iterable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import Any, Callable, ContextManager, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
+from dagster_shared.serdes import deserialize_values
+from dagster_shared.seven import JSONDecodeError
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
@@ -87,8 +76,6 @@ from dagster._core.storage.tags import (
 )
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._serdes.serdes import deserialize_values
-from dagster._seven import JSONDecodeError
 from dagster._time import datetime_from_timestamp, get_current_datetime, utc_datetime_from_naive
 from dagster._utils import PrintFn
 from dagster._utils.merger import merge_dicts
@@ -219,7 +206,7 @@ class SqlRunStorage(RunStorage):
             if failure_reason and failure_reason != RunFailureReason.UNKNOWN:
                 self.add_run_tags(run_id, {RUN_FAILURE_REASON_TAG: failure_reason.value})
 
-    def _row_to_run(self, row: Dict) -> DagsterRun:
+    def _row_to_run(self, row: dict) -> DagsterRun:
         run = deserialize_value(row["run_body"], DagsterRun)
         status = DagsterRunStatus(row["status"])
         # NOTE: the status column is more trustworthy than the status in the run body, since concurrent
@@ -227,7 +214,7 @@ class SqlRunStorage(RunStorage):
         # overriden with an old value.
         return run.with_status(status)
 
-    def _rows_to_runs(self, rows: Iterable[Dict]) -> Sequence[DagsterRun]:
+    def _rows_to_runs(self, rows: Iterable[dict]) -> Sequence[DagsterRun]:
         return list(map(self._row_to_run, rows))
 
     def _add_cursor_limit_to_query(
@@ -445,7 +432,7 @@ class SqlRunStorage(RunStorage):
         tag_keys: Sequence[str],
         value_prefix: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Sequence[Tuple[str, Set[str]]]:
+    ) -> Sequence[tuple[str, set[str]]]:
         result = defaultdict(set)
         query = (
             db_select([RunTagsTable.c.key, RunTagsTable.c.value])
@@ -513,7 +500,7 @@ class SqlRunStorage(RunStorage):
                     [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
                 )
 
-    def get_run_group(self, run_id: str) -> Tuple[str, Sequence[DagsterRun]]:
+    def get_run_group(self, run_id: str) -> tuple[str, Sequence[DagsterRun]]:
         check.str_param(run_id, "run_id")
         dagster_run = self._get_run_by_id(run_id)
         if not dagster_run:
@@ -570,12 +557,10 @@ class SqlRunStorage(RunStorage):
         check.str_param(job_snapshot_id, "job_snapshot_id")
         return self._has_snapshot_id(job_snapshot_id)
 
-    def add_job_snapshot(self, job_snapshot: JobSnap, snapshot_id: Optional[str] = None) -> str:
+    def add_job_snapshot(self, job_snapshot: JobSnap) -> str:
         check.inst_param(job_snapshot, "job_snapshot", JobSnap)
-        check.opt_str_param(snapshot_id, "snapshot_id")
 
-        if not snapshot_id:
-            snapshot_id = job_snapshot.snapshot_id
+        snapshot_id = job_snapshot.snapshot_id
 
         return self._add_snapshot(
             snapshot_id=snapshot_id,
@@ -592,13 +577,12 @@ class SqlRunStorage(RunStorage):
         return bool(self.get_execution_plan_snapshot(execution_plan_snapshot_id))
 
     def add_execution_plan_snapshot(
-        self, execution_plan_snapshot: ExecutionPlanSnapshot, snapshot_id: Optional[str] = None
+        self,
+        execution_plan_snapshot: ExecutionPlanSnapshot,
     ) -> str:
         check.inst_param(execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot)
-        check.opt_str_param(snapshot_id, "snapshot_id")
 
-        if not snapshot_id:
-            snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
+        snapshot_id = create_execution_plan_snapshot_id(execution_plan_snapshot)
 
         return self._add_snapshot(
             snapshot_id=snapshot_id,
@@ -1035,7 +1019,7 @@ class SqlRunStorage(RunStorage):
 
     def add_backfill(self, partition_backfill: PartitionBackfill) -> None:
         check.inst_param(partition_backfill, "partition_backfill", PartitionBackfill)
-        values: Dict[str, Any] = dict(
+        values: dict[str, Any] = dict(
             key=partition_backfill.backfill_id,
             status=partition_backfill.status.value,
             timestamp=datetime_from_timestamp(partition_backfill.backfill_timestamp),
@@ -1083,7 +1067,7 @@ class SqlRunStorage(RunStorage):
                 )
             )
 
-    def get_cursor_values(self, keys: Set[str]) -> Mapping[str, str]:
+    def get_cursor_values(self, keys: set[str]) -> Mapping[str, str]:
         check.set_param(keys, "keys", of_type=str)
 
         rows = self.fetchall(

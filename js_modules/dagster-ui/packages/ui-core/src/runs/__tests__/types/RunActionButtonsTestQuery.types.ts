@@ -14,6 +14,7 @@ export type RunActionButtonsTestQuery = {
         parentPipelineSnapshotId: string | null;
         runConfigYaml: string;
         canTerminate: boolean;
+        allPools: Array<string> | null;
         hasReExecutePermission: boolean;
         hasTerminatePermission: boolean;
         hasDeletePermission: boolean;
@@ -56,25 +57,8 @@ export type RunActionButtonsTestQuery = {
             }>;
           }>;
         } | null;
-        stepStats: Array<{
-          __typename: 'RunStepStats';
-          stepKey: string;
-          status: Types.StepEventStatus | null;
-          startTime: number | null;
-          endTime: number | null;
-          attempts: Array<{
-            __typename: 'RunMarker';
-            startTime: number | null;
-            endTime: number | null;
-          }>;
-          markers: Array<{
-            __typename: 'RunMarker';
-            startTime: number | null;
-            endTime: number | null;
-          }>;
-        }>;
       }
     | {__typename: 'RunNotFoundError'};
 };
 
-export const RunActionButtonsTestQueryVersion = 'd85a7e0201a27eb36be5a7471d2724fe5a68b7257e6635f54f120fc40f8169c0';
+export const RunActionButtonsTestQueryVersion = '786248dea3d03c174137e2d4334bb6d81d13b1296be8dc9f92de12bb81c133b9';

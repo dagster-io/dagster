@@ -73,7 +73,7 @@ def test_io_manager_add_input_metadata():
         event for event in result.all_events if event.event_type_value == "LOADED_INPUT"
     )
     assert loaded_input_event
-    loaded_input_event_metadata = loaded_input_event.event_specific_data.metadata
+    loaded_input_event_metadata = loaded_input_event.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     assert len(loaded_input_event_metadata) == 2
     assert "foo" in loaded_input_event_metadata
     assert "baz" in loaded_input_event_metadata
@@ -98,7 +98,7 @@ def test_input_manager_add_input_metadata():
     loaded_input_event = next(
         event for event in result.all_events if event.event_type_value == "LOADED_INPUT"
     )
-    metadata = loaded_input_event.event_specific_data.metadata
+    metadata = loaded_input_event.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     assert len(metadata) == 2
     assert "foo" in metadata
     assert "baz" in metadata

@@ -1,4 +1,5 @@
-from typing import List, Mapping, Optional
+from collections.abc import Mapping
+from typing import Optional
 
 from airflow.models.connection import Connection
 from airflow.models.dag import DAG
@@ -8,6 +9,7 @@ from dagster import (
     ResourceDefinition,
     _check as check,
 )
+from dagster._annotations import superseded
 from dagster._core.instance import IS_AIRFLOW_INGEST_PIPELINE_STR
 from dagster._utils.tags import normalize_tags
 
@@ -18,10 +20,15 @@ from dagster_airflow.resources import (
 from dagster_airflow.utils import normalized_name
 
 
+@superseded(
+    additional_warn_text=(
+        "`make_dagster_job_from_airflow_dag` has been superseded by the functionality in the `dagster-airlift` library."
+    )
+)
 def make_dagster_job_from_airflow_dag(
     dag: DAG,
     tags: Optional[Mapping[str, str]] = None,
-    connections: Optional[List[Connection]] = None,
+    connections: Optional[list[Connection]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = {},
 ) -> JobDefinition:
     """Construct a Dagster job corresponding to a given Airflow DAG.

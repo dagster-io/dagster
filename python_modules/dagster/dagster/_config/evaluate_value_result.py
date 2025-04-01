@@ -1,38 +1,31 @@
 # pylint disable is for bug: https://github.com/PyCQA/pylint/issues/3299
-from typing import Any, Generator, Generic, Optional, Sequence, TypeVar
+from collections.abc import Generator, Sequence
+from typing import Any, Generic, Optional, TypeVar
 
 import dagster._check as check
 from dagster._config.errors import EvaluationError
+from dagster._record import record
 
 T = TypeVar("T")
 
 
-# Python 3.6 doesn't simultaneously support NamedTuple and Generic, so we omit
-# the usual NamedTuple pattern here. See:
-# https://stackoverflow.com/questions/50530959/generic-namedtuple-in-python-3-6
+@record
 class EvaluateValueResult(Generic[T]):
-    success: Optional[bool]
+    success: bool
     value: Optional[T]
     errors: Optional[Sequence[EvaluationError]]
 
-    def __init__(
-        self, success: Optional[bool], value: T, errors: Optional[Sequence[EvaluationError]]
-    ):
-        self.success = check.opt_bool_param(success, "success")
-        self.value = value
-        self.errors = check.opt_sequence_param(errors, "errors", of_type=EvaluationError)
-
     @staticmethod
     def for_error(error: EvaluationError) -> "EvaluateValueResult[Any]":
-        return EvaluateValueResult(False, None, [error])
+        return EvaluateValueResult(success=False, value=None, errors=[error])
 
     @staticmethod
     def for_errors(errors: Sequence[EvaluationError]) -> "EvaluateValueResult[Any]":
-        return EvaluateValueResult(False, None, errors)
+        return EvaluateValueResult(success=False, value=None, errors=errors)
 
     @staticmethod
     def for_value(value: T) -> "EvaluateValueResult[T]":
-        return EvaluateValueResult(True, value, None)
+        return EvaluateValueResult(success=True, value=value, errors=None)
 
     def errors_at_level(self, *levels: str) -> Sequence[EvaluationError]:
         return list(self._iterate_errors_at_level(list(levels)))

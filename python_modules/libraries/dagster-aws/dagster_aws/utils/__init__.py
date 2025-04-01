@@ -20,7 +20,7 @@ def construct_boto_client_retry_config(max_attempts):
     retry_config = {"max_attempts": max_attempts}
     if version.parse(botocore_version) >= version.parse("1.15.0"):
         retry_config["mode"] = "standard"
-    return Config(retries=retry_config)
+    return Config(retries=retry_config)  # pyright: ignore[reportArgumentType]
 
 
 T = TypeVar("T")

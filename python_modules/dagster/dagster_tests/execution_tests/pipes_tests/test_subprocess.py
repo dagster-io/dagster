@@ -2,12 +2,12 @@ import re
 import shutil
 import subprocess
 import time
+from collections.abc import Iterator
 from multiprocessing import Process
 from tempfile import NamedTemporaryFile
-from typing import Iterator
 
 import pytest
-from dagster import op
+from dagster import BetaWarning, op
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.data_version import (
@@ -32,6 +32,20 @@ from dagster._core.definitions.metadata import (
     TextMetadataValue,
     UrlMetadataValue,
 )
+from dagster._core.definitions.metadata.metadata_value import (
+    TableColumnLineageMetadataValue,
+    TableMetadataValue,
+    TableSchemaMetadataValue,
+    TimestampMetadataValue,
+)
+from dagster._core.definitions.metadata.table import (
+    TableColumn,
+    TableColumnConstraints,
+    TableColumnDep,
+    TableColumnLineage,
+    TableRecord,
+    TableSchema,
+)
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
@@ -48,7 +62,6 @@ from dagster._core.pipes.utils import (
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._utils import process_is_alive
 from dagster._utils.env import environ
-from dagster._utils.warnings import ExperimentalWarning
 from dagster_pipes import DagsterPipesError
 
 from dagster_tests.execution_tests.pipes_tests.utils import temp_script
@@ -256,6 +269,42 @@ def test_pipes_typed_metadata():
                     "dagster_run_meta": {"raw_value": "foo", "type": "dagster_run"},
                     "asset_meta": {"raw_value": "bar/baz", "type": "asset"},
                     "null_meta": {"raw_value": None, "type": "null"},
+                    "table_meta": {
+                        "raw_value": {
+                            "records": [{"code": "invalid-data-type"}],
+                            "schema": [
+                                {
+                                    "name": "code",
+                                    "type": "string",
+                                    "description": "code",
+                                    "tags": {"key": "value"},
+                                    "constraints": {"unique": True},
+                                }
+                            ],
+                        },
+                        "type": "table",
+                    },
+                    "table_schema_meta": {
+                        "raw_value": {
+                            "columns": [
+                                {
+                                    "name": "code",
+                                    "type": "string",
+                                    "description": "code",
+                                    "tags": {"key": "value"},
+                                    "constraints": {"unique": True},
+                                }
+                            ]
+                        },
+                        "type": "table_schema",
+                    },
+                    "table_column_lineage_meta": {
+                        "raw_value": {
+                            "deps_by_column": {"a": [{"asset_key": "b", "column_name": "c"}]},
+                        },
+                        "type": "table_column_lineage",
+                    },
+                    "timestamp_meta": {"raw_value": 111, "type": "timestamp"},
                 }
             )
 
@@ -300,6 +349,40 @@ def test_pipes_typed_metadata():
         assert metadata["asset_meta"].value == AssetKey(["bar", "baz"])
         assert isinstance(metadata["null_meta"], NullMetadataValue)
         assert metadata["null_meta"].value is None
+        assert isinstance(metadata["table_meta"], TableMetadataValue)
+        table_metadata = metadata["table_meta"]
+        assert table_metadata.records == [TableRecord({"code": "invalid-data-type"})]
+        assert table_metadata.schema == TableSchema(
+            columns=[
+                TableColumn(
+                    name="code",
+                    type="string",
+                    description="code",
+                    tags={"key": "value"},
+                    constraints=TableColumnConstraints(unique=True),
+                )
+            ],
+        )
+        assert isinstance(metadata["table_schema_meta"], TableSchemaMetadataValue)
+        assert metadata["table_schema_meta"] == TableSchemaMetadataValue(
+            TableSchema(
+                columns=[
+                    TableColumn(
+                        name="code",
+                        type="string",
+                        description="code",
+                        tags={"key": "value"},
+                        constraints=TableColumnConstraints(unique=True),
+                    )
+                ]
+            )
+        )
+        assert isinstance(metadata["table_column_lineage_meta"], TableColumnLineageMetadataValue)
+        assert metadata["table_column_lineage_meta"].value == TableColumnLineage(
+            deps_by_column={"a": [TableColumnDep(asset_key="b", column_name="c")]}
+        )
+        assert isinstance(metadata["timestamp_meta"], TimestampMetadataValue)
+        assert metadata["timestamp_meta"].value == 111
 
 
 def test_pipes_asset_failed():
@@ -795,7 +878,7 @@ def test_pipes_cli_args_params_loader():
     assert result.success
 
 
-def test_pipes_subprocess_client_no_experimental_warning():
+def test_pipes_subprocess_client_no_beta_warning(recwarn):
     def script_fn():
         pass
 
@@ -806,14 +889,13 @@ def test_pipes_subprocess_client_no_experimental_warning():
             cmd = [_PYTHON_EXECUTABLE, external_script]
             return pipes_client.run(command=cmd, context=context).get_materialize_result()
 
-    with pytest.warns() as record:
-        materialize(
-            [foo],
-            resources={"pipes_client": PipesSubprocessClient()},
-        )
+    materialize(
+        [foo],
+        resources={"pipes_client": PipesSubprocessClient()},
+    )
 
-    experimental_warnings = [w for w in record if issubclass(w.category, ExperimentalWarning)]
+    beta_warnings = [w for w in recwarn if issubclass(w.category, BetaWarning)]
 
-    if experimental_warnings:
-        for warning in experimental_warnings:
+    if beta_warnings:
+        for warning in beta_warnings:
             assert "Pipes" not in str(warning.message)

@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, AbstractSet, Mapping, NamedTuple, Optional
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, AbstractSet, NamedTuple, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
@@ -37,7 +38,7 @@ class AssetCheckResult(
 ):
     """The result of an asset check.
 
-    Attributes:
+    Args:
         asset_key (Optional[AssetKey]):
             The asset key that was checked.
         check_name (Optional[str]):
@@ -171,7 +172,7 @@ class AssetCheckResult(
             description=self.description,
         )
 
-    def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "AssetCheckResult":
+    def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "AssetCheckResult":  # pyright: ignore[reportIncompatibleMethodOverride]
         return AssetCheckResult(
             passed=self.passed,
             asset_key=self.asset_key,

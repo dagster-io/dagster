@@ -1,5 +1,6 @@
 from argparse import Namespace
-from typing import AbstractSet, Any, Dict, Mapping
+from collections.abc import Mapping
+from typing import AbstractSet, Any  # noqa: UP035
 
 from dagster import AssetKey
 from packaging import version
@@ -50,7 +51,7 @@ def select_unique_ids_from_manifest(
             {
                 "unit_tests": {
                     # unit test nodes must be of type UnitTestDefinition
-                    unique_id: UnitTestDefinition(**info)
+                    unique_id: UnitTestDefinition.from_dict(info)
                     for unique_id, info in manifest_json["unit_tests"].items()
                 },
             }
@@ -132,7 +133,7 @@ def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
     }
 
 
-def _set_flag_attrs(kvs: Dict[str, Any]):
+def _set_flag_attrs(kvs: dict[str, Any]):
     from dbt.flags import get_flag_dict, set_flags
 
     new_flags = Namespace()

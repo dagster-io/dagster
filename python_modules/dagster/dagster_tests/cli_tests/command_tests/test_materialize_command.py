@@ -1,7 +1,7 @@
 from typing import Optional
 
 from click.testing import CliRunner
-from dagster import AssetKey
+from dagster import AssetKey, DagsterInvalidConfigError
 from dagster._cli.asset import asset_materialize_command
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
@@ -36,7 +36,7 @@ def test_missing_origin():
 
         result = runner.invoke(asset_materialize_command, ["--select", "asset1"])
         assert result.exit_code == 2
-        assert "Must specify a python file or module name" in result.output
+        assert "Invalid set of CLI arguments for loading repository/job" in result.output
 
 
 def test_single_asset():
@@ -64,6 +64,7 @@ def test_asset_with_dep():
     with instance_for_test() as instance:
         result = invoke_materialize("downstream_asset")
         assert "RUN_SUCCESS" in result.output
+        assert instance.get_latest_materialization_event(AssetKey("asset1")) is None
         assert instance.get_latest_materialization_event(AssetKey("downstream_asset")) is not None
 
 
@@ -83,13 +84,21 @@ def test_all_downstream():
             assert instance.get_latest_materialization_event(asset_key) is not None
 
 
+def test_all_upstream():
+    with instance_for_test() as instance:
+        result = invoke_materialize("*downstream_asset")
+        assert "RUN_SUCCESS" in result.output
+        for asset_key in [AssetKey("asset1"), AssetKey("downstream_asset")]:
+            assert instance.get_latest_materialization_event(asset_key) is not None
+
+
 def test_partition():
     with instance_for_test() as instance:
         result = invoke_materialize("partitioned_asset", "one")
         assert "RUN_SUCCESS" in result.output
         event = instance.get_latest_materialization_event(AssetKey("partitioned_asset"))
         assert event is not None
-        assert event.asset_materialization.partition == "one"
+        assert event.asset_materialization.partition == "one"  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def test_partition_option_with_non_partitioned_asset():
@@ -177,3 +186,22 @@ def test_partition_range_multi_run_backfill_policy():
 def test_failure():
     result = invoke_materialize("fail_asset")
     assert result.exit_code == 1
+
+
+def test_run_cli_config_json():
+    with instance_for_test() as instance:
+        asset_key = "asset_assert_with_config"
+        runner = CliRunner()
+        options = [
+            "-f",
+            file_relative_path(__file__, "assets.py"),
+            "--select",
+            asset_key,
+            "--config-json",
+            '{"ops": {"asset_assert_with_config": {"config": {"some_prop": "foo"}}}}',
+        ]
+
+        result = runner.invoke(asset_materialize_command, options)
+        assert not isinstance(result, DagsterInvalidConfigError)
+        assert instance.get_latest_materialization_event(AssetKey(asset_key)) is not None
+        assert result.exit_code == 0

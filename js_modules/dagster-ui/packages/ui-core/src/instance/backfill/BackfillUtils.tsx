@@ -1,22 +1,6 @@
 import {gql} from '../../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 
-export const RESUME_BACKFILL_MUTATION = gql`
-  mutation resumeBackfill($backfillId: String!) {
-    resumePartitionBackfill(backfillId: $backfillId) {
-      ... on ResumeBackfillSuccess {
-        backfillId
-      }
-      ... on UnauthorizedError {
-        message
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  ${PYTHON_ERROR_FRAGMENT}
-`;
-
 export const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
   mutation LaunchPartitionBackfill($backfillParams: LaunchBackfillParams!) {
     launchPartitionBackfill(backfillParams: $backfillParams) {

@@ -1,8 +1,9 @@
+from collections.abc import Iterator, Mapping, Sequence
 from math import isnan
-from typing import Any, Iterator, Mapping, Sequence, cast, no_type_check
+from typing import Any, cast, no_type_check
 
 import dagster._check as check
-import dagster._seven as seven
+import dagster_shared.seven as seven
 from dagster import (
     BoolMetadataValue,
     DagsterAssetMetadataValue,
@@ -14,6 +15,7 @@ from dagster import (
     NotebookMetadataValue,
     NullMetadataValue,
     PathMetadataValue,
+    PoolMetadataValue,
     PythonArtifactMetadataValue,
     TableMetadataValue,
     TableSchemaMetadataValue,
@@ -58,6 +60,7 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         GrapheneNullMetadataEntry,
         GraphenePathMetadataEntry,
         GraphenePipelineRunMetadataEntry,
+        GraphenePoolMetadataEntry,
         GraphenePythonArtifactMetadataEntry,
         GrapheneTableColumnLineageEntry,
         GrapheneTableColumnLineageMetadataEntry,
@@ -202,6 +205,8 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
             )
         elif isinstance(value, TimestampMetadataValue):
             yield GrapheneTimestampMetadataEntry(label=key, timestamp=value.value)
+        elif isinstance(value, PoolMetadataValue):
+            yield GraphenePoolMetadataEntry(label=key, pool=value.pool)
         else:
             # skip rest for now
             check.not_implemented(f"{type(value)} unsupported metadata entry for now")
@@ -232,6 +237,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
         GrapheneExecutionStepStartEvent,
         GrapheneExecutionStepSuccessEvent,
         GrapheneExecutionStepUpForRetryEvent,
+        GrapheneExpectationResult,
         GrapheneHandledOutputEvent,
         GrapheneHookCompletedEvent,
         GrapheneHookErroredEvent,
@@ -306,7 +312,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
     elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
         data = cast(StepExpectationResultData, dagster_event.event_specific_data)
         return GrapheneStepExpectationResultEvent(
-            expectation_result=data.expectation_result, **basic_params
+            expectation_result=GrapheneExpectationResult(data.expectation_result), **basic_params
         )
     elif dagster_event.event_type == DagsterEventType.STEP_FAILURE:
         data = dagster_event.step_failure_data
@@ -417,7 +423,17 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.LOGS_CAPTURED:
+        from dagster_graphql.schema.logs.events import GrapheneLogRetrievalShellCommand
+
         data = dagster_event.logs_captured_data
+        shell_cmd = (
+            GrapheneLogRetrievalShellCommand(
+                stdout=data.shell_cmd.stdout,
+                stderr=data.shell_cmd.stderr,
+            )
+            if data.shell_cmd
+            else None
+        )
         return GrapheneLogsCapturedEvent(
             fileKey=data.file_key,
             logKey=data.file_key,
@@ -425,6 +441,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
             externalUrl=data.external_url,
             externalStdoutUrl=data.external_stdout_url or data.external_url,
             externalStderrUrl=data.external_stderr_url or data.external_url,
+            shellCmd=shell_cmd,
             pid=dagster_event.pid,
             **basic_params,
         )

@@ -1,4 +1,5 @@
-from typing import Any, Dict, Iterable, Mapping, Sequence, Union
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Union
 
 from dagster import (
     AssetsDefinition,
@@ -6,23 +7,18 @@ from dagster import (
     Definitions,
     _check as check,
 )
+from dagster._annotations import beta
 
 from dagster_airlift.core.utils import metadata_for_dag_mapping, metadata_for_task_mapping
 
 
-class TaskDefs:
-    def __init__(self, task_id: str, defs: Definitions):
-        self.task_id = task_id
-        self.defs = defs
-
-
 def apply_metadata_to_assets(
-    assets: Iterable[Union[AssetsDefinition, AssetSpec]], metadata: Dict[str, Any]
+    assets: Iterable[Union[AssetsDefinition, AssetSpec]], metadata: dict[str, Any]
 ) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
     return [assets_def_with_af_metadata(asset, metadata) for asset in assets]
 
 
-def apply_metadata_to_all_specs(defs: Definitions, metadata: Dict[str, Any]) -> Definitions:
+def apply_metadata_to_all_specs(defs: Definitions, metadata: dict[str, Any]) -> Definitions:
     return Definitions(
         assets=[
             # Right now we make assumptions that we only support AssetSpec and AssetsDefinition
@@ -62,6 +58,7 @@ def assets_def_with_af_metadata(
     )
 
 
+@beta
 def assets_with_task_mappings(
     dag_id: str, task_mappings: Mapping[str, Iterable[Union[AssetsDefinition, AssetSpec]]]
 ) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
@@ -108,6 +105,7 @@ def assets_with_task_mappings(
     return assets_list
 
 
+@beta
 def assets_with_dag_mappings(
     dag_mappings: Mapping[str, Iterable[Union[AssetsDefinition, AssetSpec]]],
 ) -> Sequence[Union[AssetsDefinition, AssetSpec]]:
@@ -153,40 +151,3 @@ def assets_with_dag_mappings(
             )
         )
     return assets_list
-
-
-def dag_defs(dag_id: str, *defs: TaskDefs) -> Definitions:
-    """Construct a Dagster :py:class:`Definitions` object with definitions
-    associated with a particular Dag in Airflow that is being tracked by Airlift tooling.
-
-    Concretely this adds metadata to all asset specs in the provided definitions
-    with the provided dag_id and task_id. There is a single metadata key
-    "airlift/task_mapping" that is used to store this information. It is a list of
-    dictionaries with keys "dag_id" and "task_id".
-
-    Used in concert with :py:func:`task_defs`.
-
-    Example:
-    .. code-block:: python
-        defs = dag_defs(
-            "dag_one",
-            task_defs("task_one", Definitions(assets=[AssetSpec(key="asset_one"]))),
-            task_defs("task_two", Definitions(assets=[AssetSpec(key="asset_two"), AssetSpec(key="asset_three")])),
-        )
-    """
-    defs_to_merge = []
-    for task_def in defs:
-        defs_to_merge.append(
-            apply_metadata_to_all_specs(
-                defs=task_def.defs,
-                metadata=metadata_for_task_mapping(task_id=task_def.task_id, dag_id=dag_id),
-            )
-        )
-    return Definitions.merge(*defs_to_merge)
-
-
-def task_defs(task_id, defs: Definitions) -> TaskDefs:
-    """Associate a set of definitions with a particular task in Airflow that is being tracked
-    by Airlift tooling.
-    """
-    return TaskDefs(task_id, defs)

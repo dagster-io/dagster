@@ -59,7 +59,7 @@ export const Example = () => {
         {suggestions.map((suggestion) => (
           <div key={suggestion}>
             <ButtonLink
-              onMouseDown={(e: React.MouseEvent<HTMLButtonElement>) => {
+              onMouseDown={(e: React.MouseEvent<any>) => {
                 e.preventDefault();
                 setValue(onSelectSuggestion(suggestion));
               }}

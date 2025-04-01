@@ -1,14 +1,4 @@
-from dagster import (
-    AssetSelection,
-    DailyPartitionsDefinition,
-    RunRequest,
-    SkipReason,
-    WeeklyPartitionsDefinition,
-    asset,
-    define_asset_job,
-    job,
-    multi_asset_sensor,
-)
+from dagster import RunRequest, SkipReason, asset, job
 
 
 @job
@@ -16,31 +6,23 @@ def my_job():
     pass
 
 
-from typing import List
-
 from dagster import Config
 
 
 class ReadMaterializationConfig(Config):
-    asset_key: List[str]
+    asset_key: list[str]
 
 
 # start_asset_sensor_marker
-from dagster import (
-    AssetKey,
-    EventLogEntry,
-    RunConfig,
-    SensorEvaluationContext,
-    asset_sensor,
-)
+import dagster as dg
 
 
-@asset_sensor(asset_key=AssetKey("my_table"), job=my_job)
-def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry):
+@dg.asset_sensor(asset_key=dg.AssetKey("my_table"), job=my_job)
+def my_asset_sensor(context: dg.SensorEvaluationContext, asset_event: dg.EventLogEntry):
     assert asset_event.dagster_event and asset_event.dagster_event.asset_key
     yield RunRequest(
         run_key=context.cursor,
-        run_config=RunConfig(
+        run_config=dg.RunConfig(
             ops={
                 "read_materialization": ReadMaterializationConfig(
                     asset_key=list(asset_event.dagster_event.asset_key.path)

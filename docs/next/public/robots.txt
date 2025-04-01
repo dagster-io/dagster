@@ -1,2 +1,0 @@
-User-agent: *
-Sitemap: https://docs.dagster.io/sitemap.xml

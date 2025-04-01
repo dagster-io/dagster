@@ -5,17 +5,15 @@ import os
 import sys
 import threading
 import zlib
-from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, cast
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Any, Callable, Optional, cast
 
 import click
+import dagster_shared.seven as seven
 
 import dagster._check as check
-import dagster._seven as seven
-from dagster._cli.utils import get_instance_for_cli
-from dagster._cli.workspace.cli_target import (
-    get_working_directory_from_kwargs,
-    python_origin_target_argument,
-)
+from dagster._cli.utils import assert_no_remaining_opts, get_instance_for_cli
+from dagster._cli.workspace.cli_target import PythonPointerOpts, python_pointer_options
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
@@ -112,10 +110,8 @@ def _metrics_polling_interval(
     except ValueError:
         if logger:
             logger.warning(
-                (
-                    "Invalid value for dagster/run_metrics_polling_interval_seconds tag."
-                    f"Setting metric polling interval to default value: {DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS}."
-                )
+                "Invalid value for dagster/run_metrics_polling_interval_seconds tag."
+                f"Setting metric polling interval to default value: {DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS}."
             )
         return DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS
 
@@ -365,6 +361,7 @@ def verify_step(
                 f"Attempted to run {step_key} again even though it was already started. "
                 "Exiting to prevent re-running the step.",
                 dagster_run,
+                step_key=step_key,
             )
             return False
         elif current_attempt > 1 and step_stat_for_key:
@@ -377,6 +374,7 @@ def verify_step(
                     "even though it was already started. Exiting to prevent re-running "
                     "the step.",
                     dagster_run,
+                    step_key=step_key,
                 )
                 return False
         elif current_attempt > 1 and not step_stat_for_key:
@@ -384,6 +382,7 @@ def verify_step(
                 f"Attempting to retry attempt {current_attempt} for step {step_key} "
                 "but there is no record of the original attempt",
                 dagster_run,
+                step_key=step_key,
             )
             return False
 
@@ -578,6 +577,7 @@ def _execute_step_command_body(
 @click.option(
     "--heartbeat",
     is_flag=True,
+    default=False,
     help=(
         "If set, the GRPC server will shut itself down when it fails to receive a heartbeat "
         "after a timeout configurable with --heartbeat-timeout."
@@ -602,7 +602,6 @@ def _execute_step_command_body(
     ),
     envvar="DAGSTER_LAZY_LOAD_USER_CODE",
 )
-@python_origin_target_argument
 @click.option(
     "--use-python-environment-entry-point",
     is_flag=True,
@@ -700,26 +699,31 @@ def _execute_step_command_body(
     help="[INTERNAL] Retrieves current utilization metrics from GRPC server.",
     envvar="DAGSTER_ENABLE_SERVER_METRICS",
 )
+@python_pointer_options
 def grpc_command(
     port: Optional[int],
     socket: Optional[str],
     host: str,
     max_workers: Optional[int],
-    heartbeat: bool = False,
-    heartbeat_timeout: int = 30,
-    lazy_load_user_code: bool = False,
-    fixed_server_id: Optional[str] = None,
-    log_level: str = "INFO",
-    log_format: str = "colored",
-    use_python_environment_entry_point: Optional[bool] = False,
-    container_image: Optional[str] = None,
-    container_context: Optional[str] = None,
-    location_name: Optional[str] = None,
-    instance_ref=None,
-    inject_env_vars_from_instance: bool = False,
+    heartbeat: bool,
+    heartbeat_timeout: int,
+    lazy_load_user_code: bool,
+    use_python_environment_entry_point: bool,
+    empty_working_directory: bool,
+    fixed_server_id: Optional[str],
+    log_level: str,
+    log_format: str,
+    container_image: Optional[str],
+    container_context: Optional[str],
+    inject_env_vars_from_instance: bool,
+    location_name: Optional[str],
+    instance_ref: Optional[str],
     enable_metrics: bool = False,
-    **kwargs: Any,
+    **other_opts: Any,
 ) -> None:
+    python_pointer_opts = PythonPointerOpts.extract_from_cli_options(other_opts)
+    assert_no_remaining_opts(other_opts)
+
     check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
 
     check.invariant(
@@ -732,7 +736,7 @@ def grpc_command(
         raise click.UsageError(
             "You must pass a valid --port/-p on Windows: --socket/-s not supported."
         )
-    if not (port or socket and not (port and socket)):
+    if not (port or (socket and not (port and socket))):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
     setup_interrupt_handlers()
@@ -744,31 +748,28 @@ def grpc_command(
 
     loadable_target_origin = None
     if any(
-        kwargs[key]
-        for key in [
-            "attribute",
-            "working_directory",
-            "module_name",
-            "package_name",
-            "python_file",
-            "empty_working_directory",
+        [
+            python_pointer_opts.attribute,
+            python_pointer_opts.working_directory,
+            python_pointer_opts.module_name,
+            python_pointer_opts.package_name,
+            python_pointer_opts.python_file,
+            empty_working_directory,
         ]
     ):
         # in the gRPC api CLI we never load more than one module or python file at a time
-        module_name = check.opt_str_elem(kwargs, "module_name")
-        python_file = check.opt_str_elem(kwargs, "python_file")
 
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
-            attribute=kwargs["attribute"],
+            attribute=python_pointer_opts.attribute,
             working_directory=(
                 None
-                if kwargs.get("empty_working_directory")
-                else get_working_directory_from_kwargs(kwargs)
+                if empty_working_directory
+                else (python_pointer_opts.working_directory or os.getcwd())
             ),
-            module_name=module_name,
-            python_file=python_file,
-            package_name=kwargs["package_name"],
+            module_name=python_pointer_opts.module_name,
+            python_file=python_pointer_opts.python_file,
+            package_name=python_pointer_opts.package_name,
         )
 
     code_desc = " "
@@ -871,7 +872,7 @@ def grpc_health_check_command(
         raise click.UsageError(
             "You must pass a valid --port/-p on Windows: --socket/-s not supported."
         )
-    if not (port or socket and not (port and socket)):
+    if not (port or (socket and not (port and socket))):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
     client = DagsterGrpcClient(port=port, socket=socket, host=host, use_ssl=use_ssl)

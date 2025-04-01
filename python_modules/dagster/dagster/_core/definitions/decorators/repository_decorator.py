@@ -1,18 +1,6 @@
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from functools import update_wrapper
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union, overload
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
@@ -21,9 +9,6 @@ from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.metadata import RawMetadataValue, normalize_metadata
-from dagster._core.definitions.metadata.metadata_value import (
-    CodeLocationReconstructionMetadataValue,
-)
 from dagster._core.definitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
@@ -52,9 +37,9 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-def _flatten(items: Iterable[Union[T, List[T]]]) -> Iterator[T]:
+def _flatten(items: Iterable[Union[T, list[T]]]) -> Iterator[T]:
     for x in items:
-        if isinstance(x, List):
+        if isinstance(x, list):
             # switch to `yield from _flatten(x)` to support multiple layers of nesting
             yield from x
         else:
@@ -99,22 +84,25 @@ class _Repository:
     ) -> RepositoryDefinition:
         from dagster._core.definitions import AssetsDefinition, SourceAsset
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
-        from dagster._core.definitions.definitions_load_context import DefinitionsLoadContext
+        from dagster._core.definitions.definitions_load_context import (
+            DefinitionsLoadContext,
+            DefinitionsLoadType,
+        )
 
         check.callable_param(fn, "fn")
 
         if not self.name:
             self.name = fn.__name__
 
-        cacheable_asset_data: Dict[str, Sequence["AssetsDefinitionCacheableData"]] = {}
-        reconstruction_metadata = {
-            k: v
-            for k, v in self.metadata.items()
-            if isinstance(v, CodeLocationReconstructionMetadataValue)
-        }
+        cacheable_asset_data: dict[str, Sequence[AssetsDefinitionCacheableData]] = {}
 
         repository_definitions = fn()
         context = DefinitionsLoadContext.get()
+
+        if context.load_type == DefinitionsLoadType.INITIALIZATION:
+            reconstruction_metadata = context.get_pending_reconstruction_metadata()
+        else:
+            reconstruction_metadata = context.reconstruction_metadata
 
         if isinstance(repository_definitions, list):
             bad_defns = []

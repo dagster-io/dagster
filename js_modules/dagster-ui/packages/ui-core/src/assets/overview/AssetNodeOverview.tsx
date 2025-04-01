@@ -9,6 +9,7 @@ import {
 } from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {Link} from 'react-router-dom';
+import {AssetAlertsSection} from 'shared/assets/AssetAlertsSection.oss';
 
 import {AssetEventMetadataEntriesTable} from '../AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from '../AssetMetadata';
@@ -30,16 +31,15 @@ import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {LargeCollapsibleSection} from '../LargeCollapsibleSection';
 import {MaterializationTag} from '../MaterializationTag';
 import {OverdueTag} from '../OverdueTag';
-import {RecentUpdatesTimeline} from '../RecentUpdatesTimeline';
+import {RecentUpdatesTimelineForAssetKey} from '../RecentUpdatesTimeline';
 import {SimpleStakeholderAssetStatus} from '../SimpleStakeholderAssetStatus';
 import {AssetChecksStatusSummary} from '../asset-checks/AssetChecksStatusSummary';
 import {buildConsolidatedColumnSchema} from '../buildConsolidatedColumnSchema';
 import {globalAssetGraphPathForAssetsAndDescendants} from '../globalAssetGraphPathToString';
 import {AssetKey} from '../types';
-import {AssetNodeDefinitionFragment} from '../types/AssetNodeDefinition.types';
 import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
-import {useLatestPartitionEvents} from '../useLatestPartitionEvents';
-import {useRecentAssetEvents} from '../useRecentAssetEvents';
+import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
+import {useLatestEvents} from '../useLatestEvents';
 
 export const AssetNodeOverview = ({
   assetKey,
@@ -51,7 +51,7 @@ export const AssetNodeOverview = ({
   dependsOnSelf,
 }: {
   assetKey: AssetKey;
-  assetNode: AssetNodeDefinitionFragment | undefined | null;
+  assetNode: AssetViewDefinitionNodeFragment | undefined | null;
   cachedAssetNode: AssetTableDefinitionFragment | undefined | null;
   upstream: AssetNodeForGraphQueryFragment[] | null;
   downstream: AssetNodeForGraphQueryFragment[] | null;
@@ -71,20 +71,10 @@ export const AssetNodeOverview = ({
 
   const assetNodeLoadTimestamp = location ? location.updatedTimestamp * 1000 : undefined;
 
-  const {materialization, observation, loading} = useLatestPartitionEvents(
+  const {materialization, observation, loading} = useLatestEvents(
     assetKey,
     assetNodeLoadTimestamp,
     liveData,
-  );
-
-  const {
-    materializations,
-    observations,
-    loading: materializationsLoading,
-  } = useRecentAssetEvents(
-    cachedOrLiveAssetNode?.partitionDefinition ? undefined : cachedOrLiveAssetNode?.assetKey,
-    {},
-    {assetHasDefinedPartitions: false},
   );
 
   // Start loading neighboring assets data immediately to avoid waterfall.
@@ -112,6 +102,13 @@ export const AssetNodeOverview = ({
     (entry) => isCanonicalRowCountMetadataEntry(entry),
   ) as IntMetadataEntry | undefined;
 
+  // The live data does not include a partition, but the timestamp on the live data triggers
+  // an update of `observation` and `materialization`, so they should be in sync. To make sure
+  // we never display incorrect data we verify that the timestamps match.
+  const liveDataPartition = assetNode?.isObservable
+    ? partitionIfMatching(liveData?.lastObservation, observation)
+    : partitionIfMatching(liveData?.lastMaterialization, materialization);
+
   const renderStatusSection = () => (
     <Box flex={{direction: 'column', gap: 16}}>
       <Box style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))'}}>
@@ -123,6 +120,7 @@ export const AssetNodeOverview = ({
             {liveData ? (
               <SimpleStakeholderAssetStatus
                 liveData={liveData}
+                partition={liveDataPartition}
                 assetNode={assetNode ?? cachedAssetNode!}
               />
             ) : (
@@ -153,12 +151,7 @@ export const AssetNodeOverview = ({
         ) : undefined}
       </Box>
       {cachedOrLiveAssetNode.isPartitioned ? null : (
-        <RecentUpdatesTimeline
-          materializations={materializations}
-          observations={observations}
-          assetKey={cachedOrLiveAssetNode.assetKey}
-          loading={materializationsLoading}
-        />
+        <RecentUpdatesTimelineForAssetKey assetKey={cachedOrLiveAssetNode.assetKey} />
       )}
     </Box>
   );
@@ -261,6 +254,7 @@ export const AssetNodeOverview = ({
               <ComputeDetailsSection repoAddress={repoAddress} assetNode={assetNode} />
             </LargeCollapsibleSection>
           ) : null}
+          <AssetAlertsSection repoAddress={repoAddress} assetNode={cachedOrLiveAssetNode} />
         </>
       }
     />
@@ -303,12 +297,6 @@ export const AssetNodeOverviewNonSDA = ({
   assetKey: AssetKey;
   lastMaterialization: {timestamp: string; runId: string} | null | undefined;
 }) => {
-  const {materializations, observations, loading} = useRecentAssetEvents(
-    assetKey,
-    {},
-    {assetHasDefinedPartitions: false},
-  );
-
   return (
     <AssetNodeOverviewContainer
       left={
@@ -325,12 +313,7 @@ export const AssetNodeOverviewNonSDA = ({
                 <Caption color={Colors.textLighter()}>Never materialized</Caption>
               )}
             </div>
-            <RecentUpdatesTimeline
-              materializations={materializations}
-              observations={observations}
-              assetKey={assetKey}
-              loading={loading}
-            />
+            <RecentUpdatesTimelineForAssetKey assetKey={assetKey} />
           </Box>
         </LargeCollapsibleSection>
       }
@@ -386,3 +369,13 @@ export const AssetNodeOverviewLoading = () => (
     }
   />
 );
+
+function partitionIfMatching(
+  liveDataEvent: {timestamp: string} | null | undefined,
+  event: {timestamp: string; partition: string | null} | undefined,
+) {
+  if (!liveDataEvent || !event) {
+    return null;
+  }
+  return liveDataEvent.timestamp === event.timestamp ? event.partition : null;
+}

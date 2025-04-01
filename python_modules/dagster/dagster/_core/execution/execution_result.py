@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Callable, List, Optional, Sequence, Set, cast
+from collections.abc import Sequence
+from typing import AbstractSet, Callable, Optional, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions import AssetCheckEvaluation, JobDefinition, NodeHandle
@@ -46,7 +47,7 @@ class ExecutionResult(ABC):
     @property
     def all_node_events(self) -> Sequence[DagsterEvent]:
         """List[DagsterEvent]: All dagster events from the execution."""
-        step_events: List[DagsterEvent] = []
+        step_events: list[DagsterEvent] = []
 
         for node_name in self.job_def.graph.node_dict.keys():
             handle = NodeHandle.from_string(node_name)
@@ -130,8 +131,8 @@ class ExecutionResult(ABC):
     def is_node_untouched(self, node_str: str) -> bool:
         return len(self.events_for_node(node_str)) == 0
 
-    def get_job_failure_event(self) -> DagsterEvent:
-        """Returns a DagsterEvent with type DagsterEventType.PIPELINE_FAILURE if it ocurred during
+    def get_run_failure_event(self) -> DagsterEvent:
+        """Returns a DagsterEvent with type DagsterEventType.RUN_FAILURE if it ocurred during
         execution.
         """
         events = self.filter_events(
@@ -143,8 +144,8 @@ class ExecutionResult(ABC):
 
         return events[0]
 
-    def get_job_success_event(self) -> DagsterEvent:
-        """Returns a DagsterEvent with type DagsterEventType.PIPELINE_SUCCESS if it ocurred during
+    def get_run_success_event(self) -> DagsterEvent:
+        """Returns a DagsterEvent with type DagsterEventType.RUN_SUCCESS if it ocurred during
         execution.
         """
         events = self.filter_events(
@@ -196,7 +197,7 @@ class ExecutionResult(ABC):
         failure_events = self.filter_events(
             lambda event: event.is_step_failure or event.is_resource_init_failure
         )
-        keys: Set[str] = set()
+        keys: set[str] = set()
         for event in failure_events:
             if event.step_key:
                 keys.add(event.step_key)

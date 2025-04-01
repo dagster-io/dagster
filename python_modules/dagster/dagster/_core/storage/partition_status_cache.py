@@ -1,5 +1,9 @@
+from collections.abc import Iterable, Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, Iterable, List, NamedTuple, Optional, Sequence, Set, Tuple
+from typing import TYPE_CHECKING, NamedTuple, Optional
+
+from dagster_shared.serdes import deserialize_value
+from dagster_shared.serdes.errors import DeserializationError
 
 from dagster import (
     AssetKey,
@@ -28,8 +32,6 @@ from dagster._core.storage.tags import (
     get_dimension_from_partition_tag,
 )
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.errors import DeserializationError
-from dagster._serdes.serdes import deserialize_value
 from dagster._time import get_current_datetime
 
 if TYPE_CHECKING:
@@ -82,7 +84,7 @@ class AssetStatusCacheValue(
             ("earliest_in_progress_materialization_event_id", Optional[int]),
         ],
     ),
-    LoadableBy[Tuple[AssetKey, PartitionsDefinition]],
+    LoadableBy[tuple[AssetKey, PartitionsDefinition]],
 ):
     """Set of asset fields that reflect partition materialization status. This is used to display
     global partition status in the asset view.
@@ -124,7 +126,7 @@ class AssetStatusCacheValue(
         check.opt_str_param(
             serialized_in_progress_partition_subset, "serialized_in_progress_partition_subset"
         )
-        return super(AssetStatusCacheValue, cls).__new__(
+        return super().__new__(
             cls,
             latest_storage_id,
             partitions_def_id,
@@ -148,7 +150,7 @@ class AssetStatusCacheValue(
 
     @classmethod
     def _blocking_batch_load(
-        cls, keys: Iterable[Tuple[AssetKey, PartitionsDefinition]], context: LoadingContext
+        cls, keys: Iterable[tuple[AssetKey, PartitionsDefinition]], context: LoadingContext
     ) -> Iterable[Optional["AssetStatusCacheValue"]]:
         return context.instance.event_log_storage.get_asset_status_cache_values(keys, context)
 
@@ -214,7 +216,7 @@ def get_materialized_multipartitions(
     instance: DagsterInstance, asset_key: AssetKey, partitions_def: MultiPartitionsDefinition
 ) -> Sequence[str]:
     dimension_names = partitions_def.partition_dimension_names
-    materialized_keys: List[MultiPartitionKey] = []
+    materialized_keys: list[MultiPartitionKey] = []
     for event_tags in instance.get_event_tags_for_asset(asset_key):
         event_partition_keys_by_dimension = {
             get_dimension_from_partition_tag(key): value
@@ -240,7 +242,7 @@ def get_materialized_multipartitions(
 def get_validated_partition_keys(
     dynamic_partitions_store: DynamicPartitionsStore,
     partitions_def: PartitionsDefinition,
-    partition_keys: Set[str],
+    partition_keys: set[str],
 ):
     if isinstance(partitions_def, (DynamicPartitionsDefinition, StaticPartitionsDefinition)):
         validated_partitions = (
@@ -268,7 +270,7 @@ def get_validated_partition_keys(
 def get_last_planned_storage_id(
     instance: DagsterInstance, asset_key: AssetKey, asset_record: Optional["AssetRecord"]
 ) -> int:
-    if instance.event_log_storage.asset_records_have_last_planned_materialization_storage_id:
+    if instance.event_log_storage.asset_records_have_last_planned_and_failed_materializations:
         return (
             (asset_record.asset_entry.last_planned_materialization_storage_id or 0)
             if asset_record
@@ -402,8 +404,8 @@ def build_failed_and_in_progress_partition_subset(
     last_planned_materialization_storage_id: int,
     failed_subset: Optional[PartitionsSubset[str]] = None,
     after_storage_id: Optional[int] = None,
-) -> Tuple[PartitionsSubset, PartitionsSubset, Optional[int]]:
-    in_progress_partitions: Set[str] = set()
+) -> tuple[PartitionsSubset, PartitionsSubset, Optional[int]]:
+    in_progress_partitions: set[str] = set()
 
     incomplete_materializations = {}
 
@@ -418,7 +420,7 @@ def build_failed_and_in_progress_partition_subset(
             asset_key, after_storage_id=after_storage_id
         )
 
-    failed_partitions: Set[str] = set()
+    failed_partitions: set[str] = set()
 
     cursor = None
     if incomplete_materializations:

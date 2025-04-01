@@ -1,10 +1,11 @@
-from typing import Iterator, List, Optional, cast
+from collections.abc import Iterator
+from typing import Optional, cast
 
 import dagster._check as check
 import docker
 import docker.errors
 from dagster import Field, IntSource, executor
-from dagster._annotations import experimental
+from dagster._annotations import beta
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.retries import RetryMode, get_retries_config
@@ -19,8 +20,8 @@ from dagster._core.executor.step_delegating.step_handler.base import (
 )
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.utils import parse_env_var
-from dagster._serdes.utils import hash_str
 from dagster._utils.merger import merge_dicts
+from dagster_shared.serdes.utils import hash_str
 
 from dagster_docker.container_context import DockerContainerContext
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
@@ -45,7 +46,7 @@ from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, v
     ),
     requirements=multiple_process_executor_requirements(),
 )
-@experimental
+@beta
 def docker_executor(init_context: InitExecutorContext) -> Executor:
     """Executor which launches steps as Docker containers.
 
@@ -171,7 +172,7 @@ class DockerStepHandler(StepHandler):
 
     def _get_step_key(self, step_handler_context: StepHandlerContext) -> str:
         step_keys_to_execute = cast(
-            List[str], step_handler_context.execute_step_args.step_keys_to_execute
+            list[str], step_handler_context.execute_step_args.step_keys_to_execute
         )
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         return step_keys_to_execute[0]

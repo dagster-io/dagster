@@ -6,6 +6,7 @@ import {
   MiddleTruncate,
   Mono,
   Popover,
+  Row,
   Spinner,
   Tag,
   Tooltip,
@@ -530,7 +531,7 @@ const DividerLabels = styled.div`
   width: 100%;
   overflow: hidden;
 
-  &:first-child {
+  :first-child {
     box-shadow:
       inset 1px 0 0 ${Colors.keylineDefault()},
       inset -1px 0 0 ${Colors.keylineDefault()};
@@ -542,7 +543,7 @@ const DateLabel = styled.div`
   padding: 8px 0;
   white-space: nowrap;
 
-  &:not(:first-child) {
+  :not(:first-child) {
     box-shadow: inset 1px 0 0 ${Colors.keylineDefault()};
   }
 `;
@@ -740,7 +741,7 @@ export const TimelineRowContainer = styled.div.attrs<RowProps>(({$height, $start
   overflow: hidden;
   transition: background-color 100ms linear;
 
-  &:hover {
+  :hover {
     background-color: ${Colors.backgroundDefaultHover()};
   }
 `;
@@ -784,7 +785,7 @@ export const RunChunk = styled.div<ChunkProps>`
     opacity 200ms linear,
     width 200ms ease-in-out;
 
-  &:hover {
+  :hover {
     opacity: 0.7;
   }
   .chunk-popover-target {
@@ -810,8 +811,19 @@ interface RunHoverContentProps {
 
 const RunHoverContent = (props: RunHoverContentProps) => {
   const {row, batch} = props;
-  const sliced = batch.runs.slice(0, 50);
-  const remaining = batch.runs.length - sliced.length;
+  const count = batch.runs.length;
+  const parentRef = React.useRef<HTMLDivElement | null>(null);
+
+  const virtualizer = useVirtualizer({
+    count,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (_: number) => ROW_HEIGHT,
+    overscan: 10,
+  });
+
+  const totalHeight = virtualizer.getTotalSize();
+  const items = virtualizer.getVirtualItems();
+  const height = Math.min(count * ROW_HEIGHT, 240);
 
   return (
     <Box style={{width: '260px'}}>
@@ -819,37 +831,49 @@ const RunHoverContent = (props: RunHoverContentProps) => {
         <RunTimelineRowIcon type={row.type} />
         <HoverContentRowName>{row.name}</HoverContentRowName>
       </Box>
-      <div style={{maxHeight: '240px', overflowY: 'auto'}}>
-        {sliced.map((run, ii) => (
-          <Box
-            key={run.id}
-            border={ii > 0 ? 'top' : null}
-            flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
-            padding={{vertical: 8, horizontal: 12}}
-          >
-            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-              <RunStatusDot status={run.status} size={8} />
-              {run.status === 'SCHEDULED' ? (
-                'Scheduled'
-              ) : (
-                <Link to={`/runs/${run.id}`}>
-                  <Mono>{run.id.slice(0, 8)}</Mono>
-                </Link>
-              )}
-            </Box>
-            <Mono>
-              {run.status === 'SCHEDULED' ? (
-                <TimestampDisplay timestamp={run.startTime / 1000} />
-              ) : (
-                <TimeElapsed startUnix={run.startTime / 1000} endUnix={run.endTime / 1000} />
-              )}
-            </Mono>
-          </Box>
-        ))}
+      <div style={{height, overflowY: 'hidden'}}>
+        <Container ref={parentRef}>
+          <Inner $totalHeight={totalHeight}>
+            {items.map(({index, key, size, start}) => {
+              const run = batch.runs[index]!;
+              return (
+                <Row key={key} $height={size} $start={start}>
+                  <Box
+                    key={key}
+                    border={index > 0 ? 'top' : null}
+                    flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}
+                    padding={{vertical: 8, horizontal: 12}}
+                  >
+                    <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+                      <RunStatusDot status={run.status} size={8} />
+                      {run.status === 'SCHEDULED' ? (
+                        'Scheduled'
+                      ) : (
+                        <Link to={`/runs/${run.id}`}>
+                          <Mono>{run.id.slice(0, 8)}</Mono>
+                        </Link>
+                      )}
+                    </Box>
+                    <Mono>
+                      {run.status === 'SCHEDULED' ? (
+                        <TimestampDisplay timestamp={run.startTime / 1000} />
+                      ) : (
+                        <TimeElapsed
+                          startUnix={run.startTime / 1000}
+                          endUnix={run.endTime / 1000}
+                        />
+                      )}
+                    </Mono>
+                  </Box>
+                </Row>
+              );
+            })}
+          </Inner>
+        </Container>
       </div>
-      {remaining > 0 ? (
-        <Box padding={12} border="top">
-          <Link to={`${row.path}/runs`}>+ {remaining} more</Link>
+      {row.path ? (
+        <Box padding={12} border="top" flex={{direction: 'row', justifyContent: 'center'}}>
+          <Link to={`${row.path}/runs`}>View all</Link>
         </Box>
       ) : null}
     </Box>

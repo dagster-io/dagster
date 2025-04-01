@@ -6,10 +6,11 @@ import click
 import pytest
 from dagster import (
     AssetSelection,
+    BetaWarning,
     DailyPartitionsDefinition,
-    ExperimentalWarning,
     HourlyPartitionsDefinition,
     PartitionKeyRange,
+    PreviewWarning,
 )
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
@@ -21,7 +22,8 @@ from auto_materialize_perf_tests.partition_mappings_galore_perf_scenario import 
 )
 from auto_materialize_perf_tests.perf_scenario import PerfScenario, RandomAssets
 
-warnings.simplefilter("ignore", category=ExperimentalWarning)
+warnings.simplefilter("ignore", category=PreviewWarning)
+warnings.simplefilter("ignore", category=BetaWarning)
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(message)s",

@@ -11,15 +11,16 @@ import {
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
 import {Link} from 'react-router-dom';
+import {SensorAlertDetails} from 'shared/sensors/SensorAlertDetails.oss';
 import styled from 'styled-components';
 
 import {EditCursorDialog} from './EditCursorDialog';
 import {SensorMonitoredAssets} from './SensorMonitoredAssets';
 import {SensorResetButton} from './SensorResetButton';
 import {SensorSwitch} from './SensorSwitch';
+import {usePermissionsForLocation} from '../app/Permissions';
 import {EvaluateTickButtonSensor} from '../ticks/EvaluateTickButtonSensor';
 import {SensorFragment} from './types/SensorFragment.types';
-import {usePermissionsForLocation} from '../app/Permissions';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {AutomationTargetList} from '../automation/AutomationTargetList';
 import {AutomationAssetSelectionFragment} from '../automation/types/AutomationAssetSelectionFragment.types';
@@ -30,6 +31,27 @@ import {TickStatusTag} from '../ticks/TickStatusTag';
 import {RepoAddress} from '../workspace/types';
 
 const TIME_FORMAT = {showSeconds: true, showTimezone: false};
+
+/** Some cursors are persisted Python tuples, which come through as JSON. Examples:
+ * {"__class__": "AirflowPollingSensorCursor", "dag_query_offset": 0, "end_date_gte": 1743134332.087687, "end_date_lte": null}
+ * {"__class__": "RunStatusSensorCursor", "record_id": 1234, "update_timestamp": "1743134332.087687", "record_timestamp": null}
+ *
+ * For these, there are often empty / unused fields and we can pull just the cursor fields that are in use
+ * into a compact table-ready presentation:
+ *
+ * end_date_gte=1743134332.087687
+ */
+export const humanizeSensorCursor = (cursor: string | false | null) => {
+  if (cursor && cursor.startsWith('{"__class__"')) {
+    const cursorObj = JSON.parse(cursor);
+    delete cursorObj['__class__'];
+    return Object.entries(cursorObj)
+      .filter((pair) => pair[1] !== null && pair[1] !== 0)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(',');
+  }
+  return cursor;
+};
 
 export const humanizeSensorInterval = (minIntervalSeconds?: number) => {
   if (!minIntervalSeconds) {
@@ -209,7 +231,7 @@ export const SensorDetails = ({
               <td>
                 <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
                   <span style={{fontFamily: FontFamily.monospace, fontSize: '14px'}}>
-                    {cursor ? cursor : 'None'}
+                    {cursor ? humanizeSensorCursor(cursor) : 'None'}
                   </span>
                   <Tooltip
                     canShow={!canUpdateSensorCursor}
@@ -220,7 +242,7 @@ export const SensorDetails = ({
                       disabled={!canUpdateSensorCursor || loadingPermissions}
                       onClick={() => setCursorEditing(true)}
                     >
-                      Edit
+                      {cursor !== humanizeSensorCursor(cursor) ? 'View Raw / Edit' : 'Edit'}
                     </Button>
                   </Tooltip>
                 </Box>
@@ -233,6 +255,7 @@ export const SensorDetails = ({
               </td>
             </tr>
           ) : null}
+          <SensorAlertDetails repoAddress={repoAddress} sensorName={name} />
         </tbody>
       </MetadataTableWIP>
     </>

@@ -1,5 +1,3 @@
-// eslint-disable-next-line no-restricted-imports
-import {Radio} from '@blueprintjs/core';
 import {
   Alert,
   Box,
@@ -11,18 +9,18 @@ import {
   DialogFooter,
   DialogHeader,
   Icon,
+  Radio,
   RadioContainer,
   Subheading,
   Tooltip,
 } from '@dagster-io/ui-components';
 import reject from 'lodash/reject';
 import {useEffect, useMemo, useState} from 'react';
-import {useHistory} from 'react-router-dom';
 import {useLaunchWithTelemetry} from 'shared/launchpad/useLaunchWithTelemetry.oss';
 
 import {partitionCountString} from './AssetNodePartitionCounts';
 import {AssetPartitionStatus} from './AssetPartitionStatus';
-import {BackfillPreviewModal} from './BackfillPreviewModal';
+import {BackfillPreviewDialog} from './BackfillPreviewDialog';
 import {
   LaunchAssetsChoosePartitionsTarget,
   executionParamsForAssetJob,
@@ -169,7 +167,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       return mergedAssetHealth([]);
     }
     if (target.type === 'job' || assetHealthLoading) {
-      return mergedAssetHealth(assetHealth, true);
+      return mergedAssetHealth(assetHealth);
     }
     return assetHealth.find(itemWithAssetKey(target.anchorAssetKey)) || mergedAssetHealth([]);
   }, [assetHealth, assetHealthLoading, target]);
@@ -193,6 +191,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     skipPartitionKeyValidation:
       displayedPartitionDefinition?.type === PartitionDefinitionType.DYNAMIC,
     shouldReadPartitionQueryStringParam: true,
+    defaultSelection: 'empty',
   });
 
   const [launchWithRangesAsTags, setLaunchWithRangesAsTags] = useState(false);
@@ -213,7 +212,6 @@ const LaunchAssetChoosePartitionsDialogBody = ({
   }, [missingFailedOnly, selections, displayedHealth]);
 
   const client = useApolloClient();
-  const history = useHistory();
 
   const launchWithTelemetry = useLaunchWithTelemetry();
   const launchAsBackfill =
@@ -351,11 +349,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
     });
 
     if (launchBackfillData?.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess') {
-      showBackfillSuccessToast(
-        history,
-        launchBackfillData?.launchPartitionBackfill.backfillId,
-        true,
-      );
+      showBackfillSuccessToast(launchBackfillData?.launchPartitionBackfill.backfillId, true);
       setOpen(false);
     } else {
       showBackfillErrorToast(launchBackfillData);
@@ -379,16 +373,20 @@ const LaunchAssetChoosePartitionsDialogBody = ({
       );
     }
 
+    const disabled = target.type === 'pureAll' ? false : keysFiltered.length === 0;
+
     return (
-      <Button
-        data-testid={testId('launch-button')}
-        intent="primary"
-        onClick={onLaunch}
-        disabled={target.type === 'pureAll' ? false : keysFiltered.length === 0}
-        loading={launching}
-      >
-        {launching ? 'Launching...' : launchAsBackfill ? 'Launch backfill' : `Launch 1 run`}
-      </Button>
+      <Tooltip canShow={disabled} content="Choose one or more partitions to backfill">
+        <Button
+          data-testid={testId('launch-button')}
+          intent="primary"
+          onClick={onLaunch}
+          disabled={disabled}
+          loading={launching}
+        >
+          {launching ? 'Launching...' : launchAsBackfill ? 'Launch backfill' : `Launch 1 run`}
+        </Button>
+      </Tooltip>
     );
   };
 
@@ -575,7 +573,7 @@ const LaunchAssetChoosePartitionsDialogBody = ({
         )}
       </div>
 
-      <BackfillPreviewModal
+      <BackfillPreviewDialog
         assets={assets}
         keysFiltered={keysFiltered}
         isOpen={previewOpen}
@@ -783,8 +781,8 @@ const PartitionSelectionNotice = ({
 }) => {
   return (
     <Box padding={{horizontal: 16, top: 16, bottom: 8}} style={{position: 'relative'}} border="top">
-      <Alert intent="info" title={<Box style={{marginRight: 100, minHeight: 24}}>{text}</Box>} />
-      <div style={{position: 'absolute', top: 24, right: 24, zIndex: 4}}>
+      <Alert intent="info" title={<Box style={{marginRight: 100}}>{text}</Box>} />
+      <div style={{position: 'absolute', top: 20, right: 24, zIndex: 4}}>
         <Button
           data-testid={testId('backfill-preview-button')}
           intent="none"

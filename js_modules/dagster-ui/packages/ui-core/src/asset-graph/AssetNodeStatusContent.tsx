@@ -358,10 +358,10 @@ export function _buildAssetNodeStatusContent({
         <>
           {expanded && (
             <Icon
-              name="partition_failure"
+              name="check_failed"
               color={Colors.accentRed()}
               style={{marginRight: -2}}
-              size={12}
+              size={16}
             />
           )}
 
@@ -412,19 +412,19 @@ export function _buildAssetNodeStatusContent({
   if (!lastMaterialization) {
     return {
       case: StatusCase.NEVER_MATERIALIZED as const,
-      background: Colors.backgroundYellow(),
-      border: Colors.accentYellow(),
+      background: Colors.backgroundGray(),
+      border: Colors.accentGray(),
       content: (
         <>
           {expanded && (
             <Icon
-              name="partition_missing"
-              color={Colors.accentYellow()}
+              name="check_missing"
+              color={Colors.accentGray()}
               style={{marginRight: -2}}
-              size={12}
+              size={16}
             />
           )}
-          <span style={{color: Colors.textYellow()}}>Never materialized</span>
+          <span style={{color: Colors.textDefault()}}>Never materialized</span>
         </>
       ),
     };
@@ -436,7 +436,14 @@ export function _buildAssetNodeStatusContent({
     border: Colors.accentGreen(),
     content: (
       <>
-        {expanded && <AssetPartitionStatusDot status={[AssetPartitionStatus.MATERIALIZED]} />}
+        {expanded && (
+          <Icon
+            name="check_passed"
+            color={Colors.accentGreen()}
+            style={{marginRight: -2}}
+            size={16}
+          />
+        )}
         <span style={{color: Colors.textGreen()}}>Materialized</span>
         {expanded && <SpacerDot />}
         {lastMaterializationLink}

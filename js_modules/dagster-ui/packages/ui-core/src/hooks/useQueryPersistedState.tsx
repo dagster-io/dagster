@@ -21,6 +21,7 @@ export type QueryPersistedStateConfig<T extends QueryPersistedDataType> = {
   defaults?: {[key: string]: any};
   decode?: (raw: {[key: string]: any}) => T;
   encode?: (raw: T) => {[key: string]: any};
+  behavior?: 'push' | 'replace';
 };
 
 const defaultEncode = memoize(<T,>(queryKey: string) => (raw: T) => ({[queryKey]: raw}));
@@ -29,6 +30,8 @@ const defaultDecode = memoize(
     (qs: {[key: string]: any}) =>
       inferTypeOfQueryParam<T>(qs[queryKey]),
 );
+
+const ARRAY_LIMIT = 1000;
 
 /**
  * This goal of this hook is to make it easy to replace `React.useState` with a version
@@ -63,7 +66,7 @@ const defaultDecode = memoize(
 export function useQueryPersistedState<T extends QueryPersistedDataType>(
   options: QueryPersistedStateConfig<T>,
 ): [T, React.Dispatch<React.SetStateAction<T>>] {
-  const {queryKey, defaults} = options;
+  const {queryKey, defaults, behavior = 'replace'} = options;
   let {encode, decode} = options;
 
   if (queryKey) {
@@ -84,7 +87,28 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
   const qsDecoded = useMemo(() => {
     // We stash the query string into a ref so that the setter can operate on the /current/
     // location even if the user retains it and calls it after other query string changes.
-    currentQueryString = qs.parse(location.search, {ignoreQueryPrefix: true});
+    try {
+      currentQueryString = qs.parse(location.search, {
+        ignoreQueryPrefix: true,
+        // @ts-expect-error QS types are out of date.
+        throwOnLimitExceeded: true,
+        arrayLimit: ARRAY_LIMIT,
+      });
+    } catch {
+      console.error(
+        `Very large array (>${ARRAY_LIMIT} items) detected in query string. This will be permitted, but should be investigated.`,
+      );
+      // After logging the issue, permit arbitrarily large arrays in order to avoid breaking
+      // the app. This might be slow for users, but we won't end up with unexpected objects replacing
+      // any arrays. https://github.com/ljharb/qs?tab=readme-ov-file#parsing-arrays
+      // This is a pretty unlikely situation: GET request querystrings will be limited by length,
+      // and in any case, we shouldn't have many interfaces in the app that allow unbounded arrays to be encoded
+      // in querystrings.
+      currentQueryString = qs.parse(location.search, {
+        ignoreQueryPrefix: true,
+        arrayLimit: Infinity,
+      });
+    }
 
     const qsWithDefaults = {...(defaults || {}), ...currentQueryString};
     return decode ? decode(qsWithDefaults) : inferTypeOfQueryParams<T>(qsWithDefaults);
@@ -113,12 +137,15 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
       // the `replace` so that we surface any unwanted loops during development.
       if (process.env.NODE_ENV !== 'production' || !areQueriesEqual(currentQueryString, next)) {
         currentQueryString = next;
-        history.replace(
-          `${history.location.pathname}?${qs.stringify(next, {arrayFormat: 'brackets'})}`,
-        );
+        const nextPath = `${history.location.pathname}?${qs.stringify(next, {arrayFormat: 'indices'})}`;
+        if (behavior === 'replace') {
+          history.replace(nextPath);
+        } else {
+          history.push(nextPath);
+        }
       }
     },
-    [history, encode, options],
+    [encode, options.defaults, behavior, history],
   );
 
   if (!isEqual(valueRef.current, qsDecoded)) {

@@ -1,7 +1,8 @@
-from typing import Any, Dict, Iterable, Sequence, Union
+from collections.abc import Iterable, Sequence
+from typing import Any, Union
 
 from dagster import _check as check
-from dagster._annotations import experimental
+from dagster._annotations import beta
 from dagster._core.definitions.asset_check_factories.utils import (
     DEADLINE_CRON_PARAM_KEY,
     DEFAULT_FRESHNESS_SEVERITY,
@@ -37,7 +38,7 @@ from dagster._utils.schedules import (
 )
 
 
-@experimental
+@beta
 def build_time_partition_freshness_checks(
     *,
     assets: Sequence[Union[SourceAsset, CoercibleToAssetKey, AssetsDefinition]],
@@ -165,7 +166,7 @@ def _build_freshness_multi_check(
             )
             passed = latest_record is not None
 
-            metadata: Dict[str, MetadataValue] = {
+            metadata: dict[str, MetadataValue] = {
                 FRESHNESS_PARAMS_METADATA_KEY: JsonMetadataValue(params_metadata),
                 LATEST_CRON_TICK_METADATA_KEY: TimestampMetadataValue(deadline.timestamp()),
             }

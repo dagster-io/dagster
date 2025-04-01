@@ -2,29 +2,28 @@ import itertools
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     AbstractSet,
-    Dict,
+    Annotated,
     Generic,
-    Iterable,
-    List,
-    Mapping,
     Optional,
-    Sequence,
-    Set,
     TypeVar,
     Union,
 )
 
-from typing_extensions import Annotated
+from dagster_shared.serdes import whitelist_for_serdes
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_key import EntityKey
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
+    AssetExecutionType,
+)
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.base_asset_graph import (
@@ -43,9 +42,8 @@ from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.remote_representation.external import RemoteRepository
 from dagster._core.remote_representation.handle import InstigatorHandle, RepositoryHandle
-from dagster._core.workspace.workspace import WorkspaceSnapshot
+from dagster._core.workspace.workspace import CurrentWorkspace
 from dagster._record import ImportFrom, record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -87,6 +85,10 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.metadata
 
     @property
+    def pools(self) -> Optional[set[str]]:
+        return self.resolve_to_singular_repo_scoped_node().pools
+
+    @property
     def tags(self) -> Mapping[str, str]:
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.tags or {}
 
@@ -99,7 +101,7 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.partitions is not None
 
     @cached_property
-    def partitions_def(self) -> Optional[PartitionsDefinition]:
+    def partitions_def(self) -> Optional[PartitionsDefinition]:  # pyright: ignore[reportIncompatibleMethodOverride]
         partitions_snap = self.resolve_to_singular_repo_scoped_node().asset_node_snap.partitions
         return partitions_snap.get_partitions_definition() if partitions_snap else None
 
@@ -138,8 +140,8 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
     ]
     parent_keys: AbstractSet[AssetKey]
     child_keys: AbstractSet[AssetKey]
-    check_keys: AbstractSet[AssetCheckKey]
-    execution_set_entity_keys: AbstractSet[EntityKey]
+    check_keys: AbstractSet[AssetCheckKey]  # pyright: ignore[reportIncompatibleMethodOverride]
+    execution_set_entity_keys: AbstractSet[EntityKey]  # pyright: ignore[reportIncompatibleMethodOverride]
 
     def __hash__(self):
         # we create sets of these objects in the context of asset graphs but don't want to
@@ -150,7 +152,7 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
         return self
 
     @property
-    def key(self) -> AssetKey:
+    def key(self) -> AssetKey:  # pyright: ignore[reportIncompatibleVariableOverride]
         return self.asset_node_snap.asset_key
 
     @property
@@ -170,7 +172,7 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
         return self.asset_node_snap.is_executable
 
     @property
-    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return {
             dep.parent_asset_key: dep.partition_mapping
             for dep in self.asset_node_snap.parent_edges
@@ -193,6 +195,10 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
     def auto_observe_interval_minutes(self) -> Optional[float]:
         return self.asset_node_snap.auto_observe_interval_minutes
 
+    @property
+    def pools(self) -> Optional[set[str]]:
+        return self.asset_node_snap.pools
+
 
 @whitelist_for_serdes
 @record
@@ -214,7 +220,7 @@ class RepositoryScopedAssetInfo:
 @whitelist_for_serdes
 @record
 class RemoteWorkspaceAssetNode(RemoteAssetNode):
-    """Asset nodes constructed from a WorkspaceSnapshot, containing nodes from potentially several RemoteRepositories."""
+    """Asset nodes constructed from a CurrentWorkspace, containing nodes from potentially several RemoteRepositories."""
 
     repo_scoped_asset_infos: Sequence[RepositoryScopedAssetInfo]
 
@@ -225,11 +231,11 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
 
     ##### COMMON ASSET NODE INTERFACE
     @cached_property
-    def key(self) -> AssetKey:
+    def key(self) -> AssetKey:  # pyright: ignore[reportIncompatibleVariableOverride]
         return self.repo_scoped_asset_infos[0].asset_node.asset_node_snap.asset_key
 
     @property
-    def parent_keys(self) -> AbstractSet[AssetKey]:
+    def parent_keys(self) -> AbstractSet[AssetKey]:  # pyright: ignore[reportIncompatibleVariableOverride]
         # combine deps from all nodes
         keys = set()
         for info in self.repo_scoped_asset_infos:
@@ -237,7 +243,7 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
         return keys
 
     @property
-    def child_keys(self) -> AbstractSet[AssetKey]:
+    def child_keys(self) -> AbstractSet[AssetKey]:  # pyright: ignore[reportIncompatibleVariableOverride]
         # combine deps from all nodes
         keys = set()
         for info in self.repo_scoped_asset_infos:
@@ -259,23 +265,30 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
         return self.resolve_to_singular_repo_scoped_node().execution_set_entity_keys
 
     @cached_property
-    def is_materializable(self) -> bool:
+    def is_materializable(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         return any(info.asset_node.is_materializable for info in self.repo_scoped_asset_infos)
 
     @cached_property
-    def is_observable(self) -> bool:
+    def is_observable(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         return any(info.asset_node.is_observable for info in self.repo_scoped_asset_infos)
 
     @cached_property
-    def is_external(self) -> bool:
+    def is_external(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         return all(info.asset_node.is_external for info in self.repo_scoped_asset_infos)
 
     @cached_property
-    def is_executable(self) -> bool:
+    def is_executable(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         return any(node.asset_node.is_executable for node in self.repo_scoped_asset_infos)
 
+    @cached_property
+    def pools(self) -> Optional[set[str]]:  # pyright: ignore[reportIncompatibleMethodOverride]
+        pools = set()
+        for info in self.repo_scoped_asset_infos:
+            pools.update(info.asset_node.pools or set())
+        return pools
+
     @property
-    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:  # pyright: ignore[reportIncompatibleMethodOverride]
         if self.is_materializable:
             return {
                 dep.parent_asset_key: dep.partition_mapping
@@ -316,7 +329,8 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     @cached_method
     def resolve_to_singular_repo_scoped_node(self) -> "RemoteRepositoryAssetNode":
         # Return a materialization node if it exists, otherwise return an observable node if it
-        # exists, otherwise return any node. This exists to preserve implicit behavior, where the
+        # exists, otherwise return any non-stub node, otherwise return any node.
+        # This exists to preserve implicit behavior, where the
         # materialization node was previously preferred over the observable node. This is a
         # temporary measure until we can appropriately scope the accessors that could apply to
         # either a materialization or observation node.
@@ -333,6 +347,11 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
                     info.asset_node
                     for info in self.repo_scoped_asset_infos
                     if info.asset_node.is_observable
+                ),
+                (
+                    info.asset_node
+                    for info in self.repo_scoped_asset_infos
+                    if not info.asset_node.metadata.get(SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET)
                 ),
                 (info.asset_node for info in self.repo_scoped_asset_infos),
             )
@@ -384,11 +403,9 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
     def _observable_node_snap(self) -> "AssetNodeSnap":
         try:
             return next(
-                (
-                    info.asset_node.asset_node_snap
-                    for info in self.repo_scoped_asset_infos
-                    if info.asset_node.is_observable
-                )
+                info.asset_node.asset_node_snap
+                for info in self.repo_scoped_asset_infos
+                if info.asset_node.is_observable
             )
         except StopIteration:
             check.failed("No observable node found")
@@ -410,7 +427,7 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
 
     ##### COMMON ASSET GRAPH INTERFACE
     @cached_property
-    def _asset_check_nodes_by_key(self) -> Mapping[AssetCheckKey, AssetCheckNode]:
+    def _asset_check_nodes_by_key(self) -> Mapping[AssetCheckKey, AssetCheckNode]:  # pyright: ignore[reportIncompatibleVariableOverride]
         return {
             k: AssetCheckNode(
                 k,
@@ -421,7 +438,7 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
             for k, v in self.remote_asset_check_nodes_by_key.items()
         }
 
-    def get_execution_set_asset_and_check_keys(
+    def get_execution_set_asset_and_check_keys(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, entity_key: EntityKey
     ) -> AbstractSet[EntityKey]:
         if isinstance(entity_key, AssetKey):
@@ -460,7 +477,7 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
         )
 
     @cached_property
-    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return set(self.remote_asset_check_nodes_by_key.keys())
 
     def asset_keys_for_job(self, job_name: str) -> AbstractSet[AssetKey]:
@@ -499,11 +516,11 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
 
 @record
 class RemoteRepositoryAssetGraph(RemoteAssetGraph[RemoteRepositoryAssetNode]):
-    remote_asset_nodes_by_key: Mapping[AssetKey, RemoteRepositoryAssetNode]
-    remote_asset_check_nodes_by_key: Mapping[AssetCheckKey, RemoteAssetCheckNode]
+    remote_asset_nodes_by_key: Mapping[AssetKey, RemoteRepositoryAssetNode]  # pyright: ignore[reportIncompatibleMethodOverride]
+    remote_asset_check_nodes_by_key: Mapping[AssetCheckKey, RemoteAssetCheckNode]  # pyright: ignore[reportIncompatibleMethodOverride]
 
     @property
-    def _asset_nodes_by_key(self) -> Mapping[AssetKey, RemoteRepositoryAssetNode]:
+    def _asset_nodes_by_key(self) -> Mapping[AssetKey, RemoteRepositoryAssetNode]:  # pyright: ignore[reportIncompatibleVariableOverride]
         return self.remote_asset_nodes_by_key
 
     @classmethod
@@ -511,17 +528,17 @@ class RemoteRepositoryAssetGraph(RemoteAssetGraph[RemoteRepositoryAssetNode]):
         # First pass, we need to:
 
         # * Build the dependency graph of asset keys.
-        upstream: Dict[AssetKey, Set[AssetKey]] = defaultdict(set)
-        downstream: Dict[AssetKey, Set[AssetKey]] = defaultdict(set)
+        upstream: dict[AssetKey, set[AssetKey]] = defaultdict(set)
+        downstream: dict[AssetKey, set[AssetKey]] = defaultdict(set)
 
         # * Build an index of execution sets by key. An execution set is a set of assets and checks
         # that must be executed together. AssetNodeSnaps and AssetCheckNodeSnaps already have an
         # optional execution_set_identifier set. A null execution_set_identifier indicates that the
         # node or check can be executed independently.
-        execution_sets_by_id: Dict[str, Set[EntityKey]] = defaultdict(set)
+        execution_sets_by_id: dict[str, set[EntityKey]] = defaultdict(set)
 
         # * Map checks to their corresponding asset keys
-        check_keys_by_asset_key: Dict[AssetKey, Set[AssetCheckKey]] = defaultdict(set)
+        check_keys_by_asset_key: dict[AssetKey, set[AssetCheckKey]] = defaultdict(set)
         for asset_snap in repo.get_asset_node_snaps():
             id = asset_snap.execution_set_identifier
             key = asset_snap.asset_key
@@ -541,8 +558,8 @@ class RemoteRepositoryAssetGraph(RemoteAssetGraph[RemoteRepositoryAssetNode]):
             check_keys_by_asset_key[check_snap.asset_key].add(check_snap.key)
 
         # Second Pass - build the final nodes
-        assets_by_key: Dict[AssetKey, RemoteRepositoryAssetNode] = {}
-        asset_checks_by_key: Dict[AssetCheckKey, RemoteAssetCheckNode] = {}
+        assets_by_key: dict[AssetKey, RemoteRepositoryAssetNode] = {}
+        asset_checks_by_key: dict[AssetCheckKey, RemoteAssetCheckNode] = {}
 
         for asset_snap in repo.get_asset_node_snaps():
             id = asset_snap.execution_set_identifier
@@ -572,6 +589,13 @@ class RemoteRepositoryAssetGraph(RemoteAssetGraph[RemoteRepositoryAssetNode]):
             remote_asset_check_nodes_by_key=asset_checks_by_key,
         )
 
+    @classmethod
+    def empty(cls):
+        return cls(
+            remote_asset_nodes_by_key={},
+            remote_asset_check_nodes_by_key={},
+        )
+
 
 class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
     def __init__(
@@ -593,7 +617,7 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
         return self._remote_asset_check_nodes_by_key
 
     @property
-    def _asset_nodes_by_key(self) -> Mapping[AssetKey, RemoteWorkspaceAssetNode]:
+    def _asset_nodes_by_key(self) -> Mapping[AssetKey, RemoteWorkspaceAssetNode]:  # pyright: ignore[reportIncompatibleVariableOverride]
         return self.remote_asset_nodes_by_key
 
     @property
@@ -632,22 +656,27 @@ class RemoteWorkspaceAssetGraph(RemoteAssetGraph[RemoteWorkspaceAssetNode]):
         return list(keys_by_repo.values())
 
     @classmethod
-    def build(cls, workspace: WorkspaceSnapshot):
+    def build(cls, workspace: CurrentWorkspace):
         # Combine repository scoped asset graphs with additional context to form the global graph
 
-        code_locations = (
-            location_entry.code_location
-            for location_entry in workspace.code_location_entries.values()
-            if location_entry.code_location
+        code_locations = sorted(
+            (
+                location_entry.code_location
+                for location_entry in workspace.code_location_entries.values()
+                if location_entry.code_location
+            ),
+            key=lambda code_location: code_location.name,
         )
         repos = (
             repo
             for code_location in code_locations
-            for repo in code_location.get_repositories().values()
+            for repo in sorted(
+                code_location.get_repositories().values(), key=lambda repo: repo.name
+            )
         )
 
-        asset_infos_by_key: Dict[AssetKey, List[RepositoryScopedAssetInfo]] = defaultdict(list)
-        asset_checks_by_key: Dict[AssetCheckKey, RemoteAssetCheckNode] = {}
+        asset_infos_by_key: dict[AssetKey, list[RepositoryScopedAssetInfo]] = defaultdict(list)
+        asset_checks_by_key: dict[AssetCheckKey, RemoteAssetCheckNode] = {}
         for repo in repos:
             for key, asset_node in repo.asset_graph.remote_asset_nodes_by_key.items():
                 asset_infos_by_key[key].append(

@@ -1,5 +1,6 @@
 import itertools
-from typing import List, NamedTuple, Optional, Sequence
+from collections.abc import Sequence
+from typing import NamedTuple, Optional
 
 from dagster import (
     AssetCheckResult,
@@ -31,7 +32,7 @@ def build_assets(
     id: str,
     layer_configs: Sequence[AssetLayerConfig],
     automation_condition: Optional[AutomationCondition] = AutomationCondition.eager(),
-) -> List[AssetsDefinition]:
+) -> list[AssetsDefinition]:
     layers = []
 
     with disable_dagster_warnings():

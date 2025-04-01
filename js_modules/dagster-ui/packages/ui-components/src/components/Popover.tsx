@@ -3,22 +3,40 @@
 import {Popover2, Popover2Props} from '@blueprintjs/popover2';
 import deepmerge from 'deepmerge';
 import * as React from 'react';
-import {createGlobalStyle} from 'styled-components';
+import {createGlobalStyle, css} from 'styled-components';
 
 import {Colors} from './Color';
 import {FontFamily} from './styles';
 import searchSVG from '../icon-svgs/search.svg';
 
+export const PopoverWrapperStyle = css`
+  box-shadow: ${Colors.shadowDefault()} 0px 2px 12px;
+`;
+
+export const PopoverContentStyle = css`
+  background-color: ${Colors.popoverBackground()};
+  border-radius: 4px;
+
+  > :first-child {
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+  }
+
+  > :last-child {
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+  }
+`;
+
 export const GlobalPopoverStyle = createGlobalStyle`
   .dagster-popover.bp5-popover,
   .dagster-popover.bp5-popover {
-    box-shadow: ${Colors.shadowDefault()} 0px 2px 12px;
+    ${PopoverWrapperStyle}
   }
 
   .dagster-popover .bp5-popover-content,
   .dagster-popover .bp5-popover-content {
-    background-color: ${Colors.popoverBackground()};
-    border-radius: 4px;
+    ${PopoverContentStyle}
 
     .bp5-menu {
       background-color: ${Colors.popoverBackground()};
@@ -52,16 +70,6 @@ export const GlobalPopoverStyle = createGlobalStyle`
         }
       }
     }
-  }
-
-  .dagster-popover .bp5-popover-content > :first-child {
-    border-top-left-radius: 4px;
-    border-top-right-radius: 4px;
-  }
-
-  .dagster-popover .bp5-popover-content > :last-child {
-    border-bottom-left-radius: 4px;
-    border-bottom-right-radius: 4px;
   }
 
   .dagster-popover .bp5-popover-arrow-fill {

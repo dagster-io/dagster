@@ -1,6 +1,7 @@
+from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Type, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from dagster import (
     AssetSpec,
@@ -8,11 +9,12 @@ from dagster import (
     Definitions,
     _check as check,
 )
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import beta, deprecated, public
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._record import record
 from dagster._utils.cached_method import cached_method
 from dagster._utils.log import get_dagster_logger
+from dagster._utils.warnings import deprecation_warning
 from looker_sdk import init40
 from looker_sdk.rtl.api_settings import ApiSettings, SettingsConfig
 from looker_sdk.sdk.api40.methods import Looker40SDK
@@ -20,6 +22,7 @@ from pydantic import Field
 
 from dagster_looker.api.dagster_looker_api_translator import (
     DagsterLookerApiTranslator,
+    LookerApiTranslatorStructureData,
     LookerInstanceData,
     LookerStructureData,
     LookerStructureType,
@@ -48,11 +51,11 @@ class LookerFilter:
             will be fetched. If False, all explores will be fetched. Defaults to False.
     """
 
-    dashboard_folders: Optional[List[List[str]]] = None
+    dashboard_folders: Optional[list[list[str]]] = None
     only_fetch_explores_used_in_dashboards: bool = False
 
 
-@experimental
+@beta
 class LookerResource(ConfigurableResource):
     """Represents a connection to a Looker instance and provides methods
     to interact with the Looker API.
@@ -106,44 +109,53 @@ class LookerResource(ConfigurableResource):
         from dagster_looker.api.assets import build_looker_pdt_assets_definitions
 
         resource_key = "looker"
-        translator_cls = (
-            dagster_looker_translator.__class__
-            if dagster_looker_translator
-            else DagsterLookerApiTranslator
-        )
+        translator = dagster_looker_translator or DagsterLookerApiTranslator()
 
         pdts = build_looker_pdt_assets_definitions(
             resource_key=resource_key,
             request_start_pdt_builds=request_start_pdt_builds or [],
-            dagster_looker_translator=translator_cls,
+            dagster_looker_translator=translator,
         )
 
         return Definitions(
-            assets=[*pdts, *load_looker_asset_specs(self, translator_cls, looker_filter)],
+            assets=[*pdts, *load_looker_asset_specs(self, translator, looker_filter)],
             resources={resource_key: self},
         )
 
 
-@experimental
+@beta
 def load_looker_asset_specs(
     looker_resource: LookerResource,
-    dagster_looker_translator: Type[DagsterLookerApiTranslator] = DagsterLookerApiTranslator,
+    dagster_looker_translator: Optional[
+        Union[DagsterLookerApiTranslator, type[DagsterLookerApiTranslator]]
+    ] = None,
     looker_filter: Optional[LookerFilter] = None,
 ) -> Sequence[AssetSpec]:
     """Returns a list of AssetSpecs representing the Looker structures.
 
     Args:
         looker_resource (LookerResource): The Looker resource to fetch assets from.
-        dagster_looker_translator (Type[DagsterLookerApiTranslator]): The translator to use
-            to convert Looker structures into AssetSpecs. Defaults to DagsterLookerApiTranslator.
+        dagster_looker_translator (Optional[Union[DagsterLookerApiTranslator, Type[DagsterLookerApiTranslator]]]):
+            The translator to use to convert Looker structures into :py:class:`dagster.AssetSpec`.
+            Defaults to :py:class:`DagsterLookerApiTranslator`.
 
     Returns:
         List[AssetSpec]: The set of AssetSpecs representing the Looker structures.
     """
+    if isinstance(dagster_looker_translator, type):
+        deprecation_warning(
+            subject="Support of `dagster_looker_translator` as a Type[DagsterLookerApiTranslator]",
+            breaking_version="1.10",
+            additional_warn_text=(
+                "Pass an instance of DagsterLookerApiTranslator or subclass to `dagster_looker_translator` instead."
+            ),
+        )
+        dagster_looker_translator = dagster_looker_translator()
+
     return check.is_list(
         LookerApiDefsLoader(
             looker_resource=looker_resource,
-            translator_cls=dagster_looker_translator,
+            translator=dagster_looker_translator or DagsterLookerApiTranslator(),
             looker_filter=looker_filter or LookerFilter(),
         )
         .build_defs()
@@ -152,7 +164,7 @@ def load_looker_asset_specs(
     )
 
 
-def build_folder_path(folder_id_to_folder: Dict[str, "Folder"], folder_id: str) -> List[str]:
+def build_folder_path(folder_id_to_folder: dict[str, "Folder"], folder_id: str) -> list[str]:
     curr = folder_id
     result = []
     while curr in folder_id_to_folder:
@@ -164,7 +176,7 @@ def build_folder_path(folder_id_to_folder: Dict[str, "Folder"], folder_id: str) 
 @dataclass(frozen=True)
 class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     looker_resource: LookerResource
-    translator_cls: Type[DagsterLookerApiTranslator]
+    translator: DagsterLookerApiTranslator
     looker_filter: LookerFilter
 
     @property
@@ -177,8 +189,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
 
     def defs_from_state(self, state: Mapping[str, Any]) -> Definitions:
         looker_instance_data = LookerInstanceData.from_state(self.looker_resource.get_sdk(), state)
-        translator = self.translator_cls(looker_instance_data)
-        return self._build_defs_from_looker_instance_data(looker_instance_data, translator)
+        return self._build_defs_from_looker_instance_data(looker_instance_data, self.translator)
 
     def _build_defs_from_looker_instance_data(
         self,
@@ -187,20 +198,26 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
     ) -> Definitions:
         explores = [
             dagster_looker_translator.get_asset_spec(
-                LookerStructureData(
-                    structure_type=LookerStructureType.EXPLORE,
-                    data=lookml_explore,
-                    base_url=self.looker_resource.base_url,
-                ),
+                LookerApiTranslatorStructureData(
+                    structure_data=LookerStructureData(
+                        structure_type=LookerStructureType.EXPLORE,
+                        data=lookml_explore,
+                        base_url=self.looker_resource.base_url,
+                    ),
+                    instance_data=looker_instance_data,
+                )
             )
             for lookml_explore in looker_instance_data.explores_by_id.values()
         ]
         views = [
             dagster_looker_translator.get_asset_spec(
-                LookerStructureData(
-                    structure_type=LookerStructureType.DASHBOARD,
-                    data=looker_dashboard,
-                    base_url=self.looker_resource.base_url,
+                LookerApiTranslatorStructureData(
+                    structure_data=LookerStructureData(
+                        structure_type=LookerStructureType.DASHBOARD,
+                        data=looker_dashboard,
+                        base_url=self.looker_resource.base_url,
+                    ),
+                    instance_data=looker_instance_data,
                 )
             )
             for looker_dashboard in looker_instance_data.dashboards_by_id.values()
@@ -301,7 +318,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
                 for model_name, explore_names in explores_for_model.items()
             }
 
-        def fetch_explore(model_name, explore_name) -> Optional[Tuple[str, "LookmlModelExplore"]]:
+        def fetch_explore(model_name, explore_name) -> Optional[tuple[str, "LookmlModelExplore"]]:
             try:
                 lookml_explore = sdk.lookml_model_explore(
                     lookml_model_name=model_name,
@@ -330,7 +347,7 @@ class LookerApiDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
             ]
             explores_by_id = dict(
                 cast(
-                    List[Tuple[str, "LookmlModelExplore"]],
+                    list[tuple[str, "LookmlModelExplore"]],
                     (
                         entry
                         for entry in executor.map(

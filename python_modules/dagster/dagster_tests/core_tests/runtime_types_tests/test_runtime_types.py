@@ -117,13 +117,13 @@ def test_python_mapping():
     assert add_one.input_defs[0].dagster_type.unique_name == "Int"
 
     runtime = resolve_dagster_type(float)
-    runtime.type_check(None, 1.0)
-    res = runtime.type_check(None, 1)
+    runtime.type_check(None, 1.0)  # pyright: ignore[reportArgumentType]
+    res = runtime.type_check(None, 1)  # pyright: ignore[reportArgumentType]
     assert not res.success
 
     runtime = resolve_dagster_type(bool)
-    runtime.type_check(None, True)
-    res = runtime.type_check(None, 1)
+    runtime.type_check(None, True)  # pyright: ignore[reportArgumentType]
+    res = runtime.type_check(None, 1)  # pyright: ignore[reportArgumentType]
     assert not res.success
 
 

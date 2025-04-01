@@ -1,7 +1,0 @@
-- id: tutorial1.png
-  workspace: examples/docs_snippets/docs_snippets/legacy/dagster_pandas_guide/workspace.yaml
-  vetted: false
-
-- id: tutorial2.png
-  workspace: examples/docs_snippets/docs_snippets/legacy/dagster_pandas_guide/workspace.yaml
-  vetted: false

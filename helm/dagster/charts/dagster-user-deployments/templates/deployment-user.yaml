@@ -8,9 +8,16 @@ metadata:
     {{- include "dagster.labels" $ | nindent 4 }}
     component: user-deployments
     deployment: {{ $deployment.name }}
+    {{- with $deployment.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
   annotations: {{ $deployment.annotations | toYaml | nindent 4 }}
 spec:
   replicas: 1
+  {{- if $deployment.deploymentStrategy }}
+  strategy:
+    {{- toYaml $deployment.deploymentStrategy | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "dagster.selectorLabels" $ | nindent 6 }}

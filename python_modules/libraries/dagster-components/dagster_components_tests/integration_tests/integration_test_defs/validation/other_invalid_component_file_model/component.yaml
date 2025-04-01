@@ -1,0 +1,4 @@
+type: .MyComponent
+
+attributez:
+  a_string: "a string"

@@ -1,19 +1,12 @@
 import sys
 import threading
 from abc import abstractmethod
+from collections.abc import Mapping, Sequence
 from contextlib import AbstractContextManager
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-)
+from functools import cached_property
+from typing import TYPE_CHECKING, AbstractSet, Any, Optional, Union, cast  # noqa: UP035
+
+from dagster_shared.libraries import DagsterLibraryRegistry
 
 import dagster._check as check
 from dagster._api.get_server_id import sync_get_server_id
@@ -32,7 +25,7 @@ from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_job import IMPLICIT_ASSET_JOB_NAME
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.timestamp import TimestampWithTimezone
@@ -44,7 +37,6 @@ from dagster._core.errors import (
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
-from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._core.origin import RepositoryPythonOrigin
 from dagster._core.remote_representation import RemoteJobSubsetResult
 from dagster._core.remote_representation.external import (
@@ -153,6 +145,17 @@ class CodeLocation(AbstractContextManager):
         repo_handle = self.get_repository(selector.repository_name).handle
 
         subset_result = self.get_subset_remote_job_result(selector)
+
+        if subset_result.repository_python_origin:
+            # Prefer the python origin from the result if it is set, in case the code location
+            # just updated and any origin information (most frequently the image) has changed
+            repo_handle = RepositoryHandle(
+                repository_name=repo_handle.repository_name,
+                code_location_origin=repo_handle.code_location_origin,
+                repository_python_origin=subset_result.repository_python_origin,
+                display_metadata=repo_handle.display_metadata,
+            )
+
         job_data_snap = subset_result.job_data_snap
         if job_data_snap is None:
             error = check.not_none(subset_result.error)
@@ -342,7 +345,7 @@ class CodeLocation(AbstractContextManager):
     def container_image(self) -> Optional[str]:
         pass
 
-    @property
+    @cached_property
     def container_context(self) -> Optional[Mapping[str, Any]]:
         return None
 
@@ -383,13 +386,14 @@ class InProcessCodeLocation(CodeLocation):
         loadable_target_origin = self._origin.loadable_target_origin
         self._loaded_repositories = LoadedRepositories(
             loadable_target_origin,
-            self._origin.entry_point,
-            self._origin.container_image,
+            entry_point=self._origin.entry_point,
+            container_image=self._origin.container_image,
+            container_context=self._origin.container_context,
         )
 
         self._repository_code_pointer_dict = self._loaded_repositories.code_pointers_by_repo_name
 
-        self._repositories: Dict[str, RemoteRepository] = {}
+        self._repositories: dict[str, RemoteRepository] = {}
         for (
             repo_name,
             repo_def,
@@ -397,7 +401,7 @@ class InProcessCodeLocation(CodeLocation):
             self._repositories[repo_name] = RemoteRepository(
                 RepositorySnap.from_def(repo_def),
                 RepositoryHandle.from_location(repository_name=repo_name, code_location=self),
-                instance=instance,
+                auto_materialize_use_sensors=instance.auto_materialize_use_sensors,
             )
 
     @property
@@ -416,7 +420,7 @@ class InProcessCodeLocation(CodeLocation):
     def container_image(self) -> Optional[str]:
         return self._origin.container_image
 
-    @property
+    @cached_property
     def container_context(self) -> Optional[Mapping[str, Any]]:
         return self._origin.container_context
 
@@ -428,10 +432,11 @@ class InProcessCodeLocation(CodeLocation):
     def repository_code_pointer_dict(self) -> Mapping[str, CodePointer]:
         return self._repository_code_pointer_dict
 
+    def _get_reconstructable_repository(self, repository_name: str) -> ReconstructableRepository:
+        return self._loaded_repositories.reconstructables_by_name[repository_name]
+
     def get_reconstructable_job(self, repository_name: str, name: str) -> ReconstructableJob:
-        return self._loaded_repositories.reconstructables_by_name[
-            repository_name
-        ].get_reconstructable_job(name)
+        return self._get_reconstructable_repository(repository_name).get_reconstructable_job(name)
 
     def _get_repo_def(self, name: str) -> RepositoryDefinition:
         return self._loaded_repositories.definitions_by_name[name]
@@ -457,6 +462,7 @@ class InProcessCodeLocation(CodeLocation):
 
         return get_external_pipeline_subset_result(
             self._get_repo_def(selector.repository_name),
+            self._get_reconstructable_repository(selector.repository_name),
             selector.job_name,
             selector.op_selection,
             selector.asset_selection,
@@ -641,11 +647,10 @@ class GrpcServerCodeLocation(CodeLocation):
         host: Optional[str] = None,
         port: Optional[int] = None,
         socket: Optional[str] = None,
-        server_id: Optional[str] = None,
         heartbeat: Optional[bool] = False,
         watch_server: Optional[bool] = True,
         grpc_server_registry: Optional[GrpcServerRegistry] = None,
-        grpc_metadata: Optional[Sequence[Tuple[str, str]]] = None,
+        grpc_metadata: Optional[Sequence[tuple[str, str]]] = None,
     ):
         from dagster._grpc.client import DagsterGrpcClient, client_heartbeat_thread
 
@@ -692,7 +697,7 @@ class GrpcServerCodeLocation(CodeLocation):
             )
             list_repositories_response = sync_list_repositories_grpc(self.client)
 
-            self._server_id = server_id if server_id else sync_get_server_id(self.client)
+            self._server_id = sync_get_server_id(self.client)
             self.repository_names = set(
                 symbol.repository_name for symbol in list_repositories_response.repository_symbols
             )
@@ -736,7 +741,7 @@ class GrpcServerCodeLocation(CodeLocation):
                         repository_name=repo_name,
                         code_location=self,
                     ),
-                    instance,
+                    auto_materialize_use_sensors=instance.auto_materialize_use_sensors,
                 )
                 for repo_name, repo_data in self._repository_snaps.items()
             }
@@ -756,7 +761,7 @@ class GrpcServerCodeLocation(CodeLocation):
     def container_image(self) -> str:
         return cast(str, self._container_image)
 
-    @property
+    @cached_property
     def container_context(self) -> Optional[Mapping[str, Any]]:
         return self._container_context
 

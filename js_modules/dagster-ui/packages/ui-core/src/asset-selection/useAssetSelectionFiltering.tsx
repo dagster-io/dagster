@@ -16,14 +16,16 @@ export const useAssetSelectionFiltering = <
   loading: assetsLoading,
   assetSelection,
   assets,
+  useWorker = true,
 }: {
   loading?: boolean;
   assetSelection: string;
 
-  assets: T[];
+  assets: T[] | undefined;
+  useWorker?: boolean;
 }) => {
   const assetsByKey = useMemo(
-    () => Object.fromEntries(assets.map((asset) => [tokenForAssetKey(asset.key), asset])),
+    () => Object.fromEntries((assets ?? []).map((asset) => [tokenForAssetKey(asset.key), asset])),
     [assets],
   );
 
@@ -37,16 +39,14 @@ export const useAssetSelectionFiltering = <
           return !assetsByKey[tokenForAssetKey(node.assetKey)];
         },
         loading: !!assetsLoading,
+        useWorker,
       }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [assetsByKeyStringified, assetsLoading],
+      [assetsByKeyStringified, assetsLoading, useWorker],
     ),
   );
 
   const filtered = useMemo(() => {
-    if (!assetSelection) {
-      return assets;
-    }
     return (
       graphAssetKeys
         .map((key) => {
@@ -55,7 +55,7 @@ export const useAssetSelectionFiltering = <
         .filter((a) => a)
         .sort((a, b) => COMMON_COLLATOR.compare(a.key.path.join(''), b.key.path.join(''))) ?? []
     );
-  }, [assetSelection, graphAssetKeys, assets, assetsByKey]);
+  }, [graphAssetKeys, assetsByKey]);
 
   const filteredByKey = useMemo(
     () => Object.fromEntries(filtered.map((asset) => [tokenForAssetKey(asset.key), asset])),

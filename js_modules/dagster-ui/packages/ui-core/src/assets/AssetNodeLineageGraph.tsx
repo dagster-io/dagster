@@ -12,21 +12,25 @@ import {MINIMAL_SCALE} from '../asset-graph/AssetGraphExplorer';
 import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from '../asset-graph/AssetNode';
 import {ExpandedGroupNode, GroupOutline} from '../asset-graph/ExpandedGroupNode';
 import {AssetNodeLink} from '../asset-graph/ForeignNode';
-import {ToggleDirectionButton, useLayoutDirectionState} from '../asset-graph/GraphSettings';
+import {AssetGraphSettingsButton, useLayoutDirectionState} from '../asset-graph/GraphSettings';
 import {GraphData, GraphNode, groupIdForNode, toGraphId} from '../asset-graph/Utils';
-import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
+import {DEFAULT_MAX_ZOOM} from '../graph/SVGConsts';
+import {SVGViewport, SVGViewportRef} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {isNodeOffscreen} from '../graph/common';
 import {AssetKeyInput} from '../graphql/types';
 import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
-
 export type AssetNodeLineageGraphProps = {
   assetKey: AssetKeyInput;
   assetGraphData: GraphData;
   params: AssetViewParams;
 };
 
-export const AssetNodeLineageGraph = ({
+export const AssetNodeLineageGraph = (props: AssetNodeLineageGraphProps) => {
+  return <AssetNodeLineageGraphInner {...props} />;
+};
+
+const AssetNodeLineageGraphInner = ({
   assetKey,
   assetGraphData,
   params,
@@ -52,7 +56,7 @@ export const AssetNodeLineageGraph = ({
     allGroups,
     useMemo(() => ({direction}), [direction]),
   );
-  const viewportEl = useRef<SVGViewport>();
+  const viewportEl = useRef<SVGViewportRef>();
   const history = useHistory();
 
   const onClickAsset = (e: React.MouseEvent<any>, key: AssetKey) => {
@@ -84,7 +88,6 @@ export const AssetNodeLineageGraph = ({
         ref={(r) => {
           viewportEl.current = r || undefined;
         }}
-        interactor={SVGViewport.Interactors.PanAndZoom}
         defaultZoom="zoom-to-fit"
         graphWidth={layout.width}
         graphHeight={layout.height}
@@ -95,11 +98,7 @@ export const AssetNodeLineageGraph = ({
         maxZoom={DEFAULT_MAX_ZOOM}
         maxAutocenterZoom={DEFAULT_MAX_ZOOM}
         additionalToolbarElements={
-          <ToggleDirectionButton
-            key="toggle-direction"
-            direction={direction}
-            setDirection={setDirection}
-          />
+          <AssetGraphSettingsButton direction={direction} setDirection={setDirection} />
         }
       >
         {({scale}, viewportRect) => (

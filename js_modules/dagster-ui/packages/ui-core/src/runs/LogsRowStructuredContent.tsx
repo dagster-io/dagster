@@ -23,6 +23,7 @@ import {AssetKey} from '../assets/types';
 import {DagsterEventType, ErrorSource} from '../graphql/types';
 import {
   LogRowStructuredContentTable,
+  LogRowStructuredRow,
   MetadataEntries,
   MetadataEntryLink,
 } from '../metadata/MetadataEntry';
@@ -139,6 +140,7 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
           metadataEntries={node.metadataEntries}
           eventType={eventType}
           timestamp={node.timestamp}
+          partition={node.partition}
         />
       );
     case 'ObservationEvent':
@@ -149,9 +151,12 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
           metadataEntries={node.metadataEntries}
           eventType={eventType}
           timestamp={node.timestamp}
+          partition={node.partition}
         />
       );
     case 'AssetMaterializationPlannedEvent':
+      return <DefaultContent eventType={eventType} message={node.message} />;
+    case 'FailedToMaterializeEvent':
       return <DefaultContent eventType={eventType} message={node.message} />;
     case 'ObjectStoreOperationEvent':
       return (
@@ -463,9 +468,12 @@ const AssetCheckEvaluationContent = ({
   const {checkName, success, metadataEntries, targetMaterialization, assetKey} = node.evaluation;
 
   const checkLink = assetDetailsPathForAssetCheck({assetKey, name: checkName});
+
+  // Target materialization timestamp is in seconds, and must be converted to msec for the query param.
+  const asOf = targetMaterialization?.timestamp ?? null;
   const matLink = assetDetailsPathForKey(assetKey, {
     view: 'events',
-    asOf: targetMaterialization ? `${targetMaterialization.timestamp}` : undefined,
+    asOf: asOf ? `${Math.floor(asOf * 1000)}` : undefined,
   });
 
   return (
@@ -492,12 +500,14 @@ const AssetMetadataContent = ({
   metadataEntries,
   eventType,
   timestamp,
+  partition,
 }: {
   message: string;
   assetKey: AssetKey | null;
   metadataEntries: MetadataEntryFragment[];
   eventType: string;
   timestamp: string;
+  partition: string | null;
 }) => {
   if (!assetKey) {
     return (
@@ -515,22 +525,30 @@ const AssetMetadataContent = ({
     </span>
   );
 
+  // Note: No memoization here - log row content components are memoized higher up
+
+  const rows: LogRowStructuredRow[] = [
+    {
+      label: 'asset_key',
+      item: (
+        <>
+          {displayNameForAssetKey(assetKey)}
+          {assetDashboardLink}
+        </>
+      ),
+    },
+  ];
+
+  if (partition) {
+    rows.push({label: 'partition', item: <>{partition}</>});
+  }
+
   return (
     <DefaultContent message={message} eventType={eventType}>
       <>
         <LogRowStructuredContentTable
           styles={metadataEntries?.length ? {paddingBottom: 0} : {}}
-          rows={[
-            {
-              label: 'asset_key',
-              item: (
-                <>
-                  {displayNameForAssetKey(assetKey)}
-                  {assetDashboardLink}
-                </>
-              ),
-            },
-          ]}
+          rows={rows}
         />
         <MetadataEntries entries={metadataEntries} />
       </>

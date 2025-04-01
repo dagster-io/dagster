@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.workspace.permissions import Permissions

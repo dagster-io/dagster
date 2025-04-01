@@ -155,7 +155,7 @@ class TestReloadWorkspace(MultiLocationTestSuite):
 
             # Simulate adding an origin with an error, reload
 
-            original_origins.append(
+            original_origins.append(  # pyright: ignore[reportAttributeAccessIssue]
                 ManagedGrpcPythonEnvCodeLocationOrigin(
                     location_name="error_location",
                     loadable_target_origin=LoadableTargetOrigin(
@@ -196,7 +196,7 @@ class TestReloadWorkspace(MultiLocationTestSuite):
 
             # Add another origin without an error, reload
 
-            original_origins.append(original_origins[0]._replace(location_name="location_copy"))
+            original_origins.append(original_origins[0]._replace(location_name="location_copy"))  # pyright: ignore[reportAttributeAccessIssue]
             origins_mock.return_value = original_origins
 
             result = execute_dagster_graphql(graphql_context, RELOAD_WORKSPACE_QUERY)
@@ -224,7 +224,7 @@ class TestReloadWorkspace(MultiLocationTestSuite):
 
             # Finally, update one of the origins' location names
 
-            original_origins[0] = original_origins[0]._replace(location_name="new_location_name")
+            original_origins[0] = original_origins[0]._replace(location_name="new_location_name")  # pyright: ignore[reportIndexIssue,reportAttributeAccessIssue]
 
             result = execute_dagster_graphql(graphql_context, RELOAD_WORKSPACE_QUERY)
 
@@ -492,7 +492,7 @@ class TestReloadLocationCodeServerCliGrpc(CodeServerCliTestSuite):
         assert result.data["reloadRepositoryLocation"]["loadStatus"] == "LOADED"
 
         new_location = (
-            graphql_context.process_context.get_workspace_snapshot()
+            graphql_context.process_context.get_current_workspace()
             .code_location_entries[main_repo_location_name()]
             .code_location
         )

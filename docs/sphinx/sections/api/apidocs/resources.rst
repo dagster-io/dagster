@@ -6,7 +6,7 @@ Resources
 Pythonic resource system
 ------------------------
 
-The following classes are used as part of the new `Pythonic resources system <https://docs.dagster.io/concepts/resources>`_.
+The following classes are used as part of the new `Pythonic resources system <https://docs.dagster.io/guides/build/external-resources/>`_.
 
 
 .. autoclass:: ConfigurableResource
@@ -32,7 +32,7 @@ Utilities
 Legacy resource system
 ----------------------
 
-The following classes are used as part of the `legacy resource system <https://docs.dagster.io/concepts/resources-legacy>`_.
+The following classes are used as part of the `legacy resource system <https://legacy-docs.dagster.io/concepts/resources-legacy>`_.
 
 
 .. autodecorator:: resource

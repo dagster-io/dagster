@@ -1,5 +1,9 @@
 import sys
-from typing import Generator, Iterable, Iterator
+from collections.abc import Generator, Iterator
+from typing import (  # noqa:UP035
+    Iterable as TypingIterable,
+    Iterator as TypingIterator,
+)
 
 import pytest
 from dagster import AssetKey, DynamicOut, DynamicOutput, In, Out, Output, op
@@ -86,8 +90,8 @@ def test_precedence():
     assert precedence.input_defs[0].default_value == "hi"
     assert precedence.input_defs[0].metadata["explicit"]
     assert precedence.input_defs[0].input_manager_key == "rudy"
-    assert precedence.input_defs[0].get_asset_key(None) is not None
-    assert precedence.input_defs[0].get_asset_partitions(None) is not None
+    assert precedence.input_defs[0].get_asset_key(None) is not None  # pyright: ignore[reportArgumentType]
+    assert precedence.input_defs[0].get_asset_partitions(None) is not None  # pyright: ignore[reportArgumentType]
 
 
 def test_output_merge():
@@ -151,7 +155,7 @@ def test_not_type_input():
         def _create(
             _context,
             # invalid since Iterator is not a python type or DagsterType
-            arg_b: Iterator[int],
+            arg_b: TypingIterator[int],
         ):
             return arg_b
 
@@ -167,7 +171,7 @@ def test_not_type_input():
         def _combine(
             _context,
             # invalid since Iterator is not a python type or DagsterType
-            arg_b: Iterator[int],
+            arg_b: TypingIterator[int],
         ):
             return arg_b
 
@@ -180,5 +184,5 @@ def test_not_type_input():
     ):
 
         @op
-        def _out(_context) -> Iterable[int]:
+        def _out(_context) -> TypingIterable[int]:
             return [1]

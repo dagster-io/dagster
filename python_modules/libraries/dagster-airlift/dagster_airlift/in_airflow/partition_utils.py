@@ -1,9 +1,10 @@
+from collections.abc import Mapping, Sequence
 from datetime import (
     datetime,
     timezone as tz,
 )
 from enum import Enum
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, NamedTuple, Optional
 
 PARTITION_NAME_TAG = "dagster/partition"
 

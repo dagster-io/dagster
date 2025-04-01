@@ -1,7 +1,8 @@
 import logging
 import time
+from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
-from typing import Any, Callable, Iterator, Mapping, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 from urllib.parse import quote, urlencode
 
 import alembic.config

@@ -114,6 +114,17 @@ describe('LaunchAssetExecutionButton', () => {
         'Materialize selected (1)…', // 2 instead of 3
       );
     });
+
+    it('should be disabled if the selection is empty', async () => {
+      renderButton({
+        scope: {selected: []},
+      });
+      const button = await screen.findByTestId('materialize-button');
+      expect(button).toBeDisabled();
+
+      userEvent.hover(button);
+      expect(await screen.findByText('Select one or more assets to materialize')).toBeDefined();
+    });
   });
 
   describe('observable assets', () => {
@@ -358,9 +369,26 @@ describe('LaunchAssetExecutionButton', () => {
       });
       await clickMaterializeButton();
       await screen.findByTestId('choose-partitions-dialog');
+      await userEvent.click(await screen.findByTestId('all-partition-button'));
 
       // verify that the executed mutation is correct
       await expectLaunchExecutesMutationAndCloses('Launch backfill', launchMock);
+    });
+
+    it('should default the backfill modal to an empty selection', async () => {
+      renderButton({
+        scope: {all: [ASSET_DAILY]},
+        preferredJobName: 'my_asset_job',
+      });
+      await clickMaterializeButton();
+      await screen.findByTestId('choose-partitions-dialog');
+
+      const launchButton = await screen.findByTestId('launch-button');
+      expect(launchButton.textContent).toEqual('Launch backfill');
+      expect(launchButton).toBeDisabled();
+
+      await userEvent.click(await screen.findByTestId('all-partition-button'));
+      expect(await screen.findByTestId('launch-button')).toBeEnabled();
     });
 
     it('should launch backfills with only missing partitions if requested', async () => {
@@ -381,6 +409,9 @@ describe('LaunchAssetExecutionButton', () => {
       });
       await clickMaterializeButton();
       await screen.findByTestId('choose-partitions-dialog');
+
+      // choose "All" partitions
+      await userEvent.click(await screen.findByTestId('all-partition-button'));
 
       // verify that the preview option is not shown
       expect(screen.queryByTestId('backfill-preview-button')).toBeNull();
@@ -451,6 +482,9 @@ describe('LaunchAssetExecutionButton', () => {
         await clickMaterializeButton();
         await screen.findByTestId('choose-partitions-dialog');
 
+        // choose "All" partitions
+        await userEvent.click(await screen.findByTestId('all-partition-button'));
+
         // missing-and-failed only option is available
         expect(screen.getByTestId('missing-only-checkbox')).toBeEnabled();
 
@@ -487,6 +521,9 @@ describe('LaunchAssetExecutionButton', () => {
         });
         await clickMaterializeButton();
         await screen.findByTestId('choose-partitions-dialog');
+
+        // choose "All" partitions
+        await userEvent.click(await screen.findByTestId('all-partition-button'));
 
         const rangesAsTags = screen.getByTestId('ranges-as-tags-true-radio');
         await waitFor(async () => expect(rangesAsTags).toBeEnabled());
@@ -547,6 +584,9 @@ describe('LaunchAssetExecutionButton', () => {
 
       // expect the dialog to be displayed
       await screen.findByTestId('choose-partitions-dialog');
+
+      // choose "All" partitions
+      await userEvent.click(await screen.findByTestId('all-partition-button'));
 
       // expect the anchor asset to be labeled
       expect(screen.getByTestId('anchor-asset-label')).toHaveTextContent('asset_daily');

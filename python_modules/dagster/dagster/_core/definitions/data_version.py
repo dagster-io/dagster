@@ -1,22 +1,11 @@
 import functools
+from collections.abc import Iterator, Mapping, Sequence
 from enum import Enum
 from hashlib import sha256
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Iterator,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Union,
-)
-
-from typing_extensions import Final
+from typing import TYPE_CHECKING, Callable, Final, NamedTuple, Optional, Union
 
 from dagster import _check as check
-from dagster._annotations import deprecated, experimental
+from dagster._annotations import beta, deprecated
 from dagster._core.loader import LoadingContext
 from dagster._utils.cached_method import cached_method
 
@@ -47,7 +36,7 @@ class DataVersion(
         [("value", str)],
     )
 ):
-    """(Experimental) Represents a data version for an asset.
+    """Represents a data version for an asset.
 
     Args:
         value (str): An arbitrary string representing a data version.
@@ -57,13 +46,13 @@ class DataVersion(
         cls,
         value: str,
     ):
-        return super(DataVersion, cls).__new__(
+        return super().__new__(
             cls,
             value=check.str_param(value, "value"),
         )
 
 
-@experimental
+@beta
 class DataVersionsByPartition(
     NamedTuple(
         "_DataVersionsByPartition", [("data_versions_by_partition", Mapping[str, DataVersion])]
@@ -79,7 +68,7 @@ class DataVersionsByPartition(
             key_type=str,
             value_type=(str, DataVersion),
         )
-        return super(DataVersionsByPartition, cls).__new__(
+        return super().__new__(
             cls,
             data_versions_by_partition={
                 partition: DataVersion(version) if isinstance(version, str) else version
@@ -105,7 +94,7 @@ class DataProvenance(
         ],
     )
 ):
-    """(Experimental) Provenance information for an asset materialization.
+    """Provenance information for an asset materialization.
 
     Args:
         code_version (str): The code version of the op that generated a materialization.
@@ -124,7 +113,7 @@ class DataProvenance(
     ):
         from dagster._core.definitions.events import AssetKey
 
-        return super(DataProvenance, cls).__new__(
+        return super().__new__(
             cls,
             code_version=check.str_param(code_version, "code_version"),
             input_data_versions=check.mapping_param(
@@ -588,7 +577,7 @@ class CachingStaleStatusResolver:
         visited = set()
         root_causes = []
         while candidates:
-            next_candidates: List[StaleCause] = []
+            next_candidates: list[StaleCause] = []
             for cause in candidates:
                 if cause.dedupe_key not in visited:
                     if cause.children is None:

@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
-from functools import lru_cache
-from typing import AbstractSet, Any, Iterable, Mapping, Optional, Type
+from collections.abc import Iterable, Mapping
+from functools import cache
+from typing import AbstractSet, Any, Optional  # noqa: UP035
 
+from dagster_shared.dagster_model import DagsterModel
+from dagster_shared.dagster_model.pydantic_compat_layer import model_fields
 from typing_extensions import TypeVar
 
 from dagster import _check as check
@@ -12,8 +15,6 @@ from dagster._core.definitions.metadata.metadata_value import (
     TableColumnLineage,
     TableSchema,
 )
-from dagster._model import DagsterModel
-from dagster._model.pydantic_compat_layer import model_fields
 from dagster._utils.typing_api import flatten_unions
 
 # Python types that have a MetadataValue types that directly wraps them
@@ -30,7 +31,7 @@ DIRECTLY_WRAPPED_METADATA_TYPES = {
 T_NamespacedKVSet = TypeVar("T_NamespacedKVSet", bound="NamespacedKVSet")
 
 
-def is_raw_metadata_type(t: Type) -> bool:
+def is_raw_metadata_type(t: type) -> bool:
     return issubclass(t, MetadataValue) or t in DIRECTLY_WRAPPED_METADATA_TYPES
 
 
@@ -57,7 +58,7 @@ class NamespacedKVSet(ABC, DagsterModel):
     def keys(self) -> Iterable[str]:
         return [
             self._namespaced_key(key)
-            for key in model_fields(self).keys()
+            for key in model_fields(self.__class__).keys()
             # getattr returns the pydantic property on the subclass
             if getattr(self, key) is not None
         ]
@@ -67,7 +68,7 @@ class NamespacedKVSet(ABC, DagsterModel):
         return getattr(self, self._strip_namespace_from_key(key))
 
     @classmethod
-    def extract(cls: Type[T_NamespacedKVSet], values: Mapping[str, Any]) -> T_NamespacedKVSet:
+    def extract(cls: type[T_NamespacedKVSet], values: Mapping[str, Any]) -> T_NamespacedKVSet:
         """Extracts entries from the provided dictionary into an instance of this class.
 
         Ignores any entries in the dictionary whose keys don't correspond to fields on this
@@ -129,7 +130,7 @@ class NamespacedMetadataSet(NamespacedKVSet):
     """
 
     def __init__(self, *args, **kwargs) -> None:
-        for field_name in model_fields(self).keys():
+        for field_name in model_fields(self.__class__).keys():
             annotation_types = self._get_accepted_types_for_field(field_name)
             invalid_annotation_types = {
                 annotation_type
@@ -162,8 +163,8 @@ class NamespacedMetadataSet(NamespacedKVSet):
         return value
 
     @classmethod
-    @lru_cache(maxsize=None)  # this avoids wastefully recomputing this once per instance
-    def _get_accepted_types_for_field(cls, field_name: str) -> AbstractSet[Type]:
+    @cache  # this avoids wastefully recomputing this once per instance
+    def _get_accepted_types_for_field(cls, field_name: str) -> AbstractSet[type]:
         annotation = model_fields(cls)[field_name].annotation
         return flatten_unions(annotation)
 

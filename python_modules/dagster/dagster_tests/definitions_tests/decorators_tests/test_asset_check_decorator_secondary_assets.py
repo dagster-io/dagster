@@ -66,7 +66,7 @@ def test_additional_deps_overlap():
         ),
     ):
 
-        @asset_check(asset=asset1, additional_deps=[asset1])
+        @asset_check(asset=asset1, additional_deps=[asset1])  # pyright: ignore[reportArgumentType]
         def check1(asset_1):
             pass
 
@@ -78,7 +78,7 @@ def test_additional_deps_overlap():
         ),
     ):
 
-        @asset_check(asset=asset1, additional_deps=[asset1])
+        @asset_check(asset=asset1, additional_deps=[asset1])  # pyright: ignore[reportArgumentType]
         def check2():
             pass
 
@@ -92,22 +92,24 @@ def test_additional_ins_overlap():
         ),
     ):
 
-        @asset_check(asset=asset1, additional_ins={"asset_1": AssetIn("asset1")})
+        @asset_check(asset=asset1, additional_ins={"asset_1": AssetIn("asset1")})  # pyright: ignore[reportArgumentType]
         def check1(asset_1):
             pass
 
 
 def test_additional_ins_and_deps_overlap():
-    with pytest.raises(
-        DagsterInvalidDefinitionError,
-        match=re.escape("deps value AssetKey(['asset2']) also declared as input/AssetIn"),
-    ):
+    @asset_check(
+        asset=asset1,
+        additional_ins={"asset_2": AssetIn("asset2")},
+        additional_deps=[asset2],
+    )
+    def check1(asset_2) -> AssetCheckResult:
+        return AssetCheckResult(passed=asset_2 == 5)
 
-        @asset_check(
-            asset=asset1, additional_ins={"asset_2": AssetIn("asset2")}, additional_deps=[asset2]
-        )
-        def check1(asset_2):
-            pass
+    result = execute_assets_and_checks(assets=[asset1, asset2], asset_checks=[check1])
+    assert result.success
+    assert len(result.get_asset_check_evaluations()) == 1
+    assert all(e.passed for e in result.get_asset_check_evaluations())
 
 
 def test_additional_ins_must_correspond_to_params():

@@ -1,14 +1,6 @@
 # ruff: isort: skip_file
-from dagster import (
-    AssetKey,
-    load_assets_from_current_module,
-    Out,
-    Output,
-    AssetSelection,
-    define_asset_job,
-    Definitions,
-    OpExecutionContext,
-)
+import dagster as dg
+
 from unittest.mock import MagicMock
 
 
@@ -52,8 +44,8 @@ def slack_files_table():
 
 slack_mock = MagicMock()
 
-store_slack_files = define_asset_job(
-    "store_slack_files", selection=AssetSelection.assets(slack_files_table)
+store_slack_files = dg.define_asset_job(
+    "store_slack_files", selection=dg.AssetSelection.assets(slack_files_table)
 )
 
 
@@ -88,16 +80,16 @@ def downstream_asset(middle_asset):
 
 # end_basic_dependencies
 
-basic_deps_job = define_asset_job(
+basic_deps_job = dg.define_asset_job(
     "basic_deps_job",
-    AssetSelection.assets(upstream_asset, middle_asset, downstream_asset),
+    dg.AssetSelection.assets(upstream_asset, middle_asset, downstream_asset),
 )
 
 
-@op(out={"one": Out(), "two": Out()})
+@op(out={"one": dg.Out(), "two": dg.Out()})
 def two_outputs(upstream):
-    yield Output(output_name="one", value=upstream)
-    yield Output(output_name="two", value=upstream)
+    yield dg.Output(output_name="one", value=upstream)
+    yield dg.Output(output_name="two", value=upstream)
 
 
 # start_basic_dependencies_2
@@ -112,8 +104,8 @@ def two_assets(upstream_asset):
 
 # end_basic_dependencies_2
 
-second_basic_deps_job = define_asset_job(
-    "second_basic_deps_job", AssetSelection.assets(upstream_asset, two_assets)
+second_basic_deps_job = dg.define_asset_job(
+    "second_basic_deps_job", dg.AssetSelection.assets(upstream_asset, two_assets)
 )
 
 # start_explicit_dependencies
@@ -128,13 +120,13 @@ def one_and_two(upstream_asset):
 
 # end_explicit_dependencies
 
-explicit_deps_job = define_asset_job(
-    "explicit_deps_job", AssetSelection.assets(upstream_asset, one_and_two)
+explicit_deps_job = dg.define_asset_job(
+    "explicit_deps_job", dg.AssetSelection.assets(upstream_asset, one_and_two)
 )
 
 
-defs = Definitions(
-    assets=load_assets_from_current_module(),
+defs = dg.Definitions(
+    assets=dg.load_assets_from_current_module(),
     jobs=[
         basic_deps_job,
         store_slack_files,

@@ -442,10 +442,16 @@ export const useRunsForTimeline = ({
     return Object.values(jobsWithCompletedRunsAndOngoingRuns);
   }, [jobsWithCompletedRunsAndOngoingRuns]);
 
+  const allKeys = useMemo(
+    () => Object.keys(jobsWithCompletedRunsAndOngoingRuns),
+    [jobsWithCompletedRunsAndOngoingRuns],
+  );
+
   const unsortedJobs: TimelineRow[] = useMemo(() => {
     if (!workspaceOrError || workspaceOrError.__typename === 'PythonError' || _end < Date.now()) {
       return jobsWithCompletedRunsAndOngoingRunsValues;
     }
+    const addedJobKeys = new Set();
     const addedAdHocJobs = new Set();
     const jobs: TimelineRow[] = [];
     for (const locationEntry of workspaceOrError.locationEntries) {
@@ -501,6 +507,7 @@ export const useRunsForTimeline = ({
 
           const jobName = isAdHoc ? 'Ad hoc materializations' : pipeline.name;
 
+          addedJobKeys.add(jobKey);
           const jobRuns = Object.values(runsByJobKey[jobKey] || {});
           if (!jobTicks.length && !jobRuns.length) {
             continue;
@@ -531,6 +538,11 @@ export const useRunsForTimeline = ({
         }
       }
     }
+    allKeys.forEach((key) => {
+      if (!addedJobKeys.has(key)) {
+        jobs.push(jobsWithCompletedRunsAndOngoingRuns[key]!);
+      }
+    });
     return jobs;
     // Don't add start/end time as a dependency here since it changes often.
     // Instead rely on the underlying runs changing in response to start/end changing
@@ -540,6 +552,7 @@ export const useRunsForTimeline = ({
     jobsWithCompletedRunsAndOngoingRunsValues,
     runsByJobKey,
     jobsWithCompletedRunsAndOngoingRuns,
+    allKeys,
   ]);
 
   const jobsWithRuns = useMemo(() => {

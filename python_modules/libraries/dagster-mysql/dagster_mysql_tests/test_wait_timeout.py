@@ -7,7 +7,7 @@ from dagster_mysql.run_storage import MySQLRunStorage
 
 def retry_connect(conn_string: str, num_retries: int = 5, pool_recycle=-1):
     storage = MySQLRunStorage.create_clean_storage(conn_string)
-    storage.optimize_for_webserver(-1, pool_recycle=pool_recycle)
+    storage.optimize_for_webserver(-1, pool_recycle=pool_recycle, max_overflow=20)
 
     with storage.connect() as conn:
         conn.execute(db.text("SET SESSION wait_timeout = 2;"))
@@ -21,7 +21,7 @@ def retry_connect(conn_string: str, num_retries: int = 5, pool_recycle=-1):
 
 
 def test_pool_recycle_greater_than_wait_timeout(conn_string):
-    with pytest.raises(db.exc.OperationalError):
+    with pytest.raises(db.exc.OperationalError):  # pyright: ignore[reportAttributeAccessIssue]
         retry_connect(conn_string)
 
 

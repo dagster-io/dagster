@@ -2,7 +2,7 @@ import sys
 import time
 
 import pytest
-from dagster import _seven, file_relative_path
+from dagster import file_relative_path
 from dagster._core.errors import DagsterLaunchFailedError
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG
@@ -14,6 +14,7 @@ from dagster._core.workspace.load_target import GrpcServerTarget, PythonFileTarg
 from dagster._grpc.server import GrpcServerProcess
 from dagster._utils import find_free_port
 from dagster._utils.merger import merge_dicts
+from dagster_shared import seven
 
 from dagster_tests.launcher_tests.test_default_run_launcher import (
     math_diamond,
@@ -60,13 +61,13 @@ def test_run_always_finishes():
                 )
                 run_id = dagster_run.run_id
 
-                assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
+                assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED  # pyright: ignore[reportOptionalMemberAccess]
 
                 instance.launch_run(run_id=run_id, workspace=workspace)
 
         # Server process now receives shutdown event, run has not finished yet
         dagster_run = instance.get_run_by_id(run_id)
-        assert not dagster_run.is_finished
+        assert not dagster_run.is_finished  # pyright: ignore[reportOptionalMemberAccess]
         assert server_process.server_process.poll() is None
 
         # Server should wait until run finishes, then shutdown
@@ -158,13 +159,13 @@ def test_run_from_pending_repository():
 
                 run_id = dagster_run.run_id
 
-                assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED
+                assert instance.get_run_by_id(run_id).status == DagsterRunStatus.NOT_STARTED  # pyright: ignore[reportOptionalMemberAccess]
 
                 instance.launch_run(run_id=run_id, workspace=workspace)
 
         # Server process now receives shutdown event, run has not finished yet
         dagster_run = instance.get_run_by_id(run_id)
-        assert not dagster_run.is_finished
+        assert not dagster_run.is_finished  # pyright: ignore[reportOptionalMemberAccess]
         assert server_process.server_process.poll() is None
 
         # Server should wait until run finishes, then shutdown
@@ -192,8 +193,8 @@ def test_run_from_pending_repository():
         assert call_counts.get("compute_cacheable_data_called_b") == "1"
         # once at initial load time, once inside the run launch process, once for each (3) subprocess
         # upper bound of 5 here because race conditions result in lower count sometimes
-        assert int(call_counts.get("get_definitions_called_a")) < 6
-        assert int(call_counts.get("get_definitions_called_b")) < 6
+        assert int(call_counts.get("get_definitions_called_a")) < 6  # pyright: ignore[reportArgumentType]
+        assert int(call_counts.get("get_definitions_called_b")) < 6  # pyright: ignore[reportArgumentType]
 
 
 def test_terminate_after_shutdown():
@@ -228,7 +229,7 @@ def test_terminate_after_shutdown():
 
             code_location = workspace.get_code_location("test")
             # Tell the server to shut down once executions finish
-            code_location.grpc_server_registry.get_grpc_endpoint(
+            code_location.grpc_server_registry.get_grpc_endpoint(  # pyright: ignore[reportAttributeAccessIssue]
                 code_location.origin
             ).create_client().shutdown_server()
 
@@ -276,7 +277,7 @@ def test_server_down():
                     location_name="test",
                     port=api_client.port,
                     socket=api_client.socket,
-                    host=api_client.host,
+                    host=api_client.host,  # pyright: ignore[reportArgumentType]
                 ),
             ) as workspace_process_context:
                 workspace = workspace_process_context.create_request_context()
@@ -300,13 +301,13 @@ def test_server_down():
 
                 launcher = instance.run_launcher
 
-                original_run_tags = instance.get_run_by_id(dagster_run.run_id).tags[GRPC_INFO_TAG]
+                original_run_tags = instance.get_run_by_id(dagster_run.run_id).tags[GRPC_INFO_TAG]  # pyright: ignore[reportOptionalMemberAccess]
 
                 # Replace run tags with an invalid port
                 instance.add_run_tags(
                     dagster_run.run_id,
                     {
-                        GRPC_INFO_TAG: _seven.json.dumps(
+                        GRPC_INFO_TAG: seven.json.dumps(
                             merge_dicts({"host": "localhost"}, {"port": find_free_port()})
                         )
                     },

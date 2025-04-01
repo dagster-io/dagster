@@ -1,5 +1,3 @@
-from typing import List
-
 import pytest
 from dagster import AssetKey
 
@@ -11,7 +9,7 @@ from kitchen_sink_tests.integration_tests.conftest import (
 
 
 @pytest.fixture(name="dagster_dev_cmd")
-def dagster_dev_cmd_fixture() -> List[str]:
+def dagster_dev_cmd_fixture() -> list[str]:
     return ["make", "run_dagster_multi_code_locations", "-C", str(makefile_dir())]
 
 

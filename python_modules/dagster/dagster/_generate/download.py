@@ -11,7 +11,7 @@ from dagster._generate.generate import _should_skip_file
 # Examples aren't that can't be downloaded from the dagster project CLI
 EXAMPLES_TO_IGNORE = [
     "deploy_k8s_beta",
-    "docs_beta_snippets",
+    "docs_projects",
     "docs_snippets",
     "experimental",
     "use_case_repository",
@@ -36,6 +36,8 @@ AVAILABLE_EXAMPLES = [
     "development_to_production",
     "feature_graph_backed_assets",
     "getting_started_etl_tutorial",
+    "google_drive_factory",
+    "oss-metadata-to-plus",
     "project_analytics",
     "project_dagster_university_start",
     "project_du_dbt_starter",

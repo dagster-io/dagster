@@ -1,13 +1,18 @@
 import copy
 import tempfile
+import time
 
 import pytest
 import yaml
 from dagster import AssetMaterialization, Output, define_asset_job, job, op, repository
 from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import AssetObservation
 from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.api import execute_run
+from dagster._core.execution.plan.handle import StepHandle
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.test_utils import instance_for_test
@@ -256,6 +261,7 @@ RUN_CONCURRENCY_QUERY = """
         status
         hasConcurrencyKeySlots
         rootConcurrencyKeys
+        allPools
       }
     }
   }
@@ -304,6 +310,21 @@ query RunQuery($runId: ID!) {
           value
         }
         hasRunMetricsEnabled
+    }
+  }
+}
+"""
+
+RUN_STEP_STATS_QUERY = """
+query RunQuery($runId: ID!) {
+  pipelineRunOrError(runId: $runId) {
+    __typename
+    ... on Run {
+        runId
+        stepStats {
+            stepKey
+            status
+        }
     }
   }
 }
@@ -862,7 +883,7 @@ def test_run_group():
                 tags={PARENT_RUN_ID_TAG: root_run_id, ROOT_RUN_ID_TAG: root_run_id},
             )
             execute_run(InMemoryJob(foo_job), run, instance)
-            runs.append(run)
+            runs.append(run)  # pyright: ignore[reportArgumentType]
 
         with define_out_of_process_context(
             __file__, "get_repo_at_time_1", instance
@@ -937,7 +958,7 @@ def test_asset_batching():
             assert len(materializations) == 3
 
             counter = traced_counter.get()
-            counts = counter.counts()
+            counts = counter.counts()  # pyright: ignore[reportOptionalMemberAccess]
             assert counts
             assert counts.get("DagsterInstance.get_run_records") == 1
 
@@ -985,6 +1006,7 @@ def test_run_has_concurrency_slots():
                     "hasConcurrencyKeySlots"
                 ]
                 assert result.data["pipelineRunsOrError"]["results"][0]["rootConcurrencyKeys"]
+                assert result.data["pipelineRunsOrError"]["results"][0]["allPools"]
 
             claim = instance.event_log_storage.claim_concurrency_slot(
                 "foo", run_id, "fake_step_key"
@@ -998,6 +1020,7 @@ def test_run_has_concurrency_slots():
                 assert result.data["pipelineRunsOrError"]["results"][0]["runId"] == run_id
                 assert result.data["pipelineRunsOrError"]["results"][0]["hasConcurrencyKeySlots"]
                 assert result.data["pipelineRunsOrError"]["results"][0]["rootConcurrencyKeys"]
+                assert result.data["pipelineRunsOrError"]["results"][0]["allPools"]
 
 
 @pytest.mark.parametrize(
@@ -1042,3 +1065,43 @@ def test_run_has_run_metrics_enabled(run_tag, run_tag_value, run_metrics_enabled
             assert result.data
             has_run_metrics_enabled = result.data["pipelineRunOrError"]["hasRunMetricsEnabled"]
             assert has_run_metrics_enabled == run_metrics_enabled, failure_message
+
+
+def test_event_log_step_stats_retry_with_no_start():
+    with instance_for_test() as instance:
+        repo = get_repo_at_time_1()
+        run = instance.create_run_for_job(repo.get_job("foo_job"), status=DagsterRunStatus.STARTED)
+        storage = instance.event_log_storage
+        node_handle = NodeHandle("E", None)
+        step_handle = StepHandle(node_handle)
+        storage.store_event(
+            EventLogEntry(
+                error_info=None,
+                user_message="",
+                level="debug",
+                run_id=run.run_id,
+                timestamp=time.time() - 150,
+                step_key=step_handle.to_key(),
+                job_name="foo_job",
+                dagster_event=DagsterEvent(
+                    DagsterEventType.STEP_UP_FOR_RETRY.value,
+                    "foo_job",
+                    node_handle=node_handle,
+                    step_handle=step_handle,
+                    event_specific_data=None,
+                ),
+            )
+        )
+
+        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            result = execute_dagster_graphql(
+                context,
+                RUN_STEP_STATS_QUERY,
+                variables={"runId": run.run_id},
+            )
+            assert result.data
+            step_stats = result.data["pipelineRunOrError"]["stepStats"]
+            assert len(step_stats) == 1
+            step_stat = step_stats[0]
+            assert step_stat["stepKey"] == "E"
+            assert step_stat["status"] is None

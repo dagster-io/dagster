@@ -8,7 +8,10 @@ from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.step_builder import CommandStepBuilder
 from dagster_buildkite.steps.helm import build_helm_steps
 from dagster_buildkite.steps.integration import build_integration_steps
-from dagster_buildkite.steps.packages import build_library_packages_steps
+from dagster_buildkite.steps.packages import (
+    build_example_packages_steps,
+    build_library_packages_steps,
+)
 from dagster_buildkite.steps.test_project import build_test_project_steps
 from dagster_buildkite.utils import (
     UV_PIN,
@@ -47,6 +50,8 @@ def build_dagster_steps() -> List[BuildkiteStep]:
     # toxfile that defines the tests for that package.
     steps += build_library_packages_steps()
 
+    steps += build_example_packages_steps()
+
     steps += build_helm_steps()
     steps += build_sql_schema_check_steps()
     steps += build_graphql_python_client_backcompat_steps()
@@ -66,7 +71,7 @@ def build_repo_wide_ruff_steps() -> List[CommandStep]:
     return [
         CommandStepBuilder(":zap: ruff")
         .run(
-            "pip install -e python_modules/dagster[ruff] -e python_modules/dagster-pipes",
+            "pip install -e python_modules/dagster[ruff] -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
             "make check_ruff",
         )
         .on_test_image(AvailablePythonVersion.get_default())
@@ -112,6 +117,8 @@ def build_repo_wide_pyright_steps() -> List[BuildkiteStep]:
                 .run(
                     "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
                     f'pip install -U "{UV_PIN}"',
+                    "uv venv",
+                    "source .venv/bin/activate",
                     "make install_pyright",
                     "make pyright",
                 )
@@ -122,6 +129,8 @@ def build_repo_wide_pyright_steps() -> List[BuildkiteStep]:
                 .run(
                     "curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y",
                     f'pip install -U "{UV_PIN}"',
+                    "uv venv",
+                    "source .venv/bin/activate",
                     "make install_pyright",
                     "make rebuild_pyright_pins",
                 )
@@ -168,7 +177,7 @@ def build_sql_schema_check_steps() -> List[CommandStep]:
         CommandStepBuilder(":mysql: mysql-schema")
         .on_test_image(AvailablePythonVersion.get_default())
         .run(
-            "pip install -e python_modules/dagster -e python_modules/dagster-pipes",
+            "pip install -e python_modules/dagster -e python_modules/dagster-pipes -e python_modules/libraries/dagster-shared",
             "python scripts/check_schemas.py",
         )
         .with_skip(skip_mysql_if_no_changes_to_dependencies(["dagster"]))
@@ -181,12 +190,15 @@ def build_graphql_python_client_backcompat_steps() -> List[CommandStep]:
         CommandStepBuilder(":graphql: GraphQL Python Client backcompat")
         .on_test_image(AvailablePythonVersion.get_default())
         .run(
-            "pip install -e python_modules/dagster[test] -e python_modules/dagster-pipes -e"
-            " python_modules/dagster-graphql -e python_modules/automation",
+            "pip install -e python_modules/dagster[test] -e python_modules/dagster-pipes"
+            " -e python_modules/libraries/dagster-shared -e python_modules/dagster-graphql"
+            " -e python_modules/automation",
             "dagster-graphql-client query check",
         )
         .with_skip(
-            skip_graphql_if_no_changes_to_dependencies(["dagster", "dagster-graphql", "automation"])
+            skip_graphql_if_no_changes_to_dependencies(
+                ["dagster", "dagster-graphql", "automation"]
+            )
         )
         .build()
     ]

@@ -2,23 +2,33 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+## Migrating to 1.10.0
+
+### Deprecations
+
+- We've refreshed our integrations with popular ELT tools like [Fivetran](https://docs.dagster.io/integrations/libraries/fivetran) and [Airbyte](https://docs.dagster.io/integrations/libraries/airbyte/airbyte-oss) to leverage Dagster's asset-based patterns better and provide enhanced visibility into your data pipelines. The old integration patterns are still available, so there are no breaking changes, but we encourage users to take advantage of the new capabilities!
+
+### Breaking changes
+
+- Pool names now only accept letters, numbers, dashes, and underscores.
+
 ## Migrating to 1.9.0
 
-## Database migration
+### Database migration
 
 - This release includes database schema and data migrations to improve the performance of the Runs page. We highly recommend running these migrations to avoid slow page loads of the new Runs page. The migration will add a new column to the `runs` table, a new column to the `bulk_actions` table and a new `backfill_tags` table. A data migration will populate the new columns and table. Run `dagster instance migrate` to run the schema and data migration.
 
-## Notable behavior changes
+### Notable behavior changes
 
 - Backfills have been moved from their own tab underneath the Overview page to entries within the table on the Runs page. This reflects the fact that backfills and runs are similar entities that share most properties. You can continue to use the legacy Runs page with the “Revert to legacy Runs page” user setting. ([GitHub Discussion](https://github.com/dagster-io/dagster/discussions/24898))
 - By default, `AutomationConditionSensorDefinitions` will now emit backfills to handle cases where more than one partition of an asset is requested on a given tick. This allows that asset's `BackfillPolicy` to be respected. This feature can be disabled by setting `allow_backfills` to `False` on the sensor definition.
 
-## Deprecations
+### Deprecations
 
 - The `DataBricksPysparkStepLauncher`, `EmrPySparkStepLauncher`, and any custom subclass of `StepLauncher` have been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning they will continue to function as they currently do for the foreseeable future. Their functionality has been superseded by the interfaces provided by `dagster-pipes`, and so future development work will be focused there.
 - The experimental `@multi_asset_sensor` has been marked as deprecated, but will not be removed from the codebase until Dagster 2.0 is released, meaning it will continue to function as it currently does for the foreseeable future. Its functionality has been largely superseded by the `AutomationCondition` system.
 
-## Breaking changes
+### Breaking changes
 
 - `dagster` no longer supports Python 3.8, which hit EOL on 2024-10-07.
 - `dagster` now requires `pydantic>=2` .
@@ -204,7 +214,7 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ### Breaking changes
 
-- The UI dialog for launching a backfill no longer includes a toggle to determine whether the backfill is launched as a single run or multiple runs. This toggle was misleading, because it implied that all backfills could be launched as single-run backfills, when it actually required special handling in the implementations of the assets targeted by the backfill to achieve this behavior. Instead, whether to execute a backfill as a single run is now determined by a setting on the asset definition. To enable single-run backfills, set `backfill_policy=BackfillPolicy.single_run()` on the asset definitions. Refer to the [docs on single-run backfills](/concepts/partitions-schedules-sensors/backfills#single-run-backfills) for more information.
+- The UI dialog for launching a backfill no longer includes a toggle to determine whether the backfill is launched as a single run or multiple runs. This toggle was misleading, because it implied that all backfills could be launched as single-run backfills, when it actually required special handling in the implementations of the assets targeted by the backfill to achieve this behavior. Instead, whether to execute a backfill as a single run is now determined by a setting on the asset definition. To enable single-run backfills, set `backfill_policy=BackfillPolicy.single_run()` on the asset definitions. Refer to the [docs on single-run backfills](https://docs.dagster.io/concepts/partitions-schedules-sensors/backfills#single-run-backfills) for more information.
 
 - `AssetExecutionContext` is now a subclass of `OpExecutionContext`, not a type alias. The code
 
@@ -860,7 +870,7 @@ set up and run the daemon process for local development, Docker, or Kubernetes d
 3. Start the `dagster-daemon` process. Guides can be found in our
    [deployment documentations](https://docs.dagster.io/deployment).
 
-See our [schedules troubleshooting guide](/concepts/partitions-schedules-sensors/schedules) for
+See our [schedules troubleshooting guide](https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules) for
 help if you experience any problems with the new scheduler.
 
 **If you are not using a legacy scheduler:**
@@ -1003,7 +1013,7 @@ should now be expressed as:
     location_name: dagster_examples
 ```
 
-See our [Workspaces Overview](/concepts/code-locations/workspace-files)
+See our [Workspaces Overview](https://docs.dagster.io/concepts/code-locations/workspace-files)
 for more information and examples.
 
 ### Removal: config_field property on definition classes
@@ -1193,8 +1203,7 @@ enabled in your Helm values.
 
 We have removed the `config` argument to the `ConfigMapping`, `@composite_solid`, `@solid`,
 `SolidDefinition`, `@executor`, `ExecutorDefinition`, `@logger`, `LoggerDefinition`, `@resource`,
-and `ResourceDefinition` APIs, which we deprecated in 0.8.0, in favor of `config_schema`, as
-described [here](#renaming-config).
+and `ResourceDefinition` APIs, which we deprecated in 0.8.0, in favor of `config_schema`.
 
 ## Migrating to 0.8.8
 

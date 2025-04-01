@@ -1,13 +1,13 @@
 import click
 from dagster.version import __version__
 
-from dagster_components.cli.generate import generate_cli
 from dagster_components.cli.list import list_cli
+from dagster_components.cli.scaffold import scaffold_cli
 
 
 def create_dagster_components_cli():
     commands = {
-        "generate": generate_cli,
+        "scaffold": scaffold_cli,
         "list": list_cli,
     }
 
@@ -17,7 +17,12 @@ def create_dagster_components_cli():
     )
     @click.version_option(__version__, "--version", "-v")
     def group():
-        """CLI tools for working with Dagster."""
+        """Internal API for working with Dagster Components.
+
+        This CLI is private and can be considered an implementation detail for `dg`. It is called by
+        `dg` to execute commands related to Dagster Components in the context of a particular Python
+        environment. This is necessary because `dg` itself always runs in an isolated environment.
+        """
 
     return group
 

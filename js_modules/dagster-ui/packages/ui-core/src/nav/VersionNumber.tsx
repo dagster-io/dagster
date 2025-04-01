@@ -1,3 +1,4 @@
+import {FontFamily} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
 import {gql, useQuery} from '../apollo-client';
@@ -10,6 +11,7 @@ export const VersionNumber = () => {
 
 const Version = styled.div`
   font-size: 11px;
+  font-family: ${FontFamily.monospace};
 `;
 
 export const VERSION_NUMBER_QUERY = gql`

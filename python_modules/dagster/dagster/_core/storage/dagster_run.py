@@ -1,25 +1,15 @@
 import os
+from collections.abc import Iterable, Mapping, Sequence, Set
 from datetime import datetime
 from enum import Enum
 from functools import cached_property
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Union,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
 
+from dagster_shared.serdes import NamedTupleSerializer, whitelist_for_serdes
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental_param, public
+from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.loader import LoadableBy, LoadingContext
@@ -30,6 +20,7 @@ from dagster._core.storage.tags import (
     AUTOMATION_CONDITION_TAG,
     BACKFILL_ID_TAG,
     PARENT_RUN_ID_TAG,
+    POOL_TAG_PREFIX,
     REPOSITORY_LABEL_TAG,
     RESUME_RETRY_TAG,
     ROOT_RUN_ID_TAG,
@@ -40,7 +31,6 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.utils import make_new_run_id
 from dagster._record import IHaveNew, record_custom
-from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 from dagster._utils.tags import get_boolean_tag_value
 
 if TYPE_CHECKING:
@@ -152,7 +142,7 @@ class DagsterRunStatsSnapshot(
         start_time: Optional[float],
         end_time: Optional[float],
     ):
-        return super(DagsterRunStatsSnapshot, cls).__new__(
+        return super().__new__(
             cls,
             run_id=check.str_param(run_id, "run_id"),
             steps_succeeded=check.int_param(steps_succeeded, "steps_succeeded"),
@@ -173,6 +163,7 @@ class RunOpConcurrency(
         [
             ("root_key_counts", Mapping[str, int]),
             ("has_unconstrained_root_nodes", bool),
+            ("all_pools", Optional[Set[str]]),
         ],
     )
 ):
@@ -184,8 +175,9 @@ class RunOpConcurrency(
         cls,
         root_key_counts: Mapping[str, int],
         has_unconstrained_root_nodes: bool,
+        all_pools: Optional[Set[str]] = None,
     ):
-        return super(RunOpConcurrency, cls).__new__(
+        return super().__new__(
             cls,
             root_key_counts=check.dict_param(
                 root_key_counts, "root_key_counts", key_type=str, value_type=int
@@ -193,6 +185,7 @@ class RunOpConcurrency(
             has_unconstrained_root_nodes=check.bool_param(
                 has_unconstrained_root_nodes, "has_unconstrained_root_nodes"
             ),
+            all_pools=check.opt_set_param(all_pools, "all_pools", of_type=str),
         )
 
 
@@ -208,7 +201,7 @@ class DagsterRunSerializer(NamedTupleSerializer["DagsterRun"]):
     # * renamed environment_dict -> run_config
     # * added asset_selection
     # * added has_repository_load_data
-    def before_unpack(self, context, unpacked_dict: Dict[str, Any]) -> Dict[str, Any]:
+    def before_unpack(self, context, unpacked_dict: dict[str, Any]) -> dict[str, Any]:
         # back compat for environment dict => run_config
         if "environment_dict" in unpacked_dict:
             check.invariant(
@@ -306,12 +299,25 @@ class DagsterRun(
     """Serializable internal representation of a dagster run, as stored in a
     :py:class:`~dagster._core.storage.runs.RunStorage`.
 
-    Attributes:
-        job_name (str): The name of the job executed in this run
-        run_id (str): The ID of the run
-        run_config (Mapping[str, object]): The config for the run
-        tags (Mapping[str, str]): The tags applied to the run
-
+    Args:
+        job_name (str): The name of the job executed in this run.
+        run_id (str): The ID of the run.
+        run_config (Mapping[str, object]): The config for the run.
+        asset_selection (Optional[AbstractSet[AssetKey]]): The assets selected for this run.
+        asset_check_selection (Optional[AbstractSet[AssetCheckKey]]): The asset checks selected for this run.
+        op_selection (Optional[Sequence[str]]): The op queries provided by the user.
+        resolved_op_selection (Optional[AbstractSet[str]]): The resolved set of op names to execute.
+        step_keys_to_execute (Optional[Sequence[str]]): The step keys to execute.
+        status (DagsterRunStatus): The status of the run.
+        tags (Mapping[str, str]): The tags applied to the run.
+        root_run_id (Optional[str]): The ID of the root run in the run's group.
+        parent_run_id (Optional[str]): The ID of the parent run in the run's group.
+        job_snapshot_id (Optional[str]): The ID of the job snapshot.
+        execution_plan_snapshot_id (Optional[str]): The ID of the execution plan snapshot.
+        remote_job_origin (Optional[RemoteJobOrigin]): The origin of the executed job.
+        job_code_origin (Optional[JobPythonOrigin]): The origin of the job code.
+        has_repository_load_data (bool): Whether the run has repository load data.
+        run_op_concurrency (Optional[RunOpConcurrency]): The op concurrency information for the run.
     """
 
     def __new__(
@@ -372,7 +378,7 @@ class DagsterRun(
         if run_id is None:
             run_id = make_new_run_id()
 
-        return super(DagsterRun, cls).__new__(
+        return super().__new__(
             cls,
             job_name=check.str_param(job_name, "job_name"),
             run_id=check.str_param(run_id, "run_id"),
@@ -492,10 +498,13 @@ class DagsterRun(
                 self.remote_job_origin.repository_origin.get_label()
             )
 
-        if not self.tags:
-            return repository_tags
+        pool_tags = {}
+        if self.run_op_concurrency and self.run_op_concurrency.all_pools:
+            pool_tags = {
+                f"{POOL_TAG_PREFIX}{pool}": "true" for pool in self.run_op_concurrency.all_pools
+            }
 
-        return {**repository_tags, **self.tags}
+        return {**repository_tags, **pool_tags, **(self.tags or {})}
 
     @public
     @property
@@ -615,7 +624,6 @@ class RunsFilter(IHaveNew):
     created_before: Optional[datetime]
     exclude_subruns: Optional[bool]
 
-    @experimental_param(param="exclude_subruns")
     def __new__(
         cls,
         run_ids: Optional[Sequence[str]] = None,
@@ -663,13 +671,13 @@ class RunsFilter(IHaveNew):
 
 
 class JobBucket(NamedTuple):
-    job_names: List[str]
+    job_names: list[str]
     bucket_limit: Optional[int]
 
 
 class TagBucket(NamedTuple):
     tag_key: str
-    tag_values: List[str]
+    tag_values: list[str]
     bucket_limit: Optional[int]
 
 
@@ -702,7 +710,7 @@ class RunRecord(
         start_time: Optional[float] = None,
         end_time: Optional[float] = None,
     ):
-        return super(RunRecord, cls).__new__(
+        return super().__new__(
             cls,
             storage_id=check.int_param(storage_id, "storage_id"),
             dagster_run=check.inst_param(dagster_run, "dagster_run", DagsterRun),
@@ -717,7 +725,7 @@ class RunRecord(
     def _blocking_batch_load(
         cls, keys: Iterable[str], context: LoadingContext
     ) -> Iterable[Optional["RunRecord"]]:
-        result_map: Dict[str, Optional[RunRecord]] = {run_id: None for run_id in keys}
+        result_map: dict[str, Optional[RunRecord]] = {run_id: None for run_id in keys}
 
         # this should be replaced with an async DB call
         records = context.instance.get_run_records(RunsFilter(run_ids=list(result_map.keys())))
@@ -749,7 +757,7 @@ class RunPartitionData(
         start_time: Optional[float],
         end_time: Optional[float],
     ):
-        return super(RunPartitionData, cls).__new__(
+        return super().__new__(
             cls,
             run_id=check.str_param(run_id, "run_id"),
             partition=check.str_param(partition, "partition"),
@@ -782,7 +790,7 @@ class ExecutionSelector(
     """Kept here to maintain loading of PipelineRuns from when it was still alive."""
 
     def __new__(cls, name: str, solid_subset: Optional[Sequence[str]] = None):
-        return super(ExecutionSelector, cls).__new__(
+        return super().__new__(
             cls,
             name=check.str_param(name, "name"),
             solid_subset=(

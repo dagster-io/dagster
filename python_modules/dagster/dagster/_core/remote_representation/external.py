@@ -1,22 +1,9 @@
 from collections import defaultdict
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from datetime import datetime
 from functools import cached_property
 from threading import RLock
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union  # noqa: UP035
 
 import dagster._check as check
 from dagster import AssetSelection
@@ -107,15 +94,15 @@ class RemoteRepository:
         self,
         repository_snap: RepositorySnap,
         repository_handle: RepositoryHandle,
-        instance: DagsterInstance,
+        auto_materialize_use_sensors: bool,
         ref_to_data_fn: Optional[Callable[[JobRefSnap], JobDataSnap]] = None,
     ):
         self.repository_snap = check.inst_param(repository_snap, "repository_snap", RepositorySnap)
 
-        self._instance = instance
+        self._auto_materialize_use_sensors = auto_materialize_use_sensors
 
         if repository_snap.job_datas is not None:
-            self._job_map: Dict[str, Union[JobDataSnap, JobRefSnap]] = {
+            self._job_map: dict[str, Union[JobDataSnap, JobRefSnap]] = {
                 d.name: d for d in repository_snap.job_datas
             }
             self._deferred_snapshots: bool = False
@@ -135,19 +122,19 @@ class RemoteRepository:
 
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
 
-        self._asset_jobs: Dict[str, List[AssetNodeSnap]] = {}
+        self._asset_jobs: dict[str, list[AssetNodeSnap]] = {}
         for asset_node in repository_snap.asset_nodes:
             for job_name in asset_node.job_names:
                 self._asset_jobs.setdefault(job_name, []).append(asset_node)
 
-        self._asset_check_jobs: Dict[str, List[AssetCheckNodeSnap]] = {}
+        self._asset_check_jobs: dict[str, list[AssetCheckNodeSnap]] = {}
         for asset_check_node_snap in repository_snap.asset_check_nodes or []:
             for job_name in asset_check_node_snap.job_names:
                 self._asset_check_jobs.setdefault(job_name, []).append(asset_check_node_snap)
 
         # memoize job instances to share instances
         self._memo_lock: RLock = RLock()
-        self._cached_jobs: Dict[str, RemoteJob] = {}
+        self._cached_jobs: dict[str, RemoteJob] = {}
 
     @property
     def name(self) -> str:
@@ -155,7 +142,7 @@ class RemoteRepository:
 
     @property
     @cached_method
-    def _schedules(self) -> Dict[str, "RemoteSchedule"]:
+    def _schedules(self) -> dict[str, "RemoteSchedule"]:
         return {
             schedule_snap.name: RemoteSchedule(schedule_snap, self._handle)
             for schedule_snap in self.repository_snap.schedules
@@ -172,7 +159,7 @@ class RemoteRepository:
 
     @property
     @cached_method
-    def _resources(self) -> Dict[str, "RemoteResource"]:
+    def _resources(self) -> dict[str, "RemoteResource"]:
         return {
             resource_snap.name: RemoteResource(resource_snap, self._handle)
             for resource_snap in (self.repository_snap.resources or [])
@@ -196,13 +183,13 @@ class RemoteRepository:
 
     @property
     @cached_method
-    def _sensors(self) -> Dict[str, "RemoteSensor"]:
+    def _sensors(self) -> dict[str, "RemoteSensor"]:
         sensor_datas = {
             sensor_snap.name: RemoteSensor(sensor_snap, self._handle)
             for sensor_snap in self.repository_snap.sensors
         }
 
-        if not self._instance.auto_materialize_use_sensors:
+        if not self._auto_materialize_use_sensors:
             return sensor_datas
 
         # if necessary, create a default automation condition sensor
@@ -242,7 +229,7 @@ class RemoteRepository:
 
     @property
     @cached_method
-    def _partition_sets(self) -> Dict[str, "RemotePartitionSet"]:
+    def _partition_sets(self) -> dict[str, "RemotePartitionSet"]:
         return {
             partition_set_snap.name: RemotePartitionSet(partition_set_snap, self._handle)
             for partition_set_snap in self.repository_snap.partition_sets
@@ -363,9 +350,12 @@ class RemoteRepository:
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
         instance: DagsterInstance,
     ) -> Sequence[str]:
-        return self._get_partitions_def_for_job(
+        partitions_def = self._get_partitions_def_for_job(
             job_name=job_name, selected_asset_keys=selected_asset_keys
-        ).get_partition_keys(dynamic_partitions_store=instance)
+        )
+        if not partitions_def:
+            return []
+        return partitions_def.get_partition_keys(dynamic_partitions_store=instance)
 
     def get_partition_tags_for_implicit_asset_job(
         self,
@@ -374,17 +364,19 @@ class RemoteRepository:
         instance: DagsterInstance,
         partition_name: str,
     ) -> Mapping[str, str]:
-        return self._get_partitions_def_for_job(
-            job_name=job_name, selected_asset_keys=selected_asset_keys
+        return check.not_none(
+            self._get_partitions_def_for_job(
+                job_name=job_name, selected_asset_keys=selected_asset_keys
+            )
         ).get_tags_for_partition_key(partition_name)
 
     def _get_partitions_def_for_job(
         self,
         job_name: str,
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
-    ) -> PartitionsDefinition:
+    ) -> Optional[PartitionsDefinition]:
         asset_nodes = self.get_asset_node_snaps(job_name)
-        unique_partitions_defs: Set[PartitionsDefinition] = set()
+        unique_partitions_defs: set[PartitionsDefinition] = set()
         for asset_node in asset_nodes:
             if selected_asset_keys is not None and asset_node.asset_key not in selected_asset_keys:
                 continue
@@ -392,6 +384,9 @@ class RemoteRepository:
             if asset_node.partitions is not None:
                 unique_partitions_defs.add(asset_node.partitions.get_partitions_definition())
 
+        if len(unique_partitions_defs) == 0:
+            # Assets are all unpartitioned
+            return None
         if len(unique_partitions_defs) == 1:
             return next(iter(unique_partitions_defs))
         else:
@@ -403,7 +398,7 @@ class RemoteRepository:
     @cached_property
     def _sensor_mappings(
         self,
-    ) -> Tuple[
+    ) -> tuple[
         Mapping[str, Sequence["RemoteSensor"]],
         Mapping[AssetKey, Sequence["RemoteSensor"]],
     ]:
@@ -770,11 +765,11 @@ class RemoteResource:
         return self._resource_snap.resource_snapshot.description
 
     @property
-    def config_field_snaps(self) -> List[ConfigFieldSnap]:
+    def config_field_snaps(self) -> list[ConfigFieldSnap]:
         return self._resource_snap.config_field_snaps
 
     @property
-    def configured_values(self) -> Dict[str, ResourceValueSnap]:
+    def configured_values(self) -> dict[str, ResourceValueSnap]:
         return self._resource_snap.configured_values
 
     @property
@@ -782,11 +777,11 @@ class RemoteResource:
         return self._resource_snap.config_schema_snap
 
     @property
-    def nested_resources(self) -> Dict[str, NestedResource]:
+    def nested_resources(self) -> dict[str, NestedResource]:
         return self._resource_snap.nested_resources
 
     @property
-    def parent_resources(self) -> Dict[str, str]:
+    def parent_resources(self) -> dict[str, str]:
         return self._resource_snap.parent_resources
 
     @property
@@ -798,19 +793,19 @@ class RemoteResource:
         return self._resource_snap.is_top_level
 
     @property
-    def asset_keys_using(self) -> List[AssetKey]:
+    def asset_keys_using(self) -> list[AssetKey]:
         return self._resource_snap.asset_keys_using
 
     @property
-    def job_ops_using(self) -> List[ResourceJobUsageEntry]:
+    def job_ops_using(self) -> list[ResourceJobUsageEntry]:
         return self._resource_snap.job_ops_using
 
     @property
-    def schedules_using(self) -> List[str]:
+    def schedules_using(self) -> list[str]:
         return self._resource_snap.schedules_using
 
     @property
-    def sensors_using(self) -> List[str]:
+    def sensors_using(self) -> list[str]:
         return self._resource_snap.sensors_using
 
     @property

@@ -1,6 +1,6 @@
 import graphene
 
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.table import (
     GrapheneTable,
     GrapheneTableColumnLineageEntry,
@@ -207,6 +207,14 @@ class GrapheneTimestampMetadataEntry(graphene.ObjectType):
         name = "TimestampMetadataEntry"
 
 
+class GraphenePoolMetadataEntry(graphene.ObjectType):
+    pool = graphene.NonNull(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneMetadataEntry,)
+        name = "PoolMetadataEntry"
+
+
 def types():
     return [
         GrapheneMetadataEntry,
@@ -230,4 +238,5 @@ def types():
         GrapheneCodeReferencesMetadataEntry,
         GrapheneNullMetadataEntry,
         GrapheneTimestampMetadataEntry,
+        GraphenePoolMetadataEntry,
     ]

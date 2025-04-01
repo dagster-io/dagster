@@ -1,7 +1,9 @@
 import time
-from typing import Any, Iterator, Mapping, Optional, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Any, Optional
 
 import requests
+from dagster._annotations import preview
 
 from dagster_dlift.gql_queries import (
     GET_DBT_MODELS_QUERY,
@@ -14,6 +16,7 @@ ENVIRONMENTS_SUBPATH = "environments/"
 LIST_JOBS_INDIVIDUAL_REQUEST_LIMIT = 100
 
 
+@preview
 class UnscopedDbtCloudClient:
     def __init__(
         self,

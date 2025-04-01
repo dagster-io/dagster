@@ -1,4 +1,5 @@
-from typing import Iterator, List, Optional, cast
+from collections.abc import Iterator
+from typing import Optional, cast
 
 import kubernetes.config
 from dagster import (
@@ -217,7 +218,7 @@ class K8sStepHandler(StepHandler):
 
     def _get_step_key(self, step_handler_context: StepHandlerContext) -> str:
         step_keys_to_execute = cast(
-            List[str], step_handler_context.execute_step_args.step_keys_to_execute
+            list[str], step_handler_context.execute_step_args.step_keys_to_execute
         )
         assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
         return step_keys_to_execute[0]
@@ -237,9 +238,10 @@ class K8sStepHandler(StepHandler):
         user_defined_k8s_config = get_user_defined_k8s_config(
             step_handler_context.step_tags[step_key]
         )
-
+        step_context = step_handler_context.get_step_context(step_key)
+        op_name = step_context.step.op_name
         per_op_override = UserDefinedDagsterK8sConfig.from_dict(
-            self._per_step_k8s_config.get(step_key, {})
+            self._per_step_k8s_config.get(op_name, {})
         )
 
         return context.merge(K8sContainerContext(run_k8s_config=user_defined_k8s_config)).merge(
@@ -257,9 +259,9 @@ class K8sStepHandler(StepHandler):
         if step_handler_context.execute_step_args.known_state:
             retry_state = step_handler_context.execute_step_args.known_state.get_retry_state()
             if retry_state.get_attempt_count(step_key):
-                return "dagster-step-%s-%d" % (name_key, retry_state.get_attempt_count(step_key))
+                return "dagster-step-%s-%d" % (name_key, retry_state.get_attempt_count(step_key))  # noqa: UP031
 
-        return "dagster-step-%s" % (name_key)
+        return f"dagster-step-{name_key}"
 
     def launch_step(self, step_handler_context: StepHandlerContext) -> Iterator[DagsterEvent]:
         step_key = self._get_step_key(step_handler_context)
@@ -332,7 +334,7 @@ class K8sStepHandler(StepHandler):
         container_context = self._get_container_context(step_handler_context)
 
         status = self._api_client.get_job_status(
-            namespace=container_context.namespace,
+            namespace=container_context.namespace,  # pyright: ignore[reportArgumentType]
             job_name=job_name,
         )
         if not status:

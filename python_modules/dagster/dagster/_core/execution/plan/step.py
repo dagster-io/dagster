@@ -1,18 +1,9 @@
 from abc import abstractmethod
+from collections.abc import Mapping, Sequence
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    FrozenSet,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, NamedTuple, Optional, Union, cast
 
+from dagster_shared.serdes import EnumSerializer, whitelist_for_serdes
 from typing_extensions import TypeGuard
 
 import dagster._check as check
@@ -27,7 +18,6 @@ from dagster._core.execution.plan.inputs import (
     UnresolvedMappedStepInput,
 )
 from dagster._core.execution.plan.outputs import StepOutput
-from dagster._serdes.serdes import EnumSerializer, whitelist_for_serdes
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
@@ -35,7 +25,7 @@ if TYPE_CHECKING:
 
 
 class StepKindSerializer(EnumSerializer["StepKind"]):
-    def unpack(self, storage_str: str) -> "StepKind":
+    def unpack(self, storage_str: str) -> "StepKind":  # pyright: ignore[reportIncompatibleMethodOverride]
         # old name for unresolved mapped
         if storage_str == "UNRESOLVED":
             return StepKind.UNRESOLVED_MAPPED
@@ -90,6 +80,11 @@ class IExecutionStep:
 
     @property
     @abstractmethod
+    def pool(self) -> Optional[str]:
+        pass
+
+    @property
+    @abstractmethod
     def step_inputs(
         self,
     ) -> Sequence[Union[StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepInput]]:
@@ -121,7 +116,7 @@ class IExecutionStep:
         pass
 
 
-class ExecutionStep(
+class ExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_ExecutionStep",
         [
@@ -132,6 +127,7 @@ class ExecutionStep(
             ("tags", Mapping[str, str]),
             ("logging_tags", Mapping[str, str]),
             ("key", str),
+            ("pool", Optional[str]),
         ],
     ),
     IExecutionStep,
@@ -145,10 +141,11 @@ class ExecutionStep(
         step_inputs: Sequence[StepInput],
         step_outputs: Sequence[StepOutput],
         tags: Optional[Mapping[str, str]],
+        pool: Optional[str],
         logging_tags: Optional[Mapping[str, str]] = None,
         key: Optional[str] = None,
     ):
-        return super(ExecutionStep, cls).__new__(
+        return super().__new__(
             cls,
             handle=check.inst_param(handle, "handle", (StepHandle, ResolvedFromDynamicStepHandle)),
             job_name=check.str_param(job_name, "job_name"),
@@ -161,6 +158,7 @@ class ExecutionStep(
                 for so in check.sequence_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
             tags=tags or {},
+            pool=check.opt_str_param(pool, "pool"),
             logging_tags=merge_dicts(
                 {
                     "step_key": handle.to_key(),
@@ -209,7 +207,7 @@ class ExecutionStep(
         check.str_param(name, "name")
         return self.step_input_dict[name]
 
-    def get_execution_dependency_keys(self) -> Set[str]:
+    def get_execution_dependency_keys(self) -> set[str]:
         deps = set()
         for inp in self.step_inputs:
             deps.update(inp.dependency_keys)
@@ -222,7 +220,7 @@ class ExecutionStep(
         return None
 
 
-class UnresolvedMappedExecutionStep(
+class UnresolvedMappedExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_UnresolvedMappedExecutionStep",
         [
@@ -231,6 +229,7 @@ class UnresolvedMappedExecutionStep(
             ("step_input_dict", Mapping[str, Union[StepInput, UnresolvedMappedStepInput]]),
             ("step_output_dict", Mapping[str, StepOutput]),
             ("tags", Mapping[str, str]),
+            ("pool", Optional[str]),
         ],
     ),
     IExecutionStep,
@@ -244,8 +243,9 @@ class UnresolvedMappedExecutionStep(
         step_inputs: Sequence[Union[StepInput, UnresolvedMappedStepInput]],
         step_outputs: Sequence[StepOutput],
         tags: Optional[Mapping[str, str]],
+        pool: Optional[str],
     ):
-        return super(UnresolvedMappedExecutionStep, cls).__new__(
+        return super().__new__(
             cls,
             handle=check.inst_param(handle, "handle", UnresolvedStepHandle),
             job_name=check.str_param(job_name, "job_name"),
@@ -260,6 +260,7 @@ class UnresolvedMappedExecutionStep(
                 for so in check.sequence_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
             tags=check.opt_mapping_param(tags, "tags", key_type=str),
+            pool=check.opt_str_param(pool, "pool"),
         )
 
     @property
@@ -290,7 +291,7 @@ class UnresolvedMappedExecutionStep(
         check.str_param(name, "name")
         return self.step_output_dict[name]
 
-    def get_all_dependency_keys(self) -> Set[str]:
+    def get_all_dependency_keys(self) -> set[str]:
         deps = set()
         for inp in self.step_inputs:
             if isinstance(inp, StepInput):
@@ -331,7 +332,7 @@ class UnresolvedMappedExecutionStep(
         return next(iter(keys))
 
     @property
-    def resolved_by_step_keys(self) -> FrozenSet[str]:
+    def resolved_by_step_keys(self) -> frozenset[str]:
         keys = set()
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedMappedStepInput):
@@ -346,7 +347,7 @@ class UnresolvedMappedExecutionStep(
             all(key in mappings for key in self.resolved_by_step_keys),
             "resolving with mappings that do not contain all required step keys",
         )
-        execution_steps: List[ExecutionStep] = []
+        execution_steps: list[ExecutionStep] = []
 
         mapping_keys = mappings[self.resolved_by_step_key][self.resolved_by_output_name]
 
@@ -364,6 +365,7 @@ class UnresolvedMappedExecutionStep(
                     step_inputs=resolved_inputs,
                     step_outputs=self.step_outputs,
                     tags=self.tags,
+                    pool=self.pool,
                 )
             )
 
@@ -380,7 +382,7 @@ def _resolved_input(
     return step_input.resolve(map_key)
 
 
-class UnresolvedCollectExecutionStep(
+class UnresolvedCollectExecutionStep(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_UnresolvedCollectExecutionStep",
         [
@@ -389,6 +391,7 @@ class UnresolvedCollectExecutionStep(
             ("step_input_dict", Mapping[str, Union[StepInput, UnresolvedCollectStepInput]]),
             ("step_output_dict", Mapping[str, StepOutput]),
             ("tags", Mapping[str, str]),
+            ("pool", Optional[str]),
         ],
     ),
     IExecutionStep,
@@ -402,8 +405,9 @@ class UnresolvedCollectExecutionStep(
         step_inputs: Sequence[Union[StepInput, UnresolvedCollectStepInput]],
         step_outputs: Sequence[StepOutput],
         tags: Optional[Mapping[str, str]],
+        pool: Optional[str],
     ):
-        return super(UnresolvedCollectExecutionStep, cls).__new__(
+        return super().__new__(
             cls,
             handle=check.inst_param(handle, "handle", StepHandle),
             job_name=check.str_param(job_name, "job_name"),
@@ -418,6 +422,7 @@ class UnresolvedCollectExecutionStep(
                 for so in check.sequence_param(step_outputs, "step_outputs", of_type=StepOutput)
             },
             tags=check.opt_mapping_param(tags, "tags", key_type=str),
+            pool=check.opt_str_param(pool, "pool"),
         )
 
     @property
@@ -448,7 +453,7 @@ class UnresolvedCollectExecutionStep(
         check.str_param(name, "name")
         return self.step_output_dict[name]
 
-    def get_all_dependency_keys(self) -> Set[str]:
+    def get_all_dependency_keys(self) -> set[str]:
         deps = set()
         for inp in self.step_inputs:
             if isinstance(inp, StepInput):
@@ -468,7 +473,7 @@ class UnresolvedCollectExecutionStep(
         return deps
 
     @property
-    def resolved_by_step_keys(self) -> FrozenSet[str]:
+    def resolved_by_step_keys(self) -> frozenset[str]:
         keys = set()
         for inp in self.step_inputs:
             if isinstance(inp, UnresolvedCollectStepInput):
@@ -499,4 +504,5 @@ class UnresolvedCollectExecutionStep(
             step_inputs=resolved_inputs,
             step_outputs=self.step_outputs,
             tags=self.tags,
+            pool=self.pool,
         )

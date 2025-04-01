@@ -5,6 +5,11 @@ import * as Types from '../../graphql/types';
 export type AutomationAssetSelectionFragment = {
   __typename: 'AssetSelection';
   assetSelectionString: string | null;
+  assetChecks: Array<{
+    __typename: 'AssetCheckhandle';
+    name: string;
+    assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  }>;
   assetsOrError:
     | {
         __typename: 'AssetConnection';

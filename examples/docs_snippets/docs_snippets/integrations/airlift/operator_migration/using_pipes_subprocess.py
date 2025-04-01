@@ -1,10 +1,10 @@
-from dagster import AssetExecutionContext, PipesSubprocessClient, asset
+import dagster as dg
 
 
-@asset
-def script_result(context: AssetExecutionContext):
+@dg.asset
+def script_result(context: dg.AssetExecutionContext):
     return (
-        PipesSubprocessClient()
+        dg.PipesSubprocessClient()
         .run(context=context, command="python /path/to/script.py")
         .get_results()
     )

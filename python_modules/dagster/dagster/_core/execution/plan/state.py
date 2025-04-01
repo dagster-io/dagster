@@ -1,18 +1,14 @@
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    cast,
-)
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, cast
 
+from dagster_shared.serdes.serdes import (
+    FieldSerializer,
+    UnknownSerdesValue,
+    UnpackContext,
+    WhitelistMap,
+    pack_value,
+)
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -29,13 +25,6 @@ from dagster._core.execution.retries import RetryState
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    UnknownSerdesValue,
-    UnpackContext,
-    WhitelistMap,
-    pack_value,
-)
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.plan import StepHandleUnion
@@ -47,7 +36,7 @@ class PastExecutionState(
         "_PastExecutionState",
         [
             ("run_id", str),
-            ("produced_outputs", Set[StepOutputHandle]),
+            ("produced_outputs", set[StepOutputHandle]),
             # PastExecutionState, but no cycles allowed in NT
             ("parent_state", Optional[object]),
         ],
@@ -60,7 +49,7 @@ class PastExecutionState(
     def __new__(
         cls,
         run_id: str,
-        produced_outputs: Set[StepOutputHandle],
+        produced_outputs: set[StepOutputHandle],
         parent_state: Optional["PastExecutionState"],
     ):
         return super().__new__(
@@ -81,7 +70,7 @@ class PastExecutionState(
 class StepOutputVersionSerializer(FieldSerializer):
     def pack(
         self, value: Mapping[StepOutputHandle, str], whitelist_map: WhitelistMap, descent_path: str
-    ) -> Sequence[Dict[str, Any]]:
+    ) -> Sequence[dict[str, Any]]:
         return [
             {
                 "__class__": "StepOutputVersionData",  # this class no longer exists
@@ -93,13 +82,13 @@ class StepOutputVersionSerializer(FieldSerializer):
             for k, v in value.items()
         ]
 
-    def unpack(
+    def unpack(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         value: Sequence[UnknownSerdesValue],
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> Mapping[StepOutputHandle, str]:
-        mapping: Dict[StepOutputHandle, str] = {}
+        mapping: dict[StepOutputHandle, str] = {}
         for unknown_serdes_value in value:
             item = unknown_serdes_value.value
             step_output_handle = cast(StepOutputHandle, item["step_output_handle"])
@@ -120,7 +109,7 @@ class KnownExecutionState(
             ("dynamic_mappings", Mapping[str, Mapping[str, Optional[Sequence[str]]]]),
             # step_output_handle -> version
             ("step_output_versions", Mapping[StepOutputHandle, str]),
-            ("ready_outputs", Set[StepOutputHandle]),
+            ("ready_outputs", set[StepOutputHandle]),
             ("parent_state", Optional[PastExecutionState]),
         ],
     )
@@ -135,7 +124,7 @@ class KnownExecutionState(
         previous_retry_attempts: Optional[Mapping[str, int]] = None,
         dynamic_mappings: Optional[Mapping[str, Mapping[str, Optional[Sequence[str]]]]] = None,
         step_output_versions: Optional[Mapping[StepOutputHandle, str]] = None,
-        ready_outputs: Optional[Set[StepOutputHandle]] = None,
+        ready_outputs: Optional[set[StepOutputHandle]] = None,
         parent_state: Optional[PastExecutionState] = None,
     ):
         dynamic_mappings = check.opt_mapping_param(
@@ -147,7 +136,7 @@ class KnownExecutionState(
         # some old payloads (0.15.0 -> 0.15.6) were persisted with [None] mapping_keys
         # in dynamic_mappings, so can't assert [str] here in __new__.
 
-        return super(KnownExecutionState, cls).__new__(
+        return super().__new__(
             cls,
             check.opt_mapping_param(
                 previous_retry_attempts,
@@ -182,7 +171,7 @@ class KnownExecutionState(
     def build_resume_retry_reexecution(
         instance: DagsterInstance,
         parent_run: DagsterRun,
-    ) -> Tuple[Sequence[str], "KnownExecutionState"]:
+    ) -> tuple[Sequence[str], "KnownExecutionState"]:
         if parent_run.status not in (DagsterRunStatus.FAILURE, DagsterRunStatus.CANCELED):
             raise DagsterInvariantViolationError(
                 "Cannot reexecute from failure a run that is not failed or canceled",
@@ -200,7 +189,7 @@ class KnownExecutionState(
         return known_state
 
 
-TrackingDict: TypeAlias = Dict[str, Set["StepHandleUnion"]]
+TrackingDict: TypeAlias = dict[str, set["StepHandleUnion"]]
 
 
 def _copy_from_tracking_dict(
@@ -237,8 +226,8 @@ def _in_tracking_dict(handle: "StepHandleUnion", tracking: TrackingDict) -> bool
 def _derive_state_of_past_run(
     instance: DagsterInstance,
     parent_run: DagsterRun,
-) -> Tuple[
-    Sequence[str], Mapping[str, Mapping[str, Optional[Sequence[str]]]], Set[StepOutputHandle]
+) -> tuple[
+    Sequence[str], Mapping[str, Mapping[str, Optional[Sequence[str]]]], set[StepOutputHandle]
 ]:
     from dagster._core.remote_representation import RemoteExecutionPlan
 
@@ -269,8 +258,8 @@ def _derive_state_of_past_run(
 
     execution_plan = RemoteExecutionPlan(execution_plan_snapshot=execution_plan_snapshot)
 
-    output_set: Set[StepOutputHandle] = set()
-    observed_dynamic_outputs: Dict[str, Dict[str, List[str]]] = defaultdict(
+    output_set: set[StepOutputHandle] = set()
+    observed_dynamic_outputs: dict[str, dict[str, list[str]]] = defaultdict(
         lambda: defaultdict(list)
     )
 
@@ -318,7 +307,7 @@ def _derive_state_of_past_run(
                 _update_tracking_dict(interrupted_steps_in_parent_run_logs, step_handle)
 
     # expand type to allow filling in None mappings for skips
-    dynamic_outputs = cast(Dict[str, Dict[str, Optional[List[str]]]], observed_dynamic_outputs)
+    dynamic_outputs = cast(dict[str, dict[str, Optional[list[str]]]], observed_dynamic_outputs)
     to_retry: TrackingDict = defaultdict(set)
     execution_deps = execution_plan.execution_deps()
     for step_snap in execution_plan.topological_steps():
@@ -333,11 +322,11 @@ def _derive_state_of_past_run(
             continue
 
         for output in step_snap.outputs:
-            if output.properties.is_dynamic:
+            if output.properties.is_dynamic:  # pyright: ignore[reportOptionalMemberAccess]
                 if step_key in dynamic_outputs and output.name in dynamic_outputs[step_key]:
                     continue
                 elif step_key in successful_steps_in_parent_run_logs:
-                    if output.properties.is_required:
+                    if output.properties.is_required:  # pyright: ignore[reportOptionalMemberAccess]
                         dynamic_outputs[step_key][output.name] = []
                     else:
                         dynamic_outputs[step_key][output.name] = None
@@ -397,7 +386,7 @@ def _derive_state_of_past_run(
 def _derive_state_from_logs(
     instance: DagsterInstance,
     parent_run: DagsterRun,
-) -> Tuple[Sequence[str], "KnownExecutionState"]:
+) -> tuple[Sequence[str], "KnownExecutionState"]:
     # recursively build parent state chain
 
     def _create_parent_state(target_run):

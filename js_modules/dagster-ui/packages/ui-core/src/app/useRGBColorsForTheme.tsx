@@ -29,7 +29,7 @@ const computeRGBValuesFromBodyStyle = () => {
  * the mapped values do as well.
  */
 export const useRGBColorsForTheme = () => {
-  const theme = useThemeState();
+  const {theme} = useThemeState();
   const [rgbState, setRGBState] = useState(() => computeRGBValuesFromBodyStyle());
 
   useEffect(() => {

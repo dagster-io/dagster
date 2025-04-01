@@ -12,7 +12,6 @@ from dagster import (
     op,
     sensor,
 )
-from dagster._annotations import get_experimental_params
 from dagster._check import CheckError
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.events import AssetObservation
@@ -41,8 +40,8 @@ def test_sensor_result_one_run_request():
             instance=instance,
         )
         sensor_data = test_sensor.evaluate_tick(ctx)
-        assert len(sensor_data.run_requests) == 1
-        assert sensor_data.run_requests[0].run_key == "foo"
+        assert len(sensor_data.run_requests) == 1  # pyright: ignore[reportArgumentType]
+        assert sensor_data.run_requests[0].run_key == "foo"  # pyright: ignore[reportOptionalSubscript]
         assert not sensor_data.skip_message
         assert not sensor_data.dagster_run_reactions
         assert not sensor_data.cursor
@@ -51,7 +50,7 @@ def test_sensor_result_one_run_request():
 def test_sensor_result_skip_reason():
     skip_reason = SkipReason("I'm skipping")
 
-    @sensor(job=do_something_job)
+    @sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
     def test_sensor(_):
         return [
             SensorResult(skip_reason=skip_reason),
@@ -71,7 +70,7 @@ def test_sensor_result_skip_reason():
 def test_sensor_result_string_skip_reason():
     skip_reason = "I'm skipping"
 
-    @sensor(job=do_something_job)
+    @sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
     def test_sensor(_):
         return [
             SensorResult(skip_reason=skip_reason),
@@ -89,7 +88,7 @@ def test_sensor_result_string_skip_reason():
 
 
 def test_invalid_skip_reason_invocations():
-    @sensor(job=do_something_job)
+    @sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
     def multiple_sensor_results(_):
         return [
             SensorResult(skip_reason=SkipReason("I'm skipping")),
@@ -103,7 +102,7 @@ def test_invalid_skip_reason_invocations():
             RunRequest(run_key="foo"),
         ]
 
-    @sensor(job=do_something_job)
+    @sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
     def invalid_sensor_result(_):
         return [
             SensorResult(
@@ -142,7 +141,7 @@ def test_invalid_skip_reason_invocations():
 
 
 def test_update_cursor():
-    @sensor(job=do_something_job)
+    @sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
     def test_sensor(_):
         return [
             SensorResult([RunRequest("foo")], cursor="foo"),
@@ -157,7 +156,7 @@ def test_update_cursor():
 
 
 def test_update_cursor_and_sensor_result_cursor():
-    @sensor(job=do_something_job)
+    @sensor(job=do_something_job)  # pyright: ignore[reportArgumentType]
     def test_sensor(context):
         context.update_cursor("bar")
         return [
@@ -202,8 +201,8 @@ def test_sensor_result_asset_sensor():
             instance=instance,
         ) as ctx:
             result = my_asset_sensor.evaluate_tick(ctx)
-            assert len(result.run_requests) == 1
-            assert result.run_requests[0].run_key == "foo"
+            assert len(result.run_requests) == 1  # pyright: ignore[reportArgumentType]
+            assert result.run_requests[0].run_key == "foo"  # pyright: ignore[reportOptionalSubscript]
             assert result.cursor != observed["cursor"]  # ensure cursor progresses
 
         with build_sensor_context(
@@ -237,7 +236,7 @@ def test_yield_and_return():
         build_sensor_context(cursor="go")
     )
     assert result_without_skip.skip_message is None
-    assert len(result_without_skip.run_requests) == 1
+    assert len(result_without_skip.run_requests) == 1  # pyright: ignore[reportArgumentType]
 
     @sensor(job=job1)
     def sensor_with_yield_and_return_run_request(context):
@@ -247,11 +246,7 @@ def test_yield_and_return():
     result_yield_and_return_run_request = sensor_with_yield_and_return_run_request.evaluate_tick(
         build_sensor_context()
     )
-    assert len(result_yield_and_return_run_request.run_requests) == 2
-
-
-def test_asset_events_experimental_param_on_sensor_result() -> None:
-    assert "asset_events" in get_experimental_params(SensorResult)
+    assert len(result_yield_and_return_run_request.run_requests) == 2  # pyright: ignore[reportArgumentType]
 
 
 def test_asset_materialization_in_sensor() -> None:
@@ -318,4 +313,4 @@ def test_sensor_tags_not_on_run_request():
 
     with instance_for_test() as instance:
         result = my_sensor.evaluate_tick(build_sensor_context(instance))
-        assert "foo" not in result.run_requests[0].tags
+        assert "foo" not in result.run_requests[0].tags  # pyright: ignore[reportOptionalSubscript]

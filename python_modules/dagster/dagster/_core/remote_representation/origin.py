@@ -1,17 +1,8 @@
 import os
 from abc import ABC, abstractmethod
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Iterator,
-    Mapping,
-    NamedTuple,
-    NoReturn,
-    Optional,
-    Sequence,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, NamedTuple, NoReturn, Optional, cast
 
 import grpc
 
@@ -119,7 +110,7 @@ class CodeLocationOrigin(ABC):
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="RegisteredRepositoryLocationOrigin")
-class RegisteredCodeLocationOrigin(
+class RegisteredCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple("RegisteredCodeLocationOrigin", [("location_name", str)]),
     CodeLocationOrigin,
 ):
@@ -129,7 +120,7 @@ class RegisteredCodeLocationOrigin(
     """
 
     def __new__(cls, location_name: str):
-        return super(RegisteredCodeLocationOrigin, cls).__new__(cls, location_name)
+        return super().__new__(cls, location_name)
 
     def get_display_metadata(self) -> Mapping[str, Any]:
         return {}
@@ -156,7 +147,7 @@ class RegisteredCodeLocationOrigin(
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="InProcessRepositoryLocationOrigin")
-class InProcessCodeLocationOrigin(
+class InProcessCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_InProcessCodeLocationOrigin",
         [
@@ -182,7 +173,7 @@ class InProcessCodeLocationOrigin(
         container_context=None,
         location_name: Optional[str] = None,
     ):
-        return super(InProcessCodeLocationOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(
                 loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
@@ -217,7 +208,7 @@ class InProcessCodeLocationOrigin(
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="ManagedGrpcPythonEnvRepositoryLocationOrigin")
-class ManagedGrpcPythonEnvCodeLocationOrigin(
+class ManagedGrpcPythonEnvCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_ManagedGrpcPythonEnvCodeLocationOrigin",
         [("loadable_target_origin", LoadableTargetOrigin), ("location_name", str)],
@@ -231,7 +222,7 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
     def __new__(
         cls, loadable_target_origin: LoadableTargetOrigin, location_name: Optional[str] = None
     ):
-        return super(ManagedGrpcPythonEnvCodeLocationOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(
                 loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
@@ -274,9 +265,11 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
         from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
         from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
         from dagster._core.workspace.context import WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL
+        from dagster._grpc.server import GrpcServerCommand
 
         with GrpcServerRegistry(
             instance_ref=instance.get_ref(),
+            server_command=GrpcServerCommand.API_GRPC,
             heartbeat_ttl=WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL,
             startup_timeout=(
                 instance.code_server_process_startup_timeout
@@ -288,7 +281,6 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
             endpoint = grpc_server_registry.get_grpc_endpoint(self)
             with GrpcServerCodeLocation(
                 origin=self,
-                server_id=endpoint.server_id,
                 port=endpoint.port,
                 socket=endpoint.socket,
                 host=endpoint.host,
@@ -302,9 +294,10 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
 
 # Different storage name for backcompat
 @whitelist_for_serdes(
-    storage_name="GrpcServerRepositoryLocationOrigin", skip_when_empty_fields={"use_ssl"}
+    storage_name="GrpcServerRepositoryLocationOrigin",
+    skip_when_empty_fields={"use_ssl", "additional_metadata"},
 )
-class GrpcServerCodeLocationOrigin(
+class GrpcServerCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
     NamedTuple(
         "_GrpcServerCodeLocationOrigin",
         [
@@ -313,6 +306,7 @@ class GrpcServerCodeLocationOrigin(
             ("socket", Optional[str]),
             ("location_name", str),
             ("use_ssl", Optional[bool]),
+            ("additional_metadata", Optional[Mapping[str, Any]]),
         ],
     ),
     CodeLocationOrigin,
@@ -328,8 +322,9 @@ class GrpcServerCodeLocationOrigin(
         socket: Optional[str] = None,
         location_name: Optional[str] = None,
         use_ssl: Optional[bool] = None,
+        additional_metadata: Optional[Mapping[str, Any]] = None,
     ):
-        return super(GrpcServerCodeLocationOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.str_param(host, "host"),
             check.opt_int_param(port, "port"),
@@ -340,6 +335,7 @@ class GrpcServerCodeLocationOrigin(
                 else _assign_grpc_location_name(port, socket, host)
             ),
             use_ssl if check.opt_bool_param(use_ssl, "use_ssl") else None,
+            additional_metadata=check.opt_mapping_param(additional_metadata, "additional_metadata"),
         )
 
     def get_display_metadata(self) -> Mapping[str, str]:
@@ -347,6 +343,7 @@ class GrpcServerCodeLocationOrigin(
             "host": self.host,
             "port": str(self.port) if self.port else None,
             "socket": self.socket,
+            **(self.additional_metadata if self.additional_metadata else {}),
         }
         return {key: value for key, value in metadata.items() if value is not None}
 
@@ -416,7 +413,7 @@ class RemoteRepositoryOrigin(
     """
 
     def __new__(cls, code_location_origin: CodeLocationOrigin, repository_name: str):
-        return super(RemoteRepositoryOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(code_location_origin, "code_location_origin", CodeLocationOrigin),
             check.str_param(repository_name, "repository_name"),
@@ -426,11 +423,12 @@ class RemoteRepositoryOrigin(
         return create_snapshot_id(self)
 
     def get_selector_id(self) -> str:
-        return create_snapshot_id(
-            RepositorySelector(
-                location_name=self.code_location_origin.location_name,
-                repository_name=self.repository_name,
-            )
+        return create_snapshot_id(self.get_selector())
+
+    def get_selector(self) -> RepositorySelector:
+        return RepositorySelector(
+            location_name=self.code_location_origin.location_name,
+            repository_name=self.repository_name,
         )
 
     def get_label(self) -> str:
@@ -464,7 +462,7 @@ class RemoteJobOrigin(
     """
 
     def __new__(cls, repository_origin: RemoteRepositoryOrigin, job_name: str):
-        return super(RemoteJobOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(
                 repository_origin,
@@ -505,7 +503,7 @@ class RemoteInstigatorOrigin(
     """
 
     def __new__(cls, repository_origin: RemoteRepositoryOrigin, instigator_name: str):
-        return super(RemoteInstigatorOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(
                 repository_origin,
@@ -545,7 +543,7 @@ class RemotePartitionSetOrigin(
     """
 
     def __new__(cls, repository_origin: RemoteRepositoryOrigin, partition_set_name: str):
-        return super(RemotePartitionSetOrigin, cls).__new__(
+        return super().__new__(
             cls,
             check.inst_param(
                 repository_origin,

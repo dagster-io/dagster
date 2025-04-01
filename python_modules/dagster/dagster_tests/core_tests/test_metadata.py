@@ -16,11 +16,11 @@ from dagster import (
     UrlMetadataValue,
     op,
 )
-from dagster._check.functions import CheckError
 from dagster._core.definitions.metadata.metadata_value import (
     CodeLocationReconstructionMetadataValue,
 )
-from dagster._serdes.serdes import deserialize_value, serialize_value
+from dagster_shared.check import CheckError
+from dagster_shared.serdes import deserialize_value, serialize_value
 
 
 def test_op_instance_tags():
@@ -120,14 +120,17 @@ def test_code_location_reconstruction_metadata_value():
     assert CodeLocationReconstructionMetadataValue("foo").value == "foo"
 
     with pytest.raises(CheckError, match="not a str"):
-        CodeLocationReconstructionMetadataValue({"foo": "bar"})
+        CodeLocationReconstructionMetadataValue({"foo": "bar"})  # pyright: ignore[reportArgumentType]
 
 
 def test_serdes_json_metadata():
     old_bad_event_str = '{"__class__": "JsonMetadataEntryData", "data": {"float": {"__class__": "FloatMetadataEntryData", "value": 1.0}}}'
     val = deserialize_value(old_bad_event_str, JsonMetadataValue)
     assert val
-    assert isinstance(val.data["float"], dict)  # and not FloatMetadataValue
+    assert isinstance(
+        val.data["float"],  # type: ignore
+        dict,
+    )
     s = serialize_value(val)
     val_2 = deserialize_value(s, JsonMetadataValue)
     assert val_2 == val

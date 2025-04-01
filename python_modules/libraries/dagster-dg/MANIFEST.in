@@ -1,0 +1,9 @@
+include README.md
+include CHANGELOG.md
+include LICENSE
+include dagster_dg/py.typed
+include dagster_dg/utils/editor/vscode_extension_package.json
+recursive-include dagster_dg/templates *
+recursive-include dagster_dg/docs *
+recursive-exclude dagster_dg/docs/.next *
+recursive-exclude dagster_dg/docs/node_modules *

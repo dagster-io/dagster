@@ -1,6 +1,7 @@
 import sys
+from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager
-from typing import Iterator, Optional
+from typing import Optional
 
 from dagster import file_relative_path
 from dagster._core.instance import DagsterInstance

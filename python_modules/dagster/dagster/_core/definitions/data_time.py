@@ -13,7 +13,10 @@ materialization it was derived from.
 """
 
 import datetime
-from typing import AbstractSet, Dict, Mapping, Optional, Sequence, Tuple, cast
+from collections.abc import Mapping, Sequence
+from typing import AbstractSet, Optional, cast  # noqa: UP035
+
+from dagster_shared.utils.hash import make_hashable
 
 import dagster._check as check
 from dagster._core.definitions.asset_selection import KeysAssetSelection
@@ -33,7 +36,6 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import EventLogRecord
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
 from dagster._time import datetime_from_timestamp, get_current_datetime
-from dagster._utils import make_hashable
 from dagster._utils.cached_method import cached_method
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -177,7 +179,7 @@ class CachingDataTimeResolver:
     def _upstream_records_by_key(
         self, asset_key: AssetKey, record_id: int, record_tags_dict: Mapping[str, str]
     ) -> Mapping[AssetKey, "EventLogRecord"]:
-        upstream_records: Dict[AssetKey, EventLogRecord] = {}
+        upstream_records: dict[AssetKey, EventLogRecord] = {}
 
         for parent_key in self.asset_graph.get(asset_key).parent_keys:
             if not (
@@ -214,7 +216,7 @@ class CachingDataTimeResolver:
         asset_key: AssetKey,
         record_id: int,
         record_timestamp: float,
-        record_tags: Tuple[Tuple[str, str]],
+        record_tags: tuple[tuple[str, str]],
         current_time: datetime.datetime,
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
         # find the upstream times of each of the parents of this asset
@@ -232,7 +234,7 @@ class CachingDataTimeResolver:
             else:
                 return {}
 
-        data_time_by_key: Dict[AssetKey, Optional[datetime.datetime]] = {}
+        data_time_by_key: dict[AssetKey, Optional[datetime.datetime]] = {}
         for parent_key, parent_record in upstream_records_by_key.items():
             # recurse to find the data times of this parent
             for upstream_key, data_time in self._calculate_data_time_by_key(
@@ -274,7 +276,7 @@ class CachingDataTimeResolver:
         *,
         asset_key: AssetKey,
         record_id: int,
-        record_tags: Tuple[Tuple[str, str]],
+        record_tags: tuple[tuple[str, str]],
         current_time: datetime.datetime,
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
         data_version_value = dict(record_tags).get(DATA_VERSION_TAG)
@@ -308,7 +310,7 @@ class CachingDataTimeResolver:
         asset_key: AssetKey,
         record_id: Optional[int],
         record_timestamp: Optional[float],
-        record_tags: Tuple[Tuple[str, str]],  # for hashability
+        record_tags: tuple[tuple[str, str]],  # for hashability
         current_time: datetime.datetime,
     ) -> Mapping[AssetKey, Optional[datetime.datetime]]:
         if record_id is None:

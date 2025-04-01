@@ -9,7 +9,6 @@ import {isRunlessEvent} from './isRunlessEvent';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
 import {AssetKeyInput} from '../graphql/types';
-import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
@@ -137,9 +136,9 @@ export const AssetListRow = styled(Row)<{$focused: boolean}>`
   cursor: pointer;
   user-select: none;
 
-  &:focus,
-  &:active,
-  &:hover {
+  :focus,
+  :active,
+  :hover {
     outline: none;
     background: ${Colors.backgroundLight()};
   }
@@ -147,7 +146,7 @@ export const AssetListRow = styled(Row)<{$focused: boolean}>`
     p.$focused &&
     `background: ${Colors.backgroundBlue()};
      color: ${Colors.textBlue()};
-     &:hover {
+     :hover {
        background: ${Colors.backgroundBlue()};
      }
     `}
@@ -207,7 +206,7 @@ const AssetEventListEventRow = ({
               event={{stepKey: latest.stepKey, timestamp: latest.timestamp}}
             >
               <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-                <RunStatusWithStats runId={run.id} status={run.status} size={8} />
+                <Icon name="run" />
                 {titleForRun(run)}
               </Box>
             </AssetRunLink>

@@ -37,6 +37,7 @@ export enum DagsterTag {
 
   // Hidden tags (using ".dagster" HIDDEN_TAG_PREFIX)
   RepositoryLabelTag = '.dagster/repository',
+  PoolTagPrefix = '.dagster/pool',
 }
 
 export type TagType = {

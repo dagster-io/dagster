@@ -1,19 +1,9 @@
 import inspect
+from asyncio import AbstractEventLoop
 from collections import deque
+from collections.abc import Generator, Mapping
 from contextlib import ContextDecorator
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Deque,
-    Dict,
-    Generator,
-    Mapping,
-    Optional,
-    Set,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Any, Callable, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.job_definition import JobDefinition
@@ -56,6 +46,7 @@ def resource_initialization_manager(
     resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
+    event_loop: Optional[AbstractEventLoop],
 ):
     generator = resource_initialization_event_generator(
         resource_defs=resource_defs,
@@ -66,6 +57,7 @@ def resource_initialization_manager(
         resource_keys_to_init=resource_keys_to_init,
         instance=instance,
         emit_persistent_events=emit_persistent_events,
+        event_loop=event_loop,
     )
     return EventGenerationManager(generator, ScopedResourcesBuilder)
 
@@ -126,12 +118,13 @@ def _core_resource_initialization_event_generator(
     resource_defs: Mapping[str, ResourceDefinition],
     resource_configs: Mapping[str, ResourceConfig],
     resource_log_manager: DagsterLogManager,
-    resource_managers: Deque[EventGenerationManager],
+    resource_managers: deque[EventGenerationManager],
     execution_plan: Optional[ExecutionPlan],
     dagster_run: Optional[DagsterRun],
     resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
+    event_loop,
 ):
     job_name = ""  # Must be initialized to a string to satisfy typechecker
     contains_generator = False
@@ -143,7 +136,7 @@ def _core_resource_initialization_event_generator(
         )
         job_name = cast(DagsterRun, dagster_run).job_name
     resource_keys_to_init = check.opt_set_param(resource_keys_to_init, "resource_keys_to_init")
-    resource_instances: Dict[str, "InitializedResource"] = {}
+    resource_instances: dict[str, InitializedResource] = {}
     resource_init_times = {}
     try:
         if emit_persistent_events and resource_keys_to_init:
@@ -177,6 +170,7 @@ def _core_resource_initialization_event_generator(
                     resources=resources,
                     instance=instance,
                     all_resource_defs=resource_defs,
+                    event_loop=event_loop,
                 )
                 manager = single_resource_generation_manager(
                     resource_context, resource_name, resource_def
@@ -228,6 +222,7 @@ def resource_initialization_event_generator(
     resource_keys_to_init: Optional[AbstractSet[str]],
     instance: Optional[DagsterInstance],
     emit_persistent_events: Optional[bool],
+    event_loop: Optional[AbstractEventLoop],
 ):
     check.inst_param(log_manager, "log_manager", DagsterLogManager)
     resource_keys_to_init = check.opt_set_param(
@@ -249,7 +244,7 @@ def resource_initialization_event_generator(
         resource_log_manager = log_manager
 
     generator_closed = False
-    resource_managers: Deque[EventGenerationManager] = deque()
+    resource_managers: deque[EventGenerationManager] = deque()
 
     try:
         yield from _core_resource_initialization_event_generator(
@@ -262,6 +257,7 @@ def resource_initialization_event_generator(
             resource_keys_to_init=resource_keys_to_init,
             instance=instance,
             emit_persistent_events=emit_persistent_events,
+            event_loop=event_loop,
         )
     except GeneratorExit:
         # Shouldn't happen, but avoid runtime-exception in case this generator gets GC-ed
@@ -355,7 +351,7 @@ def get_required_resource_keys_to_init(
     execution_plan: ExecutionPlan,
     job_def: JobDefinition,
 ) -> AbstractSet[str]:
-    resource_keys: Set[str] = set()
+    resource_keys: set[str] = set()
 
     for step_handle, step in execution_plan.step_dict.items():
         if step_handle not in execution_plan.step_handles_to_execute:
@@ -378,7 +374,7 @@ def get_transitive_required_resource_keys(
     resource_dependencies = resolve_resource_dependencies(resource_defs)
     ensure_resource_deps_satisfiable(resource_dependencies)
 
-    transitive_required_resource_keys: Set[str] = set()
+    transitive_required_resource_keys: set[str] = set()
 
     for resource_key in required_resource_keys:
         transitive_required_resource_keys = transitive_required_resource_keys.union(
@@ -391,7 +387,7 @@ def get_transitive_required_resource_keys(
 def get_required_resource_keys_for_step(
     job_def: JobDefinition, execution_step: IExecutionStep, execution_plan: ExecutionPlan
 ) -> AbstractSet[str]:
-    resource_keys: Set[str] = set()
+    resource_keys: set[str] = set()
 
     # add all the op compute resource keys
     node_def = job_def.get_node(execution_step.node_handle).definition
@@ -453,7 +449,7 @@ def _wrapped_resource_iterator(
     if isinstance(resource_or_gen, ContextDecorator):
 
         def _gen_resource():
-            with resource_or_gen as resource:
+            with resource_or_gen as resource:  # pyright: ignore[reportGeneralTypeIssues]
                 yield resource
 
         return _gen_resource()

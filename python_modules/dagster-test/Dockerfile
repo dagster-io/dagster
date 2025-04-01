@@ -30,6 +30,7 @@ RUN python -m uv pip install \
     -e modules/dagster-airflow \
     -e modules/dagstermill \
     -e modules/dagster-pipes \
+    -e modules/dagster-shared \
     -e .
 
 

@@ -1,5 +1,5 @@
 from dagster import AssetMaterialization, Output, op
-from dagster._annotations import experimental
+from dagster._annotations import beta
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
@@ -21,8 +21,7 @@ def test_generator_yield_op():
 
     @op
     def gen_yield_op(_):
-        for event in _gen():
-            yield event
+        yield from _gen()
 
     result = wrap_op_in_graph_and_execute(gen_yield_op)
     assert result.output_value() == "done"
@@ -59,9 +58,9 @@ def test_nested_generator_op():
     assert result.output_value() == "done"
 
 
-def test_experimental_generator_op():
+def test_beta_generator_op():
     @op
-    @experimental
+    @beta
     def gen_op():
         yield Output("done")
 

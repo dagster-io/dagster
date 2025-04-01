@@ -22,6 +22,7 @@ import {
   MetadataEntryFragment,
   TableMetadataEntryFragment,
 } from './types/MetadataEntryFragment.types';
+import {PoolTag} from '../../src/instance/PoolTag';
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
@@ -57,11 +58,13 @@ export const isCanonicalRowCountMetadataEntry = (
 ): m is IntMetadataEntry =>
   m && m.__typename === 'IntMetadataEntry' && m.label === 'dagster/row_count';
 
+export type LogRowStructuredRow = {label: string; item: JSX.Element};
+
 export const LogRowStructuredContentTable = ({
   rows,
   styles,
 }: {
-  rows: {label: string; item: JSX.Element}[];
+  rows: LogRowStructuredRow[];
   styles?: React.CSSProperties;
 }) => (
   <div style={{overflow: 'auto', paddingBottom: 10, ...(styles || {})}}>
@@ -136,7 +139,7 @@ export const MetadataEntry = ({
       return expandSmallValues && jsonString.length < 1000 ? (
         <div style={{whiteSpace: 'pre-wrap'}}>{tryPrettyPrintJSON(jsonString)}</div>
       ) : (
-        <MetadataEntryModalAction
+        <MetadataEntryDialogAction
           label={entry.label}
           copyContent={() => jsonString}
           content={() => (
@@ -152,7 +155,7 @@ export const MetadataEntry = ({
           )}
         >
           [Show JSON]
-        </MetadataEntryModalAction>
+        </MetadataEntryDialogAction>
       );
 
     case 'UrlMetadataEntry':
@@ -172,7 +175,7 @@ export const MetadataEntry = ({
       return expandSmallValues && entry.mdStr.length < 1000 ? (
         <Markdown>{entry.mdStr}</Markdown>
       ) : (
-        <MetadataEntryModalAction
+        <MetadataEntryDialogAction
           label={entry.label}
           copyContent={() => entry.mdStr}
           content={() => (
@@ -187,7 +190,7 @@ export const MetadataEntry = ({
           )}
         >
           [Show Markdown]
-        </MetadataEntryModalAction>
+        </MetadataEntryDialogAction>
       );
     case 'PythonArtifactMetadataEntry':
       return (
@@ -240,7 +243,7 @@ export const MetadataEntry = ({
       return expandSmallValues && entry.schema.columns.length < 5 ? (
         <TableSchema schema={entry.schema} />
       ) : (
-        <MetadataEntryModalAction
+        <MetadataEntryDialogAction
           label={entry.label}
           modalWidth={900}
           copyContent={() => JSON.stringify(entry.schema, null, 2)}
@@ -256,7 +259,7 @@ export const MetadataEntry = ({
           )}
         >
           [Show Table Schema]
-        </MetadataEntryModalAction>
+        </MetadataEntryDialogAction>
       );
     case 'NotebookMetadataEntry':
       if (repoLocation) {
@@ -274,7 +277,7 @@ export const MetadataEntry = ({
       );
     case 'CodeReferencesMetadataEntry':
       return (
-        <MetadataEntryModalAction
+        <MetadataEntryDialogAction
           label={entry.label}
           modalWidth={900}
           content={() => (
@@ -292,8 +295,10 @@ export const MetadataEntry = ({
           )}
         >
           [Show Code References]
-        </MetadataEntryModalAction>
+        </MetadataEntryDialogAction>
       );
+    case 'PoolMetadataEntry':
+      return <PoolTag pool={entry.pool} />;
     default:
       return assertUnreachable(entry);
   }
@@ -333,7 +338,7 @@ const PythonArtifactLink = ({
   </>
 );
 
-const MetadataEntryModalAction = (props: {
+const MetadataEntryDialogAction = (props: {
   children: React.ReactNode;
   label: string;
   modalWidth?: number;

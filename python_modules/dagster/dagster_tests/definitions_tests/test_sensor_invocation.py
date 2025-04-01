@@ -1,5 +1,6 @@
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Iterator, List, cast
+from typing import cast
 from unittest import mock
 
 import pytest
@@ -57,15 +58,15 @@ def test_sensor_invocation_args():
     def basic_sensor_no_arg():
         return RunRequest(run_key=None, run_config={}, tags={})
 
-    assert basic_sensor_no_arg().run_config == {}
+    assert basic_sensor_no_arg().run_config == {}  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
     # Test underscore name
     @sensor(job_name="foo_job")
     def basic_sensor(_):
         return RunRequest(run_key=None, run_config={}, tags={})
 
-    assert basic_sensor(build_sensor_context()).run_config == {}
-    assert basic_sensor(None).run_config == {}
+    assert basic_sensor(build_sensor_context()).run_config == {}  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert basic_sensor(None).run_config == {}  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
     # Test sensor arbitrary arg name
     @sensor(job_name="foo_job")
@@ -75,10 +76,10 @@ def test_sensor_invocation_args():
     context = build_sensor_context()
 
     # Pass context as positional arg
-    assert basic_sensor_with_context(context).run_config == {}
+    assert basic_sensor_with_context(context).run_config == {}  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
     # pass context as kwarg
-    assert basic_sensor_with_context(_arbitrary_context=context).run_config == {}
+    assert basic_sensor_with_context(_arbitrary_context=context).run_config == {}  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
     # pass context as wrong kwarg
     with pytest.raises(
@@ -291,11 +292,12 @@ def test_sensor_invocation_resources_context_manager() -> None:
     # Fails bc resource is a contextmanager and sensor context is not entered
     with pytest.raises(
         DagsterInvariantViolationError, match="At least one provided resource is a generator"
-    ):
+    ) as exc_info:
         basic_sensor_str_resource_req(
             build_sensor_context(resources={"my_resource": my_cm_resource})
         )
 
+    assert "with build_sensor_context" in str(exc_info.value)
     with build_sensor_context(resources={"my_resource": my_cm_resource}) as context:
         assert cast(RunRequest, basic_sensor_str_resource_req(context)).run_config == {"foo": "foo"}
 
@@ -404,7 +406,7 @@ def test_multi_asset_sensor_with_source_assets() -> None:
             instance=instance,
             repository_def=my_repo,
         )
-        run_requests = cast(List[RunRequest], my_sensor(ctx))
+        run_requests = cast(list[RunRequest], my_sensor(ctx))
         assert len(run_requests) == 1
         assert run_requests[0].partition_key == "2023-03-01"
 
@@ -434,7 +436,7 @@ def test_run_status_sensor_invocation_resources() -> None:
     result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = result.dagster_run
-    dagster_event = result.get_job_success_event()
+    dagster_event = result.get_run_success_event()
 
     context = build_run_status_sensor_context(
         sensor_name="status_sensor",
@@ -473,7 +475,7 @@ def test_run_status_sensor_invocation_resources_direct() -> None:
     result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = result.dagster_run
-    dagster_event = result.get_job_success_event()
+    dagster_event = result.get_run_success_event()
 
     context = build_run_status_sensor_context(
         sensor_name="status_sensor",
@@ -511,7 +513,7 @@ def test_run_failure_sensor_invocation_resources() -> None:
     result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = result.dagster_run
-    dagster_event = result.get_job_success_event()
+    dagster_event = result.get_run_success_event()
 
     context = build_run_status_sensor_context(
         sensor_name="failure_sensor",
@@ -586,8 +588,8 @@ def test_validated_partitions():
 
     with build_sensor_context(repository_def=my_repo) as context:
         run_requests = valid_req_sensor.evaluate_tick(context).run_requests
-        assert len(run_requests) == 1
-        run_request = run_requests[0]
+        assert len(run_requests) == 1  # pyright: ignore[reportArgumentType]
+        run_request = run_requests[0]  # pyright: ignore[reportOptionalSubscript]
         assert run_request.partition_key == "foo"
         assert run_request.run_config == {}
         assert run_request.tags.get(PARTITION_NAME_TAG) == "foo"
@@ -640,8 +642,8 @@ def test_partitioned_config_run_request():
     with build_sensor_context(repository_def=my_repo) as context:
         for valid_sensor in [valid_req_sensor, job_str_target_sensor]:
             run_requests = valid_sensor.evaluate_tick(context).run_requests
-            assert len(run_requests) == 1
-            run_request = run_requests[0]
+            assert len(run_requests) == 1  # pyright: ignore[reportArgumentType]
+            run_request = run_requests[0]  # pyright: ignore[reportOptionalSubscript]
             assert run_request.run_config == partition_fn("a")
             assert run_request.tags.get(PARTITION_NAME_TAG) == "a"
             assert run_request.tags.get("yay") == "yay!"
@@ -688,10 +690,10 @@ def test_asset_selection_run_request_partition_key():
 
     with build_sensor_context(repository_def=my_repo) as context:
         run_requests = valid_req_sensor.evaluate_tick(context).run_requests
-        assert len(run_requests) == 1
-        assert run_requests[0].partition_key == "a"
-        assert run_requests[0].tags.get(PARTITION_NAME_TAG) == "a"
-        assert run_requests[0].asset_selection == [a_asset.key]
+        assert len(run_requests) == 1  # pyright: ignore[reportArgumentType]
+        assert run_requests[0].partition_key == "a"  # pyright: ignore[reportOptionalSubscript]
+        assert run_requests[0].tags.get(PARTITION_NAME_TAG) == "a"  # pyright: ignore[reportOptionalSubscript]
+        assert run_requests[0].asset_selection == [a_asset.key]  # pyright: ignore[reportOptionalSubscript]
 
         with pytest.raises(DagsterUnknownPartitionError, match="Could not find a partition"):
             invalid_req_sensor.evaluate_tick(context)
@@ -714,7 +716,7 @@ def test_run_status_sensor():
     result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = result.dagster_run
-    dagster_event = result.get_job_success_event()
+    dagster_event = result.get_run_success_event()
 
     context = build_run_status_sensor_context(
         sensor_name="status_sensor",
@@ -743,7 +745,7 @@ def test_run_failure_sensor():
     result = my_job.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = result.dagster_run
-    dagster_event = result.get_job_failure_event()
+    dagster_event = result.get_run_failure_event()
 
     context = build_run_status_sensor_context(
         sensor_name="failure_sensor",
@@ -768,7 +770,7 @@ def test_run_status_sensor_run_request():
     result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = result.dagster_run
-    dagster_event = result.get_job_success_event()
+    dagster_event = result.get_run_success_event()
 
     context = build_run_status_sensor_context(
         sensor_name="status_sensor",
@@ -781,7 +783,7 @@ def test_run_status_sensor_run_request():
     def basic_sensor(_):
         return RunRequest(run_key=None, run_config={}, tags={})
 
-    assert basic_sensor(context).run_config == {}
+    assert basic_sensor(context).run_config == {}  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
     # test with context
     @run_status_sensor(run_status=DagsterRunStatus.SUCCESS)
@@ -789,7 +791,7 @@ def test_run_status_sensor_run_request():
         assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
         return RunRequest(run_key=None, run_config={}, tags={})
 
-    assert basic_sensor_w_arg(context).run_config == {}
+    assert basic_sensor_w_arg(context).run_config == {}  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_run_failure_w_run_request():
@@ -805,7 +807,7 @@ def test_run_failure_w_run_request():
     result = my_job.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = result.dagster_run
-    dagster_event = result.get_job_failure_event()
+    dagster_event = result.get_run_failure_event()
 
     context = build_run_status_sensor_context(
         sensor_name="failure_sensor",
@@ -819,7 +821,7 @@ def test_run_failure_w_run_request():
     def basic_sensor(_):
         return RunRequest(run_key=None, run_config={}, tags={})
 
-    assert basic_sensor(context).run_config == {}
+    assert basic_sensor(context).run_config == {}  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
     # test with context
     @run_failure_sensor
@@ -827,7 +829,7 @@ def test_run_failure_w_run_request():
         assert context.dagster_event.event_type_value == "PIPELINE_FAILURE"
         return RunRequest(run_key=None, run_config={}, tags={})
 
-    assert basic_sensor_w_arg(context).run_config == {}
+    assert basic_sensor_w_arg(context).run_config == {}  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_multi_asset_sensor():
@@ -866,7 +868,7 @@ def test_multi_asset_sensor():
                 repository_def=repository_def,
                 definitions=definitions,
             )
-            assert a_and_b_sensor(ctx).run_config == {}
+            assert a_and_b_sensor(ctx).run_config == {}  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_multi_asset_sensor_selection():
@@ -961,9 +963,9 @@ def test_partitions_multi_asset_sensor_context():
             repository_def=my_repo,
         )
         sensor_data = two_asset_sensor.evaluate_tick(ctx)
-        assert len(sensor_data.run_requests) == 1
-        assert sensor_data.run_requests[0].partition_key == "2022-08-01"
-        assert sensor_data.run_requests[0].tags["dagster/partition"] == "2022-08-01"
+        assert len(sensor_data.run_requests) == 1  # pyright: ignore[reportArgumentType]
+        assert sensor_data.run_requests[0].partition_key == "2022-08-01"  # pyright: ignore[reportOptionalSubscript]
+        assert sensor_data.run_requests[0].tags["dagster/partition"] == "2022-08-01"  # pyright: ignore[reportOptionalSubscript]
         assert (
             ctx.cursor == '{"AssetKey([\'daily_partitions_asset\'])": ["2022-08-01", 4, {}],'
             ' "AssetKey([\'daily_partitions_asset_2\'])": ["2022-08-01", 5, {}]}'
@@ -1049,7 +1051,7 @@ def test_multi_asset_sensor_can_start_from_asset_sensor_cursor():
 
     @multi_asset_sensor(monitored_assets=[my_asset.key])
     def my_multi_asset_sensor(context):
-        ctx.advance_all_cursors()
+        ctx.advance_all_cursors()  # pyright: ignore[reportAttributeAccessIssue]
 
     with instance_for_test() as instance:
         ctx = build_sensor_context(
@@ -1319,7 +1321,7 @@ def test_multi_asset_sensor_unconsumed_events():
         )
         test_unconsumed_events_sensor(ctx)
         july_asset_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
-        assert first_2022_07_10_mat < july_asset_cursor.latest_consumed_event_id
+        assert first_2022_07_10_mat < july_asset_cursor.latest_consumed_event_id  # pyright: ignore[reportOperatorIssue]
         assert july_asset_cursor.latest_consumed_event_partition == "2022-07-10"
         # Second materialization for 2022-07-10 is after cursor so should not be unconsumed
         assert july_asset_cursor.trailing_unconsumed_partitioned_event_ids == {
@@ -1394,7 +1396,7 @@ def test_advance_all_cursors_clears_unconsumed_events():
         july_asset_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert july_asset_cursor.latest_consumed_event_partition == "2022-07-06"
         assert july_asset_cursor.trailing_unconsumed_partitioned_event_ids == {}
-        assert july_asset_cursor.latest_consumed_event_id > first_storage_id
+        assert july_asset_cursor.latest_consumed_event_id > first_storage_id  # pyright: ignore[reportOptionalOperand]
 
 
 def test_error_when_max_num_unconsumed_events():
@@ -1493,7 +1495,7 @@ def test_latest_materialization_records_by_partition_fetches_unconsumed_events()
         second_july_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert second_july_cursor.latest_consumed_event_partition == "2022-07-02"
         assert (
-            second_july_cursor.latest_consumed_event_id > first_july_cursor.latest_consumed_event_id
+            second_july_cursor.latest_consumed_event_id > first_july_cursor.latest_consumed_event_id  # pyright: ignore[reportOptionalOperand]
         )
         # We should remove the 2022-07-02 materialization from the unconsumed events list
         # since we have advanced the cursor for a later materialization with that partition key.
@@ -1562,7 +1564,7 @@ def test_unfetched_partitioned_events_are_unconsumed():
         test_unconsumed_events_sensor(ctx)
         second_july_cursor = ctx._get_cursor(july_asset.key)  # noqa: SLF001
         assert (
-            second_july_cursor.latest_consumed_event_id > first_july_cursor.latest_consumed_event_id
+            second_july_cursor.latest_consumed_event_id > first_july_cursor.latest_consumed_event_id  # pyright: ignore[reportOptionalOperand]
         )
         assert second_july_cursor.latest_consumed_event_partition == "2022-07-05"
         assert (
@@ -1756,7 +1758,7 @@ def test_dynamic_partitions_sensor():
             instance=instance,
         )
         run_request = test_sensor(ctx)
-        assert run_request.partition_key == "apple"
+        assert run_request.partition_key == "apple"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_sensor_invocation_runconfig() -> None:
@@ -1797,7 +1799,7 @@ def test_empty_asset_selection():
             instance=instance,
         )
         exec_data = my_sensor.evaluate_tick(ctx)
-        assert exec_data.run_requests[0].asset_selection == []
+        assert exec_data.run_requests[0].asset_selection == []  # pyright: ignore[reportOptionalSubscript]
 
 
 def test_reject_invalid_asset_check_keys():
@@ -1833,8 +1835,8 @@ def test_reject_invalid_asset_check_keys():
             instance=instance,
         )
         asset1_sensor_data = asset1_sensor.evaluate_tick(ctx)
-        assert asset1_sensor_data.run_requests[0].asset_selection == [asset1.key]
-        assert asset1_sensor_data.run_requests[0].asset_check_keys == [check1.check_key]
+        assert asset1_sensor_data.run_requests[0].asset_selection == [asset1.key]  # pyright: ignore[reportOptionalSubscript]
+        assert asset1_sensor_data.run_requests[0].asset_check_keys == [check1.check_key]  # pyright: ignore[reportOptionalSubscript]
 
         with pytest.warns(DeprecationWarning, match="asset check keys"):
             asset2_sensor.evaluate_tick(ctx)

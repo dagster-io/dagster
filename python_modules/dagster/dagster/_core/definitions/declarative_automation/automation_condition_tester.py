@@ -1,8 +1,11 @@
 import datetime
 import logging
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, Iterable, Mapping, Optional, Sequence, Union
+from typing import AbstractSet, Optional, Union  # noqa: UP035
+
+from dagster_shared.serdes import deserialize_value, serialize_value
 
 from dagster._core.asset_graph_view.entity_subset import EntitySubset
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
@@ -15,7 +18,6 @@ from dagster._core.definitions.declarative_automation.automation_condition_evalu
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.instance import DagsterInstance
-from dagster._serdes.serdes import deserialize_value, serialize_value
 
 
 class EvaluateAutomationConditionsResult:

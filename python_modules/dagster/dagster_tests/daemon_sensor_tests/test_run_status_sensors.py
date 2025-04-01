@@ -1,8 +1,9 @@
 import tempfile
 import time
+from collections.abc import Iterator, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import Any, Dict, Iterator, Mapping, NamedTuple, Optional, Tuple, cast
+from typing import Any, NamedTuple, Optional, cast
 
 import pytest
 from dagster import (
@@ -27,9 +28,9 @@ from dagster._core.test_utils import (
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget, WorkspaceLoadTarget
-from dagster._serdes.serdes import deserialize_value
 from dagster._time import get_current_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
+from dagster_shared.serdes import deserialize_value
 
 from dagster_tests.daemon_sensor_tests.conftest import create_workspace_load_target
 from dagster_tests.daemon_sensor_tests.test_sensor_run import (
@@ -48,16 +49,17 @@ from dagster_tests.daemon_sensor_tests.test_sensor_run import (
 @pytest.fixture(name="instance_module_scoped", scope="module")
 def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
     # Overridden from conftest.py, uses DefaultRunLauncher since we care about
-    # runs actually completing for run status sensors
-    with instance_for_test(
-        overrides={},
-    ) as instance:
+    # runs actually completing for run status sensors.
+    # Still uses DefaultRunCoordinator, since we don't need to check dequeuing logic.
+    with instance_for_test(synchronous_run_coordinator=True) as instance:
         yield instance
 
 
 @contextmanager
-def instance_with_sensors(overrides=None, attribute="the_repo"):
-    with instance_for_test(overrides=overrides) as instance:
+def instance_with_sensors(overrides=None, attribute="the_repo", synchronous_run_coordinator=False):
+    with instance_for_test(
+        overrides=overrides, synchronous_run_coordinator=synchronous_run_coordinator
+    ) as instance:
         with create_test_daemon_workspace_context(
             create_workspace_load_target(attribute=attribute), instance=instance
         ) as workspace_context:
@@ -79,7 +81,7 @@ def instance_with_sensors(overrides=None, attribute="the_repo"):
 class CodeLocationInfoForSensorTest(NamedTuple):
     instance: DagsterInstance
     context: WorkspaceProcessContext
-    repositories: Dict[str, RemoteRepository]
+    repositories: dict[str, RemoteRepository]
     code_location: CodeLocation
 
     def get_single_repository(self) -> RemoteRepository:
@@ -91,8 +93,11 @@ class CodeLocationInfoForSensorTest(NamedTuple):
 def instance_with_single_code_location_multiple_repos_with_sensors(
     overrides: Optional[Mapping[str, Any]] = None,
     workspace_load_target: Optional[WorkspaceLoadTarget] = None,
-) -> Iterator[Tuple[DagsterInstance, WorkspaceProcessContext, Dict[str, RemoteRepository]]]:
-    with instance_with_multiple_code_locations(overrides, workspace_load_target) as many_tuples:
+    synchronous_run_coordinator=False,
+) -> Iterator[tuple[DagsterInstance, WorkspaceProcessContext, dict[str, RemoteRepository]]]:
+    with instance_with_multiple_code_locations(
+        overrides, workspace_load_target, synchronous_run_coordinator=synchronous_run_coordinator
+    ) as many_tuples:
         assert len(many_tuples) == 1
         location_info = next(iter(many_tuples.values()))
         yield (
@@ -104,13 +109,17 @@ def instance_with_single_code_location_multiple_repos_with_sensors(
 
 @contextmanager
 def instance_with_multiple_code_locations(
-    overrides: Optional[Mapping[str, Any]] = None, workspace_load_target=None
-) -> Iterator[Dict[str, CodeLocationInfoForSensorTest]]:
-    with instance_for_test(overrides) as instance:
+    overrides: Optional[Mapping[str, Any]] = None,
+    workspace_load_target=None,
+    synchronous_run_coordinator=False,
+) -> Iterator[dict[str, CodeLocationInfoForSensorTest]]:
+    with instance_for_test(
+        overrides, synchronous_run_coordinator=synchronous_run_coordinator
+    ) as instance:
         with create_test_daemon_workspace_context(
             workspace_load_target or create_workspace_load_target(None), instance=instance
         ) as workspace_context:
-            location_infos: Dict[str, CodeLocationInfoForSensorTest] = {}
+            location_infos: dict[str, CodeLocationInfoForSensorTest] = {}
 
             for code_location_entry in (
                 workspace_context.create_request_context().get_code_location_entries().values()
@@ -607,7 +616,7 @@ def test_run_failure_sensor_overfetch(
                 )
 
 
-def sqlite_storage_config_fn(temp_dir: str) -> Dict[str, Any]:
+def sqlite_storage_config_fn(temp_dir: str) -> dict[str, Any]:
     # non-run sharded storage
     return {
         "run_storage": {
@@ -711,8 +720,8 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                     freeze_datetime,
                     TickStatus.SUCCESS,
                 )
-                assert len(ticks[0].origin_run_ids) == 1
-                assert ticks[0].origin_run_ids[0] == run2.run_id
+                assert len(ticks[0].origin_run_ids) == 1  # pyright: ignore[reportArgumentType]
+                assert ticks[0].origin_run_ids[0] == run2.run_id  # pyright: ignore[reportOptionalSubscript]
 
             # fail run 1
             with freeze_time(freeze_datetime):
@@ -736,8 +745,8 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                     freeze_datetime,
                     TickStatus.SUCCESS,
                 )
-                assert len(ticks[0].origin_run_ids) == 1
-                assert ticks[0].origin_run_ids[0] == run1.run_id
+                assert len(ticks[0].origin_run_ids) == 1  # pyright: ignore[reportArgumentType]
+                assert ticks[0].origin_run_ids[0] == run1.run_id  # pyright: ignore[reportOptionalSubscript]
 
 
 @pytest.mark.parametrize("storage_config_fn", [sql_event_log_storage_config_fn])
@@ -825,7 +834,8 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
     job_defs_name = "dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs"
 
     with instance_with_multiple_code_locations(
-        workspace_load_target=workspace_load_target
+        workspace_load_target=workspace_load_target,
+        synchronous_run_coordinator=True,
     ) as location_infos:
         assert len(location_infos) == 2
 
@@ -912,7 +922,8 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
     job_defs_name = "dagster_tests.daemon_sensor_tests.locations_for_xlocation_sensor_test.job_defs"
 
     with instance_with_multiple_code_locations(
-        workspace_load_target=workspace_load_target
+        workspace_load_target=workspace_load_target,
+        synchronous_run_coordinator=True,
     ) as location_infos:
         assert len(location_infos) == 2
 
@@ -1001,7 +1012,8 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
     )
 
     with instance_with_multiple_code_locations(
-        workspace_load_target=workspace_load_target
+        synchronous_run_coordinator=True,
+        workspace_load_target=workspace_load_target,
     ) as location_infos:
         assert len(location_infos) == 2
 
@@ -1100,7 +1112,8 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
     )
 
     with instance_with_multiple_code_locations(
-        workspace_load_target=workspace_load_target
+        synchronous_run_coordinator=True,
+        workspace_load_target=workspace_load_target,
     ) as location_infos:
         assert len(location_infos) == 2
 
@@ -1247,7 +1260,8 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
     code_location_with_dupe_job_name = "dagster_tests.daemon_sensor_tests.locations_for_code_location_scoped_sensor_test.code_location_with_duplicate_job_name"
 
     with instance_with_multiple_code_locations(
-        workspace_load_target=workspace_load_target
+        synchronous_run_coordinator=True,
+        workspace_load_target=workspace_load_target,
     ) as location_infos:
         assert len(location_infos) == 2
 
@@ -1367,7 +1381,9 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 
 def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = get_current_datetime()
-    with instance_with_single_code_location_multiple_repos_with_sensors() as (
+    with instance_with_single_code_location_multiple_repos_with_sensors(
+        synchronous_run_coordinator=True,
+    ) as (
         instance,
         workspace_context,
         repos,
@@ -1425,7 +1441,9 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
 
 def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = get_current_datetime()
-    with instance_with_single_code_location_multiple_repos_with_sensors() as (
+    with instance_with_single_code_location_multiple_repos_with_sensors(
+        synchronous_run_coordinator=True,
+    ) as (
         instance,
         workspace_context,
         repos,
@@ -1579,12 +1597,17 @@ def test_partitioned_job_run_status_sensor(
 
 def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = get_current_datetime()
-    with instance_with_sensors() as (
+    with instance_with_sensors(
+        synchronous_run_coordinator=True,
+    ) as (
         instance,
         workspace_context,
         the_repo,
     ):
-        with instance_with_sensors(attribute="the_other_repo") as (
+        with instance_with_sensors(
+            attribute="the_other_repo",
+            synchronous_run_coordinator=True,
+        ) as (
             the_other_instance,
             the_other_workspace_context,
             the_other_repo,
@@ -1642,7 +1665,9 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
 
 def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
     freeze_datetime = get_current_datetime()
-    with instance_with_single_code_location_multiple_repos_with_sensors() as (
+    with instance_with_single_code_location_multiple_repos_with_sensors(
+        synchronous_run_coordinator=True,
+    ) as (
         instance,
         workspace_context,
         repos,

@@ -1,10 +1,11 @@
 import importlib
 import importlib.util
 import sys
+from collections.abc import Mapping, Sequence
 from importlib.abc import Loader, MetaPathFinder
 from importlib.machinery import ModuleSpec, PathFinder
 from types import ModuleType
-from typing import Mapping, Optional, Sequence, Union
+from typing import Optional, Union
 
 
 # The AliasedModuleFinder should be inserted in front of the built-in PathFinder.
@@ -68,7 +69,7 @@ class AliasedModuleLoader(Loader):
         self.alias = alias
         self.base_spec = base_spec
 
-    def exec_module(self, _module: ModuleType) -> None:
+    def exec_module(self, _module: ModuleType) -> None:  # pyright: ignore[reportIncompatibleMethodOverride]
         base_module = importlib.import_module(self.base_spec.name)
         sys.modules[self.alias] = base_module
 

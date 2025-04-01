@@ -8,7 +8,7 @@ from dagster._core.test_utils import (
 )
 from dagster._grpc.server import ExecuteExternalJobArgs
 from dagster._grpc.types import StartRunResult
-from dagster._serdes.serdes import deserialize_value
+from dagster_shared.serdes import deserialize_value
 
 from dagster_tests.api_tests.utils import get_bar_repo_code_location
 
@@ -142,5 +142,5 @@ def test_launch_unloadable_run_grpc():
                 assert (
                     f"gRPC server could not load run {run_id} in order to execute it. "
                     "Make sure that the gRPC server has access to your run storage."
-                    in res.serializable_error_info.message
+                    in res.serializable_error_info.message  # pyright: ignore[reportOptionalMemberAccess]
                 )

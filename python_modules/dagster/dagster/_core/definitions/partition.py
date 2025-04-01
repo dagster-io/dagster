@@ -3,20 +3,16 @@ import hashlib
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import (
+from typing import (  # noqa: UP035
     AbstractSet,
     Any,
     Callable,
-    Dict,
     Generic,
-    Iterable,
-    Mapping,
     NamedTuple,
     Optional,
-    Sequence,
-    Type,
     Union,
     cast,
 )
@@ -126,7 +122,7 @@ class PartitionsDefinition(ABC, Generic[T_str]):
     """
 
     @property
-    def partitions_subset_class(self) -> Type["PartitionsSubset"]:
+    def partitions_subset_class(self) -> type["PartitionsSubset"]:
         return DefaultPartitionsSubset
 
     @abstractmethod
@@ -171,6 +167,17 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         partition_keys = self.get_partition_keys(current_time, dynamic_partitions_store)
         return partition_keys[0] if partition_keys else None
 
+    def get_subset_in_range(
+        self,
+        partition_key_range: PartitionKeyRange,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> "PartitionsSubset":
+        return self.empty_subset().with_partition_key_range(
+            partitions_def=self,
+            partition_key_range=partition_key_range,
+            dynamic_partitions_store=dynamic_partitions_store,
+        )
+
     def get_partition_keys_in_range(
         self,
         partition_key_range: PartitionKeyRange,
@@ -205,7 +212,7 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         ]
 
     def empty_subset(self) -> "PartitionsSubset":
-        return self.partitions_subset_class.empty_subset(self)
+        return self.partitions_subset_class.create_empty_subset(self)
 
     def subset_with_partition_keys(self, partition_keys: Iterable[str]) -> "PartitionsSubset":
         return self.empty_subset().with_partition_keys(partition_keys)
@@ -294,7 +301,7 @@ def raise_error_on_invalid_partition_key_substring(partition_keys: Sequence[str]
 
 
 def raise_error_on_duplicate_partition_keys(partition_keys: Sequence[str]) -> None:
-    counts: Dict[str, int] = defaultdict(lambda: 0)
+    counts: dict[str, int] = defaultdict(lambda: 0)
     for partition_key in partition_keys:
         counts[partition_key] += 1
     found_duplicates = [key for key in counts.keys() if counts[key] > 1]
@@ -469,7 +476,7 @@ class DynamicPartitionsDefinition(
                 "Cannot provide both partition_fn and name to DynamicPartitionsDefinition."
             )
 
-        return super(DynamicPartitionsDefinition, cls).__new__(
+        return super().__new__(
             cls,
             partition_fn=check.opt_callable_param(partition_fn, "partition_fn"),
             name=check.opt_str_param(name, "name"),
@@ -992,6 +999,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
         if self is other or other.is_empty:
             return self
         # Anything | AllPartitionsSubset = AllPartitionsSubset
+        # (this assumes the two subsets are using the same partitions definition)
         if isinstance(other, AllPartitionsSubset):
             return other
         return self.with_partition_keys(other.get_partition_keys())
@@ -1002,6 +1010,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
         if other.is_empty:
             return self
         # Anything - AllPartitionsSubset = Empty
+        # (this assumes the two subsets are using the same partitions definition)
         if isinstance(other, AllPartitionsSubset):
             return self.empty_subset()
         return self.empty_subset().with_partition_keys(
@@ -1014,6 +1023,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
         if other.is_empty:
             return other
         # Anything & AllPartitionsSubset = Anything
+        # (this assumes the two subsets are using the same partitions definition)
         if isinstance(other, AllPartitionsSubset):
             return self
         return self.empty_subset().with_partition_keys(
@@ -1045,9 +1055,11 @@ class PartitionsSubset(ABC, Generic[T_str]):
     @abstractmethod
     def __contains__(self, value) -> bool: ...
 
+    def empty_subset(self) -> "PartitionsSubset[T_str]": ...
+
     @classmethod
     @abstractmethod
-    def empty_subset(
+    def create_empty_subset(
         cls, partitions_def: Optional[PartitionsDefinition] = None
     ) -> "PartitionsSubset[T_str]": ...
 
@@ -1105,7 +1117,7 @@ class DefaultPartitionsSubset(
         subset: Optional[AbstractSet[str]] = None,
     ):
         check.opt_set_param(subset, "subset")
-        return super(DefaultPartitionsSubset, cls).__new__(cls, subset or set())
+        return super().__new__(cls, subset or set())
 
     def get_partition_keys_not_in_subset(
         self,
@@ -1122,15 +1134,7 @@ class DefaultPartitionsSubset(
     def get_partition_keys(self) -> Iterable[str]:
         return self.subset
 
-    def get_partition_key_ranges(
-        self,
-        partitions_def: PartitionsDefinition,
-        current_time: Optional[datetime] = None,
-        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
-    ) -> Sequence[PartitionKeyRange]:
-        partition_keys = partitions_def.get_partition_keys(
-            current_time, dynamic_partitions_store=dynamic_partitions_store
-        )
+    def get_ranges_for_keys(self, partition_keys: Sequence[str]) -> Sequence[PartitionKeyRange]:
         cur_range_start = None
         cur_range_end = None
         result = []
@@ -1146,8 +1150,65 @@ class DefaultPartitionsSubset(
 
         if cur_range_start is not None and cur_range_end is not None:
             result.append(PartitionKeyRange(cur_range_start, cur_range_end))
-
         return result
+
+    def get_partition_key_ranges(
+        self,
+        partitions_def: PartitionsDefinition,
+        current_time: Optional[datetime] = None,
+        dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
+    ) -> Sequence[PartitionKeyRange]:
+        from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+
+        if isinstance(partitions_def, MultiPartitionsDefinition):
+            # For multi-partitions, we construct the ranges by holding one dimension constant
+            # and constructing the range for the other dimension
+            primary_dimension = partitions_def.primary_dimension
+            secondary_dimension = partitions_def.secondary_dimension
+
+            primary_keys_in_subset = set()
+            secondary_keys_in_subset = set()
+            for partition_key in self.subset:
+                primary_keys_in_subset.add(
+                    partitions_def.get_partition_key_from_str(partition_key).keys_by_dimension[
+                        primary_dimension.name
+                    ]
+                )
+                secondary_keys_in_subset.add(
+                    partitions_def.get_partition_key_from_str(partition_key).keys_by_dimension[
+                        secondary_dimension.name
+                    ]
+                )
+
+            # for efficiency, group the keys by whichever dimension has fewer distinct keys
+            grouping_dimension = (
+                primary_dimension
+                if len(primary_keys_in_subset) <= len(secondary_keys_in_subset)
+                else secondary_dimension
+            )
+            grouping_keys = (
+                primary_keys_in_subset
+                if grouping_dimension == primary_dimension
+                else secondary_keys_in_subset
+            )
+
+            results = []
+            for grouping_key in grouping_keys:
+                keys = partitions_def.get_multipartition_keys_with_dimension_value(
+                    dimension_name=grouping_dimension.name,
+                    dimension_partition_key=grouping_key,
+                    current_time=current_time,
+                    dynamic_partitions_store=dynamic_partitions_store,
+                )
+                results.extend(self.get_ranges_for_keys(keys))
+            return results
+
+        else:
+            partition_keys = partitions_def.get_partition_keys(
+                current_time, dynamic_partitions_store=dynamic_partitions_store
+            )
+
+            return self.get_ranges_for_keys(partition_keys)
 
     def with_partition_keys(self, partition_keys: Iterable[str]) -> "DefaultPartitionsSubset":
         return DefaultPartitionsSubset(
@@ -1212,10 +1273,15 @@ class DefaultPartitionsSubset(
         return f"DefaultPartitionsSubset(subset={self.subset})"
 
     @classmethod
-    def empty_subset(
+    def create_empty_subset(
         cls, partitions_def: Optional[PartitionsDefinition] = None
     ) -> "DefaultPartitionsSubset":
         return cls()
+
+    def empty_subset(
+        self,
+    ) -> "DefaultPartitionsSubset":
+        return DefaultPartitionsSubset()
 
 
 class AllPartitionsSubset(
@@ -1295,11 +1361,16 @@ class AllPartitionsSubset(
         return other
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+        from dagster._core.definitions.time_window_partitions import (
+            TimeWindowPartitionsDefinition,
+            TimeWindowPartitionsSubset,
+        )
 
         if self == other:
             return self.partitions_def.empty_subset()
-        elif isinstance(other, TimeWindowPartitionsSubset):
+        elif isinstance(other, TimeWindowPartitionsSubset) and isinstance(
+            self.partitions_def, TimeWindowPartitionsDefinition
+        ):
             return TimeWindowPartitionsSubset.from_all_partitions_subset(self) - other
         return self.partitions_def.empty_subset().with_partition_keys(
             set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
@@ -1340,10 +1411,14 @@ class AllPartitionsSubset(
     ) -> "PartitionsSubset[T_str]":
         raise NotImplementedError()
 
-    def empty_subset(
-        self, partitions_def: Optional[PartitionsDefinition] = None
-    ) -> PartitionsSubset:
+    def empty_subset(self) -> PartitionsSubset:
         return self.partitions_def.empty_subset()
+
+    @classmethod
+    def create_empty_subset(
+        cls, partitions_def: Optional[PartitionsDefinition] = None
+    ) -> PartitionsSubset:
+        return check.not_none(partitions_def).empty_subset()
 
     def to_serializable_subset(self) -> PartitionsSubset:
         return self.partitions_def.subset_with_all_partitions(

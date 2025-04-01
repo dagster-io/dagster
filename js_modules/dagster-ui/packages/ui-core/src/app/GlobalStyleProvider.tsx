@@ -7,8 +7,8 @@ import {
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalThemeStyle,
-  GlobalToasterStyle,
   GlobalTooltipStyle,
+  Toaster,
   themeToClassName,
 } from '@dagster-io/ui-components';
 import {useLayoutEffect} from 'react';
@@ -68,22 +68,22 @@ const GlobalStyle = createGlobalStyle`
     font-variant-ligatures: none;
   }
 
-  &:focus-visible {
+  :focus-visible {
     outline: ${Colors.focusRing()} auto 1px;
   }
 
-  &:focus:not(:focus-visible) {
+  :focus:not(:focus-visible) {
     outline: none;
   }
 
-  &:not(a):focus,
-  &:not(a):focus-visible {
+  :not(a):focus,
+  :not(a):focus-visible {
     outline-offset: 1px;
   }
 `;
 
 export const GlobalStyleProvider = () => {
-  const theme = useThemeState();
+  const {theme} = useThemeState();
 
   // Given a theme setting, apply the appropriate class name to the body to set the
   // desired CSS var values. When the theme changes, the class name is updated.
@@ -103,12 +103,12 @@ export const GlobalStyleProvider = () => {
       <GlobalGeistMono />
       <GlobalStyle />
       <GlobalThemeStyle />
-      <GlobalToasterStyle />
       <GlobalTooltipStyle />
       <GlobalPopoverStyle />
       <GlobalDialogStyle />
       <GlobalCustomAlertPortalStyle />
       <GlobalSuggestStyle />
+      <Toaster richColors />
     </>
   );
 };

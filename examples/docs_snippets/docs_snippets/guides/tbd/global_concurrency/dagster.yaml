@@ -1,0 +1,3 @@
+concurrency:
+  runs:
+    max_concurrent_runs: 15

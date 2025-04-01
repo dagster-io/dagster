@@ -1,4 +1,5 @@
-from typing import ContextManager, Optional, Sequence
+from collections.abc import Sequence
+from typing import ContextManager, Optional  # noqa: UP035
 
 import dagster._check as check
 import sqlalchemy as db
@@ -103,12 +104,15 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         self.migrate()
         self.optimize()
 
-    def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
+    def optimize_for_webserver(
+        self, statement_timeout: int, pool_recycle: int, max_overflow: int
+    ) -> None:
         # When running in dagster-webserver, hold an open connection and set statement_timeout
         kwargs = {
             "isolation_level": "AUTOCOMMIT",
             "pool_size": 1,
             "pool_recycle": pool_recycle,
+            "max_overflow": max_overflow,
         }
         existing_options = self._engine.url.query.get("options")
         if existing_options:
@@ -129,7 +133,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
         return pg_config()
 
     @classmethod
-    def from_config_value(
+    def from_config_value(  # pyright: ignore[reportIncompatibleMethodOverride]
         cls, inst_data: Optional[ConfigurableClassData], config_value: PostgresStorageConfig
     ) -> "PostgresScheduleStorage":
         return PostgresScheduleStorage(

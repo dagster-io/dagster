@@ -122,7 +122,7 @@ def test_bad_target():
             " or RepositoryDefinition. Got None."
         ),
     ):
-        reconstructable(not_the_pipeline)
+        reconstructable(not_the_pipeline)  # pyright: ignore[reportArgumentType]
 
 
 def test_inner_scope():

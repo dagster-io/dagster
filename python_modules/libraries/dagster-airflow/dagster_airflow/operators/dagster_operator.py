@@ -2,12 +2,18 @@ import json
 
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
+from dagster._annotations import superseded
 
 from dagster_airflow.hooks.dagster_hook import DagsterHook
 from dagster_airflow.links.dagster_link import LINK_FMT, DagsterLink
 from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 
 
+@superseded(
+    additional_warn_text=(
+        "`DagsterOperator` has been superseded by the functionality in the `dagster-airlift` library."
+    )
+)
 class DagsterOperator(BaseOperator):
     """DagsterOperator.
 
@@ -84,7 +90,7 @@ class DagsterOperator(BaseOperator):
     def on_kill(self):
         self.log.info("Terminating Run")
         self.hook.terminate_run(
-            run_id=self.run_id,
+            run_id=self.run_id,  # pyright: ignore[reportArgumentType]
         )
 
     def execute(self, context):
@@ -125,6 +131,12 @@ class DagsterOperator(BaseOperator):
         )
 
 
+@superseded(
+    additional_warn_text=(
+        "`DagsterCloudOperator` has been superseded "
+        "by the functionality in the `dagster-airlift` library."
+    )
+)
 class DagsterCloudOperator(DagsterOperator):
     """DagsterCloudOperator.
 

@@ -9,8 +9,8 @@ import {PipelineTag} from '../../pipelines/PipelineReference';
 import {RepoAddress} from '../../workspace/types';
 import {EvaluationUserLabel} from '../AutoMaterializePolicyPage/EvaluationConditionalLabel';
 import {freshnessPolicyDescription} from '../OverdueTag';
-import {AssetNodeDefinitionFragment} from '../types/AssetNodeDefinition.types';
 import {AssetTableDefinitionFragment} from '../types/AssetTableFragment.types';
+import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
 export const AutomationDetailsSection = ({
   repoAddress,
@@ -18,8 +18,8 @@ export const AutomationDetailsSection = ({
   cachedOrLiveAssetNode,
 }: {
   repoAddress: RepoAddress | null;
-  assetNode: AssetNodeDefinitionFragment | null | undefined;
-  cachedOrLiveAssetNode: AssetNodeDefinitionFragment | AssetTableDefinitionFragment;
+  assetNode: AssetViewDefinitionNodeFragment | null | undefined;
+  cachedOrLiveAssetNode: AssetViewDefinitionNodeFragment | AssetTableDefinitionFragment;
 }) => {
   const {schedules, sensors} = useMemo(() => insitigatorsByType(assetNode), [assetNode]);
   const visibleJobNames =
@@ -72,6 +72,15 @@ export const AutomationDetailsSection = ({
         <SectionSkeleton />
       ),
     },
+    {
+      label: 'Automation condition',
+      children: assetNode?.automationCondition?.label ? (
+        <EvaluationUserLabel
+          userLabel={assetNode?.automationCondition.label}
+          expandedLabel={assetNode?.automationCondition.expandedLabel}
+        />
+      ) : null,
+    },
   ];
 
   if (
@@ -85,15 +94,6 @@ export const AutomationDetailsSection = ({
         learnMoreLink="https://docs.dagster.io/concepts/automation#automation"
       />
     );
-  } else {
-    if (assetNode?.automationCondition && assetNode?.automationCondition.label) {
-      return (
-        <EvaluationUserLabel
-          userLabel={assetNode?.automationCondition.label}
-          expandedLabel={assetNode?.automationCondition.expandedLabel}
-        />
-      );
-    }
   }
 
   return (

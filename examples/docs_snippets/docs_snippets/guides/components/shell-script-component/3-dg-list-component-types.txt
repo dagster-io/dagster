@@ -1,0 +1,22 @@
+dg list component-type
+
+Using /.../my-component-library/.venv/bin/dagster-components
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┓
+┃ Component Type                                                      ┃ Summary          ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━┩
+│ dagster_components.dagster.DefinitionsComponent                     │ An arbitrary set │
+│                                                                     │ of dagster       │
+│                                                                     │ definitions.     │
+│ dagster_components.dagster.DefsFolderComponent                      │ A folder         │
+│                                                                     │ containing       │
+│                                                                     │ multiple         │
+│                                                                     │ submodules.      │
+│ dagster_components.dagster.PipesSubprocessScriptCollectionComponent │ Assets that wrap │
+│                                                                     │ Python scripts   │
+│                                                                     │ executed with    │
+│                                                                     │ Dagster's        │
+│                                                                     │ PipesSubprocess… │
+│ my_component_library.lib.ShellCommand                               │ Models a shell   │
+│                                                                     │ script as a      │
+│                                                                     │ Dagster asset.   │
+└─────────────────────────────────────────────────────────────────────┴──────────────────┘

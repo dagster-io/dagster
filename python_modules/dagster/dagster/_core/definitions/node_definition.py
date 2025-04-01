@@ -1,14 +1,6 @@
 from abc import abstractmethod
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Iterable,
-    Iterator,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-)
+from collections.abc import Iterable, Iterator, Mapping, Sequence, Set
+from typing import TYPE_CHECKING, AbstractSet, Optional  # noqa: UP035
 
 import dagster._check as check
 from dagster._core.definitions.configurable import NamedConfigurableDefinition
@@ -159,7 +151,7 @@ class NodeDefinition(NamedConfigurableDefinition):
         self,
         output_name: str,
         handle: Optional["NodeHandle"],
-    ) -> Tuple["OutputDefinition", Optional["NodeHandle"]]: ...
+    ) -> tuple["OutputDefinition", Optional["NodeHandle"]]: ...
 
     @abstractmethod
     def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition": ...
@@ -240,3 +232,7 @@ class NodeDefinition(NamedConfigurableDefinition):
     def get_op_output_handles(
         self, parent: Optional["NodeHandle"]
     ) -> AbstractSet["NodeOutputHandle"]: ...
+
+    @property
+    @abstractmethod
+    def pools(self) -> Set[str]: ...

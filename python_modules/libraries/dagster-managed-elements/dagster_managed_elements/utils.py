@@ -1,4 +1,5 @@
-from typing import Any, Callable, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Callable, Optional
 
 from dagster_managed_elements.types import ManagedElementDiff
 

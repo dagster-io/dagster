@@ -1,5 +1,8 @@
 import asyncio
-from typing import Sequence
+from collections.abc import Sequence
+from typing import Union
+
+from dagster_shared.serdes import whitelist_for_serdes
 
 from dagster._core.definitions.asset_key import T_EntityKey
 from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -8,8 +11,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     BuiltinAutomationCondition,
 )
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._record import copy, record
 
 
 @whitelist_for_serdes
@@ -26,7 +28,7 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
     def children(self) -> Sequence[AutomationCondition[T_EntityKey]]:
         return [self.trigger_condition, self.reset_condition]
 
-    async def evaluate(
+    async def evaluate(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, context: AutomationContext[T_EntityKey]
     ) -> AutomationResult[T_EntityKey]:
         # must evaluate child condition over the entire subset to avoid missing state transitions
@@ -36,10 +38,14 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
         trigger_result, reset_result = await asyncio.gather(
             *[
                 context.for_child_condition(
-                    self.trigger_condition, child_index=0, candidate_subset=child_candidate_subset
+                    self.trigger_condition,
+                    child_indices=[0],
+                    candidate_subset=child_candidate_subset,
                 ).evaluate_async(),
                 context.for_child_condition(
-                    self.reset_condition, child_index=1, candidate_subset=child_candidate_subset
+                    self.reset_condition,
+                    child_indices=[1],
+                    candidate_subset=child_candidate_subset,
                 ).evaluate_async(),
             ]
         )
@@ -54,4 +60,26 @@ class SinceCondition(BuiltinAutomationCondition[T_EntityKey]):
 
         return AutomationResult(
             context=context, true_subset=true_subset, child_results=[trigger_result, reset_result]
+        )
+
+    def replace(
+        self, old: Union[AutomationCondition, str], new: AutomationCondition
+    ) -> AutomationCondition:
+        """Replaces all instances of ``old`` across any sub-conditions with ``new``.
+
+        If ``old`` is a string, then conditions with a label matching
+        that string will be replaced.
+
+        Args:
+            old (Union[AutomationCondition, str]): The condition to replace.
+            new (AutomationCondition): The condition to replace with.
+        """
+        return (
+            new
+            if old in [self, self.get_label()]
+            else copy(
+                self,
+                trigger_condition=self.trigger_condition.replace(old, new),
+                reset_condition=self.reset_condition.replace(old, new),
+            )
         )

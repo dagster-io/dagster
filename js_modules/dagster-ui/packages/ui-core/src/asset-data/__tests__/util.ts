@@ -7,10 +7,12 @@ import {
   buildAssetNode,
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
-import {ASSETS_GRAPH_LIVE_QUERY} from '../AssetBaseDataProvider';
+import {ASSETS_FRESHNESS_INFO_QUERY, ASSETS_GRAPH_LIVE_QUERY} from '../AssetBaseDataProvider';
 import {
   AssetGraphLiveQuery,
   AssetGraphLiveQueryVariables,
+  AssetsFreshnessInfoQuery,
+  AssetsFreshnessInfoQueryVariables,
 } from '../types/AssetBaseDataProvider.types';
 
 export function buildMockedAssetGraphLiveQuery(
@@ -22,8 +24,7 @@ export function buildMockedAssetGraphLiveQuery(
     | undefined = undefined,
   errors: readonly GraphQLError[] | undefined = undefined,
 ) {
-  return buildQueryMock<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>({
-    query: ASSETS_GRAPH_LIVE_QUERY,
+  const opts = {
     variables: {
       // strip __typename
       assetKeys: assetKeys.map((assetKey) => ({path: assetKey.path})),
@@ -43,5 +44,23 @@ export function buildMockedAssetGraphLiveQuery(
           }
         : data,
     errors,
-  });
+  };
+  return [
+    buildQueryMock<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>({
+      query: ASSETS_GRAPH_LIVE_QUERY,
+      ...opts,
+    }),
+    buildQueryMock<AssetsFreshnessInfoQuery, AssetsFreshnessInfoQueryVariables>({
+      query: ASSETS_FRESHNESS_INFO_QUERY,
+      ...opts,
+      data:
+        data === undefined && errors === undefined
+          ? {
+              assetNodes: assetKeys.map((assetKey) =>
+                buildAssetNode({assetKey: buildAssetKey(assetKey), id: JSON.stringify(assetKey)}),
+              ),
+            }
+          : undefined,
+    }),
+  ] as const;
 }

@@ -1,22 +1,11 @@
 from collections import defaultdict
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Type,
-    Union,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
 
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
@@ -57,7 +46,6 @@ if TYPE_CHECKING:
 
 
 @public
-@experimental
 def create_repository_using_definitions_args(
     name: str,
     assets: Optional[
@@ -129,7 +117,7 @@ def _io_manager_needs_replacement(job: JobDefinition, resource_defs: Mapping[str
 def _jobs_which_will_have_io_manager_replaced(
     jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]],
     resource_defs: Mapping[str, Any],
-) -> List[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+) -> list[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
     """Returns whether any jobs will have their I/O manager replaced by an `io_manager` override from
     the top-level `resource_defs` provided to `Definitions` in 1.3. We will warn users if this is
     the case.
@@ -491,10 +479,10 @@ class Definitions(IHaveNew):
         self,
         asset_key: CoercibleToAssetKey,
         *,
-        python_type: Optional[Type] = None,
+        python_type: Optional[type] = None,
         instance: Optional[DagsterInstance] = None,
         partition_key: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> object:
         """Load the contents of an asset as a Python object.
 
@@ -613,7 +601,6 @@ class Definitions(IHaveNew):
         defs.get_repository_def().load_all_definitions()
 
     @public
-    @experimental
     @staticmethod
     def merge(*def_sets: "Definitions") -> "Definitions":
         """Merges multiple Definitions objects into a single Definitions object.
@@ -644,9 +631,9 @@ class Definitions(IHaveNew):
         metadata = {}
 
         resources = {}
-        resource_key_indexes: Dict[str, int] = {}
+        resource_key_indexes: dict[str, int] = {}
         loggers = {}
-        logger_key_indexes: Dict[str, int] = {}
+        logger_key_indexes: dict[str, int] = {}
         executor = None
         executor_index: Optional[int] = None
 
@@ -698,13 +685,13 @@ class Definitions(IHaveNew):
         )
 
     @public
-    @experimental
+    @preview
     def get_all_asset_specs(self) -> Sequence[AssetSpec]:
         """Returns an AssetSpec object for every asset contained inside the Definitions object."""
         asset_graph = self.get_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
 
-    @experimental
+    @preview
     def with_reconstruction_metadata(self, reconstruction_metadata: Mapping[str, str]) -> Self:
         """Add reconstruction metadata to the Definitions object. This is typically used to cache data
         loaded from some external API that is computed during initialization of a code server.

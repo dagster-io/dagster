@@ -1,6 +1,7 @@
+from collections.abc import Mapping, Sequence
 from enum import Enum as PyEnum
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Sequence, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union, overload
 
 from typing_extensions import Self, TypeAlias
 
@@ -326,7 +327,7 @@ def _core_multiprocess_executor_creation(config: ExecutorConfig) -> "Multiproces
 
     # unpack optional selector
     start_method = None
-    start_cfg: Dict[str, object] = {}
+    start_cfg: dict[str, object] = {}
     start_selector = check.opt_dict_elem(config, "start_method")
     if start_selector:
         start_method, start_cfg = next(iter(start_selector.items()))
@@ -458,7 +459,7 @@ def _check_non_ephemeral_instance(instance: "DagsterInstance") -> None:
             " multiple processes. You can configure your default instance via $DAGSTER_HOME or"
             " ensure a valid one is passed when invoking the python APIs. You can learn more about"
             " setting up a persistent DagsterInstance from the DagsterInstance docs here:"
-            " https://docs.dagster.io/deployment/dagster-instance#default-local-behavior"
+            " https://docs.dagster.io/guides/deploy/dagster-instance-configuration#default-local-behavior"
         )
 
 

@@ -1,42 +1,47 @@
 // eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps} from '@blueprintjs/core';
-import {Alert, Box, ErrorBoundary, NonIdealState, Spinner, Tag} from '@dagster-io/ui-components';
+import {Alert, Box, ErrorBoundary, Spinner, Tag} from '@dagster-io/ui-components';
 import {useContext, useEffect, useMemo} from 'react';
 import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
+import {getAssetFilterStateQueryString} from 'shared/assets/useAssetDefinitionFilterState.oss';
 
+import {ASSET_NODE_CONFIG_FRAGMENT} from './AssetConfig';
 import {AssetEvents} from './AssetEvents';
 import {AssetFeatureContext} from './AssetFeatureContext';
-import {ASSET_NODE_DEFINITION_FRAGMENT, AssetNodeDefinition} from './AssetNodeDefinition';
+import {ASSET_NODE_OP_METADATA_FRAGMENT} from './AssetMetadata';
 import {ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {AssetPartitions} from './AssetPartitions';
-import {AssetPlotsPage} from './AssetPlotsPage';
 import {AssetTabs} from './AssetTabs';
 import {useAllAssets} from './AssetsCatalogTable';
-import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
+import {AssetAutomationRoot} from './AutoMaterializePolicyPage/AssetAutomationRoot';
 import {ChangedReasonsTag} from './ChangedReasons';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
 import {AssetChecks} from './asset-checks/AssetChecks';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {gql, useQuery} from '../apollo-client';
+import {featureEnabled} from '../app/Flags';
 import {AssetNodeOverview, AssetNodeOverviewNonSDA} from './overview/AssetNodeOverview';
 import {AssetKey, AssetViewParams} from './types';
+import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
 import {
   AssetViewDefinitionNodeFragment,
   AssetViewDefinitionQuery,
   AssetViewDefinitionQueryVariables,
 } from './types/AssetView.types';
+import {useAssetViewParams} from './useAssetViewParams';
 import {useDeleteDynamicPartitionsDialog} from './useDeleteDynamicPartitionsDialog';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
-import {useReportEventsModal} from './useReportEventsModal';
-import {useWipeModal} from './useWipeModal';
-import {gql, useQuery} from '../apollo-client';
-import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
+import {useReportEventsDialog} from './useReportEventsDialog';
+import {useWipeDialog} from './useWipeDialog';
 import {currentPageAtom} from '../app/analytics';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
+import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {
   GraphData,
   LiveDataForNodeWithStaleData,
@@ -46,7 +51,6 @@ import {
 } from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
@@ -58,7 +62,7 @@ interface Props {
 }
 
 export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, currentPath}: Props) => {
-  const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
+  const [params, setParams] = useAssetViewParams();
   const {useTabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
 
   // Load the asset definition
@@ -128,23 +132,6 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
     );
   };
 
-  const renderDefinitionTab = () => {
-    if (isLoading) {
-      return <AssetLoadingDefinitionState />;
-    }
-    if (!definition) {
-      return <AssetNoDefinitionState />;
-    }
-    return (
-      <AssetNodeDefinition
-        assetNode={definition}
-        upstream={upstream}
-        downstream={downstream}
-        dependsOnSelf={node ? nodeDependsOnSelf(node) : false}
-      />
-    );
-  };
-
   const renderLineageTab = () => {
     if (!visibleAssetGraph.assetGraphData) {
       return (
@@ -203,25 +190,12 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
     );
   };
 
-  const renderPlotsTab = () => {
-    if (isLoading) {
-      return <AssetLoadingDefinitionState />;
-    }
-    return (
-      <AssetPlotsPage
-        assetKey={assetKey}
-        assetHasDefinedPartitions={!!definition?.partitionDefinition}
-        params={params}
-        setParams={setParams}
-      />
-    );
-  };
-
   const renderAutomaterializeHistoryTab = () => {
     if (isLoading) {
       return <AssetLoadingDefinitionState />;
     }
-    return <AssetAutomaterializePolicyPage assetKey={assetKey} definition={definition} />;
+
+    return <AssetAutomationRoot assetKey={assetKey} definition={definition} />;
   };
 
   const renderChecksTab = () => {
@@ -240,16 +214,12 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
     switch (selectedTab) {
       case 'overview':
         return renderOverviewTab();
-      case 'definition':
-        return renderDefinitionTab();
       case 'lineage':
         return renderLineageTab();
       case 'partitions':
         return renderPartitionsTab();
       case 'events':
         return renderEventsTab();
-      case 'plots':
-        return renderPlotsTab();
       case 'automation':
         return renderAutomaterializeHistoryTab();
       case 'checks':
@@ -277,7 +247,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
     setCurrentPage(({specificPath}) => ({specificPath, path: `${path}?view=${selectedTab}`}));
   }, [path, selectedTab, setCurrentPage]);
 
-  const wipe = useWipeModal(
+  const wipe = useWipeDialog(
     definition && !definition.isObservable
       ? {
           assetKey: definition.assetKey,
@@ -295,7 +265,7 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
     },
   );
 
-  const reportEvents = useReportEventsModal(
+  const reportEvents = useReportEventsDialog(
     definition && !definition.isObservable && repoAddress
       ? {
           assetKey: definition.assetKey,
@@ -309,7 +279,11 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
 
   if (definitionQueryResult.data?.assetOrError.__typename === 'AssetNotFoundError') {
     // Redirect to the asset catalog
-    return <Redirect to={`/assets/${currentPath.join('/')}?view=folder`} />;
+    return (
+      <Redirect
+        to={`/assets/${currentPath.join('/')}?view=folder${getAssetFilterStateQueryString()}`}
+      />
+    );
   }
 
   return (
@@ -341,7 +315,10 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
         }
         right={
           <Box style={{margin: '-4px 0'}} flex={{direction: 'row', gap: 8}}>
-            {cachedOrLiveDefinition && cachedOrLiveDefinition.jobNames.length > 0 && upstream ? (
+            {reportEvents.element}
+            {wipe.element}
+            {dynamicPartitionsDelete.element}
+            {cachedOrLiveDefinition && cachedOrLiveDefinition.jobNames.length > 0 ? (
               <LaunchAssetExecutionButton
                 scope={{all: [cachedOrLiveDefinition]}}
                 showChangedAndMissingOption={false}
@@ -352,9 +329,6 @@ export const AssetView = ({assetKey, headerBreadcrumbs, writeAssetVisit, current
                 ]}
               />
             ) : undefined}
-            {reportEvents.element}
-            {wipe.element}
-            {dynamicPartitionsDelete.element}
           </Box>
         }
       />
@@ -377,16 +351,6 @@ const AssetLoadingDefinitionState = () => (
   </Box>
 );
 
-const AssetNoDefinitionState = () => (
-  <Box padding={{vertical: 32}}>
-    <NonIdealState
-      title="No definition"
-      description="This asset doesn't have a software definition in any of your code locations."
-      icon="materialization"
-    />
-  </Box>
-);
-
 // This is a helper method that returns the "asset graph query string" for the current
 // AssetView tab + page settings. eg:
 // - If you're viewing the "Lineage > Upstream 4 layers", it returns `++++token`
@@ -401,11 +365,35 @@ function getQueryForVisibleAssets(
   const token = tokenForAssetKey(assetKey);
 
   if (view === 'definition' || view === 'overview') {
-    return {query: `+"${token}"+`, requestedDepth: 1};
+    return {
+      query: featureEnabled(FeatureFlag.flagSelectionSyntax)
+        ? `1+key:"${token}"+1`
+        : `+"${token}"+`,
+      requestedDepth: 1,
+    };
   }
   if (view === 'lineage') {
     const defaultDepth = 1;
     const requestedDepth = Number(lineageDepth) || defaultDepth;
+
+    if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+      if (lineageScope === 'upstream') {
+        return {
+          query: `${requestedDepth}+key:"${token}"`,
+          requestedDepth,
+        };
+      } else if (lineageScope === 'downstream') {
+        return {
+          query: `key:"${token}"+${requestedDepth}`,
+          requestedDepth,
+        };
+      }
+      return {
+        query: `${requestedDepth}+key:"${token}"+${requestedDepth}`,
+        requestedDepth,
+      };
+    }
+
     const depthStr = '+'.repeat(requestedDepth);
 
     // Load the asset lineage (for both lineage tab and definition "Upstream" / "Downstream")
@@ -499,7 +487,13 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
 
   fragment AssetViewDefinitionNode on AssetNode {
     id
+    pools
     groupName
+    isExecutable
+    automationCondition {
+      label
+      expandedLabel
+    }
     partitionDefinition {
       description
       dimensionTypes {
@@ -510,7 +504,32 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
     partitionKeysByDimension {
       name
     }
-    hasReportRunlessAssetEventPermission
+    owners {
+      ... on TeamAssetOwner {
+        team
+      }
+      ... on UserAssetOwner {
+        email
+      }
+    }
+    autoMaterializePolicy {
+      rules {
+        className
+        description
+        decisionType
+      }
+    }
+    freshnessPolicy {
+      maximumLagMinutes
+      cronSchedule
+      cronScheduleTimezone
+    }
+    backfillPolicy {
+      description
+    }
+    requiredResources {
+      resourceKey
+    }
     repository {
       id
       name
@@ -519,14 +538,19 @@ export const ASSET_VIEW_DEFINITION_QUERY = gql`
         name
       }
     }
+    hasReportRunlessAssetEventPermission
 
+    ...AssetNodeFragment
+    ...AssetNodeConfigFragment
     ...AssetNodeInstigatorsFragment
-    ...AssetNodeDefinitionFragment
     ...UnderlyingOpsAssetNodeFragment
+    ...AssetNodeOpMetadataFragment
   }
 
+  ${ASSET_NODE_FRAGMENT}
+  ${ASSET_NODE_CONFIG_FRAGMENT}
   ${ASSET_NODE_INSTIGATORS_FRAGMENT}
-  ${ASSET_NODE_DEFINITION_FRAGMENT}
+  ${ASSET_NODE_OP_METADATA_FRAGMENT}
   ${UNDERLYING_OPS_ASSET_NODE_FRAGMENT}
 `;
 

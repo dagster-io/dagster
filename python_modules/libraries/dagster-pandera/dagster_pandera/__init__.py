@@ -1,6 +1,7 @@
 import itertools
 import re
-from typing import TYPE_CHECKING, Callable, Sequence, Type, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Callable, Type, Union  # noqa: F401, UP035
 
 import dagster._check as check
 import pandas as pd
@@ -15,8 +16,9 @@ from dagster import (
     TypeCheck,
     TypeCheckContext,
 )
+from dagster._annotations import beta
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.libraries import DagsterLibraryRegistry
+from dagster_shared.libraries import DagsterLibraryRegistry
 from typing_extensions import TypeAlias
 
 from dagster_pandera.version import __version__
@@ -59,10 +61,10 @@ if TYPE_CHECKING:
     # NOTE: It is important NOT to import `pandera.polars` under the same pa_polars alias we use for
     # the runtime import above-- that will confuse type checkers because that alias is a variable
     # due to the runtime ImportError handling.
-    import pandera.polars  # noqa: TCH004
+    import pandera.polars  # noqa: TC004
 
 DagsterPanderaSchema: TypeAlias = Union[pa.DataFrameSchema, "pandera.polars.DataFrameSchema"]
-DagsterPanderaSchemaModel: TypeAlias = Type[
+DagsterPanderaSchemaModel: TypeAlias = type[
     Union[pa.DataFrameModel, "pandera.polars.DataFrameModel"]
 ]
 DagsterPanderaColumn: TypeAlias = Union[pa.Column, "pandera.polars.Column"]
@@ -74,6 +76,7 @@ DagsterLibraryRegistry.register("dagster-pandera", __version__)
 # ########################
 
 
+@beta
 def pandera_schema_to_dagster_type(
     schema: Union[DagsterPanderaSchema, DagsterPanderaSchemaModel],
 ) -> DagsterType:
@@ -233,7 +236,7 @@ def _pandera_errors_to_type_check(
 
 
 def _pandera_schema_to_table_schema(schema: DagsterPanderaSchema) -> TableSchema:
-    df_constraints = _pandera_schema_wide_checks_to_table_constraints(schema.checks)
+    df_constraints = _pandera_schema_wide_checks_to_table_constraints(schema.checks)  # pyright: ignore[reportArgumentType]
     columns = [_pandera_column_to_table_column(col) for k, col in schema.columns.items()]
     return TableSchema(columns=columns, constraints=df_constraints)
 

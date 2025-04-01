@@ -32,7 +32,6 @@ from dagster._core.executor.step_delegating import (
     StepHandler,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._utils.merger import merge_dicts
 from dagster._utils.test.definitions import lazy_definitions, scoped_definitions_load_context
@@ -61,7 +60,7 @@ class TestStepHandler(StepHandler):
     def launch_step(self, step_handler_context):
         if step_handler_context.execute_step_args.should_verify_step:
             TestStepHandler.verify_step_count += 1
-        if step_handler_context.execute_step_args.step_keys_to_execute[0] == "baz_op":
+        if step_handler_context.execute_step_args.step_keys_to_execute[0] == "baz_op":  # pyright: ignore[reportOptionalSubscript]
             TestStepHandler.saw_baz_op = True
             assert step_handler_context.step_tags["baz_op"] == {"foo": "bar"}
 
@@ -134,7 +133,7 @@ def test_execute():
 
     assert any(
         [
-            "Starting execution with step handler TestStepHandler" in event.message
+            "Starting execution with step handler TestStepHandler" in event.message  # pyright: ignore[reportOperatorIssue]
             for event in result.all_events
         ]
     )
@@ -163,7 +162,7 @@ def test_execute_with_tailer_offset():
 
     assert any(
         [
-            "Starting execution with step handler TestStepHandler" in event.message
+            "Starting execution with step handler TestStepHandler" in event.message  # pyright: ignore[reportOperatorIssue]
             for event in result.all_events
         ]
     )
@@ -362,7 +361,7 @@ def test_execute_verify_step():
 
     assert any(
         [
-            "Starting execution with step handler TestStepHandler" in event.message
+            "Starting execution with step handler TestStepHandler" in event.message  # pyright: ignore[reportOperatorIssue]
             for event in result.all_events
         ]
     )
@@ -420,7 +419,7 @@ def test_execute_using_repository_data():
                 call_counts = instance.run_storage.get_cursor_values(
                     {"compute_cacheable_data_called", "get_definitions_called"}
                 )
-                assert call_counts.get("compute_cacheable_data_called") == "2"
+                assert call_counts.get("compute_cacheable_data_called") == "1"
 
                 assert call_counts.get("get_definitions_called") == "9"
 
@@ -496,7 +495,7 @@ def test_dynamic_failure_retry(job_fn, config_fn):
     assert_expected_failure_behavior(job_fn, config_fn)
 
 
-@op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+@op(pool="foo")
 def simple_op(context):
     time.sleep(0.1)
     foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
@@ -506,6 +505,18 @@ def simple_op(context):
 @job(executor_def=test_step_delegating_executor)
 def simple_job():
     simple_op()
+
+
+@op(pool="foo")
+def simple_legacy_op(context):
+    time.sleep(0.1)
+    foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
+    return {"active": foo_info.active_slot_count, "pending": foo_info.pending_step_count}
+
+
+@job(executor_def=test_step_delegating_executor)
+def simple_legacy_job():
+    simple_legacy_op()
 
 
 def test_blocked_concurrency_limits():
@@ -518,7 +529,10 @@ def test_blocked_concurrency_limits():
                     "module": "dagster.utils.test",
                     "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
                     "config": {"base_dir": temp_dir},
-                }
+                },
+                "concurrency": {
+                    "pools": {"granularity": "op"},
+                },
             },
         ) as instance:
             instance.event_log_storage.set_concurrency_slots("foo", 0)
@@ -536,11 +550,52 @@ def test_blocked_concurrency_limits():
                 assert result.success
                 assert any(
                     [
-                        "blocked by concurrency limit for key foo" in (event.message or "")
+                        "blocked by limit for pool foo" in (event.message or "")
                         for event in result.all_events
                     ]
                 )
                 # the executor loop sleeps every second, so there should be at least a call per
                 # second that the steps are blocked, in addition to the processing of any step
                 # events
-                assert instance.event_log_storage.get_records_for_run_calls(result.run_id) <= 3
+                assert instance.event_log_storage.get_records_for_run_calls(result.run_id) <= 3  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_blocked_concurrency_limits_legacy_keys():
+    TestStepHandler.reset()
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_for_test(
+            temp_dir=temp_dir,
+            overrides={
+                "event_log_storage": {
+                    "module": "dagster.utils.test",
+                    "class": "ConcurrencyEnabledSqliteTestEventLogStorage",
+                    "config": {"base_dir": temp_dir},
+                },
+                "concurrency": {
+                    "pools": {"granularity": "op"},
+                },
+            },
+        ) as instance:
+            instance.event_log_storage.set_concurrency_slots("foo", 0)
+
+            def _unblock_concurrency_key(instance, timeout):
+                time.sleep(timeout)
+                instance.event_log_storage.set_concurrency_slots("foo", 1)
+
+            TIMEOUT = 3
+            threading.Thread(
+                target=_unblock_concurrency_key, args=(instance, TIMEOUT), daemon=True
+            ).start()
+            with execute_job(reconstructable(simple_job), instance=instance) as result:
+                TestStepHandler.wait_for_processes()
+                assert result.success
+                assert any(
+                    [
+                        "blocked by limit for pool foo" in (event.message or "")
+                        for event in result.all_events
+                    ]
+                )
+                # the executor loop sleeps every second, so there should be at least a call per
+                # second that the steps are blocked, in addition to the processing of any step
+                # events
+                assert instance.event_log_storage.get_records_for_run_calls(result.run_id) <= 3  # pyright: ignore[reportAttributeAccessIssue]

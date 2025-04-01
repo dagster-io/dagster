@@ -1,0 +1,14 @@
+.tag {
+  background-color: var(--color-background-gray);
+  border-radius: 4px;
+  font-family: var(--font-geist-mono);
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-light);
+}
+
+.objectType {
+  background-color: var(--color-background-cyan);
+  color: var(--color-text-cyan);
+}

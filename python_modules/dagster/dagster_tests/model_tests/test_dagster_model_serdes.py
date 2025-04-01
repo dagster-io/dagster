@@ -3,9 +3,9 @@ Pydantic 1 and 2, while the general_tests do not.
 """
 
 import pytest
-from dagster._model import DagsterModel
-from dagster._serdes.errors import SerializationError
-from dagster._serdes.serdes import (
+from dagster_shared.dagster_model import DagsterModel
+from dagster_shared.serdes.errors import SerializationError
+from dagster_shared.serdes.serdes import (
     WhitelistMap,
     _whitelist_for_serdes,
     deserialize_value,
@@ -44,7 +44,7 @@ def test_pydantic_alias_generator():
         class Config:
             alias_generator = lambda field_name: f"{field_name}_alias"
 
-    o = SomeDagsterModel(id_alias=5, name_alias="fdsk")
+    o = SomeDagsterModel(id_alias=5, name_alias="fdsk")  # pyright: ignore[reportCallIssue]
     packed_o = pack_value(o, whitelist_map=test_env)
     assert packed_o == {"__class__": "SomeDagsterModel", "id_alias": 5, "name_alias": "fdsk"}
     assert unpack_value(packed_o, whitelist_map=test_env, as_type=SomeDagsterModel) == o
@@ -83,7 +83,7 @@ def test_pydantic_validation_alias():
         unaliased_id: int = Field(..., validation_alias="id_alias")
         name: str
 
-    o = SomeDagsterModel(id_alias=5, name="fdsk")
+    o = SomeDagsterModel(id_alias=5, name="fdsk")  # pyright: ignore[reportCallIssue]
     with pytest.raises(
         SerializationError,
         match="Can't serialize pydantic models with serialization or validation aliases.",

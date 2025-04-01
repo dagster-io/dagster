@@ -1,5 +1,6 @@
 # pyright: reportPrivateImportUsage=false
-from typing import Iterator, Optional, Sequence
+from collections.abc import Iterator, Sequence
+from typing import Optional
 
 import pytest
 from dagster import define_asset_job

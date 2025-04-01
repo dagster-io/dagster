@@ -1,6 +1,15 @@
 from abc import abstractmethod
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Set, Union, cast, overload
+from typing import (  # noqa: UP035
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Optional,
+    Union,
+    cast,
+    overload,
+)
 
 from typing_extensions import TypeAlias, TypeGuard
 
@@ -69,7 +78,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
             if output_config_schema is not None
             else None
         )
-        super(IOManagerDefinition, self).__init__(
+        super().__init__(
             resource_fn=resource_fn,
             config_schema=config_schema,
             description=description,
@@ -82,7 +91,7 @@ class IOManagerDefinition(ResourceDefinition, IInputManagerDefinition, IOutputMa
         return self._input_config_schema
 
     @property
-    def output_config_schema(self) -> Optional[IDefinitionConfigSchema]:
+    def output_config_schema(self) -> Optional[IDefinitionConfigSchema]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._output_config_schema
 
     def copy_for_configured(
@@ -164,7 +173,7 @@ def io_manager(
     description: Optional[str] = None,
     output_config_schema: CoercableToConfigSchema = None,
     input_config_schema: CoercableToConfigSchema = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     version: Optional[str] = None,
 ) -> Callable[[IOManagerFunction], IOManagerDefinition]: ...
 
@@ -174,7 +183,7 @@ def io_manager(
     description: Optional[str] = None,
     output_config_schema: CoercableToConfigSchema = None,
     input_config_schema: CoercableToConfigSchema = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[set[str]] = None,
     version: Optional[str] = None,
 ) -> Union[
     IOManagerDefinition,
@@ -198,7 +207,7 @@ def io_manager(
             Dagster will accept any config provided.
         required_resource_keys (Optional[Set[str]]): Keys for the resources required by the object
             manager.
-        version (Optional[str]): (Experimental) The version of a resource function. Two wrapped
+        version (Optional[str]): The version of a resource function. Two wrapped
             resource functions should only have the same version if they produce the same resource
             definition when provided with the same inputs.
 
@@ -255,7 +264,7 @@ class _IOManagerDecoratorCallable:
         description: Optional[str] = None,
         output_config_schema: CoercableToConfigSchema = None,
         input_config_schema: CoercableToConfigSchema = None,
-        required_resource_keys: Optional[Set[str]] = None,
+        required_resource_keys: Optional[set[str]] = None,
         version: Optional[str] = None,
     ):
         # type validation happens in IOManagerDefinition

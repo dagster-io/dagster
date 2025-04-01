@@ -19,10 +19,10 @@ def test_failure():
     assert not result.success
     failure_data = result.failure_data_for_node("throw")
     assert failure_data
-    assert failure_data.error.cls_name == "Failure"
+    assert failure_data.error.cls_name == "Failure"  # pyright: ignore[reportOptionalMemberAccess]
 
     # hard coded
-    assert failure_data.user_failure_data.label == "intentional-failure"
+    assert failure_data.user_failure_data.label == "intentional-failure"  # pyright: ignore[reportOptionalMemberAccess]
     # from Failure
-    assert failure_data.user_failure_data.description == "it Failure"
-    assert failure_data.user_failure_data.metadata["label"] == MetadataValue.text("text")
+    assert failure_data.user_failure_data.description == "it Failure"  # pyright: ignore[reportOptionalMemberAccess]
+    assert failure_data.user_failure_data.metadata["label"] == MetadataValue.text("text")  # pyright: ignore[reportOptionalMemberAccess]

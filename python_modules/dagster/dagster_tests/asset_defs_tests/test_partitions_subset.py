@@ -2,9 +2,16 @@ from typing import cast
 from unittest.mock import Mock
 
 import pytest
-from dagster import DailyPartitionsDefinition, MultiPartitionsDefinition, StaticPartitionsDefinition
+from dagster import (
+    DailyPartitionsDefinition,
+    MultiPartitionKey,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import (
+    HourlyPartitionsDefinition,
     PersistedTimeWindow,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
@@ -106,9 +113,9 @@ def test_time_window_partitions_subset_serialization_deserialization(
     )
     subset = cast(
         TimeWindowPartitionsSubset,
-        TimeWindowPartitionsSubset.empty_subset(time_window_partitions_def).with_partition_keys(
-            ["2023-01-01"]
-        ),
+        TimeWindowPartitionsSubset.create_empty_subset(
+            time_window_partitions_def
+        ).with_partition_keys(["2023-01-01"]),
     )
 
     deserialized = deserialize_value(
@@ -208,4 +215,204 @@ def test_partitions_set_short_circuiting() -> None:
     assert and_result is default_ps
 
     # Test short-circuiting of -. Returns an empty DefaultPartitionsSubset
-    assert (default_ps - all_ps) == DefaultPartitionsSubset.empty_subset()
+    assert (default_ps - all_ps) == DefaultPartitionsSubset.create_empty_subset()
+
+
+def test_multi_partition_subset_to_range_conversion():
+    # Test that converting from a list of partitions keys to a subset, to a list of ranges, and back to
+    # a list of partition keys for MultiPartitionsDefinitions does not lose any partitions.
+    color_partition = StaticPartitionsDefinition(["red", "yellow", "blue"])
+    number_partition = StaticPartitionsDefinition(["1", "2", "3", "4"])
+    multi_partitions_def = MultiPartitionsDefinition(
+        {
+            "color": color_partition,
+            "number": number_partition,
+        }
+    )
+    target_partitions = [
+        MultiPartitionKey({"number": "1", "color": "red"}),
+        MultiPartitionKey({"number": "2", "color": "red"}),
+        MultiPartitionKey({"number": "4", "color": "red"}),
+        MultiPartitionKey({"number": "1", "color": "blue"}),
+        MultiPartitionKey({"number": "2", "color": "blue"}),
+        MultiPartitionKey({"number": "1", "color": "yellow"}),
+        MultiPartitionKey({"number": "2", "color": "yellow"}),
+        MultiPartitionKey({"number": "3", "color": "yellow"}),
+    ]
+    # getting ranges from subsets for a multi partition definition contructs ranges for each
+    # key of the dimension with the fewest unique values
+    expected_ranges = [
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "red", "number": "1"}),
+            end=MultiPartitionKey({"color": "red", "number": "2"}),
+        ),
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "red", "number": "4"}),
+            end=MultiPartitionKey({"color": "red", "number": "4"}),
+        ),
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "blue", "number": "1"}),
+            end=MultiPartitionKey({"color": "blue", "number": "2"}),
+        ),
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "yellow", "number": "1"}),
+            end=MultiPartitionKey({"color": "yellow", "number": "3"}),
+        ),
+    ]
+    partition_subset = multi_partitions_def.subset_with_partition_keys(target_partitions)
+    partition_key_ranges = partition_subset.get_partition_key_ranges(multi_partitions_def)
+    assert sorted(partition_key_ranges) == sorted(expected_ranges)
+
+    partition_keys_from_ranges = []
+    for partition_key_range in partition_key_ranges:
+        partition_keys_from_ranges.extend(
+            multi_partitions_def.get_partition_keys_in_range(partition_key_range)
+        )
+    assert sorted(partition_keys_from_ranges) == sorted(target_partitions)
+
+
+def test_multi_partition_subset_to_range_conversion_grouping_choices():
+    # Test that converting from a list of partitions keys to a subset, to a list of ranges, and back to
+    # a list of partition keys for MultiPartitionsDefinitions does not lose any partitions.
+    color_partition = StaticPartitionsDefinition(["red", "yellow", "blue"])
+    number_partition = StaticPartitionsDefinition(["1", "2", "3", "4"])
+    multi_partitions_def = MultiPartitionsDefinition(
+        {
+            "color": color_partition,
+            "number": number_partition,
+        }
+    )
+
+    # we expect the grouping to happen by the dimension with the fewest unique values
+    # in this case number
+    group_by_number_target_partitions = [
+        MultiPartitionKey({"number": "1", "color": "red"}),
+        MultiPartitionKey({"number": "1", "color": "yellow"}),
+        MultiPartitionKey({"number": "1", "color": "blue"}),
+    ]
+    # getting ranges from subsets for a multi partition definition contructs ranges for each
+    # key of the primary dimension
+    expected_ranges = [
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "red", "number": "1"}),
+            end=MultiPartitionKey({"color": "blue", "number": "1"}),
+        ),
+    ]
+    partition_subset = multi_partitions_def.subset_with_partition_keys(
+        group_by_number_target_partitions
+    )
+    partition_key_ranges = partition_subset.get_partition_key_ranges(multi_partitions_def)
+    assert sorted(partition_key_ranges) == sorted(expected_ranges)
+
+    partition_keys_from_ranges = []
+    for partition_key_range in partition_key_ranges:
+        partition_keys_from_ranges.extend(
+            multi_partitions_def.get_partition_keys_in_range(partition_key_range)
+        )
+    assert sorted(partition_keys_from_ranges) == sorted(group_by_number_target_partitions)
+
+    # we expect the grouping to happen by the dimension with the fewest unique values
+    # in this case color
+    group_by_color_target_partitions = [
+        MultiPartitionKey({"number": "1", "color": "red"}),
+        MultiPartitionKey({"number": "2", "color": "red"}),
+        MultiPartitionKey({"number": "3", "color": "red"}),
+        MultiPartitionKey({"number": "1", "color": "blue"}),
+        MultiPartitionKey({"number": "2", "color": "blue"}),
+        MultiPartitionKey({"number": "4", "color": "blue"}),
+    ]
+    expected_ranges = [
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "red", "number": "1"}),
+            end=MultiPartitionKey({"color": "red", "number": "3"}),
+        ),
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "blue", "number": "1"}),
+            end=MultiPartitionKey({"color": "blue", "number": "2"}),
+        ),
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "blue", "number": "4"}),
+            end=MultiPartitionKey({"color": "blue", "number": "4"}),
+        ),
+    ]
+    partition_subset = multi_partitions_def.subset_with_partition_keys(
+        group_by_color_target_partitions
+    )
+    partition_key_ranges = partition_subset.get_partition_key_ranges(multi_partitions_def)
+    assert sorted(partition_key_ranges) == sorted(expected_ranges)
+
+    partition_keys_from_ranges = []
+    for partition_key_range in partition_key_ranges:
+        partition_keys_from_ranges.extend(
+            multi_partitions_def.get_partition_keys_in_range(partition_key_range)
+        )
+    assert sorted(partition_keys_from_ranges) == sorted(group_by_color_target_partitions)
+
+
+def test_multi_partition_subset_to_range_conversion_time_partition():
+    # Test that converting from a list of partitions keys to a subset, to a list of ranges, and back to
+    # a list of partition keys for MultiPartitionsDefinitions does not lose any partitions.
+    color_partition = StaticPartitionsDefinition(["red", "yellow", "blue"])
+    hour_partition = HourlyPartitionsDefinition(
+        start_date="2023-01-01-00:00", end_date="2025-01-01-01:00"
+    )
+    multi_partitions_def = MultiPartitionsDefinition(
+        {
+            "a_date": hour_partition,  # prefix with a so that it is the primary dimension
+            "color": color_partition,
+        }
+    )
+
+    # we expect the grouping to happen by the dimension with the fewest unique values
+    # in this case a_date
+    group_by_hour_target_partitions = [
+        MultiPartitionKey({"a_date": "2023-01-01-00:00", "color": "red"}),
+        MultiPartitionKey({"a_date": "2023-01-01-00:00", "color": "yellow"}),
+        MultiPartitionKey({"a_date": "2023-01-01-00:00", "color": "blue"}),
+    ]
+    # getting ranges from subsets for a multi partition definition contructs ranges for each
+    # key of the primary dimension
+    expected_ranges = [
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "red", "a_date": "2023-01-01-00:00"}),
+            end=MultiPartitionKey({"color": "blue", "a_date": "2023-01-01-00:00"}),
+        ),
+    ]
+    partition_subset = multi_partitions_def.subset_with_partition_keys(
+        group_by_hour_target_partitions
+    )
+    partition_key_ranges = partition_subset.get_partition_key_ranges(multi_partitions_def)
+    assert sorted(partition_key_ranges) == sorted(expected_ranges)
+
+    partition_keys_from_ranges = []
+    for partition_key_range in partition_key_ranges:
+        partition_keys_from_ranges.extend(
+            multi_partitions_def.get_partition_keys_in_range(partition_key_range)
+        )
+    assert sorted(partition_keys_from_ranges) == sorted(group_by_hour_target_partitions)
+
+    # we expect the grouping to happen by the dimension with the fewest unique values
+    # in this case color
+    group_by_color_target_partitions = (
+        multi_partitions_def.get_multipartition_keys_with_dimension_value(
+            dimension_name="color", dimension_partition_key="red"
+        )
+    )
+    expected_ranges = [
+        PartitionKeyRange(
+            start=MultiPartitionKey({"color": "red", "a_date": "2023-01-01-00:00"}),
+            end=MultiPartitionKey({"color": "red", "a_date": "2025-01-01-00:00"}),
+        ),
+    ]
+    partition_subset = multi_partitions_def.subset_with_partition_keys(
+        group_by_color_target_partitions
+    )
+    partition_key_ranges = partition_subset.get_partition_key_ranges(multi_partitions_def)
+    assert sorted(partition_key_ranges) == sorted(expected_ranges)
+
+    partition_keys_from_ranges = []
+    for partition_key_range in partition_key_ranges:
+        partition_keys_from_ranges.extend(
+            multi_partitions_def.get_partition_keys_in_range(partition_key_range)
+        )
+    assert sorted(partition_keys_from_ranges) == sorted(group_by_color_target_partitions)

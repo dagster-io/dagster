@@ -1,7 +1,8 @@
 import json
 import logging
 import time
-from typing import Any, Mapping, Optional, cast
+from collections.abc import Mapping
+from typing import Any, Optional, cast
 
 # Type errors ignored because some of these imports target deprecated modules for compatibility with
 # airflow 1.x and 2.x.
@@ -9,11 +10,17 @@ import requests
 from airflow.exceptions import AirflowException
 from airflow.hooks.base_hook import BaseHook  # type: ignore
 from airflow.models import Connection
+from dagster._annotations import superseded
 from dagster._core.storage.dagster_run import DagsterRunStatus
 
 from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 
 
+@superseded(
+    additional_warn_text=(
+        "`DagsterHook` has been superseded by the functionality in the `dagster-airlift` library."
+    )
+)
 class DagsterHook(BaseHook):
     conn_name_attr = "dagster_conn_id"
     default_conn_name = "dagster_default"

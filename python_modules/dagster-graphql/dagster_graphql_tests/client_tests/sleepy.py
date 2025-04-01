@@ -1,4 +1,3 @@
-import typing
 from time import sleep
 
 from dagster import Config, In, Int, List, Out, Output, job, op
@@ -20,7 +19,7 @@ def sleeper(context, units):
 
 
 class GiverConfig(Config):
-    units: typing.List[int] = Field(default_value=[1, 1, 1, 1])  # type: ignore
+    units: list[int] = Field(default_value=[1, 1, 1, 1])  # type: ignore
 
 
 @op(

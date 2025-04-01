@@ -1,6 +1,7 @@
 import os
 import sys
-from typing import List, NamedTuple, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import NamedTuple, Optional, Union
 
 import click
 import requests
@@ -181,7 +182,7 @@ def scaffold_code_location_command(context, name: str):
 )
 def scaffold_command(
     name: str,
-    excludes: Optional[Union[List[str], tuple]] = None,
+    excludes: Optional[Union[list[str], tuple]] = None,
     ignore_package_conflict: bool = False,
 ) -> None:
     dir_abspath = os.path.abspath(name)

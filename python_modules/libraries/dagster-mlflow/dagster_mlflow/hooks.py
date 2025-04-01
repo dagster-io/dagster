@@ -1,8 +1,10 @@
+from dagster._annotations import beta
 from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.definitions.events import HookExecutionResult
 from mlflow.entities.run_status import RunStatus
 
 
+@beta
 def _create_mlflow_run_hook(name):
     @event_list_hook(name=name, required_resource_keys={"mlflow"})
     def _hook(context, event_list):

@@ -25,13 +25,13 @@ from dagster._core.workspace.load_target import (
 )
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import GrpcServerProcess, wait_for_grpc_server
-from dagster._serdes.ipc import open_ipc_subprocess
 from dagster._utils import safe_tempfile_path
 from dagster._utils.merger import merge_dicts
 from dagster._utils.test import FilesystemTestScheduler
 from dagster._utils.test.postgres_instance import TestPostgresInstance
 from dagster_graphql import DagsterGraphQLClient
 from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_shared.ipc import open_ipc_subprocess
 from graphql import DocumentNode, print_ast
 
 
@@ -44,7 +44,9 @@ def get_main_loadable_target_origin():
 
 
 @contextmanager
-def graphql_postgres_instance(overrides=None):
+def graphql_postgres_instance(
+    overrides=None, synchronous_run_launcher=False, synchronous_run_coordinator=False
+):
     with tempfile.TemporaryDirectory() as temp_dir:
         with TestPostgresInstance.docker_service_up_or_skip(
             file_relative_path(__file__, "docker-compose.yml"),
@@ -80,6 +82,8 @@ def graphql_postgres_instance(overrides=None):
                     },
                     overrides if overrides else {},
                 ),
+                synchronous_run_launcher=synchronous_run_launcher,
+                synchronous_run_coordinator=synchronous_run_coordinator,
             ) as instance:
                 yield instance
 
@@ -119,6 +123,7 @@ class InstanceManagers:
                             "class": "ExplodingRunLauncher",
                         },
                     },
+                    synchronous_run_coordinator=True,
                 ) as instance:
                     yield instance
 
@@ -135,8 +140,9 @@ class InstanceManagers:
                     "run_launcher": {
                         "module": "dagster._core.test_utils",
                         "class": "ExplodingRunLauncher",
-                    }
-                }
+                    },
+                },
+                synchronous_run_coordinator=True,
             ) as instance:
                 yield instance
 
@@ -158,11 +164,8 @@ class InstanceManagers:
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
-                        "run_launcher": {
-                            "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                            "class": "SyncInMemoryRunLauncher",
-                        },
                     },
+                    synchronous_run_launcher=True,
                 ) as instance:
                     yield instance
 
@@ -209,6 +212,7 @@ class InstanceManagers:
                             "config": {"base_dir": temp_dir},
                         },
                     },
+                    synchronous_run_coordinator=True,
                 ) as instance:
                     yield instance
 
@@ -222,12 +226,8 @@ class InstanceManagers:
         @contextmanager
         def _postgres_instance():
             with graphql_postgres_instance(
-                overrides={
-                    "run_launcher": {
-                        "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                        "class": "SyncInMemoryRunLauncher",
-                    }
-                }
+                synchronous_run_launcher=True,
+                synchronous_run_coordinator=True,
             ) as instance:
                 yield instance
 
@@ -240,7 +240,7 @@ class InstanceManagers:
     def postgres_instance_with_default_run_launcher():
         @contextmanager
         def _postgres_instance_with_default_hijack():
-            with graphql_postgres_instance() as instance:
+            with graphql_postgres_instance(synchronous_run_coordinator=True) as instance:
                 yield instance
 
         return MarkedManager(
@@ -267,6 +267,35 @@ class InstanceManagers:
 
         return MarkedManager(_sqlite_asset_instance, [Marks.asset_aware_instance])
 
+    @staticmethod
+    def default_concurrency_sqlite_instance():
+        @contextmanager
+        def _sqlite_with_default_concurrency_instance():
+            with tempfile.TemporaryDirectory() as temp_dir:
+                with instance_for_test(
+                    temp_dir=temp_dir,
+                    overrides={
+                        "scheduler": {
+                            "module": "dagster.utils.test",
+                            "class": "FilesystemTestScheduler",
+                            "config": {"base_dir": temp_dir},
+                        },
+                        "run_coordinator": {
+                            "module": "dagster._core.run_coordinator.queued_run_coordinator",
+                            "class": "QueuedRunCoordinator",
+                        },
+                        "concurrency": {
+                            "default_op_concurrency_limit": 1,
+                        },
+                    },
+                ) as instance:
+                    yield instance
+
+        return MarkedManager(
+            _sqlite_with_default_concurrency_instance,
+            [Marks.sqlite_instance, Marks.queued_run_coordinator],
+        )
+
 
 class EnvironmentManagers:
     @staticmethod
@@ -288,7 +317,7 @@ class EnvironmentManagers:
                     )
                     if loadable_target_origin.python_file
                     else ModuleTarget(
-                        module_name=loadable_target_origin.module_name,
+                        module_name=loadable_target_origin.module_name,  # pyright: ignore[reportArgumentType]
                         attribute=loadable_target_origin.attribute,
                         working_directory=loadable_target_origin.working_directory,
                         location_name=location_name,
@@ -321,7 +350,7 @@ class EnvironmentManagers:
                     GrpcServerTarget(
                         port=api_client.port,
                         socket=api_client.socket,
-                        host=api_client.host,
+                        host=api_client.host,  # pyright: ignore[reportArgumentType]
                         location_name=location_name,
                     ),
                     version="",
@@ -341,7 +370,7 @@ class EnvironmentManagers:
         def _mgr_fn(instance, read_only):
             loadable_target_origin = target or get_main_loadable_target_origin()
             with safe_tempfile_path() as socket:
-                subprocess_args = [
+                subprocess_args = [  # pyright: ignore[reportOperatorIssue]
                     "dagster",
                     "code-server",
                     "start",
@@ -557,6 +586,16 @@ class GraphQLContextVariant:
         )
 
     @staticmethod
+    def sqlite_with_default_concurrency_managed_grpc_env(
+        target=None, location_name="test_location"
+    ):
+        return GraphQLContextVariant(
+            InstanceManagers.default_concurrency_sqlite_instance(),
+            EnvironmentManagers.managed_grpc(target, location_name),
+            test_id="sqlite_with_default_concurrency_managed_grpc_env",
+        )
+
+    @staticmethod
     def postgres_with_default_run_launcher_managed_grpc_env(
         target=None, location_name="test_location"
     ):
@@ -662,6 +701,7 @@ class GraphQLContextVariant:
             GraphQLContextVariant.non_launchable_postgres_instance_managed_grpc_env(),
             GraphQLContextVariant.non_launchable_postgres_instance_lazy_repository(),
             GraphQLContextVariant.consolidated_sqlite_instance_managed_grpc_env(),
+            GraphQLContextVariant.sqlite_with_default_concurrency_managed_grpc_env(),
         ]
 
     @staticmethod
@@ -797,7 +837,7 @@ def make_graphql_context_test_suite(context_variants):
                 yield graphql_context
 
         @pytest.fixture(name="graphql_context")
-        def yield_graphql_context(self, class_scoped_graphql_context):
+        def yield_graphql_context(self, class_scoped_graphql_context):  # pyright: ignore[reportIncompatibleMethodOverride]
             instance = class_scoped_graphql_context.instance
             instance.wipe()
             instance.wipe_all_schedules()

@@ -1,11 +1,12 @@
 import datetime
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any
 
 from dagster import (
     AssetsDefinition,
     _check as check,
 )
-from dagster._annotations import experimental
+from dagster._annotations import beta
 from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
     build_last_update_freshness_checks,
 )
@@ -32,7 +33,7 @@ from dagster_dbt.asset_utils import (
 )
 
 
-@experimental
+@beta
 def build_freshness_checks_from_dbt_assets(
     *,
     dbt_assets: Sequence[AssetsDefinition],
@@ -88,7 +89,7 @@ def build_freshness_checks_from_dbt_assets(
     freshness_checks = []
     dbt_assets = check.sequence_param(dbt_assets, "dbt_assets", AssetsDefinition)
     ensure_no_duplicate_assets(dbt_assets)
-    asset_key_to_assets_def: Dict[AssetKey, AssetsDefinition] = {}
+    asset_key_to_assets_def: dict[AssetKey, AssetsDefinition] = {}
     asset_key_to_resource_props: Mapping[AssetKey, Mapping[str, Any]] = {}
     for assets_def in dbt_assets:
         manifest, translator = get_manifest_and_translator_from_dbt_assets([assets_def])
@@ -132,7 +133,7 @@ def build_freshness_checks_from_dbt_assets(
 
             freshness_checks.extend(
                 build_last_update_freshness_checks(
-                    assets=[translator.get_asset_key(dbt_resource_props)],
+                    assets=[translator.get_asset_key(dbt_resource_props)],  # pyright: ignore[reportPossiblyUnboundVariable]
                     deadline_cron=freshness_check_config.get("deadline_cron"),
                     lower_bound_delta=datetime.timedelta(seconds=lower_bound_seconds),
                     severity=severity,

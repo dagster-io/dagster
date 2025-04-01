@@ -2,29 +2,21 @@ import functools
 import inspect
 import re
 import textwrap
+from collections.abc import Mapping, Sequence
 from inspect import Parameter, signature
-from typing import (
+from typing import (  # noqa: UP035
     TYPE_CHECKING,
     Any,
     Callable,
     ContextManager,
-    Mapping,
     Optional,
-    Sequence,
-    Set,
-    Type,
     TypeVar,
     Union,
     cast,
-)
-
-from typing_extensions import (
-    Concatenate,
-    ParamSpec,
-    TypeAlias,
-    TypeGuard,
     get_type_hints as typing_get_type_hints,
 )
+
+from typing_extensions import Concatenate, ParamSpec, TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -34,7 +26,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.resource_definition import ResourceDefinition
 
 Decoratable: TypeAlias = Union[
-    Type, Callable, property, staticmethod, classmethod, "OpDefinition", "ResourceDefinition"
+    type, Callable, property, staticmethod, classmethod, "OpDefinition", "ResourceDefinition"
 ]
 
 
@@ -46,7 +38,7 @@ T_Decoratable = TypeVar("T_Decoratable", bound=Decoratable)
 T_Type = TypeVar("T_Type", bound=type)
 
 
-def get_valid_name_permutations(param_name: str) -> Set[str]:
+def get_valid_name_permutations(param_name: str) -> set[str]:
     """Get all underscore permutations for provided arg name."""
     return {
         "_",
@@ -79,7 +71,7 @@ def get_type_hints(fn: Callable[..., Any]) -> Mapping[str, Any]:
     elif inspect.isfunction(fn):
         target = fn
     elif hasattr(fn, "__call__"):
-        target = fn.__call__
+        target = fn.__call__  # pyright: ignore[reportFunctionMemberAccess]
     else:
         check.failed(f"Unhandled Callable object {fn}")
 

@@ -1,27 +1,24 @@
 import {useMemo} from 'react';
 
 import {RUNS_FEED_TABLE_ENTRY_FRAGMENT} from './RunsFeedTableEntryFragment';
-import {useSelectedRunsFeedTab} from './RunsFeedTabs';
 import {RUNS_FEED_CURSOR_KEY} from './RunsFeedUtils';
-import {SCHEDULED_RUNS_LIST_QUERY} from './ScheduledRunListRoot';
-import {
-  ScheduledRunsListQuery,
-  ScheduledRunsListQueryVariables,
-} from './types/ScheduledRunListRoot.types';
 import {RunsFeedRootQuery, RunsFeedRootQueryVariables} from './types/useRunsFeedEntries.types';
 import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
-import {gql, useQuery} from '../apollo-client';
+import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {RunsFilter} from '../graphql/types';
+import {RunsFeedView, RunsFilter} from '../graphql/types';
 
 const PAGE_SIZE = 30;
 
-export function useRunsFeedEntries(
-  filter: RunsFilter,
-  currentTab: ReturnType<typeof useSelectedRunsFeedTab>,
-  includeRunsFromBackfills: boolean,
-) {
-  const isScheduled = currentTab === 'scheduled';
+export function useRunsFeedEntries({
+  filter,
+  skip,
+  view,
+}: {
+  filter: RunsFilter;
+  skip: boolean;
+  view: RunsFeedView;
+}) {
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsFeedRootQuery,
     RunsFeedRootQueryVariables
@@ -29,8 +26,8 @@ export function useRunsFeedEntries(
     query: RUNS_FEED_ROOT_QUERY,
     queryKey: RUNS_FEED_CURSOR_KEY,
     pageSize: PAGE_SIZE,
-    variables: {filter, includeRunsFromBackfills},
-    skip: isScheduled,
+    variables: {filter, view},
+    skip,
     nextCursorForResult: (data) => {
       if (data.runsFeedOrError.__typename !== 'RunsFeedConnection') {
         return undefined;
@@ -59,19 +56,10 @@ export function useRunsFeedEntries(
       : [];
   }, [data]);
 
-  const scheduledQueryResult = useQuery<ScheduledRunsListQuery, ScheduledRunsListQueryVariables>(
-    SCHEDULED_RUNS_LIST_QUERY,
-    {
-      notifyOnNetworkStatusChange: true,
-      skip: !isScheduled,
-    },
-  );
-
   return {
     queryResult,
     paginationProps,
     entries,
-    scheduledQueryResult,
   };
 }
 
@@ -80,14 +68,9 @@ export const RUNS_FEED_ROOT_QUERY = gql`
     $limit: Int!
     $cursor: String
     $filter: RunsFilter
-    $includeRunsFromBackfills: Boolean!
+    $view: RunsFeedView!
   ) {
-    runsFeedOrError(
-      limit: $limit
-      cursor: $cursor
-      filter: $filter
-      includeRunsFromBackfills: $includeRunsFromBackfills
-    ) {
+    runsFeedOrError(limit: $limit, cursor: $cursor, filter: $filter, view: $view) {
       ... on RunsFeedConnection {
         cursor
         hasMore

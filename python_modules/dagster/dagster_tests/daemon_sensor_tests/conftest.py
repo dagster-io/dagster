@@ -1,6 +1,8 @@
 import os
 import sys
-from typing import Iterator, Optional
+from collections.abc import Iterator
+from typing import Optional
+from unittest import mock
 
 import pytest
 from dagster._core.instance import DagsterInstance
@@ -36,12 +38,17 @@ def submit_executor(request):
 
 @pytest.fixture(name="instance_module_scoped", scope="module")
 def instance_module_scoped_fixture() -> Iterator[DagsterInstance]:
-    with instance_for_test(
-        overrides={
-            "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
-        }
-    ) as instance:
-        yield instance
+    with mock.patch(
+        "dagster._core.instance.DagsterInstance.get_tick_termination_check_interval",
+        return_value=1,  # check that the sensor is enabled after every run submission
+    ):
+        with instance_for_test(
+            overrides={
+                "run_launcher": {"module": "dagster._core.test_utils", "class": "MockedRunLauncher"}
+            },
+            synchronous_run_coordinator=True,
+        ) as instance:
+            yield instance
 
 
 @pytest.fixture(name="instance", scope="function")

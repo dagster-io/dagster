@@ -10,7 +10,6 @@ from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import execute_job, execute_run_iterator
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._core.test_utils import poll_for_finished_run
 from dagster._core.workspace.context import WorkspaceRequestContext
 
@@ -19,12 +18,12 @@ from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor im
 )
 
 
-@op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+@op(pool="foo")
 def should_never_execute(_x):
     assert False  # this should never execute
 
 
-@op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+@op(pool="foo")
 def throw_error():
     raise Exception("bad programmer")
 
@@ -34,14 +33,14 @@ def error_graph():
     should_never_execute(throw_error())
 
 
-@op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+@op(pool="foo")
 def simple_op(context):
     time.sleep(0.1)
     foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
     return {"active": foo_info.active_slot_count, "pending": foo_info.pending_step_count}
 
 
-@op(tags={GLOBAL_CONCURRENCY_TAG: "foo"})
+@op(pool="foo")
 def second_op(context, _):
     time.sleep(0.1)
     foo_info = context.instance.event_log_storage.get_concurrency_info("foo")
@@ -67,7 +66,7 @@ def two_tier_graph():
     second_op(simple_op())
 
 
-@op(tags={GLOBAL_CONCURRENCY_TAG: "foo"}, retry_policy=RetryPolicy(max_retries=1))
+@op(pool="foo", retry_policy=RetryPolicy(max_retries=1))
 def retry_op():
     raise Failure("I fail")
 
@@ -247,7 +246,7 @@ def test_parallel_concurrency(instance, parallel_recon_job):
 
 
 def _has_concurrency_blocked_event(events, concurrency_key):
-    message_str = f"blocked by concurrency limit for key {concurrency_key}"
+    message_str = f"blocked by limit for pool {concurrency_key}"
     for event in events:
         if message_str in event.message:
             return True
@@ -401,7 +400,7 @@ def test_multiprocess_simple_job_has_blocked_message(instance):
     threading.Thread(target=_unblock_concurrency_key, args=(instance, TIMEOUT), daemon=True).start()
 
     for event in execute_run_iterator(recon_simple_job, run, instance=instance):
-        if "blocked by concurrency limit for key foo" in event.message:
+        if "blocked by limit for pool foo" in event.message:  # pyright: ignore[reportOperatorIssue]
             has_blocked_message = True
             break
         if time.time() - start > TIMEOUT:

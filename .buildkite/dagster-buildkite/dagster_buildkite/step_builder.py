@@ -63,9 +63,13 @@ class CommandStepBuilder:
             "mount-buildkite-agent": True,
         }
 
-    def on_python_image(self, image: str, env: Optional[List[str]] = None) -> "CommandStepBuilder":
+    def on_python_image(
+        self, image: str, env: Optional[List[str]] = None
+    ) -> "CommandStepBuilder":
         settings = self._base_docker_settings()
-        settings["image"] = f"{AWS_ACCOUNT_ID}.dkr.ecr.{AWS_ECR_REGION}.amazonaws.com/{image}"
+        settings["image"] = (
+            f"{AWS_ACCOUNT_ID}.dkr.ecr.{AWS_ECR_REGION}.amazonaws.com/{image}"
+        )
         # Mount the Docker socket so we can run Docker inside of our container
         # Mount /tmp from the host machine to /tmp in our container. This is
         # useful if you need to mount a volume when running a Docker container;
@@ -80,6 +84,7 @@ class CommandStepBuilder:
             for env in list(os.environ.keys())
             if env.startswith("BUILDKITE") or env.startswith("CI_")
         ]
+        buildkite_envvars.append("BUILDKITE_ANALYTICS_TOKEN")
 
         # Set PYTEST_DEBUG_TEMPROOT to our mounted /tmp volume. Any time the
         # pytest `tmp_path` or `tmpdir` fixtures are used used, the temporary

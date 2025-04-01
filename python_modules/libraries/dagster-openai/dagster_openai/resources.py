@@ -1,8 +1,9 @@
 from collections import defaultdict
+from collections.abc import Generator
 from contextlib import contextmanager
 from enum import Enum
 from functools import wraps
-from typing import Generator, Optional, Union
+from typing import Optional, Union
 from weakref import WeakKeyDictionary
 
 from dagster import (
@@ -12,8 +13,9 @@ from dagster import (
     InitResourceContext,
     OpExecutionContext,
 )
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.execution.context.asset_check_execution_context import AssetCheckExecutionContext
 from openai import Client
 from pydantic import Field, PrivateAttr
 
@@ -48,12 +50,11 @@ def _add_to_asset_metadata(
 
 
 @public
-@experimental
 def with_usage_metadata(
     context: Union[AssetExecutionContext, OpExecutionContext], output_name: Optional[str], func
 ):
     """This wrapper can be used on any endpoint of the
-    `openai library <https://github.com/openai/openai-python>`
+    `openai library <https://github.com/openai/openai-python>`_
     to log the OpenAI API usage metadata in the asset metadata.
 
     Examples:
@@ -143,7 +144,6 @@ def with_usage_metadata(
 
 
 @public
-@experimental
 class OpenAIResource(ConfigurableResource):
     """This resource is wrapper over the
     `openai library <https://github.com/openai/openai-python>`_.
@@ -225,7 +225,7 @@ class OpenAIResource(ConfigurableResource):
     @public
     @contextmanager
     def get_client(
-        self, context: Union[AssetExecutionContext, OpExecutionContext]
+        self, context: Union[AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext]
     ) -> Generator[Client, None, None]:
         """Yields an ``openai.Client`` for interacting with the OpenAI API.
 
@@ -361,7 +361,7 @@ class OpenAIResource(ConfigurableResource):
 
     def _get_client(
         self,
-        context: Union[AssetExecutionContext, OpExecutionContext],
+        context: Union[AssetExecutionContext, AssetCheckExecutionContext, OpExecutionContext],
         asset_key: Optional[AssetKey] = None,
     ) -> Generator[Client, None, None]:
         if isinstance(context, AssetExecutionContext):

@@ -128,7 +128,9 @@ def build_celery_k8s_suite_steps() -> List[BuildkiteTopLevelStep]:
         "-default",
         "-markredis",
     ]
-    directory = os.path.join("integration_tests", "test_suites", "celery-k8s-test-suite")
+    directory = os.path.join(
+        "integration_tests", "test_suites", "celery-k8s-test-suite"
+    )
     return build_integration_suite_steps(
         directory,
         pytest_tox_factors,
@@ -155,7 +157,9 @@ def build_daemon_suite_steps():
 
 def build_auto_materialize_perf_suite_steps():
     pytest_tox_factors = None
-    directory = os.path.join("integration_tests", "test_suites", "auto_materialize_perf_tests")
+    directory = os.path.join(
+        "integration_tests", "test_suites", "auto_materialize_perf_tests"
+    )
     return build_integration_suite_steps(
         directory,
         pytest_tox_factors,
@@ -176,6 +180,15 @@ def skip_if_not_azure_commit():
     )
 
 
+def skip_if_not_gcp_commit():
+    """If no dagster-gcp files are changed, skip the gcp live tests."""
+    return (
+        None
+        if (any("dagster-gcp" in str(path) for path in ChangedFiles.all))
+        else "Not a dagster-gcp commit"
+    )
+
+
 def build_azure_live_test_suite_steps() -> List[BuildkiteTopLevelStep]:
     return PackageSpec(
         os.path.join("integration_tests", "test_suites", "dagster-azure-live-tests"),
@@ -186,6 +199,7 @@ def build_azure_live_test_suite_steps() -> List[BuildkiteTopLevelStep]:
             "TEST_AZURE_CLIENT_SECRET",
             "TEST_AZURE_STORAGE_ACCOUNT_ID",
             "TEST_AZURE_CONTAINER_ID",
+            "TEST_AZURE_ACCESS_KEY",
         ],
     ).build_steps()
 
@@ -258,7 +272,9 @@ def build_integration_suite_steps(
     ).build_steps()
 
 
-def k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
+def k8s_integration_suite_pytest_extra_cmds(
+    version: AvailablePythonVersion, _
+) -> List[str]:
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version.value,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
@@ -266,7 +282,9 @@ def k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) 
     ]
 
 
-def celery_k8s_integration_suite_pytest_extra_cmds(version: AvailablePythonVersion, _) -> List[str]:
+def celery_k8s_integration_suite_pytest_extra_cmds(
+    version: AvailablePythonVersion, _
+) -> List[str]:
     cmds = [
         'export AIRFLOW_HOME="/airflow"',
         "mkdir -p $${AIRFLOW_HOME}",

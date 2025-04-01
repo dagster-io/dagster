@@ -7,7 +7,6 @@ export type BackfillTerminationDialogBackfillFragment = {
   id: string;
   status: Types.BulkActionStatus;
   isAssetBackfill: boolean;
-  numCancelable: number;
 };
 
 export type BackfillStepStatusDialogBackfillFragment = {
@@ -36,7 +35,6 @@ export type BackfillActionsBackfillFragment = {
   hasResumePermission: boolean;
   isAssetBackfill: boolean;
   status: Types.BulkActionStatus;
-  numCancelable: number;
   partitionNames: Array<string> | null;
   partitionSet: {
     __typename: 'PartitionSet';

@@ -1,8 +1,9 @@
 import datetime
-from typing import Any, Dict, Iterable, Optional, Sequence, Union, cast
+from collections.abc import Iterable, Sequence
+from typing import Any, Optional, Union, cast
 
 from dagster import _check as check
-from dagster._annotations import experimental
+from dagster._annotations import beta
 from dagster._core.definitions.asset_check_factories.utils import (
     DEADLINE_CRON_PARAM_KEY,
     DEFAULT_FRESHNESS_SEVERITY,
@@ -40,7 +41,7 @@ from dagster._utils.schedules import (
 )
 
 
-@experimental
+@beta
 def build_last_update_freshness_checks(
     *,
     assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
@@ -197,7 +198,7 @@ def _build_freshness_multi_check(
                 and update_timestamp >= last_update_time_lower_bound.timestamp()
             )
 
-            metadata: Dict[str, MetadataValue] = {
+            metadata: dict[str, MetadataValue] = {
                 FRESHNESS_PARAMS_METADATA_KEY: JsonMetadataValue(params_metadata),
                 LOWER_BOUND_TIMESTAMP_METADATA_KEY: TimestampMetadataValue(
                     last_update_time_lower_bound.timestamp()

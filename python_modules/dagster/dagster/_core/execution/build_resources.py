@@ -1,5 +1,7 @@
+from asyncio import AbstractEventLoop
+from collections.abc import Generator, Mapping
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Mapping, Optional, cast
+from typing import Any, Optional, cast
 
 import dagster._check as check
 from dagster._config import process_config
@@ -33,7 +35,7 @@ def get_mapped_resource_config(
             config_evr.errors,
             resource_config,
         )
-    config_value = cast(Dict[str, Any], config_evr.value)
+    config_value = cast(dict[str, Any], config_evr.value)
     return config_map_resources(resource_defs, config_value)
 
 
@@ -44,6 +46,7 @@ def build_resources(
     resource_config: Optional[Mapping[str, Any]] = None,
     dagster_run: Optional[DagsterRun] = None,
     log_manager: Optional[DagsterLogManager] = None,
+    event_loop: Optional[AbstractEventLoop] = None,
 ) -> Generator[Resources, None, None]:
     """Context manager that yields resources using provided resource definitions and run config.
 
@@ -66,6 +69,8 @@ def build_resources(
             teardown, this must be provided, or initialization will fail.
         log_manager (Optional[DagsterLogManager]): Log Manager to use during resource
             initialization. Defaults to system log manager.
+        event_loop (Optional[AbstractEventLoop]): An event loop for handling resources
+            with async context managers.
 
     Examples:
         .. code-block:: python
@@ -98,6 +103,7 @@ def build_resources(
             resource_keys_to_init=set(resource_defs.keys()),
             instance=dagster_instance,
             emit_persistent_events=False,
+            event_loop=event_loop,
         )
         try:
             list(resources_manager.generate_setup_events())
@@ -113,7 +119,7 @@ def build_resources(
 
 def wrap_resources_for_execution(
     resources: Optional[Mapping[str, Any]] = None,
-) -> Dict[str, ResourceDefinition]:
+) -> dict[str, ResourceDefinition]:
     return (
         {
             resource_key: wrap_resource_for_execution(resource)

@@ -159,3 +159,51 @@ def test_default_values_extension() -> None:
     a_job.execute_in_process({"ops": {"a_struct_config_op": {"config": {"a_string": "foo"}}}})
 
     assert executed["yes"]
+
+
+def test_default_values_nested_override():
+    class InnermostConfig(Config):
+        a_float: float = 1.0
+        another_float: float = 2.0
+
+    class ANestedOpConfig(Config):
+        an_int: int = 1
+        a_bool: bool = True
+        inner_config: InnermostConfig = InnermostConfig(another_float=1.0)
+
+    class AnOpConfig(Config):
+        a_string: str = "foo"
+        a_nested: ANestedOpConfig = ANestedOpConfig(an_int=5)
+
+    executed = {}
+
+    @op
+    def a_struct_config_op(config: AnOpConfig):
+        assert config.a_string == "foo"
+        assert config.a_nested.an_int == 5
+        assert config.a_nested.a_bool is True
+        assert config.a_nested.inner_config.a_float == 3.0
+        assert config.a_nested.inner_config.another_float == 1.0
+        executed["yes"] = True
+
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+
+    assert DecoratedOpFunction(a_struct_config_op).has_config_arg()
+
+    @job
+    def a_job():
+        a_struct_config_op()
+
+    assert a_job
+
+    a_job.execute_in_process(
+        {
+            "ops": {
+                "a_struct_config_op": {
+                    "config": {"a_string": "foo", "a_nested": {"inner_config": {"a_float": 3.0}}}
+                }
+            }
+        }
+    )
+
+    assert executed["yes"]

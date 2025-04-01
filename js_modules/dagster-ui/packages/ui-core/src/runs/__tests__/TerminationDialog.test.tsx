@@ -1,5 +1,7 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
+import {showToast} from '@dagster-io/ui-components';
 import {render, screen, waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router';
 
 import {
@@ -14,6 +16,11 @@ import {
 import {TERMINATE_MUTATION} from '../RunUtils';
 import {TerminationDialog, Props as TerminationDialogProps} from '../TerminationDialog';
 import {TerminateMutation, TerminateMutationVariables} from '../types/RunUtils.types';
+
+jest.mock('@dagster-io/ui-components', () => ({
+  ...jest.requireActual('@dagster-io/ui-components'),
+  showToast: jest.fn(),
+}));
 
 // isOpen: boolean;
 // onClose: () => void;
@@ -92,39 +99,44 @@ describe('TerminationDialog', () => {
   });
 
   it('calls the terminate mutation with the SAFE_TERMINATE policy by default', async () => {
+    const user = userEvent.setup();
     const terminateMock = buildMockTerminateMutation(
       ['run-id-1', 'run-id-2'],
       TerminateRunPolicy.SAFE_TERMINATE,
     );
-    render(
+
+    const {findByTestId} = render(
       <Test
         mocks={[terminateMock]}
         propOverrides={{selectedRuns: {'run-id-1': true, 'run-id-2': true}}}
       />,
     );
 
-    await screen.getByTestId('terminate-button').click();
+    await user.click(await findByTestId('terminate-button'));
     await waitFor(() => expect(terminateMock.result).toHaveBeenCalled());
   });
 
   it('calls the terminate mutation with the MARK_AS_CANCELED_IMMEDIATELY policy if you check the "Force" checkbox', async () => {
+    const user = userEvent.setup();
     const terminateMock = buildMockTerminateMutation(
       ['run-id-1', 'run-id-2'],
       TerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY,
     );
-    render(
+
+    const {findByTestId} = render(
       <Test
         mocks={[terminateMock]}
         propOverrides={{selectedRuns: {'run-id-1': true, 'run-id-2': true}}}
       />,
     );
 
-    await screen.getByTestId('force-termination-checkbox').click();
-    await screen.getByTestId('terminate-button').click();
+    await user.click(await findByTestId('force-termination-checkbox'));
+    await user.click(await findByTestId('terminate-button'));
     await waitFor(() => expect(terminateMock.result).toHaveBeenCalled());
   });
 
   it('calls the terminate mutation with 75 IDs at a time for a large set of runs', async () => {
+    const user = userEvent.setup();
     const runIds = new Array(125).fill(0).map((_, idx) => `run-id-${idx}`);
     const terminateMock1 = buildMockTerminateMutation(
       runIds.slice(0, 75),
@@ -134,32 +146,34 @@ describe('TerminationDialog', () => {
       runIds.slice(75),
       TerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY,
     );
-    render(
+
+    const {findByTestId} = render(
       <Test
         mocks={[terminateMock1, terminateMock2]}
         propOverrides={{selectedRuns: Object.fromEntries(runIds.map((r) => [r, true]))}}
       />,
     );
 
-    await screen.getByTestId('force-termination-checkbox').click();
-    await screen.getByTestId('terminate-button').click();
+    await user.click(await findByTestId('force-termination-checkbox'));
+    await user.click(await findByTestId('terminate-button'));
     await waitFor(() => expect(terminateMock1.result).toHaveBeenCalled());
     await waitFor(() => expect(terminateMock2.result).toHaveBeenCalled());
   });
 
   it('presents a summary of success and error results', async () => {
+    const user = userEvent.setup();
     const terminateMock = buildMockTerminateMutation(
       ['run-id-1', 'run-id-2'],
       TerminateRunPolicy.SAFE_TERMINATE,
     );
-    render(
+    const {findByTestId} = render(
       <Test
         mocks={[terminateMock]}
         propOverrides={{selectedRuns: {'run-id-1': true, 'run-id-2': true}}}
       />,
     );
 
-    await screen.getByTestId('terminate-button').click();
+    await user.click(await findByTestId('terminate-button'));
     await waitFor(() => expect(terminateMock.result).toHaveBeenCalled());
 
     await waitFor(() => {
@@ -171,25 +185,27 @@ describe('TerminationDialog', () => {
   });
 
   it('presents a generic error if the mutation fails with a PythonError', async () => {
+    const user = userEvent.setup();
     const terminateMock = buildMockTerminateMutation(
       ['run-id-1', 'run-id-2'],
       TerminateRunPolicy.SAFE_TERMINATE,
       buildPythonError({message: 'Oh no python error'}),
     );
-    render(
+
+    const {findByTestId} = render(
       <Test
         mocks={[terminateMock]}
         propOverrides={{selectedRuns: {'run-id-1': true, 'run-id-2': true}}}
       />,
     );
 
-    await screen.getByTestId('terminate-button').click();
+    const terminateButton = await findByTestId('terminate-button');
+    await user.click(terminateButton);
     await waitFor(() => expect(terminateMock.result).toHaveBeenCalled());
 
-    await waitFor(() => {
-      expect(
-        screen.getByText('Sorry, an error occurred and the runs could not be terminated.'),
-      ).toBeVisible();
+    expect(showToast).toHaveBeenCalledWith({
+      message: 'Sorry, an error occurred and the runs could not be terminated.',
+      intent: 'danger',
     });
   });
 
@@ -207,11 +223,13 @@ describe('TerminationDialog', () => {
     });
 
     it('calls the terminate mutation with the MARK_AS_CANCELED_IMMEDIATELY policy', async () => {
+      const user = userEvent.setup();
       const terminateMock = buildMockTerminateMutation(
         ['run-id-1', 'run-id-2'],
         TerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY,
       );
-      render(
+
+      const {findByTestId} = render(
         <Test
           mocks={[terminateMock]}
           propOverrides={{
@@ -221,7 +239,7 @@ describe('TerminationDialog', () => {
         />,
       );
 
-      await screen.getByTestId('terminate-button').click();
+      await user.click(await findByTestId('terminate-button'));
       await waitFor(() => expect(terminateMock.result).toHaveBeenCalled());
     });
   });

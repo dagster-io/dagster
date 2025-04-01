@@ -22,97 +22,86 @@ const OverflowButtonContainer = styled.div`
   display: flex;
   flex-direction: row;
   justify-content: center;
+  gap: 8px;
 `;
 
-export class CellTruncationProvider extends React.Component<
-  {
-    children: React.ReactNode;
-    style: React.CSSProperties;
-    onExpand?: () => void;
-    forceExpandability?: boolean;
-  },
-  {isOverflowing: boolean; showDialog: boolean}
-> {
-  state = {
+interface Props {
+  children: React.ReactNode;
+  style: React.CSSProperties;
+  onExpand?: () => void;
+  forceExpandability?: boolean;
+  buttons?: React.ReactNode;
+}
+
+export const CellTruncationProvider = (props: Props) => {
+  const [state, setState] = React.useState({
     isOverflowing: false,
     showDialog: false,
-  };
+  });
+  const contentContainerRef = React.useRef<HTMLDivElement>(null);
 
-  private contentContainerRef: React.RefObject<HTMLDivElement> = React.createRef();
-
-  componentDidMount() {
-    this.detectOverflow();
-  }
-
-  componentDidUpdate() {
-    this.detectOverflow();
-  }
-
-  detectOverflow() {
-    const child =
-      this.contentContainerRef.current && this.contentContainerRef.current.firstElementChild;
-
+  const detectOverflow = React.useCallback(() => {
+    const child = contentContainerRef.current?.firstElementChild;
     if (!child) {
       return;
     }
 
     const isOverflowing = child.scrollHeight > MAX_ROW_HEIGHT_PX;
-    if (isOverflowing !== this.state.isOverflowing) {
-      this.setState({isOverflowing});
-    }
-  }
+    setState((prev) => (prev.isOverflowing !== isOverflowing ? {...prev, isOverflowing} : prev));
+  }, []);
 
-  dialogContents() {
-    const message =
-      this.contentContainerRef.current && this.contentContainerRef.current.textContent;
-    if (message) {
-      return <div style={{whiteSpace: 'pre-wrap'}}>{message}</div>;
-    }
-    return null;
-  }
+  React.useEffect(() => {
+    detectOverflow();
+  });
 
-  onView = () => {
-    const {onExpand} = this.props;
-    if (onExpand) {
-      onExpand();
+  const dialogContents = () => {
+    const message = contentContainerRef.current?.textContent;
+    return message ? <div style={{whiteSpace: 'pre-wrap'}}>{message}</div> : null;
+  };
+
+  const onView = () => {
+    if (props.onExpand) {
+      props.onExpand();
     } else {
-      this.setState({showDialog: true});
+      setState((prev) => ({...prev, showDialog: true}));
     }
   };
 
-  render() {
-    const style = {...this.props.style, overflow: 'hidden'};
+  const style = {...props.style, overflow: 'hidden'};
 
-    return (
-      <div style={style}>
-        <div ref={this.contentContainerRef}>{this.props.children}</div>
-        {(this.state.isOverflowing || this.props.forceExpandability) && (
-          <>
-            <OverflowFade />
-            <OverflowButtonContainer>
-              <Button intent="primary" icon={<Icon name="unfold_more" />} onClick={this.onView}>
-                View full message
-              </Button>
-            </OverflowButtonContainer>
-            {this.props.onExpand ? null : (
-              <Dialog
-                canEscapeKeyClose
-                canOutsideClickClose
-                isOpen={this.state.showDialog}
-                onClose={() => this.setState({showDialog: false})}
-                style={{width: 'auto', maxWidth: '80vw'}}
-              >
-                <div>{this.dialogContents()}</div>
-                <DialogFooter topBorder>
-                  <Button intent="primary" onClick={() => this.setState({showDialog: false})}>
-                    Done
-                  </Button>
-                </DialogFooter>
-              </Dialog>
-            )}
-          </>
-        )}
-      </div>
-    );
-  }
-}
+  return (
+    <div style={style}>
+      <div ref={contentContainerRef}>{props.children}</div>
+      {(state.isOverflowing || props.forceExpandability) && (
+        <>
+          <OverflowFade />
+          <OverflowButtonContainer>
+            <Button intent="primary" icon={<Icon name="unfold_more" />} onClick={onView}>
+              View full message
+            </Button>
+            {props.buttons}
+          </OverflowButtonContainer>
+          {props.onExpand ? null : (
+            <Dialog
+              canEscapeKeyClose
+              canOutsideClickClose
+              isOpen={state.showDialog}
+              onClose={() => setState((prev) => ({...prev, showDialog: false}))}
+              style={{width: 'auto', maxWidth: '80vw'}}
+            >
+              <div>{dialogContents()}</div>
+              <DialogFooter topBorder>
+                <Button
+                  intent="primary"
+                  onClick={() => setState((prev) => ({...prev, showDialog: false}))}
+                >
+                  Done
+                </Button>
+              </DialogFooter>
+            </Dialog>
+          )}
+        </>
+      )}
+    </div>
+  );
+};

@@ -1,6 +1,7 @@
 import logging
 import time
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Tuple, Union, cast
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Callable, Optional, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -35,6 +36,7 @@ from dagster._core.storage.tags import (
 from dagster._core.telemetry import BACKFILL_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
+from dagster._time import get_current_timestamp
 from dagster._utils import check_for_debug_crash
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
@@ -70,13 +72,17 @@ def execute_job_backfill_iteration(
         ):
             yield None
 
-        if not isinstance(all_runs_canceled, bool):
+        if not isinstance(all_runs_canceled, bool):  # pyright: ignore[reportPossiblyUnboundVariable]
             check.failed(
                 "Expected cancel_backfill_runs_and_cancellation_complete to return a boolean"
             )
 
         if all_runs_canceled:
-            instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
+            instance.update_backfill(
+                backfill.with_status(BulkActionStatus.CANCELED).with_end_timestamp(
+                    get_current_timestamp()
+                )
+            )
         return
 
     has_more = True
@@ -144,9 +150,17 @@ def execute_job_backfill_iteration(
                 )
                 > 0
             ):
-                instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED_FAILED))
+                instance.update_backfill(
+                    backfill.with_status(BulkActionStatus.COMPLETED_FAILED).with_end_timestamp(
+                        get_current_timestamp()
+                    )
+                )
             else:
-                instance.update_backfill(backfill.with_status(BulkActionStatus.COMPLETED_SUCCESS))
+                instance.update_backfill(
+                    backfill.with_status(BulkActionStatus.COMPLETED_SUCCESS).with_end_timestamp(
+                        get_current_timestamp()
+                    )
+                )
             yield None
 
 
@@ -202,7 +216,7 @@ def _get_partitions_chunk(
     backfill_job: PartitionBackfill,
     chunk_size: int,
     partition_set: RemotePartitionSet,
-) -> Tuple[Sequence[Union[str, PartitionKeyRange]], str, bool]:
+) -> tuple[Sequence[Union[str, PartitionKeyRange]], str, bool]:
     partition_names = cast(Sequence[str], backfill_job.partition_names)
     checkpoint = backfill_job.last_submitted_partition_name
     backfill_policy = partition_set.backfill_policy

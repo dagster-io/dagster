@@ -21,8 +21,10 @@ import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import styled from 'styled-components';
 
+import {featureEnabled} from '../app/Flags';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
 import {GraphExplorerSolidFragment} from '../pipelines/types/GraphExplorer.types';
@@ -93,16 +95,36 @@ export const placeholderTextForItems = (base: string, items: GraphQueryItem[]) =
 
   if (seed === 0) {
     const example = ranked.sort((a, b) => b.outcount - a.outcount)[0];
-    placeholder = `${placeholder} (ex: ${example!.name}+*)`;
+    placeholder = `${placeholder} (ex: ${key(example!.name)}${traversal('down')})`;
   } else if (seed === 1) {
     const example = ranked.sort((a, b) => b.outcount - a.outcount)[0];
-    placeholder = `${placeholder} (ex: ${example!.name}+)`;
+    placeholder = `${placeholder} (ex: ${key(example!.name)}${traversal('down', 1)})`;
   } else if (seed === 2) {
     const example = ranked.sort((a, b) => b.incount - a.incount)[0];
-    placeholder = `${placeholder} (ex: ++${example!.name})`;
+    placeholder = `${placeholder} (ex: ${traversal('up', 2)}${key(example!.name)})`;
   }
   return placeholder;
 };
+
+function key(name: string) {
+  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+    return `name:"${name}"`;
+  }
+  return name;
+}
+
+function traversal(direction: 'up' | 'down', levels?: number) {
+  if (featureEnabled(FeatureFlag.flagSelectionSyntax)) {
+    if (levels === undefined) {
+      return '+';
+    }
+    return direction === 'up' ? `+${levels}` : `${levels}+`;
+  }
+  if (levels === undefined) {
+    return '*';
+  }
+  return '+'.repeat(levels);
+}
 
 const intentToStrokeColor = (intent: Intent | undefined) => {
   switch (intent) {

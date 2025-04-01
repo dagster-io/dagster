@@ -1,0 +1,29 @@
+.sectionHeader {
+  margin: 32px 0 16px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.sectionHeader h2 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.sectionHeader a {
+  font-size: 20px;
+  font-weight: 600;
+  opacity: 0;
+  color: var(--color-text-lighter);
+  transition: opacity 0.1s ease-in-out;
+}
+
+.sectionHeader:hover a {
+  opacity: 1;
+}
+
+.sectionHeader a:hover {
+  color: var(--color-text-light);
+  text-decoration: underline;
+}

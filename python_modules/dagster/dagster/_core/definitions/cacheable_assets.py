@@ -2,7 +2,12 @@ import hashlib
 import inspect
 import json
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, Union
+from collections.abc import Mapping, Sequence
+from typing import AbstractSet, Any, NamedTuple, Optional, Union  # noqa: UP035
+
+from dagster_shared.serdes import serialize_value
+from dagster_shared.serdes.errors import SerializationError
+from dagster_shared.utils.hash import hash_collection
 
 import dagster._check as check
 from dagster._config.field_utils import compute_fields_hash
@@ -15,9 +20,6 @@ from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceAddable
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.errors import SerializationError
-from dagster._serdes.serdes import serialize_value
-from dagster._utils import hash_collection
 
 
 @whitelist_for_serdes
@@ -153,8 +155,7 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
 
     def with_attributes(
         self,
-        output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
-        input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
+        asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
@@ -162,8 +163,7 @@ class CacheableAssetsDefinition(ResourceAddable, ABC):
     ) -> "CacheableAssetsDefinition":
         return PrefixOrGroupWrappedCacheableAssetsDefinition(
             self,
-            output_asset_key_replacements=output_asset_key_replacements,
-            input_asset_key_replacements=input_asset_key_replacements,
+            asset_key_replacements=asset_key_replacements,
             group_names_by_key=group_names_by_key,
             freshness_policy=freshness_policy,
         )
@@ -247,11 +247,10 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
     def __init__(
         self,
         wrapped: CacheableAssetsDefinition,
-        output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
-        input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
+        asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
         group_name_for_all_assets: Optional[str] = None,
-        prefix_for_all_assets: Optional[List[str]] = None,
+        prefix_for_all_assets: Optional[list[str]] = None,
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
         ] = None,
@@ -260,8 +259,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
     ):
-        self._output_asset_key_replacements = output_asset_key_replacements or {}
-        self._input_asset_key_replacements = input_asset_key_replacements or {}
+        self._asset_key_replacements = asset_key_replacements or {}
         self._group_names_by_key = group_names_by_key or {}
         self._group_name_for_all_assets = group_name_for_all_assets
         self._prefix_for_all_assets = prefix_for_all_assets
@@ -274,12 +272,8 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
             "Cannot set both group_name_for_all_assets and group_names_by_key",
         )
         check.invariant(
-            not (
-                prefix_for_all_assets
-                and (output_asset_key_replacements or input_asset_key_replacements)
-            ),
-            "Cannot set both prefix_for_all_assets and output_asset_key_replacements or"
-            " input_asset_key_replacements",
+            not (prefix_for_all_assets and (asset_key_replacements)),
+            "Cannot set both prefix_for_all_assets and asset_key_replacements",
         )
 
         super().__init__(
@@ -290,22 +284,10 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
     def _get_hash(self) -> str:
         """Generate a stable hash of the various prefix/group mappings."""
         contents = hashlib.sha1()
-        if self._output_asset_key_replacements:
+        if self._asset_key_replacements:
             contents.update(
                 _map_to_hashable(
-                    {
-                        tuple(k.path): tuple(v.path)
-                        for k, v in self._output_asset_key_replacements.items()
-                    }
-                )
-            )
-        if self._input_asset_key_replacements:
-            contents.update(
-                _map_to_hashable(
-                    {
-                        tuple(k.path): tuple(v.path)
-                        for k, v in self._input_asset_key_replacements.items()
-                    }
+                    {tuple(k.path): tuple(v.path) for k, v in self._asset_key_replacements.items()}
                 )
             )
         if self._group_names_by_key:
@@ -330,33 +312,13 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
             if self._group_name_for_all_assets
             else self._group_names_by_key
         )
-        output_asset_key_replacements = (
+        asset_key_replacements = (
             {
-                k: AssetKey(
-                    path=(
-                        self._prefix_for_all_assets + list(k.path)
-                        if self._prefix_for_all_assets
-                        else k.path
-                    )
-                )
-                for k in assets_def.keys
+                k: k.with_prefix(self._prefix_for_all_assets) if self._prefix_for_all_assets else k
+                for k in assets_def.keys | set(assets_def.dependency_keys)
             }
             if self._prefix_for_all_assets
-            else self._output_asset_key_replacements
-        )
-        input_asset_key_replacements = (
-            {
-                k: AssetKey(
-                    path=(
-                        self._prefix_for_all_assets + list(k.path)
-                        if self._prefix_for_all_assets
-                        else k.path
-                    )
-                )
-                for k in assets_def.dependency_keys
-            }
-            if self._prefix_for_all_assets
-            else self._input_asset_key_replacements
+            else self._asset_key_replacements
         )
         if isinstance(self._auto_materialize_policy, dict):
             automation_condition = {
@@ -367,8 +329,7 @@ class PrefixOrGroupWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefini
         else:
             automation_condition = None
         return assets_def.with_attributes(
-            output_asset_key_replacements=output_asset_key_replacements,
-            input_asset_key_replacements=input_asset_key_replacements,
+            asset_key_replacements=asset_key_replacements,
             group_names_by_key=group_names_by_key,
             freshness_policy=self._freshness_policy,
             automation_condition=automation_condition,

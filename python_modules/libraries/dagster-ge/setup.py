@@ -1,11 +1,10 @@
 from pathlib import Path
-from typing import Dict
 
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    version: Dict[str, str] = {}
+    version: dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_ge/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
@@ -35,7 +34,7 @@ setup(
         f"dagster{pin}",
         f"dagster-pandas{pin}",
         "pandas",
-        "great_expectations >=0.17.15",
+        "great_expectations>=0.17.15,<1.0.0",  # need to migrate from DataContext
     ],
     zip_safe=False,
 )

@@ -1,14 +1,25 @@
+import logging
 import re
 import sys
 import time
-from typing import Any
+import traceback
+from typing import Any, Callable
 
 import pytest
 from dagster import Config, RunConfig, config_mapping, job, op
+from dagster._core.definitions.events import Failure
 from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.errors import (
+    DagsterExecutionInterruptedError,
+    DagsterUserCodeExecutionError,
+    DagsterUserCodeProcessError,
+    user_code_error_boundary,
+)
 from dagster._core.test_utils import environ, instance_for_test
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import (
+    _serializable_error_info_from_tb,
+    serializable_error_info_from_exc_info,
+)
 
 from dagster_tests.api_tests.utils import get_bar_repo_handle
 
@@ -21,9 +32,13 @@ def instance():
 
 class UserError(Exception):
     def __init__(self):
-        super(UserError, self).__init__(
+        super().__init__(
             "This is an error which has some sensitive information! My password is hunter2"
         )
+
+
+class hunter2:
+    pass
 
 
 @pytest.fixture(scope="function")
@@ -32,26 +47,138 @@ def enable_masking_user_code_errors() -> Any:
         yield
 
 
-def test_masking_op_execution(enable_masking_user_code_errors) -> Any:
+def test_masking_basic(enable_masking_user_code_errors):
+    try:
+        with user_code_error_boundary(
+            error_cls=DagsterUserCodeExecutionError,
+            msg_fn=lambda: "hunter2",
+        ):
+
+            def hunter2():
+                raise UserError()
+
+            hunter2()
+    except Exception:
+        exc_info = sys.exc_info()
+        err_info = serializable_error_info_from_exc_info(exc_info)
+
+    assert "hunter2" not in str(err_info)  # pyright: ignore[reportPossiblyUnboundVariable]
+
+
+def test_masking_nested_user_code_err_boundaries(enable_masking_user_code_errors):
+    try:
+        with user_code_error_boundary(
+            error_cls=DagsterUserCodeExecutionError,
+            msg_fn=lambda: "hunter2 as well",
+        ):
+            with user_code_error_boundary(
+                error_cls=DagsterUserCodeExecutionError,
+                msg_fn=lambda: "hunter2",
+            ):
+
+                def hunter2():
+                    raise UserError()
+
+                hunter2()
+    except Exception:
+        exc_info = sys.exc_info()
+        err_info = serializable_error_info_from_exc_info(exc_info)
+
+    assert "hunter2" not in str(err_info)  # pyright: ignore[reportPossiblyUnboundVariable]
+
+
+def test_masking_nested_user_code_err_boundaries_reraise(enable_masking_user_code_errors):
+    try:
+        try:
+            with user_code_error_boundary(
+                error_cls=DagsterUserCodeExecutionError,
+                msg_fn=lambda: "hunter2",
+            ):
+
+                def hunter2():
+                    raise UserError()
+
+                hunter2()
+        except Exception as e:
+            # Mimics behavior of resource teardown, which runs in a
+            # user_code_error_boundary after the user code raises an error
+            with user_code_error_boundary(
+                error_cls=DagsterUserCodeExecutionError,
+                msg_fn=lambda: "teardown after we raised hunter2 error",
+            ):
+                # do teardown stuff
+                raise e
+
+    except Exception:
+        exc_info = sys.exc_info()
+        err_info = serializable_error_info_from_exc_info(exc_info)
+
+    assert "hunter2" not in str(err_info)  # pyright: ignore[reportPossiblyUnboundVariable]
+
+
+ERROR_ID_REGEX = r"[Ee]rror ID ([a-z0-9\-]+)"
+
+
+@pytest.mark.parametrize(
+    "exc_name, expect_exc_name_in_error, build_exc",
+    [
+        ("UserError", False, lambda: UserError()),
+        ("TypeError", False, lambda: TypeError("hunter2")),
+        ("KeyboardInterrupt", True, lambda: KeyboardInterrupt()),
+        ("DagsterExecutionInterruptedError", True, lambda: DagsterExecutionInterruptedError()),
+        ("Failure", True, lambda: Failure("asdf")),
+    ],
+)
+def test_masking_op_execution(
+    enable_masking_user_code_errors,
+    exc_name: str,
+    expect_exc_name_in_error: bool,
+    build_exc: Callable[[], BaseException],
+    caplog,
+) -> Any:
     @op
     def throws_user_error(_):
-        raise UserError()
+        def hunter2():
+            raise build_exc()
+
+        hunter2()
 
     @job
     def job_def():
         throws_user_error()
 
-    result = job_def.execute_in_process(raise_on_error=False)
+    with caplog.at_level(logging.ERROR):
+        result = job_def.execute_in_process(raise_on_error=False)
     assert not result.success
-    assert not any("hunter2" in str(event) for event in result.all_events)
+
+    # Ensure error message and contents of user code don't leak (e.g. hunter2 text or function name)
+    assert not any("hunter2" in str(event).lower() for event in result.all_events), [
+        str(event) for event in result.all_events if "hunter2" in str(event)
+    ]
+
     step_error = next(event for event in result.all_events if event.is_step_failure)
-    assert (
-        step_error.step_failure_data.error
-        and step_error.step_failure_data.error.cls_name == "DagsterRedactedUserCodeError"
-    )
 
+    # Certain exceptions will not be fully redacted, just the stack trace
+    # For example, system errors and interrupts may contain useful information
+    # or information that the framework itself relies on
+    if expect_exc_name_in_error:
+        assert (
+            step_error.step_failure_data.error
+            and step_error.step_failure_data.error.cls_name == exc_name
+        )
+    else:
+        assert (
+            step_error.step_failure_data.error
+            and step_error.step_failure_data.error.cls_name == "DagsterRedactedUserCodeError"
+        )
 
-ERROR_ID_REGEX = r"Error occurred during user code execution, error ID ([a-z0-9\-]+)"
+    # Ensures we can match the error ID in the Dagster+ UI surfaced message to the rich error message
+    # in logs which includes the redacted error message
+    assert "Search in logs for this error ID for more details" in str(step_error)
+    error_id = re.search(ERROR_ID_REGEX, str(step_error)).group(1)  # type: ignore
+
+    assert f"Error occurred during user code execution, error ID {error_id}" in caplog.text
+    assert "hunter2" in caplog.text
 
 
 def test_masking_sensor_execution(instance, enable_masking_user_code_errors, capsys) -> None:
@@ -103,7 +230,7 @@ def test_masking_schedule_execution(instance, enable_masking_user_code_errors, c
             # assert "Search in logs for this error ID for more details" not in captured_stderr TODO: fix this
 
 
-def test_config_mapping_error(enable_masking_user_code_errors, capsys) -> None:
+def test_config_mapping_error(enable_masking_user_code_errors, caplog) -> None:
     class DoSomethingConfig(Config):
         config_param: str
 
@@ -147,5 +274,9 @@ def test_config_mapping_error(enable_masking_user_code_errors, capsys) -> None:
     assert "hunter2" not in str(err_info.message)
     assert "Search in logs for this error ID for more details" in str(err_info.message)
 
-    captured_stderr = capsys.readouterr().err
-    assert "hunter2" in captured_stderr
+    assert any(
+        "hunter2"
+        in str(_serializable_error_info_from_tb(traceback.TracebackException(*record.exc_info)))
+        for record in caplog.records
+        if record.exc_info
+    )

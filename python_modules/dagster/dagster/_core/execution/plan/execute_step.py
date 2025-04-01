@@ -1,5 +1,6 @@
 import inspect
-from typing import Any, Dict, Iterable, Iterator, Mapping, Optional, Union, cast
+from collections.abc import Iterable, Iterator, Mapping
+from typing import Any, Optional, Union, cast
 
 from typing_extensions import TypedDict
 
@@ -61,7 +62,7 @@ from dagster._core.storage.tags import BACKFILL_ID_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import iterate_with_context
 from dagster._utils.timing import time_execution_scope
-from dagster._utils.warnings import disable_dagster_warnings, experimental_warning
+from dagster._utils.warnings import beta_warning, disable_dagster_warnings
 
 
 class AssetResultOutput(Output):
@@ -548,11 +549,9 @@ def _type_check_and_store_output(
         step_context.step_output_capture[step_output_handle] = output.value
         step_context.step_output_metadata_capture[step_output_handle] = output.metadata
 
-    for output_event in _type_check_output(step_context, step_output_handle, output):
-        yield output_event
+    yield from _type_check_output(step_context, step_output_handle, output)
 
-    for evt in _store_output(step_context, step_output_handle, output):
-        yield evt
+    yield from _store_output(step_context, step_output_handle, output)
 
 
 def _get_output_asset_events(
@@ -564,12 +563,13 @@ def _get_output_asset_events(
     step_context: StepExecutionContext,
     execution_type: AssetExecutionType,
 ) -> Iterator[Union[AssetMaterialization, AssetObservation]]:
-    all_metadata = {**output.metadata, **io_manager_metadata}
+    # Metadata scoped to all events for this asset.
+    key_scoped_metadata = {**output.metadata, **io_manager_metadata}
 
     # Clear any cached record associated with this asset, since we are about to generate a new
     # materialization.
     step_context.wipe_input_asset_version_info(asset_key)
-    tags: Dict[str, str]
+    tags: dict[str, str]
     if (
         execution_type == AssetExecutionType.MATERIALIZATION
         and step_context.is_external_input_asset_version_info_loaded
@@ -623,10 +623,26 @@ def _get_output_asset_events(
     else:
         check.failed(f"Unexpected asset execution type {execution_type}")
 
+    unpartitioned_asset_metadata = step_context.get_asset_metadata(asset_key=asset_key)
+    all_unpartitioned_asset_metadata = {
+        **key_scoped_metadata,
+        **(unpartitioned_asset_metadata or {}),
+    }
     if asset_partitions:
         for partition in asset_partitions:
             with disable_dagster_warnings():
-                all_tags.update(
+                partition_scoped_metadata = step_context.get_asset_metadata(
+                    asset_key=asset_key, partition_key=partition
+                )
+                all_metadata_for_partitioned_event = {
+                    **all_unpartitioned_asset_metadata,
+                    **(partition_scoped_metadata or {}),
+                }
+                # copy the tags dictionary before setting the partition key tags. Otherwise
+                # all asset materialization events will point to the same dictionary with the
+                # partition key tags of the last partition processed.
+                tags_for_event = {**all_tags}
+                tags_for_event.update(
                     get_tags_from_multi_partition_key(partition)
                     if isinstance(partition, MultiPartitionKey)
                     else {}
@@ -635,12 +651,14 @@ def _get_output_asset_events(
                 yield event_class(
                     asset_key=asset_key,
                     partition=partition,
-                    metadata=all_metadata,
-                    tags=all_tags,
+                    metadata=all_metadata_for_partitioned_event,
+                    tags=tags_for_event,
                 )
     else:
         with disable_dagster_warnings():
-            yield event_class(asset_key=asset_key, metadata=all_metadata, tags=all_tags)
+            yield event_class(
+                asset_key=asset_key, metadata=all_unpartitioned_asset_metadata, tags=all_tags
+            )
 
 
 def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -> str:
@@ -658,7 +676,7 @@ class _InputProvenanceData(TypedDict):
 def _get_input_provenance_data(
     asset_key: AssetKey, step_context: StepExecutionContext
 ) -> Mapping[AssetKey, _InputProvenanceData]:
-    input_provenance: Dict[AssetKey, _InputProvenanceData] = {}
+    input_provenance: dict[AssetKey, _InputProvenanceData] = {}
     deps = step_context.job_def.asset_layer.get(asset_key).parent_keys
     for key in deps:
         # For deps external to this step, this will retrieve the cached record that was stored prior
@@ -688,8 +706,8 @@ def _build_data_version_tags(
     code_version: str,
     input_provenance_data: Mapping[AssetKey, _InputProvenanceData],
     data_version_is_user_provided: bool,
-) -> Dict[str, str]:
-    tags: Dict[str, str] = {}
+) -> dict[str, str]:
+    tags: dict[str, str] = {}
     tags[CODE_VERSION_TAG] = code_version
     for key, meta in input_provenance_data.items():
         tags[get_input_data_version_tag(key)] = meta["data_version"].value
@@ -702,7 +720,7 @@ def _build_data_version_tags(
     return tags
 
 
-def _build_data_version_observation_tags(data_version: DataVersion) -> Dict[str, str]:
+def _build_data_version_observation_tags(data_version: DataVersion) -> dict[str, str]:
     return {
         DATA_VERSION_TAG: data_version.value,
         DATA_VERSION_IS_USER_PROVIDED_TAG: "true",
@@ -719,7 +737,7 @@ def _store_output(
     output_context = step_context.get_output_context(step_output_handle, output.metadata)
 
     manager_materializations = []
-    manager_metadata: Dict[str, MetadataValue] = {}
+    manager_metadata: dict[str, MetadataValue] = {}
 
     # don't store asset check outputs, asset observation outputs, asset result outputs, or Nothing
     # type outputs
@@ -747,8 +765,7 @@ def _store_output(
 
             def _gen_fn():
                 gen_output = output_manager.handle_output(output_context, output.value)
-                for event in output_context.consume_events():
-                    yield event
+                yield from output_context.consume_events()
                 if gen_output:
                     yield gen_output
 
@@ -775,9 +792,7 @@ def _store_output(
             elif isinstance(elt, AssetMaterialization):
                 manager_materializations.append(elt)
             elif isinstance(elt, dict):  # should remove this?
-                experimental_warning(
-                    "Yielding metadata from an IOManager's handle_output() function"
-                )
+                beta_warning("Yielding metadata from an IOManager's handle_output() function")
                 manager_metadata = {**manager_metadata, **normalize_metadata(elt)}
             else:
                 raise DagsterInvariantViolationError(

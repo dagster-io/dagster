@@ -1,4 +1,5 @@
-from typing import Any, Dict, Mapping
+from collections.abc import Mapping
+from typing import Any, Dict  # noqa: F401, UP035
 
 from dagster._core.definitions.tags.tag_set import NamespacedTagSet as NamespacedTagSet
 from dagster._core.storage.tags import KIND_PREFIX
@@ -12,5 +13,5 @@ def build_kind_tag_key(kind: str) -> str:
     return f"{KIND_PREFIX}{kind}"
 
 
-def build_kind_tag(kind: str) -> Dict[str, Any]:
+def build_kind_tag(kind: str) -> dict[str, Any]:
     return {build_kind_tag_key(kind): ""}

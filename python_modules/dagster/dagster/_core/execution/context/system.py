@@ -5,26 +5,16 @@ in the user_context module.
 """
 
 from abc import ABC, abstractmethod
+from asyncio import AbstractEventLoop
+from collections.abc import Iterable, Mapping
 from functools import cached_property
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Set,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, AbstractSet, Any, NamedTuple, Optional, Union, cast  # noqa: UP035
 
 import dagster._check as check
 from dagster._annotations import public
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.dependency import OpNode
-from dagster._core.definitions.events import AssetKey, AssetLineageInfo
+from dagster._core.definitions.events import AssetKey, AssetLineageInfo, CoercibleToAssetKey
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.job_definition import JobDefinition
@@ -52,6 +42,7 @@ from dagster._core.execution.context.data_version_cache import (
     InputAssetVersionInfo,
 )
 from dagster._core.execution.context.input import InputContext
+from dagster._core.execution.context.metadata_logging import OutputMetadataAccumulator
 from dagster._core.execution.context.output import OutputContext, get_output_context
 from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster._core.execution.plan.outputs import StepOutputHandle
@@ -226,7 +217,7 @@ class PlanOrchestrationContext(IPlanContext):
         plan_data: PlanData,
         log_manager: DagsterLogManager,
         executor: Executor,
-        output_capture: Optional[Dict[StepOutputHandle, Any]],
+        output_capture: Optional[dict[StepOutputHandle, Any]],
         resume_from_failure: bool = False,
     ):
         self._plan_data = plan_data
@@ -256,7 +247,7 @@ class PlanOrchestrationContext(IPlanContext):
         return self._executor
 
     @property
-    def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
+    def output_capture(self) -> Optional[dict[StepOutputHandle, Any]]:
         return self._output_capture
 
     def for_step(self, step: ExecutionStep) -> "IStepContext":
@@ -286,11 +277,9 @@ class StepOrchestrationContext(PlanOrchestrationContext, IStepContext):
         log_manager: DagsterLogManager,
         executor: Executor,
         step: ExecutionStep,
-        output_capture: Optional[Dict[StepOutputHandle, Any]],
+        output_capture: Optional[dict[StepOutputHandle, Any]],
     ):
-        super(StepOrchestrationContext, self).__init__(
-            plan_data, log_manager, executor, output_capture
-        )
+        super().__init__(plan_data, log_manager, executor, output_capture)
         self._step = step
 
     @property
@@ -314,20 +303,26 @@ class PlanExecutionContext(IPlanContext):
         plan_data: PlanData,
         execution_data: ExecutionData,
         log_manager: DagsterLogManager,
-        output_capture: Optional[Dict[StepOutputHandle, Any]] = None,
+        output_capture: Optional[dict[StepOutputHandle, Any]],
+        event_loop: AbstractEventLoop,
     ):
         self._plan_data = plan_data
         self._execution_data = execution_data
         self._log_manager = log_manager
         self._output_capture = output_capture
+        self._event_loop = event_loop
 
     @property
     def plan_data(self) -> PlanData:
         return self._plan_data
 
     @property
-    def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
+    def output_capture(self) -> Optional[dict[StepOutputHandle, Any]]:
         return self._output_capture
+
+    @property
+    def event_loop(self) -> AbstractEventLoop:
+        return self._event_loop
 
     def for_step(
         self,
@@ -345,6 +340,7 @@ class PlanExecutionContext(IPlanContext):
             step=step,
             output_capture=self.output_capture,
             known_state=known_state,
+            event_loop=self.event_loop,
         )
 
     @property
@@ -418,16 +414,18 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         execution_data: ExecutionData,
         log_manager: DagsterLogManager,
         step: ExecutionStep,
-        output_capture: Optional[Dict[StepOutputHandle, Any]],
+        output_capture: Optional[dict[StepOutputHandle, Any]],
         known_state: Optional["KnownExecutionState"],
+        event_loop,
     ):
         from dagster._core.execution.resources_init import get_required_resource_keys_for_step
 
-        super(StepExecutionContext, self).__init__(
+        super().__init__(
             plan_data=plan_data,
             execution_data=execution_data,
             log_manager=log_manager,
             output_capture=output_capture,
+            event_loop=event_loop,
         )
         self._step = step
         self._required_resource_keys = get_required_resource_keys_for_step(
@@ -439,7 +437,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             self._required_resource_keys
         )
         self._known_state = known_state
-        self._input_lineage: List[AssetLineageInfo] = []
+        self._input_lineage: list[AssetLineageInfo] = []
 
         resources_iter = cast(Iterable, self._resources)
 
@@ -458,8 +456,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         self._step_exception: Optional[BaseException] = None
 
-        self._step_output_capture: Optional[Dict[StepOutputHandle, Any]] = None
-        self._step_output_metadata_capture: Optional[Dict[StepOutputHandle, Any]] = None
+        self._step_output_capture: Optional[dict[StepOutputHandle, Any]] = None
+        self._step_output_metadata_capture: Optional[dict[StepOutputHandle, Any]] = None
         # Enable step output capture if there are any hooks which will receive them.
         # Expect in the future that hooks may control whether or not they get outputs,
         # but for now presence of any will cause output capture.
@@ -467,8 +465,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             self._step_output_capture = {}
             self._step_output_metadata_capture = {}
 
-        self._output_metadata: Dict[str, Any] = {}
-        self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
+        self._metadata_accumulator = OutputMetadataAccumulator.empty()
+        self._seen_outputs: dict[str, Union[str, set[str]]] = {}
 
         self._data_version_cache = DataVersionCache(self)
 
@@ -666,7 +664,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if mapping_key:
             if output_name not in self._seen_outputs:
                 self._seen_outputs[output_name] = set()
-            cast(Set[str], self._seen_outputs[output_name]).add(mapping_key)
+            cast(set[str], self._seen_outputs[output_name]).add(mapping_key)
         else:
             self._seen_outputs[output_name] = "seen"
 
@@ -688,7 +686,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             output_name = output_def.name
         elif output_name is None:
             raise DagsterInvariantViolationError(
-                "Attempted to log metadata without providing output_name, but multiple outputs"
+                "Attempted to add metadata without providing output_name, but multiple outputs"
                 " exist. Please provide an output_name to the invocation of"
                 " `context.add_output_metadata`."
             )
@@ -706,33 +704,79 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 f" metadata for {output_desc} which has already been yielded. Metadata must be"
                 " logged before the output is yielded."
             )
-        if output_def.is_dynamic and not mapping_key:
-            raise DagsterInvariantViolationError(
-                f"In {self.op_def.node_type_str} '{self.op.name}', attempted to log metadata"
-                f" for dynamic output '{output_def.name}' without providing a mapping key. When"
-                " logging metadata for a dynamic output, it is necessary to provide a mapping key."
-            )
+        if output_def.is_dynamic:
+            if not mapping_key:
+                raise DagsterInvariantViolationError(
+                    f"In {self.op_def.node_type_str} '{self.op.name}', Attempted to add metadata"
+                    f" for dynamic output '{output_def.name}' without providing a mapping key. When"
+                    " logging metadata for a dynamic output, it is necessary to provide a mapping key."
+                )
+        self._metadata_accumulator = self._metadata_accumulator.with_additional_output_metadata(
+            output_name=output_name,
+            metadata=metadata,
+            mapping_key=mapping_key,
+        )
 
-        if mapping_key:
-            if output_name not in self._output_metadata:
-                self._output_metadata[output_name] = {}
-            if mapping_key in self._output_metadata[output_name]:
-                self._output_metadata[output_name][mapping_key].update(metadata)
-            else:
-                self._output_metadata[output_name][mapping_key] = metadata
-        else:
-            if output_name in self._output_metadata:
-                self._output_metadata[output_name].update(metadata)
-            else:
-                self._output_metadata[output_name] = metadata
+    def add_asset_metadata(
+        self,
+        metadata: Mapping[str, Any],
+        asset_key: Optional[CoercibleToAssetKey] = None,
+        partition_key: Optional[str] = None,
+    ) -> None:
+        if not self.assets_def:
+            raise DagsterInvariantViolationError(
+                "Attempted to add metadata for a non-asset computation. Only assets should be calling this function."
+            )
+        if len(self.assets_def.keys) == 0:
+            raise DagsterInvariantViolationError(
+                "Attempted to add metadata without providing asset_key, but no asset_keys"
+                " are being materialized. `context.add_asset_metadata` should only be called"
+                " when materializing assets."
+            )
+        if asset_key is None and len(self.assets_def.keys) > 1:
+            raise DagsterInvariantViolationError(
+                "Attempted to add metadata without providing asset_key, but multiple asset_keys"
+                " can potentially be materialized. Please provide an asset_key to the invocation of"
+                " `context.add_asset_metadata`."
+            )
+        asset_key = AssetKey.from_coercible(asset_key) if asset_key else self.assets_def.key
+        if asset_key not in self.assets_def.keys:
+            raise DagsterInvariantViolationError(
+                f"Attempted to add metadata for asset key '{asset_key}' that is not being materialized."
+            )
+        if partition_key:
+            if not self.assets_def.partitions_def:
+                raise DagsterInvariantViolationError(
+                    f"Attempted to add metadata for partition key '{partition_key}' without a partitions definition."
+                )
+
+            targeted_partitions = self.assets_def.partitions_def.get_partition_keys_in_range(
+                partition_key_range=self.partition_key_range
+            )
+            if partition_key not in targeted_partitions:
+                raise DagsterInvariantViolationError(
+                    f"Attempted to add metadata for partition key '{partition_key}' that is not being targeted."
+                )
+
+        self._metadata_accumulator = self._metadata_accumulator.with_additional_asset_metadata(
+            asset_key=asset_key,
+            metadata=metadata,
+            partition_key=partition_key,
+        )
 
     def get_output_metadata(
-        self, output_name: str, mapping_key: Optional[str] = None
+        self,
+        output_name: str,
+        mapping_key: Optional[str] = None,
     ) -> Optional[Mapping[str, Any]]:
-        metadata = self._output_metadata.get(output_name)
-        if mapping_key and metadata:
-            return metadata.get(mapping_key)
-        return metadata
+        return self._metadata_accumulator.get_output_metadata(output_name, mapping_key)
+
+    def get_asset_metadata(
+        self,
+        asset_key: AssetKey,
+        partition_key: Optional[str] = None,
+    ) -> Optional[Mapping[str, Any]]:
+        return self._metadata_accumulator.get_asset_metadata(asset_key, partition_key)
 
     def _get_source_run_id_from_logs(self, step_output_handle: StepOutputHandle) -> Optional[str]:
         # walk through event logs to find the right run_id based on the run lineage
@@ -796,11 +840,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._step_exception
 
     @property
-    def step_output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
+    def step_output_capture(self) -> Optional[dict[StepOutputHandle, Any]]:
         return self._step_output_capture
 
     @property
-    def step_output_metadata_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
+    def step_output_metadata_capture(self) -> Optional[dict[StepOutputHandle, Any]]:
         return self._step_output_metadata_capture
 
     @property
@@ -878,7 +922,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._data_version_cache.wipe_input_asset_version_info(key)
 
     def get_output_asset_keys(self) -> AbstractSet[AssetKey]:
-        output_keys: Set[AssetKey] = set()
+        output_keys: set[AssetKey] = set()
         asset_layer = self.job_def.asset_layer
         for step_output in self.step.step_outputs:
             asset_key = asset_layer.asset_key_for_output(self.node_handle, step_output.name)
@@ -902,15 +946,17 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self.asset_partitions_def
 
     @cached_property
+    def assets_def(self) -> Optional[AssetsDefinition]:
+        return self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+
+    @cached_property
     def asset_partitions_def(self) -> Optional[PartitionsDefinition]:
         """If the current step is executing a partitioned asset, returns the PartitionsDefinition
         for that asset. If there are one or more partitioned assets executing in the step, they're
         expected to all have the same PartitionsDefinition.
         """
-        asset_layer = self.job_def.asset_layer
-        assets_def = asset_layer.assets_def_for_node(self.node_handle) if asset_layer else None
-        if assets_def is not None:
-            for asset_key in assets_def.keys:
+        if self.assets_def is not None:
+            for asset_key in self.assets_def.keys:
                 partitions_def = self.job_def.asset_layer.get(asset_key).partitions_def
                 if partitions_def is not None:
                     return partitions_def
@@ -1056,12 +1102,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
                 if (
                     require_valid_partitions
-                    and mapped_partitions_result.required_but_nonexistent_partition_keys
+                    and not mapped_partitions_result.required_but_nonexistent_subset.is_empty
                 ):
                     raise DagsterInvariantViolationError(
                         f"Partition key range {self.partition_key_range} in"
-                        f" {self.node_handle.name} depends on invalid partition keys"
-                        f" {mapped_partitions_result.required_but_nonexistent_partition_keys} in"
+                        f" {self.node_handle.name} depends on invalid partitions"
+                        f" {mapped_partitions_result.required_but_nonexistent_subset} in"
                         f" upstream asset {upstream_asset_key}"
                     )
 
@@ -1227,6 +1273,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             step=self.step,
             output_capture=self._output_capture,
             known_state=self._known_state,
+            event_loop=None,
         )
 
     def output_observes_source_asset(self, output_name: str) -> bool:
@@ -1247,7 +1294,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         if assets_def is not None:
             computation = check.not_none(assets_def.computation)
 
-            selected_outputs: Set[str] = set()
+            selected_outputs: set[str] = set()
             for output_name in self.op.output_dict.keys():
                 if any(
                     downstream_asset_key in computation.selected_asset_keys
@@ -1306,20 +1353,20 @@ class DagsterTypeLoaderContext(StepExecutionContext):
     @property
     def resources(self) -> "Resources":
         """The resources available to the type loader, specified by the `required_resource_keys` argument of the decorator."""
-        return super(DagsterTypeLoaderContext, self).resources
+        return super().resources
 
     @public
     @property
     def job_def(self) -> "JobDefinition":
         """The underlying job definition being executed."""
-        return super(DagsterTypeLoaderContext, self).job_def
+        return super().job_def
 
     @property
     def repository_def(self) -> "RepositoryDefinition":
-        return super(DagsterTypeLoaderContext, self).repository_def
+        return super().repository_def
 
     @public
     @property
     def op_def(self) -> "OpDefinition":
         """The op for which type loading is occurring."""
-        return super(DagsterTypeLoaderContext, self).op_def
+        return super().op_def

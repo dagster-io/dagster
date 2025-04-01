@@ -1,5 +1,7 @@
+# ruff: noqa: UP006
+
 import warnings
-from typing import Tuple
+from typing import Tuple  # noqa: UP035
 
 import pytest
 from dagster import (
@@ -184,7 +186,7 @@ This config type can be a:
 
 def test_annotate_with_resource_factory() -> None:
     class MyStringFactory(ConfigurableResourceFactory[str]):
-        def create_resource(self, context: None) -> str:
+        def create_resource(self, context: None) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
             return "hello"
 
     # https://github.com/dagster-io/dagster/issues/18017
@@ -222,7 +224,7 @@ def test_annotate_with_resource_factory() -> None:
             pass
 
     class MyUnspecifiedFactory(ConfigurableResourceFactory):
-        def create_resource(self, context: None) -> str:
+        def create_resource(self, context: None) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
             return "hello"
 
     with pytest.raises(
@@ -260,7 +262,7 @@ def test_annotate_with_resource_factory() -> None:
 
 def test_annotate_with_resource_factory_schedule_sensor() -> None:
     class MyStringFactory(ConfigurableResourceFactory[str]):
-        def create_resource(self, context: None) -> str:
+        def create_resource(self, context: None) -> str:  # pyright: ignore[reportIncompatibleMethodOverride]
             return "hello"
 
     # https://github.com/dagster-io/dagster/issues/18017

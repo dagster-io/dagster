@@ -74,6 +74,9 @@ export const colorTooltipText = () => colorNameToVar[ColorName.TooltipText];
 export const colorPopoverBackground = () => colorNameToVar[ColorName.PopoverBackground];
 export const colorPopoverBackgroundHover = () => colorNameToVar[ColorName.PopoverBackgroundHover];
 export const colorShadowDefault = () => colorNameToVar[ColorName.ShadowDefault];
+export const colorCheckboxUnchecked = () => colorNameToVar[ColorName.CheckboxUnchecked];
+export const colorCheckboxChecked = () => colorNameToVar[ColorName.CheckboxChecked];
+export const colorCheckboxDisabled = () => colorNameToVar[ColorName.CheckboxDisabled];
 
 // NAV COLORS
 export const colorNavBackground = () => colorNameToVar[ColorName.NavBackground];

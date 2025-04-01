@@ -480,7 +480,7 @@ def test_wait_for_job(cluster_provider, namespace, should_cleanup):
         if should_cleanup:
             for job in ["waitforjob", "sayhi2", "failwaitforjob"]:
                 try:
-                    api_client.batch_api.delete_namespaced_job(
+                    api_client.batch_api.delete_namespaced_job(  # pyright: ignore[reportPossiblyUnboundVariable]
                         job, namespace=namespace, propagation_policy="Foreground"
                     )
                 except kubernetes.client.rest.ApiException:

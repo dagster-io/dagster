@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Sequence
+from typing import Optional
 from unittest import mock
 
 import pytest
@@ -10,7 +11,6 @@ from dagster import (
     DagsterInstance,
     Definitions,
     SensorResult,
-    _check as check,
     asset,
     asset_check,
     build_sensor_context,
@@ -33,17 +33,13 @@ from dagster_airlift.constants import (
     EFFECTIVE_TIMESTAMP_METADATA_KEY,
     TASK_ID_TAG_KEY,
 )
-from dagster_airlift.core import build_defs_from_airflow_instance, dag_defs, task_defs
+from dagster_airlift.core import build_defs_from_airflow_instance
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
-from dagster_airlift.core.load_defs import build_full_automapped_dags_from_airflow_instance
 from dagster_airlift.core.sensor.sensor_builder import (
     AirflowPollingSensorCursor,
     AirliftSensorEventTransformerError,
 )
-from dagster_airlift.core.serialization.defs_construction import (
-    key_for_automapped_task_asset,
-    make_default_dag_asset_key,
-)
+from dagster_airlift.core.top_level_dag_def_api import assets_with_task_mappings
 from dagster_airlift.test import make_dag_run, make_instance
 
 from dagster_airlift_tests.unit_tests.conftest import (
@@ -236,15 +232,15 @@ def test_request_asset_checks(init_load_context: None, instance: DagsterInstance
 
     dag_asset_key = make_dag_key("dag")
 
-    @asset_check(asset="a")
+    @asset_check(asset="a")  # pyright: ignore[reportArgumentType]
     def check_task_asset():
         pass
 
-    @asset_check(asset=dag_asset_key)
+    @asset_check(asset=dag_asset_key)  # pyright: ignore[reportArgumentType]
     def check_dag_asset():
         pass
 
-    @asset_check(asset="c")
+    @asset_check(asset="c")  # pyright: ignore[reportArgumentType]
     def check_unrelated_asset():
         pass
 
@@ -279,13 +275,13 @@ def test_request_asset_checks(init_load_context: None, instance: DagsterInstance
 _CALLCOUNT = [0]
 
 
-def _mock_get_current_datetime() -> datetime:
-    if _CALLCOUNT[0] < 2:
+def _create_datetime_mocker(iter_times: list[datetime]):
+    def _mock_get_current_datetime() -> datetime:
+        the_time = iter_times[_CALLCOUNT[0]]
         _CALLCOUNT[0] += 1
-        return datetime(2021, 2, 1, tzinfo=timezone.utc)
-    next_time = datetime(2021, 2, 1, tzinfo=timezone.utc) + timedelta(seconds=46 * _CALLCOUNT[0])
-    _CALLCOUNT[0] += 1
-    return next_time
+        return the_time
+
+    return _mock_get_current_datetime
 
 
 def test_cursor(init_load_context: None, instance: DagsterInstance) -> None:
@@ -296,8 +292,10 @@ def test_cursor(init_load_context: None, instance: DagsterInstance) -> None:
     }
 
     with freeze_time(datetime(2021, 1, 1, tzinfo=timezone.utc)):
-        # First, run through a full successful iteration of the sensor. Expect time to move forward, and polled dag id to be None, since we completed iteration of all dags.
-        # Then, run through a partial iteration of the sensor. We mock get_current_datetime to return a time after timeout passes iteration start after the first call, meaning we should pause iteration.
+        # First, run through a full successful iteration of the sensor.
+        # Expect time to move forward, and polled dag id to be None, since we completed iteration of all dags.
+        # Then, run through a partial iteration of the sensor. We mock get_current_datetime to return a time
+        # after timeout passes iteration start after the first call, meaning we should pause iteration.
         repo_def = fully_loaded_repo_from_airflow_asset_graph(asset_and_dag_structure)
         sensor = next(iter(repo_def.sensor_defs))
         context = build_sensor_context(repository_def=repo_def, instance=instance)
@@ -309,8 +307,16 @@ def test_cursor(init_load_context: None, instance: DagsterInstance) -> None:
         assert new_cursor.end_date_lte is None
         assert new_cursor.dag_query_offset == 0
 
+    # Now, we expect that we will not have completed iteration before we need to pause evaluation.
+    datetimes = [
+        datetime(2021, 2, 1, tzinfo=timezone.utc),  # set initial time
+        datetime(2021, 2, 1, 0, 0, 30, tzinfo=timezone.utc),  # initial iteration time
+        datetime(
+            2022, 2, 2, tzinfo=timezone.utc
+        ),  # second iteration time, at which iteration should be paused
+    ]
     with mock.patch(
-        "dagster._time._mockable_get_current_datetime", wraps=_mock_get_current_datetime
+        "dagster._time._mockable_get_current_datetime", wraps=_create_datetime_mocker(datetimes)
     ):
         result = sensor(context)
         assert isinstance(result, SensorResult)
@@ -377,212 +383,6 @@ def test_no_runs(init_load_context: None, instance: DagsterInstance) -> None:
         assert new_cursor.dag_query_offset == 0
         assert not result.asset_events
         assert not result.run_requests
-
-
-def test_automapped_tasks_only(init_load_context: None, instance: DagsterInstance) -> None:
-    freeze_datetime = datetime(2021, 1, 1, tzinfo=timezone.utc)
-    with freeze_time(freeze_datetime):
-        dag_id = "dag1"
-        dag_runs = [
-            make_dag_run(
-                dag_id=dag_id,
-                run_id=f"run-{dag_id}",
-                start_date=get_current_datetime() - timedelta(minutes=10),
-                end_date=get_current_datetime(),
-            )
-        ]
-
-        airflow_instance = make_instance(
-            dag_and_task_structure={dag_id: ["task1", "task2"]},
-            task_deps={"task1": [], "task2": ["task1"]},
-            dag_runs=dag_runs,
-            instance_name="test_instance",
-        )
-
-        automapped_defs = build_full_automapped_dags_from_airflow_instance(
-            airflow_instance=airflow_instance,
-        )
-
-        repo_def = automapped_defs.get_repository_def()
-
-        sensor = next(iter(repo_def.sensor_defs))
-        context = build_sensor_context(repository_def=repo_def, instance=instance)
-        result = sensor(context)
-        assert isinstance(result, SensorResult)
-
-        asset_mats = check.is_list(result.asset_events, of_type=AssetMaterialization)
-
-        asset_mat_dict = {mat.asset_key: mat for mat in asset_mats}
-
-        am_task1_key = key_for_automapped_task_asset("test_instance", dag_id, "task1")
-        am_task2_key = key_for_automapped_task_asset("test_instance", dag_id, "task2")
-        dag1_asset_key = make_default_dag_asset_key("test_instance", dag_id)
-
-        assert am_task1_key in asset_mat_dict
-        assert am_task2_key in asset_mat_dict
-        assert dag1_asset_key in asset_mat_dict
-
-
-def test_automapped_tasks_with_explicit_external_asset_defs(
-    init_load_context: None, instance: DagsterInstance
-) -> None:
-    freeze_datetime = datetime(2021, 1, 1, tzinfo=timezone.utc)
-    with freeze_time(freeze_datetime):
-        dag_id = "dag1"
-        dag_runs = [
-            make_dag_run(
-                dag_id=dag_id,
-                run_id=f"run-{dag_id}",
-                start_date=get_current_datetime() - timedelta(minutes=10),
-                end_date=get_current_datetime(),
-            )
-        ]
-
-        airflow_instance = make_instance(
-            dag_and_task_structure={dag_id: ["task1", "task2"]},
-            task_deps={"task1": [], "task2": ["task1"]},
-            dag_runs=dag_runs,
-            instance_name="test_instance",
-        )
-
-        explicit_asset1 = AssetSpec(key="explicit_asset1")
-        explicit_asset2 = AssetSpec(key="explicit_asset2")
-
-        automapped_defs = build_full_automapped_dags_from_airflow_instance(
-            airflow_instance=airflow_instance,
-            defs=dag_defs(
-                "dag1",
-                task_defs("task1", Definitions(assets=[explicit_asset1])),
-                task_defs("task2", Definitions(assets=[explicit_asset2])),
-            ),
-        )
-
-        am_task1_key = key_for_automapped_task_asset("test_instance", dag_id, "task1")
-        am_task2_key = key_for_automapped_task_asset("test_instance", dag_id, "task2")
-        dag1_asset_key = make_default_dag_asset_key("test_instance", dag_id)
-
-        spec_dict = {spec.key: spec for spec in automapped_defs.get_all_asset_specs()}
-
-        assert set(spec_dict.keys()) == {
-            am_task1_key,
-            am_task2_key,
-            dag1_asset_key,
-            explicit_asset1.key,
-            explicit_asset2.key,
-        }
-
-        repo_def = automapped_defs.get_repository_def()
-
-        sensor = next(iter(repo_def.sensor_defs))
-        context = build_sensor_context(repository_def=repo_def, instance=instance)
-        result = sensor(context)
-        assert isinstance(result, SensorResult)
-
-        # there should be 5 asset materializations. 1 for dag, 2 for tasks, and 2 for explicit assets
-
-        asset_mats = check.is_list(result.asset_events, of_type=AssetMaterialization)
-
-        asset_mat_dict = {mat.asset_key: mat for mat in asset_mats}
-
-        assert set(asset_mat_dict.keys()) == {
-            am_task1_key,
-            am_task2_key,
-            dag1_asset_key,
-            explicit_asset1.key,
-            explicit_asset2.key,
-        }
-
-
-def test_automapped_tasks_with_explicit_materializable_asset_defs(
-    init_load_context: None, instance: DagsterInstance
-) -> None:
-    freeze_datetime = datetime(2021, 1, 1, tzinfo=timezone.utc)
-    with freeze_time(freeze_datetime):
-        dag_id = "dag1"
-        dag_run_id = f"run-{dag_id}"
-        dag_runs = [
-            make_dag_run(
-                dag_id=dag_id,
-                run_id=f"run-{dag_id}",
-                start_date=get_current_datetime() - timedelta(minutes=10),
-                end_date=get_current_datetime(),
-            )
-        ]
-
-        airflow_instance = make_instance(
-            dag_and_task_structure={dag_id: ["task1", "task2"]},
-            task_deps={"task1": [], "task2": ["task1"]},
-            dag_runs=dag_runs,
-            instance_name="test_instance",
-        )
-
-        @asset
-        def explicit_asset1() -> None:
-            pass
-
-        @asset
-        def explicit_asset2() -> None:
-            pass
-
-        automapped_defs = build_full_automapped_dags_from_airflow_instance(
-            airflow_instance=airflow_instance,
-            defs=dag_defs(
-                "dag1",
-                task_defs("task1", Definitions(assets=[explicit_asset1])),
-                task_defs("task2", Definitions(assets=[explicit_asset2])),
-            ),
-        )
-
-        am_task1_key = key_for_automapped_task_asset("test_instance", dag_id, "task1")
-        am_task2_key = key_for_automapped_task_asset("test_instance", dag_id, "task2")
-        dag1_asset_key = make_default_dag_asset_key("test_instance", dag_id)
-
-        spec_dict = {spec.key: spec for spec in automapped_defs.get_all_asset_specs()}
-
-        assert set(spec_dict.keys()) == {
-            am_task1_key,
-            am_task2_key,
-            dag1_asset_key,
-            explicit_asset1.key,
-            explicit_asset2.key,
-        }
-
-        repo_def = automapped_defs.get_repository_def()
-
-        # we simulate runs from the proxy operator for both tasks
-        assert simulate_materialize_from_proxy_operator(
-            instance=instance,
-            assets_def=explicit_asset1,
-            dag_id=dag_id,
-            task_id="task1",
-            dag_run_id=dag_run_id,
-        ).success
-        assert simulate_materialize_from_proxy_operator(
-            instance=instance,
-            assets_def=explicit_asset1,
-            dag_id=dag_id,
-            task_id="task2",
-            dag_run_id=dag_run_id,
-        ).success
-
-        sensor = next(iter(repo_def.sensor_defs))
-        context = build_sensor_context(repository_def=repo_def, instance=instance)
-        result = sensor(context)
-        assert isinstance(result, SensorResult)
-
-        # there should be 3 asset materializations. 1 for dag, 2 for automapped tasks
-
-        asset_mats = check.is_list(result.asset_events, of_type=AssetMaterialization)
-
-        asset_mat_dict = {mat.asset_key: mat for mat in asset_mats}
-
-        assert set(asset_mat_dict.keys()) == {
-            am_task1_key,
-            am_task2_key,
-            dag1_asset_key,
-            # explicit_asset1.key, # no syntheic materialization for explicit asset as it was proxied
-            # explicit_asset2.key, # no syntheic materialization for explicit asset as it waws proxied
-        }
 
 
 def simulate_materialize_from_proxy_operator(
@@ -812,12 +612,11 @@ def test_default_time_partitioned_asset(init_load_context: None, instance: Dagst
                 )
             ],
         ),
-        defs=dag_defs(
-            "dag",
-            task_defs(
-                "task",
-                Definitions(
-                    assets=[
+        defs=Definitions(
+            assets=assets_with_task_mappings(
+                dag_id="dag",
+                task_mappings={
+                    "task": [
                         AssetSpec(
                             key="a",
                             partitions_def=DailyPartitionsDefinition(
@@ -825,7 +624,7 @@ def test_default_time_partitioned_asset(init_load_context: None, instance: Dagst
                             ),
                         )
                     ],
-                ),
+                },
             ),
         ),
     )
@@ -864,12 +663,11 @@ def test_before_start_of_partitioned_asset(
                 )
             ],
         ),
-        defs=dag_defs(
-            "dag",
-            task_defs(
-                "task",
-                Definitions(
-                    assets=[
+        defs=Definitions(
+            assets=assets_with_task_mappings(
+                dag_id="dag",
+                task_mappings={
+                    "task": [
                         AssetSpec(
                             key="a",
                             partitions_def=DailyPartitionsDefinition(
@@ -878,7 +676,7 @@ def test_before_start_of_partitioned_asset(
                             ),
                         )
                     ],
-                ),
+                },
             ),
         ),
     )
@@ -910,12 +708,11 @@ def test_logical_date_mismatch(init_load_context: None, instance: DagsterInstanc
                 )
             ],
         ),
-        defs=dag_defs(
-            "dag",
-            task_defs(
-                "task",
-                Definitions(
-                    assets=[
+        defs=Definitions(
+            assets=assets_with_task_mappings(
+                dag_id="dag",
+                task_mappings={
+                    "task": [
                         AssetSpec(
                             key="a",
                             partitions_def=DailyPartitionsDefinition(
@@ -923,7 +720,7 @@ def test_logical_date_mismatch(init_load_context: None, instance: DagsterInstanc
                             ),
                         )
                     ],
-                ),
+                },
             ),
         ),
     )
@@ -957,12 +754,11 @@ def test_partition_offset_mismatch(init_load_context: None, instance: DagsterIns
 
     defs = build_defs_from_airflow_instance(
         airflow_instance=airflow_instance,
-        defs=dag_defs(
-            "dag",
-            task_defs(
-                "task",
-                Definitions(
-                    assets=[
+        defs=Definitions(
+            assets=assets_with_task_mappings(
+                dag_id="dag",
+                task_mappings={
+                    "task": [
                         AssetSpec(
                             key="a",
                             partitions_def=DailyPartitionsDefinition(
@@ -971,7 +767,7 @@ def test_partition_offset_mismatch(init_load_context: None, instance: DagsterIns
                             ),
                         )
                     ],
-                ),
+                },
             ),
         ),
     )
@@ -988,12 +784,11 @@ def test_partition_offset_mismatch(init_load_context: None, instance: DagsterIns
     # now, align the offset and expect success.
     defs = build_defs_from_airflow_instance(
         airflow_instance=airflow_instance,
-        defs=dag_defs(
-            "dag",
-            task_defs(
-                "task",
-                Definitions(
-                    assets=[
+        defs=Definitions(
+            assets=assets_with_task_mappings(
+                dag_id="dag",
+                task_mappings={
+                    "task": [
                         AssetSpec(
                             key="a",
                             partitions_def=DailyPartitionsDefinition(
@@ -1002,7 +797,7 @@ def test_partition_offset_mismatch(init_load_context: None, instance: DagsterIns
                             ),
                         )
                     ],
-                ),
+                },
             ),
         ),
     )

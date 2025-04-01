@@ -1,6 +1,7 @@
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from functools import cached_property
-from typing import AbstractSet, DefaultDict, Dict, Iterable, Mapping, Optional, Sequence, Set, Union
+from typing import AbstractSet, Optional, Union  # noqa: UP035
 
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_spec import (
@@ -85,19 +86,29 @@ class AssetNode(BaseAssetNode):
         return self._spec.kinds or set()
 
     @property
+    def pools(self) -> Optional[set[str]]:
+        if not self.assets_def.computation:
+            return None
+        return set(
+            op_def.pool
+            for op_def in self.assets_def.computation.node_def.iterate_op_defs()
+            if op_def.pool
+        )
+
+    @property
     def owners(self) -> Sequence[str]:
         return self._spec.owners
 
     @property
     def is_partitioned(self) -> bool:
-        return self.assets_def.partitions_def is not None
+        return self.partitions_def is not None
 
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
-        return self.assets_def.partitions_def
+        return self.assets_def.specs_by_key[self.key].partitions_def
 
     @property
-    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return self._spec.partition_mappings
 
     @property
@@ -204,7 +215,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         # AssetKey not subject to any further manipulation.
         resolved_deps = ResolvedAssetDependencies(assets_defs, [])
 
-        input_asset_key_replacements = [
+        asset_key_replacements = [
             {
                 raw_key: normalized_key
                 for input_name, raw_key in ad.keys_by_input_name.items()
@@ -218,8 +229,8 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
 
         # Only update the assets defs if we're actually replacing input asset keys
         assets_defs = [
-            ad.with_attributes(input_asset_key_replacements=reps) if reps else ad
-            for ad, reps in zip(assets_defs, input_asset_key_replacements)
+            ad.with_attributes(asset_key_replacements=reps) if reps else ad
+            for ad, reps in zip(assets_defs, asset_key_replacements)
         ]
 
         # Create unexecutable external assets definitions for any referenced keys for which no
@@ -252,8 +263,8 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         # and child nodes.
         dep_graph = generate_asset_dep_graph(assets_defs)
 
-        assets_defs_by_check_key: Dict[AssetCheckKey, AssetsDefinition] = {}
-        check_keys_by_asset_key: DefaultDict[AssetKey, Set[AssetCheckKey]] = defaultdict(set)
+        assets_defs_by_check_key: dict[AssetCheckKey, AssetsDefinition] = {}
+        check_keys_by_asset_key: defaultdict[AssetKey, set[AssetCheckKey]] = defaultdict(set)
         for ad in assets_defs:
             for ck in ad.check_keys:
                 check_keys_by_asset_key[ck.asset_key].add(ck)
@@ -276,7 +287,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             assets_defs_by_check_key=assets_defs_by_check_key,
         )
 
-    def get_execution_set_asset_and_check_keys(
+    def get_execution_set_asset_and_check_keys(  # pyright: ignore[reportIncompatibleMethodOverride]
         self, entity_key: EntityKey
     ) -> AbstractSet[EntityKey]:
         if isinstance(entity_key, AssetKey):
@@ -332,7 +343,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             return self._assets_defs_by_check_key[key]
 
     @cached_property
-    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
+    def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:  # pyright: ignore[reportIncompatibleMethodOverride]
         return {key for ad in self.assets_defs for key in ad.check_keys}
 
     @cached_property

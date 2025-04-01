@@ -138,11 +138,10 @@ def return_annotation_op() -> int:
 # end_return_annotation
 # start_tuple_return
 from dagster import op
-from typing import Tuple
 
 
 @op(out={"int_output": Out(), "str_output": Out()})
-def my_multiple_output_annotation_op() -> Tuple[int, str]:
+def my_multiple_output_annotation_op() -> tuple[int, str]:
     return (5, "foo")
 
 
@@ -150,11 +149,10 @@ def my_multiple_output_annotation_op() -> Tuple[int, str]:
 
 # start_single_output_tuple
 from dagster import op
-from typing import Tuple
 
 
 @op
-def my_single_tuple_output_op() -> Tuple[int, str]:
+def my_single_tuple_output_op() -> tuple[int, str]:
     return (5, "foo")  # Will be viewed as one output
 
 

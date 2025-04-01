@@ -1,5 +1,6 @@
 import time
-from typing import Callable, Iterator, Mapping, Optional, Sequence, Tuple, Type, TypeVar
+from collections.abc import Iterator, Mapping, Sequence
+from typing import Callable, Optional, TypeVar
 
 import dagster._check as check
 
@@ -18,7 +19,7 @@ BACKOFF_MAX_RETRIES = 4
 
 def backoff(
     fn: Callable[..., T],
-    retry_on: Tuple[Type[BaseException], ...],
+    retry_on: tuple[type[BaseException], ...],
     args: Optional[Sequence[object]] = None,
     kwargs: Optional[Mapping[str, object]] = None,
     max_retries: int = BACKOFF_MAX_RETRIES,

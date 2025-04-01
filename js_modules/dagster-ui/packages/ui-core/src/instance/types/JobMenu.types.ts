@@ -15,6 +15,7 @@ export type RunReExecutionQuery = {
         id: string;
         status: Types.RunStatus;
         pipelineName: string;
+        tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
         executionPlan: {
           __typename: 'ExecutionPlan';
           artifactsPersisted: boolean;
@@ -32,4 +33,4 @@ export type RunReExecutionQuery = {
     | {__typename: 'RunNotFoundError'};
 };
 
-export const RunReExecutionQueryVersion = '95f0a988be27f8d33377eec80eaac91bcbd709e73098e0b12f05f71c4f732077';
+export const RunReExecutionQueryVersion = 'dba97848ec33219b3747bac51bb8fd3df5c37c662a47f1a8bd2563bfaa27c3f3';

@@ -1,4 +1,5 @@
-from typing import List, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Optional, Union
 
 import dagster._check as check
 import graphene
@@ -44,13 +45,13 @@ from dagster_graphql.implementation.utils import (
     pipeline_selector_from_graphql,
     require_permission_check,
 )
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
 from dagster_graphql.schema.backfill import (
     GrapheneAssetPartitionRange,
     GrapheneCancelBackfillResult,
     GrapheneLaunchBackfillResult,
     GrapheneResumeBackfillResult,
 )
+from dagster_graphql.schema.entity_key import GrapheneAssetKey
 from dagster_graphql.schema.errors import (
     GrapheneAssetNotFoundError,
     GrapheneConflictingExecutionParamsError,
@@ -150,8 +151,9 @@ def create_execution_params(graphene_info, graphql_execution_params):
 def execution_params_from_graphql(graphql_execution_params):
     return ExecutionParams(
         selector=pipeline_selector_from_graphql(graphql_execution_params.get("selector")),
-        run_config=parse_run_config_input(
-            graphql_execution_params.get("runConfigData") or {}, raise_on_error=True
+        run_config=parse_run_config_input(  # pyright: ignore[reportArgumentType]
+            graphql_execution_params.get("runConfigData") or {},
+            raise_on_error=True,
         ),
         mode=graphql_execution_params.get("mode"),
         execution_metadata=create_execution_metadata(
@@ -331,7 +333,7 @@ class GrapheneLaunchMultipleRunsMutation(graphene.Mutation):
 
     @capture_error
     def mutate(
-        self, graphene_info: ResolveInfo, executionParamsList: List[GrapheneExecutionParams]
+        self, graphene_info: ResolveInfo, executionParamsList: list[GrapheneExecutionParams]
     ) -> Union[
         GrapheneLaunchMultipleRunsResult,
         GrapheneError,
@@ -521,10 +523,20 @@ class GrapheneLaunchRunReexecutionMutation(graphene.Mutation):
                 execution_params_dict=executionParams,
             )
         elif reexecutionParams:
+            extra_tags = None
+            if reexecutionParams.get("extraTags"):
+                extra_tags = {t["key"]: t["value"] for t in reexecutionParams["extraTags"]}
+
+            use_parent_run_tags = None
+            if reexecutionParams.get("useParentRunTags") is not None:
+                use_parent_run_tags = reexecutionParams["useParentRunTags"]
+
             return launch_reexecution_from_parent_run(
                 graphene_info,
-                reexecutionParams["parentRunId"],
-                reexecutionParams["strategy"],
+                parent_run_id=reexecutionParams["parentRunId"],
+                strategy=reexecutionParams["strategy"],
+                extra_tags=extra_tags,
+                use_parent_run_tags=use_parent_run_tags,
             )
         else:
             check.failed("Unreachable")

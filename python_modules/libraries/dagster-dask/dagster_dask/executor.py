@@ -1,4 +1,5 @@
-from typing import Any, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any, Optional
 
 import dask
 import dask.distributed
@@ -9,7 +10,6 @@ from dagster import (
     Selector,
     StringSource,
     _check as check,
-    _seven,
     multiple_process_executor_requirements,
 )
 from dagster._core.definitions.executor_definition import executor
@@ -25,6 +25,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils import iterate_with_context
+from dagster_shared import seven
 
 # Dask resource requirements are specified under this key
 DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"
@@ -149,7 +150,7 @@ def get_dask_resource_requirements(tags: Mapping[str, str]):
     check.mapping_param(tags, "tags", key_type=str, value_type=str)
     req_str = tags.get(DASK_RESOURCE_REQUIREMENTS_KEY)
     if req_str is not None:
-        return _seven.json.loads(req_str)
+        return seven.json.loads(req_str)
 
     return {}
 
@@ -250,7 +251,7 @@ class DaskExecutor(Executor):
 
                     run_config = plan_context.run_config
 
-                    dask_task_name = "%s.%s" % (job_name, step.key)
+                    dask_task_name = f"{job_name}.{step.key}"
 
                     recon_job = plan_context.reconstructable_job
 

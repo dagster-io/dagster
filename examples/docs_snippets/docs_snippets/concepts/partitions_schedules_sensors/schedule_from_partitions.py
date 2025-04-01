@@ -3,14 +3,14 @@
 from .partitioned_job import partitioned_config
 
 # start_marker
-from dagster import build_schedule_from_partitioned_job, job
+import dagster as dg
 
 
-@job(config=partitioned_config)
+@dg.job(config=partitioned_config)
 def partitioned_op_job(): ...
 
 
-partitioned_op_schedule = build_schedule_from_partitioned_job(
+partitioned_op_schedule = dg.build_schedule_from_partitioned_job(
     partitioned_op_job,
 )
 
@@ -18,24 +18,20 @@ partitioned_op_schedule = build_schedule_from_partitioned_job(
 
 
 # start_partitioned_asset_schedule
-from dagster import (
-    asset,
-    build_schedule_from_partitioned_job,
-    define_asset_job,
-    DailyPartitionsDefinition,
-)
-
-daily_partition = DailyPartitionsDefinition(start_date="2024-05-20")
+import dagster as dg
 
 
-@asset(partitions_def=daily_partition)
+daily_partition = dg.DailyPartitionsDefinition(start_date="2024-05-20")
+
+
+@dg.asset(partitions_def=daily_partition)
 def daily_asset(): ...
 
 
-partitioned_asset_job = define_asset_job("partitioned_job", selection=[daily_asset])
+partitioned_asset_job = dg.define_asset_job("partitioned_job", selection=[daily_asset])
 
 
-asset_partitioned_schedule = build_schedule_from_partitioned_job(
+asset_partitioned_schedule = dg.build_schedule_from_partitioned_job(
     partitioned_asset_job,
 )
 
@@ -67,9 +63,9 @@ def antarctica_schedule():
 # end_single_partition
 
 # start_offset_partition
-from dagster import DailyPartitionsDefinition
+import dagster as dg
 
-daily_partition_with_offset = DailyPartitionsDefinition(
+daily_partition_with_offset = dg.DailyPartitionsDefinition(
     start_date="2024-05-20", end_offset=-1
 )
 
@@ -77,9 +73,9 @@ daily_partition_with_offset = DailyPartitionsDefinition(
 # end_offset_partition
 
 # start_partitioned_schedule_with_offset
-from dagster import build_schedule_from_partitioned_job
+import dagster as dg
 
-asset_partitioned_schedule = build_schedule_from_partitioned_job(
+asset_partitioned_schedule = dg.build_schedule_from_partitioned_job(
     partitioned_asset_job, hour_of_day=1, minute_of_hour=30
 )
 

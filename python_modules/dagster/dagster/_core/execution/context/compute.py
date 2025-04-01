@@ -1,7 +1,8 @@
+from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from inspect import _empty as EmptyAnnotation
-from typing import Iterator, Optional, Union
+from typing import Optional, Union
 
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.errors import DagsterInvalidDefinitionError

@@ -602,6 +602,30 @@ def test_handle_none_output():
         manager.handle_output(output_context, None)
 
 
+def test_handle_subclass_output():
+    handler = IntHandler()
+    db_client = MagicMock(
+        spec=DbClient,
+        get_select_statement=MagicMock(return_value=""),
+        get_table_name=mock_table_name,
+    )
+    manager = build_db_io_manager(type_handlers=[handler], db_client=db_client)
+
+    class TestClass(int):
+        pass
+
+    asset_key = AssetKey(["schema1", "table1"])
+    output_context = build_output_context(
+        asset_key=asset_key,
+        resource_config=resource_config,
+        dagster_type=resolve_dagster_type(type(TestClass)),
+        name="result",
+    )
+
+    # Check that it does not raise
+    assert manager.handle_output(output_context, TestClass(1)) is None
+
+
 def test_non_supported_type():
     handler = IntHandler()
     db_client = MagicMock(spec=DbClient, get_select_statement=MagicMock(return_value=""))

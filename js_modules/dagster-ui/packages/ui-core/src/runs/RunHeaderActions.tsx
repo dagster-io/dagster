@@ -1,11 +1,13 @@
 import {Button, Group, Icon, Menu, MenuItem, Popover, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
+import {RunAlertNotifications} from 'shared/runs/RunAlertNotifications.oss';
 import {RunMetricsDialog} from 'shared/runs/RunMetricsDialog.oss';
 
 import {DeletionDialog} from './DeletionDialog';
 import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunConfigDialog} from './RunConfigDialog';
+import {RunPoolsDialog} from './RunPoolsDialog';
 import {doneStatuses} from './RunStatuses';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
@@ -13,13 +15,12 @@ import {useMutation} from '../apollo-client';
 import {RunFragment} from './types/RunFragments.types';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
-import {useCopyToClipboard} from '../app/browser';
 import {RunStatus} from '../graphql/types';
-import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/InstanceConcurrency';
+import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/InstanceConcurrencyKeyInfo';
 import {
   FreeConcurrencySlotsMutation,
   FreeConcurrencySlotsMutationVariables,
-} from '../instance/types/InstanceConcurrency.types';
+} from '../instance/types/InstanceConcurrencyKeyInfo.types';
 import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePipelineLinkForRun, workspacePipelinePath} from '../workspace/workspacePath';
 
@@ -30,10 +31,10 @@ type VisibleDialog =
   | 'queue-criteria'
   | 'free_slots'
   | 'metrics'
+  | 'pools'
   | null;
 
 export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean}) => {
-  const {runConfigYaml} = run;
   const runMetricsEnabled = run.hasRunMetricsEnabled;
 
   const [visibleDialog, setVisibleDialog] = useState<VisibleDialog>(null);
@@ -41,22 +42,12 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
   const {rootServerURI} = useContext(AppContext);
   const {refetch} = useContext(RunsQueryRefetchContext);
 
-  const copy = useCopyToClipboard();
   const history = useHistory();
 
   const [freeSlots] = useMutation<
     FreeConcurrencySlotsMutation,
     FreeConcurrencySlotsMutationVariables
   >(FREE_CONCURRENCY_SLOTS_MUTATION);
-
-  const copyConfig = async () => {
-    copy(runConfigYaml);
-    await showSharedToaster({
-      intent: 'success',
-      icon: 'copy_to_clipboard_done',
-      message: 'Copied!',
-    });
-  };
 
   const freeConcurrencySlots = async () => {
     const resp = await freeSlots({variables: {runId: run.id}});
@@ -79,6 +70,7 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
   return (
     <div>
       <Group direction="row" spacing={8}>
+        <RunAlertNotifications runId={run.id} />
         {jobLink.disabledReason ? (
           <Tooltip content={jobLink.disabledReason} useDisabledButtonTooltipFix>
             <Button icon={<Icon name={jobLink.icon} />} disabled>
@@ -93,6 +85,11 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
         <Button icon={<Icon name="tag" />} onClick={() => setVisibleDialog('config')}>
           View tags and config
         </Button>
+        {run.allPools && run.allPools.length ? (
+          <Tooltip content="View pools" position="top" targetTagName="div">
+            <Button icon={<Icon name="concurrency" />} onClick={() => setVisibleDialog('pools')} />
+          </Tooltip>
+        ) : null}
         <Popover
           position="bottom-right"
           content={
@@ -151,7 +148,6 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
       <RunConfigDialog
         isOpen={visibleDialog === 'config'}
         onClose={() => setVisibleDialog(null)}
-        copyConfig={() => copyConfig()}
         mode={run.mode}
         runConfigYaml={run.runConfigYaml}
         tags={run.tags}
@@ -202,6 +198,13 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
             refetch();
           }}
           selectedRuns={{[run.id]: run.canTerminate}}
+        />
+      ) : null}
+      {run.allPools && run.allPools.length ? (
+        <RunPoolsDialog
+          isOpen={visibleDialog === 'pools'}
+          pools={run.allPools}
+          onClose={() => setVisibleDialog(null)}
         />
       ) : null}
     </div>

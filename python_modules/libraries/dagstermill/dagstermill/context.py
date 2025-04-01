@@ -1,4 +1,5 @@
-from typing import AbstractSet, Any, Mapping, Optional, cast
+from collections.abc import Mapping
+from typing import AbstractSet, Any, Optional, cast  # noqa: UP035
 
 from dagster import (
     DagsterRun,
@@ -6,7 +7,7 @@ from dagster import (
     OpDefinition,
     _check as check,
 )
-from dagster._annotations import public
+from dagster._annotations import beta, public
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -17,6 +18,7 @@ from dagster._core.log_manager import DagsterLogManager
 from dagster._core.system_config.objects import ResolvedRunConfig
 
 
+@beta
 class DagstermillExecutionContext(AbstractComputeExecutionContext):
     """Dagstermill-specific execution context.
 

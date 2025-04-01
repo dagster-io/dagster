@@ -27,7 +27,7 @@ def get_directory_files(directory_name, since=None):
         return []
 
     try:
-        since = float(since)
+        since = float(since)  # pyright: ignore[reportArgumentType]
     except (TypeError, ValueError):
         since = None
 
@@ -121,7 +121,7 @@ def get_toys_sensors():
     built_in_slack_on_run_failure_sensor = make_slack_on_run_failure_sensor(
         name="built_in_slack_on_run_failure_sensor",
         channel="#toy-test",
-        slack_token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"),
+        slack_token=os.environ.get("SLACK_DAGSTER_ETL_BOT_TOKEN"),  # pyright: ignore[reportArgumentType]
         monitored_jobs=[error_monster_failing_job],
         webserver_base_url="http://localhost:3000",
     )

@@ -1,10 +1,10 @@
 import groupBy from 'lodash/groupBy';
+import {filterAssetSelectionByQuery} from 'shared/asset-selection/filterAssetSelectionByQuery.oss';
 
 import {ComputeGraphDataMessageType} from './ComputeGraphData.types';
 import {GraphData, buildGraphData, toGraphId} from './Utils';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
 import {GraphDataState} from './useAssetGraphData';
-import {filterAssetSelectionByQuery} from '../asset-selection/AntlrAssetSelection';
 import {doesFilterArrayMatchValueArray} from '../ui/Filters/doesFilterArrayMatchValueArray';
 
 export function computeGraphData({
@@ -13,6 +13,7 @@ export function computeGraphData({
   opsQuery,
   kinds: _kinds,
   hideEdgesToNodesOutsideQuery,
+  supplementaryData,
 }: Omit<ComputeGraphDataMessageType, 'id' | 'type'>): GraphDataState {
   if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
     return {
@@ -26,7 +27,11 @@ export function computeGraphData({
   // In the future it might be ideal to move this server-side, but we currently
   // get to leverage the useQuery cache almost 100% of the time above, making this
   // super fast after the first load vs a network fetch on every page view.
-  const {all: allFilteredByOpQuery} = filterAssetSelectionByQuery(graphQueryItems, opsQuery);
+  const {all: allFilteredByOpQuery} = filterAssetSelectionByQuery(
+    graphQueryItems,
+    opsQuery,
+    supplementaryData,
+  );
   const kinds = _kinds?.map((c) => c.toLowerCase());
   const all = kinds?.length
     ? allFilteredByOpQuery.filter(

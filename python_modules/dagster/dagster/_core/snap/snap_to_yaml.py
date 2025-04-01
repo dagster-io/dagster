@@ -1,8 +1,10 @@
 import json
-from typing import Any, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
+
+from dagster_shared.yaml_utils import dump_run_config_yaml
 
 from dagster._config.snap import ConfigSchemaSnapshot, ConfigTypeSnap
-from dagster._utils.yaml_utils import dump_run_config_yaml
 
 
 def _safe_json_loads(json_str: Optional[str]) -> object:

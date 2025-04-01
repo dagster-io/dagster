@@ -100,6 +100,12 @@ export type PipelineExplorerRootQuery = {
               description: string | null;
             }
           | {
+              __typename: 'PoolMetadataEntry';
+              pool: string;
+              label: string;
+              description: string | null;
+            }
+          | {
               __typename: 'PythonArtifactMetadataEntry';
               module: string;
               name: string;
@@ -1604,4 +1610,4 @@ export type PipelineExplorerRootQuery = {
       };
 };
 
-export const PipelineExplorerRootQueryVersion = '983c2ad55930c1f8f2333af0de694a7172105cf5ba60ccd10a1226bf17173232';
+export const PipelineExplorerRootQueryVersion = 'af14b2b7c62f4777e5ad61a9fa8140dd715700c8754c3bd990a00a3420c9a61b';

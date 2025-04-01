@@ -96,6 +96,7 @@ def test_clean_event_generator_exit():
         resource_keys_to_init={"a"},
         instance=instance,
         emit_persistent_events=True,
+        event_loop=None,
     )
     next(generator)
     generator.close()

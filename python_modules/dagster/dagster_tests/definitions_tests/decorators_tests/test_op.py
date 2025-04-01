@@ -1,8 +1,10 @@
 import re
 import time
+from collections.abc import Generator
 from functools import partial
-from typing import Any, Dict, Generator, List, Tuple
+from typing import Any
 
+import dagster as dg
 import pytest
 from dagster import (
     AssetMaterialization,
@@ -225,13 +227,13 @@ def test_wrong_argument_to_job():
         DagsterInvalidDefinitionError,
         match="You have passed a lambda or function non_solid_func",
     ):
-        GraphDefinition(node_defs=[non_solid_func], name="test")
+        GraphDefinition(node_defs=[non_solid_func], name="test")  # pyright: ignore[reportArgumentType]
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match="You have passed a lambda or function <lambda>",
     ):
-        GraphDefinition(node_defs=[lambda x: x], name="test")
+        GraphDefinition(node_defs=[lambda x: x], name="test")  # pyright: ignore[reportArgumentType]
 
 
 def test_descriptions():
@@ -325,7 +327,7 @@ def test_op_docstring():
     assert comp_graph.__name__ == "comp_graph"
     assert the_job.__doc__ == "THE_DOCSTRING."
     assert the_job.description == "THE_DOCSTRING."
-    assert the_job.__name__ == "the_job"
+    assert the_job.__name__ == "the_job"  # pyright: ignore[reportAttributeAccessIssue]
     assert the_op.__doc__ == "OP_DOCSTRING."
     assert the_op.description == "OP_DOCSTRING."
     assert the_op.__name__ == "the_op"
@@ -361,8 +363,7 @@ def test_op_yields_multiple_bare_values():
 
 def test_op_returns_iterator():
     def iterator():
-        for i in range(3):
-            yield i
+        yield from range(3)
 
     @op
     def return_iterator(_):
@@ -441,10 +442,10 @@ def test_ins():
 
 
 def test_ins_dagster_types():
-    assert In(dagster_type=None)
+    assert In(dagster_type=None)  # pyright: ignore[reportArgumentType]
     assert In(dagster_type=int)
-    assert In(dagster_type=List)
-    assert In(dagster_type=List[int])  # typing type
+    assert In(dagster_type=list)
+    assert In(dagster_type=list[int])  # typing type
     assert In(dagster_type=Int)  # dagster type
 
 
@@ -474,8 +475,8 @@ def test_out():
 def test_out_dagster_types():
     assert Out(dagster_type=None)
     assert Out(dagster_type=int)
-    assert Out(dagster_type=List)
-    assert Out(dagster_type=List[int])  # typing type
+    assert Out(dagster_type=list)
+    assert Out(dagster_type=list[int])  # typing type
     assert Out(dagster_type=Int)  # dagster type
 
 
@@ -486,7 +487,7 @@ def test_multi_out():
             "b": Out(metadata={"y": 2}, code_version="bar"),
         }
     )
-    def my_op() -> Tuple[int, str]:
+    def my_op() -> tuple[int, str]:
         return 1, "q"
 
     assert len(my_op.output_defs) == 2
@@ -520,7 +521,7 @@ def test_multi_out():
 
 def test_tuple_out():
     @op
-    def my_op() -> Tuple[int, str]:
+    def my_op() -> tuple[int, str]:
         return 1, "a"
 
     assert len(my_op.output_defs) == 1
@@ -596,7 +597,7 @@ def test_ins_dict():
 
 def test_multi_out_dict():
     @op(out={"a": Out(metadata={"x": 1}), "b": Out(metadata={"y": 2})})
-    def my_op() -> Tuple[int, str]:
+    def my_op() -> tuple[int, str]:
         return 1, "q"
 
     assert len(my_op.output_defs) == 2
@@ -673,7 +674,7 @@ def test_out_dagster_type():
 
 def test_multiout_dagster_type():
     @op(out={"a": Out(dagster_type=even_type), "b": Out(dagster_type=even_type)})
-    def basic_multi() -> Tuple[int, int]:
+    def basic_multi() -> tuple[int, int]:
         return 6, 6
 
     assert basic_multi() == (6, 6)
@@ -693,7 +694,7 @@ def test_multiout_single_entry():
 def test_tuple_named_single_output():
     # Ensure functionality in the case where you want to have a named tuple output
     @op(out={"a": Out()})
-    def single_output_op_tuple() -> Tuple[int, int]:
+    def single_output_op_tuple() -> tuple[int, int]:
         return (5, 5)
 
     assert single_output_op_tuple() == (5, 5)
@@ -716,7 +717,7 @@ def test_op_multiout_incorrect_annotation():
 
 def test_op_typing_annotations():
     @op
-    def my_dict_op() -> Dict[str, int]:
+    def my_dict_op() -> dict[str, int]:
         return {"foo": 5}
 
     assert my_dict_op() == {"foo": 5}
@@ -724,7 +725,7 @@ def test_op_typing_annotations():
     my_output = {"foo": 5}, ("foo",)
 
     @op(out={"a": Out(), "b": Out()})
-    def my_dict_multiout() -> Tuple[Dict[str, int], Tuple[str]]:
+    def my_dict_multiout() -> tuple[dict[str, int], tuple[str]]:
         return {"foo": 5}, ("foo",)
 
     assert my_dict_multiout() == my_output
@@ -736,7 +737,7 @@ def test_op_typing_annotations():
 # Test simplest possible multiout case
 def test_op_multiout_base():
     @op(out={"a": Out(), "b": Out()})
-    def basic_multiout() -> Tuple[int, str]:
+    def basic_multiout() -> tuple[int, str]:
         return (5, "foo")
 
     assert basic_multiout() == (5, "foo")
@@ -756,7 +757,7 @@ def test_op_multiout_size_mismatch():
     ):
 
         @op(out={"a": Out(), "b": Out()})
-        def _basic_multiout_wrong_annotation() -> Tuple[int, int, int]:
+        def _basic_multiout_wrong_annotation() -> tuple[int, int, int]:
             return (5, 5, 5)
 
 
@@ -877,13 +878,13 @@ def test_yield_event_ordering():
         assert log.user_message == "A log"
 
         first = relevant_event_logs[0]
-        assert first.dagster_event.event_specific_data.materialization.label == "first"
+        assert first.dagster_event.event_specific_data.materialization.label == "first"  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
 
         second = relevant_event_logs[1]
-        assert second.dagster_event.event_specific_data.materialization.label == "second"
+        assert second.dagster_event.event_specific_data.materialization.label == "second"  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
 
         third = relevant_event_logs[2]
-        assert third.dagster_event.event_specific_data.materialization.label == "third"
+        assert third.dagster_event.event_specific_data.materialization.label == "third"  # pyright: ignore[reportAttributeAccessIssue,reportOptionalMemberAccess]
 
         assert second.timestamp - first.timestamp >= 1
         assert log.timestamp - first.timestamp >= 1
@@ -899,8 +900,8 @@ def test_metadata_logging():
     assert result.success
     assert result.output_for_node("basic") == "baz"
     events = result.events_for_node("basic")
-    assert len(events[1].event_specific_data.metadata) == 1
-    assert events[1].event_specific_data.metadata["foo"].text == "bar"
+    assert len(events[1].event_specific_data.metadata) == 1  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert events[1].event_specific_data.metadata["foo"].text == "bar"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_metadata_logging_multiple_entries():
@@ -913,9 +914,9 @@ def test_metadata_logging_multiple_entries():
     result = execute_op_in_graph(basic)
     assert result.success
     events = result.events_for_node("basic")
-    assert len(events[1].event_specific_data.metadata) == 2
-    assert events[1].event_specific_data.metadata["foo"].text == "second_value"
-    assert events[1].event_specific_data.metadata["boo"].text == "bot"
+    assert len(events[1].event_specific_data.metadata) == 2  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert events[1].event_specific_data.metadata["foo"].text == "second_value"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert events[1].event_specific_data.metadata["boo"].text == "bot"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_log_event_multi_output():
@@ -946,8 +947,8 @@ def test_log_metadata_multi_output():
     first_output_event = events[1]
     second_output_event = events[3]
 
-    assert "foo" in first_output_event.event_specific_data.metadata
-    assert "bar" in second_output_event.event_specific_data.metadata
+    assert "foo" in first_output_event.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert "bar" in second_output_event.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_log_metadata_after_output():
@@ -982,17 +983,17 @@ def test_log_metadata_multiple_dynamic_outputs():
     assert result.success
     events = result.all_node_events
     output_event_one = events[1]
-    assert output_event_one.event_specific_data.mapping_key == "one"
-    assert "one" in output_event_one.event_specific_data.metadata
+    assert output_event_one.event_specific_data.mapping_key == "one"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert "one" in output_event_one.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     output_event_two = events[3]
-    assert output_event_two.event_specific_data.mapping_key == "two"
-    assert "two" in output_event_two.event_specific_data.metadata
+    assert output_event_two.event_specific_data.mapping_key == "two"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert "two" in output_event_two.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     output_event_three = events[5]
-    assert output_event_three.event_specific_data.mapping_key == "three"
-    assert "three" in output_event_three.event_specific_data.metadata
+    assert output_event_three.event_specific_data.mapping_key == "three"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert "three" in output_event_three.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
     output_event_four = events[7]
-    assert output_event_four.event_specific_data.mapping_key == "four"
-    assert "four" in output_event_four.event_specific_data.metadata
+    assert output_event_four.event_specific_data.mapping_key == "four"  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    assert "four" in output_event_four.event_specific_data.metadata  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
 
 def test_log_metadata_after_dynamic_output():
@@ -1126,7 +1127,7 @@ def test_output_generic_correct_inner_type():
 
 def test_generic_output_tuple_op():
     @op(out={"out1": Out(), "out2": Out()})
-    def the_op() -> Tuple[Output[str], Output[int]]:
+    def the_op() -> tuple[Output[str], Output[int]]:
         return (Output("foo"), Output(5))
 
     result = execute_op_in_graph(the_op)
@@ -1139,7 +1140,7 @@ def test_generic_output_tuple_op():
     assert result2.value == 5
 
     @op(out={"out1": Out(), "out2": Out()})
-    def the_op_bad_type_match() -> Tuple[Output[str], Output[int]]:
+    def the_op_bad_type_match() -> tuple[Output[str], Output[int]]:
         return (Output("foo"), Output("foo"))  # type: ignore
 
     with pytest.raises(
@@ -1164,7 +1165,7 @@ def test_generic_output_tuple_op():
 
 def test_generic_output_tuple_complex_types():
     @op(out={"out1": Out(), "out2": Out()})
-    def the_op() -> Tuple[Output[List[str]], Output[Dict[str, str]]]:
+    def the_op() -> tuple[Output[list[str]], Output[dict[str, str]]]:
         return (Output(["foo"]), Output({"foo": "bar"}))
 
     result = execute_op_in_graph(the_op)
@@ -1180,7 +1181,7 @@ def test_generic_output_tuple_complex_types():
 
 def test_generic_output_name_mismatch():
     @op(out={"out1": Out(), "out2": Out()})
-    def the_op() -> Tuple[Output[int], Output[str]]:
+    def the_op() -> tuple[Output[int], Output[str]]:
         return Output(42, output_name="out2"), Output("foo", output_name="out1")
 
     with pytest.raises(
@@ -1204,7 +1205,7 @@ def test_generic_output_name_mismatch():
 
 def test_generic_dynamic_output():
     @op
-    def basic() -> List[DynamicOutput[int]]:
+    def basic() -> list[DynamicOutput[int]]:
         return [
             DynamicOutput(mapping_key="1", value=1),
             DynamicOutput(mapping_key="2", value=2),
@@ -1223,7 +1224,7 @@ def test_generic_dynamic_output():
 
 def test_generic_dynamic_output_type_mismatch():
     @op
-    def basic() -> List[DynamicOutput[int]]:
+    def basic() -> list[DynamicOutput[int]]:
         return [
             DynamicOutput(mapping_key="1", value=1),
             DynamicOutput(mapping_key="2", value="2"),  # type: ignore
@@ -1250,7 +1251,7 @@ def test_generic_dynamic_output_type_mismatch():
 
 def test_generic_dynamic_output_mix_with_regular():
     @op(out={"regular": Out(), "dynamic": DynamicOut()})
-    def basic() -> Tuple[Output[int], List[DynamicOutput[str]]]:
+    def basic() -> tuple[Output[int], list[DynamicOutput[str]]]:
         return (
             Output(5),
             [
@@ -1276,7 +1277,7 @@ def test_generic_dynamic_output_mix_with_regular():
 
 def test_generic_dynamic_output_mix_with_regular_type_mismatch():
     @op(out={"regular": Out(), "dynamic": DynamicOut()})
-    def basic() -> Tuple[Output[int], List[DynamicOutput[str]]]:
+    def basic() -> tuple[Output[int], list[DynamicOutput[str]]]:
         return (
             Output(5),
             [
@@ -1306,7 +1307,7 @@ def test_generic_dynamic_output_mix_with_regular_type_mismatch():
 
 def test_generic_dynamic_output_name_not_provided():
     @op
-    def basic() -> List[DynamicOutput[int]]:
+    def basic() -> list[DynamicOutput[int]]:
         return [DynamicOutput(value=5, mapping_key="blah", output_name="blah")]
 
     with pytest.raises(
@@ -1330,7 +1331,7 @@ def test_generic_dynamic_output_name_not_provided():
 
 def test_generic_dynamic_output_name_mismatch():
     @op(out={"the_name": DynamicOut()})
-    def basic() -> List[DynamicOutput[int]]:
+    def basic() -> list[DynamicOutput[int]]:
         return [DynamicOutput(value=5, mapping_key="blah", output_name="bad_name")]
 
     with pytest.raises(
@@ -1354,7 +1355,7 @@ def test_generic_dynamic_output_name_mismatch():
 
 def test_generic_dynamic_output_bare_list():
     @op
-    def basic() -> List[DynamicOutput]:
+    def basic() -> list[DynamicOutput]:
         return [DynamicOutput(4, mapping_key="1")]
 
     result = execute_op_in_graph(basic)
@@ -1396,7 +1397,7 @@ def test_generic_dynamic_output_bare():
 
 def test_generic_dynamic_output_empty():
     @op
-    def basic() -> List[DynamicOutput]:
+    def basic() -> list[DynamicOutput]:
         return []
 
     result = execute_op_in_graph(basic)
@@ -1448,7 +1449,7 @@ def test_dynamic_output_yields_no_outputs():
 
 def test_generic_dynamic_output_empty_with_type():
     @op
-    def basic() -> List[DynamicOutput[str]]:
+    def basic() -> list[DynamicOutput[str]]:
         return []
 
     result = execute_op_in_graph(basic)
@@ -1485,7 +1486,7 @@ def test_generic_dynamic_output_empty_with_type():
 
 def test_generic_dynamic_multiple_outputs_empty():
     @op(out={"out1": Out(), "out2": DynamicOut()})
-    def basic() -> Tuple[Output, List[DynamicOutput]]:
+    def basic() -> tuple[Output, list[DynamicOutput]]:
         return (Output(5), [])
 
     result = execute_op_in_graph(basic)
@@ -1505,8 +1506,8 @@ def test_generic_dynamic_multiple_outputs_empty():
 def test_non_dynamic_empty_list():
     @op(
         out={
-            "output_1": Out(List[Dict]),
-            "output_2": Out(List[Dict]),
+            "output_1": Out(list[dict]),
+            "output_2": Out(list[dict]),
         }
     )
     def dummy_op():
@@ -1535,7 +1536,7 @@ def test_required_io_manager_op_access():
 
 def test_dynamic_output_bad_list_entry():
     @op
-    def basic() -> List[DynamicOutput[int]]:
+    def basic() -> list[DynamicOutput[int]]:
         return ["foo"]  # type: ignore
 
     with pytest.raises(
@@ -1557,7 +1558,7 @@ def test_dynamic_output_bad_list_entry():
         basic()
 
     @op(out={"out1": Out(), "out2": DynamicOut()})
-    def basic_multi_output() -> Tuple[Output[int], List[DynamicOutput[str]]]:
+    def basic_multi_output() -> tuple[Output[int], list[DynamicOutput[str]]]:
         return (5, ["foo"])  # type: ignore
 
     with pytest.raises(
@@ -1582,8 +1583,8 @@ def test_dynamic_output_bad_list_entry():
 
 
 def test_list_out_op():
-    @op(out={"list_out": Out(List[str]), "other_out": Out(int)})
-    def test_op() -> Tuple[List[str], int]:
+    @op(out={"list_out": Out(list[str]), "other_out": Out(int)})
+    def test_op() -> tuple[list[str], int]:
         return ([], 5)
 
     result = execute_op_in_graph(test_op)
@@ -1614,7 +1615,7 @@ def test_output_return_no_annotation():
 
 def test_output_mismatch_tuple_lengths():
     @op(out={"out1": Out(), "out2": Out()})
-    def the_op() -> Tuple[int, int]:
+    def the_op() -> tuple[int, int]:
         return (1, 2, 3)  # type: ignore  # (test error)
 
     with pytest.raises(DagsterInvariantViolationError, match="Length mismatch"):
@@ -1673,3 +1674,26 @@ def test_colliding_args():
     ):
         bar_2 = partial(bar, x=1)
         bar_2(1)
+
+
+def test_bare_asset_check_result() -> None:
+    """Document behavior when a bare asset check result is yielded from an op."""
+
+    @dg.op
+    def the_op():
+        return dg.AssetCheckResult(
+            asset_key="asset_key",
+            check_name="my_check",
+            metadata={"foo": "bar"},
+            passed=True,
+        )
+
+    # test direct invocation - direction invocation allows this through erroneously.
+    result = the_op()
+    assert isinstance(result, dg.AssetCheckResult)
+
+    # test execution - we correctly raise an error here
+    with pytest.raises(
+        dg.DagsterInvariantViolationError, match="Received unexpected AssetCheckResult."
+    ):
+        execute_op_in_graph(the_op)
