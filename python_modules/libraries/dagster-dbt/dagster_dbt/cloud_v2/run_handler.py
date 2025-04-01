@@ -3,12 +3,12 @@ from typing import Any, Optional, Union
 
 from dagster import (
     AssetCheckEvaluation,
+    AssetCheckResult,
     AssetCheckSeverity,
     AssetExecutionContext,
     AssetMaterialization,
     MetadataValue,
     Output,
-    AssetCheckResult,
 )
 from dagster._annotations import preview
 from dagster._record import record
