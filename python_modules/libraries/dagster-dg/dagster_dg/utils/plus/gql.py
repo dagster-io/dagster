@@ -8,9 +8,9 @@ query CliDeploymentsQuery {
 }
 """
 
-LOCAL_SECRETS_FILE_QUERY = """
-{
-	viewableLocalSecretsOrError {
+SECRETS_QUERY = """
+query AllSecretsQuery($onlyViewable: Boolean, $scopes: SecretScopesInput) {
+  secretsOrError(onlyViewable: $onlyViewable, scopes: $scopes) {
     __typename
     ... on Secrets {
       secrets {

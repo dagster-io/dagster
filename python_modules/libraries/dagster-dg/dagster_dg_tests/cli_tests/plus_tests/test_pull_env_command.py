@@ -39,15 +39,16 @@ def test_pull_env_command_auth_err(dg_plus_cli_config):
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         mock_gql_response(
-            query=gql.LOCAL_SECRETS_FILE_QUERY,
+            query=gql.SECRETS_QUERY,
             json_data={
                 "data": {
-                    "viewableLocalSecretsOrError": {
+                    "secretsOrError": {
                         "__typename": "UnauthorizedError",
                         "message": "Not authorized",
                     }
                 }
             },
+            expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
         )
         result = runner.invoke("plus", "env", "pull")
         assert result.exit_code != 0, result.output + " " + str(result.exception)
@@ -61,16 +62,17 @@ def test_pull_env_command_python_err(dg_plus_cli_config):
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         mock_gql_response(
-            query=gql.LOCAL_SECRETS_FILE_QUERY,
+            query=gql.SECRETS_QUERY,
             json_data={
                 "data": {
-                    "viewableLocalSecretsOrError": {
+                    "secretsOrError": {
                         "__typename": "PythonError",
                         "message": "An error has occurred",
                         "stack": "Stack trace",
                     }
                 }
             },
+            expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
         )
         result = runner.invoke("plus", "env", "pull")
         assert result.exit_code != 0, result.output + " " + str(result.exception)
@@ -84,10 +86,10 @@ def test_pull_env_command_project(dg_plus_cli_config):
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
         mock_gql_response(
-            query=gql.LOCAL_SECRETS_FILE_QUERY,
+            query=gql.SECRETS_QUERY,
             json_data={
                 "data": {
-                    "viewableLocalSecretsOrError": {
+                    "secretsOrError": {
                         "secrets": [
                             {
                                 "secretName": "FOO",
@@ -117,6 +119,7 @@ def test_pull_env_command_project(dg_plus_cli_config):
                     }
                 }
             },
+            expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
         )
         result = runner.invoke("plus", "env", "pull")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
@@ -136,10 +139,10 @@ def test_pull_env_command_workspace(dg_plus_cli_config):
         runner.invoke("scaffold", "project", "baz")
 
         mock_gql_response(
-            query=gql.LOCAL_SECRETS_FILE_QUERY,
+            query=gql.SECRETS_QUERY,
             json_data={
                 "data": {
-                    "viewableLocalSecretsOrError": {
+                    "secretsOrError": {
                         "secrets": [
                             {
                                 "secretName": "FOO",
@@ -169,6 +172,7 @@ def test_pull_env_command_workspace(dg_plus_cli_config):
                     }
                 }
             },
+            expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
         )
         result = runner.invoke("plus", "env", "pull")
         assert result.exit_code == 0, result.output + " " + str(result.exception)

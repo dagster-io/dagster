@@ -11,7 +11,7 @@ from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.env import ProjectEnvVars
 from dagster_dg.utils import DgClickCommand, DgClickGroup
-from dagster_dg.utils.plus.gql import FULL_DEPLOYMENTS_QUERY, LOCAL_SECRETS_FILE_QUERY
+from dagster_dg.utils.plus.gql import FULL_DEPLOYMENTS_QUERY, SECRETS_QUERY
 from dagster_dg.utils.plus.gql_client import DagsterCloudGraphQLClient
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
@@ -86,8 +86,10 @@ def _get_local_secrets_for_locations(
 ) -> Mapping[str, Mapping[str, str]]:
     secrets_by_location = {location_name: {} for location_name in location_names}
 
-    result = client.execute(LOCAL_SECRETS_FILE_QUERY)
-    for secret in result["viewableLocalSecretsOrError"]["secrets"]:
+    result = client.execute(
+        SECRETS_QUERY, variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}}
+    )
+    for secret in result["secretsOrError"]["secrets"]:
         if not secret["localDeploymentScope"]:
             continue
         for location_name in location_names:
