@@ -8,6 +8,7 @@ from dagster import (
     AssetMaterialization,
     MetadataValue,
     Output,
+    AssetCheckResult,
 )
 from dagster._annotations import preview
 from dagster._record import record
@@ -195,7 +196,25 @@ class DbtCloudJobRunResults:
                     test_unique_id=unique_id,
                 )
 
-                if asset_check_key is not None:
+                if (
+                    context
+                    and has_asset_def
+                    and asset_check_key is not None
+                    and asset_check_key in context.selected_asset_check_keys
+                ):
+                    # The test is an asset check in an asset, so yield an `AssetCheckResult`.
+                    yield AssetCheckResult(
+                        passed=result_status == TestStatus.Pass,
+                        asset_key=asset_check_key.asset_key,
+                        check_name=asset_check_key.name,
+                        metadata=metadata,
+                        severity=(
+                            AssetCheckSeverity.WARN
+                            if result_status == TestStatus.Warn
+                            else AssetCheckSeverity.ERROR
+                        ),
+                    )
+                elif asset_check_key is not None:
                     yield AssetCheckEvaluation(
                         passed=result_status == TestStatus.Pass,
                         asset_key=asset_check_key.asset_key,
