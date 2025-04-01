@@ -6,6 +6,7 @@ from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._time import datetime_from_timestamp
 from dagster._utils import check
 
+from dagster_graphql.schema.asset_health import GrapheneAssetHealthStatus
 from dagster_graphql.schema.pipelines.status import GrapheneRunStatus
 from dagster_graphql.schema.runs import GrapheneRunConfigData
 from dagster_graphql.schema.util import non_null_list
@@ -125,6 +126,16 @@ class GrapheneGraphSelector(graphene.InputObjectType):
         description = """This type represents the fields necessary to identify a
         graph"""
         name = "GraphSelector"
+
+
+class GrapheneAssetHealthFilter(graphene.InputObjectType):
+    assetHealth = graphene.InputField(GrapheneAssetHealthStatus)
+    materializationStatus = graphene.InputField(GrapheneAssetHealthStatus)
+    assetChecksStatus = graphene.InputField(GrapheneAssetHealthStatus)
+    freshnessStatus = graphene.InputField(GrapheneAssetHealthStatus)
+
+    class Meta:
+        name = "AssetHealthFilter"
 
 
 class GrapheneJobOrPipelineSelector(graphene.InputObjectType):
@@ -433,4 +444,5 @@ types = [
     GrapheneTagInput,
     GrapheneReportRunlessAssetEventsParams,
     GrapheneBulkActionsFilter,
+    GrapheneAssetHealthFilter,
 ]
