@@ -1,7 +1,14 @@
 from collections.abc import Iterator, Mapping, Sequence
 from typing import Any, Optional, Union
 
-from dagster import AssetCheckEvaluation, AssetCheckSeverity, AssetMaterialization, MetadataValue
+from dagster import (
+    AssetCheckEvaluation,
+    AssetCheckSeverity,
+    AssetExecutionContext,
+    AssetMaterialization,
+    MetadataValue,
+    Output,
+)
 from dagster._annotations import preview
 from dagster._record import record
 from dateutil import parser
@@ -89,7 +96,8 @@ class DbtCloudJobRunResults:
         client: DbtCloudWorkspaceClient,
         manifest: Mapping[str, Any],
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-    ) -> Iterator[Union[AssetMaterialization, AssetCheckEvaluation]]:
+        context: Optional[AssetExecutionContext] = None,
+    ) -> Iterator[Union[AssetMaterialization, AssetCheckEvaluation, Output]]:
         """Convert the run results of a dbt Cloud job run to a set of corresponding Dagster events.
 
         Args:
@@ -97,16 +105,22 @@ class DbtCloudJobRunResults:
             manifest (Mapping[str, Any]): The dbt manifest blob.
             dagster_dbt_translator (DagsterDbtTranslator): Optionally, a custom translator for
                 linking dbt nodes to Dagster assets.
+            context (Optional[AssetExecutionContext]): The execution context.
 
         Returns:
-            Iterator[Union[AssetMaterialization, AssetCheckEvaluation]]:
+            Iterator[Union[AssetMaterialization, AssetCheckEvaluation, Output]]:
                 A set of corresponding Dagster events.
 
-                The following are yielded:
+                In a Dagster asset definition, the following are yielded:
+                - Output for refables (e.g. models, seeds, snapshots.)
+                - AssetCheckEvaluation for dbt tests.
+
+                For ad hoc usage, the following are yielded:
                 - AssetMaterialization for refables (e.g. models, seeds, snapshots.)
                 - AssetCheckEvaluation for dbt tests.
         """
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
+        has_asset_def: bool = bool(context and context.has_assets_def)
 
         run = DbtCloudRun.from_run_details(run_details=client.get_run_details(run_id=self.run_id))
 
@@ -147,15 +161,23 @@ class DbtCloudJobRunResults:
                 and not is_ephemeral
             ):
                 spec = asset_specs[0]
-                yield AssetMaterialization(
-                    asset_key=spec.key,
-                    metadata={
-                        **default_metadata,
-                        COMPLETED_AT_TIMESTAMP_METADATA_KEY: MetadataValue.timestamp(
-                            get_completed_at_timestamp(result=result)
-                        ),
-                    },
-                )
+                metadata = {
+                    **default_metadata,
+                    COMPLETED_AT_TIMESTAMP_METADATA_KEY: MetadataValue.timestamp(
+                        get_completed_at_timestamp(result=result)
+                    ),
+                }
+                if context and has_asset_def:
+                    yield Output(
+                        value=None,
+                        output_name=spec.key.to_python_identifier(),
+                        metadata=metadata,
+                    )
+                else:
+                    yield AssetMaterialization(
+                        asset_key=spec.key,
+                        metadata=metadata,
+                    )
             elif resource_type == NodeType.Test and result_status == NodeStatus.Pass:
                 metadata = {
                     **default_metadata,
