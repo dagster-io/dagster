@@ -61,5 +61,5 @@ def dbt_cloud_assets(
             dagster_dbt_translator=dagster_dbt_translator,
             select=select,
             exclude=exclude,
-        )
+        ),
     )
