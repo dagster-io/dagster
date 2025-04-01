@@ -10,6 +10,8 @@ import {usePartitionsForAssetKey} from './AutoMaterializePolicyPage/usePartition
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {useTimeRangeFilter} from '../ui/BaseFilters/useTimeRangeFilter';
+import {featureEnabled} from 'shared/app/Flags';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 type FilterState = {
   partitions?: string[];
@@ -69,11 +71,15 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
 
   const {partitions} = usePartitionsForAssetKey(assetKey.path);
 
-  const partitionValues = partitions.map((p) => ({
-    key: p,
-    value: p,
-    match: [p],
-  }));
+  const partitionValues = useMemo(
+    () =>
+      partitions.map((p) => ({
+        key: p,
+        value: p,
+        match: [p],
+      })),
+    [partitions],
+  );
 
   const partitionsFilter = useStaticSetFilter({
     name: 'Partitions',
@@ -161,7 +167,9 @@ export const useAssetEventsFilters = ({assetKey, assetNode}: Config) => {
 
   const filters = useMemo(() => {
     const filters = [];
-    filters.push(statusFilter);
+    if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+      filters.push(statusFilter);
+    }
     filters.push(dateRangeFilter);
     if (assetNode?.partitionDefinition) {
       filters.push(partitionsFilter);
