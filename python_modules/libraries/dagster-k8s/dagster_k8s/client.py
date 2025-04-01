@@ -7,6 +7,7 @@ from typing import Any, Callable, Optional, TypeVar
 import kubernetes.client
 import kubernetes.client.rest
 import six
+import urllib3.exceptions
 from dagster import (
     DagsterInstance,
     _check as check,
@@ -167,6 +168,20 @@ def k8s_api_retry(
                     k8s_api_exception=e,
                     original_exc_info=sys.exc_info(),
                 ) from e
+        # Added for consistency with `def k8s_api_retry_creation_mutation()`
+        except urllib3.exceptions.HTTPError as e:
+            # Temporary for recovery detection
+            print(f"k8s_api_retry: {e.__module__}.{e.__class__.__name__}: {e!s}")  # noqa: T201
+            if remaining_attempts > 0:
+                time.sleep(timeout)
+            else:
+                raise DagsterK8sAPIRetryLimitExceeded(
+                    msg_fn(),
+                    k8s_api_exception=e,
+                    max_retries=max_retries,
+                    original_exc_info=sys.exc_info(),
+                ) from e
+
     check.failed("Unreachable.")
 
 
@@ -222,6 +237,21 @@ def k8s_api_retry_creation_mutation(
                     k8s_api_exception=e,
                     original_exc_info=sys.exc_info(),
                 ) from e
+        # Better to be more general here. Covers both ProtocolError and ReadTimeoutError
+        # https://github.com/dagster-io/dagster/issues/28314
+        except urllib3.exceptions.HTTPError as e:
+            # Temporary for recovery detection
+            print(f"k8s_api_retry_creation_mutation: {e.__module__}.{e.__class__.__name__}: {e!s}")  # noqa: T201
+            if remaining_attempts > 0:
+                time.sleep(timeout)
+            else:
+                raise DagsterK8sAPIRetryLimitExceeded(
+                    msg_fn(),
+                    k8s_api_exception=e,
+                    max_retries=max_retries,
+                    original_exc_info=sys.exc_info(),
+                ) from e
+
     check.failed("Unreachable.")
 
 
