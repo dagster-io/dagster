@@ -17,7 +17,7 @@ from dagster._utils.pydantic_yaml import (
     _parse_and_populate_model_with_annotated_errors,
     enrich_validation_errors_with_source_position,
 )
-from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.serdes.objects import LibraryEntryKey
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
@@ -219,7 +219,7 @@ class WrappedYamlComponent(WrappedDefsModuleComponent):
 
         # find the component type
         type_str = context.normalize_component_type_str(component_file_model.type)
-        key = LibraryObjectKey.from_typename(type_str)
+        key = LibraryEntryKey.from_typename(type_str)
         obj = load_library_object(key)
         if not isinstance(obj, type) or not issubclass(obj, Component):
             raise DagsterInvalidDefinitionError(

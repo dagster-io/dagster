@@ -1,5 +1,5 @@
 from dagster_shared.libraries import DagsterLibraryRegistry
-from dagster_shared.serdes.objects import LibraryObjectKey as LibraryObjectKey
+from dagster_shared.serdes.objects import LibraryEntryKey as LibraryEntryKey
 
 from dagster_components.component.component import Component as Component
 from dagster_components.component.component_loader import component as component

@@ -5,12 +5,12 @@ from pathlib import Path
 from typing import Any
 
 import click
-from dagster_shared.serdes.objects import ComponentTypeSnap, LibraryObjectKey
+from dagster_shared.serdes.objects import ComponentTypeSnap, LibraryEntryKey
 from rich.console import Console
 from rich.table import Table
 
 from dagster_dg.cli.shared_options import dg_global_options
-from dagster_dg.component import RemoteLibraryObjectRegistry
+from dagster_dg.component import RemoteLibraryEntryRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.defs import (
@@ -70,7 +70,7 @@ def list_component_command(**global_options: object) -> None:
 
 
 def _list_library_entries(
-    registry: RemoteLibraryObjectRegistry, keys: Iterable[LibraryObjectKey], output_json: bool
+    registry: RemoteLibraryEntryRegistry, keys: Iterable[LibraryEntryKey], output_json: bool
 ) -> None:
     sorted_keys = sorted(keys, key=lambda k: k.to_typename())
 
@@ -112,7 +112,7 @@ def list_library_command(output_json: bool, **global_options: object) -> None:
     """List registered Dagster library entries in the current project environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
-    registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
+    registry = RemoteLibraryEntryRegistry.from_dg_context(dg_context)
 
     _list_library_entries(registry, registry.keys(), output_json)
 
@@ -131,7 +131,7 @@ def list_component_type_command(output_json: bool, **global_options: object) -> 
     """List registered Dagster components in the current project environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
-    registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
+    registry = RemoteLibraryEntryRegistry.from_dg_context(dg_context)
 
     _list_library_entries(
         registry,

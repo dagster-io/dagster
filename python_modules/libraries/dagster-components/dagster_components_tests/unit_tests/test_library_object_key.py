@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.serdes.objects import LibraryEntryKey
 
 dirpath = Path(".")
 
@@ -9,13 +9,13 @@ dirpath = Path(".")
 @pytest.mark.parametrize(
     ["typename", "key"],
     [
-        ("foo.bar", LibraryObjectKey("foo", "bar")),
-        ("foo.Bar", LibraryObjectKey("foo", "Bar")),
-        ("foo.bar.baz", LibraryObjectKey("foo.bar", "baz")),
+        ("foo.bar", LibraryEntryKey("foo", "bar")),
+        ("foo.Bar", LibraryEntryKey("foo", "Bar")),
+        ("foo.bar.baz", LibraryEntryKey("foo.bar", "baz")),
     ],
 )
-def test_valid_keys(typename: str, key: LibraryObjectKey) -> None:
-    assert LibraryObjectKey.from_typename(typename) == key
+def test_valid_keys(typename: str, key: LibraryEntryKey) -> None:
+    assert LibraryEntryKey.from_typename(typename) == key
 
 
 @pytest.mark.parametrize(
@@ -28,4 +28,4 @@ def test_valid_keys(typename: str, key: LibraryObjectKey) -> None:
 )
 def test_invalid_keys(typename: str) -> None:
     with pytest.raises(ValueError):
-        LibraryObjectKey.from_typename(typename)
+        LibraryEntryKey.from_typename(typename)

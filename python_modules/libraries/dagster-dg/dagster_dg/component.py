@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 import dagster_shared.check as check
 from dagster_shared.serdes import deserialize_value, serialize_value
-from dagster_shared.serdes.objects import ComponentTypeSnap, LibraryObjectKey, LibraryObjectSnap
+from dagster_shared.serdes.objects import ComponentTypeSnap, LibraryEntryKey, LibraryEntrySnap
 
 from dagster_dg.utils import is_valid_json
 
@@ -13,11 +13,11 @@ if TYPE_CHECKING:
     from dagster_dg.context import DgContext
 
 
-class RemoteLibraryObjectRegistry:
+class RemoteLibraryEntryRegistry:
     @staticmethod
     def from_dg_context(
         dg_context: "DgContext", extra_modules: Optional[Sequence[str]] = None
-    ) -> "RemoteLibraryObjectRegistry":
+    ) -> "RemoteLibraryEntryRegistry":
         """Fetches the set of available library objects. The default set includes everything
         discovered under the "dagster_dg.library" entry point group in the target environment. If
         `extra_modules` is provided, these will also be searched for component types.
@@ -35,37 +35,37 @@ class RemoteLibraryObjectRegistry:
         if extra_modules:
             object_data.update(_load_module_library_objects(dg_context, extra_modules))
 
-        return RemoteLibraryObjectRegistry(object_data)
+        return RemoteLibraryEntryRegistry(object_data)
 
-    def __init__(self, components: dict[LibraryObjectKey, LibraryObjectSnap]):
-        self._objects: dict[LibraryObjectKey, LibraryObjectSnap] = copy.copy(components)
+    def __init__(self, components: dict[LibraryEntryKey, LibraryEntrySnap]):
+        self._objects: dict[LibraryEntryKey, LibraryEntrySnap] = copy.copy(components)
 
     @staticmethod
-    def empty() -> "RemoteLibraryObjectRegistry":
-        return RemoteLibraryObjectRegistry({})
+    def empty() -> "RemoteLibraryEntryRegistry":
+        return RemoteLibraryEntryRegistry({})
 
-    def get(self, key: LibraryObjectKey) -> LibraryObjectSnap:
+    def get(self, key: LibraryEntryKey) -> LibraryEntrySnap:
         """Resolves a library object within the scope of a given component directory."""
         return self._objects[key]
 
-    def get_component_type(self, key: LibraryObjectKey) -> ComponentTypeSnap:
+    def get_component_type(self, key: LibraryEntryKey) -> ComponentTypeSnap:
         """Resolves a component type within the scope of a given component directory."""
         obj = self.get(key)
         if not isinstance(obj, ComponentTypeSnap):
             raise ValueError(f"Expected component type, got {obj}")
         return obj
 
-    def has(self, key: LibraryObjectKey) -> bool:
+    def has(self, key: LibraryEntryKey) -> bool:
         return key in self._objects
 
-    def keys(self) -> Iterable[LibraryObjectKey]:
+    def keys(self) -> Iterable[LibraryEntryKey]:
         yield from sorted(self._objects.keys(), key=lambda k: k.to_typename())
 
-    def items(self) -> Iterable[tuple[LibraryObjectKey, LibraryObjectSnap]]:
+    def items(self) -> Iterable[tuple[LibraryEntryKey, LibraryEntrySnap]]:
         yield from self._objects.items()
 
     def __repr__(self) -> str:
-        return f"<RemoteLibraryObjectRegistry {list(self._objects.keys())}>"
+        return f"<RemoteLibraryEntryRegistry {list(self._objects.keys())}>"
 
 
 def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[str, Any]:
@@ -87,7 +87,7 @@ def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[st
 
 def _load_entry_point_components(
     dg_context: "DgContext",
-) -> dict[LibraryObjectKey, LibraryObjectSnap]:
+) -> dict[LibraryEntryKey, LibraryEntrySnap]:
     if dg_context.has_cache:
         cache_key = dg_context.get_cache_key("component_registry_data")
         raw_registry_data = dg_context.cache.get(cache_key)
@@ -105,9 +105,9 @@ def _load_entry_point_components(
 
 def _load_module_library_objects(
     dg_context: "DgContext", modules: Sequence[str]
-) -> dict[LibraryObjectKey, LibraryObjectSnap]:
+) -> dict[LibraryEntryKey, LibraryEntrySnap]:
     modules_to_fetch = set(modules)
-    data: dict[LibraryObjectKey, LibraryObjectSnap] = {}
+    data: dict[LibraryEntryKey, LibraryEntrySnap] = {}
     if dg_context.has_cache:
         for module in modules:
             cache_key = dg_context.get_cache_key_for_module(module)
@@ -139,12 +139,12 @@ def _load_module_library_objects(
 
 def _parse_raw_registry_data(
     raw_registry_data: str,
-) -> dict[LibraryObjectKey, LibraryObjectSnap]:
-    deserialized = check.is_list(deserialize_value(raw_registry_data), of_type=LibraryObjectSnap)
+) -> dict[LibraryEntryKey, LibraryEntrySnap]:
+    deserialized = check.is_list(deserialize_value(raw_registry_data), of_type=LibraryEntrySnap)
     return {obj.key: obj for obj in deserialized}
 
 
 def _dump_raw_registry_data(
-    registry_data: Mapping[LibraryObjectKey, LibraryObjectSnap],
+    registry_data: Mapping[LibraryEntryKey, LibraryEntrySnap],
 ) -> str:
     return serialize_value(list(registry_data.values()))

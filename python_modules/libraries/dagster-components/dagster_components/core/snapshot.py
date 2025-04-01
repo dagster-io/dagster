@@ -3,8 +3,8 @@ from typing import Optional
 
 from dagster_shared.serdes.objects import (
     ComponentTypeSnap,
-    LibraryObjectKey,
-    LibraryObjectSnap,
+    LibraryEntryKey,
+    LibraryEntrySnap,
     ScaffolderSnap,
 )
 
@@ -40,7 +40,7 @@ def _get_summary_and_description(obj: object) -> tuple[Optional[str], Optional[s
     return summary, description
 
 
-def _get_component_type_snap(key: LibraryObjectKey, obj: type[Component]) -> ComponentTypeSnap:
+def _get_component_type_snap(key: LibraryEntryKey, obj: type[Component]) -> ComponentTypeSnap:
     summary, description = _get_summary_and_description(obj)
     component_schema = obj.get_schema()
     return ComponentTypeSnap(
@@ -52,14 +52,14 @@ def _get_component_type_snap(key: LibraryObjectKey, obj: type[Component]) -> Com
     )
 
 
-def _get_library_object_snap(key: LibraryObjectKey, obj: object) -> LibraryObjectSnap:
+def _get_library_object_snap(key: LibraryEntryKey, obj: object) -> LibraryEntrySnap:
     summary, description = _get_summary_and_description(obj)
-    return LibraryObjectSnap(
+    return LibraryEntrySnap(
         key=key, summary=summary, description=description, scaffolder=_get_scaffolder_snap(obj)
     )
 
 
-def get_library_object_snap(key: LibraryObjectKey, obj: object) -> LibraryObjectSnap:
+def get_library_object_snap(key: LibraryEntryKey, obj: object) -> LibraryEntrySnap:
     if isinstance(obj, type) and issubclass(obj, Component):
         return _get_component_type_snap(key, obj)
     else:

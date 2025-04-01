@@ -14,7 +14,7 @@ def _generate_invalid_component_typename_error_message(typename: str) -> str:
 
 @whitelist_for_serdes
 @record(kw_only=False)
-class LibraryObjectKey:
+class LibraryEntryKey:
     namespace: str
     name: str
 
@@ -22,7 +22,7 @@ class LibraryObjectKey:
         return f"{self.namespace}.{self.name}"
 
     @staticmethod
-    def from_typename(typename: str) -> "LibraryObjectKey":
+    def from_typename(typename: str) -> "LibraryEntryKey":
         parts = typename.split(".")
         for part in parts:
             if not part.isidentifier():
@@ -30,7 +30,7 @@ class LibraryObjectKey:
         if len(parts) < 2:
             raise ValueError(_generate_invalid_component_typename_error_message(typename))
         namespace, _, name = typename.rpartition(".")
-        return LibraryObjectKey(name=name, namespace=namespace)
+        return LibraryEntryKey(name=name, namespace=namespace)
 
 
 @whitelist_for_serdes
@@ -41,8 +41,8 @@ class ScaffolderSnap:
 
 @whitelist_for_serdes
 @record
-class LibraryObjectSnap:
-    key: LibraryObjectKey
+class LibraryEntrySnap:
+    key: LibraryEntryKey
     summary: Optional[str]
     description: Optional[str]
     scaffolder: Optional["ScaffolderSnap"]
@@ -54,5 +54,5 @@ class LibraryObjectSnap:
 
 @whitelist_for_serdes
 @record
-class ComponentTypeSnap(LibraryObjectSnap):
+class ComponentTypeSnap(LibraryEntrySnap):
     schema: Optional[dict[str, Any]]

@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.serdes.objects import LibraryEntryKey
 from pydantic import TypeAdapter
 
 from dagster_components.component_scaffolding import scaffold_object
@@ -30,7 +30,7 @@ def scaffold_object_command(
     json_params: Optional[str],
     scaffold_format: str,
 ) -> None:
-    key = LibraryObjectKey.from_typename(typename)
+    key = LibraryEntryKey.from_typename(typename)
     obj = load_library_object(key)
 
     if json_params:

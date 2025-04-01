@@ -10,7 +10,7 @@ from dagster._cli.workspace.cli_target import (
 )
 from dagster._core.definitions.asset_job import is_reserved_asset_job_name
 from dagster._utils.hosted_user_process import recon_repository_from_origin
-from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.serdes.objects import LibraryEntryKey
 from dagster_shared.serdes.serdes import serialize_value
 from pydantic import ConfigDict, TypeAdapter, create_model
 
@@ -148,7 +148,7 @@ def list_definitions_command(
 
 def _load_library_objects(
     entry_points: bool, extra_modules: tuple[str, ...]
-) -> dict[LibraryObjectKey, object]:
+) -> dict[LibraryEntryKey, object]:
     objects = {}
     if entry_points:
         objects.update(discover_entry_point_library_objects())
@@ -159,7 +159,7 @@ def _load_library_objects(
 
 def _load_component_types(
     entry_points: bool, extra_modules: tuple[str, ...]
-) -> dict[LibraryObjectKey, type[Component]]:
+) -> dict[LibraryEntryKey, type[Component]]:
     return {
         key: obj
         for key, obj in _load_library_objects(entry_points, extra_modules).items()

@@ -5,11 +5,11 @@ from itertools import groupby
 from typing import Any, Optional, TypedDict, Union
 
 import yaml
-from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.serdes.objects import LibraryEntryKey
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
-from dagster_dg.component import ComponentTypeSnap, RemoteLibraryObjectRegistry
+from dagster_dg.component import ComponentTypeSnap, RemoteLibraryEntryRegistry
 
 REF_BASE = "#/$defs/"
 JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY = "dagster_required_scope"
@@ -172,7 +172,7 @@ class ComponentTypeNamespaceJson(TypedDict):
 
 
 def json_for_all_components(
-    registry: RemoteLibraryObjectRegistry,
+    registry: RemoteLibraryEntryRegistry,
 ) -> list[ComponentTypeNamespaceJson]:
     """Returns a list of JSON representations of all component types in the registry."""
     component_json = [
@@ -190,7 +190,7 @@ def json_for_all_components(
 
 
 def json_for_component_type(
-    key: LibraryObjectKey, remote_component_type: ComponentTypeSnap
+    key: LibraryEntryKey, remote_component_type: ComponentTypeSnap
 ) -> ComponentTypeJson:
     typename = key.to_typename()
     sample_yaml = generate_sample_yaml(typename, remote_component_type.schema or {})

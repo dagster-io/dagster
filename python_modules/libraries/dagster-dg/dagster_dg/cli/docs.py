@@ -10,7 +10,7 @@ import click
 from yaspin import yaspin
 
 from dagster_dg.cli.shared_options import dg_global_options
-from dagster_dg.component import LibraryObjectKey, RemoteLibraryObjectRegistry
+from dagster_dg.component import LibraryEntryKey, RemoteLibraryEntryRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.docs import json_for_all_components
@@ -51,11 +51,11 @@ def serve_docs_command(
     """Get detailed information on a registered Dagster component type."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
-    registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
+    registry = RemoteLibraryEntryRegistry.from_dg_context(dg_context)
 
     component_key = None
     if component_type:
-        component_key = LibraryObjectKey.from_typename(component_type)
+        component_key = LibraryEntryKey.from_typename(component_type)
         if not component_key or not registry.has(component_key):
             exit_with_error(f"Component type `{component_type}` not found.")
 

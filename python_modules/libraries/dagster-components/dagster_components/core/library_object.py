@@ -6,7 +6,7 @@ from collections.abc import Iterable, Sequence
 from types import ModuleType
 
 from dagster._core.errors import DagsterError
-from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.serdes.objects import LibraryEntryKey
 
 from dagster_components.utils import format_error_message
 
@@ -25,7 +25,7 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
         return importlib.metadata.entry_points().get(group, [])
 
 
-def discover_entry_point_library_objects() -> dict[LibraryObjectKey, object]:
+def discover_entry_point_library_objects() -> dict[LibraryEntryKey, object]:
     """Discover library objects registered in the Python environment via the
     `dg_library` entry point group.
 
@@ -34,7 +34,7 @@ def discover_entry_point_library_objects() -> dict[LibraryObjectKey, object]:
     component types and is loaded by default. Other entry points resolve to various sets of test
     component types. This method will only ever load one builtin component library.
     """
-    objects: dict[LibraryObjectKey, object] = {}
+    objects: dict[LibraryEntryKey, object] = {}
     entry_points = get_entry_points_from_python_environment(DG_LIBRARY_ENTRY_POINT_GROUP)
 
     for entry_point in entry_points:
@@ -54,16 +54,16 @@ def discover_entry_point_library_objects() -> dict[LibraryObjectKey, object]:
                 f"Value expected to be a module, got {root_module}."
             )
         for name, obj in get_library_objects_in_module(root_module):
-            key = LibraryObjectKey(name=name, namespace=entry_point.value)
+            key = LibraryEntryKey(name=name, namespace=entry_point.value)
             objects[key] = obj
     return objects
 
 
-def discover_library_objects(modules: Sequence[str]) -> dict[LibraryObjectKey, object]:
-    objects: dict[LibraryObjectKey, object] = {}
+def discover_library_objects(modules: Sequence[str]) -> dict[LibraryEntryKey, object]:
+    objects: dict[LibraryEntryKey, object] = {}
     for extra_module in modules:
         for name, obj in get_library_objects_in_module(importlib.import_module(extra_module)):
-            key = LibraryObjectKey(name=name, namespace=extra_module)
+            key = LibraryEntryKey(name=name, namespace=extra_module)
             objects[key] = obj
     return objects
 
@@ -77,7 +77,7 @@ def get_library_objects_in_module(
             yield attr, value
 
 
-def load_library_object(key: LibraryObjectKey) -> object:
+def load_library_object(key: LibraryEntryKey) -> object:
     module_name, attr = key.namespace, key.name
     try:
         module = importlib.import_module(module_name)
