@@ -1,7 +1,7 @@
-from pathlib import Path
+from {{ project_name }} import defs as defs_module
+from dagster_components import load_defs, project_defs
 
-import {{ project_name }}.defs
 
-from dagster.components import load_defs
-
-defs = load_defs(defs_root={{ project_name }}.defs)
+@project_defs
+def project_defs():
+    return load_defs(defs_root=defs_module)

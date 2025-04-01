@@ -110,6 +110,10 @@ def lazy_definitions(fn: Callable[[], T_Defs]) -> LazyDefinitions[T_Defs]:
     return LazyDefinitions(load_fn=fn)
 
 
+def project_defs(fn: Callable[[], T_Defs]) -> LazyDefinitions[T_Defs]:
+    return LazyDefinitions(load_fn=fn)
+
+
 @contextmanager
 def scoped_definitions_load_context(
     load_type: DefinitionsLoadType = DefinitionsLoadType.INITIALIZATION,
