@@ -4,16 +4,13 @@ Using /.../jaffle-platform/.venv/bin/dagster-components
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓
 ┃ Component Type                                                       ┃ Summary         ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩
-│ dagster_components.dagster.DefinitionsComponent                      │ Wraps an        │
-│                                                                      │ arbitrary set   │
-│                                                                      │ of Dagster      │
+│ dagster_components.dagster.DefinitionsComponent                      │ An arbitrary    │
+│                                                                      │ set of dagster  │
 │                                                                      │ definitions.    │
-│ dagster_components.dagster.DefsFolderComponent                       │ Wraps a         │
-│                                                                      │ DefsModule to   │
-│                                                                      │ allow the       │
-│                                                                      │ addition of     │
-│                                                                      │ arbitrary       │
-│                                                                      │ attributes.     │
+│ dagster_components.dagster.DefsFolderComponent                       │ A folder        │
+│                                                                      │ containing      │
+│                                                                      │ multiple        │
+│                                                                      │ submodules.     │
 │ dagster_components.dagster.PipesSubprocessScriptCollectionComponent  │ Assets that     │
 │                                                                      │ wrap Python     │
 │                                                                      │ scripts         │

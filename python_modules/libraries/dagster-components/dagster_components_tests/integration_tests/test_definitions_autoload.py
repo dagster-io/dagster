@@ -1,6 +1,8 @@
 import pytest
 from dagster import AssetKey, Definitions
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.env import environ
+from pydantic import ValidationError
 
 from dagster_components_tests.integration_tests.component_loader import (
     chdir as chdir,
@@ -8,12 +10,54 @@ from dagster_components_tests.integration_tests.component_loader import (
 )
 
 
-@pytest.mark.parametrize("defs", ["definitions_autoload/single_file"], indirect=True)
+@pytest.mark.parametrize("defs", ["definitions/explicit_file_relative_imports"], indirect=True)
+def test_definitions_component_with_explicit_file_relative_imports(defs: Definitions) -> None:
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {
+        AssetKey("asset_in_some_file"),
+        AssetKey("asset_in_some_other_file"),
+    }
+
+
+@pytest.mark.parametrize("defs", ["definitions/explicit_file_relative_imports_init"], indirect=True)
+def test_definitions_component_with_explicit_file_relative_imports_init(defs: Definitions) -> None:
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {
+        AssetKey("asset_in_init_file"),
+        AssetKey("asset_in_some_other_file"),
+    }
+
+
+@pytest.mark.parametrize(
+    "defs", ["definitions/explicit_file_relative_imports_complex"], indirect=True
+)
+def test_definitions_component_with_explicit_file_relative_imports_complex(
+    defs: Definitions,
+) -> None:
+    assert {spec.key for spec in defs.get_all_asset_specs()} == {
+        AssetKey("asset_in_some_file"),
+        AssetKey("asset_in_submodule"),
+    }
+
+
+def test_definitions_component_validation_error() -> None:
+    with pytest.raises(ValidationError) as e:
+        sync_load_test_component_defs("definitions/validation_error_file")
+
+    assert "component.yaml:4" in str(e.value)
+
+
+def test_definitions_component_with_multiple_definitions_objects() -> None:
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Found multiple Definitions objects in"
+    ):
+        sync_load_test_component_defs("definitions/definitions_object_multiple")
+
+
+@pytest.mark.parametrize("defs", ["definitions/single_file"], indirect=True)
 def test_autoload_single_file(defs: Definitions) -> None:
     assert {spec.key for spec in defs.get_all_asset_specs()} == {AssetKey("an_asset")}
 
 
-@pytest.mark.parametrize("defs", ["definitions_autoload/multiple_files"], indirect=True)
+@pytest.mark.parametrize("defs", ["definitions/multiple_files"], indirect=True)
 def test_autoload_multiple_files(defs: Definitions) -> None:
     assert {spec.key for spec in defs.get_all_asset_specs()} == {
         AssetKey("asset_in_some_file"),
@@ -21,14 +65,12 @@ def test_autoload_multiple_files(defs: Definitions) -> None:
     }
 
 
-@pytest.mark.parametrize("defs", ["definitions_autoload/empty"], indirect=True)
+@pytest.mark.parametrize("defs", ["definitions/empty"], indirect=True)
 def test_autoload_empty(defs: Definitions) -> None:
     assert len(defs.get_all_asset_specs()) == 0
 
 
-@pytest.mark.parametrize(
-    "defs", ["definitions_autoload/definitions_object_relative_imports"], indirect=True
-)
+@pytest.mark.parametrize("defs", ["definitions/definitions_object_relative_imports"], indirect=True)
 def test_autoload_definitions_object(defs: Definitions) -> None:
     assert {spec.key for spec in defs.get_all_asset_specs()} == {
         AssetKey("asset_in_some_file"),
@@ -36,7 +78,7 @@ def test_autoload_definitions_object(defs: Definitions) -> None:
     }
 
 
-@pytest.mark.parametrize("defs", ["definitions_autoload/definitions_at_levels"], indirect=True)
+@pytest.mark.parametrize("defs", ["definitions/definitions_at_levels"], indirect=True)
 def test_autoload_definitions_nested(defs: Definitions) -> None:
     assert {spec.key for spec in defs.get_all_asset_specs()} == {
         AssetKey("top_level"),
@@ -90,9 +132,7 @@ def test_autoload_definitions_nested_with_config() -> None:
         },
     }
     with environ({"MY_ENV_VAR": ENV_VAL}):
-        defs = sync_load_test_component_defs(
-            "definitions_autoload/definitions_at_levels_with_config"
-        )
+        defs = sync_load_test_component_defs("definitions/definitions_at_levels_with_config")
         specs_by_key = {spec.key: spec for spec in defs.get_all_asset_specs()}
         assert tags_by_spec.keys() == specs_by_key.keys()
         for key, tags in tags_by_spec.items():

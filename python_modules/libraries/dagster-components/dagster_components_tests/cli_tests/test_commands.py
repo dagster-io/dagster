@@ -97,7 +97,7 @@ def test_list_library_objects_from_project() -> None:
     with create_project_from_components(
         "definitions/local_component_sample",
         "definitions/other_local_component_sample",
-        "definitions/default_file",
+        "definitions/single_file",
     ) as (tmpdir, location_name):
         with new_cwd(str(tmpdir)):
             result = runner.invoke(
@@ -149,7 +149,7 @@ def test_list_library_objects_from_project() -> None:
                     "--no-entry-points",
                     f"{location_name}.defs.local_component_sample",
                     f"{location_name}.defs.other_local_component_sample",
-                    f"{location_name}.defs.default_file",
+                    f"{location_name}.defs.single_file",
                 ],
             )
 
