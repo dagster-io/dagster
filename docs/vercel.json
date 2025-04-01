@@ -642,6 +642,10 @@
       "destination": "/getting-started/concepts"
     },
     {
+      "source": "/concepts/assets/asset-auto-execution",
+      "destination": "/guides/automate/declarative-automation"
+    },
+    {
       "source": "/concepts/assets/software-defined-assets",
       "destination": "/guides/build/assets/defining-assets"
     },
@@ -728,6 +732,10 @@
     {
       "source": "/concepts/partitions-schedules-sensors/sensors",
       "destination": "/guides/automate/sensors/"
+    },
+    {
+      "source": "/concepts/partitions-schedules-sensors/schedules",
+      "destination": "/guides/automate/schedules"
     },
     {
       "source": "/concepts/automation/declarative-automation",
