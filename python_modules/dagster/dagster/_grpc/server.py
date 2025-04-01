@@ -22,7 +22,6 @@ import dagster_shared.seven as seven
 import grpc
 from dagster_shared.ipc import open_ipc_subprocess
 from dagster_shared.libraries import DagsterLibraryRegistry
-from dagster_shared.record import as_dict
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 import dagster._check as check
@@ -263,7 +262,7 @@ class LoadedRepositories:
                 + ", ".join(
                     [
                         f"{k}={v}"
-                        for k, v in as_dict(loadable_target_origin).items()
+                        for k, v in loadable_target_origin._asdict().items()
                         if v is not None
                     ]
                 ),
