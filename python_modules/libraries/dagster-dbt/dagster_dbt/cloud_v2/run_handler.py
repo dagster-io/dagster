@@ -98,7 +98,7 @@ class DbtCloudJobRunResults:
         manifest: Mapping[str, Any],
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         context: Optional[AssetExecutionContext] = None,
-    ) -> Iterator[Union[AssetMaterialization, AssetCheckEvaluation, Output]]:
+    ) -> Iterator[Union[AssetCheckEvaluation, AssetCheckResult, AssetMaterialization, Output]]:
         """Convert the run results of a dbt Cloud job run to a set of corresponding Dagster events.
 
         Args:
@@ -109,12 +109,12 @@ class DbtCloudJobRunResults:
             context (Optional[AssetExecutionContext]): The execution context.
 
         Returns:
-            Iterator[Union[AssetMaterialization, AssetCheckEvaluation, Output]]:
+            Iterator[Union[AssetCheckEvaluation, AssetCheckResult, AssetMaterialization, Output]]:
                 A set of corresponding Dagster events.
 
                 In a Dagster asset definition, the following are yielded:
                 - Output for refables (e.g. models, seeds, snapshots.)
-                - AssetCheckEvaluation for dbt tests.
+                - AssetCheckResult for dbt tests.
 
                 For ad hoc usage, the following are yielded:
                 - AssetMaterialization for refables (e.g. models, seeds, snapshots.)
