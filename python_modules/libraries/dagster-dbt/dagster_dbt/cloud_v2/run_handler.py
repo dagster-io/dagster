@@ -214,7 +214,7 @@ class DbtCloudJobRunResults:
                             else AssetCheckSeverity.ERROR
                         ),
                     )
-                elif asset_check_key is not None:
+                elif not has_asset_def and asset_check_key is not None:
                     yield AssetCheckEvaluation(
                         passed=result_status == TestStatus.Pass,
                         asset_key=asset_check_key.asset_key,
