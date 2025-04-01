@@ -772,7 +772,9 @@ def get_paginated_partition_keys(
     cursor = None
     has_more = True
     partitions_context = PartitionLoadingContext(
-        TemporalContext(effective_dt=current_time or datetime.datetime.now(), last_event_id=None),
+        temporal_context=TemporalContext(
+            effective_dt=current_time or datetime.datetime.now(), last_event_id=None
+        ),
         dynamic_partitions_store=dynamic_partitions_store,
     )
     counter = 0

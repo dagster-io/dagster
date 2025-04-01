@@ -695,7 +695,7 @@ def test_basic_pagination():
 
     connection = multi_partitions.get_partition_key_connection(
         context=PartitionLoadingContext(
-            TemporalContext(effective_dt=datetime.now(), last_event_id=None),
+            temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
             dynamic_partitions_store=None,
         ),
         limit=3,
@@ -717,7 +717,7 @@ def test_basic_pagination():
 
     connection2 = multi_partitions.get_partition_key_connection(
         context=PartitionLoadingContext(
-            TemporalContext(effective_dt=datetime.now(), last_event_id=None),
+            temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
             dynamic_partitions_store=None,
         ),
         limit=3,
@@ -747,7 +747,7 @@ def test_reverse_pagination():
 
     connection = multi_partitions.get_partition_key_connection(
         context=PartitionLoadingContext(
-            TemporalContext(effective_dt=datetime.now(), last_event_id=None),
+            temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
             dynamic_partitions_store=None,
         ),
         limit=3,
@@ -768,7 +768,7 @@ def test_reverse_pagination():
 
     connection2 = multi_partitions.get_partition_key_connection(
         context=PartitionLoadingContext(
-            TemporalContext(effective_dt=datetime.now(), last_event_id=None),
+            temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
             dynamic_partitions_store=None,
         ),
         limit=3,
@@ -796,7 +796,7 @@ def test_pagination_accumulation():
 
     multi_partitions = MultiPartitionsDefinition({"dim_a": dimension_a, "dim_b": dimension_b})
     partition_context = PartitionLoadingContext(
-        TemporalContext(effective_dt=datetime.now(), last_event_id=None),
+        temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
         dynamic_partitions_store=None,
     )
 
@@ -854,7 +854,7 @@ def test_empty_dimension():
 
     multi_partitions = MultiPartitionsDefinition({"dim_a": dimension_a, "dim_b": dimension_b})
     partition_context = PartitionLoadingContext(
-        TemporalContext(effective_dt=datetime.now(), last_event_id=None),
+        temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
         dynamic_partitions_store=None,
     )
     connection = multi_partitions.get_partition_key_connection(
@@ -876,7 +876,7 @@ def test_large_cross_product_memory_usage():
         {"dim_a": large_dimension_a, "dim_b": large_dimension_b}
     )
     partition_context = PartitionLoadingContext(
-        TemporalContext(effective_dt=datetime.now(), last_event_id=None),
+        temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
         dynamic_partitions_store=None,
     )
 

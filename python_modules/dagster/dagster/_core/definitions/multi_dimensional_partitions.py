@@ -633,7 +633,7 @@ class MultiPartitionCursor:
 
 
 class MultiDimensionalPartitionKeyIterator:
-    """Helper class to iterate throuh all the partition keys in a MultiPartitionsDefinition."""
+    """Helper class to iterate through all the partition keys in a MultiPartitionsDefinition."""
 
     def __init__(
         self,
