@@ -33,7 +33,7 @@ pip install dagster-dlt
 
 :::note
 
-If you are using the [sql_database](https://dlthub.com/docs/api_reference/sources/sql_database/__init__#sql_database) source, consider setting `defer_table_reflect=True` to reduce database reads. By default, the Dagster daemon will refresh definitions roughly every minute, which will query the database for resource definitions.
+If you are using the [sql_database](https://dlthub.com/docs/api_reference/dlt/sources/sql_database/__init__) source, consider setting `defer_table_reflect=True` to reduce database reads. By default, the Dagster daemon will refresh definitions roughly every minute, which will query the database for resource definitions.
 
 :::
 

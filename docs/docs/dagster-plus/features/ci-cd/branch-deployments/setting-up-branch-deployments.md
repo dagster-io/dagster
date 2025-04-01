@@ -143,7 +143,7 @@ Copy the following files to your project, and **replace** all references to `qui
 
 - [`dagster_cloud.yaml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/dagster_cloud.yaml)
 - [`.github/workflows/dagster-cloud-deploy.yml`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/.github/workflows/dagster-cloud-deploy.yml) (for **Hybrid** deployments)
-- [`.github/workflows/branch_deployments.yml`](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/blob/main/.github/workflows/branch_deployments.yml) (for **Serverless** deployments)
+- [`.github/workflows/branch_deployments.yml`](https://github.com/dagster-io/dagster-cloud-serverless-quickstart/blob/main/.github/workflows/dagster-plus-deploy.yml) (for **Serverless** deployments)
 
 In the next step, you'll modify these files to work with your Dagster+ setup.
 

@@ -39,4 +39,4 @@ External asset events can be recorded using :py:func:`DagsterInstance.report_run
 REST API
 --------
 
-Refer to the `External assets REST API reference <https://docs.dagster.io/api/python-api/external-assets-rest>`_ for information and examples on the available APIs.
+Refer to the `External assets REST API reference <https://docs.dagster.io/api/python-api/external-assets-rest-api>`_ for information and examples on the available APIs.
