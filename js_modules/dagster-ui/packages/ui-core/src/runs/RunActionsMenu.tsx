@@ -116,6 +116,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
 
   return (
     <>
+      {reexecute.launchpadElement}
       <JoinedButtons>
         <AnchorButton to={`/runs/${run.id}`}>{anchorLabel ?? 'View run'}</AnchorButton>
         <Popover
@@ -178,9 +179,8 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                   />
                 </Tooltip>
                 <Tooltip
-                  content={reexecutionDisabledState.message || ''}
+                  content={reexecutionDisabledState.message || 'Shift-click to adjust tags.'}
                   position="left"
-                  canShow={reexecutionDisabledState.disabled}
                   targetTagName="div"
                 >
                   <MenuItem
@@ -188,8 +188,8 @@ export const RunActionsMenu = React.memo(({run, onAddTag, anchorLabel}: Props) =
                     text="Re-execute"
                     disabled={reexecutionDisabledState.disabled}
                     icon="refresh"
-                    onClick={async () => {
-                      await reexecute(run, ReexecutionStrategy.ALL_STEPS);
+                    onClick={async (e) => {
+                      await reexecute.onClick(run, ReexecutionStrategy.ALL_STEPS, e.shiftKey);
                     }}
                   />
                 </Tooltip>
