@@ -246,7 +246,7 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     upstream_asset_deps: Optional[Iterable[AssetDep]]
     execution_type: Optional[AssetExecutionType]
     pool: Optional[str]
-    new_freshness_thing: Optional[NewFreshnessThing]
+    new_freshness_thing: Optional[NewFreshnessThing] = None
 
     @property
     def check_specs(self) -> Sequence[AssetCheckSpec]:
