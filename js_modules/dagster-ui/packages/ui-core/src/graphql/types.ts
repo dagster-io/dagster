@@ -101,7 +101,7 @@ export type Asset = {
   __typename: 'Asset';
   assetMaterializationHistory: MaterializationHistoryConnection;
   assetMaterializations: Array<MaterializationEvent>;
-  assetObservations: Array<ObservationEventConnection>;
+  assetObservations: ObservationEventConnection;
   definition: Maybe<AssetNode>;
   id: Scalars['String']['output'];
   key: AssetKey;
@@ -6088,7 +6088,9 @@ export const buildAsset = (
     assetObservations:
       overrides && overrides.hasOwnProperty('assetObservations')
         ? overrides.assetObservations!
-        : [],
+        : relationshipsToOmit.has('ObservationEventConnection')
+          ? ({} as ObservationEventConnection)
+          : buildObservationEventConnection({}, relationshipsToOmit),
     definition:
       overrides && overrides.hasOwnProperty('definition')
         ? overrides.definition!

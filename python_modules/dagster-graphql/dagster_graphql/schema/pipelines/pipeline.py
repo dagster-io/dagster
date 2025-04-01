@@ -237,7 +237,7 @@ class GrapheneAsset(graphene.ObjectType):
         limit=graphene.Int(),
     )
     assetObservations = graphene.Field(
-        non_null_list(GrapheneObservationEventConnection),
+        graphene.NonNull(GrapheneObservationEventConnection),
         partitions=graphene.List(graphene.NonNull(graphene.String)),
         partitionInLast=graphene.Int(),
         beforeTimestampMillis=graphene.String(),

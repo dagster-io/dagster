@@ -191,7 +191,7 @@ export type AssetOverviewMetadataEventsQuery = {
               }
           >;
         }>;
-        assetObservations: Array<{
+        assetObservations: {
           __typename: 'ObservationEventConnection';
           results: Array<{
             __typename: 'ObservationEvent';
@@ -372,7 +372,7 @@ export type AssetOverviewMetadataEventsQuery = {
                 }
             >;
           }>;
-        }>;
+        };
       }
     | {__typename: 'AssetNotFoundError'};
 };

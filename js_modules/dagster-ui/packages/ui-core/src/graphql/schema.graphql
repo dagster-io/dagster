@@ -616,7 +616,7 @@ type Asset {
     afterTimestampMillis: String
     limit: Int
     cursor: String
-  ): [ObservationEventConnection!]!
+  ): ObservationEventConnection!
   assetMaterializationHistory(
     partitions: [String!]
     partitionInLast: Int

@@ -556,7 +556,7 @@ export type AssetEventsQuery = {
         __typename: 'Asset';
         id: string;
         key: {__typename: 'AssetKey'; path: Array<string>};
-        assetObservations: Array<{
+        assetObservations: {
           __typename: 'ObservationEventConnection';
           results: Array<{
             __typename: 'ObservationEvent';
@@ -758,11 +758,26 @@ export type AssetEventsQuery = {
                 }
             >;
           }>;
+<<<<<<< HEAD
         }>;
         assetMaterializationHistory: {
           __typename: 'MaterializationHistoryConnection';
           cursor: string;
           results: Array<
+=======
+        };
+        assetMaterializations: Array<{
+          __typename: 'MaterializationEvent';
+          partition: string | null;
+          runId: string;
+          timestamp: string;
+          stepKey: string | null;
+          label: string | null;
+          description: string | null;
+          tags: Array<{__typename: 'EventTag'; key: string; value: string}>;
+          runOrError:
+            | {__typename: 'PythonError'}
+>>>>>>> e2bf5cb58a (fix)
             | {
                 __typename: 'FailedToMaterializeEvent';
                 runId: string;
