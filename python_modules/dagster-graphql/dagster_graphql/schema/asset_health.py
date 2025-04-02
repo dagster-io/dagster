@@ -8,6 +8,7 @@ class GrapheneAssetHealthStatus(graphene.Enum):
     WARNING = "WARNING"
     DEGRADED = "DEGRADED"
     UNKNOWN = "UNKNOWN"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
 
     class Meta:
         name = "AssetHealthStatus"
@@ -26,14 +27,22 @@ class GrapheneAssetHealth(graphene.ObjectType):
         if not graphene_info.context.instance.dagster_observe_supported():
             return GrapheneAssetHealthStatus.UNKNOWN
         statuses = [
-            self.materializationStatus(graphene_info),
-            self.assetChecksStatus(graphene_info),
-            self.freshnessStatus(graphene_info),
+            self.materializationStatus,
+            self.assetChecksStatus,
+            self.freshnessStatus,
         ]
         if GrapheneAssetHealthStatus.DEGRADED in statuses:
             return GrapheneAssetHealthStatus.DEGRADED
         if GrapheneAssetHealthStatus.WARNING in statuses:
             return GrapheneAssetHealthStatus.WARNING
-        if all(status == GrapheneAssetHealthStatus.UNKNOWN for status in statuses):
+        # at this point, all statuses are HEALTHY, UNKNOWN, or NOT_APPLICABLE
+        if self.materializationStatus == GrapheneAssetHealthStatus.UNKNOWN:
             return GrapheneAssetHealthStatus.UNKNOWN
+        if all(
+            status == GrapheneAssetHealthStatus.UNKNOWN
+            or status == GrapheneAssetHealthStatus.NOT_APPLICABLE
+            for status in statuses
+        ):
+            return GrapheneAssetHealthStatus.UNKNOWN
+        # at least one status must be HEALTHY
         return GrapheneAssetHealthStatus.HEALTHY
