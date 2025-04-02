@@ -410,7 +410,7 @@ class RemoteRepositoryOrigin(NamedTupleAdapter["RemoteRepositoryOrigin"]):
         return RemoteJobOrigin(repository_origin=self, job_name=job_name)
 
     def get_instigator_origin(self, instigator_name: str) -> "RemoteInstigatorOrigin":
-        return RemoteInstigatorOrigin(self, instigator_name)
+        return RemoteInstigatorOrigin(repository_origin=self, instigator_name=instigator_name)
 
     def get_partition_set_origin(self, partition_set_name: str) -> "RemotePartitionSetOrigin":
         return RemotePartitionSetOrigin(self, partition_set_name)
@@ -452,26 +452,14 @@ class RemoteJobOrigin(NamedTupleAdapter["RemoteJobOrigin"]):
         "instigator_name": "job_name",
     },
 )
-class RemoteInstigatorOrigin(
-    NamedTuple(
-        "_RemoteInstigatorOrigin",
-        [("repository_origin", RemoteRepositoryOrigin), ("instigator_name", str)],
-    )
-):
+@record(kw_only=False)
+class RemoteInstigatorOrigin(NamedTupleAdapter["RemoteInstigatorOrigin"]):
     """Serializable representation of an ExternalJob that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, repository_origin: RemoteRepositoryOrigin, instigator_name: str):
-        return super().__new__(
-            cls,
-            check.inst_param(
-                repository_origin,
-                "repository_origin",
-                RemoteRepositoryOrigin,
-            ),
-            check.str_param(instigator_name, "instigator_name"),
-        )
+    repository_origin: RemoteRepositoryOrigin
+    instigator_name: str
 
     def get_selector(self) -> InstigatorSelector:
         return InstigatorSelector(
