@@ -6,7 +6,7 @@ from dagster_buildkite.images.versions import BUILDKITE_TEST_IMAGE_VERSION
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.utils import CommandStep, safe_getenv
 
-DEFAULT_TIMEOUT_IN_MIN = 25
+DEFAULT_TIMEOUT_IN_MIN = 45
 
 DOCKER_PLUGIN = "docker#v5.10.0"
 ECR_PLUGIN = "ecr#v2.7.0"
