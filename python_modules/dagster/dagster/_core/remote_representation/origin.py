@@ -147,19 +147,16 @@ class RegisteredCodeLocationOrigin(
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="InProcessRepositoryLocationOrigin")
-class InProcessCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
-    NamedTuple(
-        "_InProcessCodeLocationOrigin",
-        [
-            ("loadable_target_origin", LoadableTargetOrigin),
-            ("container_image", Optional[str]),
-            ("entry_point", Sequence[str]),
-            ("container_context", Optional[Mapping[str, Any]]),
-            ("location_name", str),
-        ],
-    ),
-    CodeLocationOrigin,
+@record_custom
+class InProcessCodeLocationOrigin(
+    IHaveNew, NamedTupleAdapter["InProcessCodeLocationOrigin"], CodeLocationOrigin
 ):
+    loadable_target_origin: LoadableTargetOrigin  # pyright: ignore[reportIncompatibleMethodOverride]
+    location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
+    container_image: Optional[str]
+    entry_point: Sequence[str]
+    container_context: Optional[Mapping[str, Any]]
+
     """Identifies a repository location constructed in the same process. Primarily
     used in tests, since Dagster system processes like the webserver and daemon do not
     load user code in the same process.
@@ -175,19 +172,11 @@ class InProcessCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariable
     ):
         return super().__new__(
             cls,
-            check.inst_param(
-                loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
-            ),
-            container_image=check.opt_str_param(container_image, "container_image"),
-            entry_point=(
-                check.opt_sequence_param(entry_point, "entry_point")
-                if entry_point
-                else DEFAULT_DAGSTER_ENTRY_POINT
-            ),
-            container_context=check.opt_dict_param(container_context, "container_context"),
-            location_name=check.opt_str_param(
-                location_name, "location_name", default=IN_PROCESS_NAME
-            ),
+            loadable_target_origin=loadable_target_origin,
+            container_image=container_image,
+            entry_point=entry_point if entry_point else DEFAULT_DAGSTER_ENTRY_POINT,
+            container_context=container_context,
+            location_name=location_name if location_name else IN_PROCESS_NAME,
         )
 
     @property
