@@ -252,21 +252,21 @@ class DynamicOutput(Generic[T]):
 
 @whitelist_for_serdes
 class AssetMaterializationFailureReason(Enum):
-    """Enumerate the reasons an asset may have failed to materialize."""
+    """Enumerate the reasons an asset may have failed to materialize. Can be used to provide more granular
+    information about the failure to the user.
+    """
 
     FAILED_TO_MATERIALIZE = "FAILED_TO_MATERIALIZE"  # The asset failed to materialize
-    UPSTREAM_FAILED_TO_MATERIALIZE = (
-        "UPSTREAM_FAILED_TO_MATERIALIZE"  # An upstream asset failed to materialize
-    )
-    TERMINATION = "TERMINATION"  # The run was terminated
+    UPSTREAM_FAILED_TO_MATERIALIZE = "UPSTREAM_FAILED_TO_MATERIALIZE"
+    RUN_TERMINATED = "RUN_TERMINATED"
     UNKNOWN = "UNKNOWN"
 
 
 @whitelist_for_serdes
 class AssetMaterializationFailureType(Enum):
-    """The asset can fail to materialize in two ways, an unexpected/unintentional failure that should update
-    the global state of the asset to failed, and one that indicates that the asset not materializing
-    is expected (like an optional asset, user canceled the run).
+    """An asset can fail to materialize in two ways: an unexpected/unintentional failure that should update
+    the global state of the asset to Failed, and one that indicates that the asset not materializing
+    is expected (like an optional asset or a user canceled the run).
     """
 
     FAILED = "FAILED"  # The asset was not materialized, but was expected to materialize
