@@ -1,7 +1,7 @@
 import {useMemo} from 'react';
 
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
-import {AssetKey, AssetViewParams} from './types';
+import {AssetKey} from './types';
 import {gql, useQuery} from '../apollo-client';
 import {clipEventsToSharedMinimumTime} from './clipEventsToSharedMinimumTime';
 // import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
@@ -22,29 +22,6 @@ import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 export type AssetMaterializationFragment =
   | AssetSuccessfulMaterializationFragment
   | AssetFailedToMaterializeFragment;
-
-/**
-The params behavior on this page is a bit nuanced - there are two main query
-params: ?timestamp= and ?partition= and only one is set at a time. They can
-be undefined, an empty string or a value and all three states are used.
-- If both are undefined, we expand the first item in the table by default
-- If one is present, it determines which xAxis is used (partition grouping)
-- If one is present and set to a value, that item in the table is expanded.
-- If one is present but an empty string, no items in the table is expanded.
- */
-export function getXAxisForParams(
-  params: Pick<AssetViewParams, 'asOf' | 'partition' | 'time'>,
-  {defaultToPartitions}: {defaultToPartitions: boolean},
-) {
-  const xAxisDefault = defaultToPartitions ? 'partition' : 'time';
-  const xAxis: 'partition' | 'time' =
-    params.partition !== undefined
-      ? 'partition'
-      : params.time !== undefined || params.asOf
-        ? 'time'
-        : xAxisDefault;
-  return xAxis;
-}
 
 export function useLatestAssetPartitions(assetKey: AssetKey | undefined, limit: number) {
   const queryResult = useQuery<LatestAssetPartitionsQuery, LatestAssetPartitionsQueryVariables>(
