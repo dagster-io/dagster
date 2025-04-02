@@ -4,11 +4,15 @@ import {useEffect, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {INSTIGATION_STATES_QUERY} from './InstigationStatesQuery';
 import {LeftNavItemType} from './LeftNavItemType';
 import {Item} from './RepositoryContentList';
 import {ScheduleAndSensorDialog} from './ScheduleAndSensorDialog';
-import {gql, useFragment, useQuery} from '../apollo-client';
-import {InstigationStatesQuery, InstigationStatesQueryVariables} from './types/LeftNavItem.types';
+import {useFragment, useQuery} from '../apollo-client';
+import {
+  InstigationStatesQuery,
+  InstigationStatesQueryVariables,
+} from './types/InstigationStatesQuery.types';
 import {InstigationStatus} from '../graphql/types';
 import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationStateBaseFragment';
 import {InstigationStateFragment} from '../instigation/types/InstigationUtils.types';
@@ -241,22 +245,4 @@ const IconWithTooltip = styled(Tooltip)`
 
 const ItemContainer = styled.div`
   position: relative;
-`;
-
-const INSTIGATION_STATES_QUERY = gql`
-  query InstigationStatesQuery($repositoryID: String!) {
-    instigationStatesOrError(repositoryID: $repositoryID) {
-      ... on PythonError {
-        message
-        stack
-      }
-      ... on InstigationStates {
-        results {
-          id
-          ...InstigationStateBaseFragment
-        }
-      }
-    }
-  }
-  ${INSTIGATION_STATE_BASE_FRAGMENT}
 `;
