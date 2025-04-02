@@ -26,7 +26,7 @@ This will provide you with a **workflow URL** which will be required when config
   </TabItem>
   <TabItem value='pagerduty' label='PagerDuty'>
     :::note
-You will need sufficient permissions in PagerDuty to add or edit services.
+A Dagster+ Pro plan is required to use this feature. You will also need sufficient permissions in PagerDuty to add or edit services.
 :::
 
 In PagerDuty, you can either:
