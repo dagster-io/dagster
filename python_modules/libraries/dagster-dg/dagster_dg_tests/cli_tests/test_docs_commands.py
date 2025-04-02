@@ -2,11 +2,14 @@ import threading
 from typing import Optional
 
 import pytest
-from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_dg.utils import ensure_dagster_dg_tests_import, get_venv_executable, install_to_venv
 
 ensure_dagster_dg_tests_import()
 
+import os
+import subprocess
 import time
+from pathlib import Path
 from unittest import mock
 
 import requests
@@ -104,3 +107,43 @@ obj_value:
     key_2: value_2
         """,
         )
+
+
+def test_build_docs_success():
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_components_venv(runner) as venv_path,
+    ):
+        runner.invoke("docs", "build", str(venv_path / "built_docs"))
+
+        assert (venv_path / "built_docs" / "index.html").exists()
+
+
+def test_build_docs_success_in_published_package():
+    # Tests that the logic to copy the docs webapp to the dagster-dg Python package works
+    with ProxyRunner.test() as runner, isolated_components_venv(runner):
+        module_dir = Path(__file__).parent.parent.parent
+        root_modules_dir = Path(__file__).parent.parent.parent.parent.parent
+        repo_root = root_modules_dir.parent
+        component_dir = Path.cwd()
+
+        venv_path = Path.cwd() / ".venv"
+        install_to_venv(venv_path, ["build<0.10.0"])
+
+        # Copy the docs webapp to the dagster-dg Python package
+        subprocess.check_call(["make", "ready_dagster_dg_docs_for_publish"], cwd=repo_root)
+
+        # Create a wheel mimicing the published dagster-dg package
+        os.chdir(module_dir)
+        subprocess.check_call(["python", "-m", "build"])
+        wheel_file = next(Path("dist").glob("*.whl")).absolute()
+
+        # Install the wheel in the venv
+        os.chdir(component_dir)
+        install_to_venv(venv_path, [f"dagster-dg@{wheel_file}"])
+
+        # Build the docs using the wheel copy of the package
+        executable = get_venv_executable(venv_path, "dg")
+        subprocess.check_call([str(executable), "docs", "build", component_dir / "built_docs"])
+
+        assert (component_dir / "built_docs" / "index.html").exists()
