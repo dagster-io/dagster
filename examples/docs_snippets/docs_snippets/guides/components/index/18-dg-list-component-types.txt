@@ -1,21 +1,39 @@
 dg list component-type
 
 Using /.../jaffle-platform/.venv/bin/dagster-components
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Component Type                                              ┃ Summary                  ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ dagster.components.DefinitionsComponent                     │ An arbitrary set of      │
-│                                                             │ dagster definitions.     │
-│ dagster.components.DefsFolderComponent                      │ A folder containing      │
-│                                                             │ multiple submodules.     │
-│ dagster.components.PipesSubprocessScriptCollectionComponent │ Assets that wrap Python  │
-│                                                             │ scripts executed with    │
-│                                                             │ Dagster's                │
-│                                                             │ PipesSubprocessClient.   │
-│ dagster_dbt.DbtProjectComponent                             │ Expose a DBT project to  │
-│                                                             │ Dagster as a set of      │
-│                                                             │ assets.                  │
-│ dagster_sling.SlingReplicationCollectionComponent           │ Expose one or more Sling │
-│                                                             │ replications to Dagster  │
-│                                                             │ as assets.               │
-└─────────────────────────────────────────────────────────────┴──────────────────────────┘
+┏━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Package       ┃ Entries                                                                                              ┃
+┡━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ dagster       │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓ │
+│               │ ┃ Key                                                         ┃ Summary          ┃ Types           ┃ │
+│               │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩ │
+│               │ │ dagster.components.DefinitionsComponent                     │ An arbitrary set │ [component,     │ │
+│               │ │                                                             │ of dagster       │ scaffold-targe… │ │
+│               │ │                                                             │ definitions.     │                 │ │
+│               │ ├─────────────────────────────────────────────────────────────┼──────────────────┼─────────────────┤ │
+│               │ │ dagster.components.DefsFolderComponent                      │ A folder         │ [component,     │ │
+│               │ │                                                             │ containing       │ scaffold-targe… │ │
+│               │ │                                                             │ multiple         │                 │ │
+│               │ │                                                             │ submodules.      │                 │ │
+│               │ ├─────────────────────────────────────────────────────────────┼──────────────────┼─────────────────┤ │
+│               │ │ dagster.components.PipesSubprocessScriptCollectionComponent │ Assets that wrap │ [component,     │ │
+│               │ │                                                             │ Python scripts   │ scaffold-targe… │ │
+│               │ │                                                             │ executed with    │                 │ │
+│               │ │                                                             │ Dagster's        │                 │ │
+│               │ │                                                             │ PipesSubprocess… │                 │ │
+│               │ └─────────────────────────────────────────────────────────────┴──────────────────┴─────────────────┘ │
+│ dagster_dbt   │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓ │
+│               │ ┃ Key                             ┃ Summary                         ┃ Types                        ┃ │
+│               │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩ │
+│               │ │ dagster_dbt.DbtProjectComponent │ Expose a DBT project to Dagster │ [component, scaffold-target] │ │
+│               │ │                                 │ as a set of assets.             │                              │ │
+│               │ └─────────────────────────────────┴─────────────────────────────────┴──────────────────────────────┘ │
+│ dagster_sling │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓ │
+│               │ ┃ Key                                               ┃ Summary              ┃ Types                 ┃ │
+│               │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩ │
+│               │ │ dagster_sling.SlingReplicationCollectionComponent │ Expose one or more   │ [component,           │ │
+│               │ │                                                   │ Sling replications   │ scaffold-target]      │ │
+│               │ │                                                   │ to Dagster as        │                       │ │
+│               │ │                                                   │ assets.              │                       │ │
+│               │ └───────────────────────────────────────────────────┴──────────────────────┴───────────────────────┘ │
+└───────────────┴──────────────────────────────────────────────────────────────────────────────────────────────────────┘
