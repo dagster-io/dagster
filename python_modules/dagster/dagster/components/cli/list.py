@@ -26,7 +26,7 @@ from dagster.components.core.package_entry import (
     discover_entry_point_package_entries,
     discover_package_entries,
 )
-from dagster.components.core.snapshot import get_library_object_snap
+from dagster.components.core.snapshot import get_package_entry_snap
 
 
 @click.group(name="list")
@@ -44,7 +44,7 @@ def list_library_command(
     """List registered library objects."""
     library_objects = _load_library_objects(entry_points, extra_modules)
     serialized_snaps = serialize_value(
-        [get_library_object_snap(key, obj) for key, obj in library_objects.items()]
+        [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
     )
     click.echo(serialized_snaps)
 

@@ -1,10 +1,9 @@
 import json
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import click
-from dagster_shared.serdes.objects import ComponentTypeSnap
 from rich.console import Console
 from rich.table import Table
 
@@ -68,6 +67,40 @@ def list_component_command(**global_options: object) -> None:
 # ########################
 
 
+def _list_package_entries(
+    registry: RemotePackageRegistry, output_json: bool, entry_type: Optional[str]
+) -> None:
+    sorted_keys = sorted(
+        [
+            key
+            for key in registry.keys()
+            if entry_type is None or entry_type in registry.get(key).types
+        ],
+        key=lambda k: k.to_typename(),
+    )
+    # JSON
+    if output_json:
+        output: list[dict[str, object]] = []
+        for key in sorted_keys:
+            obj = registry.get(key)
+            output.append(
+                {
+                    "key": key.to_typename(),
+                    "summary": obj.summary,
+                }
+            )
+        click.echo(json.dumps(output, indent=4))
+    # TABLE
+    else:
+        table = Table(border_style="dim")
+        table.add_column("Package Entry", style="bold cyan", no_wrap=True)
+        table.add_column("Summary")
+        for key in sorted_keys:
+            table.add_row(key.to_typename(), registry.get(key).summary)
+        console = Console()
+        console.print(table)
+
+
 @list_group.command(name="component-type", cls=DgClickCommand)
 @click.option(
     "--json",
@@ -84,33 +117,7 @@ def list_component_type_command(output_json: bool, **global_options: object) -> 
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemotePackageRegistry.from_dg_context(dg_context)
 
-    sorted_keys = sorted(
-        (k for k in registry.keys() if isinstance(registry.get(k), ComponentTypeSnap)),
-        key=lambda k: k.to_typename(),
-    )
-
-    # JSON
-    if output_json:
-        output: list[dict[str, object]] = []
-        for key in sorted_keys:
-            obj = registry.get(key)
-            output.append(
-                {
-                    "key": key.to_typename(),
-                    "summary": obj.summary,
-                }
-            )
-        click.echo(json.dumps(output, indent=4))
-
-    # TABLE
-    else:
-        table = Table(border_style="dim")
-        table.add_column("Component Type", style="bold cyan", no_wrap=True)
-        table.add_column("Summary")
-        for key in sorted_keys:
-            table.add_row(key.to_typename(), registry.get(key).summary)
-        console = Console()
-        console.print(table)
+    _list_package_entries(registry, output_json, "component")
 
 
 # ########################
