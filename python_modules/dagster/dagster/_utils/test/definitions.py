@@ -110,7 +110,7 @@ def lazy_definitions(fn: Callable[[], T_Defs]) -> LazyDefinitions[T_Defs]:
     return LazyDefinitions(load_fn=fn)
 
 
-def project_defs(fn: Callable[[], T_Defs]) -> LazyDefinitions[T_Defs]:
+def definitions(fn: Callable[[], T_Defs]) -> LazyDefinitions[T_Defs]:
     return LazyDefinitions(load_fn=fn)
 
 

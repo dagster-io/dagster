@@ -1,4 +1,3 @@
-from dagster._utils.test.definitions import project_defs as project_defs
 from dagster.components.component.component import Component as Component
 from dagster.components.component.component_loader import component as component
 from dagster.components.component.component_scaffolder import (
