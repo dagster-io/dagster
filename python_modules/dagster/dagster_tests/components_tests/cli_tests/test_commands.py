@@ -67,7 +67,18 @@ def test_list_library_objects_from_module():
         scaffolder=ScaffolderSnap(schema=None),
     )
 
-    pipes_script_params_schema = {
+    pipes_script_component_model_schema = {
+        "additionalProperties": False,
+        "properties": {
+            "asset_key": {"title": "Asset Key", "type": "string"},
+            "filename": {"title": "Filename", "type": "string"},
+        },
+        "required": ["asset_key", "filename"],
+        "title": "SimplePipesScriptComponentModel",
+        "type": "object",
+    }
+
+    pipes_script_component_scaffold_params_schema = {
         "properties": {
             "asset_key": {"title": "Asset Key", "type": "string"},
             "filename": {"title": "Filename", "type": "string"},
@@ -76,15 +87,14 @@ def test_list_library_objects_from_module():
         "title": "SimplePipesScriptScaffoldParams",
         "type": "object",
     }
-
     assert result[3] == ComponentTypeSnap(
         key=LibraryObjectKey(
             namespace="dagster_test.components", name="SimplePipesScriptComponent"
         ),
-        schema=pipes_script_params_schema,
+        schema=pipes_script_component_model_schema,
         description="A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
         summary="A simple asset that runs a Python script with the Pipes subprocess client.",
-        scaffolder=ScaffolderSnap(schema=pipes_script_params_schema),
+        scaffolder=ScaffolderSnap(schema=pipes_script_component_scaffold_params_schema),
     )
 
 
