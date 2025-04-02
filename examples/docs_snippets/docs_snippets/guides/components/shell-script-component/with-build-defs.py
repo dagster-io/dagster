@@ -3,14 +3,13 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from dagster_components import (
+import dagster as dg
+from dagster.components import (
     Component,
     ComponentLoadContext,
     Resolvable,
     ResolvedAssetSpec,
 )
-
-import dagster as dg
 
 
 @dataclass

@@ -59,7 +59,7 @@ setup(
     extras_require={
         "test": [
             "click",
-            "dagster-components",
+            "dagster",
             "psutil",
             "pydantic",
             "pytest",

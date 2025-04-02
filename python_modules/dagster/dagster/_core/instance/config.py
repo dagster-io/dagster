@@ -6,13 +6,10 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 
 from dagster_shared.yaml_utils import load_yaml_from_globs
 
-from dagster import (
-    Array,
-    Bool,
-    String,
-    _check as check,
-)
+import dagster._check as check
+from dagster._builtins import Bool, String
 from dagster._config import (
+    Array,
     Field,
     IntSource,
     Noneable,

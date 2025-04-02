@@ -16,7 +16,7 @@ from dagster_buildkite.utils import (
     BuildkiteStep,
     connect_sibling_docker_container,
     has_dagster_airlift_changes,
-    has_dg_or_components_changes,
+    has_dg_changes,
     has_storage_test_fixture_changes,
     network_buildkite_container,
     skip_if_not_airlift_or_dlift_commit,
@@ -304,7 +304,7 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         # snippets against all supported python versions.
         unsupported_python_versions=AvailablePythonVersion.get_all_except_default(),
         pytest_tox_factors=["all", "integrations", "docs_snapshot_test"],
-        always_run_if=has_dg_or_components_changes,
+        always_run_if=has_dg_changes,
     ),
     PackageSpec(
         "examples/project_fully_featured",
@@ -456,6 +456,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "api_tests",
             "asset_defs_tests",
             "cli_tests",
+            "components_tests",
             "core_tests",
             "daemon_sensor_tests",
             "daemon_tests",

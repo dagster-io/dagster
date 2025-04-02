@@ -40,26 +40,10 @@ setup(
     ],
     zip_safe=False,
     entry_points={
-        "console_scripts": [
-            "dagster-components = dagster_components.cli:main",
-        ],
         "dagster_dg.library": [
             "dagster-components-dagster = dagster_components.dagster",
             "dagster-components-dbt = dagster_components.dagster_dbt",
             "dagster-components-sling = dagster_components.dagster_sling",
-        ],
-    },
-    extras_require={
-        "sling": ["dagster-sling"],
-        "dbt": ["dagster-dbt"],
-        "test": [
-            "dagster-test",
-            "dbt-duckdb",
-            "dagster-dg",
-            "tomlkit",
-            "jsonschema",
-            "pandas",
-            "duckdb",
         ],
     },
 )

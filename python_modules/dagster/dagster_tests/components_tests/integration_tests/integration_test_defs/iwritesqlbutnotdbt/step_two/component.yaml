@@ -1,0 +1,4 @@
+type: dagster_tests.components_tests.integration_tests.lib.duckdb_component.step_two.DuckDbComponent
+attributes:
+  asset_key: "step_two_key"
+  csv_path: "raw_customers.csv"

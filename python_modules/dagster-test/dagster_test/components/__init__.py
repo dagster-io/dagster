@@ -1,10 +1,3 @@
-import importlib.util
-
-_has_dagster_components = importlib.util.find_spec("dagster_components") is not None
-
-if not _has_dagster_components:
-    raise Exception("dagster-components is not installed")
-
 from dagster_test.components.all_metadata_empty_asset import (
     AllMetadataEmptyComponent as AllMetadataEmptyComponent,
 )

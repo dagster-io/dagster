@@ -132,6 +132,12 @@ setup(
             "flaky",
             "psutil",
         ],
+        "test-components": [
+            "tomlkit",
+            "jsonschema",
+            "pandas",
+            "duckdb",
+        ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [
             "pyright==1.1.379",
@@ -161,7 +167,12 @@ setup(
     entry_points={
         "console_scripts": [
             "dagster = dagster.cli:main",
+            "dagster-components = dagster.components.cli:main",
             "dagster-daemon = dagster.daemon.cli:main",
-        ]
+        ],
+        "dagster_dg.library": [
+            "dagster = dagster",
+            "dagster.components = dagster.components",
+        ],
     },
 )

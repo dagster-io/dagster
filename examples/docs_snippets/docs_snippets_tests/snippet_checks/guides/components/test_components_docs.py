@@ -107,7 +107,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
         )
 
         _run_command(
-            f"uv add sling_mac_arm64 && uv add --editable '{EDITABLE_DIR / 'dagster-sling'!s}' && uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}[sling]'"
+            f"uv add sling_mac_arm64 && uv add --editable '{EDITABLE_DIR / 'dagster-sling'!s}'"
         )
         _run_command("uv tree")
         run_command_and_snippet_output(
@@ -120,7 +120,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
         # Scaffold new ingestion, validate new files
         run_command_and_snippet_output(
-            cmd="dg scaffold 'dagster_components.dagster_sling.SlingReplicationCollectionComponent' ingest_files",
+            cmd="dg scaffold 'dagster_sling.SlingReplicationCollectionComponent' ingest_files",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-dg-scaffold-sling-replication.txt",
             update_snippets=update_snippets,
@@ -240,7 +240,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 ignore_output=True,
             )
             _run_command(
-                f"uv add --editable '{EDITABLE_DIR / 'dagster-dbt'!s}' && uv add --editable '{EDITABLE_DIR / 'dagster-components'!s}[dbt]'; uv add dbt-duckdb"
+                f"uv add --editable '{EDITABLE_DIR / 'dagster-dbt'!s}'; uv add dbt-duckdb"
             )
             run_command_and_snippet_output(
                 cmd="dg list component-type",
@@ -252,7 +252,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
             # Scaffold dbt project components
             run_command_and_snippet_output(
-                cmd="dg scaffold dagster_components.dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt",
+                cmd="dg scaffold dagster_dbt.DbtProjectComponent jdbt --project-path dbt/jdbt",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-dg-scaffold-jdbt.txt",
                 update_snippets=update_snippets,
@@ -270,7 +270,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt-incorrect.yaml",
                 contents=format_multiline("""
-                    type: dagster_components.dbt_project
+                    type: dagster_dt.dbt_project
 
                     attributes:
                       dbt:
@@ -295,7 +295,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt.yaml",
                 contents=format_multiline("""
-                    type: dagster_components.dagster_dbt.DbtProjectComponent
+                    type: dagster_dbt.DbtProjectComponent
 
                     attributes:
                       dbt:
@@ -331,7 +331,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-component-ingest-automation.yaml",
                 contents=format_multiline("""
-                    type: dagster_components.dagster_sling.SlingReplicationCollectionComponent
+                    type: dagster_sling.SlingReplicationCollectionComponent
 
                     attributes:
                       replications:
@@ -349,7 +349,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-component-jdbt-automation.yaml",
                 contents=format_multiline("""
-                    type: dagster_components.dagster_dbt.DbtProjectComponent
+                    type: dagster_dbt.DbtProjectComponent
 
                     attributes:
                       dbt:
