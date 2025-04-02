@@ -3,7 +3,10 @@ from typing import TYPE_CHECKING, Optional, Union
 import dagster._check as check
 import graphene
 from dagster._core.definitions import ExpectationResult
-from dagster._core.definitions.events import AssetMaterializationFailureReason
+from dagster._core.definitions.events import (
+    AssetMaterializationFailureReason,
+    AssetMaterializationFailureType,
+)
 from dagster._core.events import AssetLineageInfo, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.objects import ErrorSource
@@ -409,7 +412,7 @@ class GrapheneMaterializationEvent(graphene.ObjectType, AssetEventMixin):
 
 
 GrapheneAssetMaterializationFailureType = graphene.Enum.from_enum(
-    AssetMaterializationFailureReason, name="AssetMaterializationFailureType"
+    AssetMaterializationFailureType, name="AssetMaterializationFailureType"
 )
 
 GrapheneAssetMaterializationFailureReason = graphene.Enum.from_enum(

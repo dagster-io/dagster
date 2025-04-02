@@ -663,10 +663,8 @@ enum AssetMaterializationFailureReason {
 }
 
 enum AssetMaterializationFailureType {
-  FAILED_TO_MATERIALIZE
-  UPSTREAM_FAILED_TO_MATERIALIZE
-  RUN_TERMINATED
-  UNKNOWN
+  FAILED
+  SKIPPED
 }
 
 enum MaterializationHistoryEventTypeSelector {

@@ -413,10 +413,8 @@ export enum AssetMaterializationFailureReason {
 }
 
 export enum AssetMaterializationFailureType {
-  FAILED_TO_MATERIALIZE = 'FAILED_TO_MATERIALIZE',
-  RUN_TERMINATED = 'RUN_TERMINATED',
-  UNKNOWN = 'UNKNOWN',
-  UPSTREAM_FAILED_TO_MATERIALIZE = 'UPSTREAM_FAILED_TO_MATERIALIZE',
+  FAILED = 'FAILED',
+  SKIPPED = 'SKIPPED',
 }
 
 export type AssetMaterializationPlannedEvent = MessageEvent &
@@ -8664,7 +8662,7 @@ export const buildFailedToMaterializeEvent = (
     materializationFailureType:
       overrides && overrides.hasOwnProperty('materializationFailureType')
         ? overrides.materializationFailureType!
-        : AssetMaterializationFailureType.FAILED_TO_MATERIALIZE,
+        : AssetMaterializationFailureType.FAILED,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'libero',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],
