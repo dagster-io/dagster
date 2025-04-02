@@ -147,7 +147,7 @@ class DbtProjectComponent(Component, Resolvable):
 
 
 
-    Scaffold by running `dagster scaffold component dagster_components.dagster_dbt.DbtProjectComponent --project-path path/to/your/existing/dbt_project`
+    Scaffold by running `dg scaffold dagster_components.dagster_dbt.DbtProjectComponent --project-path path/to/your/existing/dbt_project`
     in the Dagster project directory.
 
     ### What is dbt?
