@@ -2641,7 +2641,7 @@
       "destination": "/api/python-api/libraries/dagstermill#dagstermill.ConfigurableLocalOutputNotebookIOManager"
     },
     {
-      "source": "https://docs.dagster.io/overview/schedules-sensors/sensors",
+      "source": "/overview/schedules-sensors/sensors",
       "destination": "/guides/automate/sensors"
     },
     {
@@ -2649,124 +2649,132 @@
       "destination": "/guides/automate/schedules"
     },
     {
-      "source": "https://docs.dagster.io/master/integrations/databricks",
+      "source": "/master/integrations/databricks",
       "destination": "/integrations/libraries/databricks"
     },
     {
-      "source": "https://docs.dagster.io/master/integrations/bigquery/using-bigquery-with-dagster",
+      "source": "/master/integrations/bigquery/using-bigquery-with-dagster",
       "destination": "/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster"
     },
     {
-      "source": "https://docs.dagster.io/master/integrations/bigquery/reference",
+      "source": "/master/integrations/bigquery/reference",
       "destination": "/integrations/libraries/gcp/bigquery/reference"
     },
     {
-      "source": "https://docs.dagster.io/master/guides/dagster/intro-to-ops-jobs",
+      "source": "/master/guides/dagster/intro-to-ops-jobs",
       "destination": "/guides/build/ops"
     },
     {
-      "source": "https://docs.dagster.io/master/deployment/run-retries",
+      "source": "/master/deployment/run-retries",
       "destination": "/guides/deploy/execution/run-retries"
     },
     {
-      "source": "https://docs.dagster.io/master/deployment/guides/aws",
+      "source": "/master/deployment/guides/aws",
       "destination": "/guides/deploy/deployment-options/aws"
     },
     {
-      "source": "https://docs.dagster.io/master/concepts/resources",
+      "source": "/master/concepts/resources",
       "destination": "/guides/build/external-resources"
     },
     {
-      "source": "https://docs.dagster.io/master/concepts/partitions-schedules-sensors/sensors",
+      "source": "/master/concepts/partitions-schedules-sensors/sensors",
       "destination": "/guides/automate/sensors"
     },
     {
-      "source": "https://docs.dagster.io/master/concepts/partitions-schedules-sensors/schedules",
+      "source": "/master/concepts/partitions-schedules-sensors/schedules",
       "destination": "/guides/automate/schedules"
     },
     {
-      "source": "https://docs.dagster.io/master/concepts/partitions-schedules-sensors/partitions",
+      "source": "/master/concepts/partitions-schedules-sensors/partitions",
       "destination": "/guides/build/partitions-and-backfills/partitioning-assets"
     },
     {
-      "source": "https://docs.dagster.io/master/concepts/logging/loggers",
+      "source": "/master/concepts/logging/loggers",
       "destination": "/guides/monitor/logging"
     },
     {
-      "source": "https://docs.dagster.io/guides/dagster/pythonic-resources",
+      "source": "/guides/dagster/pythonic-resources",
       "destination": "guides/operate/configuration/run-configuration#defining-and-accessing-pythonic-configuration-for-a-resource"
     },
     {
-      "source": "https://docs.dagster.io/guides/dagster/pythonic-config",
+      "source": "/guides/dagster/pythonic-config",
       "destination": "/guides/operate/configuration/run-configuration"
     },
     {
-      "source": "https://docs.dagster.io/guides/dagster/automating-pipelines",
+      "source": "/guides/dagster/automating-pipelines",
       "destination": "/guides/automate"
     },
     {
-      "source": "https://docs.dagster.io/guides/dagster/asset-tutorial",
+      "source": "/guides/dagster/asset-tutorial",
       "destination": "/etl-pipeline-tutorial"
     },
     {
-      "source": "https://docs.dagster.io/getting-started/project-file-reference",
+      "source": "/getting-started/project-file-reference",
       "destination": "/guides/build/projects/dagster-project-file-reference"
     },
     {
-      "source": "https://docs.dagster.io/getting-started/overview",
+      "source": "/getting-started/overview",
       "destination": "/"
     },
     {
-      "source": "https://docs.dagster.io/deployment/guides/running-locally",
+      "source": "/deployment/guides/running-locally",
       "destination": "/guides/deploy/deployment-options/running-dagster-locally"
     },
     {
-      "source": "https://docs.dagster.io/dagster-cloud/getting-started/getting-started-with-serverless-deployment",
+      "source": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment",
       "destination": "/dagster-plus/deployment/deployment-types/serverless"
     },
     {
-      "source": "https://docs.dagster.io/dagster-cloud/getting-started/getting-started-with-hybrid-deployment",
+      "source": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment",
       "destination": "/dagster-plus/deployment/deployment-types/hybrid"
     },
     {
-      "source": "https://docs.dagster.io/dagster-cloud/developing-testing/environment-variables",
+      "source": "/dagster-cloud/developing-testing/environment-variables",
       "destination": "/dagster-plus/deployment/management/environment-variables"
     },
     {
-      "source": "https://docs.dagster.io/dagster-cloud/developing-testing/deployment-settings-reference",
+      "source": "/dagster-cloud/developing-testing/deployment-settings-reference",
       "destination": "/dagster-plus/deployment/management/deployments/deployment-settings-reference"
     },
     {
-      "source": "https://docs.dagster.io/concepts/dagster-pipes/pyspark",
+      "source": "/concepts/dagster-pipes/pyspark",
       "destination": "/guides/build/external-pipelines/pyspark-pipeline"
     },
     {
-      "source": "https://docs.dagster.io/concepts/dagit/graphql-client",
-      "destination": "https://docs.dagster.io/guides/operate/graphql/graphql-client"
+      "source": "/concepts/dagit/graphql-client",
+      "destination": "/guides/operate/graphql/graphql-client"
     },
     {
-      "source": "https://docs.dagster.io/concepts/code-locations/workspaces",
-      "destination": "https://docs.dagster.io/guides/deploy/code-locations/workspace-yaml"
+      "source": "/concepts/code-locations/workspaces",
+      "destination": "/guides/deploy/code-locations/workspace-yaml"
     },
     {
-      "source": "https://docs.dagster.io/concepts/asset-checks",
+      "source": "/concepts/asset-checks",
       "destination": "/guides/test/asset-checks"
     },
     {
-      "source": "https://docs.dagster.io/_apidocs/solids",
+      "source": "/_apidocs/solids",
       "destination": "/api/python-api/assets"
     },
     {
-      "source": "https://docs.dagster.cloud/agents/ecs/setup",
-      "destination": "https://docs.dagster.io/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/"
+      "source": "/overview/pipeline-runs/limiting-run-concurrency",
+      "destination": "/guides/operate/managing-concurrency"
     },
     {
-      "source": "http://docs.dagster.io/overview/pipeline-runs/limiting-run-concurrency",
-      "destination": "https://docs.dagster.io/guides/operate/managing-concurrency"
-    },
-    {
-      "source": "http://docs.dagster.io/overview/io-managers/io-managers",
+      "source": "/overview/io-managers/io-managers",
       "destination": "/guides/build/io-managers"
+    },
+    {
+      "source": "/master/_apidocs/experimental",
+      "destination": "/api/python-api"
+    },
+    {
+      "source": "/tutorial/saving-your-data",
+      "destination": "/etl-pipeline-tutorial"
+    },
+    {
+      "source": "/master/guides/dagster/run-attribution",
+      "destination": "/guides/deploy/execution/run-coordinators"
     }
   ],
   "trailingSlash": false
