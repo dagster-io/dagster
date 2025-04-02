@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 import dagster_shared.check as check
 from dagster_shared.serdes import deserialize_value, serialize_value
-from dagster_shared.serdes.objects import ComponentTypeSnap, PackageEntryKey, PackageEntrySnap
+from dagster_shared.serdes.objects import PackageEntryKey, PackageEntrySnap
 
 from dagster_dg.utils import is_valid_json
 
@@ -47,13 +47,6 @@ class RemotePackageRegistry:
     def get(self, key: PackageEntryKey) -> PackageEntrySnap:
         """Resolves a library object within the scope of a given component directory."""
         return self._objects[key]
-
-    def get_component_type(self, key: PackageEntryKey) -> ComponentTypeSnap:
-        """Resolves a component type within the scope of a given component directory."""
-        obj = self.get(key)
-        if not isinstance(obj, ComponentTypeSnap):
-            raise ValueError(f"Expected component type, got {obj}")
-        return obj
 
     def has(self, key: PackageEntryKey) -> bool:
         return key in self._objects
