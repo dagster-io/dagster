@@ -176,6 +176,10 @@
       "destination": "/integrations/libraries/airlift/"
     },
     {
+      "source": "/deploying/kubernetes",
+      "destination": "/guides/deploy/deployment-options/kubernetes"
+    },
+    {
       "source": "/troubleshooting/schedules",
       "destination": "/guides/automate/schedules/troubleshooting-schedules"
     },
