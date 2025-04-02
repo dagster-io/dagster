@@ -406,14 +406,17 @@ export type AssetLineageInfo = {
 export type AssetMaterializationEventType = FailedToMaterializeEvent | MaterializationEvent;
 
 export enum AssetMaterializationFailureReason {
-  COMPUTE_FAILED = 'COMPUTE_FAILED',
-  SKIPPED_OPTIONAL = 'SKIPPED_OPTIONAL',
-  SKIPPED_UNKNOWN = 'SKIPPED_UNKNOWN',
-  UNEXPECTED_TERMINATION = 'UNEXPECTED_TERMINATION',
+  FAILED_TO_MATERIALIZE = 'FAILED_TO_MATERIALIZE',
+  TERMINATION = 'TERMINATION',
   UNKNOWN = 'UNKNOWN',
-  UPSTREAM_COMPUTE_FAILED = 'UPSTREAM_COMPUTE_FAILED',
-  UPSTREAM_SKIPPED = 'UPSTREAM_SKIPPED',
-  USER_TERMINATION = 'USER_TERMINATION',
+  UPSTREAM_FAILED_TO_MATERIALIZE = 'UPSTREAM_FAILED_TO_MATERIALIZE',
+}
+
+export enum AssetMaterializationFailureType {
+  FAILED_TO_MATERIALIZE = 'FAILED_TO_MATERIALIZE',
+  TERMINATION = 'TERMINATION',
+  UNKNOWN = 'UNKNOWN',
+  UPSTREAM_FAILED_TO_MATERIALIZE = 'UPSTREAM_FAILED_TO_MATERIALIZE',
 }
 
 export type AssetMaterializationPlannedEvent = MessageEvent &
@@ -1646,6 +1649,7 @@ export type FailedToMaterializeEvent = DisplayableEvent &
     label: Maybe<Scalars['String']['output']>;
     level: LogLevel;
     materializationFailureReason: AssetMaterializationFailureReason;
+    materializationFailureType: AssetMaterializationFailureType;
     message: Scalars['String']['output'];
     metadataEntries: Array<
       | AssetMetadataEntry
@@ -8656,7 +8660,11 @@ export const buildFailedToMaterializeEvent = (
     materializationFailureReason:
       overrides && overrides.hasOwnProperty('materializationFailureReason')
         ? overrides.materializationFailureReason!
-        : AssetMaterializationFailureReason.COMPUTE_FAILED,
+        : AssetMaterializationFailureReason.FAILED_TO_MATERIALIZE,
+    materializationFailureType:
+      overrides && overrides.hasOwnProperty('materializationFailureType')
+        ? overrides.materializationFailureType!
+        : AssetMaterializationFailureType.FAILED_TO_MATERIALIZE,
     message: overrides && overrides.hasOwnProperty('message') ? overrides.message! : 'libero',
     metadataEntries:
       overrides && overrides.hasOwnProperty('metadataEntries') ? overrides.metadataEntries! : [],

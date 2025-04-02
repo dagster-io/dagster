@@ -63,6 +63,7 @@ from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import (
     AssetMaterializationFailure,
     AssetMaterializationFailureReason,
+    AssetMaterializationFailureType,
 )
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
@@ -3066,7 +3067,8 @@ class TestEventLogStorage:
                     asset_materialization_failure=AssetMaterializationFailure(
                         asset_key=a,
                         partition=partition,
-                        reason=AssetMaterializationFailureReason.COMPUTE_FAILED,
+                        failure_type=AssetMaterializationFailureType.FAILED,
+                        reason=AssetMaterializationFailureReason.FAILED_TO_MATERIALIZE,
                     ),
                     error=None,
                 )
@@ -6655,7 +6657,8 @@ class TestEventLogStorage:
                     asset_materialization_failure=AssetMaterializationFailure(
                         asset_key=asset_key,
                         partition=str(i),
-                        reason=AssetMaterializationFailureReason.COMPUTE_FAILED,
+                        failure_type=AssetMaterializationFailureType.FAILED,
+                        reason=AssetMaterializationFailureReason.FAILED_TO_MATERIALIZE,
                     ),
                 )
                 instance.report_dagster_event(event_to_store, test_run_id)

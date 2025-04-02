@@ -42,6 +42,7 @@ from dagster._core.definitions.events import (
     AssetLineageInfo,
     AssetMaterializationFailure,
     AssetMaterializationFailureReason,
+    AssetMaterializationFailureType,
     ObjectStoreOperationType,
 )
 from dagster._core.definitions.metadata import (
@@ -1632,6 +1633,10 @@ class AssetFailedToMaterializeData(
     @property
     def partition(self) -> Optional[str]:
         return self.asset_materialization_failure.partition
+
+    @property
+    def failure_type(self) -> AssetMaterializationFailureType:
+        return self.asset_materialization_failure.failure_type
 
     @property
     def reason(self) -> AssetMaterializationFailureReason:
