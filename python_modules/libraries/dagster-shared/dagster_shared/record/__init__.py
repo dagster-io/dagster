@@ -8,6 +8,8 @@ from typing import (  # noqa: UP035
     TYPE_CHECKING,
     Any,
     Callable,
+    Generic,
+    Iterator,
     NamedTuple,
     Optional,
     Tuple,  # noqa: F401
@@ -616,3 +618,17 @@ def _pydantic_core_schema(cls, source: Any, handler):
     from pydantic_core import core_schema
 
     return core_schema.is_instance_schema(cls)
+
+
+TRecord = TypeVar("TRecord")
+
+
+class NamedTupleAdapter(Generic[TRecord]):
+    def _asdict(self: TRecord) -> Mapping[str, Any]:
+        return as_dict(self)
+
+    def _replace(self: TRecord, **kwargs) -> TRecord:
+        return replace(self, **kwargs)
+
+    def __iter__(self) -> Iterator:
+        return tuple.__iter__(self)  # type: ignore
