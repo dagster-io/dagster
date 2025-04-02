@@ -283,7 +283,9 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
     skip_when_empty_fields={"use_ssl", "additional_metadata"},
 )
 @record_custom
-class GrpcServerCodeLocationOrigin(IHaveNew, CodeLocationOrigin):
+class GrpcServerCodeLocationOrigin(
+    IHaveNew, NamedTupleAdapter["GrpcServerCodeLocationOrigin"], CodeLocationOrigin
+):
     """Identifies a repository location hosted in a gRPC server managed by the user. Dagster
     is not responsible for managing the lifecycle of the server.
     """
