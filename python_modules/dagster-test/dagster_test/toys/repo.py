@@ -66,6 +66,7 @@ from dagster_test.toys.run_status_sensors import (
     yield_run_request_succeeds_sensor,
 )
 from dagster_test.toys.schedules import get_toys_schedules
+from dagster_test.toys.seed_asset_failure_events import seed_asset_failure_events
 from dagster_test.toys.sensors import get_toys_sensors
 from dagster_test.toys.sleepy import sleepy_job
 from dagster_test.toys.software_defined_assets import software_defined_assets
@@ -91,6 +92,7 @@ model_job = model.to_job()
 def toys_repository():
     return (
         [
+            seed_asset_failure_events,
             composition_job,
             error_monster_failing_job,
             error_monster_passing_job,

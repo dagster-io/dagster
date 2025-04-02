@@ -9,8 +9,8 @@ import {
   AssetPartitionStaleQuery,
 } from '../types/AssetPartitionDetail.types';
 import {
-  AssetMaterializationFragment,
   AssetObservationFragment,
+  AssetSuccessfulMaterializationFragment,
 } from '../types/useRecentAssetEvents.types';
 
 export const Partition = '2022-02-02';
@@ -18,7 +18,7 @@ export const MaterializationTimestamp = 1673996425523;
 
 const ONE_MIN = 60 * 1000;
 
-export const MaterializationEventOlder: AssetMaterializationFragment = {
+export const MaterializationEventOlder: AssetSuccessfulMaterializationFragment = {
   partition: Partition,
   tags: [
     {
@@ -76,7 +76,7 @@ export const MaterializationEventOlder: AssetMaterializationFragment = {
   __typename: 'MaterializationEvent',
 };
 
-export const MaterializationEventMinimal: AssetMaterializationFragment = {
+export const MaterializationEventMinimal: AssetSuccessfulMaterializationFragment = {
   partition: null,
   tags: [],
   runOrError: {
@@ -103,7 +103,7 @@ export const MaterializationEventMinimal: AssetMaterializationFragment = {
   __typename: 'MaterializationEvent',
 };
 
-export const MaterializationEventFull: AssetMaterializationFragment = {
+export const MaterializationEventFull: AssetSuccessfulMaterializationFragment = {
   partition: Partition,
   tags: [
     {

@@ -30,7 +30,10 @@ import {
   AssetPartitionStaleQueryVariables,
 } from './types/AssetPartitionDetail.types';
 import {AssetObservationFragment} from './types/useRecentAssetEvents.types';
-import {ASSET_MATERIALIZATION_FRAGMENT, ASSET_OBSERVATION_FRAGMENT} from './useRecentAssetEvents';
+import {
+  ASSET_OBSERVATION_FRAGMENT,
+  ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT,
+} from './useRecentAssetEvents';
 import {gql, useQuery} from '../apollo-client';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
@@ -130,7 +133,7 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
         assetMaterializations(partitions: [$partitionKey]) {
           ... on MaterializationEvent {
             runId
-            ...AssetMaterializationFragment
+            ...AssetSuccessfulMaterializationFragment
           }
         }
         assetObservations(partitions: [$partitionKey]) {
@@ -148,7 +151,7 @@ export const ASSET_PARTITION_DETAIL_QUERY = gql`
     endTime
   }
 
-  ${ASSET_MATERIALIZATION_FRAGMENT}
+  ${ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT}
   ${ASSET_OBSERVATION_FRAGMENT}
 `;
 

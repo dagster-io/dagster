@@ -1169,6 +1169,7 @@ export type RunDagsterRunEventFragment_FailedToMaterializeEvent = {
   eventType: Types.DagsterEventType | null;
   label: string | null;
   description: string | null;
+  partition: string | null;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -1317,6 +1318,7 @@ export type RunDagsterRunEventFragment_FailedToMaterializeEvent = {
       }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
+  assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
 };
 
 export type RunDagsterRunEventFragment_HandledOutputEvent = {

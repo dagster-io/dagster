@@ -5,8 +5,18 @@ import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey, AssetViewParams} from './types';
 import {gql, useQuery} from '../apollo-client';
 import {clipEventsToSharedMinimumTime} from './clipEventsToSharedMinimumTime';
-import {AssetEventsQuery, AssetEventsQueryVariables} from './types/useRecentAssetEvents.types';
+import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
+import {
+  AssetEventsQuery,
+  AssetEventsQueryVariables,
+  AssetFailedToMaterializeFragment,
+  AssetSuccessfulMaterializationFragment,
+} from './types/useRecentAssetEvents.types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
+
+export type AssetMaterializationFragment =
+  | AssetSuccessfulMaterializationFragment
+  | AssetFailedToMaterializeFragment;
 
 /**
 The params behavior on this page is a bit nuanced - there are two main query
@@ -41,7 +51,9 @@ export function getXAxisForParams(
  */
 export function useRecentAssetEvents(
   assetKey: AssetKey | undefined,
-  params: Pick<AssetViewParams, 'asOf' | 'partition' | 'time'>,
+  params: Pick<AssetViewParams, 'asOf' | 'partition' | 'time'> & {
+    partitionKeys?: string[];
+  },
   {assetHasDefinedPartitions}: {assetHasDefinedPartitions: boolean},
 ) {
   const before = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
@@ -57,19 +69,22 @@ export function useRecentAssetEvents(
           assetKey: {path: assetKey?.path ?? []},
           before,
           partitionInLast: 120,
+          eventTypeSelector: MaterializationHistoryEventTypeSelector.ALL,
         }
       : {
           assetKey: {path: assetKey?.path ?? []},
           before,
           limit: 100,
+          eventTypeSelector: MaterializationHistoryEventTypeSelector.ALL,
         },
   });
   const {data, loading, refetch} = queryResult;
 
   const value = useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
+
     const loaded = {
-      materializations: asset?.assetMaterializations || [],
+      materializations: asset?.assetMaterializationHistory?.results || [],
       observations: asset?.assetObservations || [],
     };
 
@@ -78,11 +93,11 @@ export function useRecentAssetEvents(
       : loaded;
 
     const allPartitionKeys = asset?.definition?.partitionKeys;
-    const loadedPartitionKeys =
+    const loadedPartitionKeys: string[] =
       loadUsingPartitionKeys && allPartitionKeys
         ? allPartitionKeys.slice(allPartitionKeys.length - 120)
         : uniq(
-            [...materializations, ...observations].map((p) => p.partition!).filter(Boolean),
+            [...materializations, ...observations].map((o) => o.partition!).filter(Boolean),
           ).sort();
 
     return {
@@ -101,8 +116,45 @@ export function useRecentAssetEvents(
 
 export type RecentAssetEvents = ReturnType<typeof useRecentAssetEvents>;
 
-export const ASSET_MATERIALIZATION_FRAGMENT = gql`
-  fragment AssetMaterializationFragment on MaterializationEvent {
+export const ASSET_FAILED_TO_MATERIALIZE_FRAGMENT = gql`
+  fragment AssetFailedToMaterializeFragment on FailedToMaterializeEvent {
+    tags {
+      key
+      value
+    }
+    runOrError {
+      ... on PipelineRun {
+        id
+        mode
+        repositoryOrigin {
+          id
+          repositoryName
+          repositoryLocationName
+        }
+        status
+        pipelineName
+        pipelineSnapshotId
+      }
+    }
+    runId
+    timestamp
+    stepKey
+    label
+    description
+    assetKey {
+      path
+    }
+    partition
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
+  }
+
+  ${METADATA_ENTRY_FRAGMENT}
+  ${ASSET_LINEAGE_FRAGMENT}
+`;
+export const ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT = gql`
+  fragment AssetSuccessfulMaterializationFragment on MaterializationEvent {
     partition
     tags {
       key
@@ -178,7 +230,11 @@ export const ASSET_EVENTS_QUERY = gql`
     $assetKey: AssetKeyInput!
     $limit: Int
     $before: String
+    $after: String
     $partitionInLast: Int
+    $eventTypeSelector: MaterializationHistoryEventTypeSelector!
+    $partitions: [String!]
+    $cursor: String
   ) {
     assetOrError(assetKey: $assetKey) {
       ... on Asset {
@@ -189,16 +245,26 @@ export const ASSET_EVENTS_QUERY = gql`
         assetObservations(
           limit: $limit
           beforeTimestampMillis: $before
+          afterTimestampMillis: $after
           partitionInLast: $partitionInLast
+          partitions: $partitions
         ) {
           ...AssetObservationFragment
         }
-        assetMaterializations(
+        assetMaterializationHistory(
           limit: $limit
           beforeTimestampMillis: $before
+          afterTimestampMillis: $after
           partitionInLast: $partitionInLast
+          eventTypeSelector: $eventTypeSelector
+          partitions: $partitions
+          cursor: $cursor
         ) {
-          ...AssetMaterializationFragment
+          results {
+            ...AssetSuccessfulMaterializationFragment
+            ...AssetFailedToMaterializeFragment
+          }
+          cursor
         }
 
         definition {
@@ -210,5 +276,6 @@ export const ASSET_EVENTS_QUERY = gql`
   }
 
   ${ASSET_OBSERVATION_FRAGMENT}
-  ${ASSET_MATERIALIZATION_FRAGMENT}
+  ${ASSET_SUCCESSFUL_MATERIALIZATION_FRAGMENT}
+  ${ASSET_FAILED_TO_MATERIALIZE_FRAGMENT}
 `;

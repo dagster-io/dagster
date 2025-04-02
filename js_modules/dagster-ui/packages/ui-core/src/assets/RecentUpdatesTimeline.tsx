@@ -9,7 +9,7 @@ import {
   Tag,
   useViewport,
 } from '@dagster-io/ui-components';
-import {useMemo} from 'react';
+import {memo, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -38,10 +38,10 @@ type Props = {
   loading: boolean;
 };
 
-export const RecentUpdatesTimelineForAssetKey = (props: {assetKey: AssetKey}) => {
+export const RecentUpdatesTimelineForAssetKey = memo((props: {assetKey: AssetKey}) => {
   const data = useRecentAssetEvents(props.assetKey, {}, {assetHasDefinedPartitions: false});
   return <RecentUpdatesTimeline assetKey={props.assetKey} {...data} />;
-};
+});
 
 export const RecentUpdatesTimeline = ({
   assetKey,
@@ -97,6 +97,8 @@ export const RecentUpdatesTimeline = ({
       start: number;
       end: number;
       materializations: (MaterializationType | ObservationType)[];
+      hasFailedMaterializations: boolean;
+      hasMaterializations: boolean;
     }> = new Array(buckets);
 
     sortedMaterializations.forEach((materialization) => {
@@ -108,8 +110,15 @@ export const RecentUpdatesTimeline = ({
         start: bucketIndex,
         end: bucketIndex + 1,
         materializations: [],
+        hasFailedMaterializations: false,
+        hasMaterializations: false,
       };
       bucketsArr[bucketIndex]!.materializations.push(materialization);
+      if (materialization.__typename === 'FailedToMaterializeEvent') {
+        bucketsArr[bucketIndex]!.hasFailedMaterializations = true;
+      } else {
+        bucketsArr[bucketIndex]!.hasMaterializations = true;
+      }
     });
 
     return bucketsArr;
@@ -152,6 +161,9 @@ export const RecentUpdatesTimeline = ({
         <div {...containerProps} style={{width: '100%', height: 20, position: 'relative'}}>
           {bucketedMaterializations.map((bucket) => {
             const width = bucket.end - bucket.start;
+            const bucketStartTime = startTimestamp + bucket.start * bucketTimeRange;
+            const bucketEndTimestamp = startTimestamp + bucket.end * bucketTimeRange;
+            const bucketRange = bucketEndTimestamp - bucketStartTime;
             return (
               <TickWrapper
                 key={bucket.start}
@@ -160,10 +172,7 @@ export const RecentUpdatesTimeline = ({
                   width: (100 * width) / buckets + '%',
                 }}
               >
-                {bucket.materializations.map(({timestamp}) => {
-                  const bucketStartTime = startTimestamp + bucket.start * bucketTimeRange;
-                  const bucketEndTimestamp = startTimestamp + bucket.end * bucketTimeRange;
-                  const bucketRange = bucketEndTimestamp - bucketStartTime;
+                {bucket.materializations.map(({timestamp, __typename}) => {
                   const percent = (100 * (parseInt(timestamp) - bucketStartTime)) / bucketRange;
 
                   return (
@@ -173,6 +182,7 @@ export const RecentUpdatesTimeline = ({
                         // Make sure there's enough room to see the last tick.
                         left: `min(calc(100% - ${INNER_TICK_WIDTH}px), ${percent}%`,
                       }}
+                      $isSuccess={__typename !== 'FailedToMaterializeEvent'}
                     />
                   );
                 })}
@@ -195,7 +205,10 @@ export const RecentUpdatesTimeline = ({
                   }
                 >
                   <>
-                    <Tick>
+                    <Tick
+                      $hasError={bucket.hasFailedMaterializations}
+                      $hasSuccess={bucket.hasMaterializations}
+                    >
                       <TickText>{bucket.materializations.length}</TickText>
                     </Tick>
                   </>
@@ -224,14 +237,20 @@ const AssetUpdate = ({
   event: MaterializationType | ObservationType;
 }) => {
   const run = event?.runOrError.__typename === 'Run' ? event.runOrError : null;
+  const icon = useMemo(() => {
+    switch (event.__typename) {
+      case 'MaterializationEvent':
+        return <Icon name="run_success" color={Colors.accentGreen()} size={16} />;
+      case 'ObservationEvent':
+        return <Icon name="observation" color={Colors.accentGreen()} size={16} />;
+      case 'FailedToMaterializeEvent':
+        return <Icon name="run_failed" color={Colors.accentRed()} size={16} />;
+    }
+  }, [event.__typename]);
   return (
     <Box padding={4} border="bottom" flex={{justifyContent: 'space-between', gap: 8}}>
       <Box flex={{gap: 4, direction: 'row', alignItems: 'center'}}>
-        {event.__typename === 'MaterializationEvent' ? (
-          <Icon name="materialization" />
-        ) : (
-          <Icon name="observation" />
-        )}
+        {icon}
         <Link
           to={assetDetailsPathForKey(assetKey, {
             view: 'events',
@@ -265,9 +284,12 @@ const AssetUpdate = ({
   );
 };
 
-const Tick = styled.div`
+const Tick = styled.div<{
+  $hasError: boolean;
+  $hasSuccess: boolean;
+}>`
   position: absolute;
-  width 100%;
+  width: 100%;
   top: 0;
   bottom: 0;
   overflow: hidden;
@@ -275,9 +297,16 @@ const Tick = styled.div`
   cursor: pointer;
   border-radius: 2px;
   &:hover {
-    background-color: ${Colors.accentGreenHover()};
+    background: ${({$hasError, $hasSuccess}) => {
+      if ($hasError && $hasSuccess) {
+        return `linear-gradient(90deg, ${Colors.accentRedHover()} 50%, ${Colors.accentGreenHover()} 50%)`;
+      }
+      if ($hasError) {
+        return Colors.accentRedHover();
+      }
+      return Colors.accentGreenHover();
+    }};
   }
-
 `;
 
 const TickText = styled.div`
@@ -305,14 +334,22 @@ const TickWrapper = styled.div`
   }
 `;
 
-const InnerTick = styled.div`
+const InnerTick = styled.div<{
+  $isSuccess: boolean;
+}>`
   width: ${INNER_TICK_WIDTH}px;
-  background-color: ${Colors.accentGreen()};
   top: 0;
   bottom: 0;
   position: absolute;
   pointer-events: none;
   border-radius: 1px;
+  opacity: 0.5;
+  background: ${({$isSuccess}) => {
+    if ($isSuccess) {
+      return Colors.accentGreen();
+    }
+    return Colors.accentRed();
+  }};
 `;
 
 const TickLines = styled.div`
