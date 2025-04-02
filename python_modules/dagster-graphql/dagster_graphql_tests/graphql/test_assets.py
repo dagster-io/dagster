@@ -23,6 +23,7 @@ from dagster import (
 from dagster._core.definitions.events import (
     AssetMaterializationFailure,
     AssetMaterializationFailureReason,
+    AssetMaterializationFailureType,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.events import StepMaterializationData
@@ -3663,7 +3664,8 @@ class TestAssetMaterializationHistory(ExecutingGraphQLContextTestMatrix):
                     asset_materialization_failure=AssetMaterializationFailure(
                         asset_key=asset_key,
                         partition=None,
-                        reason=AssetMaterializationFailureReason.COMPUTE_FAILED,
+                        failure_type=AssetMaterializationFailureType.FAILED,
+                        reason=AssetMaterializationFailureReason.FAILED_TO_MATERIALIZE,
                     ),
                 ),
             )
