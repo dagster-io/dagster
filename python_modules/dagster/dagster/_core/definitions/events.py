@@ -355,6 +355,7 @@ class AssetMaterializationFailure(EventWithMetadata, IHaveNew):
             partition=self.partition,
             tags=self.tags,
             reason=self.reason,
+            failure_type=self.failure_type,
         )
 
 

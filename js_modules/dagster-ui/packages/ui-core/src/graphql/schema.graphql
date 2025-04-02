@@ -658,14 +658,14 @@ type FailedToMaterializeEvent implements MessageEvent & StepEvent & DisplayableE
 enum AssetMaterializationFailureReason {
   FAILED_TO_MATERIALIZE
   UPSTREAM_FAILED_TO_MATERIALIZE
-  TERMINATION
+  RUN_TERMINATED
   UNKNOWN
 }
 
 enum AssetMaterializationFailureType {
   FAILED_TO_MATERIALIZE
   UPSTREAM_FAILED_TO_MATERIALIZE
-  TERMINATION
+  RUN_TERMINATED
   UNKNOWN
 }
 
