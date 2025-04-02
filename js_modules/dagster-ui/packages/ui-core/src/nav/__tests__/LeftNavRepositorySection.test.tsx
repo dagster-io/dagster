@@ -38,96 +38,83 @@ describe('Repository options', () => {
   });
 
   it('Correctly displays the current repository state', async () => {
-    await act(() =>
-      render(
-        <MemoryRouter initialEntries={['/locations/foo@bar/etc']}>
+    const user = userEvent.setup();
+    const {findByRole} = render(
+      <MemoryRouter initialEntries={['/locations/foo@bar/etc']}>
+        <MockedProvider mocks={buildWorkspaceQueryWithOneLocation()}>
+          <WorkspaceProvider>
+            <LeftNavRepositorySection />
+          </WorkspaceProvider>
+        </MockedProvider>
+      </MemoryRouter>,
+    );
+
+    const repoHeader = await findByRole('button', {name: /lorem/i});
+    await user.click(repoHeader);
+
+    expect(await findByRole('link', {name: /my_pipeline/i})).toBeVisible();
+  });
+
+  describe('localStorage', () => {
+    it('initializes with first repo option, if one option and no localStorage', async () => {
+      const user = userEvent.setup();
+      const {findByRole, findAllByRole} = render(
+        <MemoryRouter initialEntries={['/runs']}>
           <MockedProvider mocks={buildWorkspaceQueryWithOneLocation()}>
             <WorkspaceProvider>
               <LeftNavRepositorySection />
             </WorkspaceProvider>
           </MockedProvider>
         </MemoryRouter>,
-      ),
-    );
-
-    const repoHeader = await screen.findByRole('button', {name: /lorem/i});
-    await userEvent.click(repoHeader);
-
-    await waitFor(() => {
-      expect(screen.getByRole('link', {name: /my_pipeline/i})).toBeVisible();
-    });
-  });
-
-  describe('localStorage', () => {
-    it('initializes with first repo option, if one option and no localStorage', async () => {
-      await act(() =>
-        render(
-          <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={buildWorkspaceQueryWithOneLocation()}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>,
-        ),
       );
 
-      const repoHeader = await screen.findByRole('button', {name: /lorem/i});
-      await userEvent.click(repoHeader);
+      const repoHeader = await findByRole('button', {name: /lorem/i});
+      await user.click(repoHeader);
 
-      await waitFor(() => {
-        // Three links. Two jobs, one repo name at the bottom.
-        expect(screen.getAllByRole('link')).toHaveLength(3);
-      });
+      // Three links. Two jobs, one repo name at the bottom.
+      expect(await findAllByRole('link')).toHaveLength(3);
     });
 
     it(`initializes with one repo if it's the only one, even though it's hidden`, async () => {
       window.localStorage.setItem(`:${HIDDEN_REPO_KEYS}`, `["${repoOne}:${locationOne}"]`);
-      await act(() =>
-        render(
-          <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={buildWorkspaceQueryWithOneLocation()}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>,
-        ),
+      const user = userEvent.setup();
+      const {findByRole, findAllByRole} = render(
+        <MemoryRouter initialEntries={['/runs']}>
+          <MockedProvider mocks={buildWorkspaceQueryWithOneLocation()}>
+            <WorkspaceProvider>
+              <LeftNavRepositorySection />
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>,
       );
 
-      const repoHeader = await screen.findByRole('button', {name: /lorem/i});
-      await userEvent.click(repoHeader);
+      const repoHeader = await findByRole('button', {name: /lorem/i});
+      await user.click(repoHeader);
 
-      await waitFor(() => {
-        // Three links. Two jobs, one repo name at the bottom.
-        expect(screen.getAllByRole('link')).toHaveLength(3);
-      });
+      expect(await findAllByRole('link')).toHaveLength(3);
     });
 
     it('initializes with all repos visible, if multiple options and no localStorage', async () => {
-      await act(() =>
-        render(
-          <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={buildWorkspaceQueryWithThreeLocations()}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>,
-        ),
+      const user = userEvent.setup();
+      const {findByRole, findAllByRole} = render(
+        <MemoryRouter initialEntries={['/runs']}>
+          <MockedProvider mocks={buildWorkspaceQueryWithThreeLocations()}>
+            <WorkspaceProvider>
+              <LeftNavRepositorySection />
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>,
       );
 
-      const loremHeader = await screen.findByRole('button', {name: /lorem/i});
+      const loremHeader = await findByRole('button', {name: /lorem/i});
       expect(loremHeader).toBeVisible();
-      const fooHeader = await waitFor(() => screen.getByRole('button', {name: /foo/i}));
+      const fooHeader = await findByRole('button', {name: /foo/i});
       expect(fooHeader).toBeVisible();
-      const dunderHeader = await waitFor(() => screen.getByRole('button', {name: /abc_location/i}));
+      const dunderHeader = await findByRole('button', {name: /abc_location/i});
       expect(dunderHeader).toBeVisible();
 
-      await userEvent.click(loremHeader);
-      await waitFor(() => {
-        expect(screen.queryAllByRole('link').length).toBeGreaterThan(1);
-      });
+      await user.click(loremHeader);
+      expect(await findAllByRole('link')).toHaveLength(2);
     });
 
     it('initializes with correct repo option, if `HIDDEN_REPO_KEYS` localStorage', async () => {
@@ -136,50 +123,44 @@ describe('Repository options', () => {
         `["lorem:ipsum","${DUNDER_REPO_NAME}:abc_location"]`,
       );
 
-      await act(() =>
-        render(
-          <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={buildWorkspaceQueryWithThreeLocations()}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>,
-        ),
+      const user = userEvent.setup();
+      const {findByRole, findAllByRole} = render(
+        <MemoryRouter initialEntries={['/runs']}>
+          <MockedProvider mocks={buildWorkspaceQueryWithThreeLocations()}>
+            <WorkspaceProvider>
+              <LeftNavRepositorySection />
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>,
       );
 
-      const fooHeader = await screen.findByRole('button', {name: /foo/i});
-      await userEvent.click(fooHeader);
+      const fooHeader = await findByRole('button', {name: /foo/i});
+      await user.click(fooHeader);
 
       // `foo@bar` is visible, and has four jobs. Plus one for repo link at bottom.
-      await waitFor(() => {
-        expect(screen.getAllByRole('link')).toHaveLength(5);
-      });
+      expect(await findAllByRole('link')).toHaveLength(5);
     });
 
     it('initializes with all repo options, no matching `HIDDEN_REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(`:${HIDDEN_REPO_KEYS}`, '["hello:world"]');
 
-      await act(() =>
-        render(
-          <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={buildWorkspaceQueryWithThreeLocations()}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>,
-        ),
+      const user = userEvent.setup();
+      const {findByRole} = render(
+        <MemoryRouter initialEntries={['/runs']}>
+          <MockedProvider mocks={buildWorkspaceQueryWithThreeLocations()}>
+            <WorkspaceProvider>
+              <LeftNavRepositorySection />
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>,
       );
 
-      const loremHeader = await screen.findByRole('button', {name: /lorem/i});
-      await waitFor(() => {
-        expect(loremHeader).toBeVisible();
-      });
+      const loremHeader = await findByRole('button', {name: /lorem/i});
+      await user.click(loremHeader);
 
-      const fooHeader = screen.getByRole('button', {name: /foo/i});
+      const fooHeader = await findByRole('button', {name: /foo/i});
       expect(fooHeader).toBeVisible();
-      const dunderHeader = screen.getByRole('button', {name: /abc_location/i});
+      const dunderHeader = await findByRole('button', {name: /abc_location/i});
       expect(dunderHeader).toBeVisible();
     });
 
@@ -189,28 +170,26 @@ describe('Repository options', () => {
         `["lorem:ipsum", "foo:bar", "${DUNDER_REPO_NAME}:abc_location"]`,
       );
 
-      // `act` immediately because we are asserting null renders
-      act(() => {
-        render(
-          <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={buildWorkspaceQueryWithThreeLocations()}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>,
-        );
-      });
+      const {findByText, queryByRole, queryAllByRole} = render(
+        <MemoryRouter initialEntries={['/runs']}>
+          <MockedProvider mocks={buildWorkspaceQueryWithThreeLocations()}>
+            <WorkspaceProvider>
+              <LeftNavRepositorySection />
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>,
+      );
 
-      const loremHeader = screen.queryByRole('button', {name: /lorem/i});
+      expect(await findByText(/select a code location to see a list of jobs/i)).toBeVisible();
+      const loremHeader = queryByRole('button', {name: /lorem/i});
       expect(loremHeader).toBeNull();
-      const fooHeader = screen.queryByRole('button', {name: /foo/i});
+      const fooHeader = queryByRole('button', {name: /foo/i});
       expect(fooHeader).toBeNull();
-      const dunderHeader = screen.queryByRole('button', {name: /abc_location/i});
+      const dunderHeader = queryByRole('button', {name: /abc_location/i});
       expect(dunderHeader).toBeNull();
 
       // No linked jobs or repos. Everything is hidden.
-      expect(screen.queryAllByRole('link')).toHaveLength(0);
+      expect(queryAllByRole('link')).toHaveLength(0);
     });
 
     // eslint-disable-next-line jest/no-disabled-tests
@@ -318,33 +297,22 @@ describe('Repository options', () => {
 
   describe('Asset groups', () => {
     it('renders asset groups alongside jobs', async () => {
-      await act(() =>
-        render(
-          <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={buildWorkspaceQueryWithOneLocationAndAssetGroup()}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>,
-        ),
+      const user = userEvent.setup();
+      const {findByRole} = render(
+        <MemoryRouter initialEntries={['/runs']}>
+          <MockedProvider mocks={buildWorkspaceQueryWithOneLocationAndAssetGroup()}>
+            <WorkspaceProvider>
+              <LeftNavRepositorySection />
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>,
       );
 
-      const repoHeader = await screen.findByRole('button', {name: /unique/i});
-      await userEvent.click(repoHeader);
+      const repoHeader = await findByRole('button', {name: /unique/i});
+      await user.click(repoHeader);
 
-      await waitFor(() => {
-        expect(
-          screen.getByRole('link', {
-            name: /my_pipeline/i,
-          }),
-        ).toBeVisible();
-        expect(
-          screen.getByRole('link', {
-            name: /my_asset_group/i,
-          }),
-        ).toBeVisible();
-      });
+      expect(await findByRole('link', {name: /my_pipeline/i})).toBeVisible();
+      expect(await findByRole('link', {name: /my_asset_group/i})).toBeVisible();
     });
   });
 });
