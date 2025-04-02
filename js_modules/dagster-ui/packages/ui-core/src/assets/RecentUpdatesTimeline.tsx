@@ -289,7 +289,7 @@ const Tick = styled.div<{
   $hasSuccess: boolean;
 }>`
   position: absolute;
-  width 100%;
+  width: 100%;
   top: 0;
   bottom: 0;
   overflow: hidden;
@@ -307,7 +307,6 @@ const Tick = styled.div<{
       return Colors.accentGreenHover();
     }};
   }
-
 `;
 
 const TickText = styled.div`
