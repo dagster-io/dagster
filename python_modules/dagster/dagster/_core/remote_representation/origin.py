@@ -382,8 +382,8 @@ class GrpcServerCodeLocationOrigin(
     storage_name="ExternalRepositoryOrigin",
     storage_field_names={"code_location_origin": "repository_location_origin"},
 )
-@record
-class RemoteRepositoryOrigin:
+@record(kw_only=False)
+class RemoteRepositoryOrigin(NamedTupleAdapter["RemoteRepositoryOrigin"]):
     """Serializable representation of an ExternalRepository that can be used to
     uniquely it or reload it in across process boundaries.
     """
