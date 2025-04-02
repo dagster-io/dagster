@@ -1,11 +1,12 @@
 import copy
 import json
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence, Set
 from typing import TYPE_CHECKING, Any, Optional
 
 import dagster_shared.check as check
 from dagster_shared.serdes import deserialize_value, serialize_value
 from dagster_shared.serdes.objects import PackageEntryKey, PackageEntrySnap
+from dagster_shared.serdes.objects.package_entry import PackageEntryType
 
 from dagster_dg.utils import is_valid_json
 
@@ -43,6 +44,23 @@ class RemotePackageRegistry:
     @staticmethod
     def empty() -> "RemotePackageRegistry":
         return RemotePackageRegistry({})
+
+    @property
+    def packages(self) -> Set[str]:
+        return {key.package for key in self._objects.keys()}
+
+    def package_entries(self, package: str) -> Set[PackageEntryKey]:
+        return {key for key in self._objects.keys() if key.package == package}
+
+    def get_entries(
+        self, package: Optional[str] = None, entry_type: Optional[PackageEntryType] = None
+    ) -> Sequence[PackageEntrySnap]:
+        return [
+            entry
+            for entry in self._objects.values()
+            if (package is None or package == entry.key.package)
+            and (entry_type is None or entry_type in entry.types)
+        ]
 
     def get(self, key: PackageEntryKey) -> PackageEntrySnap:
         """Resolves a library object within the scope of a given component directory."""
