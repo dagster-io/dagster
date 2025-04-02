@@ -226,13 +226,21 @@ def test_resolve_with_resources():
         def foo_resource():
             return 3
 
+        cacheable_assets = define_uncacheable_and_resource_dependent_cacheable_assets()
+        cacheable_assets_with_resources = with_resources(
+            define_uncacheable_and_resource_dependent_cacheable_assets(),
+            {"foo": foo_resource},
+        )
+
+        assert (
+            cacheable_assets_with_resources[0].unique_id
+            == f"{cacheable_assets[0].unique_id}_with_resources"
+        )
+
         @repository
         def resource_dependent_repo_with_resources():
             return [
-                with_resources(
-                    define_uncacheable_and_resource_dependent_cacheable_assets(),
-                    {"foo": foo_resource},
-                ),
+                cacheable_assets_with_resources,
                 define_asset_job(
                     "all_asset_job",
                 ),
