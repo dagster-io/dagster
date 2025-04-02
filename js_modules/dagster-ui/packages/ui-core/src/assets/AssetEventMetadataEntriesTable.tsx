@@ -273,9 +273,9 @@ export const AssetEventMetadataEntriesTable = ({
       ) : null}
       {view === 'plots' ? (
         plotView === 'partition' ? (
-          <AssetTimeMetadataPlots assetKey={assetKey} limit={100} />
-        ) : (
           <AssetPartitionMetadataPlots assetKey={assetKey} limit={120} />
+        ) : (
+          <AssetTimeMetadataPlots assetKey={assetKey} limit={100} />
         )
       ) : null}
     </>
