@@ -1,4 +1,4 @@
-type: dagster_components.dbt_project
+type: dagster_dt.dbt_project
 
 attributes:
   dbt:

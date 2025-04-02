@@ -19,8 +19,8 @@ from pydantic import BaseModel
 from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
 import dagster._check as check
-from dagster import Field as DagsterField
 from dagster._annotations import deprecated
+from dagster._config.field import Field as DagsterField
 from dagster._config.field_utils import config_dictionary_from_values
 from dagster._config.pythonic_config.attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,

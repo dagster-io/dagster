@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.9,<3.13"
 dependencies = [
     "dagster",
-    "dagster-components",
 ]
 
 [project.optional-dependencies]

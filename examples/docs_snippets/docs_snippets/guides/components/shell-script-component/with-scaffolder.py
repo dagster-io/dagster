@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from dagster_components import (
+import dagster as dg
+from dagster.components import (
     Component,
     ComponentLoadContext,
     Resolvable,
@@ -14,9 +15,7 @@ from dagster_components import (
     ScaffoldRequest,
     scaffold_component,
 )
-from dagster_components.scaffold.scaffold import scaffold_with
-
-import dagster as dg
+from dagster.components.scaffold.scaffold import scaffold_with
 
 
 # highlight-start

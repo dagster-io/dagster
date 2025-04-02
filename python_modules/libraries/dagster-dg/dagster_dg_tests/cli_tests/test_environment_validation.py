@@ -131,7 +131,7 @@ def test_no_local_dagster_components_failure(spec: CommandSpec) -> None:
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
     ):
-        _uninstall_dagster_components_from_local_venv(Path.cwd())
+        _uninstall_dagster_from_local_venv(Path.cwd())
         result = runner.invoke(*spec.to_cli_args())
         assert_runner_result(result, exit_0=False)
 
@@ -218,7 +218,7 @@ def _add_global_cli_options(cli_args: tuple[str, ...], *global_opts: str) -> lis
         return [*cli_args, *global_opts]
 
 
-def _uninstall_dagster_components_from_local_venv(path: Path) -> None:
+def _uninstall_dagster_from_local_venv(path: Path) -> None:
     local_venv = resolve_local_venv(Path.cwd())
     assert local_venv, f"No local venv resolvable from {path}"
     subprocess.check_output(
@@ -228,6 +228,6 @@ def _uninstall_dagster_components_from_local_venv(path: Path) -> None:
             "uninstall",
             "--python",
             str(get_venv_executable(local_venv)),
-            "dagster-components",
+            "dagster",
         ],
     )

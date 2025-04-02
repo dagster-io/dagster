@@ -1,15 +1,14 @@
 from dataclasses import dataclass
 from typing import Annotated
 
-from dagster_components import (
+import dagster as dg
+from dagster.components import (
     Component,
     ComponentLoadContext,
     ResolutionContext,
     Resolvable,
     Resolver,
 )
-
-import dagster as dg
 
 
 class MyApiClient:

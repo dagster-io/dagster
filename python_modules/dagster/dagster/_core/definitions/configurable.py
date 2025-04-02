@@ -3,12 +3,10 @@ from typing import Any, Callable, NamedTuple, Optional, TypeVar, Union, cast
 
 from typing_extensions import Self
 
-from dagster import (
-    Field,
-    _check as check,
-)
+import dagster._check as check
 from dagster._config import EvaluateValueResult
 from dagster._config.config_schema import UserConfigSchema
+from dagster._config.field import Field
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.definition_config_schema import (
     CoercableToConfigSchema,

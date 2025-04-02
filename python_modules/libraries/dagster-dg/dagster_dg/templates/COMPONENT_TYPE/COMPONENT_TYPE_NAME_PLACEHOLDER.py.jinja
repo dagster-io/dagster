@@ -1,5 +1,5 @@
 from dagster import Definitions
-from dagster_components import (
+from dagster.components import (
     Component,
     ComponentLoadContext,
     Resolvable,

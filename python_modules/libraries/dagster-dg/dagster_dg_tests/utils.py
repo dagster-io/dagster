@@ -76,7 +76,6 @@ def isolated_components_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterato
             venv_path,
             [
                 "dagster",
-                "libraries/dagster-components",
                 "dagster-pipes",
                 "libraries/dagster-shared",
                 "dagster-test",
@@ -508,9 +507,10 @@ def print_exception_info(
 
 
 COMPONENT_INTEGRATION_TEST_DIR = (
-    Path(__file__).parent.parent.parent
-    / "dagster-components"
-    / "dagster_components_tests"
+    Path(__file__).parent.parent.parent.parent
+    / "dagster"
+    / "dagster_tests"
+    / "components_tests"
     / "integration_tests"
     / "integration_test_defs"
 )

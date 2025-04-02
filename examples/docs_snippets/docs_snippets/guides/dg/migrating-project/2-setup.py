@@ -13,7 +13,6 @@ setup(
     packages=find_packages(),
     install_requires=[
         "dagster",
-        "dagster-components",
     ],
     extras_require={
         "dev": [

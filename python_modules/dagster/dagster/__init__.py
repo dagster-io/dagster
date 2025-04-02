@@ -78,6 +78,7 @@ from dagster_shared.serdes import (
     serialize_value as serialize_value,
 )
 
+import dagster.components as components  # noqa: F401
 from dagster._builtins import (
     Any as Any,
     Bool as Bool,

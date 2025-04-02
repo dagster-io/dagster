@@ -1,6 +1,0 @@
-type: dagster_components_tests.integration_tests.lib.duckdb_component.step_four.DuckDbComponent
-attributes:
-  sql_file: "step_four_query.sql"
-  assets:
-    - key: "step_four_key_1"
-    - key: "step_four_key_2"

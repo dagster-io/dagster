@@ -49,20 +49,14 @@ DEFAULT_WORKSPACE_NAME = "dagster-workspace"
 
 # These commands are not dynamically generated, but perhaps should be.
 HARDCODED_COMMANDS = {"workspace", "project", "component-type"}
-# Temporary remapping of some core commands
-REMAPPED_COMMANDS = {
-    "dagster_components.dagster.asset": "dagster.asset",
-    "dagster_components.dagster.sensor": "dagster.sensor",
-    "dagster_components.dagster.schedule": "dagster.schedule",
-}
 
 
 # The `dg scaffold` command is special because its subcommands are dynamically generated
 # from the registered types in the project. Because the registered component types
-# depend on the built-in component library we are using, we cannot resolve them until we have the
-# built-in component library, which can be set via a global option, e.g.:
+# depend on the component modules we are using, we cannot resolve them until we have know these
+# component modules, which can be set via the `--use-component-module` option, e.g.
 #
-#     dg --builtin-component-lib dagster_components.test ...
+#     dg --use-component-module dagster_components.test ...
 #
 # To handle this, we define a custom click.Group subclass that loads the commands on demand.
 class ScaffoldGroup(DgClickGroup):
@@ -327,8 +321,8 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
     # We need to "reset" the help option names to the default ones because we inherit the parent
     # value of context settings from the parent group, which has been customized.
     @click.command(
-        name=REMAPPED_COMMANDS.get(key.to_typename(), key.to_typename()),
         cls=ScaffoldSubCommand,
+        name=key.to_typename(),
         context_settings={"help_option_names": ["-h", "--help"]},
     )
     @click.argument("instance_name", type=str)

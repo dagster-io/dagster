@@ -1,8 +1,0 @@
-type: dagster_components.dagster_dbt.DbtProjectComponent
-
-attributes:
-  dbt:
-    project_dir: jaffle_shop
-
-  asset_attributes:
-    key: "some_prefix/{{node.name}}"
