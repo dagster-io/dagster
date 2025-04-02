@@ -22,6 +22,10 @@ class PackageEntryKey:
     namespace: str
     name: str
 
+    @property
+    def package(self) -> str:
+        return self.namespace.split(".")[0]
+
     def to_typename(self) -> str:
         return f"{self.namespace}.{self.name}"
 
