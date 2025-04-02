@@ -452,8 +452,8 @@ class RemoteJobOrigin(NamedTupleAdapter["RemoteJobOrigin"]):
         "instigator_name": "job_name",
     },
 )
-@record
-class RemoteInstigatorOrigin:
+@record(kw_only=False)
+class RemoteInstigatorOrigin(NamedTupleAdapter["RemoteInstigatorOrigin"]):
     """Serializable representation of an ExternalJob that can be used to
     uniquely it or reload it in across process boundaries.
     """
