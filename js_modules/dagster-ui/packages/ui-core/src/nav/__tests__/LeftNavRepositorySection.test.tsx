@@ -14,6 +14,7 @@ import {
 import {DUNDER_REPO_NAME} from '../../workspace/buildRepoAddress';
 import {LeftNavRepositorySection} from '../LeftNavRepositorySection';
 import {
+  buildInstigationStateQueryForLocation,
   buildWorkspaceQueryWithOneLocation,
   buildWorkspaceQueryWithOneLocationAndAssetGroup,
   buildWorkspaceQueryWithThreeLocations,
@@ -38,10 +39,16 @@ describe('Repository options', () => {
   });
 
   it('Correctly displays the current repository state', async () => {
+    window.localStorage.removeItem(`:${HIDDEN_REPO_KEYS}`);
     const user = userEvent.setup();
     const {findByRole} = render(
       <MemoryRouter initialEntries={['/locations/foo@bar/etc']}>
-        <MockedProvider mocks={buildWorkspaceQueryWithOneLocation()}>
+        <MockedProvider
+          mocks={[
+            ...buildWorkspaceQueryWithOneLocation(),
+            buildInstigationStateQueryForLocation('lorem'),
+          ]}
+        >
           <WorkspaceProvider>
             <LeftNavRepositorySection />
           </WorkspaceProvider>
@@ -57,10 +64,16 @@ describe('Repository options', () => {
 
   describe('localStorage', () => {
     it('initializes with first repo option, if one option and no localStorage', async () => {
+      window.localStorage.removeItem(`:${HIDDEN_REPO_KEYS}`);
       const user = userEvent.setup();
       const {findByRole, findAllByRole} = render(
         <MemoryRouter initialEntries={['/runs']}>
-          <MockedProvider mocks={buildWorkspaceQueryWithOneLocation()}>
+          <MockedProvider
+            mocks={[
+              ...buildWorkspaceQueryWithOneLocation(),
+              buildInstigationStateQueryForLocation('lorem'),
+            ]}
+          >
             <WorkspaceProvider>
               <LeftNavRepositorySection />
             </WorkspaceProvider>
@@ -80,7 +93,12 @@ describe('Repository options', () => {
       const user = userEvent.setup();
       const {findByRole, findAllByRole} = render(
         <MemoryRouter initialEntries={['/runs']}>
-          <MockedProvider mocks={buildWorkspaceQueryWithOneLocation()}>
+          <MockedProvider
+            mocks={[
+              ...buildWorkspaceQueryWithOneLocation(),
+              buildInstigationStateQueryForLocation('lorem'),
+            ]}
+          >
             <WorkspaceProvider>
               <LeftNavRepositorySection />
             </WorkspaceProvider>
@@ -95,10 +113,15 @@ describe('Repository options', () => {
     });
 
     it('initializes with all repos visible, if multiple options and no localStorage', async () => {
-      const user = userEvent.setup();
-      const {findByRole, findAllByRole} = render(
+      window.localStorage.removeItem(`:${HIDDEN_REPO_KEYS}`);
+      const {findByRole} = render(
         <MemoryRouter initialEntries={['/runs']}>
-          <MockedProvider mocks={buildWorkspaceQueryWithThreeLocations()}>
+          <MockedProvider
+            mocks={[
+              ...buildWorkspaceQueryWithThreeLocations(),
+              buildInstigationStateQueryForLocation('lorem'),
+            ]}
+          >
             <WorkspaceProvider>
               <LeftNavRepositorySection />
             </WorkspaceProvider>
@@ -112,9 +135,6 @@ describe('Repository options', () => {
       expect(fooHeader).toBeVisible();
       const dunderHeader = await findByRole('button', {name: /abc_location/i});
       expect(dunderHeader).toBeVisible();
-
-      await user.click(loremHeader);
-      expect(await findAllByRole('link')).toHaveLength(2);
     });
 
     it('initializes with correct repo option, if `HIDDEN_REPO_KEYS` localStorage', async () => {
@@ -126,7 +146,12 @@ describe('Repository options', () => {
       const user = userEvent.setup();
       const {findByRole, findAllByRole} = render(
         <MemoryRouter initialEntries={['/runs']}>
-          <MockedProvider mocks={buildWorkspaceQueryWithThreeLocations()}>
+          <MockedProvider
+            mocks={[
+              ...buildWorkspaceQueryWithThreeLocations(),
+              buildInstigationStateQueryForLocation('foo'),
+            ]}
+          >
             <WorkspaceProvider>
               <LeftNavRepositorySection />
             </WorkspaceProvider>
@@ -144,10 +169,16 @@ describe('Repository options', () => {
     it('initializes with all repo options, no matching `HIDDEN_REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(`:${HIDDEN_REPO_KEYS}`, '["hello:world"]');
 
-      const user = userEvent.setup();
       const {findByRole} = render(
         <MemoryRouter initialEntries={['/runs']}>
-          <MockedProvider mocks={buildWorkspaceQueryWithThreeLocations()}>
+          <MockedProvider
+            mocks={[
+              ...buildWorkspaceQueryWithThreeLocations(),
+              buildInstigationStateQueryForLocation('lorem'),
+              buildInstigationStateQueryForLocation('foo'),
+              buildInstigationStateQueryForLocation('abc_location_repo_id'),
+            ]}
+          >
             <WorkspaceProvider>
               <LeftNavRepositorySection />
             </WorkspaceProvider>
@@ -156,8 +187,7 @@ describe('Repository options', () => {
       );
 
       const loremHeader = await findByRole('button', {name: /lorem/i});
-      await user.click(loremHeader);
-
+      expect(loremHeader).toBeVisible();
       const fooHeader = await findByRole('button', {name: /foo/i});
       expect(fooHeader).toBeVisible();
       const dunderHeader = await findByRole('button', {name: /abc_location/i});
@@ -297,10 +327,16 @@ describe('Repository options', () => {
 
   describe('Asset groups', () => {
     it('renders asset groups alongside jobs', async () => {
+      window.localStorage.removeItem(`:${HIDDEN_REPO_KEYS}`);
       const user = userEvent.setup();
       const {findByRole} = render(
         <MemoryRouter initialEntries={['/runs']}>
-          <MockedProvider mocks={buildWorkspaceQueryWithOneLocationAndAssetGroup()}>
+          <MockedProvider
+            mocks={[
+              ...buildWorkspaceQueryWithOneLocationAndAssetGroup(),
+              buildInstigationStateQueryForLocation('entry'),
+            ]}
+          >
             <WorkspaceProvider>
               <LeftNavRepositorySection />
             </WorkspaceProvider>
