@@ -26,7 +26,7 @@ class WorkspaceLoadTarget(ABC):
         """Reloads the CodeLocationOrigins for this workspace."""
 
 
-@record
+@record(kw_only=False)
 class CompositeTarget(WorkspaceLoadTarget):
     targets: Sequence[WorkspaceLoadTarget]
 
@@ -37,7 +37,7 @@ class CompositeTarget(WorkspaceLoadTarget):
         return origins
 
 
-@record
+@record(kw_only=False)
 class WorkspaceFileTarget(WorkspaceLoadTarget):
     paths: Sequence[str]
 
@@ -149,7 +149,7 @@ def get_origins_from_toml(
             return []
 
 
-@record
+@record(kw_only=False)
 class PyProjectFileTarget(WorkspaceLoadTarget):
     path: str
 
@@ -157,7 +157,7 @@ class PyProjectFileTarget(WorkspaceLoadTarget):
         return get_origins_from_toml(self.path)
 
 
-@record
+@record(kw_only=False)
 class PythonFileTarget(WorkspaceLoadTarget):
     python_file: str
     attribute: Optional[str]
@@ -175,7 +175,7 @@ class PythonFileTarget(WorkspaceLoadTarget):
         ]
 
 
-@record
+@record(kw_only=False)
 class ModuleTarget(WorkspaceLoadTarget):
     module_name: str
     attribute: Optional[str]
@@ -193,7 +193,7 @@ class ModuleTarget(WorkspaceLoadTarget):
         ]
 
 
-@record
+@record(kw_only=False)
 class PackageTarget(WorkspaceLoadTarget):
     package_name: str
     attribute: Optional[str]
@@ -211,7 +211,7 @@ class PackageTarget(WorkspaceLoadTarget):
         ]
 
 
-@record
+@record(kw_only=False)
 class GrpcServerTarget(WorkspaceLoadTarget):
     host: str
     port: Optional[int]
