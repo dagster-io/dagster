@@ -423,8 +423,8 @@ class RemoteRepositoryOrigin(NamedTupleAdapter["RemoteRepositoryOrigin"]):
         "job_name": "pipeline_name",
     },
 )
-@record
-class RemoteJobOrigin:
+@record(kw_only=False)
+class RemoteJobOrigin(NamedTupleAdapter["RemoteJobOrigin"]):
     """Serializable representation of an ExternalJob that can be used to
     uniquely it or reload it in across process boundaries.
     """
