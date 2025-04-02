@@ -1,9 +1,10 @@
 import os
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import NamedTuple, Optional, Union, cast
+from typing import Optional, Union, cast
 
 import tomli
+from dagster_shared.record import record
 
 from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
@@ -25,10 +26,10 @@ class WorkspaceLoadTarget(ABC):
         """Reloads the CodeLocationOrigins for this workspace."""
 
 
-class CompositeTarget(
-    NamedTuple("CompositeTarget", [("targets", Sequence[WorkspaceLoadTarget])]),
-    WorkspaceLoadTarget,
-):
+@record(kw_only=False)
+class CompositeTarget(WorkspaceLoadTarget):
+    targets: Sequence[WorkspaceLoadTarget]
+
     def create_origins(self):
         origins = []
         for target in self.targets:
@@ -36,9 +37,10 @@ class CompositeTarget(
         return origins
 
 
-class WorkspaceFileTarget(
-    NamedTuple("WorkspaceFileTarget", [("paths", Sequence[str])]), WorkspaceLoadTarget
-):
+@record(kw_only=False)
+class WorkspaceFileTarget(WorkspaceLoadTarget):
+    paths: Sequence[str]
+
     def create_origins(self) -> Sequence[CodeLocationOrigin]:
         return location_origins_from_yaml_paths(self.paths)
 
@@ -147,23 +149,21 @@ def get_origins_from_toml(
             return []
 
 
-class PyProjectFileTarget(NamedTuple("PyProjectFileTarget", [("path", str)]), WorkspaceLoadTarget):
+@record(kw_only=False)
+class PyProjectFileTarget(WorkspaceLoadTarget):
+    path: str
+
     def create_origins(self) -> Sequence[CodeLocationOrigin]:
         return get_origins_from_toml(self.path)
 
 
-class PythonFileTarget(
-    NamedTuple(
-        "PythonFileTarget",
-        [
-            ("python_file", str),
-            ("attribute", Optional[str]),
-            ("working_directory", Optional[str]),
-            ("location_name", Optional[str]),
-        ],
-    ),
-    WorkspaceLoadTarget,
-):
+@record(kw_only=False)
+class PythonFileTarget(WorkspaceLoadTarget):
+    python_file: str
+    attribute: Optional[str]
+    working_directory: Optional[str]
+    location_name: Optional[str]
+
     def create_origins(self) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
         return [
             location_origin_from_python_file(
@@ -175,18 +175,13 @@ class PythonFileTarget(
         ]
 
 
-class ModuleTarget(
-    NamedTuple(
-        "ModuleTarget",
-        [
-            ("module_name", str),
-            ("attribute", Optional[str]),
-            ("working_directory", Optional[str]),
-            ("location_name", Optional[str]),
-        ],
-    ),
-    WorkspaceLoadTarget,
-):
+@record(kw_only=False)
+class ModuleTarget(WorkspaceLoadTarget):
+    module_name: str
+    attribute: Optional[str]
+    working_directory: Optional[str]
+    location_name: Optional[str]
+
     def create_origins(self) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
         return [
             location_origin_from_module_name(
@@ -198,18 +193,13 @@ class ModuleTarget(
         ]
 
 
-class PackageTarget(
-    NamedTuple(
-        "ModuleTarget",
-        [
-            ("package_name", str),
-            ("attribute", Optional[str]),
-            ("working_directory", Optional[str]),
-            ("location_name", Optional[str]),
-        ],
-    ),
-    WorkspaceLoadTarget,
-):
+@record(kw_only=False)
+class PackageTarget(WorkspaceLoadTarget):
+    package_name: str
+    attribute: Optional[str]
+    working_directory: Optional[str]
+    location_name: Optional[str]
+
     def create_origins(self) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
         return [
             location_origin_from_package_name(
@@ -221,18 +211,13 @@ class PackageTarget(
         ]
 
 
-class GrpcServerTarget(
-    NamedTuple(
-        "ModuleTarget",
-        [
-            ("host", str),
-            ("port", Optional[int]),
-            ("socket", Optional[str]),
-            ("location_name", Optional[str]),
-        ],
-    ),
-    WorkspaceLoadTarget,
-):
+@record(kw_only=False)
+class GrpcServerTarget(WorkspaceLoadTarget):
+    host: str
+    port: Optional[int]
+    socket: Optional[str]
+    location_name: Optional[str]
+
     def create_origins(self) -> Sequence[GrpcServerCodeLocationOrigin]:
         return [
             GrpcServerCodeLocationOrigin(
@@ -245,6 +230,7 @@ class GrpcServerTarget(
 
 
 #  Utility target for graphql commands that do not require a workspace, e.g. downloading schema
-class EmptyWorkspaceTarget(NamedTuple("EmptyWorkspaceTarget", []), WorkspaceLoadTarget):
+@record
+class EmptyWorkspaceTarget(WorkspaceLoadTarget):
     def create_origins(self) -> Sequence[CodeLocationOrigin]:
         return []
