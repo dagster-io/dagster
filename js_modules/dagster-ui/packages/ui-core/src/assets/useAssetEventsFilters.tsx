@@ -1,7 +1,9 @@
 import {Box, Icon} from '@dagster-io/ui-components';
 import React, {useCallback, useMemo} from 'react';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 import {AssetKey} from './types';
+import {featureEnabled} from '../app/Flags';
 import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
@@ -10,8 +12,6 @@ import {usePartitionsForAssetKey} from './AutoMaterializePolicyPage/usePartition
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {useStaticSetFilter} from '../ui/BaseFilters/useStaticSetFilter';
 import {useTimeRangeFilter} from '../ui/BaseFilters/useTimeRangeFilter';
-import {featureEnabled} from 'shared/app/Flags';
-import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 
 type FilterState = {
   partitions?: string[];
