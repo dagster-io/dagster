@@ -14,6 +14,7 @@ import {
   buildFreshnessPolicy,
   buildMaterializationEvent,
   buildMaterializationHistoryConnection,
+  buildObservationEvent,
   buildObservationEventConnection,
   buildRegularDagsterType,
   buildRepository,
@@ -22,7 +23,6 @@ import {
   buildRun,
   buildRunNotFoundError,
   buildSolidDefinition,
-  buildObservationEvent
 } from '../../graphql/types';
 import {buildQueryMock} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext/WorkspaceContext';
