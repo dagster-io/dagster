@@ -1036,12 +1036,13 @@ def test_nested_resources_direct_config_fully_populated() -> None:
     """Covers regression introduced in pydantic v2.5.0 where union validation changed to Smart
     and direct initialization of nested ConfigurableResources stopped working.
     """
+    import pydantic
 
     class Inner(ConfigurableResource):
         b: str
 
     class Outer(ConfigurableResource):
-        a: str
+        a: str = pydantic.Field(default="a")
         inner: Inner
 
     # model_validate() on NESTED ConfigurableResource worked with pydantic v2.4.2, but stopped working on v2.5.0.

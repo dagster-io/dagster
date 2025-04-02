@@ -696,12 +696,12 @@ class PartialResource(
 
     def __init__(
         self,
-        resource_cls: type[ConfigurableResourceFactory[TResValue]] | None = None,
-        data: dict[str, Any] | None = None,
-        **kwargs: Any,
+        resource_cls: type[ConfigurableResourceFactory[TResValue]],
+        data: dict[str, Any],
     ):
-        super().__init__(data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
         resource_pointers, _data_without_resources = separate_resource_params(resource_cls, data)
+
+        super().__init__(data=data, resource_cls=resource_cls)  # type: ignore  # extends BaseModel, takes kwargs
 
         def resource_fn(context: InitResourceContext):
             to_populate = resource_cls._get_non_default_public_field_values_cls(  # noqa: SLF001
@@ -834,7 +834,7 @@ def _is_annotated_as_resource_type(annotation: type, metadata: list[str]) -> boo
     """Determines if a field in a structured config class is annotated as a resource type or not."""
     from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 
-    if metadata and metadata[0] == "resource_dependency":
+    if metadata and any(m == "resource_dependency" for m in metadata):
         return True
 
     if is_closed_python_optional_type(annotation):
