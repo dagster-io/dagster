@@ -1,0 +1,91 @@
+.integrationPage {
+  color: var(--color-text-light);
+}
+
+.markdownOutput {
+  h3 {
+    color: var(--color-text-default);
+    margin-top: 24px;
+  }
+}
+
+.codeBlock {
+  position: relative;
+  background-color: var(--color-background-lighter);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--color-keyline-default);
+  padding: 16px;
+}
+
+.codeBlock .copyButton {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.codeBlock :global(.hljs) {
+  background: transparent;
+  color: var(--color-text-default);
+}
+
+.codeBlock :global(.language-bash) {
+  color: var(--color-text-cyan);
+}
+
+.codeBlock :global(.language-python) {
+  color: var(--color-text-cyan);
+
+  :global(.hljs-doctag),
+  :global(.hljs-keyword),
+  :global(.hljs-meta .hljs-keyword),
+  :global(.hljs-template-tag),
+  :global(.hljs-template-variable),
+  :global(.hljs-type),
+  :global(.hljs-variable.language_) {
+    color: var(--color-text-blue);
+  }
+
+  :global(.hljs-title),
+  :global(.hljs-title.class_),
+  :global(.hljs-title.class_.inherited__),
+  :global(.hljs-title.function_) {
+    color: var(--color-text-blue);
+  }
+
+  :global(.hljs-attr),
+  :global(.hljs-attribute),
+  :global(.hljs-literal),
+  :global(.hljs-meta),
+  :global(.hljs-number),
+  :global(.hljs-operator),
+  :global(.hljs-selector-attr),
+  :global(.hljs-selector-class),
+  :global(.hljs-selector-id),
+  :global(.hljs-variable) {
+    color: var(--color-text-light);
+  }
+
+  :global(.hljs-meta .hljs-string),
+  :global(.hljs-regexp),
+  :global(.hljs-string) {
+    color: var(--color-text-cyan);
+  }
+
+  :global(.hljs-built_in),
+  :global(.hljs-symbol) {
+    color: var(--color-text-yellow);
+  }
+
+  :global(.hljs-code),
+  :global(.hljs-comment),
+  :global(.hljs-formula) {
+    color: var(--color-text-light);
+  }
+
+  :global(.hljs-name),
+  :global(.hljs-quote),
+  :global(.hljs-selector-pseudo),
+  :global(.hljs-selector-tag) {
+    color: var(--color-text-green);
+  }
+}
