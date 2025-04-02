@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 @scaffold_with(DefaultComponentScaffolder)
 class Component(ABC):
     @classmethod
-    def __dg_library_object__(cls) -> None: ...
+    def __dg_package_entry__(cls) -> None: ...
 
     @classmethod
     def get_schema(cls) -> Optional[type[BaseModel]]:

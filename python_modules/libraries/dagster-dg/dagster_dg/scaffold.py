@@ -9,7 +9,7 @@ import tomlkit
 import tomlkit.items
 from typing_extensions import TypeAlias
 
-from dagster_dg.component import RemoteLibraryObjectRegistry
+from dagster_dg.component import RemotePackageRegistry
 from dagster_dg.config import (
     DgProjectPythonEnvironment,
     DgRawWorkspaceConfig,
@@ -133,7 +133,7 @@ def scaffold_project(
     if cl_dg_context.use_dg_managed_environment and not skip_venv:
         cl_dg_context.ensure_uv_lock()
         if populate_cache:
-            RemoteLibraryObjectRegistry.from_dg_context(cl_dg_context)  # Populate the cache
+            RemotePackageRegistry.from_dg_context(cl_dg_context)  # Populate the cache
 
     # Update pyproject.toml
     if cl_dg_context.is_workspace:

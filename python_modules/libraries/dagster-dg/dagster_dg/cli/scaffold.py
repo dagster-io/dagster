@@ -6,7 +6,7 @@ from typing import Any, Optional, cast
 import click
 from click.core import ParameterSource
 from dagster_shared import check
-from dagster_shared.serdes.objects import LibraryObjectKey, LibraryObjectSnap
+from dagster_shared.serdes.objects import PackageEntryKey, PackageEntrySnap
 from typer.rich_utils import rich_format_help
 
 from dagster_dg.cli.shared_options import (
@@ -14,7 +14,7 @@ from dagster_dg.cli.shared_options import (
     dg_editable_dagster_options,
     dg_global_options,
 )
-from dagster_dg.component import RemoteLibraryObjectRegistry
+from dagster_dg.component import RemotePackageRegistry
 from dagster_dg.config import (
     DgProjectPythonEnvironment,
     DgRawCliConfig,
@@ -84,7 +84,7 @@ class ScaffoldGroup(DgClickGroup):
         config = get_config_from_cli_context(cli_context)
         dg_context = DgContext.for_defined_registry_environment(Path.cwd(), config)
 
-        registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
+        registry = RemotePackageRegistry.from_dg_context(dg_context)
         for key, component_type in registry.items():
             command = _create_scaffold_subcommand(key, component_type)
             self.add_command(command)
@@ -275,14 +275,14 @@ def scaffold_project_command(
 def _core_scaffold(
     cli_context: click.Context,
     cli_config: DgRawCliConfig,
-    object_key: LibraryObjectKey,
+    object_key: PackageEntryKey,
     instance_name: str,
     key_value_params,
     json_params,
     scaffold_format: ScaffoldFormatOptions,
 ) -> None:
     dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
-    registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
+    registry = RemotePackageRegistry.from_dg_context(dg_context)
     if not registry.has(object_key):
         exit_with_error(f"Scaffoldable object type `{object_key.to_typename()}` not found.")
     elif dg_context.has_component_instance(instance_name):
@@ -317,7 +317,7 @@ def _core_scaffold(
     )
 
 
-def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -> DgClickCommand:
+def _create_scaffold_subcommand(key: PackageEntryKey, obj: PackageEntrySnap) -> DgClickCommand:
     # We need to "reset" the help option names to the default ones because we inherit the parent
     # value of context settings from the parent group, which has been customized.
     @click.command(
@@ -421,10 +421,10 @@ def scaffold_component_type_command(
     """
     cli_config = normalize_cli_config(global_options, context)
     dg_context = DgContext.for_component_library_environment(Path.cwd(), cli_config)
-    registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
+    registry = RemotePackageRegistry.from_dg_context(dg_context)
 
     module_name = snakecase(name)
-    component_key = LibraryObjectKey(
+    component_key = PackageEntryKey(
         name=name, namespace=dg_context.default_component_library_module_name
     )
     if registry.has(component_key):

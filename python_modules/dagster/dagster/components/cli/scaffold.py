@@ -2,11 +2,11 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.serdes.objects import PackageEntryKey
 from pydantic import TypeAdapter
 
 from dagster.components.component_scaffolding import scaffold_object
-from dagster.components.core.library_object import load_library_object
+from dagster.components.core.package_entry import load_package_entry
 from dagster.components.scaffold.scaffold import ScaffolderUnavailableReason, get_scaffolder
 
 
@@ -30,8 +30,8 @@ def scaffold_object_command(
     json_params: Optional[str],
     scaffold_format: str,
 ) -> None:
-    key = LibraryObjectKey.from_typename(typename)
-    obj = load_library_object(key)
+    key = PackageEntryKey.from_typename(typename)
+    obj = load_package_entry(key)
 
     if json_params:
         scaffolder = get_scaffolder(obj)

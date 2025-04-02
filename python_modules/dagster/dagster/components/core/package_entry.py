@@ -5,12 +5,12 @@ import sys
 from collections.abc import Iterable, Sequence
 from types import ModuleType
 
-from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.serdes.objects import PackageEntryKey
 
 from dagster._core.errors import DagsterError
 from dagster.components.utils import format_error_message
 
-LIBRARY_OBJECT_ATTR = "__dg_library_object__"
+PACKAGE_ENTRY_ATTR = "__dg_package_entry__"
 DG_LIBRARY_ENTRY_POINT_GROUP = "dagster_dg.library"
 
 
@@ -25,16 +25,16 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
         return importlib.metadata.entry_points().get(group, [])
 
 
-def discover_entry_point_library_objects() -> dict[LibraryObjectKey, object]:
-    """Discover library objects registered in the Python environment via the
+def discover_entry_point_package_entries() -> dict[PackageEntryKey, object]:
+    """Discover package entries registered in the Python environment via the
     `dg_library` entry point group.
 
     `dagster-components` itself registers multiple component entry points. We call these
     "builtin" component libraries. The `dagster_components` entry point resolves to published
     component types and is loaded by default. Other entry points resolve to various sets of test
-    component types. This method will only ever load one builtin component library.
+    component types. This method will only ever load one builtin package.
     """
-    objects: dict[LibraryObjectKey, object] = {}
+    objects: dict[PackageEntryKey, object] = {}
     entry_points = get_entry_points_from_python_environment(DG_LIBRARY_ENTRY_POINT_GROUP)
 
     for entry_point in entry_points:
@@ -53,31 +53,31 @@ def discover_entry_point_library_objects() -> dict[LibraryObjectKey, object]:
                 f"Invalid entry point {entry_point.name} in group {DG_LIBRARY_ENTRY_POINT_GROUP}. "
                 f"Value expected to be a module, got {root_module}."
             )
-        for name, obj in get_library_objects_in_module(root_module):
-            key = LibraryObjectKey(name=name, namespace=entry_point.value)
+        for name, obj in get_package_entries_in_module(root_module):
+            key = PackageEntryKey(name=name, namespace=entry_point.value)
             objects[key] = obj
     return objects
 
 
-def discover_library_objects(modules: Sequence[str]) -> dict[LibraryObjectKey, object]:
-    objects: dict[LibraryObjectKey, object] = {}
+def discover_package_entries(modules: Sequence[str]) -> dict[PackageEntryKey, object]:
+    objects: dict[PackageEntryKey, object] = {}
     for extra_module in modules:
-        for name, obj in get_library_objects_in_module(importlib.import_module(extra_module)):
-            key = LibraryObjectKey(name=name, namespace=extra_module)
+        for name, obj in get_package_entries_in_module(importlib.import_module(extra_module)):
+            key = PackageEntryKey(name=name, namespace=extra_module)
             objects[key] = obj
     return objects
 
 
-def get_library_objects_in_module(
+def get_package_entries_in_module(
     module: ModuleType,
 ) -> Iterable[tuple[str, object]]:
     for attr in dir(module):
         value = getattr(module, attr)
-        if hasattr(value, LIBRARY_OBJECT_ATTR) and not inspect.isabstract(value):
+        if hasattr(value, PACKAGE_ENTRY_ATTR) and not inspect.isabstract(value):
             yield attr, value
 
 
-def load_library_object(key: LibraryObjectKey) -> object:
+def load_package_entry(key: PackageEntryKey) -> object:
     module_name, attr = key.namespace, key.name
     try:
         module = importlib.import_module(module_name)
