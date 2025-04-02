@@ -112,7 +112,9 @@ class CodeLocationOrigin(ABC):
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="RegisteredRepositoryLocationOrigin")
 @record(kw_only=False)
-class RegisteredCodeLocationOrigin(CodeLocationOrigin):
+class RegisteredCodeLocationOrigin(
+    NamedTupleAdapter["RegisteredCodeLocationOrigin"], CodeLocationOrigin
+):
     """Identifies a repository location of a handle managed using metadata stored outside of the
     origin - can only be loaded in an environment that is managing repository locations using
     its own mapping from location name to repository location metadata.
