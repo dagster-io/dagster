@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, NamedTuple, NoReturn, Optional, cast
 
 import grpc
+from dagster_shared.record import IHaveNew, NamedTupleAdapter, record_custom
 
 import dagster._check as check
 from dagster._core.definitions.selector import (
@@ -208,30 +209,26 @@ class InProcessCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariable
 
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="ManagedGrpcPythonEnvRepositoryLocationOrigin")
-class ManagedGrpcPythonEnvCodeLocationOrigin(  # pyright: ignore[reportIncompatibleVariableOverride]
-    NamedTuple(
-        "_ManagedGrpcPythonEnvCodeLocationOrigin",
-        [("loadable_target_origin", LoadableTargetOrigin), ("location_name", str)],
-    ),
-    CodeLocationOrigin,
+@record_custom
+class ManagedGrpcPythonEnvCodeLocationOrigin(
+    IHaveNew, NamedTupleAdapter["ManagedGrpcPythonEnvCodeLocationOrigin"], CodeLocationOrigin
 ):
     """Identifies a repository location in a Python environment. Dagster creates a gRPC server
     for these repository locations on startup.
     """
+
+    loadable_target_origin: LoadableTargetOrigin  # pyright: ignore[reportIncompatibleMethodOverride]
+    location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
 
     def __new__(
         cls, loadable_target_origin: LoadableTargetOrigin, location_name: Optional[str] = None
     ):
         return super().__new__(
             cls,
-            check.inst_param(
-                loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
-            ),
-            (
-                check.str_param(location_name, "location_name")
-                if location_name
-                else _assign_loadable_target_origin_name(loadable_target_origin)
-            ),
+            loadable_target_origin=loadable_target_origin,
+            location_name=location_name
+            if location_name
+            else _assign_loadable_target_origin_name(loadable_target_origin),
         )
 
     def get_display_metadata(self) -> Mapping[str, str]:
