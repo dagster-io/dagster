@@ -1,5 +1,4 @@
 import hashlib
-import inspect
 import json
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
@@ -10,7 +9,6 @@ from dagster_shared.serdes.errors import SerializationError
 from dagster_shared.utils.hash import hash_collection
 
 import dagster._check as check
-from dagster._config.field_utils import compute_fields_hash
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
@@ -348,25 +346,9 @@ class ResourceWrappedCacheableAssetsDefinition(WrappedCacheableAssetsDefinition)
         self._resource_defs = resource_defs
 
         super().__init__(
-            unique_id=f"{wrapped.unique_id}_resources_{self._get_hash()}",
+            unique_id=f"{wrapped.unique_id}_with_resources",
             wrapped=wrapped,
         )
-
-    def _get_hash(self) -> str:
-        """Generate a stable hash of the resource_defs, including the key, config, fn implementation, and description."""
-        contents = hashlib.sha1()
-        contents.update(
-            _map_to_hashable(
-                {
-                    k: (
-                        compute_fields_hash({"root": v.config_schema.as_field()}, v.description),
-                        inspect.getsource(v.resource_fn),
-                    )
-                    for k, v in self._resource_defs.items()
-                }
-            )
-        )
-        return contents.hexdigest()
 
     def transformed_assets_def(self, assets_def: AssetsDefinition) -> AssetsDefinition:
         return assets_def.with_resources(
