@@ -148,7 +148,9 @@ class RegisteredCodeLocationOrigin(
 # Different storage name for backcompat
 @whitelist_for_serdes(storage_name="InProcessRepositoryLocationOrigin")
 @record_custom
-class InProcessCodeLocationOrigin(IHaveNew, CodeLocationOrigin):
+class InProcessCodeLocationOrigin(
+    IHaveNew, NamedTupleAdapter["InProcessCodeLocationOrigin"], CodeLocationOrigin
+):
     loadable_target_origin: LoadableTargetOrigin  # pyright: ignore[reportIncompatibleMethodOverride]
     location_name: str  # pyright: ignore[reportIncompatibleMethodOverride]
     container_image: Optional[str]
