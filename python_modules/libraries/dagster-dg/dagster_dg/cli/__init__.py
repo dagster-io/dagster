@@ -14,7 +14,7 @@ from dagster_dg.cli.plus import plus_group
 from dagster_dg.cli.scaffold import scaffold_group
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.cli.utils import utils_group
-from dagster_dg.component import RemoteLibraryObjectRegistry
+from dagster_dg.component import RemotePackageRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickGroup, exit_with_error
@@ -119,7 +119,7 @@ def _rebuild_component_registry(dg_context: DgContext):
     key = dg_context.get_cache_key("component_registry_data")
     dg_context.cache.clear_key(key)
     # This will trigger a rebuild of the component registry
-    RemoteLibraryObjectRegistry.from_dg_context(dg_context)
+    RemotePackageRegistry.from_dg_context(dg_context)
 
 
 ENV_PREFIX = "DAGSTER_DG"

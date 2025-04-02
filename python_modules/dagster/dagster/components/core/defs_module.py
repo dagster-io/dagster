@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional, TypeVar
 
-from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.serdes.objects import PackageEntryKey
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
@@ -24,7 +24,7 @@ from dagster._utils.pydantic_yaml import (
 from dagster.components.component.component import Component
 from dagster.components.component.component_loader import is_component_loader
 from dagster.components.core.context import ComponentLoadContext
-from dagster.components.core.library_object import load_library_object
+from dagster.components.core.package_entry import load_package_entry
 from dagster.components.resolved.base import Resolvable
 from dagster.components.resolved.core_models import AssetPostProcessor
 
@@ -219,8 +219,8 @@ class WrappedYamlComponent(WrappedDefsModuleComponent):
 
         # find the component type
         type_str = context.normalize_component_type_str(component_file_model.type)
-        key = LibraryObjectKey.from_typename(type_str)
-        obj = load_library_object(key)
+        key = PackageEntryKey.from_typename(type_str)
+        obj = load_package_entry(key)
         if not isinstance(obj, type) or not issubclass(obj, Component):
             raise DagsterInvalidDefinitionError(
                 f"Component type {type_str} is of type {type(obj)}, but must be a subclass of dagster.Component"

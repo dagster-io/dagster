@@ -10,10 +10,10 @@ from typing import Callable, Optional
 from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster._utils import pushd
 from dagster.components import Component
-from dagster.components.core.library_object import discover_entry_point_library_objects
+from dagster.components.core.package_entry import discover_entry_point_package_entries
 from dagster.components.core.snapshot import get_library_object_snap
 from dagster_dg.utils import get_venv_executable
-from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.serdes.objects import PackageEntryKey
 from dagster_shared.serdes.serdes import deserialize_value
 
 ensure_dagster_tests_import()
@@ -126,11 +126,11 @@ def test_components_from_dagster():
 
 
 def test_all_components_have_defined_summary():
-    registry = discover_entry_point_library_objects()
+    registry = discover_entry_point_package_entries()
     for component_name, component_type in registry.items():
         if isinstance(component_type, type) and issubclass(component_type, Component):
             assert get_library_object_snap(
-                LibraryObjectKey("a", "a"), component_type
+                PackageEntryKey("a", "a"), component_type
             ).summary, f"Component {component_name} has no summary defined"
 
 

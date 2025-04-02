@@ -8,8 +8,8 @@ from dagster.components.cli import cli
 from dagster_shared import check
 from dagster_shared.serdes.objects import (
     ComponentTypeSnap,
-    LibraryObjectKey,
-    LibraryObjectSnap,
+    PackageEntryKey,
+    PackageEntrySnap,
     ScaffolderSnap,
 )
 from dagster_shared.serdes.serdes import deserialize_value
@@ -40,7 +40,7 @@ def test_list_library_objects_from_module():
     # Now check what we get when we load directly from the test library. This has stable results.
     result = runner.invoke(cli, ["list", "library", "--no-entry-points", "dagster_test.components"])
     assert result.exit_code == 0
-    result = check.is_list(deserialize_value(result.output), LibraryObjectSnap)
+    result = check.is_list(deserialize_value(result.output), PackageEntrySnap)
     assert len(result) > 1
 
     assert [obj.key.to_typename() for obj in result] == [
@@ -51,7 +51,7 @@ def test_list_library_objects_from_module():
     ]
 
     assert result[2] == ComponentTypeSnap(
-        key=LibraryObjectKey(namespace="dagster_test.components", name="SimpleAssetComponent"),
+        key=PackageEntryKey(namespace="dagster_test.components", name="SimpleAssetComponent"),
         schema={
             "additionalProperties": False,
             "properties": {
@@ -88,9 +88,7 @@ def test_list_library_objects_from_module():
         "type": "object",
     }
     assert result[3] == ComponentTypeSnap(
-        key=LibraryObjectKey(
-            namespace="dagster_test.components", name="SimplePipesScriptComponent"
-        ),
+        key=PackageEntryKey(namespace="dagster_test.components", name="SimplePipesScriptComponent"),
         schema=pipes_script_component_model_schema,
         description="A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
         summary="A simple asset that runs a Python script with the Pipes subprocess client.",
@@ -123,7 +121,7 @@ def test_list_library_objects_from_project() -> None:
 
             result = deserialize_value(result.output, list)
             assert len(result) == 1
-            assert result[0].key == LibraryObjectKey(
+            assert result[0].key == PackageEntryKey(
                 namespace=f"{location_name}.defs.local_component_sample",
                 name="MyComponent",
             )
