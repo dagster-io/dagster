@@ -25,6 +25,7 @@ from dagster_dbt.cloud_v2.resources import (
     DbtCloudCredentials,
     DbtCloudWorkspace,
     get_dagster_adhoc_job_name,
+    load_dbt_cloud_asset_specs,
 )
 from dagster_dbt.cloud_v2.sensor_builder import build_dbt_cloud_polling_sensor
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType
@@ -995,7 +996,7 @@ def load_dbt_cloud_definitions() -> Definitions:
         )
 
         return Definitions(
-            assets=workspace.load_asset_specs(),
+            assets=load_dbt_cloud_asset_specs(workspace=workspace),
             sensors=[build_dbt_cloud_polling_sensor(workspace=workspace)],
         )
     finally:
