@@ -105,6 +105,8 @@ class BaseResourceMeta(BaseConfigMeta):
     """
 
     def __new__(cls, name, bases, namespaces, **kwargs) -> Any:
+        from pydantic.fields import FieldInfo
+
         # Gather all type annotations from the class and its base classes
         annotations = namespaces.get("__annotations__", {})
         for field in annotations:
@@ -128,11 +130,20 @@ class BaseResourceMeta(BaseConfigMeta):
                     base = annotations[field]
                     annotations[field] = Annotated[
                         Union[
-                            LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base),
                             base,
+                            LateBoundTypesForResourceTypeChecking.get_partial_resource_type(base),
                         ],
                         "resource_dependency",
                     ]
+                    # Pydantic 2.5.0 changed the default union mode to "smart", which causes
+                    # partial resource initialization to fail, since Pydantic would attempt to
+                    # initialize a PartialResource with parameters which are invalid.
+                    # https://github.com/pydantic/pydantic-core/pull/867
+                    # Here, we explicitly set the union mode to "left_to_right".
+                    # https://docs.pydantic.dev/latest/concepts/unions/#left-to-right-mode
+                    namespaces[field] = FieldInfo(
+                        union_mode="left_to_right", annotation=annotations[field]
+                    )
 
         namespaces["__annotations__"] = annotations
         return super().__new__(cls, name, bases, namespaces, **kwargs)

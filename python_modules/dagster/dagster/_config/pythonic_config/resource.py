@@ -834,7 +834,7 @@ def _is_annotated_as_resource_type(annotation: type, metadata: list[str]) -> boo
     """Determines if a field in a structured config class is annotated as a resource type or not."""
     from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 
-    if metadata and metadata[0] == "resource_dependency":
+    if metadata and any(m == "resource_dependency" for m in metadata):
         return True
 
     if is_closed_python_optional_type(annotation):
