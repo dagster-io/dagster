@@ -1,3 +1,4 @@
+from ast import mod
 from collections.abc import Mapping
 from copy import copy
 from pathlib import Path
@@ -401,12 +402,18 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
     cls=ScaffoldSubCommand,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
+@click.option(
+    "--dataclass/--no-dataclass",
+    is_flag=True,
+    default=True,
+    help="Where to automatically annotated the generated class with @dataclass.",
+)
 @click.argument("name", type=str)
 @dg_global_options
 @click.pass_context
 @cli_telemetry_wrapper
 def scaffold_component_type_command(
-    context: click.Context, name: str, **global_options: object
+    context: click.Context, name: str, dataclass: bool, **global_options: object
 ) -> None:
     """Scaffold of a custom Dagster component type.
 
@@ -424,4 +431,6 @@ def scaffold_component_type_command(
     if registry.has(component_key):
         exit_with_error(f"Component type`{component_key.to_typename()}` already exists.")
 
-    scaffold_component_type(dg_context, name, module_name)
+    scaffold_component_type(
+        dg_context=dg_context, class_name=name, module_name=module_name, dataclass=dataclass
+    )

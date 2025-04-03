@@ -156,6 +156,7 @@ PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
 
 # Copied from dagster._generate.generate
 def scaffold_subtree(
+    *,
     path: Path,
     excludes: Optional[list[str]] = None,
     name_placeholder: str = PROJECT_NAME_PLACEHOLDER,
