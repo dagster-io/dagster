@@ -1,0 +1,9 @@
+# GitHub Container Registry
+# https://github.com/docker/login-action#github-container-registry
+- name: Login to GitHub Container Registry
+  if: steps.prerun.outputs.result != 'skip'
+  uses: docker/login-action@v1
+  with:
+    registry: ghcr.io
+    username: ${{ github.actor }}
+    password: ${{ secrets.GITHUB_TOKEN }}

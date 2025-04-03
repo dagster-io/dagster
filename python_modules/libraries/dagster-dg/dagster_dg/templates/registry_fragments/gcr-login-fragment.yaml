@@ -1,0 +1,9 @@
+# GCR
+# https://github.com/docker/login-action#google-container-registry-gcr
+- name: Login to GCR
+  if: steps.prerun.outputs.result != 'skip'
+  uses: docker/login-action@v1
+  with:
+    registry: gcr.io
+    username: _json_key
+    password: ${{ secrets.GCR_JSON_KEY }}

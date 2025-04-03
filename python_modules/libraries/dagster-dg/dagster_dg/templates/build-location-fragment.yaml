@@ -1,0 +1,16 @@
+- name: Build and upload Docker image for "LOCATION_NAME"
+  if: steps.prerun.outputs.result != 'skip'
+  uses: docker/build-push-action@v4
+  with:
+    context: LOCATION_PATH
+    push: true
+    tags: ${{ env.IMAGE_REGISTRY }}:${{ env.IMAGE_TAG }}-LOCATION_NAME
+    cache-from: type=gha
+    cache-to: type=gha,mode=max
+
+- name: Update build session with image tag for LOCATION_NAME
+  id: ci-set-build-output-example-location
+  if: steps.prerun.outputs.result != 'skip'
+  uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+  with:
+    command: "ci set-build-output --location-name=LOCATION_NAME --image-tag=$IMAGE_TAG-LOCATION_NAME"

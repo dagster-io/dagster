@@ -8,13 +8,13 @@ from typing import Optional
 
 import click
 import dagster_shared.check as check
-import jinja2
 
 from dagster_dg.cli.plus.constants import DgPlusAgentType, DgPlusDeploymentType
 from dagster_dg.cli.utils import create_temp_dagster_cloud_yaml_file
 from dagster_dg.config import DgRawBuildConfig, merge_build_configs
 from dagster_dg.context import DgContext
 from dagster_dg.utils.git import get_local_branch_name
+from dagster_dg.utils.plus.build import create_deploy_dockerfile
 
 
 def _guess_deployment_type(
@@ -22,11 +22,15 @@ def _guess_deployment_type(
 ) -> tuple[DgPlusDeploymentType, str]:
     branch_name = get_local_branch_name(str(project_dir))
     if not branch_name:
-        click.echo(f"Could not determine a git branch, so deploying to {full_deployment_name}.")
+        click.echo(
+            f"Could not determine a git branch, so deploying to {full_deployment_name}."
+        )
         return DgPlusDeploymentType.FULL_DEPLOYMENT, full_deployment_name
 
     if branch_name in {"main", "master"}:
-        click.echo(f"Current branch is {branch_name}, so deploying to {full_deployment_name}.")
+        click.echo(
+            f"Current branch is {branch_name}, so deploying to {full_deployment_name}."
+        )
         return DgPlusDeploymentType.FULL_DEPLOYMENT, full_deployment_name
 
     click.echo(
@@ -38,34 +42,15 @@ def _guess_deployment_type(
 def _guess_and_prompt_deployment_type(
     project_dir: Path, full_deployment_name: str, skip_confirmation_prompt: bool
 ) -> DgPlusDeploymentType:
-    deployment_type, branch_name = _guess_deployment_type(project_dir, full_deployment_name)
+    deployment_type, branch_name = _guess_deployment_type(
+        project_dir, full_deployment_name
+    )
 
     if not skip_confirmation_prompt and not click.confirm("Do you want to continue?"):
         click.echo("Deployment cancelled.")
         raise click.Abort()
 
     return deployment_type
-
-
-def _create_temp_deploy_dockerfile(dst_path, python_version, use_editable_dagster: bool):
-    dockerfile_template_path = (
-        Path(__file__).parent.parent.parent
-        / "templates"
-        / (
-            "deploy_uv_editable_Dockerfile.jinja"
-            if use_editable_dagster
-            else "deploy_uv_Dockerfile.jinja"
-        )
-    )
-
-    loader = jinja2.FileSystemLoader(searchpath=os.path.dirname(dockerfile_template_path))
-    env = jinja2.Environment(loader=loader)
-
-    template = env.get_template(os.path.basename(dockerfile_template_path))
-
-    with open(dst_path, "w", encoding="utf8") as f:
-        f.write(template.render(python_version=python_version))
-        f.write("\n")
 
 
 def _build_hybrid_image(
@@ -164,7 +149,8 @@ def init_deploy_session(
         project_dir=str(dg_context.root_path),
         deployment=deployment,
         organization=organization,
-        require_branch_deployment=deployment_type == DgPlusDeploymentType.BRANCH_DEPLOYMENT,
+        require_branch_deployment=deployment_type
+        == DgPlusDeploymentType.BRANCH_DEPLOYMENT,
         git_url=git_url,
         commit_hash=commit_hash,
         dagster_env=None,
@@ -242,8 +228,10 @@ def _build_artifact_for_project(
 
     dockerfile_path = build_directory / "Dockerfile"
     if not os.path.exists(dockerfile_path):
-        click.echo(f"No Dockerfile found - scaffolding a default one at {dockerfile_path}.")
-        _create_temp_deploy_dockerfile(dockerfile_path, python_version, use_editable_dagster)
+        click.echo(
+            f"No Dockerfile found - scaffolding a default one at {dockerfile_path}."
+        )
+        create_deploy_dockerfile(dockerfile_path, python_version, use_editable_dagster)
     else:
         click.echo(f"Building using Dockerfile at {dockerfile_path}.")
 
@@ -277,7 +265,9 @@ def _build_artifact_for_project(
         )
 
 
-def finish_deploy_session(dg_context: DgContext, statedir: str, location_names: tuple[str]):
+def finish_deploy_session(
+    dg_context: DgContext, statedir: str, location_names: tuple[str]
+):
     from dagster_cloud_cli.commands.ci import deploy_impl
     from dagster_cloud_cli.config_utils import (
         get_agent_heartbeat_timeout,
