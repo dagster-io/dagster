@@ -11,7 +11,6 @@ import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {ASSET_DAEMON_TICKS_QUERY} from './AssetDaemonTicksQuery';
 import {AutomaterializationTickDetailDialog} from './AutomaterializationTickDetailDialog';
-import {AutomaterializeRunHistoryTable} from './AutomaterializeRunHistoryTable';
 import {InstanceAutomaterializationEvaluationHistoryTable} from './InstanceAutomaterializationEvaluationHistoryTable';
 import {
   AssetDaemonTickFragment,
@@ -20,7 +19,6 @@ import {
 } from './types/AssetDaemonTicksQuery.types';
 import {useLazyQuery} from '../../apollo-client';
 import {useConfirmation} from '../../app/CustomConfirmationProvider';
-import {useFeatureFlags} from '../../app/Flags';
 import {useUnscopedPermissions} from '../../app/Permissions';
 import {useRefreshAtInterval} from '../../app/QueryRefresh';
 import {InstigationTickStatus, RunsFilter} from '../../graphql/types';
@@ -39,7 +37,6 @@ const RUNS_FILTER: RunsFilter = {tags: [{key: 'dagster/auto_materialize', value:
 
 export const GlobalAutomaterializationContent = () => {
   const automaterialize = useAutomaterializeDaemonStatus();
-  const {flagLegacyRunsPage} = useFeatureFlags();
   const confirm = useConfirmation();
 
   const {permissions: {canToggleAutoMaterialize} = {}} = useUnscopedPermissions();
@@ -221,8 +218,6 @@ export const GlobalAutomaterializationContent = () => {
               setTimerange={setTimerange}
               actionBarComponents={tableViewSwitch}
             />
-          ) : flagLegacyRunsPage ? (
-            <AutomaterializeRunHistoryTable setTableView={setTableView} />
           ) : (
             <Box margin={{top: 32}} border="top">
               <RunsFeedTableWithFilters

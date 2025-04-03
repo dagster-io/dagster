@@ -17,23 +17,6 @@ export const useVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagDisableAutoLoadDefaults,
   },
   {
-    key: 'Revert to legacy Runs page',
-    flagType: FeatureFlag.flagLegacyRunsPage,
-    label: (
-      <>
-        Revert to legacy Runs page (
-        <a
-          href="https://github.com/dagster-io/dagster/discussions/24898"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Learn more
-        </a>
-        )
-      </>
-    ),
-  },
-  {
     key: 'Enable new selection syntax for Asset/Op/Run graphs',
     flagType: FeatureFlag.flagSelectionSyntax,
     label: (
