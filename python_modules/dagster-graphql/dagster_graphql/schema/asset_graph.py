@@ -531,7 +531,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     async def get_materialization_status_for_asset_health(self, graphene_info: ResolveInfo):
         if self._asset_node_snap.partitions is not None:  # isPartitioned
             partition_stats = self.resolve_partitionStats(graphene_info)
-            if partition_stats is None:
+            if partition_stats is None or (
+                partition_stats.numMaterialized == 0 and partition_stats.numFailed == 0
+            ):
                 return GrapheneAssetHealthStatus.UNKNOWN
             if partition_stats.numFailed > 0:
                 return GrapheneAssetHealthStatus.DEGRADED
