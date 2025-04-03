@@ -1,8 +1,8 @@
-from {{ project_name }} import defs as defs_module
+import {{ project_name }}.defs
 
 from dagster.components import definitions, load_defs
 
 
 @definitions
-def {{ project_name }}_defs():
-    return load_defs(defs_root=defs_module)
+def defs():
+    return load_defs(defs_root={{ project_name }}.defs)
