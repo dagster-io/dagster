@@ -151,7 +151,7 @@ def pull_env_command(**global_options: object) -> None:
 @click.option("--description", type=str, help="Description for the token")
 @dg_global_options
 @cli_telemetry_wrapper
-def create_ci_api_token(description: str, **global_options: object) -> None:
+def create_ci_api_token(description: Optional[str] = None, **global_options: object) -> None:
     """Create a Dagster Plus API token for CI."""
     if not DagsterPlusCliConfig.exists():
         raise click.UsageError(
