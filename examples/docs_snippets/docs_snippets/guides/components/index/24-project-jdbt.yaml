@@ -1,7 +1,0 @@
-type: dbt_project@dagster_components
-
-attributes:
-  dbt:
-    project_dir: ../../../dbt/jdbt
-  asset_attributes:
-    key: "target/main/{{ node.name }}"

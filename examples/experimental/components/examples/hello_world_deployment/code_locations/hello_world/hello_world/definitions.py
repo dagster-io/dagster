@@ -1,5 +1,5 @@
 import dagster as dg
-from dagster_components import load_defs
+from dagster.components.core.load_defs import load_defs
 
 from . import components
 

@@ -43,16 +43,6 @@ isolated environment and make it a globally available executable. This makes it
 easier to work with multiple projects using `dg`.
 :::
 
-### Install `dagster-components`
-
-Next, we'll need to add `dagster-components` as a dependency of our project. Add it to `install_requires` in `setup.py`:
-
-<CodeExample path="docs_snippets/docs_snippets/guides/dg/migrating-project/2-setup.py" language="python" title="setup.py" />
-
-Now we install (or reinstall) our project into the active virtual environment:
-
-<CliInvocationExample contents="pip install -e ." />
-
 ## Update project structure
 
 ### Add `pyproject.toml`
@@ -87,7 +77,7 @@ the conventional name of the module for where definitions live in `dg`) from whi
 
 ## Modify top-level definitions
 
-Autoloading is provided by a function from `dagster-components` that returns a `Definitions` object. Because we already have some other definitions in our project, we'll combine those with the autoloaded ones from `my_existing_project.defs`.
+Autoloading is provided by a function that returns a `Definitions` object. Because we already have some other definitions in our project, we'll combine those with the autoloaded ones from `my_existing_project.defs`.
 
 To do so, you'll need to modify your `definitions.py` file, or whichever file contains your top-level `Definitions` object.
 
