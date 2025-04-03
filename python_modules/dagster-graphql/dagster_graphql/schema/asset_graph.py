@@ -602,16 +602,9 @@ class GrapheneAssetNode(graphene.ObjectType):
             if not all_checks_executed:
                 # if some checks have no planned execution for the latest materialization, we show that as an warning
                 return GrapheneAssetHealthStatus.WARNING
-            if all(
-                status == AssetCheckExecutionResolvedStatus.IN_PROGRESS
-                or status == AssetCheckExecutionResolvedStatus.SKIPPED
-                for status in check_statuses
-            ):
-                return GrapheneAssetHealthStatus.UNKNOWN
-            else:
-                # some asset checks have succeeded. Some checks may be skipped or still in progress,
-                # but we show the more descriptive status in the meantime
-                return GrapheneAssetHealthStatus.HEALTHY
+            # the checks are some combination of IN_PROGRESS, SKIPPED, and SUCCEEDED
+            # we display this as HEALTHY in the UI since no checks are in a failed state
+            return GrapheneAssetHealthStatus.HEALTHY
 
     def get_freshness_status_for_asset_health(self, graphene_info: ResolveInfo):
         # if SLA is met, healthy
