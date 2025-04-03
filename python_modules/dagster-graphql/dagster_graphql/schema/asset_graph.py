@@ -35,11 +35,10 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.storage.asset_check_execution_record import (
-    AssetCheckExecutionRecord,
     AssetCheckExecutionResolvedStatus,
     AssetCheckInstanceSupport,
 )
-from dagster._core.storage.event_log.base import AssetRecord
+from dagster._core.storage.event_log.base import AssetCheckSummaryRecord, AssetRecord
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.utils import is_valid_email
 from dagster._core.workspace.permissions import Permissions
@@ -556,21 +555,25 @@ class GrapheneAssetNode(graphene.ObjectType):
             self._asset_node_snap.asset_key
         )
         if not remote_check_nodes or len(remote_check_nodes) == 0:
+            # asset doesn't have checks defined
             return GrapheneAssetHealthStatus.NOT_APPLICABLE
         else:
             check_statuses = []
             check_failure_severities = []
-            all_checks_executed = True
-            for remote_check_node in remote_check_nodes:
-                record = await AssetCheckExecutionRecord.gen(
-                    graphene_info.context, remote_check_node.asset_check.key
-                )
-                if record and await record.targets_latest_materialization(
-                    graphene_info.context
-                ):  # requires loading the run in some cases...
-                    # resolve_status is called by targets_latest_materialization. maybe there's some caching we can do
-                    status = await record.resolve_status(
-                        graphene_info.context
+            # all_checks_executed = True
+            asset_check_summary_records = await AssetCheckSummaryRecord.gen_many(
+                graphene_info.context,
+                [remote_check_node.asset_check.key for remote_check_node in remote_check_nodes],
+            )
+            for summary_record in asset_check_summary_records:
+                if (
+                    summary_record is not None
+                    and summary_record.last_completed_check_execution_record is not None
+                ):
+                    status = (
+                        await summary_record.last_completed_check_execution_record.resolve_status(
+                            graphene_info.context
+                        )
                     )  # requires loading the run in some cases
                     check_statuses.append(status)
                     if (
@@ -579,16 +582,15 @@ class GrapheneAssetNode(graphene.ObjectType):
                     ):
                         # failed checks should always have an evaluation, but default to ERROR severity if not
                         check_failure_severities.append(
-                            record.evaluation.severity
-                            if record.evaluation
+                            summary_record.last_completed_check_execution_record.evaluation.severity
+                            if summary_record.last_completed_check_execution_record.evaluation
                             else AssetCheckSeverity.ERROR
                         )
-                else:
-                    # check wasn't executed against the latest materialization or has never been executed
-                    all_checks_executed = False
+
             if len(check_statuses) == 0:
-                # no checks have been executed for the latest materialization of the asset
-                return GrapheneAssetHealthStatus.WARNING
+                # checks have never been executed
+                return GrapheneAssetHealthStatus.UNKNOWN
+
             if any(
                 status == AssetCheckExecutionResolvedStatus.FAILED
                 or status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
@@ -597,14 +599,59 @@ class GrapheneAssetNode(graphene.ObjectType):
                 if all(
                     severity == AssetCheckSeverity.WARN for severity in check_failure_severities
                 ):
+                    # all failed checks are with warning severity
                     return GrapheneAssetHealthStatus.WARNING
+                # at least one failing check had error severity
                 return GrapheneAssetHealthStatus.DEGRADED
-            if not all_checks_executed:
-                # if some checks have no planned execution for the latest materialization, we show that as an warning
-                return GrapheneAssetHealthStatus.WARNING
-            # the checks are some combination of IN_PROGRESS, SKIPPED, and SUCCEEDED
-            # we display this as HEALTHY in the UI since no checks are in a failed state
-            return GrapheneAssetHealthStatus.HEALTHY
+            else:
+                # since we are only looking at the latest completed execution for each check, if there
+                # are no failed checks, then all checks must have succeeded
+                return GrapheneAssetHealthStatus.HEALTHY
+
+            # for remote_check_node in remote_check_nodes:
+            #     record = await AssetCheckExecutionRecord.gen(
+            #         graphene_info.context, remote_check_node.asset_check.key
+            #     )
+            #     if record and await record.targets_latest_materialization(
+            #         graphene_info.context
+            #     ):  # requires loading the run in some cases...
+            #         # resolve_status is called by targets_latest_materialization. maybe there's some caching we can do
+            #         status = await record.resolve_status(
+            #             graphene_info.context
+            #         )  # requires loading the run in some cases
+            #         check_statuses.append(status)
+            #         if (
+            #             status == AssetCheckExecutionResolvedStatus.FAILED
+            #             or status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
+            #         ):
+            #             # failed checks should always have an evaluation, but default to ERROR severity if not
+            #             check_failure_severities.append(
+            #                 record.evaluation.severity
+            #                 if record.evaluation
+            #                 else AssetCheckSeverity.ERROR
+            #             )
+            #     else:
+            #         # check wasn't executed against the latest materialization or has never been executed
+            #         all_checks_executed = False
+            # if len(check_statuses) == 0:
+            #     # no checks have been executed for the latest materialization of the asset
+            #     return GrapheneAssetHealthStatus.WARNING
+            # if any(
+            #     status == AssetCheckExecutionResolvedStatus.FAILED
+            #     or status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
+            #     for status in check_statuses
+            # ):
+            #     if all(
+            #         severity == AssetCheckSeverity.WARN for severity in check_failure_severities
+            #     ):
+            #         return GrapheneAssetHealthStatus.WARNING
+            #     return GrapheneAssetHealthStatus.DEGRADED
+            # if not all_checks_executed:
+            #     # if some checks have no planned execution for the latest materialization, we show that as an warning
+            #     return GrapheneAssetHealthStatus.WARNING
+            # # the checks are some combination of IN_PROGRESS, SKIPPED, and SUCCEEDED
+            # # we display this as HEALTHY in the UI since no checks are in a failed state
+            # return GrapheneAssetHealthStatus.HEALTHY
 
     def get_freshness_status_for_asset_health(self, graphene_info: ResolveInfo):
         # if SLA is met, healthy
