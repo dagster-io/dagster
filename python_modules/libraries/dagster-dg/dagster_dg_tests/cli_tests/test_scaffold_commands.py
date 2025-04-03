@@ -570,6 +570,39 @@ def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
         assert "type: foo_bar.lib.Baz" in component_yaml_path.read_text()
 
 
+def test_scaffold_component_succeeds_scaffolded_no_dataclass() -> None:
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner),
+    ):
+        result = runner.invoke("scaffold", "component-type", "Baz", "--no-dataclass")
+        assert_runner_result(result)
+        assert Path("foo_bar/lib/baz.py").exists()
+
+        output = '''import dagster as dg
+from dagster.components import Component, ComponentLoadContext, Resolvable
+
+
+class Baz(Component, Resolvable):
+    """COMPONENT SUMMARY HERE.
+
+    COMPONENT DESCRIPTION HERE.
+    """
+
+    def __init__(
+        self,
+        # added arguments here will define yaml schema via Resolvable
+    ):
+        pass
+
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
+        # Add definition construction logic here.
+        return dg.Definitions()
+'''
+
+        assert Path("foo_bar/lib/baz.py").read_text() == output
+
+
 # ##### SHIMS
 
 
