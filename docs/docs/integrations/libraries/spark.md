@@ -46,3 +46,5 @@ Existing Spark jobs can be used with Pipes without any modifications. In this ca
 Additionally, it's possible to send events to Dagster from the job by utilizing the `dagster_pipes` module. This requires minimal code changes on the job side.
 
 This approach also works for Spark jobs written in Java or Scala, although we don't have Pipes implementations for emitting events from those languages yet.
+
+Dagster Pipes can also be used to launch & monitor general PySpark jobs. Learn more about this in our guide about [Building pipelines with Spark](/guides/build/external-pipelines/pyspark-pipeline).
