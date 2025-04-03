@@ -1,5 +1,3 @@
-import os
-import shutil
 import signal
 import subprocess
 import tempfile
@@ -189,11 +187,16 @@ def test_dev_project_context_success():
 @pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
 def test_dev_command_project_context_success_no_uv_sync():
     with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
-        shutil.rmtree(Path.cwd() / ".venv")
-        os.remove(Path.cwd() / "uv.lock")
-        port = find_free_port()
-        dev_process = _launch_dev_command(["--port", str(port)])
-        _assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)
+        # Insert a random dep into pyproject.toml to ensure uv sync is run
+        Path("pyproject.toml").write_text(
+            Path("pyproject.toml").read_text().replace('"dagster",', '"dagster",\n"yaspin",')
+        )
+        with tempfile.NamedTemporaryFile() as stdout_file, open(stdout_file.name, "w") as stdout:
+            port = find_free_port()
+            dev_process = _launch_dev_command(["--port", str(port)], stdout=stdout, stderr=stdout)
+            _assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)
+
+            assert "Installed" in Path(stdout_file.name).read_text()
 
 
 @pytest.mark.skipif(
@@ -300,7 +303,10 @@ def test_implicit_yaml_check_from_dg_dev_workspace() -> None:
 
 
 def _launch_dev_command(
-    options: list[str], capture_output: bool = False, stdout: Optional[TextIO] = None
+    options: list[str],
+    capture_output: bool = False,
+    stdout: Optional[TextIO] = None,
+    stderr: Optional[TextIO] = None,
 ) -> subprocess.Popen:
     # We start a new process instead of using the runner to avoid blocking the test. We need to
     # poll the webserver to know when it is ready.
@@ -312,6 +318,7 @@ def _launch_dev_command(
             *options,
         ],
         stdout=stdout if stdout else (subprocess.PIPE if capture_output else None),
+        stderr=stderr if stderr else None,
     )
 
 

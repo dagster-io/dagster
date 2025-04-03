@@ -482,8 +482,9 @@ class DgContext:
         path = path or self.root_path
         with pushd(path):
             if not (path / "uv.lock").exists():
-                subprocess.run(
-                    ["uv", "sync"], check=True, env=strip_activated_venv_from_env_vars(os.environ)
+                subprocess.check_output(
+                    ["uv", "sync"],
+                    env=strip_activated_venv_from_env_vars(os.environ),
                 )
 
     @property
