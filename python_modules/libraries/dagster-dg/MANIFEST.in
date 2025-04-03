@@ -7,3 +7,7 @@ recursive-include dagster_dg/templates *
 recursive-include dagster_dg/docs *
 recursive-exclude dagster_dg/docs/.next *
 recursive-exclude dagster_dg/docs/node_modules *
+recursive-exclude dagster_dg/docs/packages/dg-docs-components/.next *
+recursive-exclude dagster_dg/docs/packages/dg-docs-components/node_modules *
+recursive-exclude dagster_dg/docs/packages/dg-docs-site/.next *
+recursive-exclude dagster_dg/docs/packages/dg-docs-site/node_modules *
