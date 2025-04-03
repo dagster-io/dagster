@@ -1,6 +1,7 @@
 import webbrowser
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Optional
 
 import click
 from dagster_shared.plus.config import DagsterPlusCliConfig
