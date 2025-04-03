@@ -104,3 +104,13 @@ check_manifest:
 	check-manifest python_modules/dagster-webserver
 	check-manifest python_modules/dagster-graphql
 	ls python_modules/libraries | xargs -n 1 -Ipkg check-manifest python_modules/libraries/pkg
+
+ready_dagster_dg_docs_for_publish:
+	rm -rf python_modules/libraries/dagster-dg/dagster_dg/docs/packages
+	mkdir -p python_modules/libraries/dagster-dg/dagster_dg/docs/packages
+	cp -r js_modules/dagster-ui/packages/dg-docs-components python_modules/libraries/dagster-dg/dagster_dg/docs/packages
+	cp -r js_modules/dagster-ui/packages/dg-docs-site python_modules/libraries/dagster-dg/dagster_dg/docs/packages
+	rm -rf python_modules/libraries/dagster-dg/dagster_dg/docs/packages/dg-docs-components/.next
+	rm -rf python_modules/libraries/dagster-dg/dagster_dg/docs/packages/dg-docs-site/.next
+	rm -rf python_modules/libraries/dagster-dg/dagster_dg/docs/packages/dg-docs-components/node_modules
+	rm -rf python_modules/libraries/dagster-dg/dagster_dg/docs/packages/dg-docs-site/node_modules
