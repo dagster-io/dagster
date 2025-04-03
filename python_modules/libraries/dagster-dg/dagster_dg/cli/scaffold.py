@@ -273,6 +273,7 @@ def _generate_dagster_cloud_yaml_contents(
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @dg_global_options
+@cli_telemetry_wrapper
 def scaffold_github_actions_command(**global_options: object) -> None:
     """Scaffold a GitHub Actions workflow for a Dagster project.
 
@@ -325,7 +326,7 @@ def scaffold_github_actions_command(**global_options: object) -> None:
         click.echo(
             "No Dagster Plus config found. Skipping GitHub secret creation. You will need to manually "
             "create an agent token in the Dagster Plus UI, and set the `DAGSTER_CLOUD_API_TOKEN` "
-            "secret in your GitHUb repository."
+            "secret in your GitHub repository."
         )
 
     workflow_file = workflows_dir / "dagster-plus-deploy.yml"
