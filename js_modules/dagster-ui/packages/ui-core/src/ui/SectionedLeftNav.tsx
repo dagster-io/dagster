@@ -25,14 +25,14 @@ import {
   getTopLevelResourceDetailsItemsForOption,
 } from '../nav/getLeftNavItemsForOption';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
-import {WorkspaceContext} from '../workspace/WorkspaceContext/WorkspaceContext';
+import {DagsterRepoOption} from '../workspace/WorkspaceContext/util';
 import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString, repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {repoAddressFromPath} from '../workspace/repoAddressFromPath';
 import {RepoAddress} from '../workspace/types';
 
 const validateExpandedKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed : []);
-const EXPANDED_REPO_KEYS = 'dagster.expanded-repo-keys';
+export const EXPANDED_REPO_KEYS = 'dagster.expanded-repo-keys';
 
 type ItemType = 'asset-group' | 'job' | 'resource';
 
@@ -48,8 +48,11 @@ type RowType =
       isLast: boolean;
     };
 
-export const SectionedLeftNav = () => {
-  const {visibleRepos} = React.useContext(WorkspaceContext);
+interface Props {
+  visibleRepos: DagsterRepoOption[];
+}
+
+export const SectionedLeftNav = ({visibleRepos}: Props) => {
   const {basePath} = React.useContext(AppContext);
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
