@@ -86,9 +86,9 @@ class CommandStepBuilder:
         ]
         buildkite_envvars.append("BUILDKITE_ANALYTICS_TOKEN")
         buildkite_envvars.append("BUILDKITE_TEST_QUARANTINE_TOKEN")
+        buildkite_envvars.append("BUILDKITE_TEST_SUITE_SLUG")
         buildkite_envvars.append("BUILDKITE_BRANCH")
         buildkite_envvars.append("BUILDKITE_COMMIT")
-        buildkite_envvars.append("BUILDKITE_PIPELINE_SLUG")
 
         # Set PYTEST_DEBUG_TEMPROOT to our mounted /tmp volume. Any time the
         # pytest `tmp_path` or `tmpdir` fixtures are used used, the temporary

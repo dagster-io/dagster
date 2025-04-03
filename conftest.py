@@ -25,10 +25,10 @@ def buildkite_quarantined_tests() -> set[TestId]:
 
             token = os.getenv("BUILDKITE_TEST_QUARANTINE_TOKEN")
             org_slug = os.getenv("BUILDKITE_ORGANIZATION_SLUG")
-            pipeline_slug = os.getenv("BUILDKITE_PIPELINE_SLUG")
+            suite_slug = os.getenv("BUILDKITE_TEST_SUITE_SLUG")
 
             headers = {"Authorization": f"Bearer {token}"}
-            url = f"https://api.buildkite.com/v2/analytics/organizations/{org_slug}/suites/{pipeline_slug}/tests/muted"
+            url = f"https://api.buildkite.com/v2/analytics/organizations/{org_slug}/suites/{suite_slug}/tests/muted"
 
             response = requests.get(url, headers=headers)
             response.raise_for_status()
