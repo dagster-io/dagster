@@ -11,6 +11,7 @@ class AvailablePythonVersion(Enum):
     V3_10 = "3.10"
     V3_11 = "3.11"
     V3_12 = "3.12"
+    V3_13 = "3.13"
 
     @classmethod
     def get_all(cls) -> List["AvailablePythonVersion"]:
