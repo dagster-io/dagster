@@ -1169,7 +1169,7 @@ class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]
     def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
         all_asset_specs = [
             self.translator.get_asset_spec(props)
-            for props in state.to_workpsace_data_selection(
+            for props in state.to_workspace_data_selection(
                 connector_selector_fn=self.connector_selector_fn
             ).to_fivetran_connector_table_props_data()
         ]

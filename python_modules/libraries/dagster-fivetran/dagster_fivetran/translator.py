@@ -11,12 +11,13 @@ from dagster._record import as_dict, record
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
 from dagster_shared.serdes import whitelist_for_serdes
+from typing_extensions import TypeAlias
 
 from dagster_fivetran.utils import get_fivetran_connector_table_name, metadata_for_table
 
 MIN_TIME_STR = "0001-01-01 00:00:00+00"
 
-ConnectorSelectorFn = Callable[["FivetranConnector"], bool]
+ConnectorSelectorFn: TypeAlias = Callable[["FivetranConnector"], bool]
 
 
 class FivetranConnectorTableProps(NamedTuple):
@@ -254,9 +255,9 @@ class FivetranWorkspaceData:
                             )
         return data
 
-    # Cache workspace data selection for a specific connector_selector_fn.
+    # Cache workspace data selection for a specific connector_selector_fn
     @cached_method
-    def to_workpsace_data_selection(
+    def to_workspace_data_selection(
         self, connector_selector_fn: Optional[ConnectorSelectorFn]
     ) -> "FivetranWorkspaceData":
         if not connector_selector_fn:

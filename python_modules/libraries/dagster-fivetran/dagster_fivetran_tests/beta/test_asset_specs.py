@@ -73,7 +73,7 @@ def test_fivetran_connector_selector(
     workspace_data = resource.fetch_fivetran_workspace_data()
     assert len(workspace_data.connectors_by_id) == expected_result_before_selection
 
-    workspace_data_selection = workspace_data.to_workpsace_data_selection(
+    workspace_data_selection = workspace_data.to_workspace_data_selection(
         connector_selector_fn=connector_selector_fn
     )
     assert len(workspace_data_selection.connectors_by_id) == expected_result_after_selection
