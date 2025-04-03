@@ -199,7 +199,7 @@ class DgContext:
 
     # Use to derive a new context for a project while preserving existing settings
     def with_root_path(self, root_path: Path) -> Self:
-        if not root_path / "pyproject.toml":
+        if not ((root_path / "pyproject.toml").exists() or (root_path / "dg.toml").exists()):
             raise DgError(f"Cannot find `pyproject.toml` at {root_path}")
         return self.__class__.from_file_discovery_and_command_line_config(
             root_path, self.cli_opts or {}

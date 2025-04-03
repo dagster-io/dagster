@@ -64,8 +64,8 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             custom_comparison_fn=compare_tree_output,
         )
         check_file(
-            "pyproject.toml",
-            DG_SNIPPETS_DIR / f"{get_next_snip_number()}-pyproject.toml",
+            "dg.toml",
+            DG_SNIPPETS_DIR / f"{get_next_snip_number()}-dg.toml",
             update_snippets=update_snippets,
             snippet_replace_regex=[
                 re_ignore_before("[tool.dagster]"),

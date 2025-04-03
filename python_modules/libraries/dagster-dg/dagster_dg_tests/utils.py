@@ -126,7 +126,7 @@ def isolated_example_workspace(
     project_name: Optional[str] = None,
     create_venv: bool = False,
     use_editable_dagster: bool = True,
-    workspace_config_file_type: ConfigFileType = "pyproject.toml",
+    workspace_config_file_type: ConfigFileType = "dg.toml",
     project_config_file_type: ConfigFileType = "pyproject.toml",
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
@@ -143,10 +143,10 @@ def isolated_example_workspace(
             *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
         )
         assert_runner_result(result)
-        if workspace_config_file_type == "dg.toml":
-            convert_pyproject_toml_to_dg_toml(
-                Path("dagster-workspace") / "pyproject.toml",
+        if workspace_config_file_type == "pyproject.toml":
+            convert_dg_toml_to_pyproject_toml(
                 Path("dagster-workspace") / "dg.toml",
+                Path("dagster-workspace") / "pyproject.toml",
             )
         with pushd("dagster-workspace"):
             if project_name:
@@ -337,6 +337,21 @@ def convert_pyproject_toml_to_dg_toml(pyproject_toml_path: Path, dg_toml_path: P
         pyproject_toml_path.unlink()
     else:
         pyproject_toml_path.write_text(tomlkit.dumps(pyproject_toml))
+
+
+def convert_dg_toml_to_pyproject_toml(dg_toml_path: Path, pyproject_toml_path: Path) -> None:
+    """Convert a dg.toml file to a pyproject.toml file."""
+    dg_toml = tomlkit.parse(dg_toml_path.read_text()).unwrap()
+    if not pyproject_toml_path.exists():
+        pyproject_toml_path.write_text(tomlkit.dumps({}))
+    with modify_toml(pyproject_toml_path) as pyproject_toml:
+        assert not has_toml_node(
+            pyproject_toml, ("tool", "dg")
+        ), "pyproject.toml already has a tool.dg section"
+        if not has_toml_node(pyproject_toml, ("tool",)):
+            set_toml_node(pyproject_toml, ("tool",), tomlkit.table())
+        set_toml_node(pyproject_toml, ("tool", "dg"), dg_toml)
+    dg_toml_path.unlink()
 
 
 # ########################

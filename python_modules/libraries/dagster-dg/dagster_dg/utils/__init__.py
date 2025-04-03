@@ -548,8 +548,8 @@ def set_toml_node(doc: TomlDoc, path: TomlPath, value: object) -> None:
     """Given a tomlkit-parsed document/table (`doc`),set a nested value at `path` to `value`. Raises
     an error if the leading keys do not already lead to a TOML container node.
     """
-    container = _gather_toml_nodes(doc, path[:-1])[-1]
-    key_or_index = path[-1]
+    container = _gather_toml_nodes(doc, path[:-1])[-1] if len(path) > 1 else doc
+    key_or_index = path[-1]  # type: ignore  # pyright bug
     if isinstance(container, dict):
         if not isinstance(key_or_index, str):
             raise TypeError(f"Expected key to be a string, but got {type(key_or_index).__name__}")
