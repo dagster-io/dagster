@@ -1,5 +1,5 @@
 import responses
-from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace
+from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace, load_dbt_cloud_asset_specs, load_dbt_cloud_check_specs
 
 from dagster_dbt_tests.cloud_v2.conftest import (
     TEST_ENVIRONMENT_ID,
@@ -24,7 +24,7 @@ def test_load_asset_specs(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
-    all_assets = workspace.load_asset_specs()
+    all_assets = load_dbt_cloud_asset_specs(workspace=workspace)
     all_assets_keys = [asset.key for asset in all_assets]
 
     # 8 dbt models
@@ -46,7 +46,7 @@ def test_load_asset_specs_selection(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
-    all_assets = workspace.load_asset_specs(select="raw_customers+")
+    all_assets = load_dbt_cloud_asset_specs(workspace=workspace, select="raw_customers+")
     all_assets_keys = [asset.key for asset in all_assets]
 
     # 3 dbt models
@@ -68,7 +68,7 @@ def test_load_asset_specs_exclusion(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
-    all_assets = workspace.load_asset_specs(exclude="raw_customers+")
+    all_assets = load_dbt_cloud_asset_specs(workspace=workspace, exclude="raw_customers+")
     all_assets_keys = [asset.key for asset in all_assets]
 
     # 5 dbt models
@@ -90,7 +90,7 @@ def test_load_check_specs(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
-    all_checks = workspace.load_check_specs()
+    all_checks = load_dbt_cloud_check_specs(workspace=workspace)
     all_checks_keys = [check.key for check in all_checks]
 
     # 20 dbt tests
@@ -110,7 +110,7 @@ def test_load_check_specs_selection(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
-    all_checks = workspace.load_check_specs(select="raw_customers+")
+    all_checks = load_dbt_cloud_check_specs(workspace=workspace, select="raw_customers+")
     all_checks_keys = [check.key for check in all_checks]
 
     # 4 dbt tests
@@ -130,7 +130,7 @@ def test_load_check_specs_exclusion(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
-    all_checks = workspace.load_check_specs(exclude="raw_customers+")
+    all_checks = load_dbt_cloud_check_specs(workspace=workspace, exclude="raw_customers+")
     all_checks_keys = [check.key for check in all_checks]
 
     # 16 dbt tests

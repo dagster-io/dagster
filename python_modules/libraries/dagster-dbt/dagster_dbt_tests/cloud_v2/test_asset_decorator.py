@@ -196,13 +196,14 @@ def test_selections(
     expected_dbt_resource_names: set[str],
 ) -> None:
     select = select or "fqn:*"
+    exclude = exclude or ""
 
     expected_asset_keys = {AssetKey(key) for key in expected_dbt_resource_names}
     expected_specs, _ = build_dbt_specs(
         manifest=get_sample_manifest_json(),
         translator=DagsterDbtTranslator(),
         select=select,
-        exclude=exclude or "",
+        exclude=exclude,
         io_manager_key=None,
         project=None,
     )
@@ -210,7 +211,7 @@ def test_selections(
     @dbt_cloud_assets(
         workspace=workspace,
         select=select,
-        exclude=exclude or "",
+        exclude=exclude,
     )
     def my_dbt_assets(): ...
 

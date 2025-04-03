@@ -232,9 +232,9 @@ class DbtCloudWorkspace(ConfigurableResource):
     @lru_cache(maxsize=1)
     def load_specs(
         self,
+        select: str,
+        exclude: str,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-        select: str = DBT_CLOUD_DEFAULT_SELECT,
-        exclude: str = DBT_CLOUD_DEFAULT_EXCLUDE,
     ) -> Sequence[Union[AssetSpec, AssetCheckSpec]]:
         dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
 
@@ -261,9 +261,9 @@ class DbtCloudWorkspace(ConfigurableResource):
 
     def load_asset_specs(
         self,
+        select: str,
+        exclude: str,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-        select: str = DBT_CLOUD_DEFAULT_SELECT,
-        exclude: str = DBT_CLOUD_DEFAULT_EXCLUDE,
     ) -> Sequence[AssetSpec]:
         return [
             spec
@@ -277,9 +277,9 @@ class DbtCloudWorkspace(ConfigurableResource):
 
     def load_check_specs(
         self,
+        select: str,
+        exclude: str,
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
-        select: str = DBT_CLOUD_DEFAULT_SELECT,
-        exclude: str = DBT_CLOUD_DEFAULT_EXCLUDE,
     ) -> Sequence[AssetCheckSpec]:
         return [
             spec
