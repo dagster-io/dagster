@@ -11,13 +11,13 @@ from dagster_fivetran.ops import (
     fivetran_sync_op as fivetran_sync_op,
 )
 from dagster_fivetran.resources import (
-    ConnectorSelectorFn as ConnectorSelectorFn,
     FivetranResource as FivetranResource,
     FivetranWorkspace as FivetranWorkspace,
     fivetran_resource as fivetran_resource,
     load_fivetran_asset_specs as load_fivetran_asset_specs,
 )
 from dagster_fivetran.translator import (
+    ConnectorSelectorFn as ConnectorSelectorFn,
     DagsterFivetranTranslator as DagsterFivetranTranslator,
     FivetranConnectorTableProps as FivetranConnectorTableProps,
 )

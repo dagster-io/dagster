@@ -32,13 +32,9 @@ from dagster._core.utils import imap
 from dagster._utils.log import get_dagster_logger
 
 from dagster_fivetran.asset_decorator import fivetran_assets
-from dagster_fivetran.resources import (
-    DEFAULT_POLL_INTERVAL,
-    ConnectorSelectorFn,
-    FivetranResource,
-    FivetranWorkspace,
-)
+from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource, FivetranWorkspace
 from dagster_fivetran.translator import (
+    ConnectorSelectorFn,
     DagsterFivetranTranslator,
     FivetranConnectorTableProps,
     FivetranMetadataSet,

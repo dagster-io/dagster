@@ -36,15 +36,15 @@ def test_fetch_fivetran_workspace_data(
 
 
 @pytest.mark.parametrize(
-    "attribute, value, expected_result",
+    "attribute, value, expected_result_before_selection, expected_result_after_selection",
     [
-        (None, None, 1),
-        ("name", TEST_CONNECTOR_NAME, 1),
-        ("id", TEST_CONNECTOR_ID, 1),
-        ("service", TEST_DESTINATION_SERVICE, 1),
-        ("name", "non_matching_name", 0),
-        ("id", "non_matching_id", 0),
-        ("service", "non_matching_service", 0),
+        (None, None, 1, 1),
+        ("name", TEST_CONNECTOR_NAME, 1, 1),
+        ("id", TEST_CONNECTOR_ID, 1, 1),
+        ("service", TEST_DESTINATION_SERVICE, 1, 1),
+        ("name", "non_matching_name", 1, 0),
+        ("id", "non_matching_id", 1, 0),
+        ("service", "non_matching_service", 1, 0),
     ],
     ids=[
         "no_selector_present_connector",
@@ -59,7 +59,8 @@ def test_fetch_fivetran_workspace_data(
 def test_fivetran_connector_selector(
     attribute: str,
     value: str,
-    expected_result: int,
+    expected_result_before_selection: int,
+    expected_result_after_selection: int,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
     resource = FivetranWorkspace(
@@ -69,10 +70,13 @@ def test_fivetran_connector_selector(
     connector_selector_fn = (
         (lambda connector: getattr(connector, attribute) == value) if attribute else None
     )
-    actual_workspace_data = resource.fetch_fivetran_workspace_data(
+    workspace_data = resource.fetch_fivetran_workspace_data()
+    assert len(workspace_data.connectors_by_id) == expected_result_before_selection
+
+    workspace_data_selection = workspace_data.to_workspace_data_selection(
         connector_selector_fn=connector_selector_fn
     )
-    assert len(actual_workspace_data.connectors_by_id) == expected_result
+    assert len(workspace_data_selection.connectors_by_id) == expected_result_after_selection
 
 
 def test_missing_schemas_fivetran_workspace_data(

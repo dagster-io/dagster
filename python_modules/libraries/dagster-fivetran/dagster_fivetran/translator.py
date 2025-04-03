@@ -1,7 +1,7 @@
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import Any, NamedTuple, Optional
+from typing import Any, Callable, NamedTuple, Optional
 
 from dagster import Failure
 from dagster._core.definitions.asset_key import AssetKey
@@ -11,10 +11,13 @@ from dagster._record import as_dict, record
 from dagster._utils.cached_method import cached_method
 from dagster._vendored.dateutil import parser
 from dagster_shared.serdes import whitelist_for_serdes
+from typing_extensions import TypeAlias
 
 from dagster_fivetran.utils import get_fivetran_connector_table_name, metadata_for_table
 
 MIN_TIME_STR = "0001-01-01 00:00:00+00"
+
+ConnectorSelectorFn: TypeAlias = Callable[["FivetranConnector"], bool]
 
 
 class FivetranConnectorTableProps(NamedTuple):
@@ -250,8 +253,38 @@ class FivetranWorkspaceData:
                                     service=destination.service,
                                 )
                             )
-
         return data
+
+    # Cache workspace data selection for a specific connector_selector_fn
+    @cached_method
+    def to_workspace_data_selection(
+        self, connector_selector_fn: Optional[ConnectorSelectorFn]
+    ) -> "FivetranWorkspaceData":
+        if not connector_selector_fn:
+            return self
+        connectors_by_id_selection = {}
+        destination_ids_selection = set()
+        for connector_id, connector in self.connectors_by_id.items():
+            if connector_selector_fn(connector):
+                connectors_by_id_selection[connector_id] = connector
+                destination_ids_selection.add(connector.destination_id)
+
+        destinations_by_id_selection = {
+            destination_id: destination
+            for destination_id, destination in self.destinations_by_id.items()
+            if destination_id in destination_ids_selection
+        }
+        schema_configs_by_connector_id_selection = {
+            connector_id: schema_configs
+            for connector_id, schema_configs in self.schema_configs_by_connector_id.items()
+            if connector_id in connectors_by_id_selection.keys()
+        }
+
+        return FivetranWorkspaceData(
+            connectors_by_id=connectors_by_id_selection,
+            destinations_by_id=destinations_by_id_selection,
+            schema_configs_by_connector_id=schema_configs_by_connector_id_selection,
+        )
 
 
 class FivetranMetadataSet(NamespacedMetadataSet):
