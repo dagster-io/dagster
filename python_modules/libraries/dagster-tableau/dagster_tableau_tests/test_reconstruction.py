@@ -14,7 +14,7 @@ from dagster._core.definitions.unresolved_asset_job_definition import define_ass
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
-from dagster._utils.test.definitions import lazy_definitions
+from dagster._utils.test.definitions import definitions
 from dagster_tableau.asset_utils import parse_tableau_external_and_materializable_asset_specs
 from dagster_tableau.assets import build_tableau_materializable_assets_definition
 from dagster_tableau.resources import TableauCloudWorkspace, load_tableau_asset_specs
@@ -39,7 +39,7 @@ resource = TableauCloudWorkspace(
 )
 
 
-@lazy_definitions
+@definitions
 def cacheable_asset_defs_refreshable_workbooks():
     tableau_specs = load_tableau_asset_specs(
         workspace=resource,
@@ -65,7 +65,7 @@ def cacheable_asset_defs_refreshable_workbooks():
     )
 
 
-@lazy_definitions
+@definitions
 def cacheable_asset_defs_custom_translator():
     class MyCoolTranslator(DagsterTableauTranslator):
         def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:
@@ -79,7 +79,7 @@ def cacheable_asset_defs_custom_translator():
     return Definitions(assets=[*tableau_specs], jobs=[define_asset_job("all_asset_job")])
 
 
-@lazy_definitions
+@definitions
 def cacheable_asset_defs_custom_translator_legacy():
     class MyCoolTranslator(DagsterTableauTranslator):
         def get_asset_spec(self, data: TableauTranslatorData) -> AssetSpec:

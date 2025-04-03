@@ -36,7 +36,7 @@ from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance import DagsterInstance
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
-from dagster._utils.test.definitions import lazy_definitions
+from dagster._utils.test.definitions import definitions
 
 
 def define_inty_job(using_file_system=False):
@@ -354,7 +354,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         ]
 
 
-@lazy_definitions
+@definitions
 def cacheable_asset_defs():
     @asset
     def bar(foo):
