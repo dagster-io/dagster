@@ -6,7 +6,7 @@ from typing import Any, Optional, cast
 import click
 from click.core import ParameterSource
 from dagster_shared import check
-from dagster_shared.serdes.objects import PackageEntryKey, PackageEntrySnap
+from dagster_shared.serdes.objects import PackageObjectKey, PackageObjectSnap
 from typer.rich_utils import rich_format_help
 
 from dagster_dg.cli.shared_options import (
@@ -276,7 +276,7 @@ def scaffold_project_command(
 def _core_scaffold(
     cli_context: click.Context,
     cli_config: DgRawCliConfig,
-    object_key: PackageEntryKey,
+    object_key: PackageObjectKey,
     instance_name: str,
     key_value_params,
     json_params,
@@ -318,7 +318,7 @@ def _core_scaffold(
     )
 
 
-def _create_scaffold_subcommand(key: PackageEntryKey, obj: PackageEntrySnap) -> DgClickCommand:
+def _create_scaffold_subcommand(key: PackageObjectKey, obj: PackageObjectSnap) -> DgClickCommand:
     # We need to "reset" the help option names to the default ones because we inherit the parent
     # value of context settings from the parent group, which has been customized.
     @click.command(
@@ -425,7 +425,7 @@ def scaffold_component_type_command(
     registry = RemotePackageRegistry.from_dg_context(dg_context)
 
     module_name = snakecase(name)
-    component_key = PackageEntryKey(
+    component_key = PackageObjectKey(
         name=name, namespace=dg_context.default_component_library_module_name
     )
     if registry.has(component_key):

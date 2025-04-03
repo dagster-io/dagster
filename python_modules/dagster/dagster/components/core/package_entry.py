@@ -5,7 +5,7 @@ import sys
 from collections.abc import Iterable, Sequence
 from types import ModuleType
 
-from dagster_shared.serdes.objects import PackageEntryKey
+from dagster_shared.serdes.objects import PackageObjectKey
 
 from dagster._core.errors import DagsterError
 from dagster.components.utils import format_error_message
@@ -25,7 +25,7 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
         return importlib.metadata.entry_points().get(group, [])
 
 
-def discover_entry_point_package_entries() -> dict[PackageEntryKey, object]:
+def discover_entry_point_package_objects() -> dict[PackageObjectKey, object]:
     """Discover package entries registered in the Python environment via the
     `dg_library` entry point group.
 
@@ -34,7 +34,7 @@ def discover_entry_point_package_entries() -> dict[PackageEntryKey, object]:
     component types and is loaded by default. Other entry points resolve to various sets of test
     component types. This method will only ever load one builtin package.
     """
-    objects: dict[PackageEntryKey, object] = {}
+    objects: dict[PackageObjectKey, object] = {}
     entry_points = get_entry_points_from_python_environment(DG_LIBRARY_ENTRY_POINT_GROUP)
 
     for entry_point in entry_points:
@@ -53,22 +53,22 @@ def discover_entry_point_package_entries() -> dict[PackageEntryKey, object]:
                 f"Invalid entry point {entry_point.name} in group {DG_LIBRARY_ENTRY_POINT_GROUP}. "
                 f"Value expected to be a module, got {root_module}."
             )
-        for name, obj in get_package_entries_in_module(root_module):
-            key = PackageEntryKey(name=name, namespace=entry_point.value)
+        for name, obj in get_package_objects_in_module(root_module):
+            key = PackageObjectKey(name=name, namespace=entry_point.value)
             objects[key] = obj
     return objects
 
 
-def discover_package_entries(modules: Sequence[str]) -> dict[PackageEntryKey, object]:
-    objects: dict[PackageEntryKey, object] = {}
+def discover_package_objects(modules: Sequence[str]) -> dict[PackageObjectKey, object]:
+    objects: dict[PackageObjectKey, object] = {}
     for extra_module in modules:
-        for name, obj in get_package_entries_in_module(importlib.import_module(extra_module)):
-            key = PackageEntryKey(name=name, namespace=extra_module)
+        for name, obj in get_package_objects_in_module(importlib.import_module(extra_module)):
+            key = PackageObjectKey(name=name, namespace=extra_module)
             objects[key] = obj
     return objects
 
 
-def get_package_entries_in_module(
+def get_package_objects_in_module(
     module: ModuleType,
 ) -> Iterable[tuple[str, object]]:
     for attr in dir(module):
@@ -77,7 +77,7 @@ def get_package_entries_in_module(
             yield attr, value
 
 
-def load_package_entry(key: PackageEntryKey) -> object:
+def load_package_object(key: PackageObjectKey) -> object:
     module_name, attr = key.namespace, key.name
     try:
         module = importlib.import_module(module_name)
