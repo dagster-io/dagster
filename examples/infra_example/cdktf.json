@@ -1,0 +1,12 @@
+{
+  "language": "python",
+  "app": "<placeholder>",
+  "projectId": "5055a7b8-567b-4210-80d8-4379d956473b",
+  "terraformProviders": ["aws@~> 4.2.0"],
+  "terraformModules": ["terraform-aws-modules/vpc/aws@3.12.0"],
+  "codeMakerOutput": "infra_example/resources/imports",
+  "context": {
+    "excludeStackIdFromLogicalIds": "true",
+    "allowSepCharsInLogicalIds": "true"
+  }
+}
