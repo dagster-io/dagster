@@ -43,8 +43,8 @@ def dbt_cloud_assets(
     dagster_dbt_translator = dagster_dbt_translator or DagsterDbtTranslator()
 
     op_tags = {
-        **({DAGSTER_DBT_SELECT_METADATA_KEY: select} if select else {}),
-        **({DAGSTER_DBT_EXCLUDE_METADATA_KEY: exclude} if exclude else {}),
+        DAGSTER_DBT_SELECT_METADATA_KEY: select,
+        DAGSTER_DBT_EXCLUDE_METADATA_KEY: exclude,
     }
 
     return multi_asset(
