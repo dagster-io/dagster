@@ -530,7 +530,6 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     async def get_materialization_status_for_asset_health(self, graphene_info: ResolveInfo):
         if self._asset_node_snap.partitions is not None:  # isPartitioned
-            # TODO - maybe can do this from the asset record? that might not re-gen the cache though
             partition_stats = self.resolve_partitionStats(graphene_info)
             if partition_stats is None:
                 return GrapheneAssetHealthStatus.UNKNOWN
