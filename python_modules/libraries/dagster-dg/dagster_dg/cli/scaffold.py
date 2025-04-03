@@ -405,7 +405,7 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
     "--dataclass/--no-dataclass",
     is_flag=True,
     default=True,
-    help="Where to automatically annotated the generated class with @dataclass.",
+    help="Whether to automatically annotate the generated class with @dataclass.",
 )
 @click.argument("name", type=str)
 @dg_global_options
