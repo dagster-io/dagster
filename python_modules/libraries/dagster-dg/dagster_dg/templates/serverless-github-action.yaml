@@ -13,11 +13,11 @@ concurrency:
   cancel-in-progress: true
 env:
   DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_API_TOKEN }}
-  ENABLE_FAST_DEPLOYS: 'true'
-  PYTHON_VERSION: '3.10'
-  DAGSTER_CLOUD_YAML_PATH: '.'
-  DAGSTER_CLOUD_FILE: 'dagster_cloud.yaml'
-  DAGSTER_CLOUD_ORGANIZATION: 'ORGANIZATION_NAME'
+  ENABLE_FAST_DEPLOYS: "true"
+  PYTHON_VERSION: "3.10"
+  DAGSTER_CLOUD_YAML_PATH: "."
+  DAGSTER_CLOUD_FILE: "dagster_cloud.yaml"
+  DAGSTER_CLOUD_ORGANIZATION: "ORGANIZATION_NAME"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
@@ -52,8 +52,7 @@ jobs:
           dagster_cloud_yaml_path: ${{ env.DAGSTER_CLOUD_FILE }}
           # A full deployment name. If this run is for a pull request, this value will be used as
           # the base deployment for the branch deployment.
-          deployment: 'prod'
-
+          deployment: "prod"
 
       # If using fast build, build the PEX
       # First ensure the correct Python version is installed
@@ -75,7 +74,6 @@ jobs:
         with:
           command: "ci build --build-strategy=python-executable --python-version ${{ env.PYTHON_VERSION }}  --pex-deps-cache-from='${{ github.repository }}' --pex-deps-cache-to='${{ github.repository }}'"
 
-
       # Otherwise, enable buildx for caching and build the Docker image
       - name: Set up Docker Buildx
         if: steps.prerun.outputs.result == 'docker-deploy'
@@ -87,7 +85,6 @@ jobs:
         uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
         with:
           command: "ci build --build-strategy=docker --python-version ${{ env.PYTHON_VERSION }}"
-
 
       # Deploy all code locations in this build session to Dagster Cloud
       - name: Deploy to Dagster Cloud
