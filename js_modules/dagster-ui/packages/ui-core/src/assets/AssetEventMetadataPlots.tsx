@@ -7,6 +7,7 @@ import {
   useLatestAssetPartitionMaterializations,
   useRecentAssetEvents,
 } from './useRecentAssetEvents';
+import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
 
 export const AssetTimeMetadataPlots = ({
   assetKey,
@@ -19,7 +20,11 @@ export const AssetTimeMetadataPlots = ({
   asSidebarSection?: boolean;
   columnCount?: number;
 }) => {
-  const {materializations, observations, loading} = useRecentAssetEvents(assetKey, limit);
+  const {materializations, observations, loading} = useRecentAssetEvents(
+    assetKey,
+    limit,
+    MaterializationHistoryEventTypeSelector.MATERIALIZATION,
+  );
   const grouped = useGroupedEvents('time', materializations, observations, undefined);
 
   if (loading) {

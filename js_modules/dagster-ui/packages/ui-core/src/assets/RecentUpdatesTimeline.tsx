@@ -20,7 +20,7 @@ import {AssetKey} from './types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetRunLink} from '../asset-graph/AssetRunLinking';
-import {TimestampMetadataEntry} from '../graphql/types';
+import {MaterializationHistoryEventTypeSelector, TimestampMetadataEntry} from '../graphql/types';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {useFormatDateTime} from '../ui/useFormatDateTime';
@@ -39,7 +39,11 @@ type Props = {
 };
 
 export const RecentUpdatesTimelineForAssetKey = memo((props: {assetKey: AssetKey}) => {
-  const data = useRecentAssetEvents(props.assetKey, 100);
+  const data = useRecentAssetEvents(
+    props.assetKey,
+    100,
+    MaterializationHistoryEventTypeSelector.ALL,
+  );
   return <RecentUpdatesTimeline assetKey={props.assetKey} {...data} />;
 });
 

@@ -13,11 +13,10 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {AssetHealthSummary} from './AssetHealthSummary';
-import {useAllAssets} from './AssetsCatalogTable';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
-import {tokenForAssetKey} from '../asset-graph/Utils';
+import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
 import {
   AssetFailedToMaterializeFragment,
   AssetObservationFragment,
@@ -25,14 +24,12 @@ import {
 } from './types/useRecentAssetEvents.types';
 
 export const AssetRecentUpdatesTrend = React.memo(({asset}: {asset: AssetHealthFragment}) => {
-  const {assetsByAssetKey} = useAllAssets();
-  const assetDefinition = assetsByAssetKey.get(tokenForAssetKey(asset.assetKey))?.definition;
   // Wait 100ms to avoid querying during fast scrolling of the table
   const shouldQuery = useDelayedState(100);
   const {materializations, observations, loading} = useRecentAssetEvents(
     shouldQuery ? asset.assetKey : undefined,
-    {limit: 5},
-    {assetHasDefinedPartitions: !!assetDefinition?.partitionDefinition},
+    5,
+    MaterializationHistoryEventTypeSelector.ALL,
   );
 
   const states = useMemo(() => {

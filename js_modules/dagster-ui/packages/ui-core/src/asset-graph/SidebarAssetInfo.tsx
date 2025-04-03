@@ -32,6 +32,7 @@ import {
 import {useRecentAssetEvents} from '../assets/useRecentAssetEvents';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../dagstertype/types/DagsterType.types';
+import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {TableSchemaAssetContext} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
@@ -60,7 +61,11 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
   const {lastMaterialization} = liveData || {};
   const asset = data?.assetNodeOrError.__typename === 'AssetNode' ? data.assetNodeOrError : null;
 
-  const recentEvents = useRecentAssetEvents(asset?.assetKey, 1);
+  const recentEvents = useRecentAssetEvents(
+    asset?.assetKey,
+    1,
+    MaterializationHistoryEventTypeSelector.MATERIALIZATION,
+  );
   const latestMaterializationEvent = recentEvents.materializations
     ? recentEvents.materializations[recentEvents.materializations.length - 1]
     : undefined;
