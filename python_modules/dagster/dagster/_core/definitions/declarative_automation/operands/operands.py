@@ -186,11 +186,26 @@ class LatestRunExecutedWithTagsCondition(SubsetAutomationCondition):
 
     @property
     def name(self) -> str:
-        return "executed_with_tags"
+        name = "executed_with_tags"
+        props = []
+        if self.tag_keys is not None:
+            tag_key_str = ",".join(sorted(self.tag_keys))
+            props.append(f"tag_keys={{{tag_key_str}}}")
+        if self.tag_values is not None:
+            tag_value_str = ",".join(
+                [f"{key}:{value}" for key, value in sorted(self.tag_values.items())]
+            )
+            props.append(f"tag_values={{{tag_value_str}}}")
+
+        if props:
+            name += f"({', '.join(props)})"
+        return name
 
     async def compute_subset(self, context: AutomationContext) -> EntitySubset:  # pyright: ignore[reportIncompatibleMethodOverride]
         def _filter_fn(run_record: "RunRecord") -> bool:
-            if self.tag_keys and run_record.dagster_run.tags.keys() < self.tag_keys:
+            if self.tag_keys and not all(
+                key in run_record.dagster_run.tags for key in self.tag_keys
+            ):
                 return False
             if self.tag_values and not all(
                 run_record.dagster_run.tags.get(key) == value
