@@ -760,6 +760,7 @@ enum AssetHealthStatus {
   WARNING
   DEGRADED
   UNKNOWN
+  NOT_APPLICABLE
 }
 
 type MaterializationUpstreamDataVersion {
