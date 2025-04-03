@@ -1,6 +1,7 @@
 {% if dataclass -%}
 from dataclasses import dataclass
-{% endif %}
+
+{% endif -%}
 import dagster as dg
 from dagster.components import Component, ComponentLoadContext, Resolvable
 
