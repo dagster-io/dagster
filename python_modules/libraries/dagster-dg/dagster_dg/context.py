@@ -9,6 +9,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Final, Optional, Union
 
+import click
 import tomlkit
 import tomlkit.items
 from dagster_shared.utils.config import does_dg_config_file_exist
@@ -482,6 +483,7 @@ class DgContext:
         path = path or self.root_path
         with pushd(path):
             if not (path / "uv.lock").exists():
+                click.echo("Syncing uv project")
                 subprocess.run(
                     ["uv", "sync"], check=True, env=strip_activated_venv_from_env_vars(os.environ)
                 )
