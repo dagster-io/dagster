@@ -33,7 +33,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_dask_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<3.14",
     install_requires=[
         "bokeh",
         f"dagster{pin}",
