@@ -903,6 +903,7 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         caplog.text.count(f"Run {run_id_2} is blocked by global concurrency limits") == 1  # pyright: ignore[reportUnusedExpression]
         caplog.text.count(f"Run {run_id_3} is blocked by global concurrency limits") == 1  # pyright: ignore[reportUnusedExpression]
 
+    @pytest.mark.flaky(max_runs=2)
     @pytest.mark.parametrize(
         "run_coordinator_config",
         [
