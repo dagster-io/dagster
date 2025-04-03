@@ -1,5 +1,9 @@
 import responses
-from dagster_dbt.cloud_v2.resources import DbtCloudWorkspace, load_dbt_cloud_asset_specs, load_dbt_cloud_check_specs
+from dagster_dbt.cloud_v2.resources import (
+    DbtCloudWorkspace,
+    load_dbt_cloud_asset_specs,
+    load_dbt_cloud_check_specs,
+)
 
 from dagster_dbt_tests.cloud_v2.conftest import (
     TEST_ENVIRONMENT_ID,

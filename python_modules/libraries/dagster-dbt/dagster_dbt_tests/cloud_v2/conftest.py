@@ -25,7 +25,7 @@ from dagster_dbt.cloud_v2.resources import (
     DbtCloudCredentials,
     DbtCloudWorkspace,
     get_dagster_adhoc_job_name,
-load_dbt_cloud_asset_specs
+    load_dbt_cloud_asset_specs,
 )
 from dagster_dbt.cloud_v2.sensor_builder import build_dbt_cloud_polling_sensor
 from dagster_dbt.cloud_v2.types import DbtCloudJobRunStatusType
