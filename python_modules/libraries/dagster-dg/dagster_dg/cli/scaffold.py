@@ -1,11 +1,16 @@
+import shutil
+import subprocess
 from collections.abc import Mapping
 from copy import copy
 from pathlib import Path
 from typing import Any, Optional, cast
 
 import click
+import requests
+import yaml
 from click.core import ParameterSource
 from dagster_shared import check
+from dagster_shared.plus.config import DagsterPlusCliConfig
 from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
 from typer.rich_utils import rich_format_help
 
@@ -43,6 +48,8 @@ from dagster_dg.utils import (
     parse_json_option,
     snakecase,
 )
+from dagster_dg.utils.plus import gql
+from dagster_dg.utils.plus.gql_client import DagsterCloudGraphQLClient
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 DEFAULT_WORKSPACE_NAME = "dagster-workspace"
@@ -186,6 +193,155 @@ def scaffold_workspace_command(
         )
     )
     scaffold_workspace(name, workspace_config)
+
+
+def _search_for_git_root(path: Path) -> Optional[Path]:
+    if path.joinpath(".git").exists():
+        return path
+    elif path.parent == path:
+        return None
+    else:
+        return _search_for_git_root(path.parent)
+
+
+GITHUB_ACTIONS_WORKFLOW_URL = "https://raw.githubusercontent.com/dagster-io/dagster-cloud-serverless-quickstart/refs/heads/main/.github/workflows/dagster-plus-deploy.yml"
+
+
+def _has_github_cli():
+    return bool(shutil.which("gh"))
+
+
+def _logged_in_to_github():
+    return "Logged in " in subprocess.check_output(["gh", "auth", "status"]).decode("utf-8").strip()
+
+
+def _add_github_secret(secret_name: str, secret_value: str):
+    subprocess.check_call(["gh", "secret", "set", secret_name, "--body", secret_value])
+
+
+def _get_or_create_agent_token(gql_client: DagsterCloudGraphQLClient, repo_name: str) -> str:
+    result = gql_client.execute(gql.AGENT_TOKENS_QUERY)
+    matching_token = next(
+        (
+            token
+            for token in result["agentTokensOrError"]["tokens"]
+            if token["description"] == f"Used in {repo_name} GitHub Actions"
+            and not token["revoked"]
+        ),
+        None,
+    )
+    if matching_token:
+        click.echo("Using existing token for GitHub Actions.")
+        return matching_token["token"]
+    else:
+        click.echo("Creating new token for GitHub Actions.")
+        token_data = gql_client.execute(
+            gql.CREATE_AGENT_TOKEN_MUTATION,
+            variables={"description": f"Used in {repo_name} GitHub Actions"},
+        )
+        return token_data["createAgentToken"]["token"]
+
+
+def _generate_dagster_cloud_yaml_contents(
+    dg_context: DgContext, git_root: Path, cli_config: DgRawCliConfig
+) -> dict:
+    project_contexts = (
+        [
+            dg_context.for_project_environment(project.path, cli_config)
+            for project in dg_context.project_specs
+        ]
+        if dg_context.is_workspace
+        else [dg_context]
+    )
+    return {
+        "locations": [
+            {
+                "location_name": project_context.code_location_name,
+                "code_source": {"module_name": project_context.code_location_target_module_name},
+                "build": {
+                    "directory": str(project_context.root_path.relative_to(git_root)),
+                },
+            }
+            for project_context in project_contexts
+        ]
+    }
+
+
+@scaffold_group.command(
+    name="github-actions",
+    cls=ScaffoldSubCommand,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
+@dg_global_options
+def scaffold_github_actions_command(**global_options: object) -> None:
+    """Scaffold a GitHub Actions workflow for a Dagster project.
+
+    This command will create a GitHub Actions workflow in the `.github/workflows` directory.
+    """
+    git_root = _search_for_git_root(Path.cwd())
+    if git_root is None:
+        exit_with_error(
+            "No git repository found. `dg scaffold github-actions` must be run from a git repository."
+        )
+
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    dg_context = DgContext.for_workspace_or_project_environment(git_root, cli_config)
+
+    plus_config = DagsterPlusCliConfig.get() if DagsterPlusCliConfig.exists() else None
+
+    workflows_dir = git_root / ".github" / "workflows"
+    workflows_dir.mkdir(parents=True, exist_ok=True)
+
+    response = requests.get(GITHUB_ACTIONS_WORKFLOW_URL)
+    response.raise_for_status()
+    template = response.text
+
+    if plus_config and plus_config.organization:
+        organization_name = plus_config.organization
+        click.echo(f"Using organization name {organization_name} from Dagster Plus config.")
+    else:
+        organization_name = click.prompt("Dagster Plus organization name: ") or ""
+
+    template = template.replace("ORGANIZATION_NAME", organization_name)
+
+    repo_name = git_root.name
+    # try:
+    if plus_config:
+        gql_client = DagsterCloudGraphQLClient.from_config(plus_config)
+        token_value = _get_or_create_agent_token(gql_client, repo_name)
+
+        if _has_github_cli() and _logged_in_to_github():
+            _add_github_secret(
+                "DAGSTER_CLOUD_API_TOKEN",
+                token_value,
+            )
+        else:
+            click.echo(
+                "Skipping GitHub secret creation because `gh` CLI is not installed or not logged in.\n"
+                "You will need to manually set the `DAGSTER_CLOUD_API_TOKEN` secret in your GitHub repository.\n"
+                "Token value: '{token_value}'"
+            )
+    else:
+        click.echo(
+            "No Dagster Plus config found. Skipping GitHub secret creation. You will need to manually "
+            "create an agent token in the Dagster Plus UI, and set the `DAGSTER_CLOUD_API_TOKEN` "
+            "secret in your GitHUb repository."
+        )
+
+    workflow_file = workflows_dir / "dagster-plus-deploy.yml"
+    workflow_file.write_text(template)
+
+    dagster_cloud_yaml_file = git_root / "dagster_cloud.yaml"
+
+    dagster_cloud_yaml_contents = _generate_dagster_cloud_yaml_contents(
+        dg_context, git_root, cli_config
+    )
+    dagster_cloud_yaml_file.write_text(
+        f"# Generated by `dg scaffold github-actions`\n{yaml.dump(dagster_cloud_yaml_contents)}"
+    )
+    click.echo(
+        "GitHub Actions workflow created successfully. Commit and push your changes in order to deploy to Dagster Plus."
+    )
 
 
 # ########################
