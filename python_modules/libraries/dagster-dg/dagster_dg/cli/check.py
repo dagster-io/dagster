@@ -120,6 +120,7 @@ def check_definitions_command(
     ]
 
     if dg_context.use_dg_managed_environment:
+        dg_context.ensure_uv_sync()
         run_cmds = ["uv", "run", "dagster", "definitions", "validate"]
     elif dg_context.is_project:
         run_cmds = ["dagster", "definitions", "validate"]
