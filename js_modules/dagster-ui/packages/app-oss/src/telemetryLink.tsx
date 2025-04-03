@@ -3,7 +3,7 @@ import {TelemetryAction, logTelemetry} from '@dagster-io/ui-core/app/Telemetry';
 
 const TELEMETRY_WHITELIST = new Set([
   'PipelineExplorerRootQuery',
-  'PipelineRunsRootQuery',
+  'PipelineRunsFeedRootQuery',
   'RunRootQuery',
   'RunsRootQuery',
   'ScheduleRootQuery',

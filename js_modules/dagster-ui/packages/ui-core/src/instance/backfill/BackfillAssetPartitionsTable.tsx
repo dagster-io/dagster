@@ -18,7 +18,6 @@ import {
 } from './types/BackfillAssetPartitionsTable.types';
 import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';
 import {gql, useApolloClient} from '../../apollo-client';
-import {useFeatureFlags} from '../../app/Flags';
 import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils';
 import {asAssetKeyInput} from '../../assets/asInput';
 import {assetDetailsPathForKey} from '../../assets/assetDetailsPathForKey';
@@ -92,7 +91,6 @@ export const BackfillAssetPartitionsTable = ({
 function getRunsUrl(
   backfillId: string,
   status: 'inProgress' | 'succeeded' | 'failed' | 'targeted',
-  flagLegacyRunsPage: boolean,
 ) {
   const filters: RunFilterToken[] = [];
 
@@ -131,14 +129,6 @@ function getRunsUrl(
       );
       break;
   }
-  if (flagLegacyRunsPage) {
-    filters.push({
-      token: 'tag',
-      value: `dagster/backfill=${backfillId}`,
-    });
-    return runsPathWithFilters(filters, `/runs`);
-  }
-
   return `/runs/b/${backfillId}/${runsPathWithFilters(filters, ``)}&tab=runs`;
 }
 
@@ -147,24 +137,20 @@ export const VirtualizedBackfillPartitionsHeader = ({
 }: {
   backfill: BackfillDetailsBackfillFragment;
 }) => {
-  const {flagLegacyRunsPage} = useFeatureFlags();
-
   return (
     <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
       <HeaderCell>Asset name</HeaderCell>
       <HeaderCell>
-        <Link to={getRunsUrl(backfill.id, 'targeted', flagLegacyRunsPage)}>
-          Partitions targeted
-        </Link>
+        <Link to={getRunsUrl(backfill.id, 'targeted')}>Partitions targeted</Link>
       </HeaderCell>
       <HeaderCell>
-        <Link to={getRunsUrl(backfill.id, 'inProgress', flagLegacyRunsPage)}>In progress</Link>
+        <Link to={getRunsUrl(backfill.id, 'inProgress')}>In progress</Link>
       </HeaderCell>
       <HeaderCell>
-        <Link to={getRunsUrl(backfill.id, 'succeeded', flagLegacyRunsPage)}>Succeeded</Link>
+        <Link to={getRunsUrl(backfill.id, 'succeeded')}>Succeeded</Link>
       </HeaderCell>
       <HeaderCell>
-        <Link to={getRunsUrl(backfill.id, 'failed', flagLegacyRunsPage)}>Failed</Link>
+        <Link to={getRunsUrl(backfill.id, 'failed')}>Failed</Link>
       </HeaderCell>
     </HeaderRow>
   );

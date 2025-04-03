@@ -9,10 +9,8 @@ import {
   AssetSensorTicksQueryVariables,
 } from './types/AssetSensorTicksQuery.types';
 import {SensorFragment} from './types/SensorFragment.types';
-import {useFeatureFlags} from '../app/Flags';
 import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomaterializationTickDetailDialog} from '../assets/auto-materialization/AutomaterializationTickDetailDialog';
-import {AutomaterializeRunHistoryTable} from '../assets/auto-materialization/AutomaterializeRunHistoryTable';
 import {SensorAutomaterializationEvaluationHistoryTable} from '../assets/auto-materialization/SensorAutomaterializationEvaluationHistoryTable';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
 import {InstigationTickStatus, RunsFilter} from '../graphql/types';
@@ -38,7 +36,6 @@ interface Props {
 
 export const SensorPageAutomaterialize = (props: Props) => {
   const {repoAddress, sensor, loading, daemonStatus} = props;
-  const {flagLegacyRunsPage} = useFeatureFlags();
 
   const [isPaused, setIsPaused] = useState(false);
   const [statuses, setStatuses] = useState<undefined | InstigationTickStatus[]>(undefined);
@@ -209,18 +206,11 @@ export const SensorPageAutomaterialize = (props: Props) => {
             />
           ) : (
             <Box margin={{top: 32}} border="top">
-              {flagLegacyRunsPage ? (
-                <AutomaterializeRunHistoryTable
-                  filterTags={runTableFilter.tags!}
-                  setTableView={setTableView}
-                />
-              ) : (
-                <RunsFeedTableWithFilters
-                  filter={runTableFilter}
-                  actionBarComponents={tableViewSwitch}
-                  includeRunsFromBackfills={true}
-                />
-              )}
+              <RunsFeedTableWithFilters
+                filter={runTableFilter}
+                actionBarComponents={tableViewSwitch}
+                includeRunsFromBackfills={true}
+              />
             </Box>
           )}
         </>
