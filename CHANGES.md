@@ -1,5 +1,44 @@
 # Changelog
 
+## 1.10.8 (core) / 0.26.8 (libraries)
+
+### New
+
+- [ui] The Dagster UI now allows you to specify extra tags when re-executing runs from failure from the runs feed re-execute dialog, or by holding shift when clicking Re-execute menu items throughout the app.
+- [ui] Performance improvements for loading the partitions page for multi-partitioned assets.
+- [ui] Fix link in toast messages that appear when launching backfills.
+- [ui] Dagster's UI now allows you to copy run tags as a YAML block from the Tags and Configuration modals.
+- [ui] The Dagster Run UI now allows you to view the execution plan of a queued run.
+
+### Bugfixes
+
+- The `AutomationCondition.initial_evaluation` condition has been updated to become true for all partitions of an asset whenever the PartitionsDefinition of that asset changes, rather than whenever the structure of the condition changes.
+- [dagster-fivetran] Fixed an issue where new runs of code locations using fivetran assets would sometimes raise a "Failure condition: No metadata found for CacheableAssetsDefinition" error if the run was started immediately after a new version of the code location was deployed.
+- [dagster-fivetran] Fixed an issue where including multiple sets of assets from `build_fivetran_assets_definitions` in a single `Definitions` object would result in "duplicate node" errors when launching a run.
+- [ui] Fixed line charts for colorblind themes.
+- [ui] Fixed an issue with querystring parsing that can arise when selecting a large number of items in the selection syntax input.
+- [ui] Fixed tag filtering on automations list.
+- [ui] Fixed hover state on focused inputs.
+- [ui] Fixed an issue with the Run step selection input autocomplete where it would suggest `key:"*substring*"` instead of `name:"*substring*"`.
+- [ui] Fixed the "View run" link shown when launching runs
+
+### Documentation
+
+- Fix a bug in example code for pyspark.
+
+### dg & Components (Preview)
+
+- Added the ability to scaffold Python components.
+- The `DefsModuleComponent` has been renamed to `DefsFolderComponent`.
+- When scaffolding a component, the command is now `dg scaffold my_project.ComponentType` instead of `dg scaffold component my_project.ComponentType`.
+- [dagster-dg] `dagster list defs` will now read environment variables from a local .env file if present when constructing the definitions.
+- `dagster-components` has been merged into `dagster` and use of the `dagster-components` package has been deprecated.
+  `dagster-components` will remain as a stub package for the next few weeks, but code should be updated to import from `dagster.components` instead of `dagster_components`.
+- The `DbtProjectComponent` has been relocated to the `dagster-dbt` package,
+  importable as `dagster_dbt.DbtProjectComponent`.
+- The `SlingReplicationCollectionComponent` has been relocated to the `dagster-sling` package,
+  importable as `dagster_sling.SlingReplicationCollectionComponent`.
+
 ## 1.10.7 (core) / 0.26.7 (libraries)
 
 ### New
