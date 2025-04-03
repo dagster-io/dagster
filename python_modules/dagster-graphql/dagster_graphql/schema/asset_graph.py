@@ -551,32 +551,8 @@ class GrapheneAssetNode(graphene.ObjectType):
             return GrapheneAssetHealthStatus.UNKNOWN
         asset_entry = asset_record.asset_entry
 
-        if graphene_info.context.instance.can_read_failure_events_for_asset(
-            self._asset_node_snap.asset_key
-        ):
+        if graphene_info.context.instance.can_read_failure_events_for_asset(asset_record):
             # compute the status based on the asset key table
-
-            # if asset_entry.last_planned_materialization_storage_id is None:
-            #     return GrapheneAssetHealthStatus.UNKNOWN
-            #
-            # max_terminal_event_storage_id = max(asset_entry.last_materialization_storage_id, asset_entry.last_failed_to_materialize_storage_id)
-
-            # if last_planned_materialization_storage_id > max_terminal_event_storage_id:
-            #     # need to check if the run was canceled or deleted
-            #     run_record = await RunRecord.gen(
-            #         graphene_info.context,
-            #         check.not_none(asset_entry.last_planned_materialization_run_id),
-            #     )
-            #     if run_record is None:
-            #         # run was deleted TODO - should we fall back onto the previous materialization status?
-            #         return GrapheneAssetHealthStatus.UNKNOWN
-            #     if run_record.dagster_run.status == DagsterRunStatus.CANCELED:
-            #         # TODO - should we fall back onto the previous materialization status?
-            #         return GrapheneAssetHealthStatus.UNKNOWN
-            #     if run_record.dagster_run.status in IN_PROGRESS_RUN_STATUSES:
-            #         # TODO - should we fall back onto the previous materialization status?
-            #         return GrapheneAssetHealthStatus.UNKNOWN
-
             if (
                 asset_entry.last_materialization_storage_id is None
                 and asset_entry.last_failed_to_materialize_storage_id is None
