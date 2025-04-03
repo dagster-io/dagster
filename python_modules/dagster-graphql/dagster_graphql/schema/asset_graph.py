@@ -578,29 +578,56 @@ class GrapheneAssetNode(graphene.ObjectType):
                 [remote_check_node.asset_check.key for remote_check_node in remote_check_nodes],
             )
             for summary_record in asset_check_summary_records:
-                if (
-                    summary_record is not None
-                    and summary_record.last_completed_check_execution_record is not None
-                ):
-                    status = (
+                if summary_record is None or summary_record.last_check_execution_record is None:
+                    # the check has never been executed
+                    all_checks_executed = False
+                    continue
+
+                # if the last_check_execution_record is completed, it will be the same as last_completed_check_execution_record,
+                # but we check the last_check_execution_record status first since there is an edge case
+                # where the record will have status PLANNED, but the resolve_status will be EXECUTION_FAILED
+                # because the run for the check failed.
+                last_check_execution_status = (
+                    await summary_record.last_check_execution_record.resolve_status(
+                        graphene_info.context
+                    )
+                )
+                last_check_evaluation = summary_record.last_check_execution_record.evaluation
+
+                if last_check_execution_status in [
+                    AssetCheckExecutionResolvedStatus.IN_PROGRESS,
+                    AssetCheckExecutionResolvedStatus.SKIPPED,
+                ]:
+                    # the last check is still in progress or is skipped, so we want to check the status of
+                    # the latest completed check instead
+                    if summary_record.last_completed_check_execution_record is None:
+                        # the check hasn't been executed prior to this in progress check
+                        all_checks_executed = False
+                        continue
+                    last_check_execution_status = (
                         await summary_record.last_completed_check_execution_record.resolve_status(
                             graphene_info.context
                         )
-                    )  # requires loading the run in some cases
-                    check_statuses.append(status)
-                    if (
-                        status == AssetCheckExecutionResolvedStatus.FAILED
-                        or status == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
-                    ):
-                        # failed checks should always have an evaluation, but default to ERROR severity if not
-                        check_failure_severities.append(
-                            summary_record.last_completed_check_execution_record.evaluation.severity
-                            if summary_record.last_completed_check_execution_record.evaluation
-                            else AssetCheckSeverity.ERROR
-                        )
-                else:
-                    # the check has never been executed
-                    all_checks_executed = False
+                    )
+                    last_check_evaluation = (
+                        summary_record.last_completed_check_execution_record.evaluation
+                    )
+
+                check_statuses.append(last_check_execution_status)
+                if last_check_execution_status == AssetCheckExecutionResolvedStatus.FAILED:
+                    # failed checks should always have an evaluation, but default to ERROR if not
+                    check_failure_severities.append(
+                        last_check_evaluation.severity
+                        if last_check_evaluation
+                        else AssetCheckSeverity.ERROR
+                    )
+                if (
+                    last_check_execution_status
+                    == AssetCheckExecutionResolvedStatus.EXECUTION_FAILED
+                ):
+                    # EXECUTION_FAILED checks may not have an evaluation, and we want to show these as
+                    # degraded health anyway.
+                    check_failure_severities.append(AssetCheckSeverity.ERROR)
 
             if len(check_statuses) == 0:
                 # checks have never been executed
