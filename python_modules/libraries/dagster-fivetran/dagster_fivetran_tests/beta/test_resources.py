@@ -227,6 +227,47 @@ def test_sync_and_poll_client_methods(method, n_polls, succeed_at_end, connector
             _mock_interaction()
 
 
+@pytest.mark.parametrize(
+    "method",
+    [
+        "sync_and_poll",
+        "resync_and_poll",
+    ],
+    ids=[
+        "sync_paused_connector",
+        "resync_paused_connector",
+    ],
+)
+def test_sync_and_poll_client_methods_with_paused_connector(method, connector_id):
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+    client = resource.get_client()
+
+    test_connector_api_url = get_fivetran_connector_api_url(connector_id)
+
+    # Create mock responses to mock sync and poll behavior with a paused connector
+    def _mock_interaction():
+        with responses.RequestsMock() as response:
+            response.add(
+                responses.GET,
+                f"{test_connector_api_url}/schemas",
+                json=SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
+            )
+            # initial state
+            response.add(
+                responses.GET,
+                test_connector_api_url,
+                json=get_sample_connection_details(
+                    succeeded_at=MIN_TIME_STR, failed_at=MIN_TIME_STR, paused=True
+                ),
+            )
+            test_method = getattr(client, method)
+            return test_method(connector_id, poll_interval=0.1)
+
+    assert _mock_interaction() is None
+
+
 def test_fivetran_sync_and_poll_materialization_method(
     connector_id: str,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
@@ -296,4 +337,23 @@ def test_fivetran_sync_and_poll_materialization_method(
         )
         assert re.search(
             r"dagster - WARNING - (?s:.)+ - Assets were not materialized", captured.err
+        )
+
+        # Mocked FivetranClient.sync_and_poll returns None if the connector is paused
+        result = materialize(
+            [my_fivetran_assets],
+            resources={"fivetran": workspace},
+        )
+        assert result.success
+        asset_materializations = [
+            event
+            for event in result.events_for_node(connector_id)
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        ]
+        assert len(asset_materializations) == 0
+
+        captured = capsys.readouterr()
+        assert re.search(
+            r"dagster - WARNING - (?s:.)+ - The connector with ID (?s:.)+ has not been synced.",
+            captured.err,
         )
