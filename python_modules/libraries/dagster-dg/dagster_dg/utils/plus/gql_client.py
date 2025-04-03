@@ -7,7 +7,7 @@ from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
 
 
-class DagsterPlusUnauthorizedError(Exception):
+class DagsterPlusUnauthorizedError(click.ClickException):
     pass
 
 
