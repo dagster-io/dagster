@@ -33,7 +33,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_azure_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<3.14",
     install_requires=[
         "azure-core<2.0.0,>=1.7.0",
         "azure-identity<2.0.0,>=1.7.0",

@@ -33,7 +33,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_embedded_elt_tests*"]),
     include_package_data=True,
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<3.14",
     install_requires=[f"dagster{pin}", f"dagster-sling{pin}", f"dagster-dlt{pin}"],
     zip_safe=False,
     extras_require={
