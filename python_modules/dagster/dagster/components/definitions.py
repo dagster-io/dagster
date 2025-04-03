@@ -34,7 +34,7 @@ def definitions(fn: Callable[[], T_Defs]) -> LazyDefinitions[T_Defs]:
     """Marks a function as an entry point for loading a set of Dagster definitions. Useful as a test
     utility to define definitions that you wish to load multiple times with different contexts.
 
-    As with plain `Definitions` objects, there can be only one `@lazy_definitions`-decorated function per
+    As with plain `Definitions` objects, there can be only one `@definitions`-decorated function per
     module if that module is being loaded as a Dagster code location.
 
     Returns:
@@ -81,7 +81,7 @@ def definitions(fn: Callable[[], T_Defs]) -> LazyDefinitions[T_Defs]:
                 ).with_reconstruction_metadata({metadata_key: payload})
 
 
-            @lazy_definitions
+            @definitions
             def defs():
                 @asset
                 def regular_asset(): ...
