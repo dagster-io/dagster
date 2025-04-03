@@ -49,7 +49,7 @@ from dagster_dg.utils import (
     snakecase,
 )
 from dagster_dg.utils.plus import gql
-from dagster_dg.utils.plus.gql_client import DagsterCloudGraphQLClient
+from dagster_dg.utils.plus.gql_client import DagsterPlusGraphQLClient, DagsterPlusUnauthorizedError
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 DEFAULT_WORKSPACE_NAME = "dagster-workspace"
@@ -195,6 +195,11 @@ def scaffold_workspace_command(
     scaffold_workspace(name, workspace_config)
 
 
+# ########################
+# ##### GITHUB ACTIONS
+# ########################
+
+
 def _search_for_git_root(path: Path) -> Optional[Path]:
     if path.joinpath(".git").exists():
         return path
@@ -219,7 +224,7 @@ def _add_github_secret(secret_name: str, secret_value: str):
     subprocess.check_call(["gh", "secret", "set", secret_name, "--body", secret_value])
 
 
-def _get_or_create_agent_token(gql_client: DagsterCloudGraphQLClient, repo_name: str) -> str:
+def _get_or_create_agent_token(gql_client: DagsterPlusGraphQLClient, repo_name: str) -> str:
     result = gql_client.execute(gql.AGENT_TOKENS_QUERY)
     matching_token = next(
         (
@@ -306,26 +311,33 @@ def scaffold_github_actions_command(**global_options: object) -> None:
     template = template.replace("ORGANIZATION_NAME", organization_name)
 
     repo_name = git_root.name
-    # try:
-    if plus_config:
-        gql_client = DagsterCloudGraphQLClient.from_config(plus_config)
-        token_value = _get_or_create_agent_token(gql_client, repo_name)
 
-        if _has_github_cli() and _logged_in_to_github():
-            _add_github_secret(
-                "DAGSTER_CLOUD_API_TOKEN",
-                token_value,
-            )
+    try:
+        if plus_config:
+            gql_client = DagsterPlusGraphQLClient.from_config(plus_config)
+            token_value = _get_or_create_agent_token(gql_client, repo_name)
+
+            if _has_github_cli() and _logged_in_to_github():
+                _add_github_secret(
+                    "DAGSTER_CLOUD_API_TOKEN",
+                    token_value,
+                )
+            else:
+                click.echo(
+                    "Skipping GitHub secret creation because `gh` CLI is not installed or not logged in.\n"
+                    "You will need to manually set the `DAGSTER_CLOUD_API_TOKEN` secret in your GitHub repository.\n"
+                    "Token value: '{token_value}'"
+                )
         else:
             click.echo(
-                "Skipping GitHub secret creation because `gh` CLI is not installed or not logged in.\n"
-                "You will need to manually set the `DAGSTER_CLOUD_API_TOKEN` secret in your GitHub repository.\n"
-                "Token value: '{token_value}'"
+                "No Dagster Plus config found. Skipping GitHub secret creation. You will need to manually "
+                "create an agent token in the Dagster Plus UI, and set the `DAGSTER_CLOUD_API_TOKEN` "
+                "secret in your GitHub repository."
             )
-    else:
+    except DagsterPlusUnauthorizedError:
         click.echo(
-            "No Dagster Plus config found. Skipping GitHub secret creation. You will need to manually "
-            "create an agent token in the Dagster Plus UI, and set the `DAGSTER_CLOUD_API_TOKEN` "
+            "Skipping GitHub secret creation because you are not authorized to create an agent token.\n"
+            "You will need to manually create an agent token in the Dagster Plus UI, and set the `DAGSTER_CLOUD_API_TOKEN` "
             "secret in your GitHub repository."
         )
 

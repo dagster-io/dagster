@@ -22,7 +22,7 @@ from dagster_dg.env import ProjectEnvVars
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 from dagster_dg.utils.plus import gql
 from dagster_dg.utils.plus.gql import SECRETS_QUERY
-from dagster_dg.utils.plus.gql_client import DagsterCloudGraphQLClient
+from dagster_dg.utils.plus.gql_client import DagsterPlusGraphQLClient
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 
@@ -59,7 +59,7 @@ def login_command() -> None:
     config.write()
     click.echo(f"Authorized for organization {new_org}\n")
 
-    gql_client = DagsterCloudGraphQLClient.from_config(config)
+    gql_client = DagsterPlusGraphQLClient.from_config(config)
     result = gql_client.execute(gql.FULL_DEPLOYMENTS_QUERY)
     deployment_names = [d["deploymentName"] for d in result["fullDeployments"]]
 
@@ -101,7 +101,7 @@ def _get_config_or_error() -> DagsterPlusCliConfig:
 
 
 def _get_local_secrets_for_locations(
-    client: DagsterCloudGraphQLClient, location_names: set[str]
+    client: DagsterPlusGraphQLClient, location_names: set[str]
 ) -> Mapping[str, Mapping[str, str]]:
     secrets_by_location = {location_name: {} for location_name in location_names}
 
@@ -137,7 +137,7 @@ def pull_env_command(**global_options: object) -> None:
     else:
         project_ctxs = [dg_context]
 
-    gql_client = DagsterCloudGraphQLClient.from_config(config)
+    gql_client = DagsterPlusGraphQLClient.from_config(config)
     secrets_by_location = _get_local_secrets_for_locations(
         gql_client, {project_ctx.project_name for project_ctx in project_ctxs}
     )
@@ -272,7 +272,7 @@ def create_env_command(
         EnvVarScope.BRANCH,
         EnvVarScope.LOCAL,
     }
-    gql_client = DagsterCloudGraphQLClient.from_config(config)
+    gql_client = DagsterPlusGraphQLClient.from_config(config)
 
     location_suffix = "" if global_ else f" for location {dg_context.project_name}"
     scope_text = f" in {', '.join(sorted(active_scopes))} scope"
