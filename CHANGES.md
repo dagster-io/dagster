@@ -9252,7 +9252,7 @@ This changes the interval at which the daemon checks for sensors which haven't r
 
 **Documentation**
 
-- Added new [troubleshooting guide](https://legacy-docs.dagster.io/troubleshooting) for problems encountered while using the `QueuedRunCoordinator` to limit run concurrency.
+- Added new troubleshooting guide for problems encountered while using the `QueuedRunCoordinator` to limit run concurrency.
 - Added documentation for the sensor command-line interface.
 
 ## 0.10.0 "The Edge of Glory"
@@ -9889,7 +9889,7 @@ opt_in:
 - Added step-level run history for partitioned schedules on the schedule view
 - Added great_expectations integration, through the `dagster_ge` library. Example usage is under a new example, called `ge_example`, and documentation for the library can be found under the libraries section of the api docs.
 - `PythonObjectDagsterType` can now take a tuple of types as well as a single type, more closely mirroring `isinstance` and allowing Union types to be represented in Dagster.
-- The `configured` API can now be used on all definition types (including `CompositeDefinition`). Example usage has been updated in the [configuration documentation](https://legacy-docs.dagster.io/overview/configuration/configured).
+- The `configured` API can now be used on all definition types (including `CompositeDefinition`). Example usage has been updated in the configuration documentation.
 - Updated Helm chart to include auto-generated user code configmap in user code deployment by default
 
 **Bugfixes**
