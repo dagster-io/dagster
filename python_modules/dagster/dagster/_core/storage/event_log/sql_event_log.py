@@ -99,7 +99,7 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_select,
     db_subquery,
 )
-from dagster._core.types.connection import PaginatedConnection, StorageIdCursor
+from dagster._core.types.pagination import PaginatedResults, StorageIdCursor
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._time import datetime_from_timestamp, get_current_timestamp, utc_datetime_from_naive
 from dagster._utils import PrintFn
@@ -2028,7 +2028,7 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_dynamic_partitions_connection(
         self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
-    ) -> PaginatedConnection[str]:
+    ) -> PaginatedResults[str]:
         self._check_partitions_table()
         order_by = (
             DynamicPartitionsTable.c.id.asc() if ascending else DynamicPartitionsTable.c.id.desc()
@@ -2061,7 +2061,7 @@ class SqlEventLogStorage(EventLogStorage):
         else:
             next_cursor = StorageIdCursor(storage_id=-1).to_string()
 
-        return PaginatedConnection(
+        return PaginatedResults(
             results=[cast(str, row[1]) for row in rows],
             cursor=next_cursor,
             has_more=len(rows) == limit,

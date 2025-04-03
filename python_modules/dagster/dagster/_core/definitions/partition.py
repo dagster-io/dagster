@@ -482,7 +482,7 @@ class CachingDynamicPartitionsLoader(DynamicPartitionsStore):
     @cached_method
     def get_dynamic_partitions_connection(
         self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
-    ) -> PaginatedConnection[str]:
+    ) -> PaginatedResults[str]:
         return self._instance.get_dynamic_partitions_connection(
             partitions_def_name=partitions_def_name, limit=limit, ascending=ascending, cursor=cursor
         )

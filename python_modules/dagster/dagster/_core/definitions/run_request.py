@@ -28,7 +28,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     PARTITION_NAME_TAG,
 )
-from dagster._core.types.connection import PaginatedConnection
+from dagster._core.types.pagination import PaginatedResults
 from dagster._record import IHaveNew, LegacyNamedTupleMixin, record, record_custom
 from dagster._utils.cached_method import cached_method
 from dagster._utils.error import SerializableErrorInfo
@@ -298,9 +298,9 @@ class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
     @cached_method
     def get_dynamic_partitions_connection(
         self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
-    ) -> PaginatedConnection[str]:
+    ) -> PaginatedResults[str]:
         partition_keys = self.get_dynamic_partitions(partitions_def_name)
-        return PaginatedConnection.create_from_sequence(
+        return PaginatedResults.create_from_sequence(
             seq=partition_keys, limit=limit, ascending=ascending, cursor=cursor
         )
 
