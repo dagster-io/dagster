@@ -21,7 +21,6 @@ from dagster_dg.context import DgContext
 from dagster_dg.env import ProjectEnvVars
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 from dagster_dg.utils.plus import gql
-from dagster_dg.utils.plus.gql import SECRETS_QUERY
 from dagster_dg.utils.plus.gql_client import DagsterPlusGraphQLClient
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
@@ -106,7 +105,8 @@ def _get_local_secrets_for_locations(
     secrets_by_location = {location_name: {} for location_name in location_names}
 
     result = client.execute(
-        SECRETS_QUERY, variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}}
+        gql.SECRETS_QUERY,
+        variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
     )
     for secret in result["secretsOrError"]["secrets"]:
         if not secret["localDeploymentScope"]:
@@ -489,3 +489,28 @@ def deploy_command(
                 str(statedir),
             ],
         )
+
+
+# ####################
+# ##### CREATE CI API TOKEN
+# ####################
+
+
+@plus_create_group.command(name="ci-api-token", cls=DgClickCommand)
+@click.option("--description", type=str, help="Description for the token")
+@dg_global_options
+@cli_telemetry_wrapper
+def create_ci_api_token(description: str, **global_options: object) -> None:
+    """Create a Dagster Plus API token for CI."""
+    if not DagsterPlusCliConfig.exists():
+        raise click.UsageError(
+            "`dg plus env pull` requires authentication with Dagster Plus. Run `dg plus login` to authenticate."
+        )
+    config = DagsterPlusCliConfig.get()
+
+    gql_client = DagsterPlusGraphQLClient.from_config(config)
+
+    token_data = gql_client.execute(
+        gql.CREATE_AGENT_TOKEN_MUTATION, variables={"description": description}
+    )
+    click.echo(token_data["createAgentToken"]["token"])

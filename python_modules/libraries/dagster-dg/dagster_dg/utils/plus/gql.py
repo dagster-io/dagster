@@ -148,7 +148,7 @@ query AgentTokensQuery {
 """
 
 CREATE_AGENT_TOKEN_MUTATION = """
-mutation CreateAgentTokenMutation($description: String!) {
+mutation CreateAgentTokenMutation($description: String) {
     createAgentToken(description: $description) {
         __typename
         ... on DagsterCloudAgentToken {
