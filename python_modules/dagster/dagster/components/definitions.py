@@ -30,7 +30,7 @@ class LazyDefinitions(Generic[T_Defs]):
         return result
 
 
-def lazy_definitions(fn: Callable[[], T_Defs]) -> LazyDefinitions[T_Defs]:
+def definitions(fn: Callable[[], T_Defs]) -> LazyDefinitions[T_Defs]:
     """Marks a function as an entry point for loading a set of Dagster definitions. Useful as a test
     utility to define definitions that you wish to load multiple times with different contexts.
 
@@ -94,8 +94,4 @@ def lazy_definitions(fn: Callable[[], T_Defs]) -> LazyDefinitions[T_Defs]:
                 )
 
     """
-    return LazyDefinitions(load_fn=fn)
-
-
-def definitions(fn: Callable[[], T_Defs]) -> LazyDefinitions[T_Defs]:
     return LazyDefinitions(load_fn=fn)

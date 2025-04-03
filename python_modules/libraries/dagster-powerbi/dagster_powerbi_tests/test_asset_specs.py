@@ -21,7 +21,7 @@ from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.instance_for_test import instance_for_test
 from dagster._utils.env import environ
-from dagster._utils.test.definitions import lazy_definitions
+from dagster._utils.test.definitions import definitions
 from dagster_powerbi import PowerBIWorkspace
 from dagster_powerbi.assets import build_semantic_model_refresh_asset_definition
 from dagster_powerbi.resource import BASE_API_URL, PowerBIToken, load_powerbi_asset_specs
@@ -137,7 +137,7 @@ def test_translator_custom_metadata_legacy(
     assert "dagster/kind/powerbi" in asset_spec.tags
 
 
-@lazy_definitions
+@definitions
 def state_derived_defs_two_workspaces() -> Definitions:
     resource = PowerBIWorkspace(
         credentials=PowerBIToken(api_token=EnvVar("FAKE_API_TOKEN")),
@@ -283,7 +283,7 @@ def test_refreshable_semantic_model_legacy(
     assert result.success is success
 
 
-@lazy_definitions
+@definitions
 def state_derived_defs() -> Definitions:
     fake_token = uuid.uuid4().hex
     resource = PowerBIWorkspace(

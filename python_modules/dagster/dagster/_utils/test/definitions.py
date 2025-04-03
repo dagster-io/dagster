@@ -20,7 +20,6 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 from dagster.components.definitions import (
     LazyDefinitions as LazyDefinitions,
     definitions as definitions,
-    lazy_definitions as lazy_definitions,
 )
 
 T_Defs = TypeVar("T_Defs", Definitions, RepositoryDefinition)
