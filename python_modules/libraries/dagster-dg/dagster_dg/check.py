@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, NamedTuple, Optional
 
 import click
-from dagster_shared.serdes.objects import PackageEntryKey
+from dagster_shared.serdes.objects import PackageObjectKey
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from dagster_shared.yaml_utils.source_position import (
     LineCol,
@@ -43,7 +43,7 @@ def _scaffold_value_and_source_position_tree(
 
 
 class ErrorInput(NamedTuple):
-    object_key: Optional[PackageEntryKey]
+    object_key: Optional[PackageObjectKey]
     error: ValidationError
     source_position_tree: ValueAndSourcePositionTree
 
@@ -56,7 +56,7 @@ def check_yaml(
 
     validation_errors: list[ErrorInput] = []
 
-    component_contents_by_key: dict[PackageEntryKey, Any] = {}
+    component_contents_by_key: dict[PackageObjectKey, Any] = {}
     modules_to_fetch = set()
     for component_dir in dg_context.defs_path.rglob("*"):
         if resolved_paths and not any(
@@ -103,7 +103,7 @@ def check_yaml(
             qualified_key = (
                 f"{component_instance_module}{raw_key}" if raw_key.startswith(".") else raw_key
             )
-            key = PackageEntryKey.from_typename(qualified_key)
+            key = PackageObjectKey.from_typename(qualified_key)
             component_contents_by_key[key] = component_doc_tree
 
             # We need to fetch components from any modules local to the project because these are

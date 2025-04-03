@@ -9,7 +9,7 @@ from typing import Any, NamedTuple, Optional
 import click
 import packaging.version
 import yaml
-from dagster_shared.serdes.objects import PackageEntryKey
+from dagster_shared.serdes.objects import PackageObjectKey
 
 from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import RemotePackageRegistry, all_components_schema_from_dg_context
@@ -83,7 +83,7 @@ def inspect_component_type_command(
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemotePackageRegistry.from_dg_context(dg_context)
-    component_key = PackageEntryKey.from_typename(component_type)
+    component_key = PackageObjectKey.from_typename(component_type)
     if not registry.has(component_key):
         exit_with_error(generate_missing_component_type_error_message(component_type))
     elif sum([description, scaffold_params_schema, component_schema]) > 1:

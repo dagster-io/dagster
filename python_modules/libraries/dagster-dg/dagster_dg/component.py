@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING, Any, Optional
 
 import dagster_shared.check as check
 from dagster_shared.serdes import deserialize_value, serialize_value
-from dagster_shared.serdes.objects import PackageEntryKey, PackageEntrySnap
-from dagster_shared.serdes.objects.package_entry import PackageEntryType
+from dagster_shared.serdes.objects import PackageObjectKey, PackageObjectSnap
+from dagster_shared.serdes.objects.package_entry import PackageObjectFeature
 
 from dagster_dg.utils import is_valid_json
 
@@ -38,8 +38,8 @@ class RemotePackageRegistry:
 
         return RemotePackageRegistry(object_data)
 
-    def __init__(self, components: dict[PackageEntryKey, PackageEntrySnap]):
-        self._objects: dict[PackageEntryKey, PackageEntrySnap] = copy.copy(components)
+    def __init__(self, components: dict[PackageObjectKey, PackageObjectSnap]):
+        self._objects: dict[PackageObjectKey, PackageObjectSnap] = copy.copy(components)
 
     @staticmethod
     def empty() -> "RemotePackageRegistry":
@@ -49,30 +49,30 @@ class RemotePackageRegistry:
     def packages(self) -> Set[str]:
         return {key.package for key in self._objects.keys()}
 
-    def package_entries(self, package: str) -> Set[PackageEntryKey]:
+    def package_entries(self, package: str) -> Set[PackageObjectKey]:
         return {key for key in self._objects.keys() if key.package == package}
 
-    def get_entries(
-        self, package: Optional[str] = None, entry_type: Optional[PackageEntryType] = None
-    ) -> Sequence[PackageEntrySnap]:
+    def get_objects(
+        self, package: Optional[str] = None, feature: Optional[PackageObjectFeature] = None
+    ) -> Sequence[PackageObjectSnap]:
         return [
             entry
             for entry in self._objects.values()
             if (package is None or package == entry.key.package)
-            and (entry_type is None or entry_type in entry.types)
+            and (feature is None or feature in entry.features)
         ]
 
-    def get(self, key: PackageEntryKey) -> PackageEntrySnap:
+    def get(self, key: PackageObjectKey) -> PackageObjectSnap:
         """Resolves a library object within the scope of a given component directory."""
         return self._objects[key]
 
-    def has(self, key: PackageEntryKey) -> bool:
+    def has(self, key: PackageObjectKey) -> bool:
         return key in self._objects
 
-    def keys(self) -> Iterable[PackageEntryKey]:
+    def keys(self) -> Iterable[PackageObjectKey]:
         yield from sorted(self._objects.keys(), key=lambda k: k.to_typename())
 
-    def items(self) -> Iterable[tuple[PackageEntryKey, PackageEntrySnap]]:
+    def items(self) -> Iterable[tuple[PackageObjectKey, PackageObjectSnap]]:
         yield from self._objects.items()
 
     def __repr__(self) -> str:
@@ -98,7 +98,7 @@ def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[st
 
 def _load_entry_point_components(
     dg_context: "DgContext",
-) -> dict[PackageEntryKey, PackageEntrySnap]:
+) -> dict[PackageObjectKey, PackageObjectSnap]:
     if dg_context.has_cache:
         cache_key = dg_context.get_cache_key("component_registry_data")
         raw_registry_data = dg_context.cache.get(cache_key)
@@ -116,9 +116,9 @@ def _load_entry_point_components(
 
 def _load_module_library_objects(
     dg_context: "DgContext", modules: Sequence[str]
-) -> dict[PackageEntryKey, PackageEntrySnap]:
+) -> dict[PackageObjectKey, PackageObjectSnap]:
     modules_to_fetch = set(modules)
-    data: dict[PackageEntryKey, PackageEntrySnap] = {}
+    data: dict[PackageObjectKey, PackageObjectSnap] = {}
     if dg_context.has_cache:
         for module in modules:
             cache_key = dg_context.get_cache_key_for_module(module)
@@ -150,12 +150,12 @@ def _load_module_library_objects(
 
 def _parse_raw_registry_data(
     raw_registry_data: str,
-) -> dict[PackageEntryKey, PackageEntrySnap]:
-    deserialized = check.is_list(deserialize_value(raw_registry_data), of_type=PackageEntrySnap)
+) -> dict[PackageObjectKey, PackageObjectSnap]:
+    deserialized = check.is_list(deserialize_value(raw_registry_data), of_type=PackageObjectSnap)
     return {obj.key: obj for obj in deserialized}
 
 
 def _dump_raw_registry_data(
-    registry_data: Mapping[PackageEntryKey, PackageEntrySnap],
+    registry_data: Mapping[PackageObjectKey, PackageObjectSnap],
 ) -> str:
     return serialize_value(list(registry_data.values()))

@@ -18,7 +18,7 @@ def _generate_invalid_component_typename_error_message(typename: str) -> str:
 
 @whitelist_for_serdes
 @record(kw_only=False)
-class PackageEntryKey:
+class PackageObjectKey:
     namespace: str
     name: str
 
@@ -30,7 +30,7 @@ class PackageEntryKey:
         return f"{self.namespace}.{self.name}"
 
     @staticmethod
-    def from_typename(typename: str) -> "PackageEntryKey":
+    def from_typename(typename: str) -> "PackageObjectKey":
         parts = typename.split(".")
         for part in parts:
             if not part.isidentifier():
@@ -38,39 +38,39 @@ class PackageEntryKey:
         if len(parts) < 2:
             raise ValueError(_generate_invalid_component_typename_error_message(typename))
         namespace, _, name = typename.rpartition(".")
-        return PackageEntryKey(name=name, namespace=namespace)
+        return PackageObjectKey(name=name, namespace=namespace)
 
 
 ###########
 # TYPE DATA
 ###########
-PackageEntryType: TypeAlias = Literal["component", "scaffold-target"]
+PackageObjectFeature: TypeAlias = Literal["component", "scaffold-target"]
 
 
-class LibraryEntryTypeData(ABC):
+class PackageObjectFeatureData(ABC):
     @property
     @abstractmethod
-    def entry_type(self) -> PackageEntryType:
+    def feature(self) -> PackageObjectFeature:
         pass
 
 
 @whitelist_for_serdes
 @record
-class ComponentTypeData(LibraryEntryTypeData):
+class ComponentFeatureData(PackageObjectFeatureData):
     schema: Optional[dict[str, Any]]
 
     @property
-    def entry_type(self) -> PackageEntryType:
+    def feature(self) -> PackageObjectFeature:
         return "component"
 
 
 @whitelist_for_serdes
 @record
-class ScaffoldTargetTypeData(LibraryEntryTypeData):
+class ScaffoldTargetTypeData(PackageObjectFeatureData):
     schema: Optional[dict[str, Any]]
 
     @property
-    def entry_type(self) -> PackageEntryType:
+    def feature(self) -> PackageObjectFeature:
         return "scaffold-target"
 
 
@@ -79,36 +79,36 @@ class ScaffoldTargetTypeData(LibraryEntryTypeData):
 ###############
 @whitelist_for_serdes
 @record
-class PackageEntrySnap:
-    key: PackageEntryKey
+class PackageObjectSnap:
+    key: PackageObjectKey
     summary: Optional[str]
     description: Optional[str]
-    type_data: Sequence[LibraryEntryTypeData]
+    feature_data: Sequence[PackageObjectFeatureData]
 
     @property
-    def types(self) -> Sequence[PackageEntryType]:
-        return [type_data.entry_type for type_data in self.type_data]
+    def features(self) -> Sequence[PackageObjectFeature]:
+        return [type_data.feature for type_data in self.feature_data]
 
     @overload
-    def get_type_data(self, entry_type: Literal["component"]) -> Optional[ComponentTypeData]: ...
+    def get_feature_data(self, feature: Literal["component"]) -> Optional[ComponentFeatureData]: ...
 
     @overload
-    def get_type_data(
-        self, entry_type: Literal["scaffold-target"]
+    def get_feature_data(
+        self, feature: Literal["scaffold-target"]
     ) -> Optional[ScaffoldTargetTypeData]: ...
 
-    def get_type_data(self, entry_type: PackageEntryType) -> Optional[LibraryEntryTypeData]:
-        for type_data in self.type_data:
-            if type_data.entry_type == entry_type:
-                return type_data
+    def get_feature_data(self, feature: PackageObjectFeature) -> Optional[PackageObjectFeatureData]:
+        for feature_data in self.feature_data:
+            if feature_data.feature == feature:
+                return feature_data
         return None
 
     @property
     def scaffolder_schema(self) -> Optional[dict[str, Any]]:
-        scaffolder_data = self.get_type_data("scaffold-target")
+        scaffolder_data = self.get_feature_data("scaffold-target")
         return scaffolder_data.schema if scaffolder_data else None
 
     @property
     def component_schema(self) -> Optional[dict[str, Any]]:
-        component_data = self.get_type_data("component")
+        component_data = self.get_feature_data("component")
         return component_data.schema if component_data else None
