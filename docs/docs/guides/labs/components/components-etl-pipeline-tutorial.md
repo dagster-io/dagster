@@ -62,13 +62,13 @@ To learn more about the files, directories, and default settings in a project sc
 
 ### 1. Add the Sling component type to your environment
 
-To ingest data, you must set up [Sling](https://slingdata.io/). However, if you list the available component types in your environment at this point, the Sling component won't appear, since the basic `dagster-components` package that was installed when you scaffolded your project doesn't include components for specific integrations (like Sling):
+To ingest data, you must set up [Sling](https://slingdata.io/). However, if you list the available component types in your environment at this point, the Sling component won't appear, since the `dagster` package doesn't contain components for specific integrations (like Sling):
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/7-dg-list-component-types.txt" />
 
-To make the Sling component available in your environment, install the `sling` extra of `dagster-components`:
+To make the Sling component available in your environment, install the `dagster-sling` package:
 
-<CliInvocationExample contents="uv add 'dagster-components[sling]'" />
+<CliInvocationExample contents="uv add dagster-sling" />
 
 :::note
 
@@ -154,9 +154,9 @@ First, clone the project and delete the embedded git repo:
 
 ### 2. Install the dbt project component type
 
-To interface with the dbt project, you will need to instantiate a Dagster dbt project component. To access the dbt project component type, install `dagster-components[dbt]` and `dbt-duckdb`:
+To interface with the dbt project, you will need to instantiate a Dagster dbt project component. To access the dbt project component type, install the dbt integration `dagster-dbt` and `dbt-duckdb`:
 
-<CliInvocationExample contents="uv add 'dagster-components[dbt]' dbt-duckdb" />
+<CliInvocationExample contents="uv add dagster-dbt dbt-duckdb" />
 
 To confirm that the `dagster_components.dbt_project` component type is now available, run `dg list component-type`:
 
