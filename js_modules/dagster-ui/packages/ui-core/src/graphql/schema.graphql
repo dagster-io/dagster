@@ -652,16 +652,19 @@ type FailedToMaterializeEvent implements MessageEvent & StepEvent & DisplayableE
   partition: String
   tags: [EventTag!]!
   materializationFailureReason: AssetMaterializationFailureReason!
+  materializationFailureType: AssetMaterializationFailureType!
 }
 
 enum AssetMaterializationFailureReason {
-  COMPUTE_FAILED
-  UPSTREAM_COMPUTE_FAILED
-  SKIPPED_OPTIONAL
-  UPSTREAM_SKIPPED
-  USER_TERMINATION
-  UNEXPECTED_TERMINATION
+  FAILED_TO_MATERIALIZE
+  UPSTREAM_FAILED_TO_MATERIALIZE
+  RUN_TERMINATED
   UNKNOWN
+}
+
+enum AssetMaterializationFailureType {
+  FAILED
+  SKIPPED
 }
 
 enum MaterializationHistoryEventTypeSelector {

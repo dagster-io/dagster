@@ -3,7 +3,10 @@ from typing import TYPE_CHECKING, Optional, Union
 import dagster._check as check
 import graphene
 from dagster._core.definitions import ExpectationResult
-from dagster._core.definitions.events import AssetMaterializationFailureReason
+from dagster._core.definitions.events import (
+    AssetMaterializationFailureReason,
+    AssetMaterializationFailureType,
+)
 from dagster._core.events import AssetLineageInfo, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.objects import ErrorSource
@@ -408,6 +411,10 @@ class GrapheneMaterializationEvent(graphene.ObjectType, AssetEventMixin):
         ]
 
 
+GrapheneAssetMaterializationFailureType = graphene.Enum.from_enum(
+    AssetMaterializationFailureType, name="AssetMaterializationFailureType"
+)
+
 GrapheneAssetMaterializationFailureReason = graphene.Enum.from_enum(
     AssetMaterializationFailureReason, name="AssetMaterializationFailureReason"
 )
@@ -419,6 +426,7 @@ class GrapheneFailedToMaterializeEvent(graphene.ObjectType, AssetEventMixin):
         name = "FailedToMaterializeEvent"
 
     materializationFailureReason = graphene.NonNull(GrapheneAssetMaterializationFailureReason)
+    materializationFailureType = graphene.NonNull(GrapheneAssetMaterializationFailureType)
 
     def __init__(self, event: EventLogEntry):
         dagster_event = check.not_none(event.dagster_event)
@@ -436,6 +444,9 @@ class GrapheneFailedToMaterializeEvent(graphene.ObjectType, AssetEventMixin):
 
     def resolve_materializationFailureReason(self, _graphene_info: ResolveInfo):
         return self.failed_materialization.reason
+
+    def resolve_materializationFailureType(self, _graphene_info: ResolveInfo):
+        return self.failed_materialization.failure_type
 
 
 class GrapheneAssetMaterializationEventType(graphene.Union):
