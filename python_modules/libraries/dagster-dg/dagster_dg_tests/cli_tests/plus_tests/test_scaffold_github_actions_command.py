@@ -8,6 +8,7 @@ import pytest
 import responses
 import yaml
 from dagster_dg.utils import ensure_dagster_dg_tests_import
+from dagster_dg.utils.plus.gql_client import DagsterPlusUnauthorizedError
 
 ensure_dagster_dg_tests_import()
 
@@ -36,6 +37,14 @@ def mock_logged_in_to_github():
 def mock_add_github_secret():
     with mock.patch("dagster_dg.cli.scaffold._add_github_secret") as mock_add_github_secret:
         yield mock_add_github_secret
+
+
+@pytest.fixture
+def mock_get_or_create_agent_token():
+    with mock.patch(
+        "dagster_dg.cli.scaffold._get_or_create_agent_token"
+    ) as mock_get_or_create_agent_token:
+        yield mock_get_or_create_agent_token
 
 
 @pytest.fixture
@@ -107,8 +116,7 @@ def test_scaffold_github_actions_command_success(
 ):
     mock_token_gql_responses("dagster-workspace")
     mock_has_github_cli.return_value = True
-    mock_logged_in_to_github.return_value = "Logged in to GitHub"
-
+    mock_logged_in_to_github.return_value = True
     from dagster_dg.cli.scaffold import GITHUB_ACTIONS_WORKFLOW_URL
 
     responses.add_passthru(GITHUB_ACTIONS_WORKFLOW_URL)
@@ -135,7 +143,7 @@ def test_scaffold_github_actions_command_success_project(
 ):
     mock_token_gql_responses("foo-bar")
     mock_has_github_cli.return_value = True
-    mock_logged_in_to_github.return_value = "Logged in to GitHub"
+    mock_logged_in_to_github.return_value = True
 
     from dagster_dg.cli.scaffold import GITHUB_ACTIONS_WORKFLOW_URL
 
@@ -221,7 +229,7 @@ def test_scaffold_github_actions_command_no_plus_config(
         monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
         monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
         mock_has_github_cli.return_value = True
-        mock_logged_in_to_github.return_value = "Logged in to GitHub"
+        mock_logged_in_to_github.return_value = True
 
         from dagster_dg.cli.scaffold import GITHUB_ACTIONS_WORKFLOW_URL
 
@@ -238,3 +246,43 @@ def test_scaffold_github_actions_command_no_plus_config(
         assert "my-org" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
         assert Path("dagster_cloud.yaml").exists()
         assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == EXPECTED_DAGSTER_CLOUD_YAML
+
+
+@responses.activate
+def test_scaffold_github_actions_command_unauthorized(
+    dg_plus_cli_config,
+    mock_has_github_cli: mock.Mock,
+    mock_logged_in_to_github: mock.Mock,
+    mock_add_github_secret: mock.Mock,
+    mock_token_gql_responses,
+    mock_get_or_create_agent_token: mock.Mock,
+    setup_populated_git_workspace,
+    monkeypatch,
+):
+    mock_token_gql_responses("dagster-workspace")
+
+    mock_has_github_cli.return_value = True
+    mock_logged_in_to_github.return_value = True
+
+    # technically the gql call should raise this, but it's in the same try/except block and
+    # it's easier for us to
+    mock_get_or_create_agent_token.side_effect = DagsterPlusUnauthorizedError("Unauthorized")
+
+    from dagster_dg.cli.scaffold import GITHUB_ACTIONS_WORKFLOW_URL
+
+    responses.add_passthru(GITHUB_ACTIONS_WORKFLOW_URL)
+
+    runner = setup_populated_git_workspace
+    result = runner.invoke("scaffold", "github-actions")
+    assert result.exit_code == 0, result.output + " " + str(result.exception)
+
+    mock_add_github_secret.assert_not_called()
+    assert (
+        "Skipping GitHub secret creation because you are not authorized to create an agent token."
+        in result.output
+    )
+
+    assert Path(".github/workflows/dagster-plus-deploy.yml").exists()
+    assert "hooli" in Path(".github/workflows/dagster-plus-deploy.yml").read_text()
+    assert Path("dagster_cloud.yaml").exists()
+    assert yaml.safe_load(Path("dagster_cloud.yaml").read_text()) == EXPECTED_DAGSTER_CLOUD_YAML

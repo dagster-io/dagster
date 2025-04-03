@@ -7,7 +7,11 @@ from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
 
 
-class DagsterCloudGraphQLClient:
+class DagsterPlusUnauthorizedError(Exception):
+    pass
+
+
+class DagsterPlusGraphQLClient:
     def __init__(self, url: str, headers: Mapping[str, str]):
         self.client = Client(
             transport=RequestsHTTPTransport(url=url, use_json=True, headers=dict(headers))
@@ -33,7 +37,7 @@ class DagsterCloudGraphQLClient:
         value = next(iter(result.values()))
         if isinstance(value, Mapping):
             if value.get("__typename") == "UnauthorizedError":
-                raise click.ClickException("Unauthorized: " + value["message"])
+                raise DagsterPlusUnauthorizedError("Unauthorized: " + value["message"])
             elif value.get("__typename", "").endswith("Error"):
                 raise click.ClickException("Error: " + value["message"])
         return result
