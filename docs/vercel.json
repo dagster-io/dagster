@@ -2774,7 +2774,7 @@
     },
     {
       "source": "/master/guides/dagster/run-attribution",
-      "destination": "/guides/deploy/execution/run-coordinators"
+      "destination": "/guides/build/assets/metadata-and-tags/tags#run-tags"
     }
   ],
   "trailingSlash": false
