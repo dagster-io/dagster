@@ -5,11 +5,11 @@ from dagster.components.scaffold.scaffold import scaffold_with
 
 class AssetScaffolder(ShimScaffolder):
     def get_text(self, filename: str) -> str:
-        return f"""# import dagster as dg
-# 
-#
-# @dg.asset
-# def {filename}(context: dg.AssetExecutionContext) -> dg.MaterializeResult: ...
+        return f"""import dagster as dg
+ 
+
+@dg.asset
+def {filename}(context: dg.AssetExecutionContext) -> dg.MaterializeResult: ...
 
 """
 
