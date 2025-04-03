@@ -7,7 +7,7 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
-The `dagster-components` system makes it easy to create new component types that can be reused across your project.
+The components system makes it easy to create new component types that can be reused across your project.
 
 In most cases, component types map to a specific technology. For example, you might have a `DockerScriptComponent` that executes a script in a Docker container, or a `SnowflakeQueryComponent` that runs a query on Snowflake.
 
@@ -44,7 +44,7 @@ In this case, we'll want to define a few things:
 - The path to the shell script that we'll want to run.
 - The assets that we expect this script to produce.
 
-Our class inherits from `Resolvable` in addition to `Component`. This will handle deriving a yaml schema for our class based on what the class is annotated with. To simplify common use cases, `dagster-components` provides annotations for common bits of configuration, such as `ResolvedAssetSpec`, which will handle exposing a schema for defining `AssetSpec`s from yaml and resolving them before instantiating our component.
+Our class inherits from `Resolvable` in addition to `Component`. This will handle deriving a yaml schema for our class based on what the class is annotated with. To simplify common use cases, Dagster provides annotations for common bits of configuration, such as `ResolvedAssetSpec`, which will handle exposing a schema for defining `AssetSpec`s from yaml and resolving them before instantiating our component.
 
 We can the schema for our component and add it to our class as follows:
 

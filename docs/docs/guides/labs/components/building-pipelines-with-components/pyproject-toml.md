@@ -47,7 +47,7 @@ This call to `load_defs` will:
 
 `is_component_lib = true` specifies that the project is a component library. This means that the project may contain component types that can be referenced when generating component instances.
 
-In a typical project, most components are likely to be instances of types defined in external libraries (e.g. `dagster-components`), but you can also define custom component types scoped to your project. That is why `is_component_lib` is set to `true` by default. Any scaffolded component types in `jaffle_platform` will be placed in the default location at `jaffle_platform/lib`.
+In a typical project, most components are likely to be instances of types defined in external libraries (e.g. `dagster-dbt`) but you can also define custom component types scoped to your project. That is why `is_component_lib` is set to `true` by default. Any scaffolded component types in `jaffle_platform` will be placed in the default location at `jaffle_platform/lib`.
 
 You can also see that this module is registered under the `dagster_dg.library` entry point in `pyproject.toml`. This is what makes the components discoverable to `dg`:
 
