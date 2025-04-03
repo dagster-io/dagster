@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any, Optional, cast
 
 import click
-import requests
 import yaml
 from click.core import ParameterSource
 from dagster_shared import check
@@ -207,7 +206,9 @@ def _search_for_git_root(path: Path) -> Optional[Path]:
         return _search_for_git_root(path.parent)
 
 
-GITHUB_ACTIONS_WORKFLOW_URL = "https://raw.githubusercontent.com/dagster-io/dagster-cloud-serverless-quickstart/refs/heads/main/.github/workflows/dagster-plus-deploy.yml"
+SERVERLESS_GITHUB_ACTION_FILE = (
+    Path(__file__).parent.parent / "templates" / "serverless-github-action.yaml"
+)
 
 
 def _has_github_cli():
@@ -252,17 +253,20 @@ def _generate_dagster_cloud_yaml_contents(
     cls=ScaffoldSubCommand,
     context_settings={"help_option_names": ["-h", "--help"]},
 )
+@click.option("--git-root", type=Path, help="Path to the git root of the repository")
 @dg_global_options
 @cli_telemetry_wrapper
-def scaffold_github_actions_command(**global_options: object) -> None:
+def scaffold_github_actions_command(git_root: Optional[Path], **global_options: object) -> None:
     """Scaffold a GitHub Actions workflow for a Dagster project.
 
-    This command will create a GitHub Actions workflow in the `.github/workflows` directory.
+    This command will create a GitHub Actions workflow in the `.github/workflows` directory
+    and a `dagster_cloud.yaml` file in the root of the repository.
     """
-    git_root = _search_for_git_root(Path.cwd())
+    git_root = git_root or _search_for_git_root(Path.cwd())
     if git_root is None:
         exit_with_error(
-            "No git repository found. `dg scaffold github-actions` must be run from a git repository."
+            "No git repository found. `dg scaffold github-actions` must be run from a git repository, or "
+            "specify the path to the git root with `--git-root`."
         )
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
@@ -273,9 +277,7 @@ def scaffold_github_actions_command(**global_options: object) -> None:
     workflows_dir = git_root / ".github" / "workflows"
     workflows_dir.mkdir(parents=True, exist_ok=True)
 
-    response = requests.get(GITHUB_ACTIONS_WORKFLOW_URL)
-    response.raise_for_status()
-    template = response.text
+    template = SERVERLESS_GITHUB_ACTION_FILE.read_text()
 
     if plus_config and plus_config.organization:
         organization_name = plus_config.organization

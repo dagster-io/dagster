@@ -57,10 +57,6 @@ def test_create_ci_api_token(
     ):
         mock_token_gql_responses(description)
 
-        from dagster_dg.cli.scaffold import GITHUB_ACTIONS_WORKFLOW_URL
-
-        responses.add_passthru(GITHUB_ACTIONS_WORKFLOW_URL)
-
         result = runner.invoke(
             "plus",
             "create-ci-api-token",
