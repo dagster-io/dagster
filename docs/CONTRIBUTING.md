@@ -256,7 +256,7 @@ The `path` is relative to the `./examples/` directory for maximum flexibility. T
 Some CLI invocations may be brief enough that we don't want to include them in a separate file. In that case, we can use the `contents` prop:
 
 ```
-<CliInvocationExample contents="uv add 'dagster-components[sling]'" />
+<CliInvocationExample contents="uv add dagster-sling" />
 ```
 
 For more information on testing the CLI commands used in docs, see [the README in docs tests](../../examples/docs_snippets/docs_snippets_tests/snippet_checks/README.md).
