@@ -390,6 +390,7 @@ export type AssetHealth = {
 export enum AssetHealthStatus {
   DEGRADED = 'DEGRADED',
   HEALTHY = 'HEALTHY',
+  NOT_APPLICABLE = 'NOT_APPLICABLE',
   UNKNOWN = 'UNKNOWN',
   WARNING = 'WARNING',
 }
