@@ -608,7 +608,6 @@ from dagster._core.types.config_schema import (
     DagsterTypeLoader as DagsterTypeLoader,
     dagster_type_loader as dagster_type_loader,
 )
-from dagster._core.types.connection import PaginatedConnection as PaginatedConnection
 from dagster._core.types.dagster_type import (
     DagsterType as DagsterType,
     List as List,
@@ -617,6 +616,7 @@ from dagster._core.types.dagster_type import (
     make_python_type_usable_as_dagster_type as make_python_type_usable_as_dagster_type,
 )
 from dagster._core.types.decorator import usable_as_dagster_type as usable_as_dagster_type
+from dagster._core.types.pagination import PaginatedResults as PaginatedResults
 from dagster._core.types.python_dict import Dict as Dict
 from dagster._core.types.python_set import Set as Set
 from dagster._core.types.python_tuple import Tuple as Tuple

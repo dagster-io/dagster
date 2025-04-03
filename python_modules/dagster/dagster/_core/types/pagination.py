@@ -14,7 +14,7 @@ T = TypeVar("T")
 
 
 @record
-class PaginatedConnection(Generic[T]):
+class PaginatedResults(Generic[T]):
     results: Sequence[T]
     cursor: str
     has_more: bool
@@ -31,15 +31,15 @@ class PaginatedConnection(Generic[T]):
     @classmethod
     def create_from_sequence(
         cls, seq: Sequence[T], limit: int, ascending: bool, cursor: Optional[str] = None
-    ) -> "PaginatedConnection[T]":
+    ) -> "PaginatedResults[T]":
         """
-        Create a PaginatedConnection from a sequence of objects.
+        Create a PaginatedResults from a sequence of objects.
 
         Args:
             seq (Sequence[T]): The sequence of objects to paginate
 
         Returns:
-            PaginatedConnection[T]: A PaginatedConnection object with the given sequence
+            PaginatedResults[T]: A PaginatedResults object with the given sequence
         """
         seq = seq if ascending else list(reversed(seq))
         if cursor:
@@ -59,7 +59,7 @@ class PaginatedConnection(Generic[T]):
         last_seen_value = seq[-1] if seq else value
         new_cursor = ValueIndexCursor(value=last_seen_value).to_string()
 
-        return PaginatedConnection(results=seq, cursor=new_cursor, has_more=has_more)
+        return PaginatedResults(results=seq, cursor=new_cursor, has_more=has_more)
 
 
 @whitelist_for_serdes

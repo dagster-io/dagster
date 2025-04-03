@@ -63,7 +63,7 @@ from dagster._core.executor.base import Executor
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
-from dagster._core.types.connection import PaginatedConnection
+from dagster._core.types.pagination import PaginatedResults
 from dagster._utils.test.definitions import scoped_definitions_load_context
 
 
@@ -978,12 +978,12 @@ def test_invalid_partitions_subclass():
             limit: int,
             ascending: bool,
             cursor: Optional[str] = None,
-        ) -> PaginatedConnection[str]:
+        ) -> PaginatedResults[str]:
             partition_keys = self.get_partition_keys(
                 current_time=context.temporal_context.effective_dt,
                 dynamic_partitions_store=context.dynamic_partitions_store,
             )
-            return PaginatedConnection.create_from_sequence(
+            return PaginatedResults.create_from_sequence(
                 partition_keys, limit=limit, ascending=ascending, cursor=cursor
             )
 

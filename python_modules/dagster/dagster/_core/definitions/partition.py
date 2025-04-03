@@ -36,7 +36,7 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster._core.types.connection import PaginatedConnection
+from dagster._core.types.pagination import PaginatedResults
 from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import xor
@@ -195,7 +195,7 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         limit: int,
         ascending: bool,
         cursor: Optional[str] = None,
-    ) -> PaginatedConnection[str]:
+    ) -> PaginatedResults[str]:
         """Returns a connection object that contains a list of partition keys and all the necessary
         information to paginate through them.
 
@@ -206,7 +206,7 @@ class PartitionsDefinition(ABC, Generic[T_str]):
             cursor (Optional[str]): A cursor to track the progress paginating through the returned partition key results.
 
         Returns:
-            PaginatedConnection[str]
+            PaginatedResults[str]
         """
         ...
 
@@ -435,13 +435,13 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
         limit: int,
         ascending: bool,
         cursor: Optional[str] = None,
-    ) -> PaginatedConnection[str]:
+    ) -> PaginatedResults[str]:
         current_time = context.temporal_context.effective_dt
         dynamic_partitions_store = context.dynamic_partitions_store
         partition_keys = self.get_partition_keys(
             current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
-        return PaginatedConnection.create_from_sequence(
+        return PaginatedResults.create_from_sequence(
             partition_keys, limit=limit, ascending=ascending, cursor=cursor
         )
 
@@ -634,13 +634,13 @@ class DynamicPartitionsDefinition(
         limit: int,
         ascending: bool,
         cursor: Optional[str] = None,
-    ) -> PaginatedConnection[str]:
+    ) -> PaginatedResults[str]:
         current_time = context.temporal_context.effective_dt
         dynamic_partitions_store = context.dynamic_partitions_store
         partition_keys = self.get_partition_keys(
             current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
         )
-        return PaginatedConnection.create_from_sequence(
+        return PaginatedResults.create_from_sequence(
             partition_keys, limit=limit, ascending=ascending, cursor=cursor
         )
 
