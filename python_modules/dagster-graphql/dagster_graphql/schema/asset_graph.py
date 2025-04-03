@@ -551,6 +551,18 @@ class GrapheneAssetNode(graphene.ObjectType):
         return GrapheneAssetHealthStatus.UNKNOWN
 
     async def get_asset_check_status_for_asset_health(self, graphene_info: ResolveInfo):
+        """Computes the health indicator for the asset checks for the assets. Follows these rules:
+        HEALTHY - the latest completed execution for every check is a success.
+        WARNING - the latest completed execution for any asset check failed with severity WARN
+            (and no checks failed with severity ERROR). Or some checks have been successfully
+            executed, but others have never been executed.
+        DEGRADED - the latest completed execution for any asset check failed with severity ERROR.
+        UNKNOWN - the asset checks have never been executed.
+        NOT_APPLICABLE - the asset has no asset checks defined.
+
+        Note: the latest completed execution for each check may not have executed based on the
+        most recent materialization of the asset.
+        """
         remote_check_nodes = graphene_info.context.asset_graph.get_checks_for_asset(
             self._asset_node_snap.asset_key
         )
