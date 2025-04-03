@@ -52,7 +52,7 @@ def serve_docs_command(
     port: int,
     **global_options: object,
 ) -> None:
-    """Get detailed information on a registered Dagster component type."""
+    """Serve the Dagster components docs, to be viewed in a browser."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
@@ -115,7 +115,7 @@ def build_docs_command(
     output_dir: str,
     **global_options: object,
 ) -> None:
-    """Get detailed information on a registered Dagster component type."""
+    """Build a static version of the Dagster components docs, to be served by a static file server."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
