@@ -152,7 +152,7 @@ def _dump_raw_registry_data(
 
 
 def get_specified_env_var_deps(component_data: Mapping[str, Any]) -> set[str]:
-    if "requires" not in component_data or "env" not in component_data["requires"]:
+    if not component_data.get("requires") or "env" not in component_data["requires"]:
         return set()
     return set(component_data["requires"]["env"])
 

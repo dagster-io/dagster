@@ -31,7 +31,7 @@ from dagster.components.resolved.core_models import AssetPostProcessor
 T = TypeVar("T", bound=BaseModel)
 
 
-class ComponentRequiresModel(BaseModel):
+class ComponentRequirementsModel(BaseModel):
     """Describes dependencies for a component to load."""
 
     env: Optional[list[str]] = None
@@ -42,7 +42,7 @@ class ComponentFileModel(BaseModel):
 
     type: str
     attributes: Optional[Mapping[str, Any]] = None
-    requires: Optional[ComponentRequiresModel] = None
+    requirements: Optional[ComponentRequirementsModel] = None
 
 
 #########
