@@ -43,6 +43,7 @@ _EXPECTED_INSPECT_COMPONENT_TYPE_FULL = textwrap.dedent("""
     Component schema:
 
     {
+        "additionalProperties": false,
         "properties": {
             "asset_key": {
                 "title": "Asset Key",
@@ -57,7 +58,7 @@ _EXPECTED_INSPECT_COMPONENT_TYPE_FULL = textwrap.dedent("""
             "asset_key",
             "filename"
         ],
-        "title": "SimplePipesScriptScaffoldParams",
+        "title": "SimplePipesScriptComponentModel",
         "type": "object"
     }
 """).strip()
@@ -155,6 +156,7 @@ def test_utils_inspect_component_type_flag_fields_success():
         assert result.output.strip().endswith(
             textwrap.dedent("""
                 {
+                    "additionalProperties": false,
                     "properties": {
                         "asset_key": {
                             "title": "Asset Key",
@@ -169,7 +171,7 @@ def test_utils_inspect_component_type_flag_fields_success():
                         "asset_key",
                         "filename"
                     ],
-                    "title": "SimplePipesScriptScaffoldParams",
+                    "title": "SimplePipesScriptComponentModel",
                     "type": "object"
                 }
             """).strip()

@@ -9,10 +9,8 @@ class MyNewComponentSchema(BaseModel):
 
 
 class MyNewComponent(Component):
-    name = "my_new_component"
-
     @classmethod
-    def get_schema(cls):
+    def get_model_cls(cls):
         return MyNewComponentSchema
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:

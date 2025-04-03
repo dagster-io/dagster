@@ -31,17 +31,17 @@ def load_context_and_component_for_test(
 ) -> tuple[ComponentLoadContext, T_Component]:
     context = ComponentLoadContext.for_test()
     context = context.with_rendering_scope(component_type.get_additional_scope())
-    schema = check.not_none(
-        component_type.get_schema(), "Component must have schema for direct test"
+    model_cls = check.not_none(
+        component_type.get_model_cls(), "Component must have schema for direct test"
     )
     if isinstance(attrs, str):
         source_positions = parse_yaml_with_source_positions(attrs)
         with enrich_validation_errors_with_source_position(
             source_positions.source_position_tree, []
         ):
-            attributes = TypeAdapter(schema).validate_python(source_positions.value)
+            attributes = TypeAdapter(model_cls).validate_python(source_positions.value)
     else:
-        attributes = TypeAdapter(schema).validate_python(attrs)
+        attributes = TypeAdapter(model_cls).validate_python(attrs)
     component = component_type.load(attributes, context)
     return context, component
 

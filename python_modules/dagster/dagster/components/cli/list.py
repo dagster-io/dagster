@@ -58,22 +58,22 @@ def list_all_components_schema_command(entry_points: bool, extra_modules: tuple[
     """
     component_types = _load_component_types(entry_points, extra_modules)
 
-    schemas = []
+    model_cls_list = []
     for key in sorted(component_types.keys(), key=lambda k: k.to_typename()):
         component_type = component_types[key]
         # Create ComponentFileModel schema for each type
-        schema_type = component_type.get_schema()
+        model_cls = component_type.get_model_cls()
         key_string = key.to_typename()
-        if schema_type:
-            schemas.append(
+        if model_cls:
+            model_cls_list.append(
                 create_model(
                     key.name,
                     type=(Literal[key_string], key_string),
-                    attributes=(schema_type, None),
+                    attributes=(model_cls, None),
                     __config__=ConfigDict(extra="forbid"),
                 )
             )
-    union_type = Union[tuple(schemas)]  # type: ignore
+    union_type = Union[tuple(model_cls_list)]  # type: ignore
     click.echo(json.dumps(TypeAdapter(union_type).json_schema()))
 
 

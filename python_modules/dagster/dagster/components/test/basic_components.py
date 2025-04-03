@@ -52,7 +52,7 @@ class MyNestedModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class MyNestedComponentSchema(BaseModel):
+class MyNestedComponentModel(BaseModel):
     nested: dict[str, MyNestedModel]
 
     model_config = ConfigDict(extra="forbid")
@@ -60,8 +60,8 @@ class MyNestedComponentSchema(BaseModel):
 
 class MyNestedComponent(Component):
     @classmethod
-    def get_schema(cls) -> type[MyNestedComponentSchema]:
-        return MyNestedComponentSchema
+    def get_model_cls(cls) -> type[MyNestedComponentModel]:
+        return MyNestedComponentModel
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
         return Definitions()

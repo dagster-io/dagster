@@ -6,7 +6,7 @@ from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from dagster.components import Component, ComponentLoadContext
+from dagster.components import Component, ComponentLoadContext, Model
 from dagster.components.component_scaffolding import scaffold_component
 from dagster.components.scaffold.scaffold import Scaffolder, ScaffoldRequest, scaffold_with
 from pydantic import BaseModel
@@ -14,6 +14,12 @@ from pydantic import BaseModel
 
 # Same schema used for file generation and defs generation
 class SimplePipesScriptScaffoldParams(BaseModel):
+    asset_key: str
+    filename: str
+
+
+# Same schema used for file generation and defs generation
+class SimplePipesScriptComponentModel(Model):
     asset_key: str
     filename: str
 
@@ -48,8 +54,8 @@ class SimplePipesScriptComponent(Component):
     """
 
     @classmethod
-    def get_schema(cls):
-        return SimplePipesScriptScaffoldParams
+    def get_model_cls(cls):
+        return SimplePipesScriptComponentModel
 
     def __init__(self, asset_key: AssetKey, script_path: Path):
         self._asset_key = asset_key

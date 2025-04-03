@@ -77,7 +77,7 @@ class DefsFolderComponent(DefsModuleComponent):
     asset_post_processors: Optional[Sequence[AssetPostProcessor]]
 
     @classmethod
-    def get_schema(cls):
+    def get_model_cls(cls):
         return DefsFolderComponentYamlSchema.model()
 
     @classmethod
@@ -226,26 +226,24 @@ class WrappedYamlComponent(WrappedDefsModuleComponent):
                 f"Component type {type_str} is of type {type(obj)}, but must be a subclass of dagster.Component"
             )
 
-        component_schema = obj.get_schema()
+        model_cls = obj.get_model_cls()
         context = context.with_rendering_scope(
             obj.get_additional_scope()
         ).with_source_position_tree(source_tree.source_position_tree)
 
         # grab the attributes from the yaml file
         with pushd(str(context.path)):
-            if component_schema is None:
+            if model_cls is None:
                 attributes = None
             elif source_tree:
                 attributes_position_tree = source_tree.source_position_tree.children["attributes"]
                 with enrich_validation_errors_with_source_position(
                     attributes_position_tree, ["attributes"]
                 ):
-                    attributes = TypeAdapter(component_schema).validate_python(
+                    attributes = TypeAdapter(model_cls).validate_python(
                         component_file_model.attributes
                     )
             else:
-                attributes = TypeAdapter(component_schema).validate_python(
-                    component_file_model.attributes
-                )
+                attributes = TypeAdapter(model_cls).validate_python(component_file_model.attributes)
 
         return obj.load(attributes, context)

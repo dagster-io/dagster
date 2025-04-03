@@ -22,8 +22,17 @@ class Component(ABC):
 
     @classmethod
     def get_schema(cls) -> Optional[type[BaseModel]]:
+        return None
+
+    @classmethod
+    def get_model_cls(cls) -> Optional[type[BaseModel]]:
         if issubclass(cls, Resolvable):
             return cls.model()
+
+        # handle existing overrides for backwards compatibility
+        cls_from_get_schema = cls.get_schema()
+        if cls_from_get_schema:
+            return cls_from_get_schema
 
         return None
 
