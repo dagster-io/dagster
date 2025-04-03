@@ -2694,7 +2694,7 @@
     },
     {
       "source": "/guides/dagster/pythonic-resources",
-      "destination": "guides/operate/configuration/run-configuration#defining-and-accessing-pythonic-configuration-for-a-resource"
+      "destination": "/guides/operate/configuration/run-configuration#defining-and-accessing-pythonic-configuration-for-a-resource"
     },
     {
       "source": "/guides/dagster/pythonic-config",
