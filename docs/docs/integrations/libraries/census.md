@@ -9,7 +9,6 @@ date: 2022-11-07
 apireflink: http://docs.dagster.io/api/python-api/libraries/dagster-census
 partnerlink: https://www.getcensus.com/
 communityIntegration: true
-logo: /integrations/Census.svg
 categories:
   - ETL
 enabledBy:

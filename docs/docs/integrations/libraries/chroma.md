@@ -6,7 +6,6 @@ title: Dagster & Chroma
 sidebar_label: Chroma
 excerpt: 'Integrate Chroma vector database capabilities into your AI pipelines powered by Dagster.'
 partnerlink: https://docs.trychroma.com/
-logo: /integrations/chroma.svg
 categories:
   - Storage
 enabledBy:

@@ -9,7 +9,6 @@ date: 2025-03-14
 apireflink:
 docslink: https://docs.dagster.io/integrations/libraries/rust
 partnerlink: https://www.rust-lang.org/
-logo: /integrations/rust.svg
 categories:
 enabledBy:
 enables:

@@ -9,7 +9,6 @@ date: 2025-03-14
 apireflink:
 docslink: https://docs.dagster.io/integrations/libraries/typescript
 partnerlink: https://www.typescriptlang.org/
-logo: /integrations/typescript.svg
 categories:
 enabledBy:
 enables:

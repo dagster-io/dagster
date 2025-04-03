@@ -9,7 +9,6 @@ date: 2024-08-20
 apireflink: https://docs.dagster.io/integrations/libraries/aws/glue
 docslink:
 partnerlink: https://aws.amazon.com/
-logo: /integrations/aws-glue.svg
 categories:
   - Compute
 enabledBy:
