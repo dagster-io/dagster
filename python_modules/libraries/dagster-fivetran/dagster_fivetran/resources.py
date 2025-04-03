@@ -886,7 +886,7 @@ class FivetranWorkspace(ConfigurableResource):
             disable_schedule_on_trigger=self.disable_schedule_on_trigger,
         )
 
-    def fetch_fivetran_workspace_data(
+    def _fetch_fivetran_workspace_data(
         self,
     ) -> FivetranWorkspaceData:
         """Retrieves all Fivetran content from the workspace and returns it as a FivetranWorkspaceData object.
@@ -949,6 +949,18 @@ class FivetranWorkspace(ConfigurableResource):
             destinations_by_id=destinations_by_id,
             schema_configs_by_connector_id=schema_configs_by_connector_id,
         )
+
+    def fetch_fivetran_workspace_data(
+        self,
+    ) -> FivetranWorkspaceData:
+        """Retrieves all Fivetran content from the workspace and returns it as a FivetranWorkspaceData object.
+
+        Returns:
+            FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
+        """
+        return FivetranWorkspaceDefsLoader(
+            workspace=self, translator=DagsterFivetranTranslator()
+        ).get_or_fetch_state()
 
     @cached_method
     def load_asset_specs(
@@ -1170,7 +1182,7 @@ def load_fivetran_asset_specs(
 
 
 @record
-class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
+class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[FivetranWorkspaceData]):
     workspace: FivetranWorkspace
     translator: DagsterFivetranTranslator
     connector_selector_fn: Optional[ConnectorSelectorFn] = None
@@ -1179,10 +1191,10 @@ class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]
     def defs_key(self) -> str:
         return f"{FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.account_id}"
 
-    def fetch_state(self) -> FivetranWorkspaceData:  # pyright: ignore[reportIncompatibleMethodOverride]
-        return self.workspace.fetch_fivetran_workspace_data()
+    def fetch_state(self) -> FivetranWorkspaceData:
+        return self.workspace._fetch_fivetran_workspace_data()  # noqa
 
-    def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:
         all_asset_specs = [
             self.translator.get_asset_spec(props)
             for props in state.to_workspace_data_selection(

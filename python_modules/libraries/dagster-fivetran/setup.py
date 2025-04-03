@@ -44,5 +44,8 @@ setup(
         "managed": [
             f"dagster-managed-elements{pin}",
         ],
+        "test": [
+            "pytest-order",
+        ],
     },
 )
