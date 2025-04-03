@@ -1,7 +1,7 @@
-from pathlib import Path
+from jaffle_platform import defs as defs_module
+from dagster.components import load_defs, definitions
 
-import jaffle_platform.defs
 
-from dagster.components import load_defs
-
-defs = load_defs(defs_root=jaffle_platform.defs)
+@definitions
+def jaffle_platform_defs():
+    return load_defs(defs_root=defs_module)
