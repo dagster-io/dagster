@@ -1,7 +1,13 @@
 from collections.abc import Iterator, Mapping, Sequence
 from typing import Any, Optional, Union
 
-from dagster import AssetCheckEvaluation, AssetExecutionContext, AssetMaterialization, Output
+from dagster import (
+    AssetCheckEvaluation,
+    AssetCheckResult,
+    AssetExecutionContext,
+    AssetMaterialization,
+    Output,
+)
 from dagster._annotations import preview
 from dagster._record import record
 
@@ -46,7 +52,9 @@ class DbtCloudCliInvocation:
             context=context,
         )
 
-    def wait(self) -> Iterator[Union[AssetMaterialization, AssetCheckEvaluation, Output]]:
+    def wait(
+        self,
+    ) -> Iterator[Union[AssetCheckEvaluation, AssetCheckResult, AssetMaterialization, Output]]:
         self.run_handler.wait_for_success()
         if "run_results.json" not in self.run_handler.list_run_artifacts():
             return
