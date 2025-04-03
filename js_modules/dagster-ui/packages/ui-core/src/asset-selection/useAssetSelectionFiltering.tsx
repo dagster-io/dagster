@@ -55,9 +55,6 @@ export const useAssetSelectionFiltering = <
   );
 
   const filtered = useMemo(() => {
-    if (!assetSelection) {
-      return assets ?? [];
-    }
     return (
       graphAssetKeys
         .map((key) => {
@@ -66,7 +63,7 @@ export const useAssetSelectionFiltering = <
         .filter((a) => a)
         .sort((a, b) => COMMON_COLLATOR.compare(a.key.path.join(''), b.key.path.join(''))) ?? []
     );
-  }, [assetSelection, graphAssetKeys, assets, assetsByKey]);
+  }, [graphAssetKeys, assetsByKey]);
 
   const filteredByKey = useMemo(
     () => Object.fromEntries(filtered.map((asset) => [tokenForAssetKey(asset.key), asset])),
