@@ -1,12 +1,9 @@
-from dagster import Definitions
-from dagster.components import (
-    Component,
-    ComponentLoadContext,
-    Resolvable,
-)
 {% if dataclass -%}
 from dataclasses import dataclass
 {% endif %}
+import dagster as dg
+from dagster.components import Component, ComponentLoadContext, Resolvable
+
 
 {% if dataclass -%}
 @dataclass
@@ -23,6 +20,6 @@ class {{ name }}(Component, Resolvable):
     ):
         pass
 {% endif %}
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         # Add definition construction logic here.
-        return Definitions()
+        return dg.Definitions()

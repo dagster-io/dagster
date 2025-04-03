@@ -1,10 +1,7 @@
-from dagster import Definitions
-from dagster.components import (
-    Component,
-    ComponentLoadContext,
-    Resolvable,
-)
 from dataclasses import dataclass
+
+import dagster as dg
+from dagster.components import Component, ComponentLoadContext, Resolvable
 
 
 @dataclass
@@ -14,6 +11,6 @@ class ShellCommand(Component, Resolvable):
     COMPONENT DESCRIPTION HERE.
     """
 
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         # Add definition construction logic here.
-        return Definitions()
+        return dg.Definitions()
