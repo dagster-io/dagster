@@ -6,6 +6,7 @@ from unittest import mock
 
 import pytest
 from dagster import file_relative_path, job, repository
+from dagster._cli.dev import ProxyServerManager
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
@@ -16,6 +17,7 @@ from dagster._core.remote_representation.origin import (
 )
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._grpc.server import GrpcServerCommand, GrpcServerProcess
 from dagster._utils import get_terminate_signal
 from dagster._utils.env import environ
@@ -101,23 +103,22 @@ def test_error_repo_in_registry(instance):
 
 
 def test_server_unexpectedly_killed(instance: DagsterInstance):
+    target = PythonFileTarget(
+        python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
+        attribute="repo",
+        working_directory=None,
+        location_name=None,
+    )
     with environ({"DAGSTER_CODE_SERVER_AUTO_RESTART_INTERVAL": "1"}):
-        origin = ManagedGrpcPythonEnvCodeLocationOrigin(
-            loadable_target_origin=LoadableTargetOrigin(
-                executable_path=sys.executable,
-                attribute="repo",
-                python_file=file_relative_path(__file__, "test_grpc_server_registry.py"),
-            ),
-        )
-
-        with GrpcServerRegistry(
-            server_command=GrpcServerCommand.CODE_SERVER_START,
-            instance_ref=instance.get_ref(),
-            heartbeat_ttl=10,
-            startup_timeout=5,
-            wait_for_processes_on_shutdown=True,
-        ) as registry:
-            endpoint_one = registry.get_grpc_endpoint(origin)
+        with ProxyServerManager(
+            instance,
+            workspace_load_target=target,
+        ) as manager:
+            origins = manager._origins  # noqa: SLF001
+            assert len(origins) == 1
+            origin = origins[0]
+            registry = manager._grpc_server_registry  # noqa: SLF001
+            endpoint_one = registry.get_grpc_endpoint(origin)  # type: ignore
 
             assert _can_connect(origin, endpoint_one, instance)
 
@@ -126,7 +127,7 @@ def test_server_unexpectedly_killed(instance: DagsterInstance):
             pid = process.pid
             os.kill(pid, get_terminate_signal())
             time.sleep(5)
-            endpoint_one = registry.get_grpc_endpoint(origin)
+            endpoint_one = registry.get_grpc_endpoint(origin)  # type: ignore
             assert _can_connect(origin, endpoint_one, instance)
 
 

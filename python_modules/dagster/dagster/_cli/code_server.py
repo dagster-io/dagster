@@ -17,7 +17,13 @@ from dagster._serdes import deserialize_value
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
-DEFAULT_HEARTBEAT_TIMEOUT = 30
+
+def get_default_proxy_server_heartbeat_timeout():
+    """Get the default heartbeat timeout for the proxy server."""
+    return int(os.getenv("DAGSTER_PROXY_SERVER_HEARTBEAT_TIMEOUT", "30"))
+
+
+DEFAULT_HEARTBEAT_TIMEOUT = get_default_proxy_server_heartbeat_timeout()
 
 
 @click.group(name="code-server")
