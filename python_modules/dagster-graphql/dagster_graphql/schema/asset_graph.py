@@ -529,25 +529,44 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._asset_node_snap.is_executable
 
     async def get_materialization_status_for_asset_health(self, graphene_info: ResolveInfo):
-        if self._asset_node_snap.partitions is not None:  # isPartitioned
-            partition_stats = self.resolve_partitionStats(graphene_info)
-            if partition_stats is None or (
-                partition_stats.numMaterialized == 0 and partition_stats.numFailed == 0
-            ):
+        """Computes the health indicator for the asset materialization status. Follows these rules:
+        If the asset is partitioned:
+            - HEALTHY - all partitions successfully materialized.
+            - WARNING - some partitions are successful but any number of partitions are missing (but no failed partitions).
+            - DEGRADED - any number of partitions are failed.
+            - UNKNOWN - all partitions are missing.
+        If the asset is not partitioned:
+            - HEALTHY - the latest materialization of an asset was successfully materialized.
+            - WARNING - no conditions lead to a warning status.
+            - DEGRADED - latest materialization of an asset failed.
+            - UNKNOWN - asset has never had a materialization attempt.
+        """
+        partitions_snap = self._asset_node_snap.partitions
+        asset_key = self._asset_node_snap.asset_key
+        if partitions_snap is not None:  # isPartitioned
+            (
+                materialized_partition_subset,
+                failed_partition_subset,
+                _,
+            ) = self.regenerate_and_check_partition_subsets(graphene_info.context, asset_key)
+            total_num_partitions = partitions_snap.get_partitions_definition().get_num_partitions(
+                dynamic_partitions_store=self._dynamic_partitions_loader
+            )
+            currently_materialized_subset = materialized_partition_subset - failed_partition_subset
+            num_materialized = len(currently_materialized_subset)
+            num_failed = len(failed_partition_subset)
+            if num_materialized == 0 and num_failed == 0:
+                # asset has never been materialized
                 return GrapheneAssetHealthStatus.UNKNOWN
-            if partition_stats.numFailed > 0:
+            if num_failed > 0:
                 return GrapheneAssetHealthStatus.DEGRADED
-            if (
-                partition_stats.numPartitions
-                > partition_stats.numFailed
-                + partition_stats.numMaterialized
-                + partition_stats.numMaterializing
-            ):
+            if total_num_partitions > num_failed + num_materialized:
                 # some partitions have never been materialized
                 return GrapheneAssetHealthStatus.WARNING
+            # if no partitions are failed or missing, they must all be successfully materialized
             return GrapheneAssetHealthStatus.HEALTHY
 
-        asset_record = await AssetRecord.gen(graphene_info.context, self._asset_node_snap.asset_key)
+        asset_record = await AssetRecord.gen(graphene_info.context, asset_key)
         if asset_record is None:
             return GrapheneAssetHealthStatus.UNKNOWN
         asset_entry = asset_record.asset_entry
@@ -575,9 +594,12 @@ class GrapheneAssetNode(graphene.ObjectType):
                 return GrapheneAssetHealthStatus.HEALTHY
             # latest materialization failed
             return GrapheneAssetHealthStatus.DEGRADED
-
+        # we are not storing failure events for this asset, so must compute status based on the inforamtion we have available
+        # in some cases this results in reporting as asset as HEALTHY or UNKNOWN during an in progress run
+        # even if the asset was previously failed
         else:
-            # check what we can before fetching the run
+            # if the asset has been successfully materialized in the past, we fallback to that status
+            # when we don't have the information available to compute status based on the latest run
             fallback_status = (
                 GrapheneAssetHealthStatus.UNKNOWN
                 if asset_entry.last_materialization is None
@@ -612,9 +634,6 @@ class GrapheneAssetNode(graphene.ObjectType):
                 return GrapheneAssetHealthStatus.DEGRADED
 
             return fallback_status
-
-        # placehodler
-        raise Exception("Shouldn't get here")
 
     async def get_asset_check_status_for_asset_health(self, graphene_info: ResolveInfo):
         """Computes the health indicator for the asset checks for the assets. Follows these rules:
@@ -1262,6 +1281,35 @@ class GrapheneAssetNode(graphene.ObjectType):
             partitions_def,
         )
 
+    def regenerate_and_check_partition_subsets(self, context, asset_key: AssetKey):
+        if not self._dynamic_partitions_loader:
+            check.failed("dynamic_partitions_loader must be provided to get partition keys")
+
+        (
+            materialized_partition_subset,
+            failed_partition_subset,
+            in_progress_subset,
+        ) = get_partition_subsets(
+            context.instance,
+            context,
+            asset_key,
+            self._dynamic_partitions_loader,
+            (
+                self._asset_node_snap.partitions.get_partitions_definition()
+                if self._asset_node_snap.partitions
+                else None
+            ),
+        )
+
+        if (
+            materialized_partition_subset is None
+            or failed_partition_subset is None
+            or in_progress_subset is None
+        ):
+            check.failed("Expected partitions subset for a partitioned asset")
+
+        return materialized_partition_subset, failed_partition_subset, in_progress_subset
+
     def resolve_partitionStats(
         self, graphene_info: ResolveInfo
     ) -> Optional[GraphenePartitionStats]:
@@ -1269,31 +1317,11 @@ class GrapheneAssetNode(graphene.ObjectType):
         if partitions_snap:
             asset_key = self._asset_node_snap.asset_key
 
-            if not self._dynamic_partitions_loader:
-                check.failed("dynamic_partitions_loader must be provided to get partition keys")
-
             (
                 materialized_partition_subset,
                 failed_partition_subset,
                 in_progress_subset,
-            ) = get_partition_subsets(
-                graphene_info.context.instance,
-                graphene_info.context,
-                asset_key,
-                self._dynamic_partitions_loader,
-                (
-                    self._asset_node_snap.partitions.get_partitions_definition()
-                    if self._asset_node_snap.partitions
-                    else None
-                ),
-            )
-
-            if (
-                materialized_partition_subset is None
-                or failed_partition_subset is None
-                or in_progress_subset is None
-            ):
-                check.failed("Expected partitions subset for a partitioned asset")
+            ) = self.regenerate_and_check_partition_subsets(graphene_info.context, asset_key)
 
             failed_or_in_progress_subset = failed_partition_subset | in_progress_subset
             failed_and_not_in_progress_subset = failed_partition_subset - in_progress_subset
