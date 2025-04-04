@@ -43,12 +43,13 @@ def _get_summary_and_description(obj: object) -> tuple[Optional[str], Optional[s
 def _get_component_type_snap(key: LibraryObjectKey, obj: type[Component]) -> ComponentTypeSnap:
     summary, description = _get_summary_and_description(obj)
     model_cls = obj.get_model_cls()
+    metadata = obj.get_metadata()
     return ComponentTypeSnap(
         key=key,
         summary=summary,
         description=description,
-        author=obj.get_author(),
-        tags=obj.get_tags(),
+        author=metadata.author,
+        tags=metadata.tags,
         schema=model_cls.model_json_schema() if model_cls else None,
         scaffolder=_get_scaffolder_snap(obj),
     )
