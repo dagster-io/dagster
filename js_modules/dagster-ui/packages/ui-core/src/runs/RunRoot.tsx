@@ -23,7 +23,6 @@ import {TickTagForRun} from './TickTagForRun';
 import {gql, useQuery} from '../apollo-client';
 import {RunPageFragment} from './types/RunFragments.types';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
-import {useFeatureFlags} from '../app/Flags';
 import {useTrackPageView} from '../app/analytics';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {AutomaterializeTagWithEvaluation} from '../assets/AutomaterializeTagWithEvaluation';
@@ -198,14 +197,12 @@ const RUN_ROOT_QUERY = gql`
 `;
 
 const RunHeaderTitle = ({run, runId}: {run: RunPageFragment | null; runId: string}) => {
-  const {flagLegacyRunsPage} = useFeatureFlags();
-
   const backfillTag = useMemo(
     () => run?.tags.find((tag) => tag.key === DagsterTag.Backfill),
     [run],
   );
 
-  if (!flagLegacyRunsPage && backfillTag) {
+  if (backfillTag) {
     return (
       <Heading>
         <Link to="/runs" style={{color: Colors.textLight()}}>

@@ -1,8 +1,7 @@
-import {Colors, Tabs, TokenizingFieldValue} from '@dagster-io/ui-components';
+import {Tabs, TokenizingFieldValue} from '@dagster-io/ui-components';
 import isEqual from 'lodash/isEqual';
 import {useMemo} from 'react';
 import {useLocation} from 'react-router-dom';
-import styled, {css} from 'styled-components';
 
 import {failedStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
 import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInput';
@@ -10,7 +9,6 @@ import {gql, useQuery} from '../apollo-client';
 import {RunFeedTabsCountQuery, RunFeedTabsCountQueryVariables} from './types/RunsFeedTabs.types';
 import {RunStatus, RunsFeedView, RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {AnchorButton} from '../ui/AnchorButton';
 import {TabLink} from '../ui/TabLink';
 
 type SelectedTab = ReturnType<typeof useSelectedRunsFeedTab>;
@@ -89,29 +87,6 @@ export const useRunsFeedTabs = (selectedTab: SelectedTab, filter: RunsFilter = {
 
   return {tabs, queryResult};
 };
-
-export const ActivatableButton = styled(AnchorButton)<{$active: boolean}>`
-  color: ${Colors.textLight()};
-
-  &&:hover {
-    color: ${Colors.textLight()};
-  }
-
-  ${({$active}) =>
-    $active
-      ? css`
-          background-color: ${Colors.backgroundLighterHover()};
-          color: ${Colors.textDefault()};
-
-          &&:hover {
-            background-color: ${Colors.backgroundLighterHover()};
-            color: ${Colors.textDefault()};
-          }
-        `
-      : css`
-          background-color: ${Colors.backgroundDefault()};
-        `}
-`;
 
 export const useSelectedRunsFeedTab = (
   filterTokens: TokenizingFieldValue[],

@@ -10,7 +10,6 @@ import {
 import {useMemo} from 'react';
 
 import {StatusDot} from './AutomaterializeLeftPanel';
-import {AutomaterializeRunsTable} from './AutomaterializeRunsTable';
 import {PartitionSubsetList} from './PartitionSubsetList';
 import {PartitionTagSelector} from './PartitionTagSelector';
 import {PolicyEvaluationTable} from './PolicyEvaluationTable';
@@ -20,7 +19,6 @@ import {
   GetEvaluationsSpecificPartitionQuery,
 } from './types/GetEvaluationsQuery.types';
 import {usePartitionsForAssetKey} from './usePartitionsForAssetKey';
-import {useFeatureFlags} from '../../app/Flags';
 import {formatElapsedTimeWithMsec} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
 import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
@@ -41,7 +39,6 @@ export const AutomaterializeMiddlePanelWithData = ({
   specificPartitionData,
   selectedPartition,
 }: Props) => {
-  const {flagLegacyRunsPage} = useFeatureFlags();
   const evaluation = selectedEvaluation?.evaluation;
   const rootEvaluationNode = useMemo(
     () => evaluation?.evaluationNodes.find((node) => node.uniqueId === evaluation.rootUniqueId),
@@ -153,16 +150,10 @@ export const AutomaterializeMiddlePanelWithData = ({
               </Box>
             </div>
           </Box>
-          <Box
-            border="bottom"
-            padding={{vertical: 12}}
-            margin={flagLegacyRunsPage ? {vertical: 12} : {top: 12}}
-          >
+          <Box border="bottom" padding={{vertical: 12}} margin={{top: 12}}>
             <Subtitle2>Runs launched ({selectedEvaluation.runIds.length})</Subtitle2>
           </Box>
-          {flagLegacyRunsPage ? (
-            <AutomaterializeRunsTable runIds={selectedEvaluation.runIds} />
-          ) : runsFilter ? (
+          {runsFilter ? (
             <RunsFeedTableWithFilters filter={runsFilter} includeRunsFromBackfills={false} />
           ) : (
             <Box padding={{vertical: 12}}>

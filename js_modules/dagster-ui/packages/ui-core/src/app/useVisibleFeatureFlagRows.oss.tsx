@@ -16,21 +16,4 @@ export const useVisibleFeatureFlagRows = () => [
     key: 'Disable automatically loading default config in launchpad',
     flagType: FeatureFlag.flagDisableAutoLoadDefaults,
   },
-  {
-    key: 'Revert to legacy Runs page',
-    flagType: FeatureFlag.flagLegacyRunsPage,
-    label: (
-      <>
-        Revert to legacy Runs page (
-        <a
-          href="https://github.com/dagster-io/dagster/discussions/24898"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Learn more
-        </a>
-        )
-      </>
-    ),
-  },
 ];

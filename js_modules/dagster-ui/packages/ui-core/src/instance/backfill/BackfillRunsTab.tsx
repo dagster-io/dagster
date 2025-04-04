@@ -1,27 +1,12 @@
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  Colors,
-  CursorHistoryControls,
-  ErrorBoundary,
-  NonIdealState,
-  Spinner,
-} from '@dagster-io/ui-components';
+import {Box, Button, ButtonGroup, Colors, ErrorBoundary} from '@dagster-io/ui-components';
 import React, {useDeferredValue, useMemo} from 'react';
 
 import {ExecutionTimeline} from './ExecutionTimeline';
 import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';
-import {useFeatureFlags} from '../../app/Flags';
-import {
-  FIFTEEN_SECONDS,
-  QueryRefreshCountdown,
-  useQueryRefreshAtInterval,
-} from '../../app/QueryRefresh';
+import {FIFTEEN_SECONDS, QueryRefreshCountdown} from '../../app/QueryRefresh';
 import {RunsFilter} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useTimelineRange} from '../../overview/OverviewTimelineRoot';
-import {RunTable} from '../../runs/RunTable';
 import {DagsterTag} from '../../runs/RunTag';
 import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {
@@ -31,15 +16,11 @@ import {
   useRunsFilterInput,
 } from '../../runs/RunsFilterInput';
 import {HourWindow} from '../../runs/useHourWindow';
-import {usePaginatedRunsTableRuns} from '../../runs/usePaginatedRunsTableRuns';
 import {useRunsForTimeline} from '../../runs/useRunsForTimeline';
-import {StickyTableContainer} from '../../ui/StickyTableContainer';
 
 const BACKFILL_RUNS_HOUR_WINDOW_KEY = 'dagster.backfill-run-timeline-hour-window';
 
 const BACKFILL_TAGS = [DagsterTag.Backfill];
-
-const PAGE_SIZE = 25;
 
 const filters: RunFilterTokenType[] = [
   'tag',
@@ -58,8 +39,6 @@ export const BackfillRunsTab = ({
   backfill: BackfillDetailsBackfillFragment;
   view: 'timeline' | 'list' | 'both';
 }) => {
-  const {flagLegacyRunsPage} = useFeatureFlags();
-
   const [_view, setView] = useQueryPersistedState<'timeline' | 'list'>({
     defaults: {view: 'timeline'},
     queryKey: 'view',
@@ -154,12 +133,6 @@ export const BackfillRunsTab = ({
       annotations={annotations}
       actionBarComponents={actionBarComponents}
     />
-  ) : flagLegacyRunsPage ? (
-    <ExecutionRunTable
-      filter={filter}
-      actionBarComponents={actionBarComponents}
-      belowActionBarComponents={belowActionBarComponents}
-    />
   ) : (
     <RunsFeedTableWithFilters
       filter={filter}
@@ -178,70 +151,6 @@ export const BackfillRunsTab = ({
         </Box>
       )}
     />
-  );
-};
-
-const ExecutionRunTable = ({
-  filter,
-  actionBarComponents,
-  belowActionBarComponents,
-}: {
-  filter: RunsFilter;
-  actionBarComponents: React.ReactNode;
-  belowActionBarComponents: React.ReactNode;
-}) => {
-  const {queryResult, paginationProps} = usePaginatedRunsTableRuns(filter, PAGE_SIZE);
-  const pipelineRunsOrError =
-    queryResult.data?.pipelineRunsOrError || queryResult.previousData?.pipelineRunsOrError;
-
-  const refreshState = useQueryRefreshAtInterval(queryResult, 15000);
-
-  if (!pipelineRunsOrError) {
-    return (
-      <Box padding={{vertical: 48}}>
-        <Spinner purpose="page" />
-      </Box>
-    );
-  }
-  if (pipelineRunsOrError.__typename !== 'Runs') {
-    return (
-      <Box padding={{vertical: 64}}>
-        <NonIdealState icon="error" title="Query error" description={pipelineRunsOrError.message} />
-      </Box>
-    );
-  }
-
-  return (
-    <>
-      <div style={{position: 'absolute', right: 16, top: -32}}>
-        <QueryRefreshCountdown refreshState={refreshState} />
-      </div>
-      <Box style={{flex: 1, overflowY: 'auto'}}>
-        <StickyTableContainer $top={56}>
-          <RunTable
-            runs={pipelineRunsOrError.results}
-            emptyState={() => (
-              <Box
-                padding={{vertical: 24}}
-                border="top-and-bottom"
-                flex={{direction: 'column', alignItems: 'center'}}
-              >
-                No runs have been launched.
-              </Box>
-            )}
-            actionBarComponents={actionBarComponents}
-            belowActionBarComponents={belowActionBarComponents}
-            loading={queryResult.loading}
-            actionBarSticky
-          />
-          {pipelineRunsOrError.results.length > 0 ? (
-            <Box margin={{vertical: 16}}>
-              <CursorHistoryControls {...paginationProps} />
-            </Box>
-          ) : null}
-        </StickyTableContainer>
-      </Box>
-    </>
   );
 };
 
