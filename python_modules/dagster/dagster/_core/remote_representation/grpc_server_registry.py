@@ -1,5 +1,6 @@
 import sys
 import threading
+from collections.abc import Sequence
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast
 
@@ -115,6 +116,10 @@ class GrpcServerRegistry(AbstractContextManager):
             daemon=True,
         )
         self._cleanup_thread.start()
+
+    @property
+    def all_processes(self) -> Sequence["GrpcServerProcess"]:
+        return self._all_processes
 
     def supports_origin(
         self, code_location_origin: CodeLocationOrigin
