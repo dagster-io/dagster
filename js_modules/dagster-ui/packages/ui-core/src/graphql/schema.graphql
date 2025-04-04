@@ -730,6 +730,7 @@ type AssetNode {
   opVersion: String
   partitionDefinition: PartitionDefinition
   partitionKeys: [String!]!
+  partitionKeyConnection(limit: Int!, ascending: Boolean!, cursor: String): PartitionKeyConnection
   partitionKeysByDimension(startIdx: Int, endIdx: Int): [DimensionPartitionKeys!]!
   pools: [String!]!
   repository: Repository!
@@ -913,6 +914,12 @@ type DimensionDefinitionType {
   type: PartitionDefinitionType!
   isPrimaryDimension: Boolean!
   dynamicPartitionsDefinitionName: String
+}
+
+type PartitionKeyConnection {
+  results: [String!]!
+  cursor: String!
+  hasMore: Boolean!
 }
 
 type DimensionPartitionKeys {
