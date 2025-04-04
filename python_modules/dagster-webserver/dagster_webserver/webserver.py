@@ -3,7 +3,7 @@ import io
 import mimetypes
 import os
 import uuid
-from os import path, walk
+from os import path
 from typing import Generic, Optional, TypeVar
 
 import dagster._check as check
