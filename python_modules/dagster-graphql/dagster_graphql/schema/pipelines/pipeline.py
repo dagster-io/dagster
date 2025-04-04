@@ -217,6 +217,14 @@ class GrapheneMaterializationHistoryConnection(graphene.ObjectType):
     cursor = graphene.NonNull(graphene.String)
 
 
+class GrapheneObservationEventConnection(graphene.ObjectType):
+    results = non_null_list(GrapheneObservationEvent)
+    cursor = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "ObservationEventConnection"
+
+
 class GrapheneAsset(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     key = graphene.NonNull(GrapheneAssetKey)
@@ -229,12 +237,13 @@ class GrapheneAsset(graphene.ObjectType):
         limit=graphene.Int(),
     )
     assetObservations = graphene.Field(
-        non_null_list(GrapheneObservationEvent),
+        graphene.NonNull(GrapheneObservationEventConnection),
         partitions=graphene.List(graphene.NonNull(graphene.String)),
         partitionInLast=graphene.Int(),
         beforeTimestampMillis=graphene.String(),
         afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
+        cursor=graphene.String(),
     )
     assetMaterializationHistory = graphene.Field(
         graphene.NonNull(GrapheneMaterializationHistoryConnection),
@@ -369,7 +378,7 @@ class GrapheneAsset(graphene.ObjectType):
         beforeTimestampMillis: Optional[str] = None,
         afterTimestampMillis: Optional[str] = None,
         limit: Optional[int] = None,
-    ) -> Sequence[GrapheneObservationEvent]:
+    ) -> Sequence[GrapheneObservationEventConnection]:
         from dagster_graphql.implementation.fetch_assets import get_asset_observations
 
         before_timestamp = parse_timestamp(beforeTimestampMillis)
@@ -377,17 +386,19 @@ class GrapheneAsset(graphene.ObjectType):
         if partitionInLast and self._definition:
             partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
 
-        return [
-            GrapheneObservationEvent(event=event)
-            for event in get_asset_observations(
-                graphene_info,
-                self.key,
-                partitions=partitions,
-                before_timestamp=before_timestamp,
-                after_timestamp=after_timestamp,
-                limit=limit,
-            )
-        ]
+        events, new_cursor = get_asset_observations(
+            graphene_info,
+            self.key,
+            partitions=partitions,
+            before_timestamp=before_timestamp,
+            after_timestamp=after_timestamp,
+            limit=limit,
+        )
+
+        return GrapheneObservationEventConnection(
+            results=[GrapheneObservationEvent(event=event) for event in events],
+            cursor=new_cursor,
+        )
 
 
 class GrapheneEventConnection(graphene.ObjectType):
