@@ -56,7 +56,7 @@ def scaffold_workspace(
     )
 
     if workspace_config is not None:
-        with modify_dg_toml_config(new_workspace_path / "pyproject.toml") as toml:
+        with modify_dg_toml_config(new_workspace_path / "dg.toml") as toml:
             for k, v in workspace_config.items():
                 # Ignore empty collections and None, but not False
                 if v != {} and v != [] and v is not None:

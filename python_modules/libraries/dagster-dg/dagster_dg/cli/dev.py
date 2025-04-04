@@ -110,7 +110,9 @@ def dev_command(
     if dg_context.is_workspace:
         os.environ["DAGSTER_PROJECT_ENV_FILE_PATHS"] = json.dumps(
             {
-                dg_context.with_root_path(project.path).code_location_name: str(project.path)
+                dg_context.with_root_path(
+                    dg_context.workspace_root_path / project.path
+                ).code_location_name: str(project.path)
                 for project in dg_context.project_specs
             }
         )

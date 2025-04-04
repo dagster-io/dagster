@@ -1,0 +1,7 @@
+directory_type = "workspace"
+
+[workspace]
+[workspace.scaffold_project_options]
+use_editable_dagster = true
+[[workspace.projects]]
+path = "projects/project-1"
