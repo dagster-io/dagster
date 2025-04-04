@@ -24,29 +24,25 @@ export const RunRowTags = ({
   run,
   onAddTag,
   isHovered,
-  isJob,
   hideTags,
-  hidePartition,
 }: {
   run: Pick<RunTableRunFragment, 'tags' | 'assetSelection' | 'mode'>;
   onAddTag?: (token: RunFilterToken) => void;
   isHovered: boolean;
-  isJob: boolean;
   hideTags?: string[];
-  hidePartition?: boolean;
 }) => {
   const {isTagPinned, onToggleTagPin} = useTagPinning();
   const [showRunTags, setShowRunTags] = React.useState(false);
 
   const allTagsWithPinned = React.useMemo(() => {
     const allTags: Omit<PipelineTag, '__typename'>[] = [...run.tags];
-    if ((isJob && run.mode !== 'default') || !isJob) {
+    if (run.mode !== 'default') {
       allTags.push({key: 'mode', value: run.mode});
     }
     return allTags.map((tag) => {
       return {...tag, pinned: isTagPinned(tag)};
     });
-  }, [run, isJob, isTagPinned]);
+  }, [run, isTagPinned]);
 
   const tagsToShow = React.useMemo(() => {
     const targetBackfill = allTagsWithPinned.find((tag) => tag.key === DagsterTag.Backfill);
@@ -69,7 +65,7 @@ export const RunRowTags = ({
       if (hideTags?.includes(tag.key)) {
         return;
       }
-      if (hidePartition && tag.key === DagsterTag.Partition) {
+      if (tag.key === DagsterTag.Partition) {
         return;
       }
       if (tag.pinned) {
@@ -77,7 +73,7 @@ export const RunRowTags = ({
       }
     });
     return tags;
-  }, [allTagsWithPinned, hideTags, hidePartition, run.assetSelection?.length]);
+  }, [allTagsWithPinned, hideTags, run.assetSelection?.length]);
 
   return (
     <>

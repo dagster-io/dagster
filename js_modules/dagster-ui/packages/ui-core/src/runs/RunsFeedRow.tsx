@@ -124,11 +124,9 @@ export const RunsFeedRow = ({
 
             <RunRowTags
               run={{...entry, mode: 'default'}}
-              isJob={true}
               isHovered={isHovered}
               onAddTag={onAddTag}
               hideTags={hideTags}
-              hidePartition
             />
 
             {entry.runStatus === RunStatus.QUEUED ? (
@@ -147,10 +145,8 @@ export const RunsFeedRow = ({
       <RowCell style={{flexDirection: 'row', alignItems: 'flex-start'}}>
         {entry.__typename === 'Run' ? (
           <RunTargetLink
-            isJob={true}
             run={{...entry, pipelineName: entry.jobName!, stepKeysToExecute: []}}
             repoAddress={repoAddress}
-            useTags={true}
             extraTags={
               partitionTag
                 ? [<RunTags key="partition" tags={[partitionTag]} onAddTag={onAddTag} />]
