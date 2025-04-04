@@ -1,30 +1,15 @@
 from dataclasses import dataclass
-from typing import Literal, NamedTuple, Optional, Union
 
 import dagster as dg
 import pandas as pd
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster.components import Component, ComponentLoadContext, Model, Resolvable
-from typing_extensions import TypeAlias
+from dagster.components import Component, ComponentLoadContext, Resolvable
 
-from components_yaml_checks_dsl.components_yaml_checks_dsl.lib.hooli_asset_checks.engine import (
-    evaluate_static_threshold,
+from components_yaml_checks_dsl.lib.hooli_asset_checks.check_types import (
+    HooliAssetCheck,
+    StaticThresholdCheck,
 )
-
-HooliAssetCheckType: TypeAlias = Literal["static_threshold"]
-
-
-class StaticThresholdCheck(Model):
-    type: Literal["static_threshold"]
-    asset: str
-    check_name: str
-    metric: str
-    min: Optional[int]
-    max: Optional[int]
-
-
-# HooliAssetCheck: TypeAlias = Union[StaticThresholdCheck]
-HooliAssetCheck: TypeAlias = StaticThresholdCheck
+from components_yaml_checks_dsl.lib.hooli_asset_checks.engine import evaluate_static_threshold
 
 
 @dataclass
@@ -55,51 +40,7 @@ def build_static_threshold_asset_check(check: StaticThresholdCheck):
         asset=dg.AssetKey.from_user_string(check.asset),
         name=check.check_name,
     )
-    def _check() -> dg.AssetCheckResult:
-        df = pd.DataFrame()  # todo get from upstream
-
-        metric = build_metric(df, check.metric)
-        assert isinstance(metric, ValueMetric)
-
-        return evaluate_static_threshold(
-            min_value=check.min,
-            max_value=check.max,
-            latest_value=metric.value,
-        )
+    def _check(users: pd.DataFrame) -> dg.AssetCheckResult:
+        return evaluate_static_threshold(users, check)
 
     return _check
-
-
-class NumRowsMetric(NamedTuple):
-    num_rows: int
-
-
-class ValueMetric(NamedTuple):
-    column: str
-    metric_type: str
-    value: int
-
-
-Metric: TypeAlias = Union[NumRowsMetric, ValueMetric]
-
-
-def column_name(metric_str: str) -> str:
-    """Extracts the column name from a metric string."""
-    return metric_str.split(":")[1]
-
-
-def build_metric(asset_data, metric_str: str) -> "Metric":
-    if metric_str == "num_rows":
-        return NumRowsMetric(num_rows=len(asset_data))
-    elif ":" in metric_str:
-        metric_type, column_name = metric_str.split(":")[0], metric_str.split(":")[1]
-        if metric_type == "sum":
-            return ValueMetric(
-                column=column_name,
-                value=asset_data[column_name].sum(),
-                metric_type=metric_type,
-            )
-        else:
-            raise ValueError(f"Unknown metric: {metric_str}")
-    else:
-        raise ValueError(f"Unknown metric: {metric_str}")
