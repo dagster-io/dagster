@@ -24,6 +24,7 @@ from dagster._utils import return_as_list
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
+    from dagster._core.instance import DagsterInstance
     from dagster._daemon.daemon import DaemonIterator
 
 
@@ -140,6 +141,78 @@ def _is_retryable_asset_backfill_error(e: Exception):
     return not isinstance(e, (DagsterError, check.CheckError))
 
 
+def execute_backfill_iteration_with_instigation_logger(
+    backfill: "PartitionBackfill",
+    logger: logging.Logger,
+    workspace_process_context: IWorkspaceProcessContext,
+    instance: "DagsterInstance",
+    debug_crash_flags: Optional[Mapping[str, int]] = None,
+) -> Iterable:
+    with _get_instigation_logger_if_log_storage_enabled(instance, backfill, logger) as _logger:
+        # create a logger that will always include the backfill_id as an `extra`
+        backfill_logger = cast(
+            logging.Logger,
+            logging.LoggerAdapter(_logger, extra={"backfill_id": backfill.backfill_id}),
+        )
+        try:
+            if backfill.is_asset_backfill:
+                yield from execute_asset_backfill_iteration(
+                    backfill, backfill_logger, workspace_process_context, instance
+                )
+            else:
+                yield from execute_job_backfill_iteration(
+                    backfill,
+                    backfill_logger,
+                    workspace_process_context,
+                    debug_crash_flags,
+                    instance,
+                )
+        except Exception as e:
+            backfill = check.not_none(instance.get_backfill(backfill.backfill_id))
+            if (
+                backfill.is_asset_backfill
+                and backfill.status == BulkActionStatus.REQUESTED
+                and backfill.failure_count < _get_max_asset_backfill_retries()
+                and _is_retryable_asset_backfill_error(e)
+            ):
+                if isinstance(e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)):
+                    try:
+                        raise DagsterUserCodeUnreachableError(
+                            "Unable to reach the code server. Backfill will resume once the code server is available."
+                        ) from e
+                    except:
+                        error_info = DaemonErrorCapture.process_exception(
+                            sys.exc_info(),
+                            logger=backfill_logger,
+                            log_message=f"Backfill failed for {backfill.backfill_id} due to unreachable code server and will retry",
+                        )
+                        instance.update_backfill(backfill.with_error(error_info))
+                else:
+                    error_info = DaemonErrorCapture.process_exception(
+                        sys.exc_info(),
+                        logger=backfill_logger,
+                        log_message=f"Backfill failed for {backfill.backfill_id} and will retry.",
+                    )
+                    instance.update_backfill(
+                        backfill.with_error(error_info).with_failure_count(
+                            backfill.failure_count + 1
+                        )
+                    )
+            else:
+                error_info = DaemonErrorCapture.process_exception(
+                    sys.exc_info(),
+                    logger=backfill_logger,
+                    log_message=f"Backfill failed for {backfill.backfill_id}",
+                )
+                instance.update_backfill(
+                    backfill.with_status(BulkActionStatus.FAILED)
+                    .with_error(error_info)
+                    .with_failure_count(backfill.failure_count + 1)
+                    .with_end_timestamp(get_current_timestamp())
+                )
+            yield error_info
+
+
 def execute_backfill_jobs(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
@@ -155,100 +228,41 @@ def execute_backfill_jobs(
 
         # refetch, in case the backfill was updated in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
-        with _get_instigation_logger_if_log_storage_enabled(instance, backfill, logger) as _logger:
-            # create a logger that will always include the backfill_id as an `extra`
-            backfill_logger = cast(
-                logging.Logger,
-                logging.LoggerAdapter(_logger, extra={"backfill_id": backfill.backfill_id}),
+
+        try:
+            if threadpool_executor:
+                if backfill_futures is None:
+                    check.failed("backfill_futures dict must be passed with threadpool_executor")
+
+                # only allow one backfill per backfill job to be in flight
+                if backfill_id in backfill_futures and not backfill_futures[backfill_id].done():
+                    continue
+
+                future = threadpool_executor.submit(
+                    return_as_list(execute_backfill_iteration_with_instigation_logger),
+                    backfill,
+                    logger,
+                    workspace_process_context,
+                    instance,
+                    debug_crash_flags,
+                )
+
+                backfill_futures[backfill_id] = future
+                yield
+
+            else:
+                yield from execute_backfill_iteration_with_instigation_logger(
+                    backfill,
+                    logger,
+                    workspace_process_context,
+                    instance,
+                    debug_crash_flags,
+                )
+
+        except Exception:
+            error_info = DaemonErrorCapture.process_exception(
+                exc_info=sys.exc_info(),
+                logger=logger,
+                log_message=f"BackfillDaemon caught an error for backfill {backfill_id}",
             )
-
-            try:
-                if threadpool_executor:
-                    if backfill_futures is None:
-                        check.failed(
-                            "backfill_futures dict must be passed with threadpool_executor"
-                        )
-
-                    # only allow one backfill per backfill job to be in flight
-                    if backfill_id in backfill_futures and not backfill_futures[backfill_id].done():
-                        continue
-
-                    if backfill.is_asset_backfill:
-                        future = threadpool_executor.submit(
-                            return_as_list(execute_asset_backfill_iteration),
-                            backfill,
-                            backfill_logger,
-                            workspace_process_context,
-                            instance,
-                        )
-                    else:
-                        future = threadpool_executor.submit(
-                            return_as_list(execute_job_backfill_iteration),
-                            backfill,
-                            backfill_logger,
-                            workspace_process_context,
-                            debug_crash_flags,
-                            instance,
-                        )
-                    backfill_futures[backfill_id] = future
-                    yield
-
-                else:
-                    if backfill.is_asset_backfill:
-                        yield from execute_asset_backfill_iteration(
-                            backfill, backfill_logger, workspace_process_context, instance
-                        )
-                    else:
-                        yield from execute_job_backfill_iteration(
-                            backfill,
-                            backfill_logger,
-                            workspace_process_context,
-                            debug_crash_flags,
-                            instance,
-                        )
-            except Exception as e:
-                backfill = check.not_none(instance.get_backfill(backfill.backfill_id))
-                if (
-                    backfill.is_asset_backfill
-                    and backfill.status == BulkActionStatus.REQUESTED
-                    and backfill.failure_count < _get_max_asset_backfill_retries()
-                    and _is_retryable_asset_backfill_error(e)
-                ):
-                    if isinstance(
-                        e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
-                    ):
-                        try:
-                            raise DagsterUserCodeUnreachableError(
-                                "Unable to reach the code server. Backfill will resume once the code server is available."
-                            ) from e
-                        except:
-                            error_info = DaemonErrorCapture.process_exception(
-                                sys.exc_info(),
-                                logger=backfill_logger,
-                                log_message=f"Backfill failed for {backfill.backfill_id} due to unreachable code server and will retry",
-                            )
-                            instance.update_backfill(backfill.with_error(error_info))
-                    else:
-                        error_info = DaemonErrorCapture.process_exception(
-                            sys.exc_info(),
-                            logger=backfill_logger,
-                            log_message=f"Backfill failed for {backfill.backfill_id} and will retry.",
-                        )
-                        instance.update_backfill(
-                            backfill.with_error(error_info).with_failure_count(
-                                backfill.failure_count + 1
-                            )
-                        )
-                else:
-                    error_info = DaemonErrorCapture.process_exception(
-                        sys.exc_info(),
-                        logger=backfill_logger,
-                        log_message=f"Backfill failed for {backfill.backfill_id}",
-                    )
-                    instance.update_backfill(
-                        backfill.with_status(BulkActionStatus.FAILED)
-                        .with_error(error_info)
-                        .with_failure_count(backfill.failure_count + 1)
-                        .with_end_timestamp(get_current_timestamp())
-                    )
-                yield error_info
+            yield error_info
