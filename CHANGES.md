@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.10.9 (core) / 0.26.9 (libraries)
+
+### Bugfixes
+
+- [ui] Fix custom time datepicker filter selection for users with custom Dagster timezone settings.
+
+### dg & Components (Preview)
+
+- Add support for `dg.toml` files. `dg` settings in `pyproject.toml` are set under `tool.dg`, but in `dg.toml` they are set at the top level. A `dg.toml` may be used in place of `pyproject.toml` at either the project or workspace level.
+- `dg`-scaffolded workspaces now include a `dg.toml` instead of `pyproject.toml` file.
+- `dg`-scaffolded projects now place the root package in an `src/` directory and use `hatchling` as the build backend rather than `setuptools`.
+- Fixed a bug where `dg` would crash when working with Python packages with an src-based layout.
+
 ## 1.10.8 (core) / 0.26.8 (libraries)
 
 ### New
