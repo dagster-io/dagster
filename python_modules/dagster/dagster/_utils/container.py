@@ -325,7 +325,7 @@ def _retrieve_containerized_cpu_cfs_quota_us_v1(
             return float(f.read())
     except:
         if logger:
-            logger.exception("Failed to retrieve CPU quota from cgroup")
+            logger.debug("Failed to retrieve CPU quota from cgroup", exc_info=True)
         return None
 
 
@@ -339,7 +339,8 @@ def _retrieve_containerized_cpu_cfs_quota_us_v2(
             return float(line.split()[0])
     except:
         if logger:
-            logger.exception(
-                "Failed to retrieve CPU quota from cgroup. There might be not limit set on the container."
+            logger.debug(
+                "Failed to retrieve CPU quota from cgroup. There might not be a limit set on the container.",
+                exc_info=True,
             )
         return None
