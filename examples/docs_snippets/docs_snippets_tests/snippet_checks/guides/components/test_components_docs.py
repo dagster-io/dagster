@@ -154,9 +154,11 @@ def test_components_docs_index(update_snippets: bool) -> None:
         ):
             run_command_and_snippet_output(
                 cmd=textwrap.dedent("""
+                    pushd src/jaffle_platform/defs/ingest_files &&
                     curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv &&
                     curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_orders.csv &&
-                    curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv
+                    curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_payments.csv &&
+                    popd
                 """).strip(),
                 snippet_path=COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-curl.txt",
                 update_snippets=update_snippets,
