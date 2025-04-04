@@ -11,6 +11,12 @@ class SimpleAssetComponent(Component, Resolvable, Model):
     asset_key: str
     value: str
 
+    def get_author():
+        return "John Smith"
+
+    def get_tags():
+        return ["a", "b", "c"]
+
     def __init__(self, asset_key: AssetKey, value: str):
         self._asset_key = asset_key
         self._value = value

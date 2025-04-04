@@ -47,6 +47,8 @@ def _get_component_type_snap(key: LibraryObjectKey, obj: type[Component]) -> Com
         key=key,
         summary=summary,
         description=description,
+        author=obj.get_author(),
+        tags=obj.get_tags(),
         schema=model_cls.model_json_schema() if model_cls else None,
         scaffolder=_get_scaffolder_snap(obj),
     )
@@ -55,7 +57,12 @@ def _get_component_type_snap(key: LibraryObjectKey, obj: type[Component]) -> Com
 def _get_library_object_snap(key: LibraryObjectKey, obj: object) -> LibraryObjectSnap:
     summary, description = _get_summary_and_description(obj)
     return LibraryObjectSnap(
-        key=key, summary=summary, description=description, scaffolder=_get_scaffolder_snap(obj)
+        key=key,
+        summary=summary,
+        description=description,
+        author=None,
+        tags=None,
+        scaffolder=_get_scaffolder_snap(obj),
     )
 
 
