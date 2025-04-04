@@ -118,6 +118,7 @@ def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
 
 
 ConfigFileType: TypeAlias = Literal["dg.toml", "pyproject.toml"]
+PackageLayoutType: TypeAlias = Literal["root", "src"]
 
 
 @contextmanager
@@ -195,6 +196,7 @@ def isolated_example_project_foo_bar(
     populate_cache: bool = False,
     component_dirs: Sequence[Path] = [],
     config_file_type: ConfigFileType = "pyproject.toml",
+    package_layout: PackageLayoutType = "root",
 ) -> Iterator[None]:
     """Scaffold a project named foo_bar in an isolated filesystem.
 
@@ -229,6 +231,19 @@ def isolated_example_project_foo_bar(
                 Path("foo-bar") / "pyproject.toml",
                 Path("foo-bar") / "dg.toml",
             )
+        if package_layout == "src":
+            # Move the src directory to the root of the project
+            src_dir = Path("foo-bar") / "src"
+            src_dir.mkdir()
+            shutil.move(Path("foo-bar/foo_bar"), src_dir / "foo_bar")
+
+            with modify_toml_as_dict(Path("foo-bar/pyproject.toml")) as toml:
+                set_toml_node(toml, ("tool", "setuptools", "package-dir"), {"": "src"})
+                set_toml_node(toml, ("tool", "setuptools", "packages", "find"), {"where": ["src"]})
+
+            # Reinstall to venv since package root changed
+            install_to_venv(Path("foo-bar/.venv"), ["-e", "foo-bar"])
+
         with clear_module_from_cache("foo_bar"), pushd(project_path):
             # _install_libraries_to_venv(Path(".venv"), ["dagster-test"])
             for src_dir in component_dirs:
