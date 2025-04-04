@@ -35,6 +35,10 @@ def test_load_defs() -> None:
     defs_obj = defs()
     assert isinstance(defs_obj, Definitions)
 
+    assert defs_obj.get_repository_def()
+
+    assert AssetKey(["RAW_DATA", "users"]) in {spec.key for spec in defs_obj.get_all_asset_specs()}
+
     check_specs = checks_specs_by_key(defs_obj)
     assert raw_ck("users", "user_count_static_threshold") in check_specs
 
@@ -74,8 +78,13 @@ def test_execute_component() -> None:
         component.build_defs(ComponentLoadContext.for_test()), Definitions([upstream])
     )
 
+    assert AssetKey("upstream") in {spec.key for spec in defs.get_all_asset_specs()}
+
+    assert defs.get_repository_def()
+
     check_def = get_check_def(
-        defs, AssetCheckKey(AssetKey("upstream"), "user_count_static_threshold")
+        defs,
+        AssetCheckKey(AssetKey("upstream"), "user_count_static_threshold"),
     )
 
     result = materialize([upstream, check_def])
