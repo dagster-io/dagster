@@ -43,6 +43,10 @@ export function getXAxisForParams(
   return xAxis;
 }
 
+type Params = Pick<AssetViewParams, 'asOf' | 'partition' | 'time'> & {
+  limit?: number;
+};
+
 /**
  * If the asset has a defined partition space, we load all materializations in the
  * last 100 partitions. This ensures that if you run a huge backfill of old partitions,
@@ -51,9 +55,7 @@ export function getXAxisForParams(
  */
 export function useRecentAssetEvents(
   assetKey: AssetKey | undefined,
-  params: Pick<AssetViewParams, 'asOf' | 'partition' | 'time'> & {
-    partitionKeys?: string[];
-  },
+  params: Params,
   {assetHasDefinedPartitions}: {assetHasDefinedPartitions: boolean},
 ) {
   const before = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
@@ -70,12 +72,13 @@ export function useRecentAssetEvents(
           before,
           partitionInLast: 120,
           eventTypeSelector: MaterializationHistoryEventTypeSelector.ALL,
+          limit: params.limit ?? 100,
         }
       : {
           assetKey: {path: assetKey?.path ?? []},
           before,
-          limit: 100,
           eventTypeSelector: MaterializationHistoryEventTypeSelector.ALL,
+          limit: params.limit ?? 100,
         },
   });
   const {data, loading, refetch} = queryResult;

@@ -11,6 +11,7 @@
   "AssetForNavigationQuery": "eb695ab88044ddd7068ea0dc1e2482eaba1fcb11b83de11050ff52f55e83ed3d",
   "AssetDefinitionCollisionQuery": "84027ea05480797a69eb150ce07ac7dfd40d6007a8107f90a6c558cf3a2662f5",
   "AssetGroupMetadataQuery": "649fd8034ea453acebec574365ec19b678930cdbc976f5da2addfe40f985886f",
+  "GetAssetHealth": "5416141b420dea60cd5eb905d8c0d9cab50bd8932013fc6702a15758d200f23c",
   "AssetMaterializationUpstreamQuery": "754bab88738acc8d310c71f577ac3cf06dc57950bb1f98a18844e6e00bae756d",
   "AssetPartitionDetailQuery": "a5a3c782894d7365cbf791c57bdec279cbccd809cd2d0dc5fd31df1e6237b927",
   "AssetPartitionStaleQuery": "4215f4014e9d7592142e1775c4b07377703e913389396f9ca14dc6bb779ce764",

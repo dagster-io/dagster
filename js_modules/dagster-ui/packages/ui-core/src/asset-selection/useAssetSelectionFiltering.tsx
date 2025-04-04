@@ -55,9 +55,6 @@ export const useAssetSelectionFiltering = <
   );
 
   const filtered = useMemo(() => {
-    if (!assetSelection) {
-      return assets ?? [];
-    }
     return (
       graphAssetKeys
         .map((key) => {
