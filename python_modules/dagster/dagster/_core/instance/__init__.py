@@ -37,6 +37,7 @@ from dagster._core.definitions.asset_check_evaluation import (
 )
 from dagster._core.definitions.data_version import extract_data_provenance_from_entry
 from dagster._core.definitions.events import AssetKey, AssetObservation
+from dagster._core.definitions.freshness import FreshnessStateEvaluation
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
     DagsterHomeNotSetError,
@@ -3351,7 +3352,12 @@ class DagsterInstance(DynamicPartitionsStore):
     @public
     def report_runless_asset_event(
         self,
-        asset_event: Union["AssetMaterialization", "AssetObservation", "AssetCheckEvaluation"],
+        asset_event: Union[
+            "AssetMaterialization",
+            "AssetObservation",
+            "AssetCheckEvaluation",
+            "FreshnessStateEvaluation",
+        ],
     ):
         """Record an event log entry related to assets that does not belong to a Dagster run."""
         from dagster._core.events import (
@@ -3371,10 +3377,13 @@ class DagsterInstance(DynamicPartitionsStore):
         elif isinstance(asset_event, AssetObservation):
             event_type_value = DagsterEventType.ASSET_OBSERVATION.value
             data_payload = AssetObservationData(asset_event)
+        elif isinstance(asset_event, FreshnessStateEvaluation):
+            event_type_value = DagsterEventType.FRESHNESS_STATE_EVALUATION.value
+            data_payload = asset_event
         else:
             raise DagsterInvariantViolationError(
                 f"Received unexpected asset event type {asset_event}, expected"
-                " AssetMaterialization, AssetObservation or AssetCheckEvaluation"
+                " AssetMaterialization, AssetObservation, AssetCheckEvaluation or FreshnessEvaluation"
             )
 
         return self.report_dagster_event(
