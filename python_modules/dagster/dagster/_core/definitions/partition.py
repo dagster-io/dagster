@@ -80,7 +80,7 @@ class TemporalContext:
 
     Note that insertion time of the last_event_id is not the same as the effective time.
 
-    A last_event_id of None indicates that the reads will be volatile will immediately
+    A last_event_id of None indicates that the reads will be volatile and will immediately
     reflect any subsequent writes.
     """
 

@@ -523,7 +523,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
             offset_time_windows = []
             if self.end_offset > 0 and self.end_offset > offset_partitions_count:
                 last_no_offset_time_window = next(
-                    iter(self._reverse_iterate_time_windows(end_timestamp))
+                    iter(self._reverse_iterate_time_windows(end_timestamp)), None
                 )
                 lookforward_time = (
                     last_no_offset_time_window.end.timestamp()
