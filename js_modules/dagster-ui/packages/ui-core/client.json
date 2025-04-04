@@ -47,11 +47,7 @@
   "AssetOverviewMetadataEventsQuery": "dd693e04c3afdca2ec362a298c39efa343ff4371e802496c04e74271fb7f679d",
   "PartitionHealthQuery": "4f37a772c8f0e07cf2d76c18915a2a9c393fa8ea6a7b2ad355b80a225c8fe2af",
   "AssetJobPartitionSetsQuery": "43286e824ac1f7d1b30c6744ad472c034d8ed257675a720ac53bcf929e0bc7f7",
-<<<<<<< HEAD
-  "AssetEventsQuery": "e7c886a06e0337a95eb966cef1c1bcc12fb11929ad63c761f1b119102ffe1e09",
-=======
-  "AssetEventsQuery": "669da62d26b1bb6e0989decf1dead0cb7277569177e5f24d86b4a179d672fd2a",
->>>>>>> 91acd66000 (cursor for observations on graphene asset)
+  "AssetEventsQuery": "fcb5311e32b51552a68e40aca83eb48e217acb06b6f27c64d709b7a1ba64e2d4",
   "ReportEventPartitionDefinitionQuery": "e306421344493a9986106de14bca90ec554505d6f1965991ba502725edc41c95",
   "ReportEventMutation": "80b4987cdf27ec8fac25eb6b98b996bd4fdeb4cbfff605d647da5d4bb8244cb0",
   "AssetWipeMutation": "accefb0c47b3d4a980d16965e8af565afed787a8a987a03570df876bd734dc8f",

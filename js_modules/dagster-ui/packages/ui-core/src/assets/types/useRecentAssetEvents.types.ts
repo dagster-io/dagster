@@ -758,26 +758,11 @@ export type AssetEventsQuery = {
                 }
             >;
           }>;
-<<<<<<< HEAD
-        }>;
+        };
         assetMaterializationHistory: {
           __typename: 'MaterializationHistoryConnection';
           cursor: string;
           results: Array<
-=======
-        };
-        assetMaterializations: Array<{
-          __typename: 'MaterializationEvent';
-          partition: string | null;
-          runId: string;
-          timestamp: string;
-          stepKey: string | null;
-          label: string | null;
-          description: string | null;
-          tags: Array<{__typename: 'EventTag'; key: string; value: string}>;
-          runOrError:
-            | {__typename: 'PythonError'}
->>>>>>> e2bf5cb58a (fix)
             | {
                 __typename: 'FailedToMaterializeEvent';
                 runId: string;
@@ -1197,8 +1182,4 @@ export type AssetEventsQuery = {
     | {__typename: 'AssetNotFoundError'};
 };
 
-<<<<<<< HEAD
-export const AssetEventsQueryVersion = 'e7c886a06e0337a95eb966cef1c1bcc12fb11929ad63c761f1b119102ffe1e09';
-=======
-export const AssetEventsQueryVersion = '669da62d26b1bb6e0989decf1dead0cb7277569177e5f24d86b4a179d672fd2a';
->>>>>>> 91acd66000 (cursor for observations on graphene asset)
+export const AssetEventsQueryVersion = 'fcb5311e32b51552a68e40aca83eb48e217acb06b6f27c64d709b7a1ba64e2d4';
