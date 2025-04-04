@@ -14,6 +14,7 @@ class ShellCommand(Component, Resolvable):
     # added fields here will define yaml schema via Resolvable
 
 
+
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         # Add definition construction logic here.
         return dg.Definitions()

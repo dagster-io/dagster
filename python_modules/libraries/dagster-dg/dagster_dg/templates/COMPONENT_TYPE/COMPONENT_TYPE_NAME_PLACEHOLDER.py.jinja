@@ -14,11 +14,9 @@ class {{ name }}(Component, Resolvable):
 
     COMPONENT DESCRIPTION HERE.
     """
-{% if dataclass -%}
-
+{% if dataclass %}
     # added fields here will define yaml schema via Resolvable
-
-{% endif -%}
+{% endif %}
 
 {% if not dataclass %}
     def __init__(
