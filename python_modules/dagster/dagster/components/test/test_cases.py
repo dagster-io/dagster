@@ -75,6 +75,16 @@ COMPONENT_VALIDATION_TEST_CASES = [
         ),
     ),
     ComponentValidationTestCase(
+        component_path="validation/basic_component_extra_value_in_a_subfolder",
+        component_type_filepath=None,
+        should_error=True,
+        validate_error_msg=msg_includes_all_of("component.yaml:4", "attributes.path"),
+        check_error_msg=msg_includes_all_of(
+            "component.yaml:4",
+            "attributes.path",
+        ),
+    ),
+    ComponentValidationTestCase(
         component_path="validation/nested_component_invalid_values",
         component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
         should_error=True,

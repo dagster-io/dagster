@@ -58,7 +58,7 @@ def check_yaml(
 
     component_contents_by_key: dict[LibraryObjectKey, Any] = {}
     modules_to_fetch = set()
-    for component_dir in dg_context.defs_path.iterdir():
+    for component_dir in dg_context.defs_path.rglob("*"):
         if resolved_paths and not any(
             path == component_dir or path in component_dir.parents for path in resolved_paths
         ):
