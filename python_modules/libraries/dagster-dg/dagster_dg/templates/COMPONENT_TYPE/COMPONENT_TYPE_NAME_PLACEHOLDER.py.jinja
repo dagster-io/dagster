@@ -14,6 +14,9 @@ class {{ name }}(Component, Resolvable):
 
     COMPONENT DESCRIPTION HERE.
     """
+
+    # added fields here will define yaml schema via Resolvable
+
 {% if not dataclass %}
     def __init__(
         self,

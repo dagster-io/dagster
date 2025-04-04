@@ -33,7 +33,11 @@ This will add a new file to your project in the `lib` directory:
   title="my_component_library/lib/shell_command.py"
 />
 
-This file contains the basic structure for the new component type. Our goal is to implement the `build_defs` method to return a `Definitions`. This will require some input input which we will define as what our component class is instantiated with.
+This file contains the basic structure for the new component type. Our goal is to implement the `build_defs` method to return a `Definitions`. This will require some input which we will define as what our component class is instantiated with.
+
+:::note
+The use of `@dataclass` is optional. If you wish to implement an `__init__` method for your class, you can provide the `--no-dataclass` flag to the `dg scaffold` command.
+:::
 
 ## Defining the Python class
 
