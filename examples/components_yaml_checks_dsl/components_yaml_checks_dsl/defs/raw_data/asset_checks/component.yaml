@@ -3,13 +3,13 @@ type: components_yaml_checks_dsl.lib.HooliAssetChecksComponent
 attributes:
   checks:
     # ───── Static Thresholds ─────
-    - asset: RAW_DATA/users
+    - type: static_threshold
+      asset: RAW_DATA/users
       check_name: user_count_static_threshold
-      type: static_threshold
       min: 500
-    - asset: RAW_DATA.orders
+    - type: static_threshold
+      asset: RAW_DATA.orders
       check_name: total_amount_static_threshold
-      type: static_threshold
       metric: sum:amount
       min: 1000
       max: 100000

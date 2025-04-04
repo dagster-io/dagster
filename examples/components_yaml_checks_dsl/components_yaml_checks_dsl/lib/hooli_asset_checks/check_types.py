@@ -5,7 +5,7 @@ from typing_extensions import TypeAlias
 
 
 class StaticThresholdCheck(Model):
-    type: Literal["static_threshold"]
+    type: str
     asset: str
     check_name: str
     metric: str

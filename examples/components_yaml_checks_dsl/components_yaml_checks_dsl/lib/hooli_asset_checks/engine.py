@@ -43,9 +43,13 @@ def build_metric(asset_data, metric_str: str) -> "Metric":
         raise ValueError(f"Unknown metric: {metric_str}")
 
 
+import dagster_shared.check
+
+
 def evaluate_static_threshold(df: pd.DataFrame, check: StaticThresholdCheck) -> dg.AssetCheckResult:
     metric = build_metric(df, check.metric)
-    assert isinstance(metric, ValueMetric)
+    # assert isinstance(metric, ValueMetric)
+    metric = dagster_shared.check.inst(metric, ValueMetric)
     return evaluate_static_threshold_values(
         latest_value=metric.value,
         min_value=check.min,
