@@ -2,10 +2,19 @@ import json
 from collections.abc import Sequence
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import click
+from dagster_shared import check
+from dagster_shared.serdes import deserialize_value
 from dagster_shared.serdes.objects import PackageObjectSnap
+from dagster_shared.serdes.objects.definition_metadata import (
+    DgAssetMetadata,
+    DgDefinitionMetadata,
+    DgJobMetadata,
+    DgScheduleMetadata,
+    DgSensorMetadata,
+)
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
@@ -14,14 +23,6 @@ from dagster_dg.cli.shared_options import dg_global_options
 from dagster_dg.component import PackageObjectFeature, RemotePackageRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
-from dagster_dg.defs import (
-    DgAssetMetadata,
-    DgDefinitionMetadata,
-    DgJobMetadata,
-    DgScheduleMetadata,
-    DgSensorMetadata,
-)
-from dagster_dg.error import DgError
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
@@ -264,7 +265,7 @@ def list_defs_command(output_json: bool, **global_options: object) -> None:
         # before that option was added
         additional_env={"DG_CLI_LIST_DEFINITIONS_LOCATION": dg_context.code_location_name},
     )
-    definitions = [_resolve_definition(x) for x in json.loads(result)]
+    definitions = check.is_list(deserialize_value(result), DgDefinitionMetadata)
 
     # JSON
     if output_json:  # pass it straight through
@@ -297,16 +298,3 @@ def list_defs_command(output_json: bool, **global_options: object) -> None:
             table.add_row("Sensor", _get_sensors_table(sensors))
 
         console.print(table)
-
-
-def _resolve_definition(item: dict[str, Any]) -> DgDefinitionMetadata:
-    if item["type"] == "asset":
-        return DgAssetMetadata(**item)
-    elif item["type"] == "job":
-        return DgJobMetadata(**item)
-    elif item["type"] == "schedule":
-        return DgScheduleMetadata(**item)
-    elif item["type"] == "sensor":
-        return DgSensorMetadata(**item)
-    else:
-        raise DgError(f"Unexpected item type: {item['type']}")

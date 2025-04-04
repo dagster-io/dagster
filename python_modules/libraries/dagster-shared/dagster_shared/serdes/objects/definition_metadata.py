@@ -1,38 +1,40 @@
-from dataclasses import dataclass
-from typing import Literal, Optional, Union
+from typing import Optional, Union
 
 from typing_extensions import TypeAlias
+
+from dagster_shared.record import record
+from dagster_shared.serdes import whitelist_for_serdes
 
 DgDefinitionMetadata: TypeAlias = Union[
     "DgAssetMetadata", "DgSensorMetadata", "DgScheduleMetadata", "DgJobMetadata"
 ]
 
 
-@dataclass
+@whitelist_for_serdes
+@record
 class DgAssetMetadata:
-    type: Literal["asset"]
     key: str
-    group: Optional[str]
     deps: list[str]
     kinds: list[str]
+    group: Optional[str]
     description: Optional[str]
-    automation_condition: Optional[str] = None
+    automation_condition: Optional[str]
 
 
-@dataclass
+@whitelist_for_serdes
+@record
 class DgSensorMetadata:
-    type: Literal["sensor"]
     name: str
 
 
-@dataclass
+@whitelist_for_serdes
+@record
 class DgScheduleMetadata:
-    type: Literal["schedule"]
     name: str
     cron_schedule: str
 
 
-@dataclass
+@whitelist_for_serdes
+@record
 class DgJobMetadata:
-    type: Literal["job"]
     name: str
