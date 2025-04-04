@@ -44,7 +44,7 @@ def test_scaffold_workspace_command_success(monkeypatch) -> None:
         result = runner.invoke("scaffold", "workspace")
         assert_runner_result(result)
         assert Path("dagster-workspace").exists()
-        assert Path("dagster-workspace/pyproject.toml").exists()
+        assert Path("dagster-workspace/dg.toml").exists()
         assert Path("dagster-workspace/projects").exists()
         assert Path("dagster-workspace/libraries").exists()
 
@@ -58,7 +58,7 @@ def test_scaffold_workspace_command_name_override_success(monkeypatch) -> None:
         result = runner.invoke("scaffold", "workspace", "my-workspace")
         assert_runner_result(result)
         assert Path("my-workspace").exists()
-        assert Path("my-workspace/pyproject.toml").exists()
+        assert Path("my-workspace/dg.toml").exists()
         assert Path("my-workspace/projects").exists()
         assert Path("my-workspace/libraries").exists()
 
@@ -107,11 +107,8 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert get_toml_node(toml, ("tool", "dg", "project", "root_module"), str) == "foo_bar"
 
         # Check workspace TOML content
-        toml = tomlkit.parse(Path("pyproject.toml").read_text())
-        assert (
-            get_toml_node(toml, ("tool", "dg", "workspace", "projects", 0, "path"), str)
-            == "projects/foo-bar"
-        )
+        toml = tomlkit.parse(Path("dg.toml").read_text())
+        assert get_toml_node(toml, ("workspace", "projects", 0, "path"), str) == "projects/foo-bar"
 
         # Check venv created
         assert Path("projects/foo-bar/.venv").exists()
@@ -142,10 +139,9 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert_runner_result(result)
 
         # Check workspace TOML content
-        toml = tomlkit.parse(Path("pyproject.toml").read_text())
+        toml = tomlkit.parse(Path("dg.toml").read_text())
         assert (
-            get_toml_node(toml, ("tool", "dg", "workspace", "projects", 1, "path"), str)
-            == "other_projects/baz"
+            get_toml_node(toml, ("workspace", "projects", 1, "path"), str) == "other_projects/baz"
         )
 
 
@@ -156,10 +152,10 @@ def test_scaffold_project_inside_workspace_applies_scaffold_project_options(monk
         ProxyRunner.test() as runner,
         isolated_example_workspace(runner, use_editable_dagster=False),
     ):
-        with modify_toml_as_dict(Path("pyproject.toml")) as toml_dict:
+        with modify_toml_as_dict(Path("dg.toml")) as toml_dict:
             create_toml_node(
                 toml_dict,
-                ("tool", "dg", "workspace", "scaffold_project_options", "use_editable_dagster"),
+                ("workspace", "scaffold_project_options", "use_editable_dagster"),
                 True,
             )
 
