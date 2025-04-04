@@ -8,15 +8,15 @@ cd jaffle-platform && tree
 │   │   └── __init__.py
 │   └── lib
 │       └── __init__.py
-├── jaffle_platform.egg-info
-│   ├── PKG-INFO
-│   ├── SOURCES.txt
-│   ├── dependency_links.txt
-│   ├── entry_points.txt
-│   ├── requires.txt
-│   └── top_level.txt
 ├── jaffle_platform_tests
 │   └── __init__.py
+├── jaffle_platform.egg-info
+│   ├── dependency_links.txt
+│   ├── entry_points.txt
+│   ├── PKG-INFO
+│   ├── requires.txt
+│   ├── SOURCES.txt
+│   └── top_level.txt
 ├── pyproject.toml
 └── uv.lock
 
