@@ -11,6 +11,11 @@ ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 ENV UV_PYTHON_DOWNLOADS=0
 
 WORKDIR /app
+
+COPY --from=oss python_modules ../dagster/python_modules
+COPY --from=internal dagster-cloud/python_modules/dagster-cloud ../dagster-internal/dagster-cloud/python_modules/dagster-cloud
+COPY --from=internal dagster-cloud/python_modules/dagster-cloud-cli ../dagster-internal/dagster-cloud/python_modules/dagster-cloud-cli
+
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
@@ -27,6 +32,10 @@ FROM python:{{ python_version }}-slim-bookworm
 
 # Copy the application from the builder
 COPY --from=builder --chown=app:app /app /app
+
+# And also the editable installs
+COPY --from=builder --chown=app:app /dagster /dagster
+COPY --from=builder --chown=app:app /dagster-internal /dagster-internal
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"

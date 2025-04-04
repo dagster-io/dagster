@@ -52,11 +52,11 @@ def test_plus_deploy_command(logged_in_dg_cli_config, project, runner):
     with patch(
         "dagster_dg.context.DgContext.external_dagster_cloud_cli_command",
     ):
-        result = runner.invoke(plus_group, ["deploy"])
+        result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
         assert result.exit_code == 0, result.output + " : " + str(result.exception)
         assert "No Dockerfile found - scaffolding a default one" in result.output
 
-        result = runner.invoke(plus_group, ["deploy"])
+        result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
         assert "Building using Dockerfile at" in result.output
         assert result.exit_code == 0, result.output + " : " + str(result.exception)
 
@@ -65,6 +65,6 @@ def test_plus_deploy_command_no_login(empty_dg_cli_config, runner, project):
     with patch(
         "dagster_dg.context.DgContext.external_dagster_cloud_cli_command",
     ):
-        result = runner.invoke(plus_group, ["deploy"])
+        result = runner.invoke(plus_group, ["deploy", "--agent-type", "serverless", "--yes"])
         assert result.exit_code != 0
         assert "Organization not specified" in result.output

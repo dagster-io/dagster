@@ -11,6 +11,7 @@ from typing import Final, Optional, Union
 
 import tomlkit
 import tomlkit.items
+import yaml
 from dagster_shared.utils.config import does_dg_config_file_exist
 from typing_extensions import Self
 
@@ -19,6 +20,7 @@ from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import (
     DgConfig,
     DgProjectPythonEnvironment,
+    DgRawBuildConfig,
     DgRawCliConfig,
     DgWorkspaceProjectSpec,
     discover_config_file,
@@ -332,6 +334,17 @@ class DgContext:
                 "`project_python_executable` is only available in a Dagster project context"
             )
         return self.root_path / get_venv_executable(Path(".venv"))
+
+    @cached_property
+    def build_config(self) -> Optional[DgRawBuildConfig]:
+        # make filename config
+        build_yaml_path = self.root_path / "build.yaml"
+
+        if not build_yaml_path.exists():
+            return None
+
+        with open(build_yaml_path) as f:
+            return yaml.safe_load(f)
 
     @cached_property
     def defs_module_name(self) -> str:

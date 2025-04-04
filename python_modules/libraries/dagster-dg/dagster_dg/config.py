@@ -225,6 +225,11 @@ class DgRawCliConfig(TypedDict, total=False):
 DgProjectPythonEnvironment: TypeAlias = Literal["active", "persistent_uv"]
 
 
+class DgRawBuildConfig(TypedDict):
+    registry: Optional[str]
+    directory: Optional[str]
+
+
 @dataclass
 class DgProjectConfig:
     root_module: str
