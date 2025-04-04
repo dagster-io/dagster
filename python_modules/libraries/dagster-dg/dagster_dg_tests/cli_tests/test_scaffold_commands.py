@@ -577,9 +577,7 @@ def test_scaffold_asset() -> None:
         result = runner.invoke("scaffold", "dagster.asset", "assets/foo.py")
         assert_runner_result(result)
         assert Path("src/foo_bar/defs/assets/foo.py").exists()
-        assert (
-            Path("src/foo_bar/defs/assets/foo.py").read_text().startswith("# import dagster as dg")
-        )
+        assert Path("src/foo_bar/defs/assets/foo.py").read_text().startswith("import dagster as dg")
         assert not Path("src/foo_bar/defs/assets/foo.py").is_dir()
         assert not Path("src/foo_bar/defs/assets/component.yaml").exists()
 
