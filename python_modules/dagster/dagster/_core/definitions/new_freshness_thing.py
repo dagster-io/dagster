@@ -1,9 +1,15 @@
-from abc import ABC
+from abc import ABC, abstractmethod
+from enum import Enum
 from typing import Optional
 
 from dagster import _check as check
 from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
+
+
+class FreshnessPolicyType(Enum):
+    TIME_WINDOW = "time_window"
+    CRON = "cron"
 
 
 class NewFreshnessThing(ABC):
@@ -17,6 +23,10 @@ class NewFreshnessThing(ABC):
         https://dagsterlabs.slack.com/archives/C047L6H0LF4/p1743087033186109.
 
     """
+
+    @property
+    @abstractmethod
+    def policy_type(self) -> FreshnessPolicyType: ...
 
 
 @whitelist_for_serdes
@@ -52,6 +62,10 @@ class TimeWindowFreshnessThing(NewFreshnessThing, IHaveNew):
 
     time_window_minutes: int
     warning_time_window_minutes: Optional[int] = None
+
+    @property
+    def policy_type(self) -> FreshnessPolicyType:
+        return FreshnessPolicyType.TIME_WINDOW
 
     def __new__(cls, time_window_minutes: int, warning_time_window_minutes: Optional[int] = None):
         time_window_minutes = check.int_param(time_window_minutes, "time_window_minutes")

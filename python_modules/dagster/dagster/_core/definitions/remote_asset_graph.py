@@ -128,6 +128,10 @@ class RemoteAssetNode(BaseAssetNode, ABC):
             else []
         )
 
+    @property
+    def new_freshness_policy(self) -> Optional[NewFreshnessThing]:
+        return self.resolve_to_singular_repo_scoped_node().asset_node_snap.new_freshness_thing
+
 
 @whitelist_for_serdes
 @record

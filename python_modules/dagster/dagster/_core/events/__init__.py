@@ -66,6 +66,7 @@ from dagster._utils.timing import format_duration
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import ObjectStoreOperation
+    from dagster._core.definitions.freshness import FreshnessStateEvaluation
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.step import StepKind
 
@@ -91,6 +92,7 @@ EventSpecificData = Union[
     "AssetCheckEvaluation",
     "AssetCheckEvaluationPlanned",
     "AssetFailedToMaterializeData",
+    "FreshnessStateEvaluation",
 ]
 
 
@@ -166,6 +168,8 @@ class DagsterEventType(str, Enum):
     ALERT_FAILURE = "ALERT_FAILURE"
 
     LOGS_CAPTURED = "LOGS_CAPTURED"
+
+    FRESHNESS_STATE_EVALUATION = "FRESHNESS_STATE_EVALUATION"
 
 
 EVENT_TYPE_TO_DISPLAY_STRING = {
