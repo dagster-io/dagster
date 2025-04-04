@@ -220,10 +220,14 @@ def add_env_command(
 
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
-    dg_context = DgContext.for_project_environment(Path.cwd(), cli_config)
+    dg_context = DgContext.for_workspace_or_project_environment(Path.cwd(), cli_config)
+    if dg_context.is_workspace:
+        global_ = True
 
     if from_local_env:
-        local_env_value = ProjectEnvVars.from_ctx(dg_context).get(env_name)
+        local_env_value = (
+            ProjectEnvVars.from_ctx(dg_context).get(env_name) if dg_context.is_project else None
+        )
         if local_env_value:
             click.echo(f"Reading environment variable {env_name} from project .env file")
         else:
