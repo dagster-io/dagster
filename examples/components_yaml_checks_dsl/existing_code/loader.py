@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import yaml
-from hooli_data_eng.checks_dsl.engine import (
+from engine import (
     generate_asset_check_function,
     handle_freshness_check,
     handle_schema_change_check,

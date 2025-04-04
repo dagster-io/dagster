@@ -58,7 +58,7 @@ def handle_schema_change_check(check: dict[str, Any]) -> list:
             seen.add(key)
             unique_asset_keys.append(AssetKey(key))
 
-    return build_column_schema_change_checks(assets=unique_asset_keys)
+    return build_column_schema_change_checks(assets=unique_asset_keys)  # type: ignore (probably a bug)
 
 
 # Function to handle freshness checks from YAML
