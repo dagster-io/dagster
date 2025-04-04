@@ -1,18 +1,9 @@
-import {
-  Box,
-  ButtonGroup,
-  Colors,
-  ErrorBoundary,
-  NonIdealState,
-  Spinner,
-  Subheading,
-} from '@dagster-io/ui-components';
+import {Box, Colors, ErrorBoundary, NonIdealState, Spinner} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {useMemo} from 'react';
 
 import {AssetEventDetail, AssetEventDetailEmpty} from './AssetEventDetail';
 import {AssetEventList} from './AssetEventList';
-import {AssetPartitionDetail, AssetPartitionDetailEmpty} from './AssetPartitionDetail';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
@@ -22,7 +13,6 @@ import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
 import {useAssetDefinition} from './useAssetDefinition';
 import {useAssetEventsFilters} from './useAssetEventsFilters';
 import {usePaginatedAssetEvents} from './usePaginatedAssetEvents';
-import {getXAxisForParams} from './useRecentAssetEvents';
 import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
 import {MaterializationHistoryEventTypeSelector, RepositorySelector} from '../graphql/types';
 
@@ -50,18 +40,6 @@ export const AssetEvents = ({
   liveData,
   dataRefreshHint,
 }: Props) => {
-  /**
-   * We have a separate "Asset > Partitions" tab, but that is only available for SDAs with
-   * pre-defined partitions. For non-SDAs, this Events page still displays a "Time | Partition"
-   * picker and this xAxis can still be `partitions`!
-   *
-   * The partitions behavior in this case isn't ideal because the UI only "sees" partition names
-   * in the events it has fetched. Users should upgrade to SDAs for a better experience.
-   *
-   * To test this easily, unload / break your code location so your SDA becomes a non-SDA :-)
-   */
-  const xAxis = getXAxisForParams(params, {defaultToPartitions: false});
-
   const {filterButton, activeFiltersJsx, filterState} = useAssetEventsFilters({
     assetKey,
     assetNode,
@@ -80,8 +58,10 @@ export const AssetEvents = ({
     return combinedParams;
   }, [params, filterState.dateRange]);
 
-  const {materializations, observations, loadedPartitionKeys, fetchMore, fetchLatest, loading} =
-    usePaginatedAssetEvents(assetKey, combinedParams);
+  const {materializations, observations, fetchMore, fetchLatest, loading} = usePaginatedAssetEvents(
+    assetKey,
+    params,
+  );
 
   React.useEffect(() => {
     fetchLatest();
@@ -92,21 +72,19 @@ export const AssetEvents = ({
     combinedParams.after,
     combinedParams.before,
     combinedParams.status,
-    combinedParams.partitions,
   ]);
 
   const grouped = useGroupedEvents(
-    xAxis,
+    'time',
     filterState.type?.includes('Materialization') ? materializations : [],
     filterState.type?.includes('Observation') ? observations : [],
-    loadedPartitionKeys,
+    [],
   );
 
   const onSetFocused = (group: AssetEventGroup | undefined) => {
-    const updates: Partial<AssetViewParams> =
-      xAxis === 'time'
-        ? {time: group?.timestamp !== params.time ? group?.timestamp || '' : ''}
-        : {partition: group?.partition !== params.partition ? group?.partition || '' : ''};
+    const updates: Partial<AssetViewParams> = {
+      time: group?.timestamp !== params.time ? group?.timestamp || '' : '',
+    };
     setParams({...params, ...updates});
   };
 
@@ -118,16 +96,6 @@ export const AssetEvents = ({
           ? b.partition === params.partition
           : false,
     ) || grouped[0];
-
-  // Note: This page still has a LOT of logic for displaying events by partition but it's only enabled
-  // in one case -- when the asset is an old-school, non-software-defined asset with partition keys
-  // on it's materializations but no defined partition set.
-  //
-  const assetHasUndefinedPartitions =
-    !assetNode?.partitionDefinition && grouped.some((g) => g.partition);
-  const assetHasLineage = materializations.some(
-    (m) => 'assetLineage' in m && m.assetLineage.length > 0,
-  );
 
   const onKeyDown = (e: React.KeyboardEvent<any>) => {
     const shift = {ArrowDown: 1, ArrowUp: -1}[e.key];
@@ -148,8 +116,7 @@ export const AssetEvents = ({
   const hasFilter =
     combinedParams.status !== MaterializationHistoryEventTypeSelector.ALL ||
     combinedParams.before !== undefined ||
-    combinedParams.after !== undefined ||
-    combinedParams.partitions !== undefined;
+    combinedParams.after !== undefined;
   if (!loading && !materializations.length && !observations.length && !hasFilter) {
     return (
       <Box padding={{horizontal: 24, vertical: 64}}>
@@ -185,33 +152,6 @@ export const AssetEvents = ({
           {activeFiltersJsx}
         </Box>
       ) : null}
-      {assetHasUndefinedPartitions && (
-        <Box
-          flex={{justifyContent: 'space-between', alignItems: 'center'}}
-          border="bottom"
-          padding={{vertical: 16, horizontal: 24}}
-          style={{marginBottom: -1}}
-        >
-          <Subheading>Asset Events</Subheading>
-          <div style={{margin: '-6px 0 '}}>
-            <ButtonGroup
-              activeItems={new Set([xAxis])}
-              buttons={[
-                {id: 'partition', label: 'By partition'},
-                {id: 'time', label: 'By timestamp'},
-              ]}
-              onClick={(id: string) =>
-                setParams(
-                  id === 'time'
-                    ? {...params, partition: undefined, time: focused?.timestamp || ''}
-                    : {...params, partition: focused?.partition || '', time: undefined},
-                )
-              }
-            />
-          </div>
-        </Box>
-      )}
-
       {assetNode && !assetNode.partitionDefinition && (
         <>
           <FailedRunSinceMaterializationBanner
@@ -258,7 +198,7 @@ export const AssetEvents = ({
                   </Box>
                 ) : (
                   <AssetEventList
-                    xAxis={xAxis}
+                    xAxis="time"
                     groups={grouped}
                     focused={focused}
                     setFocused={onSetFocused}
@@ -274,20 +214,7 @@ export const AssetEvents = ({
                 border="left"
               >
                 <ErrorBoundary region="event" resetErrorOnChange={[focused]}>
-                  {xAxis === 'partition' ? (
-                    focused ? (
-                      <AssetPartitionDetail
-                        group={focused}
-                        hasLineage={assetHasLineage}
-                        assetKey={assetKey}
-                        stepKey={assetNode ? stepKeyForAsset(assetNode) : undefined}
-                        latestRunForPartition={null}
-                        changedReasons={assetNode?.changedReasons}
-                      />
-                    ) : (
-                      <AssetPartitionDetailEmpty />
-                    )
-                  ) : focused?.latest ? (
+                  {focused?.latest ? (
                     <AssetEventDetail assetKey={assetKey} event={focused.latest} />
                   ) : (
                     <AssetEventDetailEmpty />
