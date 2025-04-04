@@ -19,10 +19,10 @@ from dagster_airlift.constants import (
     AIRFLOW_SOURCE_METADATA_KEY_PREFIX,
     DAG_ID_TAG_KEY,
     DAG_MAPPING_METADATA_KEY,
-    EXTERNAL_JOB_TAG_KEY,
     PEERED_DAG_MAPPING_METADATA_KEY,
     TASK_MAPPING_METADATA_KEY,
 )
+from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY
 
 if TYPE_CHECKING:
     from dagster_airlift.core.serialization.serialized_data import DagHandle, TaskHandle
@@ -138,7 +138,7 @@ def type_narrow_defs_assets(defs: Definitions) -> Sequence[MappedAsset]:
 
 
 def is_airflow_mapped_job(job: JobDefinition) -> bool:
-    return job.tags.get(EXTERNAL_JOB_TAG_KEY) == "airflow"
+    return job.tags.get(EXTERNAL_JOB_SOURCE_TAG_KEY) == "airflow"
 
 
 def dag_handle_from_job(job: JobDefinition) -> "DagHandle":
@@ -154,7 +154,7 @@ def dag_handle_from_job(job: JobDefinition) -> "DagHandle":
 def airflow_job_tags(dag_id: str) -> Mapping[str, str]:
     return {
         **airflow_kind_dict(),
-        EXTERNAL_JOB_TAG_KEY: "airflow",
+        EXTERNAL_JOB_SOURCE_TAG_KEY: "airflow",
         DAG_ID_TAG_KEY: dag_id,
     }
 
