@@ -24,6 +24,7 @@ import {
 import {usePartitionsForAssetKey} from './usePartitionsForAssetKey';
 import {useQuery} from '../../apollo-client';
 import {DEFAULT_TIME_FORMAT} from '../../app/time/TimestampFormat';
+import {RunsFeedView} from '../../graphql/types';
 import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {AnchorButton} from '../../ui/AnchorButton';
@@ -189,7 +190,7 @@ const EvaluationDetailDialogContents = ({
 
     const filter = runTableFiltersForEvaluation(evaluation.runIds);
     if (filter) {
-      return <RunsFeedTableWithFilters filter={filter} includeRunsFromBackfills={false} />;
+      return <RunsFeedTableWithFilters filter={filter} view={RunsFeedView.ROOTS} />;
     }
 
     return (

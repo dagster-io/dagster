@@ -12,7 +12,6 @@ import {
 import React, {useCallback, useEffect, useLayoutEffect, useMemo, useState} from 'react';
 
 import {BackfillPartitionSelector} from './BackfillSelector';
-import {JobBackfillsTable} from './JobBackfillsTable';
 import {PartitionGraph} from './PartitionGraph';
 import {PartitionStatus} from './PartitionStatus';
 import {PartitionPerOpStatus, getVisibleItemCount} from './PartitionStepStatus';
@@ -29,12 +28,15 @@ import {QueryResult, gql, useQuery} from '../apollo-client';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {RunStatus} from '../graphql/types';
+import {RunStatus, RunsFeedView} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
+import {RunsFeedTableWithFilters} from '../runs/RunsFeedTable';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 type PartitionStatus = OpJobPartitionStatusFragment;
+
+const BACKFILL_TAGS = [DagsterTag.Backfill];
 
 const simpleCache = new Map<
   string,
@@ -413,11 +415,10 @@ export const OpJobPartitionsViewContent = React.memo(
           <Subheading>Backfill history</Subheading>
         </Box>
         <Box margin={{bottom: 20}}>
-          <JobBackfillsTable
-            partitionSetName={partitionSet.name}
-            repositorySelector={repositorySelector}
-            partitionNames={partitionNames}
-            refetchCounter={backfillRefetchCounter}
+          <RunsFeedTableWithFilters
+            hideTags={BACKFILL_TAGS}
+            filter={{pipelineName: partitionSet.pipelineName}}
+            view={RunsFeedView.BACKFILLS}
           />
         </Box>
       </div>

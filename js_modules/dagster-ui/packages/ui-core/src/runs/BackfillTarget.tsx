@@ -1,133 +1,19 @@
-import {Box, Colors, Icon, Mono, Tag, useDelayedState} from '@dagster-io/ui-components';
+import {Box, Colors, Icon, Tag} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {BackfillActionsMenu} from './BackfillActionsMenu';
-import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
-import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
-import {BackfillTableFragment} from './types/BackfillTable.types';
-import {QueryResult, gql, useQuery} from '../../apollo-client';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
-import {isHiddenAssetGroupJob} from '../../asset-graph/Utils';
-import {PartitionBackfill, RunStatus} from '../../graphql/types';
-import {PartitionStatus, PartitionStatusHealthSourceOps} from '../../partitions/PartitionStatus';
-import {PipelineReference, PipelineTag} from '../../pipelines/PipelineReference';
-import {AssetKeyTagCollection} from '../../runs/AssetTagCollections';
-import {CreatedByTagCell} from '../../runs/CreatedByTag';
-import {getBackfillPath} from '../../runs/RunsFeedUtils';
-import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {isThisThingAJob, useRepository} from '../../workspace/WorkspaceContext/util';
-import {buildRepoAddress} from '../../workspace/buildRepoAddress';
-import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
-import {RepoAddress} from '../../workspace/types';
-import {workspacePathFromAddress, workspacePipelinePath} from '../../workspace/workspacePath';
-
-interface BackfillRowProps {
-  backfill: BackfillTableFragment;
-  allPartitions?: string[];
-  showBackfillTarget: boolean;
-  onShowPartitionsRequested: (backfillId: string) => void;
-  refetch: () => void;
-}
-
-export const BackfillRow = (props: BackfillRowProps) => {
-  const statusUnsupported =
-    props.backfill.numPartitions === null ||
-    props.backfill.partitionNames === null ||
-    props.backfill.isAssetBackfill;
-
-  if (statusUnsupported) {
-    return <BackfillRowContent {...props} statusQueryResult={null} />;
-  }
-  return (
-    <BackfillRowLoader backfillId={props.backfill.id}>
-      {(data) => <BackfillRowContent {...props} {...data} />}
-    </BackfillRowLoader>
-  );
-};
-
-interface LoadResult {
-  statusQueryResult: QueryResult<any, any> | null;
-}
-
-export const BackfillRowLoader = (props: {
-  backfillId: string;
-  children: (data: LoadResult) => React.ReactNode;
-}) => {
-  const {backfillId} = props;
-
-  // Wait 100ms before querying in case we're scrolling the table really fast
-  const shouldQuery = useDelayedState(100);
-
-  const statusQueryResult = useQuery<SingleBackfillQuery, SingleBackfillQueryVariables>(
-    SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY,
-    {
-      variables: {backfillId},
-      notifyOnNetworkStatusChange: true,
-      skip: !shouldQuery,
-    },
-  );
-
-  useQueryRefreshAtInterval(statusQueryResult, FIFTEEN_SECONDS);
-
-  return props.children({statusQueryResult});
-};
-
-export const BackfillRowContent = ({
-  backfill,
-  allPartitions,
-  showBackfillTarget,
-  onShowPartitionsRequested,
-  refetch,
-  statusQueryResult,
-}: BackfillRowProps & LoadResult) => {
-  const repoAddress = backfill.partitionSet
-    ? buildRepoAddress(
-        backfill.partitionSet.repositoryOrigin.repositoryName,
-        backfill.partitionSet.repositoryOrigin.repositoryLocationName,
-      )
-    : null;
-
-  const renderBackfillStatus = () =>
-    statusQueryResult?.loading ? (
-      <div style={{color: Colors.textLight()}}>Loading</div>
-    ) : (
-      <BackfillStatusTagForPage backfill={backfill} />
-    );
-
-  return (
-    <tr>
-      <td style={{width: 120}}>
-        <Mono>
-          <Link to={getBackfillPath(backfill.id, backfill.isAssetBackfill)}>{backfill.id}</Link>
-        </Mono>
-      </td>
-      <td style={{width: 220}}>
-        {backfill.timestamp ? <TimestampDisplay timestamp={backfill.timestamp} /> : '-'}
-      </td>
-      {showBackfillTarget ? (
-        <td style={{width: '20%'}}>
-          <BackfillTarget backfill={backfill} repoAddress={repoAddress} useTags={false} />
-        </td>
-      ) : null}
-      <td style={{width: allPartitions ? 300 : 140}}>
-        <BackfillRequestedRange
-          backfill={backfill}
-          allPartitions={allPartitions}
-          onExpand={() => onShowPartitionsRequested(backfill.id)}
-        />
-      </td>
-      <td style={{width: 160}}>
-        <CreatedByTagCell tags={backfill.tags} repoAddress={repoAddress} />
-      </td>
-      <td style={{width: 140}}>{renderBackfillStatus()}</td>
-      <td>
-        <BackfillActionsMenu backfill={backfill} refetch={refetch} />
-      </td>
-    </tr>
-  );
-};
+import {gql} from '../apollo-client';
+import {AssetKeyTagCollection} from './AssetTagCollections';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
+import {PartitionBackfill, RunStatus} from '../graphql/types';
+import {PartitionStatus, PartitionStatusHealthSourceOps} from '../partitions/PartitionStatus';
+import {PipelineReference, PipelineTag} from '../pipelines/PipelineReference';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext/util';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress, workspacePipelinePath} from '../workspace/workspacePath';
+import {BackfillTargetFragment} from './types/BackfillTarget.types';
 
 export const BackfillTarget = ({
   backfill,
@@ -135,15 +21,7 @@ export const BackfillTarget = ({
   useTags,
   onShowPartitions,
 }: {
-  backfill: Pick<
-    BackfillTableFragment,
-    | 'id'
-    | 'partitionNames'
-    | 'assetSelection'
-    | 'partitionSet'
-    | 'partitionSetName'
-    | 'numPartitions'
-  >;
+  backfill: BackfillTargetFragment;
   repoAddress: RepoAddress | null;
   useTags: boolean;
   onShowPartitions?: () => void;
@@ -322,16 +200,21 @@ const TagButton = styled.button`
   }
 `;
 
-export const SINGLE_BACKFILL_CANCELABLE_RUNS_QUERY = gql`
-  query SingleBackfillQuery($backfillId: String!) {
-    partitionBackfillOrError(backfillId: $backfillId) {
-      ... on PartitionBackfill {
-        id
-        cancelableRuns {
-          id
-          runId
-          status
-        }
+export const BACKFILL_TARGET_FRAGMENT = gql`
+  fragment BackfillTargetFragment on PartitionBackfill {
+    id
+    partitionNames
+    assetSelection {
+      path
+    }
+    numPartitions
+    partitionSetName
+    partitionSet {
+      name
+      pipelineName
+      repositoryOrigin {
+        repositoryName
+        repositoryLocationName
       }
     }
   }

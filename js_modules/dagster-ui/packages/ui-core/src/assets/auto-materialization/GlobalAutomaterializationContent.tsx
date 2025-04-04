@@ -21,7 +21,7 @@ import {useLazyQuery} from '../../apollo-client';
 import {useConfirmation} from '../../app/CustomConfirmationProvider';
 import {useUnscopedPermissions} from '../../app/Permissions';
 import {useRefreshAtInterval} from '../../app/QueryRefresh';
-import {InstigationTickStatus, RunsFilter} from '../../graphql/types';
+import {InstigationTickStatus, RunsFeedView, RunsFilter} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../../instigation/util';
@@ -223,7 +223,7 @@ export const GlobalAutomaterializationContent = () => {
               <RunsFeedTableWithFilters
                 filter={RUNS_FILTER}
                 actionBarComponents={tableViewSwitch}
-                includeRunsFromBackfills={true}
+                view={RunsFeedView.RUNS}
               />
             </Box>
           )}

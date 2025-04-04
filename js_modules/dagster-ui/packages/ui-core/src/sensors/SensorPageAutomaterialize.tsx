@@ -3,17 +3,17 @@ import {useCallback, useMemo, useState} from 'react';
 
 import {ASSET_SENSOR_TICKS_QUERY} from './AssetSensorTicksQuery';
 import {DaemonStatusForWarning, SensorInfo} from './SensorInfo';
+import {useLazyQuery} from '../apollo-client';
 import {
   AssetSensorTicksQuery,
   AssetSensorTicksQueryVariables,
 } from './types/AssetSensorTicksQuery.types';
 import {SensorFragment} from './types/SensorFragment.types';
-import {useLazyQuery} from '../apollo-client';
 import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {AutomaterializationTickDetailDialog} from '../assets/auto-materialization/AutomaterializationTickDetailDialog';
 import {SensorAutomaterializationEvaluationHistoryTable} from '../assets/auto-materialization/SensorAutomaterializationEvaluationHistoryTable';
 import {AssetDaemonTickFragment} from '../assets/auto-materialization/types/AssetDaemonTicksQuery.types';
-import {InstigationTickStatus, RunsFilter} from '../graphql/types';
+import {InstigationTickStatus, RunsFeedView, RunsFilter} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {LiveTickTimeline} from '../instigation/LiveTickTimeline2';
 import {isStuckStartedTick} from '../instigation/util';
@@ -209,7 +209,7 @@ export const SensorPageAutomaterialize = (props: Props) => {
               <RunsFeedTableWithFilters
                 filter={runTableFilter}
                 actionBarComponents={tableViewSwitch}
-                includeRunsFromBackfills={true}
+                view={RunsFeedView.RUNS}
               />
             </Box>
           )}

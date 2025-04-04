@@ -1,7 +1,6 @@
 import {Box, Button, Subheading, useViewport} from '@dagster-io/ui-components';
 import {useEffect, useMemo, useState} from 'react';
 
-import {JobBackfillsTable} from './JobBackfillsTable';
 import {CountBox, usePartitionDurations} from './OpJobPartitionsView';
 import {PartitionGraph} from './PartitionGraph';
 import {PartitionStatus} from './PartitionStatus';
@@ -19,10 +18,13 @@ import {
   mergedAssetHealth,
 } from '../assets/MultipartitioningSupport';
 import {keyCountInSelections, usePartitionHealthData} from '../assets/usePartitionHealthData';
-import {RepositorySelector} from '../graphql/types';
+import {RepositorySelector, RunsFeedView} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
+import {RunsFeedTableWithFilters} from '../runs/RunsFeedTable';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
+
+const BACKFILL_TAGS = [DagsterTag.Backfill];
 
 export const AssetJobPartitionsView = ({
   partitionSetName,
@@ -180,11 +182,10 @@ export const AssetJobPartitionsView = ({
         <Subheading>Backfill history</Subheading>
       </Box>
       <Box margin={{bottom: 20}}>
-        <JobBackfillsTable
-          partitionSetName={partitionSetName}
-          repositorySelector={repositorySelector}
-          partitionNames={dimensionKeys}
-          refetchCounter={1}
+        <RunsFeedTableWithFilters
+          hideTags={BACKFILL_TAGS}
+          filter={{pipelineName}}
+          view={RunsFeedView.BACKFILLS}
         />
       </Box>
     </div>
