@@ -152,6 +152,21 @@ class GrpcServerRegistry(AbstractContextManager):
         with self._lock:
             return self._get_grpc_endpoint(code_location_origin)
 
+    def get_grpc_server_process(
+        self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
+    ) -> Optional[GrpcServerProcess]:
+        check.inst_param(code_location_origin, "code_location_origin", CodeLocationOrigin)
+
+        with self._lock:
+            origin_id = code_location_origin.get_id()
+            if origin_id in self._active_entries:
+                entry = self._active_entries[origin_id]
+                if isinstance(entry, ServerRegistryEntry):
+                    return entry.process
+                else:
+                    return None
+            return None
+
     def _get_loadable_target_origin(
         self, code_location_origin: ManagedGrpcPythonEnvCodeLocationOrigin
     ) -> LoadableTargetOrigin:
@@ -215,7 +230,6 @@ class GrpcServerRegistry(AbstractContextManager):
                 active_entry.error.to_string(),
                 user_code_process_error_infos=[active_entry.error],
             )
-
         return GrpcServerEndpoint(
             host="localhost",
             port=active_entry.process.port,
