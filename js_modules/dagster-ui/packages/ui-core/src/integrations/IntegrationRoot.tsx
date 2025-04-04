@@ -54,7 +54,18 @@ export const IntegrationRoot = () => {
           </Heading>
         }
       />
-      <div style={{flex: 1, overflowY: 'auto'}}>{content()}</div>
+      <div style={{flex: 1, overflowY: 'auto'}}>
+        <div
+          style={{
+            width: '80vw',
+            maxWidth: '1100px',
+            minWidth: '900px',
+            margin: '0 auto',
+          }}
+        >
+          {content()}
+        </div>
+      </div>
     </Box>
   );
 };
