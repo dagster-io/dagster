@@ -15,13 +15,13 @@ from dagster_dg.config import (
     DgRawWorkspaceConfig,
     DgWorkspaceScaffoldProjectOptions,
     discover_workspace_root,
+    modify_dg_toml_config,
 )
 from dagster_dg.context import DgContext
 from dagster_dg.utils import (
     exit_with_error,
     get_toml_node,
     has_toml_node,
-    modify_toml,
     scaffold_subtree,
     set_toml_node,
 )
@@ -56,11 +56,11 @@ def scaffold_workspace(
     )
 
     if workspace_config is not None:
-        with modify_toml(new_workspace_path / "pyproject.toml") as toml:
+        with modify_dg_toml_config(new_workspace_path / "pyproject.toml") as toml:
             for k, v in workspace_config.items():
                 # Ignore empty collections and None, but not False
                 if v != {} and v != [] and v is not None:
-                    set_toml_node(toml, ("tool", "dg", "workspace", k), v)
+                    set_toml_node(toml, ("workspace", k), v)
 
     click.echo(f"Scaffolded files for Dagster workspace at {new_workspace_path}.")
     return new_workspace_path
@@ -125,8 +125,8 @@ def scaffold_project(
     click.echo(f"Scaffolded files for Dagster project at {path}.")
 
     if python_environment:
-        with modify_toml(dg_context.with_root_path(path).pyproject_toml_path) as toml:
-            set_toml_node(toml, ("tool", "dg", "project", "python_environment"), python_environment)
+        with modify_dg_toml_config(dg_context.with_root_path(path).config_file_path) as toml:
+            set_toml_node(toml, ("project", "python_environment"), python_environment)
 
     # Build the venv
     cl_dg_context = dg_context.with_root_path(path)
@@ -141,15 +141,15 @@ def scaffold_project(
             "path": str(cl_dg_context.root_path.relative_to(cl_dg_context.workspace_root_path)),
         }
 
-        with modify_toml(dg_context.pyproject_toml_path) as toml:
-            if not has_toml_node(toml, ("tool", "dg", "workspace", "projects")):
+        with modify_dg_toml_config(dg_context.config_file_path) as toml:
+            if not has_toml_node(toml, ("workspace", "projects")):
                 projects = tomlkit.aot()
-                set_toml_node(toml, ("tool", "dg", "workspace", "projects"), projects)
+                set_toml_node(toml, ("workspace", "projects"), projects)
                 item = tomlkit.table()
             else:
                 projects = get_toml_node(
                     toml,
-                    ("tool", "dg", "workspace", "projects"),
+                    ("workspace", "projects"),
                     (tomlkit.items.AoT, tomlkit.items.Array),
                 )
                 if isinstance(projects, tomlkit.items.Array):
