@@ -45,8 +45,8 @@ class LibraryObjectSnap:
     key: LibraryObjectKey
     summary: Optional[str]
     description: Optional[str]
-    author: Optional[str]
-    tags: Optional[list[str]]
+    author: Optional[str] = None
+    tags: Optional[list[str]] = None
     scaffolder: Optional["ScaffolderSnap"]
 
     @property
