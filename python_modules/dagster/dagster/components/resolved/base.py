@@ -6,6 +6,7 @@ from functools import partial
 from types import GenericAlias
 from typing import Annotated, Any, Final, Literal, Optional, TypeVar, Union, get_args, get_origin
 
+import yaml
 from dagster_shared.record import get_record_annotations, get_record_defaults, is_record
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from pydantic import BaseModel, PydanticSchemaGenerationError, create_model
@@ -66,11 +67,23 @@ class Resolvable:
             )
         else:  # yaml parsed as None
             model = model_cls()
-        # support adding scopes?
+        # support adding scopes
         context = ResolutionContext.default(
             parsed_and_src_tree.source_position_tree if parsed_and_src_tree else None
         )
         return cls.resolve_from_model(context, model)
+
+    @classmethod
+    def resolve_from_dict(cls, dictionary: dict[str, Any]):
+        # Convert dictionary to YAML string
+        # default_flow_style=False makes it use block style instead of inline
+        yaml_string = yaml.dump(
+            dictionary,
+            default_flow_style=False,
+            sort_keys=False,  # Preserve dictionary order
+            indent=2,  # Set indentation level
+        )
+        return cls.resolve_from_yaml(yaml_string)
 
 
 # marker type for skipping kwargs and triggering defaults
