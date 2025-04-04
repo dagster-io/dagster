@@ -1,27 +1,18 @@
-import {IntegrationTag} from './IntegrationTag';
-import {KnownTagType} from '../graph/OpTags';
-
 export type IntegrationConfig = {
-  id: string;
-  name: string;
-  icon: KnownTagType;
-  tags: IntegrationTag[];
+  frontmatter: IntegrationFrontmatter;
+  content: string;
+  logo: string | StaticImageData | null;
 };
 
-export type IntegrationDetails = {
+export type IntegrationFrontmatter = {
   id: string;
-  status: 'published' | 'unpublished';
+  status: string;
   name: string;
   title: string;
   excerpt: string;
-  date: string;
-  apireflink?: string;
-  docslink?: string;
-  partnerlink?: string;
-  logo: KnownTagType;
+  partnerlink: string;
   categories: string[];
   enabledBy: string[];
-  enables?: string[];
-  tags: IntegrationTag[];
-  markdown: string;
+  enables: string[];
+  tags: string[];
 };

@@ -9,14 +9,19 @@ import remarkGfm from 'remark-gfm';
 import {IntegrationIcon} from './IntegrationIcon';
 import {CopyIconButton} from '../ui/CopyButton';
 import styles from './css/IntegrationPage.module.css';
-import {IntegrationDetails} from './types';
+import {IntegrationConfig} from './types';
 
 interface Props {
-  integration: IntegrationDetails;
+  integration: IntegrationConfig;
 }
 
 export const IntegrationPage = ({integration}: Props) => {
-  const {name, title, logo, excerpt, markdown} = integration;
+  const {
+    frontmatter: {name, title, excerpt},
+    logo,
+    content,
+  } = integration;
+
   return (
     <div>
       <PageHeader
@@ -36,7 +41,7 @@ export const IntegrationPage = ({integration}: Props) => {
         style={{width: '1100px', margin: '0 auto'}}
       >
         <Box flex={{direction: 'row', gap: 12, alignItems: 'flex-start'}}>
-          <IntegrationIcon name={name} knownTag={logo} padding={12} />
+          <IntegrationIcon name={name} logo={logo} />
           <Box flex={{direction: 'column', gap: 2}} margin={{top: 4}}>
             <div style={{fontSize: 18, fontWeight: 600}}>{title}</div>
             <Body color={Colors.textLight()}>{excerpt}</Body>
@@ -51,7 +56,7 @@ export const IntegrationPage = ({integration}: Props) => {
               code: Code,
             }}
           >
-            {markdown}
+            {content}
           </ReactMarkdown>
         </div>
       </Box>
