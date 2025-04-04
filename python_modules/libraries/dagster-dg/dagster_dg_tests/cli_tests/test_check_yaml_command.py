@@ -31,6 +31,16 @@ from dagster_dg_tests.utils import (
     create_project_from_components,
 )
 
+SPECIFIED_ENV_VAR_TEST_CASE = ComponentValidationTestCase(
+    component_path="validation/basic_component_with_env",
+    component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
+    should_error=True,
+    check_error_msg=msg_includes_all_of(
+        "The following environment variables are used in components but not specified in the .env file or the current shell environment:",
+        "UNDEFINED_ENV_STRING",
+    ),
+)
+
 ENV_VAR_TEST_CASES = [
     ComponentValidationTestCase(
         component_path="validation/basic_component_missing_declared_env",
@@ -41,16 +51,9 @@ ENV_VAR_TEST_CASES = [
             "Component uses environment variables that are not specified in the component file: A_STRING",
         ),
     ),
-    ComponentValidationTestCase(
-        component_path="validation/basic_component_with_env",
-        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
-        should_error=True,
-        check_error_msg=msg_includes_all_of(
-            "The following environment variables are used in components but not specified in the .env file or the current shell environment:",
-            "UNDEFINED_ENV_STRING",
-        ),
-    ),
+    SPECIFIED_ENV_VAR_TEST_CASE,
 ]
+
 CLI_TEST_CASES = [
     *COMPONENT_VALIDATION_TEST_CASES,
     ComponentValidationTestCase(
@@ -109,8 +112,8 @@ def test_check_yaml(test_case: ComponentValidationTestCase) -> None:
     ids=[str(case.component_path) for case in ENV_VAR_TEST_CASES],
 )
 def test_check_yaml_no_env_var_validation(test_case: ComponentValidationTestCase) -> None:
-    """Tests that the check CLI prints rich error messages when attempting to
-    load components with errors.
+    """Tests that the check CLI does not validate env vars when the
+    --no-validate-requirements flag is provided.
     """
     with (
         ProxyRunner.test() as runner,
@@ -124,6 +127,34 @@ def test_check_yaml_no_env_var_validation(test_case: ComponentValidationTestCase
             result = runner.invoke("check", "yaml", "--no-validate-requirements")
 
             assert_runner_result(result)
+
+
+def test_check_yaml_env_var_specified() -> None:
+    """Tests that the check CLI discovers env vars in .env file or shell."""
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            SPECIFIED_ENV_VAR_TEST_CASE.component_path,
+            local_component_defn_to_inject=SPECIFIED_ENV_VAR_TEST_CASE.component_type_filepath,
+        ) as tmpdir,
+    ):
+        with pushd(tmpdir):
+            result = runner.invoke("check", "yaml")
+            assert_runner_result(result, exit_0=False)
+            assert SPECIFIED_ENV_VAR_TEST_CASE.check_error_msg
+            SPECIFIED_ENV_VAR_TEST_CASE.check_error_msg(str(result.stdout))
+
+            Path(tmpdir, ".env").write_text("UNDEFINED_ENV_STRING=foo")
+
+            result = runner.invoke("check", "yaml")
+            assert_runner_result(result)
+
+            Path(tmpdir, ".env").write_text("")
+
+            with set_env_var("UNDEFINED_ENV_STRING", "foo"):
+                result = runner.invoke("check", "yaml")
+                assert_runner_result(result)
 
 
 def test_check_yaml_succeeds_non_default_defs_module() -> None:
