@@ -492,7 +492,7 @@ class DbtCliEventMessage:
                         "Logging an `AssetObservation` instead of an `AssetCheckResult`"
                         f" for dbt test `{test_name}`.\n\n"
                         f"{additional_message}"
-                        "This test was included in Dagster's asset check"
+                        "This test was not included in Dagster's asset check"
                         " selection, and was likely executed due to dbt indirect selection."
                     )
                     logger.warning(message)
