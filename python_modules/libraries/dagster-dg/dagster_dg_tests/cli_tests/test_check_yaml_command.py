@@ -29,6 +29,7 @@ from dagster_dg_tests.utils import (
     ProxyRunner,
     assert_runner_result,
     create_project_from_components,
+    set_env_var,
 )
 
 SPECIFIED_ENV_VAR_TEST_CASE = ComponentValidationTestCase(
