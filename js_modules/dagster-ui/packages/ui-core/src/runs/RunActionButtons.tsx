@@ -231,7 +231,7 @@ export const RunActionButtons = (props: RunActionButtonsProps) => {
     });
   }
 
-  const options = [full, same, selected, fromSelected, fromFailure, fromAssetFailure];
+  const options = [full, same, selected, fromSelected, fromFailure, run.executionPlan?.assetSelection.length ? fromAssetFailure : null].filter(Boolean);
   const preferredRerun = selection.present
     ? selected
     : fromFailureEnabled && currentRunIsFromFailure

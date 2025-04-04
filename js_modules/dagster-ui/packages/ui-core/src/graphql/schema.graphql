@@ -2239,6 +2239,7 @@ type DuplicateDynamicPartitionError implements Error {
 type ExecutionPlan {
   steps: [ExecutionStep!]!
   artifactsPersisted: Boolean!
+  assetSelection: [String!]!
 }
 
 type ExecutionStep {
@@ -3998,6 +3999,7 @@ input ReexecutionParams {
 }
 
 enum ReexecutionStrategy {
+  FROM_ASSET_FAILURE
   FROM_FAILURE
   ALL_STEPS
 }
