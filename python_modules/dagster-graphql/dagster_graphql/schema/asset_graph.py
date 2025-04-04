@@ -1576,16 +1576,16 @@ class GrapheneAssetNode(graphene.ObjectType):
             ),
             dynamic_partitions_store=self._dynamic_partitions_loader,
         )
-        conn = partitions_def.get_partition_key_connection(
+        results = partitions_def.get_paginated_partition_keys(
             context=context,
             limit=limit,
             ascending=ascending,
             cursor=cursor,
         )
         return GraphenePartitionKeyConnection(
-            results=conn.results,
-            cursor=conn.cursor,
-            hasMore=conn.has_more,
+            results=results.results,
+            cursor=results.cursor,
+            hasMore=results.has_more,
         )
 
     def resolve_partitionDefinition(
