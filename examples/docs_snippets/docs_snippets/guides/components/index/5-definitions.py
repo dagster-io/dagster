@@ -1,6 +1,6 @@
-import jaffle_platform.defs
-
 from dagster.components import definitions, load_defs
+
+import jaffle_platform.defs
 
 
 @definitions
