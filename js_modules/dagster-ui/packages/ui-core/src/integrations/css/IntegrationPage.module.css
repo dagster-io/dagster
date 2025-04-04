@@ -70,7 +70,7 @@
 .codeBlock :global(.language-python) :global(.hljs-title.class_),
 .codeBlock :global(.language-python) :global(.hljs-title.class_.inherited__),
 .codeBlock :global(.language-python) :global(.hljs-title.function_) {
-  color: var(--color-text-blue);
+  color: var(--color-text-yellow);
 }
 
 .codeBlock :global(.language-python) :global(.hljs-attr),
@@ -89,7 +89,7 @@
 .codeBlock :global(.language-python) :global(.hljs-meta .hljs-string),
 .codeBlock :global(.language-python) :global(.hljs-regexp),
 .codeBlock :global(.language-python) :global(.hljs-string) {
-  color: var(--color-text-cyan);
+  color: var(--color-text-red);
 }
 
 .codeBlock :global(.language-python) :global(.hljs-built_in),
@@ -100,7 +100,7 @@
 .codeBlock :global(.language-python) :global(.hljs-code),
 .codeBlock :global(.language-python) :global(.hljs-comment),
 .codeBlock :global(.language-python) :global(.hljs-formula) {
-  color: var(--color-text-light);
+  color: var(--color-text-lighter);
 }
 
 .codeBlock :global(.language-python) :global(.hljs-name),

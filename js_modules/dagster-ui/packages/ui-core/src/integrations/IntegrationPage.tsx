@@ -24,11 +24,7 @@ export const IntegrationPage = ({integration}: Props) => {
 
   return (
     <div>
-      <Box
-        padding={{vertical: 24}}
-        flex={{direction: 'column', gap: 12}}
-        style={{width: '1100px', margin: '0 auto'}}
-      >
+      <Box padding={{vertical: 24}} flex={{direction: 'column', gap: 12}}>
         <Box flex={{direction: 'row', gap: 12, alignItems: 'flex-start'}}>
           <IntegrationIcon name={name} logo={logo} />
           <Box flex={{direction: 'column', gap: 2}} margin={{top: 4}}>
