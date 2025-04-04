@@ -2,6 +2,6 @@ type: dagster_dbt.DbtProjectComponent
 
 attributes:
   dbt:
-    project_dir: ../../../dbt/jdbt
+    project_dir: ../../../../dbt/jdbt
   asset_attributes:
     key: "target/main/{{ node.name }}"

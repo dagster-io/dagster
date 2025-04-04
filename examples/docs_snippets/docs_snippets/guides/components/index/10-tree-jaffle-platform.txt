@@ -1,6 +1,6 @@
-tree jaffle_platform
+tree src/jaffle_platform
 
-jaffle_platform
+src/jaffle_platform
 ├── __init__.py
 ├── definitions.py
 ├── defs

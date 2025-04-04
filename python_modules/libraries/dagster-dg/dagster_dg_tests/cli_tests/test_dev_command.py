@@ -1,6 +1,7 @@
 import signal
 import subprocess
 import tempfile
+import textwrap
 import time
 from pathlib import Path
 from typing import Optional, TextIO
@@ -56,7 +57,7 @@ def test_dev_workspace_context_success(monkeypatch):
         )
         assert_runner_result(result)
 
-        (Path("project-2") / "project_2" / "defs" / "my_asset.py").write_text(
+        (Path("project-2") / "src" / "project_2" / "defs" / "my_asset.py").write_text(
             "import dagster as dg\n\n@dg.asset\ndef my_asset(): pass"
         )
         port = find_free_port()
@@ -90,13 +91,14 @@ def test_dev_workspace_load_env_files(monkeypatch):
 
         (Path("project-2") / ".env").write_text("PROJECT_ENV_VAR=2\nOVERWRITTEN_ENV_VAR=4")
 
-        (Path("project-2") / "project_2" / "defs" / "my_def.py").write_text(
-            """import os
+        (Path("project-2") / "src" / "project_2" / "defs" / "my_def.py").write_text(
+            textwrap.dedent("""
+            import os
 
-assert os.environ["PROJECT_ENV_VAR"] == "2"
-assert os.environ["WORKSPACE_ENV_VAR"] == "1"
-assert os.environ["OVERWRITTEN_ENV_VAR"] == "4"
-"""
+            assert os.environ["PROJECT_ENV_VAR"] == "2"
+            assert os.environ["WORKSPACE_ENV_VAR"] == "1"
+            assert os.environ["OVERWRITTEN_ENV_VAR"] == "4"
+            """).strip()
         )
         port = find_free_port()
         with tempfile.NamedTemporaryFile() as stdout_file, open(stdout_file.name, "w") as stdout:
@@ -146,19 +148,20 @@ def test_dev_workspace_load_env_files_backcompat(monkeypatch):
 
         # Expect that the project env vars are not loaded, since the Dagster version is old
         # enough
-        (Path("project-2") / "project_2" / "definitions.py").write_text(
-            """import os
+        (Path("project-2") / "src" / "project_2" / "definitions.py").write_text(
+            textwrap.dedent("""
+            import os
 
-from dagster import __version__
+            from dagster import __version__
 
-assert __version__ == "1.10.7"
-assert os.getenv("PROJECT_ENV_VAR") is None
-assert os.environ["WORKSPACE_ENV_VAR"] == "1"
-assert os.environ["OVERWRITTEN_ENV_VAR"] == "3"
+            assert __version__ == "1.10.7"
+            assert os.getenv("PROJECT_ENV_VAR") is None
+            assert os.environ["WORKSPACE_ENV_VAR"] == "1"
+            assert os.environ["OVERWRITTEN_ENV_VAR"] == "3"
 
-import dagster as dg
-defs = dg.Definitions()
-"""
+            import dagster as dg
+            defs = dg.Definitions()
+            """).strip()
         )
         port = find_free_port()
 
