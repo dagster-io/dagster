@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {explodeCompositesInHandleGraph} from './CompositeSupport';
@@ -69,11 +69,18 @@ export const PipelineExplorerContainer = (props: {
   isGraph?: boolean;
 }) => {
   const {explorerPath, repoAddress} = props;
+  const job = useJob(repoAddress, explorerPath.pipelineName);
   const [options, setOptions] = useState<GraphExplorerOptions>({
     explodeComposites: explorerPath.explodeComposites ?? false,
     preferAssetRendering: true,
   });
-  const job = useJob(repoAddress, explorerPath.pipelineName);
+  const isExternal = !!job && job.isAirliftJob;
+  useEffect(() => {
+    if (isExternal !== options.isExternal) {
+      setOptions({...options, isExternal});
+    }
+    return () => {};
+  }, [isExternal, options]);
   if (job && job.isAssetJob && options.preferAssetRendering) {
     const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
     return (

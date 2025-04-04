@@ -4533,6 +4533,7 @@ export type GraphExplorerFragment_PipelineSnapshot = {
   description: string | null;
   pipelineSnapshotId: string;
   parentSnapshotId: string | null;
+  isAirliftJob: boolean;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
