@@ -144,7 +144,7 @@ export const BackfillRunsTab = ({
       emptyState={() => (
         <Box
           padding={{vertical: 24}}
-          border="top-and-bottom"
+          border="bottom"
           flex={{direction: 'column', alignItems: 'center'}}
         >
           No runs have been launched.
