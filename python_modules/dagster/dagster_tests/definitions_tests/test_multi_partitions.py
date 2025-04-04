@@ -693,7 +693,7 @@ def test_basic_pagination():
 
     multi_partitions = MultiPartitionsDefinition({"dim_a": dimension_a, "dim_b": dimension_b})
 
-    connection = multi_partitions.get_partition_key_connection(
+    paginated_results = multi_partitions.get_paginated_partition_keys(
         context=PartitionLoadingContext(
             temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
             dynamic_partitions_store=None,
@@ -703,37 +703,37 @@ def test_basic_pagination():
         cursor=None,
     )
 
-    assert len(connection.results) == 3
-    assert connection.has_more
+    assert len(paginated_results.results) == 3
+    assert paginated_results.has_more
 
     expected_keys = [
         {"dim_a": "a1", "dim_b": "b1"},
         {"dim_a": "a1", "dim_b": "b2"},
         {"dim_a": "a2", "dim_b": "b1"},
     ]
-    for i, key in enumerate(connection.results):
+    for i, key in enumerate(paginated_results.results):
         assert isinstance(key, MultiPartitionKey)
         assert cast(MultiPartitionKey, key).keys_by_dimension == expected_keys[i]
 
-    connection2 = multi_partitions.get_partition_key_connection(
+    paginated_results2 = multi_partitions.get_paginated_partition_keys(
         context=PartitionLoadingContext(
             temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
             dynamic_partitions_store=None,
         ),
         limit=3,
         ascending=True,
-        cursor=connection.cursor,
+        cursor=paginated_results.cursor,
     )
 
-    assert len(connection2.results) == 3
-    assert not connection2.has_more
+    assert len(paginated_results2.results) == 3
+    assert not paginated_results2.has_more
 
     expected_keys2 = [
         {"dim_a": "a2", "dim_b": "b2"},
         {"dim_a": "a3", "dim_b": "b1"},
         {"dim_a": "a3", "dim_b": "b2"},
     ]
-    for i, key in enumerate(connection2.results):
+    for i, key in enumerate(paginated_results2.results):
         assert isinstance(key, MultiPartitionKey)
         assert cast(MultiPartitionKey, key).keys_by_dimension == expected_keys2[i]
 
@@ -745,7 +745,7 @@ def test_reverse_pagination():
 
     multi_partitions = MultiPartitionsDefinition({"dim_a": dimension_a, "dim_b": dimension_b})
 
-    connection = multi_partitions.get_partition_key_connection(
+    paginated_results = multi_partitions.get_paginated_partition_keys(
         context=PartitionLoadingContext(
             temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
             dynamic_partitions_store=None,
@@ -755,36 +755,36 @@ def test_reverse_pagination():
         cursor=None,
     )
 
-    assert len(connection.results) == 3
-    assert connection.has_more
+    assert len(paginated_results.results) == 3
+    assert paginated_results.has_more
     expected_keys = [
         {"dim_a": "a3", "dim_b": "b2"},
         {"dim_a": "a3", "dim_b": "b1"},
         {"dim_a": "a2", "dim_b": "b2"},
     ]
-    for i, key in enumerate(connection.results):
+    for i, key in enumerate(paginated_results.results):
         assert isinstance(key, MultiPartitionKey)
         assert cast(MultiPartitionKey, key).keys_by_dimension == expected_keys[i]
 
-    connection2 = multi_partitions.get_partition_key_connection(
+    paginated_results2 = multi_partitions.get_paginated_partition_keys(
         context=PartitionLoadingContext(
             temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
             dynamic_partitions_store=None,
         ),
         limit=3,
         ascending=False,
-        cursor=connection.cursor,
+        cursor=paginated_results.cursor,
     )
 
-    assert len(connection2.results) == 3
-    assert not connection2.has_more
+    assert len(paginated_results2.results) == 3
+    assert not paginated_results2.has_more
 
     expected_keys2 = [
         {"dim_a": "a2", "dim_b": "b1"},
         {"dim_a": "a1", "dim_b": "b2"},
         {"dim_a": "a1", "dim_b": "b1"},
     ]
-    for i, key in enumerate(connection2.results):
+    for i, key in enumerate(paginated_results2.results):
         assert isinstance(key, MultiPartitionKey)
         assert cast(MultiPartitionKey, key).keys_by_dimension == expected_keys2[i]
 
@@ -806,15 +806,15 @@ def test_pagination_accumulation():
 
     # Paginate through all results
     while has_more:
-        connection = multi_partitions.get_partition_key_connection(
+        paginated_results = multi_partitions.get_paginated_partition_keys(
             context=partition_context,
             ascending=True,
             cursor=cursor,
             limit=4,
         )
-        all_results.extend(connection.results)
-        cursor = connection.cursor
-        has_more = connection.has_more
+        all_results.extend(paginated_results.results)
+        cursor = paginated_results.cursor
+        has_more = paginated_results.has_more
 
     assert len(all_results) == 20
 
@@ -833,15 +833,15 @@ def test_pagination_accumulation():
     cursor = None
     has_more = True
     while has_more:
-        connection = multi_partitions.get_partition_key_connection(
+        paginated_results = multi_partitions.get_paginated_partition_keys(
             context=partition_context,
             ascending=False,
             cursor=cursor,
             limit=4,
         )
-        reverse_results.extend(connection.results)
-        cursor = connection.cursor
-        has_more = connection.has_more
+        reverse_results.extend(paginated_results.results)
+        cursor = paginated_results.cursor
+        has_more = paginated_results.has_more
 
     assert len(reverse_results) == 20
     assert reverse_results == [str(key) for key in reversed(all_results)]
@@ -857,14 +857,14 @@ def test_empty_dimension():
         temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
         dynamic_partitions_store=None,
     )
-    connection = multi_partitions.get_partition_key_connection(
+    paginated_results = multi_partitions.get_paginated_partition_keys(
         context=partition_context,
         ascending=True,
         cursor=None,
         limit=10,
     )
-    assert len(connection.results) == 0
-    assert not connection.has_more
+    assert len(paginated_results.results) == 0
+    assert not paginated_results.has_more
 
 
 def test_large_cross_product_memory_usage():
@@ -884,7 +884,7 @@ def test_large_cross_product_memory_usage():
         mock.patch("itertools.product") as mock_product,
         mock.patch.object(multi_partitions, "get_partition_keys") as mock_get_partition_keys,
     ):
-        connection = multi_partitions.get_partition_key_connection(
+        paginated_results = multi_partitions.get_paginated_partition_keys(
             context=partition_context,
             ascending=True,
             cursor=None,
@@ -892,7 +892,7 @@ def test_large_cross_product_memory_usage():
         )
 
         # Verify we got the right number of results
-        assert len(connection.results) == 10
-        assert connection.has_more
+        assert len(paginated_results.results) == 10
+        assert paginated_results.has_more
         mock_product.assert_not_called()
         mock_get_partition_keys.assert_not_called()

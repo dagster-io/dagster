@@ -779,16 +779,16 @@ def get_paginated_partition_keys(
     )
     counter = 0
     while has_more:
-        connection = partitions_def.get_partition_key_connection(
+        paginated_results = partitions_def.get_paginated_partition_keys(
             context=partitions_context,
             limit=batch_size,
             ascending=ascending,
             cursor=cursor,
         )
         counter += 1
-        all_results.extend(connection.results)
-        cursor = connection.cursor
-        has_more = connection.has_more
+        all_results.extend(paginated_results.results)
+        cursor = paginated_results.cursor
+        has_more = paginated_results.has_more
 
         if counter > MAX_PAGES:
             raise Exception("Too many pages")

@@ -339,7 +339,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             current_time or get_current_datetime(), dynamic_partitions_store
         )
 
-    def get_partition_key_connection(
+    def get_paginated_partition_keys(
         self,
         context: PartitionLoadingContext,
         limit: int,

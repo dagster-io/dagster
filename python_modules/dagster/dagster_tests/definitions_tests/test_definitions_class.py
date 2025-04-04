@@ -972,7 +972,7 @@ def test_invalid_partitions_subclass():
         ) -> Sequence[str]:
             return ["a", "b", "c"]
 
-        def get_partition_key_connection(
+        def get_paginated_partition_keys(
             self,
             context: PartitionLoadingContext,
             limit: int,

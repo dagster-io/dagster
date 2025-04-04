@@ -1942,24 +1942,28 @@ def test_daily_pagination():
         ),
         dynamic_partitions_store=None,
     )
-    connection = partitions_def.get_partition_key_connection(
+    paginated_results = partitions_def.get_paginated_partition_keys(
         context=partition_context, limit=3, ascending=True, cursor=None
     )
 
-    assert len(connection.results) == 3
-    assert connection.has_more
-    assert [partitions_def.time_window_for_partition_key(key) for key in connection.results] == [
+    assert len(paginated_results.results) == 3
+    assert paginated_results.has_more
+    assert [
+        partitions_def.time_window_for_partition_key(key) for key in paginated_results.results
+    ] == [
         time_window("2021-05-05", "2021-05-06"),
         time_window("2021-05-06", "2021-05-07"),
         time_window("2021-05-07", "2021-05-08"),
     ]
 
-    connection = partitions_def.get_partition_key_connection(
-        context=partition_context, limit=3, ascending=True, cursor=connection.cursor
+    paginated_results = partitions_def.get_paginated_partition_keys(
+        context=partition_context, limit=3, ascending=True, cursor=paginated_results.cursor
     )
-    assert len(connection.results) == 3
-    assert connection.has_more
-    assert [partitions_def.time_window_for_partition_key(key) for key in connection.results] == [
+    assert len(paginated_results.results) == 3
+    assert paginated_results.has_more
+    assert [
+        partitions_def.time_window_for_partition_key(key) for key in paginated_results.results
+    ] == [
         time_window("2021-05-08", "2021-05-09"),
         time_window("2021-05-09", "2021-05-10"),
         time_window("2021-05-10", "2021-05-11"),
@@ -1979,11 +1983,11 @@ def test_empty_pagination():
         ),
         dynamic_partitions_store=None,
     )
-    connection = partitions_def.get_partition_key_connection(
+    paginated_results = partitions_def.get_paginated_partition_keys(
         context=partition_context, limit=10, ascending=True, cursor=None
     )
-    assert len(connection.results) == 0
-    assert not connection.has_more
+    assert len(paginated_results.results) == 0
+    assert not paginated_results.has_more
 
 
 def test_pagination_limit():
@@ -1999,12 +2003,12 @@ def test_pagination_limit():
     all_keys = partitions_def.get_partition_keys(current_time)
 
     for limit in [1, 3, 5, 7, 11, 50]:
-        connection = partitions_def.get_partition_key_connection(
+        paginated_results = partitions_def.get_paginated_partition_keys(
             context=partition_context, limit=limit, ascending=True, cursor=None
         )
-        assert len(connection.results) == min(limit, len(all_keys))
-        assert connection.has_more == (len(all_keys) > limit)
-        assert connection.results == all_keys[:limit]
+        assert len(paginated_results.results) == min(limit, len(all_keys))
+        assert paginated_results.has_more == (len(all_keys) > limit)
+        assert paginated_results.results == all_keys[:limit]
 
 
 def test_reverse_pagination():
@@ -2020,12 +2024,12 @@ def test_reverse_pagination():
     all_keys = partitions_def.get_partition_keys(current_time)
 
     for limit in [1, 3, 5, 7, 11, 50]:
-        connection = partitions_def.get_partition_key_connection(
+        paginated_results = partitions_def.get_paginated_partition_keys(
             context=partition_context, limit=limit, ascending=False, cursor=None
         )
-        assert len(connection.results) == min(limit, len(all_keys))
-        assert connection.has_more == (len(all_keys) > limit)
-        assert connection.results == list(reversed(all_keys[-1 * limit :]))
+        assert len(paginated_results.results) == min(limit, len(all_keys))
+        assert paginated_results.has_more == (len(all_keys) > limit)
+        assert paginated_results.results == list(reversed(all_keys[-1 * limit :]))
 
 
 def test_reverse_pagination_end_offset():
@@ -2040,11 +2044,11 @@ def test_reverse_pagination_end_offset():
     )
     all_keys = partitions_def.get_partition_keys(current_time)
 
-    connection = partitions_def.get_partition_key_connection(
+    paginated_results = partitions_def.get_paginated_partition_keys(
         context=partition_context, limit=5, ascending=False, cursor=None
     )
 
-    assert connection.results == [
+    assert paginated_results.results == [
         "2021-06-06",
         "2021-06-05",
         "2021-06-04",
@@ -2069,11 +2073,11 @@ def test_reverse_pagination_negative_end_offset():
     )
     all_keys = partitions_def.get_partition_keys(current_time)
 
-    connection = partitions_def.get_partition_key_connection(
+    paginated_results = partitions_def.get_paginated_partition_keys(
         context=partition_context, limit=5, ascending=False, cursor=None
     )
 
-    assert connection.results == [
+    assert paginated_results.results == [
         "2021-06-02",
         "2021-06-01",
         "2021-05-31",

@@ -497,7 +497,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
         return partition_keys
 
-    def get_partition_key_connection(
+    def get_paginated_partition_keys(
         self,
         context: PartitionLoadingContext,
         limit: int,
@@ -854,11 +854,11 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
     @functools.lru_cache(maxsize=5)
     def get_partition_keys_in_time_window(self, time_window: TimeWindow) -> Sequence[str]:
-        conn = self.get_partition_key_connection_in_time_window(time_window)
-        return conn.results
+        paginated_results = self.get_paginated_partition_keys_in_time_window(time_window)
+        return paginated_results.results
 
     @functools.lru_cache(maxsize=5)
-    def get_partition_key_connection_in_time_window(
+    def get_paginated_partition_keys_in_time_window(
         self,
         time_window: TimeWindow,
         limit: Optional[int] = None,

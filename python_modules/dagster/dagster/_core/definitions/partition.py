@@ -189,7 +189,7 @@ class PartitionsDefinition(ABC, Generic[T_str]):
         ...
 
     @abstractmethod
-    def get_partition_key_connection(
+    def get_paginated_partition_keys(
         self,
         context: PartitionLoadingContext,
         limit: int,
@@ -429,7 +429,7 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
         """
         return self._partition_keys
 
-    def get_partition_key_connection(
+    def get_paginated_partition_keys(
         self,
         context: PartitionLoadingContext,
         limit: int,
@@ -628,7 +628,7 @@ class DynamicPartitionsDefinition(
                 partitions_def_name=self._validated_name()
             )
 
-    def get_partition_key_connection(
+    def get_paginated_partition_keys(
         self,
         context: PartitionLoadingContext,
         limit: int,
