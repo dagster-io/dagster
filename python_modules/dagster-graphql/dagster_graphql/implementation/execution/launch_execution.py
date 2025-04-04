@@ -93,7 +93,8 @@ def launch_reexecution_from_parent_run(
         instance.get_run_by_id(parent_run_id), f"Could not find parent run with id: {parent_run_id}"
     )
 
-    if strategy == "FROM_FAILURE":
+    strategy = ReexecutionStrategy(strategy)
+    if strategy == ReexecutionStrategy.FROM_ASSET_FAILURE:
         planned = instance.all_logs(
             parent_run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
         )
@@ -106,16 +107,12 @@ def launch_reexecution_from_parent_run(
             for entry in planned
             if entry.dagster_event and entry.dagster_event.asset_key
         }
-        print("PLANNED:\n", list(sorted(planned_keys)))
         materialized_keys = {
             entry.dagster_event.asset_key
             for entry in materialized
             if entry.dagster_event and entry.dagster_event.asset_key
         }
-        print("MATERIALIZED:\n", list(sorted(materialized_keys)))
-
         asset_selection = planned_keys - materialized_keys
-        print("ASSET SELECTION:\n", list(sorted(asset_selection)))
     else:
         asset_selection = parent_run.asset_selection
 
@@ -142,7 +139,7 @@ def launch_reexecution_from_parent_run(
         parent_run=cast(DagsterRun, parent_run),
         code_location=repo_location,
         remote_job=external_pipeline,
-        strategy=ReexecutionStrategy(strategy),
+        strategy=strategy,
         extra_tags=extra_tags,
         use_parent_run_tags=use_parent_run_tags
         if use_parent_run_tags is not None

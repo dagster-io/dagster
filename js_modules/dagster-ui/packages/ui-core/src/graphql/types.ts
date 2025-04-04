@@ -1441,6 +1441,7 @@ export type ExecutionParams = {
 export type ExecutionPlan = {
   __typename: 'ExecutionPlan';
   artifactsPersisted: Scalars['Boolean']['output'];
+  assetSelection: Array<Scalars['String']['output']>;
   steps: Array<ExecutionStep>;
 };
 
@@ -4205,8 +4206,8 @@ export type ReexecutionParams = {
 
 export enum ReexecutionStrategy {
   ALL_STEPS = 'ALL_STEPS',
-  FROM_FAILURE = 'FROM_FAILURE',
   FROM_ASSET_FAILURE = 'FROM_ASSET_FAILURE',
+  FROM_FAILURE = 'FROM_FAILURE',
 }
 
 export type RegularConfigType = ConfigType & {
@@ -8333,6 +8334,8 @@ export const buildExecutionPlan = (
       overrides && overrides.hasOwnProperty('artifactsPersisted')
         ? overrides.artifactsPersisted!
         : true,
+    assetSelection:
+      overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
     steps: overrides && overrides.hasOwnProperty('steps') ? overrides.steps! : [],
   };
 };
