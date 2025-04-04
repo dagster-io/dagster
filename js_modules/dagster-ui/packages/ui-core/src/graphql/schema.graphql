@@ -1141,6 +1141,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
+  isAirliftJob: Boolean!
   repository: Repository!
   partitionKeysOrError(
     cursor: String
@@ -2240,6 +2241,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
+  isAirliftJob: Boolean!
   repository: Repository!
   partitionKeysOrError(
     cursor: String

@@ -32,6 +32,7 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {isThisThingAJob} from '../workspace/WorkspaceContext/util';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
+import { getExternalRunUrl, isExternalRun } from './externalRuns';
 
 export const RunRoot = () => {
   useTrackPageView();
@@ -178,6 +179,31 @@ const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
         />
       </Box>
     );
+  }
+
+  if (isExternalRun(data.pipelineRunOrError)) {
+    const externalUrl = getExternalRunUrl(data.pipelineRunOrError);
+    if (externalUrl) {
+      return (
+        <Box padding={{vertical: 64}}>
+          <NonIdealState
+            icon="job"
+            title="External URL found"
+            description={`This run was executed externally at ${externalUrl}.`}
+          />
+        </Box>
+      );
+    } else {
+      return (
+        <Box padding={{vertical: 64}}>
+          <NonIdealState
+            icon="job"
+            title="No external URL found"
+            description="This run was executed externally, but does not have an external URL."
+          />
+        </Box>
+      );
+    }
   }
 
   return <Run run={data.pipelineRunOrError} runId={runId} />;

@@ -2155,6 +2155,7 @@ export type Job = IPipelineSnapshot &
     description: Maybe<Scalars['String']['output']>;
     graphName: Scalars['String']['output'];
     id: Scalars['ID']['output'];
+    isAirliftJob: Scalars['Boolean']['output'];
     isAssetJob: Scalars['Boolean']['output'];
     isJob: Scalars['Boolean']['output'];
     metadataEntries: Array<
@@ -3510,6 +3511,7 @@ export type Pipeline = IPipelineSnapshot &
     description: Maybe<Scalars['String']['output']>;
     graphName: Scalars['String']['output'];
     id: Scalars['ID']['output'];
+    isAirliftJob: Scalars['Boolean']['output'];
     isAssetJob: Scalars['Boolean']['output'];
     isJob: Scalars['Boolean']['output'];
     metadataEntries: Array<
@@ -9516,6 +9518,8 @@ export const buildJob = (
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : 'f1c0de0d-2ab7-40ab-8344-a0f76da09d78',
+    isAirliftJob:
+      overrides && overrides.hasOwnProperty('isAirliftJob') ? overrides.isAirliftJob! : true,
     isAssetJob: overrides && overrides.hasOwnProperty('isAssetJob') ? overrides.isAssetJob! : false,
     isJob: overrides && overrides.hasOwnProperty('isJob') ? overrides.isJob! : true,
     metadataEntries:
@@ -11800,6 +11804,8 @@ export const buildPipeline = (
       overrides && overrides.hasOwnProperty('id')
         ? overrides.id!
         : 'fda68e2a-475a-433c-8539-8a9b6fe6ccd5',
+    isAirliftJob:
+      overrides && overrides.hasOwnProperty('isAirliftJob') ? overrides.isAirliftJob! : false,
     isAssetJob: overrides && overrides.hasOwnProperty('isAssetJob') ? overrides.isAssetJob! : true,
     isJob: overrides && overrides.hasOwnProperty('isJob') ? overrides.isJob! : true,
     metadataEntries:

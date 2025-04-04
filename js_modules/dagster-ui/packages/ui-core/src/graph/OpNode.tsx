@@ -27,6 +27,7 @@ interface IOpNodeProps {
   onDoubleClick: () => void;
   onEnterComposite: () => void;
   onHighlightEdges: (edges: Edge[]) => void;
+  hideIO?: boolean;
 }
 
 const TOOLTIP_STYLE = JSON.stringify({
@@ -87,7 +88,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
   };
 
   public render() {
-    const {definition, invocation, layout, dim, focused, selected, minified} = this.props;
+    const {definition, invocation, layout, dim, focused, selected, minified, hideIO} = this.props;
     const {metadata} = definition;
     if (!layout) {
       throw new Error(`Layout is missing for ${definition.name}`);
@@ -137,18 +138,20 @@ export class OpNode extends React.Component<IOpNodeProps> {
             {minified ? 'C' : 'Config'}
           </div>
         )}
-        <div>
-          {definition.inputDefinitions.map((item, idx) => (
-            <OpIOBox
-              {...this.props}
-              {...metadataForIO(item, invocation)}
-              key={idx}
-              item={item}
-              layoutInfo={layout.inputs[item.name]}
-              colorKey="input"
-            />
-          ))}
-        </div>
+        {!hideIO && (
+          <div>
+            {definition.inputDefinitions.map((item, idx) => (
+              <OpIOBox
+                {...this.props}
+                {...metadataForIO(item, invocation)}
+                key={idx}
+                item={item}
+                layoutInfo={layout.inputs[item.name]}
+                colorKey="input"
+              />
+            ))}
+          </div>
+        )}
         <div className="node-box" style={{...position(layout.op)}}>
           <div className="name">
             {!minified && <Icon name="op" size={16} />}
@@ -174,18 +177,20 @@ export class OpNode extends React.Component<IOpNodeProps> {
             }}
           />
         )}
-        <div>
-          {definition.outputDefinitions.map((item, idx) => (
-            <OpIOBox
-              {...this.props}
-              {...metadataForIO(item, invocation)}
-              key={idx}
-              item={item}
-              layoutInfo={layout.outputs[item.name]}
-              colorKey="output"
-            />
-          ))}
-        </div>
+        {!hideIO && (
+          <div>
+            {definition.outputDefinitions.map((item, idx) => (
+              <OpIOBox
+                {...this.props}
+                {...metadataForIO(item, invocation)}
+                key={idx}
+                item={item}
+                layoutInfo={layout.outputs[item.name]}
+                colorKey="output"
+              />
+            ))}
+          </div>
+        )}
       </NodeContainer>
     );
   }
