@@ -15,7 +15,7 @@ describe('AssetKeyTagCollection', () => {
     const key = makeKeys(1)[0]!;
     render(
       <MemoryRouter>
-        <AssetCheckTagCollection assetChecks={[key]} useTags />
+        <AssetCheckTagCollection assetChecks={[key]} />
       </MemoryRouter>,
     );
 
@@ -29,7 +29,7 @@ describe('AssetKeyTagCollection', () => {
     await act(async () => {
       render(
         <MemoryRouter>
-          <AssetCheckTagCollection assetChecks={keys} useTags />
+          <AssetCheckTagCollection assetChecks={keys} />
         </MemoryRouter>,
       );
     });
