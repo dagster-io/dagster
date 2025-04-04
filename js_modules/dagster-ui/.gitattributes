@@ -11,3 +11,4 @@ packages/ui-core/src/asset-selection/generated/* linguist-generated=true
 packages/ui-core/src/selection/generated/* linguist-generated=true
 packages/ui-core/src/run-selection/generated/* linguist-generated=true
 packages/ui-core/src/op-selection/generated/* linguist-generated=true
+packages/ui-core/src/integrations/__generated__/* linguist-generated=true

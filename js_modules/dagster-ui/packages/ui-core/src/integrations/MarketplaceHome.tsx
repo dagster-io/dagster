@@ -14,6 +14,11 @@ interface Props {
 export const MarketplaceHome = (props: Props) => {
   const {integrations} = props;
   const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredIntegrations = integrations.filter((integration) => {
+    return integration.frontmatter.name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
   return (
     <Box flex={{direction: 'column', gap: 12}}>
       <Box margin={{bottom: 8}}>
@@ -34,8 +39,11 @@ export const MarketplaceHome = (props: Props) => {
         ))}
       </Box>
       <IntegrationGrid>
-        {integrations.map((integration) => {
-          const {id, name, icon: knownTag} = integration;
+        {filteredIntegrations.map((integration) => {
+          const {
+            frontmatter: {id, name, title},
+            logo,
+          } = integration;
           return (
             <CardLink key={id} to={`/integrations/${id}`}>
               <Box
@@ -44,8 +52,8 @@ export const MarketplaceHome = (props: Props) => {
                 border="all"
                 style={{borderRadius: 8, overflow: 'hidden'}}
               >
-                <IntegrationIcon name={name} knownTag={knownTag} />
-                <div style={{fontSize: 16, fontWeight: 600, flex: 1}}>{name}</div>
+                <IntegrationIcon name={name} logo={logo} />
+                <div style={{fontSize: 16, fontWeight: 600, flex: 1}}>{name || title}</div>
               </Box>
             </CardLink>
           );

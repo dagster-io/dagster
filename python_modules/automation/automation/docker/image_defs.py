@@ -140,7 +140,7 @@ def k8s_celery_worker_editable_cm(cwd: str) -> Iterator[None]:
 def user_code_example_cm(cwd: str) -> Iterator[None]:
     with copy_directories(
         [
-            "examples/deploy_k8s/example_project",
+            "examples/deploy_k8s/iris_analysis",
         ],
         cwd,
     ):

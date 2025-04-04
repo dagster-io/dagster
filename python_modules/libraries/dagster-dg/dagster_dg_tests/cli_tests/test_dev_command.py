@@ -1,6 +1,7 @@
 import signal
 import subprocess
 import tempfile
+import textwrap
 import time
 from pathlib import Path
 from typing import Optional, TextIO
@@ -56,7 +57,7 @@ def test_dev_workspace_context_success(monkeypatch):
         )
         assert_runner_result(result)
 
-        (Path("project-2") / "project_2" / "defs" / "my_asset.py").write_text(
+        (Path("project-2") / "src" / "project_2" / "defs" / "my_asset.py").write_text(
             "import dagster as dg\n\n@dg.asset\ndef my_asset(): pass"
         )
         port = find_free_port()
@@ -90,13 +91,14 @@ def test_dev_workspace_load_env_files(monkeypatch):
 
         (Path("project-2") / ".env").write_text("PROJECT_ENV_VAR=2\nOVERWRITTEN_ENV_VAR=4")
 
-        (Path("project-2") / "project_2" / "defs" / "my_def.py").write_text(
-            """import os
+        (Path("project-2") / "src" / "project_2" / "defs" / "my_def.py").write_text(
+            textwrap.dedent("""
+            import os
 
-assert os.environ["PROJECT_ENV_VAR"] == "2"
-assert os.environ["WORKSPACE_ENV_VAR"] == "1"
-assert os.environ["OVERWRITTEN_ENV_VAR"] == "4"
-"""
+            assert os.environ["PROJECT_ENV_VAR"] == "2"
+            assert os.environ["WORKSPACE_ENV_VAR"] == "1"
+            assert os.environ["OVERWRITTEN_ENV_VAR"] == "4"
+            """).strip()
         )
         port = find_free_port()
         with tempfile.NamedTemporaryFile() as stdout_file, open(stdout_file.name, "w") as stdout:
@@ -146,19 +148,20 @@ def test_dev_workspace_load_env_files_backcompat(monkeypatch):
 
         # Expect that the project env vars are not loaded, since the Dagster version is old
         # enough
-        (Path("project-2") / "project_2" / "definitions.py").write_text(
-            """import os
+        (Path("project-2") / "src" / "project_2" / "definitions.py").write_text(
+            textwrap.dedent("""
+            import os
 
-from dagster import __version__
+            from dagster import __version__
 
-assert __version__ == "1.10.7"
-assert os.getenv("PROJECT_ENV_VAR") is None
-assert os.environ["WORKSPACE_ENV_VAR"] == "1"
-assert os.environ["OVERWRITTEN_ENV_VAR"] == "3"
+            assert __version__ == "1.10.7"
+            assert os.getenv("PROJECT_ENV_VAR") is None
+            assert os.environ["WORKSPACE_ENV_VAR"] == "1"
+            assert os.environ["OVERWRITTEN_ENV_VAR"] == "3"
 
-import dagster as dg
-defs = dg.Definitions()
-"""
+            import dagster as dg
+            defs = dg.Definitions()
+            """).strip()
         )
         port = find_free_port()
 
@@ -182,6 +185,21 @@ def test_dev_project_context_success():
         port = find_free_port()
         dev_process = _launch_dev_command(["--port", str(port)])
         _assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)
+
+
+@pytest.mark.skipif(is_windows(), reason="Temporarily skipping (signal issues in CLI)..")
+def test_dev_command_project_context_success_no_uv_sync():
+    with ProxyRunner.test() as runner, isolated_example_project_foo_bar(runner):
+        # Insert a random dep into pyproject.toml to ensure uv sync is run
+        Path("pyproject.toml").write_text(
+            Path("pyproject.toml").read_text().replace('"dagster",', '"dagster",\n"yaspin",')
+        )
+        with tempfile.NamedTemporaryFile() as stdout_file, open(stdout_file.name, "w") as stdout:
+            port = find_free_port()
+            dev_process = _launch_dev_command(["--port", str(port)], stdout=stdout, stderr=stdout)
+            _assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)
+
+            assert "Installed" in Path(stdout_file.name).read_text()
 
 
 @pytest.mark.skipif(
@@ -288,7 +306,10 @@ def test_implicit_yaml_check_from_dg_dev_workspace() -> None:
 
 
 def _launch_dev_command(
-    options: list[str], capture_output: bool = False, stdout: Optional[TextIO] = None
+    options: list[str],
+    capture_output: bool = False,
+    stdout: Optional[TextIO] = None,
+    stderr: Optional[TextIO] = None,
 ) -> subprocess.Popen:
     # We start a new process instead of using the runner to avoid blocking the test. We need to
     # poll the webserver to know when it is ready.
@@ -300,6 +321,7 @@ def _launch_dev_command(
             *options,
         ],
         stdout=stdout if stdout else (subprocess.PIPE if capture_output else None),
+        stderr=stderr if stderr else None,
     )
 
 

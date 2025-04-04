@@ -6,7 +6,7 @@ from dagster._core.definitions.reconstruct import (
     initialize_repository_def_from_pointer,
     reconstruct_repository_def_from_pointer,
 )
-from dagster._utils.test.definitions import lazy_definitions
+from dagster._utils.test.definitions import definitions
 from dagster_dbt.cloud_v2.resources import DbtCloudCredentials, DbtCloudWorkspace
 
 from dagster_dbt_tests.cloud_v2.conftest import (
@@ -18,7 +18,7 @@ from dagster_dbt_tests.cloud_v2.conftest import (
 )
 
 
-@lazy_definitions
+@definitions
 def cacheable_dbt_cloud_workspace_data():
     workspace = DbtCloudWorkspace(
         credentials=DbtCloudCredentials(

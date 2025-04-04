@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.10.9 (core) / 0.26.9 (libraries)
+
+### Bugfixes
+
+- [ui] Fix custom time datepicker filter selection for users with custom Dagster timezone settings.
+
+### dg & Components (Preview)
+
+- Add support for `dg.toml` files. `dg` settings in `pyproject.toml` are set under `tool.dg`, but in `dg.toml` they are set at the top level. A `dg.toml` may be used in place of `pyproject.toml` at either the project or workspace level.
+- `dg`-scaffolded workspaces now include a `dg.toml` instead of `pyproject.toml` file.
+- `dg`-scaffolded projects now place the root package in an `src/` directory and use `hatchling` as the build backend rather than `setuptools`.
+- Fixed a bug where `dg` would crash when working with Python packages with an src-based layout.
+- `dg check yaml` now properly validates component files in nested subdirectories of the `defs/` folder.
+
 ## 1.10.8 (core) / 0.26.8 (libraries)
 
 ### New
@@ -413,7 +427,7 @@
 - [ui] Added a new tab on the Runs page that shows a filterable list of recent backfills.
 - [dagster-airlift] Added support for Python 3.7.
 - [dagster-aws] Added a `task_definition_prefix` argument to `EcsRunLauncher`, allowing the name of the task definition families for launched runs to be customized. Previously, the task definition families always started with `run`.
-- [dagster-azure] Moved azure fake implementations to its own submodule, paving the way for fake implementations to not be imported by default. (Thanks [@futurwasfree](https://github.com/futurwasfree)!)
+- [dagster-azure] Moved azure fake implementations to its own submodule, paving the way for fake implementations to not be imported by default. (Thanks [@futurewasfree](https://github.com/futurewasfree)!)
 - [dagster-dlt] The `dagster-dlt` library is added. It replaces the dlt module of `dagster-embedded-elt`.
 - [dagster-sling] The `dagster-sling` library is added. It replaces the Sling module of `dagster-embedded-elt`.
 - [helm] Added support for sidecar containers for all Dagster pods, for versions of K8s after 1.29 ([Native Sidecars](https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/)). (Thanks [@hom3r](https://github.com/hom3r)!)
@@ -5592,7 +5606,7 @@ code_servers:
 
 - [dagster-airbyte] Added an experimental function to automatically generate Airbyte assets from project YAML files. For more information, see the [dagster-airbyte docs](https://docs.dagster.io/_apidocs/libraries/dagster-airbyte).
 - [dagster-airbyte] Added the forward_logs option to `AirbyteResource`, allowing users to disble forwarding of Airbyte logs to the compute log, which can be expensive for long-running syncs.
-- [dagster-airbyte] Added the ability to generate Airbyte assets for [basic normalization](https://docs.airbyte.com/understanding-airbyte/basic-normalization/#nesting) tables generated as part of a sync.
+- [dagster-airbyte] Added the ability to generate Airbyte assets for basic normalization tables generated as part of a sync.
 
 ### Documentation
 
@@ -5899,7 +5913,7 @@ to make sure the correct library version is installed.
 
 ### Documentation
 
-- The non-asset version of the Hacker News example, which lived inside `examples/hacker_news/`, has been removed, because it hadn’t received updates in a long time and had drifted from best practices. The asset version is still there and has an updated README. Check it out [here](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news_assets)
+- The non-asset version of the Hacker News example, which lived inside `examples/hacker_news/`, has been removed, because it hadn’t received updates in a long time and had drifted from best practices. The asset version is still there and has an updated README.
 
 ## 0.15.6
 
@@ -6799,7 +6813,7 @@ asset_group = AssetGroup(
 - [dagit] On the instance summary page, hovering over a recent run’s status dot shows a more helpful tooltip.
 - [dagster-k8s] Improved performance of the `k8s_job_executor` for runs with many user logs
 - [dagster-k8s] When using the `dagster-k8s/config` tag to configure Dagster Kubernetes pods, the tags can now accept any valid Kubernetes config, and can be written in either snake case (`node_selector_terms`) or camel case (`nodeSelectorTerms`). See [the docs](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment) for more information.
-- [dagster-aws] You can now [set secrets on the `EcsRunLauncher` using the same syntax](https://legacy-versioned-docs.dagster.dagster-docs.io/0.14.4/deployment/guides/aws#secrets-management-in-ecs) that you use to set secrets in the ECS API.
+- [dagster-aws] You can now set secrets on the `EcsRunLauncher` using the same syntax that you use to set secrets in the ECS API.
 - [dagster-aws] The `EcsRunLauncher` now attempts to reuse task definitions instead of registering a new task definition for every run.
 - [dagster-aws] The `EcsRunLauncher` now raises the underlying ECS API failure if it cannot successfully start a task.
 
@@ -6859,7 +6873,7 @@ asset_group = AssetGroup(
 - Renamed the filter class from `PipelineRunsFilter` => `RunsFilter`.
 - Assets can now be directly invoked for unit testing.
 - [dagster-dbt] `load_assets_from_dbt_project` will now attach schema information to the generated assets if it is available in the dbt project (`schema.yml`).
-- [examples] Added an [example](https://github.com/dagster-io/dagster/tree/master/examples/modern_data_stack_assets) that demonstrates using Software Defined Assets with Airbyte, dbt, and custom Python.
+- [examples] Added an example that demonstrates using Software Defined Assets with Airbyte, dbt, and custom Python.
 - The default io manager used in the `AssetGroup` api is now the `fs_asset_io_manager`.
 - It's now possible to build a job where partitioned assets depend on partitioned assets that are maintained outside the job, and for those upstream partitions to show up on the context in the op and IOManager load_input function.
 - `SourceAsset`s can now be partitioned, by setting the `partitions_def` argument.
@@ -6971,7 +6985,7 @@ asset_group = AssetGroup(
   ```
 
 - A new Airbyte integration [(dagster-airbyte)](https://docs.dagster.io/_apidocs/libraries/dagster-airbyte#airbyte-dagster-airbyte) allows you to kick off and monitor [Airbyte](https://airbyte.com/) syncs from within Dagster. The original contribution from @airbytehq’s own @marcosmarxm includes a [resource implementation](https://docs.dagster.io/_apidocs/libraries/dagster-airbyte#resources) as well as a [pre-built op](https://docs.dagster.io/_apidocs/libraries/dagster-airbyte#ops) for this purpose, and we’ve extended this library to support [software-defined asset](https://docs.dagster.io/_apidocs/libraries/dagster-airbyte#assets) use cases as well. Regardless of which interface you use, Dagster will automatically capture the Airbyte log output (in the compute logs for the relevant steps) and track the created tables over time (via AssetMaterializations).
-- The [ECSRunLauncher](https://docs.dagster.io/deployment/guides/ecs) (introduced in Dagster 0.11.15) is no longer considered experimental. You can bootstrap your own Dagster deployment on ECS using our [docker compose example](https://github.com/dagster-io/dagster/tree/master/examples/deploy_ecs) or you can use it in conjunction with a [managed Dagster Cloud deployment](https://docs.dagster.cloud/agents/ecs/setup). Since its introduction, we’ve added the ability to customize Fargate container memory and CPU, mount secrets from AWS SecretsManager, and run with a variety of AWS networking configurations. Join us in [#dagster-ecs](https://dagster.slack.com/archives/C014UDS8LAV) in Slack!
+- The [ECSRunLauncher](https://docs.dagster.io/deployment/guides/ecs) (introduced in Dagster 0.11.15) is no longer considered experimental. You can bootstrap your own Dagster deployment on ECS using our [docker compose example](https://github.com/dagster-io/dagster/tree/master/examples/deploy_ecs) or you can use it in conjunction with a [managed Dagster Cloud deployment](https://docs.dagster.io/dagster-plus/deployment/deployment-types/hybrid/amazon-ecs/). Since its introduction, we’ve added the ability to customize Fargate container memory and CPU, mount secrets from AWS SecretsManager, and run with a variety of AWS networking configurations. Join us in [#dagster-ecs](https://dagster.slack.com/archives/C014UDS8LAV) in Slack!
 - [Helm] The default liveness and startup probes for Dagit and user deployments have been replaced with readiness probes. The liveness and startup probe for the Daemon has been removed. We observed and heard from users that under load, Dagit could fail the liveness probe which would result in the pod restarting. With the new readiness probe, the pod will not restart but will stop serving new traffic until it recovers. If you experience issues with any of the probe changes, you can revert to the old behavior by specifying liveness and startup probes in your Helm values (and reach out via an issue or Slack).
 
 ### Breaking Changes and Deprecations
@@ -7751,7 +7765,7 @@ execution:
 ### New
 
 - [dagster-k8s] When launching a pipeline using the K8sRunLauncher or k8s_job_executor, you can know specify a list of volumes to be mounted in the created pod. See the [API docs](https://docs.dagster.io/_apidocs/libraries/dagster-k8s#dagster_k8s.K8sRunLauncher) for for information.
-- [dagster-k8s] When specifying a list of environment variables to be included in a pod using [custom configuration](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment#solid-or-pipeline-kubernetes-configuration), you can now specify the full set of parameters allowed by a [V1EnvVar](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#envvar-v1-core) in Kubernetes.
+- [dagster-k8s] When specifying a list of environment variables to be included in a pod using [custom configuration](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment#solid-or-pipeline-kubernetes-configuration), you can now specify the full set of parameters allowed by a [V1EnvVar](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core) in Kubernetes.
 
 ### Bugfixes
 
@@ -7910,8 +7924,7 @@ run_coordinator:
 
 - When a solid, pipeline, schedule, etc. description or event metadata entry contains a
   markdown-formatted table, that table is now rendered in Dagit with better spacing between elements.
-- The hacker-news example now includes
-  [instructions](https://github.com/dagster-io/dagster/tree/master/examples/hacker_news#deploying)
+- The hacker-news example now includes instructions
   on how to deploy the repository in a Kubernetes cluster using the Dagster Helm chart.
 - [dagster-dbt] The `dbt_cli_resource` now supports the `dbt source snapshot-freshness` command
   (thanks @emilyhawkins-drizly!)
@@ -8392,7 +8405,7 @@ def my_root_manager(_):
 
 ### Experimental
 
-- Added an example of run attribution via a [custom run coordinator](https://github.com/dagster-io/dagster/tree/master/examples/run_attribution_example), which reads a user’s email from HTTP headers on the Dagster GraphQL server and attaches the email as a run tag. Custom run coordinator are also now specifiable in the Helm chart, under `queuedRunCoordinator`. See the [docs](https://docs.dagster.io/master/guides/dagster/run-attribution) for more information on setup.
+- Added an example of run attribution via a custom run coordinator, which reads a user’s email from HTTP headers on the Dagster GraphQL server and attaches the email as a run tag. Custom run coordinator are also now specifiable in the Helm chart, under `queuedRunCoordinator`. See the [docs](https://docs.dagster.io/master/guides/dagster/run-attribution) for more information on setup.
 - `RetryPolicy` now supports backoff and jitter settings, to allow for modulating the `delay` as a function of attempt number and randomness.
 
 ### Documentation
@@ -9292,7 +9305,7 @@ This changes the interval at which the daemon checks for sensors which haven't r
 
 **Documentation**
 
-- Added new [troubleshooting guide](https://legacy-docs.dagster.io/troubleshooting) for problems encountered while using the `QueuedRunCoordinator` to limit run concurrency.
+- Added new troubleshooting guide for problems encountered while using the `QueuedRunCoordinator` to limit run concurrency.
 - Added documentation for the sensor command-line interface.
 
 ## 0.10.0 "The Edge of Glory"
@@ -9929,7 +9942,7 @@ opt_in:
 - Added step-level run history for partitioned schedules on the schedule view
 - Added great_expectations integration, through the `dagster_ge` library. Example usage is under a new example, called `ge_example`, and documentation for the library can be found under the libraries section of the api docs.
 - `PythonObjectDagsterType` can now take a tuple of types as well as a single type, more closely mirroring `isinstance` and allowing Union types to be represented in Dagster.
-- The `configured` API can now be used on all definition types (including `CompositeDefinition`). Example usage has been updated in the [configuration documentation](https://legacy-docs.dagster.io/overview/configuration/configured).
+- The `configured` API can now be used on all definition types (including `CompositeDefinition`). Example usage has been updated in the configuration documentation.
 - Updated Helm chart to include auto-generated user code configmap in user code deployment by default
 
 **Bugfixes**
@@ -10177,7 +10190,7 @@ opt_in:
 - An initial version of the CeleryDockerExecutor was added (thanks @mrdrprofuroboros!). The celery
   workers will launch tasks in docker containers.
 - **Experimental:** Great Expectations integration is currently under development in the new library
-  dagster-ge. Example usage can be found [here](https://github.com/dagster-io/dagster/blob/master/python_modules/libraries/dagster-ge/dagster_ge/examples/ge_demo.py)
+  dagster-ge.
 
 ## 0.8.5
 
@@ -11562,14 +11575,10 @@ Thank you to all of the community contributors to this release!! In alphabetical
 
 - Adds a `type_check` parameter to `PythonObjectType`, `as_dagster_type`, and `@as_dagster_type` to
   enable custom type checks in place of default `isinstance` checks.
-  See documentation here:
-  https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/types.html#custom-type-checks
 - Improved the type inference experience by automatically wrapping bare python types as dagster
   types.
 - Reworked our tutorial (now with more compelling/scary breakfast cereal examples) and public API
   documentation.
-  See the new tutorial here:
-  https://dagster.readthedocs.io/en/latest/sections/learn/tutorial/index.html
 - New solids explorer in Dagit allows you to browse and search for solids used across the
   repository.
 
@@ -11714,8 +11723,6 @@ that elevate Dagit and dagster from a local development tool to a deployable ser
   `SolidExecutionResult`
 - Dagstermill: Reworked public API now contains only `define_dagstermill_solid`, `get_context`,
   `yield_event`, `yield_result`, `DagstermillExecutionContext`, `DagstermillError`, and
-  `DagstermillExecutionError`. Please see the new
-  [guide](https://dagster.readthedocs.io/en/0.5.2/sections/learn/guides/data_science/data_science.html)
-  for details.
+  `DagstermillExecutionError`.
 - Bug fixes, including failures for some dagster CLI invocations and incorrect handling of Airflow
   timestamps.

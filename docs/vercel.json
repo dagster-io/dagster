@@ -2639,6 +2639,142 @@
     {
       "source": "/_modules/dagstermill/io_managers",
       "destination": "/api/python-api/libraries/dagstermill#dagstermill.ConfigurableLocalOutputNotebookIOManager"
+    },
+    {
+      "source": "/overview/schedules-sensors/sensors",
+      "destination": "/guides/automate/sensors"
+    },
+    {
+      "source": "/overview/schedules-sensors/schedules",
+      "destination": "/guides/automate/schedules"
+    },
+    {
+      "source": "/master/integrations/databricks",
+      "destination": "/integrations/libraries/databricks"
+    },
+    {
+      "source": "/master/integrations/bigquery/using-bigquery-with-dagster",
+      "destination": "/integrations/libraries/gcp/bigquery/using-bigquery-with-dagster"
+    },
+    {
+      "source": "/master/integrations/bigquery/reference",
+      "destination": "/integrations/libraries/gcp/bigquery/reference"
+    },
+    {
+      "source": "/master/guides/dagster/intro-to-ops-jobs",
+      "destination": "/guides/build/ops"
+    },
+    {
+      "source": "/master/deployment/run-retries",
+      "destination": "/guides/deploy/execution/run-retries"
+    },
+    {
+      "source": "/master/deployment/guides/aws",
+      "destination": "/guides/deploy/deployment-options/aws"
+    },
+    {
+      "source": "/master/concepts/resources",
+      "destination": "/guides/build/external-resources"
+    },
+    {
+      "source": "/master/concepts/partitions-schedules-sensors/sensors",
+      "destination": "/guides/automate/sensors"
+    },
+    {
+      "source": "/master/concepts/partitions-schedules-sensors/schedules",
+      "destination": "/guides/automate/schedules"
+    },
+    {
+      "source": "/master/concepts/partitions-schedules-sensors/partitions",
+      "destination": "/guides/build/partitions-and-backfills/partitioning-assets"
+    },
+    {
+      "source": "/master/concepts/logging/loggers",
+      "destination": "/guides/monitor/logging"
+    },
+    {
+      "source": "/guides/dagster/pythonic-resources",
+      "destination": "/guides/operate/configuration/run-configuration#defining-and-accessing-pythonic-configuration-for-a-resource"
+    },
+    {
+      "source": "/guides/dagster/pythonic-config",
+      "destination": "/guides/operate/configuration/run-configuration"
+    },
+    {
+      "source": "/guides/dagster/automating-pipelines",
+      "destination": "/guides/automate"
+    },
+    {
+      "source": "/guides/dagster/asset-tutorial",
+      "destination": "/etl-pipeline-tutorial"
+    },
+    {
+      "source": "/getting-started/project-file-reference",
+      "destination": "/guides/build/projects/dagster-project-file-reference"
+    },
+    {
+      "source": "/getting-started/overview",
+      "destination": "/"
+    },
+    {
+      "source": "/deployment/guides/running-locally",
+      "destination": "/guides/deploy/deployment-options/running-dagster-locally"
+    },
+    {
+      "source": "/dagster-cloud/getting-started/getting-started-with-serverless-deployment",
+      "destination": "/dagster-plus/deployment/deployment-types/serverless"
+    },
+    {
+      "source": "/dagster-cloud/getting-started/getting-started-with-hybrid-deployment",
+      "destination": "/dagster-plus/deployment/deployment-types/hybrid"
+    },
+    {
+      "source": "/dagster-cloud/developing-testing/environment-variables",
+      "destination": "/dagster-plus/deployment/management/environment-variables"
+    },
+    {
+      "source": "/dagster-cloud/developing-testing/deployment-settings-reference",
+      "destination": "/dagster-plus/deployment/management/deployments/deployment-settings-reference"
+    },
+    {
+      "source": "/concepts/dagster-pipes/pyspark",
+      "destination": "/guides/build/external-pipelines/pyspark-pipeline"
+    },
+    {
+      "source": "/concepts/dagit/graphql-client",
+      "destination": "/guides/operate/graphql/graphql-client"
+    },
+    {
+      "source": "/concepts/code-locations/workspaces",
+      "destination": "/guides/deploy/code-locations/workspace-yaml"
+    },
+    {
+      "source": "/concepts/asset-checks",
+      "destination": "/guides/test/asset-checks"
+    },
+    {
+      "source": "/_apidocs/solids",
+      "destination": "/api/python-api/assets"
+    },
+    {
+      "source": "/overview/pipeline-runs/limiting-run-concurrency",
+      "destination": "/guides/operate/managing-concurrency"
+    },
+    {
+      "source": "/overview/io-managers/io-managers",
+      "destination": "/guides/build/io-managers"
+    },
+    {
+      "source": "/master/_apidocs/experimental",
+      "destination": "/api/python-api"
+    },
+    {
+      "source": "/tutorial/saving-your-data",
+      "destination": "/etl-pipeline-tutorial"
+    },
+    {
+      "source": "/master/guides/dagster/run-attribution",
+      "destination": "/guides/build/assets/metadata-and-tags/tags#run-tags"
     }
   ],
   "trailingSlash": false

@@ -11,26 +11,33 @@ from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
-from typing import Any, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import click
+import tomlkit
+import tomlkit.items
 from click.testing import CliRunner, Result
 from dagster_dg.cli import (
     DG_CLI_MAX_OUTPUT_WIDTH,
     cli,
     cli as dg_cli,
 )
+from dagster_dg.config import is_dg_specific_config_file
 from dagster_dg.utils import (
+    create_toml_node,
     delete_toml_node,
     discover_git_root,
+    get_toml_node,
     get_venv_executable,
+    has_toml_node,
     install_to_venv,
     is_windows,
     modify_toml,
+    modify_toml_as_dict,
     pushd,
     set_toml_node,
 )
-from typing_extensions import Self
+from typing_extensions import Self, TypeAlias
 
 STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
 
@@ -111,12 +118,18 @@ def isolated_dg_venv(runner: Union[CliRunner, "ProxyRunner"]) -> Iterator[Path]:
             yield venv_path
 
 
+ConfigFileType: TypeAlias = Literal["dg.toml", "pyproject.toml"]
+PackageLayoutType: TypeAlias = Literal["root", "src"]
+
+
 @contextmanager
 def isolated_example_workspace(
     runner: Union[CliRunner, "ProxyRunner"],
     project_name: Optional[str] = None,
     create_venv: bool = False,
     use_editable_dagster: bool = True,
+    workspace_config_file_type: ConfigFileType = "dg.toml",
+    project_config_file_type: ConfigFileType = "pyproject.toml",
 ) -> Iterator[None]:
     runner = ProxyRunner(runner) if isinstance(runner, CliRunner) else runner
     dagster_git_repo_dir = str(discover_git_root(Path(__file__)))
@@ -132,6 +145,11 @@ def isolated_example_workspace(
             *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
         )
         assert_runner_result(result)
+        if workspace_config_file_type == "pyproject.toml":
+            convert_dg_toml_to_pyproject_toml(
+                Path("dagster-workspace") / "dg.toml",
+                Path("dagster-workspace") / "pyproject.toml",
+            )
         with pushd("dagster-workspace"):
             if project_name:
                 result = runner.invoke(
@@ -145,6 +163,11 @@ def isolated_example_workspace(
                     ),
                 )
                 assert_runner_result(result)
+                if project_config_file_type == "dg.toml":
+                    convert_pyproject_toml_to_dg_toml(
+                        Path("projects") / project_name / "pyproject.toml",
+                        Path("projects") / project_name / "dg.toml",
+                    )
 
             # Create a venv capable of running dagster dev
             if create_venv:
@@ -173,6 +196,8 @@ def isolated_example_project_foo_bar(
     skip_venv: bool = False,
     populate_cache: bool = False,
     component_dirs: Sequence[Path] = [],
+    config_file_type: ConfigFileType = "pyproject.toml",
+    package_layout: PackageLayoutType = "src",
 ) -> Iterator[None]:
     """Scaffold a project named foo_bar in an isolated filesystem.
 
@@ -202,11 +227,29 @@ def isolated_example_project_foo_bar(
         result = runner.invoke(*args)
 
         assert_runner_result(result)
+        if config_file_type == "dg.toml":
+            convert_pyproject_toml_to_dg_toml(
+                Path("foo-bar") / "pyproject.toml",
+                Path("foo-bar") / "dg.toml",
+            )
+        if package_layout == "root":
+            # Move the src directory to the root of the project
+            curr_pkg_root = Path("foo-bar") / "src" / "foo_bar"
+            new_pkg_root = Path("foo-bar") / "foo_bar"
+            shutil.move(curr_pkg_root, new_pkg_root)
+            Path("foo-bar", "src").rmdir()
+
+            with modify_toml_as_dict(Path("foo-bar/pyproject.toml")) as toml:
+                create_toml_node(toml, ("tool", "hatch", "build", "packages"), ["foo_bar"])
+
+            # Reinstall to venv since package root changed
+            install_to_venv(Path("foo-bar/.venv"), ["-e", "foo-bar"])
+
         with clear_module_from_cache("foo_bar"), pushd(project_path):
             # _install_libraries_to_venv(Path(".venv"), ["dagster-test"])
             for src_dir in component_dirs:
                 component_name = src_dir.name
-                components_dir = Path.cwd() / "foo_bar" / "defs" / component_name
+                components_dir = Path.cwd() / "src" / "foo_bar" / "defs" / component_name
                 components_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(src_dir, components_dir, dirs_exist_ok=True)
             yield
@@ -238,7 +281,7 @@ def isolated_example_component_library_foo_bar(
         )
         assert_runner_result(result)
         with clear_module_from_cache("foo_bar"), pushd("foo-bar"):
-            shutil.rmtree(Path("foo_bar/defs"))
+            shutil.rmtree(Path("src/foo_bar/defs"))
 
             # Make it not a project
             with modify_toml(Path("pyproject.toml")) as toml:
@@ -252,7 +295,7 @@ def isolated_example_component_library_foo_bar(
                         ("project", "entry-points", "dagster_dg.library", "foo_bar"),
                         lib_module_name,
                     )
-                    Path(*lib_module_name.split(".")).mkdir(exist_ok=True)
+                    Path("src", *lib_module_name.split(".")).mkdir(exist_ok=True)
 
             # Install the component library into our venv
             if not skip_venv:
@@ -292,6 +335,39 @@ def set_env_var(name: str, value: str) -> Iterator[None]:
         os.environ[name] = original_value
     else:
         del os.environ[name]
+
+
+def convert_pyproject_toml_to_dg_toml(pyproject_toml_path: Path, dg_toml_path: Path) -> None:
+    """Convert a pyproject.toml file to a dg.toml file."""
+    pyproject_toml = tomlkit.parse(pyproject_toml_path.read_text())
+    dg_toml_path.write_text(
+        tomlkit.dumps(get_toml_node(pyproject_toml, ("tool", "dg"), tomlkit.items.Table))
+    )
+    delete_toml_node(pyproject_toml, ("tool", "dg"))
+
+    # Delete the pyproject.toml file if it is empty after removing the dg section
+    if (
+        len(pyproject_toml) == 1
+        and len(get_toml_node(pyproject_toml, ("tool",), tomlkit.items.Table)) == 0
+    ):
+        pyproject_toml_path.unlink()
+    else:
+        pyproject_toml_path.write_text(tomlkit.dumps(pyproject_toml))
+
+
+def convert_dg_toml_to_pyproject_toml(dg_toml_path: Path, pyproject_toml_path: Path) -> None:
+    """Convert a dg.toml file to a pyproject.toml file."""
+    dg_toml = tomlkit.parse(dg_toml_path.read_text()).unwrap()
+    if not pyproject_toml_path.exists():
+        pyproject_toml_path.write_text(tomlkit.dumps({}))
+    with modify_toml(pyproject_toml_path) as pyproject_toml:
+        assert not has_toml_node(
+            pyproject_toml, ("tool", "dg")
+        ), "pyproject.toml already has a tool.dg section"
+        if not has_toml_node(pyproject_toml, ("tool",)):
+            set_toml_node(pyproject_toml, ("tool",), tomlkit.table())
+        set_toml_node(pyproject_toml, ("tool", "dg"), dg_toml)
+    dg_toml_path.unlink()
 
 
 # ########################
@@ -526,7 +602,7 @@ def create_project_from_components(
     origin_paths = [COMPONENT_INTEGRATION_TEST_DIR / src_path for src_path in src_paths]
     with isolated_example_project_foo_bar(runner, component_dirs=origin_paths):
         for src_path in src_paths:
-            components_dir = Path.cwd() / "foo_bar" / "defs" / src_path.split("/")[-1]
+            components_dir = Path.cwd() / "src" / "foo_bar" / "defs" / src_path.split("/")[-1]
             if local_component_defn_to_inject:
                 shutil.copy(local_component_defn_to_inject, components_dir / "__init__.py")
 
@@ -538,3 +614,20 @@ def find_free_port() -> int:
         s.bind(("", 0))
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         return s.getsockname()[1]
+
+
+@contextmanager
+def modify_dg_toml_config_as_dict(path: Path) -> Iterator[dict[str, Any]]:
+    """Modify a TOML file as a plain python dict, destroying comments and formatting.
+    This will take account of the filename and yield only the dg config part. This is the root node
+    for dg.toml files and the tool.dg section otherwise.
+    """
+    with modify_toml_as_dict(path) as toml_dict:
+        if is_dg_specific_config_file(path):
+            yield toml_dict
+        elif not has_toml_node(toml_dict, ("tool", "dg")):
+            raise KeyError(
+                "TOML file does not have a tool.dg section. This is required for pyproject.toml files."
+            )
+        else:
+            yield get_toml_node(toml_dict, ("tool", "dg"), dict)

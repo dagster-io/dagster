@@ -9,7 +9,6 @@ date: 2022-11-07
 apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-datadog
 docslink:
 partnerlink: https://www.datadoghq.com/
-logo: /integrations/Datadog.svg
 categories:
   - Monitoring
 enabledBy:

@@ -10,7 +10,6 @@ apireflink:
 docslink: https://github.com/silentsokolov/dagster-hashicorp
 partnerlink: https://www.vaultproject.io/
 communityIntegration: true
-logo: /integrations/Hashicorp.svg
 categories:
   - Other
 enabledBy:

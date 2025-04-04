@@ -19,7 +19,7 @@ from dagster import (
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import initialize_repository_def_from_pointer
 from dagster._utils.test.definitions import (
-    lazy_definitions,
+    definitions,
     scoped_reconstruction_metadata,
     unwrap_reconstruction_metadata,
 )
@@ -330,7 +330,7 @@ def test_local_airflow_instance() -> None:
     assert len(repo_def.assets_defs_by_key) == 2
 
 
-@lazy_definitions
+@definitions
 def airflow_instance_defs() -> Definitions:
     a = AssetKey("a")
     spec = AssetSpec(

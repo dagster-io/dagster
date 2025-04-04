@@ -61,7 +61,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.merger import deep_merge_dicts, merge_dicts
-from dagster._utils.test.definitions import lazy_definitions
+from dagster._utils.test.definitions import definitions
 
 RUN_CONFIG_BASE = {"ops": {"return_two": {"config": {"a": "b"}}}}
 
@@ -724,7 +724,7 @@ class MyCacheableAssetsDefinition(CacheableAssetsDefinition):
         )
 
 
-@lazy_definitions
+@definitions
 def cacheable_asset_defs():
     @asset
     def bar(foo):

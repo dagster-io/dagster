@@ -14,7 +14,6 @@ from typing import Any, Literal, Optional, TypeVar, Union, overload
 import click
 import jinja2
 import tomlkit
-import tomlkit.items
 from typer.rich_utils import rich_format_help
 from typing_extensions import Never, TypeAlias
 
@@ -156,6 +155,7 @@ PROJECT_NAME_PLACEHOLDER = "PROJECT_NAME_PLACEHOLDER"
 
 # Copied from dagster._generate.generate
 def scaffold_subtree(
+    *,
     path: Path,
     excludes: Optional[list[str]] = None,
     name_placeholder: str = PROJECT_NAME_PLACEHOLDER,
@@ -257,7 +257,7 @@ def modify_toml_as_dict(path: Path) -> Iterator[dict[str, Any]]:  # unwrap gets 
     values in the file without worrying about the details of the TOML syntax (it has multiple kinds of
     dict-like objects, for instance).
     """
-    toml_dict = tomlkit.parse(path.read_text()).unwrap()
+    toml_dict = load_toml_as_dict(path)
     yield toml_dict
     path.write_text(tomlkit.dumps(toml_dict))
 
@@ -495,6 +495,10 @@ TomlPath: TypeAlias = tuple[Union[str, int], ...]
 TomlDoc: TypeAlias = Union[tomlkit.TOMLDocument, dict[str, Any]]
 
 
+def load_toml_as_dict(path: Path) -> dict[str, Any]:
+    return tomlkit.parse(path.read_text()).unwrap()
+
+
 def get_toml_node(
     doc: TomlDoc,
     path: TomlPath,
@@ -525,10 +529,14 @@ def delete_toml_node(doc: TomlDoc, path: TomlPath) -> None:
     an error if the leading keys do not already lead to a TOML container node.
     """
     nodes = _gather_toml_nodes(doc, path)
-    container = nodes[-2]
+    container = nodes[-2] if len(nodes) > 1 else doc
     key_or_index = path[-1]
     if isinstance(container, dict):
-        del container[path[-1]]
+        assert isinstance(key_or_index, str)  # We already know this from _traverse_toml_path
+        del container[key_or_index]
+    elif isinstance(container, tomlkit.TOMLDocument):
+        assert isinstance(key_or_index, str)  # We already know this from _traverse_toml_path
+        container.remove(key_or_index)
     elif isinstance(container, list):
         assert isinstance(key_or_index, int)  # We already know this from _traverse_toml_path
         container.pop(key_or_index)
@@ -540,8 +548,8 @@ def set_toml_node(doc: TomlDoc, path: TomlPath, value: object) -> None:
     """Given a tomlkit-parsed document/table (`doc`),set a nested value at `path` to `value`. Raises
     an error if the leading keys do not already lead to a TOML container node.
     """
-    container = _gather_toml_nodes(doc, path[:-1])[-1]
-    key_or_index = path[-1]
+    container = _gather_toml_nodes(doc, path[:-1])[-1] if len(path) > 1 else doc
+    key_or_index = path[-1]  # type: ignore  # pyright bug
     if isinstance(container, dict):
         if not isinstance(key_or_index, str):
             raise TypeError(f"Expected key to be a string, but got {type(key_or_index).__name__}")
@@ -592,19 +600,24 @@ def _gather_toml_nodes(
 
 
 def toml_path_to_str(path: TomlPath) -> str:
-    first, rest = path[0], path[1:]
+    if len(path) == 0:
+        return ""
+    first = path[0]
     if not isinstance(first, str):
         raise TypeError(f"Expected first element of path to be a string, but got {type(first)}")
-    str_path = first
-    for item in rest:
-        if isinstance(item, int):
-            str_path += f"[{item}]"
-        elif isinstance(item, str):
-            str_path += f".{item}"
-        else:
-            raise TypeError(
-                f"Expected path elements to be strings or integers, but got {type(item)}"
-            )
+    elif len(path) == 1:
+        return first
+    else:
+        str_path = first
+        for item in path[1:]:
+            if isinstance(item, int):
+                str_path += f"[{item}]"
+            elif isinstance(item, str):
+                str_path += f".{item}"
+            else:
+                raise TypeError(
+                    f"Expected path elements to be strings or integers, but got {type(item)}"
+                )
     return str_path
 
 

@@ -7,7 +7,7 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
-The `dagster-components` system makes it easy to create new component types that can be reused across your project.
+The components system makes it easy to create new component types that can be reused across your project.
 
 In most cases, component types map to a specific technology. For example, you might have a `DockerScriptComponent` that executes a script in a Docker container, or a `SnowflakeQueryComponent` that runs a query on Snowflake.
 
@@ -33,7 +33,11 @@ This will add a new file to your project in the `lib` directory:
   title="my_component_library/lib/shell_command.py"
 />
 
-This file contains the basic structure for the new component type. Our goal is to implement the `build_defs` method to return a `Definitions`. This will require some input input which we will define as what our component class is instantiated with.
+This file contains the basic structure for the new component type. Our goal is to implement the `build_defs` method to return a `Definitions`. This will require some input which we will define as what our component class is instantiated with.
+
+:::note
+The use of `@dataclass` is optional. If you wish to implement an `__init__` method for your class, you can provide the `--no-dataclass` flag to the `dg scaffold` command.
+:::
 
 ## Defining the Python class
 
@@ -44,7 +48,7 @@ In this case, we'll want to define a few things:
 - The path to the shell script that we'll want to run.
 - The assets that we expect this script to produce.
 
-Our class inherits from `Resolvable` in addition to `Component`. This will handle deriving a yaml schema for our class based on what the class is annotated with. To simplify common use cases, `dagster-components` provides annotations for common bits of configuration, such as `ResolvedAssetSpec`, which will handle exposing a schema for defining `AssetSpec`s from yaml and resolving them before instantiating our component.
+Our class inherits from `Resolvable` in addition to `Component`. This will handle deriving a yaml schema for our class based on what the class is annotated with. To simplify common use cases, Dagster provides annotations for common bits of configuration, such as `ResolvedAssetSpec`, which will handle exposing a schema for defining `AssetSpec`s from yaml and resolving them before instantiating our component.
 
 We can define the schema for our component and add it to our class as follows:
 

@@ -85,7 +85,7 @@ export function useRecentAssetEvents(
 
     const loaded = {
       materializations: asset?.assetMaterializationHistory?.results || [],
-      observations: asset?.assetObservations || [],
+      observations: asset?.assetObservations.results || [],
     };
 
     const {materializations, observations} = !loadUsingPartitionKeys
@@ -249,7 +249,9 @@ export const ASSET_EVENTS_QUERY = gql`
           partitionInLast: $partitionInLast
           partitions: $partitions
         ) {
-          ...AssetObservationFragment
+          results {
+            ...AssetObservationFragment
+          }
         }
         assetMaterializationHistory(
           limit: $limit

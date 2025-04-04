@@ -9,7 +9,6 @@ date: 2022-11-07
 docslink: https://github.com/hightouchio/dagster-hightouch
 partnerlink: https://hightouch.com/
 communityIntegration: true
-logo: /integrations/Hightouch.svg
 categories:
   - ETL
 enabledBy:

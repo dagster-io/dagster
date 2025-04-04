@@ -9,7 +9,6 @@ date:
 apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-airlift
 docslink: https://docs.dagster.io/integrations/libraries/airlift/
 partnerlink:
-logo:
 categories:
   - ETL
 enabledBy:

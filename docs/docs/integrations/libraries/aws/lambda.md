@@ -9,7 +9,6 @@ date: 2024-06-21
 apireflink: https://docs.dagster.io/api/python-api/libraries/dagster-aws
 docslink:
 partnerlink: https://aws.amazon.com/
-logo: /integrations/aws-lambda.svg
 categories:
   - Compute
 enabledBy:

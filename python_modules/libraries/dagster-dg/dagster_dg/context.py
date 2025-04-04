@@ -199,7 +199,7 @@ class DgContext:
 
     # Use to derive a new context for a project while preserving existing settings
     def with_root_path(self, root_path: Path) -> Self:
-        if not root_path / "pyproject.toml":
+        if not ((root_path / "pyproject.toml").exists() or (root_path / "dg.toml").exists()):
             raise DgError(f"Cannot find `pyproject.toml` at {root_path}")
         return self.__class__.from_file_discovery_and_command_line_config(
             root_path, self.cli_opts or {}
@@ -475,10 +475,16 @@ class DgContext:
 
     def ensure_uv_lock(self, path: Optional[Path] = None) -> None:
         path = path or self.root_path
+        if not (path / "uv.lock").exists():
+            self.ensure_uv_sync(path)
+
+    def ensure_uv_sync(self, path: Optional[Path] = None) -> None:
+        path = path or self.root_path
         with pushd(path):
             if not (path / "uv.lock").exists():
-                subprocess.run(
-                    ["uv", "sync"], check=True, env=strip_activated_venv_from_env_vars(os.environ)
+                subprocess.check_output(
+                    ["uv", "sync"],
+                    env=strip_activated_venv_from_env_vars(os.environ),
                 )
 
     @property
@@ -526,6 +532,14 @@ class DgContext:
             return "active Python environment"
 
     @property
+    def config_file_path(self) -> Path:
+        return self.dg_toml_path if self.dg_toml_path.exists() else self.pyproject_toml_path
+
+    @property
+    def dg_toml_path(self) -> Path:
+        return self.root_path / "dg.toml"
+
+    @property
     def pyproject_toml_path(self) -> Path:
         return self.root_path / "pyproject.toml"
 
@@ -536,13 +550,19 @@ class DgContext:
             )
         if not module_name.startswith(self.root_module_name):
             raise DgError(f"Module `{module_name}` is not part of the current project.")
-        path = self.root_path / Path(*module_name.split("."))
-        if path.exists():
-            return path
-        elif path.with_suffix(".py").exists():
-            return path.with_suffix(".py")
-        else:
-            raise DgError(f"Cannot find module `{module_name}` in the current project.")
+
+        # Attempt to resolve the path for a local module by looking in both `src` and the root
+        # level. Unfortunately there is no setting reliably present in pyproject.toml or setup.py
+        # that can be relied on to know in advance the package root (src or root level).
+        for path in [
+            self.root_path / "src" / Path(*module_name.split(".")),
+            self.root_path / Path(*module_name.split(".")),
+        ]:
+            if path.exists():
+                return path
+            elif path.with_suffix(".py").exists():
+                return path.with_suffix(".py")
+        raise DgError(f"Cannot find module `{module_name}` in the current project.")
 
 
 # ########################

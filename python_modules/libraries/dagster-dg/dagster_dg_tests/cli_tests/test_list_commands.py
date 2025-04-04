@@ -142,7 +142,7 @@ def test_list_component_type_bad_entry_point_fails(capfd):
         isolated_example_component_library_foo_bar(runner),
     ):
         # Delete the component lib package referenced by the entry point
-        shutil.rmtree("foo_bar/lib")
+        shutil.rmtree("src/foo_bar/lib")
 
         # Disable cache to force re-discovery of deleted entry point
         result = runner.invoke("list", "component-type", "--disable-cache", "--json")
@@ -239,7 +239,7 @@ def test_list_defs_succeeds(use_json: bool):
         result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
         assert_runner_result(result)
 
-        with Path("foo_bar/defs/mydefs/definitions.py").open("w") as f:
+        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
             defs_source = textwrap.dedent(inspect.getsource(_sample_defs).split("\n", 1)[1])
             f.write(defs_source)
 
@@ -296,7 +296,7 @@ def test_list_defs_complex_assets_succeeds():
         result = runner.invoke("scaffold", "dagster.components.DefsFolderComponent", "mydefs")
         assert_runner_result(result)
 
-        with Path("foo_bar/defs/mydefs/definitions.py").open("w") as f:
+        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
             defs_source = textwrap.dedent(
                 inspect.getsource(_sample_complex_asset_defs).split("\n", 1)[1]
             )
@@ -357,14 +357,14 @@ def test_list_defs_with_env_file_succeeds():
         )
         assert_runner_result(result)
 
-        with Path("foo_bar/defs/mydefs/definitions.py").open("w") as f:
+        with Path("src/foo_bar/defs/mydefs/definitions.py").open("w") as f:
             defs_source = textwrap.dedent(
                 inspect.getsource(_sample_env_var_assets).split("\n", 1)[1]
             )
             f.write(defs_source)
-            env_file_contents = """
-GROUP_NAME=bar
-"""
+            env_file_contents = textwrap.dedent("""
+                GROUP_NAME=bar
+            """)
 
         with Path(".env").open("w") as f:
             f.write(env_file_contents)

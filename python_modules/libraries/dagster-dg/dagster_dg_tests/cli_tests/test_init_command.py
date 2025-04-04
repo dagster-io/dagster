@@ -26,7 +26,7 @@ def test_init_command_success(monkeypatch) -> None:
         assert not Path("dagster-workspace").exists()
 
         assert Path("helloworld").exists()
-        assert Path("helloworld/helloworld").exists()
+        assert Path("helloworld/src/helloworld").exists()
         assert Path("helloworld/pyproject.toml").exists()
         assert Path("helloworld/helloworld_tests").exists()
 
@@ -44,19 +44,18 @@ def test_init_command_success_with_workspace_name(monkeypatch) -> None:
         )
         assert_runner_result(result)
         assert Path("dagster-workspace").exists()
-        assert Path("dagster-workspace/pyproject.toml").exists()
+        assert Path("dagster-workspace/dg.toml").exists()
         assert Path("dagster-workspace/projects").exists()
         assert Path("dagster-workspace/libraries").exists()
         assert Path("dagster-workspace/projects/helloworld").exists()
-        assert Path("dagster-workspace/projects/helloworld/helloworld").exists()
+        assert Path("dagster-workspace/projects/helloworld/src/helloworld").exists()
         assert Path("dagster-workspace/projects/helloworld/pyproject.toml").exists()
         assert Path("dagster-workspace/projects/helloworld/helloworld_tests").exists()
 
         # Check workspace TOML content
-        toml = tomlkit.parse(Path("dagster-workspace/pyproject.toml").read_text())
+        toml = tomlkit.parse(Path("dagster-workspace/dg.toml").read_text())
         assert (
-            get_toml_node(toml, ("tool", "dg", "workspace", "projects", 0, "path"), str)
-            == "projects/helloworld"
+            get_toml_node(toml, ("workspace", "projects", 0, "path"), str) == "projects/helloworld"
         )
 
 
@@ -73,11 +72,11 @@ def test_init_override_project_name_prompt_with_workspace(monkeypatch) -> None:
         )
         assert_runner_result(result)
         assert Path("my-workspace").exists()
-        assert Path("my-workspace/pyproject.toml").exists()
+        assert Path("my-workspace/dg.toml").exists()
         assert Path("my-workspace/projects").exists()
         assert Path("my-workspace/libraries").exists()
         assert Path("my-workspace/projects/goodbyeworld").exists()
-        assert Path("my-workspace/projects/goodbyeworld/goodbyeworld").exists()
+        assert Path("my-workspace/projects/goodbyeworld/src/goodbyeworld").exists()
         assert Path("my-workspace/projects/goodbyeworld/pyproject.toml").exists()
         assert Path("my-workspace/projects/goodbyeworld/goodbyeworld_tests").exists()
 
@@ -89,7 +88,7 @@ def test_init_override_project_name_prompt_without_workspace(monkeypatch) -> Non
         result = runner.invoke("init", "--project-name", "goodbyeworld", "--use-editable-dagster")
         assert_runner_result(result)
         assert Path("goodbyeworld").exists()
-        assert Path("goodbyeworld/goodbyeworld").exists()
+        assert Path("goodbyeworld/src/goodbyeworld").exists()
         assert Path("goodbyeworld/pyproject.toml").exists()
         assert Path("goodbyeworld/goodbyeworld_tests").exists()
 
@@ -144,7 +143,7 @@ def test_init_use_editable_dagster(option: EditableOption, value_source: str, mo
 
         assert Path("dagster-workspace").exists()
 
-        workspace_config = Path("dagster-workspace/pyproject.toml")
+        workspace_config = Path("dagster-workspace/dg.toml")
         with workspace_config.open() as f:
             toml = tomlkit.parse(f.read())
             option_key = option[2:].replace("-", "_")
@@ -152,7 +151,7 @@ def test_init_use_editable_dagster(option: EditableOption, value_source: str, mo
             assert (
                 get_toml_node(
                     toml,
-                    ("tool", "dg", "workspace", "scaffold_project_options", option_key),
+                    ("workspace", "scaffold_project_options", option_key),
                     (bool, str),
                 )
                 == option_value

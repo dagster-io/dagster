@@ -6,7 +6,6 @@ title: Dagster & Weaviate
 sidebar_label: Weaviate
 excerpt: 'Using this integration, you can seamlessly integrate Weaviate into your Dagster workflows, leveraging Weaviates data warehousing capabilities for your data pipelines.'
 partnerlink: https://weaviate.io/
-logo: /integrations/weaviate.png
 categories:
   - Storage
 enabledBy:

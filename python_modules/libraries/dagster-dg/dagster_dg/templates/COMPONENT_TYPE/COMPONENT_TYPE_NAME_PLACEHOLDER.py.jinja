@@ -1,22 +1,29 @@
-from dagster import Definitions
-from dagster.components import (
-    Component,
-    ComponentLoadContext,
-    Resolvable,
-)
+{% if dataclass -%}
+from dataclasses import dataclass
 
+{% endif -%}
+import dagster as dg
+from dagster.components import Component, ComponentLoadContext, Resolvable
+
+
+{% if dataclass -%}
+@dataclass
+{% endif -%}
 class {{ name }}(Component, Resolvable):
     """COMPONENT SUMMARY HERE.
 
     COMPONENT DESCRIPTION HERE.
     """
-
+{% if dataclass %}
+    # added fields here will define yaml schema via Resolvable
+{%- endif %}
+{% if not dataclass %}
     def __init__(
         self,
         # added arguments here will define yaml schema via Resolvable
     ):
         pass
-
-    def build_defs(self, context: ComponentLoadContext) -> Definitions:
+{% endif %}
+    def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         # Add definition construction logic here.
-        return Definitions()
+        return dg.Definitions()

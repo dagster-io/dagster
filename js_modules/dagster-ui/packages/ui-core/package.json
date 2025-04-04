@@ -18,6 +18,7 @@
     "generate-selection-autocomplete": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateSelection.ts && eslint src/selection/generated/ --fix -c .eslintrc.js",
     "generate-run-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateRunSelection.ts && eslint src/run-selection/generated/ --fix -c .eslintrc.js",
     "generate-op-selection": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateOpSelection.ts && eslint src/op-selection/generated/ --fix -c .eslintrc.js",
+    "generate-integration-docs": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateIntegrationDocs.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
@@ -125,6 +126,7 @@
     "@types/lodash": "^4.14.145",
     "@types/lru-cache": "^5.1.0",
     "@types/mdx-js__react": "^1",
+    "@types/node": "^22",
     "@types/qs": "^6.9.18",
     "@types/react": "^18.3.9",
     "@types/react-dom": "^18.3.0",
@@ -165,9 +167,11 @@
     "resize-observer-polyfill": "^1.5.1",
     "storybook": "^8.6.0",
     "styled-components": "^5.3.3",
-    "ts-node": "9.1.1",
+    "to-vfile": "^8.0.0",
+    "ts-node": "10.9.2",
     "ts-prune": "0.10.3",
     "typescript": "5.5.4",
+    "vfile-matter": "^5.0.1",
     "webpack": "^5.94.0"
   },
   "babelMacros": {},

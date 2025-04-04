@@ -6,7 +6,6 @@ title: Dagster & Qdrant
 sidebar_label: Qdrant
 excerpt: 'Integrate Qdrant vector search features into your workflows powered by Dagster.'
 partnerlink: https://qdrant.tech/
-logo: /integrations/qdrant.svg
 categories:
   - Storage
 enabledBy:

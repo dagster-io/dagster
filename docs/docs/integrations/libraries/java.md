@@ -9,7 +9,6 @@ date: 2025-03-14
 apireflink:
 docslink: https://docs.dagster.io/integrations/libraries/java
 partnerlink: https://www.java.com/en/
-logo: /integrations/java.svg
 categories:
 enabledBy:
 enables:
