@@ -1031,6 +1031,7 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     presets = non_null_list(GraphenePipelinePreset)
     isJob = graphene.NonNull(graphene.Boolean)
     isAssetJob = graphene.NonNull(graphene.Boolean)
+    isAirliftJob = graphene.NonNull(graphene.Boolean)
     repository = graphene.NonNull("dagster_graphql.schema.external.GrapheneRepository")
     partitionKeysOrError = graphene.Field(
         graphene.NonNull(GraphenePartitionKeys),
@@ -1077,6 +1078,9 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         location = graphene_info.context.get_code_location(handle.location_name)
         repository = location.get_repository(handle.repository_name)
         return bool(repository.get_asset_node_snaps(self._remote_job.name))
+
+    def resolve_isAirliftJob(self, graphene_info: ResolveInfo):
+        return self._remote_job.tags.get("dagster/external_job") == "airflow"
 
     def resolve_repository(self, graphene_info: ResolveInfo):
         from dagster_graphql.schema.external import GrapheneRepository
