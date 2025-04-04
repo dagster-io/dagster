@@ -84,6 +84,10 @@ class BaseEntityNode(ABC, Generic[T_EntityKey]):
     @abstractmethod
     def child_entity_keys(self) -> AbstractSet[EntityKey]: ...
 
+    @property
+    @abstractmethod
+    def description(self) -> Optional[str]: ...
+
 
 class BaseAssetNode(BaseEntityNode[AssetKey]):
     key: AssetKey
@@ -190,12 +194,14 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
         key: AssetCheckKey,
         additional_deps: Sequence[AssetKey],
         blocking: bool,
+        description: Optional[str],
         automation_condition: Optional["AutomationCondition[AssetCheckKey]"],
     ):
         self.key = key
         self.blocking = blocking
         self._automation_condition = automation_condition
         self._additional_deps = additional_deps
+        self._description = description
 
     @property
     def parent_entity_keys(self) -> AbstractSet[AssetKey]:
@@ -217,6 +223,10 @@ class AssetCheckNode(BaseEntityNode[AssetCheckKey]):
     @property
     def automation_condition(self) -> Optional["AutomationCondition[AssetCheckKey]"]:
         return self._automation_condition
+
+    @property
+    def description(self) -> Optional[str]:
+        return self._description
 
 
 T_AssetNode = TypeVar("T_AssetNode", bound=BaseAssetNode)

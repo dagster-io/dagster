@@ -182,6 +182,7 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
                 k,
                 [d.asset_key for d in v.get_spec_for_check_key(k).additional_deps],
                 v.get_spec_for_check_key(k).blocking,
+                v.get_spec_for_check_key(k).description,
                 v.get_spec_for_check_key(k).automation_condition,
             )
             for k, v in assets_defs_by_check_key.items()
