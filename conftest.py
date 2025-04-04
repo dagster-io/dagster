@@ -15,7 +15,7 @@ class TestId:
 def buildkite_quarantined_tests() -> set[TestId]:
     quarantined_tests = set()
 
-    if os.getenv("BUILDKITE"):
+    if os.getenv("BUILDKITE") or os.getenv("LOCAL_BUILDKITE_QUARANTINE"):
         # Run our full test suite - warts and all - on the release branch
         if os.getenv("BUILDKITE_BRANCH", "").startswith("release-"):
             return quarantined_tests
@@ -66,8 +66,10 @@ def pytest_runtest_setup(item):
     # quarantined test.
     try:
         if buildkite_quarantined_tests():
-            scope = item.location[0]
-            name = item.location[2]
+            # https://github.com/buildkite/test-collector-python/blob/6fba081a2844d6bdec8607942eee48a03d60cd40/src/buildkite_test_collector/pytest_plugin/buildkite_plugin.py#L22-L27
+            chunks = item.nodeid.split("::")
+            scope = "::".join(chunks[:-1])
+            name = chunks[-1]
 
             test = TestId(scope, name)
 
