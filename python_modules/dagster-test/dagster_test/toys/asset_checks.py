@@ -463,6 +463,26 @@ metadata_checks = build_metadata_bounds_checks(
 )
 
 
+@asset_check(asset="asset_5")
+def asset_5_check(context: AssetExecutionContext) -> AssetCheckResult:
+    return AssetCheckResult(
+        passed=False,
+        description="A check that always fails.",
+        metadata={"my_key": int(context.get_tag("my_key") or 0)},
+        severity=AssetCheckSeverity.WARN,
+    )
+
+
+@asset_check(asset="asset_6")
+def asset_6_check(context: AssetExecutionContext) -> AssetCheckResult:
+    return AssetCheckResult(
+        passed=False,
+        description="A check that always fails.",
+        metadata={"my_key": int(context.get_tag("my_key") or 0)},
+        severity=AssetCheckSeverity.ERROR,
+    )
+
+
 def get_checks_and_assets():
     return [
         checked_asset,
@@ -488,4 +508,6 @@ def get_checks_and_assets():
         checks_only_job,
         metadata_asset,
         metadata_checks,
+        asset_5_check,
+        asset_6_check,
     ]
