@@ -4,8 +4,8 @@ import * as React from 'react';
 
 import {createAppCache} from '../../app/AppCache';
 import {buildPartitionHealthMock} from '../../assets/__fixtures__/PartitionHealthQuery.fixtures';
-import {AssetEventsQuery} from '../../assets/types/useRecentAssetEvents.types';
-import {ASSET_EVENTS_QUERY} from '../../assets/useRecentAssetEvents';
+import {RecentAssetEventsQuery} from '../../assets/types/useRecentAssetEvents.types';
+import {RECENT_ASSET_EVENTS_QUERY} from '../../assets/useRecentAssetEvents';
 import {
   AssetNode,
   RunStatus,
@@ -144,9 +144,13 @@ const buildSidebarQueryMock = (
     },
   });
 
-const buildEventsMock = ({reported}: {reported: boolean}): MockedResponse<AssetEventsQuery> => ({
+const buildEventsMock = ({
+  reported,
+}: {
+  reported: boolean;
+}): MockedResponse<RecentAssetEventsQuery> => ({
   request: {
-    query: ASSET_EVENTS_QUERY,
+    query: RECENT_ASSET_EVENTS_QUERY,
     variables: {
       assetKey: {path: ['asset1']},
       before: undefined,
@@ -160,11 +164,6 @@ const buildEventsMock = ({reported}: {reported: boolean}): MockedResponse<AssetE
         __typename: 'Asset',
         key: MockAssetKey,
         id: '["asset1"]',
-        definition: {
-          __typename: 'AssetNode',
-          id: 'test.py.repo.["asset1"]',
-          partitionKeys: [],
-        },
         assetMaterializationHistory: buildMaterializationHistoryConnection({
           results: [
             buildMaterializationEvent({
