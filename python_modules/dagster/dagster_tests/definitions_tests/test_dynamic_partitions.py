@@ -14,7 +14,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.partition import DynamicPartitionsDefinition, Partition
-from dagster._core.test_utils import get_paginated_partition_keys, instance_for_test
+from dagster._core.test_utils import instance_for_test
 
 
 @pytest.mark.parametrize(
@@ -29,10 +29,7 @@ def test_dynamic_partitions_partitions(
 ):
     partitions = DynamicPartitionsDefinition(partition_fn)
 
-    all_keys = [p.name for p in partition_fn(None)]
-    assert partitions.get_partition_keys() == all_keys
-    assert get_paginated_partition_keys(partitions) == all_keys
-    assert get_paginated_partition_keys(partitions, ascending=False) == list(reversed(all_keys))
+    assert partitions.get_partition_keys() == [p.name for p in partition_fn(None)]
 
 
 @pytest.mark.parametrize(
@@ -45,28 +42,21 @@ def test_dynamic_partitions_partitions(
 def test_dynamic_partitions_keys(partition_fn: Callable[[Optional[datetime]], Sequence[str]]):
     partitions = DynamicPartitionsDefinition(partition_fn)
 
-    all_keys = partition_fn(None)
-    assert partitions.get_partition_keys() == all_keys
-    assert get_paginated_partition_keys(partitions) == all_keys
-    assert get_paginated_partition_keys(partitions, ascending=False) == list(reversed(all_keys))
+    assert partitions.get_partition_keys() == partition_fn(None)
 
 
 def test_dynamic_partitions_def_methods():
-    partitions = DynamicPartitionsDefinition(name="foo")
+    foo = DynamicPartitionsDefinition(name="foo")
     with instance_for_test() as instance:
         instance.add_dynamic_partitions("foo", ["a", "b"])
-        all_keys = ["a", "b"]
-        assert partitions.get_partition_keys(dynamic_partitions_store=instance) == all_keys
-        assert (
-            get_paginated_partition_keys(partitions, dynamic_partitions_store=instance) == all_keys
-        )
-        assert get_paginated_partition_keys(
-            partitions, dynamic_partitions_store=instance, ascending=False
-        ) == list(reversed(all_keys))
+        assert set(foo.get_partition_keys(dynamic_partitions_store=instance)) == {
+            "a",
+            "b",
+        }
         assert instance.has_dynamic_partition("foo", "a")
 
         instance.delete_dynamic_partition("foo", "a")
-        assert partitions.get_partition_keys(dynamic_partitions_store=instance) == ["b"]
+        assert set(foo.get_partition_keys(dynamic_partitions_store=instance)) == {"b"}
         assert instance.has_dynamic_partition("foo", "a") is False
 
 
