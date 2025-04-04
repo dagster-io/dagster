@@ -32,6 +32,7 @@ from sqlglot.optimizer import optimize
 from dagster_dbt.asset_utils import (
     default_metadata_from_dbt_resource_props,
     get_asset_check_key_for_test,
+    get_checks_on_sources_upstream_of_selected_assets,
 )
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from dagster_dbt.dbt_manifest import DbtManifestParam, validate_manifest
@@ -442,12 +443,22 @@ class DbtCliEventMessage:
                 test_unique_id=unique_id,
                 project=None,
             )
+            if not context or not context.has_assets_def:
+                selected_check_keys = set()
+            else:
+                selected_check_keys = {
+                    *context.selected_asset_check_keys,
+                    *get_checks_on_sources_upstream_of_selected_assets(
+                        assets_def=context.assets_def,
+                        selected_asset_keys=context.selected_asset_keys,
+                    ),
+                }
 
             if (
                 context
                 and has_asset_def
                 and asset_check_key is not None
-                and asset_check_key in context.selected_asset_check_keys
+                and asset_check_key in selected_check_keys
             ):
                 # The test is an asset check in an asset, so yield an `AssetCheckResult`.
                 yield AssetCheckResult(

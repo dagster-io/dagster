@@ -730,6 +730,22 @@ def build_dbt_specs(
                 upstream_id,
                 project,
             ).key
+            if (
+                upstream_id.startswith("source")
+                and translator.settings.enable_source_tests_as_checks
+            ):
+                for child_unique_id in manifest["child_map"][upstream_id]:
+                    if not child_unique_id.startswith("test"):
+                        continue
+                    check_spec = default_asset_check_fn(
+                        manifest=manifest,
+                        dagster_dbt_translator=translator,
+                        asset_key=key_by_unique_id[upstream_id],
+                        test_unique_id=child_unique_id,
+                        project=project,
+                    )
+                    if check_spec:
+                        check_specs.append(check_spec)
 
     _validate_asset_keys(translator, manifest, key_by_unique_id)
     return specs, check_specs
@@ -845,6 +861,18 @@ def get_asset_check_key_for_test(
     )
 
 
+def get_checks_on_sources_upstream_of_selected_assets(
+    assets_def: AssetsDefinition, selected_asset_keys: AbstractSet[AssetKey]
+) -> AbstractSet[AssetCheckKey]:
+    sources_upstream_of_selected_assets = {
+        dep.asset_key for key in selected_asset_keys for dep in assets_def.specs_by_key[key].deps
+    } - assets_def.specs_by_key.keys()
+    all_check_keys = {
+        check_spec.key for check_spec in assets_def.node_check_specs_by_output_name.values()
+    }
+    return {key for key in all_check_keys if key.asset_key in sources_upstream_of_selected_assets}
+
+
 def get_subset_selection_for_context(
     context: Union[OpExecutionContext, AssetExecutionContext],
     manifest: Mapping[str, Any],
@@ -912,20 +940,27 @@ def get_subset_selection_for_context(
         dagster_dbt_translator, manifest, assets_def, context.selected_asset_keys
     )
 
+    # We explicitly use node_check_specs_by_output_name because it contains every single check spec, not just those selected in the currently
+    # executing subset.
+    checks_targeting_selected_sources = get_checks_on_sources_upstream_of_selected_assets(
+        assets_def=assets_def, selected_asset_keys=context.selected_asset_keys
+    )
+    selected_check_keys = {*context.selected_asset_check_keys, *checks_targeting_selected_sources}
+
     # if all asset checks for the subsetted assets are selected, then we can just select the
     # assets and use indirect selection for the tests. We verify that
     # 1. all the selected checks are for selected assets
     # 2. no checks for selected assets are excluded
     # This also means we'll run any singular tests.
-    checks_on_non_selected_assets = [
+    selected_checks_on_non_selected_assets = {
         check_key
-        for check_key in context.selected_asset_check_keys
+        for check_key in selected_check_keys
         if check_key.asset_key not in context.selected_asset_keys
-    ]
+    }
     all_check_keys = {
         check_spec.key for check_spec in assets_def.node_check_specs_by_output_name.values()
     }
-    excluded_checks = all_check_keys.difference(context.selected_asset_check_keys)
+    excluded_checks = all_check_keys.difference(selected_check_keys)
     excluded_checks_on_selected_assets = [
         check_key
         for check_key in excluded_checks
@@ -950,10 +985,10 @@ def get_subset_selection_for_context(
             "Overriding default `DBT_INDIRECT_SELECTION` "
             f"{current_dbt_indirect_selection_env or 'eager'} with "
             f"`{indirect_selection_override}` due to additional checks "
-            f"{', '.join([c.to_user_string() for c in checks_on_non_selected_assets])} "
+            f"{', '.join([c.to_user_string() for c in selected_checks_on_non_selected_assets])} "
             f"and excluded checks {', '.join([c.to_user_string() for c in excluded_checks_on_selected_assets])}."
         )
-    elif checks_on_non_selected_assets:
+    elif selected_checks_on_non_selected_assets:
         # explicitly select the tests that won't be run via indirect selection
         selected_dbt_resources = [
             *selected_asset_resources,
@@ -961,7 +996,7 @@ def get_subset_selection_for_context(
                 dagster_dbt_translator,
                 manifest,
                 assets_def,
-                checks_on_non_selected_assets,
+                selected_checks_on_non_selected_assets,
             ),
         ]
         indirect_selection_override = None
