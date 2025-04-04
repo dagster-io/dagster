@@ -33,6 +33,7 @@ import {RepoAddress} from '../workspace/types';
 export interface GraphExplorerOptions {
   explodeComposites: boolean;
   preferAssetRendering: boolean;
+  hideIO?: boolean;
 }
 
 interface GraphExplorerProps {
@@ -290,6 +291,7 @@ export const GraphExplorer = (props: GraphExplorerProps) => {
               onEnterSubgraph={handleEnterCompositeSolid}
               onLeaveSubgraph={handleLeaveCompositeSolid}
               layout={layout}
+              hideIO={options.hideIO}
             />
           )}
         </ErrorBoundary>

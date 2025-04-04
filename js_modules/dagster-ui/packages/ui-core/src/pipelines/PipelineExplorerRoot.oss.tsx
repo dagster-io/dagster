@@ -69,11 +69,12 @@ export const PipelineExplorerContainer = (props: {
   isGraph?: boolean;
 }) => {
   const {explorerPath, repoAddress} = props;
+  const job = useJob(repoAddress, explorerPath.pipelineName);
   const [options, setOptions] = useState<GraphExplorerOptions>({
     explodeComposites: explorerPath.explodeComposites ?? false,
     preferAssetRendering: true,
+    hideIO: !!job && job.isAirliftJob,
   });
-  const job = useJob(repoAddress, explorerPath.pipelineName);
   if (job && job.isAssetJob && options.preferAssetRendering) {
     const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
     return (

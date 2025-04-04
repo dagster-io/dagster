@@ -63,6 +63,7 @@ const GraphExplorerRoot = (props: Props) => {
   const [options, setOptions] = useState<GraphExplorerOptions>({
     explodeComposites: false,
     preferAssetRendering: true,
+    hideIO: true,
   });
 
   const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
