@@ -8,6 +8,7 @@ import {featureEnabled} from '../app/Flags';
 import {isHiddenAssetGroupJob, tokenForAssetKey} from '../asset-graph/Utils';
 import {globalAssetGraphPathToString} from '../assets/globalAssetGraphPathToString';
 import {Run} from '../graphql/types';
+import {getExternalRunUrl, isExternalRun} from '../runs/externalRuns';
 
 export const workspacePath = (repoName: string, repoLocation: string, path = '') => {
   const finalPath = path.startsWith('/') ? path : `/${path}`;
@@ -48,7 +49,12 @@ export const workspacePathFromAddress = (repoAddress: RepoAddress, path = '') =>
 type RunDetails = {
   run: Pick<
     Run,
-    'id' | 'pipelineName' | 'assetSelection' | 'assetCheckSelection' | 'hasReExecutePermission'
+    | 'id'
+    | 'pipelineName'
+    | 'assetSelection'
+    | 'assetCheckSelection'
+    | 'hasReExecutePermission'
+    | 'tags'
   >;
   repositoryName?: string;
   repositoryLocationName?: string;
@@ -81,6 +87,15 @@ export const workspacePipelineLinkForRun = ({
       label: `View asset lineage`,
       icon: 'lineage' as IconName,
       to: globalAssetGraphPathToString({opsQuery, opNames: []}),
+    };
+  }
+
+  if (isExternalRun(run)) {
+    return {
+      disabledReason: null,
+      label: `View job in Airflow`,
+      icon: 'job' as IconName,
+      to: getExternalRunUrl(run) || '',
     };
   }
 
