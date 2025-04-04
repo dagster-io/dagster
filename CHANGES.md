@@ -12,6 +12,7 @@
 - `dg`-scaffolded workspaces now include a `dg.toml` instead of `pyproject.toml` file.
 - `dg`-scaffolded projects now place the root package in an `src/` directory and use `hatchling` as the build backend rather than `setuptools`.
 - Fixed a bug where `dg` would crash when working with Python packages with an src-based layout.
+- `dg check yaml` now properly validates component files in nested subdirectories of the `defs/` folder.
 
 ## 1.10.8 (core) / 0.26.8 (libraries)
 
