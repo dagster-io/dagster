@@ -20,6 +20,14 @@ class Component(ABC):
     @classmethod
     def __dg_package_entry__(cls) -> None: ...
 
+    @staticmethod
+    def get_author() -> Optional[str]:
+        return None
+
+    @staticmethod
+    def get_tags() -> Optional[list[str]]:
+        return None
+
     @classmethod
     def get_schema(cls) -> Optional[type[BaseModel]]:
         return None

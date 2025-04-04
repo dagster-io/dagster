@@ -202,8 +202,8 @@ def json_for_component_type(
     sample_yaml = generate_sample_yaml(typename, component_type_data.schema or {})
     return ComponentTypeJson(
         name=typename,
-        author="",
-        tags=[],
+        author=remote_component_type.author or "",
+        tags=remote_component_type.tags or [],
         example=sample_yaml,
         schema=json.dumps(component_type_data.schema),
         description=entry.description,
