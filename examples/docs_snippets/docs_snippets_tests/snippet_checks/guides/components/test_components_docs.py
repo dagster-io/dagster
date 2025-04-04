@@ -82,7 +82,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             ],
         )
         check_file(
-            Path("jaffle_platform") / "definitions.py",
+            Path("src") / "jaffle_platform" / "definitions.py",
             COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-definitions.py",
             update_snippets=update_snippets,
         )
@@ -129,14 +129,18 @@ def test_components_docs_index(update_snippets: bool) -> None:
         # Cleanup __pycache__ directories
         _run_command(r"find . -type d -name __pycache__ -exec rm -r {} \+")
         run_command_and_snippet_output(
-            cmd="tree jaffle_platform",
+            cmd="tree src/jaffle_platform",
             snippet_path=COMPONENTS_SNIPPETS_DIR
             / f"{next_snip_no()}-tree-jaffle-platform.txt",
             update_snippets=update_snippets,
             custom_comparison_fn=compare_tree_output,
         )
         check_file(
-            Path("jaffle_platform") / "defs" / "ingest_files" / "component.yaml",
+            Path("src")
+            / "jaffle_platform"
+            / "defs"
+            / "ingest_files"
+            / "component.yaml",
             COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component.yaml",
             update_snippets=update_snippets,
         )
@@ -193,7 +197,8 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 ignore_output=True,
             )
             create_file(
-                file_path=Path("jaffle_platform")
+                file_path=Path("src")
+                / "jaffle_platform"
                 / "defs"
                 / "ingest_files"
                 / "replication.yaml",
@@ -259,14 +264,14 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
             )
             check_file(
-                Path("jaffle_platform") / "defs" / "jdbt" / "component.yaml",
+                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
                 COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component-jdbt.yaml",
                 update_snippets=update_snippets,
             )
 
             # Update component file, with error, check and fix
             create_file(
-                Path("jaffle_platform") / "defs" / "jdbt" / "component.yaml",
+                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt-incorrect.yaml",
                 contents=format_multiline("""
@@ -274,7 +279,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
                     attributes:
                       dbt:
-                        project_dir: ../../../dbt/jdbt
+                        project_dir: ../../../../dbt/jdbt
                       asset_attributes:
                         key: "target/main/{{ node.name }}
                 """),
@@ -291,7 +296,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             )
 
             create_file(
-                Path("jaffle_platform") / "defs" / "jdbt" / "component.yaml",
+                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jdbt.yaml",
                 contents=format_multiline("""
@@ -299,7 +304,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
                     attributes:
                       dbt:
-                        project_dir: ../../../dbt/jdbt
+                        project_dir: ../../../../dbt/jdbt
                       asset_attributes:
                         key: "target/main/{{ node.name }}"
                 """),
@@ -327,7 +332,11 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
             # Automation condition stuff
             create_file(
-                Path("jaffle_platform") / "defs" / "ingest_files" / "component.yaml",
+                Path("src")
+                / "jaffle_platform"
+                / "defs"
+                / "ingest_files"
+                / "component.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-component-ingest-automation.yaml",
                 contents=format_multiline("""
@@ -345,7 +354,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                     """),
             )
             create_file(
-                Path("jaffle_platform") / "defs" / "jdbt" / "component.yaml",
+                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-component-jdbt-automation.yaml",
                 contents=format_multiline("""
@@ -353,7 +362,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
                     attributes:
                       dbt:
-                        project_dir: ../../../dbt/jdbt
+                        project_dir: ../../../../dbt/jdbt
                       asset_attributes:
                         key: "target/main/{{ node.name }}"
                       asset_post_processors:

@@ -114,7 +114,8 @@ def test_build_docs_success():
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner) as venv_path,
     ):
-        runner.invoke("docs", "build", str(venv_path / "built_docs"))
+        result = runner.invoke("docs", "build", str(venv_path / "built_docs"))
+        assert_runner_result(result)
 
         assert (venv_path / "built_docs" / "index.html").exists()
 

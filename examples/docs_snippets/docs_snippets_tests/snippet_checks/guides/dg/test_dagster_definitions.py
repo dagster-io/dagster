@@ -58,13 +58,13 @@ def test_components_docs_migrating_definitions(update_snippets: bool) -> None:
         )
 
         run_command_and_snippet_output(
-            cmd="cat my_project/defs/assets/my_asset.py",
+            cmd="cat src/my_project/defs/assets/my_asset.py",
             snippet_path=SNIPPETS_DIR / f"{get_next_snip_number()}-cat.txt",
             update_snippets=update_snippets,
         )
 
         create_file(
-            Path("my_project") / "defs" / "assets" / "my_asset.py",
+            Path("src") / "my_project" / "defs" / "assets" / "my_asset.py",
             format_multiline('''
                 import dagster as dg
 

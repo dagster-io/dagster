@@ -24,6 +24,7 @@ from dagster_dg.cli import (
 )
 from dagster_dg.config import is_dg_specific_config_file
 from dagster_dg.utils import (
+    create_toml_node,
     delete_toml_node,
     discover_git_root,
     get_toml_node,
@@ -196,7 +197,7 @@ def isolated_example_project_foo_bar(
     populate_cache: bool = False,
     component_dirs: Sequence[Path] = [],
     config_file_type: ConfigFileType = "pyproject.toml",
-    package_layout: PackageLayoutType = "root",
+    package_layout: PackageLayoutType = "src",
 ) -> Iterator[None]:
     """Scaffold a project named foo_bar in an isolated filesystem.
 
@@ -231,15 +232,15 @@ def isolated_example_project_foo_bar(
                 Path("foo-bar") / "pyproject.toml",
                 Path("foo-bar") / "dg.toml",
             )
-        if package_layout == "src":
+        if package_layout == "root":
             # Move the src directory to the root of the project
-            src_dir = Path("foo-bar") / "src"
-            src_dir.mkdir()
-            shutil.move(Path("foo-bar/foo_bar"), src_dir / "foo_bar")
+            curr_pkg_root = Path("foo-bar") / "src" / "foo_bar"
+            new_pkg_root = Path("foo-bar") / "foo_bar"
+            shutil.move(curr_pkg_root, new_pkg_root)
+            Path("foo-bar", "src").rmdir()
 
             with modify_toml_as_dict(Path("foo-bar/pyproject.toml")) as toml:
-                set_toml_node(toml, ("tool", "setuptools", "package-dir"), {"": "src"})
-                set_toml_node(toml, ("tool", "setuptools", "packages", "find"), {"where": ["src"]})
+                create_toml_node(toml, ("tool", "hatch", "build", "packages"), ["foo_bar"])
 
             # Reinstall to venv since package root changed
             install_to_venv(Path("foo-bar/.venv"), ["-e", "foo-bar"])
@@ -248,7 +249,7 @@ def isolated_example_project_foo_bar(
             # _install_libraries_to_venv(Path(".venv"), ["dagster-test"])
             for src_dir in component_dirs:
                 component_name = src_dir.name
-                components_dir = Path.cwd() / "foo_bar" / "defs" / component_name
+                components_dir = Path.cwd() / "src" / "foo_bar" / "defs" / component_name
                 components_dir.mkdir(parents=True, exist_ok=True)
                 shutil.copytree(src_dir, components_dir, dirs_exist_ok=True)
             yield
@@ -280,7 +281,7 @@ def isolated_example_component_library_foo_bar(
         )
         assert_runner_result(result)
         with clear_module_from_cache("foo_bar"), pushd("foo-bar"):
-            shutil.rmtree(Path("foo_bar/defs"))
+            shutil.rmtree(Path("src/foo_bar/defs"))
 
             # Make it not a project
             with modify_toml(Path("pyproject.toml")) as toml:
@@ -294,7 +295,7 @@ def isolated_example_component_library_foo_bar(
                         ("project", "entry-points", "dagster_dg.library", "foo_bar"),
                         lib_module_name,
                     )
-                    Path(*lib_module_name.split(".")).mkdir(exist_ok=True)
+                    Path("src", *lib_module_name.split(".")).mkdir(exist_ok=True)
 
             # Install the component library into our venv
             if not skip_venv:
@@ -601,7 +602,7 @@ def create_project_from_components(
     origin_paths = [COMPONENT_INTEGRATION_TEST_DIR / src_path for src_path in src_paths]
     with isolated_example_project_foo_bar(runner, component_dirs=origin_paths):
         for src_path in src_paths:
-            components_dir = Path.cwd() / "foo_bar" / "defs" / src_path.split("/")[-1]
+            components_dir = Path.cwd() / "src" / "foo_bar" / "defs" / src_path.split("/")[-1]
             if local_component_defn_to_inject:
                 shutil.copy(local_component_defn_to_inject, components_dir / "__init__.py")
 

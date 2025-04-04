@@ -11,16 +11,13 @@ version = "0.1.0"
 {{ dev_dependencies }}
 
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.dg]
 directory_type = "project"
 
 [tool.dg.project]
 root_module = "{{ project_name }}"
-
-[tool.setuptools.packages.find]
-exclude=["{{ project_name }}_tests"]
 
 {{ uv_sources }}
