@@ -35,8 +35,8 @@ setup(
     include_package_data=True,
     python_requires=">=3.9,<3.13",
     install_requires=[
-        "dagster==1.10.8",
-        "dagster-snowflake==0.26.8",
+        "dagster==1.10.9",
+        "dagster-snowflake==0.26.9",
         "pandas",
         "requests",
         "snowflake-connector-python[pandas]>=3.4.0",

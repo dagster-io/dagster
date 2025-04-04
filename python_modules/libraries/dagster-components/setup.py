@@ -35,7 +35,7 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_components_tests*", "examples*"]),
     install_requires=[
-        "dagster==1.10.8",
+        "dagster==1.10.9",
         "typer",
     ],
     zip_safe=False,

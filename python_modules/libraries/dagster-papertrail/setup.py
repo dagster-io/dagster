@@ -33,6 +33,6 @@ setup(
     packages=find_packages(exclude=["dagster_papertrail_tests*"]),
     include_package_data=True,
     python_requires=">=3.9,<3.13",
-    install_requires=["dagster==1.10.8"],
+    install_requires=["dagster==1.10.9"],
     zip_safe=False,
 )

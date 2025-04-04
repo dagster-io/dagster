@@ -106,8 +106,8 @@ setup(
         "universal_pathlib>=0.2.0; python_version>='3.12'",
         "rich",
         "filelock",
-        "dagster-pipes==1.10.8",
-        "dagster-shared==0.26.8",
+        "dagster-pipes==1.10.9",
+        "dagster-shared==0.26.9",
         "antlr4-python3-runtime",
     ],
     extras_require={
