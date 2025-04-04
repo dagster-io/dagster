@@ -1826,6 +1826,9 @@ class DagsterInstance(DynamicPartitionsStore):
             known_state=known_state,
             instance=self,
         )
+        print("REMOTE JOB")
+        print(remote_job)
+        print(remote_job.asset_selection)
 
         return self.create_run(
             job_name=parent_run.job_name,
@@ -1842,7 +1845,7 @@ class DagsterInstance(DynamicPartitionsStore):
             parent_job_snapshot=remote_job.parent_job_snapshot,
             op_selection=parent_run.op_selection,
             asset_selection=remote_job.asset_selection,
-            asset_check_selection=remote_job.asset_check_selection,
+            asset_check_selection=parent_run.asset_check_selection,
             remote_job_origin=remote_job.get_remote_origin(),
             job_code_origin=remote_job.get_python_origin(),
             asset_graph=code_location.get_repository(
