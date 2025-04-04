@@ -1,6 +1,6 @@
 import inspect
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel
@@ -15,22 +15,25 @@ if TYPE_CHECKING:
     from dagster.components.core.context import ComponentLoadContext
 
 
+class ComponentMetadata(BaseModel):
+    """Metadata assigned to the Component."""
+
+    author: Optional[str] = None
+    tags: Optional[Sequence[str]] = None
+
+
 @scaffold_with(DefaultComponentScaffolder)
 class Component(ABC):
     @classmethod
     def __dg_package_entry__(cls) -> None: ...
 
-    @staticmethod
-    def get_author() -> Optional[str]:
-        return None
-
-    @staticmethod
-    def get_tags() -> Optional[list[str]]:
-        return None
-
     @classmethod
     def get_schema(cls) -> Optional[type[BaseModel]]:
         return None
+
+    @classmethod
+    def get_metadata(cls) -> ComponentMetadata:
+        return ComponentMetadata()
 
     @classmethod
     def get_model_cls(cls) -> Optional[type[BaseModel]]:
