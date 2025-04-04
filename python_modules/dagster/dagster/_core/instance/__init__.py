@@ -3404,5 +3404,5 @@ class DagsterInstance(DynamicPartitionsStore):
     def dagster_observe_supported(self) -> bool:
         return False
 
-    def can_read_failure_events_for_asset(self, asset_key: AssetKey) -> bool:
+    def can_read_failure_events_for_asset(self, asset_record: "AssetRecord") -> bool:
         return False
