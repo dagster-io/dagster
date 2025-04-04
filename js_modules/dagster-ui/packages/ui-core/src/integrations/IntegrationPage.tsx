@@ -1,8 +1,8 @@
-import {Body, Box, Colors, Heading, PageHeader} from '@dagster-io/ui-components';
+import {Body, Box, Colors} from '@dagster-io/ui-components';
+import clsx from 'clsx';
 import {useLayoutEffect, useRef, useState} from 'react';
 import ReactMarkdown from 'react-markdown';
-import {CodeComponent} from 'react-markdown/lib/ast-to-react';
-import {Link} from 'react-router-dom';
+import {Components} from 'react-markdown/lib/ast-to-react';
 import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
 
@@ -17,31 +17,15 @@ interface Props {
 
 export const IntegrationPage = ({integration}: Props) => {
   const {
-    frontmatter: {name, title, excerpt},
-    logo,
+    frontmatter: {name, title, excerpt, logoFilename},
     content,
   } = integration;
 
   return (
     <div>
-      <PageHeader
-        title={
-          <Heading>
-            <Box flex={{direction: 'row', gap: 8}}>
-              <Link to="/integrations">Integrations Marketplace</Link>
-              <span> / </span>
-              <div>{title}</div>
-            </Box>
-          </Heading>
-        }
-      />
-      <Box
-        padding={{vertical: 24}}
-        flex={{direction: 'column', gap: 24}}
-        style={{width: '1100px', margin: '0 auto'}}
-      >
+      <Box padding={{vertical: 24}} flex={{direction: 'column', gap: 12}}>
         <Box flex={{direction: 'row', gap: 12, alignItems: 'flex-start'}}>
-          <IntegrationIcon name={name} logo={logo} />
+          <IntegrationIcon name={name} logoFilename={logoFilename} />
           <Box flex={{direction: 'column', gap: 2}} margin={{top: 4}}>
             <div style={{fontSize: 18, fontWeight: 600}}>{title}</div>
             <Body color={Colors.textLight()}>{excerpt}</Body>
@@ -54,6 +38,7 @@ export const IntegrationPage = ({integration}: Props) => {
             rehypePlugins={[[rehypeHighlight, {ignoreMissing: true}]]}
             components={{
               code: Code,
+              a: Anchor,
             }}
           >
             {content}
@@ -64,14 +49,35 @@ export const IntegrationPage = ({integration}: Props) => {
   );
 };
 
-const Code: CodeComponent = (props) => {
-  const {children, className, ...rest} = props;
+const DOCS_ORIGIN = 'https://docs.dagster.io';
+
+const Anchor: Components['a'] = (props) => {
+  const {children, href, ...rest} = props;
+  const finalHref = href?.startsWith('/') ? `${DOCS_ORIGIN}${href}` : href;
+  return (
+    <a href={finalHref} target="_blank" rel="noreferrer" {...rest}>
+      {children}
+    </a>
+  );
+};
+
+const Code: Components['code'] = (props) => {
+  const {children, className, inline, ...rest} = props;
+
   const codeRef = useRef<HTMLElement>(null);
   const [value, setValue] = useState('');
 
   useLayoutEffect(() => {
     setValue(codeRef.current?.textContent?.trim() ?? '');
   }, [children]);
+
+  if (inline) {
+    return (
+      <code className={clsx(className, styles.inlineCode)} {...rest}>
+        {children}
+      </code>
+    );
+  }
 
   return (
     <div className={styles.codeBlock}>

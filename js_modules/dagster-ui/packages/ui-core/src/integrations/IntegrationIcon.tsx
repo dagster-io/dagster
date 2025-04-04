@@ -1,14 +1,16 @@
 import {Box, Icon, IconWrapper} from '@dagster-io/ui-components';
 import styled from 'styled-components';
 
+const INTEGRATIONS_ORIGIN_AND_PATH = 'https://integration-registry.dagster.io/logos';
+
 interface Props {
   name: string;
-  logo: string | {src: string} | null;
+  logoFilename: string | null;
 }
 
-export const IntegrationIcon = ({name, logo}: Props) => {
+export const IntegrationIcon = ({name, logoFilename}: Props) => {
   const icon = () => {
-    if (logo === null) {
+    if (logoFilename === null) {
       return <Icon name="workspace" size={24} />;
     }
 
@@ -16,7 +18,7 @@ export const IntegrationIcon = ({name, logo}: Props) => {
       <IntegrationIconWrapper
         role="img"
         $size={32}
-        $img={extractIconSrc(logo)}
+        $img={`${INTEGRATIONS_ORIGIN_AND_PATH}/${logoFilename}`}
         $color={null}
         $rotation={null}
         aria-label={name}
@@ -35,15 +37,6 @@ export const IntegrationIcon = ({name, logo}: Props) => {
     </Box>
   );
 };
-
-function extractIconSrc(iconSvg: string | {src: string}) {
-  // Storybook imports SVGs are string but nextjs imports them as object.
-  // This is a temporary work around until we can get storybook to import them the same way as nextjs
-  if (typeof iconSvg !== 'undefined') {
-    return typeof iconSvg === 'string' ? (iconSvg as any) : iconSvg?.src;
-  }
-  return '';
-}
 
 const IntegrationIconWrapper = styled(IconWrapper)`
   mask-size: contain;

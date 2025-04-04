@@ -1,7 +1,6 @@
 export type IntegrationConfig = {
   frontmatter: IntegrationFrontmatter;
   content: string;
-  logo: string | StaticImageData | null;
 };
 
 export type IntegrationFrontmatter = {
@@ -10,6 +9,9 @@ export type IntegrationFrontmatter = {
   name: string;
   title: string;
   excerpt: string;
+  logoFilename: string | null;
+  pypiUrl: string | null;
+  repoUrl: string | null;
   partnerlink: string;
   categories: string[];
   enabledBy: string[];

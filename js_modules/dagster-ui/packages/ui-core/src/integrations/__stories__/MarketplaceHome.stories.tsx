@@ -2,7 +2,6 @@ import {Box, Colors} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
 
 import {MarketplaceHome} from '../MarketplaceHome';
-import * as allIntegrations from '../__generated__';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -11,7 +10,24 @@ export default {
 } as Meta;
 
 export const Default = () => {
-  const integrations = Object.values(allIntegrations);
+  const integrations = [
+    {
+      id: 'dbt',
+      status: 'published',
+      name: 'dbt',
+      title: 'Dagster & dbt',
+      excerpt: '',
+      partnerlink: '',
+      categories: [],
+      enabledBy: [],
+      enables: [],
+      tags: [],
+      logoFilename: 'dbt.svg',
+      pypiUrl: '',
+      repoUrl: '',
+    },
+  ];
+
   return (
     <Box padding={64} style={{width: '1300px', backgroundColor: Colors.backgroundLight()}}>
       <MarketplaceHome integrations={integrations} />
