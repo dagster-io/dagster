@@ -142,7 +142,7 @@ def test_list_connectors_for_group_cursor(connector_id: str, group_id: str):
 
     setup_state = FivetranConnectorSetupStateType.CONNECTED.value
 
-    # Create mock responses to mock API behiavor for the "list connectors for group" endpoint
+    # Create mock responses to mock API behavior for the "list connectors for group" endpoint
     def _mock_interaction():
         with responses.RequestsMock() as response:
             # initial state, a cursor is returned, we will do a second call
