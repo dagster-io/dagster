@@ -11,9 +11,11 @@ class SimpleAssetComponent(Component, Resolvable, Model):
     asset_key: str
     value: str
 
+    @staticmethod
     def get_author():
         return "John Smith"
 
+    @staticmethod
     def get_tags():
         return ["a", "b", "c"]
 
