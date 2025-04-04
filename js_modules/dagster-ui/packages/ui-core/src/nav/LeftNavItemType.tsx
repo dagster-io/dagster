@@ -9,7 +9,7 @@ import {RepoAddress} from '../workspace/types';
 export type LeftNavItemType = {
   name: string;
   isJob: boolean;
-  leftIcon: IconName;
+  leftIcon: IconName | 'airlift';
   label: React.ReactNode;
   path: string;
   repoAddress: RepoAddress;

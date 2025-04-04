@@ -1154,6 +1154,7 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   parentSnapshotId: String
   graphName: String!
   runTags: [PipelineTag!]!
+  isAirliftJob: Boolean!
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
@@ -1457,6 +1458,7 @@ type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineRe
   graphName: String!
   solidSelection: [String!]
   runTags: [PipelineTag!]!
+  isAirliftJob: Boolean!
 }
 
 union PipelineSnapshotOrError =
@@ -2253,6 +2255,7 @@ type Job implements SolidContainer & IPipelineSnapshot {
   parentSnapshotId: String
   graphName: String!
   runTags: [PipelineTag!]!
+  isAirliftJob: Boolean!
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!

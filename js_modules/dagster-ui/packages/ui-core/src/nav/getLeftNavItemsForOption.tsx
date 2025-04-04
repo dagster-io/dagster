@@ -79,7 +79,7 @@ export const getJobItemsForOption = (option: DagsterRepoOption) => {
       continue;
     }
 
-    const {isJob, name} = pipeline;
+    const {isJob, name, isAirliftJob} = pipeline;
     const schedulesForJob = schedules.filter((schedule) => schedule.pipelineName === name);
     const sensorsForJob = sensors.filter((sensor) =>
       sensor.targets?.map((target) => target.pipelineName).includes(name),
@@ -88,7 +88,7 @@ export const getJobItemsForOption = (option: DagsterRepoOption) => {
     items.push({
       name,
       isJob,
-      leftIcon: 'job',
+      leftIcon: isAirliftJob ? 'airlift' : 'job',
       label: (
         <Label $hasIcon={someInRepoHasIcon}>
           <TruncatedTextWithFullTextOnHover text={name} />
