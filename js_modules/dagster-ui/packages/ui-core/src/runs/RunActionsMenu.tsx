@@ -31,7 +31,6 @@ import {TerminationDialog} from './TerminationDialog';
 import {
   PipelineEnvironmentQuery,
   PipelineEnvironmentQueryVariables,
-  RunActionsMenuRunFragment,
 } from './types/RunActionsMenu.types';
 import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
@@ -47,6 +46,7 @@ import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext/util';
 import {useRepositoryForRunWithParentSnapshot} from '../workspace/useRepositoryForRun';
 import {workspacePipelineLinkForRun} from '../workspace/workspacePath';
+import {RunActionsMenuRunFragment} from './types/RunActionsMenuRunFragment.types';
 
 interface Props {
   run: RunActionsMenuRunFragment;
@@ -461,40 +461,6 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
 
 const OPEN_LAUNCHPAD_UNKNOWN =
   'Launchpad is unavailable because the pipeline is not present in the current repository.';
-
-export const RUN_ACTIONS_MENU_RUN_FRAGMENT = gql`
-  fragment RunActionsMenuRunFragment on Run {
-    id
-    assetSelection {
-      ... on AssetKey {
-        path
-      }
-    }
-    assetCheckSelection {
-      name
-      assetKey {
-        path
-      }
-    }
-    tags {
-      key
-      value
-    }
-    hasReExecutePermission
-    hasTerminatePermission
-    hasDeletePermission
-    canTerminate
-    mode
-    status
-    pipelineName
-    pipelineSnapshotId
-    repositoryOrigin {
-      repositoryName
-      repositoryLocationName
-    }
-    hasRunMetricsEnabled
-  }
-`;
 
 // Avoid fetching envYaml and parentPipelineSnapshotId on load in Runs page, they're slow.
 export const PIPELINE_ENVIRONMENT_QUERY = gql`
