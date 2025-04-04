@@ -151,6 +151,7 @@ def dev_command(
                     dg_context.for_project_environment(project_dir, cli_config),
                     [],
                     validate_requirements=False,
+                    fix_env_requirements=False,
                 )
                 overall_check_result = overall_check_result and check_result
             if not overall_check_result:
