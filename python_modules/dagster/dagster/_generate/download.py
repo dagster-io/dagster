@@ -10,6 +10,7 @@ from dagster._generate.generate import _should_skip_file
 
 # Examples aren't that can't be downloaded from the dagster project CLI
 EXAMPLES_TO_IGNORE = [
+    "components_yaml_checks_dsl",
     "deploy_k8s_beta",
     "docs_projects",
     "docs_snippets",
