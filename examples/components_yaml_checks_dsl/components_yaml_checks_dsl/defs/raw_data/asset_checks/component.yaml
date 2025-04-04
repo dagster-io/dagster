@@ -1,0 +1,7 @@
+type: components_yaml_checks_dsl.lib.HooliAssetChecksComponent
+
+attributes:
+  checks:
+    # ───── Static Thresholds ─────
+    - asset: RAW_DATA/users
+      check_name: user_count_static_threshold
