@@ -532,6 +532,14 @@ class DgContext:
             return "active Python environment"
 
     @property
+    def config_file_path(self) -> Path:
+        return self.dg_toml_path if self.dg_toml_path.exists() else self.pyproject_toml_path
+
+    @property
+    def dg_toml_path(self) -> Path:
+        return self.root_path / "dg.toml"
+
+    @property
     def pyproject_toml_path(self) -> Path:
         return self.root_path / "pyproject.toml"
 
