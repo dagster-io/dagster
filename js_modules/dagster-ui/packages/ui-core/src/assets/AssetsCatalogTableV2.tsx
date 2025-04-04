@@ -4,10 +4,12 @@ import {
   Colors,
   Container,
   Icon,
+  IconWrapper,
   Inner,
   Row,
   Skeleton,
   Subtitle1,
+  SubtitleSmall,
   ifPlural,
 } from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
@@ -21,15 +23,24 @@ import {AssetGlobalLineageLink} from 'shared/assets/AssetPageHeader.oss';
 import {ViewBreadcrumb} from 'shared/assets/ViewBreadcrumb.oss';
 import styled from 'styled-components';
 
-import {AssetHealthSummary} from './AssetHealthSummary';
+import {
+  AssetHealthStatusString,
+  AssetHealthSummary,
+  STATUS_INFO,
+  statusToIconAndColor,
+} from './AssetHealthSummary';
 import {useAllAssets} from './AssetsCatalogTable';
 import {AssetsEmptyState} from './AssetsEmptyState';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {asAssetKeyInput} from './asInput';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {currentPageAtom} from '../app/analytics';
 import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
+import {useAssetsHealthData} from '../asset-data/AssetHealthDataProvider';
+import {AssetHealthFragment} from '../asset-data/types/AssetHealthDataProvider.types';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SyntaxError} from '../selection/CustomErrorListener';
@@ -67,25 +78,42 @@ const AssetsCatalogTableV2Impl = () => {
   useBlockTraceUntilTrue('useAllAssets', !!assets?.length && !assetsLoading);
 
   const [errorState, setErrorState] = useState<SyntaxError[]>([]);
-  const {filterInput, filtered, loading, assetSelection, setAssetSelection} =
-    useAssetSelectionInput({
-      assets: assets ?? emptyArray,
-      assetsLoading: !assets && assetsLoading,
-      onErrorStateChange: (errors) => {
-        if (errors !== errorState) {
-          setErrorState(errors);
-        }
-      },
-    });
+  const {filterInput, filtered, loading} = useAssetSelectionInput({
+    assets: assets ?? emptyArray,
+    assetsLoading: !assets && assetsLoading,
+    onErrorStateChange: (errors) => {
+      if (errors !== errorState) {
+        setErrorState(errors);
+      }
+    },
+  });
 
   const scope = useMemo(
     () => ({
-      all: (assets ?? [])
+      all: (filtered ?? [])
         .filter((a): a is AssetWithDefinition => !!a.definition)
         .map((a) => ({...a.definition, assetKey: a.key})),
     }),
-    [assets],
+    [filtered],
   );
+
+  const {liveDataByNode} = useAssetsHealthData(
+    useMemo(() => filtered.map((asset) => asAssetKeyInput(asset.key)), [filtered]),
+  );
+
+  const groupedByStatus = useMemo(() => {
+    const byStatus: Record<AssetHealthStatusString, (typeof liveDataByNode)[string][]> = {
+      Degraded: [],
+      Warning: [],
+      Healthy: [],
+      Unknown: [],
+    };
+    Object.values(liveDataByNode).forEach((asset) => {
+      const status = statusToIconAndColor[asset.assetHealth?.assetHealth ?? 'undefined'].text;
+      byStatus[status].push(asset);
+    });
+    return byStatus;
+  }, [liveDataByNode]);
 
   if (error) {
     return <PythonErrorInfo error={error} />;
@@ -123,12 +151,7 @@ const AssetsCatalogTableV2Impl = () => {
           <LaunchAssetExecutionButton primary={false} scope={scope} />
         )}
       </Box>
-      <Table
-        assets={filtered}
-        assetSelection={assetSelection}
-        setAssetSelection={setAssetSelection}
-        loading={loading}
-      />
+      <Table groupedByStatus={groupedByStatus} loading={loading} />
     </>
   );
 };
@@ -137,17 +160,29 @@ const shimmer = {shimmer: true};
 const shimmerRows = [shimmer, shimmer, shimmer, shimmer, shimmer];
 
 const Table = ({
-  assets,
+  groupedByStatus,
   loading,
 }: {
-  assets: AssetTableFragment[];
-  assetSelection: string;
-  setAssetSelection: (selection: string) => void;
+  groupedByStatus: Record<AssetHealthStatusString, AssetHealthFragment[]>;
   loading: boolean;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const rowItems = loading ? shimmerRows : assets;
+  const [openStatuses, setOpenStatuses] = useState<Set<AssetHealthStatusString>>(
+    new Set(['Unknown', 'Healthy', 'Warning', 'Degraded']),
+  );
+
+  const unGroupedRowItems = useMemo(() => {
+    return Object.keys(groupedByStatus).flatMap((status_: string) => {
+      const status = status_ as AssetHealthStatusString;
+      if (openStatuses.has(status)) {
+        return [{header: true, status}, ...groupedByStatus[status]];
+      }
+      return [{header: true, status}];
+    });
+  }, [groupedByStatus, openStatuses]);
+
+  const rowItems = loading ? shimmerRows : unGroupedRowItems;
 
   const rowVirtualizer = useVirtualizer({
     count: rowItems.length,
@@ -178,6 +213,29 @@ const Table = ({
           if ('shimmer' in item) {
             return wrapper(<Skeleton key={key} $height={21} $width="45%" />);
           }
+          if ('header' in item) {
+            return (
+              <Row key={key} $height={size} $start={start}>
+                <div data-index={index} ref={rowVirtualizer.measureElement}>
+                  <StatusHeader
+                    status={item.status}
+                    open={openStatuses.has(item.status)}
+                    onToggle={() =>
+                      setOpenStatuses((prev) => {
+                        const newSet = new Set(prev);
+                        if (newSet.has(item.status)) {
+                          newSet.delete(item.status);
+                        } else {
+                          newSet.add(item.status);
+                        }
+                        return newSet;
+                      })
+                    }
+                  />
+                </div>
+              </Row>
+            );
+          }
           return wrapper(<AssetRow asset={item} />);
         })}
       </Inner>
@@ -185,25 +243,62 @@ const Table = ({
   );
 };
 
-const AssetRow = ({asset}: {asset: AssetTableFragment}) => {
-  const linkUrl = assetDetailsPathForKey({path: asset.key.path});
-
+const StatusHeader = ({
+  status,
+  open,
+  onToggle,
+}: {
+  status: AssetHealthStatusString;
+  open: boolean;
+  onToggle: () => void;
+}) => {
+  const {iconName, iconColor, textColor, text} = STATUS_INFO[status];
   return (
-    <Box flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="asset" />
-        <Link to={linkUrl}>{asset.key.path.join(' / ')}</Link>
-      </Box>
-      <AssetRecentUpdatesTrend asset={asset} />
-    </Box>
+    <StatusHeaderContainer
+      flex={{direction: 'row', alignItems: 'center', gap: 4}}
+      onClick={onToggle}
+    >
+      <Icon name={iconName} color={iconColor} />
+      <SubtitleSmall color={textColor}>{text}</SubtitleSmall>
+      <Icon name={open ? 'expand_less' : 'expand_more'} color={Colors.textLight()} />
+    </StatusHeaderContainer>
   );
 };
 
-const AssetRecentUpdatesTrend = ({asset}: {asset: AssetTableFragment}) => {
+const StatusHeaderContainer = styled(Box)`
+  background-color: ${Colors.backgroundLight()};
+  &:hover {
+    background-color: ${Colors.backgroundLightHover()};
+  }
+  border-radius: 4px;
+  padding: 6px 24px;
+`;
+
+const AssetRow = ({asset}: {asset: AssetHealthFragment}) => {
+  const linkUrl = assetDetailsPathForKey({path: asset.assetKey.path});
+
+  return (
+    <RowWrapper to={linkUrl}>
+      <Box flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+          <AssetIconWrapper>
+            <Icon name="asset" />
+          </AssetIconWrapper>
+          {asset.assetKey.path.join(' / ')}
+        </Box>
+        <AssetRecentUpdatesTrend asset={asset} />
+      </Box>
+    </RowWrapper>
+  );
+};
+
+const AssetRecentUpdatesTrend = ({asset}: {asset: AssetHealthFragment}) => {
+  const {assetsByAssetKey} = useAllAssets();
+  const assetDefinition = assetsByAssetKey[tokenForAssetKey(asset.assetKey)]?.definition;
   const {materializations, observations, loading} = useRecentAssetEvents(
-    asset.key,
+    asset.assetKey,
     {limit: 5},
-    {assetHasDefinedPartitions: !!asset.definition?.partitionDefinition},
+    {assetHasDefinedPartitions: !!assetDefinition?.partitionDefinition},
   );
 
   const states = useMemo(() => {
@@ -228,16 +323,18 @@ const AssetRecentUpdatesTrend = ({asset}: {asset: AssetTableFragment}) => {
     return dayjs(Number(lastEvent.timestamp)).fromNow();
   }, [lastEvent]);
 
-  if (loading) {
-    return <Skeleton $width={100} $height={21} />;
-  }
-
   return (
     <Box flex={{direction: 'row', gap: 6, alignItems: 'center'}}>
-      <Body color={Colors.textLight()}>{timeAgo}</Body>
-      <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>{states}</Box>
-      <div style={{height: 13, width: 1, background: Colors.keylineDefault()}} />
-      <AssetHealthSummary assetKey={asset.key} iconOnly />
+      {loading ? (
+        <Skeleton $width={100} $height={21} />
+      ) : (
+        <>
+          <Body color={Colors.textLight()}>{timeAgo}</Body>
+          <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>{states}</Box>
+          <div style={{height: 13, width: 1, background: Colors.keylineDefault()}} />
+        </>
+      )}
+      <AssetHealthSummary assetKey={asset.assetKey} iconOnly />
     </Box>
   );
 };
@@ -261,3 +358,21 @@ const OPACITIES: Record<number, number> = {
   3: 0.4,
   4: 0.2,
 };
+
+const AssetIconWrapper = styled.div``;
+
+const RowWrapper = styled(Link)`
+  color: ${Colors.textLight()};
+  cursor: pointer;
+  :hover {
+    &,
+    ${AssetIconWrapper} ${IconWrapper} {
+      color: ${Colors.textDefault()};
+      text-decoration: none;
+    }
+    ${AssetIconWrapper} ${IconWrapper} {
+      background: ${Colors.textDefault()};
+      text-decoration: none;
+    }
+  }
+`;

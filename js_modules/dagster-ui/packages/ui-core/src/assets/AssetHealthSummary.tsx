@@ -13,11 +13,9 @@ import {
 } from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 
-import {gql, useQuery} from '../apollo-client';
 import {asAssetKeyInput} from './asInput';
-import {assertUnreachable} from '../app/Util';
+import {useAssetHealthData} from '../asset-data/AssetHealthDataProvider';
 import {AssetHealthStatus} from '../graphql/types';
-import {GetAssetHealthQuery, GetAssetHealthQueryVariables} from './types/AssetHealthSummary.types';
 
 export const AssetHealthSummary = ({
   assetKey,
@@ -28,18 +26,11 @@ export const AssetHealthSummary = ({
 }) => {
   const key = useMemo(() => asAssetKeyInput(assetKey), [assetKey]);
 
-  const {data: healthData, loading: healthDataLoading} = useQuery<
-    GetAssetHealthQuery,
-    GetAssetHealthQueryVariables
-  >(GET_ASSET_HEALTH_QUERY, {
-    variables: {
-      assetKey: key,
-    },
-  });
+  const {liveData} = useAssetHealthData(key);
 
-  const health = healthData?.assetNodes[0]?.assetHealth;
+  const health = liveData?.assetHealth;
   const {iconName, iconColor, intent, text} = useMemo(() => {
-    return statusToIconAndColor(health?.assetHealth);
+    return statusToIconAndColor[health?.assetHealth ?? 'undefined'];
   }, [health]);
 
   const icon = <Icon name={iconName} color={iconColor} />;
@@ -55,7 +46,7 @@ export const AssetHealthSummary = ({
     );
   }
 
-  if (healthDataLoading && !healthData) {
+  if (!liveData) {
     return <Skeleton $width={iconOnly ? 16 : 60} $height={16} />;
   }
 
@@ -82,7 +73,7 @@ export const AssetHealthSummary = ({
 };
 
 const Criteria = ({status, text}: {status: AssetHealthStatus | undefined; text: string}) => {
-  const {subStatusIconName, iconColor, textColor} = statusToIconAndColor(status);
+  const {subStatusIconName, iconColor, textColor} = statusToIconAndColor[status ?? 'undefined'];
 
   return (
     <Box
@@ -95,68 +86,61 @@ const Criteria = ({status, text}: {status: AssetHealthStatus | undefined; text: 
   );
 };
 
-const GET_ASSET_HEALTH_QUERY = gql`
-  query GetAssetHealth($assetKey: AssetKeyInput!) {
-    assetNodes(assetKeys: [$assetKey]) {
-      id
-      assetHealth {
-        assetHealth
-        materializationStatus
-        assetChecksStatus
-        freshnessStatus
-      }
-    }
-  }
-`;
+export type AssetHealthStatusString = 'Unknown' | 'Degraded' | 'Warning' | 'Healthy';
 
-function statusToIconAndColor(status: AssetHealthStatus | undefined): {
-  iconName: IconName;
-  subStatusIconName: IconName;
-  iconColor: string;
-  textColor: string;
-  text: string;
-  intent: Intent;
-} {
-  switch (status) {
-    case undefined:
-    case AssetHealthStatus.NOT_APPLICABLE:
-    case AssetHealthStatus.UNKNOWN:
-      return {
-        iconName: 'status',
-        iconColor: Colors.textLight(),
-        textColor: Colors.textDefault(),
-        text: 'Unknown',
-        intent: 'none',
-        subStatusIconName: 'missing',
-      };
-    case AssetHealthStatus.DEGRADED:
-      return {
-        iconName: 'failure_trend',
-        subStatusIconName: 'close',
-        iconColor: Colors.accentRed(),
-        textColor: Colors.textRed(),
-        text: 'Degraded',
-        intent: 'danger',
-      };
-    case AssetHealthStatus.HEALTHY:
-      return {
-        iconName: 'successful_trend',
-        subStatusIconName: 'done',
-        iconColor: Colors.accentGreen(),
-        textColor: Colors.textDefault(),
-        text: 'Healthy',
-        intent: 'success',
-      };
-    case AssetHealthStatus.WARNING:
-      return {
-        iconName: 'warning_trend',
-        subStatusIconName: 'close',
-        iconColor: Colors.accentYellow(),
-        text: 'Warning',
-        textColor: Colors.textYellow(),
-        intent: 'warning',
-      };
-    default:
-      assertUnreachable(status);
+export const STATUS_INFO: Record<
+  AssetHealthStatusString,
+  {
+    iconName: IconName;
+    subStatusIconName: IconName;
+    iconColor: string;
+    textColor: string;
+    text: AssetHealthStatusString;
+    intent: Intent;
   }
-}
+> = {
+  Unknown: {
+    iconName: 'status',
+    iconColor: Colors.textLight(),
+    textColor: Colors.textDefault(),
+    text: 'Unknown',
+    intent: 'none',
+    subStatusIconName: 'missing',
+  },
+  Degraded: {
+    iconName: 'failure_trend',
+    subStatusIconName: 'close',
+    iconColor: Colors.accentRed(),
+    textColor: Colors.textRed(),
+    text: 'Degraded',
+    intent: 'danger',
+  },
+  Warning: {
+    iconName: 'warning_trend',
+    subStatusIconName: 'close',
+    iconColor: Colors.accentYellow(),
+    text: 'Warning',
+    textColor: Colors.textYellow(),
+    intent: 'warning',
+  },
+  Healthy: {
+    iconName: 'successful_trend',
+    subStatusIconName: 'done',
+    iconColor: Colors.accentGreen(),
+    textColor: Colors.textDefault(),
+    text: 'Healthy',
+    intent: 'success',
+  },
+};
+
+export const statusToIconAndColor: Record<
+  AssetHealthStatus | 'undefined',
+  (typeof STATUS_INFO)[keyof typeof STATUS_INFO]
+> = {
+  ['undefined']: STATUS_INFO.Unknown,
+  [AssetHealthStatus.NOT_APPLICABLE]: STATUS_INFO.Unknown,
+  [AssetHealthStatus.UNKNOWN]: STATUS_INFO.Unknown,
+  [AssetHealthStatus.DEGRADED]: STATUS_INFO.Degraded,
+  [AssetHealthStatus.HEALTHY]: STATUS_INFO.Healthy,
+  [AssetHealthStatus.WARNING]: STATUS_INFO.Warning,
+};

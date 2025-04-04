@@ -29,6 +29,7 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {currentPageAtom} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
 import {AssetGroupSelector} from '../graphql/types';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
@@ -175,14 +176,19 @@ export function useAllAssets({
     query();
   }, [query]);
 
+  const assetsByAssetKey = useMemo(() => {
+    return Object.fromEntries(assets?.map((asset) => [tokenForAssetKey(asset.key), asset]) ?? []);
+  }, [assets]);
+
   return useMemo(() => {
     return {
       assets,
+      assetsByAssetKey,
       error,
       loading: !assets && !error,
       query,
     };
-  }, [assets, error, query]);
+  }, [assets, error, query, assetsByAssetKey]);
 }
 
 interface AssetCatalogTableProps {
