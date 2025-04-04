@@ -110,21 +110,27 @@ def _process_user_event(
             )
     elif isinstance(user_event, AssetCheckResult):
         asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
+        assets_def = _get_assets_def_for_step(step_context, user_event)
         spec = check.not_none(
-            step_context.job_def.asset_layer.asset_graph.get_check_spec(
-                asset_check_evaluation.asset_check_key
-            ),
+            assets_def.get_spec_for_check_key(asset_check_evaluation.asset_check_key),
             "If we were able to create an AssetCheckEvaluation from the AssetCheckResult, then"
             " there should be a spec for the check",
         )
-
-        output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
-            asset_check_evaluation.asset_check_key
-        )
-        output = Output(value=None, output_name=output_name)
-
+        # If the check is explicitly selected, we need to yield an Output event for it.
+        if spec.key in assets_def.check_keys:
+            output_name = check.not_none(
+                step_context.job_def.asset_layer.get_output_name_for_asset_check(
+                    asset_check_key=spec.key
+                ),
+                f"No output name found for check key {spec.key} in step {step_context.step.key}. This likely indicates that the currently executing AssetsDefinition has no check specified for the key.",
+            )
+            output = Output(value=None, output_name=output_name)
+            yield output
+        else:
+            step_context.log.warning(
+                f"AssetCheckResult for check '{spec.name}' for asset '{spec.asset_key.to_user_string()}' was yielded which is not selected. Letting it through."
+            )
         yield asset_check_evaluation
-
         if (
             not asset_check_evaluation.passed
             and asset_check_evaluation.severity == AssetCheckSeverity.ERROR
@@ -134,7 +140,6 @@ def _process_user_event(
                 f"Blocking check '{spec.name}' for asset '{spec.asset_key.to_user_string()}' failed with"
                 " ERROR severity."
             )
-        yield output
     else:
         yield user_event
 
