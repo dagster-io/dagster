@@ -3,6 +3,7 @@ import {
   Colors,
   FontFamily,
   Heading,
+  Icon,
   NonIdealState,
   PageHeader,
   Tag,
@@ -20,6 +21,7 @@ import {DagsterTag, RunTag} from './RunTag';
 import {RunTimingTags} from './RunTimingTags';
 import {getBackfillPath} from './RunsFeedUtils';
 import {TickTagForRun} from './TickTagForRun';
+import {getExternalRunUrl, isExternalRun} from './externalRuns';
 import {gql, useQuery} from '../apollo-client';
 import {RunPageFragment} from './types/RunFragments.types';
 import {RunRootQuery, RunRootQueryVariables} from './types/RunRoot.types';
@@ -166,7 +168,7 @@ const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
   const {data, runId} = props;
 
   if (!data || !data.pipelineRunOrError) {
-    return <Run run={undefined} runId={runId} />;
+    return null;
   }
 
   if (data.pipelineRunOrError.__typename !== 'Run') {
@@ -179,6 +181,38 @@ const RunById = (props: {data: RunRootQuery | undefined; runId: string}) => {
         />
       </Box>
     );
+  }
+
+  if (isExternalRun(data.pipelineRunOrError)) {
+    const externalUrl = getExternalRunUrl(data.pipelineRunOrError);
+    if (externalUrl) {
+      return (
+        <Box padding={{vertical: 64}}>
+          <NonIdealState
+            icon="job"
+            title="This run was remotely executed"
+            description={
+              <Box flex={{direction: 'row', alignItems: 'center'}}>
+                <a href={externalUrl} target="_blank" rel="noreferrer">
+                  View the execution logs
+                </a>
+                <Icon name="open_in_new" size={16} style={{marginLeft: 8}} />
+              </Box>
+            }
+          />
+        </Box>
+      );
+    } else {
+      return (
+        <Box padding={{vertical: 64}}>
+          <NonIdealState
+            icon="job"
+            title="No external URL found"
+            description="This run was executed externally, but does not have an external URL."
+          />
+        </Box>
+      );
+    }
   }
 
   return <Run run={data.pipelineRunOrError} runId={runId} />;
