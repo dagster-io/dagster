@@ -1,0 +1,13 @@
+tree my_project/defs
+
+my_project/defs
+├── __init__.py
+├── team_a
+│   ├── b.py
+│   ├── component.yaml
+│   └── subproject
+│       └── a.py
+└── team_b
+    └── c.py
+
+4 directories, 5 files
