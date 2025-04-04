@@ -49,6 +49,10 @@ class DefsModuleComponent(Component):
 
     @classmethod
     def from_context(cls, context: ComponentLoadContext) -> Optional["DefsModuleComponent"]:
+        """Attempts to load a component from the given context. Iterates through potential component
+        type matches, prioritizing more specific types: YAML, Python, plain Dagster defs, and component
+        folder.
+        """
         # this defines the priority of the module types
         module_types = (
             WrappedYamlComponent,
@@ -71,7 +75,12 @@ class DefsFolderComponentYamlSchema(Resolvable):
 
 @dataclass
 class DefsFolderComponent(DefsModuleComponent):
-    """A folder containing multiple submodules."""
+    """A folder which may contain multiple submodules, each
+    which define components.
+
+    Optionally enables postprocessing to modify the Dagster definitions
+    produced by submodules.
+    """
 
     submodules: Sequence[DefsModuleComponent]
     asset_post_processors: Optional[Sequence[AssetPostProcessor]]
@@ -131,7 +140,9 @@ class DefsFolderComponent(DefsModuleComponent):
 
 @dataclass
 class DagsterDefsComponent(DefsModuleComponent):
-    """A module containing python dagster definitions."""
+    """A Python module containing Dagster definitions. Used for implicit loading of
+    Dagster definitions from Python files in the defs folder.
+    """
 
     @classmethod
     def from_context(cls, context: ComponentLoadContext) -> Optional["DagsterDefsComponent"]:
@@ -157,7 +168,9 @@ class DagsterDefsComponent(DefsModuleComponent):
 
 @dataclass
 class WrappedDefsModuleComponent(DefsModuleComponent):
-    """A module containing a component definition."""
+    """A module containing a component definition. ABC implemented by
+    WrappedPythonicComponent and WrappedYamlComponent.
+    """
 
     wrapped: Component
 
@@ -181,6 +194,10 @@ class WrappedDefsModuleComponent(DefsModuleComponent):
 
 @dataclass
 class WrappedPythonicComponent(WrappedDefsModuleComponent):
+    """A module which contains a component definition specified in Python
+    with an @component decorator.
+    """
+
     @staticmethod
     def get_component_def_path(path: Path) -> Path:
         return path / "component.py"
@@ -202,6 +219,8 @@ class WrappedPythonicComponent(WrappedDefsModuleComponent):
 
 @dataclass
 class WrappedYamlComponent(WrappedDefsModuleComponent):
+    """A module containing a component definition specified in a component.yaml file."""
+
     @staticmethod
     def get_component_def_path(path: Path) -> Path:
         return path / "component.yaml"
