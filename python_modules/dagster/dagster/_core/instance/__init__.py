@@ -1737,6 +1737,9 @@ class DagsterInstance(DynamicPartitionsStore):
         elif strategy == ReexecutionStrategy.ALL_STEPS:
             step_keys_to_execute = None
             known_state = None
+        elif strategy == ReexecutionStrategy.FROM_ASSET_FAILURE:
+            step_keys_to_execute = None
+            known_state = None
         else:
             raise DagsterInvariantViolationError(f"Unknown reexecution strategy: {strategy}")
 

@@ -4206,6 +4206,7 @@ export type ReexecutionParams = {
 export enum ReexecutionStrategy {
   ALL_STEPS = 'ALL_STEPS',
   FROM_FAILURE = 'FROM_FAILURE',
+  FROM_ASSET_FAILURE = 'FROM_ASSET_FAILURE',
 }
 
 export type RegularConfigType = ConfigType & {
