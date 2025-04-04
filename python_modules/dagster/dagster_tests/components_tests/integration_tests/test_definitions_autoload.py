@@ -150,7 +150,7 @@ def test_autoload_definitions_nested_with_config() -> None:
     "requirements", ["definitions/definitions_at_levels_with_config"], indirect=True
 )
 def test_autoload_definitions_nested_requirements(requirements: ComponentRequirements) -> None:
-    # 3 env vars explicitly declared at each leve, one implicit (from UDF)
+    # 3 env vars explicitly declared at each level, one implicit (from UDF)
     assert set(requirements.env.keys()) == {
         "TOP_LEVEL_ENV",
         "DEFS_OBJECT_ENV",
