@@ -152,9 +152,9 @@ def _dump_raw_registry_data(
 
 
 def get_specified_env_var_deps(component_data: Mapping[str, Any]) -> set[str]:
-    if not component_data.get("requires") or "env" not in component_data["requires"]:
+    if not component_data.get("requirements") or "env" not in component_data["requirements"]:
         return set()
-    return set(component_data["requires"]["env"])
+    return set(component_data["requirements"]["env"])
 
 
 env_var_regex = re.compile(r"\{\{\s*env\(\s*['\"]([^'\"]+)['\"]\)\s*\}\}")

@@ -29,7 +29,7 @@ COMPONENT_FILE_SCHEMA = {
     "properties": {
         "type": {"type": "string"},
         "attributes": {"type": "object"},
-        "requires": {
+        "requirements": {
             "type": "object",
             "properties": {"env": {"type": "array", "items": {"type": "string"}}},
             "additionalProperties": False,
@@ -113,7 +113,7 @@ def check_yaml(
                         None,
                         ValidationError(
                             msg,
-                            path=["requires", "env"],
+                            path=["requirements", "env"],
                         ),
                         component_doc_tree,
                     )
