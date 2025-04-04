@@ -550,13 +550,19 @@ class DgContext:
             )
         if not module_name.startswith(self.root_module_name):
             raise DgError(f"Module `{module_name}` is not part of the current project.")
-        path = self.root_path / Path(*module_name.split("."))
-        if path.exists():
-            return path
-        elif path.with_suffix(".py").exists():
-            return path.with_suffix(".py")
-        else:
-            raise DgError(f"Cannot find module `{module_name}` in the current project.")
+
+        # Attempt to resolve the path for a local module by looking in both `src` and the root
+        # level. Unfortunately there is no setting reliably present in pyproject.toml or setup.py
+        # that can be relied on to know in advance the package root (src or root level).
+        for path in [
+            self.root_path / "src" / Path(*module_name.split(".")),
+            self.root_path / Path(*module_name.split(".")),
+        ]:
+            if path.exists():
+                return path
+            elif path.with_suffix(".py").exists():
+                return path.with_suffix(".py")
+        raise DgError(f"Cannot find module `{module_name}` in the current project.")
 
 
 # ########################

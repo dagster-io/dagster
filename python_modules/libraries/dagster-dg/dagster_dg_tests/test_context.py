@@ -21,6 +21,7 @@ from dagster_dg.utils import (
 from dagster_dg_tests.utils import (
     ConfigFileType,
     ProxyRunner,
+    assert_runner_result,
     isolated_components_venv,
     isolated_example_project_foo_bar,
     isolated_example_workspace,
@@ -137,6 +138,20 @@ def test_context_with_user_config():
         context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
         assert context.root_path == Path.cwd()
         assert context.config.cli.verbose is True
+
+
+# Temporary test until we switch src layout to the default.
+def test_context_with_src_layout():
+    with (
+        ProxyRunner.test() as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False, package_layout="src"),
+    ):
+        context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
+        assert context.root_path == Path.cwd()
+        assert context.defs_path == Path.cwd() / "src" / "foo_bar" / "defs"
+
+        result = runner.invoke("list", "defs")
+        assert_runner_result(result)
 
 
 # ########################
