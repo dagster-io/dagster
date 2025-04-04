@@ -32,6 +32,26 @@ def list_group():
 
 
 # ########################
+# ##### HELPERS
+# ########################
+
+
+def DagsterInnerTable(columns: Sequence[str]) -> Table:
+    table = Table(border_style="dim", show_lines=True)
+    table.add_column(columns[0], style="bold cyan", no_wrap=True)
+    for column in columns[1:]:
+        table.add_column(column, style="bold")
+    return table
+
+
+def DagsterOuterTable(columns: Sequence[str]) -> Table:
+    table = Table(border_style="dim")
+    for column in columns:
+        table.add_column(column, style="bold")
+    return table
+
+
+# ########################
 # ##### PROJECT
 # ########################
 
@@ -85,10 +105,7 @@ def _pretty_features(obj: PackageObjectSnap) -> Text:
 
 def _package_object_table(entries: Sequence[PackageObjectSnap]) -> Table:
     sorted_entries = sorted(entries, key=lambda x: x.key.to_typename())
-    table = Table(border_style="dim", show_lines=True)
-    table.add_column("Symbol", style="bold cyan", no_wrap=True)
-    table.add_column("Summary")
-    table.add_column("Features")
+    table = DagsterInnerTable(["Symbol", "Summary", "Features"])
     for entry in sorted_entries:
         table.add_row(entry.key.to_typename(), entry.summary, _pretty_features(entry))
     return table
@@ -97,11 +114,7 @@ def _package_object_table(entries: Sequence[PackageObjectSnap]) -> Table:
 def _all_packages_object_table(
     registry: RemotePackageRegistry, name_only: bool, feature: Optional[PackageObjectFeature]
 ) -> Table:
-    table = Table(border_style="dim")
-
-    table.add_column("Package", style="bold")
-    if not name_only:
-        table.add_column("Objects", style="bold")
+    table = DagsterOuterTable(["Package"] if name_only else ["Package", "Objects"])
 
     for package in sorted(registry.packages):
         if not name_only:
@@ -183,6 +196,47 @@ def list_component_type_command(output_json: bool, **global_options: object) -> 
 # ########################
 
 
+def _get_assets_table(assets: Sequence[DgAssetMetadata]) -> Table:
+    table = DagsterInnerTable(["Key", "Group", "Deps", "Kinds", "Description"])
+    table.columns[-1].max_width = 100
+
+    for asset in sorted(assets, key=lambda x: x.key):
+        description = Text(asset.description or "")
+        description.truncate(max_width=100, overflow="ellipsis")
+        table.add_row(
+            asset.key,
+            asset.group,
+            "\n".join(asset.deps),
+            "\n".join(asset.kinds),
+            description,
+        )
+    return table
+
+
+def _get_jobs_table(jobs: Sequence[DgJobMetadata]) -> Table:
+    table = DagsterInnerTable(["Name"])
+
+    for job in sorted(jobs, key=lambda x: x.name):
+        table.add_row(job.name)
+    return table
+
+
+def _get_schedules_table(schedules: Sequence[DgScheduleMetadata]) -> Table:
+    table = DagsterInnerTable(["Name", "Cron schedule"])
+
+    for schedule in sorted(schedules, key=lambda x: x.name):
+        table.add_row(schedule.name, schedule.cron_schedule)
+    return table
+
+
+def _get_sensors_table(sensors: Sequence[DgSensorMetadata]) -> Table:
+    table = DagsterInnerTable(["Name"])
+
+    for sensor in sorted(sensors, key=lambda x: x.name):
+        table.add_row(sensor.name)
+    return table
+
+
 @list_group.command(name="defs", cls=DgClickCommand)
 @click.option(
     "--json",
@@ -228,55 +282,21 @@ def list_defs_command(output_json: bool, **global_options: object) -> None:
             click.echo("No definitions are defined for this project.")
 
         console = Console()
+
+        table = Table(border_style="dim")
+        table.add_column("Type", style="bold")
+        table.add_column("Definitions")
+
         if assets:
-            click.echo("Assets")
-            table = Table(border_style="dim")
-            table.add_column("Key")
-            table.add_column("Group")
-            table.add_column("Deps")
-            table.add_column("Kinds")
-            table.add_column("Description")
-
-            for asset in sorted(assets, key=lambda x: x.key):
-                table.add_row(
-                    asset.key,
-                    asset.group,
-                    "\n".join(asset.deps),
-                    "\n".join(asset.kinds),
-                    asset.description,
-                )
-            console.print(table)
-            click.echo("")
-
+            table.add_row("Asset", _get_assets_table(assets))
         if jobs:
-            click.echo("Jobs")
-            table = Table(border_style="dim")
-            table.add_column("Name")
-
-            for schedule in schedules:
-                table.add_row(schedule.name)
-            console.print(table)
-            click.echo("")
-
+            table.add_row("Job", _get_jobs_table(jobs))
         if schedules:
-            click.echo("Schedules")
-            table = Table(border_style="dim")
-            table.add_column("Name")
-            table.add_column("Cron schedule")
-
-            for schedule in schedules:
-                table.add_row(schedule.name, schedule.cron_schedule)
-            console.print(table)
-            click.echo("")
-
+            table.add_row("Schedule", _get_schedules_table(schedules))
         if sensors:
-            click.echo("Sensors")
-            table = Table(border_style="dim")
-            table.add_column("Name")
+            table.add_row("Sensor", _get_sensors_table(sensors))
 
-            for sensor in sensors:
-                table.add_row(sensor.name)
-            console.print(table)
+        console.print(table)
 
 
 def _resolve_definition(item: dict[str, Any]) -> DgDefinitionMetadata:
