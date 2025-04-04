@@ -589,6 +589,7 @@ class Baz(Component, Resolvable):
     COMPONENT DESCRIPTION HERE.
     """
 
+
     def __init__(
         self,
         # added arguments here will define yaml schema via Resolvable
