@@ -12,6 +12,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {BackfillTarget} from './BackfillTarget';
 import {CreatedByTagCell} from './CreatedByTag';
 import {RunActionsMenu} from './RunActionsMenu';
 import {RunRowTags} from './RunRowTags';
@@ -28,7 +29,6 @@ import {RunTimeFragment} from './types/RunUtils.types';
 import {RunsFeedTableEntryFragment} from './types/RunsFeedTableEntryFragment.types';
 import {RunStatus} from '../graphql/types';
 import {BackfillActionsMenu} from '../instance/backfill/BackfillActionsMenu';
-import {BackfillTarget} from '../instance/backfill/BackfillRow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 import {appendCurrentQueryParams} from '../util/appendCurrentQueryParams';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';

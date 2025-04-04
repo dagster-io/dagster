@@ -6,16 +6,16 @@ import {SCHEDULE_ASSET_SELECTIONS_QUERY} from './ScheduleAssetSelectionsQuery';
 import {ScheduleDetails} from './ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
+import {gql, useQuery} from '../apollo-client';
 import {
   ScheduleAssetSelectionQuery,
   ScheduleAssetSelectionQueryVariables,
 } from './types/ScheduleAssetSelectionsQuery.types';
 import {ScheduleRootQuery, ScheduleRootQueryVariables} from './types/ScheduleRoot.types';
-import {gql, useQuery} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {FIFTEEN_SECONDS, useMergedRefresh, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {RunsFilter} from '../graphql/types';
+import {RunsFeedView, RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable} from '../instigation/TickHistory';
@@ -120,7 +120,7 @@ export const ScheduleRoot = (props: Props) => {
               <RunsFeedTableWithFilters
                 filter={runsFilter}
                 actionBarComponents={tabs}
-                includeRunsFromBackfills={true}
+                view={RunsFeedView.RUNS}
               />
             )}
           </Page>

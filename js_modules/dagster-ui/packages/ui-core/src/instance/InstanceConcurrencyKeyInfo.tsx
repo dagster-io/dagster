@@ -52,7 +52,7 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {RunStatus} from '../graphql/types';
+import {RunsFeedView, RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RunStatusDot} from '../runs/RunStatusDots';
 import {failedStatuses, inProgressStatuses, queuedStatuses} from '../runs/RunStatuses';
@@ -466,7 +466,7 @@ const PoolRunsTable = ({pool, runStatuses}: {pool: string; runStatuses: Set<RunS
   return (
     <RunsFeedTableWithFilters
       filter={filter}
-      includeRunsFromBackfills={true}
+      view={RunsFeedView.RUNS}
       emptyState={() => (
         <Box padding={{vertical: 24}} flex={{direction: 'column', alignItems: 'center'}}>
           {runStatuses.has(RunStatus.STARTED)

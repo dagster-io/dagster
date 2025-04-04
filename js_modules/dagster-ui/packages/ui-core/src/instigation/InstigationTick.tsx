@@ -3,6 +3,7 @@ import {useMemo} from 'react';
 
 import {gql} from '../apollo-client';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {RunsFeedView} from '../graphql/types';
 import {RunsFeedTableWithFilters} from '../runs/RunsFeedTable';
 
 export const RunList = ({runIds}: {runIds: string[]}) => {
@@ -15,7 +16,7 @@ export const RunList = ({runIds}: {runIds: string[]}) => {
 
   return (
     <Box padding={{bottom: 8}}>
-      <RunsFeedTableWithFilters filter={filter} includeRunsFromBackfills />
+      <RunsFeedTableWithFilters filter={filter} view={RunsFeedView.RUNS} />
     </Box>
   );
 };

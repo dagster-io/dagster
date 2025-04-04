@@ -8,10 +8,10 @@ import {MemoryRouter} from 'react-router-dom';
 import {ReexecutionParams, ReexecutionStrategy} from '../../../graphql/types';
 import {BackfillActionsMenu} from '../BackfillActionsMenu';
 import {
-  BackfillTableFragmentCompletedAssetJob,
-  BackfillTableFragmentFailedError,
-  BackfillTableFragmentRequested2000AssetsPure,
-} from '../__fixtures__/BackfillTable.fixtures';
+  BackfillActionsBackfillFragmentCompletedAssetJob,
+  BackfillActionsBackfillFragmentFailedError,
+  BackfillActionsBackfillFragmentRequested2000AssetsPure,
+} from '../__fixtures__/BackfillActionsMenu.fixtures';
 import {
   ReexecuteBackfillMutation,
   ReexecuteBackfillMutationVariables,
@@ -23,12 +23,12 @@ describe('BackfillActionsMenu', () => {
     const user = userEvent.setup();
 
     const reexecuteMock = buildReexecuteMock({
-      parentRunId: BackfillTableFragmentFailedError.id,
+      parentRunId: BackfillActionsBackfillFragmentFailedError.id,
       strategy: ReexecutionStrategy.ALL_STEPS,
     });
 
     const reexecuteFromFailureMock = buildReexecuteMock({
-      parentRunId: BackfillTableFragmentFailedError.id,
+      parentRunId: BackfillActionsBackfillFragmentFailedError.id,
       strategy: ReexecutionStrategy.FROM_FAILURE,
     });
 
@@ -37,7 +37,10 @@ describe('BackfillActionsMenu', () => {
         <MemoryRouter>
           <CustomTooltipProvider />
           <MockedProvider mocks={[reexecuteMock, reexecuteFromFailureMock]}>
-            <BackfillActionsMenu backfill={BackfillTableFragmentFailedError} refetch={() => {}} />
+            <BackfillActionsMenu
+              backfill={BackfillActionsBackfillFragmentFailedError}
+              refetch={() => {}}
+            />
           </MockedProvider>
         </MemoryRouter>,
       );
@@ -70,7 +73,7 @@ describe('BackfillActionsMenu', () => {
           <CustomTooltipProvider />
           <MockedProvider mocks={[]}>
             <BackfillActionsMenu
-              backfill={BackfillTableFragmentRequested2000AssetsPure}
+              backfill={BackfillActionsBackfillFragmentRequested2000AssetsPure}
               refetch={() => {}}
             />
           </MockedProvider>
@@ -99,7 +102,7 @@ describe('BackfillActionsMenu', () => {
           <CustomTooltipProvider />
           <MockedProvider mocks={[]}>
             <BackfillActionsMenu
-              backfill={BackfillTableFragmentCompletedAssetJob}
+              backfill={BackfillActionsBackfillFragmentCompletedAssetJob}
               refetch={() => {}}
             />
           </MockedProvider>

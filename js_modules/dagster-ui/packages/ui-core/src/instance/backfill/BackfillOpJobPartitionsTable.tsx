@@ -3,7 +3,6 @@ import {useMemo} from 'react';
 import {Link} from 'react-router-dom';
 
 import {StatusBar} from './BackfillAssetPartitionsTable';
-import {BackfillTableFragment} from './types/BackfillTable.types';
 import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';
 import {PipelineReference} from '../../pipelines/PipelineReference';
 import {failedStatuses, inProgressStatuses, successStatuses} from '../../runs/RunStatuses';
@@ -89,7 +88,7 @@ export const BackfillOpJobTarget = ({
   backfill,
   repoAddress,
 }: {
-  backfill: Pick<BackfillTableFragment, 'partitionSet' | 'partitionSetName'>;
+  backfill: Pick<BackfillDetailsBackfillFragment, 'partitionSet' | 'partitionSetName'>;
   repoAddress: RepoAddress | null;
 }) => {
   const repo = useRepository(repoAddress);

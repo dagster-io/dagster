@@ -21,6 +21,7 @@ import {
 import {usePartitionsForAssetKey} from './usePartitionsForAssetKey';
 import {formatElapsedTimeWithMsec} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
+import {RunsFeedView} from '../../graphql/types';
 import {RunsFeedTableWithFilters} from '../../runs/RunsFeedTable';
 import {AssetViewDefinitionNodeFragment} from '../types/AssetView.types';
 
@@ -154,7 +155,7 @@ export const AutomaterializeMiddlePanelWithData = ({
             <Subtitle2>Runs launched ({selectedEvaluation.runIds.length})</Subtitle2>
           </Box>
           {runsFilter ? (
-            <RunsFeedTableWithFilters filter={runsFilter} includeRunsFromBackfills={false} />
+            <RunsFeedTableWithFilters filter={runsFilter} view={RunsFeedView.ROOTS} />
           ) : (
             <Box padding={{vertical: 12}}>
               <NonIdealState

@@ -1,7 +1,7 @@
 import {RUN_ACTIONS_MENU_RUN_FRAGMENT} from './RunActionsMenu';
 import {gql} from '../apollo-client';
+import {BACKFILL_TARGET_FRAGMENT} from './BackfillTarget';
 import {BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT} from '../instance/backfill/BackfillFragments';
-import {PARTITION_SET_FOR_BACKFILL_TABLE_FRAGMENT} from '../instance/backfill/BackfillTable';
 
 export const RUNS_FEED_TABLE_ENTRY_FRAGMENT = gql`
   fragment RunsFeedTableEntryFragment on RunsFeedEntry {
@@ -40,7 +40,6 @@ export const RUNS_FEED_TABLE_ENTRY_FRAGMENT = gql`
       partitionSetName
       partitionSet {
         id
-        ...PartitionSetForBackfillTableFragment
       }
       assetSelection {
         path
@@ -50,11 +49,14 @@ export const RUNS_FEED_TABLE_ENTRY_FRAGMENT = gql`
       hasResumePermission
       isAssetBackfill
       numPartitions
+      isAssetBackfill
+
       ...BackfillStepStatusDialogBackfillFragment
+      ...BackfillTargetFragment
     }
   }
 
   ${RUN_ACTIONS_MENU_RUN_FRAGMENT}
-  ${PARTITION_SET_FOR_BACKFILL_TABLE_FRAGMENT}
   ${BACKFILL_STEP_STATUS_DIALOG_BACKFILL_FRAGMENT}
+  ${BACKFILL_TARGET_FRAGMENT}
 `;

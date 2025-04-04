@@ -1,6 +1,7 @@
 import {Box} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
+import {RunsFeedView} from '../graphql/types';
 import {DagsterTag} from '../runs/RunTag';
 import {RunsFeedTableWithFilters} from '../runs/RunsFeedTable';
 
@@ -20,7 +21,7 @@ export const PartitionRunList = (props: PartitionRunListProps) => {
 
   return (
     <Box flex={{direction: 'column'}} style={{minHeight: 0, maxHeight: '60vh'}}>
-      <RunsFeedTableWithFilters filter={filter} includeRunsFromBackfills scroll />
+      <RunsFeedTableWithFilters filter={filter} view={RunsFeedView.RUNS} scroll />
     </Box>
   );
 };

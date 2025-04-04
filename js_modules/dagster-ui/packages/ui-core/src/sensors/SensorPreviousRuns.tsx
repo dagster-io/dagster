@@ -1,5 +1,6 @@
 import * as React from 'react';
 
+import {RunsFeedView} from '../graphql/types';
 import {RunsFeedTableWithFilters} from '../runs/RunsFeedTable';
 import {SensorFragment} from './types/SensorFragment.types';
 import {DagsterTag} from '../runs/RunTag';
@@ -25,6 +26,6 @@ export const SensorPreviousRuns = ({
     [repoAddress, sensor.name],
   );
   return (
-    <RunsFeedTableWithFilters filter={filter} includeRunsFromBackfills actionBarComponents={tabs} />
+    <RunsFeedTableWithFilters filter={filter} view={RunsFeedView.RUNS} actionBarComponents={tabs} />
   );
 };

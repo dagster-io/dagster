@@ -4,7 +4,7 @@ import React, {useDeferredValue, useMemo} from 'react';
 import {ExecutionTimeline} from './ExecutionTimeline';
 import {BackfillDetailsBackfillFragment} from './types/useBackfillDetailsQuery.types';
 import {FIFTEEN_SECONDS, QueryRefreshCountdown} from '../../app/QueryRefresh';
-import {RunsFilter} from '../../graphql/types';
+import {RunsFeedView, RunsFilter} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useTimelineRange} from '../../overview/OverviewTimelineRoot';
 import {DagsterTag} from '../../runs/RunTag';
@@ -139,8 +139,8 @@ export const BackfillRunsTab = ({
       actionBarComponents={actionBarComponents}
       belowActionBarComponents={belowActionBarComponents}
       hideTags={BACKFILL_TAGS}
+      view={RunsFeedView.RUNS}
       scroll={true}
-      includeRunsFromBackfills={true}
       emptyState={() => (
         <Box
           padding={{vertical: 24}}
