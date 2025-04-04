@@ -60,6 +60,7 @@ export type LocationWorkspaceQuery = {
                   name: string;
                   isJob: boolean;
                   isAssetJob: boolean;
+                  isAirliftJob: boolean;
                   pipelineSnapshotId: string;
                 }>;
                 schedules: Array<{
@@ -173,6 +174,7 @@ export type WorkspaceLocationNodeFragment = {
             name: string;
             isJob: boolean;
             isAssetJob: boolean;
+            isAirliftJob: boolean;
             pipelineSnapshotId: string;
           }>;
           schedules: Array<{
@@ -266,6 +268,7 @@ export type WorkspaceLocationFragment = {
       name: string;
       isJob: boolean;
       isAssetJob: boolean;
+      isAirliftJob: boolean;
       pipelineSnapshotId: string;
     }>;
     schedules: Array<{
@@ -340,6 +343,7 @@ export type WorkspaceRepositoryFragment = {
     name: string;
     isJob: boolean;
     isAssetJob: boolean;
+    isAirliftJob: boolean;
     pipelineSnapshotId: string;
   }>;
   schedules: Array<{
@@ -409,6 +413,7 @@ export type WorkspacePipelineFragment = {
   name: string;
   isJob: boolean;
   isAssetJob: boolean;
+  isAirliftJob: boolean;
   pipelineSnapshotId: string;
 };
 
@@ -480,6 +485,6 @@ export type LocationStatusEntryFragment = {
   versionKey: string;
 };
 
-export const LocationWorkspaceQueryVersion = '72685489c28204d48c39ed5d85231756f5637febc8b19e0a0b4967a2d982191e';
+export const LocationWorkspaceQueryVersion = 'b2721010f6c30f697759d35ee4c050b34b6b3785d5ab45f74faaa21958fc4110';
 
 export const CodeLocationStatusQueryVersion = 'f92885e073b8b4b9bd588bf248df7b06025e2a1f6e74c082233ac7863f5eef8e';

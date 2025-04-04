@@ -791,6 +791,7 @@ class GrapheneIPipelineSnapshotMixin:
     sensors = non_null_list(GrapheneSensor)
     parent_snapshot_id = graphene.String()
     graph_name = graphene.NonNull(graphene.String)
+    isAirliftJob = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "IPipelineSnapshotMixin"
@@ -890,6 +891,10 @@ class GrapheneIPipelineSnapshotMixin:
             GraphenePipelineTag(key=key, value=value)
             for key, value in represented_pipeline.job_snapshot.tags.items()
         ]
+
+    def resolve_isAirliftJob(self, graphene_info: ResolveInfo):
+        represented_pipeline = self.get_represented_job()
+        return represented_pipeline.job_snapshot.tags.get("dagster/external_job") == "airflow"
 
     def resolve_run_tags(self, _graphene_info: ResolveInfo):
         represented_pipeline = self.get_represented_job()
