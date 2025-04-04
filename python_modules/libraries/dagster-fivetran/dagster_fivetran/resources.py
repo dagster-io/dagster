@@ -476,6 +476,11 @@ def fivetran_resource(context: InitResourceContext) -> FivetranResource:
 # ------------------
 
 
+DAGSTER_FIVETRAN_LIST_CONNECTIONS_FOR_GROUP_INDIVIDUAL_REQUEST_LIMIT = int(
+    os.getenv("DAGSTER_FIVETRAN_LIST_CONNECTIONS_FOR_GROUP_INDIVIDUAL_REQUEST_LIMIT", "1000")
+)
+
+
 @beta
 class FivetranClient:
     """This class exposes methods on top of the Fivetran REST API."""
@@ -517,7 +522,11 @@ class FivetranClient:
         return self._make_request(method, f"{FIVETRAN_CONNECTOR_ENDPOINT}/{endpoint}", data)
 
     def _make_request(
-        self, method: str, endpoint: str, data: Optional[str] = None
+        self,
+        method: str,
+        endpoint: str,
+        data: Optional[str] = None,
+        params: Optional[Mapping[str, Any]] = None,
     ) -> Mapping[str, Any]:
         """Creates and sends a request to the desired Fivetran API endpoint.
 
@@ -525,6 +534,7 @@ class FivetranClient:
             method (str): The http method to use for this request (e.g. "POST", "GET", "PATCH").
             endpoint (str): The Fivetran API endpoint to send this request to.
             data (Optional[str]): JSON-formatted data string to be included in the request.
+            params (Optional[Dict[str, Any]]): JSON-formatted query params to be included in the request.
 
         Returns:
             Dict[str, Any]: Parsed json data from the response to this request.
@@ -544,6 +554,7 @@ class FivetranClient:
                     headers=headers,
                     auth=self._auth,
                     data=data,
+                    params=params,
                     timeout=int(os.getenv("DAGSTER_FIVETRAN_API_REQUEST_TIMEOUT", "60")),
                 )
                 response.raise_for_status()
@@ -570,16 +581,32 @@ class FivetranClient:
         """
         return self._make_connector_request(method="GET", endpoint=connector_id)
 
-    def get_connectors_for_group(self, group_id: str) -> Mapping[str, Any]:
-        """Fetches all connectors for a given group from the Fivetran API.
+    def list_connectors_for_group(self, group_id: str) -> Sequence[Mapping[str, Any]]:
+        """Fetches a list of all connectors for a given group from the Fivetran API.
 
         Args:
             group_id (str): The Fivetran Group ID.
 
         Returns:
-            Dict[str, Any]: Parsed json data from the response to this request.
+            List[Dict[str, Any]]: A List of parsed json data from the response to this request.
         """
-        return self._make_request("GET", f"groups/{group_id}/connectors")
+        results = []
+        cursor = None
+        while True:
+            data = self._make_request(
+                method="GET",
+                endpoint=f"groups/{group_id}/connectors",
+                params={
+                    "limit": DAGSTER_FIVETRAN_LIST_CONNECTIONS_FOR_GROUP_INDIVIDUAL_REQUEST_LIMIT,
+                    **({"cursor": cursor} if cursor else {}),
+                },
+            )
+            connectors = data["items"]
+            cursor = data.get("nextCursor")
+            results.extend(connectors)
+            if not cursor:
+                break
+        return results
 
     def get_schema_config_for_connector(self, connector_id: str) -> Mapping[str, Any]:
         """Fetches the connector schema config for a given connector from the Fivetran API.
@@ -911,7 +938,7 @@ class FivetranWorkspace(ConfigurableResource):
 
             destinations_by_id[destination.id] = destination
 
-            connectors_details = client.get_connectors_for_group(group_id=group_id)["items"]
+            connectors_details = client.list_connectors_for_group(group_id=group_id)
             for connector_details in connectors_details:
                 connector = FivetranConnector.from_connector_details(
                     connector_details=connector_details,

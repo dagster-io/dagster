@@ -1,5 +1,5 @@
 from collections.abc import Iterator, Mapping
-from typing import Any
+from typing import Any, Optional
 from unittest.mock import patch
 
 import pytest
@@ -53,7 +53,9 @@ SAMPLE_GROUPS = {
 
 # Taken from Fivetran API documentation
 # https://fivetran.com/docs/rest-api/api-reference/groups/list-all-connectors-in-group
-def get_connectors_for_group(setup_state: str) -> Mapping[str, Any]:
+def list_connectors_for_group_sample(
+    setup_state: str, next_cursor: Optional[str] = None
+) -> Mapping[str, Any]:
     return {
         "code": "Success",
         "message": "Operation performed.",
@@ -123,12 +125,12 @@ def get_connectors_for_group(setup_state: str) -> Mapping[str, Any]:
                     "hybrid_deployment_agent_id": "string",
                 }
             ],
-            "nextCursor": "cursor_value",
+            **({"nextCursor": next_cursor} if next_cursor else {}),
         },
     }
 
 
-SAMPLE_CONNECTORS_FOR_GROUP = get_connectors_for_group(
+SAMPLE_CONNECTORS_FOR_GROUP = list_connectors_for_group_sample(
     setup_state=FivetranConnectorSetupStateType.CONNECTED.value
 )
 
@@ -565,7 +567,9 @@ def incomplete_connector_fetch_workspace_data_api_mocks_fixture(
     fetch_workspace_data_api_mocks.replace(
         method_or_response=responses.GET,
         url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{group_id}/connectors",
-        json=get_connectors_for_group(setup_state=FivetranConnectorSetupStateType.INCOMPLETE.value),
+        json=list_connectors_for_group_sample(
+            setup_state=FivetranConnectorSetupStateType.INCOMPLETE.value
+        ),
         status=200,
     )
     fetch_workspace_data_api_mocks.remove(
@@ -587,7 +591,9 @@ def broken_connector_fetch_workspace_data_api_mocks_fixture(
     fetch_workspace_data_api_mocks.replace(
         method_or_response=responses.GET,
         url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{group_id}/connectors",
-        json=get_connectors_for_group(setup_state=FivetranConnectorSetupStateType.BROKEN.value),
+        json=list_connectors_for_group_sample(
+            setup_state=FivetranConnectorSetupStateType.BROKEN.value
+        ),
         status=200,
     )
     fetch_workspace_data_api_mocks.remove(
