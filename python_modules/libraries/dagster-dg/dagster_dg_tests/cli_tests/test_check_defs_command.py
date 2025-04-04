@@ -39,7 +39,9 @@ def test_check_defs_workspace_context_success():
         result = runner.invoke("check", "defs")
         assert_runner_result(result)
 
-        (Path("projects") / "project-1" / "project_1" / "definitions.py").write_text("invalid")
+        (Path("projects") / "project-1" / "src" / "project_1" / "definitions.py").write_text(
+            "invalid"
+        )
         result = runner.invoke("check", "defs")
         assert result.exit_code == 1
 
@@ -50,7 +52,7 @@ def test_check_defs_project_context_success():
         result = runner.invoke("check", "defs")
         assert_runner_result(result)
 
-        (Path("foo_bar") / "definitions.py").write_text("invalid")
+        (Path("src") / "foo_bar" / "definitions.py").write_text("invalid")
         result = runner.invoke("check", "defs")
         assert result.exit_code == 1
 

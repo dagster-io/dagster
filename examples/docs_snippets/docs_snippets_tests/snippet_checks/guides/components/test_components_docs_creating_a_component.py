@@ -54,7 +54,7 @@ def test_components_docs_index(
 
         # Validate scaffolded files
         check_file(
-            Path("my_component_library") / "lib" / "shell_command.py",
+            Path("src") / "my_component_library" / "lib" / "shell_command.py",
             COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-shell-command-empty.py",
             update_snippets=update_snippets,
@@ -62,7 +62,7 @@ def test_components_docs_index(
 
         # Add config schema
         create_file(
-            Path("my_component_library") / "lib" / "shell_command.py",
+            Path("src") / "my_component_library" / "lib" / "shell_command.py",
             contents=(COMPONENTS_SNIPPETS_DIR / "with-config-schema.py").read_text(),
         )
         # Sanity check that the component type is registered properly
@@ -70,7 +70,7 @@ def test_components_docs_index(
 
         # Add build defs
         create_file(
-            Path("my_component_library") / "lib" / "shell_command.py",
+            Path("src") / "my_component_library" / "lib" / "shell_command.py",
             contents=(COMPONENTS_SNIPPETS_DIR / "with-build-defs.py").read_text(),
         )
 
@@ -128,7 +128,7 @@ def test_components_docs_index(
         # and e2e test that the component is written correctly, e.g.
         # that we can actually run a shell script.
         create_file(
-            Path("my_component_library") / "lib" / "shell_command.py",
+            Path("src") / "my_component_library" / "lib" / "shell_command.py",
             contents=(COMPONENTS_SNIPPETS_DIR / "with-scaffolder.py").read_text(),
         )
         run_command_and_snippet_output(
@@ -140,7 +140,8 @@ def test_components_docs_index(
         )
 
         check_file(
-            Path("my_component_library")
+            Path("src")
+            / "my_component_library"
             / "defs"
             / "my_shell_command"
             / "component.yaml",
@@ -149,7 +150,11 @@ def test_components_docs_index(
             update_snippets=update_snippets,
         )
         check_file(
-            Path("my_component_library") / "defs" / "my_shell_command" / "script.sh",
+            Path("src")
+            / "my_component_library"
+            / "defs"
+            / "my_shell_command"
+            / "script.sh",
             COMPONENTS_SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffolded-component-script.sh",
             update_snippets=update_snippets,

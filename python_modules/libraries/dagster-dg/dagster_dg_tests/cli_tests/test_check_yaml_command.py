@@ -91,7 +91,7 @@ def test_check_yaml_succeeds_non_default_defs_module() -> None:
         # fixture because that fixture assumes a default component package.
         component_src_path = COMPONENT_INTEGRATION_TEST_DIR / BASIC_VALID_VALUE.component_path
         component_name = component_src_path.name
-        defs_dir = Path.cwd() / "foo_bar" / "_defs" / component_name
+        defs_dir = Path.cwd() / "src" / "foo_bar" / "_defs" / component_name
         defs_dir.mkdir(parents=True, exist_ok=True)
         shutil.copytree(component_src_path, defs_dir, dirs_exist_ok=True)
         assert BASIC_VALID_VALUE.component_type_filepath
@@ -140,8 +140,18 @@ def test_check_yaml_with_watch() -> None:
 
             # Copy the invalid component into the valid code location
             shutil.copy(
-                tmpdir_valid / "foo_bar" / "defs" / "basic_component_success" / "component.yaml",
-                tmpdir / "foo_bar" / "defs" / "basic_component_invalid_value" / "component.yaml",
+                tmpdir_valid
+                / "src"
+                / "foo_bar"
+                / "defs"
+                / "basic_component_success"
+                / "component.yaml",
+                tmpdir
+                / "src"
+                / "foo_bar"
+                / "defs"
+                / "basic_component_invalid_value"
+                / "component.yaml",
             )
 
             time.sleep(10)  # Give time for the watcher to detect changes
@@ -184,8 +194,8 @@ def test_check_yaml_multiple_components(scope_check_run: bool) -> None:
                 "yaml",
                 *(
                     [
-                        str(Path("foo_bar") / "defs" / "basic_component_missing_value"),
-                        str(Path("foo_bar") / "defs" / "basic_component_invalid_value"),
+                        str(Path("src") / "foo_bar" / "defs" / "basic_component_missing_value"),
+                        str(Path("src") / "foo_bar" / "defs" / "basic_component_invalid_value"),
                     ]
                     if scope_check_run
                     else []
@@ -213,7 +223,7 @@ def test_check_yaml_multiple_components_filter() -> None:
             result = runner.invoke(
                 "check",
                 "yaml",
-                str(Path("foo_bar") / "defs" / "basic_component_missing_value"),
+                str(Path("src") / "foo_bar" / "defs" / "basic_component_missing_value"),
             )
             assert result.exit_code != 0, str(result.stdout)
 
@@ -258,10 +268,10 @@ def test_check_yaml_local_component_cache() -> None:
 
             # Update local component type, to invalidate cache
             contents = (
-                project_dir / "foo_bar" / "defs" / "basic_component_success" / "__init__.py"
+                project_dir / "src" / "foo_bar" / "defs" / "basic_component_success" / "__init__.py"
             ).read_text()
             (
-                project_dir / "foo_bar" / "defs" / "basic_component_success" / "__init__.py"
+                project_dir / "src" / "foo_bar" / "defs" / "basic_component_success" / "__init__.py"
             ).write_text(contents + "\n")
 
             # basic_component_success local component is now be invalidated and needs to be re-cached, the other one should still be cached

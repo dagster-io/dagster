@@ -1,4 +1,4 @@
-cat my_project/defs/assets/my_asset.py
+cat src/my_project/defs/assets/my_asset.py
 
 # import dagster as dg
 # 

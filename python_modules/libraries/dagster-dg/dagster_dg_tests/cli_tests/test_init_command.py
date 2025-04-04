@@ -26,7 +26,7 @@ def test_init_command_success(monkeypatch) -> None:
         assert not Path("dagster-workspace").exists()
 
         assert Path("helloworld").exists()
-        assert Path("helloworld/helloworld").exists()
+        assert Path("helloworld/src/helloworld").exists()
         assert Path("helloworld/pyproject.toml").exists()
         assert Path("helloworld/helloworld_tests").exists()
 
@@ -48,7 +48,7 @@ def test_init_command_success_with_workspace_name(monkeypatch) -> None:
         assert Path("dagster-workspace/projects").exists()
         assert Path("dagster-workspace/libraries").exists()
         assert Path("dagster-workspace/projects/helloworld").exists()
-        assert Path("dagster-workspace/projects/helloworld/helloworld").exists()
+        assert Path("dagster-workspace/projects/helloworld/src/helloworld").exists()
         assert Path("dagster-workspace/projects/helloworld/pyproject.toml").exists()
         assert Path("dagster-workspace/projects/helloworld/helloworld_tests").exists()
 
@@ -76,7 +76,7 @@ def test_init_override_project_name_prompt_with_workspace(monkeypatch) -> None:
         assert Path("my-workspace/projects").exists()
         assert Path("my-workspace/libraries").exists()
         assert Path("my-workspace/projects/goodbyeworld").exists()
-        assert Path("my-workspace/projects/goodbyeworld/goodbyeworld").exists()
+        assert Path("my-workspace/projects/goodbyeworld/src/goodbyeworld").exists()
         assert Path("my-workspace/projects/goodbyeworld/pyproject.toml").exists()
         assert Path("my-workspace/projects/goodbyeworld/goodbyeworld_tests").exists()
 
@@ -88,7 +88,7 @@ def test_init_override_project_name_prompt_without_workspace(monkeypatch) -> Non
         result = runner.invoke("init", "--project-name", "goodbyeworld", "--use-editable-dagster")
         assert_runner_result(result)
         assert Path("goodbyeworld").exists()
-        assert Path("goodbyeworld/goodbyeworld").exists()
+        assert Path("goodbyeworld/src/goodbyeworld").exists()
         assert Path("goodbyeworld/pyproject.toml").exists()
         assert Path("goodbyeworld/goodbyeworld_tests").exists()
 

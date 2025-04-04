@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from dagster_components.resolved.core_models import ResolvedAssetSpec
+
 import dagster as dg
 from dagster.components import (
     Component,
@@ -11,7 +13,6 @@ from dagster.components import (
     Resolvable,
     ResolvedAssetSpec,
 )
-from dagster_components.resolved.core_models import ResolvedAssetSpec
 
 
 @dataclass

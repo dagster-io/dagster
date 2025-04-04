@@ -65,7 +65,7 @@ def test_cache_no_invalidation_modified_pkg():
         assert "CACHE [miss]" in result.output
         assert "CACHE [write]" in result.output
 
-        Path("foo_bar/submodule.py").write_text("print('hello')")
+        Path("src/foo_bar/submodule.py").write_text("print('hello')")
 
         result = runner.invoke("list", "component-type")
         assert_runner_result(result)

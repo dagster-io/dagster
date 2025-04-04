@@ -110,11 +110,11 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
             format_multiline("""
                 load_from:
                   - python_file:
-                      relative_path: projects/project-1/project_1/definitions.py
+                      relative_path: projects/project-1/src/project_1/definitions.py
                       location_name: project_1
                       executable_path: projects/project-1/.venv/bin/python
                   - python_file:
-                      relative_path: projects/project-2/project_2/definitions.py
+                      relative_path: projects/project-2/src/project_2/definitions.py
                       location_name: project_2
                       executable_path: projects/project-2/.venv/bin/python
             """),

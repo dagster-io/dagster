@@ -141,14 +141,14 @@ def test_context_with_user_config():
 
 
 # Temporary test until we switch src layout to the default.
-def test_context_with_src_layout():
+def test_context_with_root_layout():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner, in_workspace=False, package_layout="src"),
+        isolated_example_project_foo_bar(runner, in_workspace=False, package_layout="root"),
     ):
         context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
         assert context.root_path == Path.cwd()
-        assert context.defs_path == Path.cwd() / "src" / "foo_bar" / "defs"
+        assert context.defs_path == Path.cwd() / "foo_bar" / "defs"
 
         result = runner.invoke("list", "defs")
         assert_runner_result(result)
