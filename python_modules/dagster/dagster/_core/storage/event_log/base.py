@@ -523,7 +523,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_dynamic_partitions_connection(
+    def get_paginated_dynamic_partitions(
         self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
     ) -> PaginatedResults[str]:
         raise NotImplementedError()

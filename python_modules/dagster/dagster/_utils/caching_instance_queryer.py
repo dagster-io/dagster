@@ -645,11 +645,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             )
         return self._dynamic_partitions_cache[partitions_def_name]
 
-    def get_dynamic_partitions_connection(
+    def get_paginated_dynamic_partitions(
         self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
     ) -> PaginatedResults[str]:
         if partitions_def_name not in self._dynamic_partitions_cache:
-            return self.instance.get_dynamic_partitions_connection(
+            return self.instance.get_paginated_dynamic_partitions(
                 partitions_def_name=partitions_def_name,
                 limit=limit,
                 ascending=ascending,

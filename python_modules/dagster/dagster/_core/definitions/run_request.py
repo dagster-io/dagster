@@ -296,7 +296,7 @@ class DynamicPartitionsStoreAfterRequests(DynamicPartitionsStore):
         return list((partition_keys | added_partition_keys) - deleted_partition_keys)
 
     @cached_method
-    def get_dynamic_partitions_connection(
+    def get_paginated_dynamic_partitions(
         self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
     ) -> PaginatedResults[str]:
         partition_keys = self.get_dynamic_partitions(partitions_def_name)

@@ -2026,7 +2026,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         return [cast(str, row[1]) for row in rows]
 
-    def get_dynamic_partitions_connection(
+    def get_paginated_dynamic_partitions(
         self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
     ) -> PaginatedResults[str]:
         self._check_partitions_table()

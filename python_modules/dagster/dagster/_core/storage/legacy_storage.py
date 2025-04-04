@@ -622,10 +622,10 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
         return self._storage.event_log_storage.get_dynamic_partitions(partitions_def_name)
 
-    def get_dynamic_partitions_connection(
+    def get_paginated_dynamic_partitions(
         self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
     ) -> PaginatedResults[str]:
-        return self._storage.event_log_storage.get_dynamic_partitions_connection(
+        return self._storage.event_log_storage.get_paginated_dynamic_partitions(
             partitions_def_name=partitions_def_name, limit=limit, ascending=ascending, cursor=cursor
         )
 
