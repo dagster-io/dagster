@@ -1,16 +1,16 @@
 import json
 from collections.abc import Sequence
-from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
 
 import click
 from dagster_shared import check
+from dagster_shared.record import as_dict
 from dagster_shared.serdes import deserialize_value
 from dagster_shared.serdes.objects import PackageObjectSnap
 from dagster_shared.serdes.objects.definition_metadata import (
+    DgAssetCheckMetadata,
     DgAssetMetadata,
-    DgDefinitionMetadata,
     DgJobMetadata,
     DgScheduleMetadata,
     DgSensorMetadata,
@@ -214,6 +214,21 @@ def _get_assets_table(assets: Sequence[DgAssetMetadata]) -> Table:
     return table
 
 
+def _get_asset_checks_table(asset_checks: Sequence[DgAssetCheckMetadata]) -> Table:
+    table = DagsterInnerTable(["Key", "Additional Deps", "Description"])
+    table.columns[-1].max_width = 100
+
+    for asset_check in sorted(asset_checks, key=lambda x: x.key):
+        description = Text(asset_check.description or "")
+        description.truncate(max_width=100, overflow="ellipsis")
+        table.add_row(
+            asset_check.key,
+            "\n".join(asset_check.additional_deps),
+            description,
+        )
+    return table
+
+
 def _get_jobs_table(jobs: Sequence[DgJobMetadata]) -> Table:
     table = DagsterInnerTable(["Name"])
 
@@ -265,16 +280,17 @@ def list_defs_command(output_json: bool, **global_options: object) -> None:
         # before that option was added
         additional_env={"DG_CLI_LIST_DEFINITIONS_LOCATION": dg_context.code_location_name},
     )
-    definitions = check.is_list(deserialize_value(result), DgDefinitionMetadata)
+    definitions = check.is_list(deserialize_value(result))
 
     # JSON
     if output_json:  # pass it straight through
-        json_output = [asdict(defn) for defn in definitions]
+        json_output = [as_dict(defn) for defn in definitions]
         click.echo(json.dumps(json_output, indent=4))
 
     # TABLE
     else:
         assets = [item for item in definitions if isinstance(item, DgAssetMetadata)]
+        asset_checks = [item for item in definitions if isinstance(item, DgAssetCheckMetadata)]
         jobs = [item for item in definitions if isinstance(item, DgJobMetadata)]
         schedules = [item for item in definitions if isinstance(item, DgScheduleMetadata)]
         sensors = [item for item in definitions if isinstance(item, DgSensorMetadata)]
@@ -285,16 +301,18 @@ def list_defs_command(output_json: bool, **global_options: object) -> None:
         console = Console()
 
         table = Table(border_style="dim")
-        table.add_column("Type", style="bold")
+        table.add_column("Section", style="bold")
         table.add_column("Definitions")
 
         if assets:
-            table.add_row("Asset", _get_assets_table(assets))
+            table.add_row("Assets", _get_assets_table(assets))
+        if asset_checks:
+            table.add_row("Asset Checks", _get_asset_checks_table(asset_checks))
         if jobs:
-            table.add_row("Job", _get_jobs_table(jobs))
+            table.add_row("Jobs", _get_jobs_table(jobs))
         if schedules:
-            table.add_row("Schedule", _get_schedules_table(schedules))
+            table.add_row("Schedules", _get_schedules_table(schedules))
         if sensors:
-            table.add_row("Sensor", _get_sensors_table(sensors))
+            table.add_row("Sensors", _get_sensors_table(sensors))
 
         console.print(table)

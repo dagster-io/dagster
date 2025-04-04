@@ -6,7 +6,11 @@ from dagster_shared.record import record
 from dagster_shared.serdes import whitelist_for_serdes
 
 DgDefinitionMetadata: TypeAlias = Union[
-    "DgAssetMetadata", "DgSensorMetadata", "DgScheduleMetadata", "DgJobMetadata"
+    "DgAssetMetadata",
+    "DgSensorMetadata",
+    "DgScheduleMetadata",
+    "DgJobMetadata",
+    "DgAssetCheckMetadata",
 ]
 
 
@@ -38,3 +42,13 @@ class DgScheduleMetadata:
 @record
 class DgJobMetadata:
     name: str
+
+
+@whitelist_for_serdes
+@record
+class DgAssetCheckMetadata:
+    key: str
+    asset_key: str
+    name: str
+    additional_deps: list[str]
+    description: Optional[str]
