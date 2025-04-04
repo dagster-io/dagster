@@ -156,7 +156,14 @@ def pull_env_command(**global_options: object) -> None:
             )
 
 
-class Scope(str, Enum):
+class EnvVarScope(str, Enum):
+    """Env var scopes in Dagster Plus.
+
+    local corresponds to secrets pulled with `dg plus env pull`,
+    branch corresponds to secrets set in branch deployments,
+    full corresponds to secrets set in full deployments.
+    """
+
     LOCAL = "local"
     BRANCH = "branch"
     FULL = "full"
@@ -166,13 +173,13 @@ def _secret_is_global(secret: Mapping[str, Any]) -> bool:
     return not secret["locationNames"]
 
 
-def _get_secret_scopes(secret: Mapping[str, Any]) -> set[Scope]:
+def _get_secret_scopes(secret: Mapping[str, Any]) -> set[EnvVarScope]:
     return {
         s
         for s in {
-            Scope.FULL if secret["fullDeploymentScope"] else None,
-            Scope.BRANCH if secret["allBranchDeploymentsScope"] else None,
-            Scope.LOCAL if secret["localDeploymentScope"] else None,
+            EnvVarScope.FULL if secret["fullDeploymentScope"] else None,
+            EnvVarScope.BRANCH if secret["allBranchDeploymentsScope"] else None,
+            EnvVarScope.LOCAL if secret["localDeploymentScope"] else None,
         }
         if s is not None
     }
@@ -242,7 +249,11 @@ def add_env_command(
 
     config = _get_config_or_error()
 
-    active_scopes = set(Scope(s) for s in scope) or {Scope.FULL, Scope.BRANCH, Scope.LOCAL}
+    active_scopes = set(EnvVarScope(s) for s in scope) or {
+        EnvVarScope.FULL,
+        EnvVarScope.BRANCH,
+        EnvVarScope.LOCAL,
+    }
     gql_client = DagsterCloudGraphQLClient.from_config(config)
 
     location_suffix = "" if global_ else f" for location {dg_context.project_name}"
@@ -253,9 +264,9 @@ def add_env_command(
         variables={
             "locationName": None if global_ else dg_context.project_name,
             "scopes": {
-                "fullDeploymentScope": Scope.FULL in active_scopes,
-                "allBranchDeploymentsScope": Scope.BRANCH in active_scopes,
-                "localDeploymentScope": Scope.LOCAL in active_scopes,
+                "fullDeploymentScope": EnvVarScope.FULL in active_scopes,
+                "allBranchDeploymentsScope": EnvVarScope.BRANCH in active_scopes,
+                "localDeploymentScope": EnvVarScope.LOCAL in active_scopes,
             },
             "secretName": env_name,
         },
@@ -308,9 +319,9 @@ def add_env_command(
             "secretName": env_name,
             "secretValue": env_value,
             "scopes": {
-                "fullDeploymentScope": Scope.FULL in active_scopes,
-                "allBranchDeploymentsScope": Scope.BRANCH in active_scopes,
-                "localDeploymentScope": Scope.LOCAL in active_scopes,
+                "fullDeploymentScope": EnvVarScope.FULL in active_scopes,
+                "allBranchDeploymentsScope": EnvVarScope.BRANCH in active_scopes,
+                "localDeploymentScope": EnvVarScope.LOCAL in active_scopes,
             },
             "locationName": None if global_ else dg_context.project_name,
         },
