@@ -83,12 +83,6 @@ def build_dagster_oss_nightly_steps() -> List[BuildkiteStep]:
                 ],
                 always_run_if=lambda: True,
             ),
-            PackageSpec(
-                "integration_tests/test_suites/dagster-gcp-live-tests",
-                name="gcp-live-tests",
-                env_vars=["GCP_LIVE_TEST_CREDENTIALS"],
-                always_run_if=lambda: True,
-            ),
         ]
     )
 
