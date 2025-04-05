@@ -246,7 +246,9 @@ def seconds_in_words(delta: float) -> str:
     )
 
 
-def freshness_multi_asset_check(params_metadata: JsonMetadataValue, asset_keys: Sequence[AssetKey]):
+def freshness_multi_asset_check(
+    params_metadata: JsonMetadataValue, asset_keys: Sequence[AssetKey], blocking: bool
+):
     def inner(fn: MultiAssetCheckFunction) -> AssetChecksDefinition:
         return multi_asset_check(
             specs=[
@@ -255,6 +257,7 @@ def freshness_multi_asset_check(params_metadata: JsonMetadataValue, asset_keys: 
                     asset=asset_key,
                     metadata={FRESHNESS_PARAMS_METADATA_KEY: params_metadata},
                     description="Evaluates freshness for targeted asset.",
+                    blocking=blocking,
                 )
                 for asset_key in asset_keys
             ],
