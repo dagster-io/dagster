@@ -25,12 +25,12 @@ _DEFAULT_INIT_PROJECTS_DIR: Final = "projects"
 @click.option(
     "--workspace-name",
     type=str,
-    help="Name of the workspace folder to create.",
+    help="Name of the workspace folder to create. If omitted, only a standalone project will be created.",
 )
 @click.option(
     "--project-name",
     type=str,
-    help="Name of an initial project folder to create. Setting to an empty string will skip project scaffolding.",
+    help="Name of an initial project folder to create.",
 )
 @click.option(
     "--project-python-environment",
@@ -46,19 +46,35 @@ def init_command(
     project_python_environment: DgProjectPythonEnvironment,
     **global_options: object,
 ):
-    """Initialize a new Dagster workspace and a first project within that workspace.
+    """Initialize a new Dagster project or workspace.
 
-    The scaffolded workspace folder has the following structure:
+    By default, only a standalone project is created. A workspace can also be created using the
+    --workspace-name option.
 
-    \b
-    ├── dagster-workspace
+    If a project is created, it will have the following structure:
+
+    ├── src
+    │   └── <project_name>
+    │       ├── __init__.py
+    │       ├── definitions.py
+    │       ├── defs
+    │       │   └── __init__.py
+    │       └── lib
+    │           └── __init__.py
+    ├── <project_name>_tests
+    │   └── __init__.py
+    └── pyproject.toml
+
+    If a workspace is created, it will have the following structure:
+
+    ├── <workspace_name>
     │   ├── projects
     |   |   └── <Dagster projects go here>
     |   ├── libraries
     |   |   └── <Shared packages go here>
     │   └── pyproject.toml
 
-    """  # noqa: D301
+    """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
 
     workspace_path = None

@@ -172,15 +172,14 @@ def scaffold_workspace_command(
 
     The scaffolded workspace folder has the following structure:
 
-    \b
-    ├── dagster-workspace
+    ├── <workspace_name>
     │   ├── projects
     |   |   └── <Dagster projects go here>
     |   ├── libraries
     |   |   └── <Shared packages go here>
     │   └── pyproject.toml
 
-    """  # noqa: D301
+    """
     workspace_config = DgRawWorkspaceConfig(
         scaffold_project_options=DgWorkspaceScaffoldProjectOptions.get_raw_from_cli(
             use_editable_dagster,
@@ -230,28 +229,30 @@ def scaffold_project_command(
     python_environment: DgProjectPythonEnvironment,
     **global_options: object,
 ) -> None:
-    """Scaffold a Dagster project file structure and a uv-managed virtual environment scoped
-    to the project.
+    """Scaffold a Dagster project file structure and a uv-managed virtual environment scoped to
+    the project.
 
     This command can be run inside or outside of a workspace directory. If run inside a workspace,
     the project will be created within the workspace directory's project directory.
 
-    The project file structure defines a Python package with some pre-existing internal
-    structure:
+    The project file structure defines a Python package with some pre-existing internal structure:
 
-    \b
-    ├── <name>
-    │   ├── __init__.py
-    │   ├── defs
-    │   ├── definitions.py
-    │   └── lib
-    │       └── __init__.py
-    ├── <name>_tests
+    ├── src
+    │   └── <project_name>
+    │       ├── __init__.py
+    │       ├── definitions.py
+    │       ├── defs
+    │       │   └── __init__.py
+    │       └── lib
+    │           └── __init__.py
+    ├── <project_name>_tests
     │   └── __init__.py
     └── pyproject.toml
 
-    The `<name>.lib` directory holds Python objects that can be targeted by the `dg scaffold` command or have dg-inspectable metadata. Custom component types in the project live in `<name>.lib`. These types can be created with `dg scaffold component-type`.
-    """  # noqa: D301
+    The `src.<project_name>.defs` directory holds Python objects that can be targeted by the
+    `dg scaffold` command or have dg-inspectable metadata. Custom component types in the project
+    live in `src.<project_name>.lib`. These types can be created with `dg scaffold component-type`.
+    """
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), cli_config)
 
