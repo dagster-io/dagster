@@ -33,7 +33,7 @@ Running Spark code often requires submitting code to a Databricks or EMR cluster
 
 With Pipes, the code inside the asset or op definition submits a Spark job to an external system like Databricks or AWS EMR, usually pointing to a jar or zip of Python files that contain the actual Spark data transformations and actions.
 
-You can either use one of the available Pipes Clients or make your own. The available Pipes Clients for popular Spark providers are:
+You can either use one of the available Pipes Clients or make your own (see [Building pipelines with PySpark](/guides/build/external-pipelines/pyspark-pipeline)). The available Pipes Clients for popular Spark providers are:
 
 - [Databricks](/guides/build/external-pipelines/databricks-pipeline)
 - [AWS Glue](/guides/build/external-pipelines/aws/aws-glue-pipeline)
