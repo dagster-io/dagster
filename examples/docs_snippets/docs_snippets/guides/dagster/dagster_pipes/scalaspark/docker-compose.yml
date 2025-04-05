@@ -1,0 +1,21 @@
+services:
+    dagster-dev:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        command:
+            - "dagster"
+            - "dev"
+            - "-f"
+            - "/src/dagster_code.py"
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "3000"
+        ports:
+            - "3000:3000"
+        environment:
+            AWS_ACCESS_KEY_ID: <AWS_ACCESS_KEY_ID>
+            AWS_SECRET_ACCESS_KEY: <AWS_SECRET_ACCESS_KEY>
+            AWS_REGION: <AWS_REGION>
+            DAGSTER_PIPES_BUCKET: dagster-pipes
