@@ -14,8 +14,14 @@ interface Props {
 export const MarketplaceHome = (props: Props) => {
   const {integrations} = props;
   const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<IntegrationTag | null>(null);
 
-  const filteredIntegrations = integrations.filter((integration) => {
+  const filteredByTag = integrations.filter((integration) => {
+    const {tags} = integration.frontmatter;
+    return filters === null || tags.some((tag) => filters === tag);
+  });
+
+  const filteredIntegrations = filteredByTag.filter((integration) => {
     return integration.frontmatter.name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
@@ -30,10 +36,18 @@ export const MarketplaceHome = (props: Props) => {
         placeholder="Search for integrations"
         icon="search"
       />
-      <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
+      <Box
+        flex={{direction: 'row', gap: 12, alignItems: 'center', wrap: 'wrap'}}
+        margin={{bottom: 12}}
+      >
         <div style={{fontSize: 16}}>Filters</div>
         {Object.values(IntegrationTag).map((tag) => (
-          <Button key={tag} icon={<Icon name={IntegrationTagIcon[tag]} />}>
+          <Button
+            key={tag}
+            icon={<Icon name={IntegrationTagIcon[tag]} />}
+            onClick={() => setFilters(filters === tag ? null : tag)}
+            style={{backgroundColor: filters === tag ? Colors.backgroundBlue() : 'transparent'}}
+          >
             {IntegrationTagLabel[tag]}
           </Button>
         ))}

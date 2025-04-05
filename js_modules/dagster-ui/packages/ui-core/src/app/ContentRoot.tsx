@@ -6,6 +6,7 @@ import {AssetsOverviewRoot} from 'shared/assets/AssetsOverviewRoot.oss';
 import {Route} from './Route';
 import {AssetFeatureProvider} from '../assets/AssetFeatureContext';
 import {RunsFeedBackfillPage} from '../instance/backfill/RunsFeedBackfillPage';
+import {IntegrationsRoot} from '../integrations/IntegrationsRoot';
 import RunsFeedRoot from '../runs/RunsFeedRoot';
 import {lazy} from '../util/lazy';
 
@@ -90,6 +91,9 @@ export const ContentRoot = memo(() => {
           </Route>
           <Route path="/deployment">
             <SettingsRoot />
+          </Route>
+          <Route path="/integrations">
+            <IntegrationsRoot />
           </Route>
           <Route path="*" isNestingRoute>
             <FallthroughRoot />
