@@ -1,7 +1,6 @@
 ---
 title: 'Change tracking in branch deployments'
 sidebar_position: 200
-unlisted: true
 ---
 
 :::note
