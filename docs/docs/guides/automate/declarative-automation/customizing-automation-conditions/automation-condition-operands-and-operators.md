@@ -97,7 +97,7 @@ The [operands](#operands) can be built into more complex expressions using the f
     </tr>
     <tr>
       <td>
-        <code>AutomationCondition.any_downstream_condition()</code>
+        <code>AutomationCondition.any_downstream_conditions()</code>
       </td>
       <td>
         Any <PyObject section="assets" module="dagster" object="AutomationCondition" /> on a downstream asset evaluates
