@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from functools import update_wrapper
 from typing import TYPE_CHECKING, Callable, Optional, TypeVar, Union, overload
@@ -211,9 +212,12 @@ def _resolve_cacheable_asset_data(
     # cacheable data is available, we expect all of it to be available. This
     # is to match previous behavior of PendingRepositoryDefinition.
     elif context.load_type == DefinitionsLoadType.RECONSTRUCTION and context.cacheable_asset_data:
-        check.failed(
-            f"No metadata found for CacheableAssetsDefinition with unique_id {definition.unique_id}."
+        warnings.warn(
+            f"No cached metadata found for CacheableAssetsDefinition with unique_id {definition.unique_id}."
+            " This can occur when executing a run that was created against an older version of the code"
+            " in the current process, because the `unique_id` may change between code versions. Recomputing metadata."
         )
+        return definition.compute_cacheable_data()
     else:
         return definition.compute_cacheable_data()
 
