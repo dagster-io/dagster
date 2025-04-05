@@ -28,7 +28,6 @@ import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {BackfillPartitionsRequestedDialog} from '../instance/backfill/BackfillPartitionsRequestedDialog';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
-import {LoadingSpinner} from '../ui/Loading';
 import {Container, Inner, Row} from '../ui/VirtualizedTable';
 import {numberFormatter} from '../ui/formatters';
 
@@ -178,7 +177,13 @@ export const RunsFeedTable = ({
     if (entries.length === 0 && !loading) {
       const anyFilter = !!Object.keys(filter || {}).length;
       if (emptyState) {
-        return <>{emptyState()}</>;
+        return (
+          <div style={{overflow: 'hidden'}}>
+            <IndeterminateLoadingBar $loading={loading} />
+            {header}
+            <div style={{minHeight: 82}}>{emptyState()}</div>
+          </div>
+        );
       }
 
       return (
@@ -190,7 +195,13 @@ export const RunsFeedTable = ({
     }
 
     return (
-      <div style={{overflow: 'hidden'}}>
+      <div
+        style={
+          scroll
+            ? {overflow: 'hidden', display: 'flex', flexDirection: 'column'}
+            : {overflow: 'hidden'}
+        }
+      >
         <BackfillPartitionsRequestedDialog
           backfillId={dialog?.type === 'partitions' ? dialog.backfillId : undefined}
           onClose={() => setDialog(null)}
@@ -242,7 +253,7 @@ export const RunsFeedTable = ({
     <Box
       flex={{direction: 'column', gap: 8}}
       padding={{vertical: 12}}
-      style={scroll ? {height: '100%'} : {}}
+      style={scroll ? {height: '100%', minHeight: 0} : {}}
     >
       {actionBar}
       {content()}
@@ -272,13 +283,6 @@ export const RunsFeedTableWithFilters = ({
   function content() {
     if (queryResult.error) {
       return <RunsFeedError error={queryResult.error} />;
-    }
-    if (queryResult.loading && !queryResult.data) {
-      return (
-        <Box flex={{direction: 'column', gap: 32}} padding={{vertical: 8}} border="top">
-          <LoadingSpinner purpose="page" />
-        </Box>
-      );
     }
 
     return (

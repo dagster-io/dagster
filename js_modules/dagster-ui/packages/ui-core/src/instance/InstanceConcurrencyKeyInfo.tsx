@@ -4,7 +4,6 @@ import {
   Button,
   Caption,
   Colors,
-  CursorHistoryControls,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -16,7 +15,6 @@ import {
   Mono,
   NonIdealState,
   Popover,
-  Spinner,
   SpinnerWithText,
   Subheading,
   Table,
@@ -28,6 +26,7 @@ import {Link, useHistory} from 'react-router-dom';
 
 import {gql, useMutation, useQuery} from '../apollo-client';
 import {POOL_DETAILS_QUERY} from './PoolDetailsQuery';
+import {RunsFeedTableWithFilters} from '../runs/RunsFeedTable';
 import {
   SetConcurrencyLimitMutation,
   SetConcurrencyLimitMutationVariables,
@@ -57,11 +56,9 @@ import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RunStatusDot} from '../runs/RunStatusDots';
 import {failedStatuses, inProgressStatuses, queuedStatuses} from '../runs/RunStatuses';
-import {RunTable} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {titleForRun} from '../runs/RunUtils';
 import {TimeElapsed} from '../runs/TimeElapsed';
-import {usePaginatedRunsTableRuns} from '../runs/usePaginatedRunsTableRuns';
 
 const DEFAULT_MIN_VALUE = 0;
 const DEFAULT_MAX_VALUE = 1000;
@@ -466,51 +463,18 @@ const PoolRunsTable = ({pool, runStatuses}: {pool: string; runStatuses: Set<RunS
     statuses: Array.from(runStatuses),
     tags: [{key: `${DagsterTag.PoolTagPrefix}/${pool}`, value: 'true'}],
   };
-  const {queryResult, paginationProps} = usePaginatedRunsTableRuns(filter, 10);
-  const pipelineRunsOrError =
-    queryResult.data?.pipelineRunsOrError || queryResult.previousData?.pipelineRunsOrError;
-
-  const refreshState = useQueryRefreshAtInterval(queryResult, 15000);
-
-  if (!pipelineRunsOrError) {
-    return (
-      <Box padding={{vertical: 48}}>
-        <Spinner purpose="page" />
-      </Box>
-    );
-  }
-  if (pipelineRunsOrError.__typename !== 'Runs') {
-    return (
-      <Box padding={{vertical: 64}}>
-        <NonIdealState icon="error" title="Query error" description={pipelineRunsOrError.message} />
-      </Box>
-    );
-  }
-  if (!pipelineRunsOrError.results.length) {
-    return (
-      <Box
-        padding={{vertical: 24}}
-        border="top-and-bottom"
-        flex={{direction: 'column', alignItems: 'center'}}
-      >
-        {runStatuses.has(RunStatus.STARTED)
-          ? 'No matching runs in progress.'
-          : 'No matching runs in queue.'}
-      </Box>
-    );
-  }
   return (
-    <>
-      <div style={{position: 'absolute', right: 16, top: -32}}>
-        <QueryRefreshCountdown refreshState={refreshState} />
-      </div>
-      <RunTable runs={pipelineRunsOrError.results} loading={queryResult.loading} />
-      {pipelineRunsOrError.results.length > 0 ? (
-        <Box margin={{vertical: 16}}>
-          <CursorHistoryControls {...paginationProps} />
+    <RunsFeedTableWithFilters
+      filter={filter}
+      includeRunsFromBackfills={true}
+      emptyState={() => (
+        <Box padding={{vertical: 24}} flex={{direction: 'column', alignItems: 'center'}}>
+          {runStatuses.has(RunStatus.STARTED)
+            ? 'No matching runs in progress.'
+            : 'No matching runs in queue.'}
         </Box>
-      ) : null}
-    </>
+      )}
+    />
   );
 };
 
