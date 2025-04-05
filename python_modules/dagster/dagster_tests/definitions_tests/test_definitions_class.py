@@ -1100,7 +1100,7 @@ def test_assets_def_with_only_checks():
     assert check_key in defs.get_repository_def().asset_checks_defs_by_key
 
 
-def test_get_checks_def_standalone_check():
+def test_get_checks_def_standalone_check() -> None:
     @asset_check(asset="asset1")  # pyright: ignore[reportArgumentType]
     def check1():
         pass
@@ -1111,7 +1111,7 @@ def test_get_checks_def_standalone_check():
     assert isinstance(asset_checks_def, AssetChecksDefinition)
 
 
-def test_get_assets_def_with_only_checks_getter():
+def test_get_assets_def_with_only_checks_getter() -> None:
     @asset_check(asset="asset1")  # pyright: ignore[reportArgumentType]
     def check1():
         pass
@@ -1122,3 +1122,20 @@ def test_get_assets_def_with_only_checks_getter():
     asset_checks_def = defs.get_asset_checks_def(check_key)
     # Definitions convets this to an AssetChecksDefinition underneath the hood
     assert isinstance(asset_checks_def, AssetChecksDefinition)
+
+
+def test_get_all_asset_check_specs() -> None:
+    @asset_check(asset="asset1")  # pyright: ignore[reportArgumentType]
+    def check1():
+        pass
+
+    @asset_check(asset="asset1")  # pyright: ignore[reportArgumentType]
+    def check2():
+        pass
+
+    defs = Definitions(asset_checks=[check1, check2])
+    check_specs = defs.get_all_asset_check_specs()
+    assert {check_spec.key for check_spec in check_specs} == {
+        AssetCheckKey(AssetKey("asset1"), "check1"),
+        AssetCheckKey(AssetKey("asset1"), "check2"),
+    }
