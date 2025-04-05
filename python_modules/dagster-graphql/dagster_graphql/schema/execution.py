@@ -130,6 +130,7 @@ class GrapheneExecutionStep(graphene.ObjectType):
 class GrapheneExecutionPlan(graphene.ObjectType):
     steps = non_null_list(GrapheneExecutionStep)
     artifactsPersisted = graphene.NonNull(graphene.Boolean)
+    assetSelection = non_null_list(graphene.String)
 
     class Meta:
         name = "ExecutionPlan"
@@ -151,6 +152,9 @@ class GrapheneExecutionPlan(graphene.ObjectType):
 
     def resolve_artifactsPersisted(self, _graphene_info: ResolveInfo):
         return self._remote_execution_plan.execution_plan_snapshot.artifacts_persisted
+
+    def resolve_assetSelection(self, _graphene_info: ResolveInfo):
+        return list(self._remote_execution_plan.execution_plan_snapshot.asset_selection)
 
 
 types = [

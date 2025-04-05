@@ -40,6 +40,7 @@ export type RunFragment = {
   executionPlan: {
     __typename: 'ExecutionPlan';
     artifactsPersisted: boolean;
+    assetSelection: Array<string>;
     steps: Array<{
       __typename: 'ExecutionStep';
       key: string;
@@ -3355,6 +3356,7 @@ export type RunPageFragment = {
   executionPlan: {
     __typename: 'ExecutionPlan';
     artifactsPersisted: boolean;
+    assetSelection: Array<string>;
     steps: Array<{
       __typename: 'ExecutionStep';
       key: string;

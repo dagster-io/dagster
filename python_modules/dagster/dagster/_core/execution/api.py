@@ -10,7 +10,13 @@ from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster._core.events import DagsterEvent, EngineEventData, JobFailureData, RunFailureReason
+from dagster._core.events import (
+    DagsterEvent,
+    DagsterEventType,
+    EngineEventData,
+    JobFailureData,
+    RunFailureReason,
+)
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.context_creation_job import (
     ExecutionContextManager,
@@ -313,6 +319,10 @@ class ReexecuteFromFailureOption(ReexecutionOptions):
     """Marker subclass used to calculate reexecution information later."""
 
 
+class ReexecuteFromAssetFailureOption(ReexecutionOptions):
+    """Marker subclass used to calculate reexecution information later."""
+
+
 def execute_job(
     job: ReconstructableJob,
     instance: "DagsterInstance",
@@ -527,7 +537,7 @@ def _reexecute_job(
 
         execution_plan: Optional[ExecutionPlan] = None
         # resolve step selection DSL queries using parent execution information
-        if isinstance(reexecution_options, ReexecuteFromFailureOption):
+        if isinstance(reexecution_options, ReexecuteFromFailureOption) and False:
             step_keys, known_state = KnownExecutionState.build_resume_retry_reexecution(
                 instance=instance,
                 parent_run=parent_dagster_run,
@@ -554,13 +564,36 @@ def _reexecute_job(
                 op_selection=None, asset_selection=parent_dagster_run.asset_selection
             )
 
+        if isinstance(reexecution_options, ReexecuteFromFailureOption):
+            planned = instance.all_logs(
+                parent_dagster_run.run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+            )
+            materialized = instance.all_logs(
+                parent_dagster_run.run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION
+            )
+
+            planned_keys = {
+                entry.dagster_event.asset_key
+                for entry in planned
+                if entry.dagster_event and entry.dagster_event.asset_key
+            }
+            materialized_keys = {
+                entry.dagster_event.asset_key
+                for entry in materialized
+                if entry.dagster_event and entry.dagster_event.asset_key
+            }
+
+            asset_selection = planned_keys - materialized_keys
+        else:
+            asset_selection = parent_dagster_run.asset_selection
+
         dagster_run = execute_instance.create_run_for_job(
             job_def=job_arg.get_definition(),
             execution_plan=execution_plan,
             run_config=run_config,
             tags=tags,
             op_selection=parent_dagster_run.op_selection,
-            asset_selection=parent_dagster_run.asset_selection,
+            asset_selection=asset_selection,
             resolved_op_selection=parent_dagster_run.resolved_op_selection,
             root_run_id=parent_dagster_run.root_run_id or parent_dagster_run.run_id,
             parent_run_id=parent_dagster_run.run_id,
