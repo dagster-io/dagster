@@ -22,6 +22,10 @@ class ComponentDumper(yaml.Dumper):
             super().write_line_break()
         super().write_line_break()
 
+    # Format list elements with indentation - see https://github.com/yaml/pyyaml/issues/234
+    def increase_indent(self, flow=False, *args, **kwargs):
+        return super().increase_indent(flow=flow, indentless=False)
+
 
 def scaffold_component(
     request: ScaffoldRequest,
