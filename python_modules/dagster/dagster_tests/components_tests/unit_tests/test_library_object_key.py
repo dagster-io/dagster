@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from dagster_shared.serdes.objects import PackageEntryKey
+from dagster_shared.serdes.objects import PackageObjectKey
 
 dirpath = Path(".")
 
@@ -9,13 +9,13 @@ dirpath = Path(".")
 @pytest.mark.parametrize(
     ["typename", "key"],
     [
-        ("foo.bar", PackageEntryKey("foo", "bar")),
-        ("foo.Bar", PackageEntryKey("foo", "Bar")),
-        ("foo.bar.baz", PackageEntryKey("foo.bar", "baz")),
+        ("foo.bar", PackageObjectKey("foo", "bar")),
+        ("foo.Bar", PackageObjectKey("foo", "Bar")),
+        ("foo.bar.baz", PackageObjectKey("foo.bar", "baz")),
     ],
 )
-def test_valid_keys(typename: str, key: PackageEntryKey) -> None:
-    assert PackageEntryKey.from_typename(typename) == key
+def test_valid_keys(typename: str, key: PackageObjectKey) -> None:
+    assert PackageObjectKey.from_typename(typename) == key
 
 
 @pytest.mark.parametrize(
@@ -28,4 +28,4 @@ def test_valid_keys(typename: str, key: PackageEntryKey) -> None:
 )
 def test_invalid_keys(typename: str) -> None:
     with pytest.raises(ValueError):
-        PackageEntryKey.from_typename(typename)
+        PackageObjectKey.from_typename(typename)

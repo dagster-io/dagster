@@ -2,7 +2,7 @@ import json
 from typing import Literal, Optional, Union
 
 import click
-from dagster_shared.serdes.objects import PackageEntryKey
+from dagster_shared.serdes.objects import PackageObjectKey
 from dagster_shared.serdes.serdes import serialize_value
 from pydantic import ConfigDict, TypeAdapter, create_model
 
@@ -23,8 +23,8 @@ from dagster.components.core.defs import (
     DgSensorMetadata,
 )
 from dagster.components.core.package_entry import (
-    discover_entry_point_package_entries,
-    discover_package_entries,
+    discover_entry_point_package_objects,
+    discover_package_objects,
 )
 from dagster.components.core.snapshot import get_package_entry_snap
 
@@ -148,18 +148,18 @@ def list_definitions_command(
 
 def _load_library_objects(
     entry_points: bool, extra_modules: tuple[str, ...]
-) -> dict[PackageEntryKey, object]:
+) -> dict[PackageObjectKey, object]:
     objects = {}
     if entry_points:
-        objects.update(discover_entry_point_package_entries())
+        objects.update(discover_entry_point_package_objects())
     if extra_modules:
-        objects.update(discover_package_entries(extra_modules))
+        objects.update(discover_package_objects(extra_modules))
     return objects
 
 
 def _load_component_types(
     entry_points: bool, extra_modules: tuple[str, ...]
-) -> dict[PackageEntryKey, type[Component]]:
+) -> dict[PackageObjectKey, type[Component]]:
     return {
         key: obj
         for key, obj in _load_library_objects(entry_points, extra_modules).items()

@@ -51,9 +51,7 @@ def has_scaffolder(obj: object) -> bool:
     return hasattr(obj, SCAFFOLDER_CLS_ATTRIBUTE)
 
 
-def get_scaffolder(
-    obj: object,
-) -> Union["Scaffolder", "ScaffolderUnavailableReason"]:
+def get_scaffolder(obj: object) -> Union["Scaffolder", "ScaffolderUnavailableReason"]:
     """Retrieves the scaffolder class attached to the decorated object.
 
     Args:
