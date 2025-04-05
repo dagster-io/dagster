@@ -1,4 +1,5 @@
 import os
+import subprocess
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any, Optional
@@ -97,7 +98,11 @@ def test_jaffle_shop_manifest_fixture(
 
 @pytest.fixture(name="test_asset_checks_manifest", scope="session")
 def test_asset_checks_manifest_fixture() -> dict[str, Any]:
-    # Prepopulate duckdb with jaffle shop data to support testing individual asset checks.
+    # Prepopulate duckdb with sources to support running sources
+    subprocess.run(
+        ["python", test_asset_checks_path / "init_db.py"],
+        check=True,
+    )
     return _create_dbt_invocation(
         test_asset_checks_path,
         build_project=True,
