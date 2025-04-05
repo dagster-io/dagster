@@ -98,7 +98,7 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
         assert Path("projects/foo-bar/src/foo_bar").exists()
         assert Path("projects/foo-bar/src/foo_bar/lib").exists()
         assert Path("projects/foo-bar/src/foo_bar/defs").exists()
-        assert Path("projects/foo-bar/foo_bar_tests").exists()
+        assert Path("projects/foo-bar/tests").exists()
         assert Path("projects/foo-bar/pyproject.toml").exists()
         assert Path("projects/foo-bar/.gitignore").exists()
 
@@ -182,7 +182,7 @@ def test_scaffold_project_outside_workspace_success(monkeypatch) -> None:
         assert Path("foo-bar/src/foo_bar").exists()
         assert Path("foo-bar/src/foo_bar/lib").exists()
         assert Path("foo-bar/src/foo_bar/defs").exists()
-        assert Path("foo-bar/foo_bar_tests").exists()
+        assert Path("foo-bar/tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
 
         # Check venv created
@@ -276,7 +276,7 @@ def test_scaffold_project_skip_venv_success() -> None:
         assert Path("foo-bar/src/foo_bar").exists()
         assert Path("foo-bar/src/foo_bar/lib").exists()
         assert Path("foo-bar/src/foo_bar/defs").exists()
-        assert Path("foo-bar/foo_bar_tests").exists()
+        assert Path("foo-bar/tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
 
         # Check venv not created
@@ -300,7 +300,7 @@ def test_scaffold_project_no_populate_cache_success(monkeypatch) -> None:
         assert Path("foo-bar/src/foo_bar").exists()
         assert Path("foo-bar/src/foo_bar/lib").exists()
         assert Path("foo-bar/src/foo_bar/defs").exists()
-        assert Path("foo-bar/foo_bar_tests").exists()
+        assert Path("foo-bar/tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
 
         # Check venv created
@@ -330,7 +330,7 @@ def test_scaffold_project_active_venv_success(monkeypatch) -> None:
         assert Path("foo-bar/src/foo_bar").exists()
         assert Path("foo-bar/src/foo_bar/lib").exists()
         assert Path("foo-bar/src/foo_bar/defs").exists()
-        assert Path("foo-bar/foo_bar_tests").exists()
+        assert Path("foo-bar/tests").exists()
         assert Path("foo-bar/pyproject.toml").exists()
 
         # Check venv not created
