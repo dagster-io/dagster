@@ -25,6 +25,7 @@ from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_selection import AssetCheckKeysSelection, AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
@@ -929,3 +930,37 @@ def test_additional_deps_with_multi_asset_decorator() -> None:
         def foo(context: AssetExecutionContext, asset3) -> Iterable:
             yield Output(value=None, output_name="asset1")
             yield Output(value=None, output_name="asset2")
+
+
+def test_arbitary_asset_check_specs() -> None:
+    """Test hidden behavior where we allow arbitrary asset check specs to be passed in
+    to the asset decorator. This is necessary to model things like dbt source checks.
+    """
+
+    @multi_asset(
+        check_specs=[
+            AssetCheckSpec("check1", asset="asset1", description="desc"),
+            AssetCheckSpec("check2", asset="asset2", description="desc"),
+        ],
+        specs=[AssetSpec("asset1")],
+        allow_arbitrary_check_specs=True,
+        can_subset=True,
+    )
+    def _compute() -> Iterable:
+        yield AssetMaterialization("asset1")
+        yield AssetCheckResult(
+            check_name="check1", asset_key="asset1", passed=True, metadata={"foo": "bar"}
+        )
+        yield AssetCheckResult(
+            check_name="check2", asset_key="asset2", passed=True, metadata={"baz": "bla"}
+        )
+
+    instance = DagsterInstance.ephemeral()
+    result = materialize(assets=[_compute], instance=instance)
+    assert result.success
+
+    check_evals = result.get_asset_check_evaluations()
+    assert len(check_evals) == 2
+    check_eval = check_evals[0]
+    assert check_eval.asset_key == AssetKey("asset1")
+    assert check_eval.check_name == "check1"
