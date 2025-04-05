@@ -118,7 +118,7 @@ def build_docs_command(
     """Build a static version of the Dagster components docs, to be served by a static file server."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
-    registry = RemoteLibraryObjectRegistry.from_dg_context(dg_context)
+    registry = RemotePackageRegistry.from_dg_context(dg_context)
 
     with pushd(ACTIVE_DOCS_DIR):
         DOCS_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)

@@ -1,24 +1,6 @@
 dg list component-type
 
 Using /.../my-component-library/.venv/bin/dagster-components
-<<<<<<< HEAD
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Component Type                                              ┃ Summary                  ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ dagster.components.DefinitionsComponent                     │ An arbitrary set of      │
-│                                                             │ dagster definitions.     │
-│ dagster.components.DefsFolderComponent                      │ A folder which may       │
-│                                                             │ contain multiple         │
-│                                                             │ submodules, each         │
-│                                                             │ which define components. │
-│ dagster.components.PipesSubprocessScriptCollectionComponent │ Assets that wrap Python  │
-│                                                             │ scripts executed with    │
-│                                                             │ Dagster's                │
-│                                                             │ PipesSubprocessClient.   │
-│ my_component_library.lib.ShellCommand                       │ Models a shell script as │
-│                                                             │ a Dagster asset.         │
-└─────────────────────────────────────────────────────────────┴──────────────────────────┘
-=======
 ┏━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Package              ┃ Objects                                                                                       ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
@@ -31,9 +13,13 @@ Using /.../my-component-library/.venv/bin/dagster-components
 │                      │ │                                                             │ definitions. │              │ │
 │                      │ ├─────────────────────────────────────────────────────────────┼──────────────┼──────────────┤ │
 │                      │ │ dagster.components.DefsFolderComponent                      │ A folder     │ [component,  │ │
-│                      │ │                                                             │ containing   │ scaffold-ta… │ │
+│                      │ │                                                             │ which may    │ scaffold-ta… │ │
+│                      │ │                                                             │ contain      │              │ │
 │                      │ │                                                             │ multiple     │              │ │
-│                      │ │                                                             │ submodules.  │              │ │
+│                      │ │                                                             │ submodules,  │              │ │
+│                      │ │                                                             │ each         │              │ │
+│                      │ │                                                             │ which define │              │ │
+│                      │ │                                                             │ components.  │              │ │
 │                      │ ├─────────────────────────────────────────────────────────────┼──────────────┼──────────────┤ │
 │                      │ │ dagster.components.PipesSubprocessScriptCollectionComponent │ Assets that  │ [component,  │ │
 │                      │ │                                                             │ wrap Python  │ scaffold-ta… │ │
@@ -50,4 +36,3 @@ Using /.../my-component-library/.venv/bin/dagster-components
 │                      │ │                                       │ as a Dagster asset.     │ scaffold-target]        │ │
 │                      │ └───────────────────────────────────────┴─────────────────────────┴─────────────────────────┘ │
 └──────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────┘
->>>>>>> d9e313ea4c ([dg] dg list packages)
