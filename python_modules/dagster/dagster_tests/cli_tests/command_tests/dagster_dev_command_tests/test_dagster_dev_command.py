@@ -416,3 +416,35 @@ def test_dagster_dev_command_verbose(verbose: bool) -> None:
                     )
                     == 1
                 ), contents
+
+
+def test_proxy_server_crash() -> None:
+    """Tests a case where the proxy server used to crash if the underlying user code crashed."""
+    with tempfile.TemporaryDirectory() as tempdir:
+        stdout_filepath = str(Path(tempdir) / "stdout.txt")
+        with environ({"DAGSTER_HOME": ""}):
+            with pushd(tempdir):
+                stdout_file = open(stdout_filepath, "w")
+                webserver_port = find_free_port()
+                with _launch_dev_command(
+                    [
+                        "-f",
+                        str(Path(__file__).parent / "import_error.py"),
+                        "--log-level",
+                        "debug",
+                        "--port",
+                        str(webserver_port),
+                    ],
+                    stdout_file=stdout_file,
+                    capture_output=True,
+                ):
+                    # Give the proxy server enough time to reach the end of it's expected heartbeat window.
+                    time.sleep(65)
+                    _wait_for_webserver_running(webserver_port)
+        stdout_file.close()
+        with open(stdout_filepath, encoding="utf-8") as f:
+            contents = f.read()
+            assert (
+                "Code server process has exited with code 0. Restarting the code server process"
+                not in contents
+            )

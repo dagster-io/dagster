@@ -1588,15 +1588,6 @@ class GrpcServerProcess:
 
         self._wait_on_exit = wait_on_exit
 
-        # In the case of the `dagster code-server start` entrypoint, the proxy server will not automatically restart if it crashes. Thus, we need to implement a mechanism to automatically restart the server if it crashes.
-        self.__auto_restart_thread = None
-        self.__shutdown_event = threading.Event()
-        if server_command == GrpcServerCommand.CODE_SERVER_START:
-            self.__auto_restart_thread = threading.Thread(
-                target=self.auto_restart_thread, daemon=True
-            )
-            self.__auto_restart_thread.start()
-
     def start_server_process(self):
         server_process_kwargs: dict[str, Any] = dict(
             location_name=self._location_name,
@@ -1638,19 +1629,8 @@ class GrpcServerProcess:
         else:
             self._server_process = server_process
 
-    def auto_restart_thread(self):
-        while True:
-            self.__shutdown_event.wait(get_auto_restart_code_server_interval())
-            if self.__shutdown_event.is_set():
-                break
-            if self._server_process and self._server_process.poll() is not None:
-                logging.getLogger(__name__).warning(
-                    f"Code server process has exited with code {self._server_process.poll()}. Restarting the code server process."
-                )
-                self.start_server_process()
-
     @property
-    def server_process(self):
+    def server_process(self) -> subprocess.Popen:
         return check.not_none(self._server_process)
 
     @property
@@ -1672,9 +1652,6 @@ class GrpcServerProcess:
             self.wait()
 
     def shutdown_server(self):
-        self.__shutdown_event.set()
-        if self.__auto_restart_thread:
-            self.__auto_restart_thread.join()
         if self._server_process and not self._shutdown:
             self._shutdown = True
             if self.server_process.poll() is None:

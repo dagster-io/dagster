@@ -3,11 +3,12 @@ import os
 import subprocess
 import sys
 import tempfile
+import threading
 import time
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import click
 import yaml
@@ -18,18 +19,37 @@ from dagster_shared.ipc import (
     send_ipc_shutdown_message,
 )
 from dagster_shared.serdes import serialize_value
+from typing_extensions import Self
 
+import dagster._check as check
 from dagster._annotations import deprecated
 from dagster._cli.utils import assert_no_remaining_opts, get_possibly_temporary_instance_for_cli
 from dagster._cli.workspace.cli_target import WorkspaceOpts, workspace_options
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.instance import DagsterInstance
-from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._grpc.server import GrpcServerCommand
+from dagster._core.remote_representation import CodeLocationOrigin
+from dagster._core.remote_representation.grpc_server_registry import (
+    GrpcServerEndpoint,
+    GrpcServerRegistry,
+)
+from dagster._core.remote_representation.origin import (
+    GrpcServerCodeLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
+)
+from dagster._core.workspace.context import WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL
+from dagster._core.workspace.load_target import WorkspaceLoadTarget
+from dagster._core.workspace.workspace import CurrentWorkspace
+from dagster._grpc.client import CLIENT_HEARTBEAT_INTERVAL
+from dagster._grpc.server import INCREASE_TIMEOUT_DAGSTER_YAML_MSG, GrpcServerCommand
 from dagster._utils.interrupts import setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
 _SUBPROCESS_WAIT_TIMEOUT = 60
 _CHECK_SUBPROCESS_INTERVAL = 5
+
+
+def get_auto_restart_code_server_interval() -> int:
+    return int(os.getenv("DAGSTER_CODE_SERVER_AUTO_RESTART_INTERVAL", "30"))
 
 
 @click.command(
@@ -257,7 +277,7 @@ def dev_command(
 
 
 @contextmanager
-def _temp_grpc_socket_workspace_file(context: WorkspaceProcessContext) -> Iterator[Path]:
+def _temp_grpc_socket_workspace_file(context: "DagsterDevCodeServerManager") -> Iterator[Path]:
     with tempfile.TemporaryDirectory() as temp_dir:
         workspace_file = Path(temp_dir) / "workspace.yaml"
         workspace_file.write_text(yaml.dump({"load_from": context.get_code_server_specs()}))
@@ -276,7 +296,7 @@ def _optionally_create_temp_workspace(
     If in legacy mode, do nothing and return the target args.
     """
     if not use_legacy_code_server_behavior:
-        with WorkspaceProcessContext(
+        with DagsterDevCodeServerManager(
             instance=instance,
             workspace_load_target=workspace_opts.to_load_target(),
             server_command=GrpcServerCommand.CODE_SERVER_START,
@@ -326,3 +346,116 @@ def _workspace_opts_to_serialized_cli_args(workspace_opts: WorkspaceOpts) -> Seq
         args.append("--use-ssl")
 
     return args
+
+
+class DagsterDevCodeServerManager:
+    """Context manager that manages the lifecycle of code servers launched by the dagster dev command."""
+
+    def __init__(
+        self,
+        instance: DagsterInstance,
+        workspace_load_target: Optional[WorkspaceLoadTarget],
+        code_server_log_level: str = "INFO",
+        server_command: GrpcServerCommand = GrpcServerCommand.API_GRPC,
+    ) -> None:
+        self._stack = ExitStack()
+
+        self._instance = check.inst_param(instance, "instance", DagsterInstance)
+        self._workspace_load_target = check.opt_inst_param(
+            workspace_load_target, "workspace_load_target", WorkspaceLoadTarget
+        )
+
+        self._grpc_server_registry: GrpcServerRegistry = self._stack.enter_context(
+            GrpcServerRegistry(
+                instance_ref=self._instance.get_ref(),
+                server_command=server_command,
+                heartbeat_ttl=WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL,
+                startup_timeout=instance.code_server_process_startup_timeout,
+                log_level=code_server_log_level,
+                wait_for_processes_on_shutdown=instance.wait_for_local_code_server_processes_on_shutdown,
+                additional_timeout_msg=INCREASE_TIMEOUT_DAGSTER_YAML_MSG,
+            )
+        )
+
+        self._current_workspace: CurrentWorkspace = CurrentWorkspace(code_location_entries={})
+        # Is it ok that there's only one of these? When would this be something that needs to be called per location?
+        self.__shutdown_event = threading.Event()
+        self.__auto_restart_thread = threading.Thread(target=self.auto_restart_thread, daemon=True)
+        self.__auto_restart_thread.start()
+
+    def auto_restart_thread(self) -> None:
+        """Thread that automatically restarts the code server if it is not responding."""
+        while True:
+            self.__shutdown_event.wait(get_auto_restart_code_server_interval())
+            if self.__shutdown_event.is_set():
+                break
+            for process in self._grpc_server_registry.all_processes:
+                if process.server_process.poll() is not None:
+                    logging.getLogger(__name__).warning(
+                        f"Code server process has exited with code {process.server_process.poll()}. Restarting the code server process."
+                    )
+                    process.start_server_process()
+
+    def client_heartbeat_thread(self) -> None:
+        while True:
+            self.__shutdown_event.wait(CLIENT_HEARTBEAT_INTERVAL)
+            if self.__shutdown_event.is_set():
+                break
+            for process in self._grpc_server_registry.all_processes:
+                client = process.create_client()
+                try:
+                    client.heartbeat("ping")
+                except DagsterUserCodeUnreachableError:
+                    continue
+
+    @property
+    def _origins(self) -> Sequence[CodeLocationOrigin]:
+        return self._workspace_load_target.create_origins() if self._workspace_load_target else []
+
+    def retrieve_endpoint(
+        self, origin: CodeLocationOrigin, reload: bool = False
+    ) -> GrpcServerEndpoint:
+        return (
+            self._grpc_server_registry.reload_grpc_endpoint(origin)
+            if reload
+            else self._grpc_server_registry.get_grpc_endpoint(origin)
+        )
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
+        self.__shutdown_event.set()
+        self.empty_workspace()  # update to empty to close all current locations
+        self._stack.close()
+
+    def empty_workspace(self) -> None:
+        """Empty the workspace by closing all code locations."""
+        for entry in self._current_workspace.code_location_entries.values():
+            if entry.code_location:
+                entry.code_location.cleanup()
+
+    def get_code_server_specs(self) -> Sequence[Mapping[str, Mapping[str, Any]]]:
+        result = []
+        for origin in self._origins:
+            if isinstance(origin, ManagedGrpcPythonEnvCodeLocationOrigin):
+                grpc_endpoint = self._grpc_server_registry.get_grpc_endpoint(origin)
+                server_spec = {
+                    "location_name": origin.location_name,
+                    "socket": grpc_endpoint.socket,
+                    "port": grpc_endpoint.port,
+                    "host": grpc_endpoint.host,
+                    "additional_metadata": origin.loadable_target_origin.as_dict,
+                }
+            elif isinstance(origin, GrpcServerCodeLocationOrigin):
+                server_spec = {
+                    "location_name": origin.location_name,
+                    "host": origin.host,
+                    "port": origin.port,
+                    "socket": origin.socket,
+                    "additional_metadata": origin.additional_metadata,
+                }
+            else:
+                check.failed(f"Unexpected origin type {origin}")
+            result.append({"grpc_server": {k: v for k, v in server_spec.items() if v is not None}})
+        return result
