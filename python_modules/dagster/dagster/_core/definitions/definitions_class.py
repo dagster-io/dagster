@@ -8,6 +8,7 @@ import dagster._check as check
 from dagster._annotations import deprecated, preview, public
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
@@ -446,6 +447,11 @@ class Definitions(IHaveNew):
             asset_checks=asset_checks,
             metadata=normalize_metadata(check.opt_mapping_param(metadata, "metadata")),
         )
+
+    @public
+    def get_asset_checks_def(self, key: AssetCheckKey) -> AssetChecksDefinition:
+        """Get a canonicalized :py:class:`AssetChecksDefinition` by key."""
+        return check.inst(self.get_asset_graph().assets_def_for_key(key), AssetChecksDefinition)
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:
