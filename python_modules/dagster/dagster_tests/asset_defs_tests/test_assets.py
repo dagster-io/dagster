@@ -40,6 +40,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import (
@@ -2568,3 +2569,27 @@ def test_unpartitioned_multiasset_metadata():
             "output_name_specified",
             "additional_a_output_metadata",
         }
+
+
+def test_execute_unselected_asset_check():
+    """Test the behavior that we allow yielding a check result for an unselected but well-specified asset check."""
+
+    @multi_asset(
+        specs=[AssetSpec("a"), AssetSpec("b")],
+        check_specs=[AssetCheckSpec("check1", asset="a"), AssetCheckSpec("check2", asset="b")],
+        can_subset=True,
+    )
+    def always_yields_b_check(context: AssetExecutionContext):
+        for _asset in context.selected_asset_keys:
+            yield AssetMaterialization(asset_key=_asset)
+        yield AssetCheckResult(check_name="check1", asset_key=AssetKey("a"), passed=True)
+
+    result = materialize_to_memory(
+        [always_yields_b_check],
+        selection="b",  # so b and b's check are selected
+    )
+    assert result.success
+    evals = result.get_asset_check_evaluations()
+    assert len(evals) == 1
+    assert evals[0].check_name == "check1"
+    assert evals[0].asset_key == AssetKey("a")
