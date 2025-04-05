@@ -351,4 +351,5 @@ def dbt_assets(
         backfill_policy=backfill_policy,
         retry_policy=retry_policy,
         pool=pool,
+        allow_arbitrary_check_specs=True,
     )
