@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
@@ -15,6 +15,9 @@ from dagster._core.errors import DagsterError
 from dagster._utils import pushd
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.utils import get_path_from_module
+
+if TYPE_CHECKING:
+    from dagster.components.component.component import Component
 
 
 @dataclass
@@ -145,3 +148,8 @@ def use_component_load_context(component_load_context: ComponentLoadContext):
         yield
     finally:
         active_component_load_context.reset(token)
+
+
+def component_defs_for_test(component: "Component") -> Definitions:
+    """Builds the definitions for a component for testing purposes."""
+    return component.build_defs(ComponentLoadContext.for_test())
