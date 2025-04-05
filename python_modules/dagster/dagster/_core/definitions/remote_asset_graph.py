@@ -35,6 +35,7 @@ from dagster._core.definitions.base_asset_graph import (
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
+from dagster._core.definitions.freshness_condition import FreshnessCondition
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -315,6 +316,19 @@ class RemoteWorkspaceAssetNode(RemoteAssetNode):
         else:
             return None
 
+    @property
+    def freshness_condition(self) -> Optional[FreshnessCondition]:
+        if self.is_materializable:
+            return self._materializable_node_snap.freshness_condition
+        elif self.is_observable:
+            return self._observable_node_snap.freshness_condition
+        else:
+            # TODO: do we solve this elsewhere? Should we just error on ambiguous asset specs?
+            # TODO: you have multiple freshness conditions set; we should error on that.
+            for asset_info in self.repo_scoped_asset_infos:
+                if asset_info.asset_node.freshness_condition:
+                    return asset_info.asset_node.freshness_condition
+            return None
     @property
     def auto_observe_interval_minutes(self) -> Optional[float]:
         return (
