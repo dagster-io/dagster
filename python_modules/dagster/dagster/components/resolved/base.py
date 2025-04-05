@@ -52,13 +52,8 @@ class Resolvable:
         return derive_model_type(cls)
 
     @classmethod
-    def resolve_from_model(
-        cls,
-        context: "ResolutionContext",
-        model: BaseModel,
-        from_kwargs: Optional[type["Resolvable"]] = None,
-    ):
-        return cls(**resolve_fields(model, from_kwargs if from_kwargs else cls, context))
+    def resolve_from_model(cls, context: "ResolutionContext", model: BaseModel):
+        return cls(**resolve_fields(model, cls, context))
 
     @classmethod
     def resolve_from_yaml(cls, yaml: str):

@@ -10,14 +10,7 @@ class ContainsAssetChecks(Resolvable):
     checks: list[ResolvedAssetCheckSpec]
 
 
-@record
-class ContainsContainsAssetChecks(Resolvable):
-    contains: ContainsAssetChecks
-
-
 def test_parse_asset_checks() -> None:
-    # context = ResolutionContext.default()
-
     contains_asset_checks = ContainsAssetChecks.resolve_from_dict(
         {
             "checks": [
