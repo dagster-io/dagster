@@ -1,6 +1,8 @@
 import inspect
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
+from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel
@@ -13,6 +15,27 @@ from dagster.components.scaffold.scaffold import scaffold_with
 
 if TYPE_CHECKING:
     from dagster.components.core.context import ComponentLoadContext
+
+
+@dataclass
+class ComponentRequirements:
+    env: dict[str, set[Path]]
+
+    def __or__(self, other: "ComponentRequirements") -> "ComponentRequirements":
+        return ComponentRequirements(
+            env={
+                key: (self.env.get(key, set()) | other.env.get(key, set()))
+                for key in set(self.env.keys()) | set(other.env.keys())
+            }
+        )
+
+    def to_json(self, components_root_path: Path) -> dict[str, Any]:
+        return {
+            "env": {
+                key: [str(path.relative_to(components_root_path)) for path in paths]
+                for key, paths in self.env.items()
+            }
+        }
 
 
 @scaffold_with(DefaultComponentScaffolder)
@@ -42,6 +65,9 @@ class Component(ABC):
 
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
+
+    def get_requirements(self, context: "ComponentLoadContext") -> ComponentRequirements:
+        return ComponentRequirements(env={})
 
     @classmethod
     def load(cls, attributes: Optional[BaseModel], context: "ComponentLoadContext") -> Self:
