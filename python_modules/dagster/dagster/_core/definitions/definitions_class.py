@@ -6,6 +6,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import deprecated, preview, public
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_key import AssetCheckKey
@@ -696,6 +697,13 @@ class Definitions(IHaveNew):
         """Returns an AssetSpec object for every asset contained inside the Definitions object."""
         asset_graph = self.get_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
+
+    @public
+    @preview
+    def get_all_asset_check_specs(self) -> Sequence[AssetCheckSpec]:
+        """Returns an AssetCheckSpec object for every asset check contained inside the Definitions object."""
+        asset_graph = self.get_asset_graph()
+        return [asset_graph.get_check_spec(check_key) for check_key in asset_graph.asset_check_keys]
 
     @preview
     def with_reconstruction_metadata(self, reconstruction_metadata: Mapping[str, str]) -> Self:
