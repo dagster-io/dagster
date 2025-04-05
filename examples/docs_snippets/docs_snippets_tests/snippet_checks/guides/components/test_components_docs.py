@@ -135,46 +135,16 @@ def test_components_docs_index(update_snippets: bool) -> None:
             update_snippets=update_snippets,
             custom_comparison_fn=compare_tree_output,
         )
+
+        ingest_files_component_yaml_path = (
+            Path("src") / "jaffle_platform" / "defs" / "ingest_files" / "component.yaml"
+        )
+
         check_file(
-            Path("src")
-            / "jaffle_platform"
-            / "defs"
-            / "ingest_files"
-            / "component.yaml",
+            ingest_files_component_yaml_path,
             COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component.yaml",
             update_snippets=update_snippets,
         )
-
-        # Set up duckdb Sling connection
-        with environ(
-            {
-                "BUILDKITE_MESSAGE": ""
-            }  # keep buildkite message from messing up sling parsing
-        ):
-            run_command_and_snippet_output(
-                cmd="uv run sling conns set DUCKDB type=duckdb instance=/tmp/jaffle_platform.duckdb",
-                snippet_path=COMPONENTS_SNIPPETS_DIR
-                / f"{next_snip_no()}-sling-setup-duckdb.txt",
-                update_snippets=update_snippets,
-                snippet_replace_regex=[
-                    MASK_SLING_WARNING,
-                    MASK_SLING_PROMO,
-                    MASK_TIME,
-                    (r"set in .*?.sling", "set in /.../.sling"),
-                ],
-            )
-            run_command_and_snippet_output(
-                cmd="uv run sling conns test DUCKDB",
-                snippet_path=COMPONENTS_SNIPPETS_DIR
-                / f"{next_snip_no()}-sling-test-duckdb.txt",
-                update_snippets=update_snippets,
-                snippet_replace_regex=[
-                    MASK_SLING_WARNING,
-                    MASK_SLING_DOWNLOAD_DUCKDB,
-                    MASK_SLING_PROMO,
-                    MASK_TIME,
-                ],
-            )
 
         sling_duckdb_path = Path("/") / "tmp" / ".sling" / "bin" / "duckdb"
         sling_duckdb_version = next(iter(os.listdir()), None)
@@ -185,7 +155,6 @@ def test_components_docs_index(update_snippets: bool) -> None:
             if sling_duckdb_version
             else {}
         ):
-            # Test sling sync
             run_command_and_snippet_output(
                 cmd=textwrap.dedent("""
                     curl -O https://raw.githubusercontent.com/dbt-labs/jaffle-shop-classic/refs/heads/main/seeds/raw_customers.csv &&
@@ -196,6 +165,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 update_snippets=update_snippets,
                 ignore_output=True,
             )
+
             create_file(
                 file_path=Path("src")
                 / "jaffle_platform"
@@ -223,6 +193,28 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 """,
                 ).strip(),
             )
+
+            # Add duckdb connection
+            create_file(
+                ingest_files_component_yaml_path,
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-component-connections.yaml",
+                contents=format_multiline("""
+                    type: dagster_sling.SlingReplicationCollectionComponent
+
+                    attributes:
+                      sling:
+                        connections:
+                          - name: DUCKDB
+                            type: duckdb
+                            instance: /tmp/jaffle_platform.duckdb
+                      replications:
+                        - path: replication.yaml
+                    """),
+            )
+
+            # Test sling sync
+
             _run_command(
                 "uv run dagster asset materialize --select '*' -m jaffle_platform.definitions"
             )
@@ -330,49 +322,27 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 update_snippets=update_snippets,
             )
 
-            # Automation condition stuff
-            create_file(
-                Path("src")
-                / "jaffle_platform"
-                / "defs"
-                / "ingest_files"
-                / "component.yaml",
+            run_command_and_snippet_output(
+                cmd="dg scaffold dagster.schedule daily_jaffle.py",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
-                / f"{next_snip_no()}-component-ingest-automation.yaml",
-                contents=format_multiline("""
-                    type: dagster_sling.SlingReplicationCollectionComponent
-
-                    attributes:
-                      replications:
-                        - path: replication.yaml
-                      asset_post_processors:
-                        - target: "*"
-                          attributes:
-                            automation_condition: "{{ automation_condition.on_cron('@daily') }}"
-                            metadata:
-                              automation_condition: "on_cron(@daily)"
-                    """),
+                / f"{next_snip_no()}-scaffold-daily-jaffle.txt",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
             )
+
             create_file(
-                Path("src") / "jaffle_platform" / "defs" / "jdbt" / "component.yaml",
+                Path("src") / "jaffle_platform" / "defs" / "daily_jaffle.py",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
-                / f"{next_snip_no()}-component-jdbt-automation.yaml",
+                / f"{next_snip_no()}-daily-jaffle.py",
                 contents=format_multiline("""
-                    type: dagster_dbt.DbtProjectComponent
+import dagster as dg
 
-                    attributes:
-                      dbt:
-                        project_dir: ../../../../dbt/jdbt
-                      asset_attributes:
-                        key: "target/main/{{ node.name }}"
-                      asset_post_processors:
-                        - target: "*"
-                          attributes:
-                            automation_condition: "{{ automation_condition.eager() }}"
-                            metadata:
-                                automation_condition: "eager"
-                    """),
+
+@dg.schedule(cron_schedule="@daily", target="*")
+def daily_jaffle(context: dg.ScheduleEvaluationContext): ...
+                """),
             )
+
             _run_command(
                 "DAGSTER_IS_DEV_CLI=1 uv run dagster asset materialize --select '*' -m jaffle_platform.definitions"
             )
