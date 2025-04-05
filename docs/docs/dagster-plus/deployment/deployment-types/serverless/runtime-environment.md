@@ -47,7 +47,7 @@ To add a package from a private GitHub repository, see [Use private Python packa
 
 ## Use a different Python version
 
-Python versions 3.9 through 3.12 are all supported for Serverless deployments. You can specify the Python version you want to use in your GitHub or GitLab workflow, or by using the `dagster-cloud` CLI.
+Python versions 3.9 through 3.13 are all supported for Serverless deployments. You can specify the Python version you want to use in your GitHub or GitLab workflow, or by using the `dagster-cloud` CLI.
 
 <Tabs groupId="method">
 <TabItem value="GitHub" label="GitHub">
