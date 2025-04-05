@@ -83,6 +83,9 @@ def test_dynamic_partitioned_run():
 
         instance.add_dynamic_partitions("foo", ["a"])
         assert partitions_def.get_partition_keys(dynamic_partitions_store=instance) == ["a"]
+        assert get_paginated_partition_keys(partitions_def, dynamic_partitions_store=instance) == [
+            "a"
+        ]
         assert materialize([my_asset], instance=instance, partition_key="a").success
         materialization = instance.get_latest_materialization_event(AssetKey("my_asset"))
         assert materialization
