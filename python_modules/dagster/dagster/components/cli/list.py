@@ -2,7 +2,7 @@ import json
 from typing import Literal, Optional, Union
 
 import click
-from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.serdes.objects import PackageEntryKey
 from dagster_shared.serdes.serdes import serialize_value
 from pydantic import ConfigDict, TypeAdapter, create_model
 
@@ -22,9 +22,9 @@ from dagster.components.core.defs import (
     DgScheduleMetadata,
     DgSensorMetadata,
 )
-from dagster.components.core.library_object import (
-    discover_entry_point_library_objects,
-    discover_library_objects,
+from dagster.components.core.package_entry import (
+    discover_entry_point_package_entries,
+    discover_package_entries,
 )
 from dagster.components.core.snapshot import get_library_object_snap
 
@@ -148,18 +148,18 @@ def list_definitions_command(
 
 def _load_library_objects(
     entry_points: bool, extra_modules: tuple[str, ...]
-) -> dict[LibraryObjectKey, object]:
+) -> dict[PackageEntryKey, object]:
     objects = {}
     if entry_points:
-        objects.update(discover_entry_point_library_objects())
+        objects.update(discover_entry_point_package_entries())
     if extra_modules:
-        objects.update(discover_library_objects(extra_modules))
+        objects.update(discover_package_entries(extra_modules))
     return objects
 
 
 def _load_component_types(
     entry_points: bool, extra_modules: tuple[str, ...]
-) -> dict[LibraryObjectKey, type[Component]]:
+) -> dict[PackageEntryKey, type[Component]]:
     return {
         key: obj
         for key, obj in _load_library_objects(entry_points, extra_modules).items()
