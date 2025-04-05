@@ -1,4 +1,5 @@
 import textwrap
+from collections.abc import Sequence
 from typing import Any, Optional
 
 from dagster_shared.record import record
@@ -45,6 +46,8 @@ class LibraryObjectSnap:
     key: LibraryObjectKey
     summary: Optional[str]
     description: Optional[str]
+    author: Optional[str] = None
+    tags: Optional[Sequence[str]] = None
     scaffolder: Optional["ScaffolderSnap"]
 
     @property

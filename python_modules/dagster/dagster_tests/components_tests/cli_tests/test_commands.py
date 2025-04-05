@@ -62,6 +62,8 @@ def test_list_library_objects_from_module():
             "title": "SimpleAssetComponentModel",
             "type": "object",
         },
+        author="John Smith",
+        tags=["a", "b", "c"],
         description="A simple asset that returns a constant string value.",
         summary="A simple asset that returns a constant string value.",
         scaffolder=ScaffolderSnap(schema=None),

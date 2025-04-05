@@ -157,8 +157,8 @@ class ComponentTypeJson(TypedDict):
     """Component type JSON, used to back dg docs webapp."""
 
     name: str
-    author: str
-    tags: list[str]
+    author: Optional[str]
+    tags: Optional[Sequence[str]]
     example: str
     schema: str
     description: Optional[str]
@@ -196,8 +196,8 @@ def json_for_component_type(
     sample_yaml = generate_sample_yaml(typename, remote_component_type.schema or {})
     return ComponentTypeJson(
         name=typename,
-        author="",
-        tags=[],
+        author=remote_component_type.author or None,
+        tags=remote_component_type.tags or None,
         example=sample_yaml,
         schema=json.dumps(remote_component_type.schema),
         description=remote_component_type.description,
