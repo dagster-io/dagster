@@ -142,6 +142,10 @@ retention:
       failure: 30
       success: -1
 
+backfills:
+  use_threads: true
+  num_workers: 8
+
 sensors:
   use_threads: true
   num_workers: 8
@@ -276,6 +280,16 @@ retention:
       skipped: 7
       failure: 30
       success: -1
+```
+
+### `backfills`
+
+Configures how backfills are evaluated.
+
+```yaml
+backfills:
+  use_threads: true
+  num_workers: 8
 ```
 
 ### `sensors`
