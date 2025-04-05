@@ -763,7 +763,7 @@ class FivetranClient:
         connector_id: str,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
-    ) -> FivetranOutput:
+    ) -> Optional[FivetranOutput]:
         """Initializes a sync operation for the given connector, and polls until it completes.
 
         Args:
@@ -774,8 +774,9 @@ class FivetranClient:
                 out. By default, this will never time out.
 
         Returns:
-            :py:class:`~FivetranOutput`:
-                Object containing details about the connector and the tables it updates
+            Optional[FivetranOutput]:
+                Returns a :py:class:`~FivetranOutput` object containing details
+                about the connector and the tables it synced. If the connector is not synced, None is returned.
         """
         return self._sync_and_poll(
             sync_fn=self.start_sync,
@@ -790,7 +791,7 @@ class FivetranClient:
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
         resync_parameters: Optional[Mapping[str, Sequence[str]]] = None,
-    ) -> FivetranOutput:
+    ) -> Optional[FivetranOutput]:
         """Initializes a historical resync operation for the given connector, and polls until it completes.
 
         Args:
@@ -804,8 +805,9 @@ class FivetranClient:
                 out. By default, this will never time out.
 
         Returns:
-            :py:class:`~FivetranOutput`:
-                Object containing details about the connector and the tables it updates
+            Optional[FivetranOutput]:
+                Returns a :py:class:`~FivetranOutput` object containing details
+                about the connector and the tables it synced. If the connector is not synced, None is returned.
         """
         return self._sync_and_poll(
             sync_fn=partial(self.start_resync, resync_parameters=resync_parameters),
@@ -820,11 +822,17 @@ class FivetranClient:
         connector_id: str,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
         poll_timeout: Optional[float] = None,
-    ) -> FivetranOutput:
+    ) -> Optional[FivetranOutput]:
         schema_config_details = self.get_schema_config_for_connector(connector_id)
         connector = FivetranConnector.from_connector_details(
             connector_details=self.get_connector_details(connector_id)
         )
+        if connector.paused:
+            self._log.warning(
+                f"Cannot sync connector {connector.name} with ID {connector.id} because the connector is paused. "
+                "Make sure the connector is enabled before syncing it."
+            )
+            return None
         sync_fn(connector_id=connector_id)
         final_details = self.poll_sync(
             connector_id=connector_id,
@@ -1072,6 +1080,14 @@ class FivetranWorkspace(ConfigurableResource):
         fivetran_output = client.sync_and_poll(
             connector_id=connector_id,
         )
+
+        # The FivetranOutput is None if the connector hasn't been synced
+        if not fivetran_output:
+            context.log.warning(
+                f"The connector with ID {connector_id} has not been synced."
+                f"Make sure that your connector is enabled before syncing it."
+            )
+            return
 
         materialized_asset_keys = set()
         for materialization in self._generate_materialization(

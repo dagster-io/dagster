@@ -185,7 +185,9 @@ SAMPLE_DESTINATION_DETAILS = {
 # Taken from Fivetran API documentation
 # https://fivetran.com/docs/rest-api/api-reference/connectors/connector-details
 # The sample is parameterized to test the poll method
-def get_sample_connection_details(succeeded_at: str, failed_at: str) -> Mapping[str, Any]:
+def get_sample_connection_details(
+    succeeded_at: str, failed_at: str, paused: bool = False
+) -> Mapping[str, Any]:
     return {
         "code": "Success",
         "message": "Operation performed.",
@@ -193,7 +195,7 @@ def get_sample_connection_details(succeeded_at: str, failed_at: str) -> Mapping[
             "id": TEST_CONNECTOR_ID,
             "service": "15five",
             "schema": "schema.table",
-            "paused": False,
+            "paused": paused,
             "status": {
                 "tasks": [
                     {
@@ -666,5 +668,11 @@ def sync_and_poll_fixture():
             )["data"],
             schema_config=ALTERED_SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR["data"],
         )
-        mocked_function.side_effect = [expected_fivetran_output, unexpected_fivetran_output]
+        # sync_and_poll returns None if the connector is paused
+        paused_connector_output = None
+        mocked_function.side_effect = [
+            expected_fivetran_output,
+            unexpected_fivetran_output,
+            paused_connector_output,
+        ]
         yield mocked_function
