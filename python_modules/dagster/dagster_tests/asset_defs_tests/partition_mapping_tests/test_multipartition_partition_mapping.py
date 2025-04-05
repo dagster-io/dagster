@@ -246,6 +246,12 @@ def test_error_thrown_when_no_partition_dimension_name_provided():
         )
 
     with pytest.raises(CheckError, match="dimension name must be specified"):
+        MultiToSingleDimensionPartitionMapping().validate_partition_mapping(
+            multipartitions_def,
+            single_dimension_def,
+        )
+
+    with pytest.raises(CheckError, match="dimension name must be specified"):
         MultiToSingleDimensionPartitionMapping().get_downstream_partitions_for_partitions(
             multipartitions_def.empty_subset().with_partition_key_range(
                 multipartitions_def,
@@ -772,18 +778,25 @@ def test_error_multipartitions_mapping():
         }
     )
 
+    error_mapping = MultiPartitionMapping(
+        {
+            "nonexistent dimension": DimensionPartitionMapping(
+                "other nonexistent dimension", SpecificPartitionsPartitionMapping(["c"])
+            )
+        }
+    )
+
     with pytest.raises(
         CheckError, match="upstream dimension name that is not in the upstream partitions def"
     ):
-        MultiPartitionMapping(
-            {
-                "nonexistent dimension": DimensionPartitionMapping(
-                    "other nonexistent dimension", SpecificPartitionsPartitionMapping(["c"])
-                )
-            }
-        ).get_upstream_mapped_partitions_result_for_partitions(
+        error_mapping.get_upstream_mapped_partitions_result_for_partitions(
             weekly_abc.empty_subset(), weekly_abc, daily_123
         )
+
+    with pytest.raises(
+        CheckError, match="upstream dimension name that is not in the upstream partitions def"
+    ):
+        error_mapping.validate_partition_mapping(weekly_abc, daily_123)
 
 
 def test_multi_partition_mapping_with_asset_deps():
