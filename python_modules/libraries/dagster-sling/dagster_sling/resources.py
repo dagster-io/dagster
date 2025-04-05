@@ -559,37 +559,22 @@ class SlingResource(ConfigurableResource):
         # Get start time from wall clock
         start_time = time.time()
 
-        for line in sling._exec_cmd(cmd, env=env):  # noqa
-            if line == "":  # if empty line -- skipped
-                continue
-            text = self._clean_timestamp_log(line)  # else clean timestamp
-            logger.info(text)  # log info to dagster log
+        try:
+            for line in sling._exec_cmd(cmd, env=env):  # noqa
+                if line == "":  # if empty line -- skipped
+                    continue
+                text = self._clean_timestamp_log(line)  # else clean timestamp
+                logger.info(text)  # log info to dagster log
 
-            # if no current stream is chosen
-            if current_stream is None:
-                # Try to match stream name with stream keyword
-                matched = re.findall("stream (.*)$", text)
+                # if no current stream is chosen
+                if current_stream is None:
+                    # Try to match stream name with stream keyword
+                    matched = re.findall("stream (.*)$", text)
 
-                # If found, extract stream name, stream config, asset key
-                if matched:
-                    current_stream = matched[0]
-                    current_config = replication_config.get("streams", {}).get(current_stream, {})
-                    asset_key = dagster_sling_translator.get_asset_spec(
-                        {"name": current_stream, "config": current_config}
-                    ).key
-                    if debug:
-                        logger.debug(current_stream)
-                        logger.debug(current_config)
-                        logger.debug(asset_key)
-                # Else search for single replication format
-                else:
                     # If found, extract stream name, stream config, asset key
-                    matched = re.findall(r"Sling Replication [|] .* [|] (\S*)$", text)
                     if matched:
                         current_stream = matched[0]
-                        current_config = replication_config.get("streams", {}).get(
-                            current_stream, {}
-                        )
+                        current_config = replication_config.get("streams", {}).get(current_stream, {})
                         asset_key = dagster_sling_translator.get_asset_spec(
                             {"name": current_stream, "config": current_config}
                         ).key
@@ -597,31 +582,54 @@ class SlingResource(ConfigurableResource):
                             logger.debug(current_stream)
                             logger.debug(current_config)
                             logger.debug(asset_key)
-                    # Else log that no stream found. This is normal for a few line. But if multiple line come up, further evaluate might be needed for other pattern
+                    # Else search for single replication format
                     else:
-                        if debug:
-                            logger.debug("no match stream name")
-            # If current stream is already choose
-            else:
-                # Search whether the current stream ended
-                matched = re.findall("execution succeeded", text)
+                        # If found, extract stream name, stream config, asset key
+                        matched = re.findall(r"Sling Replication [|] .* [|] (\S*)$", text)
+                        if matched:
+                            current_stream = matched[0]
+                            current_config = replication_config.get("streams", {}).get(
+                                current_stream, {}
+                            )
+                            asset_key = dagster_sling_translator.get_asset_spec(
+                                {"name": current_stream, "config": current_config}
+                            ).key
+                            if debug:
+                                logger.debug(current_stream)
+                                logger.debug(current_config)
+                                logger.debug(asset_key)
+                        # Else log that no stream found. This is normal for a few line. But if multiple line come up, further evaluate might be needed for other pattern
+                        else:
+                            if debug:
+                                logger.debug("no match stream name")
+                # If current stream is already choose
+                else:
+                    # Search whether the current stream ended
+                    matched = re.findall("execution (succeeded|failed)", text)
 
-                if matched:
-                    # If yes, query metadata and materialize asset
-                    metadata = self._query_metadata("\n".join(metadata_text), start_time=start_time)
-                    start_time = time.time()
-                    metadata["stream_name"] = current_stream
-                    logger.debug(metadata)
-                    if context.has_assets_def:
-                        yield MaterializeResult(asset_key=asset_key, metadata=metadata)  # pyright: ignore[reportPossiblyUnboundVariable]
-                    else:
-                        yield AssetMaterialization(asset_key=asset_key, metadata=metadata)  # pyright: ignore[reportPossiblyUnboundVariable]
+                    if matched:
 
-                    current_stream = None
-                    metadata_text = []
+                        if matched[0] == "succeeded":
+                            # If yes, query metadata and materialize asset
+                            metadata = self._query_metadata("\n".join(metadata_text), start_time=start_time)
+                            start_time = time.time()
+                            metadata["stream_name"] = current_stream
+                            logger.debug(metadata)
+                            if context.has_assets_def:
+                                yield MaterializeResult(asset_key=asset_key, metadata=metadata)  # pyright: ignore[reportPossiblyUnboundVariable]
+                            else:
+                                yield AssetMaterialization(asset_key=asset_key, metadata=metadata)  # pyright: ignore[reportPossiblyUnboundVariable]
+                        else:
+                            start_time = time.time()
+                            logger.info(f"{current_stream} failed")
+                        current_stream = None
+                        metadata_text = []
 
-                metadata_text.append(text)
+                    metadata_text.append(text)
 
+        except Exception as e:
+            os.remove(temp_file)
+            raise Exception from e
         # clean up unused file
         os.remove(temp_file)
 
