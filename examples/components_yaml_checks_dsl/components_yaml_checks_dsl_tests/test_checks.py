@@ -4,7 +4,6 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.materialize import materialize
-from dagster.components.core.context import component_defs_for_test
 
 from components_yaml_checks_dsl.definitions import defs
 from components_yaml_checks_dsl.lib import HooliAssetChecksComponent
@@ -53,7 +52,7 @@ def test_execute_component() -> None:
         ]
     )
 
-    defs = Definitions.merge(component_defs_for_test(component), Definitions([upstream]))
+    defs = Definitions.merge(component.build_test_defs(), Definitions([upstream]))
 
     assert AssetKey("upstream") in {spec.key for spec in defs.get_all_asset_specs()}
 

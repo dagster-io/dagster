@@ -43,6 +43,12 @@ class Component(ABC):
     @abstractmethod
     def build_defs(self, context: "ComponentLoadContext") -> Definitions: ...
 
+    def build_test_defs(self) -> Definitions:
+        from dagster.components.core.context import ComponentLoadContext
+
+        """Build definitions for testing."""
+        return self.build_defs(ComponentLoadContext.for_test())
+
     @classmethod
     def load(cls, attributes: Optional[BaseModel], context: "ComponentLoadContext") -> Self:
         if issubclass(cls, Resolvable):
