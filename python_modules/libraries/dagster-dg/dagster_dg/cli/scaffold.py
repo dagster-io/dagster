@@ -245,7 +245,7 @@ def scaffold_project_command(
     │       │   └── __init__.py
     │       └── lib
     │           └── __init__.py
-    ├── <project_name>_tests
+    ├── tests
     │   └── __init__.py
     └── pyproject.toml
 
