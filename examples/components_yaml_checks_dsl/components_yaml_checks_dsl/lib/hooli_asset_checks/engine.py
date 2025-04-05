@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import NamedTuple, Optional, Union
 
 import dagster as dg
+import dagster_shared.check
 import pandas as pd
 from typing_extensions import TypeAlias
 
@@ -43,12 +44,8 @@ def build_metric(asset_data, metric_str: str) -> "Metric":
         raise ValueError(f"Unknown metric: {metric_str}")
 
 
-import dagster_shared.check
-
-
 def evaluate_static_threshold(df: pd.DataFrame, check: StaticThresholdCheck) -> dg.AssetCheckResult:
     metric = build_metric(df, check.metric)
-    # assert isinstance(metric, ValueMetric)
     metric = dagster_shared.check.inst(metric, ValueMetric)
     return evaluate_static_threshold_values(
         latest_value=metric.value,
