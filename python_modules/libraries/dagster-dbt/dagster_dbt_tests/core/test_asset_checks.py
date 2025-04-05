@@ -35,6 +35,9 @@ dagster_dbt_translator_with_checks = DagsterDbtTranslator(
 dagster_dbt_translator_without_checks = DagsterDbtTranslator(
     settings=DagsterDbtTranslatorSettings(enable_asset_checks=False)
 )
+dagster_dbt_translator_with_checks_and_source_checks = DagsterDbtTranslator(
+    settings=DagsterDbtTranslatorSettings(enable_source_tests_as_checks=True)
+)
 
 
 @pytest.fixture(params=[[["build"]], [["seed"], ["run"], ["test"]]], ids=["build", "seed-run-test"])
@@ -834,3 +837,38 @@ def test_dbt_source_tests(
         )
         == 1
     )
+
+
+@pytest.mark.parametrize(
+    "selection,expected_num_source_test_execs,success",
+    [(None, 2, False), ("stg_customers", 2, True), ("stg_orders", 0, True)],
+    ids=["select_all", "select_downstream_of_source", "select_non_source"],
+)
+def test_dbt_source_tests_checks_enabled(
+    test_asset_checks_manifest: dict[str, Any],
+    selection: Optional[str],
+    expected_num_source_test_execs: int,
+    success: bool,
+) -> None:
+    """Test behavior when dbt source tests are configured, but checks are disabled."""
+
+    @dbt_assets(
+        manifest=test_asset_checks_manifest,
+        dagster_dbt_translator=dagster_dbt_translator_with_checks_and_source_checks,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_asset_checks_path))},
+        raise_on_error=False,
+        selection=selection,
+    )
+    assert result.success == success
+    asset_check_results = [
+        eval_result.asset_key
+        for eval_result in result.get_asset_check_evaluations()
+        if eval_result.asset_key == AssetKey(["jaffle_shop", "raw_customers"])
+    ]
+    assert len(asset_check_results) == expected_num_source_test_execs
