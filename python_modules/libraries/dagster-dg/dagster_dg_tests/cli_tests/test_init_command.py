@@ -28,7 +28,7 @@ def test_init_command_success(monkeypatch) -> None:
         assert Path("helloworld").exists()
         assert Path("helloworld/src/helloworld").exists()
         assert Path("helloworld/pyproject.toml").exists()
-        assert Path("helloworld/helloworld_tests").exists()
+        assert Path("helloworld/tests").exists()
 
 
 def test_init_command_success_with_workspace_name(monkeypatch) -> None:
@@ -50,7 +50,7 @@ def test_init_command_success_with_workspace_name(monkeypatch) -> None:
         assert Path("dagster-workspace/projects/helloworld").exists()
         assert Path("dagster-workspace/projects/helloworld/src/helloworld").exists()
         assert Path("dagster-workspace/projects/helloworld/pyproject.toml").exists()
-        assert Path("dagster-workspace/projects/helloworld/helloworld_tests").exists()
+        assert Path("dagster-workspace/projects/helloworld/tests").exists()
 
         # Check workspace TOML content
         toml = tomlkit.parse(Path("dagster-workspace/dg.toml").read_text())
@@ -78,7 +78,7 @@ def test_init_override_project_name_prompt_with_workspace(monkeypatch) -> None:
         assert Path("my-workspace/projects/goodbyeworld").exists()
         assert Path("my-workspace/projects/goodbyeworld/src/goodbyeworld").exists()
         assert Path("my-workspace/projects/goodbyeworld/pyproject.toml").exists()
-        assert Path("my-workspace/projects/goodbyeworld/goodbyeworld_tests").exists()
+        assert Path("my-workspace/projects/goodbyeworld/tests").exists()
 
 
 def test_init_override_project_name_prompt_without_workspace(monkeypatch) -> None:
@@ -90,7 +90,7 @@ def test_init_override_project_name_prompt_without_workspace(monkeypatch) -> Non
         assert Path("goodbyeworld").exists()
         assert Path("goodbyeworld/src/goodbyeworld").exists()
         assert Path("goodbyeworld/pyproject.toml").exists()
-        assert Path("goodbyeworld/goodbyeworld_tests").exists()
+        assert Path("goodbyeworld/tests").exists()
 
 
 def test_init_workspace_already_exists_failure(monkeypatch) -> None:
