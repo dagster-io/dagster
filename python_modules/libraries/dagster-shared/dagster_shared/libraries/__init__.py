@@ -77,7 +77,7 @@ def core_version_from_library_version(library_version: str) -> str:
     parsed_version = parse_package_version(library_version)
 
     release = parsed_version.release
-    if release[0] < 1:
+    if release[0] < 1 and len(release) > 1:
         core_version = ".".join(["1", str(release[1] - 16), str(release[2])])
 
         if parsed_version.is_prerelease:
