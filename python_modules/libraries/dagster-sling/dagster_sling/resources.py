@@ -482,15 +482,19 @@ class SlingResource(ConfigurableResource):
 
         logger.debug(f"Running Sling replication with command: {cmd}")
 
+        exception = None
         # Get start time from wall clock
         start_time = time.time()
-
-        results = sling._run(  # noqa
-            cmd=cmd,
-            temp_file=temp_file,
-            return_output=True,
-            env=env,
-        )
+        try:
+            results = sling._run(  # noqa
+                cmd=cmd,
+                temp_file=temp_file,
+                return_output=True,
+                env=env,
+            )
+        except Exception as e:
+            results = str(e)
+            exception = e
 
         end_time = time.time()
 
@@ -498,6 +502,13 @@ class SlingResource(ConfigurableResource):
             clean_line = self._clean_line(row)
             logger.debug(clean_line + "\n")
             self._stdout.append(clean_line)
+
+        print(results)
+        matched = re.findall(r"(?:(?:stream )|(?:Sling Replication [|] .* [|] ))(\S+)\n[\S\s]*?execution (succeeded|failed)", results)
+        print(matched)
+        replication_results={}
+        for (stream_name, stream_result) in matched:
+            replication_results[stream_name] = stream_result
 
         for stream_definition in stream_definitions:
             asset_key = dagster_sling_translator.get_asset_spec(stream_definition).key
@@ -515,11 +526,18 @@ class SlingResource(ConfigurableResource):
                     table_name=table_name,
                 ),
             }
-
-            if context.has_assets_def:
-                yield MaterializeResult(asset_key=asset_key, metadata=metadata)
+            print(replication_results)
+            print(replication_results.get(stream_definition["name"],""))
+            if replication_results.get(stream_definition["name"],"") == "succeeded":
+                if context.has_assets_def:
+                    yield MaterializeResult(asset_key=asset_key, metadata=metadata)
+                else:
+                    yield AssetMaterialization(asset_key=asset_key, metadata=metadata)
             else:
-                yield AssetMaterialization(asset_key=asset_key, metadata=metadata)
+                pass
+
+        if exception:
+            raise exception
 
     def _stream_sling_replicate(
         self,
