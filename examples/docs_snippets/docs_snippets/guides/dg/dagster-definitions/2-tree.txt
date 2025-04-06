@@ -1,8 +1,6 @@
 tree
 
 .
-├── my_project_tests
-│   └── __init__.py
 ├── pyproject.toml
 ├── src
 │   └── my_project
@@ -14,6 +12,8 @@ tree
 │       │       └── my_asset.py
 │       └── lib
 │           └── __init__.py
+├── tests
+│   └── __init__.py
 └── uv.lock
 
 7 directories, 8 files
