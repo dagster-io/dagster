@@ -503,12 +503,14 @@ class SlingResource(ConfigurableResource):
             logger.debug(clean_line + "\n")
             self._stdout.append(clean_line)
 
-        print(results)
-        matched = re.findall(r"(?:(?:stream )|(?:Sling Replication [|] .* [|] ))(\S+)\n[\S\s]*?execution (succeeded|failed)", results)
-        print(matched)
-        replication_results={}
-        for (stream_name, stream_result) in matched:
-            replication_results[stream_name] = stream_result
+        matched = re.findall(
+            r"(?:(?:stream )|(?:Sling Replication [|] .* [|] ))(\S+)\n[\S\s]*?execution (succeeded|failed)",
+            results,
+        )
+
+        replication_results = {
+            stream_name: stream_result for (stream_name, stream_result) in matched
+        }
 
         for stream_definition in stream_definitions:
             asset_key = dagster_sling_translator.get_asset_spec(stream_definition).key
@@ -526,9 +528,8 @@ class SlingResource(ConfigurableResource):
                     table_name=table_name,
                 ),
             }
-            print(replication_results)
-            print(replication_results.get(stream_definition["name"],""))
-            if replication_results.get(stream_definition["name"],"") == "succeeded":
+
+            if replication_results.get(stream_definition["name"], "") == "succeeded":
                 if context.has_assets_def:
                     yield MaterializeResult(asset_key=asset_key, metadata=metadata)
                 else:
@@ -576,6 +577,7 @@ class SlingResource(ConfigurableResource):
 
         # Get start time from wall clock
         start_time = time.time()
+        failed_stream = []
 
         try:
             for line in sling._exec_cmd(cmd, env=env):  # noqa
@@ -592,7 +594,9 @@ class SlingResource(ConfigurableResource):
                     # If found, extract stream name, stream config, asset key
                     if matched:
                         current_stream = matched[0]
-                        current_config = replication_config.get("streams", {}).get(current_stream, {})
+                        current_config = replication_config.get("streams", {}).get(
+                            current_stream, {}
+                        )
                         asset_key = dagster_sling_translator.get_asset_spec(
                             {"name": current_stream, "config": current_config}
                         ).key
@@ -626,10 +630,11 @@ class SlingResource(ConfigurableResource):
                     matched = re.findall("execution (succeeded|failed)", text)
 
                     if matched:
-
                         if matched[0] == "succeeded":
                             # If yes, query metadata and materialize asset
-                            metadata = self._query_metadata("\n".join(metadata_text), start_time=start_time)
+                            metadata = self._query_metadata(
+                                "\n".join(metadata_text), start_time=start_time
+                            )
                             start_time = time.time()
                             metadata["stream_name"] = current_stream
                             logger.debug(metadata)
@@ -640,6 +645,7 @@ class SlingResource(ConfigurableResource):
                         else:
                             start_time = time.time()
                             logger.info(f"{current_stream} failed")
+                            failed_stream.append(current_stream)
                         current_stream = None
                         metadata_text = []
 
@@ -647,7 +653,9 @@ class SlingResource(ConfigurableResource):
 
         except Exception as e:
             os.remove(temp_file)
-            raise Exception from e
+            fail_string = ",".join(failed_stream)
+            raise Exception(f"Sling replication fail: {fail_string} failed") from e
+
         # clean up unused file
         os.remove(temp_file)
 

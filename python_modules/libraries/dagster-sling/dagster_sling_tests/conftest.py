@@ -104,6 +104,7 @@ def csv_to_sqlite_dataworks_replication(path_to_dataworks_folder):
     conf["streams"] = conf_streams
     return conf
 
+
 @pytest.fixture
 def csv_to_sqlite_failed_replication(path_to_dataworks_folder):
     with open(

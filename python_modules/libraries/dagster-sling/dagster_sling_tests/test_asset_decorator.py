@@ -587,14 +587,10 @@ def test_runs_failed_sling_config(
             ),
         ]
     )
-    
-    res = materialize(
-        [my_sling_assets],
-        resources={"sling": sling_resource},
-        raise_on_error=False
-    )
 
-    assert res.success==False
+    res = materialize([my_sling_assets], resources={"sling": sling_resource}, raise_on_error=False)
+
+    assert not res.success
     asset_materializations = res.get_asset_materialization_events()
 
     failed_key = AssetKey(["target", "main", "failed_file"])

@@ -108,6 +108,7 @@ def test_streams_sling_replicate(
     counts = sqlite_connection.execute("SELECT count(1) FROM main.products").fetchone()[0]
     assert counts == 4
 
+
 def test_stream_sling_replicate_metadata(
     csv_to_sqlite_dataworks_replication: SlingReplicationParam,
     path_to_temp_sqlite_db: str,
@@ -162,6 +163,7 @@ def test_stream_sling_replicate_metadata(
     assert products_metadata["row_count"].value == "4"
     assert products_metadata["destination_table"].value == "main.products"
 
+
 def test_failed_stream_sling_replicate(
     csv_to_sqlite_failed_replication: SlingReplicationParam,
     path_to_temp_sqlite_db: str,
@@ -183,14 +185,10 @@ def test_failed_stream_sling_replicate(
             ),
         ]
     )
-    
-    res = materialize(
-        [my_sling_assets],
-        resources={"sling": sling_resource},
-        raise_on_error=False
-    )
 
-    assert res.success==False
+    res = materialize([my_sling_assets], resources={"sling": sling_resource}, raise_on_error=False)
+
+    assert not res.success
     asset_materializations = res.get_asset_materialization_events()
     assert len(asset_materializations) == 3
 
@@ -251,5 +249,3 @@ def test_failed_stream_sling_replicate(
     assert products_metadata["stream_name"].value == f"file://{product_name_path}"
     assert products_metadata["row_count"].value == "4"
     assert products_metadata["destination_table"].value == "main.products"
-
-    
