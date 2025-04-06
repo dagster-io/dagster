@@ -92,10 +92,6 @@ class DgContext:
     def for_project_environment(cls, path: Path, command_line_config: DgRawCliConfig) -> Self:
         context = cls.from_file_discovery_and_command_line_config(path, command_line_config)
 
-        # Commands that operate on a project need to be run (a) with dagster-components
-        # available; and (b) inside a Dagster project context.
-        _validate_dagster_components_availability(context)
-
         if not context.is_project:
             exit_with_error(NOT_PROJECT_ERROR_MESSAGE)
         return context
