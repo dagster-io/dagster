@@ -209,8 +209,8 @@ def list_defs_command(output_json: bool, **global_options: object) -> None:
             table = Table(border_style="dim")
             table.add_column("Name")
 
-            for schedule in schedules:
-                table.add_row(schedule.name)
+            for sensor in sensors:
+                table.add_row(sensor.name)
             console.print(table)
 
 
