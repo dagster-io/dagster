@@ -150,6 +150,9 @@ class StepOutputData(
     def mapping_key(self) -> Optional[str]:
         return self.step_output_handle.mapping_key
 
+    def redact_errors(self):
+        return self
+
 
 @whitelist_for_serdes
 class StepOutputHandle(
