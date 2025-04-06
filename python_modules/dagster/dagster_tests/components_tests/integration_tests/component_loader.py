@@ -8,7 +8,8 @@ from typing import Optional, Union
 import pytest
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._utils import pushd
-from dagster.components.core.load_defs import load_defs
+from dagster.components.component.component import ComponentRequirements
+from dagster.components.core.load_defs import load_component_requirements, load_defs
 
 from dagster_tests.components_tests.utils import create_project_from_components
 
@@ -26,6 +27,17 @@ def load_test_component_defs(
         module = importlib.import_module(f"{project_name}.defs.{Path(src_path).stem}")
 
         yield load_defs(defs_root=module)
+
+
+def load_test_component_requirements(
+    src_path: Union[str, Path], local_component_defn_to_inject: Optional[Path] = None
+) -> ComponentRequirements:
+    with create_project_from_components(
+        str(src_path), local_component_defn_to_inject=local_component_defn_to_inject
+    ) as (_, project_name):
+        module = importlib.import_module(f"{project_name}.defs.{Path(src_path).stem}")
+
+        return load_component_requirements(defs_root=module)
 
 
 def sync_load_test_component_defs(

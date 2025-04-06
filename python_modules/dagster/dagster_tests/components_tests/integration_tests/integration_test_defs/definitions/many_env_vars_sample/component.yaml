@@ -1,0 +1,9 @@
+type: .MyComponent
+
+attributes:
+  a_string: "{{ env('MY_ENV_VAR') }}"
+  an_int: "{{ env('MY_INT_ENV_VAR') }}"
+
+requirements:
+  env:
+    - "MY_UNLISTED_ENV_VAR"

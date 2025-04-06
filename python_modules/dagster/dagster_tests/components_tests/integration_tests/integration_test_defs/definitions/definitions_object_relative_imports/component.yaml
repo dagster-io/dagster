@@ -2,3 +2,7 @@ type: dagster.components.DefinitionsComponent
 
 attributes:
   path: definitions_other_name.py
+
+requirements:
+  env:
+    - "DEFS_OBJECT_ENV"
