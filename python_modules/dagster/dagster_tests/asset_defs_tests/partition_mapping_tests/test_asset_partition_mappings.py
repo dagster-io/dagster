@@ -85,6 +85,13 @@ def test_access_partition_keys_from_context_non_identity_partition_mapping():
                 required_but_nonexistent_subset=upstream_partitions_def.empty_subset(),
             )
 
+        def validate_partition_mapping(
+            self,
+            upstream_partitions_def: PartitionsDefinition,
+            downstream_partitions_def: PartitionsDefinition,
+        ):
+            pass
+
         def get_downstream_partitions_for_partitions(
             self,
             upstream_partitions_subset: PartitionsSubset,
@@ -443,6 +450,17 @@ def test_partition_keys_in_range():
         resources={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
         partition_key="2022-09-11",
     ).success
+
+
+def test_timezone_error_partition_mapping():
+    utc = DailyPartitionsDefinition(start_date="2020-01-01")
+    pacific = DailyPartitionsDefinition(start_date="2020-01-01", timezone="US/Pacific")
+    partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=0)
+
+    with pytest.raises(Exception, match="Timezones UTC and US/Pacific don't match"):
+        partition_mapping.validate_partition_mapping(utc, pacific)
+
+    partition_mapping.validate_partition_mapping(utc, utc)
 
 
 def test_dependency_resolution_partition_mapping():
