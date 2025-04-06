@@ -3400,3 +3400,10 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def da_request_backfills(self) -> bool:
         return False
+
+    def max_num_runs_launched_per_tick(self) -> Optional[int]:
+        env_val = os.getenv("DAGSTER_SENSOR_MAX_NUM_RUNS_LAUNCHED_PER_TICK", None)
+        if env_val:
+            return int(env_val)
+
+        return None

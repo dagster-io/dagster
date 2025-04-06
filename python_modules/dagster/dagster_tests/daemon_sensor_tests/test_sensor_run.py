@@ -65,6 +65,7 @@ from dagster._core.definitions.sensor_definition import (
     SensorType,
     SkipReason,
 )
+from dagster._core.errors import DagsterTickMaxRunsExceededError
 from dagster._core.events import DagsterEventType
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.remote_representation import (
@@ -84,6 +85,7 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.test_utils import (
     BlockingThreadPoolExecutor,
     create_test_daemon_workspace_context,
+    environ,
     freeze_time,
     instance_for_test,
     wait_for_futures,
@@ -92,6 +94,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.daemon import SpanMarker
 from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
+from dagster._daemon.utils import DaemonErrorCapture
 from dagster._record import copy
 from dagster._time import create_datetime, get_current_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
@@ -856,6 +859,11 @@ def job_no_tags_with_run_tags_sensor(context):
     return RunRequest()
 
 
+@sensor(job=the_job)
+def emits_many_run_requests_sensor(context: "SensorEvaluationContext"):
+    return [RunRequest() for _ in range(100)]
+
+
 @repository
 def the_repo():
     return [
@@ -934,6 +942,7 @@ def the_repo():
         job_with_tags_no_run_tags_sensor,
         job_no_tags_with_run_tags,
         job_no_tags_with_run_tags_sensor,
+        emits_many_run_requests_sensor,
     ]
 
 
@@ -3640,3 +3649,37 @@ def test_sensor_run_tags(
         )
         assert "tag_foo" not in no_tags_with_run_tags_run.tags
         assert no_tags_with_run_tags_run.tags["run_tag_foo"] == "bar"
+
+
+def test_respect_max_num_runs_launched_per_tick_envvar(
+    executor: ThreadPoolExecutor,
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    remote_repo: RemoteRepository,
+):
+    sensor = remote_repo.get_sensor("emits_many_run_requests_sensor")
+    instance.start_sensor(sensor)
+
+    with mock.patch.object(
+        DaemonErrorCapture,
+        "process_exception",
+        wraps=DaemonErrorCapture.process_exception,
+    ) as handler:
+        with environ(
+            {
+                "DAGSTER_SENSOR_MAX_NUM_RUNS_LAUNCHED_PER_TICK": "20",
+            }
+        ):
+            evaluate_sensors(workspace_context, executor)
+            exc_info = handler.call_args.kwargs["exc_info"]
+            assert isinstance(exc_info[1], DagsterTickMaxRunsExceededError)
+
+        handler.reset_mock()
+
+        with environ(
+            {
+                "DAGSTER_SENSOR_MAX_NUM_RUNS_LAUNCHED_PER_TICK": None,  # pyright: ignore[reportArgumentType]
+            }
+        ):
+            evaluate_sensors(workspace_context, executor)
+            handler.assert_not_called()
