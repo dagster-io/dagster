@@ -121,4 +121,4 @@ def init_command(
         python_environment=project_python_environment,
     )
 
-    click.echo("You can create additional projects later by running `dg scaffold project`.")
+    click.echo("You can create additional projects later by running 'dg scaffold project'.")
