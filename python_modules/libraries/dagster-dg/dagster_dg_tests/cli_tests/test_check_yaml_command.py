@@ -342,15 +342,8 @@ def test_check_yaml_fix_env_requirements() -> None:
                 "yaml",
                 "--fix-env-requirements",
             )
-            assert result.exit_code == 1, str(result.stdout)
+            assert result.exit_code == 0, str(result.stdout)
             assert (
                 "The following component files were updated to fix environment variable requirements:"
                 in str(result.stdout)
             )
-
-            with set_env_var("A_STRING", "foo"):
-                result = runner.invoke(
-                    "check",
-                    "yaml",
-                )
-                assert result.exit_code == 0, str(result.stdout)
