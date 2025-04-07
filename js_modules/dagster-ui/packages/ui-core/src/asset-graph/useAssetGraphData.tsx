@@ -164,8 +164,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
   const favoriteAssets = useFavoriteAssets();
 
-  console.log({favoriteAssets});
-
   const repoFilteredNodes = useMemo(() => {
     if (favoriteAssets) {
       return nodes?.filter((node) => favoriteAssets.has(tokenForAssetKey(node.assetKey)));
