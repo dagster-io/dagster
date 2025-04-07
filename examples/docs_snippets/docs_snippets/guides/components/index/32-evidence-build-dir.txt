@@ -1,0 +1,13 @@
+ls jaffle_dashboard/build
+
+_app
+api
+apple-touch-icon.png
+data
+favicon.ico
+fix-tprotocol-service-worker.js
+icon-192.png
+icon-512.png
+icon.svg
+index.html
+manifest.webmanifest

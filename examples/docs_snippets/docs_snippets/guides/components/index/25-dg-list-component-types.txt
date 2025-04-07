@@ -1,6 +1,6 @@
 dg list component-type
 
-/Users/elementl/repos/dagsterlabs/dagster/python_modules/libraries/dagster-shared/dagster_shared/libraries/__init__.py:42: UserWarning: Found version mismatch between `dagster-shared` (1!0+dev) and `dagster-evidence` (0.26.9)
+/home/floydophone/repos/dagsterlabs/dagster/python_modules/libraries/dagster-shared/dagster_shared/libraries/__init__.py:42: UserWarning: Found version mismatch between `dagster-shared` (1!0+dev) and `dagster-evidence` (0.26.9)
   warnings.warn(message)
 Using /.../jaffle-platform/.venv/bin/dagster-components
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┓

@@ -11,4 +11,4 @@ src/jaffle_platform
 └── lib
     └── __init__.py
 
-4 directories, 6 files
+3 directories, 6 files
