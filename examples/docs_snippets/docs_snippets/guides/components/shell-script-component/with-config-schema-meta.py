@@ -17,9 +17,9 @@ class ShellCommand(Component, Resolvable):
 
     # highlight-start
     @classmethod
-    def get_metadata(cls):
+    def get_component_type_metadata(cls):
         return ComponentMetadata(
-            author="John Dagster",
+            owners=["John Dagster"],
             tags=["shell", "script"],
         )
 

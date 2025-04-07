@@ -58,7 +58,7 @@ We can define the schema for our component and add it to our class as follows:
   title="my_component_library/lib/shell_command.py"
   />
 
-Additionally, it's possible to include metadata for your Component by overriding the `get_metadata` method. This allows you to set fields like `author` and `tags` that will be visible in the generated documentation.
+Additionally, it's possible to include metadata for your Component by overriding the `get_component_type_metadata` method. This allows you to set fields like `owners` and `tags` that will be visible in the generated documentation.
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/components/shell-script-component/with-config-schema-meta.py"
