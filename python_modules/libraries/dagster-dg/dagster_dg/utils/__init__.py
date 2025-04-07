@@ -358,7 +358,7 @@ def generate_missing_dagster_components_error_message(
     env_qualifier = f" for the virtual environment at {venv_path}" if venv_path else ""
     return f"""
         Could not resolve the `dagster-components` executable{env_qualifier}.
-        The `dagster-components` is included with `dagster>=1.10.8`. It is necessary for `dg` to
+        The `dagster-components` executable is included with `dagster>=1.10.8`. It is necessary for `dg` to
         interface with Python environments. Ensure that your Python environment has
         `dagster>=1.10.8` installed.
     """
