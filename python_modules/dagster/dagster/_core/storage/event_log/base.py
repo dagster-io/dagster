@@ -66,7 +66,10 @@ class AssetEntry(
             ("last_observation_record", Optional[EventLogRecord]),
             ("last_planned_materialization_storage_id", Optional[int]),
             ("last_planned_materialization_run_id", Optional[str]),
+            # Last ASSET_FAILED_TO_MATERIALIZE event with FAILED failure type
             ("last_failed_to_materialize_record", Optional[EventLogRecord]),
+            # Last ASSET_FAILED_TO_MATERIALIZE event with SKIPPED failure type
+            ("last_skipped_failed_to_materialize_record", Optional[EventLogRecord]),
         ],
     )
 ):
@@ -81,6 +84,7 @@ class AssetEntry(
         last_planned_materialization_storage_id: Optional[int] = None,
         last_planned_materialization_run_id: Optional[str] = None,
         last_failed_to_materialize_record: Optional[EventLogRecord] = None,
+        last_skipped_failed_to_materialize_record: Optional[EventLogRecord] = None,
     ):
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
@@ -111,6 +115,11 @@ class AssetEntry(
             last_failed_to_materialize_record=check.opt_inst_param(
                 last_failed_to_materialize_record,
                 "last_failed_to_materialize_record",
+                EventLogRecord,
+            ),
+            last_skipped_failed_to_materialize_record=check.opt_inst_param(
+                last_skipped_failed_to_materialize_record,
+                "last_skipped_failed_to_materialize_record",
                 EventLogRecord,
             ),
         )
@@ -144,6 +153,12 @@ class AssetEntry(
         if self.last_failed_to_materialize_record is None:
             return None
         return self.last_failed_to_materialize_record.storage_id
+
+    @property
+    def last_skipped_failed_to_materialize_storage_id(self) -> Optional[int]:
+        if self.last_skipped_failed_to_materialize_record is None:
+            return None
+        return self.last_skipped_failed_to_materialize_record.storage_id
 
 
 class AssetRecord(
