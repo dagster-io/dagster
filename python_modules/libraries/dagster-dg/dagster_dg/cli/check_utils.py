@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 import click
 import typer
-from dagster_shared.serdes.objects import LibraryObjectKey
+from dagster_shared.serdes.objects import PackageEntryKey
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from jsonschema import ValidationError
 
@@ -39,7 +39,7 @@ def augment_error_path(error_details: ValidationError) -> Sequence[Union[str, in
 
 
 def error_dict_to_formatted_error(
-    object_key: Optional[LibraryObjectKey],
+    key: Optional[PackageEntryKey],
     error_details: ValidationError,
     source_position_tree: SourcePositionTree,
     prefix: Sequence[str] = (),
@@ -48,11 +48,7 @@ def error_dict_to_formatted_error(
     a code snippet of the offending YAML file.
 
     Args:
-    <<<<<<< HEAD
-        component_key: The name of the component that the error occurred in, e.g. "my_component".
-    =======
-        object_key: The key of the component that the error occurred in.
-    >>>>>>> 9402d2cc11 ([dg] Rename ComponentKey and adjacent to LibraryObjectKey)
+        key: The key of the component that the error occurred in, e.g. "my_package.my_component".
         error_details: The JSON Schema ValidationError object.
         source_position_tree: The SourcePositionTree object, which contains the source position of
             each line in the YAML file.
@@ -77,7 +73,5 @@ def error_dict_to_formatted_error(
         f"{source.file_name}" f":{typer.style(source.start_line_no, fg=typer.colors.GREEN)}"
     )
     fmt_location = typer.style(source.location, fg=typer.colors.BRIGHT_WHITE)
-    fmt_name = typer.style(
-        f"{object_key.to_typename()} " if object_key else "", fg=typer.colors.RED
-    )
+    fmt_name = typer.style(f"{key.to_typename()} " if key else "", fg=typer.colors.RED)
     return f"{fmt_filename} - {fmt_name}{fmt_location} {error_details.message}\n{source.snippet}\n"
