@@ -232,7 +232,7 @@ def _gather_dagster_packages(editable_dagster_root: Path) -> list[Path]:
 
 
 def scaffold_component_type(
-    *, dg_context: DgContext, class_name: str, module_name: str, dataclass: bool
+    *, dg_context: DgContext, class_name: str, module_name: str, model: bool
 ) -> None:
     root_path = Path(dg_context.default_component_library_path)
     click.echo(f"Creating a Dagster component type at {root_path}/{module_name}.py.")
@@ -243,7 +243,7 @@ def scaffold_component_type(
         templates_path=str(Path(__file__).parent / "templates" / "COMPONENT_TYPE"),
         project_name=module_name,
         name=class_name,
-        dataclass=dataclass,
+        model=model,
     )
 
     with open(root_path / "__init__.py", "a") as f:
