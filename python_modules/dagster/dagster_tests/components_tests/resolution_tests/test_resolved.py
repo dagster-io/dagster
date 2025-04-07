@@ -1,13 +1,13 @@
 from dataclasses import dataclass, field
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional, Union
 
 import pytest
 from dagster._core.definitions.asset_key import AssetKey
-from dagster.components.resolved.base import Resolvable
-from dagster.components.resolved.core_models import ResolvedAssetSpec
+from dagster._core.definitions.definitions_class import Definitions
+from dagster.components import Component, Model, Resolvable, ResolvedAssetSpec
 from dagster.components.resolved.errors import ResolutionException
 from dagster.components.resolved.model import Resolver
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 def test_basic():
@@ -185,3 +185,29 @@ def test_bad_class():
 
     with pytest.raises(ResolutionException, match="positional only parameter"):
         PosOnly.resolve_from_yaml("")
+
+
+def test_component_docs():
+    class RangeTest(Model):
+        type: Literal["range"] = Field(..., description="Must be 'range'.")
+        name: str
+
+    class SumTest(Model):
+        type: Literal["sum"] = Field(..., description="Must be 'sum'")
+        name: str
+
+    class TestSuiteComponent(Component, Resolvable, Model):
+        asset_key: str = Field(
+            ..., description="The asset key to test. Slashes are parsed into key parts."
+        )
+        tests: list[Union[RangeTest, SumTest]]
+
+        def build_defs(self, context):
+            return Definitions()
+
+    model_cls = TestSuiteComponent.get_model_cls()
+    assert model_cls
+    assert model_cls.model_fields["asset_key"].description
+    json_schema = model_cls.model_json_schema()
+    assert json_schema["$defs"]["RangeTest"]["properties"]["type"]["description"]
+    assert json_schema["$defs"]["SumTest"]["properties"]["type"]["description"]

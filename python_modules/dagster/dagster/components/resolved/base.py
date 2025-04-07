@@ -101,18 +101,20 @@ def derive_model_type(
             str, Any
         ] = {}  # use Any to appease type checker when **-ing in to create_model
 
-        for name, (annotation, has_default) in _get_annotations(target_type).items():
+        for name, (annotation, has_default, field_info) in _get_annotations(target_type).items():
             field_resolver = _get_resolver(annotation, name)
             field_name = field_resolver.model_field_name or name
             field_type = field_resolver.model_field_type or annotation
 
-            field_infos = []
+            field_infos = [field_info] if field_info else []
 
             if has_default:
                 # use a marker value that will cause the kwarg
                 # to get omitted when we resolve fields in order
                 # to trigger the default on the target type
-                field_infos.append(Field(default=_Unset))
+                field_infos.append(
+                    Field(default=_Unset),  # type: ignore # Field() is typed weird
+                )
 
             if field_resolver.can_inject:  # derive and serve via model_field_type
                 field_type = Union[field_type, str]
@@ -158,23 +160,25 @@ def _is_implicitly_resolved_type(annotation):
     return False
 
 
-def _get_annotations(resolved_type: type[Resolvable]):
-    annotations: dict[str, tuple[Any, bool]] = {}
+def _get_annotations(
+    resolved_type: type[Resolvable],
+) -> dict[str, tuple[Any, bool, Optional[FieldInfo]]]:
+    annotations: dict[str, tuple[Any, bool, Optional[FieldInfo]]] = {}
     init_kwargs = _get_init_kwargs(resolved_type)
     if is_dataclass(resolved_type):
         for f in fields(resolved_type):
             has_default = f.default is not MISSING or f.default_factory is not MISSING
-            annotations[f.name] = (f.type, has_default)
+            annotations[f.name] = (f.type, has_default, None)
         return annotations
     elif _safe_is_subclass(resolved_type, BaseModel):
         for name, field_info in resolved_type.model_fields.items():
             has_default = not field_info.is_required()
-            annotations[name] = (field_info.rebuild_annotation(), has_default)
+            annotations[name] = (field_info.rebuild_annotation(), has_default, field_info)
         return annotations
     elif is_record(resolved_type):
         defaults = get_record_defaults(resolved_type)
         for name, ttype in get_record_annotations(resolved_type).items():
-            annotations[name] = (ttype, name in defaults)
+            annotations[name] = (ttype, name in defaults, None)
         return annotations
     elif init_kwargs is not None:
         return init_kwargs
@@ -214,7 +218,7 @@ def _get_init_kwargs(target_type: type[Resolvable]):
                 f"Invalid Resolved type {target_type}: __init__ parameter {name} has no type hint."
             )
 
-        fields[name] = (param.annotation, param.default is not param.empty)
+        fields[name] = (param.annotation, param.default is not param.empty, None)
     return fields
 
 
@@ -226,7 +230,7 @@ def resolve_fields(
     """Returns a mapping of field names to resolved values for those fields."""
     field_resolvers = {
         field_name: _get_resolver(annotation, field_name)
-        for field_name, (annotation, _) in _get_annotations(resolved_cls).items()
+        for field_name, (annotation, _, __) in _get_annotations(resolved_cls).items()
     }
 
     return {
