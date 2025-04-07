@@ -3,6 +3,13 @@ from typing import Literal, Optional, Union
 
 import click
 from dagster_shared.serdes.objects import PackageObjectKey
+from dagster_shared.serdes.objects.definition_metadata import (
+    DgAssetMetadata,
+    DgDefinitionMetadata,
+    DgJobMetadata,
+    DgScheduleMetadata,
+    DgSensorMetadata,
+)
 from dagster_shared.serdes.serdes import serialize_value
 from pydantic import ConfigDict, TypeAdapter, create_model
 
@@ -15,13 +22,6 @@ from dagster._cli.workspace.cli_target import (
 from dagster._core.definitions.asset_job import is_reserved_asset_job_name
 from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster.components.component.component import Component
-from dagster.components.core.defs import (
-    DgAssetMetadata,
-    DgDefinitionMetadata,
-    DgJobMetadata,
-    DgScheduleMetadata,
-    DgSensorMetadata,
-)
 from dagster.components.core.package_entry import (
     discover_entry_point_package_objects,
     discover_package_objects,
@@ -108,7 +108,6 @@ def list_definitions_command(
             node = asset_graph.get(key)
             all_defs.append(
                 DgAssetMetadata(
-                    type="asset",
                     key=key.to_user_string(),
                     deps=sorted([k.to_user_string() for k in node.parent_keys]),
                     group=node.group_name,
@@ -121,7 +120,7 @@ def list_definitions_command(
             )
         for job in repo_def.get_all_jobs():
             if not is_reserved_asset_job_name(job.name):
-                all_defs.append(DgJobMetadata(type="job", name=job.name))
+                all_defs.append(DgJobMetadata(name=job.name))
         for schedule in repo_def.schedule_defs:
             schedule_str = (
                 schedule.cron_schedule
@@ -130,15 +129,14 @@ def list_definitions_command(
             )
             all_defs.append(
                 DgScheduleMetadata(
-                    type="schedule",
                     name=schedule.name,
                     cron_schedule=schedule_str,
                 )
             )
         for sensor in repo_def.sensor_defs:
-            all_defs.append(DgSensorMetadata(type="sensor", name=sensor.name))
+            all_defs.append(DgSensorMetadata(name=sensor.name))
 
-        click.echo(json.dumps(all_defs))
+        click.echo(serialize_value(all_defs))
 
 
 # ########################
