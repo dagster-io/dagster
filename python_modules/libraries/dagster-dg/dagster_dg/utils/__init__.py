@@ -352,12 +352,15 @@ def generate_missing_component_type_error_message(component_key_str: str) -> str
     """
 
 
-def generate_missing_dagster_components_in_local_venv_error_message(venv_path: str) -> str:
+def generate_missing_dagster_components_error_message(
+    venv_path: Optional[str] = None,
+) -> str:
+    env_qualifier = f" for the virtual environment at {venv_path}" if venv_path else ""
     return f"""
-        Could not find the `dagster-components` executable in the virtual environment at {venv_path}.
-        The `dagster-components` executable is necessary for `dg` to interface with Python environments
-        containing Dagster definitions. Ensure that the virtual environment has the `dagster-components`
-        package installed.
+        Could not resolve the `dagster-components` executable{env_qualifier}.
+        The `dagster-components` is included with `dagster>=1.10.8`. It is necessary for `dg` to
+        interface with Python environments. Ensure that your Python environment has
+        `dagster>=1.10.8` installed.
     """
 
 
@@ -389,17 +392,6 @@ nearest pyproject.toml has `tool.dg.directory_type = "project"` or `tool.dg.dire
 NOT_COMPONENT_LIBRARY_ERROR_MESSAGE = """
 This command must be run inside a Dagster component library directory. Ensure that the nearest
 pyproject.toml has an entry point defined under the `dagster_dg.library` group.
-"""
-
-MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE = """
-Could not find the `dagster-components` executable on the system path.
-
-The `dagster-components` executable is installed with the `dagster-components` PyPI package and is
-necessary for `dg` to interface with Python environments containing Dagster definitions.
-`dagster-components` is installed by default when a project is scaffolded by `dg`. However, if
-you are using `dg` in a non-managed environment (either outside of a Dagster project or using the
-`--no-use-dg-managed-environment` flag), you need to independently ensure `dagster-components` is
-installed.
 """
 
 
