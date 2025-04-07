@@ -186,11 +186,11 @@ _EXPECTED_DEFS = textwrap.dedent("""
     └─────────────┴───────────────┘
 
     Sensors
-    ┏━━━━━━━━━━━━━┓
-    ┃ Name        ┃
-    ┡━━━━━━━━━━━━━┩
-    │ my_schedule │
-    └─────────────┘
+    ┏━━━━━━━━━━━┓
+    ┃ Name      ┃
+    ┡━━━━━━━━━━━┩
+    │ my_sensor │
+    └───────────┘
 """).strip()
 
 _EXPECTED_DEFS_JSON = textwrap.dedent("""
