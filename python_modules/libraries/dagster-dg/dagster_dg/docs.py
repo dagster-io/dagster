@@ -5,8 +5,8 @@ from itertools import groupby
 from typing import Any, Optional, TypedDict, Union
 
 import yaml
-from dagster_shared.serdes.objects import ComponentTypeData, PackageEntryKey
-from dagster_shared.serdes.objects.package_entry import PackageEntrySnap
+from dagster_shared.serdes.objects import ComponentFeatureData, PackageObjectKey
+from dagster_shared.serdes.objects.package_entry import PackageObjectSnap
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
@@ -178,7 +178,7 @@ def json_for_all_components(
     """Returns a list of JSON representations of all component types in the registry."""
     component_json = []
     for key, entry in registry.items():
-        component_type_data = entry.get_type_data("component")
+        component_type_data = entry.get_feature_data("component")
         if component_type_data and component_type_data.schema:
             component_json.append(
                 (
@@ -196,7 +196,7 @@ def json_for_all_components(
 
 
 def json_for_component_type(
-    key: PackageEntryKey, entry: PackageEntrySnap, component_type_data: ComponentTypeData
+    key: PackageObjectKey, entry: PackageObjectSnap, component_type_data: ComponentFeatureData
 ) -> ComponentTypeJson:
     typename = key.to_typename()
     sample_yaml = generate_sample_yaml(typename, component_type_data.schema or {})

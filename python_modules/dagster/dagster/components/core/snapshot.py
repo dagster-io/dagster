@@ -2,9 +2,9 @@ import textwrap
 from typing import Optional
 
 from dagster_shared.serdes.objects.package_entry import (
-    ComponentTypeData,
-    PackageEntryKey,
-    PackageEntrySnap,
+    ComponentFeatureData,
+    PackageObjectKey,
+    PackageObjectSnap,
     ScaffoldTargetTypeData,
 )
 
@@ -30,10 +30,10 @@ def _get_summary_and_description(obj: object) -> tuple[Optional[str], Optional[s
     return summary, description
 
 
-def _get_component_type_data(obj: type[Component]) -> ComponentTypeData:
+def _get_component_type_data(obj: type[Component]) -> ComponentFeatureData:
     component_schema = obj.get_model_cls()
     component_json_schema = component_schema.model_json_schema() if component_schema else None
-    return ComponentTypeData(schema=component_json_schema)
+    return ComponentFeatureData(schema=component_json_schema)
 
 
 def _get_scaffold_target_type_data(scaffolder: Scaffolder) -> ScaffoldTargetTypeData:
@@ -43,12 +43,14 @@ def _get_scaffold_target_type_data(scaffolder: Scaffolder) -> ScaffoldTargetType
     )
 
 
-def get_package_entry_snap(key: PackageEntryKey, obj: object) -> PackageEntrySnap:
+def get_package_entry_snap(key: PackageObjectKey, obj: object) -> PackageObjectSnap:
     type_data = []
     if isinstance(obj, type) and issubclass(obj, Component):
         type_data.append(_get_component_type_data(obj))
-    scaffolder = get_scaffolder(obj) if isinstance(obj, type) else None
+    scaffolder = get_scaffolder(obj)
     if isinstance(scaffolder, Scaffolder):
         type_data.append(_get_scaffold_target_type_data(scaffolder))
     summary, description = _get_summary_and_description(obj)
-    return PackageEntrySnap(key=key, summary=summary, description=description, type_data=type_data)
+    return PackageObjectSnap(
+        key=key, summary=summary, description=description, feature_data=type_data
+    )

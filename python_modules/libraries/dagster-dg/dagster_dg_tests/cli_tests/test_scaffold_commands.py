@@ -19,7 +19,7 @@ from dagster_dg.utils import (
     modify_toml_as_dict,
     pushd,
 )
-from dagster_shared.serdes.objects import PackageEntryKey
+from dagster_shared.serdes.objects import PackageObjectKey
 from typing_extensions import TypeAlias
 
 ensure_dagster_dg_tests_import()
@@ -689,7 +689,7 @@ def test_scaffold_component_type_success() -> None:
         assert Path("src/foo_bar/lib/baz.py").exists()
         dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
         registry = RemotePackageRegistry.from_dg_context(dg_context)
-        assert registry.has(PackageEntryKey(name="Baz", namespace="foo_bar.lib"))
+        assert registry.has(PackageObjectKey(name="Baz", namespace="foo_bar.lib"))
 
 
 def test_scaffold_component_type_already_exists_fails() -> None:
@@ -714,7 +714,7 @@ def test_scaffold_component_type_succeeds_non_default_component_lib_package() ->
         assert Path("src/foo_bar/_lib/baz.py").exists()
         dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
         registry = RemotePackageRegistry.from_dg_context(dg_context)
-        assert registry.has(PackageEntryKey(name="Baz", namespace="foo_bar._lib"))
+        assert registry.has(PackageObjectKey(name="Baz", namespace="foo_bar._lib"))
 
 
 def test_scaffold_component_type_fails_components_lib_package_does_not_exist(capfd) -> None:

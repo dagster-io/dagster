@@ -7,9 +7,9 @@ from dagster._core.test_utils import ensure_dagster_tests_import, new_cwd
 from dagster.components.cli import cli
 from dagster_shared import check
 from dagster_shared.serdes.objects import (
-    ComponentTypeData,
-    PackageEntryKey,
-    PackageEntrySnap,
+    ComponentFeatureData,
+    PackageObjectKey,
+    PackageObjectSnap,
     ScaffoldTargetTypeData,
 )
 from dagster_shared.serdes.serdes import deserialize_value
@@ -40,7 +40,7 @@ def test_list_library_objects_from_module():
     # Now check what we get when we load directly from the test library. This has stable results.
     result = runner.invoke(cli, ["list", "library", "--no-entry-points", "dagster_test.components"])
     assert result.exit_code == 0
-    result = check.is_list(deserialize_value(result.output), PackageEntrySnap)
+    result = check.is_list(deserialize_value(result.output), PackageObjectSnap)
     assert len(result) > 1
 
     assert [obj.key.to_typename() for obj in result] == [
@@ -50,12 +50,12 @@ def test_list_library_objects_from_module():
         "dagster_test.components.SimplePipesScriptComponent",
     ]
 
-    assert result[2] == PackageEntrySnap(
-        key=PackageEntryKey(namespace="dagster_test.components", name="SimpleAssetComponent"),
+    assert result[2] == PackageObjectSnap(
+        key=PackageObjectKey(namespace="dagster_test.components", name="SimpleAssetComponent"),
         description="A simple asset that returns a constant string value.",
         summary="A simple asset that returns a constant string value.",
-        type_data=[
-            ComponentTypeData(
+        feature_data=[
+            ComponentFeatureData(
                 schema={
                     "additionalProperties": False,
                     "properties": {
@@ -92,12 +92,14 @@ def test_list_library_objects_from_module():
         "type": "object",
     }
 
-    assert result[3] == PackageEntrySnap(
-        key=PackageEntryKey(namespace="dagster_test.components", name="SimplePipesScriptComponent"),
+    assert result[3] == PackageObjectSnap(
+        key=PackageObjectKey(
+            namespace="dagster_test.components", name="SimplePipesScriptComponent"
+        ),
         description="A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
         summary="A simple asset that runs a Python script with the Pipes subprocess client.",
-        type_data=[
-            ComponentTypeData(schema=pipes_script_component_model_schema),
+        feature_data=[
+            ComponentFeatureData(schema=pipes_script_component_model_schema),
             ScaffoldTargetTypeData(schema=pipes_script_component_scaffold_params_schema),
         ],
     )
@@ -128,7 +130,7 @@ def test_list_library_objects_from_project() -> None:
 
             result = deserialize_value(result.output, list)
             assert len(result) == 1
-            assert result[0].key == PackageEntryKey(
+            assert result[0].key == PackageObjectKey(
                 namespace=f"{location_name}.defs.local_component_sample",
                 name="MyComponent",
             )

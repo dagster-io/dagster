@@ -5,13 +5,13 @@ from pathlib import Path
 from typing import Any, Optional
 
 import click
-from dagster_shared.serdes.objects import PackageEntrySnap
+from dagster_shared.serdes.objects import PackageObjectSnap
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
 from dagster_dg.cli.shared_options import dg_global_options
-from dagster_dg.component import PackageEntryType, RemotePackageRegistry
+from dagster_dg.component import PackageObjectFeature, RemotePackageRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.defs import (
@@ -66,47 +66,47 @@ def list_component_command(**global_options: object) -> None:
 
 
 # ########################
-# ##### PACKAGE ENTRY
+# ##### PACKAGE OBJECT
 # ########################
 
 
-ENTRY_TYPE_COLOR_MAP = {"component": "deep_sky_blue3", "scaffold-target": "khaki1"}
+FEATURE_COLOR_MAP = {"component": "deep_sky_blue3", "scaffold-target": "khaki1"}
 
 
-def _pretty_entry_types(entry: PackageEntrySnap) -> Text:
+def _pretty_features(obj: PackageObjectSnap) -> Text:
     text = Text()
-    for entry_type in entry.types:
+    for entry_type in obj.features:
         if len(text) > 0:
             text += Text(", ")
-        text += Text(entry_type, style=ENTRY_TYPE_COLOR_MAP.get(entry_type, ""))
+        text += Text(entry_type, style=FEATURE_COLOR_MAP.get(entry_type, ""))
     text = Text("[") + text + Text("]")
     return text
 
 
-def _package_entry_table(entries: Sequence[PackageEntrySnap]) -> Table:
+def _package_object_table(entries: Sequence[PackageObjectSnap]) -> Table:
     sorted_entries = sorted(entries, key=lambda x: x.key.to_typename())
     table = Table(border_style="dim", show_lines=True)
-    table.add_column("Key", style="bold cyan", no_wrap=True)
+    table.add_column("Symbol", style="bold cyan", no_wrap=True)
     table.add_column("Summary")
-    table.add_column("Types")
+    table.add_column("Features")
     for entry in sorted_entries:
-        table.add_row(entry.key.to_typename(), entry.summary, _pretty_entry_types(entry))
+        table.add_row(entry.key.to_typename(), entry.summary, _pretty_features(entry))
     return table
 
 
-def _all_packages_entry_table(
-    registry: RemotePackageRegistry, name_only: bool, entry_type: Optional[PackageEntryType]
+def _all_packages_object_table(
+    registry: RemotePackageRegistry, name_only: bool, feature: Optional[PackageObjectFeature]
 ) -> Table:
     table = Table(border_style="dim")
 
     table.add_column("Package", style="bold")
     if not name_only:
-        table.add_column("Entries", style="bold")
+        table.add_column("Objects", style="bold")
 
     for package in sorted(registry.packages):
         if not name_only:
-            entries = registry.get_entries(package, entry_type)
-            inner_table = _package_entry_table(entries)
+            objs = registry.get_objects(package, feature)
+            inner_table = _package_object_table(objs)
             table.add_row(package, inner_table)
         else:
             table.add_row(package)
@@ -126,8 +126,8 @@ def _all_packages_entry_table(
     help="Filter by package name.",
 )
 @click.option(
-    "--entry-type",
-    "-t",
+    "--feature",
+    "-f",
     type=click.Choice(["component", "scaffold-target"]),
     help="Filter by entry type.",
 )
@@ -136,7 +136,7 @@ def _all_packages_entry_table(
 def list_packages_command(
     name_only: bool,
     package: Optional[str],
-    entry_type: Optional[PackageEntryType],
+    feature: Optional[PackageObjectFeature],
     **global_options: object,
 ) -> None:
     """List registered Dagster components in the current project environment."""
@@ -145,9 +145,9 @@ def list_packages_command(
     registry = RemotePackageRegistry.from_dg_context(dg_context)
 
     if package:
-        table = _package_entry_table(registry.get_entries(package, entry_type))
+        table = _package_object_table(registry.get_objects(package, feature))
     else:
-        table = _all_packages_entry_table(registry, name_only, entry_type=entry_type)
+        table = _all_packages_object_table(registry, name_only, feature=feature)
     Console().print(table)
 
 
@@ -170,12 +170,12 @@ def list_component_type_command(output_json: bool, **global_options: object) -> 
     if output_json:
         output: list[dict[str, object]] = []
         for entry in sorted(
-            registry.get_entries(entry_type="component"), key=lambda x: x.key.to_typename()
+            registry.get_objects(feature="component"), key=lambda x: x.key.to_typename()
         ):
             output.append({"key": entry.key.to_typename(), "summary": entry.summary})
         click.echo(json.dumps(output, indent=4))
     else:
-        Console().print(_all_packages_entry_table(registry, False, "component"))
+        Console().print(_all_packages_object_table(registry, False, "component"))
 
 
 # ########################
