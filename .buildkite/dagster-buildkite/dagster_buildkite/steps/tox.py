@@ -88,3 +88,15 @@ def _resolve_python_version(tox_env: str) -> AvailablePythonVersion:
         return AvailablePythonVersion.from_major_minor(major, minor)
     else:
         return AvailablePythonVersion.get_default()
+
+
+def build_tox_lint_steps() -> list[CommandStep]:
+    commands = [
+        "python3 .buildkite/scripts/tox_lint.py",
+    ]
+    return [
+        CommandStepBuilder(":lint-roller: tox.ini")
+        .run(*commands)
+        .on_test_image(AvailablePythonVersion.get_default())
+        .build()
+    ]
