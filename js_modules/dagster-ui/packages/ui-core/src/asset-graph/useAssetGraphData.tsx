@@ -3,6 +3,7 @@ import reject from 'lodash/reject';
 import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {useAssetGraphSupplementaryData} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
+import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 import {Worker} from 'shared/workers/Worker.oss';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
@@ -131,7 +132,7 @@ const INITIAL_STATE: GraphDataState = {
   assetGraphData: null,
 };
 
-/** Fetches data for rendering an asset graph:
+/** Fetches data for doing asset selection filtering in the asset catalog and asset graph:
  *
  * @param pipelineSelector: Optionally scope to an asset job, or pass null for the global graph
  *
@@ -161,18 +162,34 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
   const nodes = fetchResult.data?.assetNodes;
 
+  const favoriteAssets = useFavoriteAssets();
+
   const repoFilteredNodes = useMemo(() => {
-    // Apply any filters provided by the caller. This is where we do repo filtering
+    // Apply any filters provided by the caller
     let matching = nodes;
+
+    // Apply favorites filtering if enabled
+    if (favoriteAssets) {
+      matching = matching?.filter((node) => favoriteAssets.has(tokenForAssetKey(node.assetKey)));
+    }
+
+    // Apply repository filtering
     if (options.hideNodesMatching) {
       matching = reject(matching, options.hideNodesMatching);
     }
+
     return matching;
-  }, [nodes, options.hideNodesMatching]);
+  }, [nodes, options.hideNodesMatching, favoriteAssets]);
 
   const externalAssetNodes = useMemo(
-    () => (options.externalAssets ?? []).map(buildExternalAssetQueryItem),
-    [options.externalAssets],
+    () =>
+      (options.externalAssets ?? [])
+        .filter((asset) => {
+          const token = tokenForAssetKey(asset.key);
+          return !favoriteAssets || favoriteAssets.has(token);
+        })
+        .map(buildExternalAssetQueryItem),
+    [options.externalAssets, favoriteAssets],
   );
 
   const graphQueryItems = useMemo(
