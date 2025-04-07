@@ -25,9 +25,6 @@ def _get_latest_dagster_release() -> str:
 
 LATEST_DAGSTER_RELEASE = _get_latest_dagster_release()
 
-# https://github.com/dagster-io/dagster/issues/1662
-DO_COVERAGE = True
-
 GCP_CREDS_FILENAME = "gcp-key-elementl-dev.json"
 
 # GCP tests need appropriate credentials
