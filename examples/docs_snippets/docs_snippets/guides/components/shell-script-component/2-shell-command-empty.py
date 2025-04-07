@@ -1,11 +1,9 @@
-from dataclasses import dataclass
-
 import dagster as dg
-from dagster.components import Component, ComponentLoadContext, Resolvable
+from dagster.components import Component, ComponentLoadContext, Model, Resolvable
 
 
 @dataclass
-class ShellCommand(Component, Resolvable):
+class ShellCommand(Component, Model, Resolvable):
     """COMPONENT SUMMARY HERE.
 
     COMPONENT DESCRIPTION HERE.
