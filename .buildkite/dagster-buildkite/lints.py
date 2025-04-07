@@ -37,3 +37,15 @@ def test_tox_passenv(tox_config):
             missing_env.append(env)
 
     assert not missing_env, f"tox.ini missing passenv {missing_env}"
+
+
+def test_no_subdirectory_pytest_ini():
+    pytest_ini_files = []
+    for root, dirs, files in os.walk("."):
+        if "pytest.ini" in files:
+            pytest_ini_file = os.path.join(root, "tox.ini")
+            pytest_ini_files.append(pytest_ini_file)
+
+    assert (
+        not pytest_ini_files
+    ), f"Subdirectory pytest.ini conflict with root pyproject.toml {pytest_ini_files}"
