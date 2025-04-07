@@ -20,7 +20,10 @@ ensure_dagster_tests_import()
 from dagster_tests.components_tests.integration_tests.component_loader import (
     load_test_component_defs,
 )
-from dagster_tests.components_tests.utils import build_component_defs_for_test
+from dagster_tests.components_tests.utils import (
+    build_component_defs_for_test,
+    load_component_for_test,
+)
 
 STUB_LOCATION_PATH = Path(__file__).parent / "code_locations" / "dbt_project_location"
 COMPONENT_RELPATH = "defs/jaffle_shop_dbt"
@@ -295,3 +298,25 @@ def test_udf_map_spec(dbt_path: Path, map_fn: Callable[[AssetSpec], Any]) -> Non
     )
     assets_def = defs.get_assets_def(AssetKey("stg_customers"))
     assert assets_def.get_asset_spec(AssetKey("stg_customers")).tags["is_custom_spec"] == "yes"
+
+
+def test_state_path(
+    dbt_path: Path,
+) -> None:
+    comp = load_component_for_test(
+        DbtProjectComponent,
+        {
+            "dbt": {
+                "project_dir": dbt_path,
+                "state_path": "state",
+                "profile": "profile",
+                "target": "target",
+            },
+        },
+    )
+    state_path = comp.dbt.state_path
+    assert state_path
+    assert Path(state_path).relative_to(dbt_path.resolve())
+    assert comp.project.state_path == Path(state_path)
+    assert comp.project.target == "target"
+    assert comp.project.profile == "profile"

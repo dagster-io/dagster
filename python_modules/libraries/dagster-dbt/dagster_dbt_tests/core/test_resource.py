@@ -567,6 +567,16 @@ def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -
     assert len(dbt.get_state_args()) == 2
 
 
+def test_cli_state_path():
+    cli = DbtCliResource(test_jaffle_shop_path, state_path="state")
+    assert cli.state_path
+    assert Path(cli.state_path) == test_jaffle_shop_path / "state"
+
+    cli = DbtCliResource(test_jaffle_shop_path, state_path="/tmp/state")
+    assert cli.state_path
+    assert Path(cli.state_path) == Path("/tmp/state").resolve()
+
+
 def test_dbt_cli_op_execution(
     test_jaffle_shop_manifest: dict[str, Any], dbt: DbtCliResource
 ) -> None:
