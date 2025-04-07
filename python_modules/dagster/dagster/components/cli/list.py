@@ -2,7 +2,7 @@ import json
 from typing import Literal, Optional, Union
 
 import click
-from dagster_shared.serdes.objects import PackageObjectKey
+from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetCheckMetadata,
     DgAssetMetadata,
@@ -160,7 +160,7 @@ def list_definitions_command(
 
 def _load_library_objects(
     entry_points: bool, extra_modules: tuple[str, ...]
-) -> dict[PackageObjectKey, object]:
+) -> dict[PluginObjectKey, object]:
     objects = {}
     if entry_points:
         objects.update(discover_entry_point_package_objects())
@@ -171,7 +171,7 @@ def _load_library_objects(
 
 def _load_component_types(
     entry_points: bool, extra_modules: tuple[str, ...]
-) -> dict[PackageObjectKey, type[Component]]:
+) -> dict[PluginObjectKey, type[Component]]:
     return {
         key: obj
         for key, obj in _load_library_objects(entry_points, extra_modules).items()

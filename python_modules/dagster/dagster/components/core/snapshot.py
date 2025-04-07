@@ -3,8 +3,8 @@ from typing import Optional
 
 from dagster_shared.serdes.objects.package_entry import (
     ComponentFeatureData,
-    PackageObjectKey,
-    PackageObjectSnap,
+    PluginObjectKey,
+    PluginObjectSnap,
     ScaffoldTargetTypeData,
 )
 
@@ -43,7 +43,7 @@ def _get_scaffold_target_type_data(scaffolder: Scaffolder) -> ScaffoldTargetType
     )
 
 
-def get_package_entry_snap(key: PackageObjectKey, obj: object) -> PackageObjectSnap:
+def get_package_entry_snap(key: PluginObjectKey, obj: object) -> PluginObjectSnap:
     type_data = []
     owners = []
     tags = []
@@ -56,7 +56,7 @@ def get_package_entry_snap(key: PackageObjectKey, obj: object) -> PackageObjectS
     if isinstance(scaffolder, Scaffolder):
         type_data.append(_get_scaffold_target_type_data(scaffolder))
     summary, description = _get_summary_and_description(obj)
-    return PackageObjectSnap(
+    return PluginObjectSnap(
         key=key,
         summary=summary,
         owners=owners,

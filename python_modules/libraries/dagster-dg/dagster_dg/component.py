@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 
 import dagster_shared.check as check
 from dagster_shared.serdes import deserialize_value, serialize_value
-from dagster_shared.serdes.objects import PackageObjectKey, PackageObjectSnap
-from dagster_shared.serdes.objects.package_entry import PackageObjectFeature
+from dagster_shared.serdes.objects import PluginObjectKey, PluginObjectSnap
+from dagster_shared.serdes.objects.package_entry import PluginObjectFeature
 
 from dagster_dg.utils import is_valid_json
 
@@ -15,12 +15,12 @@ if TYPE_CHECKING:
     from dagster_dg.context import DgContext
 
 
-class RemotePackageRegistry:
+class RemotePluginRegistry:
     @staticmethod
     def from_dg_context(
         dg_context: "DgContext", extra_modules: Optional[Sequence[str]] = None
-    ) -> "RemotePackageRegistry":
-        """Fetches the set of available package entries. The default set includes everything
+    ) -> "RemotePluginRegistry":
+        """Fetches the set of available plugin objects. The default set includes everything
         discovered under the "dagster_dg.library" entry point group in the target environment. If
         `extra_modules` is provided, these will also be searched for component types.
         """
@@ -37,25 +37,25 @@ class RemotePackageRegistry:
         if extra_modules:
             object_data.update(_load_module_library_objects(dg_context, extra_modules))
 
-        return RemotePackageRegistry(object_data)
+        return RemotePluginRegistry(object_data)
 
-    def __init__(self, components: dict[PackageObjectKey, PackageObjectSnap]):
-        self._objects: dict[PackageObjectKey, PackageObjectSnap] = copy.copy(components)
+    def __init__(self, components: dict[PluginObjectKey, PluginObjectSnap]):
+        self._objects: dict[PluginObjectKey, PluginObjectSnap] = copy.copy(components)
 
     @staticmethod
-    def empty() -> "RemotePackageRegistry":
-        return RemotePackageRegistry({})
+    def empty() -> "RemotePluginRegistry":
+        return RemotePluginRegistry({})
 
     @property
     def packages(self) -> Set[str]:
         return {key.package for key in self._objects.keys()}
 
-    def package_entries(self, package: str) -> Set[PackageObjectKey]:
+    def package_entries(self, package: str) -> Set[PluginObjectKey]:
         return {key for key in self._objects.keys() if key.package == package}
 
     def get_objects(
-        self, package: Optional[str] = None, feature: Optional[PackageObjectFeature] = None
-    ) -> Sequence[PackageObjectSnap]:
+        self, package: Optional[str] = None, feature: Optional[PluginObjectFeature] = None
+    ) -> Sequence[PluginObjectSnap]:
         return [
             entry
             for entry in self._objects.values()
@@ -63,21 +63,21 @@ class RemotePackageRegistry:
             and (feature is None or feature in entry.features)
         ]
 
-    def get(self, key: PackageObjectKey) -> PackageObjectSnap:
+    def get(self, key: PluginObjectKey) -> PluginObjectSnap:
         """Resolves a library object within the scope of a given component directory."""
         return self._objects[key]
 
-    def has(self, key: PackageObjectKey) -> bool:
+    def has(self, key: PluginObjectKey) -> bool:
         return key in self._objects
 
-    def keys(self) -> Iterable[PackageObjectKey]:
+    def keys(self) -> Iterable[PluginObjectKey]:
         yield from sorted(self._objects.keys(), key=lambda k: k.to_typename())
 
-    def items(self) -> Iterable[tuple[PackageObjectKey, PackageObjectSnap]]:
+    def items(self) -> Iterable[tuple[PluginObjectKey, PluginObjectSnap]]:
         yield from self._objects.items()
 
     def __repr__(self) -> str:
-        return f"<RemotePackageRegistry {list(self._objects.keys())}>"
+        return f"<RemotePluginRegistry {list(self._objects.keys())}>"
 
 
 def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[str, Any]:
@@ -99,7 +99,7 @@ def all_components_schema_from_dg_context(dg_context: "DgContext") -> Mapping[st
 
 def _load_entry_point_components(
     dg_context: "DgContext",
-) -> dict[PackageObjectKey, PackageObjectSnap]:
+) -> dict[PluginObjectKey, PluginObjectSnap]:
     if dg_context.has_cache:
         cache_key = dg_context.get_cache_key("component_registry_data")
         raw_registry_data = dg_context.cache.get(cache_key)
@@ -117,9 +117,9 @@ def _load_entry_point_components(
 
 def _load_module_library_objects(
     dg_context: "DgContext", modules: Sequence[str]
-) -> dict[PackageObjectKey, PackageObjectSnap]:
+) -> dict[PluginObjectKey, PluginObjectSnap]:
     modules_to_fetch = set(modules)
-    data: dict[PackageObjectKey, PackageObjectSnap] = {}
+    data: dict[PluginObjectKey, PluginObjectSnap] = {}
     if dg_context.has_cache:
         for module in modules:
             cache_key = dg_context.get_cache_key_for_module(module)
@@ -151,13 +151,13 @@ def _load_module_library_objects(
 
 def _parse_raw_registry_data(
     raw_registry_data: str,
-) -> dict[PackageObjectKey, PackageObjectSnap]:
-    deserialized = check.is_list(deserialize_value(raw_registry_data), of_type=PackageObjectSnap)
+) -> dict[PluginObjectKey, PluginObjectSnap]:
+    deserialized = check.is_list(deserialize_value(raw_registry_data), of_type=PluginObjectSnap)
     return {obj.key: obj for obj in deserialized}
 
 
 def _dump_raw_registry_data(
-    registry_data: Mapping[PackageObjectKey, PackageObjectSnap],
+    registry_data: Mapping[PluginObjectKey, PluginObjectSnap],
 ) -> str:
     return serialize_value(list(registry_data.values()))
 
