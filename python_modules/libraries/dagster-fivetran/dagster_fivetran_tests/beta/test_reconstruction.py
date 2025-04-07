@@ -6,13 +6,13 @@ from dagster._core.definitions.reconstruct import (
     initialize_repository_def_from_pointer,
     reconstruct_repository_def_from_pointer,
 )
-from dagster._utils.test.definitions import lazy_definitions
+from dagster._utils.test.definitions import definitions
 from dagster_fivetran import FivetranWorkspace
 
 from dagster_fivetran_tests.beta.conftest import TEST_ACCOUNT_ID, TEST_API_KEY, TEST_API_SECRET
 
 
-@lazy_definitions
+@definitions
 def cacheable_fivetran_workspace_data():
     workspace = FivetranWorkspace(
         account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
