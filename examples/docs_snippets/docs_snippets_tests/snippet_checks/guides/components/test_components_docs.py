@@ -150,7 +150,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
         sling_duckdb_version = next(iter(os.listdir()), None)
         with environ(
             {
-                "PATH": f'{os.environ["PATH"]}:{sling_duckdb_path / sling_duckdb_version!s}'
+                "PATH": f"{os.environ['PATH']}:{sling_duckdb_path / sling_duckdb_version!s}"
             }
             if sling_duckdb_version
             else {}
@@ -327,7 +327,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             _run_command(
                 f"uv add git+https://github.com/dagster-io/community-integrations.git@petehunt/evidencedev#subdirectory=libraries/dagster-evidence"
             )
-            
+
             run_command_and_snippet_output(
                 cmd="dg list component-type",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
@@ -337,7 +337,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             )
 
             run_command_and_snippet_output(
-                cmd="git clone --depth=1 https://github.com/petehunt/jaffle_dashboard.git jaffle_dashboard && rm -rf jaffle_dashboard/.git && cd jaffle_dashboard && npm i",
+                cmd="git clone --depth=1 https://github.com/petehunt/jaffle_dashboard.git jaffle_dashboard && rm -rf jaffle_dashboard/.git && (cd jaffle_dashboard && npm i)",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-jaffle-dashboard-clone.txt",
                 update_snippets=update_snippets,
@@ -353,13 +353,22 @@ def test_components_docs_index(update_snippets: bool) -> None:
             )
 
             check_file(
-                Path("src") / "jaffle_platform" / "defs" / "jaffle_dashboard" / "component.yaml",
-                COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component-jaffle-dashboard.yaml",
+                Path("src")
+                / "jaffle_platform"
+                / "defs"
+                / "jaffle_dashboard"
+                / "component.yaml",
+                COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-component-jaffle-dashboard.yaml",
                 update_snippets=update_snippets,
             )
 
             create_file(
-                Path("src") / "jaffle_platform" / "defs" / "jaffle_dashboard" / "component.yaml",
+                Path("src")
+                / "jaffle_platform"
+                / "defs"
+                / "jaffle_dashboard"
+                / "component.yaml",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jaffle-dashboard.yaml",
                 contents=format_multiline("""
@@ -397,7 +406,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 "DAGSTER_IS_DEV_CLI=1 uv run dagster asset materialize --select '*' -m jaffle_platform.definitions"
             )
             run_command_and_snippet_output(
-                cmd='ls jaffle_dashboard/build',
+                cmd="ls jaffle_dashboard/build",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-evidence-build-dir.txt",
                 update_snippets=update_snippets,
@@ -429,4 +438,3 @@ def daily_jaffle(context: dg.ScheduleEvaluationContext):
             _run_command(
                 "DAGSTER_IS_DEV_CLI=1 uv run dagster asset materialize --select '*' -m jaffle_platform.definitions"
             )
-

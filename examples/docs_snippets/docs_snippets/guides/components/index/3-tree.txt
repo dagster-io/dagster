@@ -14,4 +14,4 @@ cd jaffle-platform && tree
 │   └── __init__.py
 └── uv.lock
 
-6 directories, 7 files
+5 directories, 7 files
