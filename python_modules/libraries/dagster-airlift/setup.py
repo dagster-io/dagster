@@ -79,11 +79,15 @@ setup(
         "mwaa": [
             "boto3>=1.18.0"
         ],  # confirms that mwaa is available in the environment (can't find exactly which version adds mwaa support, but I can confirm that 1.18.0 and greater have it.)
+        "astronomer": [
+            "requests>=2.25.0"
+        ],  # Astronomer integration requires requests for API communication
         "test": [
             "pytest",
             f"dagster-dbt{pin}",
             "dbt-duckdb",
             "boto3",
+            "requests>=2.25.0",
             f"dagster-webserver{pin}",
             *AIRFLOW_REQUIREMENTS,
             *CLI_REQUIREMENTS,
