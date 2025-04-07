@@ -31,6 +31,18 @@ from dagster_dg_tests.utils import (
     create_project_from_components,
 )
 
+ENV_VAR_TEST_CASES = [
+    ComponentValidationTestCase(
+        component_path="validation/basic_component_missing_declared_env",
+        component_type_filepath=BASIC_COMPONENT_TYPE_FILEPATH,
+        should_error=True,
+        check_error_msg=msg_includes_all_of(
+            "component.yaml:1",
+            "Component uses environment variables that are not specified in the component file: A_STRING",
+        ),
+    ),
+]
+
 CLI_TEST_CASES = [
     *COMPONENT_VALIDATION_TEST_CASES,
     ComponentValidationTestCase(
@@ -51,6 +63,7 @@ CLI_TEST_CASES = [
             "'an_extra_top_level_value' was unexpected",
         ),
     ),
+    *ENV_VAR_TEST_CASES,
 ]
 
 
@@ -80,6 +93,29 @@ def test_check_yaml(test_case: ComponentValidationTestCase) -> None:
 
             else:
                 assert_runner_result(result)
+
+
+@pytest.mark.parametrize(
+    "test_case",
+    ENV_VAR_TEST_CASES,
+    ids=[str(case.component_path) for case in ENV_VAR_TEST_CASES],
+)
+def test_check_yaml_no_env_var_validation(test_case: ComponentValidationTestCase) -> None:
+    """Tests that the check CLI does not validate env vars when the
+    --no-validate-requirements flag is provided.
+    """
+    with (
+        ProxyRunner.test() as runner,
+        create_project_from_components(
+            runner,
+            test_case.component_path,
+            local_component_defn_to_inject=test_case.component_type_filepath,
+        ) as tmpdir,
+    ):
+        with pushd(tmpdir):
+            result = runner.invoke("check", "yaml", "--no-validate-requirements")
+
+            assert_runner_result(result)
 
 
 def test_check_yaml_succeeds_non_default_defs_module() -> None:

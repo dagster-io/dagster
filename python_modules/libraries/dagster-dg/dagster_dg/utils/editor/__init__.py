@@ -59,7 +59,7 @@ def install_or_update_yaml_schema_extension(
     template_package_json_path = Path(__file__).parent / "vscode_extension_package.json"
     template_package_json = json.loads(template_package_json_path.read_text())
     template_package_json["contributes"]["yamlValidation"] = [
-        {"fileMatch": f"{yaml_dir}/**/*.y*ml", "url": f"{schema_path}"}
+        {"fileMatch": f"{yaml_dir}/**/component.y*ml", "url": f"{schema_path}"}
     ]
 
     extension_working_dir.mkdir(parents=True, exist_ok=True)
@@ -73,7 +73,7 @@ def install_or_update_yaml_schema_extension(
             template_package_json["contributes"]["yamlValidation"].extend(
                 entry
                 for entry in existing_yaml_validation
-                if entry["fileMatch"] != f"{yaml_dir}/**/*.y*ml"
+                if entry["fileMatch"] != f"{yaml_dir}/**/component.y*ml"
             )
 
     extension_package_json_path.write_text(json.dumps(template_package_json, indent=2))

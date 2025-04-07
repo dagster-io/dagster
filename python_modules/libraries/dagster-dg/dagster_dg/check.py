@@ -15,7 +15,11 @@ from jsonschema import Draft202012Validator, ValidationError
 from yaml.scanner import ScannerError
 
 from dagster_dg.cli.check_utils import error_dict_to_formatted_error
-from dagster_dg.component import RemotePackageRegistry
+from dagster_dg.component import (
+    RemotePackageRegistry,
+    get_specified_env_var_deps,
+    get_used_env_vars,
+)
 from dagster_dg.context import DgContext
 
 COMPONENT_FILE_SCHEMA = {
@@ -23,6 +27,11 @@ COMPONENT_FILE_SCHEMA = {
     "properties": {
         "type": {"type": "string"},
         "attributes": {"type": "object"},
+        "requirements": {
+            "type": "object",
+            "properties": {"env": {"type": "array", "items": {"type": "string"}}},
+            "additionalProperties": False,
+        },
     },
     "additionalProperties": False,
 }
@@ -51,10 +60,12 @@ class ErrorInput(NamedTuple):
 def check_yaml(
     dg_context: DgContext,
     resolved_paths: Sequence[Path],
+    validate_requirements: bool,
 ) -> bool:
     top_level_component_validator = Draft202012Validator(schema=COMPONENT_FILE_SCHEMA)
 
     validation_errors: list[ErrorInput] = []
+    all_specified_env_var_deps = set()
 
     component_contents_by_key: dict[PackageObjectKey, Any] = {}
     modules_to_fetch = set()
@@ -85,6 +96,28 @@ def check_yaml(
                     )
                 )
                 continue
+
+            if validate_requirements:
+                specified_env_var_deps = get_specified_env_var_deps(component_doc_tree.value)
+                used_env_vars = get_used_env_vars(component_doc_tree.value)
+                all_specified_env_var_deps.update(specified_env_var_deps)
+
+                if used_env_vars - specified_env_var_deps:
+                    msg = (
+                        "Component uses environment variables that are not specified in the component file: "
+                        + ", ".join(used_env_vars - specified_env_var_deps)
+                    )
+
+                    validation_errors.append(
+                        ErrorInput(
+                            None,
+                            ValidationError(
+                                msg,
+                                path=["requirements", "env"],
+                            ),
+                            component_doc_tree,
+                        )
+                    )
 
             # First, validate the top-level structure of the component file
             # (type and params keys) before we try to validate the params themselves.
@@ -145,4 +178,5 @@ def check_yaml(
         return False
     else:
         click.echo("All components validated successfully.")
+
         return True

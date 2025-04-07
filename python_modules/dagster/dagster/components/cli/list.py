@@ -23,6 +23,7 @@ from dagster._cli.workspace.cli_target import (
 from dagster._core.definitions.asset_job import is_reserved_asset_job_name
 from dagster._utils.hosted_user_process import recon_repository_from_origin
 from dagster.components.component.component import Component
+from dagster.components.core.defs_module import ComponentRequirementsModel
 from dagster.components.core.package_entry import (
     discover_entry_point_package_objects,
     discover_package_objects,
@@ -71,6 +72,7 @@ def list_all_components_schema_command(entry_points: bool, extra_modules: tuple[
                     key.name,
                     type=(Literal[key_string], key_string),
                     attributes=(model_cls, None),
+                    requirements=(Optional[ComponentRequirementsModel], None),
                     __config__=ConfigDict(extra="forbid"),
                 )
             )
