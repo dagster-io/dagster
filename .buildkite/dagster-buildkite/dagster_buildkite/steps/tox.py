@@ -93,7 +93,6 @@ def _resolve_python_version(tox_env: str) -> AvailablePythonVersion:
 def build_tox_lint_steps() -> list[CommandStep]:
     commands = [
         "python3",
-        "-m",
         ".buildkite/scripts/tox_lint.py",
     ]
     return [
