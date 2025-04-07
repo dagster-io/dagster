@@ -64,7 +64,7 @@ To learn more about the files, directories, and default settings in a project sc
 
 To ingest data, you must set up [Sling](https://slingdata.io/). However, if you list the available component types in your environment at this point, the Sling component won't appear, since the `dagster` package doesn't contain components for specific integrations (like Sling):
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/7-dg-list-component-types.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/7-dg-list-plugins.txt" />
 
 To make the Sling component available in your environment, install the `dagster-sling` package:
 
@@ -82,7 +82,7 @@ When you run commands like `dg list component-type` , `dg` obtains the results b
 
 To confirm that the `dagster_sling.SlingReplicationCollectionComponent` component type is now available, run the `dg list component-type` command again:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/8-dg-list-component-types.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/8-dg-list-plugins.txt" />
 
 ### 3. Create a new instance of the Sling component
 
@@ -162,7 +162,7 @@ To interface with the dbt project, you will need to instantiate a Dagster dbt pr
 
 To confirm that the `dagster_dbt.DbtProjectComponent` component type is now available, run `dg list component-type`:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/17-dg-list-component-types.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/17-dg-list-plugins.txt" />
 
 ### 3. Scaffold a new instance of the dbt project component
 

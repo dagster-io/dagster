@@ -1,4 +1,4 @@
-dg list component-type
+dg list plugins
 
 Using /.../jaffle-platform/.venv/bin/dagster-components
 ┏━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -7,6 +7,11 @@ Using /.../jaffle-platform/.venv/bin/dagster-components
 │ dagster       │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┓ │
 │               │ ┃ Symbol                                                      ┃ Summary          ┃ Features        ┃ │
 │               │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━┩ │
+│               │ │ dagster.asset                                               │ Create a         │ [scaffold-targ… │ │
+│               │ │                                                             │ definition for   │                 │ │
+│               │ │                                                             │ how to compute   │                 │ │
+│               │ │                                                             │ an asset.        │                 │ │
+│               │ ├─────────────────────────────────────────────────────────────┼──────────────────┼─────────────────┤ │
 │               │ │ dagster.components.DefinitionsComponent                     │ An arbitrary set │ [component,     │ │
 │               │ │                                                             │ of dagster       │ scaffold-targe… │ │
 │               │ │                                                             │ definitions.     │                 │ │
@@ -23,7 +28,30 @@ Using /.../jaffle-platform/.venv/bin/dagster-components
 │               │ │                                                             │ executed with    │                 │ │
 │               │ │                                                             │ Dagster's        │                 │ │
 │               │ │                                                             │ PipesSubprocess… │                 │ │
+│               │ ├─────────────────────────────────────────────────────────────┼──────────────────┼─────────────────┤ │
+│               │ │ dagster.schedule                                            │ Creates a        │ [scaffold-targ… │ │
+│               │ │                                                             │ schedule         │                 │ │
+│               │ │                                                             │ following the    │                 │ │
+│               │ │                                                             │ provided cron    │                 │ │
+│               │ │                                                             │ schedule and     │                 │ │
+│               │ │                                                             │ requests runs    │                 │ │
+│               │ │                                                             │ for the provided │                 │ │
+│               │ │                                                             │ job.             │                 │ │
+│               │ ├─────────────────────────────────────────────────────────────┼──────────────────┼─────────────────┤ │
+│               │ │ dagster.sensor                                              │ Creates a sensor │ [scaffold-targ… │ │
+│               │ │                                                             │ where the        │                 │ │
+│               │ │                                                             │ decorated        │                 │ │
+│               │ │                                                             │ function is used │                 │ │
+│               │ │                                                             │ as the sensor's  │                 │ │
+│               │ │                                                             │ evaluation       │                 │ │
+│               │ │                                                             │ function.        │                 │ │
 │               │ └─────────────────────────────────────────────────────────────┴──────────────────┴─────────────────┘ │
+│ dagster_dbt   │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓ │
+│               │ ┃ Symbol                          ┃ Summary                         ┃ Features                     ┃ │
+│               │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩ │
+│               │ │ dagster_dbt.DbtProjectComponent │ Expose a DBT project to Dagster │ [component, scaffold-target] │ │
+│               │ │                                 │ as a set of assets.             │                              │ │
+│               │ └─────────────────────────────────┴─────────────────────────────────┴──────────────────────────────┘ │
 │ dagster_sling │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓ │
 │               │ ┃ Symbol                                            ┃ Summary              ┃ Features              ┃ │
 │               │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩ │
