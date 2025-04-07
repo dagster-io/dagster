@@ -433,6 +433,7 @@ class RemoteAssetGraph(BaseAssetGraph[TRemoteAssetNode], ABC, Generic[TRemoteAss
                 k,
                 v.asset_check.additional_asset_keys,
                 v.asset_check.blocking,
+                v.asset_check.description,
                 v.asset_check.automation_condition,
             )
             for k, v in self.remote_asset_check_nodes_by_key.items()

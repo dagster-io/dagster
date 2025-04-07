@@ -4,6 +4,7 @@ from typing import Literal, Optional, Union
 import click
 from dagster_shared.serdes.objects import PackageObjectKey
 from dagster_shared.serdes.objects.definition_metadata import (
+    DgAssetCheckMetadata,
     DgAssetMetadata,
     DgDefinitionMetadata,
     DgJobMetadata,
@@ -116,6 +117,17 @@ def list_definitions_command(
                     automation_condition=node.automation_condition.get_label()
                     if node.automation_condition
                     else None,
+                )
+            )
+        for key in asset_graph.asset_check_keys:
+            node = asset_graph.get(key)
+            all_defs.append(
+                DgAssetCheckMetadata(
+                    key=key.to_user_string(),
+                    asset_key=key.asset_key.to_user_string(),
+                    name=key.name,
+                    additional_deps=sorted([k.to_user_string() for k in node.parent_entity_keys]),
+                    description=node.description,
                 )
             )
         for job in repo_def.get_all_jobs():
