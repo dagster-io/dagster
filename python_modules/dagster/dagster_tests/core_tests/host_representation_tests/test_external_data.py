@@ -26,7 +26,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.metadata import MetadataValue, TextMetadataValue, normalize_metadata
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.new_freshness_thing import TimeWindowFreshnessThing
+from dagster._core.definitions.new_freshness_policy import TimeWindowFreshnessPolicy
 from dagster._core.definitions.partition import ScheduleType
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
@@ -237,27 +237,28 @@ def test_asset_invalid_group_name():
             return 1
 
 
-def test_asset_spec_with_new_freshness_thing():
-    """Can we define an asset with a new freshness thing?"""
+def test_asset_spec_with_new_freshness_policy():
+    """Can we define an asset with a new freshness policy?"""
     asset1 = AssetSpec(
-        key=AssetKey("asset1"), new_freshness_thing=TimeWindowFreshnessThing(time_window_minutes=10)
+        key=AssetKey("asset1"),
+        new_freshness_policy=TimeWindowFreshnessPolicy(time_window_minutes=10),
     )
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(Definitions(assets=[asset1]))
 
-    assert asset_node_snaps[0].new_freshness_thing == TimeWindowFreshnessThing(
+    assert asset_node_snaps[0].new_freshness_policy == TimeWindowFreshnessPolicy(
         time_window_minutes=10
     )
 
 
-def test_asset_with_new_freshness_thing():
-    @asset(new_freshness_thing=TimeWindowFreshnessThing(time_window_minutes=10))
+def test_asset_with_new_freshness_policy():
+    @asset(new_freshness_policy=TimeWindowFreshnessPolicy(time_window_minutes=10))
     def asset1():
         return 1
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(Definitions(assets=[asset1]))
 
-    assert asset_node_snaps[0].new_freshness_thing == TimeWindowFreshnessThing(
+    assert asset_node_snaps[0].new_freshness_policy == TimeWindowFreshnessPolicy(
         time_window_minutes=10
     )
 

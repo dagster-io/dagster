@@ -17,7 +17,7 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.input import NoValueSentinel
-from dagster._core.definitions.new_freshness_thing import NewFreshnessThing
+from dagster._core.definitions.new_freshness_policy import NewFreshnessPolicy
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.utils import resolve_automation_condition
@@ -211,8 +211,8 @@ class AssetOut:
         return self._spec.kinds
 
     @property
-    def new_freshness_thing(self) -> Optional[NewFreshnessThing]:
-        return self._spec.new_freshness_thing
+    def new_freshness_policy(self) -> Optional[NewFreshnessPolicy]:
+        return self._spec.new_freshness_policy
 
     def to_out(self) -> Out:
         return Out(
@@ -230,7 +230,7 @@ class AssetOut:
         deps: Sequence[AssetDep],
         additional_tags: Mapping[str, str] = {},
         partitions_def: Optional[PartitionsDefinition] = ...,
-        new_freshness_thing: Optional[NewFreshnessThing] = ...,
+        new_freshness_policy: Optional[NewFreshnessPolicy] = ...,
     ) -> AssetSpec:
         return self._spec.replace_attributes(
             key=key,
@@ -238,7 +238,7 @@ class AssetOut:
             kinds=self.kinds,
             deps=[*self._spec.deps, *deps],
             partitions_def=partitions_def if partitions_def is not None else ...,
-            new_freshness_thing=new_freshness_thing if new_freshness_thing is not None else ...,
+            new_freshness_policy=new_freshness_policy if new_freshness_policy is not None else ...,
         )
 
     @public

@@ -24,7 +24,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
-from dagster._core.definitions.new_freshness_thing import NewFreshnessThing
+from dagster._core.definitions.new_freshness_policy import NewFreshnessPolicy
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
@@ -157,8 +157,8 @@ class AssetNode(BaseAssetNode):
             return self.assets_def.asset_and_check_keys
 
     @property
-    def new_freshness_thing(self) -> Optional[NewFreshnessThing]:
-        return self._spec.new_freshness_thing
+    def new_freshness_policy(self) -> Optional[NewFreshnessPolicy]:
+        return self._spec.new_freshness_policy
 
     ##### ASSET GRAPH SPECIFIC INTERFACE
 

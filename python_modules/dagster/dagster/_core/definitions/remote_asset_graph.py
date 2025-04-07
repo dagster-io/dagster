@@ -37,7 +37,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
-from dagster._core.definitions.new_freshness_thing import NewFreshnessThing
+from dagster._core.definitions.new_freshness_policy import NewFreshnessPolicy
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
@@ -129,8 +129,8 @@ class RemoteAssetNode(BaseAssetNode, ABC):
         )
 
     @property
-    def new_freshness_policy(self) -> Optional[NewFreshnessThing]:
-        return self.resolve_to_singular_repo_scoped_node().asset_node_snap.new_freshness_thing
+    def new_freshness_policy(self) -> Optional[NewFreshnessPolicy]:
+        return self.resolve_to_singular_repo_scoped_node().asset_node_snap.new_freshness_policy
 
 
 @whitelist_for_serdes
@@ -205,8 +205,8 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
         return self.asset_node_snap.pools
 
     @property
-    def new_freshness_thing(self) -> Optional[NewFreshnessThing]:
-        return self.asset_node_snap.new_freshness_thing
+    def new_freshness_policy(self) -> Optional[NewFreshnessPolicy]:
+        return self.asset_node_snap.new_freshness_policy
 
 
 @whitelist_for_serdes

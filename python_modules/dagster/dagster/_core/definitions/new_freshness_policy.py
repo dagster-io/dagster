@@ -12,16 +12,14 @@ class FreshnessPolicyType(Enum):
     CRON = "cron"
 
 
-class NewFreshnessThing(ABC):
+class NewFreshnessPolicy(ABC):
     """A condition that delineates when an asset is considered fresh. The asset can either pass, violate, or warn on this condition.
 
-    `NewFreshnessThing` can be specified as a parameter to `@asset`, `@multi_asset`, or in `AssetSpec`.
+    This is intended to replace the existing, deprecated `FreshnessPolicy` construct.
+
+    `NewFreshnessPolicy` can be specified as a parameter to `@asset`, `@multi_asset`, or in `AssetSpec`.
 
     Do not use this class directly. Instead, use one of the subclasses.
-
-    A proper name for this concept is under discussion here:
-        https://dagsterlabs.slack.com/archives/C047L6H0LF4/p1743087033186109.
-
     """
 
     @property
@@ -31,7 +29,7 @@ class NewFreshnessThing(ABC):
 
 @whitelist_for_serdes
 @record_custom
-class TimeWindowFreshnessThing(NewFreshnessThing, IHaveNew):
+class TimeWindowFreshnessPolicy(NewFreshnessPolicy, IHaveNew):
     """A freshness condition that considers an asset fresh if it was materialized within a specified time window (time_window_minutes).
 
     The asset is considered stale if its last materialization is older than time_window_minutes, and in a warning state
@@ -41,15 +39,15 @@ class TimeWindowFreshnessThing(NewFreshnessThing, IHaveNew):
 
     .. code-block:: python
 
-        from dagster import TimeWindowFreshnessThing
+        from dagster import TimeWindowFreshnessPolicy
 
         # Asset must be materialized within last 24 hours (1440 minutes)
-        @asset(new_freshness_thing=TimeWindowFreshnessThing(time_window_minutes=1440))
+        @asset(new_freshness_policy=TimeWindowFreshnessPolicy(time_window_minutes=1440))
         def my_asset():
             ...
 
         # Asset must be materialized within last 24 hours (1440 minutes), with warning after 12 hours
-        @asset(new_freshness_thing=TimeWindowFreshnessThing(time_window_minutes=1440, warning_time_window_minutes=720))
+        @asset(new_freshness_policy=TimeWindowFreshnessPolicy(time_window_minutes=1440, warning_time_window_minutes=720))
         def my_asset():
             ...
 

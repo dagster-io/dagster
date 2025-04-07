@@ -38,7 +38,7 @@ from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAss
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.new_freshness_thing import NewFreshnessThing
+from dagster._core.definitions.new_freshness_policy import NewFreshnessPolicy
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.op_invocation import direct_invocation_result
@@ -151,7 +151,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]] = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph,
         # from_op, and get_attributes_dict methods
-        new_freshness_thing_by_key: Optional[Mapping[AssetKey, NewFreshnessThing]] = None,
+        new_freshness_policy_by_key: Optional[Mapping[AssetKey, NewFreshnessPolicy]] = None,
     ):
         from dagster._core.definitions.graph_definition import GraphDefinition
         from dagster._core.execution.build_resources import wrap_resources_for_execution
@@ -240,7 +240,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             check.invariant(partition_mappings is None)
             check.invariant(asset_deps is None)
             check.invariant(partitions_def is None)
-            check.invariant(new_freshness_thing_by_key is None)
+            check.invariant(new_freshness_policy_by_key is None)
             resolved_specs = specs
 
         else:
@@ -281,7 +281,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 descriptions_by_key=descriptions_by_key,
                 code_versions_by_key=None,
                 partitions_def=partitions_def,
-                new_freshness_thing_by_key=new_freshness_thing_by_key,
+                new_freshness_policy_by_key=new_freshness_policy_by_key,
             )
 
         normalized_specs: list[AssetSpec] = []
@@ -434,8 +434,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         auto_materialize_policies_by_output_name: Optional[
             Mapping[str, Optional[AutoMaterializePolicy]]
         ] = None,
-        new_freshness_thing_by_output_name: Optional[
-            Mapping[str, Optional[NewFreshnessThing]]
+        new_freshness_policy_by_output_name: Optional[
+            Mapping[str, Optional[NewFreshnessPolicy]]
         ] = None,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from a GraphDefinition.
@@ -495,7 +495,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             backfill_policy (Optional[BackfillPolicy]): Defines this asset's BackfillPolicy
             owners_by_key (Optional[Mapping[AssetKey, Sequence[str]]]): Defines
                 owners to be associated with each of the asset keys for this node.
-            new_freshness_thing_by_output_name (Optional[Mapping[str, Optional[NewFreshnessThing]]]): Defines asset
+            new_freshness_policy_by_output_name (Optional[Mapping[str, Optional[NewFreshnessPolicy]]]): Defines asset
                 freshness conditions to be associated with some or all of the output assets for this node.
         """
         return AssetsDefinition._from_node(
@@ -522,7 +522,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             check_specs=check_specs,
             owners_by_output_name=owners_by_output_name,
             code_versions_by_output_name=code_versions_by_output_name,
-            new_freshness_thing_by_output_name=new_freshness_thing_by_output_name,
+            new_freshness_policy_by_output_name=new_freshness_policy_by_output_name,
         )
 
     @public
@@ -651,8 +651,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
         owners_by_output_name: Optional[Mapping[str, Sequence[str]]] = None,
-        new_freshness_thing_by_output_name: Optional[
-            Mapping[str, Optional[NewFreshnessThing]]
+        new_freshness_policy_by_output_name: Optional[
+            Mapping[str, Optional[NewFreshnessPolicy]]
         ] = None,
     ) -> "AssetsDefinition":
         from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
@@ -758,8 +758,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
             descriptions_by_key=_output_dict_to_asset_dict(descriptions_by_output_name),
             code_versions_by_key=_output_dict_to_asset_dict(code_versions_by_output_name),
             partitions_def=partitions_def,
-            new_freshness_thing_by_key=_output_dict_to_asset_dict(
-                new_freshness_thing_by_output_name
+            new_freshness_policy_by_key=_output_dict_to_asset_dict(
+                new_freshness_policy_by_output_name
             ),
         )
 
@@ -1724,7 +1724,7 @@ def _asset_specs_from_attr_key_params(
     descriptions_by_key: Optional[Mapping[AssetKey, str]],
     owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]],
     partitions_def: Optional[PartitionsDefinition],
-    new_freshness_thing_by_key: Optional[Mapping[AssetKey, NewFreshnessThing]],
+    new_freshness_policy_by_key: Optional[Mapping[AssetKey, NewFreshnessPolicy]],
 ) -> Sequence[AssetSpec]:
     validated_group_names_by_key = check.opt_mapping_param(
         group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
@@ -1760,11 +1760,11 @@ def _asset_specs_from_attr_key_params(
         value_type=AutomationCondition,
     )
 
-    validated_new_freshness_thing_by_key = check.opt_mapping_param(
-        new_freshness_thing_by_key,
-        "new_freshness_thing_by_key",
+    validated_new_freshness_policy_by_key = check.opt_mapping_param(
+        new_freshness_policy_by_key,
+        "new_freshness_policy_by_key",
         key_type=AssetKey,
-        value_type=NewFreshnessThing,
+        value_type=NewFreshnessPolicy,
     )
 
     validated_owners_by_key = check.opt_mapping_param(
@@ -1808,7 +1808,7 @@ def _asset_specs_from_attr_key_params(
                     partitions_def=check.opt_inst_param(
                         partitions_def, "partitions_def", PartitionsDefinition
                     ),
-                    new_freshness_thing=validated_new_freshness_thing_by_key.get(key),
+                    new_freshness_policy=validated_new_freshness_policy_by_key.get(key),
                 )
             )
 
