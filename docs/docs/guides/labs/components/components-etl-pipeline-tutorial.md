@@ -272,6 +272,10 @@ Finally, materialize the pipeline via the UI. Observe that the Evidence website 
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/32-evidence-build-dir.txt" />
 
+When viewed in your browser, it should look something like this:
+
+![](/images/guides/build/projects-and-components/components/evidence.png)
+
 ## Automate the pipeline
 
 Now that you've defined some assets, let's schedule them.
