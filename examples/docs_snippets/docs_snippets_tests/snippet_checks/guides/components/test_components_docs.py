@@ -322,6 +322,88 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 update_snippets=update_snippets,
             )
 
+            # Evidence.dev
+
+            _run_command(
+                f"uv add git+https://github.com/dagster-io/community-integrations.git@petehunt/evidencedev#subdirectory=libraries/dagster-evidence"
+            )
+            
+            run_command_and_snippet_output(
+                cmd="dg list component-type",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-dg-list-component-types.txt",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
+            )
+
+            run_command_and_snippet_output(
+                cmd="git clone --depth=1 https://github.com/petehunt/jaffle_dashboard.git jaffle_dashboard && rm -rf jaffle_dashboard/.git && cd jaffle_dashboard && npm i",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-jaffle-dashboard-clone.txt",
+                update_snippets=update_snippets,
+                ignore_output=True,
+            )
+
+            run_command_and_snippet_output(
+                cmd="dg scaffold dagster_evidence.lib.EvidenceProject jaffle_dashboard",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-scaffold-jaffle-dashboard.txt",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[MASK_JAFFLE_PLATFORM],
+            )
+
+            check_file(
+                Path("src") / "jaffle_platform" / "defs" / "jaffle_dashboard" / "component.yaml",
+                COMPONENTS_SNIPPETS_DIR / f"{next_snip_no()}-component-jaffle-dashboard.yaml",
+                update_snippets=update_snippets,
+            )
+
+            create_file(
+                Path("src") / "jaffle_platform" / "defs" / "jaffle_dashboard" / "component.yaml",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-project-jaffle-dashboard.yaml",
+                contents=format_multiline("""
+                    type: dagster_evidence.lib.EvidenceProject
+
+                    attributes:
+                      project_path: ../../../../jaffle_dashboard
+                      asset:
+                        key: jaffle_dashboard
+                        deps:
+                          - orders
+                          - customers
+                      deploy_command: 'echo "Dashboard built at $EVIDENCE_BUILD_PATH"'
+                """),
+            )
+            run_command_and_snippet_output(
+                cmd="dg check yaml",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-dg-component-check-yaml.txt",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[
+                    MASK_JAFFLE_PLATFORM,
+                ],
+            )
+            run_command_and_snippet_output(
+                cmd="dg check defs",
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-dg-component-check-defs.txt",
+                update_snippets=update_snippets,
+                snippet_replace_regex=[
+                    MASK_JAFFLE_PLATFORM,
+                ],
+            )
+            _run_command(
+                "DAGSTER_IS_DEV_CLI=1 uv run dagster asset materialize --select '*' -m jaffle_platform.definitions"
+            )
+            run_command_and_snippet_output(
+                cmd='ls jaffle_dashboard/build',
+                snippet_path=COMPONENTS_SNIPPETS_DIR
+                / f"{next_snip_no()}-evidence-build-dir.txt",
+                update_snippets=update_snippets,
+            )
+
+            # Schedule
             run_command_and_snippet_output(
                 cmd="dg scaffold dagster.schedule daily_jaffle.py",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
@@ -347,3 +429,4 @@ def daily_jaffle(context: dg.ScheduleEvaluationContext):
             _run_command(
                 "DAGSTER_IS_DEV_CLI=1 uv run dagster asset materialize --select '*' -m jaffle_platform.definitions"
             )
+

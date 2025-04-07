@@ -1,0 +1,15 @@
+dg check defs
+
+All components validated successfully.
+WARNING:py.warnings:/Users/elementl/repos/dagsterlabs/dagster/python_modules/libraries/dagster-shared/dagster_shared/libraries/__init__.py:42: UserWarning: Found version mismatch between `dagster-shared` (1!0+dev) and `dagster-evidence` (0.26.9)
+  warnings.warn(message)
+
+WARNING:py.warnings:/Users/elementl/repos/dagsterlabs/dagster/python_modules/dagster/dagster/_core/definitions/resolved_asset_deps.py:24: BetaWarning: Asset ["jaffle_dashboard"]'s dependency 'orders' was resolved to upstream asset ["target", "main", "orders"], because the name matches and they're in the same group. This is a beta functionality that may change in a future release is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+  self._deps_by_assets_def_id = resolve_assets_def_deps(assets_defs, source_assets)
+
+WARNING:py.warnings:/Users/elementl/repos/dagsterlabs/dagster/python_modules/dagster/dagster/_core/definitions/resolved_asset_deps.py:24: BetaWarning: Asset ["jaffle_dashboard"]'s dependency 'orders' was resolved to upstream asset ["target", "main", "orders"], because the name matches and they're in the same group. This is a beta functionality that may change in a future release is currently in beta, and may have breaking changes in minor version releases, with behavior changes in patch releases.
+  self._deps_by_assets_def_id = resolve_assets_def_deps(assets_defs, source_assets)
+
+Using /.../jaffle-platform/.venv/bin/dagster
+uv run dagster definitions validate --log-level warning --log-format colored --workspace /var/folders/ct/t_v5c9mn0_g7ylc0172v5cz00000gn/T/tmpfyez4scb
+All definitions loaded successfully.
