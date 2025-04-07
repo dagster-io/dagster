@@ -97,7 +97,7 @@ def build_tox_lint_steps() -> list[CommandStep]:
         ".buildkite/scripts/tox_lint.py",
     ]
     return [
-        CommandStepBuilder(":tox: Lint")
+        CommandStepBuilder(":lint_roller: tox.ini")
         .run(*commands)
         .on_test_image(AvailablePythonVersion.get_default())
         .build()
