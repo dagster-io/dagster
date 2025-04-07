@@ -102,7 +102,11 @@ export const AssetGraphExplorerSidebar = React.memo(
         return {'open-nodes': Array.from(val)};
       },
       decode: (qs) => {
-        return new Set(qs['open-nodes']);
+        const openNodes = qs['open-nodes'];
+        if (Array.isArray(openNodes)) {
+          return new Set(openNodes.map((node) => String(node)));
+        }
+        return new Set();
       },
       isEmptyState: (val) => val.size === 0,
     });

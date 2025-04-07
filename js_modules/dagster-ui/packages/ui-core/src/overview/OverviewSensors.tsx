@@ -68,7 +68,12 @@ export const OverviewSensors = () => {
 
   const [sensorTypes, setSensorTypes] = useQueryPersistedState<Set<SensorType>>({
     encode: (vals) => ({sensorType: vals.size ? Array.from(vals).join(',') : undefined}),
-    decode: (qs) => new Set((qs.sensorType?.split(',') as SensorType[]) || []),
+    decode: (qs) => {
+      if (typeof qs.sensorType === 'string') {
+        return new Set(qs.sensorType.split(',') as SensorType[]);
+      }
+      return new Set();
+    },
   });
 
   const codeLocationFilter = useCodeLocationFilter();

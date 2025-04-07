@@ -52,7 +52,7 @@ interface Props {
   isLoadingDefinition: boolean;
 }
 
-const DISPLAYED_STATUSES = [
+const DISPLAYED_STATUSES: AssetPartitionStatus[] = [
   AssetPartitionStatus.MISSING,
   AssetPartitionStatus.MATERIALIZING,
   AssetPartitionStatus.MATERIALIZED,
@@ -88,10 +88,17 @@ export const AssetPartitions = ({
   const [statusFilters, setStatusFilters] = useQueryPersistedState<AssetPartitionStatus[]>({
     defaults: {status: [...DISPLAYED_STATUSES].sort().join(',')},
     encode: (val) => ({status: [...val].sort().join(',')}),
-    decode: (qs) =>
-      (qs.status || '')
-        .split(',')
-        .filter((s: AssetPartitionStatus) => DISPLAYED_STATUSES.includes(s)),
+    decode: (qs) => {
+      const status = qs.status;
+      if (typeof status === 'string') {
+        return status
+          .split(',')
+          .filter((s): s is AssetPartitionStatus =>
+            DISPLAYED_STATUSES.includes(s as AssetPartitionStatus),
+          );
+      }
+      return [];
+    },
   });
 
   const [searchValues, setSearchValues] = useState<string[]>([]);

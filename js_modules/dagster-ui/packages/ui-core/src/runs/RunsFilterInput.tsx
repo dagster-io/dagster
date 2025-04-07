@@ -110,11 +110,13 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
           cursor: undefined,
           [RUNS_FEED_CURSOR_KEY]: undefined,
         }),
-        decode: ({q = []}) =>
-          tokenizedValuesFromStringArray(q, RUN_PROVIDERS_EMPTY).filter(
+        decode: ({q}) => {
+          const values = (Array.isArray(q) ? q : []).map(String);
+          return tokenizedValuesFromStringArray(values, RUN_PROVIDERS_EMPTY).filter(
             (t) =>
               !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType),
-          ) as RunFilterToken[],
+          ) as RunFilterToken[];
+        },
       }),
       [enabledFilters],
     ),

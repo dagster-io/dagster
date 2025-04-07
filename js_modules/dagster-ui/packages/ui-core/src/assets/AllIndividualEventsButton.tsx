@@ -311,10 +311,10 @@ export const AllIndividualEventsButton = ({
   children: React.ReactNode;
   disabled?: boolean;
 }) => {
-  const [_open, setOpen] = useQueryPersistedState({
+  const [_open, setOpen] = useQueryPersistedState<boolean>({
     queryKey: 'showAllEvents',
-    decode: (qs) => (qs.showAllEvents === 'true' ? true : false),
-    encode: (b) => ({showAllEvents: b || undefined}),
+    decode: (qs) => typeof qs.showAllEvents === 'string' && qs.showAllEvents === 'true',
+    encode: (b) => ({showAllEvents: b ? 'true' : undefined}),
   });
   const [focusedTimestamp, setFocusedTimestamp] = React.useState<string | undefined>();
   const groups = React.useMemo(
