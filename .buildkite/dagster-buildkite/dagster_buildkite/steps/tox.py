@@ -92,8 +92,7 @@ def _resolve_python_version(tox_env: str) -> AvailablePythonVersion:
 
 def build_tox_lint_steps() -> list[CommandStep]:
     commands = [
-        "python3",
-        ".buildkite/scripts/tox_lint.py",
+        "python3 .buildkite/scripts/tox_lint.py",
     ]
     return [
         CommandStepBuilder(":lint-roller: tox.ini")
