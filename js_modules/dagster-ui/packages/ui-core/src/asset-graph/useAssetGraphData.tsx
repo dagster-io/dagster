@@ -165,9 +165,11 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   const favoriteAssets = useFavoriteAssets();
 
   const repoFilteredNodes = useMemo(() => {
-    if (favoriteAssets) {
-      return nodes?.filter((node) => favoriteAssets.has(tokenForAssetKey(node.assetKey)));
-    }
+    // Apply both favorites filtering and repository filtering together
+    return nodes?.filter((node) => 
+      (!favoriteAssets || favoriteAssets.has(tokenForAssetKey(node.assetKey))) && 
+      (!options.hideNodesMatching || !options.hideNodesMatching(node))
+    );
     // Apply any filters provided by the caller. This is where we do repo filtering
     let matching = nodes;
     if (options.hideNodesMatching) {
