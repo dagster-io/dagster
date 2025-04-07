@@ -6,7 +6,7 @@ export default function ComponentTags({owners, tags}: {owners: string[]; tags: s
   return (
     <div className={styles.tags}>
       {owners.map((owner) => (
-        <div className={clsx(styles.tag, styles.authorTag)}>
+        <div key={owner} className={clsx(styles.tag, styles.authorTag)}>
          owner: {owner}
         </div>
       ))}
