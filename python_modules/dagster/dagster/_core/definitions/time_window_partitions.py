@@ -620,7 +620,7 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
         return PaginatedResults(
             results=partition_keys,
-            cursor=str(next_cursor),
+            cursor=next_cursor.to_string(),
             has_more=has_more,
         )
 
@@ -854,53 +854,18 @@ class TimeWindowPartitionsDefinition(PartitionsDefinition, IHaveNew):
 
     @functools.lru_cache(maxsize=5)
     def get_partition_keys_in_time_window(self, time_window: TimeWindow) -> Sequence[str]:
-        paginated_results = self.get_paginated_partition_keys_in_time_window(time_window)
-        return paginated_results.results
-
-    @functools.lru_cache(maxsize=5)
-    def get_paginated_partition_keys_in_time_window(
-        self,
-        time_window: TimeWindow,
-        limit: Optional[int] = None,
-        ascending: bool = True,
-        cursor: Optional[str] = None,
-    ) -> PaginatedResults[str]:
         result: list[str] = []
-        if cursor:
-            start_ts = TimeWindowCursor.from_cursor(cursor).start_timestamp
-        else:
-            start_ts = time_window.start.timestamp()
-
-        has_more = False
-        new_cursor = str(
-            TimeWindowCursor(
-                start_timestamp=int(start_ts),
-                end_timestamp=int(start_ts),
-                offset_partition_count=0,
-            )
-        )
-
         time_window_end_timestamp = time_window.end.timestamp()
-        for partition_time_window in self._iterate_time_windows(start_ts):
+        for partition_time_window in self._iterate_time_windows(time_window.start.timestamp()):
             if partition_time_window.start.timestamp() < time_window_end_timestamp:
                 result.append(
                     dst_safe_strftime(
                         partition_time_window.start, self.timezone, self.fmt, self.cron_schedule
                     )
                 )
-                new_cursor = str(
-                    TimeWindowCursor(
-                        start_timestamp=int(partition_time_window.end.timestamp()),
-                        end_timestamp=int(time_window.start.timestamp()),
-                        offset_partition_count=0,
-                    )
-                )
-                if limit and len(result) >= limit:
-                    has_more = True
-                    break
             else:
                 break
-        return PaginatedResults(results=result, cursor=new_cursor, has_more=has_more)
+        return result
 
     def get_partition_subset_in_time_window(
         self, time_window: TimeWindow
