@@ -6,6 +6,7 @@ from dagster_shared.record import record
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
@@ -116,6 +117,32 @@ ResolvedAssetSpec: TypeAlias = Annotated[
     Resolver(
         resolve_asset_spec,
         model_field_type=AssetSpecKwargs.model(),
+    ),
+]
+
+
+@record
+class AssetCheckSpecKwargs(Resolvable):
+    name: str
+    asset: ResolvedAssetKey
+    additional_deps: Optional[Sequence[ResolvedAssetKey]] = None
+    description: Optional[str] = None
+    blocking: bool = False
+    metadata: Injectable[Optional[Mapping[str, Any]]] = None
+    automation_condition: Optional[Injected[AutomationCondition]] = None
+
+
+def resolve_asset_check_spec(context: ResolutionContext, model):
+    return AssetCheckSpec(
+        **resolve_fields(model=model, resolved_cls=AssetCheckSpecKwargs, context=context)
+    )
+
+
+ResolvedAssetCheckSpec: TypeAlias = Annotated[
+    AssetCheckSpec,
+    Resolver(
+        resolve_asset_check_spec,
+        model_field_type=AssetCheckSpecKwargs.model(),
     ),
 ]
 
