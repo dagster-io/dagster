@@ -475,7 +475,8 @@ def fivetran_resource(context: InitResourceContext) -> FivetranResource:
 # Reworked resources
 # ------------------
 
-
+# The upper limit is 1000 according to the Fivetran API documentation
+# https://fivetran.com/docs/rest-api/getting-started/pagination#queryparameters
 DAGSTER_FIVETRAN_LIST_CONNECTIONS_FOR_GROUP_INDIVIDUAL_REQUEST_LIMIT = int(
     os.getenv("DAGSTER_FIVETRAN_LIST_CONNECTIONS_FOR_GROUP_INDIVIDUAL_REQUEST_LIMIT", "1000")
 )
