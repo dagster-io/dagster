@@ -36,7 +36,7 @@ def lint_passenv(tox_config: configparser.ConfigParser) -> bool:
 
 
 if __name__ == "__main__":
-    failures = False
+    passing = True
     for root, dirs, files in os.walk("."):
         if "tox.ini" in files:
             tox_file = os.path.join(root, "tox.ini")
@@ -46,6 +46,6 @@ if __name__ == "__main__":
 
             print(f"Linting {tox_file}")  # noqa
 
-            failures |= lint_passenv(config)
+            passing &= lint_passenv(config)
 
-    assert not failures
+    assert passing
