@@ -1,5 +1,5 @@
 ---
-title: 'Scaffolding a project'
+title: 'Initializing a dg project'
 sidebar_position: 100
 ---
 
@@ -7,15 +7,15 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
-`dg` provides support for scaffolding a special type of Python package, called a _project_, that defines a [Dagster code location](https://docs.dagster.io/guides/deploy/code-locations/managing-code-locations-with-definitions).
+`dg` provides support for generating a special type of Python package, called a _project_, that defines a [Dagster code location](https://docs.dagster.io/guides/deploy/code-locations/managing-code-locations-with-definitions).
 
-To scaffold a new project, use the `dg scaffold project` command:
+To initialize a new project, use the `dg init` command:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/scaffolding-project/1-scaffolding-project.txt" />
 
 ## Project structure
 
-The `dg scaffold project` command creates a directory with a standard Python package structure with some additions:
+The `dg init` command creates a directory with a standard Python package structure with some additions:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/dg/scaffolding-project/2-tree.txt" />
 
