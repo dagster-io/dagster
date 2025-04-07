@@ -1084,8 +1084,8 @@ class FivetranWorkspace(ConfigurableResource):
         # The FivetranOutput is None if the connector hasn't been synced
         if not fivetran_output:
             context.log.warning(
-                f"The connector with ID {connector_id} has not been synced."
-                f"Make sure that your connector is enabled before syncing it."
+                f"The connector with ID {connector_id} is currently paused and so it has not been synced. "
+                f"Make sure that your connector is enabled before syncing it with Dagster."
             )
             return
 
