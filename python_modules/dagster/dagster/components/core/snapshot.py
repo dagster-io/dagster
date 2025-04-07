@@ -15,7 +15,8 @@ from dagster.components.scaffold.scaffold import Scaffolder, get_scaffolder
 def _clean_docstring(docstring: str) -> str:
     lines = docstring.strip().splitlines()
     first_line = lines[0]
-    if len(lines) == 1: return first_line
+    if len(lines) == 1:
+        return first_line
     else:
         rest = textwrap.dedent("\n".join(lines[1:]))
         return f"{first_line}\n{rest}"
@@ -44,19 +45,22 @@ def _get_scaffold_target_type_data(scaffolder: Scaffolder) -> ScaffoldTargetType
 
 def get_package_entry_snap(key: PackageObjectKey, obj: object) -> PackageObjectSnap:
     type_data = []
-    summary, description = _get_summary_and_description(obj)
+    owners = []
+    tags = []
     if isinstance(obj, type) and issubclass(obj, Component):
         type_data.append(_get_component_type_data(obj))
         spec = obj.get_spec()
-        description = spec.description
         owners = spec.owners
         tags = spec.tags
     scaffolder = get_scaffolder(obj)
     if isinstance(scaffolder, Scaffolder):
         type_data.append(_get_scaffold_target_type_data(scaffolder))
-        owners = None
-        tags = None
+    summary, description = _get_summary_and_description(obj)
     return PackageObjectSnap(
-        key=key, summary=summary, owners=owners, tags=tags, description=description, feature_data=type_data
+        key=key,
+        summary=summary,
+        owners=owners,
+        tags=tags,
+        description=description,
+        feature_data=type_data,
     )
-

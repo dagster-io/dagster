@@ -54,6 +54,8 @@ def test_list_library_objects_from_module():
         key=PackageObjectKey(namespace="dagster_test.components", name="SimpleAssetComponent"),
         description="A simple asset that returns a constant string value.",
         summary="A simple asset that returns a constant string value.",
+        owners=["john@dagster.io", "jane@dagster.io"],
+        tags=["a", "b", "c"],
         feature_data=[
             ComponentFeatureData(
                 schema={
@@ -98,6 +100,8 @@ def test_list_library_objects_from_module():
         ),
         description="A simple asset that runs a Python script with the Pipes subprocess client.\n\nBecause it is a pipes asset, no value is returned.",
         summary="A simple asset that runs a Python script with the Pipes subprocess client.",
+        owners=[],
+        tags=[],
         feature_data=[
             ComponentFeatureData(schema=pipes_script_component_model_schema),
             ScaffoldTargetTypeData(schema=pipes_script_component_scaffold_params_schema),
