@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class ComponentMetadata(BaseModel):
     """Metadata assigned to the Component."""
 
-    author: Optional[str] = None
+    owners: Optional[Sequence[str]] = None
     tags: Optional[Sequence[str]] = None
 
 
@@ -32,7 +32,7 @@ class Component(ABC):
         return None
 
     @classmethod
-    def get_metadata(cls) -> ComponentMetadata:
+    def get_component_type_metadata(cls) -> ComponentMetadata:
         return ComponentMetadata()
 
     @classmethod

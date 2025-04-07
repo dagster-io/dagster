@@ -16,9 +16,9 @@ class SimpleAssetComponent(Component, Resolvable, Model):
         self._value = value
 
     @classmethod
-    def get_metadata(cls):
+    def get_component_type_metadata(cls):
         return ComponentMetadata(
-            author="John Smith",
+            owners=["John Dagster", "Jane Dagster"],
             tags=["a", "b", "c"],
         )
 
