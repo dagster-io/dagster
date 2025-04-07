@@ -23,6 +23,8 @@ Spark jobs typically execute on infrastructure that's specialized for Spark. Spa
 
 Running Spark code often requires submitting code to a Databricks or EMR cluster. `dagster-pyspark` provides a Spark class with methods for configuration and constructing the `spark-submit` command for a Spark job.
 
+This page is focused on using Pipes with specific Spark providers, such as AWS EMR or Databricks. Our guide about [Building pipelines with PySpark](/guides/build/external-pipelines/pyspark-pipeline) provides more information on using Dagster Pipes to launch & monitor general PySpark jobs.
+
 ### About Apache Spark
 
 **Apache Spark** is an open source unified analytics engine for large-scale data processing. Spark provides an interface for programming clusters with implicit data parallelism and fault tolerance. It also provides libraries for graph computation, SQL for structured data processing, ML, and data science.
@@ -46,5 +48,3 @@ Existing Spark jobs can be used with Pipes without any modifications. In this ca
 Additionally, it's possible to send events to Dagster from the job by utilizing the `dagster_pipes` module. This requires minimal code changes on the job side.
 
 This approach also works for Spark jobs written in Java or Scala, although we don't have Pipes implementations for emitting events from those languages yet.
-
-Dagster Pipes can also be used to launch & monitor general PySpark jobs. Learn more about this in our guide about [Building pipelines with Spark](/guides/build/external-pipelines/pyspark-pipeline).
