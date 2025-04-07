@@ -163,11 +163,11 @@ def build_auto_materialize_perf_suite_steps():
     return build_integration_suite_steps(
         directory,
         pytest_tox_factors,
-        unsupported_python_versions=[
-            version
-            for version in AvailablePythonVersion.get_all()
-            if version != AvailablePythonVersion.V3_11
-        ],
+        # unsupported_python_versions=[
+        #     version
+        #     for version in AvailablePythonVersion.get_all()
+        #     if version != AvailablePythonVersion.V3_11
+        # ],
     )
 
 
