@@ -17,6 +17,7 @@ metadata:
     {{- end }}
 spec:
   replicas: 1
+  revisionHistoryLimit: {{ .Values.dagsterDaemon.revisionHistoryLimit }}
   strategy:
     type: Recreate
   selector:
