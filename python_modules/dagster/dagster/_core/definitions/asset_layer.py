@@ -28,6 +28,7 @@ class AssetLayer(NamedTuple):
     """
 
     asset_graph: "AssetGraph"
+    global_asset_graph: "AssetGraph"
     assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"]
     asset_keys_by_node_input_handle: Mapping[NodeInputHandle, AssetKey]
     asset_keys_by_node_output_handle: Mapping[NodeOutputHandle, AssetKey]
@@ -43,6 +44,7 @@ class AssetLayer(NamedTuple):
         graph_def: GraphDefinition,
         assets_defs_by_outer_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
         asset_graph: "AssetGraph",
+        global_asset_graph: "AssetGraph",
     ) -> "AssetLayer":
         """Generate asset info from a GraphDefinition and a mapping from nodes in that graph to the
         corresponding AssetsDefinition objects.
@@ -124,6 +126,7 @@ class AssetLayer(NamedTuple):
 
         return AssetLayer(
             asset_graph=asset_graph,
+            global_asset_graph=global_asset_graph,
             asset_keys_by_node_input_handle=asset_key_by_input,
             asset_keys_by_node_output_handle=asset_keys_by_node_output_handle,
             check_key_by_node_output_handle=check_key_by_output,

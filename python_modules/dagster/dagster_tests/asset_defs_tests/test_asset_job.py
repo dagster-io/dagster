@@ -2918,18 +2918,59 @@ def test_subset_cycle_dependencies():
 
     # now create a job that just executes a and b
     job = job.get_subset(asset_selection={AssetKey("a"), AssetKey("b")})
-    # should produce a job with foo -> foo_2
-    assert len(list(job.graph.iterate_op_defs())) == 2
-    assert job.graph.dependencies == {
-        NodeInvocation(name="foo"): {},
-        # the second node must have a dependency on the first
-        NodeInvocation(name="foo", alias="foo_2"): {
-            "__subset_input__a": DependencyDefinition(node="foo", output="a"),
-        },
-    }
+    # can satisfy this with just a single op
+    assert len(list(job.graph.iterate_op_defs())) == 1
+    assert job.graph.dependencies == {NodeInvocation(name="foo"): {}}
     result = job.execute_in_process()
     assert result.success
     assert _all_asset_keys(result) == {AssetKey("a"), AssetKey("b")}
+
+
+def test_subset_recongeal() -> None:
+    import dagster as dg
+
+    @dg.multi_asset(
+        specs=[
+            dg.AssetSpec("a", skippable=True),
+            dg.AssetSpec("c", deps="b", skippable=True),
+            dg.AssetSpec("d", deps=["a", "b"], skippable=True),
+        ],
+        can_subset=True,
+    )
+    def acd(context: dg.AssetExecutionContext):
+        context.log.info(f"{context.selected_asset_keys}")
+        for selected in sorted(context.op_execution_context.selected_output_names):
+            yield dg.Output(None, selected)
+
+    @dg.asset(deps=["a"])
+    def b() -> None: ...
+
+    defs = dg.Definitions(assets=[acd, b])
+
+    all_job = defs.get_implicit_global_asset_job_def()
+    subset_job = all_job.get_subset(asset_selection={dg.AssetKey("a"), dg.AssetKey("c")})
+    assert len(list(subset_job.graph.iterate_op_defs())) == 1
+
+    assert all_job.graph.dependencies == {
+        NodeInvocation(name="acd"): {},
+        NodeInvocation(name="b"): {
+            "a": DependencyDefinition(node="acd", output="a"),
+        },
+        NodeInvocation(name="acd", alias="acd_2"): {
+            "__subset_input__a": DependencyDefinition(node="acd", output="a"),
+            "b": DependencyDefinition(node="b", output="result"),
+        },
+    }
+    result = all_job.execute_in_process()
+    assert result.success
+    assert _all_asset_keys(result) == {AssetKey("a"), AssetKey("b"), AssetKey("c"), AssetKey("d")}
+
+    # only need a single op to make this work
+    assert len(list(subset_job.graph.iterate_op_defs())) == 1
+    assert subset_job.graph.dependencies == {NodeInvocation(name="acd"): {}}
+    result = subset_job.execute_in_process()
+    assert result.success
+    assert _all_asset_keys(result) == {AssetKey("a"), AssetKey("c")}
 
 
 def test_exclude_assets_without_keys():

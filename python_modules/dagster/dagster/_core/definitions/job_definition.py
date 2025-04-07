@@ -877,7 +877,7 @@ class JobDefinition(IHasInternalInit):
             )
 
         job_asset_graph = get_asset_graph_for_job(
-            self.asset_layer.asset_graph, selection, allow_different_partitions_defs=True
+            self.asset_layer.global_asset_graph, selection, allow_different_partitions_defs=True
         )
 
         return build_asset_job(
@@ -889,6 +889,7 @@ class JobDefinition(IHasInternalInit):
             tags=self.tags,
             config=self.config_mapping or self.partitioned_config,
             _asset_selection_data=selection_data,
+            _global_asset_graph=self.asset_layer.global_asset_graph,
             allow_different_partitions_defs=True,
         )
 
@@ -1310,6 +1311,7 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
 
     return AssetLayer(
         asset_graph=AssetGraph.from_assets(all_input_assets),
+        global_asset_graph=AssetGraph.from_assets(all_input_assets),
         assets_defs_by_node_handle={},
         asset_keys_by_node_input_handle=asset_keys_by_node_input_handle,
         asset_keys_by_node_output_handle={},

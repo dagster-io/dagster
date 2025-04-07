@@ -91,6 +91,7 @@ def build_asset_job(
     hooks: Optional[AbstractSet[HookDefinition]] = None,
     op_retry_policy: Optional[RetryPolicy] = None,
     _asset_selection_data: Optional[AssetSelectionData] = None,
+    _global_asset_graph: Optional[AssetGraph] = None,
 ) -> JobDefinition:
     """Builds a job that materializes the given assets. This is a private function that is used
     during resolution of jobs created with `define_asset_job`.
@@ -139,6 +140,7 @@ def build_asset_job(
     )
 
     deps, assets_defs_by_node_handle = build_node_deps(asset_graph)
+    global_asset_graph = _global_asset_graph or asset_graph
 
     # attempt to resolve cycles using multi-asset subsetting
     if _has_cycles(deps):
@@ -169,6 +171,7 @@ def build_asset_job(
         graph_def=graph,
         assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
         asset_graph=asset_graph,
+        global_asset_graph=global_asset_graph,
     )
 
     all_resource_defs = get_all_resource_defs(asset_graph, wrapped_resource_defs)
