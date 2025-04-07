@@ -79,11 +79,17 @@ setup(
         "mwaa": [
             "boto3>=1.18.0"
         ],  # confirms that mwaa is available in the environment (can't find exactly which version adds mwaa support, but I can confirm that 1.18.0 and greater have it.)
+        "composer": [
+            "google-auth>=2.0.0",
+            "google-cloud-composer>=1.0.0"
+        ],  # dependencies for Google Cloud Composer authentication
         "test": [
             "pytest",
             f"dagster-dbt{pin}",
             "dbt-duckdb",
             "boto3",
+            "google-auth",
+            "google-cloud-composer",
             f"dagster-webserver{pin}",
             *AIRFLOW_REQUIREMENTS,
             *CLI_REQUIREMENTS,
