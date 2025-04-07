@@ -1,15 +1,17 @@
 import json
+from collections.abc import Sequence
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import click
-from dagster_shared.serdes.objects import ComponentTypeSnap
+from dagster_shared.serdes.objects import PackageEntrySnap
 from rich.console import Console
 from rich.table import Table
+from rich.text import Text
 
 from dagster_dg.cli.shared_options import dg_global_options
-from dagster_dg.component import RemotePackageRegistry
+from dagster_dg.component import PackageEntryType, RemotePackageRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.defs import (
@@ -64,8 +66,89 @@ def list_component_command(**global_options: object) -> None:
 
 
 # ########################
-# ##### COMPONENT TYPE
+# ##### PACKAGE ENTRY
 # ########################
+
+
+ENTRY_TYPE_COLOR_MAP = {"component": "deep_sky_blue3", "scaffold-target": "khaki1"}
+
+
+def _pretty_entry_types(entry: PackageEntrySnap) -> Text:
+    text = Text()
+    for entry_type in entry.types:
+        if len(text) > 0:
+            text += Text(", ")
+        text += Text(entry_type, style=ENTRY_TYPE_COLOR_MAP.get(entry_type, ""))
+    text = Text("[") + text + Text("]")
+    return text
+
+
+def _package_entry_table(entries: Sequence[PackageEntrySnap]) -> Table:
+    sorted_entries = sorted(entries, key=lambda x: x.key.to_typename())
+    table = Table(border_style="dim", show_lines=True)
+    table.add_column("Key", style="bold cyan", no_wrap=True)
+    table.add_column("Summary")
+    table.add_column("Types")
+    for entry in sorted_entries:
+        table.add_row(entry.key.to_typename(), entry.summary, _pretty_entry_types(entry))
+    return table
+
+
+def _all_packages_entry_table(
+    registry: RemotePackageRegistry, name_only: bool, entry_type: Optional[PackageEntryType]
+) -> Table:
+    table = Table(border_style="dim")
+
+    table.add_column("Package", style="bold")
+    if not name_only:
+        table.add_column("Entries", style="bold")
+
+    for package in sorted(registry.packages):
+        if not name_only:
+            entries = registry.get_entries(package, entry_type)
+            inner_table = _package_entry_table(entries)
+            table.add_row(package, inner_table)
+        else:
+            table.add_row(package)
+    return table
+
+
+@list_group.command(name="packages", cls=DgClickCommand)
+@click.option(
+    "--name-only",
+    is_flag=True,
+    default=False,
+    help="Only display the names of the packages.",
+)
+@click.option(
+    "--package",
+    "-p",
+    help="Filter by package name.",
+)
+@click.option(
+    "--entry-type",
+    "-t",
+    type=click.Choice(["component", "scaffold-target"]),
+    help="Filter by entry type.",
+)
+@dg_global_options
+@cli_telemetry_wrapper
+def list_packages_command(
+    name_only: bool,
+    package: Optional[str],
+    entry_type: Optional[PackageEntryType],
+    **global_options: object,
+) -> None:
+    """List registered Dagster components in the current project environment."""
+    cli_config = normalize_cli_config(global_options, click.get_current_context())
+    dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
+    registry = RemotePackageRegistry.from_dg_context(dg_context)
+
+    if package:
+        table = _package_entry_table(registry.get_entries(package, entry_type))
+    else:
+        table = _all_packages_entry_table(registry, name_only, entry_type=entry_type)
+    Console().print(table)
 
 
 @list_group.command(name="component-type", cls=DgClickCommand)
@@ -84,33 +167,15 @@ def list_component_type_command(output_json: bool, **global_options: object) -> 
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemotePackageRegistry.from_dg_context(dg_context)
 
-    sorted_keys = sorted(
-        (k for k in registry.keys() if isinstance(registry.get(k), ComponentTypeSnap)),
-        key=lambda k: k.to_typename(),
-    )
-
-    # JSON
     if output_json:
         output: list[dict[str, object]] = []
-        for key in sorted_keys:
-            obj = registry.get(key)
-            output.append(
-                {
-                    "key": key.to_typename(),
-                    "summary": obj.summary,
-                }
-            )
+        for entry in sorted(
+            registry.get_entries(entry_type="component"), key=lambda x: x.key.to_typename()
+        ):
+            output.append({"key": entry.key.to_typename(), "summary": entry.summary})
         click.echo(json.dumps(output, indent=4))
-
-    # TABLE
     else:
-        table = Table(border_style="dim")
-        table.add_column("Component Type", style="bold cyan", no_wrap=True)
-        table.add_column("Summary")
-        for key in sorted_keys:
-            table.add_row(key.to_typename(), registry.get(key).summary)
-        console = Console()
-        console.print(table)
+        Console().print(_all_packages_entry_table(registry, False, "component"))
 
 
 # ########################

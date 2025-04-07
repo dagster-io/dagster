@@ -3,8 +3,8 @@ from typing import Optional
 
 from dagster_shared.serdes.objects.package_entry import (
     ComponentTypeData,
-    LibraryEntryKey,
-    LibraryEntrySnap,
+    PackageEntryKey,
+    PackageEntrySnap,
     ScaffoldTargetTypeData,
 )
 
@@ -43,7 +43,7 @@ def _get_scaffold_target_type_data(scaffolder: Scaffolder) -> ScaffoldTargetType
     )
 
 
-def get_library_object_snap(key: LibraryEntryKey, obj: object) -> LibraryEntrySnap:
+def get_package_entry_snap(key: PackageEntryKey, obj: object) -> PackageEntrySnap:
     type_data = []
     if isinstance(obj, type) and issubclass(obj, Component):
         type_data.append(_get_component_type_data(obj))
@@ -51,4 +51,4 @@ def get_library_object_snap(key: LibraryEntryKey, obj: object) -> LibraryEntrySn
     if isinstance(scaffolder, Scaffolder):
         type_data.append(_get_scaffold_target_type_data(scaffolder))
     summary, description = _get_summary_and_description(obj)
-    return LibraryEntrySnap(key=key, summary=summary, description=description, type_data=type_data)
+    return PackageEntrySnap(key=key, summary=summary, description=description, type_data=type_data)

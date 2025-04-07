@@ -1,16 +1,25 @@
 dg list component-type
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Component Type                                              ┃ Summary                  ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━┩
-│ dagster.components.DefinitionsComponent                     │ An arbitrary set of      │
-│                                                             │ dagster definitions.     │
-│ dagster.components.DefsFolderComponent                      │ A folder which may       │
-│                                                             │ contain multiple         │
-│                                                             │ submodules, each         │
-│                                                             │ which define components. │
-│ dagster.components.PipesSubprocessScriptCollectionComponent │ Assets that wrap Python  │
-│                                                             │ scripts executed with    │
-│                                                             │ Dagster's                │
-│                                                             │ PipesSubprocessClient.   │
-└─────────────────────────────────────────────────────────────┴──────────────────────────┘
+┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Package ┃ Entries                                                                                                    ┃
+┡━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ dagster │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┓ │
+│         │ ┃ Key                                                         ┃ Summary            ┃ Types               ┃ │
+│         │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━┩ │
+│         │ │ dagster.components.DefinitionsComponent                     │ An arbitrary set   │ [component,         │ │
+│         │ │                                                             │ of dagster         │ scaffold-target]    │ │
+│         │ │                                                             │ definitions.       │                     │ │
+│         │ ├─────────────────────────────────────────────────────────────┼────────────────────┼─────────────────────┤ │
+│         │ │ dagster.components.DefsFolderComponent                      │ A folder which may │ [component,         │ │
+│         │ │                                                             │ contain multiple   │ scaffold-target]    │ │
+│         │ │                                                             │ submodules, each   │                     │ │
+│         │ │                                                             │ which define       │                     │ │
+│         │ │                                                             │ components.        │                     │ │
+│         │ ├─────────────────────────────────────────────────────────────┼────────────────────┼─────────────────────┤ │
+│         │ │ dagster.components.PipesSubprocessScriptCollectionComponent │ Assets that wrap   │ [component,         │ │
+│         │ │                                                             │ Python scripts     │ scaffold-target]    │ │
+│         │ │                                                             │ executed with      │                     │ │
+│         │ │                                                             │ Dagster's          │                     │ │
+│         │ │                                                             │ PipesSubprocessCl… │                     │ │
+│         │ └─────────────────────────────────────────────────────────────┴────────────────────┴─────────────────────┘ │
+└─────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

@@ -39,7 +39,7 @@ EDITABLE_DIR = DAGSTER_ROOT / "python_modules" / "libraries"
 
 SNIPPET_ENV = {
     # Controls width from click/rich
-    "COLUMNS": "90",
+    "COLUMNS": "120",
     # No ansi escapes for color
     "NO_COLOR": "1",
     # Disable any activated virtualenv to prevent warning messages
