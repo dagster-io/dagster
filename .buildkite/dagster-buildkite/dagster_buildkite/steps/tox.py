@@ -88,3 +88,17 @@ def _resolve_python_version(tox_env: str) -> AvailablePythonVersion:
         return AvailablePythonVersion.from_major_minor(major, minor)
     else:
         return AvailablePythonVersion.get_default()
+
+
+def build_tox_lint_steps() -> list[CommandStep]:
+    commands = [
+        "python3",
+        "-m",
+        ".buildkite/scripts/tox_lint.py",
+    ]
+    return [
+        CommandStepBuilder(":tox: Lint")
+        .run(*commands)
+        .on_test_image(AvailablePythonVersion.get_default())
+        .build()
+    ]

@@ -7,6 +7,7 @@ from dagster_buildkite.python_packages import PythonPackages
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.step_builder import CommandStepBuilder
 from dagster_buildkite.steps.helm import build_helm_steps
+from dagster_buildkite.steps.tox import build_tox_lint_steps
 from dagster_buildkite.steps.integration import build_integration_steps
 from dagster_buildkite.steps.packages import (
     build_example_packages_steps,
@@ -39,6 +40,7 @@ def build_repo_wide_steps() -> List[BuildkiteStep]:
         *build_repo_wide_pyright_steps(),
         *build_repo_wide_ruff_steps(),
         *build_repo_wide_prettier_steps(),
+        *build_tox_lint_steps(),
     ]
 
 
