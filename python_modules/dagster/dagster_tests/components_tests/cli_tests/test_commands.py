@@ -50,25 +50,8 @@ def test_list_library_objects_from_module():
         "dagster_test.components.SimplePipesScriptComponent",
     ]
 
-<<<<<<< HEAD
     assert result[2] == PackageObjectSnap(
         key=PackageObjectKey(namespace="dagster_test.components", name="SimpleAssetComponent"),
-=======
-    assert result[2] == ComponentTypeSnap(
-        key=LibraryObjectKey(namespace="dagster_test.components", name="SimpleAssetComponent"),
-        schema={
-            "additionalProperties": False,
-            "properties": {
-                "asset_key": {"title": "Asset Key", "type": "string"},
-                "value": {"title": "Value", "type": "string"},
-            },
-            "required": ["asset_key", "value"],
-            "title": "SimpleAssetComponentModel",
-            "type": "object",
-        },
-        owners=["John Dagster", "Jane Dagster"],
-        tags=["a", "b", "c"],
->>>>>>> 51a84b75ec (allow owners, and rename get_metadata to get_component_type_metadata)
         description="A simple asset that returns a constant string value.",
         summary="A simple asset that returns a constant string value.",
         feature_data=[
