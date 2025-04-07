@@ -113,7 +113,6 @@ setup(
     extras_require={
         "docker": ["docker"],
         "test": [
-            "buildkite-test-collector",
             "docker",
             f"grpcio-tools>={GRPC_VERSION_FLOOR}",
             "mypy-protobuf",
@@ -131,6 +130,10 @@ setup(
             "rapidfuzz",
             "flaky",
             "psutil",
+        ],
+        "ci": [
+            "buildkite-test-collector",
+            "dagster-buildkite",
         ],
         "test-components": [
             "tomlkit",

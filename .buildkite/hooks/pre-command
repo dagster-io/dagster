@@ -4,3 +4,6 @@ set -eu
 
 export BUILDKITE_ANALYTICS_TOKEN=$DAGSTER_BUILDKITE_TEST_ANALYTICS_TOKEN
 export BUILDKITE_TEST_SUITE_SLUG=$DAGSTER_BUILDKITE_TEST_SUITE_SLUG
+
+# Globally install fixtures we use across all tests in CI
+export PYTEST_PLUGINS='dagster_buildkite.fixtures'
