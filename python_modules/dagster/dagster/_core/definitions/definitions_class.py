@@ -6,8 +6,10 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import deprecated, preview, public
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_key import AssetCheckKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
@@ -448,6 +450,11 @@ class Definitions(IHaveNew):
         )
 
     @public
+    def get_asset_checks_def(self, key: AssetCheckKey) -> AssetChecksDefinition:
+        """Get a canonicalized :py:class:`AssetChecksDefinition` by key."""
+        return check.inst(self.get_asset_graph().assets_def_for_key(key), AssetChecksDefinition)
+
+    @public
     def get_job_def(self, name: str) -> JobDefinition:
         """Get a job definition by name. If you passed in a an :py:class:`UnresolvedAssetJobDefinition`
         (return value of :py:func:`define_asset_job`) it will be resolved to a :py:class:`JobDefinition` when returned
@@ -690,6 +697,13 @@ class Definitions(IHaveNew):
         """Returns an AssetSpec object for every asset contained inside the Definitions object."""
         asset_graph = self.get_asset_graph()
         return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]
+
+    @public
+    @preview
+    def get_all_asset_check_specs(self) -> Sequence[AssetCheckSpec]:
+        """Returns an AssetCheckSpec object for every asset check contained inside the Definitions object."""
+        asset_graph = self.get_asset_graph()
+        return [asset_graph.get_check_spec(check_key) for check_key in asset_graph.asset_check_keys]
 
     @preview
     def with_reconstruction_metadata(self, reconstruction_metadata: Mapping[str, str]) -> Self:
