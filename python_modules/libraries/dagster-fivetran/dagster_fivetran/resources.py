@@ -894,61 +894,9 @@ class FivetranWorkspace(ConfigurableResource):
         Returns:
             FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
         """
-        connectors_by_id = {}
-        destinations_by_id = {}
-        schema_configs_by_connector_id = {}
-
-        client = self.get_client()
-        groups = client.get_groups()["items"]
-
-        for group in groups:
-            group_id = group["id"]
-
-            destination_details = client.get_destination_details(destination_id=group_id)
-            destination = FivetranDestination.from_destination_details(
-                destination_details=destination_details
-            )
-
-            destinations_by_id[destination.id] = destination
-
-            connectors_details = client.get_connectors_for_group(group_id=group_id)["items"]
-            for connector_details in connectors_details:
-                connector = FivetranConnector.from_connector_details(
-                    connector_details=connector_details,
-                )
-                if not connector.is_connected:
-                    self._log.warning(
-                        f"Ignoring incomplete or broken connector `{connector.name}`. "
-                        f"Dagster requires a connector to be connected before fetching its data."
-                    )
-                    continue
-
-                schema_config_details = client.get_schema_config_for_connector(
-                    connector_id=connector.id
-                )
-                schema_config = FivetranSchemaConfig.from_schema_config_details(
-                    schema_config_details=schema_config_details
-                )
-
-                # A connector that has not been synced yet has no `schemas` field in its schema config.
-                # Schemas are required for creating the asset definitions,
-                # so connectors for which the schemas are missing are discarded.
-                if not schema_config.has_schemas:
-                    self._log.warning(
-                        f"Ignoring connector `{connector.name}`. "
-                        f"Dagster requires connector schema information to represent this connector, "
-                        f"which is not available until this connector has been run for the first time."
-                    )
-                    continue
-
-                connectors_by_id[connector.id] = connector
-                schema_configs_by_connector_id[connector.id] = schema_config
-
-        return FivetranWorkspaceData(
-            connectors_by_id=connectors_by_id,
-            destinations_by_id=destinations_by_id,
-            schema_configs_by_connector_id=schema_configs_by_connector_id,
-        )
+        return FivetranWorkspaceDefsLoader(
+            workspace=self, translator=DagsterFivetranTranslator()
+        ).get_or_fetch_state()
 
     @cached_method
     def load_asset_specs(
@@ -1170,7 +1118,7 @@ def load_fivetran_asset_specs(
 
 
 @record
-class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]]):
+class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[FivetranWorkspaceData]):
     workspace: FivetranWorkspace
     translator: DagsterFivetranTranslator
     connector_selector_fn: Optional[ConnectorSelectorFn] = None
@@ -1179,10 +1127,10 @@ class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]
     def defs_key(self) -> str:
         return f"{FIVETRAN_RECONSTRUCTION_METADATA_KEY_PREFIX}/{self.workspace.account_id}"
 
-    def fetch_state(self) -> FivetranWorkspaceData:  # pyright: ignore[reportIncompatibleMethodOverride]
-        return self.workspace.fetch_fivetran_workspace_data()
+    def fetch_state(self) -> FivetranWorkspaceData:
+        return self.fetch_fivetran_workspace_data()
 
-    def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def defs_from_state(self, state: FivetranWorkspaceData) -> Definitions:
         all_asset_specs = [
             self.translator.get_asset_spec(props)
             for props in state.to_workspace_data_selection(
@@ -1191,3 +1139,67 @@ class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[Mapping[str, Any]
         ]
 
         return Definitions(assets=all_asset_specs)
+
+    def fetch_fivetran_workspace_data(
+        self,
+    ) -> FivetranWorkspaceData:
+        """Retrieves all Fivetran content from the workspace and returns it as a FivetranWorkspaceData object.
+
+        Returns:
+            FivetranWorkspaceData: A snapshot of the Fivetran workspace's content.
+        """
+        connectors_by_id = {}
+        destinations_by_id = {}
+        schema_configs_by_connector_id = {}
+
+        client = self.workspace.get_client()
+        groups = client.get_groups()["items"]
+
+        for group in groups:
+            group_id = group["id"]
+
+            destination_details = client.get_destination_details(destination_id=group_id)
+            destination = FivetranDestination.from_destination_details(
+                destination_details=destination_details
+            )
+
+            destinations_by_id[destination.id] = destination
+
+            connectors_details = client.get_connectors_for_group(group_id=group_id)["items"]
+            for connector_details in connectors_details:
+                connector = FivetranConnector.from_connector_details(
+                    connector_details=connector_details,
+                )
+                if not connector.is_connected:
+                    self.workspace._log.warning(  # noqa
+                        f"Ignoring incomplete or broken connector `{connector.name}`. "
+                        f"Dagster requires a connector to be connected before fetching its data."
+                    )
+                    continue
+
+                schema_config_details = client.get_schema_config_for_connector(
+                    connector_id=connector.id
+                )
+                schema_config = FivetranSchemaConfig.from_schema_config_details(
+                    schema_config_details=schema_config_details
+                )
+
+                # A connector that has not been synced yet has no `schemas` field in its schema config.
+                # Schemas are required for creating the asset definitions,
+                # so connectors for which the schemas are missing are discarded.
+                if not schema_config.has_schemas:
+                    self.workspace._log.warning(  # noqa
+                        f"Ignoring connector `{connector.name}`. "
+                        f"Dagster requires connector schema information to represent this connector, "
+                        f"which is not available until this connector has been run for the first time."
+                    )
+                    continue
+
+                connectors_by_id[connector.id] = connector
+                schema_configs_by_connector_id[connector.id] = schema_config
+
+        return FivetranWorkspaceData(
+            connectors_by_id=connectors_by_id,
+            destinations_by_id=destinations_by_id,
+            schema_configs_by_connector_id=schema_configs_by_connector_id,
+        )
