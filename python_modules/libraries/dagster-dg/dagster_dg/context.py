@@ -28,14 +28,13 @@ from dagster_dg.config import (
 )
 from dagster_dg.error import DgError
 from dagster_dg.utils import (
-    MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE,
     NO_LOCAL_VENV_ERROR_MESSAGE,
     NOT_COMPONENT_LIBRARY_ERROR_MESSAGE,
     NOT_PROJECT_ERROR_MESSAGE,
     NOT_WORKSPACE_ERROR_MESSAGE,
     NOT_WORKSPACE_OR_PROJECT_ERROR_MESSAGE,
     exit_with_error,
-    generate_missing_dagster_components_in_local_venv_error_message,
+    generate_missing_dagster_components_error_message,
     generate_tool_dg_cli_in_project_in_workspace_error_message,
     get_toml_node,
     get_venv_executable,
@@ -572,9 +571,7 @@ def _validate_dagster_components_availability(context: DgContext) -> None:
             exit_with_error(NO_LOCAL_VENV_ERROR_MESSAGE)
         elif not get_venv_executable(context.venv_path, "dagster-components").exists():
             exit_with_error(
-                generate_missing_dagster_components_in_local_venv_error_message(
-                    str(context.venv_path)
-                )
+                generate_missing_dagster_components_error_message(str(context.venv_path))
             )
     elif not context.has_executable("dagster-components"):
-        exit_with_error(MISSING_DAGSTER_COMPONENTS_ERROR_MESSAGE)
+        exit_with_error(generate_missing_dagster_components_error_message())

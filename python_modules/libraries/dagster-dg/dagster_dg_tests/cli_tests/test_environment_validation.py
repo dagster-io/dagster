@@ -151,7 +151,7 @@ def test_no_ambient_dagster_components_failure(spec: CommandSpec) -> None:
         # Set $PATH to /dev/null to ensure that the `dagster-components` executable is not found
         result = runner.invoke(*cli_args, env={"PATH": "/dev/null"})
         assert_runner_result(result, exit_0=False)
-        assert "Could not find the `dagster-components` executable" in result.output
+        assert "Could not resolve the `dagster-components` executable" in result.output
 
 
 @pytest.mark.parametrize("spec", PROJECT_CONTEXT_COMMANDS, ids=lambda spec: "-".join(spec.command))
