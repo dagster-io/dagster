@@ -1,0 +1,28 @@
+dg list component-type
+
+/Users/elementl/repos/dagsterlabs/dagster/python_modules/libraries/dagster-shared/dagster_shared/libraries/__init__.py:42: UserWarning: Found version mismatch between `dagster-shared` (1!0+dev) and `dagster-evidence` (0.26.9)
+  warnings.warn(message)
+Using /.../jaffle-platform/.venv/bin/dagster-components
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Component Type                                              ┃ Summary                  ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ dagster.components.DefinitionsComponent                     │ An arbitrary set of      │
+│                                                             │ dagster definitions.     │
+│ dagster.components.DefsFolderComponent                      │ A folder which may       │
+│                                                             │ contain multiple         │
+│                                                             │ submodules, each         │
+│                                                             │ which define components. │
+│ dagster.components.PipesSubprocessScriptCollectionComponent │ Assets that wrap Python  │
+│                                                             │ scripts executed with    │
+│                                                             │ Dagster's                │
+│                                                             │ PipesSubprocessClient.   │
+│ dagster_dbt.DbtProjectComponent                             │ Expose a DBT project to  │
+│                                                             │ Dagster as a set of      │
+│                                                             │ assets.                  │
+│ dagster_evidence.lib.EvidenceProject                        │ Expose an Evidence.dev   │
+│                                                             │ dashboard as a Dagster   │
+│                                                             │ asset.                   │
+│ dagster_sling.SlingReplicationCollectionComponent           │ Expose one or more Sling │
+│                                                             │ replications to Dagster  │
+│                                                             │ as assets.               │
+└─────────────────────────────────────────────────────────────┴──────────────────────────┘
