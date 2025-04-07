@@ -32,7 +32,7 @@ SNIPPETS_DIR = (
 def test_dg_docs_scaffolding_project(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment() as get_next_snip_number:
         run_command_and_snippet_output(
-            cmd="dg scaffold project my-project --use-editable-dagster",
+            cmd="dg init --project-name my-project --use-editable-dagster",
             snippet_path=SNIPPETS_DIR
             / f"{get_next_snip_number()}-scaffolding-project.txt",
             update_snippets=update_snippets,
