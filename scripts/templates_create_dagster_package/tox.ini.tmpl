@@ -8,7 +8,9 @@ setenv =
 passenv =
     CI_*
     COVERALLS_REPO_TOKEN
-    BUILDKITE* # TODO add additional env var requirements and add them to .buildkite/dagster-buildkite/dagster_buildkite/steps/packages.py
+    BUILDKITE*
+    PYTEST_PLUGINS
+    # TODO add additional env var requirements and add them to .buildkite/dagster-buildkite/dagster_buildkite/steps/packages.py
 install_command = uv pip install {opts} {packages}
 deps =
   -e ../../dagster[test]
