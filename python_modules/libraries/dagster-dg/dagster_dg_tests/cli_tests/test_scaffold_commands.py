@@ -566,12 +566,12 @@ def test_scaffold_component_succeeds_scaffolded_component_type() -> None:
         assert "type: foo_bar.lib.Baz" in component_yaml_path.read_text()
 
 
-def test_scaffold_component_succeeds_scaffolded_no_dataclass() -> None:
+def test_scaffold_component_succeeds_scaffolded_no_model() -> None:
     with (
         ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("scaffold", "component-type", "Baz", "--no-dataclass")
+        result = runner.invoke("scaffold", "component-type", "Baz", "--no-model")
         assert_runner_result(result)
         assert Path("src/foo_bar/lib/baz.py").exists()
 
@@ -584,7 +584,6 @@ class Baz(Component, Resolvable):
 
     COMPONENT DESCRIPTION HERE.
     """
-
 
     def __init__(
         self,

@@ -403,17 +403,17 @@ def _create_scaffold_subcommand(key: LibraryObjectKey, obj: LibraryObjectSnap) -
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.option(
-    "--dataclass/--no-dataclass",
+    "--model/--no-model",
     is_flag=True,
     default=True,
-    help="Whether to automatically annotate the generated class with @dataclass.",
+    help="Whether to automatically make the generated class inherit from dagster.components.Model.",
 )
 @click.argument("name", type=str)
 @dg_global_options
 @click.pass_context
 @cli_telemetry_wrapper
 def scaffold_component_type_command(
-    context: click.Context, name: str, dataclass: bool, **global_options: object
+    context: click.Context, name: str, model: bool, **global_options: object
 ) -> None:
     """Scaffold of a custom Dagster component type.
 
@@ -432,5 +432,5 @@ def scaffold_component_type_command(
         exit_with_error(f"Component type`{component_key.to_typename()}` already exists.")
 
     scaffold_component_type(
-        dg_context=dg_context, class_name=name, module_name=module_name, dataclass=dataclass
+        dg_context=dg_context, class_name=name, module_name=module_name, model=model
     )

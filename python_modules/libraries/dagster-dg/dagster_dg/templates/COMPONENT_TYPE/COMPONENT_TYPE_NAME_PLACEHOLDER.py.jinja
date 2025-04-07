@@ -1,23 +1,26 @@
-{% if dataclass -%}
-from dataclasses import dataclass
-
-{% endif -%}
 import dagster as dg
+{% if model -%}
+from dagster.components import Component, ComponentLoadContext, Model, Resolvable
+{% else -%}
 from dagster.components import Component, ComponentLoadContext, Resolvable
+{% endif %}
 
+{% if model -%}
+class {{ name }}(Component, Model, Resolvable):
+    """COMPONENT SUMMARY HERE.
 
-{% if dataclass -%}
-@dataclass
-{% endif -%}
+    COMPONENT DESCRIPTION HERE.
+    """
+{% else -%}
 class {{ name }}(Component, Resolvable):
     """COMPONENT SUMMARY HERE.
 
     COMPONENT DESCRIPTION HERE.
     """
-{% if dataclass %}
-    # added fields here will define yaml schema via Resolvable
-{%- endif %}
-{% if not dataclass %}
+{% endif -%}
+{% if model %}
+    # added fields here will define yaml schema via Model
+{% else %}
     def __init__(
         self,
         # added arguments here will define yaml schema via Resolvable
