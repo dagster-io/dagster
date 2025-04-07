@@ -1,4 +1,7 @@
-from dagster.components.component.component import Component as Component
+from dagster.components.component.component import (
+    Component as Component,
+    ComponentSpec as ComponentSpec,
+)
 from dagster.components.component.component_loader import component as component
 from dagster.components.component.component_scaffolder import (
     DefaultComponentScaffolder as DefaultComponentScaffolder,

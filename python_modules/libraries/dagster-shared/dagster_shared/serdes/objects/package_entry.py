@@ -83,6 +83,8 @@ class PackageObjectSnap:
     key: PackageObjectKey
     summary: Optional[str]
     description: Optional[str]
+    owners: Optional[Sequence[str]]
+    tags: Optional[Sequence[str]]
     feature_data: Sequence[PackageObjectFeatureData]
 
     @property

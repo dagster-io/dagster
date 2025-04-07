@@ -37,7 +37,7 @@ export default function ComponentHeader({config, descriptionStyle}: Props) {
           </div>
         </div>
       </div>
-      {config.tags.length > 0 ? <ComponentTags author={config.author} tags={config.tags} /> : null}
+      {config.tags && config.tags.length > 0 ? <ComponentTags owners={config.owners} tags={config.tags} /> : null}
     </div>
   );
 }

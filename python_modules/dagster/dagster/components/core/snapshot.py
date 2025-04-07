@@ -45,12 +45,22 @@ def _get_scaffold_target_type_data(scaffolder: Scaffolder) -> ScaffoldTargetType
 
 def get_package_entry_snap(key: PackageObjectKey, obj: object) -> PackageObjectSnap:
     type_data = []
+    owners = []
+    tags = []
     if isinstance(obj, type) and issubclass(obj, Component):
         type_data.append(_get_component_type_data(obj))
+        spec = obj.get_spec()
+        owners = spec.owners
+        tags = spec.tags
     scaffolder = get_scaffolder(obj)
     if isinstance(scaffolder, Scaffolder):
         type_data.append(_get_scaffold_target_type_data(scaffolder))
     summary, description = _get_summary_and_description(obj)
     return PackageObjectSnap(
-        key=key, summary=summary, description=description, feature_data=type_data
+        key=key,
+        summary=summary,
+        owners=owners,
+        tags=tags,
+        description=description,
+        feature_data=type_data,
     )

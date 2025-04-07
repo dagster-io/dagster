@@ -9,10 +9,10 @@ export type Package = {
 
 export type ComponentType = {
   name: string;
-  author: string;
   example: string;
   schema: string;
   description: string;
+  owners: string[];
   tags: string[];
 };
 
