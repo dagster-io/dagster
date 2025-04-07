@@ -616,6 +616,7 @@ from dagster._core.types.dagster_type import (
     make_python_type_usable_as_dagster_type as make_python_type_usable_as_dagster_type,
 )
 from dagster._core.types.decorator import usable_as_dagster_type as usable_as_dagster_type
+from dagster._core.types.pagination import PaginatedResults as PaginatedResults
 from dagster._core.types.python_dict import Dict as Dict
 from dagster._core.types.python_set import Set as Set
 from dagster._core.types.python_tuple import Tuple as Tuple
