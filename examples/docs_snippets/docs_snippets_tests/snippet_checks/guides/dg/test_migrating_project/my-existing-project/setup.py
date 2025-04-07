@@ -9,7 +9,7 @@ setup(
     description="Add your description here",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<3.14",
     packages=find_packages(),
     install_requires=[
         "dagster",

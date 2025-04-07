@@ -30,6 +30,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
@@ -37,7 +38,7 @@ setup(
     install_requires=[f"dagster{pin}", "sqlglot", "aiohttp"],
     extras_require={"test": ["aioresponses", "aiohttp<3.11"]},
     include_package_data=True,
-    python_requires=">=3.9,<3.13",
+    python_requires=">=3.9,<3.14",
     entry_points={
         "console_scripts": [
             "dagster-sigma = dagster_sigma.cli:app",
