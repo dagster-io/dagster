@@ -379,8 +379,8 @@ def test_components_docs_index(update_snippets: bool) -> None:
                       asset:
                         key: jaffle_dashboard
                         deps:
-                          - orders
-                          - customers
+                          - target/main/orders
+                          - target/main/customers
                       deploy_command: 'echo "Dashboard built at $EVIDENCE_BUILD_PATH"'
                 """),
             )
