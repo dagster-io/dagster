@@ -16,7 +16,7 @@ def test_default_asset_events_from_run_results(
     events = [
         event
         for event in run_results.to_default_asset_events(
-            client=workspace.get_client(), manifest=workspace.fetch_workspace_data().manifest
+            client=workspace.get_client(), manifest=workspace.get_or_fetch_workspace_data().manifest
         )
     ]
 

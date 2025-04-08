@@ -97,7 +97,7 @@ def materializations_from_batch_iter(
             )
             events = run_results.to_default_asset_events(
                 client=workspace.get_client(),
-                manifest=workspace.fetch_workspace_data().manifest,
+                manifest=workspace.get_or_fetch_workspace_data().manifest,
                 dagster_dbt_translator=dagster_dbt_translator,
             )
             # Currently, only materializations are tracked
