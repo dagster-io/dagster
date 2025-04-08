@@ -1,0 +1,19 @@
+{
+  "frontmatter": {
+    "id": "airbyte",
+    "status": "published",
+    "name": "Airbyte",
+    "title": "Dagster & Airbyte",
+    "excerpt": "Orchestrate Airbyte connections and schedule syncs alongside upstream or downstream dependencies.",
+    "partnerlink": "https://airbyte.com/tutorials/orchestrate-data-ingestion-and-transformation-pipelines",
+    "categories": [],
+    "enabledBy": [],
+    "enables": [],
+    "tags": [
+      "dagster-supported",
+      "etl"
+    ]
+  },
+  "logoFilename": "airbyte.svg",
+  "content": "import DocCardList from '@theme/DocCardList';\n\n<DocCardList />"
+}
