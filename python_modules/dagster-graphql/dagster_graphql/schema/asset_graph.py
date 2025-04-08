@@ -578,7 +578,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
             for summary_record in asset_check_summary_records:
                 if summary_record is None or summary_record.last_check_execution_record is None:
-                    # the check has never been executed
+                    # the check has never been executed.
                     all_checks_executed = False
                     continue
 
@@ -628,7 +628,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                     # degraded health anyway.
                     check_failure_severities.append(AssetCheckSeverity.ERROR)
 
-            if len(check_statuses) == 0 or not all_checks_executed:
+            if len(check_statuses) == 0:
                 # checks have never been executed
                 return GrapheneAssetHealthStatus.UNKNOWN
 
@@ -646,6 +646,11 @@ class GrapheneAssetNode(graphene.ObjectType):
                 return GrapheneAssetHealthStatus.DEGRADED
             # since we are only looking at the latest completed execution for each check, if there
             # are no failed checks, then all checks must have succeeded
+            if not all_checks_executed:
+                # if any check has never been executed, we report this as unknown, even if other checks
+                # have passed
+                return GrapheneAssetHealthStatus.UNKNOWN
+            # all checks must have executed and passed
             return GrapheneAssetHealthStatus.HEALTHY
 
     def get_freshness_status_for_asset_health(self, graphene_info: ResolveInfo):
