@@ -7,9 +7,6 @@ from typing import Annotated, Any, Optional, Union, cast
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
-)
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
 from dagster.components import Resolvable, Resolver
@@ -23,92 +20,46 @@ from dagster.components.resolved.core_models import (
 )
 from dagster.components.scaffold.scaffold import scaffold_with
 from dagster.components.utils import TranslatorResolvingInfo
-from typing_extensions import override
 
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.asset_utils import get_asset_key_for_model as get_asset_key_for_model
+from dagster_dbt.asset_utils import get_asset_key_for_model, get_node
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
-from dagster_dbt.dbt_manifest import validate_manifest
 from dagster_dbt.dbt_manifest_asset_selection import DbtManifestAssetSelection
 from dagster_dbt.dbt_project import DbtProject
-from dagster_dbt.utils import get_dbt_resource_props_by_dbt_unique_id_from_manifest
+
+
+class ComponentDagsterDbtTranslator(DagsterDbtTranslator):
+    def __init__(self, *, resolving_info: TranslatorResolvingInfo):
+        super().__init__()
+        self.resolving_info = resolving_info
+        self._specs_map: dict[tuple, AssetSpec] = {}
+
+    def get_asset_spec(
+        self,
+        manifest: Mapping[str, Any],
+        unique_id: str,
+        project: Optional[DbtProject],
+    ) -> AssetSpec:
+        memo_id = (id(manifest), unique_id)
+        if memo_id not in self._specs_map:
+            base_spec = super().get_asset_spec(
+                manifest=manifest,
+                unique_id=unique_id,
+                project=project,
+            )
+            self._specs_map[memo_id] = self.resolving_info.get_asset_spec(
+                base_spec,
+                {
+                    self.resolving_info.obj_name: get_node(manifest, unique_id),
+                    "spec": base_spec,
+                },
+            )
+        return self._specs_map[memo_id]
 
 
 def resolve_translator(context: ResolutionContext, model) -> DagsterDbtTranslator:
-    class DagsterDbtTranslatorWithSpecs(DagsterDbtTranslator):
-        def __init__(self, *, resolving_info: TranslatorResolvingInfo):
-            super().__init__()
-            self.resolving_info = resolving_info
-            self.base_translator = DagsterDbtTranslator()
-            self._specs_map: dict[int, AssetSpec] = {}
-
-        @cached_property
-        def project(self) -> DbtProject:
-            return DbtProject(model.dbt.project_dir)
-
-        @cached_property
-        def manifest(self) -> Mapping[str, Any]:
-            return validate_manifest(self.project.manifest_path)
-
-        @cached_property
-        def dbt_nodes(self) -> Mapping[str, Any]:
-            return get_dbt_resource_props_by_dbt_unique_id_from_manifest(self.manifest)
-
-        @cached_property
-        def group_props(self) -> Mapping[str, Any]:
-            return {group["name"]: group for group in self.manifest.get("groups", {}).values()}
-
-        def get_asset_spec_from_props(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
-            if id(stream_definition) not in self._specs_map:
-                base_spec = DagsterDbtTranslator().get_asset_spec(
-                    manifest=self.manifest,
-                    dbt_nodes=self.dbt_nodes,
-                    group_props=self.group_props,
-                    project=self.project,
-                    resource_props=stream_definition,
-                )
-                self._specs_map[id(stream_definition)] = self.resolving_info.get_asset_spec(
-                    base_spec,
-                    {self.resolving_info.obj_name: stream_definition, "spec": base_spec},
-                )
-            return self._specs_map[id(stream_definition)]
-
-        @override
-        def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-            return self.get_asset_spec_from_props(dbt_resource_props).key
-
-        @override
-        def get_description(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
-            return self.get_asset_spec_from_props(dbt_resource_props).description
-
-        @override
-        def get_metadata(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
-            return self.get_asset_spec_from_props(dbt_resource_props).metadata
-
-        @override
-        def get_tags(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
-            return self.get_asset_spec_from_props(dbt_resource_props).tags
-
-        @override
-        def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
-            return self.get_asset_spec_from_props(dbt_resource_props).group_name
-
-        @override
-        def get_code_version(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
-            return self.get_asset_spec_from_props(dbt_resource_props).code_version
-
-        @override
-        def get_owners(self, dbt_resource_props: Mapping[str, Any]) -> Sequence[str]:
-            return self.get_asset_spec_from_props(dbt_resource_props).owners
-
-        @override
-        def get_automation_condition(
-            self, dbt_resource_props: Mapping[str, Any]
-        ) -> Optional[AutomationCondition]:
-            return self.get_asset_spec_from_props(dbt_resource_props).automation_condition
-
     if (
         model.asset_attributes
         and isinstance(model.asset_attributes, AssetAttributesModel)
@@ -117,7 +68,7 @@ def resolve_translator(context: ResolutionContext, model) -> DagsterDbtTranslato
         # TODO: Consider supporting alerting deps in the future
         raise ValueError("deps are not supported for dbt_project component")
 
-    return DagsterDbtTranslatorWithSpecs(
+    return ComponentDagsterDbtTranslator(
         resolving_info=TranslatorResolvingInfo(
             "node",
             model.asset_attributes or AssetAttributesModel(),

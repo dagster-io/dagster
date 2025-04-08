@@ -81,6 +81,7 @@ def test_microbatch_log_model_result_to_asset():
                 "alias": "order_history",
                 "path": "mart/public__orders.sql",
                 "config": {"schema": "public"},
+                "description": "",
             }
         },
     }
@@ -171,6 +172,7 @@ def test_incremental_log_model_result_to_asset():
                 "alias": "order_history",
                 "path": "mart/public__orders.sql",
                 "config": {"schema": "public"},
+                "description": "",
             }
         },
     }

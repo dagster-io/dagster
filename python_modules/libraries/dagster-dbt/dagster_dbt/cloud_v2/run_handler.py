@@ -196,6 +196,7 @@ class DbtCloudJobRunResults:
                     manifest=manifest,
                     dagster_dbt_translator=dagster_dbt_translator,
                     test_unique_id=unique_id,
+                    project=None,
                 )
 
                 if (
