@@ -83,7 +83,6 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
     () => [...(nodes ?? []), ...externalAssetNodes],
     [nodes, externalAssetNodes],
   );
-  const queryItems = useMemo(() => buildGraphQueryItems(allNodes), [allNodes]);
 
   const [fullAssetGraphData, setFullAssetGraphData] = useState<GraphData | null>(null);
   useBlockTraceUntilTrue('FullAssetGraphData', !!fullAssetGraphData);
@@ -113,7 +112,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
         // buildGraphData is throttled and rejects promises when another call is made before the throttle delay.
         console.warn(e);
       });
-  }, [allNodes, options.loading, options.useWorker, queryItems, spawnBuildGraphDataWorker]);
+  }, [allNodes, options.loading, options.useWorker, spawnBuildGraphDataWorker]);
 
   return {fullAssetGraphData, loading: !fetchResult.data || fetchResult.loading || options.loading};
 }
