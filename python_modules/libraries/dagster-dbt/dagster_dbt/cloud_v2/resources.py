@@ -1,10 +1,10 @@
+import logging
 import os
 import re
 from collections.abc import Sequence
 from contextlib import suppress
 from functools import cached_property, lru_cache
 from typing import NamedTuple, Optional, Union
-import logging
 
 from dagster import (
     AssetCheckSpec,
@@ -14,8 +14,8 @@ from dagster import (
     ConfigurableResource,
     Definitions,
     _check as check,
+    get_dagster_logger,
     multi_asset_check,
-get_dagster_logger
 )
 from dagster._annotations import preview
 from dagster._config.pythonic_config.resource import ResourceDependency
