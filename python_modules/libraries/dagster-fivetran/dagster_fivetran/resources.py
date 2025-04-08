@@ -981,7 +981,7 @@ class FivetranWorkspace(ConfigurableResource):
     def get_or_fetch_workspace_data(
         self,
     ) -> FivetranWorkspaceData:
-        """Retrieves all Fivetran content from the workspace using the FivetranWorkspaceDefsLoader 
+        """Retrieves all Fivetran content from the workspace using the FivetranWorkspaceDefsLoader
         and returns it as a FivetranWorkspaceData object. If the workspace data has already been fetched,
         the cached FivetranWorkspaceData object is returned.
 
