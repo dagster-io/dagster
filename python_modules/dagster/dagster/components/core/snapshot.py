@@ -47,11 +47,14 @@ def get_package_entry_snap(key: PackageObjectKey, obj: object) -> PackageObjectS
     type_data = []
     owners = []
     tags = []
+    logo_path = None
     if isinstance(obj, type) and issubclass(obj, Component):
         type_data.append(_get_component_type_data(obj))
+        # TODO - consolidate `spec` between scaffolder and components
         spec = obj.get_spec()
         owners = spec.owners
         tags = spec.tags
+        logo_path = spec.logo_path
     scaffolder = get_scaffolder(obj)
     if isinstance(scaffolder, Scaffolder):
         type_data.append(_get_scaffold_target_type_data(scaffolder))
@@ -61,6 +64,7 @@ def get_package_entry_snap(key: PackageObjectKey, obj: object) -> PackageObjectS
         summary=summary,
         owners=owners,
         tags=tags,
+        logo_path=logo_path,
         description=description,
         feature_data=type_data,
     )

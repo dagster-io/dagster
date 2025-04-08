@@ -163,6 +163,7 @@ class ComponentTypeJson(TypedDict):
     example: str
     schema: str
     description: Optional[str]
+    logo_path: Optional[str]
 
 
 class ComponentTypeNamespaceJson(TypedDict):
@@ -204,6 +205,7 @@ def json_for_component_type(
         name=typename,
         owners=entry.owners,
         tags=entry.tags,
+        logo_path=entry.logo_path,
         example=sample_yaml,
         schema=json.dumps(component_type_data.schema),
         description=entry.description,

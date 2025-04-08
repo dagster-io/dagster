@@ -1,6 +1,7 @@
 import inspect
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from dagster_shared.record import IHaveNew, record_custom
@@ -32,6 +33,7 @@ class ComponentSpec(IHaveNew):
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
         tags (Optional[Sequence[str]]): Tags for filtering and organizing.
+        logo_path (Optional[Path]): Location of image file to be used as a logo.
 
     """
 
@@ -39,6 +41,7 @@ class ComponentSpec(IHaveNew):
     tags: PublicAttr[Sequence[str]]
     owners: PublicAttr[Sequence[str]]
     metadata: PublicAttr[Mapping[str, Any]]
+    logo_path: PublicAttr[Optional[str]]
 
     def __new__(
         cls,
@@ -46,6 +49,7 @@ class ComponentSpec(IHaveNew):
         tags: Optional[Sequence[str]] = None,
         owners: Optional[Sequence[str]] = None,
         metadata: Optional[Mapping[str, Any]] = None,
+        logo_path: Optional[Path] = None,
     ):
         owners = check.opt_sequence_param(owners, "owners", of_type=str)
         for owner in owners:
@@ -57,6 +61,7 @@ class ComponentSpec(IHaveNew):
             tags=check.opt_sequence_param(tags, "tags", of_type=str),
             owners=owners,
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
+            logo_path=check.opt_path_param(logo_path, "logo_path"),
         )
 
 
