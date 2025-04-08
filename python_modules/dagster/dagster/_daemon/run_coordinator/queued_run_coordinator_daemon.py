@@ -459,10 +459,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
                         EngineEventData.engine_error(error),
                     )
                     # Re-submit the run into the queue
-                    enqueued_event = DagsterEvent(
-                        event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
-                        job_name=run.job_name,
-                    )
+                    enqueued_event = DagsterEvent.job_enqueue(run)
                     instance.report_dagster_event(enqueued_event, run_id=run.run_id)
                     return False
             else:

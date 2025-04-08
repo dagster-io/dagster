@@ -60,7 +60,7 @@ from dagster._core.execution.plan.objects import StepFailureData, StepRetryData,
 from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.compute_log_manager import CapturedLogContext, LogRetrievalShellCommand
-from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
@@ -92,6 +92,7 @@ EventSpecificData = Union[
     "AssetCheckEvaluation",
     "AssetCheckEvaluationPlanned",
     "AssetFailedToMaterializeData",
+    "RunEnqueuedData",
 ]
 
 
@@ -339,6 +340,8 @@ def _validate_event_specific_data(
         check.inst_param(event_specific_data, "event_specific_data", AssetCheckEvaluationPlanned)
     elif event_type == DagsterEventType.ASSET_CHECK_EVALUATION:
         check.inst_param(event_specific_data, "event_specific_data", AssetCheckEvaluation)
+    elif event_type == DagsterEventType.RUN_ENQUEUED:
+        check.opt_inst_param(event_specific_data, "event_specific_data", RunEnqueuedData)
 
     return event_specific_data
 
@@ -772,6 +775,11 @@ class DagsterEvent(
         return cast(StepInputData, self.event_specific_data)
 
     @property
+    def run_enqueued_data(self) -> Optional["RunEnqueuedData"]:
+        _assert_type("run_enqueued_data", DagsterEventType.RUN_ENQUEUED, self.event_type)
+        return cast(Optional[RunEnqueuedData], self.event_specific_data)
+
+    @property
     def step_output_data(self) -> StepOutputData:
         _assert_type("step_output_data", DagsterEventType.STEP_OUTPUT, self.event_type)
         return cast(StepOutputData, self.event_specific_data)
@@ -1108,6 +1116,25 @@ class DagsterEvent(
             event_specific_data=EngineEventData(
                 metadata={"pool": MetadataValue.pool(concurrency_key)}
             ),
+        )
+
+    @staticmethod
+    def job_enqueue(run: DagsterRun) -> "DagsterEvent":
+        remote_job_origin = run.remote_job_origin
+        if remote_job_origin:
+            loc_name = remote_job_origin.location_name
+            repo_name = remote_job_origin.repository_origin.repository_name
+            event_data = RunEnqueuedData(
+                code_location_name=loc_name,
+                repository_name=repo_name,
+            )
+        else:
+            event_data = None
+
+        return DagsterEvent(
+            event_type_value=DagsterEventType.RUN_ENQUEUED.value,
+            job_name=run.job_name,
+            event_specific_data=event_data,
         )
 
     @staticmethod
@@ -1761,6 +1788,19 @@ class ObjectStoreOperationResultData(
             version=check.opt_str_param(version, "version"),
             mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
         )
+
+
+@whitelist_for_serdes
+class RunEnqueuedData(
+    NamedTuple(
+        "_RunEnqueuedData",
+        [
+            ("code_location_name", str),
+            ("repository_name", str),
+        ],
+    )
+):
+    pass
 
 
 @whitelist_for_serdes(
