@@ -1257,7 +1257,7 @@ class FivetranWorkspaceDefsLoader(StateBackedDefinitionsLoader[FivetranWorkspace
 
             destinations_by_id[destination.id] = destination
 
-            connectors_details = client.get_connectors_for_group(group_id=group_id)["items"]
+            connectors_details = client.list_connectors_for_group(group_id=group_id)
             for connector_details in connectors_details:
                 connector = FivetranConnector.from_connector_details(
                     connector_details=connector_details,
