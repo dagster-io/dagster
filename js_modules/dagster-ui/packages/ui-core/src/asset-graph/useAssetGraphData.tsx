@@ -160,10 +160,11 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     }
     if (groupSelector) {
       matching = matching.filter((node) => {
-        return node.groupName === groupSelector.groupName && 
-               node.repository.name === groupSelector.repositoryName && 
-               node.repository.location.name === groupSelector.repositoryLocationName;
-      });
+        return (
+          node.groupName === groupSelector.groupName &&
+          node.repository.name === groupSelector.repositoryName &&
+          node.repository.location.name === groupSelector.repositoryLocationName
+        );
       });
     }
     if (hideNodesMatching) {
