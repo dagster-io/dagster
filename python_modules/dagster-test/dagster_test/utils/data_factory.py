@@ -57,7 +57,7 @@ def event_log(
 
 
 def dagster_event(
-    event_type_value: str = DagsterEventType.ALERT_START.value,
+    event_type_value: Union[str, DagsterEventType] = DagsterEventType.ALERT_START.value,
     job_name: str = "default_job",
     step_handle: Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]] = None,
     node_handle: Optional[NodeHandle] = None,
@@ -68,6 +68,8 @@ def dagster_event(
     pid: Optional[int] = None,
     step_key: Optional[str] = None,
 ) -> DagsterEvent:
+    if isinstance(event_type_value, DagsterEventType):
+        event_type_value = event_type_value.value
     return DagsterEvent(
         event_type_value=event_type_value,
         job_name=job_name,
