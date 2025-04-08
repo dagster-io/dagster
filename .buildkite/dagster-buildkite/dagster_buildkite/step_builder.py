@@ -85,7 +85,7 @@ class CommandStepBuilder:
             if env.startswith("BUILDKITE") or env.startswith("CI_")
         ]
         buildkite_envvars.append("BUILDKITE_ANALYTICS_TOKEN")
-        buildkite_envvars.append("PYTEST_CONFIG")
+        buildkite_envvars.append("PYTEST_ADDOPTS")
 
         # Set PYTEST_DEBUG_TEMPROOT to our mounted /tmp volume. Any time the
         # pytest `tmp_path` or `tmpdir` fixtures are used used, the temporary
