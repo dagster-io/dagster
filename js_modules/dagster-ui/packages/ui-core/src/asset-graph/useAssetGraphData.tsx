@@ -29,8 +29,14 @@ import {workerSpawner} from '../workers/workerSpawner';
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
   hideNodesMatching?: (node: AssetNodeForGraphQueryFragment) => boolean;
-  pipelineSelector?: PipelineSelector;
-  groupSelector?: AssetGroupSelector;
+  pipelineSelector?: Pick<
+    PipelineSelector,
+    'pipelineName' | 'repositoryName' | 'repositoryLocationName'
+  >;
+  groupSelector?: Pick<
+    AssetGroupSelector,
+    'groupName' | 'repositoryName' | 'repositoryLocationName'
+  >;
   kinds?: string[];
 
   externalAssets?: {id: string; key: {path: Array<string>}}[];
@@ -45,22 +51,12 @@ export type AssetGraphQueryItem = GraphQueryItem & {
   node: AssetNode;
 };
 
-export function useFullAssetGraphData(options: AssetGraphFetchScope) {
+export function useFullAssetGraphData(
+  options: Omit<AssetGraphFetchScope, 'groupSelector' | 'pipelineSelector'>,
+) {
   const fetchResult = useIndexedDBCachedQuery<AssetGraphQuery, AssetGraphQueryVariables>({
     query: ASSET_GRAPH_QUERY,
-    variables: useMemo(
-      () => ({
-        pipelineSelector: options.pipelineSelector,
-        groupSelector: options.groupSelector,
-      }),
-      [options.pipelineSelector, options.groupSelector],
-    ),
-    key: usePrefixedCacheKey(
-      `AssetGraphQuery/${JSON.stringify({
-        pipelineSelector: options.pipelineSelector,
-        groupSelector: options.groupSelector,
-      })}`,
-    ),
+    key: usePrefixedCacheKey('AssetGraphQuery'),
     version: AssetGraphQueryVersion,
   });
 
@@ -140,19 +136,7 @@ const INITIAL_STATE: GraphDataState = {
 export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScope) {
   const fetchResult = useIndexedDBCachedQuery<AssetGraphQuery, AssetGraphQueryVariables>({
     query: ASSET_GRAPH_QUERY,
-    variables: useMemo(
-      () => ({
-        pipelineSelector: options.pipelineSelector,
-        groupSelector: options.groupSelector,
-      }),
-      [options.pipelineSelector, options.groupSelector],
-    ),
-    key: usePrefixedCacheKey(
-      `AssetGraphQuery/${JSON.stringify({
-        pipelineSelector: options.pipelineSelector,
-        groupSelector: options.groupSelector,
-      })}`,
-    ),
+    key: usePrefixedCacheKey('AssetGraphQuery'),
     version: AssetGraphQueryVersion,
   });
 
@@ -167,13 +151,33 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     [nodes, externalAssetNodes],
   );
 
+  const {pipelineSelector, groupSelector, hideNodesMatching} = options;
+
   const repoFilteredNodes = useMemo(() => {
     let matching = allNodes;
-    if (options.hideNodesMatching) {
-      matching = reject(matching, options.hideNodesMatching);
+    if (pipelineSelector) {
+      matching = matching.filter((node) => node.jobNames.includes(pipelineSelector.pipelineName));
+    }
+    if (groupSelector) {
+      matching = matching.filter((node) => {
+        let isMatch = true;
+        if (node.groupName !== groupSelector.groupName) {
+          isMatch = false;
+        }
+        if (node.repository.name !== groupSelector.repositoryName) {
+          isMatch = false;
+        }
+        if (node.repository.location.name !== groupSelector.repositoryLocationName) {
+          isMatch = false;
+        }
+        return isMatch;
+      });
+    }
+    if (hideNodesMatching) {
+      matching = reject(matching, hideNodesMatching);
     }
     return matching;
-  }, [allNodes, options.hideNodesMatching]);
+  }, [allNodes, pipelineSelector, groupSelector, hideNodesMatching]);
 
   const graphQueryItems = useMemo(
     () => buildGraphQueryItems(repoFilteredNodes),
