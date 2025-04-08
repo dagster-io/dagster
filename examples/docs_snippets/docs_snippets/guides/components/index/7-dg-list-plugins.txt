@@ -1,4 +1,4 @@
-dg list component-type
+dg list plugins
 
 ┏━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Plugin  ┃ Objects                                                                                                    ┃
@@ -6,6 +6,11 @@ dg list component-type
 │ dagster │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┓ │
 │         │ ┃ Symbol                                                      ┃ Summary            ┃ Features            ┃ │
 │         │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━┩ │
+│         │ │ dagster.asset                                               │ Create a           │ [scaffold-target]   │ │
+│         │ │                                                             │ definition for how │                     │ │
+│         │ │                                                             │ to compute an      │                     │ │
+│         │ │                                                             │ asset.             │                     │ │
+│         │ ├─────────────────────────────────────────────────────────────┼────────────────────┼─────────────────────┤ │
 │         │ │ dagster.components.DefinitionsComponent                     │ An arbitrary set   │ [component,         │ │
 │         │ │                                                             │ of dagster         │ scaffold-target]    │ │
 │         │ │                                                             │ definitions.       │                     │ │
@@ -21,5 +26,20 @@ dg list component-type
 │         │ │                                                             │ executed with      │                     │ │
 │         │ │                                                             │ Dagster's          │                     │ │
 │         │ │                                                             │ PipesSubprocessCl… │                     │ │
+│         │ ├─────────────────────────────────────────────────────────────┼────────────────────┼─────────────────────┤ │
+│         │ │ dagster.schedule                                            │ Creates a schedule │ [scaffold-target]   │ │
+│         │ │                                                             │ following the      │                     │ │
+│         │ │                                                             │ provided cron      │                     │ │
+│         │ │                                                             │ schedule and       │                     │ │
+│         │ │                                                             │ requests runs for  │                     │ │
+│         │ │                                                             │ the provided job.  │                     │ │
+│         │ ├─────────────────────────────────────────────────────────────┼────────────────────┼─────────────────────┤ │
+│         │ │ dagster.sensor                                              │ Creates a sensor   │ [scaffold-target]   │ │
+│         │ │                                                             │ where the          │                     │ │
+│         │ │                                                             │ decorated function │                     │ │
+│         │ │                                                             │ is used as the     │                     │ │
+│         │ │                                                             │ sensor's           │                     │ │
+│         │ │                                                             │ evaluation         │                     │ │
+│         │ │                                                             │ function.          │                     │ │
 │         │ └─────────────────────────────────────────────────────────────┴────────────────────┴─────────────────────┘ │
 └─────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

@@ -346,7 +346,7 @@ def format_multiline_str(message: str) -> str:
 
 def generate_missing_component_type_error_message(component_key_str: str) -> str:
     return f"""
-        No component type `{component_key_str}` is registered. Use 'dg list component-type'
+        No component type `{component_key_str}` is registered. Use `dg list plugins --feature component`
         to see the registered component types in your environment. You may need to install a package
         that provides `{component_key_str}` into your environment.
     """

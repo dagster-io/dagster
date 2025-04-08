@@ -123,13 +123,13 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
 
         # Populate cache
         with pushd("projects/foo-bar"):
-            result = runner.invoke("list", "component-type", "--verbose")
+            result = runner.invoke("list", "plugins", "--verbose")
             assert_runner_result(result)
             assert "CACHE [miss]" in result.output
 
         # Check cache was populated
         with pushd("projects/foo-bar"):
-            result = runner.invoke("list", "component-type", "--verbose")
+            result = runner.invoke("list", "plugins", "--verbose")
             assert_runner_result(result)
             assert "CACHE [hit]" in result.output
 
@@ -308,7 +308,7 @@ def test_scaffold_project_no_populate_cache_success(monkeypatch) -> None:
         assert Path("foo-bar/uv.lock").exists()
 
         with pushd("foo-bar"):
-            result = runner.invoke("list", "component-type", "--verbose")
+            result = runner.invoke("list", "plugins", "--verbose")
             assert_runner_result(result)
             assert "CACHE [miss]" in result.output
 

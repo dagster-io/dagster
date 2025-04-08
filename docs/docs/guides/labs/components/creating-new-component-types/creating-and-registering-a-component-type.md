@@ -89,7 +89,7 @@ Our `build_defs` method will create a single `@asset` that executes the provided
 
 Following the steps above will automatically register your component type in your environment. You can now run:
 
-<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/3-dg-list-component-types.txt" />
+<CliInvocationExample path="docs_snippets/docs_snippets/guides/components/shell-script-component/3-dg-list-plugins.txt" />
 
 and see your new component type in the list of available component types.
 
