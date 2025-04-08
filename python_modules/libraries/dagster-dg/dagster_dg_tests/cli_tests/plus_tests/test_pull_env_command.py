@@ -24,7 +24,7 @@ def test_pull_env_command_no_auth(monkeypatch):
     ):
         monkeypatch.setenv("DG_CLI_CONFIG", str(Path(cloud_config_dir) / "dg.toml"))
         monkeypatch.setenv("DAGSTER_CLOUD_CLI_CONFIG", str(Path(cloud_config_dir) / "config"))
-        result = runner.invoke("plus", "env", "pull")
+        result = runner.invoke("plus", "pull", "env")
         assert result.exit_code != 0, result.output + " " + str(result.exception)
         assert (
             "`dg plus env pull` requires authentication with Dagster Plus. Run `dg plus login` to authenticate."
@@ -50,7 +50,7 @@ def test_pull_env_command_auth_err(dg_plus_cli_config):
             },
             expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
         )
-        result = runner.invoke("plus", "env", "pull")
+        result = runner.invoke("plus", "pull", "env")
         assert result.exit_code != 0, result.output + " " + str(result.exception)
         assert "Unauthorized: Not authorized" in str(result.output)
 
@@ -74,7 +74,7 @@ def test_pull_env_command_python_err(dg_plus_cli_config):
             },
             expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
         )
-        result = runner.invoke("plus", "env", "pull")
+        result = runner.invoke("plus", "pull", "env")
         assert result.exit_code != 0, result.output + " " + str(result.exception)
         assert "Error: An error has occurred" in str(result.output)
 
@@ -121,7 +121,7 @@ def test_pull_env_command_project(dg_plus_cli_config):
             },
             expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
         )
-        result = runner.invoke("plus", "env", "pull")
+        result = runner.invoke("plus", "pull", "env")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert result.output.strip() == "Environment variables saved to .env"
 
@@ -174,7 +174,7 @@ def test_pull_env_command_workspace(dg_plus_cli_config):
             },
             expected_variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
         )
-        result = runner.invoke("plus", "env", "pull")
+        result = runner.invoke("plus", "pull", "env")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert (
             result.output.strip()

@@ -76,9 +76,9 @@ def login_command() -> None:
 # ########################
 
 
-@plus_group.group(name="env", cls=DgClickGroup)
-def plus_env_group():
-    """Commands for managing environment variables in Dagster Plus."""
+@plus_group.group(name="plus", cls=DgClickGroup)
+def plus_pull_group():
+    """Commands for pulling configuration from Dagster Plus."""
 
 
 def _get_local_secrets_for_locations(
@@ -99,7 +99,7 @@ def _get_local_secrets_for_locations(
     return secrets_by_location
 
 
-@plus_env_group.command(name="pull", cls=DgClickCommand)
+@plus_pull_group.command(name="env", cls=DgClickCommand)
 @dg_global_options
 @cli_telemetry_wrapper
 def pull_env_command(**global_options: object) -> None:
