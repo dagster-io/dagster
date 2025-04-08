@@ -9,8 +9,12 @@ import {IntegrationFrontmatter} from '../integrations/types';
 
 const PATH_TO_INTEGRATION_DOCS = path.resolve('../../../../docs/docs/integrations/libraries');
 const PATH_TO_INTEGRATION_LOGOS = path.resolve('../../../../docs/static');
+const PATH_TO_EXAMPLES = path.resolve('../../../../examples');
 const OUTPUT_TARGET_DIR = path.resolve('./src/integrations/__generated__');
 const OUTPUT_TARGET_LOGOS_DIR = path.join(OUTPUT_TARGET_DIR, 'logos');
+
+const CODE_EXAMPLE_PATH_REGEX =
+  /<(?:(?:CodeExample)|(?:CliInvocationExample))\s+[^>]*path=["']([^"']+)["'][^>]*language=["']([^"']+)["'][^>]*>/g;
 
 function camelize(str: string) {
   return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
@@ -104,7 +108,33 @@ async function main() {
     }
 
     const outputPath = path.join(OUTPUT_TARGET_DIR, `${camelizedFileName}.ts`);
-    const content = String(file);
+    let content = String(file).trim();
+
+    const codeExampleMatches = [];
+    let foundMatches;
+    while ((foundMatches = CODE_EXAMPLE_PATH_REGEX.exec(content)) !== null) {
+      const [fullMatch, filePath, language] = foundMatches;
+      codeExampleMatches.push({fullMatch, filePath, language});
+    }
+
+    for (const {fullMatch, filePath, language} of codeExampleMatches) {
+      if (filePath) {
+        const codeFromFile = await fs.promises.readFile(
+          path.join(PATH_TO_EXAMPLES, filePath),
+          'utf8',
+        );
+
+        content = content.replace(
+          fullMatch,
+          `
+\`\`\`${language}
+${codeFromFile.trim()}
+\`\`\`
+        `,
+        );
+      }
+    }
+
     const output = `
 ${GENERATION_DISCLAIMER}
 
