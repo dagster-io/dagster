@@ -66,8 +66,8 @@ PROJECT_CONTEXT_COMMANDS = [
     CommandSpec(("check", "yaml")),
     CommandSpec(("list", "component")),
     CommandSpec(("list", "defs")),
+    CommandSpec(("list", "env")),
     CommandSpec(("scaffold", DEFAULT_COMPONENT_TYPE, "foot")),
-    CommandSpec(("env", "list")),
 ]
 
 WORKSPACE_CONTEXT_COMMANDS = [
