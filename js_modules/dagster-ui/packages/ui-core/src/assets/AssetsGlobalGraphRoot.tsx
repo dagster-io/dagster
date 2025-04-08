@@ -2,6 +2,7 @@ import {Page} from '@dagster-io/ui-components';
 import {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 import {AssetsGraphHeader} from 'shared/assets/AssetsGraphHeader.oss';
+import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {
@@ -10,14 +11,13 @@ import {
 } from './globalAssetGraphPathToString';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
-import {AssetGraphViewType} from '../asset-graph/Utils';
+import {AssetGraphViewType, tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';
 import {AssetLocation} from '../asset-graph/useFindAssetLocation';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useOpenInNewTab} from '../hooks/useOpenInNewTab';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
-
 interface AssetGroupRootParams {
   0: string;
 }
@@ -62,12 +62,19 @@ export const AssetsGlobalGraphRoot = () => {
     },
   );
 
+  const favorites = useFavoriteAssets();
+
+  console.log({favorites});
+
   const fetchOptions = useMemo(() => {
     const options: AssetGraphFetchScope = {
       hideEdgesToNodesOutsideQuery,
+      hideNodesMatching: favorites
+        ? (node) => !favorites.has(tokenForAssetKey(node.assetKey))
+        : undefined,
     };
     return options;
-  }, [hideEdgesToNodesOutsideQuery]);
+  }, [hideEdgesToNodesOutsideQuery, favorites]);
 
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>

@@ -123,7 +123,19 @@ export const AssetGraphExplorer = React.memo((props: Props) => {
   } = useAssetGraphData(
     props.explorerPath.opsQuery,
     useMemo(
-      () => ({...props.fetchOptions, hideNodesMatching}),
+      () => ({
+        ...props.fetchOptions,
+        hideNodesMatching: (node) => {
+          let hide = false;
+          if (props.fetchOptions.hideNodesMatching?.(node)) {
+            hide = true;
+          }
+          if (hideNodesMatching(node)) {
+            hide = true;
+          }
+          return hide;
+        },
+      }),
       [props.fetchOptions, hideNodesMatching],
     ),
   );

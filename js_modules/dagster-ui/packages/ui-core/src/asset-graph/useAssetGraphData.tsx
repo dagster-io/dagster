@@ -3,7 +3,6 @@ import reject from 'lodash/reject';
 import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {useAssetGraphSupplementaryData} from 'shared/asset-graph/useAssetGraphSupplementaryData.oss';
-import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 import {Worker} from 'shared/workers/Worker.oss';
 
 import {ASSET_NODE_FRAGMENT} from './AssetNode';
@@ -76,17 +75,15 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
   }, [spawnBuildGraphDataWorker]);
 
   const externalAssetNodes = useMemo(
-    () => (options.externalAssets ?? []).map((a) => buildExternalAssetQueryItem(a).node),
+    () => (options.externalAssets ?? []).map((a) => buildExternalAssetQueryItem(a)),
     [options.externalAssets],
   );
   const nodes = fetchResult.data?.assetNodes;
-  const queryItems = useMemo(
-    () => [
-      ...(nodes ? buildGraphQueryItems(nodes) : []).map(({node}) => node),
-      ...externalAssetNodes,
-    ],
+  const allNodes = useMemo(
+    () => [...(nodes ?? []), ...externalAssetNodes],
     [nodes, externalAssetNodes],
   );
+  const queryItems = useMemo(() => buildGraphQueryItems(allNodes), [allNodes]);
 
   const [fullAssetGraphData, setFullAssetGraphData] = useState<GraphData | null>(null);
   useBlockTraceUntilTrue('FullAssetGraphData', !!fullAssetGraphData);
@@ -101,7 +98,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
     const requestId = ++currentRequestRef.current;
     buildGraphData(
       {
-        nodes: queryItems,
+        nodes: allNodes,
       },
       spawnBuildGraphDataWorker,
       options.useWorker ?? true,
@@ -116,7 +113,7 @@ export function useFullAssetGraphData(options: AssetGraphFetchScope) {
         // buildGraphData is throttled and rejects promises when another call is made before the throttle delay.
         console.warn(e);
       });
-  }, [options.loading, options.useWorker, queryItems, spawnBuildGraphDataWorker]);
+  }, [allNodes, options.loading, options.useWorker, queryItems, spawnBuildGraphDataWorker]);
 
   return {fullAssetGraphData, loading: !fetchResult.data || fetchResult.loading || options.loading};
 }
@@ -161,43 +158,27 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   });
 
   const nodes = fetchResult.data?.assetNodes;
+  const externalAssetNodes = useMemo(
+    () => (options.externalAssets ?? []).map(buildExternalAssetQueryItem),
+    [options.externalAssets],
+  );
 
-  const favoriteAssets = useFavoriteAssets();
+  const allNodes = useMemo(
+    () => [...(nodes ?? []), ...externalAssetNodes],
+    [nodes, externalAssetNodes],
+  );
 
   const repoFilteredNodes = useMemo(() => {
-    // Apply any filters provided by the caller
-    let matching = nodes;
-
-    // Apply favorites filtering if enabled
-    if (favoriteAssets) {
-      matching = matching?.filter((node) => favoriteAssets.has(tokenForAssetKey(node.assetKey)));
-    }
-
-    // Apply repository filtering
+    let matching = allNodes;
     if (options.hideNodesMatching) {
       matching = reject(matching, options.hideNodesMatching);
     }
-
     return matching;
-  }, [nodes, options.hideNodesMatching, favoriteAssets]);
-
-  const externalAssetNodes = useMemo(
-    () =>
-      (options.externalAssets ?? [])
-        .filter((asset) => {
-          const token = tokenForAssetKey(asset.key);
-          return !favoriteAssets || favoriteAssets.has(token);
-        })
-        .map(buildExternalAssetQueryItem),
-    [options.externalAssets, favoriteAssets],
-  );
+  }, [allNodes, options.hideNodesMatching]);
 
   const graphQueryItems = useMemo(
-    () => [
-      ...(repoFilteredNodes ? buildGraphQueryItems(repoFilteredNodes) : []),
-      ...externalAssetNodes,
-    ],
-    [repoFilteredNodes, externalAssetNodes],
+    () => buildGraphQueryItems(repoFilteredNodes),
+    [repoFilteredNodes],
   );
 
   const [state, setState] = useState<GraphDataState>(INITIAL_STATE);
@@ -300,6 +281,7 @@ const computeGraphData = indexedDBAsyncMemoize<GraphDataState, typeof computeGra
 );
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
+  console.log('buildGraphQueryItems', nodes);
   const items: {[name: string]: AssetGraphQueryItem} = {};
 
   for (const node of nodes) {
@@ -508,46 +490,41 @@ async function buildGraphDataWrapper(
 const buildExternalAssetQueryItem = (asset: {
   id: string;
   key: {path: string[]};
-}): AssetGraphQueryItem => {
+}): AssetNodeForGraphQueryFragment => {
   return {
-    name: tokenForAssetKey(asset.key),
-    inputs: [],
-    outputs: [],
-    node: {
-      __typename: 'AssetNode',
-      id: asset.id,
-      assetKey: {
-        __typename: 'AssetKey',
-        ...asset.key,
-      },
-      groupName: '',
-      isExecutable: false,
-      changedReasons: [],
-      tags: [],
-      owners: [],
-      hasMaterializePermission: false,
-      repository: {
-        __typename: 'Repository',
+    __typename: 'AssetNode',
+    changedReasons: [],
+    kinds: [],
+    hasMaterializePermission: false,
+    opVersion: null,
+    isMaterializable: false,
+    tags: [],
+    owners: [],
+    id: asset.id,
+    groupName: '',
+    isExecutable: false,
+    isPartitioned: false,
+    opNames: [],
+    jobNames: [],
+    computeKind: null,
+    isObservable: false,
+    description: null,
+    repository: {
+      __typename: 'Repository',
+      id: '',
+      name: '',
+      location: {
+        __typename: 'RepositoryLocation',
         id: '',
         name: '',
-        location: {
-          __typename: 'RepositoryLocation',
-          id: '',
-          name: '',
-        },
       },
-      dependencyKeys: [],
-      dependedByKeys: [],
-      graphName: null,
-      jobNames: [],
-      opNames: [],
-      opVersion: null,
-      description: null,
-      computeKind: null,
-      isPartitioned: false,
-      isObservable: false,
-      isMaterializable: false,
-      kinds: [],
     },
+    assetKey: {
+      __typename: 'AssetKey',
+      ...asset.key,
+    },
+    graphName: null,
+    dependencyKeys: [],
+    dependedByKeys: [],
   };
 };

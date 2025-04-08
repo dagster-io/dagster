@@ -7,6 +7,7 @@ import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGraphFilterBar} from 'shared/asset-graph/AssetGraphFilterBar.oss';
 import {CreateCatalogViewButton} from 'shared/assets/CreateCatalogViewButton.oss';
 import {useAssetCatalogFiltering} from 'shared/assets/useAssetCatalogFiltering.oss';
+import {useFavoriteAssets} from 'shared/assets/useFavoriteAssets.oss';
 
 import {AssetTable} from './AssetTable';
 import {ASSET_TABLE_DEFINITION_FRAGMENT, ASSET_TABLE_FRAGMENT} from './AssetTableFragment';
@@ -29,6 +30,7 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {currentPageAtom} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
+import {tokenForAssetKey} from '../asset-graph/Utils';
 import {useAssetSelectionInput} from '../asset-selection/input/useAssetSelectionInput';
 import {AssetGroupSelector} from '../graphql/types';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
@@ -219,10 +221,20 @@ export const AssetsCatalogTable = ({
     enabled: !featureEnabled(FeatureFlag.flagSelectionSyntax),
   });
 
+  const favorites = useFavoriteAssets();
+  const penultimateAssets = useMemo(() => {
+    if (!favorites) {
+      return partiallyFiltered;
+    }
+    return partiallyFiltered.filter((asset: AssetTableFragment) =>
+      favorites.has(tokenForAssetKey(asset.key)),
+    );
+  }, [favorites, partiallyFiltered]);
+
   const [errorState, setErrorState] = useState<SyntaxError[]>([]);
   const {filterInput, filtered, loading, assetSelection, setAssetSelection} =
     useAssetSelectionInput({
-      assets: partiallyFiltered,
+      assets: penultimateAssets,
       assetsLoading: !assets || filteredAssetsLoading,
       onErrorStateChange: (errors) => {
         if (errors !== errorState) {
