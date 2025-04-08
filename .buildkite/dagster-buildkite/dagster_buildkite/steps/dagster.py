@@ -7,7 +7,6 @@ from dagster_buildkite.python_packages import PythonPackages
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.step_builder import CommandStepBuilder
 from dagster_buildkite.steps.helm import build_helm_steps
-from dagster_buildkite.steps.tox import build_tox_lint_steps
 from dagster_buildkite.steps.integration import build_integration_steps
 from dagster_buildkite.steps.packages import (
     build_example_packages_steps,
@@ -31,6 +30,18 @@ from dagster_buildkite.utils import (
 branch_name = safe_getenv("BUILDKITE_BRANCH")
 
 
+def build_buildkite_lint_steps() -> list[CommandStep]:
+    commands = [
+        "pytest .buildkite/dagster-buildkite/lints.py",
+    ]
+    return [
+        CommandStepBuilder(":lint-roller: :buildkite:")
+        .run(*commands)
+        .on_test_image(AvailablePythonVersion.get_default())
+        .build()
+    ]
+
+
 def build_repo_wide_steps() -> List[BuildkiteStep]:
     # Other linters may be run in per-package environments because they rely on the dependencies of
     # the target. `check-manifest`, `pyright`, and `ruff` are run for the whole repo at once.
@@ -40,7 +51,7 @@ def build_repo_wide_steps() -> List[BuildkiteStep]:
         *build_repo_wide_pyright_steps(),
         *build_repo_wide_ruff_steps(),
         *build_repo_wide_prettier_steps(),
-        *build_tox_lint_steps(),
+        *build_buildkite_lint_steps(),
     ]
 
 
