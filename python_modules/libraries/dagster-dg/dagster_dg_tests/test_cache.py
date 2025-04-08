@@ -20,32 +20,32 @@ cache_runner_args = {"verbose": True}
 
 def test_load_from_cache():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
-        result = runner.invoke("list", "component-type")
+        result = runner.invoke("list", "plugins")
         assert_runner_result(result)
         assert "CACHE [miss]" in result.output
         assert "CACHE [write]" in result.output
-        result = runner.invoke("list", "component-type")
+        result = runner.invoke("list", "plugins")
         assert_runner_result(result)
         assert "CACHE [hit]" in result.output
 
 
 def test_cache_invalidation_uv_lock():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
-        result = runner.invoke("list", "component-type")
+        result = runner.invoke("list", "plugins")
         assert_runner_result(result)
         assert "CACHE [miss]" in result.output
         assert "CACHE [write]" in result.output
 
         subprocess.run(["uv", "add", "dagster-dbt"], check=True)
 
-        result = runner.invoke("list", "component-type")
+        result = runner.invoke("list", "plugins")
         assert_runner_result(result)
         assert "CACHE [miss]" in result.output
 
 
 def test_cache_invalidation_modified_lib():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
-        result = runner.invoke("list", "component-type")
+        result = runner.invoke("list", "plugins")
         assert_runner_result(result)
         assert "CACHE [miss]" in result.output
         assert "CACHE [write]" in result.output
@@ -53,21 +53,21 @@ def test_cache_invalidation_modified_lib():
         result = runner.invoke("scaffold", "component-type", "my_component")
         assert_runner_result(result)
 
-        result = runner.invoke("list", "component-type")
+        result = runner.invoke("list", "plugins")
         assert_runner_result(result)
         assert "CACHE [miss]" in result.output
 
 
 def test_cache_no_invalidation_modified_pkg():
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
-        result = runner.invoke("list", "component-type")
+        result = runner.invoke("list", "plugins")
         assert_runner_result(result)
         assert "CACHE [miss]" in result.output
         assert "CACHE [write]" in result.output
 
         Path("src/foo_bar/submodule.py").write_text("print('hello')")
 
-        result = runner.invoke("list", "component-type")
+        result = runner.invoke("list", "plugins")
         assert_runner_result(result)
         assert "CACHE [hit]" in result.output
 
@@ -75,7 +75,7 @@ def test_cache_no_invalidation_modified_pkg():
 @pytest.mark.parametrize("clear_outside_project", [True, False])
 def test_clear_cache(clear_outside_project: bool):
     with ProxyRunner.test(**cache_runner_args) as runner, example_project(runner):
-        result = runner.invoke("list", "component-type")
+        result = runner.invoke("list", "plugins")
         assert_runner_result(result)
         assert "CACHE [miss]" in result.output
         assert "CACHE [write]" in result.output
@@ -85,7 +85,7 @@ def test_clear_cache(clear_outside_project: bool):
             assert_runner_result(result)
             assert "CACHE [clear-all]" in result.output
 
-        result = runner.invoke("list", "component-type")
+        result = runner.invoke("list", "plugins")
         assert_runner_result(result)
         assert "CACHE [miss]" in result.output
 
@@ -100,7 +100,7 @@ def test_rebuild_component_registry_success():
         assert_runner_result(result)
         assert "CACHE [clear-key]" in result.output
 
-        result = runner.invoke("list", "component-type")
+        result = runner.invoke("list", "plugins")
         assert_runner_result(result)
         assert "CACHE [hit]" in result.output
 
@@ -110,7 +110,7 @@ def test_rebuild_component_registry_fails_with_subcommand():
         ProxyRunner.test(**cache_runner_args) as runner,
         isolated_example_project_foo_bar(runner),
     ):
-        result = runner.invoke("--rebuild-component-registry", "list", "component-type")
+        result = runner.invoke("--rebuild-component-registry", "list", "plugins")
         assert_runner_result(result, exit_0=False)
         assert "Cannot specify --rebuild-component-registry with a subcommand." in result.output
 
@@ -134,6 +134,6 @@ def test_cache_disabled():
         ProxyRunner.test(**cache_runner_args, disable_cache=True) as runner,
         example_project(runner),
     ):
-        result = runner.invoke("list", "component-type")
+        result = runner.invoke("list", "plugins")
         assert_runner_result(result)
         assert "CACHE" not in result.output

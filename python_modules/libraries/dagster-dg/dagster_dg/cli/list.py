@@ -145,27 +145,6 @@ def _all_plugins_object_table(
     type=click.Choice(["component", "scaffold-target"]),
     help="Filter by object type.",
 )
-@dg_global_options
-@cli_telemetry_wrapper
-def list_plugins_command(
-    name_only: bool,
-    plugin: Optional[str],
-    feature: Optional[PluginObjectFeature],
-    **global_options: object,
-) -> None:
-    """List dg plugins and their corresponding objects in the current Python environment."""
-    cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
-    registry = RemotePluginRegistry.from_dg_context(dg_context)
-
-    if plugin:
-        table = _plugin_object_table(registry.get_objects(plugin, feature))
-    else:
-        table = _all_plugins_object_table(registry, name_only, feature=feature)
-    Console().print(table)
-
-
-@list_group.command(name="component-type", cls=DgClickCommand)
 @click.option(
     "--json",
     "output_json",
@@ -175,21 +154,35 @@ def list_plugins_command(
 )
 @dg_global_options
 @cli_telemetry_wrapper
-def list_component_type_command(output_json: bool, **global_options: object) -> None:
-    """List registered Dagster components in the current project environment."""
+def list_plugins_command(
+    name_only: bool,
+    plugin: Optional[str],
+    feature: Optional[PluginObjectFeature],
+    output_json: bool,
+    **global_options: object,
+) -> None:
+    """List dg plugins and their corresponding objects in the current Python environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
     registry = RemotePluginRegistry.from_dg_context(dg_context)
 
     if output_json:
         output: list[dict[str, object]] = []
-        for entry in sorted(
-            registry.get_objects(feature="component"), key=lambda x: x.key.to_typename()
-        ):
-            output.append({"key": entry.key.to_typename(), "summary": entry.summary})
+        for entry in sorted(registry.get_objects(), key=lambda x: x.key.to_typename()):
+            output.append(
+                {
+                    "key": entry.key.to_typename(),
+                    "summary": entry.summary,
+                    "features": entry.features,
+                }
+            )
         click.echo(json.dumps(output, indent=4))
-    else:
-        Console().print(_all_plugins_object_table(registry, False, "component"))
+    else:  # table output
+        if plugin:
+            table = _plugin_object_table(registry.get_objects(plugin, feature))
+        else:
+            table = _all_plugins_object_table(registry, name_only, feature=feature)
+        Console().print(table)
 
 
 # ########################
