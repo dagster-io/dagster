@@ -554,10 +554,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         """Computes the health indicator for the asset checks for the assets. Follows these rules:
         HEALTHY - the latest completed execution for every check is a success.
         WARNING - the latest completed execution for any asset check failed with severity WARN
-            (and no checks failed with severity ERROR). Or some checks have been successfully
-            executed, but others have never been executed.
+            (and no checks failed with severity ERROR).
         DEGRADED - the latest completed execution for any asset check failed with severity ERROR.
-        UNKNOWN - the asset checks have never been executed.
+        UNKNOWN - any asset checks has never been executed.
         NOT_APPLICABLE - the asset has no asset checks defined.
 
         Note: the latest completed execution for each check may not have executed based on the
@@ -629,7 +628,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                     # degraded health anyway.
                     check_failure_severities.append(AssetCheckSeverity.ERROR)
 
-            if len(check_statuses) == 0:
+            if len(check_statuses) == 0 or not all_checks_executed:
                 # checks have never been executed
                 return GrapheneAssetHealthStatus.UNKNOWN
 
@@ -647,11 +646,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 return GrapheneAssetHealthStatus.DEGRADED
             # since we are only looking at the latest completed execution for each check, if there
             # are no failed checks, then all checks must have succeeded
-            if not all_checks_executed:
-                # all executed checks succeeded, but some checks have never been executed, so we consider this a warning
-                return GrapheneAssetHealthStatus.WARNING
-            else:
-                return GrapheneAssetHealthStatus.HEALTHY
+            return GrapheneAssetHealthStatus.HEALTHY
 
     def get_freshness_status_for_asset_health(self, graphene_info: ResolveInfo):
         # if SLA is met, healthy
