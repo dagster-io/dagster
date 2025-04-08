@@ -23,7 +23,7 @@ Usage: dg [OPTIONS] COMMAND [ARGS]...
 │ check      Commands for checking the integrity of your Dagster code.                                                 │
 │ dev        Start a local instance of Dagster.                                                                        │
 │ docs       Commands for generating docs from your Dagster code.                                                      │
-│ init       Initialize a new Dagster project or workspace.                                                            │
+│ init       Initialize a new Dagster project, optionally inside a workspace.                                          │
 │ launch     Launch a Dagster run.                                                                                     │
 │ list       Commands for listing Dagster entities.                                                                    │
 │ scaffold   Commands for scaffolding Dagster code.                                                                    │

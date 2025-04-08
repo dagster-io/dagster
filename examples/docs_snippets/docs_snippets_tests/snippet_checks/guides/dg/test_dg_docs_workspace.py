@@ -32,7 +32,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
     with isolated_snippet_generation_environment() as get_next_snip_number:
         # Scaffold workspace
         run_command_and_snippet_output(
-            cmd='echo "project-1\n" | dg init --use-editable-dagster --workspace-name dagster-workspace',
+            cmd='echo "project-1\n" | dg init --use-editable-dagster --workspace dagster-workspace',
             snippet_path=DG_SNIPPETS_DIR / f"{get_next_snip_number()}-dg-init.txt",
             update_snippets=update_snippets,
             snippet_replace_regex=[
@@ -45,7 +45,7 @@ def test_dg_docs_workspace(update_snippets: bool) -> None:
                     "of your Dagster project: project-1\n",
                 ),
             ],
-            print_cmd="dg init --workspace-name dagster-workspace",
+            print_cmd="dg init --workspace dagster-workspace",
         )
 
         # Remove files we don't want to show up in the tree

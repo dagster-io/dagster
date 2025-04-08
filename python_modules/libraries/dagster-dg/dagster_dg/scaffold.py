@@ -33,17 +33,18 @@ ScaffoldFormatOptions: TypeAlias = Literal["yaml", "python"]
 
 
 def scaffold_workspace(
-    workspace_name: str,
+    dirname: str,
     workspace_config: Optional[DgRawWorkspaceConfig] = None,
 ) -> Path:
     # Can't create a workspace that is a child of another workspace
-    new_workspace_path = Path.cwd() / workspace_name
+
+    new_workspace_path = Path.cwd() if dirname == "." else Path.cwd() / dirname
     existing_workspace_path = discover_workspace_root(new_workspace_path)
     if existing_workspace_path:
         exit_with_error(
             f"Workspace already exists at {existing_workspace_path}.  Run `dg scaffold project` to add a new project to that workspace."
         )
-    elif new_workspace_path.exists():
+    elif dirname != "." and new_workspace_path.exists():
         exit_with_error(f"Folder already exists at {new_workspace_path}.")
 
     scaffold_subtree(
@@ -52,7 +53,7 @@ def scaffold_workspace(
         templates_path=os.path.join(
             os.path.dirname(__file__), "templates", "WORKSPACE_NAME_PLACEHOLDER"
         ),
-        project_name=workspace_name,
+        project_name=dirname,
     )
 
     if workspace_config is not None:
