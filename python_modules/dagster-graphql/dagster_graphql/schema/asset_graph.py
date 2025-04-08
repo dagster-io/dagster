@@ -747,10 +747,11 @@ class GrapheneAssetNode(graphene.ObjectType):
                     [sev for sev in check_failure_severities if sev == AssetCheckSeverity.ERROR]
                 )
                 num_warn = len(check_failure_severities) - num_failed
-                return (
-                    GrapheneAssetHealthStatus.DEGRADED,
-                    f"{num_failed}/{total_num_checks} checks failed, {num_warn}/{total_num_checks} checks warning",
-                )
+                msg = f"{num_failed}/{total_num_checks} checks failed"
+                if num_warn > 0:
+                    msg += f", {num_warn}/{total_num_checks} checks warning"
+                return GrapheneAssetHealthStatus.DEGRADED, msg
+
             # since we are only looking at the latest completed execution for each check, if there
             # are no failed checks, then all checks must have succeeded
             if num_unexecuted_checks > 0:
