@@ -30,28 +30,24 @@ def buildkite_quarantined_tests() -> set[TestId]:
         if os.getenv("BUILDKITE_BRANCH", "").startswith("release-"):
             return quarantined_tests
 
-        try:
-            import requests
+        import requests
 
-            token = os.getenv("BUILDKITE_TEST_QUARANTINE_TOKEN")
-            org_slug = os.getenv("BUILDKITE_ORGANIZATION_SLUG")
-            suite_slug = os.getenv("BUILDKITE_TEST_SUITE_SLUG")
+        token = os.getenv("BUILDKITE_TEST_QUARANTINE_TOKEN")
+        org_slug = os.getenv("BUILDKITE_ORGANIZATION_SLUG")
+        suite_slug = os.getenv("BUILDKITE_TEST_SUITE_SLUG")
 
-            headers = {"Authorization": f"Bearer {token}"}
-            url = f"https://api.buildkite.com/v2/analytics/organizations/{org_slug}/suites/{suite_slug}/tests/muted"
+        headers = {"Authorization": f"Bearer {token}"}
+        url = f"https://api.buildkite.com/v2/analytics/organizations/{org_slug}/suites/{suite_slug}/tests/muted"
 
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
 
-            for test in response.json():
-                scope = test.get("scope", "")
-                name = test.get("name", "")
-                quarantined_test = TestId(scope, name)
+        for test in response.json():
+            scope = test.get("scope", "")
+            name = test.get("name", "")
+            quarantined_test = TestId(scope, name)
 
-                quarantined_tests.add(quarantined_test)
-
-        except Exception as e:
-            print(e)  # noqa
+            quarantined_tests.add(quarantined_test)
 
     return quarantined_tests
 
