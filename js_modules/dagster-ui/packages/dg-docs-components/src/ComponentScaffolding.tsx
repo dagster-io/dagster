@@ -1,7 +1,7 @@
 import CopyButton from './CopyButton';
 import styles from './css/ComponentScaffolding.module.css';
 
-export default function ComponentScaffolding({ componentName }: { componentName: string }) {
+export default function ComponentScaffolding({componentName}: {componentName: string}) {
   const command = `dg scaffold ${componentName} {component_name}`;
   return (
     <div className={styles.container}>
