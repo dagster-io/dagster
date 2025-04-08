@@ -223,6 +223,10 @@ def test_cli_invocation_in_asset_decorator(
     assert len(asset_check_evaluation) == 20
 
     # Sanity check
+    first_output_with_metadata = next(output for output in sorted(outputs_with_metadata))
+    assert first_output_with_metadata.step_output_data.output_name == "customers"
+    assert first_output_with_metadata.step_output_data.metadata["run_url"].value == TEST_RUN_URL
+
     first_mat = next(event.materialization for event in sorted(asset_materialization_events))
     assert first_mat.asset_key.path == ["customers"]
     assert first_mat.metadata["run_url"].value == TEST_RUN_URL
