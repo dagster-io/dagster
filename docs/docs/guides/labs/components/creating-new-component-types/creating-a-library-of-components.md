@@ -7,19 +7,29 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
 
-To let the `dg` CLI know that your Python package contains component types, update your `pyproject.toml` file with the following configuration:
+`dg` is able to discover declared component types in packages installed in your Python environment. These may come from either your Dagster project or a third-party package. In either case, the mechanism for declaring component types is the same. A package must declare an [entry point](https://packaging.python.org/en/latest/specifications/entry-points/) in the `dagster-dg.library` group in its package metadata. The entry point value is the name of a Python module containing component type definitions. By convention, this usually specifies the top-level module of a package, though any submodule may be specified. The entry point name is  arbitrary and does not affect component type detection, but by convention should be set to the same string as the value (i.e. the module name):
 
-```toml
-[tool.dg]
-is_component_lib = true
-```
+<Tabs>
+  <TabItem value="pyproject.toml" label="pyproject.toml">
+    ```
+    [project.entry-points]
+    dagster-dg.library = [
+        "my_library = my_library",
+    ]
+    ```
+  </TabItem>
+  <TabItem value="setup.py" label="setup.py">
+    ```
+    setup(
+        # ...
+        entry_points={
+            "dagster_dg.library": [
+                "my_library = my_library",
+            ],
+        },
+    )
+    ```
+  </TabItem>
+</Tabs>
 
-By default, it is assumed that all component types will be defined in `your_package.lib`. If you'd like to define your components in a different directory, you can specify this in your `pyproject.toml` file:
-
-```toml
-[tool.dg]
-is_component_lib = true
-component_lib_package="your_package.other_module"
-```
-
-Once this is done, as long as this package is installed in your environment, you'll be able to use the `dg` command-line utility to interact with your component types.
+Note that scaffolded projects declare `<project_name>.lib` as the entry point by default.
