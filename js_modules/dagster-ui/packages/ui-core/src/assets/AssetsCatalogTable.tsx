@@ -221,7 +221,7 @@ export const AssetsCatalogTable = ({
     enabled: !featureEnabled(FeatureFlag.flagSelectionSyntax),
   });
 
-  const favorites = useFavoriteAssets();
+  const {favorites, loading: favoritesLoading} = useFavoriteAssets();
   const penultimateAssets = useMemo(() => {
     if (!favorites) {
       return partiallyFiltered;
@@ -235,7 +235,7 @@ export const AssetsCatalogTable = ({
   const {filterInput, filtered, loading, assetSelection, setAssetSelection} =
     useAssetSelectionInput({
       assets: penultimateAssets,
-      assetsLoading: !assets || filteredAssetsLoading,
+      assetsLoading: !assets || filteredAssetsLoading || favoritesLoading,
       onErrorStateChange: (errors) => {
         if (errors !== errorState) {
           setErrorState(errors);
