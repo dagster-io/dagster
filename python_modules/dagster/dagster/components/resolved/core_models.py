@@ -8,15 +8,12 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.asset_spec import AssetSpec, map_asset_specs
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.declarative_automation.automation_condition import (
     AutomationCondition,
 )
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._record import replace
 from dagster.components.resolved.base import Resolvable, resolve_fields
 from dagster.components.resolved.context import ResolutionContext
 from dagster.components.resolved.model import Injectable, Injected, Model, Resolver
@@ -194,22 +191,9 @@ def apply_post_processor_to_spec(
 def apply_post_processor_to_defs(
     model: AssetPostProcessorModel, defs: Definitions, context: ResolutionContext
 ) -> Definitions:
-    target_selection = AssetSelection.from_string(model.target, include_sources=True)
-    target_keys = target_selection.resolve(defs.get_asset_graph())
-
-    mappable = [d for d in defs.assets or [] if isinstance(d, (AssetsDefinition, AssetSpec))]
-    mapped_assets = map_asset_specs(
-        lambda spec: apply_post_processor_to_spec(model, spec, context)
-        if spec.key in target_keys
-        else spec,
-        mappable,
+    return defs.map_asset_specs(
+        selection=model.target, func=lambda spec: apply_post_processor_to_spec(model, spec, context)
     )
-
-    assets = [
-        *mapped_assets,
-        *[d for d in defs.assets or [] if not isinstance(d, (AssetsDefinition, AssetSpec))],
-    ]
-    return replace(defs, assets=assets)
 
 
 def resolve_schema_to_post_processor(
