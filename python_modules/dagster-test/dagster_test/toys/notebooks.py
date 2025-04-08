@@ -5,7 +5,10 @@ try:
 
     hello_world_notebook_op = define_dagstermill_op("hello_world_notebook_op", "hello_world.ipynb")
 except ImportError:
-    hello_world_notebook_op = lambda: None
+    @op(name="hello_world_notebook_op")
+    def mock_notebook_op():
+        return None
+    hello_world_notebook_op = mock_notebook_op
 
 
 @job
