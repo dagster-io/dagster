@@ -137,8 +137,8 @@ def test_asset_checks_enabled_by_default(test_asset_checks_manifest: dict[str, A
                 AssetKey(["customers"]),
             ],
         ),
-        "orders_relationships_orders_customer_id__customer_id__source_jaffle_shop_raw_customers_": AssetCheckSpec(
-            name="relationships_orders_customer_id__customer_id__source_jaffle_shop_raw_customers_",
+        "orders_relationships_orders_customer_id__id__source_jaffle_shop_raw_customers_": AssetCheckSpec(
+            name="relationships_orders_customer_id__id__source_jaffle_shop_raw_customers_",
             asset=AssetKey(["orders"]),
             additional_deps=[
                 AssetKey(["jaffle_shop", "raw_customers"]),
@@ -293,9 +293,10 @@ def test_materialize_no_selection(
         expected_dbt_selection={"fqn:*"},
     )
     assert not result.success  # fail_tests_model fails
-    assert len(result.get_asset_materialization_events()) == 10
+    # raw_customers is a source, and thus does not receive an asset materialization.
+    assert len(result.get_asset_materialization_events()) == 9
     assert len(result.get_asset_check_evaluations()) == 26
-    assert len(result.get_asset_observation_events()) == 2
+    assert len(result.get_asset_observation_events()) == 4
 
 
 def test_materialize_asset_and_checks(
@@ -786,3 +787,50 @@ def test_dbt_with_dotted_dependency_names(test_dbt_alias_manifest: dict[str, Any
         resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_alias_path))},
     )
     assert result.success
+
+
+def test_dbt_source_tests(
+    test_asset_checks_manifest: dict[str, Any],
+) -> None:
+    """Test default behavior when dbt source tests are configured."""
+
+    @dbt_assets(
+        manifest=test_asset_checks_manifest,
+        dagster_dbt_translator=dagster_dbt_translator_with_checks,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_asset_checks_path))},
+        raise_on_error=False,
+    )
+    assert not result.success
+    asset_observations_for_raw_customers = [
+        event.asset_observation_data.asset_observation
+        for event in result.get_asset_observation_events()
+        if event.asset_observation_data.asset_observation.asset_key
+        == AssetKey(["jaffle_shop", "raw_customers"])
+    ]
+    assert len(asset_observations_for_raw_customers) == 2
+    assert (
+        len(
+            [
+                obs
+                for obs in asset_observations_for_raw_customers
+                if "source_not_null_jaffle_shop_raw_customers_id" in obs.description
+            ]
+        )
+        == 1
+    )
+    assert (
+        len(
+            [
+                obs
+                for obs in asset_observations_for_raw_customers
+                if "source_unique_jaffle_shop_raw_customers_id" in obs.description
+            ]
+        )
+        == 1
+    )
