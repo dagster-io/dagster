@@ -69,7 +69,7 @@ class AssetEntry(
             # Last ASSET_FAILED_TO_MATERIALIZE event with FAILED failure type
             ("last_failed_to_materialize_record", Optional[EventLogRecord]),
             # Last ASSET_FAILED_TO_MATERIALIZE event with SKIPPED failure type
-            ("last_skipped_failed_to_materialize_record", Optional[EventLogRecord]),
+            ("last_skipped_materialization_record", Optional[EventLogRecord]),
         ],
     )
 ):
@@ -84,7 +84,7 @@ class AssetEntry(
         last_planned_materialization_storage_id: Optional[int] = None,
         last_planned_materialization_run_id: Optional[str] = None,
         last_failed_to_materialize_record: Optional[EventLogRecord] = None,
-        last_skipped_failed_to_materialize_record: Optional[EventLogRecord] = None,
+        last_skipped_materialization_record: Optional[EventLogRecord] = None,
     ):
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
@@ -117,9 +117,9 @@ class AssetEntry(
                 "last_failed_to_materialize_record",
                 EventLogRecord,
             ),
-            last_skipped_failed_to_materialize_record=check.opt_inst_param(
-                last_skipped_failed_to_materialize_record,
-                "last_skipped_failed_to_materialize_record",
+            last_skipped_materialization_record=check.opt_inst_param(
+                last_skipped_materialization_record,
+                "last_skipped_materialization_record",
                 EventLogRecord,
             ),
         )
@@ -155,10 +155,10 @@ class AssetEntry(
         return self.last_failed_to_materialize_record.storage_id
 
     @property
-    def last_skipped_failed_to_materialize_storage_id(self) -> Optional[int]:
-        if self.last_skipped_failed_to_materialize_record is None:
+    def last_skipped_materialization_storage_id(self) -> Optional[int]:
+        if self.last_skipped_materialization_record is None:
             return None
-        return self.last_skipped_failed_to_materialize_record.storage_id
+        return self.last_skipped_materialization_record.storage_id
 
 
 class AssetRecord(
