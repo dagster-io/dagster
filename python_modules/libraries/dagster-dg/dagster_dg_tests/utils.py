@@ -198,6 +198,7 @@ def isolated_example_project_foo_bar(
     component_dirs: Sequence[Path] = [],
     config_file_type: ConfigFileType = "pyproject.toml",
     package_layout: PackageLayoutType = "src",
+    use_editable_dagster: bool = True,
 ) -> Iterator[None]:
     """Scaffold a project named foo_bar in an isolated filesystem.
 
@@ -218,8 +219,7 @@ def isolated_example_project_foo_bar(
         args = [
             "scaffold",
             "project",
-            "--use-editable-dagster",
-            dagster_git_repo_dir,
+            *(["--use-editable-dagster", dagster_git_repo_dir] if use_editable_dagster else []),
             *(["--skip-venv"] if skip_venv else []),
             *(["--no-populate-cache"] if not populate_cache else []),
             "foo-bar",
