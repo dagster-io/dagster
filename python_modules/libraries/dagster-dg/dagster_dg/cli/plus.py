@@ -504,7 +504,7 @@ def create_ci_api_token(description: Optional[str] = None, **global_options: obj
     """Create a Dagster Plus API token for CI."""
     if not DagsterPlusCliConfig.exists():
         raise click.UsageError(
-            "`dg plus create-ci-api-token` requires authentication with Dagster Plus. Run `dg plus login` to authenticate."
+            "`dg plus create ci-api-token` requires authentication with Dagster Plus. Run `dg plus login` to authenticate."
         )
     config = DagsterPlusCliConfig.get()
 

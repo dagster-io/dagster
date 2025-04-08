@@ -8,6 +8,7 @@ from dagster_dg.utils import ensure_dagster_dg_tests_import
 ensure_dagster_dg_tests_import()
 
 from dagster_dg.utils.plus import gql
+
 from dagster_dg_tests.cli_tests.plus_tests.utils import mock_gql_response
 from dagster_dg_tests.utils import ProxyRunner, isolated_example_workspace
 
@@ -59,7 +60,8 @@ def test_create_ci_api_token(
 
         result = runner.invoke(
             "plus",
-            "create-ci-api-token",
+            "create",
+            "ci-api-token",
             *(["--description", "Used in dagster-workspace GitHub Actions"] if description else []),
         )
         assert result.exit_code == 0, result.output + " " + str(result.exception)
