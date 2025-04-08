@@ -381,9 +381,58 @@ export type AssetGroupSelector = {
 export type AssetHealth = {
   __typename: 'AssetHealth';
   assetChecksStatus: AssetHealthStatus;
+  assetChecksStatusMetadata: Maybe<AssetHealthCheckMeta>;
   assetHealth: AssetHealthStatus;
   freshnessStatus: AssetHealthStatus;
   materializationStatus: AssetHealthStatus;
+  materializationStatusMetadata: Maybe<AssetHealthMaterializationMeta>;
+};
+
+export type AssetHealthCheckDegradedMeta = {
+  __typename: 'AssetHealthCheckDegradedMeta';
+  numFailed: Scalars['Int']['output'];
+  numWarning: Scalars['Int']['output'];
+  totalNumChecks: Scalars['Int']['output'];
+};
+
+export type AssetHealthCheckMeta =
+  | AssetHealthCheckDegradedMeta
+  | AssetHealthCheckUnknownMeta
+  | AssetHealthCheckWarningMeta;
+
+export type AssetHealthCheckUnknownMeta = {
+  __typename: 'AssetHealthCheckUnknownMeta';
+  numNotExecuted: Scalars['Int']['output'];
+  totalNumChecks: Scalars['Int']['output'];
+};
+
+export type AssetHealthCheckWarningMeta = {
+  __typename: 'AssetHealthCheckWarningMeta';
+  numWarning: Scalars['Int']['output'];
+  totalNumChecks: Scalars['Int']['output'];
+};
+
+export type AssetHealthMaterializationDegradedNotPartitionedMeta = {
+  __typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta';
+  failedRunId: Scalars['String']['output'];
+};
+
+export type AssetHealthMaterializationDegradedPartitionedMeta = {
+  __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
+  numFailed: Scalars['Int']['output'];
+  numMissing: Scalars['Int']['output'];
+  totalNumPartitions: Scalars['Int']['output'];
+};
+
+export type AssetHealthMaterializationMeta =
+  | AssetHealthMaterializationDegradedNotPartitionedMeta
+  | AssetHealthMaterializationDegradedPartitionedMeta
+  | AssetHealthMaterializationWarningPartitionedMeta;
+
+export type AssetHealthMaterializationWarningPartitionedMeta = {
+  __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+  numMissing: Scalars['Int']['output'];
+  totalNumPartitions: Scalars['Int']['output'];
 };
 
 export enum AssetHealthStatus {
@@ -6608,6 +6657,12 @@ export const buildAssetHealth = (
       overrides && overrides.hasOwnProperty('assetChecksStatus')
         ? overrides.assetChecksStatus!
         : AssetHealthStatus.DEGRADED,
+    assetChecksStatusMetadata:
+      overrides && overrides.hasOwnProperty('assetChecksStatusMetadata')
+        ? overrides.assetChecksStatusMetadata!
+        : relationshipsToOmit.has('AssetHealthCheckDegradedMeta')
+          ? ({} as AssetHealthCheckDegradedMeta)
+          : buildAssetHealthCheckDegradedMeta({}, relationshipsToOmit),
     assetHealth:
       overrides && overrides.hasOwnProperty('assetHealth')
         ? overrides.assetHealth!
@@ -6620,6 +6675,108 @@ export const buildAssetHealth = (
       overrides && overrides.hasOwnProperty('materializationStatus')
         ? overrides.materializationStatus!
         : AssetHealthStatus.DEGRADED,
+    materializationStatusMetadata:
+      overrides && overrides.hasOwnProperty('materializationStatusMetadata')
+        ? overrides.materializationStatusMetadata!
+        : relationshipsToOmit.has('AssetHealthMaterializationDegradedNotPartitionedMeta')
+          ? ({} as AssetHealthMaterializationDegradedNotPartitionedMeta)
+          : buildAssetHealthMaterializationDegradedNotPartitionedMeta({}, relationshipsToOmit),
+  };
+};
+
+export const buildAssetHealthCheckDegradedMeta = (
+  overrides?: Partial<AssetHealthCheckDegradedMeta>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetHealthCheckDegradedMeta'} & AssetHealthCheckDegradedMeta => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetHealthCheckDegradedMeta');
+  return {
+    __typename: 'AssetHealthCheckDegradedMeta',
+    numFailed: overrides && overrides.hasOwnProperty('numFailed') ? overrides.numFailed! : 6675,
+    numWarning: overrides && overrides.hasOwnProperty('numWarning') ? overrides.numWarning! : 908,
+    totalNumChecks:
+      overrides && overrides.hasOwnProperty('totalNumChecks') ? overrides.totalNumChecks! : 6689,
+  };
+};
+
+export const buildAssetHealthCheckUnknownMeta = (
+  overrides?: Partial<AssetHealthCheckUnknownMeta>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetHealthCheckUnknownMeta'} & AssetHealthCheckUnknownMeta => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetHealthCheckUnknownMeta');
+  return {
+    __typename: 'AssetHealthCheckUnknownMeta',
+    numNotExecuted:
+      overrides && overrides.hasOwnProperty('numNotExecuted') ? overrides.numNotExecuted! : 9781,
+    totalNumChecks:
+      overrides && overrides.hasOwnProperty('totalNumChecks') ? overrides.totalNumChecks! : 7235,
+  };
+};
+
+export const buildAssetHealthCheckWarningMeta = (
+  overrides?: Partial<AssetHealthCheckWarningMeta>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetHealthCheckWarningMeta'} & AssetHealthCheckWarningMeta => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetHealthCheckWarningMeta');
+  return {
+    __typename: 'AssetHealthCheckWarningMeta',
+    numWarning: overrides && overrides.hasOwnProperty('numWarning') ? overrides.numWarning! : 1255,
+    totalNumChecks:
+      overrides && overrides.hasOwnProperty('totalNumChecks') ? overrides.totalNumChecks! : 9768,
+  };
+};
+
+export const buildAssetHealthMaterializationDegradedNotPartitionedMeta = (
+  overrides?: Partial<AssetHealthMaterializationDegradedNotPartitionedMeta>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta';
+} & AssetHealthMaterializationDegradedNotPartitionedMeta => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetHealthMaterializationDegradedNotPartitionedMeta');
+  return {
+    __typename: 'AssetHealthMaterializationDegradedNotPartitionedMeta',
+    failedRunId:
+      overrides && overrides.hasOwnProperty('failedRunId') ? overrides.failedRunId! : 'magnam',
+  };
+};
+
+export const buildAssetHealthMaterializationDegradedPartitionedMeta = (
+  overrides?: Partial<AssetHealthMaterializationDegradedPartitionedMeta>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'AssetHealthMaterializationDegradedPartitionedMeta';
+} & AssetHealthMaterializationDegradedPartitionedMeta => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetHealthMaterializationDegradedPartitionedMeta');
+  return {
+    __typename: 'AssetHealthMaterializationDegradedPartitionedMeta',
+    numFailed: overrides && overrides.hasOwnProperty('numFailed') ? overrides.numFailed! : 4481,
+    numMissing: overrides && overrides.hasOwnProperty('numMissing') ? overrides.numMissing! : 1661,
+    totalNumPartitions:
+      overrides && overrides.hasOwnProperty('totalNumPartitions')
+        ? overrides.totalNumPartitions!
+        : 5405,
+  };
+};
+
+export const buildAssetHealthMaterializationWarningPartitionedMeta = (
+  overrides?: Partial<AssetHealthMaterializationWarningPartitionedMeta>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {
+  __typename: 'AssetHealthMaterializationWarningPartitionedMeta';
+} & AssetHealthMaterializationWarningPartitionedMeta => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetHealthMaterializationWarningPartitionedMeta');
+  return {
+    __typename: 'AssetHealthMaterializationWarningPartitionedMeta',
+    numMissing: overrides && overrides.hasOwnProperty('numMissing') ? overrides.numMissing! : 3355,
+    totalNumPartitions:
+      overrides && overrides.hasOwnProperty('totalNumPartitions')
+        ? overrides.totalNumPartitions!
+        : 8637,
   };
 };
 

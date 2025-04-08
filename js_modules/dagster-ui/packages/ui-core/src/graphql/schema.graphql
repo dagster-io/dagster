@@ -746,7 +746,9 @@ type AssetNode {
 type AssetHealth {
   assetHealth: AssetHealthStatus!
   materializationStatus: AssetHealthStatus!
+  materializationStatusMetadata: AssetHealthMaterializationMeta
   assetChecksStatus: AssetHealthStatus!
+  assetChecksStatusMetadata: AssetHealthCheckMeta
   freshnessStatus: AssetHealthStatus!
 }
 
@@ -756,6 +758,47 @@ enum AssetHealthStatus {
   DEGRADED
   UNKNOWN
   NOT_APPLICABLE
+}
+
+union AssetHealthMaterializationMeta =
+  | AssetHealthMaterializationDegradedPartitionedMeta
+  | AssetHealthMaterializationWarningPartitionedMeta
+  | AssetHealthMaterializationDegradedNotPartitionedMeta
+
+type AssetHealthMaterializationDegradedPartitionedMeta {
+  numFailed: Int!
+  numMissing: Int!
+  totalNumPartitions: Int!
+}
+
+type AssetHealthMaterializationWarningPartitionedMeta {
+  numMissing: Int!
+  totalNumPartitions: Int!
+}
+
+type AssetHealthMaterializationDegradedNotPartitionedMeta {
+  failedRunId: String!
+}
+
+union AssetHealthCheckMeta =
+  | AssetHealthCheckDegradedMeta
+  | AssetHealthCheckWarningMeta
+  | AssetHealthCheckUnknownMeta
+
+type AssetHealthCheckDegradedMeta {
+  numFailed: Int!
+  numWarning: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckWarningMeta {
+  numWarning: Int!
+  totalNumChecks: Int!
+}
+
+type AssetHealthCheckUnknownMeta {
+  numNotExecuted: Int!
+  totalNumChecks: Int!
 }
 
 type MaterializationUpstreamDataVersion {
