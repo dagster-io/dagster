@@ -219,7 +219,7 @@ def test_add_env_command_basic_success_workspace(dg_plus_cli_config, input_type:
     ):
         mock_gql_response(
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
-            json_data={"data": {"secretsForScopes": {"secrets": []}}},
+            json_data={"data": {"secretsOrError": {"secrets": []}}},
         )
         mock_gql_response(
             query=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
@@ -282,7 +282,7 @@ def test_add_env_command_scopes_workspace(dg_plus_cli_config, scopes: list[str])
     ):
         mock_gql_response(
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
-            json_data={"data": {"secretsForScopes": {"secrets": []}}},
+            json_data={"data": {"secretsOrError": {"secrets": []}}},
         )
         mock_gql_response(
             query=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
@@ -334,7 +334,7 @@ def test_add_env_command_warn_if_existing_workspace(dg_plus_cli_config, accept: 
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
             json_data={
                 "data": {
-                    "secretsForScopes": {
+                    "secretsOrError": {
                         "secrets": [
                             {
                                 "secretName": "FOO",
@@ -404,7 +404,7 @@ def test_add_env_command_basic_success(dg_plus_cli_config, input_type: str):
     ):
         mock_gql_response(
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
-            json_data={"data": {"secretsForScopes": {"secrets": []}}},
+            json_data={"data": {"secretsOrError": {"secrets": []}}},
         )
         mock_gql_response(
             query=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
@@ -469,7 +469,7 @@ def test_add_env_command_scopes(dg_plus_cli_config, scopes: list[str]):
     ):
         mock_gql_response(
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
-            json_data={"data": {"secretsForScopes": {"secrets": []}}},
+            json_data={"data": {"secretsOrError": {"secrets": []}}},
         )
         mock_gql_response(
             query=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
@@ -515,9 +515,25 @@ def test_add_env_command_basic_success_global(dg_plus_cli_config):
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_example_project_foo_bar(runner, in_workspace=False),
     ):
+        # Existing non-global secret, which we ignore
         mock_gql_response(
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
-            json_data={"data": {"secretsForScopes": {"secrets": []}}},
+            json_data={
+                "data": {
+                    "secretsOrError": {
+                        "secrets": [
+                            {
+                                "secretName": "FOO",
+                                "secretValue": "bar",
+                                "locationNames": ["foo-bar"],
+                                "fullDeploymentScope": True,
+                                "allBranchDeploymentsScope": True,
+                                "localDeploymentScope": True,
+                            }
+                        ]
+                    }
+                }
+            },
         )
         mock_gql_response(
             query=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
@@ -563,7 +579,7 @@ def test_add_env_command_warn_if_global(dg_plus_cli_config, accept: bool):
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
             json_data={
                 "data": {
-                    "secretsForScopes": {
+                    "secretsOrError": {
                         "secrets": [
                             {
                                 "secretName": "FOO",
@@ -617,7 +633,7 @@ def test_add_env_command_exception_if_multiple_locations(dg_plus_cli_config):
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
             json_data={
                 "data": {
-                    "secretsForScopes": {
+                    "secretsOrError": {
                         "secrets": [
                             {
                                 "secretName": "FOO",
@@ -666,7 +682,7 @@ def test_add_env_command_warn_if_existing(dg_plus_cli_config, accept: bool):
             query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
             json_data={
                 "data": {
-                    "secretsForScopes": {
+                    "secretsOrError": {
                         "secrets": [
                             {
                                 "secretName": "FOO",
@@ -706,3 +722,52 @@ def test_add_env_command_warn_if_existing(dg_plus_cli_config, accept: bool):
                 "Are you sure you want to update environment variable FOO in branch, full, local scope for location foo-bar? [y/N]: y\n\n"
                 "Environment variable FOO set in branch, full, local scope for location foo-bar in deployment hooli-dev"
             )
+
+
+@responses.activate
+def test_add_env_command_no_confirm(dg_plus_cli_config):
+    # Test that we warn and ask for confirmation if we are going to update any existing env vars
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner, in_workspace=False),
+    ):
+        mock_gql_response(
+            query=gql.GET_SECRETS_FOR_SCOPES_QUERY,
+            json_data={
+                "data": {
+                    "secretsOrError": {
+                        "secrets": [
+                            {
+                                "secretName": "FOO",
+                                "secretValue": "bar",
+                                "locationNames": ["foo-bar"],
+                                "fullDeploymentScope": False,
+                                "allBranchDeploymentsScope": False,
+                                "localDeploymentScope": True,
+                            }
+                        ]
+                    }
+                }
+            },
+        )
+        mock_gql_response(
+            query=gql.CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION,
+            json_data={
+                "data": {
+                    "createOrUpdateSecretForScopes": {
+                        "secret": {
+                            "secretName": "FOO",
+                            "secretValue": "bar",
+                            "locationNames": ["foo-bar"],
+                        }
+                    }
+                }
+            },
+        )
+        result = runner.invoke("plus", "create", "env", "FOO", "bar", "--no-confirm")
+        assert result.exit_code == 0, result.output + " " + str(result.exception)
+        assert (
+            result.output.strip()
+            == "Environment variable FOO is already configured for local scope for location foo-bar.\n\n"
+            "Environment variable FOO set in branch, full, local scope for location foo-bar in deployment hooli-dev"
+        )

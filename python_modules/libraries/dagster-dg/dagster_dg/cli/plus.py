@@ -1,21 +1,13 @@
-<<<<<<< HEAD
+import itertools
 import os
 import sys
 import tempfile
 import webbrowser
 from collections.abc import Mapping
 from contextlib import ExitStack
-from pathlib import Path
-from typing import Optional
-=======
-import itertools
-import os
-import webbrowser
-from collections.abc import Mapping
 from enum import Enum
 from pathlib import Path
-from typing import Any
->>>>>>> 2cec4829d5 ([dg] `dg plus env add`)
+from typing import Any, Optional
 
 import click
 import jinja2
@@ -168,6 +160,7 @@ def pull_env_command(**global_options: object) -> None:
                 f"Environment variables not found for projects: {', '.join(projects_without_secrets)}"
             )
 
+
 class EnvVarScope(str, Enum):
     """Env var scopes in Dagster Plus.
 
@@ -222,6 +215,11 @@ def plus_create_group():
     is_flag=True,
     help="Whether to set the environment variable at the deployment level, for all locations.",
 )
+@click.option(
+    "--no-confirm",
+    is_flag=True,
+    help="Do not confirm the creation of the environment variable, if it already exists.",
+)
 @dg_global_options
 @cli_telemetry_wrapper
 def create_env_command(
@@ -230,6 +228,7 @@ def create_env_command(
     scope: list[str],
     global_: bool,
     from_local_env: bool,
+    no_confirm: bool,
     **global_options: object,
 ) -> None:
     """Create or update an environment variable in Dagster Plus."""
@@ -287,7 +286,11 @@ def create_env_command(
             },
             "secretName": env_name,
         },
-    )["secretsForScopes"]["secrets"]
+    )["secretsOrError"]["secrets"]
+    if global_:
+        existing_secrets = [
+            secret for secret in existing_secrets if len(secret["locationNames"]) == 0
+        ]
 
     for existing_secret in existing_secrets:
         if len(existing_secret["locationNames"]) > 1:
@@ -318,7 +321,7 @@ def create_env_command(
         )
         should_confirm = True
 
-    if should_confirm:
+    if should_confirm and not no_confirm:
         if not global_:
             click.confirm(
                 f"\nAre you sure you want to update environment variable {env_name}{scope_text}{location_suffix}?",
@@ -357,6 +360,7 @@ def create_env_command(
 # ####################
 # ##### DEPLOY
 # ####################
+
 
 def _create_temp_deploy_dockerfile(dst_path, python_version):
     dockerfile_template_path = (
@@ -481,4 +485,5 @@ def deploy_command(
                 "deploy",
                 "--statedir",
                 str(statedir),
-            ],)
+            ],
+        )

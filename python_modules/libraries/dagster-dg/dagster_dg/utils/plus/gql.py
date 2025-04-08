@@ -90,7 +90,7 @@ CREATE_OR_UPDATE_SECRET_FOR_SCOPES_MUTATION = """
 
 GET_SECRETS_FOR_SCOPES_QUERY = """
 query SecretsForScopesQuery($locationName: String, $scopes: SecretScopesInput!, $secretName: String!) {
-    secretsForScopes(locationName: $locationName, scopes: $scopes, secretName: $secretName) {
+    secretsOrError(locationName: $locationName, scopes: $scopes, secretName: $secretName) {
         __typename
         ... on Secrets {
             secrets {
