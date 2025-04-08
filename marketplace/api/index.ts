@@ -1,14 +1,29 @@
-const express = require("express");
+import express from "express";
+
 const app = express();
 
-app.get("/", (req, res) => res.send("Dagster Marketplace"));
+// Statically hosted files, for example:
+//
+// public/images/dagster-primary-horizontal.svg -> /images/dagster-primary-horizontal.svg
+//
+app.use(express.static("public"));
 
-app.get("/api/registry", (req, res) =>
-  res.json({
-    message: "Hello, world!",
-    elements: [1, 2, 3, 4, 5],
-  }),
-);
+const EXAMPLE_PAYLOAD = {
+  status: "success",
+  user: {
+    id: "u123456",
+    username: "johndoe",
+    email: "john.doe@example.com",
+    role: "admin",
+    profile: {
+      firstName: "John",
+      lastName: "Doe",
+      avatarUrl: "https://example.com/avatars/johndoe.jpg",
+    },
+  },
+};
+
+app.get("/api/example", (req, res) => res.json(EXAMPLE_PAYLOAD));
 
 app.listen(8080, () => console.log("Server ready on port 8080."));
 
