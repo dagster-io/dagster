@@ -10,6 +10,7 @@ from dagster_airlift.constants import SOURCE_CODE_METADATA_KEY
 from dagster_airlift.core import build_defs_from_airflow_instance
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
+from dagster_airlift.core.filter import AirflowFilter
 from kitchen_sink.airflow_instance import (
     AIRFLOW_BASE_URL,
     AIRFLOW_INSTANCE_NAME,
@@ -36,9 +37,26 @@ def test_configure_dag_list_limit(airflow_instance: None, mocker: MockFixture) -
         # Set low list limit, force batched retrieval.
         dag_list_limit=1,
     )
-    assert len(af_instance.list_dags()) == 16
+    assert len(af_instance.list_dags(AirflowFilter())) == 16
     # 16 with actual results, 1 with no results
     assert spy.call_count == 17
+
+
+def test_airflow_filter(airflow_instance: None) -> None:
+    """Test that airflow filter correctly filters dags."""
+    af_instance = AirflowInstance(
+        auth_backend=AirflowBasicAuthBackend(
+            webserver_url=AIRFLOW_BASE_URL, username=USERNAME, password=PASSWORD
+        ),
+        name=AIRFLOW_INSTANCE_NAME,
+    )
+    dags = af_instance.list_dags(AirflowFilter(dag_id_ilike="simple"))
+    assert len(dags) == 1
+    assert dags[0].dag_id == "simple_unproxied_dag"
+
+    dags = af_instance.list_dags(AirflowFilter(airflow_tags=["example"]))
+    assert len(dags) == 1
+    assert dags[0].dag_id == "simple_unproxied_dag"
 
 
 def change_dag_limit_source_code(limit: int) -> None:
