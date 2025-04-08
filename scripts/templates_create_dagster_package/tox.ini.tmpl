@@ -5,6 +5,7 @@ download = True
 passenv =
     CI_*
     BUILDKITE*
+    PYTEST_ADDOPTS
     PYTEST_PLUGINS
     # TODO add additional env var requirements and add them to .buildkite/dagster-buildkite/dagster_buildkite/steps/packages.py
 install_command = uv pip install {opts} {packages}
@@ -17,4 +18,4 @@ allowlist_externals =
   uv
 commands =
   !windows: /bin/bash -c '! pip list --exclude-editable | grep -e dagster -e dagit'
-  pytest -c ../../../pyproject.toml -vv ./{{ underscore_name }}_tests --durations 10 {posargs}
+  pytest -vv ./{{ underscore_name }}_tests --durations 10 {posargs}
