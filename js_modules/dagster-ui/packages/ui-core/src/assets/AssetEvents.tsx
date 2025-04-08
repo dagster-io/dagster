@@ -1,7 +1,6 @@
 import {
   Box,
   ButtonGroup,
-  Colors,
   ErrorBoundary,
   NonIdealState,
   Spinner,
@@ -247,11 +246,7 @@ export const AssetEvents = ({
           }
           return (
             <>
-              <Box
-                style={{display: 'flex', flex: 1, minWidth: 200}}
-                flex={{direction: 'column'}}
-                background={Colors.backgroundLight()}
-              >
+              <Box style={{display: 'flex', flex: 1, minWidth: 200}} flex={{direction: 'column'}}>
                 {loading && grouped.length === 0 ? (
                   <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{flex: 1}}>
                     <Spinner purpose="section" />
