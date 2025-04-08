@@ -363,7 +363,7 @@ class GrapheneAsset(graphene.ObjectType):
         new_cursor = (
             EventLogCursor.from_storage_id(sorted_combined[-1][0]).to_string()
             if sorted_combined
-            else None
+            else EventLogCursor.from_storage_id(-1).to_string()
         )
         return GrapheneMaterializationHistoryConnection(
             results=[event_tuple[1] for event_tuple in sorted_combined],

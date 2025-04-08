@@ -60,6 +60,9 @@ export function usePaginatedAssetEvents(
       if (!assetKey) {
         return;
       }
+      if (cursor === '-1') {
+        return;
+      }
       setLoading(true);
       const {data} = await client.query<AssetEventsQuery, AssetEventsQueryVariables>({
         query: ASSET_EVENTS_QUERY,
