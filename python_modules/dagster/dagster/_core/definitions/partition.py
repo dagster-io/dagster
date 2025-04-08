@@ -36,6 +36,8 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._core.types.pagination import PaginatedResults
+from dagster._record import record
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import xor
 from dagster._utils.cached_method import cached_method
@@ -52,13 +54,52 @@ T_PartitionsDefinition = TypeVar(
     default="PartitionsDefinition",
     covariant=True,
 )
-
 # In the Dagster UI users can select partition ranges following the format '2022-01-13...2022-01-14'
 # "..." is an invalid substring in partition keys
 # The other escape characters are characters that may not display in the Dagster UI.
 INVALID_PARTITION_SUBSTRINGS = ["...", "\a", "\b", "\f", "\n", "\r", "\t", "\v", "\0"]
 
 PartitionConfigFn: TypeAlias = Callable[[str], Union[RunConfig, Mapping[str, Any]]]
+
+
+@record
+class TemporalContext:
+    """TemporalContext represents an effective time, used for business logic, and last_event_id
+    which is used to identify that state of the event log at some point in time. Put another way,
+    the value of a TemporalContext represents a point in time and a snapshot of the event log.
+
+    Effective time: This is the effective time of the computation in terms of business logic,
+    and it impacts the behavior of partitioning and partition mapping. For example,
+    the "last" partition window of a given partitions definition, it is with
+    respect to the effective time.
+
+    Last event id: Our event log has a monotonically increasing event id. This is used to
+    cursor the event log. This event_id is also propogated to derived tables to indicate
+    when that record is valid.  This allows us to query the state of the event log
+    at a given point in time.
+
+    Note that insertion time of the last_event_id is not the same as the effective time.
+
+    A last_event_id of None indicates that the reads will be volatile and will immediately
+    reflect any subsequent writes.
+    """
+
+    effective_dt: datetime
+    last_event_id: Optional[int]
+
+
+@record
+class PartitionLoadingContext:
+    """PartitionLoadingContext is a context object that is passed the partition keys functions of a
+    PartitionedJobDefinition. It contains information about where partitions are being loaded from
+    and the effective time for the partition loading.
+
+    temporal_context (TemporalContext): The TemporalContext for partition loading.
+    dynamic_partitions_store: The DynamicPartitionsStore backing the partition loading.  Used for dynamic partitions definitions.
+    """
+
+    temporal_context: TemporalContext
+    dynamic_partitions_store: Optional[DynamicPartitionsStore]
 
 
 @deprecated(breaking_version="2.0", additional_warn_text="Use string partition keys instead.")
@@ -144,6 +185,28 @@ class PartitionsDefinition(ABC, Generic[T_str]):
 
         Returns:
             Sequence[str]
+        """
+        ...
+
+    @abstractmethod
+    def get_paginated_partition_keys(
+        self,
+        context: PartitionLoadingContext,
+        limit: int,
+        ascending: bool,
+        cursor: Optional[str] = None,
+    ) -> PaginatedResults[str]:
+        """Returns a connection object that contains a list of partition keys and all the necessary
+        information to paginate through them.
+
+        Args:
+            context (PartitionLoadingContext): The context for loading partition keys.
+            limit (int): The maximum number of partition keys to return.
+            ascending (bool): Whether to return the partition keys in ascending order.  The order is determined by the partitions definition.
+            cursor (Optional[str]): A cursor to track the progress paginating through the returned partition key results.
+
+        Returns:
+            PaginatedResults[str]
         """
         ...
 
@@ -366,6 +429,22 @@ class StaticPartitionsDefinition(PartitionsDefinition[str]):
         """
         return self._partition_keys
 
+    def get_paginated_partition_keys(
+        self,
+        context: PartitionLoadingContext,
+        limit: int,
+        ascending: bool,
+        cursor: Optional[str] = None,
+    ) -> PaginatedResults[str]:
+        current_time = context.temporal_context.effective_dt
+        dynamic_partitions_store = context.dynamic_partitions_store
+        partition_keys = self.get_partition_keys(
+            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+        )
+        return PaginatedResults.create_from_sequence(
+            partition_keys, limit=limit, ascending=ascending, cursor=cursor
+        )
+
     def __hash__(self):
         return hash(self.__repr__())
 
@@ -548,6 +627,22 @@ class DynamicPartitionsDefinition(
             return dynamic_partitions_store.get_dynamic_partitions(
                 partitions_def_name=self._validated_name()
             )
+
+    def get_paginated_partition_keys(
+        self,
+        context: PartitionLoadingContext,
+        limit: int,
+        ascending: bool,
+        cursor: Optional[str] = None,
+    ) -> PaginatedResults[str]:
+        current_time = context.temporal_context.effective_dt
+        dynamic_partitions_store = context.dynamic_partitions_store
+        partition_keys = self.get_partition_keys(
+            current_time=current_time, dynamic_partitions_store=dynamic_partitions_store
+        )
+        return PaginatedResults.create_from_sequence(
+            partition_keys, limit=limit, ascending=ascending, cursor=cursor
+        )
 
     def has_partition_key(
         self,

@@ -47,7 +47,11 @@ from dagster._core.definitions.external_asset import create_external_asset_from_
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
-from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
+from dagster._core.definitions.partition import (
+    PartitionLoadingContext,
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.time_window_partitions import (
@@ -59,6 +63,7 @@ from dagster._core.executor.base import Executor
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.test_utils import instance_for_test
+from dagster._core.types.pagination import PaginatedResults
 from dagster._utils.test.definitions import scoped_definitions_load_context
 
 
@@ -966,6 +971,21 @@ def test_invalid_partitions_subclass():
             dynamic_partitions_store: Any = None,
         ) -> Sequence[str]:
             return ["a", "b", "c"]
+
+        def get_paginated_partition_keys(
+            self,
+            context: PartitionLoadingContext,
+            limit: int,
+            ascending: bool,
+            cursor: Optional[str] = None,
+        ) -> PaginatedResults[str]:
+            partition_keys = self.get_partition_keys(
+                current_time=context.temporal_context.effective_dt,
+                dynamic_partitions_store=context.dynamic_partitions_store,
+            )
+            return PaginatedResults.create_from_sequence(
+                partition_keys, limit=limit, ascending=ascending, cursor=cursor
+            )
 
     @asset(partitions_def=CustomPartitionsDefinition())
     def asset1():

@@ -1,4 +1,6 @@
 from datetime import datetime
+from typing import cast
+from unittest import mock
 
 import pytest
 from dagster import (
@@ -19,6 +21,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.partition import PartitionLoadingContext, TemporalContext
 from dagster._core.definitions.time_window_partitions import TimeWindow, get_time_partitions_def
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import get_multidimensional_partition_tag
@@ -681,3 +684,215 @@ def test_multipartitions_range_cartesian_multiple_keys_in_both_ranges():
         MultiPartitionKey({"a": "2024-01-03", "b": "3"}),
         MultiPartitionKey({"a": "2024-01-03", "b": "4"}),
     ]
+
+
+def test_basic_pagination():
+    """Test basic pagination works correctly."""
+    dimension_a = StaticPartitionsDefinition(["a1", "a2", "a3"])
+    dimension_b = StaticPartitionsDefinition(["b1", "b2"])
+
+    multi_partitions = MultiPartitionsDefinition({"dim_a": dimension_a, "dim_b": dimension_b})
+
+    paginated_results = multi_partitions.get_paginated_partition_keys(
+        context=PartitionLoadingContext(
+            temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
+            dynamic_partitions_store=None,
+        ),
+        limit=3,
+        ascending=True,
+        cursor=None,
+    )
+
+    assert len(paginated_results.results) == 3
+    assert paginated_results.has_more
+
+    expected_keys = [
+        {"dim_a": "a1", "dim_b": "b1"},
+        {"dim_a": "a1", "dim_b": "b2"},
+        {"dim_a": "a2", "dim_b": "b1"},
+    ]
+    for i, key in enumerate(paginated_results.results):
+        assert isinstance(key, MultiPartitionKey)
+        assert cast(MultiPartitionKey, key).keys_by_dimension == expected_keys[i]
+
+    paginated_results2 = multi_partitions.get_paginated_partition_keys(
+        context=PartitionLoadingContext(
+            temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
+            dynamic_partitions_store=None,
+        ),
+        limit=3,
+        ascending=True,
+        cursor=paginated_results.cursor,
+    )
+
+    assert len(paginated_results2.results) == 3
+    assert not paginated_results2.has_more
+
+    expected_keys2 = [
+        {"dim_a": "a2", "dim_b": "b2"},
+        {"dim_a": "a3", "dim_b": "b1"},
+        {"dim_a": "a3", "dim_b": "b2"},
+    ]
+    for i, key in enumerate(paginated_results2.results):
+        assert isinstance(key, MultiPartitionKey)
+        assert cast(MultiPartitionKey, key).keys_by_dimension == expected_keys2[i]
+
+
+def test_reverse_pagination():
+    """Test reverse pagination works correctly."""
+    dimension_a = StaticPartitionsDefinition(["a1", "a2", "a3"])
+    dimension_b = StaticPartitionsDefinition(["b1", "b2"])
+
+    multi_partitions = MultiPartitionsDefinition({"dim_a": dimension_a, "dim_b": dimension_b})
+
+    paginated_results = multi_partitions.get_paginated_partition_keys(
+        context=PartitionLoadingContext(
+            temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
+            dynamic_partitions_store=None,
+        ),
+        limit=3,
+        ascending=False,
+        cursor=None,
+    )
+
+    assert len(paginated_results.results) == 3
+    assert paginated_results.has_more
+    expected_keys = [
+        {"dim_a": "a3", "dim_b": "b2"},
+        {"dim_a": "a3", "dim_b": "b1"},
+        {"dim_a": "a2", "dim_b": "b2"},
+    ]
+    for i, key in enumerate(paginated_results.results):
+        assert isinstance(key, MultiPartitionKey)
+        assert cast(MultiPartitionKey, key).keys_by_dimension == expected_keys[i]
+
+    paginated_results2 = multi_partitions.get_paginated_partition_keys(
+        context=PartitionLoadingContext(
+            temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
+            dynamic_partitions_store=None,
+        ),
+        limit=3,
+        ascending=False,
+        cursor=paginated_results.cursor,
+    )
+
+    assert len(paginated_results2.results) == 3
+    assert not paginated_results2.has_more
+
+    expected_keys2 = [
+        {"dim_a": "a2", "dim_b": "b1"},
+        {"dim_a": "a1", "dim_b": "b2"},
+        {"dim_a": "a1", "dim_b": "b1"},
+    ]
+    for i, key in enumerate(paginated_results2.results):
+        assert isinstance(key, MultiPartitionKey)
+        assert cast(MultiPartitionKey, key).keys_by_dimension == expected_keys2[i]
+
+
+def test_pagination_accumulation():
+    """Test multiple pagination calls accumulate the full cross product."""
+    dimension_a = StaticPartitionsDefinition(["a1", "a2", "a3", "a4"])
+    dimension_b = StaticPartitionsDefinition(["b1", "b2", "b3", "b4", "b5"])
+
+    multi_partitions = MultiPartitionsDefinition({"dim_a": dimension_a, "dim_b": dimension_b})
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
+        dynamic_partitions_store=None,
+    )
+
+    all_results = []
+    cursor = None
+    has_more = True
+
+    # Paginate through all results
+    while has_more:
+        paginated_results = multi_partitions.get_paginated_partition_keys(
+            context=partition_context,
+            ascending=True,
+            cursor=cursor,
+            limit=4,
+        )
+        all_results.extend(paginated_results.results)
+        cursor = paginated_results.cursor
+        has_more = paginated_results.has_more
+
+    assert len(all_results) == 20
+
+    expected_combinations = []
+    for a_val in ["a1", "a2", "a3", "a4"]:
+        for b_val in ["b1", "b2", "b3", "b4", "b5"]:
+            expected_combinations.append({"dim_a": a_val, "dim_b": b_val})
+
+    result_dicts = [key.keys_by_dimension for key in all_results]
+    for expected in expected_combinations:
+        assert expected in result_dicts
+    assert len(result_dicts) == len(expected_combinations)
+
+    # paginate the reverse results
+    reverse_results = []
+    cursor = None
+    has_more = True
+    while has_more:
+        paginated_results = multi_partitions.get_paginated_partition_keys(
+            context=partition_context,
+            ascending=False,
+            cursor=cursor,
+            limit=4,
+        )
+        reverse_results.extend(paginated_results.results)
+        cursor = paginated_results.cursor
+        has_more = paginated_results.has_more
+
+    assert len(reverse_results) == 20
+    assert reverse_results == [str(key) for key in reversed(all_results)]
+
+
+def test_empty_dimension():
+    """Test behavior when one dimension is empty."""
+    dimension_a = StaticPartitionsDefinition(["a1", "a2"])
+    dimension_b = StaticPartitionsDefinition([])  # Empty dimension
+
+    multi_partitions = MultiPartitionsDefinition({"dim_a": dimension_a, "dim_b": dimension_b})
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
+        dynamic_partitions_store=None,
+    )
+    paginated_results = multi_partitions.get_paginated_partition_keys(
+        context=partition_context,
+        ascending=True,
+        cursor=None,
+        limit=10,
+    )
+    assert len(paginated_results.results) == 0
+    assert not paginated_results.has_more
+
+
+def test_large_cross_product_memory_usage():
+    """Test memory efficiency with large dimensions."""
+    large_dimension_a = StaticPartitionsDefinition([f"a{i}" for i in range(1000)])
+    large_dimension_b = StaticPartitionsDefinition([f"b{i}" for i in range(1000)])
+
+    multi_partitions = MultiPartitionsDefinition(
+        {"dim_a": large_dimension_a, "dim_b": large_dimension_b}
+    )
+    partition_context = PartitionLoadingContext(
+        temporal_context=TemporalContext(effective_dt=datetime.now(), last_event_id=None),
+        dynamic_partitions_store=None,
+    )
+
+    with (
+        mock.patch("itertools.product") as mock_product,
+        mock.patch.object(multi_partitions, "get_partition_keys") as mock_get_partition_keys,
+    ):
+        paginated_results = multi_partitions.get_paginated_partition_keys(
+            context=partition_context,
+            ascending=True,
+            cursor=None,
+            limit=10,
+        )
+
+        # Verify we got the right number of results
+        assert len(paginated_results.results) == 10
+        assert paginated_results.has_more
+        mock_product.assert_not_called()
+        mock_get_partition_keys.assert_not_called()
