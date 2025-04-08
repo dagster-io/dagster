@@ -1,16 +1,3 @@
 {
-  "1.10.9": "https://release-1-10-9.archive.dagster-docs.io/",
-  "1.10.8": "https://release-1-10-8.archive.dagster-docs.io/",
-  "1.10.7": "https://release-1-10-7.archive.dagster-docs.io/",
-  "1.10.6": "https://release-1-10-6.archive.dagster-docs.io/",
-  "1.10.5": "https://release-1-10-5.archive.dagster-docs.io/",
-  "1.10.4": "https://release-1-10-4.archive.dagster-docs.io/",
-  "1.10.3": "https://release-1-10-3.archive.dagster-docs.io/",
-  "1.10.2": "https://release-1-10-2.archive.dagster-docs.io/",
-  "1.10.1": "https://release-1-10-1.archive.dagster-docs.io/",
-  "1.10.0": "https://release-1-10-0.archive.dagster-docs.io/",
-  "1.9.13": "https://release-1-9-13.archive.dagster-docs.io/",
-  "1.9.12": "https://release-1-9-12.archive.dagster-docs.io/",
-  "1.9.11": "https://release-1-9-11.archive.dagster-docs.io/",
-  "1.9.10": "https://release-1-9-10.archive.dagster-docs.io/"
+  "Version 1.9 (1.9.13)": "https://release-1-9-13.archive.dagster-docs.io/"
 }
