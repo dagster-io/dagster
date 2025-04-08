@@ -103,6 +103,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
         "asset_deps",
         "owners_by_key",
         "partitions_def",
+        "new_freshness_policy_by_key",
     }
 
     # partition mappings are also tracked inside the AssetSpecs, but this enables faster access by
@@ -497,6 +498,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 owners to be associated with each of the asset keys for this node.
             new_freshness_policy_by_output_name (Optional[Mapping[str, Optional[NewFreshnessPolicy]]]): Defines asset
                 freshness conditions to be associated with some or all of the output assets for this node.
+                This is intended to replace the existing, deprecated `FreshnessPolicy` construct.
         """
         return AssetsDefinition._from_node(
             node_def=graph_def,

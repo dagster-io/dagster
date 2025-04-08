@@ -120,6 +120,7 @@ def _validate_hidden_non_argument_dep_param(
 @beta_param(param="resource_defs")
 @beta_param(param="io_manager_def")
 @beta_param(param="backfill_policy")
+@beta_param(param="new_freshness_policy")
 @hidden_param(
     param="non_argument_deps",
     breaking_version="2.0.0",
