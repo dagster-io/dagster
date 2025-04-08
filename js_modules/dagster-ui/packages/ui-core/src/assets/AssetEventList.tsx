@@ -48,7 +48,12 @@ export const AssetEventList = ({
 
   return (
     <Box
-      style={{position: 'relative', flex: 1, minHeight: 0}}
+      style={{
+        position: 'relative',
+        flex: 1,
+        minHeight: 0,
+        background: Colors.backgroundDefault(),
+      }}
       padding={{vertical: 12, horizontal: 16}}
     >
       <AssetListContainer
