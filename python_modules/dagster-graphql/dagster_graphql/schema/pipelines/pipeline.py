@@ -214,7 +214,7 @@ class GrapheneMaterializationHistoryConnection(graphene.ObjectType):
         name = "MaterializationHistoryConnection"
 
     results = non_null_list(GrapheneAssetMaterializationEventType)
-    cursor = graphene.NonNull(graphene.String)
+    cursor = graphene.String()
 
 
 class GrapheneObservationEventConnection(graphene.ObjectType):
