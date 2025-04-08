@@ -77,8 +77,19 @@ export const AssetEvents = ({
         combinedParams.after = filterState.dateRange.start;
       }
     }
+    if (filterState.status) {
+      if (filterState.status.length === 1) {
+        if (filterState.status[0] === 'Materialization') {
+          combinedParams.status = MaterializationHistoryEventTypeSelector.MATERIALIZATION;
+        } else if (filterState.status[0] === 'FailedToMaterialize') {
+          combinedParams.status = MaterializationHistoryEventTypeSelector.FAILED_TO_MATERIALIZE;
+        } else {
+          combinedParams.status = MaterializationHistoryEventTypeSelector.ALL;
+        }
+      }
+    }
     return combinedParams;
-  }, [params, filterState.dateRange]);
+  }, [params, filterState.dateRange, filterState.status]);
 
   const {materializations, observations, loadedPartitionKeys, fetchMore, fetchLatest, loading} =
     usePaginatedAssetEvents(assetKey, combinedParams);
