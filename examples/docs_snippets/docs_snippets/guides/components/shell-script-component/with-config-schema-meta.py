@@ -5,7 +5,7 @@ from dagster.components import (
     Component,
     ComponentLoadContext,
     # highlight-start
-    ComponentSpec,
+    ComponentTypeSpec,
     # highlight-end
     Resolvable,
     ResolvedAssetSpec,
@@ -18,7 +18,7 @@ class ShellCommand(Component, Resolvable):
     # highlight-start
     @classmethod
     def get_spec(cls):
-        return ComponentSpec(
+        return ComponentTypeSpec(
             owners=["John Dagster"],
             tags=["shell", "script"],
         )
