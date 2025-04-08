@@ -20,7 +20,7 @@ def test_fivetran_workspace_data_to_fivetran_connector_table_props_data(
         account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
     )
 
-    actual_workspace_data = resource.fetch_fivetran_workspace_data()
+    actual_workspace_data = resource.get_or_fetch_workspace_data()
     table_props_data = actual_workspace_data.to_fivetran_connector_table_props_data()
     assert len(table_props_data) == 4
     assert table_props_data[0].table == "schema_name_in_destination_1.table_name_in_destination_1"
@@ -48,7 +48,7 @@ def test_translator_custom_metadata(
             api_secret=EnvVar("FIVETRAN_API_SECRET"),
         )
 
-        actual_workspace_data = resource.fetch_fivetran_workspace_data()
+        actual_workspace_data = resource.get_or_fetch_workspace_data()
         table_props_data = actual_workspace_data.to_fivetran_connector_table_props_data()
 
         first_table_props_data = next(props for props in table_props_data)

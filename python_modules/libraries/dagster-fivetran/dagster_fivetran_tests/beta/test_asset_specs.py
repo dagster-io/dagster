@@ -30,7 +30,7 @@ def test_fetch_fivetran_workspace_data(
         account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
     )
 
-    actual_workspace_data = resource.fetch_fivetran_workspace_data()
+    actual_workspace_data = resource.get_or_fetch_workspace_data()
     assert len(actual_workspace_data.connectors_by_id) == 1
     assert len(actual_workspace_data.destinations_by_id) == 1
 
@@ -70,7 +70,7 @@ def test_fivetran_connector_selector(
     connector_selector_fn = (
         (lambda connector: getattr(connector, attribute) == value) if attribute else None
     )
-    workspace_data = resource.fetch_fivetran_workspace_data()
+    workspace_data = resource.get_or_fetch_workspace_data()
     assert len(workspace_data.connectors_by_id) == expected_result_before_selection
 
     workspace_data_selection = workspace_data.to_workspace_data_selection(
@@ -86,7 +86,7 @@ def test_missing_schemas_fivetran_workspace_data(
         account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
     )
 
-    actual_workspace_data = resource.fetch_fivetran_workspace_data()
+    actual_workspace_data = resource.get_or_fetch_workspace_data()
     # The connector is discarded because it's missing its schemas
     assert len(actual_workspace_data.connectors_by_id) == 0
     assert len(actual_workspace_data.destinations_by_id) == 1
@@ -99,7 +99,7 @@ def test_incomplete_connector_fivetran_workspace_data(
         account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
     )
 
-    actual_workspace_data = resource.fetch_fivetran_workspace_data()
+    actual_workspace_data = resource.get_or_fetch_workspace_data()
     # The connector is discarded because it's incomplete
     assert len(actual_workspace_data.connectors_by_id) == 0
     assert len(actual_workspace_data.destinations_by_id) == 1
@@ -112,7 +112,7 @@ def test_broken_connector_fivetran_workspace_data(
         account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
     )
 
-    actual_workspace_data = resource.fetch_fivetran_workspace_data()
+    actual_workspace_data = resource.get_or_fetch_workspace_data()
     # The connector is discarded because it's broken
     assert len(actual_workspace_data.connectors_by_id) == 0
     assert len(actual_workspace_data.destinations_by_id) == 1

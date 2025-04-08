@@ -18,7 +18,7 @@ def cacheable_fivetran_workspace_data():
         account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
     )
 
-    workspace.fetch_fivetran_workspace_data()
+    workspace.get_or_fetch_workspace_data()
 
     return Definitions(
         resources={"fivetran": workspace},
