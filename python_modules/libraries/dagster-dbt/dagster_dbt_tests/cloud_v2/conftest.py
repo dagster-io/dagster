@@ -920,6 +920,30 @@ def cli_invocation_mocks_fixture(
 
 
 @pytest.fixture(
+    name="cli_invocation_wait_timeout_mocks",
+)
+def cli_invocation_wait_timeout_mocks_fixture(
+    cli_invocation_api_mocks: responses.RequestsMock,
+) -> Iterator[responses.RequestsMock]:
+    # The second call to the run details endpoint must return a run for which the status is `RUNNING`
+    cli_invocation_api_mocks.add(
+        method=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/runs/{TEST_RUN_ID}",
+        json=get_sample_run_response(run_status=int(DbtCloudJobRunStatusType.RUNNING)),
+        status=200,
+    )
+    cli_invocation_api_mocks.remove(
+        method_or_response=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/runs/{TEST_RUN_ID}/artifacts",
+    )
+    cli_invocation_api_mocks.remove(
+        method_or_response=responses.GET,
+        url=f"{TEST_REST_API_BASE_URL}/runs/{TEST_RUN_ID}/artifacts/run_results.json",
+    )
+    yield cli_invocation_api_mocks
+
+
+@pytest.fixture(
     name="all_api_mocks",
 )
 def all_api_mocks_fixture(

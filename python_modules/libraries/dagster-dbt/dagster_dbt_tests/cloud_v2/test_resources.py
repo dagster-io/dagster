@@ -260,6 +260,17 @@ def test_cli_invocation_with_custom_indirect_selection(
         assert result.success
 
 
+def test_cli_invocation_wait_timeout(
+    workspace: DbtCloudWorkspace,
+    cli_invocation_wait_timeout_mocks: responses.RequestsMock,
+) -> None:
+    timeout = 0.1
+    with pytest.raises(
+        Exception, match=f"Run {TEST_RUN_ID} did not complete within {timeout} seconds."
+    ):
+        list(workspace.cli(args=["run"]).wait(timeout=timeout))
+
+
 @pytest.mark.parametrize(
     "n_polls, last_status, succeed_at_end",
     [
