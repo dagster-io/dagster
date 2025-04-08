@@ -1,5 +1,7 @@
 import os
 import warnings
+from dataclasses import dataclass
+from functools import lru_cache
 
 import pytest
 
@@ -11,6 +13,47 @@ try:
     warnings.filterwarnings("ignore", category=SupersessionWarning)
 except ImportError:
     pass  # Not all test suites have dagster installed
+
+
+@dataclass(frozen=True)
+class TestId:
+    scope: str
+    name: str
+
+
+@lru_cache
+def buildkite_quarantined_tests() -> set[TestId]:
+    quarantined_tests = set()
+
+    if os.getenv("BUILDKITE"):
+        # Run our full test suite - warts and all - on the release branch
+        if os.getenv("BUILDKITE_BRANCH", "").startswith("release-"):
+            return quarantined_tests
+
+        try:
+            import requests
+
+            token = os.getenv("BUILDKITE_TEST_QUARANTINE_TOKEN")
+            org_slug = os.getenv("BUILDKITE_ORGANIZATION_SLUG")
+            pipeline_slug = os.getenv("BUILDKITE_PIPELINE_SLUG")
+
+            headers = {"Authorization": f"Bearer {token}"}
+            url = f"https://api.buildkite.com/v2/analytics/organizations/{org_slug}/suites/{pipeline_slug}/tests/muted"
+
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+
+            for test in response.json():
+                scope = test.get("scope", "")
+                name = test.get("name", "")
+                quarantined_test = TestId(scope, name)
+
+                quarantined_tests.add(quarantined_test)
+
+        except Exception as e:
+            print(e)  # noqa
+
+    return quarantined_tests
 
 
 def pytest_configure(config):
@@ -27,6 +70,22 @@ def pytest_configure(config):
 
 
 def pytest_runtest_setup(item):
+    # https://buildkite.com/docs/apis/rest-api/test-engine/quarantine#list-quarantined-tests
+    # Buildkite Test Engine marks unreliable tests as muted and triages them out to owning teams to improve.
+    # We pull this list of tests at the beginning of each pytest session and add soft xfail markers to each
+    # quarantined test.
+    try:
+        if buildkite_quarantined_tests():
+            scope = item.location[0]
+            name = item.location[2]
+
+            test = TestId(scope, name)
+
+            if test in buildkite_quarantined_tests():
+                item.add_marker(pytest.mark.xfail(reason="Test muted in Buildkite.", strict=False))
+    except Exception as e:
+        print(e)  # noqa
+
     try:
         next(item.iter_markers("integration"))
         if os.getenv("CI_DISABLE_INTEGRATION_TESTS"):
