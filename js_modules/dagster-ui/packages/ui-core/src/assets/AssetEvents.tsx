@@ -1,7 +1,6 @@
 import {
   Box,
   ButtonGroup,
-  Colors,
   ErrorBoundary,
   NonIdealState,
   Spinner,
@@ -77,8 +76,15 @@ export const AssetEvents = ({
         combinedParams.after = filterState.dateRange.start;
       }
     }
+    if (filterState.status) {
+      if (filterState.status.length === 1) {
+        combinedParams.status = filterState.status[0] as MaterializationHistoryEventTypeSelector;
+      } else {
+        combinedParams.status = MaterializationHistoryEventTypeSelector.ALL;
+      }
+    }
     return combinedParams;
-  }, [params, filterState.dateRange]);
+  }, [params, filterState.dateRange, filterState.status]);
 
   const {materializations, observations, loadedPartitionKeys, fetchMore, fetchLatest, loading} =
     usePaginatedAssetEvents(assetKey, combinedParams);
@@ -247,11 +253,7 @@ export const AssetEvents = ({
           }
           return (
             <>
-              <Box
-                style={{display: 'flex', flex: 1, minWidth: 200}}
-                flex={{direction: 'column'}}
-                background={Colors.backgroundLight()}
-              >
+              <Box style={{display: 'flex', flex: 1, minWidth: 200}} flex={{direction: 'column'}}>
                 {loading && grouped.length === 0 ? (
                   <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{flex: 1}}>
                     <Spinner purpose="section" />
