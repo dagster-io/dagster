@@ -15,7 +15,7 @@ def _get_default_dg_cli_file() -> Path:
     if is_windows():
         return Path.home() / "AppData" / "dg" / "dg.toml"
     else:
-        return Path.home() / "dg.toml"
+        return Path.home() / ".dg.toml"
 
 
 DEFAULT_DG_CLI_FILE = _get_default_dg_cli_file()
