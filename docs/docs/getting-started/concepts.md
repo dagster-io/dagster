@@ -245,7 +245,7 @@ A `code location` is a collection of <PyObject section="definitions" module="dag
     end
 ```
 
-A `Component` is an opinionated project layout built around a <PyObject section="definitions" module="dagster" object="Definitions" />. The `Definitions` contains Dagster objects used to accomplish a specific task—such as a standard workflow or an integration. Components are designed to help you quickly bootstrap parts of your Dagster project and serve as templates for repeatable patterns.
+A `Component` is an opinionated project layout built around a <PyObject section="definitions" module="dagster" object="Definitions" />. The <PyObject section="definitions" module="dagster" object="Definitions" /> contains Dagster objects used to accomplish a specific task—such as a standard workflow or an integration. Components are designed to help you quickly bootstrap parts of your Dagster project and serve as templates for repeatable patterns.
 
 | Concept                             | Relationship                         |
 | ----------------------------------- | ------------------------------------ |
@@ -317,19 +317,17 @@ A <PyObject section="config" module="dagster" object="RunConfig" /> is a set sch
     style CodeLocation fill:#BDBAB7,stroke:#BDBAB7,stroke-width:2px
 
 
-    Asset -.-> Component
-    AssetCheck -.-> Component
-    IOManager -.-> Component
-    Job -.-> Component
-    Resource -.-> Component
-    Schedule -.-> Component
-    Sensor -.-> Component
+    Asset -.-> Definitions
+    AssetCheck -.-> Definitions
+    IOManager -.-> Definitions
+    Job -.-> Definitions
+    Resource -.-> Definitions
+    Schedule -.-> Definitions
+    Sensor -.-> Definitions
 
-    subgraph Component
     Definitions(Definitions)
-    end
 
-    Component ==> CodeLocation
+    Definitions ==> CodeLocation
 ```
 
 <PyObject section="definitions" module="dagster" object="Definitions" /> is a top-level construct that contains
@@ -339,17 +337,19 @@ references to all the objects of a Dagster project, such as
 <PyObject section="schedules-sensors" module="dagster" object="ScheduleDefinition" pluralize />. Only objects included
 in the definitions will be deployed and visible within the Dagster UI.
 
-| Concept                                 | Relationship                                         |
-| --------------------------------------- | ---------------------------------------------------- |
-| [asset](concepts#asset)                 | `definitions` may contain one or more `assets`       |
-| [asset check](concepts#asset-check)     | `definitions` may contain one or more `asset checks` |
-| [io manager](concepts#io-manager)       | `definitions` may contain one or more `io managers`  |
-| [job](concepts#job)                     | `definitions` may contain one or more `jobs`         |
-| [resource](concepts#resource)           | `definitions` may contain one or more `resources`    |
-| [schedule](concepts#schedule)           | `definitions` may contain one or more `schedules`    |
-| [sensor](concepts#sensor)               | `definitions` may contain one or more `sensors`      |
-| [component](concepts#component)       | `definitions` may exist as part of a `component`     |
-| [code location](concepts#code-location) | `definitions` must be deployed in a `code location`  |
+A <PyObject section="definitions" module="dagster" object="Definitions" /> can also be constructed from a `Component` which is a predefined set of Dagster objects.
+
+| Concept                                 | Relationship                                           |
+| --------------------------------------- | ------------------------------------------------------ |
+| [asset](concepts#asset)                 | `definitions` may contain one or more `assets`         |
+| [asset check](concepts#asset-check)     | `definitions` may contain one or more `asset checks`   |
+| [io manager](concepts#io-manager)       | `definitions` may contain one or more `io managers`    |
+| [job](concepts#job)                     | `definitions` may contain one or more `jobs`           |
+| [resource](concepts#resource)           | `definitions` may contain one or more `resources`      |
+| [schedule](concepts#schedule)           | `definitions` may contain one or more `schedules`      |
+| [sensor](concepts#sensor)               | `definitions` may contain one or more `sensors`        |
+| [component](concepts#component)         | `definitions` may exist as the output of a `component` |
+| [code location](concepts#code-location) | `definitions` must be deployed in a `code location`    |
 
 ### Graph
 
