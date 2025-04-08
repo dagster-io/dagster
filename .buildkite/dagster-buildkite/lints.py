@@ -46,6 +46,4 @@ def test_no_subdirectory_pytest_ini():
             pytest_ini_file = os.path.join(root, "tox.ini")
             pytest_ini_files.append(pytest_ini_file)
 
-    assert (
-        not pytest_ini_files
-    ), f"Subdirectory pytest.ini conflict with root pyproject.toml {pytest_ini_files}"
+    assert not pytest_ini_files, f"Subdirectory pytest.ini files conflict with our root pyproject.toml settings and conftest.py discovery. Please remove: {pytest_ini_files}"
