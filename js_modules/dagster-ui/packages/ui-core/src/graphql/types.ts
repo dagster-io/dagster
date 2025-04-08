@@ -382,9 +382,12 @@ export type AssetGroupSelector = {
 export type AssetHealth = {
   __typename: 'AssetHealth';
   assetChecksStatus: AssetHealthStatus;
+  assetChecksStatusMessage: Maybe<Scalars['String']['output']>;
   assetHealth: AssetHealthStatus;
   freshnessStatus: AssetHealthStatus;
+  freshnessStatusMessage: Maybe<Scalars['String']['output']>;
   materializationStatus: AssetHealthStatus;
+  materializationStatusMessage: Maybe<Scalars['String']['output']>;
 };
 
 export enum AssetHealthStatus {
@@ -6616,6 +6619,10 @@ export const buildAssetHealth = (
       overrides && overrides.hasOwnProperty('assetChecksStatus')
         ? overrides.assetChecksStatus!
         : AssetHealthStatus.DEGRADED,
+    assetChecksStatusMessage:
+      overrides && overrides.hasOwnProperty('assetChecksStatusMessage')
+        ? overrides.assetChecksStatusMessage!
+        : 'ut',
     assetHealth:
       overrides && overrides.hasOwnProperty('assetHealth')
         ? overrides.assetHealth!
@@ -6624,10 +6631,18 @@ export const buildAssetHealth = (
       overrides && overrides.hasOwnProperty('freshnessStatus')
         ? overrides.freshnessStatus!
         : AssetHealthStatus.DEGRADED,
+    freshnessStatusMessage:
+      overrides && overrides.hasOwnProperty('freshnessStatusMessage')
+        ? overrides.freshnessStatusMessage!
+        : 'quidem',
     materializationStatus:
       overrides && overrides.hasOwnProperty('materializationStatus')
         ? overrides.materializationStatus!
         : AssetHealthStatus.DEGRADED,
+    materializationStatusMessage:
+      overrides && overrides.hasOwnProperty('materializationStatusMessage')
+        ? overrides.materializationStatusMessage!
+        : 'maiores',
   };
 };
 

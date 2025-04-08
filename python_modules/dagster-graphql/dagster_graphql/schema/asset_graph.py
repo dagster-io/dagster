@@ -557,18 +557,25 @@ class GrapheneAssetNode(graphene.ObjectType):
             num_failed = len(failed_partition_subset)
             if num_materialized == 0 and num_failed == 0:
                 # asset has never been materialized
-                return GrapheneAssetHealthStatus.UNKNOWN
+                return GrapheneAssetHealthStatus.UNKNOWN, "No materializations"
+            num_missing = total_num_partitions - num_materialized - num_failed
             if num_failed > 0:
-                return GrapheneAssetHealthStatus.DEGRADED
-            if total_num_partitions > num_failed + num_materialized:
+                return (
+                    GrapheneAssetHealthStatus.DEGRADED,
+                    f"{num_failed}/{total_num_partitions} partitions failed to materialize, {num_missing}/{total_num_partitions} partitions missing",
+                )
+            if num_missing > 0:
                 # some partitions have never been materialized
-                return GrapheneAssetHealthStatus.WARNING
+                return (
+                    GrapheneAssetHealthStatus.WARNING,
+                    f"{num_missing}/{total_num_partitions} partitions missing",
+                )
             # if no partitions are failed or missing, they must all be successfully materialized
-            return GrapheneAssetHealthStatus.HEALTHY
+            return GrapheneAssetHealthStatus.HEALTHY, None
 
         asset_record = await AssetRecord.gen(graphene_info.context, asset_key)
         if asset_record is None:
-            return GrapheneAssetHealthStatus.UNKNOWN
+            return GrapheneAssetHealthStatus.UNKNOWN, None
         asset_entry = asset_record.asset_entry
 
         if graphene_info.context.instance.can_read_failure_events_for_asset(asset_record):
@@ -578,40 +585,41 @@ class GrapheneAssetNode(graphene.ObjectType):
                 and asset_entry.last_failed_to_materialize_storage_id is None
             ):
                 # never materialized
-                return GrapheneAssetHealthStatus.UNKNOWN
+                return GrapheneAssetHealthStatus.UNKNOWN, "No materializations"
             if asset_entry.last_failed_to_materialize_storage_id is None:
                 # last_materialization_record must be non-null, therefore the asset successfully materialized
-                return GrapheneAssetHealthStatus.HEALTHY
+                return GrapheneAssetHealthStatus.HEALTHY, None
             elif asset_entry.last_materialization_storage_id is None:
                 # last_failed_to_materialize_record must be non-null, therefore the asset failed to materialize
-                return GrapheneAssetHealthStatus.DEGRADED
+                return (
+                    GrapheneAssetHealthStatus.DEGRADED,
+                    "Failed in run",
+                )  # TODO - include truncated run id here or add it in FE?
 
             if (
                 asset_entry.last_materialization_storage_id
                 > asset_entry.last_failed_to_materialize_storage_id
             ):
                 # latest materialization succeeded
-                return GrapheneAssetHealthStatus.HEALTHY
+                return GrapheneAssetHealthStatus.HEALTHY, None
             # latest materialization failed
-            return GrapheneAssetHealthStatus.DEGRADED
+            return (
+                GrapheneAssetHealthStatus.DEGRADED,
+                "Failed in run",
+            )  # TODO - include truncated run id here or add it in FE?
         # we are not storing failure events for this asset, so must compute status based on the inforamtion we have available
         # in some cases this results in reporting as asset as HEALTHY or UNKNOWN during an in progress run
         # even if the asset was previously failed
         else:
             # if the asset has been successfully materialized in the past, we fallback to that status
             # when we don't have the information available to compute status based on the latest run
-            fallback_status = (
-                GrapheneAssetHealthStatus.UNKNOWN
+            fallback_status_and_message = (
+                (GrapheneAssetHealthStatus.UNKNOWN, "No materializations")
                 if asset_entry.last_materialization is None
-                else GrapheneAssetHealthStatus.HEALTHY
+                else (GrapheneAssetHealthStatus.HEALTHY, None)
             )
             if asset_entry.last_run_id is None:
-                if asset_entry.last_materialization is None:
-                    # never materialized
-                    return GrapheneAssetHealthStatus.UNKNOWN
-                else:
-                    # last materialization was manually reported
-                    return GrapheneAssetHealthStatus.HEALTHY
+                return fallback_status_and_message
 
             assert asset_entry.last_run_id is not None
             if (
@@ -619,21 +627,24 @@ class GrapheneAssetNode(graphene.ObjectType):
                 and asset_entry.last_run_id == asset_entry.last_materialization.run_id
             ):
                 # latest materialization succeeded in the latest run
-                return GrapheneAssetHealthStatus.HEALTHY
+                return GrapheneAssetHealthStatus.HEALTHY, None
             run_record = await RunRecord.gen(graphene_info.context, asset_entry.last_run_id)
             if run_record is None or not run_record.dagster_run.is_finished:
-                return fallback_status
+                return fallback_status_and_message
             run_end_time = check.not_none(run_record.end_time)
             if (
                 asset_entry.last_materialization
                 and asset_entry.last_materialization.timestamp > run_end_time
             ):
                 # latest materialization was reported manually
-                return GrapheneAssetHealthStatus.HEALTHY
+                return GrapheneAssetHealthStatus.HEALTHY, None
             if run_record.dagster_run.is_failure:
-                return GrapheneAssetHealthStatus.DEGRADED
+                return (
+                    GrapheneAssetHealthStatus.DEGRADED,
+                    "Failed in run",
+                )  # TODO - include truncated run id here or add it in FE?
 
-            return fallback_status
+            return fallback_status_and_message
 
     async def get_asset_check_status_for_asset_health(self, graphene_info: ResolveInfo):
         """Computes the health indicator for the asset checks for the assets. Follows these rules:
@@ -652,11 +663,12 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         if not remote_check_nodes or len(remote_check_nodes) == 0:
             # asset doesn't have checks defined
-            return GrapheneAssetHealthStatus.NOT_APPLICABLE
+            return GrapheneAssetHealthStatus.NOT_APPLICABLE, "No asset checks defined"
         else:
+            total_num_checks = len(remote_check_nodes)
             check_statuses = []
             check_failure_severities = []
-            all_checks_executed = True
+            num_unexecuted_checks = 0
             asset_check_summary_records = await AssetCheckSummaryRecord.gen_many(
                 graphene_info.context,
                 [remote_check_node.asset_check.key for remote_check_node in remote_check_nodes],
@@ -664,7 +676,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             for summary_record in asset_check_summary_records:
                 if summary_record is None or summary_record.last_check_execution_record is None:
                     # the check has never been executed.
-                    all_checks_executed = False
+                    num_unexecuted_checks += 1
                     continue
 
                 # if the last_check_execution_record is completed, it will be the same as last_completed_check_execution_record,
@@ -686,7 +698,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                     # the latest completed check instead
                     if summary_record.last_completed_check_execution_record is None:
                         # the check hasn't been executed prior to this in progress check
-                        all_checks_executed = False
+                        num_unexecuted_checks += 1
                         continue
                     last_check_execution_status = (
                         await summary_record.last_completed_check_execution_record.resolve_status(
@@ -715,7 +727,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
             if len(check_statuses) == 0:
                 # checks have never been executed
-                return GrapheneAssetHealthStatus.UNKNOWN
+                return GrapheneAssetHealthStatus.UNKNOWN, "No asset checks executed"
 
             if any(
                 status == AssetCheckExecutionResolvedStatus.FAILED
@@ -726,33 +738,57 @@ class GrapheneAssetNode(graphene.ObjectType):
                     severity == AssetCheckSeverity.WARN for severity in check_failure_severities
                 ):
                     # all failed checks are with warning severity
-                    return GrapheneAssetHealthStatus.WARNING
+                    return (
+                        GrapheneAssetHealthStatus.WARNING,
+                        f"{len(check_failure_severities)}/{total_num_checks} checks warning",
+                    )
                 # at least one failing check had error severity
-                return GrapheneAssetHealthStatus.DEGRADED
+                num_failed = len(
+                    [sev for sev in check_failure_severities if sev == AssetCheckSeverity.ERROR]
+                )
+                num_warn = len(check_failure_severities) - num_failed
+                return (
+                    GrapheneAssetHealthStatus.DEGRADED,
+                    f"{num_failed}/{total_num_checks} checks failed, {num_warn}/{total_num_checks} checks warning",
+                )
             # since we are only looking at the latest completed execution for each check, if there
             # are no failed checks, then all checks must have succeeded
-            if not all_checks_executed:
+            if num_unexecuted_checks > 0:
                 # if any check has never been executed, we report this as unknown, even if other checks
                 # have passed
-                return GrapheneAssetHealthStatus.UNKNOWN
+                return (
+                    GrapheneAssetHealthStatus.UNKNOWN,
+                    f"{num_unexecuted_checks}/{total_num_checks} checks not executed",
+                )
             # all checks must have executed and passed
-            return GrapheneAssetHealthStatus.HEALTHY
+            return GrapheneAssetHealthStatus.HEALTHY, None
 
     def get_freshness_status_for_asset_health(self, graphene_info: ResolveInfo):
         # if SLA is met, healthy
         # if SLA violated with warning, warning
         # if SLA violated with error, degraded
-        return GrapheneAssetHealthStatus.UNKNOWN
+        return GrapheneAssetHealthStatus.UNKNOWN, None
 
     async def resolve_assetHealth(self, graphene_info: ResolveInfo):
         if not graphene_info.context.instance.dagster_observe_supported():
             return None
+        check_status, check_message = await self.get_asset_check_status_for_asset_health(
+            graphene_info
+        )
+        (
+            materialization_status,
+            materialization_message,
+        ) = await self.get_materialization_status_for_asset_health(graphene_info)
+        freshness_status, freshness_message = self.get_freshness_status_for_asset_health(
+            graphene_info
+        )
         return GrapheneAssetHealth(
-            assetChecksStatus=await self.get_asset_check_status_for_asset_health(graphene_info),
-            materializationStatus=await self.get_materialization_status_for_asset_health(
-                graphene_info
-            ),
-            freshnessStatus=self.get_freshness_status_for_asset_health(graphene_info),
+            assetChecksStatus=check_status,
+            assetCheckStatusMessage=check_message,
+            materializationStatus=materialization_status,
+            materializationStatusMessage=materialization_message,
+            freshnessStatus=freshness_status,
+            freshnessStatusMessage=freshness_message,
         )
 
     def resolve_hasMaterializePermission(

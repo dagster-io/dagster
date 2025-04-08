@@ -751,8 +751,11 @@ type AssetNode {
 type AssetHealth {
   assetHealth: AssetHealthStatus!
   materializationStatus: AssetHealthStatus!
+  materializationStatusMessage: String
   assetChecksStatus: AssetHealthStatus!
+  assetChecksStatusMessage: String
   freshnessStatus: AssetHealthStatus!
+  freshnessStatusMessage: String
 }
 
 enum AssetHealthStatus {

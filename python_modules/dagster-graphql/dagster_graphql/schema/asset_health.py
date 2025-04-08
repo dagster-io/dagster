@@ -17,8 +17,11 @@ class GrapheneAssetHealthStatus(graphene.Enum):
 class GrapheneAssetHealth(graphene.ObjectType):
     assetHealth = graphene.NonNull(GrapheneAssetHealthStatus)
     materializationStatus = graphene.NonNull(GrapheneAssetHealthStatus)
+    materializationStatusMessage = graphene.String()
     assetChecksStatus = graphene.NonNull(GrapheneAssetHealthStatus)
+    assetChecksStatusMessage = graphene.String()
     freshnessStatus = graphene.NonNull(GrapheneAssetHealthStatus)
+    freshnessStatusMessage = graphene.String()
 
     class Meta:
         name = "AssetHealth"
