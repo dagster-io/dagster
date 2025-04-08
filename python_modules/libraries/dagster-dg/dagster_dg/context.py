@@ -15,7 +15,7 @@ from dagster_shared.utils.config import does_dg_config_file_exist
 from typing_extensions import Self
 
 from dagster_dg.cache import CachableDataType, DgCache
-from dagster_dg.component import RemotePackageRegistry
+from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.config import (
     DgConfig,
     DgProjectPythonEnvironment,
@@ -76,7 +76,7 @@ class DgContext:
             self._cache = None
         else:
             self._cache = DgCache.from_config(config)
-        self.component_registry = RemotePackageRegistry.empty()
+        self.component_registry = RemotePluginRegistry.empty()
 
     @classmethod
     def for_workspace_environment(cls, path: Path, command_line_config: DgRawCliConfig) -> Self:

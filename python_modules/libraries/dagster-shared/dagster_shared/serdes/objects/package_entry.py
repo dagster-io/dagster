@@ -18,7 +18,7 @@ def _generate_invalid_component_typename_error_message(typename: str) -> str:
 
 @whitelist_for_serdes
 @record(kw_only=False)
-class PackageObjectKey:
+class PluginObjectKey:
     namespace: str
     name: str
 
@@ -30,7 +30,7 @@ class PackageObjectKey:
         return f"{self.namespace}.{self.name}"
 
     @staticmethod
-    def from_typename(typename: str) -> "PackageObjectKey":
+    def from_typename(typename: str) -> "PluginObjectKey":
         parts = typename.split(".")
         for part in parts:
             if not part.isidentifier():
@@ -38,39 +38,39 @@ class PackageObjectKey:
         if len(parts) < 2:
             raise ValueError(_generate_invalid_component_typename_error_message(typename))
         namespace, _, name = typename.rpartition(".")
-        return PackageObjectKey(name=name, namespace=namespace)
+        return PluginObjectKey(name=name, namespace=namespace)
 
 
 ###########
 # TYPE DATA
 ###########
-PackageObjectFeature: TypeAlias = Literal["component", "scaffold-target"]
+PluginObjectFeature: TypeAlias = Literal["component", "scaffold-target"]
 
 
-class PackageObjectFeatureData(ABC):
+class PluginObjectFeatureData(ABC):
     @property
     @abstractmethod
-    def feature(self) -> PackageObjectFeature:
+    def feature(self) -> PluginObjectFeature:
         pass
 
 
 @whitelist_for_serdes
 @record
-class ComponentFeatureData(PackageObjectFeatureData):
+class ComponentFeatureData(PluginObjectFeatureData):
     schema: Optional[dict[str, Any]]
 
     @property
-    def feature(self) -> PackageObjectFeature:
+    def feature(self) -> PluginObjectFeature:
         return "component"
 
 
 @whitelist_for_serdes
 @record
-class ScaffoldTargetTypeData(PackageObjectFeatureData):
+class ScaffoldTargetTypeData(PluginObjectFeatureData):
     schema: Optional[dict[str, Any]]
 
     @property
-    def feature(self) -> PackageObjectFeature:
+    def feature(self) -> PluginObjectFeature:
         return "scaffold-target"
 
 
@@ -79,16 +79,16 @@ class ScaffoldTargetTypeData(PackageObjectFeatureData):
 ###############
 @whitelist_for_serdes
 @record
-class PackageObjectSnap:
-    key: PackageObjectKey
+class PluginObjectSnap:
+    key: PluginObjectKey
     summary: Optional[str]
     description: Optional[str]
     owners: Optional[Sequence[str]]
     tags: Optional[Sequence[str]]
-    feature_data: Sequence[PackageObjectFeatureData]
+    feature_data: Sequence[PluginObjectFeatureData]
 
     @property
-    def features(self) -> Sequence[PackageObjectFeature]:
+    def features(self) -> Sequence[PluginObjectFeature]:
         return [type_data.feature for type_data in self.feature_data]
 
     @overload
@@ -99,7 +99,7 @@ class PackageObjectSnap:
         self, feature: Literal["scaffold-target"]
     ) -> Optional[ScaffoldTargetTypeData]: ...
 
-    def get_feature_data(self, feature: PackageObjectFeature) -> Optional[PackageObjectFeatureData]:
+    def get_feature_data(self, feature: PluginObjectFeature) -> Optional[PluginObjectFeatureData]:
         for feature_data in self.feature_data:
             if feature_data.feature == feature:
                 return feature_data

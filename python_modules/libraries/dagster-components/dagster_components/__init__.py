@@ -34,7 +34,7 @@ from dagster.components.scaffold.scaffold import (
     ScaffoldRequest as ScaffoldRequest,
 )
 from dagster_shared.libraries import DagsterLibraryRegistry
-from dagster_shared.serdes.objects import PackageObjectKey as PackageObjectKey
+from dagster_shared.serdes.objects import PluginObjectKey as PluginObjectKey
 
 from dagster_components.version import __version__ as __version__
 

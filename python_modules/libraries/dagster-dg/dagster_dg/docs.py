@@ -5,12 +5,12 @@ from itertools import groupby
 from typing import Any, Optional, TypedDict, Union
 
 import yaml
-from dagster_shared.serdes.objects import ComponentFeatureData, PackageObjectKey
-from dagster_shared.serdes.objects.package_entry import PackageObjectSnap
+from dagster_shared.serdes.objects import ComponentFeatureData, PluginObjectKey
+from dagster_shared.serdes.objects.package_entry import PluginObjectSnap
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
-from dagster_dg.component import RemotePackageRegistry
+from dagster_dg.component import RemotePluginRegistry
 
 REF_BASE = "#/$defs/"
 JSON_SCHEMA_EXTRA_REQUIRED_SCOPE_KEY = "dagster_required_scope"
@@ -173,7 +173,7 @@ class ComponentTypeNamespaceJson(TypedDict):
 
 
 def json_for_all_components(
-    registry: RemotePackageRegistry,
+    registry: RemotePluginRegistry,
 ) -> list[ComponentTypeNamespaceJson]:
     """Returns a list of JSON representations of all component types in the registry."""
     component_json = []
@@ -196,7 +196,7 @@ def json_for_all_components(
 
 
 def json_for_component_type(
-    key: PackageObjectKey, entry: PackageObjectSnap, component_type_data: ComponentFeatureData
+    key: PluginObjectKey, entry: PluginObjectSnap, component_type_data: ComponentFeatureData
 ) -> ComponentTypeJson:
     typename = key.to_typename()
     sample_yaml = generate_sample_yaml(typename, component_type_data.schema or {})

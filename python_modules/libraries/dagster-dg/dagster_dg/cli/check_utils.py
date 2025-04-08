@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 import click
 import typer
-from dagster_shared.serdes.objects import PackageObjectKey
+from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 from jsonschema import ValidationError
 
@@ -39,7 +39,7 @@ def augment_error_path(error_details: ValidationError) -> Sequence[Union[str, in
 
 
 def error_dict_to_formatted_error(
-    key: Optional[PackageObjectKey],
+    key: Optional[PluginObjectKey],
     error_details: ValidationError,
     source_position_tree: SourcePositionTree,
     prefix: Sequence[str] = (),

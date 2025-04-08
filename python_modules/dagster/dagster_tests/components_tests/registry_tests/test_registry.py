@@ -13,7 +13,7 @@ from dagster.components import Component
 from dagster.components.core.package_entry import discover_entry_point_package_objects
 from dagster.components.core.snapshot import get_package_entry_snap
 from dagster_dg.utils import get_venv_executable
-from dagster_shared.serdes.objects import PackageObjectKey
+from dagster_shared.serdes.objects import PluginObjectKey
 from dagster_shared.serdes.serdes import deserialize_value
 
 ensure_dagster_tests_import()
@@ -130,7 +130,7 @@ def test_all_components_have_defined_summary():
     for component_name, component_type in registry.items():
         if isinstance(component_type, type) and issubclass(component_type, Component):
             assert get_package_entry_snap(
-                PackageObjectKey("a", "a"), component_type
+                PluginObjectKey("a", "a"), component_type
             ).summary, f"Component {component_name} has no summary defined"
 
 
