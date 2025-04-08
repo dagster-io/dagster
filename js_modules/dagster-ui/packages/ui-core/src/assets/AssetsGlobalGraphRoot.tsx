@@ -64,8 +64,6 @@ export const AssetsGlobalGraphRoot = () => {
 
   const favorites = useFavoriteAssets();
 
-  console.log({favorites});
-
   const fetchOptions = useMemo(() => {
     const options: AssetGraphFetchScope = {
       hideEdgesToNodesOutsideQuery,
