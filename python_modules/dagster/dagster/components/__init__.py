@@ -1,6 +1,6 @@
 from dagster.components.component.component import (
     Component as Component,
-    ComponentSpec as ComponentSpec,
+    ComponentTypeSpec as ComponentTypeSpec,
 )
 from dagster.components.component.component_loader import component as component
 from dagster.components.component.component_scaffolder import (

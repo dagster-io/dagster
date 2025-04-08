@@ -2,7 +2,7 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.execution.context.asset_execution_context import AssetExecutionContext
-from dagster.components import Component, ComponentLoadContext, ComponentSpec, Model, Resolvable
+from dagster.components import Component, ComponentLoadContext, ComponentTypeSpec, Model, Resolvable
 
 
 class SimpleAssetComponent(Component, Resolvable, Model):
@@ -17,7 +17,7 @@ class SimpleAssetComponent(Component, Resolvable, Model):
 
     @classmethod
     def get_spec(cls):
-        return ComponentSpec(
+        return ComponentTypeSpec(
             owners=["john@dagster.io", "jane@dagster.io"],
             tags=["a", "b", "c"],
         )

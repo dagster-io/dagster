@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 @record_custom
-class ComponentSpec(IHaveNew):
+class ComponentTypeSpec(IHaveNew):
     """Specifies the core attributes of a component.
 
     Args:
@@ -70,8 +70,8 @@ class Component(ABC):
         return None
 
     @classmethod
-    def get_spec(cls) -> ComponentSpec:
-        return ComponentSpec()
+    def get_spec(cls) -> ComponentTypeSpec:
+        return ComponentTypeSpec()
 
     @classmethod
     def get_model_cls(cls) -> Optional[type[BaseModel]]:
