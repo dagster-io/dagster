@@ -1,7 +1,11 @@
 from dagster import job
-from dagstermill.factory import define_dagstermill_op
 
-hello_world_notebook_op = define_dagstermill_op("hello_world_notebook_op", "hello_world.ipynb")
+try:
+    from dagstermill.factory import define_dagstermill_op
+
+    hello_world_notebook_op = define_dagstermill_op("hello_world_notebook_op", "hello_world.ipynb")
+except ImportError:
+    hello_world_notebook_op = lambda: None
 
 
 @job
