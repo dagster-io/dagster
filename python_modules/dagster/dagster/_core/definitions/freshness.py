@@ -1,12 +1,12 @@
 from enum import Enum
 from typing import NamedTuple
 
+from dagster._annotations import beta
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._serdes import whitelist_for_serdes
 
 
-# TODO finalize states and naming
-# https://dagsterlabs.slack.com/archives/C047L6H0LF4/p1743697967200509
+@beta
 @whitelist_for_serdes
 class FreshnessState(str, Enum):
     PASSING = "PASSING"
@@ -15,6 +15,7 @@ class FreshnessState(str, Enum):
     UNKNOWN = "UNKNOWN"
 
 
+@beta
 @whitelist_for_serdes
 class FreshnessStateEvaluation(
     NamedTuple(

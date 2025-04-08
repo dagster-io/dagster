@@ -253,8 +253,7 @@ def asset(
         pool (Optional[str]): A string that identifies the concurrency pool that governs this asset's execution.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the asset.
-            Hidden parameter not exposed in the decorator signature, but passed in kwargs.
-        new_freshness_policy (Optional[NewFreshnessPolicy]): A condition that must be met for an asset to be considered fresh.
+            Hidden parameter not exposed in the decorator signature, but passed in kwargs. Currently experimental.
 
     Examples:
         .. code-block:: python
@@ -710,7 +709,7 @@ def multi_asset(
         decorator_name="@multi_asset",
         execution_type=AssetExecutionType.MATERIALIZATION,
         pool=pool,
-        new_freshness_policy=None,  # TODO enable new_freshness_policy for @multi_asset
+        new_freshness_policy=None,
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:

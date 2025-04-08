@@ -16,6 +16,7 @@ from dagster_shared.serdes import whitelist_for_serdes
 import dagster._check as check
 from dagster._annotations import (
     PublicAttr,
+    beta_param,
     hidden_param,
     only_allow_hidden_params_in_kwargs,
     public,
@@ -99,6 +100,10 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
         raise DagsterInvalidDefinitionError("Assets can have at most three kinds currently.")
 
 
+@beta_param(
+    param="new_freshness_policy",
+    additional_warn_text="Currently experimental. Use freshness checks instead to define asset freshness.",
+)
 @hidden_param(
     param="freshness_policy",
     breaking_version="1.10.0",
@@ -141,7 +146,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             will be made visible in the Dagster UI.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
-        new_freshness_policy (Optional[NewFreshnessPolicy]): A condition that delineates when an asset is considered fresh. Use this over `freshness_policy`.
+        new_freshness_policy (Optional[NewFreshnessPolicy]): A condition that delineates when an asset is considered fresh. Currently experimental.
     """
 
     key: PublicAttr[AssetKey]
@@ -302,6 +307,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         )
 
     @public
+    @beta_param(param="new_freshness_policy", additional_warn_text="Currently experimental.")
     def replace_attributes(
         self,
         *,

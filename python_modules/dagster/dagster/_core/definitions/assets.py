@@ -406,6 +406,7 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
 
     @public
     @beta_param(param="resource_defs")
+    @beta_param(param="new_freshness_policy_by_output_name")
     @staticmethod
     def from_graph(
         graph_def: "GraphDefinition",
@@ -498,7 +499,8 @@ class AssetsDefinition(ResourceAddable, IHasInternalInit):
                 owners to be associated with each of the asset keys for this node.
             new_freshness_policy_by_output_name (Optional[Mapping[str, Optional[NewFreshnessPolicy]]]): Defines asset
                 freshness conditions to be associated with some or all of the output assets for this node.
-                This is intended to replace the existing, deprecated `FreshnessPolicy` construct.
+                Currently experimental, it is intended to replace the existing, deprecated `FreshnessPolicy` construct.
+                For now, continue to use freshness checks to define asset freshness.
         """
         return AssetsDefinition._from_node(
             node_def=graph_def,

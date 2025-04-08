@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Optional
 
 from dagster import _check as check
+from dagster._annotations import beta
 from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
 
@@ -27,10 +28,11 @@ class NewFreshnessPolicy(ABC):
     def policy_type(self) -> FreshnessPolicyType: ...
 
 
+@beta
 @whitelist_for_serdes
 @record_custom
 class TimeWindowFreshnessPolicy(NewFreshnessPolicy, IHaveNew):
-    """A freshness condition that considers an asset fresh if it was materialized within a specified time window (time_window_minutes).
+    """[BETA/EXPERIMENTAL] A freshness condition that considers an asset fresh if it was materialized within a specified time window (time_window_minutes).
 
     The asset is considered stale if its last materialization is older than time_window_minutes, and in a warning state
     if its last materialization is older than the warning time window but newer than the critical time window.

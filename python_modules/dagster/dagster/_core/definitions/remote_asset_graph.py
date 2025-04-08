@@ -130,6 +130,7 @@ class RemoteAssetNode(BaseAssetNode, ABC):
 
     @property
     def new_freshness_policy(self) -> Optional[NewFreshnessPolicy]:
+        """Experimental, do not use."""
         return self.resolve_to_singular_repo_scoped_node().asset_node_snap.new_freshness_policy
 
 
@@ -206,6 +207,7 @@ class RemoteRepositoryAssetNode(RemoteAssetNode):
 
     @property
     def new_freshness_policy(self) -> Optional[NewFreshnessPolicy]:
+        """Experimental, do not use."""
         return self.asset_node_snap.new_freshness_policy
 
 

@@ -212,6 +212,7 @@ class AssetOut:
 
     @property
     def new_freshness_policy(self) -> Optional[NewFreshnessPolicy]:
+        """Experimental, do not use."""
         return self._spec.new_freshness_policy
 
     def to_out(self) -> Out:
