@@ -295,7 +295,9 @@ def isolated_example_component_library_foo_bar(
                         ("project", "entry-points", "dagster_dg.library", "foo_bar"),
                         lib_module_name,
                     )
-                    Path("src", *lib_module_name.split(".")).mkdir(exist_ok=True)
+                    lib_dir = Path("src", *lib_module_name.split("."))
+                    lib_dir.mkdir(exist_ok=True)
+                    (lib_dir / "__init__.py").touch()
 
             # Install the component library into our venv
             if not skip_venv:

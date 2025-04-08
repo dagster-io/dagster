@@ -246,10 +246,13 @@ def scaffold_component_type(
         model=model,
     )
 
-    with open(root_path / "__init__.py", "a") as f:
-        f.write(
-            f"from {dg_context.default_component_library_module_name}.{module_name} import {class_name}\n"
-        )
+    with open(root_path / "__init__.py") as f:
+        lines = f.readlines()
+    lines.append(
+        f"from {dg_context.default_component_library_module_name}.{module_name} import {class_name} as {class_name}\n"
+    )
+    with open(root_path / "__init__.py", "w") as f:
+        f.writelines(lines)
 
     click.echo(f"Scaffolded files for Dagster component type at {root_path}/{module_name}.py.")
 

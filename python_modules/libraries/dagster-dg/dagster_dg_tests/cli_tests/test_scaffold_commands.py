@@ -1,6 +1,7 @@
 import json
 import shutil
 import subprocess
+import textwrap
 from pathlib import Path
 from typing import Literal, get_args
 
@@ -690,6 +691,9 @@ def test_scaffold_component_type_success() -> None:
         dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
         registry = RemotePluginRegistry.from_dg_context(dg_context)
         assert registry.has(PluginObjectKey(name="Baz", namespace="foo_bar.lib"))
+        assert Path("src/foo_bar/lib/__init__.py").read_text() == textwrap.dedent("""
+            from foo_bar.lib.baz import Baz as Baz
+        """)
 
 
 def test_scaffold_component_type_already_exists_fails() -> None:
