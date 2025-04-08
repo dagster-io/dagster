@@ -62,7 +62,7 @@ export const AssetsGlobalGraphRoot = () => {
     },
   );
 
-  const favorites = useFavoriteAssets();
+  const {favorites, loading: favoritesLoading} = useFavoriteAssets();
 
   const fetchOptions = useMemo(() => {
     const options: AssetGraphFetchScope = {
@@ -70,9 +70,10 @@ export const AssetsGlobalGraphRoot = () => {
       hideNodesMatching: favorites
         ? (node) => !favorites.has(tokenForAssetKey(node.assetKey))
         : undefined,
+      loading: favoritesLoading,
     };
     return options;
-  }, [hideEdgesToNodesOutsideQuery, favorites]);
+  }, [hideEdgesToNodesOutsideQuery, favorites, favoritesLoading]);
 
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
