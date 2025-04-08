@@ -229,8 +229,8 @@ def build_k8s_suite_steps() -> List[BuildkiteTopLevelStep]:
     pytest_tox_factors = [
         "-default",
         "-subchart",
-        "-default-monitoring",
-        "-subchart-monitoring",
+        "-default_monitoring",
+        "-subchart_monitoring",
     ]
     directory = os.path.join("integration_tests", "test_suites", "k8s-test-suite")
     return build_integration_suite_steps(
