@@ -30,7 +30,7 @@ def cacheable_dbt_cloud_workspace_data():
         environment_id=TEST_ENVIRONMENT_ID,
     )
 
-    workspace.fetch_workspace_data()
+    workspace.get_or_fetch_workspace_data()
 
     return Definitions(
         resources={"dbt_cloud": workspace},

@@ -17,7 +17,7 @@ def test_fetch_dbt_cloud_workspace_data(
     workspace: DbtCloudWorkspace,
     fetch_workspace_data_api_mocks: responses.RequestsMock,
 ) -> None:
-    workspace_data = workspace.fetch_workspace_data()
+    workspace_data = workspace.get_or_fetch_workspace_data()
     assert workspace_data.project_id == TEST_PROJECT_ID
     assert workspace_data.environment_id == TEST_ENVIRONMENT_ID
     assert workspace_data.job_id == TEST_JOB_ID
