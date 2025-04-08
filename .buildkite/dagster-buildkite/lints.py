@@ -25,6 +25,7 @@ def tox_config(request):
 def test_tox_passenv(tox_config):
     PASSENV_ENV = [
         "BUILDKITE*",
+        "PYTEST_CONFIG",
         "PYTEST_PLUGINS",
     ]
 
