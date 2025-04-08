@@ -337,7 +337,6 @@ class DgContext:
 
     @cached_property
     def build_config(self) -> Optional[DgRawBuildConfig]:
-        # make filename config
         build_yaml_path = self.root_path / "build.yaml"
 
         if not build_yaml_path.exists():
