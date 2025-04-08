@@ -785,7 +785,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         return GrapheneAssetHealth(
             assetChecksStatus=check_status,
-            assetCheckStatusMessage=check_message,
+            assetChecksStatusMessage=check_message,
             materializationStatus=materialization_status,
             materializationStatusMessage=materialization_message,
             freshnessStatus=freshness_status,
