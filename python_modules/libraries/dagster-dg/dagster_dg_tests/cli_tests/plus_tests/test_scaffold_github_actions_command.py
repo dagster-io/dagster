@@ -1,7 +1,6 @@
 import subprocess
 import tempfile
 from pathlib import Path
-from unittest import mock
 
 import pytest
 import yaml
@@ -14,26 +13,6 @@ from dagster_dg_tests.utils import (
     isolated_example_project_foo_bar,
     isolated_example_workspace,
 )
-
-
-@pytest.fixture
-def mock_has_github_cli():
-    with mock.patch("dagster_dg.cli.scaffold._has_github_cli") as mock_has_github_cli:
-        yield mock_has_github_cli
-
-
-@pytest.fixture
-def mock_logged_in_to_github():
-    with mock.patch("dagster_dg.cli.scaffold._logged_in_to_github") as mock_logged_in_to_github:
-        yield mock_logged_in_to_github
-
-
-@pytest.fixture
-def mock_get_or_create_agent_token():
-    with mock.patch(
-        "dagster_dg.cli.scaffold._get_or_create_agent_token"
-    ) as mock_get_or_create_agent_token:
-        yield mock_get_or_create_agent_token
 
 
 @pytest.fixture

@@ -31,6 +31,14 @@ query AllSecretsQuery($onlyViewable: Boolean, $scopes: SecretScopesInput) {
 }
 """
 
+DEPLOYMENT_INFO_QUERY = """
+query DeploymentInfoQuery {
+	currentDeployment {
+        agentType
+    }
+}
+"""
+
 AGENT_TOKENS_QUERY = """
 query AgentTokensQuery {
     agentTokensOrError {

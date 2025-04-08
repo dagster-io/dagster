@@ -1,3 +1,4 @@
+import os
 import subprocess
 from collections.abc import Mapping
 from copy import copy
@@ -5,6 +6,7 @@ from pathlib import Path
 from typing import Any, Optional, cast
 
 import click
+import jinja2
 import typer
 import yaml
 from click.core import ParameterSource
@@ -47,6 +49,8 @@ from dagster_dg.utils import (
     parse_json_option,
     snakecase,
 )
+from dagster_dg.utils.plus import gql
+from dagster_dg.utils.plus.gql_client import DagsterPlusGraphQLClient
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 DEFAULT_WORKSPACE_NAME = "dagster-workspace"
@@ -209,10 +213,17 @@ def _search_for_git_root(path: Path) -> Optional[Path]:
 SERVERLESS_GITHUB_ACTION_FILE = (
     Path(__file__).parent.parent / "templates" / "serverless-github-action.yaml"
 )
+HYBRID_GITHUB_ACTION_FILE = Path(__file__).parent.parent / "templates" / "hybrid-github-action.yaml"
+ECR_LOGIN_FRAGMENT = Path(__file__).parent.parent / "templates" / "ecr-login-fragment.yaml"
+
+
+def _get_deployment_agent_type(gql_client: DagsterPlusGraphQLClient) -> bool:
+    result = gql_client.execute(gql.DEPLOYMENT_INFO_QUERY)
+    return result["currentDeployment"]["agentType"]
 
 
 def _generate_dagster_cloud_yaml_contents(
-    dg_context: DgContext, git_root: Path, cli_config: DgRawCliConfig
+    dg_context: DgContext, git_root: Path, cli_config: DgRawCliConfig, registry: Optional[str]
 ) -> dict:
     project_contexts = (
         [
@@ -229,6 +240,7 @@ def _generate_dagster_cloud_yaml_contents(
                 "code_source": {"module_name": project_context.code_location_target_module_name},
                 "build": {
                     "directory": str(project_context.root_path.relative_to(git_root)),
+                    **({"registry": registry} if registry else {}),
                 },
             }
             for project_context in project_contexts
@@ -247,6 +259,21 @@ def _get_git_web_url(git_root: Path) -> Optional[str]:
         return remote_origin_url
     except subprocess.CalledProcessError:
         return None
+
+
+def _create_deploy_dockerfile(dst_path, python_version):
+    dockerfile_template_path = os.path.join(
+        os.path.dirname(__file__), "..", "templates", "deploy_uv_Dockerfile.jinja"
+    )
+
+    loader = jinja2.FileSystemLoader(searchpath=os.path.dirname(dockerfile_template_path))
+    env = jinja2.Environment(loader=loader)
+
+    template = env.get_template(os.path.basename(dockerfile_template_path))
+
+    with open(dst_path, "w", encoding="utf8") as f:
+        f.write(template.render(python_version=python_version))
+        f.write("\n")
 
 
 @scaffold_group.command(
@@ -278,15 +305,67 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
     workflows_dir = git_root / ".github" / "workflows"
     workflows_dir.mkdir(parents=True, exist_ok=True)
 
-    template = SERVERLESS_GITHUB_ACTION_FILE.read_text()
-
     if plus_config and plus_config.organization:
         organization_name = plus_config.organization
         click.echo(f"Using organization name {organization_name} from Dagster Plus config.")
     else:
         organization_name = click.prompt("Dagster Plus organization name") or ""
 
-    template = template.replace("ORGANIZATION_NAME", organization_name)
+    # try:
+    if plus_config:
+        gql_client = DagsterPlusGraphQLClient.from_config(plus_config)
+
+        agent_type = _get_deployment_agent_type(gql_client)
+
+    else:
+        click.echo("No Dagster Plus config found.")
+        agent_type = click.prompt(
+            "Deployment agent type: ", type=click.Choice(("serverless", "hybrid"))
+        ).upper()
+
+    agent_type = "HYBRID"
+    if agent_type == "SERVERLESS":
+        click.echo("Using serverless workflow template.")
+    else:
+        click.echo("Using hybrid workflow template.")
+
+    registry_url = None
+    additional_secrets_hints = []
+    if agent_type == "HYBRID":
+        # Attempt to read registry from registry.yaml
+        registry_file = dg_context.root_path / "registry.yaml"
+        if registry_file.exists():
+            registry_url = yaml.safe_load(registry_file.read_text()).get("registry")
+
+        if not registry_url:
+            registry_url = click.prompt("Docker registry URL, for built images")
+        else:
+            click.echo(f"Using Docker registry URL {registry_url} from registry.yaml")
+
+        _create_deploy_dockerfile(git_root / "Dockerfile", "3.11")
+
+    template = (
+        SERVERLESS_GITHUB_ACTION_FILE.read_text()
+        if agent_type == "SERVERLESS"
+        else HYBRID_GITHUB_ACTION_FILE.read_text()
+    )
+    template = (
+        template.replace("ORGANIZATION_NAME", organization_name)
+        .replace("LOCATION_NAME", dg_context.code_location_name)
+        .replace("IMAGE_REGISTRY_TEMPLATE", registry_url)
+    )
+
+    if registry_url and "ecr" in registry_url:
+        template = template.replace(
+            "# CONTAINER_REGISTRY_LOGIN_FRAGMENT", ECR_LOGIN_FRAGMENT.read_text()
+        )
+        additional_secrets_hints.append(
+            'gh secret set AWS_ACCESS_KEY_ID --body "(your AWS access key ID)"'
+        )
+        additional_secrets_hints.append(
+            'gh secret set AWS_SECRET_ACCESS_KEY --body "(your AWS secret access key)"'
+        )
+        additional_secrets_hints.append('gh secret set AWS_REGION --body "(your AWS region)"')
 
     workflow_file = workflows_dir / "dagster-plus-deploy.yml"
     workflow_file.write_text(template)
@@ -294,7 +373,7 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
     dagster_cloud_yaml_file = git_root / "dagster_cloud.yaml"
 
     dagster_cloud_yaml_contents = _generate_dagster_cloud_yaml_contents(
-        dg_context, git_root, cli_config
+        dg_context, git_root, cli_config, registry_url
     )
     dagster_cloud_yaml_file.write_text(
         f"# Generated by `dg scaffold github-actions`\n{yaml.dump(dagster_cloud_yaml_contents)}"
@@ -310,7 +389,9 @@ def scaffold_github_actions_command(git_root: Optional[Path], **global_options: 
         )
         + f"\nYou will need to set up the following secrets in your GitHub repository using\nthe GitHub UI {git_web_url}or CLI (https://cli.github.com/):"
         + typer.style(
-            f"\ndg plus create-ci-api-token --description 'Used in {git_root.name} GitHub Actions' | gh secret set DAGSTER_CLOUD_API_TOKEN",
+            f"\ndg plus create-ci-api-token --description 'Used in {git_root.name} GitHub Actions' | gh secret set DAGSTER_CLOUD_API_TOKEN"
+            + "\n"
+            + "\n".join(additional_secrets_hints),
             fg=typer.colors.BLUE,
         )
     )
