@@ -8,6 +8,7 @@ from dagster._record import record
 
 from dagster_airlift.core.airflow_instance import AirflowInstance, DagInfo
 from dagster_airlift.core.dag_asset import get_leaf_assets_for_dag
+from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.serialization.serialized_data import (
     DagHandle,
     KeyScopedDagHandles,
@@ -144,10 +145,11 @@ def fetch_all_airflow_data(
     mapping_info: AirliftMetadataMappingInfo,
     dag_selector_fn: Optional[DagSelectorFn],
     automapping_enabled: bool,
+    retrieval_filter: AirflowFilter,
 ) -> FetchedAirflowData:
     dag_infos = {
         dag.dag_id: dag
-        for dag in airflow_instance.list_dags()
+        for dag in airflow_instance.list_dags(retrieval_filter=retrieval_filter)
         if dag_selector_fn is None or dag_selector_fn(dag)
     }
     # To limit the number of API calls, only fetch task infos for the dags that we absolutely have to.
@@ -185,10 +187,15 @@ def compute_serialized_data(
     dag_selector_fn: Optional[DagSelectorFn],
     automapping_enabled: bool,
     source_code_retrieval_enabled: Optional[bool],
+    retrieval_filter: AirflowFilter,
 ) -> "SerializedAirflowDefinitionsData":
     mapping_info = build_airlift_metadata_mapping_info(mapped_assets)
     fetched_airflow_data = fetch_all_airflow_data(
-        airflow_instance, mapping_info, dag_selector_fn, automapping_enabled=automapping_enabled
+        airflow_instance,
+        mapping_info,
+        dag_selector_fn,
+        automapping_enabled=automapping_enabled,
+        retrieval_filter=retrieval_filter,
     )
     source_code_retrieval_enabled = infer_code_retrieval_enabled(
         source_code_retrieval_enabled, fetched_airflow_data

@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional
 
 import click
-from dagster_shared.serdes.objects import PackageObjectKey
+from dagster_shared.serdes.objects import PluginObjectKey
 from pydantic import TypeAdapter
 
 from dagster.components.component_scaffolding import scaffold_object
@@ -30,7 +30,7 @@ def scaffold_object_command(
     json_params: Optional[str],
     scaffold_format: str,
 ) -> None:
-    key = PackageObjectKey.from_typename(typename)
+    key = PluginObjectKey.from_typename(typename)
     obj = load_package_object(key)
 
     if json_params:

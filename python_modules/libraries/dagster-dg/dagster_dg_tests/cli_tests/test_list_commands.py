@@ -75,7 +75,7 @@ def test_list_components_success():
 
 _EXPECTED_COMPONENT_TYPES = textwrap.dedent("""
 ┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Package      ┃ Objects                                                                                               ┃
+┃ Plugin       ┃ Objects                                                                                               ┃
 ┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │ dagster_test │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓ │
 │              │ ┃ Symbol                                             ┃ Summary              ┃ Features              ┃ │
@@ -102,44 +102,60 @@ _EXPECTED_COMPONENT_TYPES_JSON = textwrap.dedent("""
     [
         {
             "key": "dagster_test.components.AllMetadataEmptyComponent",
-            "summary": null
+            "summary": null,
+            "features": [
+                "component",
+                "scaffold-target"
+            ]
         },
         {
             "key": "dagster_test.components.ComplexAssetComponent",
-            "summary": "An asset that has a complex schema."
+            "summary": "An asset that has a complex schema.",
+            "features": [
+                "component",
+                "scaffold-target"
+            ]
         },
         {
             "key": "dagster_test.components.SimpleAssetComponent",
-            "summary": "A simple asset that returns a constant string value."
+            "summary": "A simple asset that returns a constant string value.",
+            "features": [
+                "component",
+                "scaffold-target"
+            ]
         },
         {
             "key": "dagster_test.components.SimplePipesScriptComponent",
-            "summary": "A simple asset that runs a Python script with the Pipes subprocess client."
+            "summary": "A simple asset that runs a Python script with the Pipes subprocess client.",
+            "features": [
+                "component",
+                "scaffold-target"
+            ]
         }
     ]
 
 """).strip()
 
 
-def test_list_component_types_success():
+def test_list_plugins_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
     ):
         with fixed_panel_width(width=120):
-            result = runner.invoke("list", "component-type")
+            result = runner.invoke("list", "plugins")
             assert_runner_result(result)
             # strip the first line of logging output
             output = "\n".join(result.output.split("\n")[1:])
             match_terminal_box_output(output.strip(), _EXPECTED_COMPONENT_TYPES)
 
 
-def test_list_component_type_json_success():
+def test_list_plugins_json_success():
     with (
         ProxyRunner.test(use_fixed_test_components=True) as runner,
         isolated_components_venv(runner),
     ):
-        result = runner.invoke("list", "component-type", "--json")
+        result = runner.invoke("list", "plugins", "--json")
         assert_runner_result(result)
         # strip the first line of logging output
         output = "\n".join(result.output.split("\n")[1:])
@@ -149,7 +165,7 @@ def test_list_component_type_json_success():
 # Need to use capfd here to capture stderr from the subprocess invoked by the `list component-type`
 # command. This subprocess inherits stderr from the parent process, for whatever reason `capsys` does
 # not work.
-def test_list_component_type_bad_entry_point_fails(capfd):
+def test_list_plugins_bad_entry_point_fails(capfd):
     with (
         ProxyRunner.test() as runner,
         isolated_example_component_library_foo_bar(runner),
@@ -158,7 +174,7 @@ def test_list_component_type_bad_entry_point_fails(capfd):
         shutil.rmtree("src/foo_bar/lib")
 
         # Disable cache to force re-discovery of deleted entry point
-        result = runner.invoke("list", "component-type", "--disable-cache", "--json")
+        result = runner.invoke("list", "plugins", "--disable-cache")
         assert_runner_result(result, exit_0=False)
 
         expected_error_message = format_error_message("""

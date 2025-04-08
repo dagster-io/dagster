@@ -1,12 +1,18 @@
-dg list component-type
+dg list plugins
 
 Using /.../my-component-library/.venv/bin/dagster-components
 ┏━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ Package              ┃ Objects                                                                                       ┃
+┃ Plugin               ┃ Objects                                                                                       ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
 │ dagster              │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓ │
 │                      │ ┃ Symbol                                                      ┃ Summary      ┃ Features     ┃ │
 │                      │ ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩ │
+│                      │ │ dagster.asset                                               │ Create a     │ [scaffold-t… │ │
+│                      │ │                                                             │ definition   │              │ │
+│                      │ │                                                             │ for how to   │              │ │
+│                      │ │                                                             │ compute an   │              │ │
+│                      │ │                                                             │ asset.       │              │ │
+│                      │ ├─────────────────────────────────────────────────────────────┼──────────────┼──────────────┤ │
 │                      │ │ dagster.components.DefinitionsComponent                     │ An arbitrary │ [component,  │ │
 │                      │ │                                                             │ set of       │ scaffold-ta… │ │
 │                      │ │                                                             │ dagster      │              │ │
@@ -28,6 +34,27 @@ Using /.../my-component-library/.venv/bin/dagster-components
 │                      │ │                                                             │ with         │              │ │
 │                      │ │                                                             │ Dagster's    │              │ │
 │                      │ │                                                             │ PipesSubpro… │              │ │
+│                      │ ├─────────────────────────────────────────────────────────────┼──────────────┼──────────────┤ │
+│                      │ │ dagster.schedule                                            │ Creates a    │ [scaffold-t… │ │
+│                      │ │                                                             │ schedule     │              │ │
+│                      │ │                                                             │ following    │              │ │
+│                      │ │                                                             │ the provided │              │ │
+│                      │ │                                                             │ cron         │              │ │
+│                      │ │                                                             │ schedule and │              │ │
+│                      │ │                                                             │ requests     │              │ │
+│                      │ │                                                             │ runs for the │              │ │
+│                      │ │                                                             │ provided     │              │ │
+│                      │ │                                                             │ job.         │              │ │
+│                      │ ├─────────────────────────────────────────────────────────────┼──────────────┼──────────────┤ │
+│                      │ │ dagster.sensor                                              │ Creates a    │ [scaffold-t… │ │
+│                      │ │                                                             │ sensor where │              │ │
+│                      │ │                                                             │ the          │              │ │
+│                      │ │                                                             │ decorated    │              │ │
+│                      │ │                                                             │ function is  │              │ │
+│                      │ │                                                             │ used as the  │              │ │
+│                      │ │                                                             │ sensor's     │              │ │
+│                      │ │                                                             │ evaluation   │              │ │
+│                      │ │                                                             │ function.    │              │ │
 │                      │ └─────────────────────────────────────────────────────────────┴──────────────┴──────────────┘ │
 │ my_component_library │ ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┓ │
 │                      │ ┃ Symbol                                ┃ Summary                 ┃ Features                ┃ │

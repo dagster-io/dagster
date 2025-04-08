@@ -1,5 +1,5 @@
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta
 from typing import Any, Optional
 
@@ -8,6 +8,7 @@ import requests
 from dagster_airlift.core import AirflowInstance
 from dagster_airlift.core.airflow_instance import DagInfo, DagRun, TaskInfo, TaskInstance
 from dagster_airlift.core.basic_auth import AirflowAuthBackend
+from dagster_airlift.core.filter import AirflowFilter
 
 
 class DummyAuthBackend(AirflowAuthBackend):
@@ -16,6 +17,9 @@ class DummyAuthBackend(AirflowAuthBackend):
 
     def get_webserver_url(self) -> str:
         return "http://dummy.domain"
+
+
+DEFAULT_FAKE_INSTANCE_NAME = "test_instance"
 
 
 class AirflowInstanceFake(AirflowInstance):
@@ -50,11 +54,29 @@ class AirflowInstanceFake(AirflowInstance):
         self._max_runs_per_batch = max_runs_per_batch
         super().__init__(
             auth_backend=DummyAuthBackend(),
-            name="test_instance" if instance_name is None else instance_name,
+            name=DEFAULT_FAKE_INSTANCE_NAME if instance_name is None else instance_name,
         )
 
-    def list_dags(self) -> list[DagInfo]:
-        return list(self._dag_infos_by_dag_id.values())
+    def list_dags(self, retrieval_filter: Optional[AirflowFilter] = None) -> list[DagInfo]:
+        retrieval_filter = retrieval_filter or AirflowFilter()
+        # Very basic filtering for testing purposes
+        dags_to_retrieve = list(self._dag_infos_by_dag_id.values())
+        if retrieval_filter.dag_id_ilike:
+            dags_to_retrieve = [
+                dag_info
+                for dag_info in dags_to_retrieve
+                if retrieval_filter.dag_id_ilike in dag_info.dag_id
+            ]
+        if retrieval_filter.airflow_tags:
+            dags_to_retrieve = [
+                dag_info
+                for dag_info in dags_to_retrieve
+                if all(
+                    tag in dag_info.metadata.get("tags", [])
+                    for tag in retrieval_filter.airflow_tags
+                )
+            ]
+        return dags_to_retrieve
 
     def list_variables(self) -> list[dict[str, Any]]:
         return self._variables
@@ -150,11 +172,13 @@ class AirflowInstanceFake(AirflowInstance):
         return "indicates found source code"
 
 
-def make_dag_info(dag_id: str, file_token: Optional[str]) -> DagInfo:
+def make_dag_info(
+    instance_name: str, dag_id: str, file_token: Optional[str], dag_props: Mapping[str, Any]
+) -> DagInfo:
     return DagInfo(
         webserver_url="http://dummy.domain",
         dag_id=dag_id,
-        metadata={"file_token": file_token if file_token else "dummy_file_token"},
+        metadata={"file_token": file_token if file_token else "dummy_file_token", **dag_props},
     )
 
 
@@ -220,6 +244,7 @@ def make_instance(
     task_deps: dict[str, list[str]] = {},
     instance_name: Optional[str] = None,
     max_runs_per_batch: Optional[int] = None,
+    dag_props: dict[str, Any] = {},
 ) -> AirflowInstanceFake:
     """Constructs DagInfo, TaskInfo, and TaskInstance objects from provided data.
 
@@ -231,7 +256,12 @@ def make_instance(
     dag_infos = []
     task_infos = []
     for dag_id, task_ids in dag_and_task_structure.items():
-        dag_info = make_dag_info(dag_id=dag_id, file_token=dag_id)
+        dag_info = make_dag_info(
+            instance_name=instance_name or DEFAULT_FAKE_INSTANCE_NAME,
+            dag_id=dag_id,
+            file_token=dag_id,
+            dag_props=dag_props.get(dag_id, {}),
+        )
         dag_infos.append(dag_info)
         task_infos.extend(
             [

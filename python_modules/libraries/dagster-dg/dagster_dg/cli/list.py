@@ -7,7 +7,7 @@ import click
 from dagster_shared import check
 from dagster_shared.record import as_dict
 from dagster_shared.serdes import deserialize_value
-from dagster_shared.serdes.objects import PackageObjectSnap
+from dagster_shared.serdes.objects import PluginObjectSnap
 from dagster_shared.serdes.objects.definition_metadata import (
     DgAssetCheckMetadata,
     DgAssetMetadata,
@@ -20,7 +20,7 @@ from rich.table import Table
 from rich.text import Text
 
 from dagster_dg.cli.shared_options import dg_global_options
-from dagster_dg.component import PackageObjectFeature, RemotePackageRegistry
+from dagster_dg.component import PluginObjectFeature, RemotePluginRegistry
 from dagster_dg.config import normalize_cli_config
 from dagster_dg.context import DgContext
 from dagster_dg.utils import DgClickCommand, DgClickGroup
@@ -87,14 +87,14 @@ def list_component_command(**global_options: object) -> None:
 
 
 # ########################
-# ##### PACKAGE OBJECT
+# ##### PLUGINS
 # ########################
 
 
 FEATURE_COLOR_MAP = {"component": "deep_sky_blue3", "scaffold-target": "khaki1"}
 
 
-def _pretty_features(obj: PackageObjectSnap) -> Text:
+def _pretty_features(obj: PluginObjectSnap) -> Text:
     text = Text()
     for entry_type in obj.features:
         if len(text) > 0:
@@ -104,7 +104,7 @@ def _pretty_features(obj: PackageObjectSnap) -> Text:
     return text
 
 
-def _package_object_table(entries: Sequence[PackageObjectSnap]) -> Table:
+def _plugin_object_table(entries: Sequence[PluginObjectSnap]) -> Table:
     sorted_entries = sorted(entries, key=lambda x: x.key.to_typename())
     table = DagsterInnerTable(["Symbol", "Summary", "Features"])
     for entry in sorted_entries:
@@ -112,60 +112,39 @@ def _package_object_table(entries: Sequence[PackageObjectSnap]) -> Table:
     return table
 
 
-def _all_packages_object_table(
-    registry: RemotePackageRegistry, name_only: bool, feature: Optional[PackageObjectFeature]
+def _all_plugins_object_table(
+    registry: RemotePluginRegistry, name_only: bool, feature: Optional[PluginObjectFeature]
 ) -> Table:
-    table = DagsterOuterTable(["Package"] if name_only else ["Package", "Objects"])
+    table = DagsterOuterTable(["Plugin"] if name_only else ["Plugin", "Objects"])
 
     for package in sorted(registry.packages):
         if not name_only:
             objs = registry.get_objects(package, feature)
-            inner_table = _package_object_table(objs)
+            inner_table = _plugin_object_table(objs)
             table.add_row(package, inner_table)
         else:
             table.add_row(package)
     return table
 
 
-@list_group.command(name="packages", cls=DgClickCommand)
+@list_group.command(name="plugins", cls=DgClickCommand)
 @click.option(
     "--name-only",
     is_flag=True,
     default=False,
-    help="Only display the names of the packages.",
+    help="Only display the names of the plugin packages.",
 )
 @click.option(
-    "--package",
+    "--plugin",
     "-p",
-    help="Filter by package name.",
+    help="Filter by plugin name.",
 )
 @click.option(
     "--feature",
     "-f",
     type=click.Choice(["component", "scaffold-target"]),
-    help="Filter by entry type.",
+    help="Filter by object type.",
 )
-@dg_global_options
-@cli_telemetry_wrapper
-def list_packages_command(
-    name_only: bool,
-    package: Optional[str],
-    feature: Optional[PackageObjectFeature],
-    **global_options: object,
-) -> None:
-    """List registered Dagster components in the current project environment."""
-    cli_config = normalize_cli_config(global_options, click.get_current_context())
-    dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
-    registry = RemotePackageRegistry.from_dg_context(dg_context)
-
-    if package:
-        table = _package_object_table(registry.get_objects(package, feature))
-    else:
-        table = _all_packages_object_table(registry, name_only, feature=feature)
-    Console().print(table)
-
-
-@list_group.command(name="component-type", cls=DgClickCommand)
 @click.option(
     "--json",
     "output_json",
@@ -175,21 +154,35 @@ def list_packages_command(
 )
 @dg_global_options
 @cli_telemetry_wrapper
-def list_component_type_command(output_json: bool, **global_options: object) -> None:
-    """List registered Dagster components in the current project environment."""
+def list_plugins_command(
+    name_only: bool,
+    plugin: Optional[str],
+    feature: Optional[PluginObjectFeature],
+    output_json: bool,
+    **global_options: object,
+) -> None:
+    """List dg plugins and their corresponding objects in the current Python environment."""
     cli_config = normalize_cli_config(global_options, click.get_current_context())
     dg_context = DgContext.for_defined_registry_environment(Path.cwd(), cli_config)
-    registry = RemotePackageRegistry.from_dg_context(dg_context)
+    registry = RemotePluginRegistry.from_dg_context(dg_context)
 
     if output_json:
         output: list[dict[str, object]] = []
-        for entry in sorted(
-            registry.get_objects(feature="component"), key=lambda x: x.key.to_typename()
-        ):
-            output.append({"key": entry.key.to_typename(), "summary": entry.summary})
+        for entry in sorted(registry.get_objects(), key=lambda x: x.key.to_typename()):
+            output.append(
+                {
+                    "key": entry.key.to_typename(),
+                    "summary": entry.summary,
+                    "features": entry.features,
+                }
+            )
         click.echo(json.dumps(output, indent=4))
-    else:
-        Console().print(_all_packages_object_table(registry, False, "component"))
+    else:  # table output
+        if plugin:
+            table = _plugin_object_table(registry.get_objects(plugin, feature))
+        else:
+            table = _all_plugins_object_table(registry, name_only, feature=feature)
+        Console().print(table)
 
 
 # ########################

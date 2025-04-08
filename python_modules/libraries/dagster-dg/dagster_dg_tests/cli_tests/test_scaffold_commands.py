@@ -7,7 +7,7 @@ from typing import Literal, get_args
 import pytest
 import tomlkit
 from dagster_dg.cli.shared_options import DEFAULT_EDITABLE_DAGSTER_PROJECTS_ENV_VAR
-from dagster_dg.component import RemotePackageRegistry
+from dagster_dg.component import RemotePluginRegistry
 from dagster_dg.context import DgContext
 from dagster_dg.utils import (
     create_toml_node,
@@ -19,7 +19,7 @@ from dagster_dg.utils import (
     modify_toml_as_dict,
     pushd,
 )
-from dagster_shared.serdes.objects import PackageObjectKey
+from dagster_shared.serdes.objects import PluginObjectKey
 from typing_extensions import TypeAlias
 
 ensure_dagster_dg_tests_import()
@@ -123,13 +123,13 @@ def test_scaffold_project_inside_workspace_success(monkeypatch) -> None:
 
         # Populate cache
         with pushd("projects/foo-bar"):
-            result = runner.invoke("list", "component-type", "--verbose")
+            result = runner.invoke("list", "plugins", "--verbose")
             assert_runner_result(result)
             assert "CACHE [miss]" in result.output
 
         # Check cache was populated
         with pushd("projects/foo-bar"):
-            result = runner.invoke("list", "component-type", "--verbose")
+            result = runner.invoke("list", "plugins", "--verbose")
             assert_runner_result(result)
             assert "CACHE [hit]" in result.output
 
@@ -308,7 +308,7 @@ def test_scaffold_project_no_populate_cache_success(monkeypatch) -> None:
         assert Path("foo-bar/uv.lock").exists()
 
         with pushd("foo-bar"):
-            result = runner.invoke("list", "component-type", "--verbose")
+            result = runner.invoke("list", "plugins", "--verbose")
             assert_runner_result(result)
             assert "CACHE [miss]" in result.output
 
@@ -688,8 +688,8 @@ def test_scaffold_component_type_success() -> None:
         assert_runner_result(result)
         assert Path("src/foo_bar/lib/baz.py").exists()
         dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
-        registry = RemotePackageRegistry.from_dg_context(dg_context)
-        assert registry.has(PackageObjectKey(name="Baz", namespace="foo_bar.lib"))
+        registry = RemotePluginRegistry.from_dg_context(dg_context)
+        assert registry.has(PluginObjectKey(name="Baz", namespace="foo_bar.lib"))
 
 
 def test_scaffold_component_type_already_exists_fails() -> None:
@@ -713,8 +713,8 @@ def test_scaffold_component_type_succeeds_non_default_component_lib_package() ->
         assert_runner_result(result)
         assert Path("src/foo_bar/_lib/baz.py").exists()
         dg_context = DgContext.from_file_discovery_and_command_line_config(Path.cwd(), {})
-        registry = RemotePackageRegistry.from_dg_context(dg_context)
-        assert registry.has(PackageObjectKey(name="Baz", namespace="foo_bar._lib"))
+        registry = RemotePluginRegistry.from_dg_context(dg_context)
+        assert registry.has(PluginObjectKey(name="Baz", namespace="foo_bar._lib"))
 
 
 def test_scaffold_component_type_fails_components_lib_package_does_not_exist(capfd) -> None:

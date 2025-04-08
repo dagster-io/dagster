@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 from collections.abc import Sequence
@@ -13,6 +14,7 @@ from dagster import (
     ConfigurableResource,
     Definitions,
     _check as check,
+    get_dagster_logger,
     multi_asset_check,
 )
 from dagster._annotations import preview
@@ -108,6 +110,11 @@ class DbtCloudWorkspace(ConfigurableResource):
     )
 
     @property
+    @cached_method
+    def _log(self) -> logging.Logger:
+        return get_dagster_logger()
+
+    @property
     def unique_id(self) -> str:
         """Unique ID for this dbt Cloud workspace, which is composed of the project ID and environment ID.
 
@@ -121,11 +128,16 @@ class DbtCloudWorkspace(ConfigurableResource):
         """The name of the account for this dbt Cloud workspace.
 
         Returns:
-            str: the name of the account for this dbt Cloud workspace.
+            Optional[str]: the name of the account for this dbt Cloud workspace.
         """
         account = DbtCloudAccount.from_account_details(
             account_details=self.get_client().get_account_details()
         )
+        if not account.name:
+            self._log.warning(
+                f"Account name was not returned by the dbt Cloud API for account ID `{account.id}`. "
+                f"Make sure to set a name for this account in dbt Cloud."
+            )
         return account.name
 
     @cached_property
@@ -138,6 +150,11 @@ class DbtCloudWorkspace(ConfigurableResource):
         project = DbtCloudProject.from_project_details(
             project_details=self.get_client().get_project_details(project_id=self.project_id)
         )
+        if not project.name:
+            self._log.warning(
+                f"Project name was not returned by the dbt Cloud API for project ID `{project.id}`. "
+                f"Make sure to set a name for this project in dbt Cloud."
+            )
         return project.name
 
     @cached_property
@@ -152,6 +169,11 @@ class DbtCloudWorkspace(ConfigurableResource):
                 environment_id=self.environment_id
             )
         )
+        if not environment.name:
+            self._log.warning(
+                f"Environment name was not returned by the dbt Cloud API for environment ID `{environment.id}`. "
+                f"Make sure to set a name for this environment in dbt Cloud."
+            )
         return environment.name
 
     @cached_method
