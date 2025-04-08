@@ -379,6 +379,22 @@ export type AssetGroupSelector = {
   repositoryName: Scalars['String']['input'];
 };
 
+export type AssetHealth = {
+  __typename: 'AssetHealth';
+  assetChecksStatus: AssetHealthStatus;
+  assetHealth: AssetHealthStatus;
+  freshnessStatus: AssetHealthStatus;
+  materializationStatus: AssetHealthStatus;
+};
+
+export enum AssetHealthStatus {
+  DEGRADED = 'DEGRADED',
+  HEALTHY = 'HEALTHY',
+  NOT_APPLICABLE = 'NOT_APPLICABLE',
+  UNKNOWN = 'UNKNOWN',
+  WARNING = 'WARNING',
+}
+
 export type AssetKey = {
   __typename: 'AssetKey';
   path: Array<Scalars['String']['output']>;
@@ -443,6 +459,7 @@ export type AssetMetadataEntry = MetadataEntry & {
 export type AssetNode = {
   __typename: 'AssetNode';
   assetChecksOrError: AssetChecksOrError;
+  assetHealth: Maybe<AssetHealth>;
   assetKey: AssetKey;
   assetMaterializationUsedData: Array<MaterializationUpstreamDataVersion>;
   assetMaterializations: Array<MaterializationEvent>;
@@ -6587,6 +6604,33 @@ export const buildAssetGroupSelector = (
   };
 };
 
+export const buildAssetHealth = (
+  overrides?: Partial<AssetHealth>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'AssetHealth'} & AssetHealth => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('AssetHealth');
+  return {
+    __typename: 'AssetHealth',
+    assetChecksStatus:
+      overrides && overrides.hasOwnProperty('assetChecksStatus')
+        ? overrides.assetChecksStatus!
+        : AssetHealthStatus.DEGRADED,
+    assetHealth:
+      overrides && overrides.hasOwnProperty('assetHealth')
+        ? overrides.assetHealth!
+        : AssetHealthStatus.DEGRADED,
+    freshnessStatus:
+      overrides && overrides.hasOwnProperty('freshnessStatus')
+        ? overrides.freshnessStatus!
+        : AssetHealthStatus.DEGRADED,
+    materializationStatus:
+      overrides && overrides.hasOwnProperty('materializationStatus')
+        ? overrides.materializationStatus!
+        : AssetHealthStatus.DEGRADED,
+  };
+};
+
 export const buildAssetKey = (
   overrides?: Partial<AssetKey>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -6735,6 +6779,12 @@ export const buildAssetNode = (
         : relationshipsToOmit.has('AssetCheckNeedsAgentUpgradeError')
           ? ({} as AssetCheckNeedsAgentUpgradeError)
           : buildAssetCheckNeedsAgentUpgradeError({}, relationshipsToOmit),
+    assetHealth:
+      overrides && overrides.hasOwnProperty('assetHealth')
+        ? overrides.assetHealth!
+        : relationshipsToOmit.has('AssetHealth')
+          ? ({} as AssetHealth)
+          : buildAssetHealth({}, relationshipsToOmit),
     assetKey:
       overrides && overrides.hasOwnProperty('assetKey')
         ? overrides.assetKey!
