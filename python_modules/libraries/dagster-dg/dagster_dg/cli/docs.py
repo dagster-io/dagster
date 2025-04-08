@@ -18,7 +18,6 @@ from dagster_dg.docs import json_for_all_components
 from dagster_dg.utils import DgClickCommand, DgClickGroup, exit_with_error, pushd
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
-# from pathlib import Path
 DEV_DOCS_DIR = (
     Path(__file__).parent.parent.parent.parent.parent.parent
     / "js_modules"
@@ -123,6 +122,9 @@ def build_docs_command(
     with pushd(ACTIVE_DOCS_DIR):
         DOCS_JSON_PATH.parent.mkdir(parents=True, exist_ok=True)
         DOCS_JSON_PATH.write_text(json.dumps(json_for_all_components(registry), indent=2))
+
+        # TODO: copy logos to docs static dir
+        # breakpoint()
         with yaspin(text="Verifying docs dependencies", color="blue") as spinner:
             yes = subprocess.Popen(["yes", "y"], stdout=subprocess.PIPE)
             try:

@@ -85,6 +85,7 @@ class PackageObjectSnap:
     description: Optional[str]
     owners: Optional[Sequence[str]]
     tags: Optional[Sequence[str]]
+    logo_path: Optional[str]
     feature_data: Sequence[PackageObjectFeatureData]
 
     @property

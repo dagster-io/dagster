@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
@@ -20,6 +22,7 @@ class SimpleAssetComponent(Component, Resolvable, Model):
         return ComponentSpec(
             owners=["john@dagster.io", "jane@dagster.io"],
             tags=["a", "b", "c"],
+            logo_path=Path(__file__).parent / "dagster-logo.svg",
         )
 
     def build_defs(self, context: ComponentLoadContext) -> Definitions:
