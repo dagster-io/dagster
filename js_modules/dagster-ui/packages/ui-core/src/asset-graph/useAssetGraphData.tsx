@@ -280,7 +280,6 @@ const computeGraphData = indexedDBAsyncMemoize<GraphDataState, typeof computeGra
 );
 
 const buildGraphQueryItems = (nodes: AssetNode[]) => {
-  console.log('buildGraphQueryItems', nodes);
   const items: {[name: string]: AssetGraphQueryItem} = {};
 
   for (const node of nodes) {
