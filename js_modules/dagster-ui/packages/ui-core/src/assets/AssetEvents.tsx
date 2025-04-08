@@ -76,8 +76,15 @@ export const AssetEvents = ({
         combinedParams.after = filterState.dateRange.start;
       }
     }
+    if (filterState.status) {
+      if (filterState.status.length === 1) {
+        combinedParams.status = filterState.status[0] as MaterializationHistoryEventTypeSelector;
+      } else {
+        combinedParams.status = MaterializationHistoryEventTypeSelector.ALL;
+      }
+    }
     return combinedParams;
-  }, [params, filterState.dateRange]);
+  }, [params, filterState.dateRange, filterState.status]);
 
   const {materializations, observations, loadedPartitionKeys, fetchMore, fetchLatest, loading} =
     usePaginatedAssetEvents(assetKey, combinedParams);
