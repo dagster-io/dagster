@@ -1,0 +1,37 @@
+[project]
+name = "pdf_extraction"
+requires-python = ">=3.9,<3.13"
+version = "0.1.0"
+dependencies = [
+    "dagster-components",
+    "dagster-duckdb>=0.26.8",
+    "dagster-openai>=0.26.8",
+    "dagster-webserver>=1.10.8",
+    "opencv-python>=4.11.0.86",
+    "pdf2image>=1.17.0",
+    "pytesseract>=0.3.13",
+]
+
+[project.entry-points]
+"dagster_dg.library" = { pdf_extraction = "pdf_extraction.lib"}
+
+[dependency-groups]
+dev = [
+    "dagster-webserver",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.dg]
+directory_type = "project"
+
+[tool.dg.project]
+root_module = "pdf_extraction"
+python_environment = "persistent_uv"
+
+[tool.setuptools.packages.find]
+exclude=["pdf_extraction_tests"]
+
+
