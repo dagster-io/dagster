@@ -5,6 +5,8 @@ try:
 
     hello_world_notebook_op = define_dagstermill_op("hello_world_notebook_op", "hello_world.ipynb")
 except ImportError:
+    # We don't include dagstermill in our setup.py for dagster_test to keep it lean so we
+    # can't rely on this always being installed.
 
     @op(name="hello_world_notebook_op")
     def mock_notebook_op():
