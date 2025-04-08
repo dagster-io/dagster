@@ -1,4 +1,5 @@
 import re
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -9,9 +10,11 @@ from dagster._core.definitions.materialize import materialize
 from dagster._core.test_utils import environ
 from dagster._vendored.dateutil import parser
 from dagster_fivetran import FivetranOutput, FivetranWorkspace, fivetran_assets
-from dagster_fivetran.translator import MIN_TIME_STR
+from dagster_fivetran.translator import MIN_TIME_STR, FivetranConnectorSetupStateType
 
 from dagster_fivetran_tests.beta.conftest import (
+    FIVETRAN_API_BASE,
+    FIVETRAN_API_VERSION,
     SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR,
     SAMPLE_SUCCESS_MESSAGE,
     TEST_ACCOUNT_ID,
@@ -23,6 +26,7 @@ from dagster_fivetran_tests.beta.conftest import (
     TEST_TABLE_NAME,
     get_fivetran_connector_api_url,
     get_sample_connection_details,
+    list_connectors_for_group_sample,
 )
 
 
@@ -38,7 +42,7 @@ def test_basic_resource_request(
     client = resource.get_client()
 
     # fetch workspace data calls
-    client.get_connectors_for_group(group_id=group_id)
+    client.list_connectors_for_group(group_id=group_id)
     client.get_destination_details(destination_id=destination_id)
     client.get_groups()
     client.get_schema_config_for_connector(connector_id=connector_id)
@@ -128,6 +132,38 @@ def test_basic_resource_request(
             poll_timeout=2,
             poll_interval=1,
         )
+
+
+def test_list_connectors_for_group_cursor(connector_id: str, group_id: str):
+    resource = FivetranWorkspace(
+        account_id=TEST_ACCOUNT_ID, api_key=TEST_API_KEY, api_secret=TEST_API_SECRET
+    )
+    client = resource.get_client()
+
+    setup_state = FivetranConnectorSetupStateType.CONNECTED.value
+
+    # Create mock responses to mock API behavior for the "list connectors for group" endpoint
+    def _mock_interaction():
+        with responses.RequestsMock() as response:
+            # initial state, a cursor is returned, we will do a second call
+            response.add(
+                method=responses.GET,
+                url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{group_id}/connectors",
+                json=list_connectors_for_group_sample(
+                    setup_state=setup_state, next_cursor="some_cursor"
+                ),
+                status=200,
+            )
+            # final state, no cursor so we break after the second call
+            response.add(
+                method=responses.GET,
+                url=f"{FIVETRAN_API_BASE}/{FIVETRAN_API_VERSION}/groups/{group_id}/connectors",
+                json=list_connectors_for_group_sample(setup_state=setup_state, next_cursor=None),
+                status=200,
+            )
+            return client.list_connectors_for_group(group_id=group_id)
+
+    assert len(cast(list, _mock_interaction())) == 2
 
 
 @pytest.mark.parametrize(
