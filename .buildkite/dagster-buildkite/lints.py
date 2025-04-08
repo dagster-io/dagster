@@ -19,6 +19,10 @@ def find_tox_ini():
 def tox_config(request):
     config = configparser.ConfigParser()
     config.read(request.param)
+
+    assert "testenv" in config
+    assert "passenv" in config["testenv"]
+
     return config
 
 
@@ -28,9 +32,6 @@ def test_tox_passenv(tox_config):
         "PYTEST_CONFIG",
         "PYTEST_PLUGINS",
     ]
-
-    assert "testenv" in tox_config
-    assert "passenv" in tox_config["testenv"]
 
     missing_env = []
     for env in PASSENV_ENV:
@@ -48,3 +49,10 @@ def test_no_subdirectory_pytest_ini():
             pytest_ini_files.append(pytest_ini_file)
 
     assert not pytest_ini_files, f"Subdirectory pytest.ini files conflict with our root pyproject.toml settings and conftest.py discovery. Please remove: {pytest_ini_files}"
+
+
+def test_no_tox_pytest_config_override(tox_config):
+    if "commands" in tox_config["testenv"]:
+        assert (
+            "pyproject.toml" not in tox_config["testenv"]["commands"]
+        ), "We use a global PYTEST_CONFIG that uses the root directory's pyproject.toml. Remove any -c overrides in pytest commands in tox.ini"
