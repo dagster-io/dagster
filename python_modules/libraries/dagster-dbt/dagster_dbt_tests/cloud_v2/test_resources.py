@@ -209,9 +209,13 @@ def test_cli_invocation_in_asset_decorator(
     asset_materialization_events = result.get_asset_materialization_events()
     asset_check_evaluation = result.get_asset_check_evaluations()
 
-    # materializations are successful outputs, asset check evaluations are not outputs
+    # materializations and check results are successful outputs
     outputs = [event for event in result.all_events if event.is_successful_output]
-    assert len(outputs) == 8
+    assert len(outputs) == 28
+
+    # materialization outputs have metadata, asset check outputs don't
+    outputs_with_metadata = [output for output in outputs if output.step_output_data.metadata]
+    assert len(outputs_with_metadata) == 8
 
     # 8 asset materializations
     assert len(asset_materialization_events) == 8
@@ -219,6 +223,10 @@ def test_cli_invocation_in_asset_decorator(
     assert len(asset_check_evaluation) == 20
 
     # Sanity check
+    first_output_with_metadata = next(output for output in sorted(outputs_with_metadata))
+    assert first_output_with_metadata.step_output_data.output_name == "customers"
+    assert first_output_with_metadata.step_output_data.metadata["run_url"].value == TEST_RUN_URL
+
     first_mat = next(event.materialization for event in sorted(asset_materialization_events))
     assert first_mat.asset_key.path == ["customers"]
     assert first_mat.metadata["run_url"].value == TEST_RUN_URL

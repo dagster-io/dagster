@@ -3,6 +3,7 @@ from typing import Any, Optional, Union
 
 from dagster import (
     AssetCheckEvaluation,
+    AssetCheckResult,
     AssetCheckSeverity,
     AssetExecutionContext,
     AssetMaterialization,
@@ -97,7 +98,7 @@ class DbtCloudJobRunResults:
         manifest: Mapping[str, Any],
         dagster_dbt_translator: Optional[DagsterDbtTranslator] = None,
         context: Optional[AssetExecutionContext] = None,
-    ) -> Iterator[Union[AssetMaterialization, AssetCheckEvaluation, Output]]:
+    ) -> Iterator[Union[AssetCheckEvaluation, AssetCheckResult, AssetMaterialization, Output]]:
         """Convert the run results of a dbt Cloud job run to a set of corresponding Dagster events.
 
         Args:
@@ -108,12 +109,12 @@ class DbtCloudJobRunResults:
             context (Optional[AssetExecutionContext]): The execution context.
 
         Returns:
-            Iterator[Union[AssetMaterialization, AssetCheckEvaluation, Output]]:
+            Iterator[Union[AssetCheckEvaluation, AssetCheckResult, AssetMaterialization, Output]]:
                 A set of corresponding Dagster events.
 
                 In a Dagster asset definition, the following are yielded:
                 - Output for refables (e.g. models, seeds, snapshots.)
-                - AssetCheckEvaluation for dbt tests.
+                - AssetCheckResult for dbt tests.
 
                 For ad hoc usage, the following are yielded:
                 - AssetMaterialization for refables (e.g. models, seeds, snapshots.)
@@ -195,7 +196,25 @@ class DbtCloudJobRunResults:
                     test_unique_id=unique_id,
                 )
 
-                if asset_check_key is not None:
+                if (
+                    context
+                    and has_asset_def
+                    and asset_check_key is not None
+                    and asset_check_key in context.selected_asset_check_keys
+                ):
+                    # The test is an asset check in an asset, so yield an `AssetCheckResult`.
+                    yield AssetCheckResult(
+                        passed=result_status == TestStatus.Pass,
+                        asset_key=asset_check_key.asset_key,
+                        check_name=asset_check_key.name,
+                        metadata=metadata,
+                        severity=(
+                            AssetCheckSeverity.WARN
+                            if result_status == TestStatus.Warn
+                            else AssetCheckSeverity.ERROR
+                        ),
+                    )
+                elif not has_asset_def and asset_check_key is not None:
                     yield AssetCheckEvaluation(
                         passed=result_status == TestStatus.Pass,
                         asset_key=asset_check_key.asset_key,
