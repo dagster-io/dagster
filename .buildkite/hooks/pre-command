@@ -3,3 +3,4 @@ set -eu
 . ./.buildkite/scripts/docker_prune.sh
 
 export BUILDKITE_ANALYTICS_TOKEN=$DAGSTER_BUILDKITE_TEST_ANALYTICS_TOKEN
+export PYTEST_CONFIG=DAGSTER_GIT_REPO_DIR/pyproject.toml
