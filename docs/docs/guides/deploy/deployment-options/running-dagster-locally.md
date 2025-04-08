@@ -85,6 +85,13 @@ You may want to detect whether you're running locally. For example, you might wa
 
 `dagster dev` sets the environment variable `DAGSTER_IS_DEV_CLI` to `1`. You can detect whether you're in a local dev environment by checking for the presence of that environment variable.
 
+```python
+import os
+
+if os.getenv("DAGSTER_IS_DEV_CLI"):
+    print("Running in local dev environment")
+```
+
 ## Moving to production
 
 `dagster dev` is primarily useful for running Dagster for local development and testing. It isn't suitable for the demands of most production deployments. Most importantly, `dagster dev` does not include authentication or web security. Additionally, in a production deployment, you might want to run multiple webserver replicas, have zero downtime continuous deployment of your code, or set up your Dagster daemon to automatically restart if it crashes.
