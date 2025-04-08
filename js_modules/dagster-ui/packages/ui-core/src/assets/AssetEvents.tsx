@@ -79,13 +79,9 @@ export const AssetEvents = ({
     }
     if (filterState.status) {
       if (filterState.status.length === 1) {
-        if (filterState.status[0] === 'Materialization') {
-          combinedParams.status = MaterializationHistoryEventTypeSelector.MATERIALIZATION;
-        } else if (filterState.status[0] === 'FailedToMaterialize') {
-          combinedParams.status = MaterializationHistoryEventTypeSelector.FAILED_TO_MATERIALIZE;
-        } else {
-          combinedParams.status = MaterializationHistoryEventTypeSelector.ALL;
-        }
+        combinedParams.status = filterState.status[0] as MaterializationHistoryEventTypeSelector;
+      } else {
+        combinedParams.status = MaterializationHistoryEventTypeSelector.ALL;
       }
     }
     return combinedParams;
