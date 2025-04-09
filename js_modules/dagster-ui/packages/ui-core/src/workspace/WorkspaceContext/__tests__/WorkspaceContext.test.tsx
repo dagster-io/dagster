@@ -12,12 +12,7 @@ import {
   buildRepositoryLocation,
   buildWorkspaceLocationEntry,
 } from '../../../graphql/types';
-import {
-  IndexedDBCacheContext,
-  KEY_PREFIX,
-  __resetForJest,
-  createIndexedDBCacheContextValue,
-} from '../../../search/useIndexedDBCachedQuery';
+import {KEY_PREFIX, __resetForJest} from '../../../search/useIndexedDBCachedQuery';
 import {getMockResultFn} from '../../../testing/mocking';
 import {cache} from '../../../util/idb-lru-cache';
 import {
@@ -72,11 +67,9 @@ function renderWithMocks(mocks: MockedResponse[]) {
               telemetryEnabled: false,
             }}
           >
-            <IndexedDBCacheContext.Provider value={createIndexedDBCacheContextValue()}>
-              <MockedProvider mocks={mocks}>
-                <WorkspaceProvider>{children}</WorkspaceProvider>
-              </MockedProvider>
-            </IndexedDBCacheContext.Provider>
+            <MockedProvider mocks={mocks}>
+              <WorkspaceProvider>{children}</WorkspaceProvider>
+            </MockedProvider>
           </AppContext.Provider>
         </RecoilRoot>
       );
