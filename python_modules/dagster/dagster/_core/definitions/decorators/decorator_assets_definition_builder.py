@@ -667,11 +667,7 @@ class DecoratorAssetsDefinitionBuilder:
                 deps = input_deps
 
             resolved_specs.append(
-                asset_out.to_spec(
-                    key,
-                    deps=deps,
-                    partitions_def=self.args.partitions_def,
-                )
+                asset_out.to_spec(key, deps=deps, partitions_def=self.args.partitions_def)
             )
 
         specs = resolved_specs

@@ -2,6 +2,8 @@ from datetime import timedelta
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec, attach_internal_freshness_policy
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.freshness import (
     INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
@@ -14,6 +16,26 @@ from dagster_shared.serdes.utils import SerializableTimeDelta
 from dagster_tests.core_tests.host_representation_tests.test_external_data import (
     _get_asset_node_snaps_from_definitions,
 )
+
+
+def test_asset_decorator_with_internal_freshness_policy() -> None:
+    """Can we define an asset from decorator with an internal freshness policy?"""
+
+    @asset(
+        internal_freshness_policy=TimeWindowFreshnessPolicy.from_timedeltas(
+            fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+        )
+    )
+    def asset_with_internal_freshness_policy():
+        pass
+
+    spec = asset_with_internal_freshness_policy.get_asset_spec()
+    policy = spec.metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY)
+    assert policy is not None
+    deserialized = deserialize_value(policy)
+    assert isinstance(deserialized, TimeWindowFreshnessPolicy)
+    assert deserialized.fail_window == SerializableTimeDelta.from_timedelta(timedelta(minutes=10))
+    assert deserialized.warn_window == SerializableTimeDelta.from_timedelta(timedelta(minutes=5))
 
 
 def test_asset_spec_with_internal_freshness_policy() -> None:
@@ -98,21 +120,32 @@ def test_attach_internal_freshness_policy() -> None:
 
 
 def test_map_asset_specs_attach_internal_freshness_policy() -> None:
-    """Can we map attach_internal_freshness_policy over a selection of asset specs?"""
-    asset_specs = [AssetSpec(key="foo"), AssetSpec(key="bar"), AssetSpec(key="baz")]
+    """Can we map attach_internal_freshness_policy over a selection of assets and asset specs?"""
+
+    @asset
+    def foo_asset():
+        pass
+
+    asset_specs = [foo_asset, AssetSpec(key="bar"), AssetSpec(key="baz")]
+    defs: Definitions = Definitions(assets=asset_specs)
+
     freshness_policy = TimeWindowFreshnessPolicy.from_timedeltas(
         fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
     )
-    defs: Definitions = Definitions(assets=asset_specs)
     mapped_defs = defs.map_asset_specs(
         func=lambda spec: attach_internal_freshness_policy(spec, freshness_policy)
     )
 
-    assets = mapped_defs.assets
-    assert len(assets) == 3
-    for asset in assets:
-        assert INTERNAL_FRESHNESS_POLICY_METADATA_KEY in asset.metadata
-        policy = deserialize_value(asset.metadata[INTERNAL_FRESHNESS_POLICY_METADATA_KEY])
+    assets_and_specs = mapped_defs.assets
+    assert len(assets_and_specs) == 3
+    for asset_or_spec in assets_and_specs:
+        spec = (
+            asset_or_spec.get_asset_spec()
+            if isinstance(asset_or_spec, AssetsDefinition)
+            else asset_or_spec
+        )
+        assert INTERNAL_FRESHNESS_POLICY_METADATA_KEY in spec.metadata
+        policy = deserialize_value(spec.metadata[INTERNAL_FRESHNESS_POLICY_METADATA_KEY])
         assert isinstance(policy, TimeWindowFreshnessPolicy)
         assert policy.fail_window == SerializableTimeDelta.from_timedelta(timedelta(minutes=10))
         assert policy.warn_window == SerializableTimeDelta.from_timedelta(timedelta(minutes=5))
