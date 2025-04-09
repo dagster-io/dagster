@@ -1,5 +1,5 @@
 import memoize from 'lodash/memoize';
-import React, {createContext, useCallback, useContext, useEffect, useMemo} from 'react';
+import React, {useCallback, useEffect, useMemo} from 'react';
 
 import {
   ApolloClient,
@@ -108,7 +108,7 @@ export class IndexedDBQueryCache<TQuery, TVariables extends OperationVariables> 
     this.version = version;
     this.variables = variables;
     this.queryFn = queryFn;
-    this.cacheManager = new CacheManager<TQuery>(key);
+    this.cacheManager = getCacheManager(key);
 
     // Try to get cached data immediately (but don't await it in constructor)
     this.getCachedData();
@@ -353,28 +353,19 @@ export function useGetCachedData() {
   }, []);
 }
 export function useClearCachedData() {
-  const {getCacheManager} = useContext(IndexedDBCacheContext);
-  return useCallback(
-    async <TQuery,>({key}: {key: string}) => {
-      const cacheManager = getCacheManager<TQuery>(key);
-      await cacheManager.clear();
-    },
-    [getCacheManager],
-  );
+  return useCallback(async <TQuery,>({key}: {key: string}) => {
+    const cacheManager = getCacheManager<TQuery>(key);
+    await cacheManager.clear();
+  }, []);
 }
 
-export function createIndexedDBCacheContextValue() {
-  return {
-    getCacheManager: memoize(<TQuery,>(key: string) => {
-      return new CacheManager<TQuery>(key);
-    }),
-  };
-}
-
-const contextValue = createIndexedDBCacheContextValue();
-export const IndexedDBCacheContext = createContext(contextValue);
+let getCacheManager = memoize(<TQuery,>(key: string) => {
+  return new CacheManager<TQuery>(key);
+});
 
 export const __resetForJest = () => {
-  Object.assign(contextValue, createIndexedDBCacheContextValue());
   Object.keys(globalFetchStates).forEach((key) => delete globalFetchStates[key]);
+  getCacheManager = memoize(<TQuery,>(key: string) => {
+    return new CacheManager<TQuery>(key);
+  });
 };
