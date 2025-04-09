@@ -1,0 +1,3 @@
+.vercel
+node_modules/
+yarn.lock
