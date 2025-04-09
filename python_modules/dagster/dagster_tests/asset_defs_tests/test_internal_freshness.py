@@ -82,6 +82,19 @@ def test_attach_internal_freshness_policy() -> None:
     )
     assert_freshness_policy(asset_spec, expected_fail_window=timedelta(minutes=60))
 
+    # Don't overwrite existing metadata
+    spec_with_metadata = AssetSpec(key="bar", metadata={"existing": "metadata"})
+    spec_with_metadata = attach_internal_freshness_policy(
+        spec_with_metadata,
+        TimeWindowFreshnessPolicy.from_timedeltas(fail_window=timedelta(minutes=60)),
+    )
+    assert spec_with_metadata.metadata.get("existing") == "metadata"
+    assert_freshness_policy(
+        spec_with_metadata,
+        expected_fail_window=timedelta(minutes=60),
+        expected_warn_window=None,
+    )
+
 
 def test_map_asset_specs_attach_internal_freshness_policy() -> None:
     """Can we map attach_internal_freshness_policy over a selection of asset specs?"""
