@@ -540,23 +540,6 @@
     ]
   },
   {
-    "id": "sdf",
-    "status": "published",
-    "name": "SDF",
-    "title": "Dagster & SDF",
-    "excerpt": "Put your SDF transformations to work, directly from within Dagster.",
-    "partnerlink": "https://www.sdf.com/",
-    "categories": [
-      "ETL"
-    ],
-    "enabledBy": [],
-    "enables": [],
-    "tags": [
-      "community-supported",
-      "etl"
-    ]
-  },
-  {
     "id": "secoda",
     "status": "published",
     "name": "Secoda",
