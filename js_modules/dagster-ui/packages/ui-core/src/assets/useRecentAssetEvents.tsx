@@ -5,6 +5,7 @@ import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
 import {AssetKey, AssetViewParams} from './types';
 import {gql, useQuery} from '../apollo-client';
 import {clipEventsToSharedMinimumTime} from './clipEventsToSharedMinimumTime';
+import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {MaterializationHistoryEventTypeSelector} from '../graphql/types';
 import {
   AssetEventsQuery,
@@ -85,6 +86,7 @@ export function useRecentAssetEvents(
       [assetKey?.path, before, loadUsingPartitionKeys, params.limit],
     ),
   });
+  useQueryRefreshAtInterval(queryResult, 60000);
   const {data: _data, previousData, loading, refetch} = queryResult;
   const data = _data ?? previousData;
 
