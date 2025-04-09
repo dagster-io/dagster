@@ -877,7 +877,9 @@ class JobDefinition(IHasInternalInit):
             )
 
         job_asset_graph = get_asset_graph_for_job(
-            self.asset_layer.asset_graph, selection, allow_different_partitions_defs=True
+            self.asset_layer.asset_graph.source_asset_graph,
+            selection,
+            allow_different_partitions_defs=True,
         )
 
         return build_asset_job(

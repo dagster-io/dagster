@@ -1123,21 +1123,17 @@ def test_dbt_with_python_interleaving(
 
     # now make sure that if you just select these two, we still get a valid dependency graph where
     # customers executes after its parent "stg_orders", even though the python step is not selected
+    # update: now this all just executes in one step!
     subset_job = global_job.get_subset(
         asset_selection={AssetKey("stg_orders"), AssetKey("customers")}
     )
     assert subset_job.dependencies == {
         # no dependencies for the first invocation of my_dbt_assets
-        NodeInvocation(name="my_dbt_assets", alias="my_dbt_assets_2"): {},
-        # the second invocation of my_dbt_assets depends on the first
-        NodeInvocation(name="my_dbt_assets"): {
-            "__subset_input__stg_orders": DependencyDefinition(
-                node="my_dbt_assets_2", output="stg_orders"
-            )
-        },
+        NodeInvocation(name="my_dbt_assets", alias=None): {},
     }
     result = subset_job.execute_in_process()
     assert result.success
+    assert len(result.asset_materializations_for_node("my_dbt_assets")) == 2
 
 
 def test_dbt_with_semantic_models(test_dbt_semantic_models_manifest: dict[str, Any]) -> None:
