@@ -10,6 +10,11 @@ from dagster_airlift.core.airflow_instance import DagInfo, TaskInfo
 from dagster_airlift.core.basic_auth import AirflowAuthBackend
 from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.runtime_representations import DagRun, TaskInstance
+from dagster_airlift.core.serialization.serialized_data import (
+    Dataset,
+    DatasetConsumingDag,
+    DatasetProducingTask,
+)
 
 
 class DummyAuthBackend(AirflowAuthBackend):
@@ -32,6 +37,7 @@ class AirflowInstanceFake(AirflowInstance):
         task_infos: list[TaskInfo],
         task_instances: list[TaskInstance],
         dag_runs: list[DagRun],
+        datasets: list[Dataset] = [],
         variables: list[dict[str, Any]] = [],
         instance_name: Optional[str] = None,
         max_runs_per_batch: Optional[int] = None,
@@ -53,6 +59,7 @@ class AirflowInstanceFake(AirflowInstance):
         self._dag_infos_by_file_token = {dag_info.file_token: dag_info for dag_info in dag_infos}
         self._variables = variables
         self._max_runs_per_batch = max_runs_per_batch
+        self._datasets = datasets
         super().__init__(
             auth_backend=DummyAuthBackend(),
             name=DEFAULT_FAKE_INSTANCE_NAME if instance_name is None else instance_name,
@@ -172,6 +179,9 @@ class AirflowInstanceFake(AirflowInstance):
             raise ValueError(f"Dag info not found for file_token {file_token}")
         return "indicates found source code"
 
+    def get_all_datasets(self, *, batch_size=100) -> Sequence[Dataset]:
+        return self._datasets
+
 
 def make_dag_info(
     instance_name: str, dag_id: str, file_token: Optional[str], dag_props: Mapping[str, Any]
@@ -239,8 +249,41 @@ def make_dag_run(
     )
 
 
+def make_dataset(
+    producing_tasks: Sequence[Mapping[str, str]],
+    consuming_dags: Sequence[str],
+    uri: str,
+    extra: Mapping[str, Any],
+) -> Dataset:
+    return Dataset(
+        id=1,
+        uri=uri,
+        extra=extra,
+        created_at=datetime.now().isoformat(),
+        updated_at=datetime.now().isoformat(),
+        producing_tasks=[
+            DatasetProducingTask(
+                dag_id=task["dag_id"],
+                task_id=task["task_id"],
+                created_at=datetime.now().isoformat(),
+                updated_at=datetime.now().isoformat(),
+            )
+            for task in producing_tasks
+        ],
+        consuming_dags=[
+            DatasetConsumingDag(
+                dag_id=dag_id,
+                created_at=datetime.now().isoformat(),
+                updated_at=datetime.now().isoformat(),
+            )
+            for dag_id in consuming_dags
+        ],
+    )
+
+
 def make_instance(
     dag_and_task_structure: dict[str, list[str]],
+    dataset_construction_info: Sequence[Mapping[str, Any]] = [],
     dag_runs: list[DagRun] = [],
     task_deps: dict[str, list[str]] = {},
     instance_name: Optional[str] = None,
@@ -290,6 +333,16 @@ def make_instance(
                 for task_id in dag_and_task_structure[dag_run.dag_id]
             ]
         )
+    datasets = []
+    for dataset_info in dataset_construction_info:
+        datasets.append(
+            make_dataset(
+                producing_tasks=dataset_info["producing_tasks"],
+                consuming_dags=dataset_info["consuming_dags"],
+                uri=dataset_info["uri"],
+                extra=dataset_info.get("extra", {}),
+            )
+        )
     return AirflowInstanceFake(
         dag_infos=dag_infos,
         task_infos=task_infos,
@@ -297,4 +350,5 @@ def make_instance(
         dag_runs=dag_runs,
         instance_name=instance_name,
         max_runs_per_batch=max_runs_per_batch,
+        datasets=datasets,
     )
