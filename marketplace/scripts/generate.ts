@@ -10,8 +10,8 @@ import {IntegrationFrontmatter} from './types';
 const PATH_TO_INTEGRATION_DOCS = path.resolve('../docs/docs/integrations/libraries');
 const PATH_TO_INTEGRATION_LOGOS = path.resolve('../docs/static');
 const PATH_TO_EXAMPLES = path.resolve('../examples');
-const OUTPUT_TARGET_DIR = path.resolve('./__generated__');
-const OUTPUT_TARGET_LOGOS_DIR = path.join(OUTPUT_TARGET_DIR, 'logos');
+const OUTPUT_TARGET_DIR = path.resolve('./__json__');
+const OUTPUT_TARGET_LOGOS_DIR = path.resolve('./__logos__');
 
 const CODE_EXAMPLE_PATH_REGEX =
   /<(?:(?:CodeExample)|(?:CliInvocationExample))\s+[^>]*path=["']([^"']+)["'][^>]*language=["']([^"']+)["'][^>]*>/g;
@@ -73,14 +73,13 @@ async function main() {
       name: matterResult.name ?? '',
       title: matterResult.title ?? '',
       excerpt: matterResult.excerpt ?? '',
+      logoFilename: null,
       partnerlink: matterResult.partnerlink ?? '',
       categories: matterResult.categories ?? [],
       enabledBy: matterResult.enabledBy ?? [],
       enables: matterResult.enables ?? [],
       tags: matterResult.tags ?? [],
     };
-
-    frontmatterList.push(frontmatter);
 
     let logoFileExists = false;
     const logoPath = matterResult.sidebar_custom_props?.logo;
@@ -97,7 +96,10 @@ async function main() {
     let logoFilename = null;
     if (logoFileExists) {
       logoFilename = logoPath?.split('/').pop()?.toLowerCase();
+      frontmatter.logoFilename = logoFilename;
     }
+
+    frontmatterList.push(frontmatter);
 
     const outputPath = path.join(OUTPUT_TARGET_DIR, `${kebabCaseFileName}.json`);
 
@@ -135,7 +137,6 @@ ${codeFromFile.trim()}
 
     const packagedObject = {
       frontmatter,
-      logoFilename,
       content,
     };
 
