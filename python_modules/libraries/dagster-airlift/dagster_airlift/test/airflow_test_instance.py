@@ -6,9 +6,10 @@ from typing import Any, Optional
 import requests
 
 from dagster_airlift.core import AirflowInstance
-from dagster_airlift.core.airflow_instance import DagInfo, DagRun, TaskInfo, TaskInstance
+from dagster_airlift.core.airflow_instance import DagInfo, TaskInfo
 from dagster_airlift.core.basic_auth import AirflowAuthBackend
 from dagster_airlift.core.filter import AirflowFilter
+from dagster_airlift.core.runtime_representations import DagRun, TaskInstance
 
 
 class DummyAuthBackend(AirflowAuthBackend):

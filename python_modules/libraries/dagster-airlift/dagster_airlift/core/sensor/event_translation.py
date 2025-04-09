@@ -22,7 +22,7 @@ from dagster_airlift.constants import (
     EFFECTIVE_TIMESTAMP_METADATA_KEY,
 )
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
-from dagster_airlift.core.airflow_instance import DagRun, TaskInstance
+from dagster_airlift.core.runtime_representations import DagRun, TaskInstance
 from dagster_airlift.core.serialization.serialized_data import DagHandle
 
 AssetEvent = Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]
