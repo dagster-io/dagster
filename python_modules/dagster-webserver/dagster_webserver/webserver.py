@@ -1,9 +1,8 @@
 import gzip
 import io
 import mimetypes
-import os
 import uuid
-from os import path
+from os import path, walk
 from typing import Generic, Optional, TypeVar
 
 import dagster._check as check
@@ -33,7 +32,6 @@ from starlette.responses import (
     StreamingResponse,
 )
 from starlette.routing import Mount, Route, WebSocketRoute
-from starlette.staticfiles import StaticFiles
 from starlette.types import Message
 
 from dagster_webserver.external_assets import (
@@ -260,24 +258,12 @@ class DagsterWebserver(
 
         routes = []
         base_dir = self.relative_path("webapp/build/")
-        with os.scandir(base_dir) as entries:
-            for entry in entries:
-                if entry.is_symlink():
-                    continue
-                relative_path = "/" + path.relpath(entry.path, base_dir).replace(path.sep, "/")
-                if entry.is_file():
-                    routes.append(_static_file(relative_path, entry.path))
-                elif entry.is_dir():
-                    routes.append(
-                        Mount(
-                            relative_path,
-                            StaticFiles(
-                                directory=entry.path,
-                                check_dir=False,
-                            ),
-                            name="root_static",
-                        )
-                    )
+        for subdir, _, files in walk(base_dir):
+            for file in files:
+                full_path = path.join(subdir, file)
+                # Replace path.sep to make sure our routes use forward slashes on windows
+                mount_path = "/" + full_path[len(base_dir) :].replace(path.sep, "/")
+                routes.append(_static_file(mount_path, full_path))
 
         # No build directory, this happens in a test environment. Don't fail loudly since we already have other tests that will fail loudly if
         # there is in fact no build
