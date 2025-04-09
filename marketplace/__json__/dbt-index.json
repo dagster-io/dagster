@@ -1,0 +1,16 @@
+{
+  "frontmatter": {
+    "id": "dbt-index",
+    "status": "published",
+    "name": "dbt",
+    "title": "Dagster & dbt",
+    "excerpt": "",
+    "logoFilename": "dbt.svg",
+    "partnerlink": "",
+    "categories": [],
+    "enabledBy": [],
+    "enables": [],
+    "tags": []
+  },
+  "content": "import DocCardList from '@theme/DocCardList';\n\n<DocCardList />"
+}
