@@ -1,3 +1,3 @@
-type: dagster_evidence.lib.EvidenceProject
+type: dagster_evidence.EvidenceProject
 
 attributes: {}

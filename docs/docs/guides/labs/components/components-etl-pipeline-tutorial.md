@@ -268,11 +268,11 @@ And that the definitions load successfully:
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/31-dg-component-check-defs.txt" />
 
-Finally, materialize the pipeline via the UI. Observe that the Evidence website was built successfully:
+Materialize the Evidence assets in the UI, and it will generate a static website for your dashboard in the `build` directory.
 
 <CliInvocationExample path="docs_snippets/docs_snippets/guides/components/index/32-evidence-build-dir.txt" />
 
-When viewed in your browser, it should look something like this:
+You can view the dashboard in your browser by running `python -m http.server` in the build directory, and which should result in something that looks like this:
 
 ![](/images/guides/build/projects-and-components/components/evidence.png)
 
