@@ -40,7 +40,8 @@ from dagster_airlift.constants import (
     TASK_ID_TAG_KEY,
 )
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData, MappedAsset
-from dagster_airlift.core.airflow_instance import AirflowInstance, DagRun, TaskInstance
+from dagster_airlift.core.airflow_instance import AirflowInstance
+from dagster_airlift.core.runtime_representations import DagRun, TaskInstance
 from dagster_airlift.core.sensor.event_translation import (
     AssetEvent,
     DagsterEventTransformerFn,
