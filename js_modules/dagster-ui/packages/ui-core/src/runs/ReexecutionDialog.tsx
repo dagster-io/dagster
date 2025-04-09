@@ -23,6 +23,7 @@ import {
   LaunchPipelineReexecutionMutationVariables,
 } from './types/RunUtils.types';
 import {ExecutionTag, ReexecutionStrategy} from '../graphql/types';
+import {tagsWithUIExecutionTags} from '../launchpad/uiExecutionTags';
 
 export interface ReexecutionDialogProps {
   isOpen: boolean;
@@ -179,7 +180,7 @@ export const ReexecutionDialog = (props: ReexecutionDialogProps) => {
     dispatch({type: 'start'});
 
     const runList = Object.keys(state.frozenRuns);
-    const extraTags = extraTagsValidated.toSave.length ? extraTagsValidated.toSave : undefined;
+    const extraTags = tagsWithUIExecutionTags(extraTagsValidated.toSave);
 
     for (const runId of runList) {
       const {data} = await reexecute({

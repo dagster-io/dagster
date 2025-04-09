@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import {MemoryRouter, useLocation} from 'react-router-dom';
 
 import {ReexecutionStrategy} from '../../graphql/types';
+import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
 import {testId} from '../../testing/testId';
 import {buildLaunchPipelineReexecutionSuccessMock} from '../__fixtures__/Reexecution.fixtures';
 import {useJobReexecution} from '../useJobReExecution';
@@ -33,6 +34,7 @@ describe('useJobReexecution', () => {
           buildLaunchPipelineReexecutionSuccessMock({
             parentRunId: '1',
             strategy: ReexecutionStrategy.FROM_FAILURE,
+            extraTags: UI_EXECUTION_TAGS,
           }),
         ]}
       >
@@ -54,7 +56,7 @@ describe('useJobReexecution', () => {
         mocks={[
           buildLaunchPipelineReexecutionSuccessMock({
             parentRunId: '1',
-            extraTags: [{key: 'test_key', value: 'test_value'}],
+            extraTags: [{key: 'test_key', value: 'test_value'}, ...UI_EXECUTION_TAGS],
           }),
         ]}
       >

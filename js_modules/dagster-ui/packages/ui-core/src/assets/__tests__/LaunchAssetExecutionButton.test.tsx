@@ -7,6 +7,7 @@ import {CustomAlertProvider} from '../../app/CustomAlertProvider';
 import {CustomConfirmationProvider} from '../../app/CustomConfirmationProvider';
 import {displayNameForAssetKey} from '../../asset-graph/Utils';
 import {LaunchPartitionBackfillMutation} from '../../instance/backfill/types/BackfillUtils.types';
+import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
 import {LaunchPipelineExecutionMutation} from '../../runs/types/RunUtils.types';
 import {TestProvider} from '../../testing/TestProvider';
 import {buildWorkspaceMocks} from '../../workspace/WorkspaceContext/__fixtures__/Workspace.fixtures';
@@ -190,7 +191,7 @@ describe('LaunchAssetExecutionButton', () => {
       const launchMock = buildExpectedLaunchSingleRunMutation({
         mode: 'default',
         executionMetadata: {
-          tags: [],
+          tags: [...UI_EXECUTION_TAGS],
         },
         runConfigData: '{}',
         selector: {
@@ -214,7 +215,7 @@ describe('LaunchAssetExecutionButton', () => {
       it('should not include checks if the job in context is marked without_checks', async () => {
         const launchMock = buildExpectedLaunchSingleRunMutation({
           mode: 'default',
-          executionMetadata: {tags: []},
+          executionMetadata: {tags: [...UI_EXECUTION_TAGS]},
           runConfigData: '{}',
           selector: {
             repositoryLocationName: 'test.py',
@@ -236,7 +237,7 @@ describe('LaunchAssetExecutionButton', () => {
       it('should include checks if the job in context includes them', async () => {
         const launchMock = buildExpectedLaunchSingleRunMutation({
           mode: 'default',
-          executionMetadata: {tags: []},
+          executionMetadata: {tags: [...UI_EXECUTION_TAGS]},
           runConfigData: '{}',
           selector: {
             repositoryLocationName: 'test.py',
@@ -275,7 +276,7 @@ describe('LaunchAssetExecutionButton', () => {
       const launchMock = buildExpectedLaunchSingleRunMutation({
         mode: 'default',
         executionMetadata: {
-          tags: [],
+          tags: [...UI_EXECUTION_TAGS],
         },
         runConfigData: '{}',
         selector: {
@@ -327,6 +328,7 @@ describe('LaunchAssetExecutionButton', () => {
           tags: [
             {key: 'dagster/partition', value: '2023-02-22'},
             {key: 'dagster/partition_set', value: 'my_asset_job_partition_set'},
+            ...UI_EXECUTION_TAGS,
           ],
         },
         mode: 'default',
@@ -360,7 +362,7 @@ describe('LaunchAssetExecutionButton', () => {
         assetSelection: [{path: ['asset_daily']}],
         partitionNames: ASSET_DAILY_PARTITION_KEYS,
         fromFailure: false,
-        tags: [],
+        tags: [...UI_EXECUTION_TAGS],
       });
       renderButton({
         scope: {all: [ASSET_DAILY]},
@@ -400,7 +402,7 @@ describe('LaunchAssetExecutionButton', () => {
         assetSelection: [{path: ['asset_daily']}],
         partitionNames: ASSET_DAILY_PARTITION_KEYS_MISSING,
         fromFailure: false,
-        tags: [],
+        tags: [...UI_EXECUTION_TAGS],
       });
       renderButton({
         scope: {all: [ASSET_DAILY]},
@@ -437,6 +439,7 @@ describe('LaunchAssetExecutionButton', () => {
           tags: [
             {key: 'dagster/partition', value: '2023-02-22'},
             {key: 'dagster/partition_set', value: '__ASSET_JOB_partition_set'},
+            ...UI_EXECUTION_TAGS,
           ],
         },
         mode: 'default',
@@ -472,7 +475,7 @@ describe('LaunchAssetExecutionButton', () => {
           assetSelection: [{path: ['asset_daily']}],
           partitionNames: ASSET_DAILY_PARTITION_KEYS,
           fromFailure: false,
-          tags: [],
+          tags: [...UI_EXECUTION_TAGS],
         });
         renderButton({
           scope: {all: [ASSET_DAILY]},
@@ -503,6 +506,7 @@ describe('LaunchAssetExecutionButton', () => {
             tags: [
               {key: 'dagster/asset_partition_range_start', value: '2020-01-02'},
               {key: 'dagster/asset_partition_range_end', value: '2023-02-22'},
+              ...UI_EXECUTION_TAGS,
             ],
           },
           runConfigData: '{}\n',
@@ -540,6 +544,7 @@ describe('LaunchAssetExecutionButton', () => {
             tags: [
               {key: 'dagster/asset_partition_range_start', value: '2020-01-02'},
               {key: 'dagster/asset_partition_range_end', value: '2023-02-22'},
+              ...UI_EXECUTION_TAGS,
             ],
           },
           runConfigData: '{}\n',
@@ -572,7 +577,7 @@ describe('LaunchAssetExecutionButton', () => {
         assetSelection: [{path: ['asset_daily']}, {path: ['asset_weekly']}],
         partitionNames: ASSET_DAILY_PARTITION_KEYS,
         fromFailure: false,
-        tags: [],
+        tags: [...UI_EXECUTION_TAGS],
       });
 
       renderButton({
@@ -604,7 +609,7 @@ describe('LaunchAssetExecutionButton', () => {
         assetSelection: [{path: ['asset_daily']}, {path: ['asset_weekly']}],
         partitionNames: ASSET_DAILY_PARTITION_KEYS,
         fromFailure: false,
-        tags: [],
+        tags: [...UI_EXECUTION_TAGS],
       });
 
       renderButton({
@@ -624,7 +629,7 @@ describe('LaunchAssetExecutionButton', () => {
 
     it('should offer to materialize all partitions if roots have different partition defintions ("pureAll" case)', async () => {
       const LaunchPureAllMutationMock = buildExpectedLaunchBackfillMutation({
-        tags: [],
+        tags: [...UI_EXECUTION_TAGS],
         assetSelection: [
           {path: ['asset_daily']},
           {path: ['asset_weekly']},
@@ -658,7 +663,7 @@ describe('LaunchAssetExecutionButton', () => {
     it('should present a warning if pre-flight check indicates other asset keys are required', async () => {
       const launchMock = buildExpectedLaunchSingleRunMutation({
         mode: 'default',
-        executionMetadata: {tags: []},
+        executionMetadata: {tags: [...UI_EXECUTION_TAGS]},
         runConfigData: '{}',
         selector: {
           repositoryLocationName: 'test.py',
