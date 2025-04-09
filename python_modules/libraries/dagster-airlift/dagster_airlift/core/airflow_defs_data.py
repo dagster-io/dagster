@@ -68,7 +68,14 @@ class AirflowDefinitionsData:
 
     @property
     def dag_ids_with_mapped_asset_keys(self) -> AbstractSet[str]:
-        return self.mapping_info.dag_ids
+        """All dag_ids that have asset keys explicitly mapped to them. This include peered dag assets."""
+        # dag ids that have asset keys explicitly mapped to them, or tasks within them
+        explicitly_mapped_dag_ids = self.mapping_info.dag_ids
+        # dag ids that have a "peered" dag asset
+        peered_dag_ids = {
+            handle.dag_id for handle in self.peered_dag_asset_keys_by_dag_handle.keys()
+        }
+        return explicitly_mapped_dag_ids.union(peered_dag_ids)
 
     @cached_property
     def mapped_asset_keys_by_task_handle(self) -> Mapping[TaskHandle, AbstractSet[AssetKey]]:
