@@ -71,7 +71,7 @@ def generate_component_lib_pyproject_toml(name: str, is_project: bool = False) -
         name = "{name}"
         version = "0.1.0"
         dependencies = [
-            "dagster-components",
+            "dagster",
         ]
 
         [project.entry-points]

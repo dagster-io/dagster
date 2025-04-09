@@ -72,9 +72,9 @@ def test_scaffold_workspace_command_name_override_success(monkeypatch) -> None:
 # ##### PROJECT
 # ########################
 
-# At this time all of our tests are against an editable install of dagster-components. The reason
+# At this time all of our tests are against an editable install of dagster. The reason
 # for this is that this package should always be tested against the corresponding version of
-# dagster-components (i.e. from the same commit), and the only way to achieve this right now is
+# dagster (i.e. from the same commit), and the only way to achieve this right now is
 # using the editable install variant of `dg scaffold project`.
 #
 # Ideally we would have a way to still use the matching dagster-components without using the
