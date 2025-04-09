@@ -160,7 +160,6 @@ dagster-modal==0.0.2
 -e python_modules/libraries/dagster-pandera
 -e python_modules/libraries/dagster-papertrail
 -e python_modules/dagster-pipes
--e python_modules/libraries/dagster-polars
 -e python_modules/libraries/dagster-postgres
 -e python_modules/libraries/dagster-powerbi
 -e python_modules/libraries/dagster-prometheus
@@ -304,7 +303,6 @@ huggingface-hub==0.30.2
 humanfriendly==10.0
 humanize==4.12.2
 hyperframe==6.1.0
-hypothesis==6.130.12
 id==1.5.0
 idna==3.10
 ijson==3.3.0
@@ -610,7 +608,7 @@ sshtunnel==0.4.0
 stack-data==0.6.3
 starlette==0.46.1
 structlog==25.2.0
-sympy==1.13.1
+sympy==1.13.3
 synchronicity==0.9.11
 syrupy==4.9.1
 tableauserverclient==0.37
@@ -630,8 +628,8 @@ tomli==2.2.1
 tomlkit==0.13.2
 toolz==1.0.0
 toposort==1.10
-torch==2.6.0
-torchvision==0.21.0
+torch==2.4.1
+torchvision==0.19.1
 tornado==6.4.2
 tox==4.25.0
 tqdm==4.67.1
