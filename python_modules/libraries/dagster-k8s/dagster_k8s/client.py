@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 import time
 from enum import Enum
@@ -14,8 +15,6 @@ from dagster import (
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from kubernetes.client.api_client import ApiClient
 from kubernetes.client.models import V1Job, V1JobStatus
-
-from dagster_k8s.utils import TimeoutConfigurableK8sAPIClient
 
 try:
     from kubernetes.client.models import EventsV1Event  # noqa
@@ -96,6 +95,14 @@ WHITELISTED_TRANSIENT_K8S_STATUS_CODES = [
 
 
 class PatchedApiClient(ApiClient):
+    def __init__(self, *args, **kwargs):
+        try:
+            timeout_str = os.getenv("KUBERNETES_API_REQUEST_TIMEOUT")
+            self.__dagster_request_timeout = int(timeout_str) if timeout_str else None
+        except ValueError:
+            self.__dagster_request_timeout = None
+        super().__init__(*args, **kwargs)
+
     # Forked from ApiClient implementation to pass configuration object down into created model
     # objects, avoiding lock contention issues. See https://github.com/kubernetes-client/python/issues/2284
     # Intentionally circumventing private name mangling
@@ -128,6 +135,12 @@ class PatchedApiClient(ApiClient):
             if klass_name:
                 instance = self._ApiClient__deserialize(data, klass_name)
         return instance
+
+    def call_api(self, *args, **kwargs):
+        if not kwargs.get("_request_timeout") and self.__dagster_request_timeout:
+            kwargs["_request_timeout"] = self.__dagster_request_timeout
+
+        return super().call_api(*args, **kwargs)
 
 
 def k8s_api_retry(
@@ -240,7 +253,7 @@ class KubernetesWaitingReasons:
 class DagsterKubernetesClient:
     def __init__(self, batch_api, core_api, logger, sleeper, timer):
         self.batch_api = batch_api
-        self.core_api = TimeoutConfigurableK8sAPIClient(core_api)
+        self.core_api = core_api
         self.logger = logger
         self.sleeper = sleeper
         self.timer = timer
