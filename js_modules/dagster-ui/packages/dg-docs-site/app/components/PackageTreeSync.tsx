@@ -7,7 +7,9 @@ import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {HTMLProps} from 'react';
 
-const renderLink = (props: HTMLProps<HTMLAnchorElement>) => <Link {...props} href={props.href!} />;
+const renderLink = ({key, href, ...rest}: HTMLProps<HTMLAnchorElement>) => (
+  <Link key={key} href={href!} {...rest} />
+);
 
 export default function PackageTreeSync({contents}: {contents: Contents | null}) {
   const pathname = usePathname();

@@ -10,6 +10,7 @@ import {workspacePathFromAddress} from './workspacePath';
 import {Route} from '../app/Route';
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
 import {CodeLocationDefinitionsRoot} from '../code-location/CodeLocationDefinitionsRoot';
+import {CodeLocationDocsRoot} from '../code-location/CodeLocationDocsRoot';
 import CodeLocationOverviewRoot from '../code-location/CodeLocationOverviewRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ResourceRoot} from '../resources/ResourceRoot';
@@ -100,6 +101,12 @@ const RepoRouteContainer = () => {
       </Route>
       <Route path="/locations/:repoPath/definitions" exact>
         <Redirect to={workspacePathFromAddress(addressForPath, '/assets')} />
+      </Route>
+      <Route path="/locations/:repoPath/docs" exact>
+        <CodeLocationDocsRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/locations/:repoPath/docs/packages/:packageName?/:componentName?">
+        <CodeLocationDocsRoot repoAddress={addressForPath} />
       </Route>
       {/* Avoid trying to render a definitions route if there is no actual repo available. */}
       {matchingRepo ? (

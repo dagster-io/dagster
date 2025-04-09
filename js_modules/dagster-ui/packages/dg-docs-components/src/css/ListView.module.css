@@ -1,0 +1,37 @@
+.container {
+  overflow-y: auto;
+  flex: 1;
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.emptyState {
+  padding: 24px 32px;
+  color: var(--color-text-lighter);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+}
+
+.componentItem {
+  background-color: var(--color-background-light);
+  color: var(--color-text-default);
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--color-keyline-default);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-decoration: none;
+  transition: background-color 0.1s ease-in-out;
+}
+
+.componentItem:hover {
+  background-color: var(--color-background-light-hover);
+  color: var(--color-text-default);
+  text-decoration: none;
+}

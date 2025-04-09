@@ -1,7 +1,5 @@
 import getContents, {getComponent} from '@/util/getContents';
-import ComponentDetails from '@dagster-io/dg-docs-components/ComponentDetails';
-
-import styles from './css/ComponentPage.module.css';
+import ComponentPageContents from '@dagster-io/dg-docs-components/ComponentPageContents';
 
 interface Props {
   params: Promise<{pkg: string; component: string}>;
@@ -19,30 +17,7 @@ export default async function ComponentPage({params}: Props) {
     return <div>Component not found</div>;
   }
 
-  return (
-    <div className={styles.outer}>
-      <div className={styles.container}>
-        <div className={styles.main}>
-          <ComponentDetails config={componentConfig} />
-        </div>
-      </div>
-      <div className={styles.tableOfContents}>
-        <ol>
-          <li>
-            <a href="#scaffolding">Scaffolding</a>
-          </li>
-          <li>
-            <a href="#schema">Schema</a>
-          </li>
-          <li>
-            <a href="#example">
-              Example <code>component.yaml</code>
-            </a>
-          </li>
-        </ol>
-      </div>
-    </div>
-  );
+  return <ComponentPageContents componentConfig={componentConfig} />;
 }
 
 export async function generateStaticParams() {

@@ -1,6 +1,5 @@
+import PackagePageWithLink from '@/app/packages/[pkg]/PackagePageWithLink';
 import getContents, {getPackage} from '@/util/getContents';
-
-import PackagePageDetails from './PackagePageDetails';
 
 interface Props {
   params: Promise<{pkg: string}>;
@@ -19,7 +18,7 @@ export default async function Page({params}: Props) {
     return <div>Package not found</div>;
   }
 
-  return <PackagePageDetails pkg={pkgConfig} />;
+  return <PackagePageWithLink pkgConfig={pkgConfig} />;
 }
 
 export async function generateStaticParams() {
