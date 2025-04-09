@@ -1,9 +1,9 @@
 dg check defs
 
 All components validated successfully.
-WARNING:py.warnings:/Users/colton/src/dagster/python_modules/libraries/dagster-shared/dagster_shared/libraries/__init__.py:42: UserWarning: Found version mismatch between `dagster-shared` (1!0+dev) and `dagster-evidence` (0.1.4)
+
   warnings.warn(message)
 
 Using /.../jaffle-platform/.venv/bin/dagster
-uv run dagster definitions validate --log-level warning --log-format colored --workspace /var/folders/j1/hhr6f_f17_x1zt44m27t5mh40000gn/T/tmpx3vrmfic
+uv run dagster definitions validate --log-level warning --log-format colored --workspace /var/folders/j1/hhr6f_f17_x1zt44m27t5mh40000gn/T/tmpes1i6ho3
 All definitions loaded successfully.
