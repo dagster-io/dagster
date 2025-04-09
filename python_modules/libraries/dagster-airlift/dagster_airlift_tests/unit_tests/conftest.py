@@ -1,7 +1,7 @@
 from collections import defaultdict
 from collections.abc import Generator, Sequence
 from datetime import datetime, timedelta
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import pytest
 from dagster import (
@@ -43,6 +43,7 @@ def strip_to_first_of_month(dt: datetime) -> datetime:
 
 def fully_loaded_repo_from_airflow_asset_graph(
     assets_per_task: dict[str, dict[str, list[tuple[str, list[str]]]]],
+    dataset_construction_info: Optional[list[dict[str, Any]]] = None,
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
     dag_level_asset_overrides: Optional[dict[str, list[str]]] = None,
@@ -50,6 +51,7 @@ def fully_loaded_repo_from_airflow_asset_graph(
 ) -> RepositoryDefinition:
     defs = load_definitions_airflow_asset_graph(
         assets_per_task,
+        dataset_construction_info=dataset_construction_info,
         additional_defs=additional_defs,
         create_runs=create_runs,
         dag_level_asset_overrides=dag_level_asset_overrides,
@@ -62,6 +64,7 @@ def fully_loaded_repo_from_airflow_asset_graph(
 
 def load_definitions_airflow_asset_graph(
     assets_per_task: dict[str, dict[str, list[tuple[str, list[str]]]]],
+    dataset_construction_info: Optional[list[dict[str, Any]]] = None,
     additional_defs: Definitions = Definitions(),
     create_runs: bool = True,
     create_assets_defs: bool = True,
@@ -121,6 +124,7 @@ def load_definitions_airflow_asset_graph(
     instance = make_instance(
         dag_and_task_structure=dag_and_task_structure,
         dag_runs=runs,
+        dataset_construction_info=dataset_construction_info or [],
     )
     defs = Definitions.merge(
         additional_defs,
