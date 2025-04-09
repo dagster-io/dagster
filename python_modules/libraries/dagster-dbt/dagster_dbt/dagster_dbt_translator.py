@@ -1,20 +1,33 @@
+import os
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Optional
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Optional
 
 from dagster import (
+    AssetDep,
     AssetKey,
+    AssetSpec,
     AutoMaterializePolicy,
     AutomationCondition,
+    DagsterInvalidDefinitionError,
     FreshnessPolicy,
     PartitionMapping,
     _check as check,
 )
 from dagster._annotations import beta, public
+from dagster._core.definitions.metadata.source_code import (
+    CodeReferencesMetadataSet,
+    CodeReferencesMetadataValue,
+    LocalFileCodeReference,
+)
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._utils.tags import is_valid_tag_key
 
 from dagster_dbt.asset_utils import (
+    DAGSTER_DBT_MANIFEST_METADATA_KEY,
+    DAGSTER_DBT_TRANSLATOR_METADATA_KEY,
+    DAGSTER_DBT_UNIQUE_ID_METADATA_KEY,
     default_asset_key_fn,
     default_auto_materialize_policy_fn,
     default_code_version_fn,
@@ -23,7 +36,12 @@ from dagster_dbt.asset_utils import (
     default_group_from_dbt_resource_props,
     default_metadata_from_dbt_resource_props,
     default_owners_from_dbt_resource_props,
+    get_upstream_unique_ids,
+    has_self_dependency,
 )
+
+if TYPE_CHECKING:
+    from dagster_dbt.dbt_project import DbtProject
 
 
 @dataclass(frozen=True)
@@ -69,6 +87,86 @@ class DagsterDbtTranslator:
             self._settings = DagsterDbtTranslatorSettings()
 
         return self._settings
+
+    def get_asset_spec(
+        self,
+        manifest: Mapping[str, Any],
+        dbt_nodes: Mapping[str, Any],
+        group_props: Mapping[str, Any],
+        project: Optional["DbtProject"],
+        resource_props: Mapping[str, Any],
+    ) -> AssetSpec:
+        """Returns an AssetSpec representing a specific dbt resource."""
+        from dagster_dbt.dagster_dbt_translator import DbtManifestWrapper
+
+        # calculate the dependencies for the asset
+        upstream_ids = get_upstream_unique_ids(dbt_nodes, resource_props)
+        deps = [
+            AssetDep(
+                asset=self.get_asset_key(dbt_nodes[upstream_id]),
+                partition_mapping=self.get_partition_mapping(
+                    resource_props, dbt_nodes[upstream_id]
+                ),
+            )
+            for upstream_id in upstream_ids
+        ]
+        self_partition_mapping = self.get_partition_mapping(resource_props, resource_props)
+        if self_partition_mapping and has_self_dependency(resource_props):
+            deps.append(
+                AssetDep(
+                    asset=self.get_asset_key(resource_props),
+                    partition_mapping=self_partition_mapping,
+                )
+            )
+
+        resource_group_props = group_props.get(resource_props.get("group") or "")
+        spec = AssetSpec(
+            key=self.get_asset_key(resource_props),
+            deps=deps,
+            description=self.get_description(resource_props),
+            metadata=self.get_metadata(resource_props),
+            skippable=True,
+            group_name=self.get_group_name(resource_props),
+            code_version=self.get_code_version(resource_props),
+            automation_condition=self.get_automation_condition(resource_props),
+            freshness_policy=self.get_freshness_policy(resource_props),
+            owners=self.get_owners(
+                {
+                    **resource_props,
+                    # this overrides the group key in resource_props, which is bad as
+                    # this key is not always empty and this dictionary generally differs
+                    # in structure from other inputs, but this is necessary for backcompat
+                    **({"group": resource_group_props} if resource_group_props else {}),
+                }
+            ),
+            tags=self.get_tags(resource_props),
+            kinds={"dbt", manifest.get("metadata", {}).get("adapter_type", "dbt")},
+            partitions_def=self.get_partitions_def(resource_props),
+        )
+
+        # add integration-specific metadata to the spec
+        spec = spec.merge_attributes(
+            metadata={
+                DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
+                DAGSTER_DBT_TRANSLATOR_METADATA_KEY: self,
+                DAGSTER_DBT_UNIQUE_ID_METADATA_KEY: resource_props["unique_id"],
+            }
+        )
+        if self.settings.enable_code_references:
+            if not project:
+                raise DagsterInvalidDefinitionError(
+                    "enable_code_references requires a DbtProject to be supplied"
+                    " to the @dbt_assets decorator."
+                )
+
+            spec = spec.replace_attributes(
+                metadata=_attach_sql_model_code_reference(
+                    existing_metadata=spec.metadata,
+                    dbt_resource_props=resource_props,
+                    project=project,
+                )
+            )
+        return spec
 
     @public
     def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
@@ -586,3 +684,41 @@ def validate_opt_translator(
             " DagsterDbtTranslator."
         ),
     )
+
+
+def _attach_sql_model_code_reference(
+    existing_metadata: Mapping[str, Any],
+    dbt_resource_props: Mapping[str, Any],
+    project: "DbtProject",
+) -> Mapping[str, Any]:
+    """Pulls the SQL model location for a dbt resource and attaches it as a code reference to the
+    existing metadata.
+    """
+    existing_references_meta = CodeReferencesMetadataSet.extract(existing_metadata)
+    references = (
+        existing_references_meta.code_references.code_references
+        if existing_references_meta.code_references
+        else []
+    )
+
+    if "original_file_path" not in dbt_resource_props:
+        raise DagsterInvalidDefinitionError(
+            "Cannot attach SQL model code reference because 'original_file_path' is not present"
+            " in the dbt resource properties."
+        )
+
+    # attempt to get root_path, which is removed from manifests in newer dbt versions
+    relative_path = Path(dbt_resource_props["original_file_path"])
+    abs_path = project.project_dir.joinpath(relative_path).resolve()
+
+    return {
+        **existing_metadata,
+        **CodeReferencesMetadataSet(
+            code_references=CodeReferencesMetadataValue(
+                code_references=[
+                    *references,
+                    LocalFileCodeReference(file_path=os.fspath(abs_path)),
+                ],
+            )
+        ),
+    }

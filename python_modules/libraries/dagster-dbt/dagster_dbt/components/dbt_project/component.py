@@ -26,10 +26,7 @@ from dagster.components.utils import TranslatorResolvingInfo
 from typing_extensions import override
 
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.asset_utils import (
-    get_asset_key_for_model as get_asset_key_for_model,
-    get_asset_spec,
-)
+from dagster_dbt.asset_utils import get_asset_key_for_model as get_asset_key_for_model
 from dagster_dbt.components.dbt_project.scaffolder import DbtProjectComponentScaffolder
 from dagster_dbt.core.resource import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
@@ -63,10 +60,9 @@ def resolve_translator(context: ResolutionContext, model) -> DagsterDbtTranslato
         def group_props(self) -> Mapping[str, Any]:
             return {group["name"]: group for group in self.manifest.get("groups", {}).values()}
 
-        def get_asset_spec(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
+        def get_asset_spec_from_props(self, stream_definition: Mapping[str, Any]) -> AssetSpec:
             if id(stream_definition) not in self._specs_map:
-                base_spec = get_asset_spec(
-                    translator=DagsterDbtTranslator(),
+                base_spec = DagsterDbtTranslator().get_asset_spec(
                     manifest=self.manifest,
                     dbt_nodes=self.dbt_nodes,
                     group_props=self.group_props,
@@ -81,37 +77,37 @@ def resolve_translator(context: ResolutionContext, model) -> DagsterDbtTranslato
 
         @override
         def get_asset_key(self, dbt_resource_props: Mapping[str, Any]) -> AssetKey:
-            return self.get_asset_spec(dbt_resource_props).key
+            return self.get_asset_spec_from_props(dbt_resource_props).key
 
         @override
         def get_description(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:  # pyright: ignore[reportIncompatibleMethodOverride]
-            return self.get_asset_spec(dbt_resource_props).description
+            return self.get_asset_spec_from_props(dbt_resource_props).description
 
         @override
         def get_metadata(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, Any]:
-            return self.get_asset_spec(dbt_resource_props).metadata
+            return self.get_asset_spec_from_props(dbt_resource_props).metadata
 
         @override
         def get_tags(self, dbt_resource_props: Mapping[str, Any]) -> Mapping[str, str]:
-            return self.get_asset_spec(dbt_resource_props).tags
+            return self.get_asset_spec_from_props(dbt_resource_props).tags
 
         @override
         def get_group_name(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
-            return self.get_asset_spec(dbt_resource_props).group_name
+            return self.get_asset_spec_from_props(dbt_resource_props).group_name
 
         @override
         def get_code_version(self, dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
-            return self.get_asset_spec(dbt_resource_props).code_version
+            return self.get_asset_spec_from_props(dbt_resource_props).code_version
 
         @override
         def get_owners(self, dbt_resource_props: Mapping[str, Any]) -> Sequence[str]:
-            return self.get_asset_spec(dbt_resource_props).owners
+            return self.get_asset_spec_from_props(dbt_resource_props).owners
 
         @override
         def get_automation_condition(
             self, dbt_resource_props: Mapping[str, Any]
         ) -> Optional[AutomationCondition]:
-            return self.get_asset_spec(dbt_resource_props).automation_condition
+            return self.get_asset_spec_from_props(dbt_resource_props).automation_condition
 
     if (
         model.asset_attributes
