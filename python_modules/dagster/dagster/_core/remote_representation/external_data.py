@@ -61,10 +61,7 @@ from dagster._core.definitions.dependency import (
     OpNode,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.freshness import (
-    INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
-    InternalFreshnessPolicy,
-)
+from dagster._core.definitions.freshness import InternalFreshnessPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -99,7 +96,7 @@ from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.utils import is_valid_email
 from dagster._record import IHaveNew, record, record_custom
-from dagster._serdes import deserialize_value, whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 from dagster._time import datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.warnings import suppress_dagster_warnings
@@ -1559,10 +1556,7 @@ class AssetNodeSnap(IHaveNew):
 
     @property
     def internal_freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
-        serialized_policy = self.metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY)
-        if serialized_policy is None:
-            return None
-        return deserialize_value(serialized_policy.value)
+        return InternalFreshnessPolicy.from_asset_spec_metadata(self.metadata)
 
 
 ResourceJobUsageMap: TypeAlias = dict[str, list[ResourceJobUsageEntry]]

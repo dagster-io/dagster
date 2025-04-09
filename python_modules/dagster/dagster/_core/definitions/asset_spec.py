@@ -466,4 +466,6 @@ def map_asset_specs(
 
 def attach_internal_freshness_policy(spec: AssetSpec, policy: InternalFreshnessPolicy) -> AssetSpec:
     """Apply a freshness policy to an asset spec, attaching it to the spec's metadata."""
-    return spec.merge_attributes(metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: str(policy)})
+    return spec.merge_attributes(
+        metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(policy)}
+    )

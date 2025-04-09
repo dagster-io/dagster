@@ -13,8 +13,14 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_spec import attach_internal_freshness_policy
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.freshness import (
+    INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
+    TimeWindowFreshnessPolicy,
+)
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._serdes import deserialize_value
 from pydantic import BaseModel, TypeAdapter
 
 
@@ -409,3 +415,25 @@ def test_pydantic_spec() -> None:
 
     holder = SpecHolder(spec=AssetSpec(key="foo"), spec_list=[AssetSpec(key="bar")])
     assert TypeAdapter(SpecHolder).validate_python(holder)
+
+
+def test_asset_spec_apply_internal_freshness_policy():
+    def assert_freshness_policy(spec, expected_minutes, expected_warning_minutes=None):
+        metadata = spec.metadata
+        assert INTERNAL_FRESHNESS_POLICY_METADATA_KEY in metadata
+        deserialized = deserialize_value(metadata[INTERNAL_FRESHNESS_POLICY_METADATA_KEY])
+        assert isinstance(deserialized, TimeWindowFreshnessPolicy)
+        assert deserialized.time_window_minutes == expected_minutes
+        assert deserialized.warning_time_window_minutes == expected_warning_minutes
+
+    asset_spec = AssetSpec(key="foo")
+    asset_spec = attach_internal_freshness_policy(
+        asset_spec, TimeWindowFreshnessPolicy(time_window_minutes=10, warning_time_window_minutes=5)
+    )
+    assert_freshness_policy(asset_spec, expected_minutes=10, expected_warning_minutes=5)
+
+    # Overwrite the policy with a new one
+    asset_spec = attach_internal_freshness_policy(
+        asset_spec, TimeWindowFreshnessPolicy(time_window_minutes=60)
+    )
+    assert_freshness_policy(asset_spec, expected_minutes=60)

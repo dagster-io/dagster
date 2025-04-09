@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import Any, NamedTuple, Optional
 
 from dagster._annotations import beta
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._record import IHaveNew, record_custom
-from dagster._serdes import whitelist_for_serdes
+from dagster._serdes import deserialize_value, whitelist_for_serdes
 from dagster._utils import check
 
 
@@ -44,6 +45,15 @@ class InternalFreshnessPolicy(ABC):
     @property
     @abstractmethod
     def policy_type(self) -> FreshnessPolicyType: ...
+
+    @classmethod
+    def from_asset_spec_metadata(
+        cls, metadata: Mapping[str, Any]
+    ) -> Optional["InternalFreshnessPolicy"]:
+        serialized_policy = metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY)
+        if serialized_policy is None:
+            return None
+        return deserialize_value(serialized_policy.value, cls)
 
 
 @whitelist_for_serdes
