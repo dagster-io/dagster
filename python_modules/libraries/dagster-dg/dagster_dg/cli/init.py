@@ -71,7 +71,7 @@ def init_command(
             Scaffold a new workspace in a new directory `<workspace_name>`. Prompts for `<workspace_name>`. Scaffold a new project inside this workspace at projects/<project_name>. Prompts for `<project_name>`.
         dg init --workspace .
             Scaffold a new workspace in the CWD. Scaffold a new project inside this workspace at projects/<project_name>. Prompts for `<project_name>`.
-        dg init -workspace WORKSPACE_NAME
+        dg init --workspace WORKSPACE_NAME
             Scaffold a new workspace in a new directory WORKSPACE_NAME. Scaffold a new project inside this workspace at projects/<project_name>. Prompt for the project name.
         dg init --workspace --project-name PROJECT_NAME .
             Scaffold a new workspace in the CWD. Scaffold a new project inside this workspace at projects/PROJECT_NAME.
