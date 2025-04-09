@@ -762,7 +762,7 @@ def test_add_env_command_no_confirm(dg_plus_cli_config):
                 }
             },
         )
-        result = runner.invoke("plus", "create", "env", "FOO", "bar", "--no-confirm")
+        result = runner.invoke("plus", "create", "env", "FOO", "bar", "--yes")
         assert result.exit_code == 0, result.output + " " + str(result.exception)
         assert (
             result.output.strip()

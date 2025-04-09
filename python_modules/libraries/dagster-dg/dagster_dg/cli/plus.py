@@ -216,7 +216,9 @@ def plus_create_group():
     help="Whether to set the environment variable at the deployment level, for all locations.",
 )
 @click.option(
-    "--no-confirm",
+    "-y",
+    "--yes",
+    "skip_confirmation_prompt",
     is_flag=True,
     help="Do not confirm the creation of the environment variable, if it already exists.",
 )
@@ -228,7 +230,7 @@ def create_env_command(
     scope: list[str],
     global_: bool,
     from_local_env: bool,
-    no_confirm: bool,
+    skip_confirmation_prompt: bool,
     **global_options: object,
 ) -> None:
     """Create or update an environment variable in Dagster Plus."""
@@ -321,7 +323,7 @@ def create_env_command(
         )
         should_confirm = True
 
-    if should_confirm and not no_confirm:
+    if should_confirm and not skip_confirmation_prompt:
         if not global_:
             click.confirm(
                 f"\nAre you sure you want to update environment variable {env_name}{scope_text}{location_suffix}?",
