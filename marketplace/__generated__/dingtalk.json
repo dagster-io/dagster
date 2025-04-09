@@ -9,9 +9,7 @@
     "categories": [],
     "enabledBy": [],
     "enables": [],
-    "tags": [
-      "community-supported"
-    ]
+    "tags": ["community-supported"]
   },
   "logoFilename": "ding.svg",
   "content": "The community-supported `dagster-dingtalk` package provides an integration with DingTalk.\n\nFor more information, see the [dagster-dingtalk GitHub repository](https://github.com/sqkkyzx/dagster-dingtalk)."

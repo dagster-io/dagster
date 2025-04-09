@@ -9,10 +9,7 @@
     "categories": [],
     "enabledBy": [],
     "enables": [],
-    "tags": [
-      "community-supported",
-      "compute"
-    ]
+    "tags": ["community-supported", "compute"]
   },
   "logoFilename": "modal.svg",
   "content": "The community-supported `dagster-modal` package provides an integration with Modal.\n\nFor more information, see the [Dagster Community Integrations GitHub repository](https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-modal)."
