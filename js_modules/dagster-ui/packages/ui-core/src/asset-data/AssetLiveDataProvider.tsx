@@ -96,11 +96,11 @@ export const AssetLiveDataProvider = ({children}: {children: React.ReactNode}) =
   React.useEffect(() => {
     const onSubscriptionsChanged = () => {
       const keys = Array.from(
-        new Set(
+        new Set([
           ...staleKeysObserved.current,
           ...baseKeysObserved.current,
           ...healthKeysObserved.current,
-        ),
+        ])
       );
       setAllObservedKeys(keys.map((key) => ({path: key.split('/')})));
     };
