@@ -28,11 +28,6 @@ def get_entry_points_from_python_environment(group: str) -> Sequence[importlib.m
 def discover_entry_point_package_objects() -> dict[PluginObjectKey, object]:
     """Discover package entries registered in the Python environment via the
     `dagster_dg.plugin` entry point group.
-
-    `dagster-components` itself registers multiple component entry points. We call these
-    "builtin" component libraries. The `dagster_components` entry point resolves to published
-    component types and is loaded by default. Other entry points resolve to various sets of test
-    component types. This method will only ever load one builtin package.
     """
     objects: dict[PluginObjectKey, object] = {}
     entry_points = get_entry_points_from_python_environment(DG_PLUGIN_ENTRY_POINT_GROUP)
