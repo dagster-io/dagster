@@ -15,8 +15,8 @@ from dagster_tests.core_tests.host_representation_tests.test_external_data impor
 )
 
 
-def test_asset_spec_with_internal_freshness_policy():
-    """Can we define an asset with an internal freshness policy?"""
+def test_asset_spec_with_internal_freshness_policy() -> None:
+    """Can we define an asset spec with an internal freshness policy?"""
 
     def create_spec_and_verify_policy(asset_key: str, fail_window: timedelta, warn_window=None):
         asset = AssetSpec(
@@ -45,7 +45,9 @@ def test_asset_spec_with_internal_freshness_policy():
     )
 
 
-def test_asset_spec_apply_internal_freshness_policy():
+def test_attach_internal_freshness_policy() -> None:
+    """Can we attach an internal freshness policy to an asset spec?"""
+
     def assert_freshness_policy(spec, expected_fail_window, expected_warn_window=None):
         metadata = spec.metadata
         assert INTERNAL_FRESHNESS_POLICY_METADATA_KEY in metadata
@@ -79,3 +81,24 @@ def test_asset_spec_apply_internal_freshness_policy():
         asset_spec, TimeWindowFreshnessPolicy.from_timedeltas(fail_window=timedelta(minutes=60))
     )
     assert_freshness_policy(asset_spec, expected_fail_window=timedelta(minutes=60))
+
+
+def test_map_asset_specs_attach_internal_freshness_policy() -> None:
+    """Can we map attach_internal_freshness_policy over a selection of asset specs?"""
+    asset_specs = [AssetSpec(key="foo"), AssetSpec(key="bar"), AssetSpec(key="baz")]
+    freshness_policy = TimeWindowFreshnessPolicy.from_timedeltas(
+        fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
+    )
+    defs: Definitions = Definitions(assets=asset_specs)
+    mapped_defs = defs.map_asset_specs(
+        func=lambda spec: attach_internal_freshness_policy(spec, freshness_policy)
+    )
+
+    assets = mapped_defs.assets
+    assert len(assets) == 3
+    for asset in assets:
+        assert INTERNAL_FRESHNESS_POLICY_METADATA_KEY in asset.metadata
+        policy = deserialize_value(asset.metadata[INTERNAL_FRESHNESS_POLICY_METADATA_KEY])
+        assert isinstance(policy, TimeWindowFreshnessPolicy)
+        assert policy.fail_window == SerializableTimeDelta.from_timedelta(timedelta(minutes=10))
+        assert policy.warn_window == SerializableTimeDelta.from_timedelta(timedelta(minutes=5))
