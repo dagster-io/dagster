@@ -61,6 +61,10 @@ from dagster._core.definitions.dependency import (
     OpNode,
 )
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.freshness import (
+    INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
+    InternalFreshnessPolicy,
+)
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -70,10 +74,6 @@ from dagster._core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.new_freshness_policy import (
-    INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
-    NewFreshnessPolicy,
-)
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import DynamicPartitionsDefinition, ScheduleType
 from dagster._core.definitions.partition_mapping import (
@@ -1427,7 +1427,6 @@ class AssetNodeSnap(IHaveNew):
     backfill_policy: Optional[BackfillPolicy]
     auto_observe_interval_minutes: Optional[Union[float, int]]
     owners: Optional[Sequence[str]]
-    new_freshness_policy: Optional[NewFreshnessPolicy]
 
     def __new__(
         cls,
@@ -1459,7 +1458,6 @@ class AssetNodeSnap(IHaveNew):
         backfill_policy: Optional[BackfillPolicy] = None,
         auto_observe_interval_minutes: Optional[Union[float, int]] = None,
         owners: Optional[Sequence[str]] = None,
-        new_freshness_policy: Optional[NewFreshnessPolicy] = None,
     ):
         metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str), allow_invalid=True
@@ -1538,7 +1536,6 @@ class AssetNodeSnap(IHaveNew):
             auto_observe_interval_minutes=auto_observe_interval_minutes,
             owners=owners or [],
             execution_type=execution_type,
-            new_freshness_policy=new_freshness_policy,
         )
 
     @property
@@ -1561,11 +1558,10 @@ class AssetNodeSnap(IHaveNew):
             return None
 
     @property
-    def internal_freshness_policy(self) -> Optional[NewFreshnessPolicy]:
+    def internal_freshness_policy(self) -> Optional[InternalFreshnessPolicy]:
         serialized_policy = self.metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY)
         if serialized_policy is None:
             return None
-        # TODO - determine freshness policy type from serialized and specify before deserializing
         return deserialize_value(serialized_policy.value)
 
 
@@ -1773,7 +1769,6 @@ def asset_node_snaps_from_repo(repo: RepositoryDefinition) -> Sequence[AssetNode
                 backfill_policy=asset_node.backfill_policy,
                 auto_observe_interval_minutes=asset_node.auto_observe_interval_minutes,
                 owners=asset_node.owners,
-                new_freshness_policy=asset_node.new_freshness_policy,
             )
         )
 

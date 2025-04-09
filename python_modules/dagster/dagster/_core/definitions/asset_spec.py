@@ -16,7 +16,6 @@ from dagster_shared.serdes import serialize_value, whitelist_for_serdes
 import dagster._check as check
 from dagster._annotations import (
     PublicAttr,
-    beta_param,
     hidden_param,
     only_allow_hidden_params_in_kwargs,
     public,
@@ -27,11 +26,11 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
 )
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.new_freshness_policy import (
+from dagster._core.definitions.freshness import (
     INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
-    NewFreshnessPolicy,
+    InternalFreshnessPolicy,
 )
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import (
@@ -103,10 +102,6 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
         raise DagsterInvalidDefinitionError("Assets can have at most three kinds currently.")
 
 
-@beta_param(
-    param="new_freshness_policy",
-    additional_warn_text="Currently experimental. Use freshness checks instead to define asset freshness.",
-)
 @hidden_param(
     param="freshness_policy",
     breaking_version="1.10.0",
@@ -154,7 +149,6 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             will be made visible in the Dagster UI.
         partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
-        new_freshness_policy (Optional[NewFreshnessPolicy]): A condition that delineates when an asset is considered fresh. Currently experimental.
     """
 
     key: PublicAttr[AssetKey]
@@ -169,7 +163,6 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
     owners: PublicAttr[Sequence[str]]
     tags: PublicAttr[Mapping[str, str]]
     partitions_def: PublicAttr[Optional[PartitionsDefinition]]
-    new_freshness_policy: Optional[NewFreshnessPolicy]
 
     def __new__(
         cls,
@@ -186,7 +179,6 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         tags: Optional[Mapping[str, str]] = None,
         kinds: Optional[set[str]] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
-        new_freshness_policy: Optional[NewFreshnessPolicy] = None,
         **kwargs,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
@@ -212,7 +204,7 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         }
         validate_kind_tags(kind_tags)
 
-        internal_freshness_policy: Optional[NewFreshnessPolicy] = kwargs.get(
+        internal_freshness_policy: Optional[InternalFreshnessPolicy] = kwargs.get(
             "internal_freshness_policy"
         )
         if internal_freshness_policy:
@@ -256,9 +248,6 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             partitions_def=check.opt_inst_param(
                 partitions_def, "partitions_def", PartitionsDefinition
             ),
-            new_freshness_policy=check.opt_inst_param(
-                new_freshness_policy, "new_freshness_policy", NewFreshnessPolicy
-            ),
         )
 
     @staticmethod
@@ -293,7 +282,6 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             tags=tags,
             kinds=kinds,
             partitions_def=partitions_def,
-            new_freshness_policy=kwargs.get("new_freshness_policy"),
         )
 
     @cached_property
@@ -333,7 +321,6 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         )
 
     @public
-    @beta_param(param="new_freshness_policy", additional_warn_text="Currently experimental.")
     def replace_attributes(
         self,
         *,
@@ -350,7 +337,6 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
         kinds: Optional[set[str]] = ...,
         partitions_def: Optional[PartitionsDefinition] = ...,
         freshness_policy: Optional[FreshnessPolicy] = ...,
-        new_freshness_policy: Optional[NewFreshnessPolicy] = ...,
     ) -> "AssetSpec":
         """Returns a new AssetSpec with the specified attributes replaced."""
         current_tags_without_kinds = {
@@ -375,9 +361,6 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
                 tags=tags if tags is not ... else current_tags_without_kinds,
                 kinds=kinds if kinds is not ... else self.kinds,
                 partitions_def=partitions_def if partitions_def is not ... else self.partitions_def,
-                new_freshness_policy=new_freshness_policy
-                if new_freshness_policy is not ...
-                else self.new_freshness_policy,
             )
 
     @public
@@ -425,7 +408,6 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
                 tags={**current_tags_without_kinds, **(tags if tags is not ... else {})},
                 kinds={*self.kinds, *(kinds if kinds is not ... else {})},
                 partitions_def=self.partitions_def,
-                new_freshness_policy=self.new_freshness_policy,
             )
 
 
@@ -482,6 +464,6 @@ def map_asset_specs(
     ]
 
 
-def attach_internal_freshness_policy(spec: AssetSpec, policy: NewFreshnessPolicy) -> AssetSpec:
+def attach_internal_freshness_policy(spec: AssetSpec, policy: InternalFreshnessPolicy) -> AssetSpec:
     """Apply a freshness policy to an asset spec, attaching it to the spec's metadata."""
     return spec.merge_attributes(metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: str(policy)})

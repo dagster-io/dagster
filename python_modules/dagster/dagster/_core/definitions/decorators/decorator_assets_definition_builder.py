@@ -27,7 +27,6 @@ from dagster._core.definitions.assets import (
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.decorators.op_decorator import _Op
 from dagster._core.definitions.input import In
-from dagster._core.definitions.new_freshness_policy import NewFreshnessPolicy
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -246,7 +245,6 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     upstream_asset_deps: Optional[Iterable[AssetDep]]
     execution_type: Optional[AssetExecutionType]
     pool: Optional[str]
-    new_freshness_policy: Optional[NewFreshnessPolicy] = None
 
     @property
     def check_specs(self) -> Sequence[AssetCheckSpec]:
@@ -673,7 +671,6 @@ class DecoratorAssetsDefinitionBuilder:
                     key,
                     deps=deps,
                     partitions_def=self.args.partitions_def,
-                    new_freshness_policy=self.args.new_freshness_policy,
                 )
             )
 
