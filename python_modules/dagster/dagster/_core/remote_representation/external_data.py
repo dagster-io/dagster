@@ -70,7 +70,10 @@ from dagster._core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.new_freshness_policy import NewFreshnessPolicy
+from dagster._core.definitions.new_freshness_policy import (
+    INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
+    NewFreshnessPolicy,
+)
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import DynamicPartitionsDefinition, ScheduleType
 from dagster._core.definitions.partition_mapping import (
@@ -96,7 +99,7 @@ from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.utils import is_valid_email
 from dagster._record import IHaveNew, record, record_custom
-from dagster._serdes import whitelist_for_serdes
+from dagster._serdes import deserialize_value, whitelist_for_serdes
 from dagster._time import datetime_from_timestamp
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.warnings import suppress_dagster_warnings
@@ -1556,6 +1559,14 @@ class AssetNodeSnap(IHaveNew):
             return self.auto_materialize_policy.to_automation_condition()
         else:
             return None
+
+    @property
+    def internal_freshness_policy(self) -> Optional[NewFreshnessPolicy]:
+        serialized_policy = self.metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY)
+        if serialized_policy is None:
+            return None
+        # TODO - determine freshness policy type from serialized and specify before deserializing
+        return deserialize_value(serialized_policy.value)
 
 
 ResourceJobUsageMap: TypeAlias = dict[str, list[ResourceJobUsageEntry]]

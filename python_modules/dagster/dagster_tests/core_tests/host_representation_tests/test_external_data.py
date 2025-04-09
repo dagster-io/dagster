@@ -241,14 +241,15 @@ def test_asset_spec_with_new_freshness_policy():
     """Can we define an asset with a new freshness policy?"""
     asset1 = AssetSpec(
         key=AssetKey("asset1"),
-        new_freshness_policy=TimeWindowFreshnessPolicy(time_window_minutes=10),
+        internal_freshness_policy=TimeWindowFreshnessPolicy(time_window_minutes=10),
     )
 
     asset_node_snaps = _get_asset_node_snaps_from_definitions(Definitions(assets=[asset1]))
-
-    assert asset_node_snaps[0].new_freshness_policy == TimeWindowFreshnessPolicy(
-        time_window_minutes=10
-    )
+    snap = asset_node_snaps[0]
+    policy = snap.internal_freshness_policy
+    assert isinstance(policy, TimeWindowFreshnessPolicy)
+    assert policy.time_window_minutes == 10
+    assert policy.warning_time_window_minutes is None
 
 
 def test_asset_with_new_freshness_policy():

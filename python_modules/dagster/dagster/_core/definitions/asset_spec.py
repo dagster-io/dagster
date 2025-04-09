@@ -11,7 +11,7 @@ from typing import (  # noqa: UP035
     overload,
 )
 
-from dagster_shared.serdes import whitelist_for_serdes
+from dagster_shared.serdes import serialize_value, whitelist_for_serdes
 
 import dagster._check as check
 from dagster._annotations import (
@@ -28,7 +28,10 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 )
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.new_freshness_policy import NewFreshnessPolicy
+from dagster._core.definitions.new_freshness_policy import (
+    INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
+    NewFreshnessPolicy,
+)
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.utils import (
@@ -113,6 +116,11 @@ def validate_kind_tags(kinds: Optional[AbstractSet[str]]) -> None:
     param="auto_materialize_policy",
     breaking_version="1.10.0",
     additional_warn_text="use `automation_condition` instead",
+)
+@hidden_param(
+    param="internal_freshness_policy",
+    breaking_version="1.10.0",
+    additional_warn_text="experimental feature, use freshness checks instead",
 )
 @record_custom
 class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
@@ -203,6 +211,24 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             tag_key for tag_key in tags_with_kinds.keys() if tag_key.startswith(KIND_PREFIX)
         }
         validate_kind_tags(kind_tags)
+
+        internal_freshness_policy: Optional[NewFreshnessPolicy] = kwargs.get(
+            "internal_freshness_policy"
+        )
+        if internal_freshness_policy:
+            if metadata:
+                metadata = {
+                    **metadata,
+                    INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(
+                        internal_freshness_policy
+                    ),
+                }
+            else:
+                metadata = {
+                    INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(
+                        internal_freshness_policy
+                    )
+                }
 
         return super().__new__(
             cls,
@@ -454,3 +480,8 @@ def map_asset_specs(
         obj.map_asset_specs(func) if isinstance(obj, AssetsDefinition) else func(obj)
         for obj in iterable
     ]
+
+
+def attach_internal_freshness_policy(spec: AssetSpec, policy: NewFreshnessPolicy) -> AssetSpec:
+    """Apply a freshness policy to an asset spec, attaching it to the spec's metadata."""
+    return spec.merge_attributes(metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: str(policy)})

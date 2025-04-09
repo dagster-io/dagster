@@ -3,14 +3,14 @@ from enum import Enum
 from typing import Optional
 
 from dagster import _check as check
-from dagster._annotations import beta
 from dagster._record import IHaveNew, record_custom
 from dagster._serdes import whitelist_for_serdes
+
+INTERNAL_FRESHNESS_POLICY_METADATA_KEY = "dagster/internal_freshness_policy"
 
 
 class FreshnessPolicyType(Enum):
     TIME_WINDOW = "time_window"
-    CRON = "cron"
 
 
 class NewFreshnessPolicy(ABC):
@@ -28,7 +28,6 @@ class NewFreshnessPolicy(ABC):
     def policy_type(self) -> FreshnessPolicyType: ...
 
 
-@beta
 @whitelist_for_serdes
 @record_custom
 class TimeWindowFreshnessPolicy(NewFreshnessPolicy, IHaveNew):
