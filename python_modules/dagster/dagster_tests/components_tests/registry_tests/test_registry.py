@@ -152,7 +152,7 @@ dependencies = [
 ]
 
 [project.entry-points]
-"dagster_dg.library" = { dagster_foo = "dagster_foo.lib"}
+"dagster_dg.plugin" = { dagster_foo = "dagster_foo.lib"}
 """
 
 DAGSTER_FOO_LIB_ROOT = f"""
@@ -214,13 +214,13 @@ def test_bad_entry_point_error_message():
         with modify_toml(Path("dagster-foo/pyproject.toml")) as toml:
             set_toml_value(
                 toml,
-                ("project", "entry-points", "dagster_dg.library", "dagster_foo"),
+                ("project", "entry-points", "dagster_dg.plugin", "dagster_foo"),
                 "fake.module",
             )
 
     with isolated_venv_with_component_lib_dagster_foo(pre_install_hook) as venv_root:
         result = _get_component_print_script_result(venv_root)
         assert (
-            "Error loading entry point `dagster_foo` in group `dagster_dg.library`" in result.stderr
+            "Error loading entry point `dagster_foo` in group `dagster_dg.plugin`" in result.stderr
         )
         assert result.returncode != 0

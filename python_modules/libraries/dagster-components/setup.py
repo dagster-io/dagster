@@ -40,7 +40,7 @@ setup(
     ],
     zip_safe=False,
     entry_points={
-        "dagster_dg.library": [
+        "dagster_dg.plugin": [
             "dagster-components-dagster = dagster_components.dagster",
             "dagster-components-dbt = dagster_components.dagster_dbt",
             "dagster-components-sling = dagster_components.dagster_sling",
