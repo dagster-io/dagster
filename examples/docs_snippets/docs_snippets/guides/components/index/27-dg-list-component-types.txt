@@ -19,7 +19,7 @@ Using /.../jaffle-platform/.venv/bin/dagster-components
 │ dagster_dbt.DbtProjectComponent                             │ Expose a DBT project to  │
 │                                                             │ Dagster as a set of      │
 │                                                             │ assets.                  │
-│ dagster_evidence.lib.EvidenceProject                        │ Expose an Evidence.dev   │
+│ dagster_evidence.EvidenceProject                            │ Expose an Evidence.dev   │
 │                                                             │ dashboard as a Dagster   │
 │                                                             │ asset.                   │
 │ dagster_sling.SlingReplicationCollectionComponent           │ Expose one or more Sling │

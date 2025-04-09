@@ -325,7 +325,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             # Evidence.dev
 
             _run_command(
-                f"uv add git+https://github.com/dagster-io/community-integrations.git@petehunt/evidencedev#subdirectory=libraries/dagster-evidence"
+                "uv add git+https://github.com/dagster-io/community-integrations.git@petehunt/evidencedev#subdirectory=libraries/dagster-evidence"
             )
 
             run_command_and_snippet_output(
@@ -345,7 +345,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
             )
 
             run_command_and_snippet_output(
-                cmd="dg scaffold dagster_evidence.lib.EvidenceProject jaffle_dashboard",
+                cmd="dg scaffold dagster_evidence.EvidenceProject jaffle_dashboard",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-scaffold-jaffle-dashboard.txt",
                 update_snippets=update_snippets,
@@ -372,7 +372,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 snippet_path=COMPONENTS_SNIPPETS_DIR
                 / f"{next_snip_no()}-project-jaffle-dashboard.yaml",
                 contents=format_multiline("""
-                    type: dagster_evidence.lib.EvidenceProject
+                    type: dagster_evidence.EvidenceProject
 
                     attributes:
                       project_path: ../../../../jaffle_dashboard
