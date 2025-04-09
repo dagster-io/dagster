@@ -115,6 +115,7 @@ query SecretsForScopesQuery($locationName: String, $scopes: SecretScopesInput!, 
             }
         }
         ...on UnauthorizedError {
+            message
         }
         ... on PythonError {
             message
