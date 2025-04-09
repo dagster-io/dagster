@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, cast
 
 import pytest
@@ -13,6 +14,7 @@ from dagster_airlift.core import build_defs_from_airflow_instance
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.basic_auth import AirflowBasicAuthBackend
 from dagster_airlift.core.filter import AirflowFilter
+from dagster_airlift.core.serialization.serialized_data import Dataset
 from dagster_airlift.core.top_level_dag_def_api import assets_with_dag_mappings
 from kitchen_sink.airflow_instance import (
     AIRFLOW_BASE_URL,
@@ -154,3 +156,27 @@ def test_sensor_explicitly_mapped_assets(airflow_instance: None, mocker: MockFix
         result = sensor_def(ctx)
         assert isinstance(result, SensorResult)
         assert len(result.asset_events) == 2
+
+
+def dataset_with_uri(datasets: Sequence[Dataset], uri: str) -> Dataset:
+    return next(dataset for dataset in datasets if dataset.uri == uri)
+
+
+def test_datasets(airflow_instance: None) -> None:
+    """Test that we can correctly retrieve datasets from Airflow."""
+    af_instance = local_airflow_instance()
+    datasets = af_instance.get_all_datasets()
+    assert len(datasets) == 2
+    assert {d.uri for d in datasets} == {
+        "s3://dataset-bucket/example1.csv",
+        "s3://dataset-bucket/example2.csv",
+    }
+    example1_dataset = dataset_with_uri(datasets, "s3://dataset-bucket/example1.csv")
+    assert {t.task_id for t in example1_dataset.producing_tasks} == {"print_task"}
+    assert {d.dag_id for d in example1_dataset.consuming_dags} == {"example1_consumer"}
+    assert example1_dataset.is_produced_by_task(task_id="print_task", dag_id="dataset_producer")
+
+    example2_dataset = dataset_with_uri(datasets, "s3://dataset-bucket/example2.csv")
+    assert {t.task_id for t in example2_dataset.producing_tasks} == {"print_task"}
+    assert {d.dag_id for d in example2_dataset.consuming_dags} == {"example2_consumer"}
+    assert example2_dataset.is_produced_by_task(task_id="print_task", dag_id="dataset_producer")
