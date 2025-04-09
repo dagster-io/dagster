@@ -1237,12 +1237,32 @@ def test_wait_for_ready_pod_is_deleted():
 
 
 def test_patched_client():
-    with (
-        mock.patch.object(ApiClient, "call_api") as call_api,
-        environ({"KUBERNETES_API_REQUEST_TIMEOUT": "60"}),
-    ):
+    with mock.patch.object(ApiClient, "call_api") as call_api:
         client = DagsterKubernetesClient.production_client()
         client.core_api.read_namespaced_pod_log("name", "namespace")
         assert call_api.call_count == 1
         _args, kwargs = call_api.call_args
         assert kwargs["_request_timeout"] == 60
+
+    with (
+        mock.patch.object(ApiClient, "call_api") as call_api,
+        environ({"DAGSTER_KUBERNETES_API_REQUEST_TIMEOUT": "30"}),
+    ):
+        client = DagsterKubernetesClient.production_client()
+        client.core_api.read_namespaced_pod_log("name", "namespace")
+        assert call_api.call_count == 1
+        _args, kwargs = call_api.call_args
+        assert kwargs["_request_timeout"] == 30
+
+    with (
+        mock.patch.object(ApiClient, "call_api") as call_api,
+        environ({"DAGSTER_KUBERNETES_API_REQUEST_TIMEOUT": "30"}),
+    ):
+        client = DagsterKubernetesClient.production_client()
+        client.core_api.read_namespaced_pod_log("name", "namespace")
+        client.core_api.read_namespaced_pod_log(
+            "name",
+            "namespace",
+            follow=True,
+            _preload_content=False,  # avoid JSON processing
+        ).stream()

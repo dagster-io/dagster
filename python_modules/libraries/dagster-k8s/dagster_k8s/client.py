@@ -29,6 +29,7 @@ T = TypeVar("T")
 DEFAULT_WAIT_TIMEOUT = 86400.0  # 1 day
 DEFAULT_WAIT_BETWEEN_ATTEMPTS = 10.0  # 10 seconds
 DEFAULT_JOB_POD_COUNT = 1  # expect job:pod to be 1:1 by default
+DEFAULT_DAGSTER_K8S_REQUEST_TIMEOUT = 60
 
 
 class WaitForPodState(Enum):
@@ -97,7 +98,9 @@ WHITELISTED_TRANSIENT_K8S_STATUS_CODES = [
 class PatchedApiClient(ApiClient):
     def __init__(self, *args, **kwargs):
         try:
-            timeout_str = os.getenv("KUBERNETES_API_REQUEST_TIMEOUT")
+            timeout_str = os.getenv(
+                "DAGSTER_KUBERNETES_API_REQUEST_TIMEOUT", str(DEFAULT_DAGSTER_K8S_REQUEST_TIMEOUT)
+            )
             self.__dagster_request_timeout = int(timeout_str) if timeout_str else None
         except ValueError:
             self.__dagster_request_timeout = None
