@@ -1,6 +1,6 @@
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, cast
 
 from dagster import (
     AssetsDefinition,
@@ -9,6 +9,7 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import beta
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.external_asset import external_asset_from_spec
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
@@ -227,8 +228,12 @@ def build_defs_from_airflow_instance(
         source_code_retrieval_enabled=source_code_retrieval_enabled,
         retrieval_filter=retrieval_filter or AirflowFilter(),
     ).get_or_fetch_state()
+    assets_to_apply_airflow_data = [
+        *mapped_assets,
+        *construct_dataset_defs(serialized_airflow_data),
+    ]
     mapped_and_constructed_assets = [
-        *_apply_airflow_data_to_specs(mapped_assets, serialized_airflow_data),
+        *_apply_airflow_data_to_specs(assets_to_apply_airflow_data, serialized_airflow_data),
         *construct_dag_assets_defs(serialized_airflow_data),
     ]
     defs_with_airflow_assets = replace_assets_in_defs(
@@ -326,3 +331,42 @@ def load_airflow_dag_asset_specs(
         retrieval_filter=retrieval_filter or AirflowFilter(),
     ).get_or_fetch_state()
     return list(spec_iterator(construct_dag_assets_defs(serialized_data)))
+
+
+def uri_to_asset_key(uri: str) -> AssetKey:
+    last_path_segment = uri.split("/")[-1]
+    with_ext_removed = last_path_segment.split(".")[0]
+    return AssetKey(with_ext_removed)
+
+
+def construct_dataset_defs(
+    serialized_data: SerializedAirflowDefinitionsData,
+) -> Sequence[AssetsDefinition]:
+    """Construct dataset definitions from the serialized Airflow data."""
+    from dagster_airlift.core.multiple_tasks import assets_with_multiple_task_mappings
+
+    return cast(
+        "Sequence[AssetsDefinition]",
+        [
+            assets_with_multiple_task_mappings(
+                task_handles=[
+                    {"dag_id": t.dag_id, "task_id": t.task_id} for t in dataset.producing_tasks
+                ],
+                assets=[
+                    external_asset_from_spec(
+                        AssetSpec(
+                            key=uri_to_asset_key(dataset.uri),
+                            metadata=dataset.extra,
+                            deps=[
+                                uri_to_asset_key(upstream_uri)
+                                for upstream_uri in serialized_data.upstream_datasets_by_uri.get(
+                                    dataset.uri, set()
+                                )
+                            ],
+                        )
+                    )
+                ],
+            )[0]
+            for dataset in serialized_data.datasets
+        ],
+    )

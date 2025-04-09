@@ -10,6 +10,7 @@ from .airflow_test_instance import (
 )
 from .test_utils import (
     airlift_root as airlift_root,
+    asset_spec as asset_spec,
     configured_airflow_home as configured_airflow_home,
     remove_airflow_home_remnants as remove_airflow_home_remnants,
 )
