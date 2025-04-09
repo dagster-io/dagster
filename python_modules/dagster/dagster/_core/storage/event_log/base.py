@@ -36,6 +36,7 @@ from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
 from dagster._core.storage.partition_status_cache import get_and_update_asset_status_cache_value
 from dagster._core.storage.sql import AlembicVersion
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
+from dagster._core.types.pagination import PaginatedResults
 from dagster._record import record
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
@@ -522,6 +523,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def get_dynamic_partitions(self, partitions_def_name: str) -> Sequence[str]:
         """Get the list of partition keys for a dynamic partitions definition."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_paginated_dynamic_partitions(
+        self, partitions_def_name: str, limit: int, ascending: bool, cursor: Optional[str] = None
+    ) -> PaginatedResults[str]:
         raise NotImplementedError()
 
     @abstractmethod
