@@ -42,7 +42,6 @@
 -e python_modules/libraries/dagster-celery-docker/
 -e python_modules/libraries/dagster-celery-k8s/
 -e python_modules/libraries/dagster-census/
--e python_modules/libraries/dagster-components
 -e python_modules/libraries/dagster-dask[yarn,pbs,kube,test]
 -e python_modules/libraries/dagster-databricks/
 -e python_modules/libraries/dagster-datadog/
