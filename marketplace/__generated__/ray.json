@@ -9,10 +9,7 @@
     "categories": [],
     "enabledBy": [],
     "enables": [],
-    "tags": [
-      "community-supported",
-      "etl"
-    ]
+    "tags": ["community-supported", "etl"]
   },
   "logoFilename": "ray.svg",
   "content": "The community-supported `dagster-ray` package allows orchestrating distributed Ray compute from Dagster pipelines.\n\nFor more information, see the [dagster-ray GitHub repository](https://github.com/danielgafni/dagster-ray)."

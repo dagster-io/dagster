@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import {ESLint} from 'eslint';
+import * as prettier from 'prettier';
 import {read} from 'to-vfile';
 import {matter} from 'vfile-matter';
 
@@ -15,12 +15,6 @@ const OUTPUT_TARGET_LOGOS_DIR = path.join(OUTPUT_TARGET_DIR, 'logos');
 
 const CODE_EXAMPLE_PATH_REGEX =
   /<(?:(?:CodeExample)|(?:CliInvocationExample))\s+[^>]*path=["']([^"']+)["'][^>]*language=["']([^"']+)["'][^>]*>/g;
-
-function camelize(str: string) {
-  return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
-}
-
-const eslint = new ESLint({fix: true});
 
 /**
  * This script copies integration documentation and logos from the `docs` project for reuse
@@ -60,21 +54,21 @@ async function main() {
       continue;
     }
 
-    let camelizedFileName = '';
+    let kebabCaseFileName = fileName;
 
     if (fileName.includes('/')) {
-      // Handle files that are within nested directories.
-      camelizedFileName = camelize(
-        fileName.replace('/index.md', '').replaceAll('/', '-').replace('.md', ''),
-      );
-    } else {
-      camelizedFileName = camelize(fileName.replace('.md', ''));
+      if (fileName.endsWith('/index.md')) {
+        kebabCaseFileName = fileName.replace('/index.md', '');
+      }
+      kebabCaseFileName = fileName.replaceAll('/', '-');
     }
 
-    fullList.push(camelizedFileName);
+    kebabCaseFileName = kebabCaseFileName.replace('.md', '');
+
+    fullList.push(kebabCaseFileName);
 
     const frontmatter: IntegrationFrontmatter = {
-      id: camelizedFileName,
+      id: kebabCaseFileName,
       status: matterResult.status ?? '',
       name: matterResult.name ?? '',
       title: matterResult.title ?? '',
@@ -95,7 +89,9 @@ async function main() {
       try {
         await fs.promises.stat(path.join(PATH_TO_INTEGRATION_LOGOS, logoPath));
         logoFileExists = true;
-      } catch {}
+      } catch {
+        console.error(`❌ Logo file does not exist: ${logoPath}`);
+      }
     }
 
     let logoFilename = null;
@@ -103,7 +99,7 @@ async function main() {
       logoFilename = logoPath?.split('/').pop()?.toLowerCase();
     }
 
-    const outputPath = path.join(OUTPUT_TARGET_DIR, `${camelizedFileName}.json`);
+    const outputPath = path.join(OUTPUT_TARGET_DIR, `${kebabCaseFileName}.json`);
 
     let content = String(file).trim();
 
@@ -144,8 +140,8 @@ ${codeFromFile.trim()}
     };
 
     const output = JSON.stringify(packagedObject, null, 2);
-
-    await fs.promises.writeFile(outputPath, output);
+    const prettierOutput = await prettier.format(output, {parser: 'json'});
+    await fs.promises.writeFile(outputPath, prettierOutput);
 
     // Copy the logo to the output directory
     if (logoFilename) {
@@ -164,10 +160,10 @@ ${codeFromFile.trim()}
 
   console.log(`✅ Created index file.`);
 
-  const eslintOutput = await eslint.lintFiles([`${OUTPUT_TARGET_DIR}/**/*.json`]);
-  await ESLint.outputFixes(eslintOutput);
+  // Iterate over all files in the output directory and format them with prettier.
 
-  console.log(`✅ Ran eslint.`);
+  const prettierOutput = await prettier.format(indexOutput, {parser: 'json'});
+  await fs.promises.writeFile(path.join(OUTPUT_TARGET_DIR, 'index.json'), prettierOutput);
 
   console.log('✨ Integration docs generated successfully.');
 }
