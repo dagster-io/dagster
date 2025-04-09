@@ -2,6 +2,20 @@
 
 import * as Types from '../../../graphql/types';
 
+export type PartitionSetForBackfillTableFragment = {
+  __typename: 'PartitionSet';
+  id: string;
+  name: string;
+  mode: string;
+  pipelineName: string;
+  repositoryOrigin: {
+    __typename: 'RepositoryOrigin';
+    id: string;
+    repositoryName: string;
+    repositoryLocationName: string;
+  };
+};
+
 export type BackfillTerminationDialogBackfillFragment = {
   __typename: 'PartitionBackfill';
   id: string;
