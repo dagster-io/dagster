@@ -246,6 +246,54 @@
         dict({
           '__typename': 'UsedSolid',
           'definition': dict({
+            'name': 'asset_3_asset_3_check',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_3_asset_3_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': 'failure_assets_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_3_asset_3_check',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
+            'name': 'asset_3_asset_3_other_check',
+          }),
+          'invocations': list([
+            dict({
+              'pipeline': dict({
+                'name': '__ASSET_JOB',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_3_asset_3_other_check',
+              }),
+            }),
+            dict({
+              'pipeline': dict({
+                'name': 'failure_assets_job',
+              }),
+              'solidHandle': dict({
+                'handleID': 'asset_3_asset_3_other_check',
+              }),
+            }),
+          ]),
+        }),
+        dict({
+          '__typename': 'UsedSolid',
+          'definition': dict({
             'name': 'asset_one',
           }),
           'invocations': list([
