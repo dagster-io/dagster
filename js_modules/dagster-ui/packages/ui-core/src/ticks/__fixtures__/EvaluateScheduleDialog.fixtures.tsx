@@ -14,6 +14,7 @@ import {
   buildSchedule,
   buildTickEvaluation,
 } from '../../graphql/types';
+import {UI_EXECUTION_TAGS} from '../../launchpad/uiExecutionTags';
 import {LAUNCH_MULTIPLE_RUNS_MUTATION} from '../../runs/RunUtils';
 import {LaunchMultipleRunsMutation} from '../../runs/types/RunUtils.types';
 import {GET_SCHEDULE_QUERY, SCHEDULE_DRY_RUN_MUTATION} from '../EvaluateScheduleDialog';
@@ -260,6 +261,7 @@ export const ScheduleLaunchAllMutation: MockedResponse<LaunchMultipleRunsMutatio
                 key: 'okay_t2',
                 value: 'okay',
               },
+              ...UI_EXECUTION_TAGS,
             ],
           },
         },
@@ -344,6 +346,7 @@ export const ScheduleLaunchAllMutationWithUndefinedName: MockedResponse<LaunchMu
                   key: 'okay_t2',
                   value: 'okay',
                 },
+                ...UI_EXECUTION_TAGS,
               ],
             },
           },
