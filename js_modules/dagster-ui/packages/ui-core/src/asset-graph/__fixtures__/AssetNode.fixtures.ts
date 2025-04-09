@@ -458,6 +458,7 @@ export const LiveDataForNodeSourceObservedUpToDate: LiveDataForNodeWithStaleData
   lastObservation: {
     __typename: 'ObservationEvent',
     runId: 'ABCDEF',
+    stepKey: 'asset1',
     timestamp: TIMESTAMP,
   },
   runWhichFailedToMaterialize: null,
@@ -476,6 +477,7 @@ export const LiveDataForNodePartitionedSomeMissing: LiveDataForNodeWithStaleData
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
+    stepKey: 'asset1',
     timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
@@ -501,6 +503,7 @@ export const LiveDataForNodePartitionedSomeFailed: LiveDataForNodeWithStaleData 
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
+    stepKey: 'asset1',
     timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
@@ -526,6 +529,7 @@ export const LiveDataForNodePartitionedNoneMissing: LiveDataForNodeWithStaleData
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
+    stepKey: 'asset1',
     timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
@@ -593,6 +597,7 @@ export const LiveDataForNodePartitionedStale: LiveDataForNodeWithStaleData = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
+    stepKey: 'asset1',
     timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
@@ -618,6 +623,7 @@ export const LiveDataForNodePartitionedOverdue: LiveDataForNodeWithStaleData = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
+    stepKey: 'asset1',
     timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
@@ -646,6 +652,7 @@ export const LiveDataForNodePartitionedFresh: LiveDataForNodeWithStaleData = {
   lastMaterialization: {
     __typename: 'MaterializationEvent',
     runId: 'ABCDEF',
+    stepKey: 'asset1',
     timestamp: TIMESTAMP,
   },
   lastMaterializationRunStatus: null,
