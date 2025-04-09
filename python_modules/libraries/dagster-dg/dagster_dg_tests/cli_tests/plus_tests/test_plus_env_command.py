@@ -251,9 +251,7 @@ def test_add_env_command_basic_success_workspace(dg_plus_cli_config, input_type:
         assert result.exit_code == 0, result.output + " " + str(result.exception)
 
         additional_output = ""
-        if input_type == "from-env-file":
-            additional_output = "Reading environment variable FOO from project .env file\n\n"
-        elif input_type == "from-local-env":
+        if input_type == "from-local-env":
             additional_output = "Reading environment variable FOO from shell environment\n\n"
         assert (
             result.output.strip()
