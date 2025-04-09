@@ -3,7 +3,9 @@ from collections import namedtuple
 from unittest import mock
 
 import kubernetes
+import kubernetes.client
 import pytest
+from dagster._core.test_utils import environ
 from dagster_k8s.client import (
     DagsterK8sAPIRetryLimitExceeded,
     DagsterK8sError,
@@ -12,6 +14,7 @@ from dagster_k8s.client import (
     KubernetesWaitingReasons,
     WaitForPodState,
 )
+from dagster_k8s.utils import TimeoutConfigurableK8sAPIClient
 from kubernetes.client.models import (
     V1ContainerState,
     V1ContainerStateRunning,
@@ -1231,3 +1234,17 @@ def test_wait_for_ready_pod_is_deleted():
         mock_client.wait_for_pod(pod_name=pod_name, namespace="namespace")
 
     assert str(exc_info.value).startswith(f'Pod "{pod_name}" was unexpectedly killed')
+
+
+def test_wrapped_client():
+    core_api = mock.MagicMock(kubernetes.client.CoreV1Api)
+    core_api.read_namespaced_pod_log = mock.MagicMock(return_value=("a_string", 200, {}))
+    core_api.api_client = mock.MagicMock()
+
+    with environ({"KUBERNETES_API_REQUEST_TIMEOUT": "60"}):
+        wrapper = TimeoutConfigurableK8sAPIClient(core_api)
+        result = wrapper.read_namespaced_pod_log("default", "default_namespace")
+        core_api.read_namespaced_pod_log.assert_called_once_with(
+            "default", "default_namespace", _request_timeout=60
+        )
+        assert result == ("a_string", 200, {})

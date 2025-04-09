@@ -15,6 +15,8 @@ from dagster._core.storage.dagster_run import DagsterRunStatus
 from kubernetes.client.api_client import ApiClient
 from kubernetes.client.models import V1Job, V1JobStatus
 
+from dagster_k8s.utils import TimeoutConfigurableK8sAPIClient
+
 try:
     from kubernetes.client.models import EventsV1Event  # noqa
 
@@ -238,7 +240,7 @@ class KubernetesWaitingReasons:
 class DagsterKubernetesClient:
     def __init__(self, batch_api, core_api, logger, sleeper, timer):
         self.batch_api = batch_api
-        self.core_api = core_api
+        self.core_api = TimeoutConfigurableK8sAPIClient(core_api)
         self.logger = logger
         self.sleeper = sleeper
         self.timer = timer
