@@ -170,7 +170,7 @@ setup(
             "dagster-components = dagster.components.cli:main",
             "dagster-daemon = dagster.daemon.cli:main",
         ],
-        "dagster_dg.library": [
+        "dagster_dg.plugin": [
             "dagster = dagster",
             "dagster.components = dagster.components",
         ],

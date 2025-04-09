@@ -117,7 +117,7 @@ class DgContext:
         # available; (b) in a component library context.
         _validate_dagster_components_availability(context)
 
-        if not context.is_component_library:
+        if not context.is_plugin:
             exit_with_error(NOT_COMPONENT_LIBRARY_ERROR_MESSAGE)
         return context
 
@@ -218,7 +218,7 @@ class DgContext:
         """Paths that should be watched for changes to the component registry."""
         return [
             self.root_path / "uv.lock",
-            *([self.default_component_library_path] if self.is_component_library else []),
+            *([self.default_plugin_module_path] if self.is_plugin else []),
         ]
 
     # Allowing open-ended str data_type for now so we can do module names
@@ -226,7 +226,7 @@ class DgContext:
         path_parts = [str(part) for part in self.root_path.parts if part != self.root_path.anchor]
         paths_to_hash = [
             self.root_path / "uv.lock",
-            *([self.default_component_library_path] if self.is_component_library else []),
+            *([self.default_plugin_module_path] if self.is_plugin else []),
         ]
         env_hash = hash_paths(paths_to_hash)
         return ("_".join(path_parts), env_hash, data_type)
@@ -278,8 +278,8 @@ class DgContext:
     def root_module_name(self) -> str:
         if self.config.project:
             return self.config.project.root_module
-        elif self.is_component_library:
-            return self.default_component_library_module_name.split(".")[0]
+        elif self.is_plugin:
+            return self.default_plugin_module_name.split(".")[0]
         else:
             raise DgError("Cannot determine root package name")
 
@@ -389,19 +389,19 @@ class DgContext:
         return self.config.project.python_environment
 
     # ########################
-    # ##### COMPONENT LIBRARY METHODS
+    # ##### PLUGIN METHODS
     # ########################
 
     # It is possible for a single package to define multiple entry points under the
-    # `dagster_dg.library` entry point group. At present, `dg` only cares about the first one, which
+    # `dagster_dg.plugin` entry point group. At present, `dg` only cares about the first one, which
     # it uses for all component type scaffolding operations.
 
     @property
-    def is_component_library(self) -> bool:
+    def is_plugin(self) -> bool:
         return bool(self._dagster_components_entry_points)
 
     @cached_property
-    def default_component_library_module_name(self) -> str:
+    def default_plugin_module_name(self) -> str:
         if not self._dagster_components_entry_points:
             raise DgError(
                 "`default_component_library_module_name` is only available in a component library context"
@@ -409,26 +409,34 @@ class DgContext:
         return next(iter(self._dagster_components_entry_points.values()))
 
     @cached_property
-    def default_component_library_path(self) -> Path:
-        if not self.is_component_library:
+    def default_plugin_module_path(self) -> Path:
+        if not self.is_plugin:
             raise DgError(
-                "`default_component_library_path` is only available in a component library context"
+                "`default_plugin_module_path` is only available in a component library context"
             )
-        return self.get_path_for_local_module(self.default_component_library_module_name)
+        return self.get_path_for_local_module(self.default_plugin_module_name)
 
     @cached_property
     def _dagster_components_entry_points(self) -> Mapping[str, str]:
         if not self.pyproject_toml_path.exists():
             return {}
         toml = tomlkit.parse(self.pyproject_toml_path.read_text())
-        if not has_toml_node(toml, ("project", "entry-points", "dagster_dg.library")):
-            return {}
-        else:
+        if has_toml_node(toml, ("project", "entry-points", "dagster_dg.plugin")):
+            return get_toml_node(
+                toml,
+                ("project", "entry-points", "dagster_dg.plugin"),
+                (tomlkit.items.Table, tomlkit.items.InlineTable),
+            ).unwrap()
+        # Keeping for a few weeks (as of 2025-04-09) for backwards compatibility. Should be removed
+        # eventually.
+        elif has_toml_node(toml, ("project", "entry-points", "dagster_dg.library")):
             return get_toml_node(
                 toml,
                 ("project", "entry-points", "dagster_dg.library"),
                 (tomlkit.items.Table, tomlkit.items.InlineTable),
             ).unwrap()
+        else:
+            return {}
 
     # ########################
     # ##### HELPERS
@@ -539,7 +547,7 @@ class DgContext:
         return self.root_path / "pyproject.toml"
 
     def get_path_for_local_module(self, module_name: str) -> Path:
-        if not self.is_project and not self.is_component_library:
+        if not self.is_project and not self.is_plugin:
             raise DgError(
                 "`get_path_for_local_module` is only available in a project or component library context"
             )

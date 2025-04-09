@@ -21,7 +21,7 @@ class RemotePluginRegistry:
         dg_context: "DgContext", extra_modules: Optional[Sequence[str]] = None
     ) -> "RemotePluginRegistry":
         """Fetches the set of available plugin objects. The default set includes everything
-        discovered under the "dagster_dg.library" entry point group in the target environment. If
+        discovered under the "dagster_dg.plugin" entry point group in the target environment. If
         `extra_modules` is provided, these will also be searched for component types.
         """
         if dg_context.use_dg_managed_environment:

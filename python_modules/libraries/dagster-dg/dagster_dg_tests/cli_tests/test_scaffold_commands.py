@@ -735,4 +735,4 @@ def test_scaffold_component_type_fails_components_lib_package_does_not_exist(cap
         assert_runner_result(result, exit_0=False)
 
         captured = capfd.readouterr()
-        assert "Error loading entry point `foo_bar` in group `dagster_dg.library`." in captured.err
+        assert "Error loading entry point `foo_bar` in group `dagster_dg.plugin`." in captured.err
