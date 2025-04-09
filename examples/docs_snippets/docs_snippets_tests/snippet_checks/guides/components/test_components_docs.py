@@ -324,9 +324,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
 
             # Evidence.dev
 
-            _run_command(
-                "uv add git+https://github.com/dagster-io/community-integrations.git@petehunt/evidencedev#subdirectory=libraries/dagster-evidence"
-            )
+            _run_command("uv add dagster-evidence")
 
             run_command_and_snippet_output(
                 cmd="dg list component-type",
