@@ -101,7 +101,7 @@ export type Asset = {
   __typename: 'Asset';
   assetMaterializationHistory: MaterializationHistoryConnection;
   assetMaterializations: Array<MaterializationEvent>;
-  assetObservations: ObservationEventConnection;
+  assetObservations: Array<ObservationEvent>;
   definition: Maybe<AssetNode>;
   id: Scalars['String']['output'];
   key: AssetKey;
@@ -128,7 +128,6 @@ export type AssetAssetMaterializationsArgs = {
 export type AssetAssetObservationsArgs = {
   afterTimestampMillis?: InputMaybe<Scalars['String']['input']>;
   beforeTimestampMillis?: InputMaybe<Scalars['String']['input']>;
-  cursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   partitionInLast?: InputMaybe<Scalars['Int']['input']>;
   partitions?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -3160,12 +3159,6 @@ export type ObservationEvent = DisplayableEvent &
     timestamp: Scalars['String']['output'];
   };
 
-export type ObservationEventConnection = {
-  __typename: 'ObservationEventConnection';
-  cursor: Scalars['String']['output'];
-  results: Array<ObservationEvent>;
-};
-
 export type Output = {
   __typename: 'Output';
   definition: OutputDefinition;
@@ -6105,9 +6098,7 @@ export const buildAsset = (
     assetObservations:
       overrides && overrides.hasOwnProperty('assetObservations')
         ? overrides.assetObservations!
-        : relationshipsToOmit.has('ObservationEventConnection')
-          ? ({} as ObservationEventConnection)
-          : buildObservationEventConnection({}, relationshipsToOmit),
+        : [],
     definition:
       overrides && overrides.hasOwnProperty('definition')
         ? overrides.definition!
@@ -11098,19 +11089,6 @@ export const buildObservationEvent = (
           : buildRunStepStats({}, relationshipsToOmit),
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 'ut',
-  };
-};
-
-export const buildObservationEventConnection = (
-  overrides?: Partial<ObservationEventConnection>,
-  _relationshipsToOmit: Set<string> = new Set(),
-): {__typename: 'ObservationEventConnection'} & ObservationEventConnection => {
-  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
-  relationshipsToOmit.add('ObservationEventConnection');
-  return {
-    __typename: 'ObservationEventConnection',
-    cursor: overrides && overrides.hasOwnProperty('cursor') ? overrides.cursor! : 'veniam',
-    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
   };
 };
 
