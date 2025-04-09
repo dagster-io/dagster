@@ -1,6 +1,7 @@
 import os
 import time
 from typing import Any
+from uuid import uuid4
 
 import pytest
 from dagster._core.definitions.reconstruct import ReconstructableRepository
@@ -368,8 +369,9 @@ class TestRunVariantTermination(RunTerminationTestSuite):
             assert run and run.status == DagsterRunStatus.CANCELED
 
     def test_run_not_found(self, graphql_context: WorkspaceRequestContext):
+        random_run_id = str(uuid4())
         result = execute_dagster_graphql(
-            graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": "nope"}
+            graphql_context, RUN_CANCELLATION_QUERY, variables={"runId": random_run_id}
         )
         assert result.data["terminatePipelineExecution"]["__typename"] == "RunNotFoundError"
 
