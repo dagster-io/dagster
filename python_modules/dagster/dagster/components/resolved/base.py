@@ -186,7 +186,7 @@ def _get_annotations(
     # * @record
     else:
         raise ResolutionException(
-            f"Invalid Resolved type {resolved_type} could not determine fields, expected:\n"
+            f"Invalid Resolvable type {resolved_type} could not determine fields, expected:\n"
             "* class with __init__\n"
             "* @dataclass\n"
             "* pydantic Model\n"
@@ -209,13 +209,13 @@ def _get_init_kwargs(target_type: type[Resolvable]):
 
         if param.kind == param.POSITIONAL_ONLY:
             raise ResolutionException(
-                f"Invalid Resolved type {target_type}: __init__ contains positional only parameter."
+                f"Invalid Resolvable type {target_type}: __init__ contains positional only parameter."
             )
         if param.kind in (param.VAR_POSITIONAL, param.VAR_KEYWORD):
             continue
         if param.annotation == param.empty:
             raise ResolutionException(
-                f"Invalid Resolved type {target_type}: __init__ parameter {name} has no type hint."
+                f"Invalid Resolvable type {target_type}: __init__ parameter {name} has no type hint."
             )
 
         fields[name] = (param.annotation, param.default is not param.empty, None)
@@ -274,11 +274,13 @@ def _get_resolver(annotation: Any, field_name: str) -> "Resolver":
     if res:
         return res
     raise ResolutionException(
-        f"Could not derive resolver for annotation {field_name}: {annotation}.\n"
+        "Could not derive resolver for annotation\n"
+        f"  {field_name}: {annotation}\n"
         "Field types are expected to be:\n"
         "* serializable types such as str, float, int, bool, list, etc\n"
+        "* Resolvable subclasses\n"
         "* pydantic Models\n"
-        "* Annotated with an appropriate Resolver."
+        "* Annotated with an appropriate Resolver"
     )
 
 
