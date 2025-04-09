@@ -47,7 +47,7 @@ def test_scaffold_workspace_command_success(monkeypatch) -> None:
         assert Path("dagster-workspace").exists()
         assert Path("dagster-workspace/dg.toml").exists()
         assert Path("dagster-workspace/projects").exists()
-        assert Path("dagster-workspace/libraries").exists()
+        assert not Path("dagster-workspace/libraries").exists()
 
         result = runner.invoke("scaffold", "workspace")
         assert_runner_result(result, exit_0=False)
@@ -61,7 +61,7 @@ def test_scaffold_workspace_command_name_override_success(monkeypatch) -> None:
         assert Path("my-workspace").exists()
         assert Path("my-workspace/dg.toml").exists()
         assert Path("my-workspace/projects").exists()
-        assert Path("my-workspace/libraries").exists()
+        assert not Path("my-workspace/libraries").exists()
 
         result = runner.invoke("scaffold", "workspace", "my-workspace")
         assert_runner_result(result, exit_0=False)

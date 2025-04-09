@@ -99,7 +99,7 @@ def test_init_success_workspace(
         assert Path("dagster-workspace").exists()
         assert Path("dagster-workspace/dg.toml").exists()
         assert Path("dagster-workspace/projects").exists()
-        assert Path("dagster-workspace/libraries").exists()
+        assert not Path("dagster-workspace/libraries").exists()
         assert Path("dagster-workspace/projects/helloworld").exists()
         assert Path("dagster-workspace/projects/helloworld/src/helloworld").exists()
         assert Path("dagster-workspace/projects/helloworld/pyproject.toml").exists()
