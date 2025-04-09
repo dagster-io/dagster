@@ -55,8 +55,10 @@ class DbtCloudJobRunHandler:
             client=client,
         )
 
-    def wait_for_success(self) -> Optional[DbtCloudJobRunStatusType]:
-        run_details = self.client.poll_run(run_id=self.run_id)
+    def wait_for_success(
+        self, timeout: Optional[float] = None
+    ) -> Optional[DbtCloudJobRunStatusType]:
+        run_details = self.client.poll_run(run_id=self.run_id, poll_timeout=timeout)
         dbt_cloud_run = DbtCloudRun.from_run_details(run_details=run_details)
         return dbt_cloud_run.status
 

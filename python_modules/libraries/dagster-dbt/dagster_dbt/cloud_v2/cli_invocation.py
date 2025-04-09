@@ -53,9 +53,9 @@ class DbtCloudCliInvocation:
         )
 
     def wait(
-        self,
+        self, timeout: Optional[float] = None
     ) -> Iterator[Union[AssetCheckEvaluation, AssetCheckResult, AssetMaterialization, Output]]:
-        self.run_handler.wait_for_success()
+        self.run_handler.wait_for_success(timeout=timeout)
         if "run_results.json" not in self.run_handler.list_run_artifacts():
             return
         run_results = DbtCloudJobRunResults.from_run_results_json(
