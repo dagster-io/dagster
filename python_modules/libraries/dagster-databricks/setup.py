@@ -35,7 +35,7 @@ setup(
         f"dagster{pin}",
         f"dagster-pipes{pin}",
         f"dagster-pyspark{pin}",
-        "databricks-sdk==0.46.0",  # dbt-databricks is pinned to this version
+        "databricks-sdk>=0.41,<0.48.0",  # dbt-databricks is pinned to this version
     ],
     zip_safe=False,
 )
