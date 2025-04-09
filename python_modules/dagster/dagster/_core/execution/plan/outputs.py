@@ -15,7 +15,7 @@ from dagster._core.execution.plan.objects import TypeCheckData
 from dagster._serdes import whitelist_for_serdes
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_field_names={"should_materialize_DEPRECATED": "should_materialize"})
 class StepOutputProperties(
     NamedTuple(
         "_StepOutputProperties",
@@ -23,7 +23,7 @@ class StepOutputProperties(
             ("is_required", bool),
             ("is_dynamic", bool),
             ("is_asset", bool),
-            ("should_materialize", bool),
+            ("should_materialize_DEPRECATED", bool),
             ("asset_key", Optional[AssetKey]),
             ("is_asset_partitioned", bool),
             ("asset_check_key", Optional[AssetCheckKey]),
@@ -35,7 +35,7 @@ class StepOutputProperties(
         is_required: bool,
         is_dynamic: bool,
         is_asset: bool,
-        should_materialize: bool,
+        should_materialize_DEPRECATED: bool,
         asset_key: Optional[AssetKey] = None,
         is_asset_partitioned: bool = False,
         asset_check_key: Optional[AssetCheckKey] = None,
@@ -45,7 +45,7 @@ class StepOutputProperties(
             check.bool_param(is_required, "is_required"),
             check.bool_param(is_dynamic, "is_dynamic"),
             check.bool_param(is_asset, "is_asset"),
-            check.bool_param(should_materialize, "should_materialize"),
+            check.bool_param(should_materialize_DEPRECATED, "should_materialize_DEPRECATED"),
             check.opt_inst_param(asset_key, "asset_key", AssetKey),
             check.bool_param(is_asset_partitioned, "is_asset_partitioned"),
             check.opt_inst_param(asset_check_key, "asset_check_key", AssetCheckKey),
@@ -92,10 +92,6 @@ class StepOutput(
     @property
     def is_asset(self) -> bool:
         return self.properties.is_asset
-
-    @property
-    def should_materialize(self) -> bool:
-        return self.properties.should_materialize
 
     @property
     def asset_key(self) -> Optional[AssetKey]:
