@@ -260,12 +260,11 @@ type Check = {name: string; assetKey: AssetKey};
 interface AssetCheckTagCollectionProps {
   assetChecks: Check[] | null;
   dialogTitle?: string;
-  useTags?: boolean;
   maxRows?: number;
 }
 
 export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectionProps) => {
-  const {assetChecks, maxRows, useTags, dialogTitle = 'Asset checks in run'} = props;
+  const {assetChecks, maxRows, dialogTitle = 'Asset checks in run'} = props;
 
   const count = assetChecks?.length ?? 0;
   const rendered = maxRows ? 10 : count === 1 ? 1 : 0;
@@ -318,22 +317,13 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
           actions={[{label: 'View asset check', to: assetDetailsPathForAssetCheck(check)}]}
           childrenMiddleTruncate
         >
-          {useTags ? (
-            <Tag intent="none" interactive icon="asset_check">
-              <MiddleTruncate text={labelForAssetCheck(check)} />
-            </Tag>
-          ) : (
-            <Link to={assetDetailsPathForAssetCheck(check)}>
-              <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-                <Icon color={Colors.accentGray()} name="asset_check" size={16} />
-                <MiddleTruncate text={labelForAssetCheck(check)} />
-              </Box>
-            </Link>
-          )}
+          <Tag intent="none" interactive icon="asset_check">
+            <MiddleTruncate text={labelForAssetCheck(check)} />
+          </Tag>
         </TagActionsPopover>
       ))}
       {rendered !== 1 && (
-        <span style={useTags ? {} : {marginBottom: -4}}>
+        <span>
           <TagActionsPopover
             data={{key: '', value: ''}}
             actions={[
@@ -343,20 +333,9 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
               },
             ]}
           >
-            {useTags ? (
-              <Tag intent="none" icon="asset_check">
-                <span ref={moreLabelRef}>{moreLabelFn(0)}</span>
-              </Tag>
-            ) : (
-              <ButtonLink onClick={() => setShowMore(true)} underline="hover">
-                <Box
-                  flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}
-                >
-                  <Icon color={Colors.accentGray()} name="asset_check" size={16} />
-                  <span ref={moreLabelRef}>{moreLabelFn(0)}</span>
-                </Box>
-              </ButtonLink>
-            )}
+            <Tag intent="none" icon="asset_check">
+              <span ref={moreLabelRef}>{moreLabelFn(0)}</span>
+            </Tag>
           </TagActionsPopover>
           {dialog}
         </span>
