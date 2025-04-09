@@ -19,19 +19,7 @@ Dagster Components is a new way to structure your Dagster projects. It aims to p
 
 ## Installation
 
-To use Dagster Components, install `uv`, then install the `dg` command line tool. `dg` allows you to quickly scaffold Dagster projects and populate them with components. It is designed to be globally installed and has no dependency on `dagster` itself.
-
-### Install `uv`
-
-import InstallUv from '@site/docs/partials/\_InstallUv.md';
-
-<InstallUv />
-
-### Install the `dg` command line tool
-
-import InstallDg from '@site/docs/partials/\_InstallDg.md';
-
-<InstallDg />
+To use Dagster Components, you'll need to [install the `dg` command line tool](/guides/labs/dg/). `dg` allows you to quickly scaffold Dagster projects and populate them with components.
 
 ## `dg` API reference
 
