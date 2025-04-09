@@ -3,14 +3,17 @@ import {BreadcrumbProps} from '@blueprintjs/core';
 import {Box} from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
+import {FeatureFlag} from 'shared/app/FeatureFlags.oss';
 import {AssetGlobalLineageLink, AssetPageHeader} from 'shared/assets/AssetPageHeader.oss';
 
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
+import {AssetsCatalogTableV2} from './AssetsCatalogTableV2';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
 import {gql} from '../apollo-client';
 import {useAssetViewParams} from './useAssetViewParams';
+import {featureEnabled} from '../app/Flags';
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -49,7 +52,12 @@ export const AssetsOverviewRoot = ({
       : documentTitlePrefix,
   );
 
+  console.log({currentPath});
+
   if (currentPath.length === 0 || searchParams.view === 'folder') {
+    if (featureEnabled(FeatureFlag.flagUseNewObserveUIs)) {
+      return <AssetsCatalogTableV2 />;
+    }
     return (
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
         <AssetPageHeader
@@ -63,6 +71,7 @@ export const AssetsOverviewRoot = ({
             </Box>
           }
         />
+
         <AssetsCatalogTable
           prefixPath={currentPath}
           setPrefixPath={(prefixPath) => history.push(assetDetailsPathForKey({path: prefixPath}))}

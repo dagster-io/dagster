@@ -146,6 +146,7 @@ import expand_arrows from '../icon-svgs/expand_arrows.svg';
 import expand_less from '../icon-svgs/expand_less.svg';
 import expand_more from '../icon-svgs/expand_more.svg';
 import expectation from '../icon-svgs/expectation.svg';
+import failure_trend from '../icon-svgs/failure_trend.svg';
 import file_csv from '../icon-svgs/file_csv.svg';
 import file_json from '../icon-svgs/file_json.svg';
 import file_markdown from '../icon-svgs/file_markdown.svg';
@@ -350,6 +351,7 @@ import sticky_note from '../icon-svgs/sticky_note.svg';
 import storage_kind from '../icon-svgs/storage_kind.svg';
 import subtract from '../icon-svgs/subtract.svg';
 import success from '../icon-svgs/success.svg';
+import successful_trend from '../icon-svgs/successful_trend.svg';
 import sun from '../icon-svgs/sun.svg';
 import support from '../icon-svgs/support.svg';
 import sync from '../icon-svgs/sync.svg';
@@ -392,6 +394,7 @@ import visibility from '../icon-svgs/visibility.svg';
 import visibility_off from '../icon-svgs/visibility_off.svg';
 import warning from '../icon-svgs/warning.svg';
 import warning_outline from '../icon-svgs/warning_outline.svg';
+import warning_trend from '../icon-svgs/warning_trend.svg';
 import water from '../icon-svgs/water.svg';
 import waterfall_chart from '../icon-svgs/waterfall_chart.svg';
 import webhook from '../icon-svgs/webhook.svg';
@@ -558,6 +561,7 @@ export const Icons = {
   expand_less,
   expand_more,
   expectation,
+  failure_trend,
   file_csv,
   file_json,
   file_markdown,
@@ -758,6 +762,7 @@ export const Icons = {
   storage_kind,
   subtract,
   success,
+  successful_trend,
   sun,
   support,
   sync,
@@ -800,6 +805,7 @@ export const Icons = {
   visibility_off,
   warning,
   warning_outline,
+  warning_trend,
   water,
   waterfall_chart,
   webhook,

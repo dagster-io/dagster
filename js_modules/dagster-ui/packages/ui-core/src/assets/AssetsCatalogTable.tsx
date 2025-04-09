@@ -177,14 +177,19 @@ export function useAllAssets({
     query();
   }, [query]);
 
+  const assetsByAssetKey = useMemo(() => {
+    return Object.fromEntries(assets?.map((asset) => [tokenForAssetKey(asset.key), asset]) ?? []);
+  }, [assets]);
+
   return useMemo(() => {
     return {
       assets,
+      assetsByAssetKey,
       error,
       loading: !assets && !error,
       query,
     };
-  }, [assets, error, query]);
+  }, [assets, error, query, assetsByAssetKey]);
 }
 
 interface AssetCatalogTableProps {
