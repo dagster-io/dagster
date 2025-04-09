@@ -21,8 +21,7 @@ from dagster_dg.context import DgContext
 from dagster_dg.env import ProjectEnvVars
 from dagster_dg.utils import DgClickCommand, DgClickGroup
 from dagster_dg.utils.plus import gql
-from dagster_dg.utils.plus.gql import SECRETS_QUERY
-from dagster_dg.utils.plus.gql_client import DagsterCloudGraphQLClient
+from dagster_dg.utils.plus.gql_client import DagsterPlusGraphQLClient
 from dagster_dg.utils.telemetry import cli_telemetry_wrapper
 
 
@@ -59,7 +58,7 @@ def login_command() -> None:
     config.write()
     click.echo(f"Authorized for organization {new_org}\n")
 
-    gql_client = DagsterCloudGraphQLClient.from_config(config)
+    gql_client = DagsterPlusGraphQLClient.from_config(config)
     result = gql_client.execute(gql.FULL_DEPLOYMENTS_QUERY)
     deployment_names = [d["deploymentName"] for d in result["fullDeployments"]]
 
@@ -101,12 +100,13 @@ def _get_config_or_error() -> DagsterPlusCliConfig:
 
 
 def _get_local_secrets_for_locations(
-    client: DagsterCloudGraphQLClient, location_names: set[str]
+    client: DagsterPlusGraphQLClient, location_names: set[str]
 ) -> Mapping[str, Mapping[str, str]]:
     secrets_by_location = {location_name: {} for location_name in location_names}
 
     result = client.execute(
-        SECRETS_QUERY, variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}}
+        gql.SECRETS_QUERY,
+        variables={"onlyViewable": True, "scopes": {"localDeploymentScope": True}},
     )
     for secret in result["secretsOrError"]["secrets"]:
         if not secret["localDeploymentScope"]:
@@ -137,7 +137,7 @@ def pull_env_command(**global_options: object) -> None:
     else:
         project_ctxs = [dg_context]
 
-    gql_client = DagsterCloudGraphQLClient.from_config(config)
+    gql_client = DagsterPlusGraphQLClient.from_config(config)
     secrets_by_location = _get_local_secrets_for_locations(
         gql_client, {project_ctx.project_name for project_ctx in project_ctxs}
     )
@@ -272,7 +272,7 @@ def create_env_command(
         EnvVarScope.BRANCH,
         EnvVarScope.LOCAL,
     }
-    gql_client = DagsterCloudGraphQLClient.from_config(config)
+    gql_client = DagsterPlusGraphQLClient.from_config(config)
 
     location_suffix = "" if global_ else f" for location {dg_context.project_name}"
     scope_text = f" in {', '.join(sorted(active_scopes))} scope"
@@ -489,3 +489,28 @@ def deploy_command(
                 str(statedir),
             ],
         )
+
+
+# ####################
+# ##### CREATE CI API TOKEN
+# ####################
+
+
+@plus_create_group.command(name="ci-api-token", cls=DgClickCommand)
+@click.option("--description", type=str, help="Description for the token")
+@dg_global_options
+@cli_telemetry_wrapper
+def create_ci_api_token(description: Optional[str] = None, **global_options: object) -> None:
+    """Create a Dagster Plus API token for CI."""
+    if not DagsterPlusCliConfig.exists():
+        raise click.UsageError(
+            "`dg plus create ci-api-token` requires authentication with Dagster Plus. Run `dg plus login` to authenticate."
+        )
+    config = DagsterPlusCliConfig.get()
+
+    gql_client = DagsterPlusGraphQLClient.from_config(config)
+
+    token_data = gql_client.execute(
+        gql.CREATE_AGENT_TOKEN_MUTATION, variables={"description": description}
+    )
+    click.echo(token_data["createAgentToken"]["token"])

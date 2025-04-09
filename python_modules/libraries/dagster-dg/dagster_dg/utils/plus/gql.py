@@ -124,3 +124,44 @@ query SecretsForScopesQuery($locationName: String, $scopes: SecretScopesInput!, 
     }
 }
 """
+
+AGENT_TOKENS_QUERY = """
+query AgentTokensQuery {
+    agentTokensOrError {
+        __typename
+        ... on DagsterCloudAgentTokens {
+            tokens {
+                id
+                description
+                token
+                revoked
+            }
+        }
+        ... on UnauthorizedError {
+            message
+        }
+        ... on PythonError {
+            message
+            stack
+        }
+    }
+}
+"""
+
+CREATE_AGENT_TOKEN_MUTATION = """
+mutation CreateAgentTokenMutation($description: String) {
+    createAgentToken(description: $description) {
+        __typename
+        ... on DagsterCloudAgentToken {
+            token
+        }
+        ... on UnauthorizedError {
+            message
+        }
+        ... on PythonError {
+            message
+            stack
+        }
+    }
+}
+"""
