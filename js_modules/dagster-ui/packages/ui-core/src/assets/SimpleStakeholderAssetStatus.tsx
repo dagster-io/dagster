@@ -78,7 +78,7 @@ export const SimpleStakeholderAssetStatus = ({
         <MaterializationTag
           assetKey={assetNode.assetKey}
           event={liveData.lastMaterialization}
-          stepKey={liveData.stepKey}
+          stepKey={liveData.lastMaterialization.stepKey}
         />
         {partitionTag}
       </Box>

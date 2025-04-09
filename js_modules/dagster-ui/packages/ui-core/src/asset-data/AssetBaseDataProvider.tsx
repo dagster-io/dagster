@@ -161,11 +161,13 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
   fragment AssetNodeLiveMaterialization on MaterializationEvent {
     timestamp
     runId
+    stepKey
   }
 
   fragment AssetNodeLiveObservation on ObservationEvent {
     timestamp
     runId
+    stepKey
   }
 
   fragment AssetCheckLiveFragment on AssetCheck {
