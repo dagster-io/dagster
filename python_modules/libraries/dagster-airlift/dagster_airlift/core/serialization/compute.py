@@ -1,5 +1,5 @@
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from functools import cached_property
 from typing import TYPE_CHECKING, AbstractSet, Callable, Optional  # noqa: UP035
 
@@ -11,6 +11,7 @@ from dagster_airlift.core.dag_asset import get_leaf_assets_for_dag
 from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.serialization.serialized_data import (
     DagHandle,
+    Dataset,
     KeyScopedDagHandles,
     KeyScopedTaskHandles,
     SerializedAirflowDefinitionsData,
@@ -124,6 +125,7 @@ class FetchedAirflowData:
     dag_infos: dict[str, DagInfo]
     task_info_map: dict[str, dict[str, TaskInfo]]
     mapping_info: AirliftMetadataMappingInfo
+    datasets: Sequence[Dataset]
 
     @cached_property
     def all_mapped_tasks(self) -> dict[AssetKey, AbstractSet[TaskHandle]]:
@@ -152,6 +154,7 @@ def fetch_all_airflow_data(
         for dag in airflow_instance.list_dags(retrieval_filter=retrieval_filter)
         if dag_selector_fn is None or dag_selector_fn(dag)
     }
+
     # To limit the number of API calls, only fetch task infos for the dags that we absolutely have to.
     # Airflow has no batch API for fetching task infos, so we have to fetch them one dag
     # at a time.
@@ -170,6 +173,7 @@ def fetch_all_airflow_data(
         dag_infos=dag_infos,
         task_info_map=task_info_map,
         mapping_info=mapping_info,
+        datasets=airflow_instance.get_all_datasets(),
     )
 
 
@@ -225,4 +229,5 @@ def compute_serialized_data(
             )
             for dag_id, dag_info in fetched_airflow_data.dag_infos.items()
         },
+        datasets=fetched_airflow_data.datasets,
     )
