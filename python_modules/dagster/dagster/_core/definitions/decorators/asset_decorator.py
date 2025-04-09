@@ -138,6 +138,12 @@ def _validate_hidden_non_argument_dep_param(
     emit_runtime_warning=False,
     breaking_version="1.10.0",
 )
+@hidden_param(
+    param="internal_freshness_policy",
+    emit_runtime_warning=False,
+    breaking_version="1.10.0",
+    additional_warn_text="experimental, use freshness checks instead.",
+)
 def asset(
     compute_fn: Optional[Callable[..., Any]] = None,
     *,

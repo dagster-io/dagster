@@ -208,19 +208,10 @@ class AssetSpec(IHasInternalInit, IHaveNew, LegacyNamedTupleMixin):
             "internal_freshness_policy"
         )
         if internal_freshness_policy:
-            if metadata:
-                metadata = {
-                    **metadata,
-                    INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(
-                        internal_freshness_policy
-                    ),
-                }
-            else:
-                metadata = {
-                    INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(
-                        internal_freshness_policy
-                    )
-                }
+            metadata = {
+                **(metadata or {}),
+                INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(internal_freshness_policy),
+            }
 
         return super().__new__(
             cls,
@@ -465,7 +456,10 @@ def map_asset_specs(
 
 
 def attach_internal_freshness_policy(spec: AssetSpec, policy: InternalFreshnessPolicy) -> AssetSpec:
-    """Apply a freshness policy to an asset spec, attaching it to the spec's metadata."""
+    """Apply a freshness policy to an asset spec, attaching it to the spec's metadata.
+
+    You can use this in Definitions.map_asset_specs to attach a freshness policy to an asset spec.
+    """
     return spec.merge_attributes(
         metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(policy)}
     )

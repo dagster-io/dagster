@@ -1,11 +1,14 @@
-from abc import ABC, abstractmethod
+import datetime
+from abc import ABC
 from collections.abc import Mapping
 from enum import Enum
-from typing import Any, NamedTuple, Optional
+from typing import Any, Optional
+
+from dagster_shared.serdes.utils import SerializableTimeDelta
 
 from dagster._annotations import beta
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._record import IHaveNew, record_custom
+from dagster._record import IHaveNew, record
 from dagster._serdes import deserialize_value, whitelist_for_serdes
 from dagster._utils import check
 
@@ -13,39 +16,23 @@ from dagster._utils import check
 @beta
 @whitelist_for_serdes
 class FreshnessState(str, Enum):
-    PASSING = "PASSING"
-    IN_VIOLATION = "IN_VIOLATION"
-    NEAR_VIOLATION = "NEAR_VIOLATION"
+    PASS = "PASS"
+    WARN = "WARN"
+    FAIL = "FAIL"
     UNKNOWN = "UNKNOWN"
 
 
-@beta
 @whitelist_for_serdes
-class FreshnessStateEvaluation(
-    NamedTuple(
-        "_FreshnessStateEvaluation",
-        [
-            ("asset_key", AssetKey),
-            ("freshness_state", FreshnessState),
-        ],
-    )
-):
-    def __new__(cls, asset_key: AssetKey, freshness_state: FreshnessState):
-        return super().__new__(cls, asset_key=asset_key, freshness_state=freshness_state)
+@record
+class FreshnessStateEvaluation:
+    key: AssetKey
+    freshness_state: FreshnessState
 
 
 INTERNAL_FRESHNESS_POLICY_METADATA_KEY = "dagster/internal_freshness_policy"
 
 
-class FreshnessPolicyType(Enum):
-    TIME_WINDOW = "time_window"
-
-
 class InternalFreshnessPolicy(ABC):
-    @property
-    @abstractmethod
-    def policy_type(self) -> FreshnessPolicyType: ...
-
     @classmethod
     def from_asset_spec_metadata(
         cls, metadata: Mapping[str, Any]
@@ -57,36 +44,19 @@ class InternalFreshnessPolicy(ABC):
 
 
 @whitelist_for_serdes
-@record_custom
+@record
 class TimeWindowFreshnessPolicy(InternalFreshnessPolicy, IHaveNew):
-    time_window_minutes: int
-    warning_time_window_minutes: Optional[int] = None
+    fail_window: SerializableTimeDelta
+    warn_window: Optional[SerializableTimeDelta] = None
 
-    @property
-    def policy_type(self) -> FreshnessPolicyType:
-        return FreshnessPolicyType.TIME_WINDOW
+    @classmethod
+    def from_timedeltas(
+        cls, fail_window: datetime.timedelta, warn_window: Optional[datetime.timedelta] = None
+    ):
+        if warn_window:
+            check.invariant(warn_window < fail_window, "warn_window must be less than fail_window")
 
-    def __new__(cls, time_window_minutes: int, warning_time_window_minutes: Optional[int] = None):
-        time_window_minutes = check.int_param(time_window_minutes, "time_window_minutes")
-        check.invariant(
-            time_window_minutes > 0, f"time_window_minutes ({time_window_minutes}) must be positive"
-        )
-
-        if warning_time_window_minutes is not None:
-            warning_time_window_minutes = check.int_param(
-                warning_time_window_minutes, "warning_time_window_minutes"
-            )
-            check.invariant(
-                warning_time_window_minutes > 0,
-                f"warning_time_window_minutes ({warning_time_window_minutes}) must be positive",
-            )
-            check.invariant(
-                warning_time_window_minutes < time_window_minutes,
-                f"warning_time_window_minutes ({warning_time_window_minutes}) must be less than time_window_minutes ({time_window_minutes})",
-            )
-
-        return super().__new__(
-            cls,
-            time_window_minutes=time_window_minutes,
-            warning_time_window_minutes=warning_time_window_minutes,
+        return cls(
+            fail_window=SerializableTimeDelta.from_timedelta(fail_window),
+            warn_window=SerializableTimeDelta.from_timedelta(warn_window) if warn_window else None,
         )
