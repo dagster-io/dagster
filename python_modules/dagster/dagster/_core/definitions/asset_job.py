@@ -7,7 +7,7 @@ from toposort import CircularDependencyError
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_checks import has_only_asset_checks
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_graph import AssetGraph, AssetNode
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
@@ -204,6 +204,24 @@ def build_asset_job(
     )
 
 
+class JobScopedAssetGraph(AssetGraph):
+    """An AssetGraph that is scoped to a particular job."""
+
+    def __init__(
+        self,
+        asset_nodes_by_key: Mapping[AssetKey, AssetNode],
+        assets_defs_by_check_key: Mapping[AssetCheckKey, AssetsDefinition],
+        source_asset_graph: AssetGraph,
+    ):
+        super().__init__(asset_nodes_by_key, assets_defs_by_check_key)
+        self._source_asset_graph = source_asset_graph
+
+    @property
+    def source_asset_graph(self) -> AssetGraph:
+        """The source AssetGraph from which this job-scoped graph was created."""
+        return self._source_asset_graph
+
+
 def get_asset_graph_for_job(
     parent_asset_graph: AssetGraph,
     selection: AssetSelection,
@@ -267,7 +285,10 @@ def get_asset_graph_for_job(
         create_unexecutable_external_asset_from_assets_def(ad) for ad in other_assets_defs
     ]
 
-    return AssetGraph.from_assets([*executable_assets_defs, *unexecutable_assets_defs])
+    asset_nodes_by_key, assets_defs_by_check_key = JobScopedAssetGraph.key_mappings_from_assets(
+        [*executable_assets_defs, *unexecutable_assets_defs]
+    )
+    return JobScopedAssetGraph(asset_nodes_by_key, assets_defs_by_check_key, parent_asset_graph)
 
 
 def _subset_assets_defs(
@@ -605,7 +626,10 @@ def _attempt_resolve_node_cycles(asset_graph: AssetGraph) -> AssetGraph:
         ad for ad in asset_graph.assets_defs if has_only_asset_checks(ad)
     ]
 
-    return AssetGraph.from_assets(subsetted_assets_defs + assets_defs_with_only_checks)
+    asset_nodes_by_key, assets_defs_by_check_key = JobScopedAssetGraph.key_mappings_from_assets(
+        subsetted_assets_defs + assets_defs_with_only_checks
+    )
+    return JobScopedAssetGraph(asset_nodes_by_key, assets_defs_by_check_key, asset_graph)
 
 
 def _ensure_resources_dont_conflict(
