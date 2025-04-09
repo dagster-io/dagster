@@ -615,8 +615,7 @@ type Asset {
     beforeTimestampMillis: String
     afterTimestampMillis: String
     limit: Int
-    cursor: String
-  ): ObservationEventConnection!
+  ): [ObservationEvent!]!
   assetMaterializationHistory(
     partitions: [String!]
     partitionInLast: Int
@@ -627,11 +626,6 @@ type Asset {
     cursor: String
   ): MaterializationHistoryConnection!
   definition: AssetNode
-}
-
-type ObservationEventConnection {
-  results: [ObservationEvent!]!
-  cursor: String!
 }
 
 type MaterializationHistoryConnection {
