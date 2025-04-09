@@ -6,6 +6,7 @@ import {
   Icon,
   IconWrapper,
   Inner,
+  Popover,
   Row,
   Skeleton,
   Subtitle1,
@@ -47,6 +48,12 @@ import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SyntaxError} from '../selection/CustomErrorListener';
 import {IndeterminateLoadingBar} from '../ui/IndeterminateLoadingBar';
 import {numberFormatter} from '../ui/formatters';
+import {
+  AssetFailedToMaterializeFragment,
+  AssetObservationFragment,
+  AssetSuccessfulMaterializationFragment,
+} from './types/useRecentAssetEvents.types';
+import {Timestamp} from '../app/time/Timestamp';
 
 dayjs.extend(relativeTime);
 dayjs.extend(updateLocale);
@@ -316,19 +323,24 @@ const AssetRecentUpdatesTrend = ({asset}: {asset: AssetHealthFragment}) => {
   );
 
   const states = useMemo(() => {
-    return new Array(5)
-      .fill(null)
-      .map((_, index) => {
-        const materialization = materializations[index] ?? observations[index];
-        if (!materialization) {
-          return <Pill key={index} $index={index} $color={Colors.backgroundDisabled()} />;
-        }
-        if (materialization.__typename === 'FailedToMaterializeEvent') {
-          return <Pill key={index} $index={index} $color={Colors.accentRed()} />;
-        }
-        return <Pill key={index} $index={index} $color={Colors.accentGreen()} />;
-      })
-      .reverse();
+    return new Array(5).fill(null).map((_, index) => {
+      const materialization = materializations[index] ?? observations[index];
+      if (!materialization) {
+        return <Pill key={index} $index={index} $color={Colors.backgroundDisabled()} />;
+      }
+      if (materialization.__typename === 'FailedToMaterializeEvent') {
+        return (
+          <EventPopover key={index} event={materialization}>
+            <Pill $index={index} $color={Colors.accentRed()} />
+          </EventPopover>
+        );
+      }
+      return (
+        <EventPopover key={index} event={materialization}>
+          <Pill $index={index} $color={Colors.accentGreen()} />
+        </EventPopover>
+      );
+    });
   }, [materializations, observations]);
 
   const lastEvent = materializations[0] ?? observations[0];
@@ -346,7 +358,9 @@ const AssetRecentUpdatesTrend = ({asset}: {asset: AssetHealthFragment}) => {
         <Skeleton $width={100} $height={21} />
       ) : (
         <>
-          <Body color={Colors.textLight()}>{timeAgo}</Body>
+          <EventPopover event={lastEvent}>
+            <Body color={Colors.textLight()}>{timeAgo}</Body>
+          </EventPopover>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>{states}</Box>
           <div style={{height: 13, width: 1, background: Colors.keylineDefault()}} />
         </>
@@ -366,6 +380,9 @@ const Pill = styled.div<{$index: number; $color: string}>`
   width: 4px;
   background: ${({$color}) => $color};
   opacity: ${({$index}) => OPACITIES[$index] ?? 1};
+  &:hover {
+    box-shadow: 0 0 0 1px ${Colors.accentGrayHover()};
+  }
 `;
 
 const OPACITIES: Record<number, number> = {
@@ -393,3 +410,62 @@ const RowWrapper = styled(Link)`
     }
   }
 `;
+
+const EventPopover = ({
+  event,
+  children,
+}: {
+  event:
+    | AssetFailedToMaterializeFragment
+    | AssetObservationFragment
+    | AssetSuccessfulMaterializationFragment
+    | undefined;
+  children: React.ReactNode;
+}) => {
+  const {content, icon} = useMemo(() => {
+    switch (event?.__typename) {
+      case 'FailedToMaterializeEvent':
+        return {
+          content: <Body>Failed</Body>,
+          icon: <Icon name="run_failed" color={Colors.accentRed()} />,
+        };
+      case 'ObservationEvent':
+        return {
+          content: <Body>Observed</Body>,
+          icon: <Icon name="run_success" color={Colors.accentGreen()} />,
+        };
+      case 'MaterializationEvent':
+        return {
+          content: <Body>Materialized</Body>,
+          icon: <Icon name="run_success" color={Colors.accentGreen()} />,
+        };
+      default:
+        return {content: null, icon: null};
+    }
+  }, [event]);
+  if (!event) {
+    return children;
+  }
+  return (
+    <Popover
+      interactionKind="hover"
+      content={
+        <Box border="all">
+          <Box padding={{vertical: 8, horizontal: 12}} border="bottom">
+            <Timestamp timestamp={{ms: Number(event.timestamp)}} />
+          </Box>
+          <Box padding={{vertical: 8, horizontal: 12}}>
+            <Link to={`/runs/${event.runId}`}>
+              <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+                {icon}
+                {content}
+              </Box>
+            </Link>
+          </Box>
+        </Box>
+      }
+    >
+      {children}
+    </Popover>
+  );
+};
