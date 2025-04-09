@@ -3383,7 +3383,7 @@ class DagsterInstance(DynamicPartitionsStore):
         else:
             raise DagsterInvariantViolationError(
                 f"Received unexpected asset event type {asset_event}, expected"
-                " AssetMaterialization, AssetObservation, AssetCheckEvaluation or FreshnessEvaluation"
+                " AssetMaterialization, AssetObservation, AssetCheckEvaluation or FreshnessStateEvaluation"
             )
 
         return self.report_dagster_event(

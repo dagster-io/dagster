@@ -6,14 +6,12 @@ from typing import Any, Optional
 
 from dagster_shared.serdes.utils import SerializableTimeDelta
 
-from dagster._annotations import beta
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._record import IHaveNew, record
 from dagster._serdes import deserialize_value, whitelist_for_serdes
 from dagster._utils import check
 
 
-@beta
 @whitelist_for_serdes
 class FreshnessState(str, Enum):
     PASS = "PASS"
@@ -41,6 +39,12 @@ class InternalFreshnessPolicy(ABC):
         if serialized_policy is None:
             return None
         return deserialize_value(serialized_policy.value, cls)
+
+    @staticmethod
+    def time_window(
+        fail_window: datetime.timedelta, warn_window: Optional[datetime.timedelta] = None
+    ) -> "TimeWindowFreshnessPolicy":
+        return TimeWindowFreshnessPolicy.from_timedeltas(fail_window, warn_window)
 
 
 @whitelist_for_serdes

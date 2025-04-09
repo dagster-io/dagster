@@ -5,6 +5,7 @@ from dagster._core.definitions.asset_spec import AssetSpec, attach_internal_fres
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.freshness import (
     INTERNAL_FRESHNESS_POLICY_METADATA_KEY,
+    InternalFreshnessPolicy,
     TimeWindowFreshnessPolicy,
 )
 from dagster._serdes import deserialize_value
@@ -21,7 +22,7 @@ def test_asset_spec_with_internal_freshness_policy() -> None:
     def create_spec_and_verify_policy(asset_key: str, fail_window: timedelta, warn_window=None):
         asset = AssetSpec(
             key=AssetKey(asset_key),
-            internal_freshness_policy=TimeWindowFreshnessPolicy.from_timedeltas(
+            internal_freshness_policy=InternalFreshnessPolicy.time_window(
                 fail_window=fail_window, warn_window=warn_window
             ),
         )
@@ -66,7 +67,7 @@ def test_attach_internal_freshness_policy() -> None:
     asset_spec = AssetSpec(key="foo")
     asset_spec = attach_internal_freshness_policy(
         asset_spec,
-        TimeWindowFreshnessPolicy.from_timedeltas(
+        InternalFreshnessPolicy.time_window(
             fail_window=timedelta(minutes=10), warn_window=timedelta(minutes=5)
         ),
     )
@@ -78,7 +79,7 @@ def test_attach_internal_freshness_policy() -> None:
 
     # Overwrite the policy with a new one
     asset_spec = attach_internal_freshness_policy(
-        asset_spec, TimeWindowFreshnessPolicy.from_timedeltas(fail_window=timedelta(minutes=60))
+        asset_spec, InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=60))
     )
     assert_freshness_policy(asset_spec, expected_fail_window=timedelta(minutes=60))
 
@@ -86,7 +87,7 @@ def test_attach_internal_freshness_policy() -> None:
     spec_with_metadata = AssetSpec(key="bar", metadata={"existing": "metadata"})
     spec_with_metadata = attach_internal_freshness_policy(
         spec_with_metadata,
-        TimeWindowFreshnessPolicy.from_timedeltas(fail_window=timedelta(minutes=60)),
+        InternalFreshnessPolicy.time_window(fail_window=timedelta(minutes=60)),
     )
     assert spec_with_metadata.metadata.get("existing") == "metadata"
     assert_freshness_policy(
