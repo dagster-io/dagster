@@ -3,6 +3,7 @@ title: 'dg'
 sidebar_position: 10
 ---
 
+import InstallUv from '@site/docs/partials/\_InstallUv.md';
 import Preview from '@site/docs/partials/\_Preview.md';
 
 <Preview />
@@ -13,47 +14,29 @@ import Preview from '@site/docs/partials/\_Preview.md';
 
 There are two basic approaches to installing `dg`:
 
-- A _local_ `dg` installation installs `dg` into a particular user-managed virtual
-  environment. The `dg` executable will be available when the
-  virtual environment is active. This is the traditional workflow for Python
-  developer tools. A local installation can be done with any Python package manager.
-- A _global_ `dg` installation installs `dg` into a hidden, isolated Python
-  environment. The `dg` executable is always available in the user's `$PATH`,
-  regardless of any virtual environment activation in the shell. A global
-  installation is simpler, only needs to be done once, and better supports
-  multiple Python projects. We recommend a global installation for most users.
-  A global installation requires the Python package manager [`uv`](https://docs.astral.sh/uv/).
-
 <Tabs>
-<TabItem value="local" label="local installation">
-    Activate your virtual environment (if using one) and run:
+<TabItem value="uv" label="uv">
 
-    ```
-    pip install dagster-dg`
-    ```
-</TabItem>
-<TabItem value="global" label="global installation">
+First, install the Python package manager [`uv`](https://docs.astral.sh/uv/) if you don't have it:
 
-First, install the Python package manager `uv`:
+<InstallUv />
 
-<CliInvocationExample contents="brew install uv" />
-
-For more information on `uv`, including installation instructions for non-Mac systems, see the [`uv` docs](https://docs.astral.sh/uv/).
-
-Next, use `uv` to install `dg` as a global "tool":
+Next, use `uv` to install `dg` as a globally available tool:
 
 <CliInvocationExample contents="uv tool install dagster-dg" />
 
-:::tip
+This installs `dg` into a hidden, isolated Python environment. The `dg` executable is always available in the user's `$PATH`, regardless of any virtual environment activation in the shell.
 
-`uv tool install` installs Python packages from PyPI into isolated environments and exposes their executables on your shell path. This means the `dg` command will always execute in an isolated environment separate from any project environment.
+While it is possible to create a virtual environment and install `dagster-dg` into it with `uv`, we recommend a global installation for most users. It is simpler, only needs to be done once, and better supports multiple Python projects.
 
-:::
+</TabItem>
+<TabItem value="pip" label="pip">
+Activate your [virtual environment](https://github.com/dagster-io/dagster/pull/29349) (if using one), then run:
 
+```
+uv pip install dagster-dg
+```
 
-:::note
-If you have a local clone of the `dagster` repo, you can install a as an editable by running `make install_editable_uv_tools` in the root folder of the repo. This will create an isolated environment for `dg` like the standard `uv tool install`, but the environment will contain an editable installation of `dagster-dg`.
-:::
 </TabItem>
 </Tabs>
 
