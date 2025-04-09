@@ -66,7 +66,6 @@
    sections/api/apidocs/libraries/dagster-pandera
    sections/api/apidocs/libraries/dagster-papertrail
    sections/api/apidocs/libraries/dagster-pipes
-   sections/api/apidocs/libraries/dagster-polars
    sections/api/apidocs/libraries/dagster-postgres
    sections/api/apidocs/libraries/dagster-powerbi
    sections/api/apidocs/libraries/dagster-prometheus
