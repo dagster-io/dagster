@@ -1,0 +1,44 @@
+[cli]
+# (bool, optional) Specifies whether the `dg` cache is disabled.
+#
+# Defaults to `false`.
+disable_cache = false
+
+# (string, optional) Specifies the directory where the `dg` cache is stored.
+#
+# Defaults to a platform-specific cache directory.
+cache_dir = "/path/to/my-cache"
+
+# (bool, optional) Specifies whether to use verbose output.
+# 
+# Defaults to `false`.
+verbose = false
+
+# Telemetry-related settings.
+[cli.telemetry]
+
+# (bool, optional) Specifies whether to enable telemetry.
+# 
+# Defaults to `true`.
+enabled = true
+
+
+# The `cli.plus` section is a replacement for `.dagster_cloud_cli.yaml`. The
+# settings here are required to run `dg plus` commands.
+[cli.plus]
+
+# (string, optional) Your Dagster Plus organization, to run dg plus commands against.
+#
+# Defaults to None.
+organization = "hooli"
+
+# (string, optional) The default deployment to run commands against, if another
+# deployment is not explicitly specified
+#
+# Defaults to None.
+default_deployment = "prod"
+
+# (optional, str) A Dagster Plus user token to authenticate to your organization
+#
+# Defaults to None.
+user_token = "user:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

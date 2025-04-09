@@ -1,6 +1,6 @@
 ---
 title: 'Python environment management and `uv` integration'
-sidebar_position: 500
+sidebar_position: 550
 ---
 
 import Preview from '@site/docs/partials/\_Preview.md';
