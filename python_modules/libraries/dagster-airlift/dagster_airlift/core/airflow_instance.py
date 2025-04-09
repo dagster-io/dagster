@@ -12,7 +12,13 @@ from dagster._time import get_current_datetime
 
 from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.runtime_representations import DagRun, TaskInstance
-from dagster_airlift.core.serialization.serialized_data import DagInfo, TaskInfo
+from dagster_airlift.core.serialization.serialized_data import (
+    DagInfo,
+    Dataset,
+    DatasetConsumingDag,
+    DatasetProducingTask,
+    TaskInfo,
+)
 
 TERMINAL_STATES = {"success", "failed", "canceled"}
 # This limits the number of task ids that we attempt to query from airflow's task instance rest API at a given time.
@@ -386,3 +392,93 @@ class AirflowInstance:
                 f"Failed to delete run for {dag_id}/{run_id}. Status code: {response.status_code}, Message: {response.text}"
             )
         return None
+
+    def _get_datasets(
+        self,
+        *,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> Sequence["Dataset"]:
+        params: dict[str, Any] = {"limit": limit, "offset": offset}
+
+        response = self.auth_backend.get_session().get(
+            f"{self.get_api_url()}/datasets",
+            params=params,
+        )
+
+        if response.status_code != 200:
+            raise DagsterError(
+                f"Failed to fetch datasets. Status code: {response.status_code}, Message: {response.text}"
+            )
+
+        data = response.json()
+        datasets = []
+
+        for dataset_data in data["datasets"]:
+            consuming_dags = [
+                DatasetConsumingDag(
+                    dag_id=dag_data["dag_id"],
+                    created_at=dag_data.get("created_at", ""),
+                    updated_at=dag_data.get("updated_at", ""),
+                )
+                for dag_data in dataset_data.get("consuming_dags", [])
+            ]
+
+            producing_tasks = [
+                DatasetProducingTask(
+                    dag_id=task_data["dag_id"],
+                    task_id=task_data["task_id"],
+                    created_at=task_data.get("created_at", ""),
+                    updated_at=task_data.get("updated_at", ""),
+                )
+                for task_data in dataset_data.get("producing_tasks", [])
+            ]
+
+            dataset = Dataset(
+                id=dataset_data["id"],
+                uri=dataset_data["uri"],
+                extra=dataset_data.get("extra", {}),
+                created_at=dataset_data.get("created_at", ""),
+                updated_at=dataset_data.get("updated_at", ""),
+                consuming_dags=consuming_dags,
+                producing_tasks=producing_tasks,
+            )
+
+            datasets.append(dataset)
+
+        return datasets
+
+    def get_all_datasets(
+        self,
+        *,
+        batch_size: int = 100,
+    ) -> Sequence["Dataset"]:
+        """Get all datasets from the Airflow instance, handling pagination.
+
+        Args:
+            batch_size: The number of items to fetch per request. Default is 100.
+            max_datasets: The maximum number of datasets to return. If None, all datasets will be returned.
+            order_by: The name of the field to order the results by. Prefix a field name with - to reverse the sort order.
+            uri_pattern: If set, only return datasets with URIs matching this pattern.
+            dag_ids: One or more DAG IDs to filter datasets by associated DAGs either consuming or producing.
+
+        Returns:
+            A list of Dataset objects.
+        """
+        datasets = []
+        offset = 0
+
+        while True:
+            batch = self._get_datasets(
+                limit=batch_size,
+                offset=offset,
+            )
+
+            datasets.extend(batch)
+
+            if len(batch) < batch_size:  # No more datasets to fetch
+                break
+
+            offset += batch_size
+
+        return datasets
