@@ -255,10 +255,10 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         return assets_defs
 
     @classmethod
-    def from_assets(
+    def key_mappings_from_assets(
         cls,
         assets: Iterable[Union[AssetsDefinition, SourceAsset]],
-    ) -> "AssetGraph":
+    ) -> tuple[Mapping[AssetKey, AssetNode], Mapping[AssetCheckKey, AssetsDefinition]]:
         assets_defs = cls.normalize_assets(assets)
 
         # Build the set of AssetNodes. Each node holds key rather than object references to parent
@@ -284,6 +284,14 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             for key in ad.keys
         }
 
+        return (asset_nodes_by_key, assets_defs_by_check_key)
+
+    @classmethod
+    def from_assets(
+        cls,
+        assets: Iterable[Union[AssetsDefinition, SourceAsset]],
+    ) -> "AssetGraph":
+        asset_nodes_by_key, assets_defs_by_check_key = cls.key_mappings_from_assets(assets)
         return AssetGraph(
             asset_nodes_by_key=asset_nodes_by_key,
             assets_defs_by_check_key=assets_defs_by_check_key,
@@ -379,6 +387,10 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
 
     def get_check_spec(self, key: AssetCheckKey) -> AssetCheckSpec:
         return self._assets_defs_by_check_key[key].get_spec_for_check_key(key)
+
+    @property
+    def source_asset_graph(self) -> "AssetGraph":
+        return self
 
 
 def executable_in_same_run(
