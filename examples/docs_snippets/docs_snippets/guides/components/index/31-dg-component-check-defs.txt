@@ -4,6 +4,8 @@ All components validated successfully.
 
   warnings.warn(message)
 
+INFO:dagster.builtin:Running dbt command: `dbt parse --quiet`.
+INFO:dagster.builtin:Finished dbt command: `dbt parse --quiet`.
 Using /.../jaffle-platform/.venv/bin/dagster
-uv run dagster definitions validate --log-level warning --log-format colored --workspace /var/folders/j1/hhr6f_f17_x1zt44m27t5mh40000gn/T/tmpes1i6ho3
+uv run dagster definitions validate --log-level warning --log-format colored --workspace /var/folders/j1/hhr6f_f17_x1zt44m27t5mh40000gn/T/tmpeymdy5bx
 All definitions loaded successfully.
