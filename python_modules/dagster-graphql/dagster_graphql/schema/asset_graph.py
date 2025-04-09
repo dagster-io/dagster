@@ -692,7 +692,6 @@ class GrapheneAssetNode(graphene.ObjectType):
             total_num_checks = len(remote_check_nodes)
             check_statuses = []
             check_failure_severities = []
-            num_unexecuted_checks = 0
             asset_check_summary_records = await AssetCheckSummaryRecord.gen_many(
                 graphene_info.context,
                 [remote_check_node.asset_check.key for remote_check_node in remote_check_nodes],
@@ -700,7 +699,6 @@ class GrapheneAssetNode(graphene.ObjectType):
             for summary_record in asset_check_summary_records:
                 if summary_record is None or summary_record.last_check_execution_record is None:
                     # the check has never been executed.
-                    num_unexecuted_checks += 1
                     continue
 
                 # if the last_check_execution_record is completed, it will be the same as last_completed_check_execution_record,
@@ -722,7 +720,6 @@ class GrapheneAssetNode(graphene.ObjectType):
                     # the latest completed check instead
                     if summary_record.last_completed_check_execution_record is None:
                         # the check hasn't been executed prior to this in progress check
-                        num_unexecuted_checks += 1
                         continue
                     last_check_execution_status = (
                         await summary_record.last_completed_check_execution_record.resolve_status(
@@ -749,9 +746,14 @@ class GrapheneAssetNode(graphene.ObjectType):
                     # degraded health anyway.
                     check_failure_severities.append(AssetCheckSeverity.ERROR)
 
+            num_unexecuted_checks = total_num_checks - len(check_statuses)
+
             if len(check_statuses) == 0:
                 # checks have never been executed
-                return GrapheneAssetHealthStatus.UNKNOWN, None
+                return GrapheneAssetHealthStatus.UNKNOWN, GrapheneAssetHealthCheckUnknownMeta(
+                    numNotExecuted=num_unexecuted_checks,
+                    totalNumChecks=total_num_checks,
+                )
 
             if any(
                 status == AssetCheckExecutionResolvedStatus.FAILED
