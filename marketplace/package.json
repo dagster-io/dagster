@@ -1,18 +1,18 @@
 {
-  "name": "dagster-marketplace",
+  "name": "@dagster-io/dagster-marketplace",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-  "test": "jest",
-  "ts": "tsc -p .",
-  "lint": "eslint .",
-  "generate": "ts-node -O '{\"module\": \"commonjs\"}' ./scripts/generate.ts"
+    "test": "jest",
+    "ts": "tsc -p .",
+    "lint": "eslint .",
+    "generate": "ts-node -O '{\"module\": \"commonjs\"}' ./scripts/generate.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "packageManager": "yarn@4.8.1",
   "dependencies": {
     "express": "^5.1.0"
   },
