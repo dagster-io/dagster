@@ -123,6 +123,7 @@ setup(
             "pytest-xdist==3.6.1",
             "pytest>=8",
             "pytest-asyncio",
+            "pytest-timeout",
             "responses<=0.23.1",  # https://github.com/getsentry/responses/issues/654
             "syrupy>=4.0.0",
             "tox>=4",
