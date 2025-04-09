@@ -240,12 +240,12 @@ class DbtCliResource(ConfigurableResource):
         )
 
     @classmethod
-    def _validate_absolute_path_exists(cls, path: Union[str, Path]) -> Path:
+    def _validate_path_exists(cls, path: Union[str, Path]) -> Path:
         absolute_path = Path(path).absolute()
         try:
             resolved_path = absolute_path.resolve(strict=True)
         except FileNotFoundError:
-            raise ValueError(f"The absolute path of '{path}' ('{absolute_path}') does not exist")
+            raise ValueError(f"The file at '{path}' ('{absolute_path}') does not exist")
 
         return resolved_path
 
@@ -258,20 +258,14 @@ class DbtCliResource(ConfigurableResource):
     def convert_path_to_str(cls, v: Any) -> Any:
         """Validate that the path is converted to a string."""
         if isinstance(v, Path):
-            resolved_path = cls._validate_absolute_path_exists(v)
-
-            absolute_path = Path(v).absolute()
-            try:
-                resolved_path = absolute_path.resolve(strict=True)
-            except FileNotFoundError:
-                raise ValueError(f"The absolute path of '{v}' ('{absolute_path}') does not exist")
-            return os.fspath(resolved_path)
+            cls._validate_path_exists(v)
+            return os.fspath(v)
 
         return v
 
     @field_validator("project_dir")
     def validate_project_dir(cls, project_dir: str) -> str:
-        resolved_project_dir = cls._validate_absolute_path_exists(project_dir)
+        resolved_project_dir = cls._validate_path_exists(project_dir)
 
         cls._validate_path_contains_file(
             path=resolved_project_dir,
@@ -282,14 +276,14 @@ class DbtCliResource(ConfigurableResource):
             ),
         )
 
-        return os.fspath(resolved_project_dir)
+        return os.fspath(project_dir)
 
     @field_validator("profiles_dir")
     def validate_profiles_dir(cls, profiles_dir: Optional[str]) -> Optional[str]:
         if profiles_dir is None:
             return None
 
-        resolved_profiles_dir = cls._validate_absolute_path_exists(profiles_dir)
+        resolved_profiles_dir = cls._validate_path_exists(profiles_dir)
 
         cls._validate_path_contains_file(
             path=resolved_profiles_dir,
