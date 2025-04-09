@@ -2,28 +2,18 @@ import express from "express";
 
 const app = express();
 
-// Statically hosted files, for example:
-//
-// public/images/dagster-primary-horizontal.svg -> /images/dagster-primary-horizontal.svg
-//
-app.use(express.static("public"));
+app.get('/', (req, res) => { res.send('Dagster Marketplace API') })
 
-const EXAMPLE_PAYLOAD = {
-  status: "success",
-  user: {
-    id: "u123456",
-    username: "johndoe",
-    email: "john.doe@example.com",
-    role: "admin",
-    profile: {
-      firstName: "John",
-      lastName: "Doe",
-      avatarUrl: "https://example.com/avatars/johndoe.jpg",
-    },
-  },
-};
+//
+// Serve `__generated__` files (e.g. `index.json` at `/api/integrations/index.json`)
+//
+app.use("/api/integrations", express.static("__generated__"));
 
-app.get("/api/example", (req, res) => res.json(EXAMPLE_PAYLOAD));
+// Servce static assets, for example:
+//
+// public/images/dagster-primary-horizontal.svg -> /assets/images/dagster-primary-horizontal.svg
+//
+app.use("/assets", express.static("public"));
 
 app.listen(8080, () => console.log("Server ready on port 8080."));
 

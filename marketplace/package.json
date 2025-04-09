@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint api/ --ext=.tsx,.ts,.js --fix",
-    "lint:ci": "eslint api/ --ext=.tsx,.ts,.js",
-    "test": "jest",
-    "ts": "tsc -p ."
+  "test": "jest",
+  "ts": "tsc -p .",
+  "lint": "eslint .",
+  "generate": "ts-node -O '{\"module\": \"commonjs\"}' ./scripts/generate.ts"
   },
   "keywords": [],
   "author": "",
@@ -17,12 +17,16 @@
     "express": "^5.1.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.24.0",
+    "@types/express": "^5.0.1",
     "@types/node": "^22.14.0",
     "eslint": "^9.24.0",
     "eslint-config-prettier": "^10.1.1",
-    "eslint-plugin-prettier": "^5.2.6",
-    "prettier": "^3.5.3",
+    "globals": "^16.0.0",
+    "to-vfile": "^8.0.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.29.1"
+    "typescript-eslint": "^8.29.1",
+    "vfile-matter": "^5.0.1"
   }
 }

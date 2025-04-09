@@ -1,0 +1,19 @@
+{
+  "frontmatter": {
+    "id": "hex",
+    "status": "published",
+    "name": "Hex",
+    "title": "Dagster & Hex",
+    "excerpt": "The community-supported `dagster-hex` package provides an integration with Hex.",
+    "partnerlink": "",
+    "categories": [],
+    "enabledBy": [],
+    "enables": [],
+    "tags": [
+      "community-supported",
+      "compute"
+    ]
+  },
+  "logoFilename": "hex.svg",
+  "content": "The community-supported `dagster-hex` package provides an integration with HashiCorp Nomad.\n\nFor more information, see the [Dagster Community Integrations GitHub repository](https://github.com/dagster-io/community-integrations/tree/main/libraries/dagster-hex)."
+}
