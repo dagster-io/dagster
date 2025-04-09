@@ -1,4 +1,4 @@
-dg init --workspace-name dagster-workspace
+dg init --workspace dagster-workspace
 
 Scaffolded files for Dagster workspace at /.../dagster-workspace.
 Enter the name of your Dagster project: project-1
