@@ -159,7 +159,15 @@ def test_build_docs_success_in_published_package():
 
 GET_DOCS_JSON_QUERY = """
 query GetDocsJson {
-  locationDocsJson(repositorySelector: {repositoryLocationName: "foo-bar", repositoryName: "foo-bar"})
+  locationDocsJsonOrError(repositorySelector: {repositoryLocationName: "foo-bar", repositoryName: "__repository__"}) {
+    __typename
+    ... on LocationDocsJson {
+      json
+    }
+    ... on PythonError {
+      message
+    }
+  }
 }
 """
 
@@ -181,17 +189,22 @@ def test_build_docs_success_matches_graphql():
         assert contents
 
         port = find_free_port()
+
         dev_process = launch_dev_command(["--port", str(port)])
         wait_for_projects_loaded({"foo-bar"}, port, dev_process)
 
+        print("\n\n\n", DOCS_JSON_PATH)
         import time
 
-        print(port)
+        time.sleep(60)
 
-        time.sleep(50)
+        try:
+            gql_client = DagsterGraphQLClient(hostname="localhost", port_number=port)
+            result = gql_client._execute(GET_DOCS_JSON_QUERY)  # noqa: SLF001
+            assert result["locationDocsJsonOrError"]["__typename"] == "LocationDocsJson", str(
+                result
+            )
+            assert json.loads(result["locationDocsJsonOrError"]["json"]) == contents
 
-        gql_client = DagsterGraphQLClient(hostname="localhost", port_number=port)
-        result = gql_client._execute(GET_DOCS_JSON_QUERY)  # noqa: SLF001
-        assert json.loads(result["locationDocsJson"]) == contents
-
-        assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)
+        finally:
+            assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)

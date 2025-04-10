@@ -1,5 +1,4 @@
 import importlib
-import json
 from pathlib import Path
 from types import ModuleType
 
@@ -54,8 +53,7 @@ def load_defs(defs_root: ModuleType) -> Definitions:
 
     snaps = [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
 
-    components_json = json.dumps(json_for_all_components(snaps))
-    print(components_json)
+    components_json = json_for_all_components(snaps)
 
     with use_component_load_context(context):
         return Definitions.merge(

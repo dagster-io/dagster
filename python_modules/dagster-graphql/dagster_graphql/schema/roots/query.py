@@ -120,7 +120,11 @@ from dagster_graphql.schema.backfill import (
     GraphenePartitionBackfillsOrError,
 )
 from dagster_graphql.schema.entity_key import GrapheneAssetKey
-from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
+from dagster_graphql.schema.env_vars import (
+    GrapheneEnvVarWithConsumersListOrError,
+    GrapheneLocationDocsJson,
+    GrapheneLocationDocsJsonOrError,
+)
 from dagster_graphql.schema.external import (
     GrapheneRepositoriesOrError,
     GrapheneRepositoryConnection,
@@ -314,8 +318,8 @@ class GrapheneQuery(graphene.ObjectType):
         description="Retrieve all the utilized environment variables for the given repo.",
     )
 
-    locationDocsJson = graphene.Field(
-        graphene.NonNull(graphene.JSONString),
+    locationDocsJsonOrError = graphene.Field(
+        graphene.NonNull(GrapheneLocationDocsJsonOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         description="Retrieves JSON blob to drive integrated code location docs.",
     )
@@ -776,9 +780,9 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     @capture_error
-    def resolve_locationDocsJson(
+    def resolve_locationDocsJsonOrError(
         self, graphene_info: ResolveInfo, repositorySelector: GrapheneRepositorySelector
-    ):
+    ) -> GrapheneLocationDocsJson:
         repo_selector = RepositorySelector.from_graphql_input(repositorySelector)
 
         location: CodeLocation = graphene_info.context.get_code_location(
@@ -796,7 +800,7 @@ class GrapheneQuery(graphene.ObjectType):
             else "[]"
         )
 
-        return plugin_docs_json
+        return GrapheneLocationDocsJson(json=plugin_docs_json)
 
     @capture_error
     def resolve_sensorOrError(
