@@ -13,6 +13,14 @@ services:
     networks:
       - postgres
 
+  s3:
+    container_name: s3
+    image: localstack/localstack:s3-latest
+    ports:
+      - "4566:4566"
+    networks:
+      - postgres
+
 networks:
   postgres:
     driver: bridge

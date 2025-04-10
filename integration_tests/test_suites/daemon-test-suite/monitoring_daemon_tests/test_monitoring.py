@@ -1,7 +1,10 @@
+pytest_plugins = ["dagster_test.fixtures"]
+
 import os
 import time
 from contextlib import contextmanager
 
+import boto3
 import pytest
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
@@ -22,7 +25,6 @@ from dagster_test.test_project import (
 )
 
 ensure_dagster_aws_tests_import()
-from dagster_aws_tests.aws_credential_test_utils import get_aws_creds
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
@@ -157,11 +159,16 @@ def test_docker_monitoring(aws_env):
 
 
 @pytest.fixture
-def aws_env():
-    aws_creds = get_aws_creds()
+def aws_env(docker_compose):
+    boto3.client(
+        "s3",
+        endpoint_url=f"http://{docker_compose['s3']}:4566",
+        region_name="us-east-1",
+    ).create_bucket(Bucket="dagster-scratch-80542c2")
     return [
-        f"AWS_ACCESS_KEY_ID={aws_creds['aws_access_key_id']}",
-        f"AWS_SECRET_ACCESS_KEY={aws_creds['aws_secret_access_key']}",
+        "AWS_ACCESS_KEY_ID=test",
+        "AWS_SECRET_ACCESS_KEY=test",
+        "AWS_ENDPOINT_URL=http://s3:4566",
     ]
 
 
