@@ -782,5 +782,19 @@ def test_load_datasets() -> None:
         TaskHandle(dag_id="producer2", task_id="producing_task"): {AssetKey("example1")},
         TaskHandle(dag_id="consumer1", task_id="task"): {AssetKey("example2")},
     }
-    assert asset_spec("example1", defs).deps == []
-    assert asset_spec("example2", defs).deps == [AssetDep("example1")]
+    example1_spec = asset_spec("example1", defs)
+    assert example1_spec
+    assert example1_spec.deps == []
+    example2_spec = asset_spec("example2", defs)
+    assert example2_spec
+    assert example2_spec.deps == [AssetDep("example1")]
+
+    # Filter down to just producer1. Only example1 should be included
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=af_instance,
+        retrieval_filter=AirflowFilter(dag_id_ilike="producer1"),
+        defs=Definitions(assets=[spec]),
+    )
+    Definitions.validate_loadable(defs)
+    assert asset_spec("example1", defs)
+    assert not asset_spec("example2", defs)
