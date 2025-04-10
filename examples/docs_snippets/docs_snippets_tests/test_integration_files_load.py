@@ -84,6 +84,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/power-bi/multiple-power-bi-workspaces.py",
     f"{snippets_folder}/power-bi/representing-power-bi-assets.py",
     f"{snippets_folder}/sigma/customize-sigma-asset-defs.py",
+    f"{snippets_folder}/sigma/customize_upstream_dependencies.py",
     f"{snippets_folder}/sigma/filtering-sigma-assets.py",
     f"{snippets_folder}/sigma/multiple-sigma-organizations.py",
     f"{snippets_folder}/sigma/representing-sigma-assets.py",
