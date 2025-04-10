@@ -159,17 +159,18 @@ def test_docker_monitoring(aws_env):
 
 
 @pytest.fixture
-def aws_env(docker_compose):
-    boto3.client(
-        "s3",
-        endpoint_url=f"http://{docker_compose['s3']}:4566",
-        region_name="us-east-1",
-    ).create_bucket(Bucket="dagster-scratch-80542c2")
-    return [
-        "AWS_ACCESS_KEY_ID=test",
-        "AWS_SECRET_ACCESS_KEY=test",
-        "AWS_ENDPOINT_URL=http://s3:4566",
-    ]
+def aws_env(docker_compose_cm):
+    with docker_compose_cm(network_name="postgres") as hostnames:
+        boto3.client(
+            "s3",
+            endpoint_url=f"http://{hostnames['s3']}:4566",
+            region_name="us-east-1",
+        ).create_bucket(Bucket="dagster-scratch-80542c2")
+        yield [
+            "AWS_ACCESS_KEY_ID=test",
+            "AWS_SECRET_ACCESS_KEY=test",
+            "AWS_ENDPOINT_URL=http://s3:4566",
+        ]
 
 
 def test_docker_monitoring_run_out_of_attempts(aws_env):
