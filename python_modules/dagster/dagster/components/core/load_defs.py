@@ -39,13 +39,13 @@ def load_defs(defs_root: ModuleType) -> Definitions:
         resources (Optional[Mapping[str, object]]): A mapping of resource keys to resources
             to apply to the definitions.
     """
-    from dagster.components.core.defs_module import DefsModuleComponent
+    from dagster.components.core.defs_module import get_component
     from dagster.components.core.package_entry import discover_entry_point_package_objects
     from dagster.components.core.snapshot import get_package_entry_snap
 
     # create a top-level DefsModule component from the root module
     context = ComponentLoadContext.for_module(defs_root)
-    root_component = DefsModuleComponent.from_context(context)
+    root_component = get_component(context)
     if root_component is None:
         raise DagsterInvalidDefinitionError("Could not resolve root module to a component.")
 
