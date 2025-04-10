@@ -396,10 +396,14 @@ class AirflowInstance:
     def _get_datasets(
         self,
         *,
-        limit: int = 100,
-        offset: int = 0,
+        limit: int,
+        offset: int,
+        retrieval_filter: AirflowFilter,
+        dag_ids: Optional[Sequence[str]],
     ) -> Sequence["Dataset"]:
         params: dict[str, Any] = {"limit": limit, "offset": offset}
+        if retrieval_filter.dataset_uri_ilike:
+            params["uri_pattern"] = retrieval_filter.dataset_uri_ilike
 
         response = self.auth_backend.get_session().get(
             f"{self.get_api_url()}/datasets",
@@ -415,15 +419,6 @@ class AirflowInstance:
         datasets = []
 
         for dataset_data in data["datasets"]:
-            consuming_dags = [
-                DatasetConsumingDag(
-                    dag_id=dag_data["dag_id"],
-                    created_at=dag_data.get("created_at", ""),
-                    updated_at=dag_data.get("updated_at", ""),
-                )
-                for dag_data in dataset_data.get("consuming_dags", [])
-            ]
-
             producing_tasks = [
                 DatasetProducingTask(
                     dag_id=task_data["dag_id"],
@@ -432,6 +427,21 @@ class AirflowInstance:
                     updated_at=task_data.get("updated_at", ""),
                 )
                 for task_data in dataset_data.get("producing_tasks", [])
+                if not dag_ids or task_data["dag_id"] in dag_ids
+            ]
+            if not producing_tasks:
+                # If the dataset has no producers among the set of dag_ids we care about, skip it.
+                continue
+
+            consuming_dags = [
+                DatasetConsumingDag(
+                    dag_id=dag_data["dag_id"],
+                    created_at=dag_data.get("created_at", ""),
+                    updated_at=dag_data.get("updated_at", ""),
+                )
+                for dag_data in dataset_data.get("consuming_dags", [])
+                # Skip consuming dags that are not in the set of dag_ids we care about.
+                if not dag_ids or dag_data["dag_id"] in dag_ids
             ]
 
             dataset = Dataset(
@@ -452,14 +462,14 @@ class AirflowInstance:
         self,
         *,
         batch_size: int = 100,
+        retrieval_filter: Optional[AirflowFilter] = None,
+        dag_ids: Optional[Sequence[str]] = None,
     ) -> Sequence["Dataset"]:
         """Get all datasets from the Airflow instance, handling pagination.
 
         Args:
             batch_size: The number of items to fetch per request. Default is 100.
-            max_datasets: The maximum number of datasets to return. If None, all datasets will be returned.
-            order_by: The name of the field to order the results by. Prefix a field name with - to reverse the sort order.
-            uri_pattern: If set, only return datasets with URIs matching this pattern.
+            retrieval_filter: An optional filter to apply to the dataset retrieval.
             dag_ids: One or more DAG IDs to filter datasets by associated DAGs either consuming or producing.
 
         Returns:
@@ -467,11 +477,14 @@ class AirflowInstance:
         """
         datasets = []
         offset = 0
+        retrieval_filter = retrieval_filter or AirflowFilter()
 
         while True:
             batch = self._get_datasets(
                 limit=batch_size,
                 offset=offset,
+                retrieval_filter=retrieval_filter,
+                dag_ids=dag_ids,
             )
 
             datasets.extend(batch)

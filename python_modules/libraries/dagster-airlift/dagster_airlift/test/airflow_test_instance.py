@@ -179,8 +179,25 @@ class AirflowInstanceFake(AirflowInstance):
             raise ValueError(f"Dag info not found for file_token {file_token}")
         return "indicates found source code"
 
-    def get_all_datasets(self, *, batch_size=100) -> Sequence[Dataset]:
-        return self._datasets
+    def get_all_datasets(
+        self,
+        *,
+        batch_size=100,
+        retrieval_filter: Optional[AirflowFilter] = None,
+        dag_ids: Optional[Sequence[str]] = None,
+    ) -> Sequence[Dataset]:
+        return_datasets = []
+        retrieval_filter = retrieval_filter or AirflowFilter()
+        for dataset in self._datasets:
+            if (
+                retrieval_filter.dataset_uri_ilike
+                and retrieval_filter.dataset_uri_ilike not in dataset.uri
+            ):
+                continue
+            if dag_ids and not any(t.dag_id in dag_ids for t in dataset.producing_tasks):
+                continue
+            return_datasets.append(dataset)
+        return return_datasets
 
 
 def make_dag_info(
