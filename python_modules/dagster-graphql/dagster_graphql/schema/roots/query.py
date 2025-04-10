@@ -638,12 +638,6 @@ class GrapheneQuery(graphene.ObjectType):
         description="Retrieve the executions for a given asset check.",
     )
 
-    orderAssetsByLastMaterializedTime = graphene.Field(
-        non_null_list(GrapheneAssetKey),
-        assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
-        description="Retrieve a list of asset keys sorted by their last materialized or observed time. Includes materialization attempts that failed to materialize the asset.",
-    )
-
     @capture_error
     def resolve_repositoriesOrError(
         self,
@@ -1363,6 +1357,3 @@ class GrapheneQuery(graphene.ObjectType):
             limit=limit,
             cursor=cursor,
         )
-
-    def resolve_orderAssetsByLastMaterializedTime(self, graphene_info, assetKeys: Sequence[GrapheneAssetKeyInput]) -> Sequence[GrapheneAssetKeyInput]:
-        
