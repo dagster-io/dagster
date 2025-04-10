@@ -7,7 +7,6 @@ import yaml
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.test_utils import instance_for_test
-from dagster._utils.test.postgres_instance import TestPostgresInstance
 from dagster_postgres.utils import get_conn, get_conn_string
 
 
@@ -218,9 +217,10 @@ def test_statement_timeouts(hostname):
 
 
 def test_skip_autocreate(hostname, conn_string):
-    TestPostgresInstance.clean_run_storage(conn_string, should_autocreate_tables=False)
-    TestPostgresInstance.clean_event_log_storage(conn_string, should_autocreate_tables=False)
-    TestPostgresInstance.clean_schedule_storage(conn_string, should_autocreate_tables=False)
+    with instance_for_test(overrides=yaml.safe_load(unified_pg_config(hostname))) as instance:
+        instance.run_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        instance.event_log_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        instance.schedule_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
     with instance_for_test(
         overrides=yaml.safe_load(skip_autocreate_pg_config(hostname))
@@ -238,10 +238,6 @@ def test_skip_autocreate(hostname, conn_string):
         instance.get_runs()
         instance.all_asset_keys()
         instance.all_instigator_state()
-
-    TestPostgresInstance.clean_run_storage(conn_string, should_autocreate_tables=False)
-    TestPostgresInstance.clean_event_log_storage(conn_string, should_autocreate_tables=False)
-    TestPostgresInstance.clean_schedule_storage(conn_string, should_autocreate_tables=False)
 
 
 def test_specify_pg_params(hostname):

@@ -4,6 +4,10 @@ from dagster_test.fixtures.docker_compose import (
     docker_compose_cm as docker_compose_cm,
     docker_compose_cm_fixture as docker_compose_cm_fixture,
 )
+from dagster_test.fixtures.instance.postgres import (
+    postgres_conn_str as postgres_conn_str,
+    postgres_hostname as postgres_hostname,
+)
 from dagster_test.fixtures.utils import (
     retrying_requests as retrying_requests,
     test_directory as test_directory,

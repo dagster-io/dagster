@@ -262,29 +262,6 @@ gcp_creds_extra_cmds = (
 )
 
 
-postgres_extra_cmds = [
-    "pushd python_modules/libraries/dagster-postgres/dagster_postgres_tests/",
-    "docker-compose up -d --remove-orphans",  # clean up in hooks/pre-exit,
-    "docker-compose -f docker-compose-multi.yml up -d",  # clean up in hooks/pre-exit,
-    *network_buildkite_container("postgres"),
-    *connect_sibling_docker_container(
-        "postgres", "test-postgres-db", "POSTGRES_TEST_DB_HOST"
-    ),
-    *network_buildkite_container("postgres_multi"),
-    *connect_sibling_docker_container(
-        "postgres_multi",
-        "test-run-storage-db",
-        "POSTGRES_TEST_RUN_STORAGE_DB_HOST",
-    ),
-    *connect_sibling_docker_container(
-        "postgres_multi",
-        "test-event-log-storage-db",
-        "POSTGRES_TEST_EVENT_LOG_STORAGE_DB_HOST",
-    ),
-    "popd",
-]
-
-
 # Some Dagster packages have more involved test configs or support only certain Python version;
 # special-case those here
 EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
@@ -700,7 +677,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
     ),
     PackageSpec(
         "python_modules/libraries/dagster-postgres",
-        pytest_extra_cmds=postgres_extra_cmds,
         pytest_tox_factors=[
             "storage_tests",
             "storage_tests_sqlalchemy_1_3",
