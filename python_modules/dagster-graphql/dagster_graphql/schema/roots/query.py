@@ -641,6 +641,8 @@ class GrapheneQuery(graphene.ObjectType):
     orderAssetsByLastMaterializedTime = graphene.Field(
         non_null_list(GrapheneAssetKey),
         assetKeys=graphene.Argument(non_null_list(GrapheneAssetKeyInput)),
+        descending=graphene.Boolean(default_value=False),
+        description="Retrieve a list of asset keys ordered by last materialized time.",
     )
 
     @capture_error
@@ -1364,11 +1366,12 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     def resolve_orderAssetsByLastMaterializedTime(
-        self, graphene_info, assetKeys: Sequence[GrapheneAssetKeyInput]
+        self, graphene_info, assetKeys: Sequence[GrapheneAssetKeyInput], descending: bool = False
     ) -> Sequence[GrapheneAssetKey]:
         sorted_keys = (
             graphene_info.context.instance.event_log_storage.order_assets_by_last_materialized_time(
-                [AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys]
+                [AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys],
+                descending=descending,
             )
         )
         return [GrapheneAssetKey(path=asset_key.path) for asset_key in sorted_keys]
