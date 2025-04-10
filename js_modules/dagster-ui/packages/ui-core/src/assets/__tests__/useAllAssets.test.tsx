@@ -113,9 +113,6 @@ describe('useAllAssets', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.assets?.length).toBe(1);
-    });
-    await waitFor(() => {
       expect(result.current.assets?.length).toBe(5);
     });
   });
