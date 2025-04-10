@@ -18,7 +18,9 @@ from dagster import (
 )
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.reconstruct import initialize_repository_def_from_pointer
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._utils.test.definitions import (
     definitions,
     scoped_reconstruction_metadata,
@@ -29,6 +31,7 @@ from dagster_airlift.core import assets_with_task_mappings, build_defs_from_airf
 from dagster_airlift.core.airflow_defs_data import AirflowDefinitionsData
 from dagster_airlift.core.filter import AirflowFilter
 from dagster_airlift.core.load_defs import (
+    build_job_based_airflow_defs,
     enrich_airflow_mapped_assets,
     load_airflow_dag_asset_specs,
 )
@@ -44,6 +47,7 @@ from dagster_airlift.core.serialization.serialized_data import (
 )
 from dagster_airlift.core.utils import is_task_mapped_asset_spec, metadata_for_task_mapping
 from dagster_airlift.test import asset_spec, make_instance
+from dagster_airlift.test.test_utils import get_job
 from dagster_shared.serdes import deserialize_value
 
 from dagster_airlift_tests.unit_tests.conftest import (
@@ -798,3 +802,49 @@ def test_load_datasets() -> None:
     Definitions.validate_loadable(defs)
     assert asset_spec("example1", defs)
     assert not asset_spec("example2", defs)
+
+
+def test_load_job_defs() -> None:
+    """Test job-based loader."""
+    task_structure = {
+        "producer1": ["producing_task"],
+        "producer2": ["producing_task"],
+        "consumer1": ["task"],
+        "consumer2": ["task"],
+    }
+    # Dataset is produced and consumed by multiple tasks
+    dataset_info = [
+        {
+            "uri": "s3://dataset-bucket/example1.csv",
+            "producing_tasks": [
+                {"dag_id": "producer1", "task_id": "producing_task"},
+                {"dag_id": "producer2", "task_id": "producing_task"},
+            ],
+            "consuming_dags": ["consumer1", "consumer2"],
+        },
+        {
+            "uri": "s3://dataset-bucket/example2.csv",
+            "producing_tasks": [
+                {"dag_id": "consumer1", "task_id": "task"},
+            ],
+            "consuming_dags": [],
+        },
+    ]
+    af_instance = make_instance(
+        dag_and_task_structure=task_structure,
+        dataset_construction_info=dataset_info,
+    )
+    # Add an additional spec to the same task as the dataset
+    spec = AssetSpec(
+        key="a", metadata=metadata_for_task_mapping(task_id="producing_task", dag_id="producer1")
+    )
+
+    defs = build_job_based_airflow_defs(
+        airflow_instance=af_instance,
+        mapped_defs=Definitions(assets=[spec]),
+    )
+    Definitions.validate_loadable(defs)
+    assert isinstance(get_job("producer1", defs), UnresolvedAssetJobDefinition)
+    assert isinstance(get_job("producer2", defs), UnresolvedAssetJobDefinition)
+    assert isinstance(get_job("consumer1", defs), UnresolvedAssetJobDefinition)
+    assert isinstance(get_job("consumer2", defs), JobDefinition)

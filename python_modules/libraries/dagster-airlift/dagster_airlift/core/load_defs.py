@@ -1,4 +1,5 @@
-from collections.abc import Iterable, Sequence
+from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Union, cast
 
@@ -11,13 +12,17 @@ from dagster import (
 from dagster._annotations import beta
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import map_asset_specs
+from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_load_context import StateBackedDefinitionsLoader
 from dagster._core.definitions.external_asset import external_asset_from_spec
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 from dagster_airlift.core.airflow_defs_data import MappedAsset
 from dagster_airlift.core.airflow_instance import AirflowInstance
 from dagster_airlift.core.filter import AirflowFilter
+from dagster_airlift.core.job_builder import construct_dag_jobs
 from dagster_airlift.core.sensor.event_translation import (
     DagsterEventTransformerFn,
     default_event_transformer,
@@ -35,7 +40,14 @@ from dagster_airlift.core.serialization.serialized_data import (
     DagInfo,
     SerializedAirflowDefinitionsData,
 )
-from dagster_airlift.core.utils import get_metadata_key, spec_iterator
+from dagster_airlift.core.utils import (
+    dag_handles_for_spec,
+    get_metadata_key,
+    is_dag_mapped_asset_spec,
+    is_task_mapped_asset_spec,
+    spec_iterator,
+    task_handles_for_spec,
+)
 
 
 @dataclass
@@ -301,6 +313,21 @@ def replace_assets_in_defs(
     )
 
 
+def add_jobs_to_defs(
+    defs: Definitions, jobs: Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]
+) -> Definitions:
+    return Definitions(
+        assets=defs.assets,
+        asset_checks=defs.asset_checks,
+        sensors=defs.sensors,
+        schedules=defs.schedules,
+        jobs=[*jobs, *(defs.jobs if defs.jobs else [])],
+        executor=defs.executor,
+        loggers=defs.loggers,
+        resources=defs.resources,
+    )
+
+
 def enrich_airflow_mapped_assets(
     mapped_assets: Sequence[MappedAsset],
     airflow_instance: AirflowInstance,
@@ -370,4 +397,101 @@ def construct_dataset_specs(
             )[0]
             for dataset in serialized_data.datasets
         ],
+    )
+
+
+def _get_dag_to_asset_mapping(
+    mapped_assets: Sequence[MappedAsset],
+) -> Mapping[str, Sequence[Union[AssetSpec, AssetsDefinition]]]:
+    res = defaultdict(list)
+    for asset in mapped_assets:
+        if is_task_mapped_asset_spec(asset):
+            for task_handle in task_handles_for_spec(asset):
+                res[task_handle.dag_id].append(asset)
+        elif is_dag_mapped_asset_spec(asset):
+            for dag_handle in dag_handles_for_spec(asset):
+                res[dag_handle.dag_id].append(asset)
+    return res
+
+
+def _dag_multi_asset(
+    dag_id: str,
+    specs: Sequence[AssetSpec],
+) -> AssetsDefinition:
+    @multi_asset(
+        specs=specs,
+        name=f"{dag_id}_underlying_op",
+        # We need to allow assets definitions to be subsettable in the case where
+        # the same asset is referenced in multiple DAGs.
+        can_subset=True,
+    )
+    def _dag_multi():
+        pass
+
+    return _dag_multi
+
+
+def build_dag_assets_defs(
+    dag_to_assets_mapping: Mapping[str, Sequence[AssetSpec]],
+) -> Sequence[AssetsDefinition]:
+    already_seen = set()
+    res = []
+    for dag_id, specs in dag_to_assets_mapping.items():
+        unseen_specs = [spec for spec in specs if spec.key not in already_seen]
+        if not unseen_specs:
+            continue
+        res.append(
+            _dag_multi_asset(
+                dag_id=dag_id,
+                specs=[spec for spec in specs if spec.key not in already_seen],
+            )
+        )
+        already_seen.update(spec.key for spec in specs)
+    return res
+
+
+def build_job_based_airflow_defs(
+    *,
+    airflow_instance: AirflowInstance,
+    mapped_defs: Optional[Definitions] = None,
+) -> Definitions:
+    mapped_defs = mapped_defs or Definitions()
+    mapped_assets = _type_narrow_defs_assets(mapped_defs)
+    serialized_airflow_data = AirflowInstanceDefsLoader(
+        airflow_instance=airflow_instance,
+        mapped_assets=mapped_assets,
+        dag_selector_fn=None,
+        source_code_retrieval_enabled=True,
+        retrieval_filter=AirflowFilter(),
+    ).get_or_fetch_state()
+    assets_with_airflow_data = _apply_airflow_data_to_specs(
+        [
+            *mapped_assets,
+            *construct_dataset_specs(serialized_airflow_data),
+        ],
+        serialized_airflow_data,
+    )
+    dag_to_assets_mapping = _get_dag_to_asset_mapping(assets_with_airflow_data)
+    jobs = construct_dag_jobs(
+        serialized_data=serialized_airflow_data,
+        mapped_assets=dag_to_assets_mapping,
+    )
+    fully_resolved_dag_assets = build_dag_assets_defs(dag_to_assets_mapping)
+    defs_with_airflow_assets = add_jobs_to_defs(
+        replace_assets_in_defs(defs=mapped_defs, assets=fully_resolved_dag_assets), jobs=jobs
+    )
+
+    return Definitions.merge(
+        defs_with_airflow_assets,
+        Definitions(
+            sensors=[
+                build_airflow_polling_sensor(
+                    mapped_assets=fully_resolved_dag_assets,
+                    airflow_instance=airflow_instance,
+                    minimum_interval_seconds=DEFAULT_AIRFLOW_SENSOR_INTERVAL_SECONDS,
+                    event_transformer_fn=default_event_transformer,
+                    default_sensor_status=DefaultSensorStatus.RUNNING,
+                )
+            ]
+        ),
     )
