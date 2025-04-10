@@ -78,7 +78,6 @@ export function useLiveData<T>(
       }
     };
     const unsubscribeCallbacks = keys.map((key) => manager.subscribe(key, setDataSingle, thread));
-
     return () => {
       unsubscribeCallbacks.forEach((cb) => {
         cb();
