@@ -14,10 +14,81 @@ class GrapheneAssetHealthStatus(graphene.Enum):
         name = "AssetHealthStatus"
 
 
+class GrapheneAssetHealthCheckDegradedMeta(graphene.ObjectType):
+    numFailedChecks = graphene.NonNull(graphene.Int)
+    numWarningChecks = graphene.NonNull(graphene.Int)
+    totalNumChecks = graphene.NonNull(graphene.Int)
+
+    class Meta:
+        name = "AssetHealthCheckDegradedMeta"
+
+
+class GrapheneAssetHealthCheckWarningMeta(graphene.ObjectType):
+    numWarningChecks = graphene.NonNull(graphene.Int)
+    totalNumChecks = graphene.NonNull(graphene.Int)
+
+    class Meta:
+        name = "AssetHealthCheckWarningMeta"
+
+
+class GrapheneAssetHealthCheckUnknownMeta(graphene.ObjectType):
+    numNotExecutedChecks = graphene.NonNull(graphene.Int)
+    totalNumChecks = graphene.NonNull(graphene.Int)
+
+    class Meta:
+        name = "AssetHealthCheckUnknownMeta"
+
+
+class GrapheneAssetHealthCheckMeta(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneAssetHealthCheckDegradedMeta,
+            GrapheneAssetHealthCheckWarningMeta,
+            GrapheneAssetHealthCheckUnknownMeta,
+        )
+        name = "AssetHealthCheckMeta"
+
+
+class GrapheneAssetHealthMaterializationDegradedPartitionedMeta(graphene.ObjectType):
+    numFailedPartitions = graphene.NonNull(graphene.Int)
+    numMissingPartitions = graphene.NonNull(graphene.Int)
+    totalNumPartitions = graphene.NonNull(graphene.Int)
+
+    class Meta:
+        name = "AssetHealthMaterializationDegradedPartitionedMeta"
+
+
+class GrapheneAssetHealthMaterializationWarningPartitionedMeta(graphene.ObjectType):
+    numMissingPartitions = graphene.NonNull(graphene.Int)
+    totalNumPartitions = graphene.NonNull(graphene.Int)
+
+    class Meta:
+        name = "AssetHealthMaterializationWarningPartitionedMeta"
+
+
+class GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta(graphene.ObjectType):
+    failedRunId = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "AssetHealthMaterializationDegradedNotPartitionedMeta"
+
+
+class GrapheneAssetHealthMaterializationMeta(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneAssetHealthMaterializationDegradedPartitionedMeta,
+            GrapheneAssetHealthMaterializationWarningPartitionedMeta,
+            GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta,
+        )
+        name = "AssetHealthMaterializationMeta"
+
+
 class GrapheneAssetHealth(graphene.ObjectType):
     assetHealth = graphene.NonNull(GrapheneAssetHealthStatus)
     materializationStatus = graphene.NonNull(GrapheneAssetHealthStatus)
+    materializationStatusMetadata = graphene.Field(GrapheneAssetHealthMaterializationMeta)
     assetChecksStatus = graphene.NonNull(GrapheneAssetHealthStatus)
+    assetChecksStatusMetadata = graphene.Field(GrapheneAssetHealthCheckMeta)
     freshnessStatus = graphene.NonNull(GrapheneAssetHealthStatus)
 
     class Meta:
