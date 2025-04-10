@@ -600,12 +600,10 @@ describe('AssetLiveDataProvider', () => {
 
     expect(resultFn).toHaveBeenCalled();
     await waitFor(() => {
-      console.log(JSON.stringify(hookResult.mock.calls, null, 2));
       expect(hookResult.mock.calls[1][0]!).toEqual({
         ['key1']: expect.any(Object),
         ['key2']: expect.any(Object),
       });
-      console.log('passed');
     });
 
     // Re-render with different asset keys (only asset key1 is in the new set)
