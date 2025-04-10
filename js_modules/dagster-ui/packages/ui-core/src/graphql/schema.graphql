@@ -3554,6 +3554,10 @@ type Query {
     limit: Int!
     cursor: String
   ): [AssetCheckExecution!]!
+  orderAssetsByLastMaterializedTime(
+    assetKeys: [AssetKeyInput!]!
+    descending: Boolean = false
+  ): [AssetKey!]!
 }
 
 union WorkspaceOrError = Workspace | PythonError
