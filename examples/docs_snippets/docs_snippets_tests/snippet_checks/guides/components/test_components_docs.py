@@ -2,6 +2,8 @@ import os
 import textwrap
 from pathlib import Path
 
+import pytest
+
 from dagster._utils.env import environ
 from docs_snippets_tests.snippet_checks.guides.components.utils import (
     DAGSTER_ROOT,
@@ -34,6 +36,7 @@ COMPONENTS_SNIPPETS_DIR = (
 )
 
 
+@pytest.mark.timeout(480)
 def test_components_docs_index(update_snippets: bool) -> None:
     snip_no = 0
 
