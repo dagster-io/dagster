@@ -19,6 +19,23 @@ def scope_compile_dbt_manifest_with_dbt_project(manifest):
     # end_compile_dbt_manifest_with_dbt_project
 
 
+def scope_connection_information_with_dbt_project():
+    # start_connection_information_with_dbt_project
+    from pathlib import Path
+
+    from dagster_dbt import DbtProject
+
+    my_dbt_project = DbtProject(
+        project_dir=Path(__file__).joinpath("..", "..", "..").resolve(),
+        profiles_dir=Path(__file__)
+        .joinpath("..", "..", "..", "my_profiles_dir")
+        .resolve(),
+        profile="my_profile",
+        target="my_target",
+    )
+    # end_connection_information_with_dbt_project
+
+
 def scope_schedule_assets_dbt_only(manifest):
     from dagster import Config
 
