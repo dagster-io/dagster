@@ -19,13 +19,14 @@ tableau_workspace = TableauCloudWorkspace(
 
 # start_upstream_asset
 class MyCustomTableauTranslator(DagsterTableauTranslator):
-    def get_sheet_spec(self, data: TableauTranslatorData) -> dg.AssetSpec:
+    def get_asset_spec(self, data: TableauTranslatorData) -> dg.AssetSpec:
         # We create the default asset spec using super()
         default_spec = super().get_asset_spec(data)
         # We customize upstream dependencies for the Tableau sheet named `my_tableau_sheet`
         return default_spec.replace_attributes(
             deps=["my_upstream_asset"]
-            if data.properties.get("name") == "my_tableau_sheet"
+            if data.content_type == TableauContentType.SHEET
+            and data.properties.get("name") == "my_tableau_sheet"
             else ...
         )
 
