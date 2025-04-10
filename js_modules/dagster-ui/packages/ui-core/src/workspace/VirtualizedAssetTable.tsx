@@ -49,7 +49,7 @@ export const VirtualizedAssetTable = (props: Props) => {
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
   const rows: Row[] = React.useMemo(() => {
-    if (isLoading && !Object.keys(groups).length) {
+    if (true || (isLoading && !Object.keys(groups).length)) {
       return new Array(5).fill({type: 'shimmer'});
     }
     return Object.entries(groups).map(([displayKey, assets]) => {
