@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 from typing import Any, Optional, TypeVar, Union, overload
 
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
@@ -155,3 +156,12 @@ class ResolutionContext:
             return [self.at_path(i).resolve_value(v) for i, v in enumerate(val)]
         else:
             return self._resolve_inner_value(val)
+
+    def resolve_source_relative_path(self, value: str) -> Path:
+        path = Path(value)
+        if not self.source_position_tree or path.is_absolute():
+            # no source, can't transform
+            return path
+
+        source_dir = Path(self.source_position_tree.position.filename).parent
+        return source_dir.joinpath(path).resolve()

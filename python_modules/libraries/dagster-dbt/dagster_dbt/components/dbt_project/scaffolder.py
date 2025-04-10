@@ -38,4 +38,4 @@ class DbtProjectComponentScaffolder(Scaffolder):
         else:
             relative_path = None
 
-        scaffold_component(request, {"dbt": {"project_dir": relative_path}})
+        scaffold_component(request, {"project": relative_path})
