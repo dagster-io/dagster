@@ -169,11 +169,17 @@ def fetch_all_airflow_data(
             for task_info in airflow_instance.get_task_infos(dag_id=dag_id)
         }
 
+    if retrieval_filter.retrieve_datasets:
+        datasets = airflow_instance.get_all_datasets(
+            retrieval_filter=retrieval_filter, dag_ids=list(dag_infos.keys())
+        )
+    else:
+        datasets = []
     return FetchedAirflowData(
         dag_infos=dag_infos,
         task_info_map=task_info_map,
         mapping_info=mapping_info,
-        datasets=airflow_instance.get_all_datasets(),
+        datasets=datasets,
     )
 
 
