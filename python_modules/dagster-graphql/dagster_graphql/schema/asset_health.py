@@ -15,8 +15,8 @@ class GrapheneAssetHealthStatus(graphene.Enum):
 
 
 class GrapheneAssetHealthCheckDegradedMeta(graphene.ObjectType):
-    numFailed = graphene.NonNull(graphene.Int)
-    numWarning = graphene.NonNull(graphene.Int)
+    numFailedChecks = graphene.NonNull(graphene.Int)
+    numWarningChecks = graphene.NonNull(graphene.Int)
     totalNumChecks = graphene.NonNull(graphene.Int)
 
     class Meta:
@@ -24,7 +24,7 @@ class GrapheneAssetHealthCheckDegradedMeta(graphene.ObjectType):
 
 
 class GrapheneAssetHealthCheckWarningMeta(graphene.ObjectType):
-    numWarning = graphene.NonNull(graphene.Int)
+    numWarningChecks = graphene.NonNull(graphene.Int)
     totalNumChecks = graphene.NonNull(graphene.Int)
 
     class Meta:
@@ -32,7 +32,7 @@ class GrapheneAssetHealthCheckWarningMeta(graphene.ObjectType):
 
 
 class GrapheneAssetHealthCheckUnknownMeta(graphene.ObjectType):
-    numNotExecuted = graphene.NonNull(graphene.Int)
+    numNotExecutedChecks = graphene.NonNull(graphene.Int)
     totalNumChecks = graphene.NonNull(graphene.Int)
 
     class Meta:
@@ -50,8 +50,8 @@ class GrapheneAssetHealthCheckMeta(graphene.Union):
 
 
 class GrapheneAssetHealthMaterializationDegradedPartitionedMeta(graphene.ObjectType):
-    numFailed = graphene.NonNull(graphene.Int)
-    numMissing = graphene.NonNull(graphene.Int)
+    numFailedPartitions = graphene.NonNull(graphene.Int)
+    numMissingPartitions = graphene.NonNull(graphene.Int)
     totalNumPartitions = graphene.NonNull(graphene.Int)
 
     class Meta:
@@ -59,7 +59,7 @@ class GrapheneAssetHealthMaterializationDegradedPartitionedMeta(graphene.ObjectT
 
 
 class GrapheneAssetHealthMaterializationWarningPartitionedMeta(graphene.ObjectType):
-    numMissing = graphene.NonNull(graphene.Int)
+    numMissingPartitions = graphene.NonNull(graphene.Int)
     totalNumPartitions = graphene.NonNull(graphene.Int)
 
     class Meta:

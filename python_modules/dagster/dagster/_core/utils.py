@@ -43,7 +43,6 @@ PYTHON_LOGGING_LEVELS_NAMES = frozenset(
     ]
 )
 
-
 T = TypeVar("T", bound=Any)
 
 

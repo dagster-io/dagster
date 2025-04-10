@@ -766,13 +766,13 @@ union AssetHealthMaterializationMeta =
   | AssetHealthMaterializationDegradedNotPartitionedMeta
 
 type AssetHealthMaterializationDegradedPartitionedMeta {
-  numFailed: Int!
-  numMissing: Int!
+  numFailedPartitions: Int!
+  numMissingPartitions: Int!
   totalNumPartitions: Int!
 }
 
 type AssetHealthMaterializationWarningPartitionedMeta {
-  numMissing: Int!
+  numMissingPartitions: Int!
   totalNumPartitions: Int!
 }
 
@@ -786,18 +786,18 @@ union AssetHealthCheckMeta =
   | AssetHealthCheckUnknownMeta
 
 type AssetHealthCheckDegradedMeta {
-  numFailed: Int!
-  numWarning: Int!
+  numFailedChecks: Int!
+  numWarningChecks: Int!
   totalNumChecks: Int!
 }
 
 type AssetHealthCheckWarningMeta {
-  numWarning: Int!
+  numWarningChecks: Int!
   totalNumChecks: Int!
 }
 
 type AssetHealthCheckUnknownMeta {
-  numNotExecuted: Int!
+  numNotExecutedChecks: Int!
   totalNumChecks: Int!
 }
 

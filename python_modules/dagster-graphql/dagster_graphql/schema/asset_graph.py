@@ -68,10 +68,12 @@ from dagster_graphql.schema.asset_checks import (
 from dagster_graphql.schema.asset_health import (
     GrapheneAssetHealth,
     GrapheneAssetHealthCheckDegradedMeta,
+    GrapheneAssetHealthCheckMeta,
     GrapheneAssetHealthCheckUnknownMeta,
     GrapheneAssetHealthCheckWarningMeta,
     GrapheneAssetHealthMaterializationDegradedNotPartitionedMeta,
     GrapheneAssetHealthMaterializationDegradedPartitionedMeta,
+    GrapheneAssetHealthMaterializationMeta,
     GrapheneAssetHealthMaterializationWarningPartitionedMeta,
     GrapheneAssetHealthStatus,
 )
@@ -537,7 +539,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     def is_executable(self) -> bool:
         return self._asset_node_snap.is_executable
 
-    async def get_materialization_status_for_asset_health(self, graphene_info: ResolveInfo):
+    async def get_materialization_status_for_asset_health(
+        self, graphene_info: ResolveInfo
+    ) -> tuple[str, Optional[GrapheneAssetHealthMaterializationMeta]]:
         """Computes the health indicator for the asset materialization status. Follows these rules:
         If the asset is partitioned:
             - HEALTHY - all partitions successfully materialized.
@@ -572,8 +576,8 @@ class GrapheneAssetNode(graphene.ObjectType):
                 return (
                     GrapheneAssetHealthStatus.DEGRADED,
                     GrapheneAssetHealthMaterializationDegradedPartitionedMeta(
-                        numFailed=num_failed,
-                        numMissing=num_missing,
+                        numFailedPartitions=num_failed,
+                        numMissingPartitions=num_missing,
                         totalNumPartitions=total_num_partitions,
                     ),
                 )
@@ -582,7 +586,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 return (
                     GrapheneAssetHealthStatus.WARNING,
                     GrapheneAssetHealthMaterializationWarningPartitionedMeta(
-                        numMissing=num_missing,
+                        numMissingPartitions=num_missing,
                         totalNumPartitions=total_num_partitions,
                     ),
                 )
@@ -629,7 +633,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                     failedRunId=last_failed_record.run_id,
                 ),
             )
-        # we are not storing failure events for this asset, so must compute status based on the inforamtion we have available
+        # we are not storing failure events for this asset, so must compute status based on the information we have available
         # in some cases this results in reporting as asset as HEALTHY or UNKNOWN during an in progress run
         # even if the asset was previously failed
         else:
@@ -670,7 +674,9 @@ class GrapheneAssetNode(graphene.ObjectType):
 
             return fallback_status_and_meta
 
-    async def get_asset_check_status_for_asset_health(self, graphene_info: ResolveInfo):
+    async def get_asset_check_status_for_asset_health(
+        self, graphene_info: ResolveInfo
+    ) -> tuple[str, Optional[GrapheneAssetHealthCheckMeta]]:
         """Computes the health indicator for the asset checks for the assets. Follows these rules:
         HEALTHY - the latest completed execution for every check is a success.
         WARNING - the latest completed execution for any asset check failed with severity WARN
@@ -751,7 +757,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             if len(check_statuses) == 0:
                 # checks have never been executed
                 return GrapheneAssetHealthStatus.UNKNOWN, GrapheneAssetHealthCheckUnknownMeta(
-                    numNotExecuted=num_unexecuted_checks,
+                    numNotExecutedChecks=num_unexecuted_checks,
                     totalNumChecks=total_num_checks,
                 )
 
@@ -767,7 +773,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                     return (
                         GrapheneAssetHealthStatus.WARNING,
                         GrapheneAssetHealthCheckWarningMeta(
-                            numWarning=len(check_failure_severities),
+                            numWarningChecks=len(check_failure_severities),
                             totalNumChecks=total_num_checks,
                         ),
                     )
@@ -777,8 +783,8 @@ class GrapheneAssetNode(graphene.ObjectType):
                 )
                 num_warn = len(check_failure_severities) - num_failed
                 return GrapheneAssetHealthStatus.DEGRADED, GrapheneAssetHealthCheckDegradedMeta(
-                    numFailed=num_failed,
-                    numWarning=num_warn,
+                    numFailedChecks=num_failed,
+                    numWarningChecks=num_warn,
                     totalNumChecks=total_num_checks,
                 )
 
@@ -790,20 +796,22 @@ class GrapheneAssetNode(graphene.ObjectType):
                 return (
                     GrapheneAssetHealthStatus.UNKNOWN,
                     GrapheneAssetHealthCheckUnknownMeta(
-                        numNotExecuted=num_unexecuted_checks,
+                        numNotExecutedChecks=num_unexecuted_checks,
                         totalNumChecks=total_num_checks,
                     ),
                 )
             # all checks must have executed and passed
             return GrapheneAssetHealthStatus.HEALTHY, None
 
-    def get_freshness_status_for_asset_health(self, graphene_info: ResolveInfo):
+    def get_freshness_status_for_asset_health(self, graphene_info: ResolveInfo) -> tuple[str, None]:
         # if SLA is met, healthy
         # if SLA violated with warning, warning
         # if SLA violated with error, degraded
         return GrapheneAssetHealthStatus.UNKNOWN, None
 
-    async def resolve_assetHealth(self, graphene_info: ResolveInfo):
+    async def resolve_assetHealth(
+        self, graphene_info: ResolveInfo
+    ) -> Optional[GrapheneAssetHealth]:
         if not graphene_info.context.instance.dagster_observe_supported():
             return None
         check_status, check_meta = await self.get_asset_check_status_for_asset_health(graphene_info)
