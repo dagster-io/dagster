@@ -174,7 +174,7 @@ query GetDocsJson {
 
 def test_build_docs_success_matches_graphql():
     with (
-        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        ProxyRunner.test() as runner,
         isolated_example_project_foo_bar(runner) as venv_path,
     ):
         result = runner.invoke("docs", "build", str(Path.cwd() / "built_docs"))
@@ -192,11 +192,6 @@ def test_build_docs_success_matches_graphql():
 
         dev_process = launch_dev_command(["--port", str(port)])
         wait_for_projects_loaded({"foo-bar"}, port, dev_process)
-
-        print("\n\n\n", DOCS_JSON_PATH)
-        import time
-
-        time.sleep(60)
 
         try:
             gql_client = DagsterGraphQLClient(hostname="localhost", port_number=port)
