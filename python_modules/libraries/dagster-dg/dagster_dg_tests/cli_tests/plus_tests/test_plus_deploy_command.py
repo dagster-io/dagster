@@ -84,7 +84,7 @@ def test_plus_deploy_command_no_login(empty_dg_cli_config, runner, project):
 
 def test_plus_deploy_on_branch(logged_in_dg_cli_config, project, runner, mocker):
     mocker.patch(
-        "dagster_dg.cli.plus.get_local_branch_name",
+        "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
         return_value="my-branch",
     )
     with patch(
@@ -100,7 +100,7 @@ def test_plus_deploy_on_branch(logged_in_dg_cli_config, project, runner, mocker)
 
 def test_plus_deploy_cant_determine_branch(logged_in_dg_cli_config, project, runner, mocker):
     mocker.patch(
-        "dagster_dg.cli.plus.get_local_branch_name",
+        "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
         return_value=None,
     )
     with patch(
@@ -113,7 +113,7 @@ def test_plus_deploy_cant_determine_branch(logged_in_dg_cli_config, project, run
 
 def test_plus_deploy_main_branch(logged_in_dg_cli_config, project, runner, mocker):
     mocker.patch(
-        "dagster_dg.cli.plus.get_local_branch_name",
+        "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
         return_value="main",
     )
     with patch(
@@ -126,7 +126,7 @@ def test_plus_deploy_main_branch(logged_in_dg_cli_config, project, runner, mocke
 
 def test_plus_deploy_hybrid_no_build_yaml(logged_in_dg_cli_config, project, runner, mocker):
     mocker.patch(
-        "dagster_dg.cli.plus.get_local_branch_name",
+        "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
         return_value="main",
     )
     with patch(
@@ -142,14 +142,14 @@ def test_plus_deploy_hybrid_with_build_yaml(
     logged_in_dg_cli_config, project, runner, mocker, build_yaml_file
 ):
     mocker.patch(
-        "dagster_dg.cli.plus.get_local_branch_name",
+        "dagster_dg.cli.plus.deploy_session.get_local_branch_name",
         return_value="main",
     )
     with patch(
         "dagster_dg.context.DgContext.external_dagster_cloud_cli_command",
     ):
         with patch(
-            "dagster_dg.cli.plus._build_hybrid_image",
+            "dagster_dg.cli.plus.deploy_session._build_hybrid_image",
         ):
             result = runner.invoke(plus_group, ["deploy", "--agent-type", "hybrid", "--yes"])
             assert not result.exit_code

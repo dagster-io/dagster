@@ -46,7 +46,7 @@ def _guess_and_prompt_deployment_type(
 
 def _create_temp_deploy_dockerfile(dst_path, python_version, use_editable_dagster: bool):
     dockerfile_template_path = (
-        Path(__file__).parent.parent
+        Path(__file__).parent.parent.parent
         / "templates"
         / (
             "deploy_uv_editable_Dockerfile.jinja"
