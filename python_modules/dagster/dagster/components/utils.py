@@ -67,6 +67,7 @@ class TranslatorResolvingInfo:
     obj_name: str
     asset_attributes: Union[str, BaseModel]
     resolution_context: ResolutionContext
+    model_key: str = "asset_attributes"
 
     def _resolve_asset_attributes(self, context: Mapping[str, Any]) -> Union[AssetSpec, BaseModel]:
         """Resolves the user-specified asset attributes into an AssetAttributesModel, or an AssetSpec
@@ -76,7 +77,7 @@ class TranslatorResolvingInfo:
             return self.asset_attributes
 
         resolved_asset_attributes = (
-            self.resolution_context.at_path("asset_attributes")
+            self.resolution_context.at_path(self.model_key)
             .with_scope(**context)
             .resolve_value(self.asset_attributes)
         )
@@ -116,7 +117,7 @@ class TranslatorResolvingInfo:
 
         resolved_attributes = resolve_asset_attributes_to_mapping(
             model=resolved_asset_attributes,
-            context=self.resolution_context.at_path("asset_attributes").with_scope(**context),
+            context=self.resolution_context.at_path(self.model_key).with_scope(**context),
         )
         if "code_version" in resolved_attributes:
             resolved_attributes = {

@@ -61,8 +61,8 @@ def test_python_attributes_node_rename(dbt_path: Path) -> None:
     defs = build_component_defs_for_test(
         DbtProjectComponent,
         {
-            "dbt": {"project_dir": dbt_path},
-            "asset_attributes": {"key": "some_prefix/{{ node.name }}"},
+            "project": str(dbt_path),
+            "translation": {"key": "some_prefix/{{ node.name }}"},
         },
     )
     assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS_WITH_PREFIX
@@ -72,8 +72,8 @@ def test_python_attributes_group(dbt_path: Path) -> None:
     defs = build_component_defs_for_test(
         DbtProjectComponent,
         {
-            "dbt": {"project_dir": dbt_path},
-            "asset_attributes": {"group_name": "some_group"},
+            "project": str(dbt_path),
+            "translation": {"group_name": "some_group"},
         },
     )
     assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
@@ -91,8 +91,8 @@ def test_render_vars_root(dbt_path: Path) -> None:
         defs = build_component_defs_for_test(
             DbtProjectComponent,
             {
-                "dbt": {"project_dir": dbt_path},
-                "asset_attributes": {"group_name": "{{ env('GROUP_AS_ENV') }}"},
+                "project": str(dbt_path),
+                "translation": {"group_name": "{{ env('GROUP_AS_ENV') }}"},
             },
         )
         assert defs.get_asset_graph().get_all_asset_keys() == JAFFLE_SHOP_KEYS
@@ -105,8 +105,8 @@ def test_render_vars_asset_key(dbt_path: Path) -> None:
         defs = build_component_defs_for_test(
             DbtProjectComponent,
             {
-                "dbt": {"project_dir": dbt_path},
-                "asset_attributes": {
+                "project": str(dbt_path),
+                "translation": {
                     "key": "{{ env('ASSET_KEY_PREFIX') }}/{{ node.name }}",
                 },
             },
