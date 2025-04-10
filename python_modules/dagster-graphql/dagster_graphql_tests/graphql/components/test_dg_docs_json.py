@@ -5,9 +5,11 @@ from dagster import Definitions
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster_graphql.test.utils import define_out_of_process_context, execute_dagster_graphql
 from dagster_shared.serdes.objects.package_entry import PluginObjectKey
+
+ensure_dagster_tests_import()
 
 GET_DOCS_JSON_QUERY = """
 query GetDocsJson {

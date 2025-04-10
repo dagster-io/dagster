@@ -3430,6 +3430,7 @@ type Query {
     repositorySelector: RepositorySelector!
   ): ResourceDetailsListOrError!
   utilizedEnvVarsOrError(repositorySelector: RepositorySelector!): EnvVarWithConsumersOrError!
+  locationDocsJsonOrError(repositorySelector: RepositorySelector!): LocationDocsJsonOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(
     repositorySelector: RepositorySelector!
@@ -3625,6 +3626,14 @@ type EnvVarConsumer {
 enum EnvVarConsumerType {
   RESOURCE
 }
+
+union LocationDocsJsonOrError = LocationDocsJson | PythonError
+
+type LocationDocsJson {
+  json: JSONString!
+}
+
+scalar JSONString
 
 union RunsFeedConnectionOrError = RunsFeedConnection | PythonError
 
