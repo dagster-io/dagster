@@ -22,7 +22,7 @@ class MyCustomTableauTranslator(DagsterTableauTranslator):
     def get_sheet_spec(self, data: TableauTranslatorData) -> dg.AssetSpec:
         # We create the default asset spec using super()
         default_spec = super().get_asset_spec(data)
-        # We customize the upstream dependencies for the Tableau sheet named `my_tableau_sheet`
+        # We customize upstream dependencies for the Tableau sheet named `my_tableau_sheet`
         return default_spec.replace_attributes(
             deps=["my_upstream_asset"]
             if data.properties.get("name") == "my_tableau_sheet"
