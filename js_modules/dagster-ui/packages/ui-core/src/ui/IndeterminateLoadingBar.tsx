@@ -21,6 +21,8 @@ export const IndeterminateLoadingBar = styled.div<{$loading?: boolean}>`
     transform-origin: left center;
     will-change: transform;
     animation: load 2s infinite;
+    contain: layout style size;
+    isolation: isolate;
 
     @keyframes load {
       0% {
