@@ -82,6 +82,7 @@ export function useLiveData<T>(
       unsubscribeCallbacks.forEach((cb) => {
         cb();
       });
+      setData({});
     };
   }, [keys, batchUpdatesInterval, manager, thread]);
 
