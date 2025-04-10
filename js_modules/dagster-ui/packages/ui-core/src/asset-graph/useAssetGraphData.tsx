@@ -156,7 +156,13 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   const repoFilteredNodes = useMemo(() => {
     let matching = allNodes;
     if (pipelineSelector) {
-      matching = matching.filter((node) => node.jobNames.includes(pipelineSelector.pipelineName));
+      matching = matching.filter((node) => {
+        return (
+          node.jobNames.includes(pipelineSelector.pipelineName) &&
+          node.repository.name === pipelineSelector.repositoryName &&
+          node.repository.location.name === pipelineSelector.repositoryLocationName
+        );
+      });
     }
     if (groupSelector) {
       matching = matching.filter((node) => {
