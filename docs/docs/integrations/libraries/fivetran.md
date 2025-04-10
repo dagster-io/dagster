@@ -127,6 +127,19 @@ Definitions from multiple Fivetran workspaces can be combined by instantiating m
   language="python"
 />
 
+### Define downstream dependencies
+
+Dagster allows you to define assets that are downstream of specific Fivetran tables using their asset keys. The asset key for a Fivetran table can be retrieved using the asset definitions created using the @fivetran_assets decorator. The below example defines `my_downstream_asset` as a downstream dependency of `my_fivetran_table`:
+
+<CodeExample
+  startAfter="start_downstream_asset"
+  endBefore="end_downstream_asset"
+  path="docs_snippets/docs_snippets/integrations/fivetran/define_downstream_dependencies.py"
+/>
+
+In the downstream asset, you may want direct access to the contents of the Fivetran table. To do so, you can customize the code within your `@asset`-decorated function to load upstream data.
+
+
 ### About Fivetran
 
 **Fivetran** ingests data from SaaS applications, databases, and servers. The data is stored and typically used for analytics.
