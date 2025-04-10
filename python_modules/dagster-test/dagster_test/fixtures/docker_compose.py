@@ -160,7 +160,10 @@ def connect_container_to_network(container, network):
         subprocess.check_call(["docker", "network", "connect", network, container])
         logging.info(f"Connected {container} to network {network}.")
     except subprocess.CalledProcessError:
+        subprocess.check_output(["docker", "network", "ls"])
+        subprocess.check_output(["docker", "ps"])
         logging.warning(f"Unable to connect {container} to network {network}.")
+        raise
 
 
 def disconnect_container_from_network(container, network):
