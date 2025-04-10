@@ -34,7 +34,6 @@ tableau_specs = load_tableau_asset_specs(
     tableau_workspace,
     dagster_tableau_translator=MyCustomTableauTranslator(),
 )
-
 # end_upstream_asset
 
 defs = dg.Definitions(assets=[*tableau_specs], resources={"tableau": tableau_workspace})
