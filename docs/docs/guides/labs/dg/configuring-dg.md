@@ -65,10 +65,10 @@ listed in the below sample are comprehensive:
 A project configuration file is located in the root of a `dg` project. It may
 either be a `pyproject.toml` file or a `dg.toml` file. If it is a
 `pyproject.toml`, then all settings are nested under the `tool.dg` key. If it
-is a `dg.toml` file, then settings are should be placed at the top level. Usually
+is a `dg.toml` file, then settings should be placed at the top level. Usually
 `pyproject.toml` is used for project configuration.
 
-Below is an example of the dg-scoped part of a `pyproject.toml` (note all settings are part of `tool.dg.*` tables). for a project named `my-project`. The `tool.dg.project` section is a comprehensive list of supported settings:
+Below is an example of the dg-scoped part of a `pyproject.toml` (note all settings are part of `tool.dg.*` tables) for a project named `my-project`. The `tool.dg.project` section is a comprehensive list of supported settings:
 
 <CodeExample
   path="docs_snippets/docs_snippets/guides/dg/configuring-dg/project-config.toml"
@@ -88,7 +88,7 @@ Below is an example of a `dg.toml` file for a workspace. The
 `workspace` section is a comprehensive list of supported settings:
 
 <CodeExample
-  path="docs_snippets/docs_snippets/guides/dg/configuring-dg/project-config.toml"
+  path="docs_snippets/docs_snippets/guides/dg/configuring-dg/workspace-config.toml"
   title="dg.toml"
   language="toml"
 />
