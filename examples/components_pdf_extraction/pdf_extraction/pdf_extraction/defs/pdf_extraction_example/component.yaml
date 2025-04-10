@@ -1,0 +1,9 @@
+type: pdf_extraction.lib.PdfExtraction
+
+attributes:
+  dpi: 300
+  language: eng
+  openai_model: gpt-4o-mini
+  output_dir: './output'
+  pdf_path: './pdf_extraction/source_pdfs/aapl-20241228.pdf'
+  validation_score: 0 

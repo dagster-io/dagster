@@ -3,7 +3,6 @@ name = "pdf_extraction"
 requires-python = ">=3.9,<3.13"
 version = "0.1.0"
 dependencies = [
-    "dagster-components",
     "dagster-duckdb>=0.26.8",
     "dagster-openai>=0.26.8",
     "dagster-webserver>=1.10.8",
@@ -30,6 +29,7 @@ directory_type = "project"
 [tool.dg.project]
 root_module = "pdf_extraction"
 python_environment = "persistent_uv"
+defs_module = "pdf_extraction.defs"
 
 [tool.setuptools.packages.find]
 exclude=["pdf_extraction_tests"]

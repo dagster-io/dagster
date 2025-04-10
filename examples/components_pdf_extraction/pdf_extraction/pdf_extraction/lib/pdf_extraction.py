@@ -1,19 +1,18 @@
 import json
-import os
-from collections.abc import Sequence
-from pathlib import Path
-from typing import Any
 import logging
+import os
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Optional
 
 import dagster as dg
 import pytesseract
 import requests
-from dagster_components import (
+from dagster.components import (
     Component,
     ComponentLoadContext,
-    Scaffolder,
     Resolvable,
-    ResolvedAssetSpec,
+    Scaffolder,
     ScaffoldRequest,
 )
 from pdf2image import convert_from_path
@@ -21,27 +20,28 @@ from PIL import Image, ImageEnhance, ImageFilter
 
 logger = logging.getLogger(__name__)
 
+
 class PDFTextExtractor(dg.ConfigurableResource):
-    def __init__(self, language="eng", dpi=300, openai_api_key=None, preprocess=True):
-        """Initialize the PDF processor resource.
+    """Initialize the PDF processor resource.
 
-        Args:
-            language: OCR language (default: 'eng')
-            dpi: DPI for PDF conversion (default: 300)
-            openai_api_key: OpenAI API key for validation (optional)
-            preprocess: Whether to preprocess images (default: True)
-        """
-        self.language = language
-        self.dpi = dpi
-        self.openai_api_key = openai_api_key
-        self.preprocess = preprocess
+    Args:
+        language: OCR language (default: 'eng')
+        dpi: DPI for PDF conversion (default: 300)
+        openai_api_key: OpenAI API key for validation (optional)
+        preprocess: Whether to preprocess images (default: True)
+    """
 
-        # Set up OpenAI headers if API key is available
-        if self.openai_api_key:
-            self.openai_headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.openai_api_key}",
-            }
+    language: str
+    dpi: int
+    openai_api_key: str
+    preprocess: bool = True
+
+    @property
+    def openai_headers(self):
+        return {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.openai_api_key}",
+        }
 
     def preprocess_image(self, image_path: str, save_preprocessed: bool = True) -> tuple:
         """Preprocess image to improve OCR quality.
@@ -95,7 +95,7 @@ class PDFTextExtractor(dg.ConfigurableResource):
         return image, None
 
     def convert_pdf_to_images(
-        self, pdf_path: str, output_folder: str = None, pages: list[int] = None
+        self, pdf_path: str, output_folder: Optional[str] = None, pages: Optional[list[int]] = None
     ) -> dict[str, Any]:
         """Convert PDF to images and save them to a folder.
 
@@ -266,7 +266,10 @@ class PDFTextExtractor(dg.ConfigurableResource):
         return extraction_result
 
     def validate_with_openai(
-        self, extraction_result: dict[str, Any], context: str = "", expected_info: list[str] = None
+        self,
+        extraction_result: dict[str, Any],
+        context: str = "",
+        expected_info: Optional[list[str]] = None,
     ) -> dict[str, Any]:
         """Validate extraction using OpenAI.
 
@@ -378,6 +381,7 @@ class PDFTextExtractor(dg.ConfigurableResource):
             return error_result
 
 
+@dataclass
 class PdfExtraction(Component, Resolvable):
     """A component for extracting and validating text from PDF documents.
 
@@ -403,51 +407,44 @@ class PdfExtraction(Component, Resolvable):
         validation_score (int): Minimum acceptable validation score (1-10)
     """
 
-    def __init__(
-        self,
-        pdf_path: str,
-        output_dir: str,
-        asset_specs: Sequence[ResolvedAssetSpec],
-        language: str,
-        dpi: int,
-        openai_api_key: str,
-        openai_model: str,
-        validation_score: int,
-    ):
-        self.pdf_path = pdf_path
-        self.asset_specs = asset_specs
+    pdf_path: str
+    output_dir: str
+    validation_score: int = 0
+    language: str = "eng"
+    dpi: int = 300
+    openai_model: str = "gpt-4o-mini"
+
+    def _normalize_key(self, key: str) -> str:
+        return key.replace("-", "_")  # Check for existing implementation
 
     def build_defs(self, context: ComponentLoadContext) -> dg.Definitions:
         # Create the PDF extractor resource
         pdf_extractor_resource = PDFTextExtractor(
-            language="eng", dpi=300, openai_api_key=dg.EnvVar("OPENAI_API_KEY")
+            language=self.language, dpi=self.dpi, openai_api_key=dg.EnvVar("OPENAI_API_KEY")
         )
 
-        @dg.asset(name=f"{Path(self.pdf_path).stem}_convert_to_image", specs=self.asset_specs)
+        key_prefix = self._normalize_key(f"{Path(self.pdf_path).stem}")
+
+        @dg.asset(name=f"{key_prefix}_convert_to_image")
         def convert_to_image(context: dg.AssetExecutionContext, pdf_extractor: PDFTextExtractor):
             """Convert PDF to images, one per page."""
             conversion_result = pdf_extractor.convert_pdf_to_images(self.pdf_path)
             return conversion_result
 
         @dg.asset(
-            name=f"{Path(self.pdf_path).stem}_extract_text",
-            specs=self.asset_specs,
-            deps=[f"{Path(self.pdf_path).stem}_convert_to_image"],
+            name=f"{key_prefix}_extract_text",
+            deps=[f"{key_prefix}_convert_to_image"],
         )
-        def extract_text(
-            context: dg.AssetExecutionContext, pdf_extractor: PDFTextExtractor, convert_to_image
-        ):
+        def extract_text(pdf_extractor: PDFTextExtractor):
             """Extract text from the converted images using OCR."""
             extraction_result = pdf_extractor.extract_text_from_images(convert_to_image)
             return extraction_result
 
         @dg.asset_check(
-            asset_name=f"{Path(self.pdf_path).stem}_extract_text",
-            name=f"{Path(self.pdf_path).stem}_validate_extraction_quality",
+            asset=f"{key_prefix}_extract_text",
+            name=f"{key_prefix}_validate_extraction_quality",
         )
-        def check_extraction_quality(
-            context: dg.AssetCheckContext, pdf_extractor: PDFTextExtractor
-        ):
+        def check_extraction_quality(pdf_extractor: PDFTextExtractor):
             """Validate the extracted text quality using OpenAI."""
             # Get the asset value (extraction result)
             extraction_result = context.asset_value
@@ -471,7 +468,6 @@ class PdfExtraction(Component, Resolvable):
 
             # Consider the check successful if quality score is 7 or higher
             success = ocr_quality_score >= 7
-
             return dg.AssetCheckResult(
                 success=success,
                 metadata={
@@ -495,10 +491,10 @@ class PdfExtractionScaffolder(Scaffolder):
     def default_format(self) -> str:
         """Override to always use YAML format."""
         return "yaml"
-    
+
     def scaffold(self, request: ScaffoldRequest) -> str:
         """Generate scaffold code for PdfExtraction component."""
-        return f"""# PDF Extraction Component Configuration
+        return """# PDF Extraction Component Configuration
         components:
         pdf_extraction:
             type: pdf_extraction.lib.pdf_extraction.PdfExtraction
@@ -507,12 +503,9 @@ class PdfExtractionScaffolder(Scaffolder):
             output_dir: path/to/output  # Replace with desired output directory
             language: eng  # OCR language
             dpi: 300  # Image DPI for PDF conversion
-            openai_api_key: {{ env: OPENAI_API_KEY }}  # Use environment variable
+            openai_api_key: { env: OPENAI_API_KEY }  # Use environment variable
             openai_model: gpt-4-turbo  # OpenAI model to use
             validation_score: 7  # Minimum validation score threshold
-            asset_specs:
-                - key: {request.asset_key}
-                group_name: {request.group_name}
         """
 
     @property
@@ -522,7 +515,7 @@ class PdfExtractionScaffolder(Scaffolder):
         1. Converts PDF documents to images
         2. Extracts text using OCR
         3. Validates extraction quality using OpenAI
-        
+
         Required configuration:
         - pdf_path: Path to the PDF document to process
         - output_dir: Directory for output files
