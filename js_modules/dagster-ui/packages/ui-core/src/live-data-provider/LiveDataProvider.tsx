@@ -77,11 +77,14 @@ export function useLiveData<T>(
         }, batchUpdatesInterval);
       }
     };
-    const unsubscribeCallbacks = keys.map((key) => manager.subscribe(key, setDataSingle, thread));
+    const unsubscribeCallbacks = Object.fromEntries(
+      keys.map((key) => [key, manager.subscribe(key, setDataSingle, thread)]),
+    );
     return () => {
-      unsubscribeCallbacks.forEach((cb) => {
+      Object.entries(unsubscribeCallbacks).forEach(([key, cb]) => {
         cb();
       });
+      setData({});
     };
   }, [keys, batchUpdatesInterval, manager, thread]);
 
