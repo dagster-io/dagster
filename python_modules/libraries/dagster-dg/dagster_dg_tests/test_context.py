@@ -39,7 +39,7 @@ def test_context_in_workspace(config_file: ConfigFileType):
         isolated_example_workspace(runner, workspace_config_file_type=config_file),
     ):
         # go into a subdirectory to make sure root resolution works
-        path_arg = Path.cwd() / "libraries"
+        path_arg = Path.cwd() / "projects"
 
         context = DgContext.for_workspace_environment(path_arg, {})
         assert context.root_path == Path.cwd()

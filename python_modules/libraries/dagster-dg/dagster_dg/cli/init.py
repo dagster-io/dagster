@@ -95,8 +95,6 @@ def init_command(
     ├── <workspace_name>
     │   ├── projects
     |   |   └── <Dagster projects go here>
-    |   ├── libraries
-    |   |   └── <Shared packages go here>
     │   └── pyproject.toml
 
     """
