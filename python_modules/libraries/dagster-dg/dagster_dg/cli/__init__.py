@@ -10,6 +10,7 @@ from dagster_dg.cli.docs import docs_group
 from dagster_dg.cli.init import init_command
 from dagster_dg.cli.launch import launch_command
 from dagster_dg.cli.list import list_group
+from dagster_dg.cli.mcp_server import mcp_group
 from dagster_dg.cli.plus import plus_group
 from dagster_dg.cli.scaffold import scaffold_group
 from dagster_dg.cli.shared_options import dg_global_options, dg_path_options
@@ -36,6 +37,7 @@ def create_dg_cli():
             "dev": dev_command,
             "init": init_command,
             "plus": plus_group,
+            "mcp": mcp_group,
         },
         context_settings={
             "max_content_width": DG_CLI_MAX_OUTPUT_WIDTH,
