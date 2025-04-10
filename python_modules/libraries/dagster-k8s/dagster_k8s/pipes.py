@@ -66,6 +66,14 @@ _NAMESPACE_SECRET_PATH = Path("/var/run/secrets/kubernetes.io/serviceaccount/nam
 _DEV_NULL_MESSAGE_WRITER = encode_env_var({"path": "/dev/null"})
 
 
+def get_pipes_k8s_request_timeout() -> Optional[int]:
+    try:
+        timeout_str = os.getenv("DAGSTER_PIPES_KUBERNETES_API_REQUEST_TIMEOUT")
+        return int(timeout_str) if timeout_str else None
+    except ValueError:
+        return None
+
+
 class PipesK8sPodLogsMessageReader(PipesMessageReader):
     """Message reader that reads messages from kubernetes pod logs."""
 
@@ -414,7 +422,9 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
 
         """
         self._load_k8s_config()
-        client = DagsterKubernetesClient.production_client()
+        client = DagsterKubernetesClient.production_client(
+            request_timeout=get_pipes_k8s_request_timeout()
+        )
 
         with open_pipes_session(
             context=context,

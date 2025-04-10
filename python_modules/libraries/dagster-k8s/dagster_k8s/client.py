@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 import time
 from enum import Enum
@@ -96,14 +95,8 @@ WHITELISTED_TRANSIENT_K8S_STATUS_CODES = [
 
 
 class PatchedApiClient(ApiClient):
-    def __init__(self, *args, **kwargs):
-        try:
-            timeout_str = os.getenv(
-                "DAGSTER_KUBERNETES_API_REQUEST_TIMEOUT", str(DEFAULT_DAGSTER_K8S_REQUEST_TIMEOUT)
-            )
-            self.__dagster_request_timeout = int(timeout_str) if timeout_str else None
-        except ValueError:
-            self.__dagster_request_timeout = None
+    def __init__(self, *args, request_timeout=None, **kwargs):
+        self.__dagster_request_timeout = check.opt_int_param(request_timeout, "request_timeout")
         super().__init__(*args, **kwargs)
 
     # Forked from ApiClient implementation to pass configuration object down into created model
@@ -262,13 +255,19 @@ class DagsterKubernetesClient:
         self.timer = timer
 
     @staticmethod
-    def production_client(batch_api_override=None, core_api_override=None):
+    def production_client(batch_api_override=None, core_api_override=None, request_timeout=None):
         return DagsterKubernetesClient(
             batch_api=(
-                batch_api_override or kubernetes.client.BatchV1Api(api_client=PatchedApiClient())
+                batch_api_override
+                or kubernetes.client.BatchV1Api(
+                    api_client=PatchedApiClient(request_timeout=request_timeout)
+                )
             ),
             core_api=(
-                core_api_override or kubernetes.client.CoreV1Api(api_client=PatchedApiClient())
+                core_api_override
+                or kubernetes.client.CoreV1Api(
+                    api_client=PatchedApiClient(request_timeout=request_timeout)
+                )
             ),
             logger=logging.info,
             sleeper=time.sleep,
