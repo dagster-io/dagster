@@ -177,6 +177,7 @@ def test_pipes_client_file_inject(namespace, cluster_provider):
     assert mats[0].metadata["is_even"].value is True
 
 
+@pytest.mark.default
 def test_use_execute_k8s_job(namespace, cluster_provider):
     docker_image = get_test_project_docker_image()
 
@@ -190,11 +191,12 @@ def test_use_execute_k8s_job(namespace, cluster_provider):
             reader,
             extras={"storage_root": "/tmp/"},
         ) as pipes_session:
-            job_name = "number_y_asset_job"
+            job_name = "number-y-asset-job"
 
             # stand-in for any means of creating kubernetes work
             execute_k8s_job(
                 context=context.op_execution_context,
+                namespace=namespace,
                 image=docker_image,
                 command=[
                     "python",
@@ -210,8 +212,16 @@ def test_use_execute_k8s_job(namespace, cluster_provider):
                     }.items()
                 ],
                 k8s_job_name=job_name,
+                load_incluster_config=False,
+                kubeconfig_file=cluster_provider.kubeconfig_file,
+                image_pull_policy="IfNotPresent",
             )
-            reader.consume_pod_logs(core_api, job_name, namespace)
+
+            api_client = DagsterKubernetesClient.production_client()
+            pod_names = api_client.get_pod_names_in_job(job_name=job_name, namespace=namespace)
+            pod_name = pod_names[0]
+
+            reader.consume_pod_logs(context, core_api, pod_name, namespace)
         yield from pipes_session.get_results()
 
     result = materialize(
@@ -230,7 +240,8 @@ def test_use_execute_k8s_job(namespace, cluster_provider):
     assert mats[0].metadata["is_even"].value is True
 
 
-def test_error(namespace, cluster_provider):
+@pytest.mark.default
+def test_pipes_error(namespace, cluster_provider):
     docker_image = get_test_project_docker_image()
 
     @asset

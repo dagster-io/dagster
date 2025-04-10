@@ -65,6 +65,8 @@ DEFAULT_CONTAINER_NAME = "dagster-pipes-execution"
 _NAMESPACE_SECRET_PATH = Path("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 _DEV_NULL_MESSAGE_WRITER = encode_env_var({"path": "/dev/null"})
 
+CONSUME_POD_LOGS_RETRIES = 5
+
 
 class PipesK8sPodLogsMessageReader(PipesMessageReader):
     """Message reader that reads messages from kubernetes pod logs."""
@@ -82,22 +84,59 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
 
     def consume_pod_logs(
         self,
+        context: Union[OpExecutionContext, AssetExecutionContext],
         core_api: kubernetes.client.CoreV1Api,
         pod_name: str,
         namespace: str,
     ):
+        last_seen_timestamp = None
+        catching_up_after_retry = False
+
+        retries_remaining = CONSUME_POD_LOGS_RETRIES
+
         handler = check.not_none(
             self._handler, "can only consume logs within scope of context manager"
         )
-        for line in core_api.read_namespaced_pod_log(
-            pod_name,
-            namespace,
-            follow=True,
-            _preload_content=False,  # avoid JSON processing
-        ).stream():
-            log_chunk = line.decode("utf-8")
-            for log_line in log_chunk.split("\n"):
-                extract_message_or_forward_to_stdout(handler, log_line)
+
+        while True:
+            try:
+                for log_item in _process_log_stream(
+                    core_api.read_namespaced_pod_log(
+                        pod_name,
+                        namespace,
+                        follow=True,
+                        _preload_content=False,  # avoid JSON processing
+                        timestamps=True,
+                    )
+                ):
+                    timestamp = log_item.timestamp
+                    message = log_item.log
+
+                    if (
+                        catching_up_after_retry
+                        and timestamp
+                        and last_seen_timestamp
+                        and last_seen_timestamp >= timestamp
+                    ):
+                        # Log that we've already seen before from before we retried
+                        continue
+                    else:
+                        catching_up_after_retry = False
+                        extract_message_or_forward_to_stdout(handler, message)
+                        if timestamp:
+                            last_seen_timestamp = (
+                                max(last_seen_timestamp, timestamp) if last_seen_timestamp else ""
+                            )
+                return
+            except Exception:
+                if retries_remaining == 0:
+                    raise
+                context.log.warning(
+                    f"Error consuming pod logs. {retries_remaining} retr{('y' if retries_remaining==1 else 'ies')} remaining",
+                    exc_info=True,
+                )
+                catching_up_after_retry = True
+                retries_remaining -= 1
 
     @contextmanager
     def async_consume_pod_logs(
@@ -504,6 +543,7 @@ class PipesK8sClient(PipesClient, TreatAsResourceParam):
                     return
             else:
                 self.message_reader.consume_pod_logs(
+                    context=context,
                     core_api=client.core_api,
                     namespace=namespace,
                     pod_name=pod_name,
