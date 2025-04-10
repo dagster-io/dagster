@@ -187,6 +187,21 @@ def test_datasets(airflow_instance: None) -> None:
     assert {d.dag_id for d in example2_dataset.consuming_dags} == {"example2_consumer"}
     assert example2_dataset.is_produced_by_task(task_id="print_task", dag_id="dataset_producer")
 
+    # Apply a filter to the dataset
+    datasets = af_instance.get_all_datasets(
+        retrieval_filter=AirflowFilter(dataset_uri_ilike="example1")
+    )
+    assert len(datasets) == 1
+
     defs = build_defs_from_airflow_instance(airflow_instance=af_instance)
     assert asset_spec("example1", defs)
     assert asset_spec("example2", defs)
+
+    # Apply a dag filter that does not include the producing dag. The datasets should not be
+    # included in the definitions.
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=af_instance,
+        retrieval_filter=AirflowFilter(dag_id_ilike="print_dag"),
+    )
+    assert not asset_spec("example1", defs)
+    assert not asset_spec("example2", defs)
