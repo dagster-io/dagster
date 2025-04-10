@@ -673,10 +673,10 @@ def test_enrich() -> None:
         source_code_retrieval_enabled=None,
     )
     assert len(airflow_assets) == 1
-    assets_def = next(iter(airflow_assets))
-    assert assets_def.key == AssetKey("a")
+    spec = next(iter(airflow_assets))
+    assert isinstance(spec, AssetSpec)
+    assert spec.key == AssetKey("a")
     # Asset metadata properties have been glommed onto the asset
-    spec = next(iter(assets_def.specs))
     assert spec.metadata["Dag ID"] == "dag"
 
 
