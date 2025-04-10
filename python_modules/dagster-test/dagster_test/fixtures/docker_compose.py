@@ -40,7 +40,7 @@ def docker_compose_cm(
         else:
             # When running locally, we don't need to jump through any special networking hoops;
             # just yield a dict of container name to "localhost".
-            yield dict((container, "0.0.0.0") for container in list_containers())
+            yield dict((container, "localhost") for container in list_containers())
     finally:
         docker_compose_down(docker_compose_yml, docker_context, service, env_file)
 
@@ -163,7 +163,6 @@ def connect_container_to_network(container, network):
         subprocess.check_output(["docker", "network", "ls"])
         subprocess.check_output(["docker", "ps"])
         logging.warning(f"Unable to connect {container} to network {network}.")
-        raise
 
 
 def disconnect_container_from_network(container, network):
