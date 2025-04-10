@@ -38,7 +38,7 @@ class InternalFreshnessPolicy(ABC):
         serialized_policy = metadata.get(INTERNAL_FRESHNESS_POLICY_METADATA_KEY)
         if serialized_policy is None:
             return None
-        return deserialize_value(serialized_policy.value, cls)
+        return deserialize_value(serialized_policy.value, cls)  # pyright: ignore
 
     @staticmethod
     def time_window(

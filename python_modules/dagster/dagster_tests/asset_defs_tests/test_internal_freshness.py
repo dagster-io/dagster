@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Union
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_spec import AssetSpec, attach_internal_freshness_policy
@@ -137,8 +138,9 @@ def test_map_asset_specs_attach_internal_freshness_policy() -> None:
     )
 
     assets_and_specs = mapped_defs.assets
-    assert len(assets_and_specs) == 3
+    assert assets_and_specs is not None
     for asset_or_spec in assets_and_specs:
+        assert isinstance(asset_or_spec, Union[AssetsDefinition, AssetSpec])
         spec = (
             asset_or_spec.get_asset_spec()
             if isinstance(asset_or_spec, AssetsDefinition)

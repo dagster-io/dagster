@@ -461,5 +461,5 @@ def attach_internal_freshness_policy(spec: AssetSpec, policy: InternalFreshnessP
     You can use this in Definitions.map_asset_specs to attach a freshness policy to an asset spec.
     """
     return spec.merge_attributes(
-        metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(policy)}
+        metadata={INTERNAL_FRESHNESS_POLICY_METADATA_KEY: serialize_value(policy)}  # pyright: ignore[reportArgumentType]
     )
