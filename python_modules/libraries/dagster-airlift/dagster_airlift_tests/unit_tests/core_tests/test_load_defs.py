@@ -784,3 +784,13 @@ def test_load_datasets() -> None:
     }
     assert asset_spec("example1", defs).deps == []
     assert asset_spec("example2", defs).deps == [AssetDep("example1")]
+
+    # Filter down to just producer1. Only example1 should be included
+    defs = build_defs_from_airflow_instance(
+        airflow_instance=af_instance,
+        retrieval_filter=AirflowFilter(dag_id_ilike="producer1"),
+        defs=Definitions(assets=[spec]),
+    )
+    Definitions.validate_loadable(defs)
+    assert asset_spec("example1", defs)
+    assert not asset_spec("example2", defs)
