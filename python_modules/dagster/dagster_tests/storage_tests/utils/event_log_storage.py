@@ -6714,3 +6714,118 @@ class TestEventLogStorage:
                 failed_record.asset_key == asset_key_1
                 for failed_record in failed_records_for_partitions.records
             )
+
+        def test_asset_ordering(self, test_run_id, storage: EventLogStorage, instance):
+            # log events for some assets, make sure the time order of the events doesn't match the
+            # alpahbetical order of the asset keys
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id=test_run_id,
+                    timestamp=1,
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION.value,
+                        "nonce",
+                        event_specific_data=StepMaterializationData(
+                            materialization=AssetMaterialization(asset_key=AssetKey("asset_4")),
+                        ),
+                    ),
+                )
+            )
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id=test_run_id,
+                    timestamp=2,
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION.value,
+                        "nonce",
+                        event_specific_data=StepMaterializationData(
+                            materialization=AssetMaterialization(asset_key=AssetKey("asset_1")),
+                        ),
+                    ),
+                )
+            )
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id=test_run_id,
+                    timestamp=2,
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetMaterializationPlannedData(
+                            asset_key=AssetKey("asset_2")
+                        ),
+                    ),
+                )
+            )
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id=test_run_id,
+                    timestamp=3,
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetObservationData(
+                            AssetObservation(asset_key=AssetKey("asset_3"))
+                        ),
+                    ),
+                )
+            )
+
+            query_keys = [
+                AssetKey("asset_1"),
+                AssetKey("asset_2"),
+                AssetKey("asset_3"),
+                AssetKey("asset_4"),
+                AssetKey("asset_5"),  # not in DB, so never materialized
+            ]
+            expected_order = [
+                AssetKey("asset_5"),
+                AssetKey("asset_4"),
+                AssetKey("asset_1"),
+                AssetKey("asset_2"),
+                AssetKey("asset_3"),
+            ]
+
+            assert (
+                storage.order_assets_by_last_materialized_time(asset_keys=query_keys)
+                == expected_order
+            )
+            assert (
+                storage.order_assets_by_last_materialized_time(
+                    asset_keys=query_keys, descending=True
+                )
+                == expected_order.reverse()
+            )
+
+            storage.wipe_asset(AssetKey("asset_1"))
+
+            expected_order = [
+                AssetKey("asset_1"),
+                AssetKey("asset_5"),
+                AssetKey("asset_4"),
+                AssetKey("asset_2"),
+                AssetKey("asset_3"),
+            ]
+
+            assert (
+                storage.order_assets_by_last_materialized_time(asset_keys=query_keys)
+                == expected_order
+            )
+            assert (
+                storage.order_assets_by_last_materialized_time(
+                    asset_keys=query_keys, descending=True
+                )
+                == expected_order.reverse()
+            )

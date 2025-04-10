@@ -733,3 +733,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         # Base implementation of fetching pool config.  To be overriden for remote storage
         # implementations where the local instance might not match the remote instance.
         return self._instance.get_concurrency_config().pool_config
+
+    def order_assets_by_last_materialized_time(
+        self, asset_keys: Sequence[AssetKey], descending: bool = False
+    ) -> Sequence[AssetKey]:
+        raise NotImplementedError()
