@@ -1,8 +1,9 @@
 import copy
 from collections.abc import Iterator, Mapping, Sequence, Set
-from typing import Any, Optional, TypedDict, Union
+from typing import Any, Union
 
 import yaml
+
 from dagster_shared.yaml_utils import parse_yaml_with_source_positions
 from dagster_shared.yaml_utils.source_position import SourcePositionTree
 
@@ -146,21 +147,3 @@ def generate_sample_yaml(component_type: str, json_schema: Mapping[str, Any]) ->
         else:
             commented_lines.append(line)
     return "\n".join(commented_lines)
-
-
-class ComponentTypeJson(TypedDict):
-    """Component type JSON, used to back dg docs webapp."""
-
-    name: str
-    owners: Optional[Sequence[str]]
-    tags: Optional[Sequence[str]]
-    example: str
-    schema: str
-    description: Optional[str]
-
-
-class ComponentTypeNamespaceJson(TypedDict):
-    """Component type namespace JSON, used to back dg docs webapp."""
-
-    name: str
-    componentTypes: list[ComponentTypeJson]

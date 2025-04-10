@@ -15,6 +15,7 @@ from pathlib import Path
 from unittest import mock
 
 import requests
+import yaml
 from dagster_dg.cli import docs
 
 from dagster_dg_tests.utils import (
@@ -172,10 +173,21 @@ query GetDocsJson {
 """
 
 
+def _sort_sample_yamls(contents: dict) -> None:
+    """Sort the sample YAML values, since the generated YAML is not deterministic."""
+    for item in contents:
+        if "componentTypes" in item:
+            for component_type in item["componentTypes"]:
+                if "example" in component_type:
+                    component_type["example"] = yaml.dump(
+                        yaml.load(component_type["example"], Loader=yaml.SafeLoader), sort_keys=True
+                    )
+
+
 def test_build_docs_success_matches_graphql():
     with (
         ProxyRunner.test() as runner,
-        isolated_example_project_foo_bar(runner) as venv_path,
+        isolated_example_project_foo_bar(runner),
     ):
         result = runner.invoke("docs", "build", str(Path.cwd() / "built_docs"))
         assert_runner_result(result)
@@ -199,7 +211,11 @@ def test_build_docs_success_matches_graphql():
             assert result["locationDocsJsonOrError"]["__typename"] == "LocationDocsJson", str(
                 result
             )
-            assert json.loads(result["locationDocsJsonOrError"]["json"]) == contents
+            assert json.dumps(
+                _sort_sample_yamls(json.loads(result["locationDocsJsonOrError"]["json"])),
+                sort_keys=True,
+                indent=2,
+            ) == json.dumps(_sort_sample_yamls(contents), sort_keys=True, indent=2)
 
         finally:
             assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)

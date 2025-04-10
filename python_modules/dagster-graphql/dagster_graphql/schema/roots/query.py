@@ -17,7 +17,6 @@ from dagster._core.definitions.selector import (
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
-from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
 from dagster._core.storage.event_log.base import AssetRecord
@@ -785,19 +784,17 @@ class GrapheneQuery(graphene.ObjectType):
     ) -> GrapheneLocationDocsJson:
         repo_selector = RepositorySelector.from_graphql_input(repositorySelector)
 
-        location: CodeLocation = graphene_info.context.get_code_location(
-            repo_selector.location_name
-        )
+        location = graphene_info.context.get_code_location(repo_selector.location_name)
         repository = location.get_repository(repo_selector.repository_name)
         plugin_docs_json = (
             cast(
-                str,
+                list,
                 repository.repository_snap.metadata.get(
-                    PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY, "[]"
+                    PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY, [[]]
                 ),
-            )
+            )[0]
             if repository.repository_snap.metadata
-            else "[]"
+            else []
         )
 
         return GrapheneLocationDocsJson(json=plugin_docs_json)

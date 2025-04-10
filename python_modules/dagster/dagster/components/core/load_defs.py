@@ -40,6 +40,8 @@ def load_defs(defs_root: ModuleType) -> Definitions:
             to apply to the definitions.
     """
     from dagster.components.core.defs_module import DefsModuleComponent
+    from dagster.components.core.package_entry import discover_entry_point_package_objects
+    from dagster.components.core.snapshot import get_package_entry_snap
 
     # create a top-level DefsModule component from the root module
     context = ComponentLoadContext.for_module(defs_root)
@@ -47,12 +49,8 @@ def load_defs(defs_root: ModuleType) -> Definitions:
     if root_component is None:
         raise DagsterInvalidDefinitionError("Could not resolve root module to a component.")
 
-    from dagster.components.cli.list import _load_library_objects, get_package_entry_snap
-
-    library_objects = _load_library_objects(True, ())
-
+    library_objects = discover_entry_point_package_objects()
     snaps = [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
-
     components_json = json_for_all_components(snaps)
 
     with use_component_load_context(context):

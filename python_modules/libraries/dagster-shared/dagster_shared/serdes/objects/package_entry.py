@@ -9,6 +9,7 @@ from typing_extensions import TypeAlias
 
 from dagster_shared.record import record
 from dagster_shared.serdes.serdes import whitelist_for_serdes
+from dagster_shared.yaml_utils.sample_yaml import generate_sample_yaml
 
 
 def _generate_invalid_component_typename_error_message(typename: str) -> str:
@@ -169,12 +170,12 @@ def json_for_component_type(
     key: PluginObjectKey, entry: PluginObjectSnap, component_type_data: ComponentFeatureData
 ) -> ComponentTypeJson:
     typename = key.to_typename()
-    # sample_yaml = generate_sample_yaml(typename, component_type_data.schema or {})
+    sample_yaml = generate_sample_yaml(typename, component_type_data.schema or {})
     return ComponentTypeJson(
         name=typename,
         owners=entry.owners,
         tags=entry.tags,
-        example="",
-        schema=json.dumps(component_type_data.schema),
+        example=sample_yaml,
+        schema=json.dumps(component_type_data.schema, sort_keys=True),
         description=entry.description,
     )
