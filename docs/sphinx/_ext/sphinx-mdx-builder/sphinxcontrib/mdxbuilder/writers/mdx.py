@@ -402,10 +402,13 @@ class MdxTranslator(SphinxTranslator):
         self.new_state(0)
 
     def depart_document(self, node: Element) -> None:
+
         title = next(iter(node.nameids.keys()), "Dagster Python API Reference")
         title_suffix = self.builder.config.mdx_title_suffix
         title_meta = self.builder.config.mdx_title_meta
         meta_description = self.builder.config.mdx_description_meta
+        sidebar_position = 'sidebar_position: 1' if 'index.rst' in node.attributes['source']\
+                                else self.builder.config.mdx_sidebar_position
 
         # Escape single quotes in strings
         title = title.replace("'", "\\'")
@@ -421,6 +424,8 @@ class MdxTranslator(SphinxTranslator):
         if title_suffix:
             frontmatter += f" {title_suffix}"
         frontmatter += "'\n"
+        if sidebar_position:
+            frontmatter += f"sidebar_position: 1\n"
 
         if title_meta:
             frontmatter += f"title_meta: '{title}{title_meta}'\n"
