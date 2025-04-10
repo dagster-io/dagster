@@ -21,6 +21,7 @@ EXCLUDED_FILES = {
     f"{snippets_folder}/dlt.py",
     f"{snippets_folder}/fivetran/customize_fivetran_asset_defs.py",
     f"{snippets_folder}/fivetran/customize_fivetran_translator_asset_spec.py",
+    f"{snippets_folder}/fivetran/define_downstream_dependencies.py",
     f"{snippets_folder}/fivetran/multiple_fivetran_workspaces.py",
     f"{snippets_folder}/fivetran/representing_fivetran_assets.py",
     f"{snippets_folder}/fivetran/select_fivetran_connectors.py",
