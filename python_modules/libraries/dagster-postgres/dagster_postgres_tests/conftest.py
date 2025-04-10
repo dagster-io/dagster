@@ -1,5 +1,5 @@
 import pytest
-from dagster_postgres.test_fixtures import (  # noqa: F401 #pyright:ignore reportMissingImports
+from dagster_postgres.test_fixtures import (  # noqa: F401
     postgres_conn_str,
     postgres_hostname,
 )

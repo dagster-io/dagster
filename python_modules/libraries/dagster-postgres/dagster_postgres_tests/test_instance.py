@@ -218,8 +218,8 @@ def test_statement_timeouts(hostname):
 
 def test_skip_autocreate(hostname, conn_string):
     with instance_for_test(overrides=yaml.safe_load(unified_pg_config(hostname))) as instance:
-        instance.run_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-        instance.event_log_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+        instance.run_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # pyright: ignore[reportAttributeAccessIssue]
+        instance.event_log_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # pyright: ignore[reportAttributeAccessIssue]
         instance.schedule_storage.create_clean_storage(conn_string, should_autocreate_tables=False)  # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
 
     with instance_for_test(
