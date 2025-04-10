@@ -13,7 +13,7 @@ This guide covers using existing Dagster definitions with a `dg`-compatible proj
 
 :::
 
-In projects that heavily use `dg`, you would typically keep all definitions in the `defs/` directory. However, if you've converted an existing project to use `dg`, you may have definitions located in various other modules. This guide will show you how to move these existing definitions into the `defs` directory in a way that will allow them to be automatically loaded.
+In projects that are started with `dg`, all definitions are typically kept in the `defs/` directory. However, if you've converted an existing project to use `dg`, you may have definitions located in various other modules. This guide will show you how to move these existing definitions into the `defs` directory in a way that will allow them to be automatically loaded.
 
 ## Example project structure
 

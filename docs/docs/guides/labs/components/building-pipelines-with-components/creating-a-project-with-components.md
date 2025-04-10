@@ -27,15 +27,14 @@ Running `dg scaffold project <project-name>` creates a fairly standard Python pr
 
 The following files and directories are included:
 
-- A Python package `jaffle_platform`-- the name is an underscored inflection of the
-  project root directory (`jaffle_platform`).
-- An (empty) `jaffle_platform_tests` test package.
+- A Python package `jaffle_platform` located in `src/jaffle_platform`-- the name is an underscored inflection of the project root directory (`jaffle-platform`).
+- An (empty) `tests` package.
 - A `uv.lock` file.
 - A `pyproject.toml` file.
 
 :::note
 
-For more information about the sections and settings in pyproject.toml, see "[pyproject.toml settings](/guides/labs/components/building-pipelines-with-components/pyproject-toml)".
+For more information about the sections and settings in `pyproject.toml`, see "[pyproject.toml settings](/guides/labs/components/building-pipelines-with-components/pyproject-toml)".
 
 :::
 
