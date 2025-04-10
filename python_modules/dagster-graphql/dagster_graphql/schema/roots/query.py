@@ -17,10 +17,12 @@ from dagster._core.definitions.selector import (
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
+from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
 from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.workspace.permissions import Permissions
+from dagster.components.core.load_defs import PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY
 
 from dagster_graphql.implementation.execution.backfill import get_asset_backfill_preview
 from dagster_graphql.implementation.external import (
@@ -310,6 +312,12 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneEnvVarWithConsumersListOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         description="Retrieve all the utilized environment variables for the given repo.",
+    )
+
+    locationDocsJson = graphene.Field(
+        graphene.NonNull(graphene.JSONString),
+        repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
+        description="Retrieves JSON blob to drive integrated code location docs.",
     )
 
     sensorOrError = graphene.Field(
@@ -766,6 +774,29 @@ class GrapheneQuery(graphene.ObjectType):
             graphene_info,
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
+
+    @capture_error
+    def resolve_locationDocsJson(
+        self, graphene_info: ResolveInfo, repositorySelector: GrapheneRepositorySelector
+    ):
+        repo_selector = RepositorySelector.from_graphql_input(repositorySelector)
+
+        location: CodeLocation = graphene_info.context.get_code_location(
+            repo_selector.location_name
+        )
+        repository = location.get_repository(repo_selector.repository_name)
+        plugin_docs_json = (
+            cast(
+                str,
+                repository.repository_snap.metadata.get(
+                    PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY, "[]"
+                ),
+            )
+            if repository.repository_snap.metadata
+            else "[]"
+        )
+
+        return plugin_docs_json
 
     @capture_error
     def resolve_sensorOrError(

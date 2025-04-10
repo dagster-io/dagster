@@ -27,7 +27,9 @@ DEV_DOCS_DIR = (
     / "dg-docs-site"
 )
 DOCS_DIR = Path(__file__).parent.parent / "docs" / "packages" / "dg-docs-site"
-ACTIVE_DOCS_DIR = DOCS_DIR if DOCS_DIR.exists() else DEV_DOCS_DIR
+ACTIVE_DOCS_DIR = (
+    DOCS_DIR if DOCS_DIR.exists() and (DOCS_DIR / "package.json").exists() else DEV_DOCS_DIR
+)
 
 DOCS_JSON_PATH = ACTIVE_DOCS_DIR / "contents" / "generated.json"
 
@@ -132,6 +134,7 @@ def build_docs_command(
             spinner.ok("✓")
 
         spinner = yaspin(text="Building docs", color="blue")
+        spinner.start()
         subprocess.check_output(["yarn", "build"])
         spinner.ok("✓")
 

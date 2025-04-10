@@ -1,12 +1,17 @@
 import importlib
+import json
 from pathlib import Path
 from types import ModuleType
+
+from dagster_shared.serdes.objects.package_entry import json_for_all_components
 
 from dagster._annotations import deprecated
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import suppress_dagster_warnings
 from dagster.components.core.context import ComponentLoadContext, use_component_load_context
+
+PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY = "plugin_component_types_json"
 
 
 @deprecated(breaking_version="0.2.0")
@@ -43,5 +48,17 @@ def load_defs(defs_root: ModuleType) -> Definitions:
     if root_component is None:
         raise DagsterInvalidDefinitionError("Could not resolve root module to a component.")
 
+    from dagster.components.cli.list import _load_library_objects, get_package_entry_snap
+
+    library_objects = _load_library_objects(True, ())
+
+    snaps = [get_package_entry_snap(key, obj) for key, obj in library_objects.items()]
+
+    components_json = json.dumps(json_for_all_components(snaps))
+    print(components_json)
+
     with use_component_load_context(context):
-        return root_component.build_defs(context)
+        return Definitions.merge(
+            root_component.build_defs(context),
+            Definitions(metadata={PLUGIN_COMPONENT_TYPES_JSON_METADATA_KEY: components_json}),
+        )

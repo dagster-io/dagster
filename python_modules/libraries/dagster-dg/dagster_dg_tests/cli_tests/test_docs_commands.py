@@ -3,9 +3,11 @@ from typing import Optional
 
 import pytest
 from dagster_dg.utils import ensure_dagster_dg_tests_import, get_venv_executable, install_to_venv
+from dagster_graphql.client.client import DagsterGraphQLClient
 
 ensure_dagster_dg_tests_import()
 
+import json
 import os
 import subprocess
 import time
@@ -17,9 +19,13 @@ from dagster_dg.cli import docs
 
 from dagster_dg_tests.utils import (
     ProxyRunner,
+    assert_projects_loaded_and_exit,
     assert_runner_result,
     find_free_port,
     isolated_components_venv,
+    isolated_example_project_foo_bar,
+    launch_dev_command,
+    wait_for_projects_loaded,
 )
 
 # ########################
@@ -149,3 +155,43 @@ def test_build_docs_success_in_published_package():
         subprocess.check_call([str(executable), "docs", "build", component_dir / "built_docs"])
 
         assert (component_dir / "built_docs" / "index.html").exists()
+
+
+GET_DOCS_JSON_QUERY = """
+query GetDocsJson {
+  locationDocsJson(repositorySelector: {repositoryLocationName: "foo-bar", repositoryName: "foo-bar"})
+}
+"""
+
+
+def test_build_docs_success_matches_graphql():
+    with (
+        ProxyRunner.test(use_fixed_test_components=True) as runner,
+        isolated_example_project_foo_bar(runner) as venv_path,
+    ):
+        result = runner.invoke("docs", "build", str(Path.cwd() / "built_docs"))
+        assert_runner_result(result)
+
+        assert (Path.cwd() / "built_docs" / "index.html").exists()
+
+        from dagster_dg.cli.docs import DOCS_JSON_PATH
+
+        assert DOCS_JSON_PATH.exists()
+        contents = json.loads(DOCS_JSON_PATH.read_text())
+        assert contents
+
+        port = find_free_port()
+        dev_process = launch_dev_command(["--port", str(port)])
+        wait_for_projects_loaded({"foo-bar"}, port, dev_process)
+
+        import time
+
+        print(port)
+
+        time.sleep(50)
+
+        gql_client = DagsterGraphQLClient(hostname="localhost", port_number=port)
+        result = gql_client._execute(GET_DOCS_JSON_QUERY)  # noqa: SLF001
+        assert json.loads(result["locationDocsJson"]) == contents
+
+        assert_projects_loaded_and_exit({"foo-bar"}, port, dev_process)

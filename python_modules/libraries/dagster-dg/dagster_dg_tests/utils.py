@@ -1,9 +1,11 @@
 import contextlib
 import os
 import shutil
+import signal
 import socket
 import subprocess
 import sys
+import time
 import traceback
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager, nullcontext
@@ -11,9 +13,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, TextIO, Union
 
 import click
+import psutil
+import requests
 import tomlkit
 import tomlkit.items
 from click.testing import CliRunner, Result
@@ -37,6 +41,7 @@ from dagster_dg.utils import (
     pushd,
     set_toml_node,
 )
+from dagster_graphql.client import DagsterGraphQLClient
 from typing_extensions import Self, TypeAlias
 
 STANDARD_TEST_COMPONENT_MODULE = "dagster_test.components"
@@ -633,3 +638,98 @@ def modify_dg_toml_config_as_dict(path: Path) -> Iterator[dict[str, Any]]:
             )
         else:
             yield get_toml_node(toml_dict, ("tool", "dg"), dict)
+
+
+# ########################
+# ##### DEV COMMAND
+# ########################
+
+
+def launch_dev_command(
+    options: list[str],
+    capture_output: bool = False,
+    stdout: Optional[TextIO] = None,
+    stderr: Optional[TextIO] = None,
+) -> subprocess.Popen:
+    # We start a new process instead of using the runner to avoid blocking the test. We need to
+    # poll the webserver to know when it is ready.
+    assert stdout is None or capture_output is False, "Cannot set both stdout and capture_output"
+    return subprocess.Popen(
+        [
+            "dg",
+            "dev",
+            *options,
+        ],
+        stdout=stdout if stdout else (subprocess.PIPE if capture_output else None),
+        stderr=stderr if stderr else None,
+    )
+
+
+def wait_for_projects_loaded(projects: set[str], port: int, proc: subprocess.Popen) -> None:
+    _ping_webserver(port)
+    assert _query_code_locations(port) == projects
+
+
+def assert_projects_loaded_and_exit(projects: set[str], port: int, proc: subprocess.Popen) -> None:
+    child_processes = []
+    try:
+        wait_for_projects_loaded(projects, port, proc)
+        child_processes = get_child_processes(proc.pid)
+    finally:
+        proc.send_signal(signal.SIGINT)
+        proc.communicate()
+        time.sleep(3)
+        _assert_no_child_processes_running(child_processes)
+
+
+def _assert_no_child_processes_running(child_procs: list[psutil.Process]) -> None:
+    for proc in child_procs:
+        assert not proc.is_running(), f"Process {proc.pid} ({proc.cmdline()}) is still running"
+
+
+def get_child_processes(pid) -> list[psutil.Process]:
+    parent = psutil.Process(pid)
+    return parent.children(recursive=True)
+
+
+def _ping_webserver(port: int) -> None:
+    start_time = time.time()
+    while True:
+        try:
+            server_info = requests.get(f"http://localhost:{port}/server_info").json()
+            if server_info:
+                return
+        except:
+            print("Waiting for dagster-webserver to be ready..")  # noqa: T201
+
+        if time.time() - start_time > 30:
+            raise Exception("Timed out waiting for dagster-webserver to serve requests")
+
+        time.sleep(1)
+
+
+_GET_CODE_LOCATION_NAMES_QUERY = """
+query GetCodeLocationNames {
+  repositoriesOrError {
+    __typename
+    ... on RepositoryConnection {
+      nodes {
+        name
+        location {
+          name
+        }
+      }
+    }
+    ... on PythonError {
+      message
+    }
+  }
+}
+"""
+
+
+def _query_code_locations(port: int) -> set[str]:
+    gql_client = DagsterGraphQLClient(hostname="localhost", port_number=port)
+    result = gql_client._execute(_GET_CODE_LOCATION_NAMES_QUERY)  # noqa: SLF001
+    assert result["repositoriesOrError"]["__typename"] == "RepositoryConnection"
+    return {node["location"]["name"] for node in result["repositoriesOrError"]["nodes"]}
