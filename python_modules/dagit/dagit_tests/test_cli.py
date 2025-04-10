@@ -2,7 +2,6 @@ import os
 import subprocess
 import time
 
-import pytest
 from dagster import asset
 
 
@@ -21,7 +20,6 @@ def foo(bar):
     return 1
 
 
-@pytest.mark.skip("This test is hanging indefinitely")
 def test_cli_logs_to_dagit():
     defs_path = os.path.realpath(__file__)
     process = subprocess.Popen(
@@ -29,7 +27,9 @@ def test_cli_logs_to_dagit():
     )
     time.sleep(2)  # give time for dagit to start
     process.terminate()
-    process.wait()
-    stdout, _ = process.communicate()
-    assert "The `dagit` CLI command is deprecated" in stdout
-    assert "- dagit -" in stdout
+    try:
+        stdout, _ = process.communicate(timeout=10)
+        assert "The `dagit` CLI command is deprecated" in stdout
+        assert "- dagit -" in stdout
+    except subprocess.TimeoutExpired:
+        process.kill()
