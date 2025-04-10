@@ -41,3 +41,8 @@ extend-ignore = [
 # Ensures ruff classifies imports from `dagster` as first-party. Keeps snippet imports relatively
 # compressed.
 known-first-party = ["dagster"]
+
+[tool.pytest.ini_options]
+
+# override ../../pyproject.toml timeout
+timeout = 480
