@@ -8,10 +8,7 @@ from docs_snippets_tests.snippet_checks.guides.components.utils import (
     EDITABLE_DIR,
     MASK_EDITABLE_DAGSTER,
     MASK_JAFFLE_PLATFORM,
-    MASK_SLING_DOWNLOAD_DUCKDB,
-    MASK_SLING_PROMO,
-    MASK_SLING_WARNING,
-    MASK_TIME,
+    MASK_TMP_WORKSPACE,
     MASK_USING_ENVIRONMENT,
     format_multiline,
     isolated_snippet_generation_environment,
@@ -391,6 +388,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                     MASK_JAFFLE_PLATFORM,
                 ],
             )
+
             run_command_and_snippet_output(
                 cmd="dg check defs",
                 snippet_path=COMPONENTS_SNIPPETS_DIR
@@ -398,6 +396,7 @@ def test_components_docs_index(update_snippets: bool) -> None:
                 update_snippets=update_snippets,
                 snippet_replace_regex=[
                     MASK_JAFFLE_PLATFORM,
+                    MASK_TMP_WORKSPACE,
                 ],
             )
             _run_command(
