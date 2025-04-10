@@ -10,10 +10,11 @@ from dagster import (
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.utils import VALID_NAME_REGEX
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.storage.tags import KIND_PREFIX
+from dagster._core.storage.tags import EXTERNAL_JOB_SOURCE_TAG_KEY, KIND_PREFIX
 
 from dagster_airlift.constants import (
     AIRFLOW_SOURCE_METADATA_KEY_PREFIX,
+    DAG_ID_TAG_KEY,
     DAG_MAPPING_METADATA_KEY,
     PEERED_DAG_MAPPING_METADATA_KEY,
     TASK_MAPPING_METADATA_KEY,
@@ -105,4 +106,11 @@ def peered_dag_handles_for_spec(spec: AssetSpec) -> set["DagHandle"]:
     return {
         DagHandle(dag_id=dag_handle_dict["dag_id"])
         for dag_handle_dict in spec.metadata[PEERED_DAG_MAPPING_METADATA_KEY]
+    }
+
+
+def airflow_job_tags(dag_id: str) -> dict:
+    return {
+        **airflow_kind_dict(),
+        **{EXTERNAL_JOB_SOURCE_TAG_KEY: "airflow", DAG_ID_TAG_KEY: dag_id},
     }
