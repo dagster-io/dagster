@@ -3914,6 +3914,7 @@ export type Query = {
   isPipelineConfigValid: PipelineConfigValidationResult;
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   logsForRun: EventConnectionOrError;
+  orderAssetsByLastMaterializedTime: Array<AssetKey>;
   partitionBackfillOrError: PartitionBackfillOrError;
   partitionBackfillsOrError: PartitionBackfillsOrError;
   partitionSetOrError: PartitionSetOrError;
@@ -4074,6 +4075,11 @@ export type QueryLogsForRunArgs = {
   afterCursor?: InputMaybe<Scalars['String']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   runId: Scalars['ID']['input'];
+};
+
+export type QueryOrderAssetsByLastMaterializedTimeArgs = {
+  assetKeys: Array<AssetKeyInput>;
+  descending?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type QueryPartitionBackfillOrErrorArgs = {
@@ -12590,6 +12596,10 @@ export const buildQuery = (
         : relationshipsToOmit.has('EventConnection')
           ? ({} as EventConnection)
           : buildEventConnection({}, relationshipsToOmit),
+    orderAssetsByLastMaterializedTime:
+      overrides && overrides.hasOwnProperty('orderAssetsByLastMaterializedTime')
+        ? overrides.orderAssetsByLastMaterializedTime!
+        : [],
     partitionBackfillOrError:
       overrides && overrides.hasOwnProperty('partitionBackfillOrError')
         ? overrides.partitionBackfillOrError!
