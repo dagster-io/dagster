@@ -1,8 +1,9 @@
 from pathlib import Path
 
 import pytest
-from dagster_postgres.utils import get_conn_string, wait_for_connection
 from dagster_test.fixtures import docker_compose_cm
+
+from dagster_postgres.utils import get_conn_string, wait_for_connection
 
 compose_file = Path(__file__).parent / "docker-compose.yml"
 

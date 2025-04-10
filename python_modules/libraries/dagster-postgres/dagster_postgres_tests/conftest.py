@@ -1,6 +1,6 @@
 import pytest
 
-pytest_plugins = ["dagster_test.fixtures"]
+pytest_plugins = ["dagster_postgres.test_fixtures"]
 
 
 @pytest.fixture
